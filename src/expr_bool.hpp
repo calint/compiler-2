@@ -541,22 +541,16 @@ class expr_bool_op final : public statement {
                      const comparison_side& rhs,
                      const machine::comparison_action& action) const -> void {
 
-        std::vector<operand> allocated_registers;
+        machine& x{tc.machine()};
 
-        const operand dst{
-            left_operand(tc, indent, lhs, allocated_registers),
-        };
+        machine::held_registers held{x, tok(), indent};
 
-        const operand src{
-            right_operand(tc, indent, rhs, allocated_registers),
-        };
+        const operand dst{left_operand(tc, indent, lhs, held)};
+        const operand src{right_operand(tc, indent, rhs, held)};
 
         assert_rhs_fits_lhs(lhs, rhs, action.operation, dst, src);
 
-        machine& x{tc.machine()};
-
         x.compare_and_branch(tok(), indent, dst, src, action);
-        x.free_scratch_registers(tok(), indent, allocated_registers);
     }
 
     auto resolve_cmp_shorthand(toc& tc, const size_t indent,
@@ -580,35 +574,27 @@ class expr_bool_op final : public statement {
             return;
         }
 
-        std::vector<operand> allocated_registers;
+        machine& x{tc.machine()};
+
+        machine::held_registers held{x, tok(), indent};
 
         // a plain 'bool' already holds 0 or 1, a copy is shorter than
         // evaluating the shorthand as '!= 0'
         if (is_bool_copy(lhs, action)) {
-            machine& x{tc.machine()};
-
-            const operand src{
-                left_operand(tc, indent, condition, allocated_registers),
-            };
+            const operand src{left_operand(tc, indent, condition, held)};
 
             x.copy_value(tok(), indent, action.destination, src);
-            x.free_scratch_registers(tok(), indent, allocated_registers);
 
             return;
         }
 
         const operand dst{
-            truth_test_operand(tc, indent, condition, action,
-                               allocated_registers),
+            truth_test_operand(tc, indent, condition, action, held),
         };
-
-        machine& x{tc.machine()};
 
         x.compare_and_branch(tok(), indent, dst,
                              operand::imm(0, tc.builtins().default_type()),
                              action);
-
-        x.free_scratch_registers(tok(), indent, allocated_registers);
     }
 
     // the bytes are compared and the result is branched on as for a shorthand
@@ -885,9 +871,10 @@ class expr_bool_op final : public statement {
             });
     }
 
-    [[nodiscard]] static auto
-    compile_to_scratch(toc& tc, const size_t indent, const expr_arith& expr,
-                       std::vector<operand>& allocated_registers) -> operand {
+    [[nodiscard]] static auto compile_to_scratch(toc& tc, const size_t indent,
+                                                 const expr_arith& expr,
+                                                 machine::held_registers& held)
+        -> operand {
 
         machine& x{tc.machine()};
 
@@ -898,7 +885,7 @@ class expr_bool_op final : public statement {
             x.alloc_scratch_register(expr.tok(), indent, expr.get_type()),
         };
 
-        allocated_registers.emplace_back(reg);
+        held.add(reg);
         expr.compile(tc, indent + 1, destination::of_register(reg));
 
         return reg;
@@ -986,9 +973,10 @@ class expr_bool_op final : public statement {
 
     // the comparison needs its left operand in a register; a constant left
     // side that is not typed was mirrored onto the right
-    [[nodiscard]] static auto
-    left_operand(toc& tc, const size_t indent, const comparison_side& side,
-                 std::vector<operand>& allocated_registers) -> operand {
+    [[nodiscard]] static auto left_operand(toc& tc, const size_t indent,
+                                           const comparison_side& side,
+                                           machine::held_registers& held)
+        -> operand {
 
         const expr_arith& expr{*side.node};
 
@@ -997,7 +985,7 @@ class expr_bool_op final : public statement {
         const stmt_identifier* const ident{expr.operand_path()};
 
         if (ident == nullptr) {
-            return compile_to_scratch(tc, indent, expr, allocated_registers);
+            return compile_to_scratch(tc, indent, expr, held);
         }
 
         const ident_info expr_info{make_scalar_ident_info(tc, *ident)};
@@ -1010,7 +998,7 @@ class expr_bool_op final : public statement {
                 x.alloc_scratch_register(expr.tok(), indent, expr.get_type()),
             };
 
-            allocated_registers.emplace_back(reg);
+            held.add(reg);
 
             x.copy_value(expr.tok(), indent, reg, typed_constant(side));
 
@@ -1022,7 +1010,7 @@ class expr_bool_op final : public statement {
         // e.g. 'a', '-a[i]'
         return ident->compile_value_operand(
             tc, indent, expr.tok(), expr_info, expr_info.type_ref(),
-            tc.checks().overflow_options(), allocated_registers);
+            tc.checks().overflow_options(), held);
     }
 
     // a typed constant side is compared as a variable of its type
@@ -1080,9 +1068,10 @@ class expr_bool_op final : public statement {
 
     // the right operand may be an immediate; an untyped constant is compared
     // as written, the caller checks that it fits the left side
-    [[nodiscard]] static auto
-    right_operand(toc& tc, const size_t indent, const comparison_side& side,
-                  std::vector<operand>& allocated_registers) -> operand {
+    [[nodiscard]] static auto right_operand(toc& tc, const size_t indent,
+                                            const comparison_side& side,
+                                            machine::held_registers& held)
+        -> operand {
 
         const expr_arith& expr{*side.node};
 
@@ -1091,8 +1080,7 @@ class expr_bool_op final : public statement {
 
         if (ident == nullptr) {
             if (not side.folded) {
-                return compile_to_scratch(tc, indent, expr,
-                                          allocated_registers);
+                return compile_to_scratch(tc, indent, expr, held);
             }
 
             machine& x{tc.machine()};
@@ -1115,7 +1103,7 @@ class expr_bool_op final : public statement {
         // e.g. 'a', '-a[i]'
         return ident->compile_value_operand(
             tc, indent, expr.tok(), expr_info, expr_info.type_ref(),
-            tc.checks().overflow_options(), allocated_registers);
+            tc.checks().overflow_options(), held);
     }
 
     // a side computed at run time in a register of its own type, so a
@@ -1154,7 +1142,7 @@ class expr_bool_op final : public statement {
     truth_test_operand(toc& tc, const size_t indent,
                        const comparison_side& condition,
                        const machine::comparison_action& action,
-                       std::vector<operand>& allocated_registers) -> operand {
+                       machine::held_registers& held) -> operand {
 
         const expr_arith& lhs{*condition.node};
 
@@ -1167,7 +1155,7 @@ class expr_bool_op final : public statement {
             return action.destination;
         }
 
-        return left_operand(tc, indent, condition, allocated_registers);
+        return left_operand(tc, indent, condition, held);
     }
 
     // the value at the width of its type, e.g. -128 for '-i8(-128)'

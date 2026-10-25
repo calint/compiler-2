@@ -117,7 +117,7 @@ class stmt_builtin_array_copy final : public statement {
 
         machine& x{tc.machine()};
 
-        std::vector<operand> allocated_scratch_registers;
+        machine::held_registers held{x, tok(), indent};
 
         const range_check src_check{operands_.range_check_of(tc, src)};
         const range_check dst_check{operands_.range_check_of(tc, dst)};
@@ -132,7 +132,7 @@ class stmt_builtin_array_copy final : public statement {
             count_register = x.alloc_scratch_register(
                 tok(), indent, tc.builtins().default_type());
 
-            allocated_scratch_registers.push_back(count_register);
+            held.add(count_register);
 
             x.comment(count_expr.tok(), indent,
                       statement::trimmed_source(count_expr));
@@ -149,7 +149,7 @@ class stmt_builtin_array_copy final : public statement {
 
         const operand src_operand{
             src.compile_lea(
-                tc, indent, src.first_token(), allocated_scratch_registers,
+                tc, indent, src.first_token(), held,
                 {
                     .reg_count{src_count},
                     .address_by_call{arrays.first.address_by_call()},
@@ -165,7 +165,7 @@ class stmt_builtin_array_copy final : public statement {
 
         const operand dst_operand{
             dst.compile_lea(
-                tc, indent, dst.first_token(), allocated_scratch_registers,
+                tc, indent, dst.first_token(), held,
                 {
                     .reg_count{dst_count},
                     .address_by_call{arrays.second.address_by_call()},
@@ -177,7 +177,5 @@ class stmt_builtin_array_copy final : public statement {
                multiply_storage_size(
                    tok(), arrays.first.type_ref().size_bytes(), count),
                arrays.first.type_ref().alignment());
-
-        x.free_scratch_registers(tok(), indent, allocated_scratch_registers);
     }
 };

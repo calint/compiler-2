@@ -2526,8 +2526,8 @@ main:
             syscall
 ;           [prog.baz:38:34] free named register rdi
         if.38.24.189.5.end:
-;       [prog.baz:189:5] free scratch register r15
     func.assert.189.5.end:
+;       [prog.baz:189:5] free scratch register r15
 ;   [prog.baz:191:5] answer = maybe
 ;   [prog.baz:191:14] answer = -1
 ;   [prog.baz:191:14] src: folded constant 'maybe'
@@ -2557,8 +2557,8 @@ main:
             syscall
 ;           [prog.baz:38:34] free named register rdi
         if.38.24.192.5.end:
-;       [prog.baz:192:5] free scratch register r15
     func.assert.192.5.end:
+;       [prog.baz:192:5] free scratch register r15
 ;       [prog.baz:197:9] let maybe = 33
 ;       [prog.baz:197:13] const maybe = 33
 ;       [prog.baz:198:9] assert(maybe == 33)
@@ -2612,8 +2612,8 @@ main:
             syscall
 ;           [prog.baz:38:34] free named register rdi
         if.38.24.203.5.end:
-;       [prog.baz:203:5] free scratch register r15
     func.assert.203.5.end:
+;       [prog.baz:203:5] free scratch register r15
 ;   [prog.baz:204:5] assert(str2.len == 3 and str2.data[2] == 'z')
 ;   [prog.baz:204:12] allocate scratch register -> r15
 ;   [prog.baz:204:12] ? str2.len == 3 and str2.data[2] == 'z'
@@ -2645,8 +2645,8 @@ main:
             syscall
 ;           [prog.baz:38:34] free named register rdi
         if.38.24.204.5.end:
-;       [prog.baz:204:5] free scratch register r15
     func.assert.204.5.end:
+;       [prog.baz:204:5] free scratch register r15
 ;   [prog.baz:206:5] var a = 7
 ;   [prog.baz:206:9] a: i64 (8 B @ [rbp + 392])
 ;   [prog.baz:206:9] a = 7
@@ -2685,8 +2685,8 @@ main:
             syscall
 ;           [prog.baz:38:34] free named register rdi
         if.38.24.207.5.end:
-;       [prog.baz:207:5] free scratch register r15
     func.assert.207.5.end:
+;       [prog.baz:207:5] free scratch register r15
 ;   [prog.baz:208:5] assert(a | 8 == 15)
 ;   [prog.baz:208:12] allocate scratch register -> r15
 ;   [prog.baz:208:12] ? a | 8 == 15
@@ -2719,8 +2719,8 @@ main:
             syscall
 ;           [prog.baz:38:34] free named register rdi
         if.38.24.208.5.end:
-;       [prog.baz:208:5] free scratch register r15
     func.assert.208.5.end:
+;       [prog.baz:208:5] free scratch register r15
 ;   [prog.baz:209:5] assert(a ^ 1 == 6)
 ;   [prog.baz:209:12] allocate scratch register -> r15
 ;   [prog.baz:209:12] ? a ^ 1 == 6
@@ -2753,8 +2753,8 @@ main:
             syscall
 ;           [prog.baz:38:34] free named register rdi
         if.38.24.209.5.end:
-;       [prog.baz:209:5] free scratch register r15
     func.assert.209.5.end:
+;       [prog.baz:209:5] free scratch register r15
 ;   [prog.baz:210:5] assert(a << 2 == 28)
 ;   [prog.baz:210:12] allocate scratch register -> r15
 ;   [prog.baz:210:12] ? a << 2 == 28
@@ -2787,8 +2787,8 @@ main:
             syscall
 ;           [prog.baz:38:34] free named register rdi
         if.38.24.210.5.end:
-;       [prog.baz:210:5] free scratch register r15
     func.assert.210.5.end:
+;       [prog.baz:210:5] free scratch register r15
 ;   [prog.baz:211:5] assert(-a >> 1 == -4)
 ;   [prog.baz:211:12] allocate scratch register -> r15
 ;   [prog.baz:211:12] ? -a >> 1 == -4
@@ -2823,8 +2823,8 @@ main:
             syscall
 ;           [prog.baz:38:34] free named register rdi
         if.38.24.211.5.end:
-;       [prog.baz:211:5] free scratch register r15
     func.assert.211.5.end:
+;       [prog.baz:211:5] free scratch register r15
 ;   [prog.baz:214:5] assert(a + a << 1 == 21)
 ;   [prog.baz:214:12] allocate scratch register -> r15
 ;   [prog.baz:214:12] ? a + a << 1 == 21
@@ -2865,8 +2865,8 @@ main:
             syscall
 ;           [prog.baz:38:34] free named register rdi
         if.38.24.214.5.end:
-;       [prog.baz:214:5] free scratch register r15
     func.assert.214.5.end:
+;       [prog.baz:214:5] free scratch register r15
 ;   [prog.baz:215:5] assert((a + a) << 1 == 28)
 ;   [prog.baz:215:12] allocate scratch register -> r15
 ;   [prog.baz:215:12] ? (a + a) << 1 == 28
@@ -2905,8 +2905,8 @@ main:
             syscall
 ;           [prog.baz:38:34] free named register rdi
         if.38.24.215.5.end:
-;       [prog.baz:215:5] free scratch register r15
     func.assert.215.5.end:
+;       [prog.baz:215:5] free scratch register r15
 ;   [prog.baz:220:5] assert(a != 0 and (a >= 7 or a < 0))
 ;   [prog.baz:220:12] allocate scratch register -> r15
 ;   [prog.baz:220:12] ? a != 0 and (a >= 7 or a < 0)
@@ -2945,8 +2945,8 @@ main:
             syscall
 ;           [prog.baz:38:34] free named register rdi
         if.38.24.220.5.end:
-;       [prog.baz:220:5] free scratch register r15
     func.assert.220.5.end:
+;       [prog.baz:220:5] free scratch register r15
 ;   [prog.baz:223:5] var small = i8(100)
 ;   [prog.baz:223:9] small: i8 (1 B @ [rbp + 400])
 ;   [prog.baz:223:9] small = i8(100)
@@ -2990,8 +2990,8 @@ main:
             syscall
 ;           [prog.baz:38:34] free named register rdi
         if.38.24.225.5.end:
-;       [prog.baz:225:5] free scratch register r15
     func.assert.225.5.end:
+;       [prog.baz:225:5] free scratch register r15
 ;   [prog.baz:228:5] var wide = int(i16(small))
 ;   [prog.baz:228:9] wide: i64 (8 B @ [rbp + 408])
 ;   [prog.baz:228:9] wide = int(i16(small))
@@ -3030,8 +3030,8 @@ main:
             syscall
 ;           [prog.baz:38:34] free named register rdi
         if.38.24.229.5.end:
-;       [prog.baz:229:5] free scratch register r15
     func.assert.229.5.end:
+;       [prog.baz:229:5] free scratch register r15
 ;   [prog.baz:236:5] var letter = '\x41'
 ;   [prog.baz:236:9] letter: i64 (8 B @ [rbp + 416])
 ;   [prog.baz:236:9] letter = '\x41'
@@ -3063,8 +3063,8 @@ main:
             syscall
 ;           [prog.baz:38:34] free named register rdi
         if.38.24.237.5.end:
-;       [prog.baz:237:5] free scratch register r15
     func.assert.237.5.end:
+;       [prog.baz:237:5] free scratch register r15
 ;   [prog.baz:240:5] var arr = i32[4]
 ;   [prog.baz:240:9] arr: i32[4] (16 B @ [rbp + 424])
 ;   [prog.baz:240:9] arr = i32[4]
@@ -3153,8 +3153,8 @@ main:
             syscall
 ;           [prog.baz:38:34] free named register rdi
         if.38.24.245.5.end:
-;       [prog.baz:245:5] free scratch register r15
     func.assert.245.5.end:
+;       [prog.baz:245:5] free scratch register r15
 ;   [prog.baz:246:5] assert(arr[2] == 2)
 ;   [prog.baz:246:12] allocate scratch register -> r15
 ;   [prog.baz:246:12] ? arr[2] == 2
@@ -3180,8 +3180,8 @@ main:
             syscall
 ;           [prog.baz:38:34] free named register rdi
         if.38.24.246.5.end:
-;       [prog.baz:246:5] free scratch register r15
     func.assert.246.5.end:
+;       [prog.baz:246:5] free scratch register r15
 ;   [prog.baz:248:5] array_copy(arr[2], arr, 2)
 ;   [prog.baz:248:5] allocate named register rsi
 ;   [prog.baz:248:5] allocate named register rdi
@@ -3262,8 +3262,8 @@ main:
             syscall
 ;           [prog.baz:38:34] free named register rdi
         if.38.24.249.5.end:
-;       [prog.baz:249:5] free scratch register r15
     func.assert.249.5.end:
+;       [prog.baz:249:5] free scratch register r15
 ;   [prog.baz:252:5] var arr1 = i32[8]
 ;   [prog.baz:252:9] arr1: i32[8] (32 B @ [rbp + 448])
 ;   [prog.baz:252:9] arr1 = i32[8]
@@ -3458,8 +3458,8 @@ main:
             syscall
 ;           [prog.baz:38:34] free named register rdi
         if.38.24.260.5.end:
-;       [prog.baz:260:5] free scratch register r15
     func.assert.260.5.end:
+;       [prog.baz:260:5] free scratch register r15
 ;   [prog.baz:262:5] var arr4 = arr
 ;   [prog.baz:262:9] arr4: i32[4] (16 B @ [rbp + 484])
 ;   [prog.baz:262:9] arr4 = arr
@@ -3506,8 +3506,8 @@ main:
             syscall
 ;           [prog.baz:38:34] free named register rdi
         if.38.24.263.5.end:
-;       [prog.baz:263:5] free scratch register r15
     func.assert.263.5.end:
+;       [prog.baz:263:5] free scratch register r15
 ;   [prog.baz:270:5] ix = 3
 ;   [prog.baz:270:10] ix = 3
 ;   [prog.baz:270:10] src: folded constant '3'
@@ -3546,8 +3546,8 @@ main:
         mov dword [rbp + 500], r14d
 ;       [prog.baz:73:12] free scratch register r14
         not dword [rbp + 500]
-;       [prog.baz:271:16] free scratch register r15
     func.inv.271.16.end:
+;       [prog.baz:271:16] free scratch register r15
     not dword [rbp + 500]
 ;   [prog.baz:272:5] arr[ix] = tmp
 ;   [prog.baz:272:9] allocate scratch register -> r15
@@ -3604,8 +3604,8 @@ main:
             syscall
 ;           [prog.baz:38:34] free named register rdi
         if.38.24.273.5.end:
-;       [prog.baz:273:5] free scratch register r15
     func.assert.273.5.end:
+;       [prog.baz:273:5] free scratch register r15
 ;   [prog.baz:275:5] faz(arr)
 ;   [prog.baz:78:6] faz(arg mut i32[])
     func.faz.275.5:
@@ -3640,8 +3640,8 @@ main:
             syscall
 ;           [prog.baz:38:34] free named register rdi
         if.38.24.276.5.end:
-;       [prog.baz:276:5] free scratch register r15
     func.assert.276.5.end:
+;       [prog.baz:276:5] free scratch register r15
 ;   [prog.baz:278:5] var arr3 = []{ 3, 5 }
 ;   [prog.baz:278:9] arr3: i64[2] (16 B @ [rbp + 504])
 ;   [prog.baz:278:9] arr3 = []{ 3, 5 }
@@ -3704,8 +3704,8 @@ main:
             syscall
 ;           [prog.baz:38:34] free named register rdi
         if.38.24.282.5.end:
-;       [prog.baz:282:5] free scratch register r15
     func.assert.282.5.end:
+;       [prog.baz:282:5] free scratch register r15
 ;   [prog.baz:283:5] assert(arr3[1] == 5 + 1 + 2)
 ;   [prog.baz:283:12] allocate scratch register -> r15
 ;   [prog.baz:283:12] ? arr3[1] == 5 + 1 + 2
@@ -3732,8 +3732,8 @@ main:
             syscall
 ;           [prog.baz:38:34] free named register rdi
         if.38.24.283.5.end:
-;       [prog.baz:283:5] free scratch register r15
     func.assert.283.5.end:
+;       [prog.baz:283:5] free scratch register r15
 ;   [prog.baz:289:5] var p = point
 ;   [prog.baz:289:9] p: point (16 B @ [rbp + 520])
 ;   [prog.baz:289:9] p = point
@@ -3779,8 +3779,8 @@ main:
             syscall
 ;           [prog.baz:38:34] free named register rdi
         if.38.24.294.5.end:
-;       [prog.baz:294:5] free scratch register r15
     func.assert.294.5.end:
+;       [prog.baz:294:5] free scratch register r15
 ;   [prog.baz:295:5] assert(p.y == 0xb)
 ;   [prog.baz:295:12] allocate scratch register -> r15
 ;   [prog.baz:295:12] ? p.y == 0xb
@@ -3806,8 +3806,8 @@ main:
             syscall
 ;           [prog.baz:38:34] free named register rdi
         if.38.24.295.5.end:
-;       [prog.baz:295:5] free scratch register r15
     func.assert.295.5.end:
+;       [prog.baz:295:5] free scratch register r15
 ;   [prog.baz:297:5] var q = p
 ;   [prog.baz:297:9] q: point (16 B @ [rbp + 536])
 ;   [prog.baz:297:9] q = p
@@ -3854,8 +3854,8 @@ main:
             syscall
 ;           [prog.baz:38:34] free named register rdi
         if.38.24.300.5.end:
-;       [prog.baz:300:5] free scratch register r15
     func.assert.300.5.end:
+;       [prog.baz:300:5] free scratch register r15
 ;   [prog.baz:304:5] q.x = 3
 ;   [prog.baz:304:11] q.x = 3
 ;   [prog.baz:304:11] src: folded constant '3'
@@ -3896,8 +3896,8 @@ main:
             syscall
 ;           [prog.baz:38:34] free named register rdi
         if.38.24.305.5.end:
-;       [prog.baz:305:5] free scratch register r15
     func.assert.305.5.end:
+;       [prog.baz:305:5] free scratch register r15
 ;   [prog.baz:307:5] var i = 0
 ;   [prog.baz:307:9] i: i64 (8 B @ [rbp + 552])
 ;   [prog.baz:307:9] i = 0
@@ -3946,8 +3946,8 @@ main:
             syscall
 ;           [prog.baz:38:34] free named register rdi
         if.38.24.309.5.end:
-;       [prog.baz:309:5] free scratch register r15
     func.assert.309.5.end:
+;       [prog.baz:309:5] free scratch register r15
 ;   [prog.baz:311:5] i = 1
 ;   [prog.baz:311:9] i = 1
 ;   [prog.baz:311:9] src: folded constant '1'
@@ -3994,8 +3994,8 @@ main:
             syscall
 ;           [prog.baz:38:34] free named register rdi
         if.38.24.313.5.end:
-;       [prog.baz:313:5] free scratch register r15
     func.assert.313.5.end:
+;       [prog.baz:313:5] free scratch register r15
 ;   [prog.baz:315:5] var j = 1
 ;   [prog.baz:315:9] j: i64 (8 B @ [rbp + 560])
 ;   [prog.baz:315:9] j = 1
@@ -4022,8 +4022,8 @@ main:
         imul r15, 2
         jo baz_overflow_line_67
         mov qword [rbp + 568], r15
-;       [prog.baz:67:11] free scratch register r15
     func.baz.316.13.end:
+;       [prog.baz:67:11] free scratch register r15
 ;   [prog.baz:317:5] assert(k == 2)
 ;   [prog.baz:317:12] allocate scratch register -> r15
 ;   [prog.baz:317:12] ? k == 2
@@ -4049,8 +4049,8 @@ main:
             syscall
 ;           [prog.baz:38:34] free named register rdi
         if.38.24.317.5.end:
-;       [prog.baz:317:5] free scratch register r15
     func.assert.317.5.end:
+;       [prog.baz:317:5] free scratch register r15
 ;   [prog.baz:319:5] k = baz(1)
 ;   [prog.baz:319:9] k = baz(1)
 ;   [prog.baz:319:9] = expression
@@ -4089,8 +4089,8 @@ main:
             syscall
 ;           [prog.baz:38:34] free named register rdi
         if.38.24.320.5.end:
-;       [prog.baz:320:5] free scratch register r15
     func.assert.320.5.end:
+;       [prog.baz:320:5] free scratch register r15
 ;   [prog.baz:322:5] var five = 5
 ;   [prog.baz:322:9] five: i64 (8 B @ [rbp + 576])
 ;   [prog.baz:322:9] five = 5
@@ -4158,8 +4158,8 @@ main:
             syscall
 ;           [prog.baz:38:34] free named register rdi
         if.38.24.324.5.end:
-;       [prog.baz:324:5] free scratch register r15
     func.assert.324.5.end:
+;       [prog.baz:324:5] free scratch register r15
 ;   [prog.baz:326:5] var p0 = point{baz(3), 0}
 ;   [prog.baz:326:9] p0: point (16 B @ [rbp + 592])
 ;   [prog.baz:326:9] p0 = point{baz(3), 0}
@@ -4205,8 +4205,8 @@ main:
             syscall
 ;           [prog.baz:38:34] free named register rdi
         if.38.24.327.5.end:
-;       [prog.baz:327:5] free scratch register r15
     func.assert.327.5.end:
+;       [prog.baz:327:5] free scratch register r15
 ;   [prog.baz:329:5] var pt = point.at(-1, -2)
 ;   [prog.baz:329:9] pt: point (16 B @ [rbp + 608])
 ;   [prog.baz:329:9] pt = point.at(-1, -2)
@@ -4250,8 +4250,8 @@ main:
             syscall
 ;           [prog.baz:38:34] free named register rdi
         if.38.24.333.5.end:
-;       [prog.baz:333:5] free scratch register r15
     func.assert.333.5.end:
+;       [prog.baz:333:5] free scratch register r15
 ;   [prog.baz:334:5] assert(pt.y == -2)
 ;   [prog.baz:334:12] allocate scratch register -> r15
 ;   [prog.baz:334:12] ? pt.y == -2
@@ -4277,8 +4277,8 @@ main:
             syscall
 ;           [prog.baz:38:34] free named register rdi
         if.38.24.334.5.end:
-;       [prog.baz:334:5] free scratch register r15
     func.assert.334.5.end:
+;       [prog.baz:334:5] free scratch register r15
 ;   [prog.baz:336:8] pt.x(2)
 ;   [prog.baz:114:10] mut point.x(x)
     func.point.x.336.8:
@@ -4314,8 +4314,8 @@ main:
             syscall
 ;           [prog.baz:38:34] free named register rdi
         if.38.24.337.5.end:
-;       [prog.baz:337:5] free scratch register r15
     func.assert.337.5.end:
+;       [prog.baz:337:5] free scratch register r15
 ;   [prog.baz:338:5] assert(pt.sum() == 0)
 ;   [prog.baz:338:12] allocate scratch register -> r15
 ;   [prog.baz:338:12] ? pt.sum() == 0
@@ -4358,8 +4358,8 @@ main:
             syscall
 ;           [prog.baz:38:34] free named register rdi
         if.38.24.338.5.end:
-;       [prog.baz:338:5] free scratch register r15
     func.assert.338.5.end:
+;       [prog.baz:338:5] free scratch register r15
 ;   [prog.baz:340:5] var x = 1
 ;   [prog.baz:340:9] x: i64 (8 B @ [rbp + 624])
 ;   [prog.baz:340:9] x = 1
@@ -4424,8 +4424,8 @@ main:
             syscall
 ;           [prog.baz:38:34] free named register rdi
         if.38.24.344.5.end:
-;       [prog.baz:344:5] free scratch register r15
     func.assert.344.5.end:
+;       [prog.baz:344:5] free scratch register r15
 ;   [prog.baz:345:5] assert(o1.pos.y == 2)
 ;   [prog.baz:345:12] allocate scratch register -> r15
 ;   [prog.baz:345:12] ? o1.pos.y == 2
@@ -4451,8 +4451,8 @@ main:
             syscall
 ;           [prog.baz:38:34] free named register rdi
         if.38.24.345.5.end:
-;       [prog.baz:345:5] free scratch register r15
     func.assert.345.5.end:
+;       [prog.baz:345:5] free scratch register r15
 ;   [prog.baz:346:5] assert(o1.color == 0xff0000)
 ;   [prog.baz:346:12] allocate scratch register -> r15
 ;   [prog.baz:346:12] ? o1.color == 0xff0000
@@ -4478,8 +4478,8 @@ main:
             syscall
 ;           [prog.baz:38:34] free named register rdi
         if.38.24.346.5.end:
-;       [prog.baz:346:5] free scratch register r15
     func.assert.346.5.end:
+;       [prog.baz:346:5] free scratch register r15
 ;   [prog.baz:348:5] var p1 = point{-x, -y}
 ;   [prog.baz:348:9] p1: point (16 B @ [rbp + 664])
 ;   [prog.baz:348:9] p1 = point{-x, -y}
@@ -4532,8 +4532,8 @@ main:
             syscall
 ;           [prog.baz:38:34] free named register rdi
         if.38.24.350.5.end:
-;       [prog.baz:350:5] free scratch register r15
     func.assert.350.5.end:
+;       [prog.baz:350:5] free scratch register r15
 ;   [prog.baz:351:5] assert(o1.pos.y == -2)
 ;   [prog.baz:351:12] allocate scratch register -> r15
 ;   [prog.baz:351:12] ? o1.pos.y == -2
@@ -4559,8 +4559,8 @@ main:
             syscall
 ;           [prog.baz:38:34] free named register rdi
         if.38.24.351.5.end:
-;       [prog.baz:351:5] free scratch register r15
     func.assert.351.5.end:
+;       [prog.baz:351:5] free scratch register r15
 ;   [prog.baz:353:5] var o2 = o1
 ;   [prog.baz:353:9] o2: object (24 B @ [rbp + 680])
 ;   [prog.baz:353:9] o2 = o1
@@ -4599,8 +4599,8 @@ main:
             syscall
 ;           [prog.baz:38:34] free named register rdi
         if.38.24.354.5.end:
-;       [prog.baz:354:5] free scratch register r15
     func.assert.354.5.end:
+;       [prog.baz:354:5] free scratch register r15
 ;   [prog.baz:355:5] assert(o2.pos.y == -2)
 ;   [prog.baz:355:12] allocate scratch register -> r15
 ;   [prog.baz:355:12] ? o2.pos.y == -2
@@ -4626,8 +4626,8 @@ main:
             syscall
 ;           [prog.baz:38:34] free named register rdi
         if.38.24.355.5.end:
-;       [prog.baz:355:5] free scratch register r15
     func.assert.355.5.end:
+;       [prog.baz:355:5] free scratch register r15
 ;   [prog.baz:356:5] assert(o2.color == 0xff0000)
 ;   [prog.baz:356:12] allocate scratch register -> r15
 ;   [prog.baz:356:12] ? o2.color == 0xff0000
@@ -4653,8 +4653,8 @@ main:
             syscall
 ;           [prog.baz:38:34] free named register rdi
         if.38.24.356.5.end:
-;       [prog.baz:356:5] free scratch register r15
     func.assert.356.5.end:
+;       [prog.baz:356:5] free scratch register r15
 ;   [prog.baz:358:5] o2.pos = {x, y}
 ;   [prog.baz:358:15] copy field 'x'
 ;   [prog.baz:358:15] allocate scratch register -> r15
@@ -4691,8 +4691,8 @@ main:
             syscall
 ;           [prog.baz:38:34] free named register rdi
         if.38.24.359.5.end:
-;       [prog.baz:359:5] free scratch register r15
     func.assert.359.5.end:
+;       [prog.baz:359:5] free scratch register r15
 ;   [prog.baz:360:5] o2.pos = {y, x}
 ;   [prog.baz:360:15] copy field 'x'
 ;   [prog.baz:360:15] allocate scratch register -> r15
@@ -4729,8 +4729,8 @@ main:
             syscall
 ;           [prog.baz:38:34] free named register rdi
         if.38.24.361.5.end:
-;       [prog.baz:361:5] free scratch register r15
     func.assert.361.5.end:
+;       [prog.baz:361:5] free scratch register r15
 ;   [prog.baz:368:5] var o3 = object[2]
 ;   [prog.baz:368:9] o3: object[2] (48 B @ [rbp + 704])
 ;   [prog.baz:368:9] o3 = object[2]
@@ -4774,8 +4774,8 @@ main:
             syscall
 ;           [prog.baz:38:34] free named register rdi
         if.38.24.371.5.end:
-;       [prog.baz:371:5] free scratch register r15
     func.assert.371.5.end:
+;       [prog.baz:371:5] free scratch register r15
 ;   [prog.baz:372:5] o3[1] = object.at(2, 74, 0xffffff)
 ;   [prog.baz:372:13] zero padding: 4 B
 ;   [prog.baz:372:13] size <= 32 B, use mov
@@ -4833,8 +4833,8 @@ main:
             syscall
 ;           [prog.baz:38:34] free named register rdi
         if.38.24.373.5.end:
-;       [prog.baz:373:5] free scratch register r15
     func.assert.373.5.end:
+;       [prog.baz:373:5] free scratch register r15
 ;   [prog.baz:375:15] o3[1].pos.fooz()
 ;   [prog.baz:47:10] mut point.fooz()
     func.point.fooz.375.15:
@@ -4890,8 +4890,8 @@ main:
             syscall
 ;           [prog.baz:38:34] free named register rdi
         if.38.24.376.5.end:
-;       [prog.baz:376:5] free scratch register r15
     func.assert.376.5.end:
+;       [prog.baz:376:5] free scratch register r15
 ;   [prog.baz:379:5] var worlds = world[8]
 ;   [prog.baz:379:9] worlds: world[8] (512 B @ [rbp + 752])
 ;   [prog.baz:379:9] worlds = world[8]
@@ -4935,8 +4935,8 @@ main:
             syscall
 ;           [prog.baz:38:34] free named register rdi
         if.38.24.381.5.end:
-;       [prog.baz:381:5] free scratch register r15
     func.assert.381.5.end:
+;       [prog.baz:381:5] free scratch register r15
 ;   [prog.baz:383:5] array_copy( worlds[1].locations, worlds[0].locations, array_length(worlds[0].locations) )
 ;   [prog.baz:383:5] allocate named register rsi
 ;   [prog.baz:383:5] allocate named register rdi
@@ -5005,8 +5005,8 @@ main:
             syscall
 ;           [prog.baz:38:34] free named register rdi
         if.38.24.390.5.end:
-;       [prog.baz:390:5] free scratch register r15
     func.assert.390.5.end:
+;       [prog.baz:390:5] free scratch register r15
 ;   [prog.baz:391:5] assert(arrays_equal( worlds[0].locations, worlds[1].locations, array_length(worlds[0].locations) ))
 ;   [prog.baz:391:12] allocate scratch register -> r15
 ;   [prog.baz:391:12] ? shorthand: arrays_equal( worlds[0].locations, worlds[1].locations, array_length(worlds[0].locations) )
@@ -5063,8 +5063,8 @@ main:
             syscall
 ;           [prog.baz:38:34] free named register rdi
         if.38.24.391.5.end:
-;       [prog.baz:391:5] free scratch register r15
     func.assert.391.5.end:
+;       [prog.baz:391:5] free scratch register r15
 ;   [prog.baz:397:5] var arr2 = []{ -1, 2 }
 ;   [prog.baz:397:9] arr2: i64[2] (16 B @ [rbp + 1264])
 ;   [prog.baz:397:9] arr2 = []{ -1, 2 }
@@ -5106,8 +5106,8 @@ main:
             syscall
 ;           [prog.baz:38:34] free named register rdi
         if.38.24.399.5.end:
-;       [prog.baz:399:5] free scratch register r15
     func.assert.399.5.end:
+;       [prog.baz:399:5] free scratch register r15
 ;   [prog.baz:400:5] assert(arr2[1] == 2)
 ;   [prog.baz:400:12] allocate scratch register -> r15
 ;   [prog.baz:400:12] ? arr2[1] == 2
@@ -5133,8 +5133,8 @@ main:
             syscall
 ;           [prog.baz:38:34] free named register rdi
         if.38.24.400.5.end:
-;       [prog.baz:400:5] free scratch register r15
     func.assert.400.5.end:
+;       [prog.baz:400:5] free scratch register r15
 ;   [prog.baz:402:5] var counter = 0
 ;   [prog.baz:402:9] counter: i64 (8 B @ [rbp + 1280])
 ;   [prog.baz:402:9] counter = 0
@@ -5289,8 +5289,8 @@ main:
 ;           [prog.baz:92:19] src: folded constant '- 1'
             sub r15, 1
             mov byte [rbp + 1288], r15b
-;           [prog.baz:92:16] free scratch register r15
         func.str.input.410.12.end:
+;           [prog.baz:92:16] free scratch register r15
         if.412.12:
 ;       [prog.baz:412:12] ? nm.len <= 0
         cmp.412.12:

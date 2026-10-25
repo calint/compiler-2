@@ -196,7 +196,7 @@ class stmt_identifier final : public statement {
         std::reference_wrapper<toc> tc_;
         size_t indent_;
         token src_loc_tk_;
-        std::reference_wrapper<std::vector<operand>> allocated_;
+        std::reference_wrapper<machine::held_registers> held_;
         size_t owned_from_;
         // where the caller prefers the address, empty without a preference
         operand address_register_;
@@ -205,9 +205,9 @@ class stmt_identifier final : public statement {
 
       public:
         path_address(toc& tc, const size_t indent, const token& src_loc_tk,
-                     std::vector<operand>& allocated, operand address_register)
-            : tc_{tc}, indent_{indent}, src_loc_tk_{src_loc_tk},
-              allocated_{allocated}, owned_from_{allocated.size()},
+                     machine::held_registers& held, operand address_register)
+            : tc_{tc}, indent_{indent}, src_loc_tk_{src_loc_tk}, held_{held},
+              owned_from_{held.registers().size()},
               address_register_{std::move(address_register)} {}
 
         // the range of an unindexed array is checked once, at the last element
@@ -273,7 +273,7 @@ class stmt_identifier final : public statement {
                 target = x.alloc_scratch_register(
                     src_loc_tk_, indent_, tc_.get().builtins().address());
 
-                allocated_.get().push_back(target);
+                held_.get().add(target);
             }
 
             x.address_of(src_loc_tk_, indent_, target, address);
@@ -328,7 +328,7 @@ class stmt_identifier final : public statement {
                                          tc.builtins().address()),
             };
 
-            allocated_.get().push_back(address_register);
+            held_.get().add(address_register);
 
             x.copy_value(src_loc_tk_, indent_, address_register,
                          operand::mem(address_slot, tc.builtins().address()));
@@ -337,7 +337,7 @@ class stmt_identifier final : public statement {
         }
 
         [[nodiscard]] auto owned() const -> std::span<const operand> {
-            return std::span{allocated_.get()}.subspan(owned_from_);
+            return held_.get().registers().subspan(owned_from_);
         }
     };
 
@@ -411,18 +411,14 @@ class stmt_identifier final : public statement {
         // note: a list copies a constant itself
         assert(not src_info.is_const());
 
-        std::vector<operand> allocated_registers;
+        machine::held_registers held{x, tok(), indent};
 
-        const operand op{
-            get_lea_operand(tc, indent, src_info, allocated_registers),
-        };
+        const operand op{get_lea_operand(tc, indent, src_info, held)};
 
         x.copy_value(tok(), indent, dst.operand(), op);
 
         get_unary_ops().compile(x, indent, tok(), dst.operand(),
                                 tc.overflow_options(dst));
-
-        x.free_scratch_registers(tok(), indent, allocated_registers);
     }
 
     auto assert_not_narrowed(const toc& tc, const type& dst_type) const
@@ -594,31 +590,26 @@ class stmt_identifier final : public statement {
 
         x.comment(tok(), indent, statement::trimmed_source(*this));
 
-        std::vector<operand> allocated_registers;
+        machine::held_registers held{x, src_loc_tk, indent};
 
-        const operand address{
-            compile_lea(tc, indent, tok(), allocated_registers, request),
-        };
+        const operand address{compile_lea(tc, indent, tok(), held, request)};
 
         use(address);
-
-        x.free_scratch_registers(src_loc_tk, indent, allocated_registers);
     }
 
     // the memory operand of this identifier, e.g. 'rbp + 4 * r15 + 248',
-    // 'allocated_registers' receives the scratch registers of the indexing and
+    // 'held' receives the scratch registers of the indexing and
     // 'machine' says which scalings an operand can have
-    [[nodiscard]] auto compile_lea(toc& tc, const size_t indent,
-                                   const token& src_loc_tk,
-                                   std::vector<operand>& allocated_registers,
-                                   const lea_request& request) const
+    [[nodiscard]] auto
+    compile_lea(toc& tc, const size_t indent, const token& src_loc_tk,
+                machine::held_registers& held, const lea_request& request) const
         -> operand {
 
         const call_address* const by_call{
             by_call_in_path(request.address_by_call),
         };
 
-        path_address builder{tc, indent, src_loc_tk, allocated_registers,
+        path_address builder{tc, indent, src_loc_tk, held,
                              request.address_register};
 
         operand address;
@@ -656,21 +647,21 @@ class stmt_identifier final : public statement {
 
     // the value of this path where 'info' resolves it to a variable: its
     // storage or computed address, with unary ops a scratch register of
-    // 'register_type' that holds the result; the registers go to 'registers'
+    // 'register_type' that holds the result; the registers go to 'held'
     [[nodiscard]] auto
     compile_value_operand(toc& tc, const size_t indent, const token& src_loc_tk,
                           const ident_info& info, const type& register_type,
                           const machine::runtime_check& overflow_check,
-                          std::vector<operand>& registers) const -> operand {
+                          machine::held_registers& held) const -> operand {
 
         // note: a constant is folded by the caller, each by its own policy
         assert(not info.is_const());
 
         if (get_unary_ops().is_empty()) {
-            return get_lea_operand(tc, indent, info, registers);
+            return get_lea_operand(tc, indent, info, held);
         }
 
-        const operand storage{get_lea_operand(tc, indent, info, registers)};
+        const operand storage{get_lea_operand(tc, indent, info, held)};
 
         machine& x{tc.machine()};
 
@@ -678,7 +669,7 @@ class stmt_identifier final : public statement {
             x.alloc_scratch_register(src_loc_tk, indent, register_type),
         };
 
-        registers.push_back(reg);
+        held.add(reg);
         x.copy_value(src_loc_tk, indent, reg, storage);
         get_unary_ops().compile(x, indent, src_loc_tk, reg, overflow_check);
 
@@ -702,16 +693,17 @@ class stmt_identifier final : public statement {
     }
 
     // the operand of what 'info' resolves this statement to, a computed
-    // address goes into 'lea_registers'
-    [[nodiscard]] auto
-    get_lea_operand(toc& tc, const size_t indent, const ident_info& info,
-                    std::vector<operand>& lea_registers) const -> operand {
+    // address goes into 'held'
+    [[nodiscard]] auto get_lea_operand(toc& tc, const size_t indent,
+                                       const ident_info& info,
+                                       machine::held_registers& held) const
+        -> operand {
 
         if (not has_computed_address(info)) {
             return info.operand();
         }
 
-        return compile_lea(tc, indent, tok(), lea_registers,
+        return compile_lea(tc, indent, tok(), held,
                            {
                                .reg_count{},
                                .address_by_call{info.address_by_call()},

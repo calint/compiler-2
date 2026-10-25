@@ -292,7 +292,7 @@ inline auto stmt_identifier::path_address::add_index(const ident_elem& cur_elem,
         index_register_ = x.alloc_scratch_register(
             index_tk, indent, tc.builtins().default_type());
 
-        allocated_.get().push_back(index_register_);
+        held_.get().add(index_register_);
     }
 
     const operand& index_register{index_register_};

@@ -95,27 +95,27 @@ class stmt_builtin_foo final : public statement {
         // hide names they use
         const ident_info array_info{make_ident_info(tc, ident_)};
 
+        machine::held_registers held{x, tok(), indent};
+
         const operand reg_iter{
             x.alloc_scratch_register(ident_.tok(), indent,
                                      tc.builtins().address()),
         };
 
+        held.add(reg_iter);
+
         x.comment(ident_.tok(), indent, "initialize iterator e");
 
         load_array_address(tc, indent, array_info, reg_iter);
 
-        std::vector<operand> allocated_registers;
-
         const operand limit{
-            compile_limit(tc, indent, array_info.element_count(),
-                          allocated_registers),
+            compile_limit(tc, indent, array_info.element_count(), held),
         };
 
         const toc::scope_entry foo{tc, scope::foo(loop_label)};
 
         const operand counter{
-            declare_loop_names(tc, indent, array_info, reg_iter,
-                               allocated_registers),
+            declare_loop_names(tc, indent, array_info, reg_iter, held),
         };
 
         x.comment(tok(), indent, "initialize counter i");
@@ -136,9 +136,6 @@ class stmt_builtin_foo final : public statement {
         x.label(indent, end_label);
 
         tc.join_foo();
-
-        x.free_scratch_registers(tok(), indent, allocated_registers);
-        x.free_scratch_register(tok(), indent, reg_iter);
     }
 
     auto trace_assignment(assignment_flow& flow) const -> void override {
@@ -244,9 +241,10 @@ class stmt_builtin_foo final : public statement {
 
     // a count register is checked against the array size like the count of
     // 'array_copy', a constant count is checked at compile time
-    [[nodiscard]] auto
-    compile_limit(toc& tc, const size_t indent, const size_t array_len,
-                  std::vector<operand>& allocated_registers) const -> operand {
+    [[nodiscard]] auto compile_limit(toc& tc, const size_t indent,
+                                     const size_t array_len,
+                                     machine::held_registers& held) const
+        -> operand {
 
         if (not has_count()) {
             return operand::imm(array_len, tc.builtins().default_type());
@@ -264,7 +262,7 @@ class stmt_builtin_foo final : public statement {
                                      tc.builtins().default_type()),
         };
 
-        allocated_registers.push_back(reg_count);
+        held.add(reg_count);
 
         x.comment(count_.tok(), indent, "count {}",
                   statement::trimmed_source(count_));
@@ -283,8 +281,7 @@ class stmt_builtin_foo final : public statement {
     auto declare_loop_names(toc& tc, const size_t indent,
                             const ident_info& array_info,
                             const operand& reg_iter,
-                            std::vector<operand>& allocated_registers) const
-        -> operand {
+                            machine::held_registers& held) const -> operand {
 
         machine& x{tc.machine()};
 
@@ -296,7 +293,7 @@ class stmt_builtin_foo final : public statement {
             reg_counter = x.alloc_scratch_register(
                 tok(), indent, tc.builtins().default_type());
 
-            allocated_registers.push_back(reg_counter);
+            held.add(reg_counter);
         }
 
         add_loop_names(tc, indent, ident_.tok(), array_info, reg_iter,
@@ -331,11 +328,11 @@ class stmt_builtin_foo final : public statement {
             return;
         }
 
-        std::vector<operand> allocated_registers;
+        machine::held_registers held{x, tok(), indent};
 
         const operand op{
             ident_.compile_lea(
-                tc, indent, tok(), allocated_registers,
+                tc, indent, tok(), held,
                 {
                     .reg_count{},
                     .address_by_call{array_info.address_by_call()},
@@ -344,8 +341,6 @@ class stmt_builtin_foo final : public statement {
         };
 
         x.address_of(tok(), indent, reg_iter, op);
-
-        x.free_scratch_registers(tok(), indent, allocated_registers);
     }
 
     // the loop is tested at the end, so a count of zero or less skips it

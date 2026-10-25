@@ -101,6 +101,7 @@ struct target_description {
 //                  'emit_data_array', 'emit_repeated_data',
 //                  'emit_string_data', 'emit_zero_data', 'zero_padding'
 //   registers      'alloc_scratch_register', 'free_scratch_register(s)',
+//                  'held_registers' (what a front-end step holds),
 //                  'free_named_register(s)', 'reserve_frame_base',
 //                  'release_frame_base', 'slot_register', 'register_view',
 //                  'alloc_named_register', 'make_register_operand',
@@ -309,6 +310,48 @@ class machine {
             -> register_trace_scope& = delete;
 
         ~register_trace_scope() { machine_.end_trace_frame(); }
+    };
+
+    // the scratch registers a front-end step allocates for its operands and
+    // holds until it ends, e.g. the address registers of a path; it frees
+    // them in reverse when it goes out of scope, with the token and indent it
+    // was made with. like 'operation_scope' for the backend, but it frees only
+    // what was added to it
+    //
+    // note: an error leaves the registers allocated: a version or a dry run
+    //       that catches it puts the state back, any other error stops the
+    //       compile
+    class held_registers final {
+        machine& machine_;
+        token src_loc_tk_;
+        size_t indent_;
+        int uncaught_at_start_;
+        std::vector<operand> registers_;
+
+      public:
+        held_registers(machine& backend, const token& src_loc_tk,
+                       const size_t indent)
+            : machine_{backend}, src_loc_tk_{src_loc_tk}, indent_{indent},
+              uncaught_at_start_{std::uncaught_exceptions()} {}
+
+        held_registers(const held_registers&) = delete;
+        held_registers(held_registers&&) = delete;
+        auto operator=(const held_registers&) -> held_registers& = delete;
+        auto operator=(held_registers&&) -> held_registers& = delete;
+
+        ~held_registers() {
+            if (std::uncaught_exceptions() > uncaught_at_start_) {
+                return;
+            }
+
+            machine_.free_scratch_registers(src_loc_tk_, indent_, registers_);
+        }
+
+        auto add(const operand& reg) -> void { registers_.push_back(reg); }
+
+        [[nodiscard]] auto registers() const -> std::span<const operand> {
+            return registers_;
+        }
     };
 
   protected:

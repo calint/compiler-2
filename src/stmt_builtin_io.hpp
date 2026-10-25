@@ -541,11 +541,11 @@ class stmt_builtin_io final : public statement {
 
         const stmt_identifier& ident{*buffer.ident};
 
-        std::vector<operand> lea_registers;
+        machine::held_registers held{x, tok(), indent};
 
         const operand buffer_lea{
             ident.compile_lea(
-                tc, indent, ident.tok(), lea_registers,
+                tc, indent, ident.tok(), held,
                 {
                     .reg_count{range},
                     .address_by_call{buffer.info.address_by_call()},
@@ -554,8 +554,6 @@ class stmt_builtin_io final : public statement {
         };
 
         x.address_of(tok(), indent, buffer_reg, buffer_lea);
-
-        x.free_scratch_registers(tok(), indent, lea_registers);
     }
 
     // without a count the whole array is transferred, a sector function

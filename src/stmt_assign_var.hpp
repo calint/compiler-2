@@ -101,10 +101,10 @@ class stmt_assign_var final : public statement {
         // note: the parse rejected a constant destination
         assert(not var_info.is_const());
 
-        std::vector<operand> lea_registers;
+        machine::held_registers held{x, tok(), indent};
 
         const operand address{
-            stmt_ident_.get_lea_operand(tc, indent, var_info, lea_registers),
+            stmt_ident_.get_lea_operand(tc, indent, var_info, held),
         };
 
         // the destination is written at the address computed here
@@ -123,7 +123,6 @@ class stmt_assign_var final : public statement {
         };
 
         expr_.compile(tc, indent, var_dst);
-        x.free_scratch_registers(tok(), indent, lea_registers);
     }
 
     // the value is read before the destination is written

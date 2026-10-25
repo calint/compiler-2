@@ -942,11 +942,8 @@ class inline_call {
                   in_quotes(dst.text()));
     }
 
-    // the registers are freed before the exit label
     auto compile_body(toc& tc, const size_t indent,
-                      const call_bindings& bindings,
-                      const std::span<const operand> registers_to_free) const
-        -> void {
+                      const call_bindings& bindings) const -> void {
 
         machine& x{tc.machine()};
 
@@ -1019,8 +1016,6 @@ class inline_call {
             throw;
         }
 
-        x.free_scratch_registers(call_.tk, indent + 1, registers_to_free);
-
         // provide the exit label for 'return' to jump to
         x.label(indent, ret_jmp_label);
 
@@ -1035,7 +1030,7 @@ class inline_call {
 
         machine& x{tc.machine()};
 
-        std::vector<operand> address_registers;
+        machine::held_registers held{x, call_.tk, indent + 1};
 
         for (param_binding& binding : bindings.arguments) {
 
@@ -1050,7 +1045,7 @@ class inline_call {
                                          tc.builtins().address()),
             };
 
-            address_registers.push_back(address);
+            held.add(address);
 
             x.comment(call_.tk, indent, "address of parameter {}",
                       in_quotes(binding.from));
@@ -1059,7 +1054,7 @@ class inline_call {
                                              keeps_displacement);
         }
 
-        compile_body(tc, indent, bindings, address_registers);
+        compile_body(tc, indent, bindings);
     }
 
     auto compile_to_destination(toc& tc, const size_t indent,
@@ -1164,17 +1159,17 @@ class inline_call {
     //       compiling the body
     //
     //       the argument registers are shared by all versions, so they are
-    //       freed after the choice instead of inside the body
+    //       freed after the choice by 'compile_with_bindings'
 
-    auto compile_with_address_choice(
-        toc& tc, const size_t indent, const call_bindings& bindings,
-        const std::span<const operand> allocated_registers) const -> void {
+    auto compile_with_address_choice(toc& tc, const size_t indent,
+                                     const call_bindings& bindings) const
+        -> void {
 
         machine& x{tc.machine()};
 
         x.emit_most_efficient(
             call_.tk, indent,
-            [&] -> void { compile_body(tc, indent, bindings, {}); },
+            [&] -> void { compile_body(tc, indent, bindings); },
             [&] -> void {
                 emit_most_efficient_address(
                     tc, indent, [&](const bool keeps) -> void {
@@ -1182,35 +1177,31 @@ class inline_call {
                                                             bindings, keeps);
                     });
             });
-
-        x.free_scratch_registers(call_.tk, indent + 1, allocated_registers);
     }
 
     // the dry run of a 'noinline' call starts at this step
     auto compile_with_bindings(toc& tc, const size_t indent,
                                const destination& dst) const -> void {
 
-        // scratch registers stay allocated until the inlined body is compiled
-        std::vector<operand> allocated_registers;
+        machine& x{tc.machine()};
 
-        const call_bindings bindings{
-            make_bindings(tc, indent, dst, allocated_registers),
-        };
+        // scratch registers stay allocated until the inlined body is compiled
+        machine::held_registers held{x, call_.tk, indent + 1};
+
+        const call_bindings bindings{make_bindings(tc, indent, dst, held)};
 
         const bool has_indexed_argument{
             std::ranges::any_of(bindings.arguments, is_indexed_reference),
         };
 
-        const machine& x{tc.machine()};
-
         // an access can use the indexed address as it is, so computing it
         // into a register is not tried
         if (not has_indexed_argument or x.has_indexed_addressing()) {
-            compile_body(tc, indent, bindings, allocated_registers);
+            compile_body(tc, indent, bindings);
             return;
         }
 
-        compile_with_address_choice(tc, indent, bindings, allocated_registers);
+        compile_with_address_choice(tc, indent, bindings);
     }
 
     // a new register because the index register may belong to an enclosing
@@ -1276,9 +1267,9 @@ class inline_call {
     }
 
     // the bindings of the result and of the arguments of the inlined body
-    [[nodiscard]] auto
-    make_bindings(toc& tc, const size_t indent, const destination& dst,
-                  std::vector<operand>& allocated_registers) const
+    [[nodiscard]] auto make_bindings(toc& tc, const size_t indent,
+                                     const destination& dst,
+                                     machine::held_registers& held) const
         -> call_bindings {
 
         // note: the call checked the use and the type of the result before
@@ -1315,8 +1306,8 @@ class inline_call {
                 continue;
             }
 
-            bindings.arguments.push_back(bind_argument(
-                tc, indent, arg, param, planned.form, allocated_registers));
+            bindings.arguments.push_back(
+                bind_argument(tc, indent, arg, param, planned.form, held));
         }
 
         return bindings;
@@ -1333,7 +1324,7 @@ class inline_call {
     bind_argument(toc& tc, const size_t indent, const expr_any& arg,
                   const stmt_def_func_param& param,
                   const call_site::argument_form& argument,
-                  std::vector<operand>& allocated_registers) -> param_binding {
+                  machine::held_registers& held) -> param_binding {
 
         // note: 'stmt_call::assert_argument_types' checked the type
 
@@ -1342,8 +1333,7 @@ class inline_call {
 
             // an indexed argument keeps its computed address
             if (ident.has_computed_address(arg_place->info)) {
-                return bind_reference(tc, indent, arg, ident, param,
-                                      allocated_registers);
+                return bind_reference(tc, indent, arg, ident, param, held);
             }
 
             return bind_name(param, ident.dotted_path(), ident.path_text(),
@@ -1360,20 +1350,20 @@ class inline_call {
                 arg.assert_not_narrowed(tc, param.get_type());
             }
 
-            return bind_expression(tc, indent, arg, param, allocated_registers);
+            return bind_expression(tc, indent, arg, param, held);
         }
 
         return bind_named_value(
             tc, indent, arg,
             std::get<call_site::argument_form::named_value>(argument.kind),
-            param, allocated_registers);
+            param, held);
     }
 
     // a constant lets the inlined body be decided at compile time
-    [[nodiscard]] static auto
-    bind_expression(toc& tc, const size_t indent, const expr_any& arg,
-                    const stmt_def_func_param& param,
-                    std::vector<operand>& allocated_registers)
+    [[nodiscard]] static auto bind_expression(toc& tc, const size_t indent,
+                                              const expr_any& arg,
+                                              const stmt_def_func_param& param,
+                                              machine::held_registers& held)
         -> param_binding {
 
         const std::optional<folded_value> folded{
@@ -1391,7 +1381,7 @@ class inline_call {
             x.alloc_scratch_register(arg.tok(), indent, param.get_type()),
         };
 
-        allocated_registers.push_back(reg);
+        held.add(reg);
         arg.compile(tc, indent, destination::of_register(reg));
 
         return param_binding::make_register(param.name(), param.get_type(),
@@ -1420,8 +1410,7 @@ class inline_call {
     bind_named_value(toc& tc, const size_t indent, const expr_any& arg,
                      const call_site::argument_form::named_value& value,
                      const stmt_def_func_param& param,
-                     std::vector<operand>& allocated_registers)
-        -> param_binding {
+                     machine::held_registers& held) -> param_binding {
 
         // constants and unary ops pass a value, not storage, so the value
         // must fit the parameter
@@ -1451,9 +1440,9 @@ class inline_call {
         }
 
         const operand reg{
-            ident.compile_value_operand(
-                tc, indent, arg.tok(), arg_info, param.get_type(),
-                tc.checks().overflow_options(), allocated_registers),
+            ident.compile_value_operand(tc, indent, arg.tok(), arg_info,
+                                        param.get_type(),
+                                        tc.checks().overflow_options(), held),
         };
 
         return param_binding::make_register(param.name(), param.get_type(),
@@ -1462,28 +1451,26 @@ class inline_call {
 
     // an indexed argument keeps its computed address, e.g.
     // '[rbp + r14 * 4 + 205]', '[r15 + r14]' or simply '[r15]'
-    [[nodiscard]] static auto
-    bind_reference(toc& tc, const size_t indent, const expr_any& arg,
-                   const stmt_identifier& ident,
-                   const stmt_def_func_param& param,
-                   std::vector<operand>& allocated_registers) -> param_binding {
+    [[nodiscard]] static auto bind_reference(toc& tc, const size_t indent,
+                                             const expr_any& arg,
+                                             const stmt_identifier& ident,
+                                             const stmt_def_func_param& param,
+                                             machine::held_registers& held)
+        -> param_binding {
 
         const ident_info arg_info{make_ident_info(tc, ident)};
 
-        std::vector<operand> regs_lea;
+        // note: the address registers stay allocated until the inlined body is
+        //       compiled
 
         const operand lea{
-            ident.compile_lea(tc, indent, arg.tok(), regs_lea,
+            ident.compile_lea(tc, indent, arg.tok(), held,
                               {
                                   .reg_count{},
                                   .address_by_call{arg_info.address_by_call()},
                                   .address_register{},
                               }),
         };
-
-        // the address registers stay allocated until the inlined body is
-        // compiled
-        allocated_registers.append_range(regs_lea);
 
         return param_binding::make_name(
             param.name(), param.get_type(),
@@ -1698,13 +1685,6 @@ class noinline_call {
         // without array parameters
         tc.add_noinline_body(*call_.func, array_lengths);
 
-        // the registers stay allocated until the callee frame is populated
-        std::vector<operand> address_registers;
-
-        const std::vector<addressed_slot> slots{
-            frame_slot_addresses(tc, indent, dst, arguments, address_registers),
-        };
-
         // start the callee frame after the caller's storage, not on the stack
         // pointer
         // example: caller uses 24 bytes; callee returns a value and takes one
@@ -1725,23 +1705,10 @@ class noinline_call {
         // rv32i 's0'
         const operand frame_address{tc.next_frame_address()};
 
-        if (tc.checks().frame) {
-            x.check_frame_capacity(
-                call_.tk, indent, frame_address,
-                operand::symbol(call_.func->frame_size_label(array_lengths),
-                                tc.builtins().address()));
-        }
-
-        // the registers holding the addresses of the arguments are still
-        // allocated, the check must not change a register that is free but
-        // used by the call
-        if (tc.checks().stack) {
-            x.check_stack_capacity(call_.tk, indent);
-        }
-
-        write_frame_slots(x, indent, frame_address, slots);
-
-        x.free_scratch_registers(call_.tk, indent, address_registers);
+        const std::vector<addressed_slot> slots{
+            populate_frame(tc, indent, dst, arguments, frame_address,
+                           array_lengths),
+        };
 
         // the address in a register is loaded after the registers are saved,
         // a register that holds a value of the caller is not lost
@@ -1815,15 +1782,14 @@ class noinline_call {
     [[nodiscard]] auto
     frame_slot_addresses(toc& tc, const size_t indent, const destination& dst,
                          const std::span<const noinline_arg> arguments,
-                         std::vector<operand>& address_registers) const
+                         machine::held_registers& held) const
         -> std::vector<addressed_slot> {
 
         std::vector<addressed_slot> slots;
 
         for (const frame_slot& slot : call_.func->frame_slots()) {
             const operand address{
-                slot_address_of(tc, indent, dst, slot, arguments,
-                                address_registers),
+                slot_address_of(tc, indent, dst, slot, arguments, held),
             };
 
             slots.push_back({
@@ -1831,6 +1797,43 @@ class noinline_call {
                 .address{address},
             });
         }
+
+        return slots;
+    }
+
+    // the slots of the callee frame at 'frame_address' get the addresses of
+    // the result and the arguments, the registers that hold them stay
+    // allocated until the frame is populated
+    [[nodiscard]] auto
+    populate_frame(toc& tc, const size_t indent, const destination& dst,
+                   const std::span<const noinline_arg> arguments,
+                   const operand& frame_address,
+                   const std::span<const size_t> array_lengths) const
+        -> std::vector<addressed_slot> {
+
+        machine& x{tc.machine()};
+
+        machine::held_registers held{x, call_.tk, indent};
+
+        std::vector<addressed_slot> slots{
+            frame_slot_addresses(tc, indent, dst, arguments, held),
+        };
+
+        if (tc.checks().frame) {
+            x.check_frame_capacity(
+                call_.tk, indent, frame_address,
+                operand::symbol(call_.func->frame_size_label(array_lengths),
+                                tc.builtins().address()));
+        }
+
+        // the registers holding the addresses of the arguments are still
+        // allocated, the check must not change a register that is free but
+        // used by the call
+        if (tc.checks().stack) {
+            x.check_stack_capacity(call_.tk, indent);
+        }
+
+        write_frame_slots(x, indent, frame_address, slots);
 
         return slots;
     }
@@ -2060,7 +2063,7 @@ class noinline_call {
     slot_address_of(toc& tc, const size_t indent, const destination& dst,
                     const frame_slot& slot,
                     const std::span<const noinline_arg> arguments,
-                    std::vector<operand>& address_registers) -> operand {
+                    machine::held_registers& held) -> operand {
 
         if (not slot.param_index) {
             return dst.operand();
@@ -2073,8 +2076,7 @@ class noinline_call {
             return argument.info.operand();
         }
 
-        return argument.path->get_lea_operand(tc, indent, argument.info,
-                                              address_registers);
+        return argument.path->get_lea_operand(tc, indent, argument.info, held);
     }
 };
 

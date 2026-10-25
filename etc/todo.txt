@@ -166,6 +166,23 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
             'std::vector<operand>&' holders (six names), frees in its
             destructor; 'inline_call::compile_body' loses
             'registers_to_free'; listing comments may move, a trial first
+       => D.3 done (2026-10-25): 'machine::held_registers' {add,
+          registers} beside 'register_trace_scope' frees in reverse with the
+          token and indent it was made with; an error leaves the registers
+          (a version or dry run puts the state back), as the vectors did;
+          16 local vectors and 19 'std::vector<operand>&' parameters are
+          'held'; 'path_address' holds one and reads its own registers
+          from 'owned_from_'; foo adds 'reg_iter' first, so one holder
+          frees in the old order; 'inline_call': 'compile_with_bindings'
+          holds the argument registers on both paths, 'compile_body' loses
+          'registers_to_free' and frees nothing,
+          'compile_body_with_address_registers' holds its own;
+          'noinline_call::populate_frame' holds the slot address registers
+          until the frame is written; 'bind_reference' passes the holder
+          to 'compile_lea' instead of appending; trial: instructions and
+          register report equal on both suites, only 'free scratch
+          register' comments of inlined calls move after the body's end
+          label (the same comments); README listing updated likewise
        D.4. ask, low confidence: the register trace frame opened by the
             function scope (T8), not by hand at four sites; the register
             report is the check

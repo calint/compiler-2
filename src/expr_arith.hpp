@@ -1058,10 +1058,10 @@ class expr_arith final : public statement {
 
             const stmt_identifier& ident{*src.operand_path()};
             const ident_info src_info{make_scalar_ident_info(tc, ident)};
-            std::vector<operand> lea_registers;
+            machine::held_registers held{x, src.tok(), indent};
 
             const operand src_operand{
-                ident.get_lea_operand(tc, indent, src_info, lea_registers),
+                ident.get_lea_operand(tc, indent, src_info, held),
             };
 
             x.add_subtract(
@@ -1069,8 +1069,6 @@ class expr_arith final : public statement {
                 op == arithmetic_operator::add ? arithmetic_operator::subtract
                                                : arithmetic_operator::add,
                 dst.operand(), src_operand, tc.overflow_options(dst));
-
-            x.free_scratch_registers(src.tok(), indent, lea_registers);
 
             return;
         }
@@ -1373,18 +1371,16 @@ class expr_arith final : public statement {
                   has_unary_ops ? "src: operand with unary ops"
                                 : "src: operand");
 
-        std::vector<operand> registers;
+        machine::held_registers held{x, src.tok(), indent};
 
         const operand src_operand{
             ident.compile_value_operand(tc, indent, src.tok(), src_info,
                                         operand_type, tc.overflow_options(dst),
-                                        registers),
+                                        held),
         };
 
         emit(src_operand, has_unary_ops ? machine::factor_use::may_overwrite
                                         : machine::factor_use::read_only);
-
-        x.free_scratch_registers(src.tok(), indent, registers);
     }
 
     // rejects a constant divisor or shift count like 'compile'; none for a

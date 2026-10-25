@@ -402,20 +402,16 @@ inline auto expr_type::compile_identifier_copy(toc& tc, const size_t indent,
 
     assert(src_info.is_array() == is_array_destination_);
 
-    std::vector<operand> allocated_registers;
+    machine& x{tc.machine()};
 
-    const operand src_op{
-        ident.get_lea_operand(tc, indent, src_info, allocated_registers),
-    };
+    machine::held_registers held{x, tok(), indent};
+
+    const operand src_op{ident.get_lea_operand(tc, indent, src_info, held)};
 
     const size_t size_bytes{src_info.value_size_bytes(tok())};
 
-    machine& x{tc.machine()};
-
     x.copy(tok(), indent, dst.operand(), src_op, size_bytes,
            dst_type.alignment());
-
-    x.free_scratch_registers(tok(), indent, allocated_registers);
 }
 
 inline auto expr_type::visit_reads(const read_filter var,
