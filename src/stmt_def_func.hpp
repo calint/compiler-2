@@ -930,10 +930,13 @@ class stmt_def_func final : public statement {
     // the function scope is established before the body is parsed, its
     // variables are registered without emitting output
     auto parse_body(toc& tc, tokenizer& tz) -> void {
+        const machine& x{tc.machine()};
+
         const toc::scope_entry body{
             tc,
-            is_inlined() ? scope::inlined_func(name(), {}, {})
-                         : scope::noinline_func(name(), {}, {}),
+            is_inlined()
+                ? scope::inlined_func(name(), {}, {})
+                : scope::noinline_func(name(), {}, x.frame_base_register()),
         };
 
         add_constants(tc, 0);

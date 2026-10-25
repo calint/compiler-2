@@ -637,21 +637,21 @@ class scope final {
     }
 
     // a function with a body of its own, its variables are placed from
-    // 'storage_base_register' when not empty
+    // 'storage_base_register'
     [[nodiscard]] static auto
     noinline_func(const std::string_view name, std::string call_path,
                   const std::string_view storage_base_register) -> scope {
+
+        assert(not storage_base_register.empty());
 
         scope scp{
             function(name, scope_kind::noinline_func, std::move(call_path), {}),
         };
 
-        if (not storage_base_register.empty()) {
-            scp.storage_ = storage_base{
-                .base_register{storage_base_register},
-                .peak_size_bytes{},
-            };
-        }
+        scp.storage_ = storage_base{
+            .base_register{storage_base_register},
+            .peak_size_bytes{},
+        };
 
         return scp;
     }
@@ -1089,7 +1089,6 @@ class compile_records final {
 // generic ones
 class function_table final {
     lut<func_info> funcs_;
-    std::vector<const stmt_def_func*> defs_;
     std::vector<std::shared_ptr<const stmt_def_func>> instances_;
     std::reference_wrapper<const definition_order> order_;
 
@@ -1109,8 +1108,6 @@ class function_table final {
                        .generic_method{std::move(generic_method)},
                        .definition{definition},
                    });
-
-        defs_.emplace_back(&func_def);
     }
 
     // keeps the instance alive, 'funcs_' refers to it
@@ -1118,8 +1115,9 @@ class function_table final {
         instances_.emplace_back(std::move(instance));
     }
 
-    [[nodiscard]] auto defs() const -> std::span<const stmt_def_func* const> {
-        return defs_;
+    // in the order they were added
+    [[nodiscard]] auto defs() const -> auto {
+        return funcs_.values() | std::views::transform(&func_info::def);
     }
 
     // also a function that the current instance parse does not see, for the
@@ -1433,10 +1431,6 @@ struct name_meaning {
     // a name that has a value hides a type or a generic function of that name,
     // a call 'f()' still calls the function
     [[nodiscard]] auto is_value() const -> bool { return what != kind::none; }
-
-    [[nodiscard]] auto is_var_or_binding() const -> bool {
-        return is_variable() or is_binding();
-    }
 
     [[nodiscard]] auto is_variable() const -> bool {
         return what == kind::variable;
@@ -1864,14 +1858,12 @@ class storage_layout final {
 
         assert_total_fits_target(src_loc_tk, allocated_size_bytes);
 
-        // note: a dry run puts the peak back; the scope holds the bytes after
-        //       this returns
+        // note: a dry run puts the peak back ('end_dry_run'); the scope holds
+        //       the bytes after this returns
 
-        if (checks_capacity) {
-            max_body_vars_size_bytes_ = std::max(
-                sum_storage_size(used_vars_size_bytes(), allocated_size_bytes),
-                max_body_vars_size_bytes_);
-        }
+        max_body_vars_size_bytes_ = std::max(
+            sum_storage_size(used_vars_size_bytes(), allocated_size_bytes),
+            max_body_vars_size_bytes_);
 
         return allocated_size_bytes;
     }
@@ -2880,7 +2872,7 @@ class toc final {
     // above zero inside 'dry_run', no noinline body is added there
     size_t dry_run_depth_{};
     // false while the program is parsed: the names are declared without
-    // comments and without the capacity check of the storage
+    // storage and without comments
     bool is_compiling_{};
     // the parsers recurse on the one stack, e.g. a generic instance is parsed
     // inside the parse that needs it, so the levels are counted once for all
@@ -3373,11 +3365,9 @@ class toc final {
         return overflow_options(dst).enabled;
     }
 
-    // the parse declares names without checking the capacity, the compile
-    // checks it where the declaration is compiled; the locals of a dry run
-    // live in the callee's own frame
+    // the locals of a dry run live in the callee's own frame
     [[nodiscard]] auto checks_storage_capacity() const -> bool {
-        return is_compiling_ and dry_run_depth_ == 0;
+        return dry_run_depth_ == 0;
     }
 
     [[nodiscard]] auto compiled() const -> const compile_records& {

@@ -8,7 +8,6 @@
 
 #include "bulk_operands.hpp"
 #include "compile_error.hpp"
-#include "expression.hpp"
 #include "statement.hpp"
 #include "stmt_identifier.hpp"
 #include "toc.hpp"
@@ -18,13 +17,13 @@
 
 // 'arrays_equal(a, b, count)' is a 'bool': whether the elements of the two
 // ranges are equal; it takes no unary ops
-class stmt_builtin_arrays_equal final : public expression {
+class stmt_builtin_arrays_equal final : public statement {
     bulk_operands operands_;
 
   public:
     stmt_builtin_arrays_equal(toc& tc, unary_ops uops, const token src_loc_tk,
                               tokenizer& tz)
-        : expression{src_loc_tk, std::move(uops)} {
+        : statement{src_loc_tk, std::move(uops)} {
 
         assert_no_unary_ops();
 

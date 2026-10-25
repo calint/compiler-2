@@ -4,8 +4,8 @@
 #include <ostream>
 #include <string_view>
 
-#include "expression.hpp"
 #include "ident_info.hpp"
+#include "statement.hpp"
 #include "toc.hpp"
 #include "token.hpp"
 #include "type.hpp"
@@ -13,13 +13,13 @@
 // '{}' where a built-in is expected is its zero value, 0 or 'false', as '{}'
 // is the zero value of an instance or an array, e.g. 'n = {}' and 'res = {}'
 // of 'func zero<T type>() res T' for any 'T'; it resolves like the literal
-class expr_zero final : public expression {
+class expr_zero final : public statement {
     token close_brace_tk_;
 
   public:
     expr_zero(const type& tp, const token open_brace_tk,
               const token close_brace_tk)
-        : expression{open_brace_tk}, close_brace_tk_{close_brace_tk} {
+        : statement{open_brace_tk}, close_brace_tk_{close_brace_tk} {
 
         set_type(tp);
     }
@@ -31,7 +31,7 @@ class expr_zero final : public expression {
     //
 
     auto source_to(std::ostream& os) const -> void override {
-        expression::source_to(os);
+        statement::source_to(os);
         close_brace_tk_.source_to(os);
     }
 

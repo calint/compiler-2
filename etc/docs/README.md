@@ -127,7 +127,7 @@ the layers above it:
                      machine_rv32i_qemu, machine_rv32i_fpga, register_report
 4. names and checks  tokenizer, generics, ident_info, ub_reads, ub_assigned,
                      toc
-5. nodes             statement, expression, unary_ops, parse_lookahead,
+5. nodes             statement, unary_ops, parse_lookahead,
                      decouple, parse_statement, stmt_identifier, ub_order,
                      bulk_operands, expr_*, stmt_*
 6. driver            program, main.cpp
@@ -1413,12 +1413,12 @@ other, also not when they are 'noinline' ('etc/todo.txt' section 4).
 
 ### 7.3 One base class for every node
 
-'statement' has 13 virtual methods, each node overrides the ones it needs
+'statement' has 12 virtual methods, each node overrides the ones it needs
 (the groups are listed above the class). A default that no other node reaches
 is 'std::unreachable()', the others answer for a node that lacks the
 capability, e.g. 'fold' is empty. Every node parses, writes its
 source back, compiles and takes part in the definite assignment walk. Code
-asks a node a few capability queries ('is_expression', 'operand_path',
+asks a node a few capability queries ('operand_path', 'fold',
 ...), no code switches on the kind of a node.
 
 Rejected: the nodes as a 'std::variant', a closed set gains nothing when

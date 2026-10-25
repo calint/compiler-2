@@ -19,10 +19,10 @@
 
 #include "constant_arith.hpp"
 #include "decouple.hpp"
-#include "expression.hpp"
 #include "ident_info.hpp"
 #include "machine.hpp"
 #include "operand.hpp"
+#include "statement.hpp"
 #include "stmt_identifier.hpp"
 #include "toc.hpp"
 #include "token.hpp"
@@ -44,9 +44,7 @@
 // note: a list is computed left to right in its destination, only a nested
 //       list needs a scratch register
 //
-class expr_arith final : public expression {
-    using arithmetic_operator = arithmetic_operator;
-
+class expr_arith final : public statement {
     std::vector<std::unique_ptr<statement>> exprs_; // expression list
     // operators between elements in the vector
     std::vector<arithmetic_operator> ops_;
@@ -136,8 +134,8 @@ class expr_arith final : public expression {
 
     // the list is located where its first element starts
     expr_arith(toc& tc, tokenizer& tz, options opts)
-        : expression{opts.first_expression ? position_of(*opts.first_expression)
-                                           : tz.cur_position_token()},
+        : statement{opts.first_expression ? position_of(*opts.first_expression)
+                                          : tz.cur_position_token()},
           list_uops_{std::move(opts.uops)}, open_paren_tk_{opts.open_paren_tk},
           is_implied_subexpression_{opts.is_implied_subexpression},
           destination_type_{opts.destination_type} {
@@ -234,7 +232,7 @@ class expr_arith final : public expression {
 
         token::source_to(os, open_paren_tk_);
 
-        expression::source_to(os); // whitespace
+        statement::source_to(os); // whitespace
         exprs_.at(0)->source_to(os);
         for (const auto [ws, o, e] : std::views::zip(
                  ws_before_ops_, ops_, exprs_ | std::views::drop(1))) {
@@ -329,7 +327,7 @@ class expr_arith final : public expression {
         -> std::optional<folded_value> override {
 
         // e.g. 'k' or 'i8(1)'
-        if (not is_expression()) {
+        if (not is_computed()) {
             return exprs_.front()->fold(tc, use);
         }
 
@@ -387,21 +385,6 @@ class expr_arith final : public expression {
     [[nodiscard]] auto is_arrays_equal_call() const -> bool override {
         return list_uops_.is_empty() and exprs_.size() == 1 and
                exprs_.front()->is_arrays_equal_call();
-    }
-
-    [[nodiscard]] auto is_expression() const -> bool override {
-        // unary operators apply to the computed list, e.g. '-(a + b)'
-        if (not list_uops_.is_empty()) {
-            return true;
-        }
-
-        // a single element is read in place unless it is computed itself
-        if (exprs_.size() == 1) {
-            return exprs_.at(0)->is_expression();
-        }
-
-        // several elements are combined by instructions
-        return true;
     }
 
     // '/', '%' and '>>' read the high bits of their operands. narrowed, a
@@ -514,15 +497,6 @@ class expr_arith final : public expression {
                          std::span{steps}.first(steps.size() - 1));
 
         return last.value;
-    }
-
-    // the identifier of an arithmetic that is only one
-    [[nodiscard]] auto identifier() const -> const stmt_identifier& {
-        const stmt_identifier* const ident{operand_path()};
-
-        assert(ident != nullptr);
-
-        return *ident;
     }
 
     // one element without a unary op of its own, which parentheses would not
@@ -1151,7 +1125,7 @@ class expr_arith final : public expression {
         x.comment(src.tok(), indent,
                   statement::trimmed_source(src, dst.text(), source_text(op)));
 
-        if (src.is_expression()) {
+        if (src.is_computed()) {
             x.comment(src.tok(), indent, "src: folded constant {}",
                       in_quotes(statement::trimmed_source(src)));
         } else {
@@ -1207,7 +1181,7 @@ class expr_arith final : public expression {
     static auto asm_op_mov(toc& tc, const size_t indent, const destination& dst,
                            const statement& src) -> void {
 
-        assert(src.is_expression());
+        assert(src.is_computed());
 
         machine& x{tc.machine()};
 
@@ -1421,7 +1395,7 @@ class expr_arith final : public expression {
         // note: a constant element is a constant step, its value folded by
         //       'make_steps', see 'asm_op_constant_element'
 
-        if (src.is_expression()) {
+        if (src.is_computed()) {
             assert(not src.fold(tc, tc.use_of(dst)));
 
             x.comment(src.tok(), indent, "src: expression");

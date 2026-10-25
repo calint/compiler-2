@@ -1470,6 +1470,10 @@ class machine {
                 continue;
             }
 
+            // note: only a bounded stack is checked, see 'is_stack_bounded'
+            assert(handler.label != stack_overflow_failure.label or
+                   is_stack_bounded());
+
             comment({}, 0, handler.comment);
             emit_failure_handler(handler, reports_line_ and handler.takes_line);
         }

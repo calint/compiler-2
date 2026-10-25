@@ -10,9 +10,9 @@
 #include <utility>
 
 #include "compile_error.hpp"
-#include "expression.hpp"
 #include "ident_info.hpp"
 #include "operand.hpp"
+#include "statement.hpp"
 #include "stmt_identifier.hpp"
 #include "token.hpp"
 #include "ub_reads.hpp"
@@ -20,7 +20,7 @@
 
 // 'array_length(a)' is the length of the array 'a' in the default type, a
 // constant whenever the length is known, see 'fold'
-class stmt_builtin_array_length final : public expression {
+class stmt_builtin_array_length final : public statement {
     token open_paren_tk_;
     stmt_identifier stmt_ident_;
     token close_paren_tk_;
@@ -28,7 +28,7 @@ class stmt_builtin_array_length final : public expression {
   public:
     stmt_builtin_array_length(toc& tc, unary_ops uops, const token src_loc_tk,
                               tokenizer& tz)
-        : expression{src_loc_tk, std::move(uops)},
+        : statement{src_loc_tk, std::move(uops)},
           open_paren_tk_{
               tz.expect_char_token('(',
                                    "expected '(' followed by an identifier"),
@@ -56,7 +56,7 @@ class stmt_builtin_array_length final : public expression {
     //
 
     auto source_to(std::ostream& os) const -> void override {
-        expression::source_to(os);
+        statement::source_to(os);
         open_paren_tk_.source_to(os);
         stmt_ident_.source_to(os);
         close_paren_tk_.source_to(os);

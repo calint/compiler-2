@@ -16,7 +16,6 @@
 
 #include "constant_arith.hpp"
 #include "expr_arith.hpp"
-#include "expression.hpp"
 #include "ident_info.hpp"
 #include "operand.hpp"
 #include "statement.hpp"
@@ -81,7 +80,7 @@ struct branch_targets {
 // one operand of an 'expr_bool': a comparison 'a < b', a comparison of the
 // bytes of two instances or arrays, or the shorthand, the operand alone as
 // the condition, e.g. 'if a'
-class expr_bool_op final : public expression {
+class expr_bool_op final : public statement {
     // the operator and the right side, e.g. '== b' of 'a == b'
     struct comparison {
         token ws_pre_op;
@@ -115,7 +114,7 @@ class expr_bool_op final : public expression {
 
   public:
     expr_bool_op(toc& tc, tokenizer& tz)
-        : expression{tz.next_whitespace_token()} {
+        : statement{tz.next_whitespace_token()} {
 
         set_type(tc.builtins().boolean());
 
@@ -639,8 +638,16 @@ class expr_bool_op final : public expression {
                             const machine::comparison_action& action) const
         -> void {
 
-        const stmt_identifier& lhs{lhs_.identifier()};
-        const stmt_identifier& rhs{cmp.rhs.identifier()};
+        // note: both sides are places ('is_memory_operand'), so both have a
+        //       path
+
+        const stmt_identifier* const lhs_path{lhs_.operand_path()};
+        const stmt_identifier* const rhs_path{cmp.rhs.operand_path()};
+
+        assert(lhs_path != nullptr and rhs_path != nullptr);
+
+        const stmt_identifier& lhs{*lhs_path};
+        const stmt_identifier& rhs{*rhs_path};
 
         const bool is_not_equal{
             cmp.op == comparison_operator::not_equal,
@@ -929,8 +936,8 @@ class expr_bool_op final : public expression {
                (not action.destination.is_empty() and
                 action.destination.type_ref().is_bool()));
 
-        // note: a value that is no expression is one name or literal
-        return not lhs.is_expression() and
+        // note: a value that is not computed has a path ('is_computed')
+        return not lhs.is_computed() and
                lhs.operand_path()->get_unary_ops().is_empty() and
                lhs.get_type().is_bool() and not action.inverted and
                action.target.empty();
@@ -1123,7 +1130,7 @@ class expr_bool_op final : public expression {
 
         const expr_arith& lhs{*condition.node};
 
-        if (lhs.is_expression() and action.destination.is_register() and
+        if (lhs.is_computed() and action.destination.is_register() and
             lhs.get_type().is_same(action.destination.type_ref())) {
 
             lhs.compile_checked(tc, indent + 1,
@@ -1149,7 +1156,7 @@ class expr_bool_op final : public expression {
 // of a tree
 // note: a list branches at the first operand that decides it, which is the
 //       short-circuit of 'and' and 'or'
-class expr_bool final : public expression {
+class expr_bool final : public statement {
     using element = std::variant<expr_bool_op, expr_bool>;
 
     std::vector<element> bools_;
@@ -1163,15 +1170,14 @@ class expr_bool final : public expression {
     std::optional<token> close_paren_tk_;
 
   public:
-    expr_bool(toc& tc, const token tk, tokenizer& tz) : expression{tk} {
+    expr_bool(toc& tc, const token tk, tokenizer& tz) : statement{tk} {
         parse_list(tc, tz);
     }
 
     // e.g. '(a == b and c == d)' after its 'not's, the '(' has been read
     expr_bool(toc& tc, const token tk, tokenizer& tz, std::vector<token> nots,
               const token open_paren_tk)
-        : expression{tk}, nots_{std::move(nots)},
-          open_paren_tk_{open_paren_tk} {
+        : statement{tk}, nots_{std::move(nots)}, open_paren_tk_{open_paren_tk} {
 
         parse_list(tc, tz);
         assert_parentheses_group();

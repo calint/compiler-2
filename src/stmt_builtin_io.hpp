@@ -23,7 +23,7 @@
 // 'read(fd, buf, count, start)' and 'write(fd, buf, count, start)', and the
 // sd card functions 'sector_read(sector, buf, start)' and
 // 'sector_write(sector, buf, start)' that transfer one sector
-class stmt_builtin_io final : public expression {
+class stmt_builtin_io final : public statement {
   public:
     // what tells the functions apart, a sector function takes a sector in
     // place of the descriptor and has no count and no result
@@ -101,7 +101,7 @@ class stmt_builtin_io final : public expression {
   public:
     stmt_builtin_io(toc& tc, const io_function& io, unary_ops uops,
                     const token tk, tokenizer& tz)
-        : expression{tk, std::move(uops)}, io_{io}, args_{tc, tz} {
+        : statement{tk, std::move(uops)}, io_{io}, args_{tc, tz} {
 
         set_type(io_.result_type(tc));
 

@@ -22,12 +22,12 @@
 #include "compile_error.hpp"
 #include "decouple.hpp"
 #include "expr_any.hpp"
-#include "expression.hpp"
 #include "generics.hpp"
 #include "ident_info.hpp"
 #include "machine.hpp"
 #include "operand.hpp"
 #include "parse_lookahead.hpp"
+#include "statement.hpp"
 #include "stmt_def_func.hpp"
 #include "stmt_identifier.hpp"
 #include "toc.hpp"
@@ -2245,7 +2245,7 @@ class builtin_arguments {
 // compiling, in 'compile': the checks made before the inlined and noinline
 // paths split ('assert_call_accepted'), then 'inline_call' or 'noinline_call'
 // compiles the call
-class stmt_call : public expression {
+class stmt_call : public statement {
     // e.g. the '.' in 'lst.add(x)', the receiver is the first argument;
     // none when the call is not a method call
     std::optional<token> method_dot_tk_;
@@ -2283,7 +2283,7 @@ class stmt_call : public expression {
     // parameter that is the result, e.g. 'x.f = tz.to()'
     stmt_call(toc& tc, unary_ops uops, const token tk, tokenizer& tz,
               const type* const expected_type)
-        : expression{tk, std::move(uops)}, func_name_{tk.text()} {
+        : statement{tk, std::move(uops)}, func_name_{tk.text()} {
 
         const std::vector<size_t> deducing_args{
             read_generic_callee(tc, tz, expected_type),
@@ -2305,7 +2305,7 @@ class stmt_call : public expression {
     // e.g. 'lst.add(x)' calls 'list.add' with 'lst' as 'self'
     stmt_call(toc& tc, unary_ops uops, stmt_identifier receiver, tokenizer& tz,
               const type* const expected_type)
-        : expression{receiver.method_name_token(), std::move(uops)},
+        : statement{receiver.method_name_token(), std::move(uops)},
           method_dot_tk_{receiver.method_dot_token()},
           func_name_{
               std::format("{}.{}", receiver.get_type().name(),
@@ -2342,7 +2342,7 @@ class stmt_call : public expression {
     // 'point'
     stmt_call(constructor_call_tag /*tag*/, toc& tc, unary_ops uops,
               const token type_tk, tokenizer& tz)
-        : expression{type_tk, std::move(uops)},
+        : statement{type_tk, std::move(uops)},
           constructor_{read_constructor_tokens(tz)},
           func_name_{
               constructor_function_name(tc, type_tk, constructor_->name_tk),
@@ -3092,14 +3092,14 @@ class stmt_call : public expression {
     // e.g. 'f', 'lst.add' or 'point.at'
     auto source_callee_to(std::ostream& os) const -> void {
         if (constructor_) {
-            expression::source_to(os);
+            statement::source_to(os);
             constructor_->dot_tk.source_to(os);
             constructor_->name_tk.source_to(os);
             return;
         }
 
         if (not is_method()) {
-            expression::source_to(os);
+            statement::source_to(os);
             source_generic_to(os);
             return;
         }

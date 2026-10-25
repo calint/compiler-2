@@ -55,8 +55,8 @@
 //                'check_frame_capacity', 'check_stack_capacity', the overflow
 //                checks 'check_negate', 'check_multiply_result',
 //                'emit_checked_add_subtract'
-//   handlers     'emit_failure_handler', 'emit_named_failure_handler',
-//                'emit_line_failure', 'emit_report_line_routine'
+//   handlers     'emit_failure_handler', 'emit_line_failure',
+//                'emit_report_line_routine'
 //   calls        'call_function', the sector and i/o routine calls
 //   target hooks 'emit_read_call', 'emit_write_call',
 //                'emit_stack_limit_load', 'emit_divide_by_zero_trap',
@@ -413,13 +413,56 @@ class machine_rv32i : public machine {
         assembler_.call(indent, label);
     }
 
+    // the handler of a check that prints 'panic: NAME' then exits with its
+    // code; with the line, one entry per file prints 'panic: NAME at FILE:'
+    // and the line number in a0, see 'branch_to_failure'
     auto emit_failure_handler(const failure_handler& handler,
                               const bool with_line) -> void override {
 
-        assert(handler.label != stack_overflow_failure.label or
-               is_stack_bounded());
+        constexpr std::array<int64_t, 1> newline{'\n'};
 
-        emit_named_failure_handler(handler, with_line);
+        const std::string_view name{handler.name};
+        const std::string_view handler_label{handler.label};
+
+        std::string label_name{name};
+        std::ranges::replace(label_name, ' ', '_');
+
+        if (with_line) {
+            for (const size_t file_ix :
+                 failure_lines_of(handler_label) | std::views::keys) {
+
+                assembler_.label(0,
+                                 failure_entry_label(handler_label, file_ix));
+
+                emit_line_failure(
+                    std::format(".Lbaz_{}_message_{}", label_name, file_ix),
+                    failure_message(name, file_ix), handler.exit_code);
+            }
+
+            return;
+        }
+
+        const std::string message_label{
+            std::format(".Lbaz_{}_message", label_name),
+        };
+
+        assembler_.label(0, handler_label);
+
+        const std::string message{panic_message(name)};
+
+        assembler_.li(1, "a0", stderr_descriptor);
+        assembler_.la(1, "a1", message_label);
+        // the newline follows the message text
+        assembler_.li(1, "a2", message.size() + 1);
+        emit_write_call(1);
+
+        exit(token{}, 1, operand::imm(handler.exit_code, default_type()));
+
+        assembler_.switch_section(section::rodata);
+        assembler_.label(0, message_label);
+        assembler_.ascii(message);
+        assembler_.data(1, newline);
+        assembler_.switch_section(section::text);
     }
 
     // a 'noinline' body saves the return address below 'sp'
@@ -3262,58 +3305,6 @@ class machine_rv32i : public machine {
         }
 
         mark_lower_checked(range);
-    }
-
-    // the handler of a check that prints 'panic: NAME' then exits with its
-    // code; with the line, one entry per file prints 'panic: NAME at FILE:'
-    // and the line number in a0, see 'branch_to_failure'
-    auto emit_named_failure_handler(const failure_handler& handler,
-                                    const bool with_line) -> void {
-
-        constexpr std::array<int64_t, 1> newline{'\n'};
-
-        const std::string_view name{handler.name};
-        const std::string_view handler_label{handler.label};
-
-        std::string label_name{name};
-        std::ranges::replace(label_name, ' ', '_');
-
-        if (with_line) {
-            for (const size_t file_ix :
-                 failure_lines_of(handler_label) | std::views::keys) {
-
-                assembler_.label(0,
-                                 failure_entry_label(handler_label, file_ix));
-
-                emit_line_failure(
-                    std::format(".Lbaz_{}_message_{}", label_name, file_ix),
-                    failure_message(name, file_ix), handler.exit_code);
-            }
-
-            return;
-        }
-
-        const std::string message_label{
-            std::format(".Lbaz_{}_message", label_name),
-        };
-
-        assembler_.label(0, handler_label);
-
-        const std::string message{panic_message(name)};
-
-        assembler_.li(1, "a0", stderr_descriptor);
-        assembler_.la(1, "a1", message_label);
-        // the newline follows the message text
-        assembler_.li(1, "a2", message.size() + 1);
-        emit_write_call(1);
-
-        exit(token{}, 1, operand::imm(handler.exit_code, default_type()));
-
-        assembler_.switch_section(section::rodata);
-        assembler_.label(0, message_label);
-        assembler_.ascii(message);
-        assembler_.data(1, newline);
-        assembler_.switch_section(section::text);
     }
 
     // writes the line number of s2 in decimal, then exits with the code in s3:

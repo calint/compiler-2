@@ -13,9 +13,9 @@
 #include "compile_error.hpp"
 #include "constant_arith.hpp"
 #include "expr_arith.hpp"
-#include "expression.hpp"
 #include "ident_info.hpp"
 #include "operand.hpp"
+#include "statement.hpp"
 #include "toc.hpp"
 #include "token.hpp"
 #include "ub_reads.hpp"
@@ -55,7 +55,7 @@
 //   3a  an argument at least as wide as T, or a single operand without unary
 //       ops: in a scratch register of the argument's type
 //   3b  a narrower single operand with unary ops, e.g. 'i16(-g())': as row 1
-class stmt_builtin_convert final : public expression {
+class stmt_builtin_convert final : public statement {
     // none in the bare form, e.g. the 'i8' of 'var x = i8'
     std::optional<token> open_paren_tk_;
     expr_arith arg_;
@@ -87,7 +87,7 @@ class stmt_builtin_convert final : public expression {
 
   public:
     stmt_builtin_convert(toc& tc, unary_ops uops, const token tk, tokenizer& tz)
-        : expression{tk, std::move(uops)},
+        : statement{tk, std::move(uops)},
           open_paren_tk_{tz.is_next_char_token('(')} {
 
         set_type(tc.get_type_or_throw(tk));
@@ -111,7 +111,7 @@ class stmt_builtin_convert final : public expression {
     }
 
     // e.g. 'i8' in 'var x = i8' is 'i8(0)'
-    stmt_builtin_convert(const toc& tc, const token tk) : expression{tk, {}} {
+    stmt_builtin_convert(const toc& tc, const token tk) : statement{tk, {}} {
         set_type(tc.get_type_or_throw(tk));
     }
 
@@ -122,7 +122,7 @@ class stmt_builtin_convert final : public expression {
     //
 
     auto source_to(std::ostream& os) const -> void override {
-        expression::source_to(os);
+        statement::source_to(os);
 
         // the bare form has no argument
         if (not open_paren_tk_) {

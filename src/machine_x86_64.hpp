@@ -45,7 +45,7 @@
 //                'check_copy_overlap', 'check_frame_capacity', each jumps to
 //                its handler, all but the frame check with a stub per line
 //                for '--checks=line'
-//   handlers     'emit_failure_handler', 'emit_failure_handler_body'
+//   handlers     'emit_failure_handler'
 //   calls        'call_function', the system calls 'io_syscall' and 'exit',
 //                the sector routines 'emit_sector_routines'
 class machine_x86_64 final : public machine {
@@ -1008,14 +1008,59 @@ class machine_x86_64 final : public machine {
         assembler_.call(indent, label);
     }
 
+    // the handler of a check: without the line it prints 'panic: NAME'; with
+    // it, one stub per failure location sets rbp to the line and enters the
+    // entry of its file, which prints 'panic: NAME at FILE:', sets rbx to the
+    // exit code and enters the shared line report
     auto emit_failure_handler(const failure_handler& handler,
                               const bool with_line) -> void override {
 
-        // note: the stack is not bounded, see 'is_stack_bounded'
-        assert(handler.label != stack_overflow_failure.label);
+        const failure_lines lines_by_file{failure_lines_of(handler.label)};
 
-        emit_failure_handler_body(with_line, handler,
-                                  failure_lines_of(handler.label));
+        const std::string_view name{handler.name};
+        const std::string_view handler_label{handler.label};
+
+        // a label has no space, 'frame overflow' is 'msg_frame_overflow'
+        std::string label_name{name};
+        std::ranges::replace(label_name, ' ', '_');
+
+        if (not with_line) {
+            const std::string message_label{std::format("msg_{}", label_name)};
+
+            assembler_.label(0, handler_label);
+            emit_panic_message(message_label);
+            emit_failure_exit(handler.exit_code);
+
+            emit_message_data(message_label,
+                              std::format("{}\n", panic_message(name)));
+
+            return;
+        }
+
+        for (const auto& [file_ix, lines] : lines_by_file) {
+            for (const size_t line : lines) {
+                assembler_.label(0, line_failure_label(name, file_ix, line));
+                assembler_.instruction(1, op::mov, "rbp", line);
+                assembler_.jmp(1, failure_entry_label(handler_label, file_ix));
+            }
+        }
+
+        for (const size_t file_ix : lines_by_file | std::views::keys) {
+            const std::string message_label{
+                std::format("msg_{}_file_{}", label_name, file_ix),
+            };
+
+            assembler_.label(0, failure_entry_label(handler_label, file_ix));
+            emit_panic_message(message_label);
+            assembler_.instruction(1, op::mov, "rbx", handler.exit_code);
+            assembler_.jmp(1, report_line_label_);
+            mark_used(report_line_label_);
+
+            // note: a backslash or a control byte of a path is written as an
+            //       escape of a nasm string
+
+            emit_message_data(message_label, failure_message(name, file_ix));
+        }
     }
 
     // 'read' and 'write' are system calls, the sector functions routines
@@ -1479,60 +1524,6 @@ class machine_x86_64 final : public machine {
         assembler_.instruction(1, op::mov, "rax", syscall_exit_);
         assembler_.instruction(1, op::mov, "rdi", exit_code);
         assembler_.instruction(1, op::syscall);
-    }
-
-    // the handler of a check: without the line it prints 'panic: NAME'; with
-    // it, one stub per failure location sets rbp to the line and enters the
-    // entry of its file, which prints 'panic: NAME at FILE:', sets rbx to the
-    // exit code and enters the shared line report
-    auto emit_failure_handler_body(const bool with_line,
-                                   const failure_handler& handler,
-                                   const failure_lines& lines_by_file) -> void {
-
-        const std::string_view name{handler.name};
-        const std::string_view handler_label{handler.label};
-
-        // a label has no space, 'frame overflow' is 'msg_frame_overflow'
-        std::string label_name{name};
-        std::ranges::replace(label_name, ' ', '_');
-
-        if (not with_line) {
-            const std::string message_label{std::format("msg_{}", label_name)};
-
-            assembler_.label(0, handler_label);
-            emit_panic_message(message_label);
-            emit_failure_exit(handler.exit_code);
-
-            emit_message_data(message_label,
-                              std::format("{}\n", panic_message(name)));
-
-            return;
-        }
-
-        for (const auto& [file_ix, lines] : lines_by_file) {
-            for (const size_t line : lines) {
-                assembler_.label(0, line_failure_label(name, file_ix, line));
-                assembler_.instruction(1, op::mov, "rbp", line);
-                assembler_.jmp(1, failure_entry_label(handler_label, file_ix));
-            }
-        }
-
-        for (const size_t file_ix : lines_by_file | std::views::keys) {
-            const std::string message_label{
-                std::format("msg_{}_file_{}", label_name, file_ix),
-            };
-
-            assembler_.label(0, failure_entry_label(handler_label, file_ix));
-            emit_panic_message(message_label);
-            assembler_.instruction(1, op::mov, "rbx", handler.exit_code);
-            assembler_.jmp(1, report_line_label_);
-            mark_used(report_line_label_);
-
-            // note: a backslash or a control byte of a path is written as an
-            //       escape of a nasm string
-
-            emit_message_data(message_label, failure_message(name, file_ix));
-        }
     }
 
     // an immediate that does not fit the instruction goes through a register

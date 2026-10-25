@@ -241,9 +241,7 @@ class stmt_identifier;
 //                  'expr_any'; 'assert_not_narrowed': 'stmt_identifier',
 //                  'stmt_call' and the built-ins, forwarded by 'expr_arith'
 //                  and 'expr_any'; 'keeps_low_bits': 'stmt_identifier' and
-//                  'stmt_builtin_convert', forwarded by 'expr_arith';
-//                  'is_expression': 'expression', answered by what it holds
-//                  in 'expr_arith'
+//                  'stmt_builtin_convert', forwarded by 'expr_arith'
 //   a condition    'is_arrays_equal_call' and 'compile_arrays_equal':
 //                  'stmt_builtin_arrays_equal', forwarded by 'expr_arith',
 //                  so 'expr_bool' needs not include the built-in
@@ -311,9 +309,6 @@ class statement {
     [[nodiscard]] virtual auto is_arrays_equal_call() const -> bool {
         return false;
     }
-
-    // the value is computed, it is not a name or a constant read in place
-    [[nodiscard]] virtual auto is_expression() const -> bool { return false; }
 
     // true when computing at the width that 'change' gives keeps the low bits
     [[nodiscard]] virtual auto
@@ -434,6 +429,12 @@ class statement {
 
     [[nodiscard]] auto get_unary_ops() const -> const unary_ops& {
         return uops_;
+    }
+
+    // a value of a list that is computed, not one name or literal read in
+    // place ('operand_path')
+    [[nodiscard]] auto is_computed() const -> bool {
+        return operand_path() == nullptr;
     }
 
     [[nodiscard]] auto reads_var(const std::string_view var) const -> bool {
