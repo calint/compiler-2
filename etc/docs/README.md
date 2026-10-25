@@ -449,8 +449,8 @@ narrows the result to its type; 'statement::fold_checked' adds the check of
 initializer is rejected where a computed one is. A constant reaches a
 destination only through the list that holds it ('expr_arith', the
 immediate by 'folded_value::operand_at'); the nodes in a list never emit one.
-A comparison side has its own rule ('expr_bool_op::resolve_expr',
-'typed_constant'): the backend compares at the width of the left side, so an
+A comparison side has its own rule ('expr_bool_op::right_operand',
+'immediate_of'): the backend compares at the width of the left side, so an
 untyped constant on the right is checked to fit it ('assert_rhs_fits_lhs')
 and a typed one keeps its type.
 

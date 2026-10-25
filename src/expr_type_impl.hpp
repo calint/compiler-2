@@ -305,6 +305,8 @@ inline auto expr_type::plan_writes(const toc& tc, const part_location& at,
 
     // a call or a copy writes the value at once
     if (not is_literal()) {
+        assert_copy_source_shape(tc);
+
         plan.push_back({
             .at{at},
             .action{
@@ -360,6 +362,27 @@ inline auto expr_type::plan_writes(const toc& tc, const part_location& at,
                    std::move(unlisted), plan);
 }
 
+// the copy size comes from the source: a whole array is copied only to an
+// array, an instance only from one; checked when the plan is made, at compile
+// time, where a parameter is resolved to what its call passed
+inline auto expr_type::assert_copy_source_shape(const toc& tc) const -> void {
+    const stmt_identifier* const ident{operand_path()};
+
+    if (ident == nullptr) {
+        return;
+    }
+
+    const bool is_array_source{make_ident_info(tc, *ident).is_array()};
+
+    if (is_array_source == is_array_destination_) {
+        return;
+    }
+
+    throw compile_error{tok(), is_array_destination_
+                                   ? "source must be an array"
+                                   : "source must not be an array"};
+}
+
 // e.g. 'pt1 = pt2'
 inline auto expr_type::compile_identifier_copy(toc& tc, const size_t indent,
                                                const destination& dst) const
@@ -374,15 +397,10 @@ inline auto expr_type::compile_identifier_copy(toc& tc, const size_t indent,
     // 'expr_type' validates the source type before entering here
     assert(dst_type.is_same(src_info.type_ref()));
 
-    // the copy size comes from the source, a whole array would overflow
-    if (src_info.is_array() and not is_array_destination_) {
-        throw compile_error{tok(), "source must not be an array"};
-    }
+    // note: 'plan_writes' checked the shape, the plan of every value is made
+    //       before it is compiled ('assert_copy_source_shape')
 
-    // note: 'expr_any::plan_writes' checked an array copy, the plan of every
-    //       value is made before it is compiled
-
-    assert(not is_array_destination_ or src_info.is_array());
+    assert(src_info.is_array() == is_array_destination_);
 
     std::vector<operand> allocated_registers;
 

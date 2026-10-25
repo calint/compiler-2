@@ -298,55 +298,8 @@ class stmt_builtin_convert final : public statement {
 
         const auto in_scratch{
             [&] -> void {
-                machine& x{tc.machine()};
-
-                const operand wide{
-                    x.alloc_scratch_register(tok(), indent, *plan.scratch_type),
-                };
-
-                arg_.compile(
-                    tc, indent,
-                    destination::of_register(wide).as_wrapping().as_operand());
-
-                // a 'bool' is not negated, e.g. the '-' of '-i8(b)' applies
-                // to the copy
-                if (plan.scratch_type->is_bool()) {
-                    x.copy_value(tok(), indent, target.operand(), wide);
-                    x.free_scratch_register(tok(), indent, wide);
-
-                    uops.compile(x, indent, tok(), target.operand(),
-                                 uops_check);
-
-                    return;
-                }
-
-                // a narrower register widens in place first, so the ops apply
-                // at the width of the target, e.g. the '-' of '-i16(g(v))' of
-                // an 'i8' -128 gives 128
-                if (not uops.is_empty() and
-                    plan.scratch_type->size_bytes() <
-                        target.type_ref().size_bytes()) {
-
-                    const operand widened{
-                        x.register_view(wide, target.type_ref()),
-                    };
-
-                    x.copy_value(tok(), indent, widened, wide);
-
-                    uops.compile(x, indent, tok(), widened, uops_check);
-
-                    x.copy_value(tok(), indent, target.operand(), widened);
-                    x.free_scratch_register(tok(), indent, wide);
-
-                    return;
-                }
-
-                // '-' and '~' give the same low bits at any width, so the one
-                // store also narrows their result
-                uops.compile(x, indent, tok(), wide, uops_check);
-
-                x.copy_value(tok(), indent, target.operand(), wide);
-                x.free_scratch_register(tok(), indent, wide);
+                compile_in_scratch(tc, indent, target, uops, uops_check,
+                                   *plan.scratch_type);
             },
         };
 
@@ -373,6 +326,61 @@ class stmt_builtin_convert final : public statement {
         -> void {
 
         compile_argument(tc, indent, destination::of_register(reg), {});
+    }
+
+    // the argument in a scratch register of 'scratch_type', the unary ops
+    // applied, then stored to 'target'
+    auto compile_in_scratch(toc& tc, const size_t indent,
+                            const destination& target, const unary_ops& uops,
+                            const machine::runtime_check& uops_check,
+                            const type& scratch_type) const -> void {
+
+        machine& x{tc.machine()};
+
+        const operand wide{
+            x.alloc_scratch_register(tok(), indent, scratch_type),
+        };
+
+        arg_.compile(tc, indent,
+                     destination::of_register(wide).as_wrapping().as_operand());
+
+        // a 'bool' is not negated, e.g. the '-' of '-i8(b)' applies
+        // to the copy
+        if (scratch_type.is_bool()) {
+            x.copy_value(tok(), indent, target.operand(), wide);
+            x.free_scratch_register(tok(), indent, wide);
+
+            uops.compile(x, indent, tok(), target.operand(), uops_check);
+
+            return;
+        }
+
+        // a narrower register widens in place first, so the ops apply
+        // at the width of the target, e.g. the '-' of '-i16(g(v))' of
+        // an 'i8' -128 gives 128
+        if (not uops.is_empty() and
+            scratch_type.size_bytes() < target.type_ref().size_bytes()) {
+
+            const operand widened{
+                x.register_view(wide, target.type_ref()),
+            };
+
+            x.copy_value(tok(), indent, widened, wide);
+
+            uops.compile(x, indent, tok(), widened, uops_check);
+
+            x.copy_value(tok(), indent, target.operand(), widened);
+            x.free_scratch_register(tok(), indent, wide);
+
+            return;
+        }
+
+        // '-' and '~' give the same low bits at any width, so the one
+        // store also narrows their result
+        uops.compile(x, indent, tok(), wide, uops_check);
+
+        x.copy_value(tok(), indent, target.operand(), wide);
+        x.free_scratch_register(tok(), indent, wide);
     }
 
     // the value is made in a register of the type, where the unary ops apply,
@@ -495,6 +503,9 @@ class stmt_builtin_convert final : public statement {
                 .scratch_type{&arg_type},
             };
         }
+
+        // note: a narrower argument here is a single operand, the first
+        //       check took every narrower list
 
         // '/', '%', '>>' and calls are computed at the argument's width, a
         // call's result must also have its declared type

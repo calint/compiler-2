@@ -550,87 +550,6 @@ class expr_arith final : public statement {
     }
 
   private:
-    // e.g. 'b + 1 - 1' or 'b / 1 / 1' apply nothing
-    auto apply_merged_constant(toc& tc, const size_t indent,
-                               const arithmetic_operator op,
-                               const destination& dst, const int64_t value,
-                               const std::string_view folded_source) const
-        -> void {
-
-        // subtracting zero changes nothing like adding it
-        const arithmetic_operator identity_op{
-            op == arithmetic_operator::subtract ? arithmetic_operator::add : op,
-        };
-
-        if (value == identity_of(identity_op)) {
-            machine& x{tc.machine()};
-
-            x.comment(tok(), indent,
-                      "src: folded constant {} is {} and changes nothing",
-                      in_quotes(folded_source), value);
-
-            return;
-        }
-
-        asm_op_constant(tc, indent, op, dst, value, folded_source);
-    }
-
-    auto asm_op_constant(toc& tc, const size_t indent,
-                         const arithmetic_operator op, const destination& dst,
-                         const int64_t value,
-                         const std::string_view folded_source) const -> void {
-
-        // 'b - 3' rather than 'b + -3', the most negative value has no
-        // positive counterpart in the width
-        if (op == arithmetic_operator::add and value < 0 and
-            value !=
-                constant_arith::signed_minimum(dst.type_ref().size_bits())) {
-
-            asm_op_constant(tc, indent, arithmetic_operator::subtract, dst,
-                            -value, folded_source);
-
-            return;
-        }
-
-        machine& x{tc.machine()};
-
-        x.comment(tok(), indent, "{} {} {}", dst.text(), source_text(op),
-                  value);
-
-        x.comment(tok(), indent, "src: folded constant {}",
-                  in_quotes(folded_source));
-
-        const operand constant{
-            folded_value::untyped(value).operand_at(dst.type_ref()),
-        };
-
-        if (op == arithmetic_operator::add or
-            op == arithmetic_operator::subtract) {
-
-            x.add_subtract(tok(), indent, op, dst.operand(), constant,
-                           tc.overflow_options(dst));
-
-            return;
-        }
-
-        if (op == arithmetic_operator::multiply) {
-            x.multiply(tok(), indent, dst.operand(), constant,
-                       machine::factor_use::read_only,
-                       tc.overflow_options(dst));
-
-            return;
-        }
-
-        if (op == arithmetic_operator::divide) {
-            x.divide(tok(), indent, op, dst.operand(), constant,
-                     tc.checks().division_options());
-
-            return;
-        }
-
-        x.bitwise(tok(), indent, op, dst.operand(), constant);
-    }
-
     // parentheses group an operation, around one plain element they mean
     // nothing, e.g. '(x)' is 'x' and '-(x)' is '-x'
     auto assert_parentheses_group() const -> void {
@@ -732,16 +651,9 @@ class expr_arith final : public statement {
                 is_regroupable(s.op),
         };
 
-        if (s.value and (s.element == nullptr or is_checked_constant)) {
-            apply_merged_constant(tc, indent, s.op, dst, *s.value,
-                                  s.folded_source);
-
-            return;
-        }
-
         if (s.value) {
-            asm_op_constant_element(tc, indent, s.op, dst, *s.element,
-                                    *s.value);
+            emit_constant_step(tc, indent, dst, s, *s.value,
+                               s.element == nullptr or is_checked_constant);
 
             return;
         }
@@ -808,6 +720,89 @@ class expr_arith final : public statement {
         x.copy_value(tok(), indent, dst.operand(), reg);
 
         x.free_scratch_register(tok(), indent, reg);
+    }
+
+    // a step with a value: a constant the passes merged ('is_merged'), e.g. the
+    // '+ 8' of 'a + 3 + 5', which may change nothing, e.g. 'b + 1 - 1'; or a
+    // constant element they keep in place, a divisor or a shift count, e.g.
+    // 'x / 3' or 'x << k', its value folded by 'make_steps'
+    auto emit_constant_step(toc& tc, const size_t indent,
+                            const destination& dst, const step& s,
+                            const int64_t step_value,
+                            const bool is_merged) const -> void {
+
+        machine& x{tc.machine()};
+
+        if (not is_merged) {
+            const statement& element{*s.element};
+
+            x.comment(element.tok(), indent,
+                      statement::trimmed_source(element, dst.text(),
+                                                source_text(s.op)));
+
+            if (element.is_computed()) {
+                x.comment(element.tok(), indent, "src: folded constant {}",
+                          in_quotes(statement::trimmed_source(element)));
+            } else {
+                x.comment(element.tok(), indent, "src: constant");
+            }
+
+            // note: the merging passes regroup or merge every other operator
+            assert(not is_regroupable(s.op));
+
+            if (is_shift(s.op)) {
+                // note: a count wider than the value is rejected as narrowed
+                //       also in the argument of a conversion
+
+                element.assert_not_narrowed(tc, dst.type_ref());
+            }
+
+            assert_constant_operand(element.tok(), s.op, step_value,
+                                    dst.type_ref());
+
+            emit_operation(tc, indent, element.tok(), s.op, dst,
+                           constant_operand(dst, step_value),
+                           machine::factor_use::read_only);
+
+            return;
+        }
+
+        // subtracting zero changes nothing like adding it
+        const arithmetic_operator identity_op{
+            s.op == arithmetic_operator::subtract ? arithmetic_operator::add
+                                                  : s.op,
+        };
+
+        if (step_value == identity_of(identity_op)) {
+            x.comment(tok(), indent,
+                      "src: folded constant {} is {} and changes nothing",
+                      in_quotes(s.folded_source), step_value);
+
+            return;
+        }
+
+        // 'b - 3' rather than 'b + -3', the most negative value has no
+        // positive counterpart in the width
+        const bool is_subtracted{
+            s.op == arithmetic_operator::add and step_value < 0 and
+                step_value !=
+                    constant_arith::signed_minimum(dst.type_ref().size_bits()),
+        };
+
+        const arithmetic_operator op{
+            is_subtracted ? arithmetic_operator::subtract : s.op,
+        };
+
+        const int64_t value{is_subtracted ? -step_value : step_value};
+
+        x.comment(tok(), indent, "{} {} {}", dst.text(), source_text(op),
+                  value);
+
+        x.comment(tok(), indent, "src: folded constant {}",
+                  in_quotes(s.folded_source));
+
+        emit_operation(tc, indent, tok(), op, dst, constant_operand(dst, value),
+                       machine::factor_use::read_only);
     }
 
     // 'ws_before_op_tk' belongs to what follows the list
@@ -1033,26 +1028,19 @@ class expr_arith final : public statement {
             return;
         }
 
-        if (op == arithmetic_operator::multiply) {
-            asm_op_mul(tc, indent, dst, src);
-            return;
+        if (is_shift(op)) {
+            // note: a count wider than the value is rejected as narrowed also
+            //       in the argument of a conversion, which narrows the other
+            //       elements on purpose
+
+            src.assert_not_narrowed(tc, dst.type_ref());
         }
 
-        if (op == arithmetic_operator::divide or
-            op == arithmetic_operator::remainder) {
-
-            asm_op_div(tc, indent, op, dst, src);
-            return;
-        }
-
-        if (op == arithmetic_operator::shift_left or
-            op == arithmetic_operator::shift_right) {
-
-            asm_op_shift(tc, indent, op, dst, src);
-            return;
-        }
-
-        asm_op_bitwise(tc, indent, op, dst, src);
+        emit_with_source(
+            tc, indent, src, dst,
+            [&](const operand& value, const machine::factor_use use) -> void {
+                emit_operation(tc, indent, src.tok(), op, dst, value, use);
+            });
     }
 
     static auto asm_op_add_sub(toc& tc, const size_t indent,
@@ -1091,89 +1079,8 @@ class expr_arith final : public statement {
         // the overflow check sees it
         emit_with_source(
             tc, indent, src, dst,
-            [&](const operand& term, const machine::factor_use) -> void {
-                x.add_subtract(src.tok(), indent, op, dst.operand(), term,
-                               tc.overflow_options(dst));
-            });
-    }
-
-    static auto asm_op_bitwise(toc& tc, const size_t indent,
-                               const arithmetic_operator op,
-                               const destination& dst, const statement& src)
-        -> void {
-
-        machine& x{tc.machine()};
-
-        emit_with_source(
-            tc, indent, src, dst,
-            [&](const operand& value, const machine::factor_use) -> void {
-                x.bitwise(src.tok(), indent, op, dst.operand(), value);
-            });
-    }
-
-    // a constant element that the merging passes keep in place, its value
-    // folded by 'make_steps': a divisor or a shift count, e.g. 'x / 3' or
-    // 'x << k'
-    static auto asm_op_constant_element(toc& tc, const size_t indent,
-                                        const arithmetic_operator op,
-                                        const destination& dst,
-                                        const statement& src,
-                                        const int64_t value) -> void {
-
-        machine& x{tc.machine()};
-
-        x.comment(src.tok(), indent,
-                  statement::trimmed_source(src, dst.text(), source_text(op)));
-
-        if (src.is_computed()) {
-            x.comment(src.tok(), indent, "src: folded constant {}",
-                      in_quotes(statement::trimmed_source(src)));
-        } else {
-            x.comment(src.tok(), indent, "src: constant");
-        }
-
-        const operand constant{
-            folded_value::untyped(value).operand_at(dst.type_ref()),
-        };
-
-        if (op == arithmetic_operator::divide or
-            op == arithmetic_operator::remainder) {
-
-            assert_divisor_not_zero(src.tok(), constant.immediate());
-
-            x.divide(src.tok(), indent, op, dst.operand(), constant,
-                     tc.checks().division_options());
-
-            return;
-        }
-
-        // note: the merging passes regroup or merge every other operator
-        assert(op == arithmetic_operator::shift_left or
-               op == arithmetic_operator::shift_right);
-
-        // note: a count wider than the value is rejected as narrowed also in
-        //       the argument of a conversion
-
-        src.assert_not_narrowed(tc, dst.type_ref());
-
-        assert_shift_count_fits(src.tok(), constant.immediate(),
-                                dst.type_ref());
-
-        x.shift(src.tok(), indent, op, dst.operand(), constant,
-                tc.checks().shift_options());
-    }
-
-    static auto asm_op_div(toc& tc, const size_t indent,
-                           const arithmetic_operator op, const destination& dst,
-                           const statement& src) -> void {
-
-        machine& x{tc.machine()};
-
-        emit_with_source(
-            tc, indent, src, dst,
-            [&](const operand& divisor, const machine::factor_use) -> void {
-                x.divide(src.tok(), indent, op, dst.operand(), divisor,
-                         tc.checks().division_options());
+            [&](const operand& term, const machine::factor_use use) -> void {
+                emit_operation(tc, indent, src.tok(), op, dst, term, use);
             });
     }
 
@@ -1190,39 +1097,22 @@ class expr_arith final : public statement {
         src.compile(tc, indent, dst);
     }
 
-    static auto asm_op_mul(toc& tc, const size_t indent, const destination& dst,
-                           const statement& src) -> void {
+    // a constant divisor is not zero and a constant shift count is inside the
+    // width, for a fold and for a constant step
+    static auto assert_constant_operand(const token& src_loc_tk,
+                                        const arithmetic_operator op,
+                                        const int64_t value,
+                                        const type& width_type) -> void {
 
-        machine& x{tc.machine()};
+        if (op == arithmetic_operator::divide or
+            op == arithmetic_operator::remainder) {
 
-        // a scratch register factor can be overwritten by the backend
-        emit_with_source(
-            tc, indent, src, dst,
-            [&](const operand& factor, const machine::factor_use use) -> void {
-                x.multiply(src.tok(), indent, dst.operand(), factor, use,
-                           tc.overflow_options(dst));
-            });
-    }
+            assert_divisor_not_zero(src_loc_tk, value);
+        }
 
-    static auto asm_op_shift(toc& tc, const size_t indent,
-                             const arithmetic_operator op,
-                             const destination& dst, const statement& src)
-        -> void {
-
-        // note: a count wider than the value is rejected as narrowed also in
-        //       the argument of a conversion, which narrows the other elements
-        //       on purpose
-
-        src.assert_not_narrowed(tc, dst.type_ref());
-
-        machine& x{tc.machine()};
-
-        emit_with_source(
-            tc, indent, src, dst,
-            [&](const operand& count, const machine::factor_use) -> void {
-                x.shift(src.tok(), indent, op, dst.operand(), count,
-                        tc.checks().shift_options());
-            });
+        if (is_shift(op)) {
+            assert_shift_count_fits(src_loc_tk, value, width_type);
+        }
     }
 
     // a zero divisor traps on every target, so a constant one is an error like
@@ -1339,6 +1229,13 @@ class expr_arith final : public statement {
         return reg;
     }
 
+    // the immediate of a constant step at the width of 'dst'
+    [[nodiscard]] static auto constant_operand(const destination& dst,
+                                               const int64_t value) -> operand {
+
+        return folded_value::untyped(value).operand_at(dst.type_ref());
+    }
+
     static auto consume_peeked_operator(tokenizer& tz) -> void {
         const char ch{tz.next_char()};
 
@@ -1380,6 +1277,56 @@ class expr_arith final : public statement {
             });
     }
 
+    // the machine operation of 'op' with its run-time check: overflow for
+    // add, subtract and multiply, the division check for divide and
+    // remainder, the shift check for shifts, none for the bitwise operators
+    static auto emit_operation(toc& tc, const size_t indent,
+                               const token& src_loc_tk,
+                               const arithmetic_operator op,
+                               const destination& dst, const operand& value,
+                               const machine::factor_use use) -> void {
+
+        machine& x{tc.machine()};
+
+        if (op == arithmetic_operator::add or
+            op == arithmetic_operator::subtract) {
+
+            x.add_subtract(src_loc_tk, indent, op, dst.operand(), value,
+                           tc.overflow_options(dst));
+
+            return;
+        }
+
+        if (op == arithmetic_operator::multiply) {
+            x.multiply(src_loc_tk, indent, dst.operand(), value, use,
+                       tc.overflow_options(dst));
+
+            return;
+        }
+
+        if (op == arithmetic_operator::divide or
+            op == arithmetic_operator::remainder) {
+
+            x.divide(src_loc_tk, indent, op, dst.operand(), value,
+                     tc.checks().division_options());
+
+            return;
+        }
+
+        if (is_shift(op)) {
+            x.shift(src_loc_tk, indent, op, dst.operand(), value,
+                    tc.checks().shift_options());
+
+            return;
+        }
+
+        assert(op == arithmetic_operator::bit_and or
+               op == arithmetic_operator::bit_or or
+               op == arithmetic_operator::bit_xor);
+
+        x.bitwise(src_loc_tk, indent, op, dst.operand(), value);
+    }
+
     // compiles 'src' into an operand the operation on 'dst' accepts, emits
     // the operation and frees the registers that producing the operand needed
     static auto emit_with_source(
@@ -1393,7 +1340,7 @@ class expr_arith final : public statement {
         const type& operand_type{dst.type_ref()};
 
         // note: a constant element is a constant step, its value folded by
-        //       'make_steps', see 'asm_op_constant_element'
+        //       'make_steps', see 'emit_constant_step'
 
         if (src.is_computed()) {
             assert(not src.fold(tc, tc.use_of(dst)));
@@ -1448,22 +1395,17 @@ class expr_arith final : public statement {
                    const int64_t rhs, const type& width_type)
         -> std::optional<int64_t> {
 
-        if (op == arithmetic_operator::divide or
-            op == arithmetic_operator::remainder) {
+        assert_constant_operand(rhs_element.tok(), op, rhs, width_type);
 
-            assert_divisor_not_zero(rhs_element.tok(), rhs);
+        const bool is_division{
+            op == arithmetic_operator::divide or
+                op == arithmetic_operator::remainder,
+        };
 
-            if (tc.checks().division and
-                constant_arith::division_overflows(lhs, rhs, width_type)) {
+        if (is_division and tc.checks().division and
+            constant_arith::division_overflows(lhs, rhs, width_type)) {
 
-                return std::nullopt;
-            }
-        }
-
-        if (op == arithmetic_operator::shift_left or
-            op == arithmetic_operator::shift_right) {
-
-            assert_shift_count_fits(rhs_element.tok(), rhs, width_type);
+            return std::nullopt;
         }
 
         return constant_arith::apply_operation(lhs, op, rhs, width_type);
@@ -1528,6 +1470,11 @@ class expr_arith final : public statement {
                op == arithmetic_operator::bit_and or
                op == arithmetic_operator::bit_or or
                op == arithmetic_operator::bit_xor;
+    }
+
+    [[nodiscard]] static auto is_shift(const arithmetic_operator op) -> bool {
+        return op == arithmetic_operator::shift_left or
+               op == arithmetic_operator::shift_right;
     }
 
     // a register or memory location, neither computed nor constant

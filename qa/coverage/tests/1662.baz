@@ -1,0 +1,14 @@
+# 'array_copy' checks its arguments in the order 'arrays_equal' does: a
+# source that the count may write is reported before the element types
+var a = i8[4]
+
+func grow() res {
+    a[0] = 1
+    res = 4
+}
+
+func main() {
+    var b = i16[4]
+    array_copy(a, b, grow())
+    exit(b[0])
+}

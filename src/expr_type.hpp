@@ -355,6 +355,8 @@ class expr_type final : public statement {
   private:
     auto assert_call_type(const type& tp) const -> void;
 
+    auto assert_copy_source_shape(const toc& tc) const -> void;
+
     // the '}' that ends the fields, when it is the next character, e.g. the '}'
     // of '{x, y}'
     [[nodiscard]] auto at_closing_brace(tokenizer& tz) -> bool {

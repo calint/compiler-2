@@ -58,15 +58,11 @@ class stmt_builtin_arrays_equal final : public statement {
     auto compile_arrays_equal(toc& tc, const size_t indent, const operand& dst,
                               const bool inverted) const -> void override {
 
-        operands_.assert_not_written_later(tc, false);
-
         machine& x{tc.machine()};
 
         x.comment(tok(), indent, statement::trimmed_source(*this));
 
-        const bulk_operands::arrays_info arrays{operands_.resolve_arrays(tc)};
-
-        operands_.assert_constant_count_in_bounds(tc);
+        const bulk_operands::arrays_info arrays{operands_.check(tc, false)};
 
         // no elements are compared, the ranges are equal
         if (operands_.is_constant_empty(tc)) {

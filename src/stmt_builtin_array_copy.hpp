@@ -52,10 +52,7 @@ class stmt_builtin_array_copy final : public statement {
 
         x.comment(tok(), indent, statement::trimmed_source(*this));
 
-        const bulk_operands::arrays_info arrays{operands_.resolve_arrays(tc)};
-
-        operands_.assert_not_written_later(tc, true);
-        operands_.assert_constant_count_in_bounds(tc);
+        const bulk_operands::arrays_info arrays{operands_.check(tc, true)};
 
         // nothing is copied
         if (operands_.is_constant_empty(tc)) {

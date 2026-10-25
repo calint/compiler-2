@@ -173,28 +173,71 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
        E.1. one 'emit_operation' maps an operator to its machine call and
             check (E2); the five 'asm_op_*' wrappers go; the constant
             emitters call it; an unknown operator asserts
+       => E.1 done (2026-10-25): 'emit_operation' maps each operator to
+          its machine call and check and asserts the bitwise rest;
+          'asm_op' keeps the 'assign', the negated-operand rewrite and the
+          shift-count narrowing, then 'emit_with_source' with
+          'emit_operation'; 'asm_op_mul', 'asm_op_div', 'asm_op_shift',
+          'asm_op_bitwise' go
        E.2. one 'emit_constant_step' (E3): a step says whether it was
             merged; the zero-divisor, shift-range and narrowing rules in one
             'assert_constant_operand' shared with 'fold_operation'; the two
             comment forms kept, so listings equal
+       => E.2 done (2026-10-25): 'emit_constant_step' replaces
+          'apply_merged_constant', 'asm_op_constant' and
+          'asm_op_constant_element'; 'compile_step' passes 'is_merged'
+          (the passes merged it, or a regroupable constant under the
+          overflow check); one 'assert_constant_operand' (zero divisor,
+          shift count) for the fold and the step, the narrowing check stays
+          with the element; the step was not given a kind of its own, the
+          null element already says merged; listings equal with and
+          without '--checks=overflow,division,shift'; fuzz-exprs default,
+          noub and spelling, fuzz-ub, fuzz-compiler clean
        E.3. 'expr_bool' (E4): the element functions take only the action,
             the list inversion goes to the comment only; 'compile_and' and
             'compile_or' named for what they do ('branch if false', 'branch
             if true')
+       => E.3 done (2026-10-25): 'constant_comparison' and
+          'constant_shorthand' (now static) give the value without the
+          element's 'not's; 'constant_value' applies 'is_negated', the
+          compile 'action.inverted'; the list inversion reaches only the
+          comment label; 'compile_branch_if_false' and
+          'compile_branch_if_true' replace 'compile_and' and 'compile_or';
+          listings equal
        E.4. 'resolve_expr' split into 'left_operand' and 'right_operand'
             (E6); one place turns a folded side into an immediate
+       => E.4 done (2026-10-25): 'left_operand' (always a register) and
+          'right_operand' (may be an immediate), 'immediate_of' the one
+          place a folded side becomes an immediate; the README names it;
+          listings equal
        E.5. 'stmt_builtin_convert' (E8): 'in_scratch' becomes the member
             'compile_in_scratch'; a 'note:' at row 3a for its precondition
+       => E.5 done (2026-10-25): a move, listings equal
        E.6. behavior, error order: 'bulk_operands::check' runs its three
             checks in one order for both built-ins (E7); a program with two
             faults gets the same first error from 'array_copy' and
             'arrays_equal'
+       => E.6 done (2026-10-25): 'bulk_operands::check' runs the order
+          check, the types and the bounds; the three are private; test 1662
+          ('array_copy' with an order fault and a type mismatch reports the
+          order fault, HEAD reported the types)
        E.7. behavior, error place: the array copy shape checked in both
             directions where the parse knows it (E5), the plan keeps the
             lengths; 'stmt_array_size' rejects a size below 1 in its
             constructor (E9)
+       => E.7 done (2026-10-25), both directions in the plan rather than
+          the parse: the parse of a parameter's body does not know what a
+          call binds it to, the plan is made at compile time;
+          'expr_type::assert_copy_source_shape' rejects both mismatches,
+          'expr_any' plans the source before its length check, which
+          asserts the shape; 'compile_identifier_copy' asserts;
+          'stmt_array_size' rejects a size below 1 when parsed, the getter
+          asserts a value, the field reports a missing size itself; no test
+          output changed
        E.8. the 'expr_any' form 'array_copy' -> 'whole_array_copy' (N5), so
             'array_copy' names only the built-in
+       => E.8 done (2026-10-25): 'whole_array_copy',
+          'is_whole_array_copy', 'assert_whole_array_copy_fits'
     F. front end
        F.1. absent tokens as 'std::optional' where round 13 J.4 missed them
             (F9): the index part of 'ident_elem', 'is_indexed' derived,

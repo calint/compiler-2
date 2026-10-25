@@ -51,6 +51,14 @@ class stmt_def_type_field final : public statement {
         }
 
         array_size_ = {tc, tz};
+
+        // a field has no initializer to give an unsized array its length
+        if (not array_size_.has_value()) {
+            throw compile_error{
+                array_size_.tok(),
+                "expected a constant array size greater than 0"};
+        }
+
         array_count_ = array_size_.array_size();
 
         close_bracket_tk_ =

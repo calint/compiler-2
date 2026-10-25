@@ -5194,3 +5194,6 @@ SRC=1660 && EXP=2 && RUN
 
 # a conversion folds its argument like a list at its width
 SRC=1661 && EXP=35 && RUN
+
+# 'array_copy' checks its arguments in the order 'arrays_equal' does: a
+SRC=1662 && COMPERR

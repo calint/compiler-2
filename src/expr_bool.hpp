@@ -235,13 +235,14 @@ class expr_bool_op final : public statement {
                         in_quotes(comparison))};
     }
 
-    [[nodiscard]] auto compile_and(toc& tc, const size_t indent,
-                                   const std::string_view jmp_to_if_false,
-                                   const bool inverted, const operand& dst,
-                                   const bool branch_required) const
-        -> condition_result {
+    // an element of an 'and' list and the last element of any list: it
+    // branches when false; 'inverted' is the inversion of the list
+    [[nodiscard]] auto compile_branch_if_false(
+        toc& tc, const size_t indent, const std::string_view jmp_to_if_false,
+        const bool inverted, const operand& dst,
+        const bool branch_required) const -> condition_result {
 
-        return compile_element(tc, indent, "and", inverted,
+        return compile_element(tc, indent, comment_label("and", inverted),
                                {
                                    .operation{operation()},
                                    .inverted{inverted != is_negated()},
@@ -252,13 +253,13 @@ class expr_bool_op final : public statement {
                                branch_required);
     }
 
-    // the result is known when the expression evaluated at compile time
-    [[nodiscard]] auto compile_or(toc& tc, const size_t indent,
-                                  const std::string_view jmp_to_if_true,
-                                  const bool inverted, const operand& dst) const
-        -> condition_result {
+    // an element of an 'or' list before the last: it branches when true; the
+    // result is known when the expression evaluated at compile time
+    [[nodiscard]] auto compile_branch_if_true(
+        toc& tc, const size_t indent, const std::string_view jmp_to_if_true,
+        const bool inverted, const operand& dst) const -> condition_result {
 
-        return compile_element(tc, indent, "or", inverted,
+        return compile_element(tc, indent, comment_label("or", inverted),
                                {
                                    .operation{operation()},
                                    .inverted{inverted != is_negated()},
@@ -276,16 +277,21 @@ class expr_bool_op final : public statement {
 
         const comparison_side lhs{side_of(tc, lhs_)};
 
-        if (not comparison_) {
-            return constant_shorthand(lhs);
-        }
-
-        if (not lhs.folded) {
+        if (comparison_ and not lhs.folded) {
             return std::nullopt;
         }
 
-        return constant_comparison(lhs, comparison_->op,
-                                   side_of(tc, comparison_->rhs));
+        const std::optional<bool> constant{
+            comparison_ ? constant_comparison(lhs, comparison_->op,
+                                              side_of(tc, comparison_->rhs))
+                        : constant_shorthand(lhs),
+        };
+
+        if (not constant) {
+            return std::nullopt;
+        }
+
+        return *constant != is_negated();
     }
 
     // takes the operand that 'arithmetic' points to
@@ -394,8 +400,7 @@ class expr_bool_op final : public statement {
     // the sides are classified once, a stored result needs no branch to the
     // label that follows it ('stored_action')
     [[nodiscard]] auto
-    compile_comparison(toc& tc, const size_t indent, const bool inverted,
-                       const comparison& cmp,
+    compile_comparison(toc& tc, const size_t indent, const comparison& cmp,
                        const machine::comparison_action& action,
                        const machine::comparison_action& stored_action) const
         -> condition_result {
@@ -408,7 +413,9 @@ class expr_bool_op final : public statement {
             }) {
 
             assert_folded_sides_fit(lhs, rhs, cmp.op);
-            return compile_constant(tc, indent, *constant != inverted, action);
+
+            return compile_constant(tc, indent, *constant != action.inverted,
+                                    action);
         }
 
         // e.g. the 'i' of 'i == h(i)' with 'h' writing 'i'
@@ -472,19 +479,17 @@ class expr_bool_op final : public statement {
         return known_result(value);
     }
 
-    // an 'or' element branches when true and an 'and' element when false
+    // 'action' says where it branches and whether the comparison is
+    // inverted, by the list and by the element's own 'not's
     [[nodiscard]] auto compile_element(toc& tc, const size_t indent,
-                                       const std::string_view list_op,
-                                       const bool inverted,
+                                       const std::string_view label,
                                        const machine::comparison_action& action,
                                        const bool branch_required) const
         -> condition_result {
 
         machine& x{tc.machine()};
 
-        x.comment(tok(), indent,
-                  statement::trimmed_source(*this, "?",
-                                            comment_label(list_op, inverted)));
+        x.comment(tok(), indent, statement::trimmed_source(*this, "?", label));
 
         x.label(indent, tc.create_cmp_label(tok()));
 
@@ -496,17 +501,16 @@ class expr_bool_op final : public statement {
         }
 
         if (not comparison_) {
-            return compile_shorthand(tc, indent, inverted, action,
-                                     stored_action);
+            return compile_shorthand(tc, indent, action, stored_action);
         }
 
-        return compile_comparison(tc, indent, inverted, *comparison_, action,
+        return compile_comparison(tc, indent, *comparison_, action,
                                   stored_action);
     }
 
     // the operand alone, compared with 0
     [[nodiscard]] auto
-    compile_shorthand(toc& tc, const size_t indent, const bool inverted,
+    compile_shorthand(toc& tc, const size_t indent,
                       const machine::comparison_action& action,
                       const machine::comparison_action& stored_action) const
         -> condition_result {
@@ -514,39 +518,14 @@ class expr_bool_op final : public statement {
         const comparison_side condition{side_of(tc, lhs_)};
 
         if (const std::optional<bool> constant{constant_shorthand(condition)}) {
-            return compile_constant(tc, indent, *constant != inverted, action);
+            return compile_constant(tc, indent, *constant != action.inverted,
+                                    action);
         }
 
         assert_not_instance_condition(lhs_);
         resolve_cmp_shorthand(tc, indent, condition, stored_action);
 
         return condition_result::unknown;
-    }
-
-    // the value of a comparison whose sides fold, empty otherwise
-    [[nodiscard]] auto constant_comparison(const comparison_side& lhs,
-                                           const comparison_operator op,
-                                           const comparison_side& rhs) const
-        -> std::optional<bool> {
-
-        if (not lhs.folded or not rhs.folded) {
-            return std::nullopt;
-        }
-
-        return constant_arith::eval_constant(lhs.folded->value, op,
-                                             rhs.folded->value) != is_negated();
-    }
-
-    // the value of a shorthand whose operand folds, empty otherwise
-    [[nodiscard]] auto
-    constant_shorthand(const comparison_side& condition) const
-        -> std::optional<bool> {
-
-        if (not condition.folded) {
-            return std::nullopt;
-        }
-
-        return (condition.folded->value != 0) != is_negated();
     }
 
     [[nodiscard]] auto is_negated() const -> bool {
@@ -565,11 +544,11 @@ class expr_bool_op final : public statement {
         std::vector<operand> allocated_registers;
 
         const operand dst{
-            resolve_expr(tc, indent, lhs, true, allocated_registers),
+            left_operand(tc, indent, lhs, allocated_registers),
         };
 
         const operand src{
-            resolve_expr(tc, indent, rhs, false, allocated_registers),
+            right_operand(tc, indent, rhs, allocated_registers),
         };
 
         assert_rhs_fits_lhs(lhs, rhs, action.operation, dst, src);
@@ -609,7 +588,7 @@ class expr_bool_op final : public statement {
             machine& x{tc.machine()};
 
             const operand src{
-                resolve_expr(tc, indent, condition, true, allocated_registers),
+                left_operand(tc, indent, condition, allocated_registers),
             };
 
             x.copy_value(tok(), indent, action.destination, src);
@@ -925,6 +904,50 @@ class expr_bool_op final : public statement {
         return reg;
     }
 
+    // the value of a comparison whose sides fold, without the element's
+    // 'not's, empty otherwise
+    [[nodiscard]] static auto constant_comparison(const comparison_side& lhs,
+                                                  const comparison_operator op,
+                                                  const comparison_side& rhs)
+        -> std::optional<bool> {
+
+        if (not lhs.folded or not rhs.folded) {
+            return std::nullopt;
+        }
+
+        return constant_arith::eval_constant(lhs.folded->value, op,
+                                             rhs.folded->value);
+    }
+
+    // the value of a shorthand whose operand folds, without the element's
+    // 'not's, empty otherwise
+    [[nodiscard]] static auto
+    constant_shorthand(const comparison_side& condition)
+        -> std::optional<bool> {
+
+        if (not condition.folded) {
+            return std::nullopt;
+        }
+
+        return condition.folded->value != 0;
+    }
+
+    // a side that folded as an immediate: a typed constant at its own type,
+    // e.g. 'i16(300) + 1', an untyped one at 'untyped_type', the type of the
+    // constant name or the default type for a list
+    [[nodiscard]] static auto immediate_of(const comparison_side& side,
+                                           const type& untyped_type)
+        -> operand {
+
+        assert(side.folded);
+
+        if (side.folded->is_typed()) {
+            return typed_constant(side);
+        }
+
+        return operand::imm(side.folded->value, untyped_type);
+    }
+
     // a stored 'bool' is 0 or 1 so a plain one needs no comparison with 0,
     // inversion and branches keep the comparison which is shorter on x86
     [[nodiscard]] static auto
@@ -959,6 +982,47 @@ class expr_bool_op final : public statement {
 
         return stored and (stored->info.is_array() or
                            not stored->info.type_ref().is_builtin());
+    }
+
+    // the comparison needs its left operand in a register; a constant left
+    // side that is not typed was mirrored onto the right
+    [[nodiscard]] static auto
+    left_operand(toc& tc, const size_t indent, const comparison_side& side,
+                 std::vector<operand>& allocated_registers) -> operand {
+
+        const expr_arith& expr{*side.node};
+
+        // a computed value, or the zero value '{}', which has no name;
+        // 'compile' folds a constant list into one copy
+        const stmt_identifier* const ident{expr.operand_path()};
+
+        if (ident == nullptr) {
+            return compile_to_scratch(tc, indent, expr, allocated_registers);
+        }
+
+        const ident_info expr_info{make_scalar_ident_info(tc, *ident)};
+
+        // a typed constant is a value of its type in a register
+        if (side.is_typed_constant()) {
+            machine& x{tc.machine()};
+
+            const operand reg{
+                x.alloc_scratch_register(expr.tok(), indent, expr.get_type()),
+            };
+
+            allocated_registers.emplace_back(reg);
+
+            x.copy_value(expr.tok(), indent, reg, typed_constant(side));
+
+            return reg;
+        }
+
+        assert(not expr_info.is_const());
+
+        // e.g. 'a', '-a[i]'
+        return ident->compile_value_operand(
+            tc, indent, expr.tok(), expr_info, expr_info.type_ref(),
+            tc.checks().overflow_options(), allocated_registers);
     }
 
     // a typed constant side is compared as a variable of its type
@@ -1014,26 +1078,19 @@ class expr_bool_op final : public statement {
         return std::nullopt;
     }
 
+    // the right operand may be an immediate; an untyped constant is compared
+    // as written, the caller checks that it fits the left side
     [[nodiscard]] static auto
-    resolve_expr(toc& tc, const size_t indent, const comparison_side& side,
-                 const bool is_lhs, std::vector<operand>& allocated_registers)
-        -> operand {
+    right_operand(toc& tc, const size_t indent, const comparison_side& side,
+                  std::vector<operand>& allocated_registers) -> operand {
 
         const expr_arith& expr{*side.node};
 
         // a computed value, or the zero value '{}', which has no name
         const stmt_identifier* const ident{expr.operand_path()};
 
-        // the comparison needs its left operand in a register, 'compile'
-        // folds a constant list into one copy
-        if (ident == nullptr and is_lhs) {
-            return compile_to_scratch(tc, indent, expr, allocated_registers);
-        }
-
         if (ident == nullptr) {
-            const std::optional<folded_value>& folded{side.folded};
-
-            if (not folded) {
+            if (not side.folded) {
                 return compile_to_scratch(tc, indent, expr,
                                           allocated_registers);
             }
@@ -1043,45 +1100,16 @@ class expr_bool_op final : public statement {
             x.comment(expr.tok(), indent, "src: folded constant {}",
                       in_quotes(statement::trimmed_source(expr)));
 
-            // e.g. 'i16(300) + 1' is a value of type 'i16'
-            if (folded->is_typed()) {
-                return operand::imm(folded->value, *folded->own_type);
-            }
-
-            return operand::imm(folded->value, tc.builtins().default_type());
+            return immediate_of(side, tc.builtins().default_type());
         }
 
         const ident_info expr_info{make_scalar_ident_info(tc, *ident)};
 
-        // a typed constant left side is a value of its type in a register
-        if (is_lhs and side.is_typed_constant()) {
-            machine& x{tc.machine()};
-
-            const operand reg{
-                x.alloc_scratch_register(expr.tok(), indent, expr.get_type()),
-            };
-
-            allocated_registers.emplace_back(reg);
-
-            x.copy_value(expr.tok(), indent, reg, typed_constant(side));
-
-            return reg;
-        }
-
-        // a constant left side was mirrored onto the right
-        assert(not expr_info.is_const() or not is_lhs);
-
-        if (side.is_typed_constant()) {
-            return typed_constant(side);
-        }
-
-        // an untyped constant is compared as written, the caller checks that
-        // it fits the left side
-        if (expr_info.is_const()) {
+        if (side.is_typed_constant() or expr_info.is_const()) {
             // note: a constant name or literal folds
             assert(side.folded);
 
-            return operand::imm(side.folded->value, expr_info.type_ref());
+            return immediate_of(side, expr_info.type_ref());
         }
 
         // e.g. 'a', '-a[i]'
@@ -1139,7 +1167,7 @@ class expr_bool_op final : public statement {
             return action.destination;
         }
 
-        return resolve_expr(tc, indent, condition, true, allocated_registers);
+        return left_operand(tc, indent, condition, allocated_registers);
     }
 
     // the value at the width of its type, e.g. -128 for '-i8(-128)'
@@ -1440,11 +1468,12 @@ class expr_bool final : public statement {
         const expr_bool_op& expr{std::get<expr_bool_op>(bools_.at(expr_index))};
 
         if (is_or) {
-            return expr.compile_or(tc, indent, targets.if_true, invert, dst);
+            return expr.compile_branch_if_true(tc, indent, targets.if_true,
+                                               invert, dst);
         }
 
-        return expr.compile_and(tc, indent, targets.if_false, invert, dst,
-                                true);
+        return expr.compile_branch_if_false(tc, indent, targets.if_false,
+                                            invert, dst, true);
     }
 
     [[nodiscard]] auto compile_last_element(
@@ -1473,8 +1502,9 @@ class expr_bool final : public statement {
         const expr_bool_op& expr{std::get<expr_bool_op>(bools_.back())};
 
         const condition_result const_eval{
-            expr.compile_and(tc, indent, targets.if_false, invert, dst,
-                             targets.if_false != targets.if_true),
+            expr.compile_branch_if_false(tc, indent, targets.if_false, invert,
+                                         dst,
+                                         targets.if_false != targets.if_true),
         };
 
         if (is_known(const_eval)) {

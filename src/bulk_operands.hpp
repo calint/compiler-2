@@ -25,8 +25,8 @@
 // built-in gives them, e.g. 'source' and 'destination'
 // invariants: after parsing, each array is an array or an element of one where
 // the operation starts; the element types match and a constant count is in the
-// bounds of both once 'resolve_arrays' and 'assert_constant_count_in_bounds'
-// have run, which is at compile time because the types are resolved then
+// bounds of both once 'check' has run, which is at compile time because the
+// types are resolved then
 class bulk_operands final {
     token open_paren_tk_;
     stmt_identifier first_;
@@ -80,6 +80,94 @@ class bulk_operands final {
 
     bulk_operands() = default;
 
+    // the checks of the arguments in the order the statement reads: no
+    // argument is written by a later one, the element types match, a constant
+    // count is in bounds; 'is_second_written' for the destination of a copy
+    [[nodiscard]] auto check(toc& tc, const bool is_second_written) const
+        -> arrays_info {
+
+        assert_not_written_later(tc, is_second_written);
+
+        arrays_info arrays{resolve_arrays(tc)};
+
+        assert_constant_count_in_bounds(tc);
+
+        return arrays;
+    }
+
+    [[nodiscard]] auto count() const -> const expr_any& { return count_; }
+
+    // compiles the count into the register the machine asks for, this must
+    // outlive the emitter
+    [[nodiscard]] auto count_emitter(toc& tc, const size_t indent) const
+        -> std::function<void(const operand&)> {
+
+        return [&tc, indent, this](const operand& count_register) -> void {
+            machine& x{tc.machine()};
+
+            x.comment(count_.tok(), indent, statement::trimmed_source(count_));
+
+            count_.compile(tc, indent,
+                           destination::of_register(count_register));
+        };
+    }
+
+    [[nodiscard]] auto first() const -> const stmt_identifier& {
+        return first_;
+    }
+
+    // a constant count of 0 reaches no element, so a start at the end of the
+    // array, which only a range may have, is not addressed
+    [[nodiscard]] auto is_constant_empty(const toc& tc) const -> bool {
+        const std::optional<int64_t> constant_count{count_.constant_value(tc)};
+        return constant_count and *constant_count == 0;
+    }
+
+    // 'array' is 'first' or 'second', see 'range_check'
+    [[nodiscard]] auto range_check_of(const toc& tc,
+                                      const stmt_identifier& array) const
+        -> range_check {
+
+        if (count_.constant_value(tc) and array.constant_start_index(tc)) {
+            return range_check::compile_time;
+        }
+
+        return range_check::run_time;
+    }
+
+    [[nodiscard]] auto second() const -> const stmt_identifier& {
+        return second_;
+    }
+
+    auto source_to(std::ostream& os) const -> void {
+        open_paren_tk_.source_to(os);
+        first_.source_to(os);
+        first_delim_tk_.source_to(os);
+        second_.source_to(os);
+        second_delim_tk_.source_to(os);
+        count_.source_to(os);
+        close_paren_tk_.source_to(os);
+    }
+
+    auto visit_call_effects(const toc& tc,
+                            const call_effect_visitor visitor) const -> void {
+
+        first_.visit_call_effects(tc, visitor);
+        second_.visit_call_effects(tc, visitor);
+        count_.visit_call_effects(tc, visitor);
+    }
+
+    // for 'arrays_equal', which reads both arrays; 'array_copy' writes the
+    // second
+    auto visit_reads(const read_filter var, const read_visitor reader) const
+        -> void {
+
+        first_.visit_reads(var, reader);
+        second_.visit_reads(var, reader);
+        count_.visit_reads(var, reader);
+    }
+
+  private:
     // a run-time count is left to the bounds check at run time
     auto assert_constant_count_in_bounds(const toc& tc) const -> void {
         const std::optional<int64_t> constant_count{count_.constant_value(tc)};
@@ -126,46 +214,6 @@ class bulk_operands final {
             "an array argument, the count is computed before the arrays");
     }
 
-    [[nodiscard]] auto count() const -> const expr_any& { return count_; }
-
-    // compiles the count into the register the machine asks for, this must
-    // outlive the emitter
-    [[nodiscard]] auto count_emitter(toc& tc, const size_t indent) const
-        -> std::function<void(const operand&)> {
-
-        return [&tc, indent, this](const operand& count_register) -> void {
-            machine& x{tc.machine()};
-
-            x.comment(count_.tok(), indent, statement::trimmed_source(count_));
-
-            count_.compile(tc, indent,
-                           destination::of_register(count_register));
-        };
-    }
-
-    [[nodiscard]] auto first() const -> const stmt_identifier& {
-        return first_;
-    }
-
-    // a constant count of 0 reaches no element, so a start at the end of the
-    // array, which only a range may have, is not addressed
-    [[nodiscard]] auto is_constant_empty(const toc& tc) const -> bool {
-        const std::optional<int64_t> constant_count{count_.constant_value(tc)};
-        return constant_count and *constant_count == 0;
-    }
-
-    // 'array' is 'first' or 'second', see 'range_check'
-    [[nodiscard]] auto range_check_of(const toc& tc,
-                                      const stmt_identifier& array) const
-        -> range_check {
-
-        if (count_.constant_value(tc) and array.constant_start_index(tc)) {
-            return range_check::compile_time;
-        }
-
-        return range_check::run_time;
-    }
-
     // the elements are compared or copied as a whole, so their types match
     [[nodiscard]] auto resolve_arrays(toc& tc) const -> arrays_info {
         arrays_info info{
@@ -183,37 +231,5 @@ class bulk_operands final {
         }
 
         return info;
-    }
-
-    [[nodiscard]] auto second() const -> const stmt_identifier& {
-        return second_;
-    }
-
-    auto source_to(std::ostream& os) const -> void {
-        open_paren_tk_.source_to(os);
-        first_.source_to(os);
-        first_delim_tk_.source_to(os);
-        second_.source_to(os);
-        second_delim_tk_.source_to(os);
-        count_.source_to(os);
-        close_paren_tk_.source_to(os);
-    }
-
-    auto visit_call_effects(const toc& tc,
-                            const call_effect_visitor visitor) const -> void {
-
-        first_.visit_call_effects(tc, visitor);
-        second_.visit_call_effects(tc, visitor);
-        count_.visit_call_effects(tc, visitor);
-    }
-
-    // for 'arrays_equal', which reads both arrays; 'array_copy' writes the
-    // second
-    auto visit_reads(const read_filter var, const read_visitor reader) const
-        -> void {
-
-        first_.visit_reads(var, reader);
-        second_.visit_reads(var, reader);
-        count_.visit_reads(var, reader);
     }
 };

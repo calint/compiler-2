@@ -59,7 +59,8 @@ class stmt_array_size final : public statement {
     // class methods
     //
 
-    // a written size of at least 1, e.g. the '4' of 'i8[4]'
+    // the written size, at least 1 (checked when parsed), e.g. the '4' of
+    // 'i8[4]'; asked only when 'has_value'
     [[nodiscard]] auto array_size() const -> size_t;
 
     [[nodiscard]] auto has_value() const -> bool { return value_ != nullptr; }
@@ -116,12 +117,12 @@ class expr_any final : public statement {
     };
 
     // e.g. the 'a' of 'var b = a', copied whole as bytes
-    struct array_copy {
+    struct whole_array_copy {
         expr_type source;
     };
 
     std::variant<single_value, string_array, element_list, zero_array,
-                 array_copy>
+                 whole_array_copy>
         form_;
     // what the destination gives, e.g. an array parameter 's[]' is an array
     // of unknown length, its argument gives the length when it is compiled
@@ -198,7 +199,7 @@ class expr_any final : public statement {
             // 'expr_type' copies the whole array as bytes, 'expr_arith' would
             // read a single scalar
             // e.g. 'var b = a' copies the array 'a'
-            form_ = array_copy{
+            form_ = whole_array_copy{
                 .source{
                     tc,
                     tz,
@@ -284,7 +285,7 @@ class expr_any final : public statement {
 
         // note: an unsized destination is the only array of unknown length
 
-        assert(not is_array() or is_array_copy() or
+        assert(not is_array() or is_whole_array_copy() or
                dst.is_length_unknown() ==
                    (destination_.is_length_unknown() and not dst.array_len()));
 
@@ -314,7 +315,10 @@ class expr_any final : public statement {
 
     // a single value or the copy of an array, e.g. the 'a' of 'var b = a'
     [[nodiscard]] auto operand_path() const -> const stmt_identifier* override {
-        if (const array_copy* const copy{std::get_if<array_copy>(&form_)}) {
+        if (const whole_array_copy* const copy{
+                std::get_if<whole_array_copy>(&form_),
+            }) {
+
             return copy->source.operand_path();
         }
 
@@ -426,7 +430,10 @@ class expr_any final : public statement {
     // the value of a single value, an element of a list or the source of a
     // copy
     [[nodiscard]] auto element(const size_t index) const -> const statement& {
-        if (const array_copy* const copy{std::get_if<array_copy>(&form_)}) {
+        if (const whole_array_copy* const copy{
+                std::get_if<whole_array_copy>(&form_),
+            }) {
+
             assert(index == 0);
 
             return copy->source;
@@ -472,12 +479,12 @@ class expr_any final : public statement {
         return not std::holds_alternative<single_value>(form_);
     }
 
-    [[nodiscard]] auto is_array_copy() const -> bool {
-        return std::holds_alternative<array_copy>(form_);
-    }
-
     [[nodiscard]] auto is_string() const -> bool {
         return std::holds_alternative<string_array>(form_);
+    }
+
+    [[nodiscard]] auto is_whole_array_copy() const -> bool {
+        return std::holds_alternative<whole_array_copy>(form_);
     }
 
     // e.g. the '[' of 'i8[]{}', none without an array prefix
@@ -503,9 +510,10 @@ class expr_any final : public statement {
             destination_.is_length_unknown() ? unsized_count : array_count_,
         };
 
-        if (is_array_copy()) {
-            assert_array_copy_fits(tc, array_count);
+        // the source's shape is checked by its plan, then the lengths
+        if (is_whole_array_copy()) {
             plan_element(tc, 0, at, plan);
+            assert_whole_array_copy_fits(tc, array_count);
             return;
         }
 
@@ -555,30 +563,6 @@ class expr_any final : public statement {
         return nullptr;
     }
 
-    // the copy size comes from the source, so it is an array of the length of
-    // the destination, 'array_count' when known
-    auto assert_array_copy_fits(const toc& tc,
-                                const std::optional<size_t> array_count) const
-        -> void {
-
-        const ident_info src_info{make_ident_info(tc, *operand_path())};
-
-        if (not src_info.is_array()) {
-            throw compile_error{tok(), "source must be an array"};
-        }
-
-        const std::optional<size_t> src_len{src_info.array_len()};
-
-        if (not array_count or not src_len or *array_count == *src_len) {
-            return;
-        }
-
-        throw compile_error{
-            tok(), std::format("destination array size {} does not match "
-                               "source size {}",
-                               *array_count, *src_len)};
-    }
-
     // the remaining count would wrap around past the array size
     auto assert_room_for_element(const tokenizer& tz,
                                  const element_list& list) const -> void {
@@ -590,6 +574,28 @@ class expr_any final : public statement {
         throw compile_error{tz, std::format("too many elements for array of "
                                             "size {}",
                                             *array_count_)};
+    }
+
+    // the copy size comes from the source, so its length is that of the
+    // destination, 'array_count' when known
+    auto assert_whole_array_copy_fits(
+        const toc& tc, const std::optional<size_t> array_count) const -> void {
+
+        const ident_info src_info{make_ident_info(tc, *operand_path())};
+
+        // note: the plan of the source checked that it is an array
+        assert(src_info.is_array());
+
+        const std::optional<size_t> src_len{src_info.array_len()};
+
+        if (not array_count or not src_len or *array_count == *src_len) {
+            return;
+        }
+
+        throw compile_error{
+            tok(), std::format("destination array size {} does not match "
+                               "source size {}",
+                               *array_count, *src_len)};
     }
 
     // the little endian bytes of the elements, empty when an element is not a
@@ -867,7 +873,10 @@ class expr_any final : public statement {
 
     // the element at 'index' when it is an 'expr_type', null otherwise
     [[nodiscard]] auto record_at(const size_t index) const -> const expr_type* {
-        if (const array_copy* const copy{std::get_if<array_copy>(&form_)}) {
+        if (const whole_array_copy* const copy{
+                std::get_if<whole_array_copy>(&form_),
+            }) {
+
             return &copy->source;
         }
 
@@ -1124,6 +1133,11 @@ inline stmt_array_size::stmt_array_size(toc& tc, tokenizer& tz)
                         in_quotes(statement::trimmed_source(*value_)))};
     }
 
+    if (*folded < 1) {
+        throw compile_error{value_->tok(),
+                            "expected a constant array size greater than 0"};
+    }
+
     folded_ = *folded;
 }
 
@@ -1145,15 +1159,7 @@ inline auto stmt_array_size::source_to(std::ostream& os) const -> void {
 }
 
 inline auto stmt_array_size::array_size() const -> size_t {
-    if (not value_) {
-        throw compile_error{tok(),
-                            "expected a constant array size greater than 0"};
-    }
-
-    if (folded_ < 1) {
-        throw compile_error{value_->tok(),
-                            "expected a constant array size greater than 0"};
-    }
+    assert(value_);
 
     return static_cast<size_t>(folded_);
 }
