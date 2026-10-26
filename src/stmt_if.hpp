@@ -53,8 +53,6 @@ class stmt_if final : public statement {
         }
     }
 
-    stmt_if() = default;
-
     //
     // overridden methods
     //

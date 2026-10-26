@@ -141,38 +141,11 @@ class expr_bool_op final : public statement {
 
   public:
     expr_bool_op(toc& tc, tokenizer& tz)
-        : statement{tz.next_whitespace_token()} {
+        : statement{tz.next_whitespace_token()}, nots_{tz}, lhs_{tc, tz},
+          comparison_{parse_comparison(tc, tz)} {
 
         set_type(tc.builtins().boolean());
-
-        nots_ = condition_nots{tz};
-
-        lhs_ = {tc, tz};
-
-        const std::optional<comparison_operator> op{
-            comparison_of(tz.peek_operator()),
-        };
-
-        // without an operator the operand is the condition, e.g. 'if a {...}'
-        if (not op) {
-            assert_no_lone_operator_char(tz);
-            return;
-        }
-
-        comparison cmp{
-            .op_tk{tz.seen_operator()},
-            .op{*op},
-            .rhs{},
-            .is_memory{},
-        };
-
-        cmp.rhs = {tc, tz};
-        cmp.is_memory = classify_operands(tc, cmp);
-
-        comparison_ = std::move(cmp);
     }
-
-    expr_bool_op() = default;
 
     //
     // overridden methods
@@ -525,6 +498,35 @@ class expr_bool_op final : public statement {
     // a shorthand is a comparison with 0 by '!='
     [[nodiscard]] auto operation() const -> comparison_operator {
         return comparison_ ? comparison_->op : comparison_operator::not_equal;
+    }
+
+    // the operator and the right side after 'lhs_', none for a shorthand
+    // note: called by the constructor after 'lhs_' is made
+    [[nodiscard]] auto parse_comparison(toc& tc, tokenizer& tz) const
+        -> std::optional<comparison> {
+
+        const std::optional<comparison_operator> op{
+            comparison_of(tz.peek_operator()),
+        };
+
+        // without an operator the operand is the condition, e.g. 'if a {...}'
+        if (not op) {
+            assert_no_lone_operator_char(tz);
+            return std::nullopt;
+        }
+
+        const token op_tk{tz.seen_operator()};
+
+        comparison cmp{
+            .op_tk{op_tk},
+            .op{*op},
+            .rhs{tc, tz},
+            .is_memory{},
+        };
+
+        cmp.is_memory = classify_operands(tc, cmp);
+
+        return cmp;
     }
 
     auto resolve_cmp(toc& tc, const size_t indent, const comparison_side& lhs,
@@ -1160,8 +1162,6 @@ class expr_bool final : public statement {
         parse_list(tc, tz);
         assert_parentheses_group();
     }
-
-    expr_bool() = default;
 
     //
     // overridden methods

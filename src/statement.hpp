@@ -263,7 +263,6 @@ class statement {
     explicit statement(const token tk, unary_ops uops = {})
         : token_{tk}, uops_{std::move(uops)} {}
 
-    statement() = default;
     statement(const statement&) = default;
     statement(statement&&) = default;
     auto operator=(const statement&) -> statement& = default;
@@ -532,6 +531,9 @@ class statement {
     }
 
   protected:
+    // note: only the empty block of 'stmt_block' has no token
+    statement() = default;
+
     // for statements whose value has the statement's own type
     auto assert_own_type_not_narrowed(const type& dst_type) const -> void {
         if (not dst_type.is_builtin() or not get_type().is_builtin() or

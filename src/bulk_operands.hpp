@@ -70,32 +70,23 @@ class bulk_operands final {
                   std::format("expected '(', {}, {}, 'count', and ')'",
                               in_quotes(first_role), in_quotes(second_role))),
           },
+          first_{parse_array(tc, tz)},
+          first_delim_tk_{
+              tz.expect_char_token(
+                  ',', std::format("expected ',' followed by {} and 'count'",
+                                   in_quotes(second_role))),
+          },
+          second_{parse_array(tc, tz)},
+          second_delim_tk_{
+              tz.expect_char_token(',', "expected ',' followed by 'count'"),
+          },
+          count_{tc, tz, tc.builtins().default_type(),
+                 literal_typing::from_destination},
+          close_paren_tk_{
+              tz.expect_char_token(')', "expected ')' after the arguments"),
+          },
           first_role_{first_role}, second_role_{second_role},
-          is_second_written_{use == second_use::written} {
-
-        first_ = stmt_identifier::parse_array_argument(tc, tz);
-
-        first_.assert_array_or_element();
-
-        first_delim_tk_ = tz.expect_char_token(
-            ',', std::format("expected ',' followed by {} and 'count'",
-                             in_quotes(second_role_)));
-
-        second_ = stmt_identifier::parse_array_argument(tc, tz);
-
-        second_.assert_array_or_element();
-
-        second_delim_tk_ =
-            tz.expect_char_token(',', "expected ',' followed by 'count'");
-
-        count_ = {tc, tz, tc.builtins().default_type(),
-                  literal_typing::from_destination};
-
-        close_paren_tk_ =
-            tz.expect_char_token(')', "expected ')' after the arguments");
-    }
-
-    bulk_operands() = default;
+          is_second_written_{use == second_use::written} {}
 
     // the checks of the arguments in the order the statement reads: no
     // argument is written by a later one, the element types match, a constant
@@ -255,5 +246,19 @@ class bulk_operands final {
         }
 
         return info;
+    }
+
+    //
+    // statics
+    //
+
+    [[nodiscard]] static auto parse_array(toc& tc, tokenizer& tz)
+        -> stmt_identifier {
+
+        stmt_identifier array{stmt_identifier::parse_array_argument(tc, tz)};
+
+        array.assert_array_or_element();
+
+        return array;
     }
 };

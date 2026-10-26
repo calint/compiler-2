@@ -243,6 +243,27 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
        1. A.3 of the reviewer: node members initialized in the member list,
           the default constructors deleted (20 classes; error order kept by
           hand); recommended: yes, phase by phase after C
+       => 1 done (2026-10-26): no node class has a default constructor;
+          the members are made in the member list through named steps:
+          'stmt_loop::parse_code', 'stmt_if_branch::parse_condition' and
+          'constant_of' (the constant before the block, as before),
+          'stmt_builtin_foo::parse_code' and 'parse_count',
+          'expr_bool_op::parse_comparison', 'stmt_assign_var::parse_value'
+          (the write recorded before the value parses),
+          'stmt_def_var::declare_and_assign', 'stmt_def_dat::parse_name' and
+          'parse_initializer', 'expr_any::parse_form' (members reordered:
+          'destination_' and 'array_count_' first), 'bulk_operands' and
+          'stmt_builtin_array_length' in the list, the array prefix built
+          once; 'stmt_identifier::parse_whole_array' for 'foo' and
+          'array_length'; 'initializer_declaration::parse_value' holds the
+          value in an optional inside its placeholder scope; exception, with
+          a note: 'stmt_block' keeps a default for the body of
+          'stmt_def_func', whose signature registers the function and
+          declares its names through members before the body parses
+          ('statement()' protected for it); README 1.1 invariant 1 says so;
+          messages and listings equal (both suites, the CLI tests,
+          test-rv32i), clang-tidy and fuzz-reject, constructs, data, flow,
+          methods, generics, io, programs clean
        2. A.4: a script in qa/lint that checks the include layer table of
           README 1.1 (a new file); recommended: yes
        => 2 done (2026-10-26): 'qa/lint/check-layers.py' reads the table

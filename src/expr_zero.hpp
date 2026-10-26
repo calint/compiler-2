@@ -24,8 +24,6 @@ class expr_zero final : public statement {
         set_type(tp);
     }
 
-    expr_zero() = default;
-
     //
     // overridden methods
     //

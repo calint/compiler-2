@@ -261,7 +261,6 @@ class stmt_def_type final : public statement {
         tc.add_type(name_tk_, type_);
     }
 
-    stmt_def_type() = default;
     // 'toc' keeps the address of the type
     stmt_def_type(const stmt_def_type&) = delete;
     stmt_def_type(stmt_def_type&&) = delete;
@@ -301,8 +300,6 @@ class stmt_def_type_generic final : public statement {
 
         define_generic(tc, tk, tz);
     }
-
-    stmt_def_type_generic() = default;
 
     //
     // overridden methods
@@ -586,7 +583,6 @@ class stmt_def_type_alias final : public statement {
         type_instantiator::instantiate(tc, name_tk_, generic, type_);
     }
 
-    stmt_def_type_alias() = default;
     // 'toc' keeps the address of the type
     stmt_def_type_alias(const stmt_def_type_alias&) = delete;
     stmt_def_type_alias(stmt_def_type_alias&&) = delete;

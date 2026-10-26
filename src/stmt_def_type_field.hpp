@@ -76,8 +76,6 @@ class stmt_def_type_field final : public statement {
         };
     }
 
-    stmt_def_type_field() = default;
-
     //
     // overridden methods
     //

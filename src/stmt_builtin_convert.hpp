@@ -102,8 +102,6 @@ class stmt_builtin_convert final : public statement {
         set_type(tc.get_type_or_throw(tk));
     }
 
-    stmt_builtin_convert() = default;
-
     //
     // overridden methods
     //

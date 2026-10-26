@@ -17,8 +17,6 @@ class stmt_break final : public statement {
         tc.scopes().assert_in_loop(src_loc_tk);
     }
 
-    stmt_break() = default;
-
     //
     // overridden methods
     //

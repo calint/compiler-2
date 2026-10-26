@@ -32,19 +32,14 @@ class stmt_builtin_array_length final : public statement {
           open_paren_tk_{
               tz.expect_char_token('(',
                                    "expected '(' followed by an identifier"),
+          },
+          stmt_ident_{stmt_identifier::parse_whole_array(tc, tz)},
+          close_paren_tk_{
+              tz.expect_char_token(')', "expected ')' after the argument"),
           } {
 
         set_type(tc.builtins().default_type());
-
-        stmt_ident_ = stmt_identifier::parse_array_argument(tc, tz);
-
-        stmt_ident_.assert_array();
-
-        close_paren_tk_ =
-            tz.expect_char_token(')', "expected ')' after the argument");
     }
-
-    stmt_builtin_array_length() = default;
 
     //
     // overridden methods

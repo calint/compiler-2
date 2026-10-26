@@ -48,6 +48,11 @@ class stmt_block final : public statement {
         }
     }
 
+    // note: the body of a 'stmt_def_func' parses after its signature has
+    //       registered the function and declared its names, in the
+    //       constructor's body, so it starts empty; every other node is made
+    //       whole by its constructor
+
     stmt_block() = default;
 
     //

@@ -419,7 +419,6 @@ class stmt_def_func final : public statement {
         parse_body(tc, tz);
     }
 
-    stmt_def_func() = default;
     // 'toc' keeps the address of the definition
     stmt_def_func(const stmt_def_func&) = delete;
     stmt_def_func(stmt_def_func&&) = delete;
@@ -1478,8 +1477,6 @@ class stmt_def_func_generic final : public statement {
 
         generic_text_ = tz.skip_braced_block_after(tk);
     }
-
-    stmt_def_func_generic() = default;
 
     //
     // overridden methods

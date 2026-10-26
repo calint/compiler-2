@@ -204,7 +204,9 @@ comments and class maps of steps 1 to 5.
 Invariants the code relies on:
 
 1. a statement parses in its constructor and emits nothing until it is
-   compiled; a compile may run more than once ([1.4](#14-dry-runs)) and adds
+   compiled; a node has no default constructor, its members are made in
+   the member list (the one exception is the body of a 'stmt_def_func',
+   see 'stmt_block'); a compile may run more than once ([1.4](#14-dry-runs)) and adds
    the same to 'toc' each time
 2. the front end never writes assembly, it calls 'machine' operations
    with operands; the backend lowers them to what the target encodes

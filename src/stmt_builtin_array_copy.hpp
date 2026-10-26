@@ -32,8 +32,6 @@ class stmt_builtin_array_copy final : public statement {
         dst.record_write(tc, dst.tok(), "copy into", make_ident_info(tc, dst));
     }
 
-    stmt_builtin_array_copy() = default;
-
     //
     // overridden methods
     //

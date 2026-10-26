@@ -272,7 +272,6 @@ class expr_type final : public statement {
 
     // a 'unique_ptr' of a class that is incomplete here needs
     // the special members where 'stmt_identifier' and 'stmt_call' are complete
-    expr_type();
 
     expr_type(expr_type&&) noexcept;
 

@@ -93,13 +93,16 @@ class initializer_declaration final {
 
     // the value at the deduced type and size
     [[nodiscard]] auto parse_value(toc& tc, tokenizer& tz) const -> expr_any {
-        expr_any value;
+        // note: set by the parse, which throws when it fails
+        std::optional<expr_any> value;
 
         with_placeholder(tc, [&] -> void {
-            value = {tc, tz, type_ref(), literal_typing::written, shape_};
+            value.emplace(tc, tz, type_ref(), literal_typing::written, shape_);
         });
 
-        return value;
+        assert(value);
+
+        return std::move(*value);
     }
 
     [[nodiscard]] auto shape() const -> array_shape { return shape_; }
@@ -345,8 +348,6 @@ class stmt_def_const final : public statement {
         tc.add_const(name_tk_, 0, name_tk_.text(), constant_);
     }
 
-    stmt_def_const() = default;
-
     //
     // overridden methods
     //
@@ -395,20 +396,13 @@ class stmt_def_var final : public statement {
                  tokenizer at_name, const token equals_tk,
                  const initializer_declaration& declaration, expr_any value)
         : statement{tk}, name_tk_{name_tk}, shape_{declaration.shape()},
-          equals_tk_{equals_tk} {
+          equals_tk_{equals_tk},
+          assign_var_{
+              declare_and_assign(tc, name_tk, at_name, equals_tk, declaration,
+                                 std::move(value)),
+          } {
 
         set_type(declaration.type_ref());
-
-        // the variable is declared during the parse so later statements can
-        // name it
-        tc.add_var(name_tk_, 0, make_var_info(), var_kind::var);
-
-        assign_var_ = {
-            tc,
-            stmt_identifier{tc, name_tk_, at_name},
-            equals_tk_,
-            std::move(value),
-        };
 
         // the newly defined variable is not yet assigned in its initialization
         assert_var_not_used(
@@ -421,8 +415,6 @@ class stmt_def_var final : public statement {
             tc.make_var_read_only(name_tk_.text(), read_only_cause::let);
         }
     }
-
-    stmt_def_var() = default;
 
     //
     // overridden methods
@@ -463,6 +455,31 @@ class stmt_def_var final : public statement {
     [[nodiscard]] auto make_var_info() const -> var_info {
         return initializer_declaration::make_var_info(name_tk_, get_type(),
                                                       shape_);
+    }
+
+    //
+    // statics
+    //
+
+    // the variable is declared during the parse so later statements can name
+    // it, its initializer names it as the destination
+    [[nodiscard]] static auto
+    declare_and_assign(toc& tc, const token& name_tk, tokenizer at_name,
+                       const token& equals_tk,
+                       const initializer_declaration& declaration,
+                       expr_any value) -> stmt_assign_var {
+
+        tc.add_var(name_tk, 0,
+                   initializer_declaration::make_var_info(
+                       name_tk, declaration.type_ref(), declaration.shape()),
+                   var_kind::var);
+
+        return {
+            tc,
+            stmt_identifier{tc, name_tk, at_name},
+            equals_tk,
+            std::move(value),
+        };
     }
 };
 

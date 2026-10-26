@@ -207,8 +207,6 @@ class stmt_def_func_param final : public statement {
         set_type(tp);
     }
 
-    stmt_def_func_param() = default;
-
     //
     // overridden methods
     //

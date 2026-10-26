@@ -106,8 +106,6 @@ inline auto stmt_identifier::path_source_to(std::ostream& os) const -> void {
     source_delimited_to(os, elems_, elem_delims_tk_);
 }
 
-inline stmt_identifier::stmt_identifier() = default;
-
 inline stmt_identifier::stmt_identifier(stmt_identifier&&) noexcept = default;
 
 inline auto stmt_identifier::operator=(stmt_identifier&&) noexcept

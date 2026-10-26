@@ -534,8 +534,6 @@ class expr_arith final : public statement {
         }
     }
 
-    expr_arith() = default;
-
     // higher than the highest precedence
     static constexpr uint8_t initial_precedence{list_start_precedence};
 

@@ -37,41 +37,9 @@ class stmt_builtin_foo final : public statement {
 
   public:
     stmt_builtin_foo(toc& tc, const token src_loc_tk, tokenizer& tz)
-        : statement{src_loc_tk} {
-
-        ident_ = stmt_identifier::parse_array_argument(tc, tz);
-
-        ident_.assert_array();
-
-        // e.g. 'foo arr, len' visits the first 'len' elements
-        if (const std::optional<token> delim_tk{tz.is_next_char_token(',')}) {
-            count_ = {
-                .delim_tk{*delim_tk},
-                .count{
-                    tc,
-                    tz,
-                    tc.builtins().default_type(),
-                    literal_typing::from_destination,
-                },
-            };
-        }
-
-        // the element and the counter are declared during the parse so the
-        // block can name them
-        const ident_info array_info{make_ident_info(tc, ident_)};
-        const std::string label{tc.create_unique_label(tok(), "foo")};
-
-        const toc::scope_entry foo{tc,
-                                   scope::loop(label, loop_end::also_when_done,
-                                               toc::continue_label(label))};
-
-        add_loop_names(tc, 0, src_loc_tk, array_info, var_placement{},
-                       var_placement{});
-
-        code_ = {tc, tz};
-    }
-
-    stmt_builtin_foo() = default;
+        : statement{src_loc_tk},
+          ident_{stmt_identifier::parse_whole_array(tc, tz)},
+          count_{parse_count(tc, tz)}, code_{parse_code(tc, tz)} {}
 
     //
     // overridden methods
@@ -349,6 +317,23 @@ class stmt_builtin_foo final : public statement {
         x.address_of(tok(), indent, reg_iter, op);
     }
 
+    // the element and the counter are declared during the parse so the block
+    // can name them
+    // note: called by the constructor after 'ident_' is made
+    [[nodiscard]] auto parse_code(toc& tc, tokenizer& tz) const -> stmt_block {
+        const ident_info array_info{make_ident_info(tc, ident_)};
+        const std::string label{tc.create_unique_label(tok(), "foo")};
+
+        const toc::scope_entry foo{tc,
+                                   scope::loop(label, loop_end::also_when_done,
+                                               toc::continue_label(label))};
+
+        add_loop_names(tc, 0, tok(), array_info, var_placement{},
+                       var_placement{});
+
+        return {tc, tz};
+    }
+
     // the loop is tested at the end, so a count of zero or less skips it
     auto skip_empty_loop(machine& x, const toc& tc, const size_t indent,
                          const operand& limit,
@@ -376,5 +361,30 @@ class stmt_builtin_foo final : public statement {
                                  .target{end_label},
                                  .branch_on_true{true},
                              });
+    }
+
+    //
+    // statics
+    //
+
+    // e.g. 'foo arr, len' visits the first 'len' elements
+    [[nodiscard]] static auto parse_count(toc& tc, tokenizer& tz)
+        -> std::optional<count_part> {
+
+        const std::optional<token> delim_tk{tz.is_next_char_token(',')};
+
+        if (not delim_tk) {
+            return std::nullopt;
+        }
+
+        return count_part{
+            .delim_tk{*delim_tk},
+            .count{
+                tc,
+                tz,
+                tc.builtins().default_type(),
+                literal_typing::from_destination,
+            },
+        };
     }
 };

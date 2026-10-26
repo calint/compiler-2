@@ -19,29 +19,19 @@
 // one condition of an 'if' or 'else if' and the block it guards
 class stmt_if_branch final : public statement {
     expr_bool condition_;
-    stmt_block code_;
     // the value of the condition known where the 'if' is written, e.g. from
     // literals and constants, 'unknown' when it depends on the run or on a
     // call
-    condition_result parse_constant_{condition_result::unknown};
+    condition_result parse_constant_;
+    stmt_block code_;
 
   public:
     // e.g. 'a == b {x = 1}' of 'if a == b {x = 1} else {y = 2}', the condition
     // and the block that runs when it holds
     stmt_if_branch(toc& tc, tokenizer& tz)
         : statement{tz.next_whitespace_token()},
-          condition_{tc, condition_start(tz), tz} {
-
-        condition_.assert_boolean_operands();
-
-        if (const std::optional<bool> constant{condition_.constant_value(tc)}) {
-            parse_constant_ = known_result(*constant);
-        }
-
-        code_ = {tc, tz};
-    }
-
-    stmt_if_branch() = default;
+          condition_{parse_condition(tc, tz)},
+          parse_constant_{constant_of(tc, condition_)}, code_{tc, tz} {}
 
     //
     // overridden methods
@@ -107,9 +97,6 @@ class stmt_if_branch final : public statement {
     // statics
     //
 
-    // an empty token where the condition starts, the branch's token holds the
-    // whitespace before it; a '{' there means the condition is missing, e.g.
-    // 'if {x = 1}'
     [[nodiscard]] static auto condition_start(tokenizer& tz) -> token {
         const token ws_tk{tz.next_whitespace_token()};
 
@@ -118,5 +105,31 @@ class stmt_if_branch final : public statement {
         }
 
         return ws_tk;
+    }
+
+    // an empty token where the condition starts, the branch's token holds the
+    // whitespace before it; a '{' there means the condition is missing, e.g.
+    // 'if {x = 1}'
+    [[nodiscard]] static auto constant_of(const toc& tc,
+                                          const expr_bool& condition)
+        -> condition_result {
+
+        const std::optional<bool> constant{condition.constant_value(tc)};
+
+        if (not constant) {
+            return condition_result::unknown;
+        }
+
+        return known_result(*constant);
+    }
+
+    [[nodiscard]] static auto parse_condition(toc& tc, tokenizer& tz)
+        -> expr_bool {
+
+        expr_bool condition{tc, condition_start(tz), tz};
+
+        condition.assert_boolean_operands();
+
+        return condition;
     }
 };

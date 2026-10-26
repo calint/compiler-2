@@ -2156,8 +2156,6 @@ class builtin_arguments {
         }
     }
 
-    builtin_arguments() = default;
-
     [[nodiscard]] auto at(const size_t index) const -> const expr_any& {
         return args_.at(index);
     }
@@ -2328,8 +2326,6 @@ class stmt_call : public statement {
 
         parse_arguments(tc, tz, {});
     }
-
-    stmt_call() = default;
 
     //
     // overridden methods

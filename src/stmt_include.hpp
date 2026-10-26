@@ -40,8 +40,6 @@ class stmt_include final : public statement {
         }
     }
 
-    stmt_include() = default;
-
     //
     // overridden methods
     //

@@ -93,30 +93,18 @@ class stmt_def_dat final : public statement {
 
   public:
     stmt_def_dat(toc& tc, const token src_loc_tk, tokenizer& tz)
-        : statement{src_loc_tk}, name_tk_{tz.next_token()} {
+        : statement{src_loc_tk}, name_tk_{parse_name(tc, tz)},
+          equals_tk_{initializer_declaration::parse_equals(tz, "dat")},
+          initializer_{parse_initializer(tc, tz, name_tk_)},
+          root_elem_{fold(tc, initializer_.get_type(), initializer_)} {
 
-        tc.assert_valid_unqualified_name(name_tk_);
-
-        equals_tk_ = initializer_declaration::parse_equals(tz, "dat");
-
-        const initializer_declaration declaration{
-            tc,
-            tz,
-            name_tk_,
-            name_in_initializer::hidden,
-        };
-
-        set_type(declaration.type_ref());
-
-        initializer_ = declaration.parse_value(tc, tz);
-        root_elem_ = fold(tc, get_type(), initializer_);
+        set_type(initializer_.get_type());
 
         // register the data without emitting output so it is available
         // during subsequent parsing
         tc.add_dat(*this, tok(), make_var_info());
     }
 
-    stmt_def_dat() = default;
     // 'toc' keeps the address of the definition
     stmt_def_dat(const stmt_def_dat&) = delete;
     stmt_def_dat(stmt_def_dat&&) = delete;
@@ -411,6 +399,31 @@ class stmt_def_dat final : public statement {
         return {
             .form{std::move(fields)},
         };
+    }
+
+    // the value at the type and size it deduces, the name is not in scope
+    [[nodiscard]] static auto parse_initializer(toc& tc, tokenizer& tz,
+                                                const token& name_tk)
+        -> expr_any {
+
+        const initializer_declaration declaration{
+            tc,
+            tz,
+            name_tk,
+            name_in_initializer::hidden,
+        };
+
+        return declaration.parse_value(tc, tz);
+    }
+
+    [[nodiscard]] static auto parse_name(const toc& tc, tokenizer& tz)
+        -> token {
+
+        const token name_tk{tz.next_token()};
+
+        tc.assert_valid_unqualified_name(name_tk);
+
+        return name_tk;
     }
 
     [[noreturn]] static auto throw_not_constant(const statement& value)

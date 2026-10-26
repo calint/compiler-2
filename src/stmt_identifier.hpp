@@ -398,8 +398,6 @@ class stmt_identifier final : public statement {
     // note: 'expr_any' is incomplete here, the special members are defined in
     //       'stmt_identifier_impl.hpp', where a 'unique_ptr' of it is complete
 
-    stmt_identifier();
-
     stmt_identifier(stmt_identifier&&) noexcept;
 
     stmt_identifier(const stmt_identifier&) = delete;
@@ -891,6 +889,18 @@ class stmt_identifier final : public statement {
         stmt_identifier array{tc, tk, tz};
 
         array.assert_not_method();
+
+        return array;
+    }
+
+    // the whole array of 'array_length' or 'foo', e.g. not the 'a[1]' of
+    // 'foo a[1]'
+    [[nodiscard]] static auto parse_whole_array(toc& tc, tokenizer& tz)
+        -> stmt_identifier {
+
+        stmt_identifier array{parse_array_argument(tc, tz)};
+
+        array.assert_array();
 
         return array;
     }

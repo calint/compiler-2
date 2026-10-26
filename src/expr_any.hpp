@@ -40,8 +40,6 @@ class stmt_array_size final : public statement {
   public:
     stmt_array_size(toc& tc, tokenizer& tz);
 
-    stmt_array_size();
-
     stmt_array_size(stmt_array_size&&) noexcept;
 
     stmt_array_size(const stmt_array_size&) = delete;
@@ -121,15 +119,16 @@ class expr_any final : public statement {
         expr_type source;
     };
 
-    std::variant<single_value, string_array, element_list, zero_array,
-                 whole_array_copy>
-        form_;
+    using form_variant = std::variant<single_value, string_array, element_list,
+                                      zero_array, whole_array_copy>;
+
     // what the destination gives, e.g. an array parameter 's[]' is an array
     // of unknown length, its argument gives the length when it is compiled
     array_shape destination_;
     // the size of an array form: the length of the destination, else the size
     // the literal gives, e.g. 3 of 'i8[]{1, 2, 3}'; empty until known
     std::optional<size_t> array_count_;
+    form_variant form_;
 
   public:
     // a single value, or an array when 'destination' is one; where 'typing' is
@@ -138,105 +137,21 @@ class expr_any final : public statement {
     expr_any(toc& tc, tokenizer& tz, const type& tp,
              const literal_typing typing, const array_shape destination = {})
         : statement{tz.next_whitespace_token()}, destination_{destination},
-          array_count_{destination.length()} {
+          array_count_{destination.length()},
+          form_{parse_form(tc, tz, tp, typing)} {
 
         set_type(tp);
-
-        // the basic case, e.g. 'x + 1' or 'point{1, 2}'
-        if (not destination.is_array()) {
-            form_ = single_value{
-                .value{parse_variant(tc, tz, tp, typing)},
-            };
-
-            return;
-        }
-
-        // array, e.g. 'i8[]{1, 2}' or 'a' of 'var b = a'
-
-        // e.g. "hello" fills the start of an 'i8' array
-        if (tz.is_peek_char('"')) {
-            const token string_tk{tz.next_token()};
-
-            array_count_ = string_array_count(tc.builtins().i8(), string_tk, tp,
-                                              array_count_);
-
-            form_ = string_array{
-                .string_tk{string_tk},
-            };
-
-            return;
-        }
-
-        // an array is initialized by a '{ ... }' or by the name of an array,
-        // e.g. 'str.data'
-
-        std::optional<array_prefix> prefix{
-            parse_array_prefix(tc, tz, tp, typing),
-        };
-
-        const std::optional<token> open_brace_tk{tz.is_next_char_token('{')};
-
-        if (not open_brace_tk and prefix) {
-            // e.g. 'var a = i8[4]' is 'i8[4]{}'
-            if (not prefix->size.has_value()) {
-                throw compile_error{
-                    prefix->close_bracket_tk,
-                    std::format("an array needs a constant size, e.g. "
-                                "'{}[4]'",
-                                prefix->element_type_tk
-                                    ? prefix->element_type_tk->text()
-                                    : "")};
-            }
-
-            form_ = zero_array{
-                .prefix{std::move(*prefix)},
-            };
-
-            return;
-        }
-
-        if (not open_brace_tk) {
-            // 'expr_type' copies the whole array as bytes, 'expr_arith' would
-            // read a single scalar
-            // e.g. 'var b = a' copies the array 'a'
-            form_ = whole_array_copy{
-                .source{
-                    tc,
-                    tz,
-                    tp,
-                    expr_type::destination_kind::whole_array,
-                    typing,
-                },
-            };
-
-            return;
-        }
-
-        // e.g. the '{1, 2, 3}' of 'var a = i8[]{1, 2, 3}'
-        element_list list{
-            .prefix{std::move(prefix)},
-            .open_brace_tk{*open_brace_tk},
-            .elements{},
-            .delims_tk{},
-            .close_brace_tk{},
-        };
-
-        parse_braced_elements(tc, tz, tp, list);
-
-        form_ = std::move(list);
     }
 
     // a path parsed apart, e.g. a method receiver or the array argument of a
     // built-in
-    expr_any(const token pos_tk, expr_type path) : statement{pos_tk} {
-        set_type(path.get_type());
+    expr_any(const token pos_tk, expr_type path)
+        : statement{pos_tk}, form_{single_value{
+                                 .value{std::move(path)},
+                             }} {
 
-        form_ = single_value{
-            .value{std::move(path)},
-        };
+        set_type(as_expr_type().get_type());
     }
-
-    expr_any() = default;
 
     //
     // overridden methods
@@ -632,8 +547,6 @@ class expr_any final : public statement {
                                           const literal_typing typing)
         -> std::optional<array_prefix> {
 
-        array_prefix prefix;
-
         const token tk{tz.next_token()};
 
         const bool is_typed{
@@ -649,31 +562,37 @@ class expr_any final : public statement {
         }
 
         // note: an array literal is a type name or nothing before a '['
-        prefix.open_bracket_tk = tz.seen_char_token('[');
+        const token open_bracket_tk{tz.seen_char_token('[')};
 
         const type& literal_type{
             is_typed ? tc.get_type_or_throw(tk) : tc.builtins().default_type(),
         };
 
         if (not literal_type.is_same(tp)) {
-            throw_type_mismatch(is_typed ? tk : prefix.open_bracket_tk,
-                                tp.name(), literal_type.name());
-        }
-
-        if (is_typed) {
-            prefix.element_type_tk = tk;
+            throw_type_mismatch(is_typed ? tk : open_bracket_tk, tp.name(),
+                                literal_type.name());
         }
 
         // e.g. the '4' of 'i8[4]', none for 'i8[]'
-        prefix.size = {tc, tz};
+        stmt_array_size size{tc, tz};
 
-        prefix.close_bracket_tk =
-            tz.expect_char_token(']', "expected ']' after array size");
+        const token close_bracket_tk{
+            tz.expect_char_token(']', "expected ']' after array size"),
+        };
+
+        array_prefix prefix{
+            .element_type_tk{
+                is_typed ? std::optional<token>{tk} : std::nullopt,
+            },
+            .open_bracket_tk{open_bracket_tk},
+            .size{std::move(size)},
+            .close_bracket_tk{close_bracket_tk},
+        };
 
         // e.g. 'i8[]{1, 2}' for an 'i8' array field is '{1, 2}' and 'i8[4]'
         // is '{}'
         if (typing == literal_typing::from_destination) {
-            throw_known_type(is_typed ? tk : prefix.open_bracket_tk,
+            throw_known_type(is_typed ? tk : open_bracket_tk,
                              std::format("{}[]", literal_type.name()),
                              tz.peek_char_after_whitespace() == '{' ? "{...}"
                                                                     : "{}");
@@ -727,6 +646,88 @@ class expr_any final : public statement {
         if (not array_count_) {
             array_count_ = list.elements.size();
         }
+    }
+
+    // the form 'destination_' calls for; an array form sets 'array_count_'
+    // note: called by the constructor after 'destination_' and
+    //       'array_count_' are made
+    [[nodiscard]] auto parse_form(toc& tc, tokenizer& tz, const type& tp,
+                                  const literal_typing typing) -> form_variant {
+
+        // the basic case, e.g. 'x + 1' or 'point{1, 2}'
+        if (not destination_.is_array()) {
+            return single_value{
+                .value{parse_variant(tc, tz, tp, typing)},
+            };
+        }
+
+        // array, e.g. 'i8[]{1, 2}' or 'a' of 'var b = a'
+
+        // e.g. "hello" fills the start of an 'i8' array
+        if (tz.is_peek_char('"')) {
+            const token string_tk{tz.next_token()};
+
+            array_count_ = string_array_count(tc.builtins().i8(), string_tk, tp,
+                                              array_count_);
+
+            return string_array{
+                .string_tk{string_tk},
+            };
+        }
+
+        // an array is initialized by a '{ ... }' or by the name of an array,
+        // e.g. 'str.data'
+
+        std::optional<array_prefix> prefix{
+            parse_array_prefix(tc, tz, tp, typing),
+        };
+
+        const std::optional<token> open_brace_tk{tz.is_next_char_token('{')};
+
+        if (not open_brace_tk and prefix) {
+            // e.g. 'var a = i8[4]' is 'i8[4]{}'
+            if (not prefix->size.has_value()) {
+                throw compile_error{
+                    prefix->close_bracket_tk,
+                    std::format("an array needs a constant size, e.g. "
+                                "'{}[4]'",
+                                prefix->element_type_tk
+                                    ? prefix->element_type_tk->text()
+                                    : "")};
+            }
+
+            return zero_array{
+                .prefix{std::move(*prefix)},
+            };
+        }
+
+        if (not open_brace_tk) {
+            // 'expr_type' copies the whole array as bytes, 'expr_arith' would
+            // read a single scalar
+            // e.g. 'var b = a' copies the array 'a'
+            return whole_array_copy{
+                .source{
+                    tc,
+                    tz,
+                    tp,
+                    expr_type::destination_kind::whole_array,
+                    typing,
+                },
+            };
+        }
+
+        // e.g. the '{1, 2, 3}' of 'var a = i8[]{1, 2, 3}'
+        element_list list{
+            .prefix{std::move(prefix)},
+            .open_brace_tk{*open_brace_tk},
+            .elements{},
+            .delims_tk{},
+            .close_brace_tk{},
+        };
+
+        parse_braced_elements(tc, tz, tp, list);
+
+        return list;
     }
 
     // an instance literal is written field by field, any other value at once
@@ -1120,8 +1121,6 @@ inline stmt_array_size::stmt_array_size(toc& tc, tokenizer& tz)
 
     folded_ = *folded;
 }
-
-inline stmt_array_size::stmt_array_size() = default;
 
 inline stmt_array_size::stmt_array_size(stmt_array_size&&) noexcept = default;
 

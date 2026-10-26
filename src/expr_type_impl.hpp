@@ -155,7 +155,6 @@ inline auto expr_type::parse_fields(toc& tc, tokenizer& tz, const type& tp)
 }
 
 // the special members need the complete 'stmt_identifier' and 'stmt_call'
-inline expr_type::expr_type() = default;
 inline expr_type::expr_type(expr_type&&) noexcept = default;
 inline auto expr_type::operator=(expr_type&&) noexcept -> expr_type& = default;
 inline expr_type::~expr_type() = default;

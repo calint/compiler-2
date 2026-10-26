@@ -43,18 +43,9 @@ class stmt_assign_var final : public statement {
     stmt_assign_var(toc& tc, tokenizer& tz, stmt_identifier ident,
                     const token equals_tk)
         : statement{ident.tok()}, stmt_ident_{std::move(ident)},
-          equals_tk_{equals_tk} {
+          expr_{parse_value(tc, tz, stmt_ident_)}, equals_tk_{equals_tk} {
 
-        const ident_info dst_info{make_ident_info(tc, stmt_ident_)};
-
-        stmt_ident_.record_write(tc, tok(), "assign to", dst_info);
-
-        set_type(dst_info.type_ref());
-
-        // the value is parsed as the type of the destination, which gives the
-        // type of a literal, e.g. 'a = {1, 2}'
-        expr_ = {tc, tz, dst_info.type_ref(), literal_typing::from_destination,
-                 stmt_ident_.shape()};
+        set_type(expr_.get_type());
     }
 
     // the initializer of a declaration, parsed before the variable was
@@ -67,8 +58,6 @@ class stmt_assign_var final : public statement {
 
         set_type(make_ident_info(tc, stmt_ident_).type_ref());
     }
-
-    stmt_assign_var() = default;
 
     //
     // overridden methods
@@ -254,5 +243,24 @@ class stmt_assign_var final : public statement {
         return read.src_loc_tk.text() == stmt_ident_.first_token().text() and
                not read.read_path.has_run_time_index() and
                not place.path.has_run_time_index();
+    }
+
+    //
+    // statics
+    //
+
+    // the write is recorded before the value parses; the value is parsed as
+    // the type of the destination, which gives the type of a literal, e.g.
+    // 'a = {1, 2}'
+    [[nodiscard]] static auto parse_value(toc& tc, tokenizer& tz,
+                                          const stmt_identifier& dst)
+        -> expr_any {
+
+        const ident_info dst_info{make_ident_info(tc, dst)};
+
+        dst.record_write(tc, dst.tok(), "assign to", dst_info);
+
+        return {tc, tz, dst_info.type_ref(), literal_typing::from_destination,
+                dst.shape()};
     }
 };

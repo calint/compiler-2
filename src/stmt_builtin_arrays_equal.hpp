@@ -30,8 +30,6 @@ class stmt_builtin_arrays_equal final : public statement {
         set_type(tc.builtins().boolean());
     }
 
-    stmt_builtin_arrays_equal() = default;
-
     //
     // overridden methods
     //

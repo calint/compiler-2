@@ -19,8 +19,6 @@ class stmt_continue final : public statement {
         tc.scopes().assert_in_loop(src_loc_tk);
     }
 
-    stmt_continue() = default;
-
     //
     // overridden methods
     //
