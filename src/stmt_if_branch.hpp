@@ -22,7 +22,7 @@ class stmt_if_branch final : public statement {
     // the value of the condition known where the 'if' is written, e.g. from
     // literals and constants, 'unknown' when it depends on the run or on a
     // call
-    condition_result parse_constant_;
+    condition_result constant_at_parse_;
     stmt_block code_;
 
   public:
@@ -31,7 +31,7 @@ class stmt_if_branch final : public statement {
     stmt_if_branch(toc& tc, tokenizer& tz)
         : statement{tz.next_whitespace_token()},
           condition_{parse_condition(tc, tz)},
-          parse_constant_{constant_of(tc, condition_)}, code_{tc, tz} {}
+          constant_at_parse_{constant_of(tc, condition_)}, code_{tc, tz} {}
 
     //
     // overridden methods
@@ -89,14 +89,17 @@ class stmt_if_branch final : public statement {
         return const_eval;
     }
 
-    [[nodiscard]] auto parse_constant() const -> condition_result {
-        return parse_constant_;
+    [[nodiscard]] auto constant_at_parse() const -> condition_result {
+        return constant_at_parse_;
     }
 
     //
     // statics
     //
 
+    // an empty token where the condition starts, the branch's token holds the
+    // whitespace before it; a '{' there means the condition is missing, e.g.
+    // 'if {x = 1}'
     [[nodiscard]] static auto condition_start(tokenizer& tz) -> token {
         const token ws_tk{tz.next_whitespace_token()};
 
@@ -107,9 +110,6 @@ class stmt_if_branch final : public statement {
         return ws_tk;
     }
 
-    // an empty token where the condition starts, the branch's token holds the
-    // whitespace before it; a '{' there means the condition is missing, e.g.
-    // 'if {x = 1}'
     [[nodiscard]] static auto constant_of(const toc& tc,
                                           const expr_bool& condition)
         -> condition_result {

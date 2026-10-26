@@ -452,7 +452,7 @@ class machine_x86_64 final : public machine {
         }
 
         assembler_.instruction(indent, op::rep_movsb);
-        release_bulk_registers(src_loc_tk, indent);
+        release_bulk(src_loc_tk, indent);
     }
 
     auto copy_value(const token& src_loc_tk, const size_t indent,
@@ -506,7 +506,7 @@ class machine_x86_64 final : public machine {
 
         test(src_loc_tk, indent, qword_register("rcx"), qword_register("rcx"));
         assembler_.instruction(indent, op::repe_cmpsb);
-        release_bulk_registers(src_loc_tk, indent);
+        release_bulk(src_loc_tk, indent);
 
         store_condition(src_loc_tk, indent,
                         condition_for_comparison(comparison_operator::equal,
@@ -1126,8 +1126,8 @@ class machine_x86_64 final : public machine {
         return std::in_range<int32_t>(value.displacement());
     }
 
-    [[nodiscard]] auto alloc_bulk_registers(const token& src_loc_tk,
-                                            const size_t indent) -> operand {
+    [[nodiscard]] auto begin_bulk(const token& src_loc_tk, const size_t indent)
+        -> operand {
 
         reserve_named_register(src_loc_tk, indent, "rsi", default_type());
         reserve_named_register(src_loc_tk, indent, "rdi", default_type());
@@ -1391,7 +1391,7 @@ class machine_x86_64 final : public machine {
         const std::function_ref<void(const operand&)> load_source_address)
         -> void {
 
-        std::ignore = alloc_bulk_registers(src_loc_tk, indent);
+        std::ignore = begin_bulk(src_loc_tk, indent);
 
         load_source_address(qword_register("rsi"));
         lea(src_loc_tk, indent, qword_register("rdi"), dst);
@@ -1399,7 +1399,7 @@ class machine_x86_64 final : public machine {
 
         assembler_.instruction(indent, op::rep_movsb);
 
-        release_bulk_registers(src_loc_tk, indent);
+        release_bulk(src_loc_tk, indent);
     }
 
     // writes the instruction with the operands as they are
@@ -1945,7 +1945,7 @@ class machine_x86_64 final : public machine {
         const std::function_ref<void(const operand&)> emit_count,
         const address_emitter& to_rsi, const address_emitter& to_rdi) -> void {
 
-        const operand count{alloc_bulk_registers(src_loc_tk, indent)};
+        const operand count{begin_bulk(src_loc_tk, indent)};
 
         emit_count(count);
         load_bulk_addresses(src_loc_tk, indent, count, to_rsi, to_rdi);
@@ -2088,9 +2088,7 @@ class machine_x86_64 final : public machine {
         return make_register_operand(name, builtin_type_i64());
     }
 
-    auto release_bulk_registers(const token& src_loc_tk, const size_t indent)
-        -> void {
-
+    auto release_bulk(const token& src_loc_tk, const size_t indent) -> void {
         release_named_register(src_loc_tk, indent, "rcx");
         release_named_register(src_loc_tk, indent, "rdi");
         release_named_register(src_loc_tk, indent, "rsi");

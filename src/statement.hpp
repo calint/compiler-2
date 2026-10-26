@@ -230,7 +230,9 @@ class stmt_identifier;
 // 'stmt_if_branch') in a whitespace-only token, while a list ('expr_arith') is
 // a position and its first element holds it; the virtuals in groups, with the
 // classes that override them, the default is 'std::unreachable()' where no
-// other class reaches it
+// other class reaches it; a parse step named 'parse_' makes a node or a part
+// that holds one, e.g. 'parse_condition', one named 'read_' takes tokens only,
+// e.g. 'read_open_paren'
 //
 //   every node     'compile', 'source_to', 'tok', 'trace_assignment'
 //                  (control flow); 'visit_operands' (the default is

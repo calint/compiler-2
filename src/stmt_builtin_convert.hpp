@@ -76,7 +76,7 @@ class stmt_builtin_convert final : public statement {
 
     // where the argument is computed for a target at most as wide as the type
     struct computation_plan {
-        enum class place : uint8_t {
+        enum class computed_in : uint8_t {
             // the target, at its width
             destination,
             // a register of 'scratch_type', then copied into the target
@@ -85,14 +85,15 @@ class stmt_builtin_convert final : public statement {
             measured,
         };
 
-        place where{place::destination};
+        computed_in where{computed_in::destination};
         // null for 'destination'
         const type* scratch_type{};
     };
 
   public:
     stmt_builtin_convert(toc& tc, unary_ops uops, const token tk, tokenizer& tz)
-        : statement{tk, std::move(uops)}, argument_{read_argument(tc, tz, tk)} {
+        : statement{tk, std::move(uops)},
+          argument_{parse_argument(tc, tz, tk)} {
 
         set_type(tc.get_type_or_throw(tk));
     }
@@ -297,12 +298,12 @@ class stmt_builtin_convert final : public statement {
             },
         };
 
-        if (plan.where == computation_plan::place::destination) {
+        if (plan.where == computation_plan::computed_in::destination) {
             in_destination();
             return;
         }
 
-        if (plan.where == computation_plan::place::scratch) {
+        if (plan.where == computation_plan::computed_in::scratch) {
             in_scratch();
             return;
         }
@@ -434,13 +435,13 @@ class stmt_builtin_convert final : public statement {
         // e.g. the 'i16' of 'i8(i16(a * (a >> 1)))' is narrowed after it
         if (target.type_ref().size_bytes() < get_type().size_bytes()) {
             return {
-                .where{computation_plan::place::scratch},
+                .where{computation_plan::computed_in::scratch},
                 .scratch_type{&get_type()},
             };
         }
 
         return {
-            .where{computation_plan::place::destination},
+            .where{computation_plan::computed_in::destination},
             .scratch_type{},
         };
     }
@@ -486,13 +487,13 @@ class stmt_builtin_convert final : public statement {
                 arg_type.size_bytes() < target_size_bytes) {
 
                 return {
-                    .where{computation_plan::place::destination},
+                    .where{computation_plan::computed_in::destination},
                     .scratch_type{},
                 };
             }
 
             return {
-                .where{computation_plan::place::measured},
+                .where{computation_plan::computed_in::measured},
                 .scratch_type{&arg_type},
             };
         }
@@ -506,7 +507,7 @@ class stmt_builtin_convert final : public statement {
             argument().single_operand().get_unary_ops().is_empty()) {
 
             return {
-                .where{computation_plan::place::scratch},
+                .where{computation_plan::computed_in::scratch},
                 .scratch_type{&arg_type},
             };
         }
@@ -528,8 +529,8 @@ class stmt_builtin_convert final : public statement {
     //
 
     // note: the parse takes a type name followed by '(' as a conversion
-    [[nodiscard]] static auto read_argument(toc& tc, tokenizer& tz,
-                                            const token& type_tk)
+    [[nodiscard]] static auto parse_argument(toc& tc, tokenizer& tz,
+                                             const token& type_tk)
         -> argument_part {
 
         const std::optional<token> open_paren_tk{tz.is_next_char_token('(')};

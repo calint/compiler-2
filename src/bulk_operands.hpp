@@ -55,8 +55,6 @@ class bulk_operands final {
         ident_info second;
     };
 
-    // compiles the count into the register the machine asks for, this must
-    // outlive the emitter
     // the run-time count and the address of each array, for the element
     // operations of the machine
     struct run_time_emitters {
@@ -107,6 +105,8 @@ class bulk_operands final {
 
     [[nodiscard]] auto count() const -> const expr_any& { return count_; }
 
+    // compiles the count into the register the machine asks for, this must
+    // outlive the emitter
     [[nodiscard]] auto count_emitter(toc& tc, const size_t indent) const
         -> std::function<void(const operand&)> {
 

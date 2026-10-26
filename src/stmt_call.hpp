@@ -2203,7 +2203,7 @@ class builtin_arguments {
 // a call of a function, a method or a constructor
 //
 // parsing, in the constructors: the callee and its '('
-// ('read_callee', a generic function through 'generic_call', and
+// ('resolve_callee', a generic function through 'generic_call', and
 // 'read_open_paren'), the kind of the callee
 // ('assert_method_receiver', 'constructor_func'), then the arguments
 // ('parse_arguments', each checked by 'assert_argument_usable' and
@@ -2255,7 +2255,7 @@ class stmt_call : public statement {
         : statement{tk, std::move(uops)}, func_name_{tk.text()} {
 
         const std::vector<size_t> deducing_args{
-            read_callee(tc, tz, expected_type),
+            resolve_callee(tc, tz, expected_type),
         };
 
         read_open_paren(tc, tz, "function name");
@@ -2292,7 +2292,7 @@ class stmt_call : public statement {
         }
 
         const std::vector<size_t> deducing_args{
-            read_callee(tc, tz, expected_type),
+            resolve_callee(tc, tz, expected_type),
         };
 
         read_open_paren(tc, tz, "method name");
@@ -2937,31 +2937,6 @@ class stmt_call : public statement {
         record_uses_of_call(tc);
     }
 
-    // the name is read, a generic function has its type arguments before the
-    // '(', e.g. 'convert<i8>(x)', and 'func_name_' becomes the name of its
-    // instance; then the callee is resolved, an unknown one is an error here;
-    // returns 'generic_call::deducing_args'
-    [[nodiscard]] auto read_callee(toc& tc, tokenizer& tz,
-                                   const type* const expected_type)
-        -> std::vector<size_t> {
-
-        if (not tc.generics().has_func(func_name_)) {
-            func_ = &tc.get_func_or_throw(tok(), func_name_);
-            return {};
-        }
-
-        generic_call generic{
-            generic_call::parse(tc, tz, tok(), func_name_, expected_type),
-        };
-
-        func_name_ = std::move(generic.func_name);
-        generic_tks_ = std::move(generic.generic_tks);
-
-        func_ = &tc.get_func_or_throw(tok(), func_name_);
-
-        return std::move(generic.deducing_args);
-    }
-
     // a call is in a function; the type is the result type of the callee,
     // resolved before, so an unknown callee is reported before a missing '(';
     // 'what' names the callee in that error
@@ -3031,6 +3006,31 @@ class stmt_call : public statement {
                 }
             }
         }
+    }
+
+    // the name is read, a generic function has its type arguments before the
+    // '(', e.g. 'convert<i8>(x)', and 'func_name_' becomes the name of its
+    // instance; then the callee is resolved, an unknown one is an error here;
+    // returns 'generic_call::deducing_args'
+    [[nodiscard]] auto resolve_callee(toc& tc, tokenizer& tz,
+                                      const type* const expected_type)
+        -> std::vector<size_t> {
+
+        if (not tc.generics().has_func(func_name_)) {
+            func_ = &tc.get_func_or_throw(tok(), func_name_);
+            return {};
+        }
+
+        generic_call generic{
+            generic_call::parse(tc, tz, tok(), func_name_, expected_type),
+        };
+
+        func_name_ = std::move(generic.func_name);
+        generic_tks_ = std::move(generic.generic_tks);
+
+        func_ = &tc.get_func_or_throw(tok(), func_name_);
+
+        return std::move(generic.deducing_args);
     }
 
     // what 'inline_call' and 'noinline_call' need of this call

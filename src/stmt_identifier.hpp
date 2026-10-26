@@ -1223,16 +1223,24 @@ statement::visit_call_effects(const toc& tc,
     });
 }
 
+// the reads of 'operand', the indexes alone of a written place
+inline auto visit_operand_reads(const list_operand& operand,
+                                const read_filter var,
+                                const read_visitor reader) -> void {
+
+    if (operand.written_place != nullptr) {
+        operand.written_place->visit_index_reads(var, reader);
+        return;
+    }
+
+    operand.node->visit_reads(var, reader);
+}
+
 inline auto statement::visit_reads(const read_filter var,
                                    const read_visitor reader) const -> void {
 
     visit_operands([&var, &reader](const list_operand& operand) -> void {
-        if (operand.written_place != nullptr) {
-            operand.written_place->visit_index_reads(var, reader);
-            return;
-        }
-
-        operand.node->visit_reads(var, reader);
+        visit_operand_reads(operand, var, reader);
     });
 }
 

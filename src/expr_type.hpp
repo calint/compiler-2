@@ -401,21 +401,6 @@ class expr_type final : public statement {
     auto parse_copy_source(toc& tc, tokenizer& tz, const type& tp,
                            const term& tm) -> void;
 
-    // the ',' before the value of the field 'next', e.g. the ',' of '{x, y}'
-    // before the value of 'y'
-    auto parse_field_delimiter(tokenizer& tz, const type& tp,
-                               const type_field& next) -> void {
-
-        const token delimiter_tk{
-            tz.expect_char_token(
-                ',', std::format("expected ',' followed by a value for field "
-                                 "{} in type {}",
-                                 in_quotes(next.name), in_quotes(tp.name()))),
-        };
-
-        std::get<field_list>(value_).delims_tk.emplace_back(delimiter_tk);
-    }
-
     // creates an 'expr_any' for each field
     auto parse_fields(toc& tc, tokenizer& tz, const type& tp) -> void;
 
@@ -447,6 +432,21 @@ class expr_type final : public statement {
             },
             .covered{std::move(covered)},
         });
+    }
+
+    // the ',' before the value of the field 'next', e.g. the ',' of '{x, y}'
+    // before the value of 'y'
+    auto read_field_delimiter(tokenizer& tz, const type& tp,
+                              const type_field& next) -> void {
+
+        const token delimiter_tk{
+            tz.expect_char_token(
+                ',', std::format("expected ',' followed by a value for field "
+                                 "{} in type {}",
+                                 in_quotes(next.name), in_quotes(tp.name()))),
+        };
+
+        std::get<field_list>(value_).delims_tk.emplace_back(delimiter_tk);
     }
 
     // a call writes the fields only, so the padding is zeroed before it and

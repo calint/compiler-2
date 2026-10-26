@@ -130,8 +130,8 @@ class initializer_declaration final {
 
     // the '=' before the initializer, 'keyword' names the definition in the
     // example
-    [[nodiscard]] static auto parse_equals(tokenizer& tz,
-                                           const std::string_view keyword)
+    [[nodiscard]] static auto read_equals(tokenizer& tz,
+                                          const std::string_view keyword)
         -> token {
 
         const token equals_tk{
@@ -497,7 +497,7 @@ inline auto make_stmt_def_var(toc& tc, const token tk, tokenizer& tz)
     // 'var a = [2]{}' would read as an index
     const tokenizer at_name{tz};
 
-    const token equals_tk{initializer_declaration::parse_equals(tz, tk.text())};
+    const token equals_tk{initializer_declaration::read_equals(tz, tk.text())};
 
     const initializer_declaration declaration{
         tc,

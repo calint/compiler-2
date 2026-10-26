@@ -2837,9 +2837,8 @@ class variable_comments final {
 //   compile        'add_binding', 'add_bytes_constant', 'add_string_constant',
 //                  'add_noinline_body', 'dry_run',
 //                  'dry_run_call_kind', 'emit_most_efficient',
-//                  'reach_dry_run_level', 'reach_scope_check', 'call_path_at',
-//                  'create_cmp_label', 'create_unique_label',
-//                  'next_frame_address', 'storage_of', the reachability
+//                  'reach_dry_run_level', 'reach_scope_check',
+//                  'create_cmp_label', 'next_frame_address', the reachability
 //                  ('is_reachable', 'end_path', 'record_break',
 //                  'record_return', 'join_loop', 'path_merge')
 //   both           'add_var' and 'add_const' (placed and commented only while
@@ -2847,7 +2846,9 @@ class variable_comments final {
 //                  'resolve_declared', 'get_func_or_throw',
 //                  'get_main_or_throw', 'get_type_or_throw', 'is_func',
 //                  'use_of', 'use_at', 'overflow_options', 'checks_overflow',
-//                  'source_of'
+//                  'source_of', 'storage_of', 'call_path_at' and
+//                  'create_unique_label' (a loop scope of the parse has a
+//                  label)
 //   tables         'builtins', 'checks', 'compiled', 'data', 'dry_runs',
 //                  'funcs', 'generics', 'layout', 'machine', 'scopes',
 //                  'types', 'usage'
@@ -3047,6 +3048,8 @@ class toc final {
     static constexpr size_t max_parse_nesting{128};
 
     auto add_binding(const param_binding& binding) -> void {
+        assert(is_compiling_);
+
         scopes_.back().add_binding(binding);
     }
 
@@ -3054,6 +3057,8 @@ class toc final {
     [[nodiscard]] auto add_bytes_constant(const token& src_loc_tk,
                                           const std::string_view bytes)
         -> std::string {
+
+        assert(is_compiling_);
 
         return add_read_only_constant("init", src_loc_tk, std::string{bytes});
     }
@@ -3086,6 +3091,8 @@ class toc final {
     auto add_dat(const stmt_def_dat& dat, const token& dat_tk,
                  const var_info& var) -> void {
 
+        assert(not is_compiling_);
+
         // note: a name declared twice is reported before where it is declared
         definitions_.assert_name_free(var.src_loc_tk, var.name);
 
@@ -3115,6 +3122,8 @@ class toc final {
                   const stmt_def_func& func_def, std::string generic_method,
                   const bool is_ordered) -> void {
 
+        assert(not is_compiling_);
+
         definitions_.assert_function_not_defined(src_loc_tk, name,
                                                  generic_method);
 
@@ -3127,10 +3136,14 @@ class toc final {
     auto add_func_instance(std::shared_ptr<const stmt_def_func> instance)
         -> void {
 
+        assert(not is_compiling_);
+
         funcs_.add_instance(std::move(instance));
     }
 
     auto add_generic_func(std::string name, generic_func_info info) -> void {
+        assert(not is_compiling_);
+
         definitions_.assert_function_not_defined(
             info.src_loc_tk, name, info.receiver ? info.report_name : "");
 
@@ -3140,6 +3153,8 @@ class toc final {
     // a method is defined once for its generic type, also when no alias
     // makes an instance of the type
     auto add_generic_method(const generic_method_info& method) -> void {
+        assert(not is_compiling_);
+
         definitions_.assert_generic_method_not_defined(method);
 
         generics_.add_method(method);
@@ -3148,12 +3163,16 @@ class toc final {
     auto add_generic_type(const std::string_view name, generic_type_info info)
         -> void {
 
+        assert(not is_compiling_);
+
         definitions_.assert_type_not_defined(info.src_loc_tk, name);
 
         generics_.add_type(name, std::move(info));
     }
 
     auto add_generic_type_instance(generic_type_instance instance) -> void {
+        assert(not is_compiling_);
+
         generics_.add_type_instance(std::move(instance));
     }
 
@@ -3175,11 +3194,15 @@ class toc final {
     [[nodiscard]] auto add_string_constant(const token& string_tk)
         -> std::string {
 
+        assert(is_compiling_);
+
         return add_read_only_constant("str", string_tk,
                                       string_tk.string_bytes());
     }
 
     auto add_type(const token& src_loc_tk, const type& tpe) -> void {
+        assert(not is_compiling_);
+
         definitions_.assert_type_not_defined(src_loc_tk, tpe.name());
 
         types_.add(src_loc_tk, tpe);
@@ -3189,6 +3212,8 @@ class toc final {
     // 'exit_type_params'
     auto add_type_param(const token& src_loc_tk, const std::string_view name,
                         const type& tpe) -> void {
+
+        assert(not is_compiling_);
 
         definitions_.assert_generic_param_not_type(src_loc_tk, name);
         types_.add_param(src_loc_tk, name, tpe);
@@ -3236,11 +3261,15 @@ class toc final {
     auto assert_generic_param_apart(const token& param_tk, const token& name_tk,
                                     const std::string_view what) const -> void {
 
+        assert(not is_compiling_);
+
         definitions_.assert_generic_param_apart(param_tk, name_tk, what);
     }
 
     // a generic parameter is a name like the others, e.g. not a keyword
     auto assert_generic_param_free(const token& name_tk) const -> void {
+        assert(not is_compiling_);
+
         assert_valid_unqualified_name(name_tk);
         definitions_.assert_generic_param_not_type(name_tk, name_tk.text());
         definitions_.assert_generic_param_not_value(name_tk, name_tk.text());
@@ -3253,6 +3282,8 @@ class toc final {
     // definition is checked against its parameters too, so the order of the
     // definitions does not matter
     auto assert_generic_params_free() const -> void {
+        assert(not is_compiling_);
+
         for (const token& param_tk : generics_.param_tokens()) {
             assert_generic_param_free(param_tk);
         }
@@ -3277,6 +3308,8 @@ class toc final {
     // a name of a type, function, variable, constant, data or parameter, which
     // is used without a qualifier
     auto assert_valid_unqualified_name(const token& name_tk) const -> void {
+        assert(not is_compiling_);
+
         assert_valid_name(name_tk);
 
         if (reserved_names::find_builtin_function(name_tk.text()) != nullptr) {
@@ -3323,7 +3356,11 @@ class toc final {
     }
 
     // a top-level definition starts, see 'definition_order'
-    auto begin_definition() -> void { order_.begin_definition(); }
+    auto begin_definition() -> void {
+        assert(not is_compiling_);
+
+        order_.begin_definition();
+    }
 
     // the tables are read through these const accessors, a change goes
     // through a method of 'toc', which may combine tables (README 7.6)
@@ -3390,6 +3427,8 @@ class toc final {
     [[nodiscard]] auto constant_value_of(const token& tk) const
         -> std::optional<int64_t> {
 
+        assert(not is_compiling_);
+
         if (const std::optional<int64_t> value{
                 constant_parser::parse_constant(tk, tk.text()),
             };
@@ -3405,6 +3444,8 @@ class toc final {
     [[nodiscard]] auto create_cmp_label(const token& src_loc_tk) const
         -> std::string {
 
+        assert(is_compiling_);
+
         return create_unique_label(src_loc_tk, "cmp");
     }
 
@@ -3416,6 +3457,8 @@ class toc final {
     }
 
     [[nodiscard]] auto current_definition() const -> size_t {
+        assert(not is_compiling_);
+
         return order_.current();
     }
 
@@ -3451,6 +3494,8 @@ class toc final {
     //       'stmt_def_func::check_body' (not 'source') would drop
     auto dry_run_call_kind(const std::string_view kind, const size_t level,
                            const std::function_ref<void()> compile) -> void {
+
+        assert(is_compiling_);
 
         dry_runs_.measure(kind, level, scopes_.count(), [&] -> void {
             if (std::optional<compile_error> error{dry_run(compile)}) {
@@ -3501,13 +3546,25 @@ class toc final {
     }
 
     // 'continue' and 'exit' leave the code after them unreached
-    auto end_path() -> void { scopes_.set_reachable(false); }
+    auto end_path() -> void {
+        assert(is_compiling_);
+
+        scopes_.set_reachable(false);
+    }
 
     // the type parameters of an enclosing instance are hidden until
     // 'exit_type_params'
-    auto enter_type_params() -> void { types_.enter_params(); }
+    auto enter_type_params() -> void {
+        assert(not is_compiling_);
 
-    auto exit_type_params() -> void { types_.exit_params(); }
+        types_.enter_params();
+    }
+
+    auto exit_type_params() -> void {
+        assert(not is_compiling_);
+
+        types_.exit_params();
+    }
 
     [[nodiscard]] auto funcs() const -> const function_table& { return funcs_; }
 
@@ -3583,6 +3640,8 @@ class toc final {
     [[nodiscard]] auto instance_visibility(const size_t definition)
         -> definition_order::instance_scope {
 
+        assert(not is_compiling_);
+
         return {order_, definition};
     }
 
@@ -3596,6 +3655,8 @@ class toc final {
     // compiling at an unreached statement, e.g. after the 'return' of
     // 'if n == 0 return' in an inlined call with the constant argument 0
     [[nodiscard]] auto is_reachable() const -> bool {
+        assert(is_compiling_);
+
         return scopes_.current_func_scope().is_reachable();
     }
 
@@ -3603,6 +3664,8 @@ class toc final {
     // also ends when it runs out, always; called as the last step inside the
     // loop's scope
     auto join_loop() -> void {
+        assert(is_compiling_);
+
         const scope& loop{scopes_.back()};
 
         assert(loop.is_loop());
@@ -3627,11 +3690,15 @@ class toc final {
     }
 
     auto mark_generic_func_instantiated(const std::string_view name) -> void {
+        assert(not is_compiling_);
+
         generics_.mark_func_instantiated(name);
     }
 
     // a callee frame starts aligned for any variable it holds
     [[nodiscard]] auto next_frame_address() const -> operand {
+        assert(is_compiling_);
+
         return storage_.next_frame_address(builtins_.address());
     }
 
@@ -3646,24 +3713,32 @@ class toc final {
     }
 
     auto reach_dry_run_level(const size_t level) -> void {
+        assert(is_compiling_);
+
         dry_runs_.reach_level(level);
     }
 
     // a check of the scope limit with 'scope_count' scopes, which a cached
     // noinline check repeats, see 'noinline_call::dry_run_body'
     auto reach_scope_check(const size_t scope_count) -> void {
+        assert(is_compiling_);
+
         dry_runs_.reach_scope_check(scope_count);
     }
 
     // a 'break' leaves the innermost 'loop' or 'foo', whose end is then
     // reached, and the code after it unreached
     auto record_break() -> void {
+        assert(is_compiling_);
+
         scopes_.record_break();
         scopes_.set_reachable(false);
     }
 
     // the globals that a function called in the body uses
     auto record_callee_globals(const body_uses& callee) -> void {
+        assert(not is_compiling_);
+
         if (scopes_.is_in_func()) {
             scopes_.record_callee_globals(callee);
         }
@@ -3672,6 +3747,8 @@ class toc final {
     // a 'return' leaves the code after it unreached and reaches the end of an
     // inlined call
     auto record_return() -> void {
+        assert(is_compiling_);
+
         scopes_.record_return();
         end_path();
     }
@@ -3680,6 +3757,8 @@ class toc final {
     // outside a function nothing is recorded
     auto record_use(const std::string_view name, const access_path& path,
                     const use_kind kind) -> void {
+
+        assert(not is_compiling_);
 
         if (not scopes_.is_in_func()) {
             return;

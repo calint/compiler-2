@@ -997,7 +997,8 @@ class machine_rv32i : public machine {
 
         emit_count(count);
 
-        set_bulk_addresses(src_loc_tk, indent, count, request.src, request.dst);
+        load_bulk_addresses(src_loc_tk, indent, count, request.src,
+                            request.dst);
 
         const bulk_operation& bulk{bulk_operations_.back()};
 
@@ -1105,7 +1106,8 @@ class machine_rv32i : public machine {
 
         emit_count(count);
 
-        set_bulk_addresses(src_loc_tk, indent, count, request.lhs, request.rhs);
+        load_bulk_addresses(src_loc_tk, indent, count, request.lhs,
+                            request.rhs);
 
         const bulk_operation& bulk{bulk_operations_.back()};
         {
@@ -3518,6 +3520,36 @@ class machine_rv32i : public machine {
         return saved;
     }
 
+    // the pointer of 'slot', 0 the first address and 1 the second, holds the
+    // address; the pointers advance together so both starts decide the width
+    // of the loop
+    auto load_bulk_address(const token& src_loc_tk, const size_t indent,
+                           const size_t slot, const operand& address) -> void {
+
+        bulk_operation& bulk{bulk_operations_.back()};
+
+        bulk.starts.at(slot) = start_of(address, 1);
+        ++bulk.address_count;
+
+        address_of(src_loc_tk, indent, bulk.pointer(slot), address);
+    }
+
+    // borrowed pointers avoid a temporary address and final move for indexing
+    auto load_bulk_addresses(const token& src_loc_tk, const size_t indent,
+                             const operand& count, const address_emitter& first,
+                             const address_emitter& second) -> void {
+
+        first(count, bulk_operations_.back().pointer(0),
+              [&](const operand& address) -> void {
+                  load_bulk_address(src_loc_tk, indent, 0, address);
+              });
+
+        second(count, bulk_operations_.back().pointer(1),
+               [&](const operand& address) -> void {
+                   load_bulk_address(src_loc_tk, indent, 1, address);
+               });
+    }
+
     [[nodiscard]] auto load_destination(const token& src_loc_tk,
                                         const size_t indent, const operand& dst)
         -> loaded_destination {
@@ -3855,36 +3887,6 @@ class machine_rv32i : public machine {
 
         return reserve_call_register(src_loc_tk, indent, descriptor, address,
                                      count);
-    }
-
-    // the pointer of 'slot', 0 the first address and 1 the second, holds the
-    // address; the pointers advance together so both starts decide the width
-    // of the loop
-    auto set_bulk_address(const token& src_loc_tk, const size_t indent,
-                          const size_t slot, const operand& address) -> void {
-
-        bulk_operation& bulk{bulk_operations_.back()};
-
-        bulk.starts.at(slot) = start_of(address, 1);
-        ++bulk.address_count;
-
-        address_of(src_loc_tk, indent, bulk.pointer(slot), address);
-    }
-
-    // borrowed pointers avoid a temporary address and final move for indexing
-    auto set_bulk_addresses(const token& src_loc_tk, const size_t indent,
-                            const operand& count, const address_emitter& first,
-                            const address_emitter& second) -> void {
-
-        first(count, bulk_operations_.back().pointer(0),
-              [&](const operand& address) -> void {
-                  set_bulk_address(src_loc_tk, indent, 0, address);
-              });
-
-        second(count, bulk_operations_.back().pointer(1),
-               [&](const operand& address) -> void {
-                   set_bulk_address(src_loc_tk, indent, 1, address);
-               });
     }
 
     // the loop ends when its pointer reaches 'end', replacing a counter that

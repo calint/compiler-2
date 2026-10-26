@@ -129,14 +129,7 @@ inline auto visit_operand_storage_reads(const toc& tc,
                                         const storage_read_visitor visitor)
     -> void {
 
-    if (operand.written_place != nullptr) {
-        operand.written_place->visit_index_reads(std::nullopt,
-                                                 storage_reader(tc, visitor));
-
-        return;
-    }
-
-    visit_storage_reads(tc, *operand.node, visitor);
+    visit_operand_reads(operand, std::nullopt, storage_reader(tc, visitor));
 }
 
 // 'earlier' reads nothing that 'write', an effect of an operand computed
@@ -159,49 +152,6 @@ inline auto assert_not_read_before(const toc& tc, const list_operand& earlier,
                             in_quotes(read.read_text), in_quotes(write.call_tk),
                             writer)};
         });
-}
-
-// evaluation is left to right, but the compile reads a name where it is
-// used, so a name that a later operand of the same list may write would read
-// the written value; such a list is rejected, e.g. the 'i' of 'f(arr[i],
-// h(i))' or of 'i == h(i)' with 'h' writing 'i'; 'operand' names an operand
-// of the list in the message, e.g. "argument"
-// note: a call among the earlier operands has run before the later ones,
-//       only the names those read are checked
-inline auto
-assert_not_written_later(const toc& tc,
-                         const std::span<const list_operand> operands,
-                         const std::string_view operand) -> void {
-
-    const std::string writer{std::format("a later {}", operand)};
-
-    for (size_t k{1}; k < operands.size(); ++k) {
-        operands.at(k).node->visit_call_effects(
-            tc, [&](const call_effect& effect) -> void {
-                if (not effect.is_write) {
-                    return;
-                }
-
-                for (const list_operand& earlier : operands.first(k)) {
-                    assert_not_read_before(tc, earlier, effect, writer);
-                }
-            });
-    }
-}
-
-// the operands of 'node' in its 'visit_operands' order, 'operand' names one
-// in the message, e.g. "argument"
-inline auto assert_operands_not_written_later(const toc& tc,
-                                              const statement& node,
-                                              const std::string_view operand)
-    -> void {
-
-    std::vector<list_operand> operands;
-
-    node.visit_operands(
-        [&operands](const list_operand& o) -> void { operands.push_back(o); });
-
-    assert_not_written_later(tc, operands, operand);
 }
 
 // a backend that computes 'computed_first' before 'computed_after', which come
@@ -227,4 +177,39 @@ assert_not_written_after(const toc& tc,
                 }
             });
     }
+}
+
+// evaluation is left to right, but the compile reads a name where it is
+// used, so a name that a later operand of the same list may write would read
+// the written value; such a list is rejected, e.g. the 'i' of 'f(arr[i],
+// h(i))' or of 'i == h(i)' with 'h' writing 'i'; 'operand' names an operand
+// of the list in the message, e.g. "argument"
+// note: a call among the earlier operands has run before the later ones,
+//       only the names those read are checked
+inline auto
+assert_not_written_later(const toc& tc,
+                         const std::span<const list_operand> operands,
+                         const std::string_view operand) -> void {
+
+    const std::string writer{std::format("a later {}", operand)};
+
+    for (size_t k{1}; k < operands.size(); ++k) {
+        assert_not_written_after(tc, operands.first(k), operands.subspan(k, 1),
+                                 writer);
+    }
+}
+
+// the operands of 'node' in its 'visit_operands' order, 'operand' names one
+// in the message, e.g. "argument"
+inline auto assert_operands_not_written_later(const toc& tc,
+                                              const statement& node,
+                                              const std::string_view operand)
+    -> void {
+
+    std::vector<list_operand> operands;
+
+    node.visit_operands(
+        [&operands](const list_operand& o) -> void { operands.push_back(o); });
+
+    assert_not_written_later(tc, operands, operand);
 }

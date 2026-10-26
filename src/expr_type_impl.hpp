@@ -139,7 +139,7 @@ inline auto expr_type::parse_fields(toc& tc, tokenizer& tz, const type& tp)
         const type_field& tf{flds.at(index)};
 
         if (index > 0) {
-            parse_field_delimiter(tz, tp, tf);
+            read_field_delimiter(tz, tp, tf);
 
             // a trailing ',' lets each field end its line the same way
             if (at_closing_brace(tz)) {

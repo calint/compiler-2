@@ -34,7 +34,7 @@ class stmt_assign_var final : public statement {
 
     // a part of the value: its storage and its path under the destination's
     // name
-    struct written_place {
+    struct written_part {
         storage_path storage;
         access_path path;
     };
@@ -145,10 +145,10 @@ class stmt_assign_var final : public statement {
     // in it read or write one
     auto assert_no_read_of_written_part(
         const toc& tc, const statement& item,
-        const std::span<const written_place> written) const -> void {
+        const std::span<const written_part> written) const -> void {
 
         visit_storage_reads(tc, item, [&](const storage_read& read) -> void {
-            for (const written_place& place : written) {
+            for (const written_part& place : written) {
                 if (not read.storage.may_overlap(place.storage)) {
                     continue;
                 }
@@ -171,7 +171,7 @@ class stmt_assign_var final : public statement {
 
         // e.g. 'gr()' of 'g = {1, gr()}' with 'gr' reading 'g.x'
         item.visit_call_effects(tc, [&](const call_effect& effect) -> void {
-            for (const written_place& place : written) {
+            for (const written_part& place : written) {
                 if (not effect.storage.may_overlap(place.storage)) {
                     continue;
                 }
@@ -205,7 +205,7 @@ class stmt_assign_var final : public statement {
         expr_.plan_writes(tc, part_location{}, unsized_count, plan);
 
         // the parts written by the steps before the current one
-        std::vector<written_place> written;
+        std::vector<written_part> written;
 
         for (const write_step& step : plan) {
             if (const value_write* const value{
@@ -232,7 +232,7 @@ class stmt_assign_var final : public statement {
     // the bytes through the same binding, e.g. 'p.x' of 'p = {1, p.x}' with
     // 'p' bound to 'ps[i]'
     [[nodiscard]] auto is_certain_overwrite(const storage_read& read,
-                                            const written_place& place) const
+                                            const written_part& place) const
         -> bool {
 
         if (not read.storage.path.has_run_time_index() and

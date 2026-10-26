@@ -114,11 +114,44 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
        D.1. 'read_' and 'parse_' prefixes by one rule, the getter
             'parse_constant' renamed (C6); 'written_place' and 'place' one
             meaning each (S5); the backend bulk and io step names alike (C4)
+       => D.1 done, reduced (2026-10-26): the rule in the 'statement' class
+          comment ('parse_' makes a node or a part holding one, 'read_' takes
+          tokens); 'parse_argument' (conversion, 'array_length'),
+          'read_equals', 'read_field_delimiter', 'read_element_delimiter',
+          'resolve_callee', 'constant_at_parse'; 'stmt_assign_var::
+          written_part', 'computation_plan::computed_in'; the bulk steps
+          'begin_bulk', 'load_bulk_addresses', 'release_bulk' in both
+          backends; not done: a bulk scope type (rv32i has
+          'bulk_depth_scope', x86_64 holds named registers) and the io pair,
+          whose steps differ (a system call against a routine); both suites,
+          the CLI tests, test-rv32i, clang-tidy clean, roome listings equal
        D.2. 'assert_not_written_later' over 'assert_not_written_after', one
             written-place dispatch (S2); one unwind policy for the register
             guards (S3)
+       => D.2 S2 done (2026-10-26): 'assert_not_written_later' is a loop of
+          'assert_not_written_after' over each prefix (messages and their
+          order equal); one 'visit_operand_reads' (stmt_identifier.hpp) for
+          the default 'visit_reads' and 'visit_operand_storage_reads'; part
+          3 (an 'operands_of' helper) not done, one user; both suites,
+          fuzz-effects, calls, io clean
+       => D.2 S3 discarded (2026-10-26): with the three guards leaving their
+          state while an error unwinds, test-rv32i fails: its
+          'rejected_with' catches an error without a 'version_scope' and
+          goes on with the same backend, relying on 'operation_scope'
+          freeing on unwind; 'held_registers' cannot free by count (it
+          frees named registers, other allocations may lie above them), so
+          the two policies stay as their comments say
        D.3. the two stolen comments (C7)
+       => D.3 done (2026-10-26): 'condition_start' and 'count_emitter' have
+          their comments back; the formatter check not added (low value)
        D.4. phase asserts on the phase-bound 'toc' methods (A.2)
+       => D.4 done (2026-10-26): every method of the parse and compile groups
+          of the 'toc' map asserts its phase (35 added); three were in the
+          wrong group and move to "both": 'storage_of' ('record_use' at the
+          parse), 'create_unique_label' and 'call_path_at' (a loop scope of
+          the parse has a label); every test on both targets, the CLI tests,
+          test-rv32i, roome and fuzz-generics, methods, programs, flow,
+          reject, compiler hold them
     E. docs
        E.1. drifted and doubled contract lists (D1, S4, D5), loose claims
             and stale counts (D3), what a reader meets first (D4), a hub for

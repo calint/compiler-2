@@ -622,7 +622,7 @@ class expr_any final : public statement {
 
         while (not close_brace_tk) {
             if (not list.elements.empty()) {
-                parse_element_delimiter(tz, tp, list);
+                read_element_delimiter(tz, tp, list);
 
                 // a trailing ',' lets each element end its line the same way
                 close_brace_tk = tz.is_next_char_token('}');
@@ -942,19 +942,6 @@ class expr_any final : public statement {
         return expr_arith{tc, tz, expr_arith::options::after(std::move(first))};
     }
 
-    static auto parse_element_delimiter(tokenizer& tz, const type& tp,
-                                        element_list& list) -> void {
-
-        const token delimiter_tk{
-            tz.expect_char_token(
-                ',', std::format("expected ',' followed by initializer "
-                                 "for type {}",
-                                 in_quotes(tp.name()))),
-        };
-
-        list.delims_tk.emplace_back(delimiter_tk);
-    }
-
     [[nodiscard]] static auto parse_variant(toc& tc, tokenizer& tz,
                                             const type& tp,
                                             const literal_typing typing)
@@ -1047,6 +1034,19 @@ class expr_any final : public statement {
         }
 
         return value;
+    }
+
+    static auto read_element_delimiter(tokenizer& tz, const type& tp,
+                                       element_list& list) -> void {
+
+        const token delimiter_tk{
+            tz.expect_char_token(
+                ',', std::format("expected ',' followed by initializer "
+                                 "for type {}",
+                                 in_quotes(tp.name()))),
+        };
+
+        list.delims_tk.emplace_back(delimiter_tk);
     }
 
     // the size of an 'i8' array that a string fills: 'array_count', or the

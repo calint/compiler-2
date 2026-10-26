@@ -103,8 +103,8 @@ class stmt_if final : public statement {
             // note: the compile knows at least what the parse knew, the
             //       paths of the definite assignment follow the parse
 
-            assert(not is_known(branches_.at(i).parse_constant()) or
-                   branches_.at(i).parse_constant() == known);
+            assert(not is_known(branches_.at(i).constant_at_parse()) or
+                   branches_.at(i).constant_at_parse() == known);
 
             if (runs(known)) {
                 paths.join_path();
@@ -143,7 +143,7 @@ class stmt_if final : public statement {
         assignment_flow::path_merge paths{flow};
 
         for (const stmt_if_branch& branch : branches_) {
-            const condition_result known{branch.parse_constant()};
+            const condition_result known{branch.constant_at_parse()};
 
             if (runs(known)) {
                 paths.trace(branch);
