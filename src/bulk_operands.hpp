@@ -14,6 +14,7 @@
 #include "expr_any.hpp"
 #include "ident_info.hpp"
 #include "operand.hpp"
+#include "stmt_call.hpp"
 #include "stmt_identifier.hpp"
 #include "toc.hpp"
 #include "token.hpp"
@@ -31,14 +32,9 @@
 class bulk_operands final {
     // the two arrays and the count
     static constexpr size_t argument_count{3};
+    static constexpr std::array<size_t, 2> array_indexes_{0, 1};
 
-    token open_paren_tk_;
-    stmt_identifier first_;
-    token first_delim_tk_;
-    stmt_identifier second_;
-    token second_delim_tk_;
-    expr_any count_;
-    token close_paren_tk_;
+    builtin_arguments args_;
     // how the messages name the arrays, e.g. 'source' and 'destination'
     std::string_view first_role_;
     std::string_view second_role_;
@@ -67,28 +63,16 @@ class bulk_operands final {
     bulk_operands(toc& tc, tokenizer& tz, const token& name_tk,
                   const std::string_view first_role,
                   const std::string_view second_role, const second_use use)
-        : open_paren_tk_{
-              tz.expect_char_token(
-                  '(',
-                  std::format("expected '(', {}, {}, 'count', and ')'",
-                              in_quotes(first_role), in_quotes(second_role))),
-          },
-          first_{parse_array(tc, tz, name_tk)},
-          first_delim_tk_{
-              expect_delimiter(
-                  tz, name_tk,
-                  std::format("expected ',' followed by {} and 'count'",
-                              in_quotes(second_role))),
-          },
-          second_{parse_array(tc, tz, name_tk)},
-          second_delim_tk_{
-              expect_delimiter(tz, name_tk, "expected ',' followed by 'count'"),
-          },
-          count_{tc, tz, tc.builtins().default_type(),
-                 literal_typing::from_destination},
-          close_paren_tk_{expect_close(tz, name_tk)}, first_role_{first_role},
+        : args_{tc, tz, array_indexes_}, first_role_{first_role},
           second_role_{second_role},
-          is_second_written_{use == second_use::written} {}
+          is_second_written_{use == second_use::written} {
+
+        if (args_.count() != argument_count) {
+            throw compile_error{name_tk, argument_count_text(name_tk.text(),
+                                                             argument_count,
+                                                             argument_count)};
+        }
+    }
 
     // the checks of the arguments in the order the statement reads: no
     // argument is written by a later one, the element types match, a constant
@@ -103,7 +87,7 @@ class bulk_operands final {
         return arrays;
     }
 
-    [[nodiscard]] auto count() const -> const expr_any& { return count_; }
+    [[nodiscard]] auto count() const -> const expr_any& { return args_.at(2); }
 
     // compiles the count into the register the machine asks for, this must
     // outlive the emitter
@@ -113,10 +97,11 @@ class bulk_operands final {
         return [&tc, indent, this](const operand& count_register) -> void {
             machine& x{tc.machine()};
 
-            x.comment(count_.tok(), indent, statement::trimmed_source(count_));
+            x.comment(count().tok(), indent,
+                      statement::trimmed_source(count()));
 
-            count_.compile(tc, indent,
-                           destination::of_register(count_register));
+            count().compile(tc, indent,
+                            destination::of_register(count_register));
         };
     }
 
@@ -124,31 +109,31 @@ class bulk_operands final {
                                 const token& src_loc_tk) const
         -> run_time_emitters {
 
-        const machine::address_emitter first{
-            first_.address_emitter_of(tc, indent, src_loc_tk,
-                                      range_check_of(tc, first_)),
+        const machine::address_emitter first_address{
+            first().address_emitter_of(tc, indent, src_loc_tk,
+                                       range_check_of(tc, first())),
         };
 
-        const machine::address_emitter second{
-            second_.address_emitter_of(tc, indent, src_loc_tk,
-                                       range_check_of(tc, second_)),
+        const machine::address_emitter second_address{
+            second().address_emitter_of(tc, indent, src_loc_tk,
+                                        range_check_of(tc, second())),
         };
 
         return {
             .count{count_emitter(tc, indent)},
-            .first{first},
-            .second{second},
+            .first{first_address},
+            .second{second_address},
         };
     }
 
     [[nodiscard]] auto first() const -> const stmt_identifier& {
-        return first_;
+        return *args_.at(0).bare_path();
     }
 
     // a constant count of 0 reaches no element, so a start at the end of the
     // array, which only a range may have, is not addressed
     [[nodiscard]] auto is_constant_empty(const toc& tc) const -> bool {
-        const std::optional<int64_t> constant_count{count_.constant_value(tc)};
+        const std::optional<int64_t> constant_count{count().constant_value(tc)};
         return constant_count and *constant_count == 0;
     }
 
@@ -157,7 +142,7 @@ class bulk_operands final {
                                       const stmt_identifier& array) const
         -> range_check {
 
-        if (count_.constant_value(tc) and array.constant_start_index(tc)) {
+        if (count().constant_value(tc) and array.constant_start_index(tc)) {
             return range_check::compile_time;
         }
 
@@ -165,34 +150,26 @@ class bulk_operands final {
     }
 
     [[nodiscard]] auto second() const -> const stmt_identifier& {
-        return second_;
+        return *args_.at(1).bare_path();
     }
 
-    auto source_to(std::ostream& os) const -> void {
-        open_paren_tk_.source_to(os);
-        first_.source_to(os);
-        first_delim_tk_.source_to(os);
-        second_.source_to(os);
-        second_delim_tk_.source_to(os);
-        count_.source_to(os);
-        close_paren_tk_.source_to(os);
-    }
+    auto source_to(std::ostream& os) const -> void { args_.source_to(os); }
 
     // the arrays and the count in their order, the second array written by
     // a copy
     auto visit_operands(const operand_visitor visitor) const -> void {
         visitor({
-            .node{&first_},
+            .node{&args_.at(0)},
             .written_place{},
         });
 
         visitor({
-            .node{&second_},
-            .written_place{is_second_written_ ? &second_ : nullptr},
+            .node{&args_.at(1)},
+            .written_place{is_second_written_ ? &second() : nullptr},
         });
 
         visitor({
-            .node{&count_},
+            .node{&count()},
             .written_place{},
         });
     }
@@ -200,14 +177,14 @@ class bulk_operands final {
   private:
     // a run-time count is left to the bounds check at run time
     auto assert_constant_count_in_bounds(const toc& tc) const -> void {
-        const std::optional<int64_t> constant_count{count_.constant_value(tc)};
+        const std::optional<int64_t> constant_count{count().constant_value(tc)};
 
         if (not constant_count) {
             return;
         }
 
-        first_.assert_count_in_bounds(tc, count_.tok(), *constant_count);
-        second_.assert_count_in_bounds(tc, count_.tok(), *constant_count);
+        first().assert_count_in_bounds(tc, count().tok(), *constant_count);
+        second().assert_count_in_bounds(tc, count().tok(), *constant_count);
     }
 
     // e.g. the 'a' of 'array_copy(a, b, f())' with 'f' writing 'a'
@@ -231,13 +208,13 @@ class bulk_operands final {
     // the elements are compared or copied as a whole, so their types match
     [[nodiscard]] auto resolve_arrays(toc& tc) const -> arrays_info {
         arrays_info info{
-            .first{make_ident_info(tc, first_)},
-            .second{make_ident_info(tc, second_)},
+            .first{make_ident_info(tc, first())},
+            .second{make_ident_info(tc, second())},
         };
 
         if (not info.first.type_ref().is_same(info.second.type_ref())) {
             throw compile_error{
-                second_.tok(),
+                second().tok(),
                 std::format("{} type {} does not match {} type {}", first_role_,
                             in_quotes(info.first.type_ref().name()),
                             second_role_,
@@ -245,46 +222,5 @@ class bulk_operands final {
         }
 
         return info;
-    }
-
-    //
-    // statics
-    //
-
-    // a ',' after the count is an argument too many
-    [[nodiscard]] static auto expect_close(tokenizer& tz, const token& name_tk)
-        -> token {
-
-        tz.assert_no_surplus_argument(name_tk.text(), argument_count);
-        return tz.expect_char_token(')', "expected ')' after the arguments");
-    }
-
-    // the ',' after an argument; a ')' before or after it is an argument
-    // missing, e.g. 'array_copy(a, b)'
-    [[nodiscard]] static auto expect_delimiter(tokenizer& tz,
-                                               const token& name_tk,
-                                               const std::string& message)
-        -> token {
-
-        tz.assert_no_missing_argument(name_tk.text(), argument_count);
-
-        const token delimiter_tk{tz.expect_char_token(',', message)};
-
-        tz.assert_no_missing_argument(name_tk.text(), argument_count);
-
-        return delimiter_tk;
-    }
-
-    [[nodiscard]] static auto parse_array(toc& tc, tokenizer& tz,
-                                          const token& name_tk)
-        -> stmt_identifier {
-
-        tz.assert_no_missing_argument(name_tk.text(), argument_count);
-
-        stmt_identifier array{stmt_identifier::parse_array_argument(tc, tz)};
-
-        array.assert_array_or_element();
-
-        return array;
     }
 };

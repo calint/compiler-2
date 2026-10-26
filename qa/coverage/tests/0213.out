@@ -1,4 +1,4 @@
 
-0213.baz:5:19: 'array_copy' takes 3 arguments
+0213.baz:5:5: 'array_copy' takes 3 arguments
     array_copy(a,a)
-                  ^
+    ^~~~~~~~~~

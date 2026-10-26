@@ -1,4 +1,4 @@
 
-0214.baz:5:30: expected ',' followed by 'count'
+0214.baz:5:30: expected ',' or ')' after the argument
     var z = arrays_equal(a,a 1)
                              ^

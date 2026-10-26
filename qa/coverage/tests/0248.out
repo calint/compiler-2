@@ -1,4 +1,4 @@
 
-0248.baz:5:26: expected '(', 'first', 'second', 'count', and ')'
+0248.baz:5:26: expected '(' after function name
     var z = arrays_equal a,a,1
                          ^

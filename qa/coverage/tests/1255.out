@@ -1,4 +1,4 @@
 
-1255.baz:4:16: expected an identifier
+1255.baz:4:16: a string is not an argument, it would refer to read-only data
     array_copy("abc", b, 3)
                ^~~~~

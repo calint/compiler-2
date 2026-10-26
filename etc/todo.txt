@@ -149,6 +149,12 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
           'storage_read' go, a message asks 'path_text'; listings equal
        B.4. S1 (-55): the bulk built-ins parse their arguments with
             'builtin_arguments'; messages of 5 tests change
+       => B.4 done (2026-10-26): 'bulk_operands' holds a 'builtin_arguments'
+          (its arrays at '{0, 1}', 'array_indexes' a span), checks the count
+          like 'exit'; its own parser (5 tokens, 'parse_array',
+          'expect_delimiter', 'expect_close') goes; 10 tests get the generic
+          texts of 'read' and 'exit' (0182, 0211-0214, 0248, 0249, 0269, a
+          string argument 1255, the count at the name 1687); src -64 lines
        B.5. S3 (-35): one path for the unary ops of a conversion, the
             'ops_place' enum goes; output changes, never longer (measured)
        B.6. S5 (-18): a value argument's fit checked once before the

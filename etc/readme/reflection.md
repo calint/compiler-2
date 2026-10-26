@@ -123,18 +123,33 @@ So I told it to refactor so that whole classes of bugs would become impossible.
 ### From exuberance to doubt
 
 For a while, there seemed to be no end to the bug reports. They came from using
-the language in ways nobody had thought of but that it allowed. I asked the AI
+the language in ways I did not expect but that it allowed. I asked the AI
 whether it would be easier to start over from an empty directory, using the
 current code and tests as the specification, and rewrite everything.
+
+It said no, so I continued with a codebase that looked like structured slop.
 
 The ever-increasing convolution and complexity of the code the AI wrote worried
 me.
 
 So I decided to pause and refactor until the AI found the system in as good a
-shape as it could envision.
+shape as it could envision. Its verdict kept stopping at "good" or "very good".
 
 This process has taken far longer than the development of the features that
-tangled the otherwise simple structure of the code. Maybe it was inevitable.
+tangled the otherwise simple structure of the code. Maybe it was inevitable,
+given the extent of the features.
+
+### From doubt to hope
+
+After 20 or so rounds of the same review prompt, the AI found the design good.
+Now it is working toward simplifying it, and that brings hope.
+
+Besides the goal of no undefined behavior, the AI now also looks for the
+simplest possible solution. Many concepts it had introduced, each of which made
+sense at the time, were removed once "simple" became part of its goal.
+
+The goal is easy for a human to understand: no undefined behavior, and keep it
+simple.
 
 ### The sense of losing touch with the code
 

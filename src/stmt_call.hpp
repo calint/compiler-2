@@ -1669,8 +1669,8 @@ inline auto assert_call_in_func(const toc& tc, const token& call_tk) -> void {
 }
 
 // the arguments of a built-in that parses like a call, e.g. '(1, buf, 4)' of
-// 'write(1, buf, 4)'; each is a value at the default type, the one at
-// 'array_index' an array path ('stmt_identifier::parse_array_argument'), the
+// 'write(1, buf, 4)'; each is a value at the default type, those at
+// 'array_indexes' array paths ('stmt_identifier::parse_array_argument'), the
 // built-in checks their count and their kinds
 class builtin_arguments {
     token open_paren_tk_;
@@ -1681,7 +1681,7 @@ class builtin_arguments {
   public:
     // the name of the built-in is read
     builtin_arguments(toc& tc, tokenizer& tz,
-                      const std::optional<size_t> array_index)
+                      const std::span<const size_t> array_indexes)
         : open_paren_tk_{
               tz.expect_char_token('(', "expected '(' after function name"),
           } {
@@ -1697,7 +1697,7 @@ class builtin_arguments {
 
             assert_not_string_argument(tz);
 
-            if (args_.size() == array_index) {
+            if (std::ranges::contains(array_indexes, args_.size())) {
                 add_array_argument(
                     stmt_identifier::parse_array_argument(tc, tz));
             } else {
@@ -1751,8 +1751,7 @@ class builtin_arguments {
     }
 
   private:
-    // an array or an element, checked where it is read like the arrays of
-    // 'bulk_operands'
+    // an array or an element, checked where it is read
     auto add_array_argument(stmt_identifier array) -> void {
         array.assert_array_or_element();
 

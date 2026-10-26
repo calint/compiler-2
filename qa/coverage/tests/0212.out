@@ -1,4 +1,4 @@
 
-0212.baz:5:18: expected ',' followed by 'destination' and 'count'
+0212.baz:5:18: expected ',' or ')' after the argument
     array_copy(a a,1)
                  ^

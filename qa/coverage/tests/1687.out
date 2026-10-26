@@ -1,4 +1,4 @@
 
-1687.baz:6:28: 'arrays_equal' takes 3 arguments
+1687.baz:6:8: 'arrays_equal' takes 3 arguments
     if arrays_equal(a, b, 1, 2) {
-                           ^
+       ^~~~~~~~~~~~

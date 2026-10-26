@@ -84,6 +84,7 @@ class stmt_builtin_io final : public statement {
 
     // the buffer follows the descriptor or the sector
     static constexpr size_t buffer_index_{1};
+    static constexpr std::array<size_t, 1> array_indexes_{buffer_index_};
 
     // where the optional arguments are, e.g. 2 and 3 of 'read(0, b, 4, 2)',
     // or the start 2 of 'sector_read(s, b, 2)', which has no count
@@ -102,7 +103,7 @@ class stmt_builtin_io final : public statement {
     stmt_builtin_io(toc& tc, const io_function& io, unary_ops uops,
                     const token tk, tokenizer& tz)
         : statement{tk, std::move(uops)}, io_{io},
-          args_{tc, tz, buffer_index_} {
+          args_{tc, tz, array_indexes_} {
 
         assert_call_in_func(tc, tok());
 
