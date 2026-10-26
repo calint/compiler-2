@@ -558,9 +558,9 @@ struct call_site {
         e.add_call_frame(begin_tk, source);
     }
 
-    // a variable in the current block
+    // a variable in the current block, a root variable of its own
     auto add_temporary(toc& tc, const size_t indent, const std::string& name,
-                       const type& tpe) const -> ident_info {
+                       const type& tpe) const -> destination {
 
         tc.add_var(tk, indent,
                    {
@@ -573,7 +573,9 @@ struct call_site {
                    },
                    var_kind::var);
 
-        return tc.resolve_declared(tk, name);
+        return destination::of_name(
+            tc.resolve_declared(tk, name), name,
+            tc.storage_of(name, access_path::whole_variable()));
     }
 
     // the form of each argument, an array is only passed by name
@@ -597,28 +599,40 @@ struct call_site {
         return plan;
     }
 
+    // the result is made in a temporary of the call, then copied into
+    // 'dst', which it widens into
+    auto compile_through_result_temporary(
+        toc& tc, const size_t indent, const destination& dst,
+        const std::function_ref<void(const destination& result)> compile) const
+        -> void {
+
+        const destination result{
+            add_temporary(tc, indent, temporary_result_name(),
+                          func->result_type()),
+        };
+
+        compile(result);
+
+        machine& x{tc.machine()};
+
+        x.copy_value(tk, indent, dst.operand(), result.operand());
+    }
+
     // a variable of the current block that holds the argument at 'index',
     // compiled into it
     [[nodiscard]] auto make_argument_temporary(toc& tc, const size_t indent,
                                                const size_t index) const
         -> noinline_arg {
 
-        const ident_info temporary{
+        const destination temporary{
             add_temporary(tc, indent, temporary_argument_name(index),
                           func->param(index).get_type()),
         };
 
-        const std::optional<storage_path> target{
-            temporary_storage(tc, temporary_argument_name(index)),
-        };
-
-        args.at(index).compile(
-            tc, indent,
-            destination::of_name(temporary, temporary_argument_name(index),
-                                 target));
+        args.at(index).compile(tc, indent, temporary);
 
         return {
-            .info{temporary},
+            .info{temporary.bound_info()},
             .path{},
         };
     }
@@ -725,14 +739,6 @@ struct call_site {
         return not dst.type_ref().is_same(func.result_type());
     }
 
-    // a temporary of the call is a root variable of its own
-    [[nodiscard]] static auto temporary_storage(const toc& tc,
-                                                const std::string_view name)
-        -> std::optional<storage_path> {
-
-        return tc.storage_of(name, access_path::whole_variable());
-    }
-
   private:
     [[nodiscard]] auto is_inside_call(const compile_error& e) const -> bool {
 
@@ -810,23 +816,10 @@ class inline_call {
                     return;
                 }
 
-                const std::string name{call_.temporary_result_name()};
-
-                const ident_info result_info{
-                    call_.add_temporary(tc, indent, name,
-                                        call_.func->result_type()),
-                };
-
-                compile_with_bindings(
-                    tc, indent,
-                    destination::of_name(
-                        result_info, name,
-                        call_site::temporary_storage(tc, name)));
-
-                machine& x{tc.machine()};
-
-                x.copy_value(call_.tk, indent, dst.operand(),
-                             result_info.operand());
+                call_.compile_through_result_temporary(
+                    tc, indent, dst, [&](const destination& result) -> void {
+                        compile_with_bindings(tc, indent, result);
+                    });
             });
     }
 
@@ -1315,28 +1308,15 @@ class noinline_call {
             });
         }
 
-        if (has_result_temporary(dst, *call_.func)) {
-            // the temporary has the type of the result, the copy into the
-            // destination widens it
-            const ident_info result_info{
-                call_.add_temporary(tc, indent, call_.temporary_result_name(),
-                                    call_.func->result_type()),
-            };
-
-            compile_with_arguments(
-                tc, indent,
-                destination::of_name(result_info, call_.temporary_result_name(),
-                                     call_site::temporary_storage(
-                                         tc, call_.temporary_result_name())),
-                arguments);
-
-            machine& x{tc.machine()};
-
-            x.copy_value(call_.tk, indent, dst.operand(),
-                         result_info.operand());
-        } else {
+        if (not has_result_temporary(dst, *call_.func)) {
             compile_with_arguments(tc, indent, dst, arguments);
+            return;
         }
+
+        call_.compile_through_result_temporary(
+            tc, indent, dst, [&](const destination& result) -> void {
+                compile_with_arguments(tc, indent, result, arguments);
+            });
     }
 
     auto

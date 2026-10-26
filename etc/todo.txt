@@ -148,6 +148,12 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
        B.3. D1-5 defaulted '==' for the path types, a constant index as a
             range of one element (-25)
        B.4. D1-3 a string token keeps its quotes like a character (-12)
+    => B.1 done (2026-10-26): 'call_site::add_temporary' returns the
+       destination of the new variable ('temporary_storage' goes),
+       'call_site::compile_through_result_temporary' makes the result in a
+       temporary for both call compilers (-20 lines); D2-4 4.1 kept (removing
+       'call_plan::is_inlined' splits 'is_temporary' between the compilers),
+       4.2 done with A.1; B.2 done with round 22 C.4 N3; listings equal
     C. asks
        C.1. D2-3 the later-argument rule only for arguments passed by
             reference (accepts more, +10)
