@@ -93,6 +93,14 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
        caller's record; a call writes of a 'mut' argument what its body
        writes, a recursive call its whole argument (accepts more, test
        1711); listings and errors of every other test equal; README 3.9, 8.3
+    => C.3 done (2026-10-26): one rule over what the call reaches of the
+       result, each argument and each global ('visit_reach_of' by the
+       record, the whole of it for a call of the function it is in): two may
+       not reach the same bytes where one writes them; the read-only
+       exemption and the whole-argument comparison go ('reference' keeps the
+       parts it reaches); accepts 'f(a, a)' with 'f' writing 'p.x' and
+       reading 'q.y' (tests 1712, 1713); messages and listings of every
+       other test equal; README 4.2, 8.1
     D. dropped (user, 2026-10-26: simplify the code of a feature, never
        remove the feature): the versions (B1), the padding gap walk (B2),
        rv32i constant bytes (B3) and shared-base copy (B4), the receiver

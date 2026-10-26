@@ -1,0 +1,21 @@
+# two arguments that name the same variable are accepted when the parts the
+# body reaches of them are disjoint or only read: 'f' writes 'p.x' and reads
+# 'q.y', inlined and noinline
+
+type pt {x, y}
+
+func f(p mut pt, q pt) {
+    p.x = q.y + 1
+}
+
+func noinline nf(p mut pt, q pt) {
+    p.x = q.y + 2
+}
+
+func main() {
+    var a = pt{1, 2}
+    f(a, a)
+    var b = pt{1, 2}
+    nf(b, b)
+    exit(a.x * 10 + b.x)
+}

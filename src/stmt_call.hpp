@@ -1729,16 +1729,14 @@ class stmt_call : public statement {
         "use a temporary variable for one of them",
     };
 
-    // the result destination or an argument that names a variable, kept to
-    // compare with the next ones
+    // the result destination or an argument that names a variable, with
+    // what the callee reaches of it, kept to compare with the next ones
     struct reference {
-        // empty for the result, like 'body_uses::binding_use'
-        std::optional<size_t> param_index;
         token tk;
         // e.g. "argument 1 'a'" or "the result destination 'x'"
         std::string text;
         storage_path target;
-        bool is_read_only;
+        std::vector<call_effect> reached;
     };
 
   public:
@@ -2088,10 +2086,10 @@ class stmt_call : public statement {
         }
     }
 
-    // the callee writes a 'mut' parameter in place, so storage shared with
-    // another argument could be read after it changed, unless both
-    // parameters are read-only; the result destination and a global that the
-    // callee uses count as arguments, see 'body_uses'
+    // the callee reaches the arguments, the result and the globals in place,
+    // so a part that one of them writes may be read or written under
+    // another name; the record of the body says which parts it reaches
+    // ('body_uses')
     auto assert_no_shared_storage(const toc& tc, const destination& dst) const
         -> void {
 
@@ -2099,16 +2097,10 @@ class stmt_call : public statement {
 
         // none for a destination without storage, e.g. a register
         if (dst.storage()) {
-            references.push_back({
-                .param_index{},
-                .tk{tok()},
-                .text{
-                    std::format("the result destination {}",
-                                in_quotes(dst.text())),
-                },
-                .target{*dst.storage()},
-                .is_read_only{},
-            });
+            references.push_back(make_reference(
+                tc, std::nullopt, tok(),
+                std::format("the result destination {}", in_quotes(dst.text())),
+                *dst.storage()));
         }
 
         for (size_t i{}; i < args_.size(); ++i) {
@@ -2121,7 +2113,7 @@ class stmt_call : public statement {
                 continue;
             }
 
-            std::optional<storage_path> target{
+            const std::optional<storage_path> target{
                 passed->ident->storage(tc),
             };
 
@@ -2129,14 +2121,11 @@ class stmt_call : public statement {
             assert(target);
 
             reference arg_reference{
-                .param_index{i},
-                .tk{arg.tok()},
-                .text{
+                make_reference(
+                    tc, i, arg.tok(),
                     std::format("{} {}", describe_argument(i),
                                 in_quotes(statement::trimmed_source(arg))),
-                },
-                .target{std::move(*target)},
-                .is_read_only{callee().param(i).is_read_only()},
+                    *target),
             };
 
             assert_not_shared_with_earlier(references, arg_reference);
@@ -2189,19 +2178,9 @@ class stmt_call : public statement {
         const std::span<const reference> references) const -> void {
 
         for (const reference& ref : references) {
-            for (const body_uses::binding_use& u : callee().uses().bindings()) {
-                if (u.param_index != ref.param_index) {
-                    continue;
-                }
-
-                // the part of the reference that the callee reaches as 'u'
-                const storage_path reached{
-                    .root{ref.target.root},
-                    .path{ref.target.path.extended_by(u.path)},
-                };
-
-                if (not(u.is_written or global.is_written) or
-                    not reached.may_overlap(global.storage)) {
+            for (const call_effect& reached : ref.reached) {
+                if (not(reached.is_write or global.is_written) or
+                    not reached.storage.may_overlap(global.storage)) {
 
                     continue;
                 }
@@ -2295,6 +2274,29 @@ class stmt_call : public statement {
 
     [[nodiscard]] auto is_method() const -> bool {
         return method_dot_tk_.has_value();
+    }
+
+    [[nodiscard]] auto make_reference(const toc& tc,
+                                      const std::optional<size_t> param_index,
+                                      const token& tk, std::string text,
+                                      const storage_path& target) const
+        -> reference {
+
+        reference result{
+            .tk{tk},
+            .text{std::move(text)},
+            .target{target},
+            .reached{},
+        };
+
+        // note: the parts are compared, not named
+
+        visit_reach_of(tc, param_index, {}, target,
+                       [&](const call_effect& effect) -> void {
+                           result.reached.push_back(effect);
+                       });
+
+        return result;
     }
 
     // a method receiver is already in 'args_', the parameter gives the type of
@@ -2528,10 +2530,6 @@ class stmt_call : public statement {
             });
         }
 
-        const bool is_recursive{
-            tc.scopes().current_func_scope().is_name(callee().name()),
-        };
-
         for (size_t i{}; i < args_.size(); ++i) {
 
             // a value or a constant is passed as a copy
@@ -2548,32 +2546,50 @@ class stmt_call : public statement {
             // note: a variable has storage
             assert(target);
 
-            if (is_recursive) {
-                visitor({
-                    .call_tk{tok()},
-                    .name{ident.dotted_path()},
-                    .storage{*target},
-                    .is_write{not callee().param(i).is_read_only()},
-                });
+            visit_reach_of(tc, i, ident.dotted_path(), *target, visitor);
+        }
+    }
 
+    // what the body reaches of 'target', the argument of the parameter at
+    // 'param_index' or the result (empty), by its record; a call of the
+    // function it is in, whose record the parse is still making, reaches it
+    // whole, written unless the parameter is read-only
+    auto visit_reach_of(const toc& tc, const std::optional<size_t> param_index,
+                        const std::string_view name, const storage_path& target,
+                        const call_effect_visitor visitor) const -> void {
+
+        const bool is_recursive{
+            tc.scopes().current_func_scope().is_name(callee().name()),
+        };
+
+        if (is_recursive) {
+            visitor({
+                .call_tk{tok()},
+                .name{name},
+                .storage{target},
+                .is_write{
+                    not param_index or
+                        not callee().param(*param_index).is_read_only(),
+                },
+            });
+
+            return;
+        }
+
+        for (const body_uses::binding_use& u : callee().uses().bindings()) {
+            if (u.param_index != param_index) {
                 continue;
             }
 
-            for (const body_uses::binding_use& u : callee_uses.bindings()) {
-                if (u.param_index != i) {
-                    continue;
-                }
-
-                visitor({
-                    .call_tk{tok()},
-                    .name{ident.dotted_path()},
-                    .storage{
-                        .root{target->root},
-                        .path{target->path.extended_by(u.path)},
-                    },
-                    .is_write{u.is_written},
-                });
-            }
+            visitor({
+                .call_tk{tok()},
+                .name{name},
+                .storage{
+                    .root{target.root},
+                    .path{target.path.extended_by(u.path)},
+                },
+                .is_write{u.is_written},
+            });
         }
     }
 
@@ -2613,19 +2629,14 @@ class stmt_call : public statement {
         }
     }
 
-    // an argument that names the storage of an earlier one or of the result,
-    // unless both parameters are read-only or the bytes they reach are
-    // disjoint
+    // an argument that reaches a part of an earlier one or of the result that
+    // one of the two writes
     static auto
     assert_not_shared_with_earlier(const std::span<const reference> earlier,
                                    const reference& ref) -> void {
 
         for (const reference& other : earlier) {
-            if (ref.is_read_only and other.is_read_only) {
-                continue;
-            }
-
-            if (not ref.target.may_overlap(other.target)) {
+            if (not may_share(ref, other)) {
                 continue;
             }
 
@@ -2656,6 +2667,22 @@ class stmt_call : public statement {
                            constructor_name_tk.text());
 
         return name;
+    }
+
+    [[nodiscard]] static auto may_share(const reference& lhs,
+                                        const reference& rhs) -> bool {
+
+        for (const call_effect& l : lhs.reached) {
+            for (const call_effect& r : rhs.reached) {
+                if ((l.is_write or r.is_write) and
+                    l.storage.may_overlap(r.storage)) {
+
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 
     // the '.' and the name after a type, e.g. '.at' of 'point.at(1, 2)'

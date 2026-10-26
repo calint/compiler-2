@@ -1135,13 +1135,15 @@ The call is judged by what it passes and by what the parse recorded of the
 body, without compiling the body for it ('stmt_call::assert_no_shared_storage'),
 inlined and noinline alike, so the verdict does not depend on inlining:
 
-1. two arguments that may share storage, unless both parameters are read-only
-2. an argument that may share storage with the result destination
-3. an argument or the result that may share storage with a global the callee
-   uses, also through its calls: the parse records what each body reaches that
-   its callers name too ('body_uses'), the globals, its parameters and its
-   result, each with its path and whether it is written, e.g. 'f(g)' where 'f'
-   writes its parameter and reads 'g', or 'g = f()' where 'f' reads 'g'
+The parse records what each body reaches that its callers name too
+('body_uses'): the globals, its parameters and its result, each with its path
+and whether it is written, also through its calls. Of the result destination,
+the arguments and the globals the callee uses, two may not reach the same
+bytes where one of them writes them, e.g. 'f(a, a)' where 'f' writes 'p.x' and
+reads 'q.x', 'f(g)' where 'f' writes its parameter and reads 'g', or 'g = f()'
+where 'f' reads 'g'; 'f(a, a)' where 'f' writes 'p.x' and reads 'q.y' is
+accepted. A call of the function it is in reaches its arguments and its result
+whole, its record is not complete yet (3.9).
 
 A value without storage (a constant, 'point{1, 2}') is passed in a temporary
 of the call, which shares storage with nothing.
@@ -1744,7 +1746,7 @@ constants out of range, and the code the run-time checks.
 | class | example | how | option | tests |
 |---|---|---|---|---|
 | uninitialized read | 'var x = x' | rejected (definite assignment, 'ub_assigned.hpp', 3.10) | always | 0099, 1301-1303, 1367 |
-| a 'mut' argument sharing storage with another argument | 'f(x, x)' with 'f' writing both | rejected ('stmt_call::assert_no_shared_storage', 3.7) | always | 0525, 0642, 0676 |
+| an argument sharing bytes with another argument that the call writes | 'f(a, a)' with 'f' writing 'p.x' and reading 'q.x' | rejected ('stmt_call::assert_no_shared_storage', 3.7) | always | 0525, 0642, 0676 |
 | a result or a global sharing storage with an argument | 'p = f(p)' with 'f' writing its result before it reads 'p', 'f(g)' with 'f' using the global 'g' | rejected ('stmt_call::assert_no_shared_storage', 3.7, 4.2) | always | 0522-0524, 0526, 0527, 0941 |
 | a value written in parts reading a part written before it | 'p = {p.y, p.x}', 'q = {{1}, q.a[3]}', 'g = {7, gx()}' | rejected ('stmt_assign_var', the 'write_plan' of 'expr_type.hpp', 3.7) | always | 1608-1612, 1634, 1635, 1644 |
 | evaluation order | 'f(arr[i], h(i))', 'i == h(i)' with 'h' writing 'i' | evaluation is left to right; an operand that a call in a later operand of the same list may write is rejected ('assert_not_written_later'); a destination that the value reads, also through a call, is written last ('reaches_destination'), 3.1 | always | 1636-1642, 1676; accepted: 1630-1633, 1643, 1678 |

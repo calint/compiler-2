@@ -5418,3 +5418,8 @@ SRC=1710 && EXP=1 && RUN
 # a call writes of a 'mut' argument what its body writes: an earlier read of
 # another field is accepted
 SRC=1711 && EXP=29 && RUN
+
+# two arguments may name the same storage when the parts the body reaches of
+# them are disjoint or only read
+SRC=1712 && EXP=34 && RUN
+SRC=1713 && COMPERR
