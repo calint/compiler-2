@@ -1034,16 +1034,16 @@ call, so it needs no fixed point over the bodies (8.3).
 ### 3.10 Definite assignment
 
 'ub_assigned.hpp' tells which bytes of a variable are set before they are read.
-'assignment_flow' walks one variable through a function body by name, before
-'toc' resolves the names: each statement reports what it does ('declare',
-'assign', 'end_path', 'record_break'), the class joins the paths ('block_scope',
-'trace_loop' with its 'loop_end', 'path_merge' for an 'if'), and
-'assigned_bytes' keeps the byte ranges set on every path. A read outside them is
-"use of uninitialized variable".
-
-It walks the result of a function, which every path must set before it returns
-('stmt_def_func::assert_sets_result'), and, without a variable, which statements
-are reached ('assignment_flow::reachability_only', 1.5.1). A variable is set
+'assignment_flow' walks the result of a function through its body, which every
+path must set before it returns ('stmt_def_func::assert_sets_result'). The
+parse tells which reads and writes name the result, by the one lookup of 1.3
+('stmt_identifier::names_result'), so a name that hides it is not the result.
+Each statement reports what it does ('assign', 'end_path', 'record_break'), the
+class joins the paths ('trace_loop' with its 'loop_end', 'path_merge' for an
+'if'), and 'assigned_bytes' keeps the byte ranges set on every path. A read
+outside them is "use of uninitialized variable". The same walk finds the
+statements that are not reached (1.5.1); a function without a result has no
+bytes to assign. A variable is set
 where it is declared, so the one local that can be read unset is the variable
 its own initializer names, e.g. 'var x = x + 1' ('stmt_def_var'). The compile
 tells which code is reached with the same join rules ('toc::path_merge').

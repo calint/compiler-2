@@ -124,17 +124,15 @@ class assigned_bytes final {
     }
 };
 
-// definite-assignment walk of one variable through a function body, also the
-// walk of which statements are reached ('reachability_only', no variable);
-// the statements report what they do ('declare', 'assign', 'end_path',
-// 'record_break') and the rules that join paths are here: a block scopes
-// its declarations ('block_scope'), 'trace_loop' traces a body by its
-// 'loop_end', 'path_merge' joins the paths of an 'if'
+// definite-assignment walk of the result through a function body, which also
+// finds the statements that are not reached; a function without a result has
+// no bytes to assign. the statements report what they do ('assign',
+// 'end_path', 'record_break'), the parse tells which reads name the result
+// ('stmt_identifier::names_result'), and the rules that join paths are here:
+// 'trace_loop' traces a body by its 'loop_end', 'path_merge' joins the paths
+// of an 'if'
 class assignment_flow final {
-    // empty when the walk answers reachability only
-    std::optional<std::string_view> var_;
-
-    // the declaration of the result, reported when a 'return' may leave 'var_'
+    // the declaration of the result, reported when a 'return' may leave it
     // unset
     token src_loc_tk_;
 
@@ -146,28 +144,7 @@ class assignment_flow final {
 
     bool is_reachable_{true};
 
-    // a declaration in the current block hides 'var_', the name then means
-    // that declaration until the block ends
-    bool is_shadowed_{};
-
   public:
-    // a declaration hides 'var_' only until the end of its block
-    class block_scope final {
-        assignment_flow& flow_;
-        bool was_shadowed_;
-
-      public:
-        explicit block_scope(assignment_flow& flow)
-            : flow_{flow}, was_shadowed_{flow.is_shadowed_} {}
-
-        block_scope(const block_scope&) = delete;
-        block_scope(block_scope&&) = delete;
-        auto operator=(const block_scope&) -> block_scope& = delete;
-        auto operator=(block_scope&&) -> block_scope& = delete;
-
-        ~block_scope() { flow_.is_shadowed_ = was_shadowed_; }
-    };
-
     // every path of an 'if' starts at the 'if', after it only what every path
     // that reaches its end assigned remains, and its end is reached when one
     // path reaches it; the flow continues from the merge when it ends
@@ -208,9 +185,8 @@ class assignment_flow final {
         }
     };
 
-    assignment_flow(const std::optional<std::string_view> var,
-                    const token& src_loc_tk, const size_t size_bytes)
-        : var_{var}, src_loc_tk_{src_loc_tk}, assigned_{size_bytes} {}
+    assignment_flow(const token& src_loc_tk, const size_t size_bytes)
+        : src_loc_tk_{src_loc_tk}, assigned_{size_bytes} {}
 
     auto assert_set_at_return() const -> void {
         if (assigned_.is_full()) {
@@ -222,18 +198,11 @@ class assignment_flow final {
             "function may return without setting its return value"};
     }
 
-    // the traced variable is assigned these bytes
+    // the result is assigned these bytes
     auto assign(const byte_range bytes) -> void { assigned_.add(bytes); }
 
     [[nodiscard]] auto assigned() const -> const assigned_bytes& {
         return assigned_;
-    }
-
-    // a declaration of 'name' hides 'var_' for the rest of its block
-    auto declare(const std::string_view name) -> void {
-        if (name == var_) {
-            is_shadowed_ = true;
-        }
     }
 
     // a path that never reaches the next statement cannot narrow a merge
@@ -278,28 +247,6 @@ class assignment_flow final {
 
         assigned_ = *breaks;
         is_reachable_ = true;
-    }
-
-    // the variable that a name in the current statement may mean, none when
-    // a declaration hides it or the walk traces no variable
-    [[nodiscard]] auto traced_var() const -> std::optional<std::string_view> {
-        if (is_shadowed_) {
-            return std::nullopt;
-        }
-
-        return var_;
-    }
-
-    //
-    // statics
-    //
-
-    // a walk that traces no variable and answers only which statements are
-    // reached, e.g. the error of a statement after a 'return'
-    [[nodiscard]] static auto reachability_only(const token& src_loc_tk)
-        -> assignment_flow {
-
-        return {std::nullopt, src_loc_tk, 0};
     }
 
   private:

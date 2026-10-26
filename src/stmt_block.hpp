@@ -80,8 +80,6 @@ class stmt_block final : public statement {
     }
 
     auto trace_assignment(assignment_flow& flow) const -> void override {
-        const assignment_flow::block_scope scope{flow};
-
         for (const std::unique_ptr<statement>& s : statements_) {
             // e.g. a statement after 'return', 'break', 'continue', 'exit'
             // or a 'loop' without 'break'

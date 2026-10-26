@@ -1,7 +1,6 @@
 #pragma once
 
 #include <functional>
-#include <optional>
 #include <string_view>
 
 #include "access_path.hpp"
@@ -34,15 +33,10 @@ struct list_operand {
 // receives each operand of a node in evaluation order
 using operand_visitor = std::function_ref<void(const list_operand& operand)>;
 
-// the variable whose reads 'visit_reads' reports, none for every variable
-using read_filter = std::optional<std::string_view>;
-
-// receives each read of a variable: the token of its root name, where an
-// error points, its text as written, the bytes of the variable that it
-// reaches, the whole array after a run-time index, and its path
-using read_visitor = std::function_ref<void(
-    const token& src_loc_tk, std::string_view read_text,
-    const byte_range& accessed_bytes, const access_path& accessed_path)>;
+// receives each read of a variable, the path that reads it: its root token,
+// where an error points, the bytes of the variable that it reaches, the whole
+// array after a run-time index, and its path
+using read_visitor = std::function_ref<void(const stmt_identifier& read)>;
 
 // what the body of a called function does to storage its caller names too: a
 // global it reads or writes, or an argument it writes through a 'mut'

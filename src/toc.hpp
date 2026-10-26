@@ -1293,6 +1293,20 @@ class scope_stack final {
         return max_scope_count_;
     }
 
+    // 'name' means the result of the innermost function, not a name that
+    // hides it, e.g. the 'e' of a 'foo' over the result
+    [[nodiscard]] auto names_result(const std::string_view name) const -> bool {
+        if (not is_in_func()) {
+            return false;
+        }
+
+        const name_meaning meaning{lookup(name)};
+
+        return meaning.is_variable() and
+               meaning.scope_index == func_scope_index() and
+               current_func_scope().is_result(name);
+    }
+
     auto pop() -> void { scopes_.pop_back(); }
 
     auto push(scope scp) -> void {

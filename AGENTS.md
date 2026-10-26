@@ -157,6 +157,14 @@
   `.out` files; run for x86_64 and rv32i-fpga, then review the diff.
 - After every change to `roome/src/main.baz`, run `roome/qa/test.sh`. No
   formatter or linter run needed there.
+- Per step: the set above, the linters and, for a pure refactor, the
+  listings and errors of every test on x86_64 and rv32i compared with a
+  compiler built from HEAD, compiled in parallel on all cores.
+- Per phase, or for a step that changes behavior: also
+  `qa/coverage/test-rv32i.sh`, `test-versions.sh`, `roome/qa/test.sh`, the
+  asan build and the fuzzers, the fuzzers in parallel.
+- Run each check once per round; do not edit sources while a check runs
+  (decided 2026-10-26).
 
 ## Process
 

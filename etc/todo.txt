@@ -136,7 +136,17 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
           of every test on both targets equal to HEAD
        B.2. U1 (-55): definite assignment traces the result as the parse
             resolved it, its own hiding model goes, one walk per body
+       => B.2 done (2026-10-26, after B.3): 'stmt_identifier::names_result_'
+          set at the parse by 'scope_stack::names_result' (the one lookup);
+          'assignment_flow' traces the result's bytes, 0 without a result;
+          'block_scope', 'declare', 'traced_var', 'reachability_only', the
+          traced name, 'assert_statements_reached' (one walk per body) and
+          the declaring overrides of 'var' and 'foo' go; 'var x = x' keeps
+          its by-name check; errors of every test equal
        B.3. U2 (-20): a read is a 'stmt_identifier', no path text per read
+       => B.3 done (2026-10-26): 'read_visitor' takes the
+          'stmt_identifier' that reads, 'read_filter' and the copies in
+          'storage_read' go, a message asks 'path_text'; listings equal
        B.4. S1 (-55): the bulk built-ins parse their arguments with
             'builtin_arguments'; messages of 5 tests change
        B.5. S3 (-35): one path for the unary ops of a conversion, the

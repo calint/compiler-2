@@ -50,12 +50,8 @@
 // a read resolved to the storage it reaches, e.g. 'p.x' with 'p' bound to
 // 'ps[i]' reaches the field 'x' of any element of 'ps'
 struct storage_read {
-    // the root name of the read, where an error points
-    token src_loc_tk;
-    // the read as written
-    std::string_view read_text;
-    // the path from the root name as written
-    access_path read_path;
+    // its root token is where an error points
+    const stmt_identifier* read{};
     storage_path storage;
 };
 
@@ -66,22 +62,15 @@ using storage_read_visitor = std::function_ref<void(const storage_read& read)>;
 [[nodiscard]] inline auto storage_reader(const toc& tc,
                                          const storage_read_visitor visitor) {
 
-    return [&tc, visitor](const token& src_loc_tk,
-                          const std::string_view read_text,
-                          [[maybe_unused]] const byte_range& accessed_bytes,
-                          const access_path& read_path) -> void {
-        const std::optional<storage_path> storage{
-            tc.storage_of(src_loc_tk.text(), read_path),
-        };
+    return [&tc, visitor](const stmt_identifier& read) -> void {
+        const std::optional<storage_path> storage{read.storage(tc)};
 
         if (not storage) {
             return;
         }
 
         visitor({
-            .src_loc_tk{src_loc_tk},
-            .read_text{read_text},
-            .read_path{read_path},
+            .read{&read},
             .storage{*storage},
         });
     };
@@ -91,7 +80,7 @@ using storage_read_visitor = std::function_ref<void(const storage_read& read)>;
 inline auto visit_storage_reads(const toc& tc, const statement& st,
                                 const storage_read_visitor visitor) -> void {
 
-    st.visit_reads(std::nullopt, storage_reader(tc, visitor));
+    st.visit_reads(storage_reader(tc, visitor));
 }
 
 // 'st' reads 'dst', or a call in it reads or writes it; a register has no
@@ -131,7 +120,7 @@ inline auto visit_operand_storage_reads(const toc& tc,
                                         const storage_read_visitor visitor)
     -> void {
 
-    visit_operand_reads(operand, std::nullopt, storage_reader(tc, visitor));
+    visit_operand_reads(operand, storage_reader(tc, visitor));
 }
 
 // 'earlier' reads nothing that 'write', an effect of an operand computed
@@ -148,11 +137,11 @@ inline auto assert_not_read_before(const toc& tc, const list_operand& earlier,
             }
 
             throw compile_error{
-                read.src_loc_tk,
+                read.read->first_token(),
                 std::format("{} may be written by the call of {} in {}, use a "
                             "temporary variable",
-                            in_quotes(read.read_text), in_quotes(write.call_tk),
-                            writer)};
+                            in_quotes(read.read->path_text()),
+                            in_quotes(write.call_tk), writer)};
         });
 }
 

@@ -118,7 +118,7 @@ class stmt_assign_var final : public statement {
 
     // the value is read before the destination is written
     auto trace_assignment(assignment_flow& flow) const -> void override {
-        assert_var_not_used(flow);
+        assert_result_not_read(flow);
         stmt_ident_.record_assignment(flow);
     }
 
@@ -157,17 +157,17 @@ class stmt_assign_var final : public statement {
 
                 if (is_certain_overwrite(read, place)) {
                     throw compile_error{
-                        read.src_loc_tk,
+                        read.read->first_token(),
                         std::format("{} is read but has been overwritten in "
                                     "the same statement",
-                                    in_quotes(read.read_text))};
+                                    in_quotes(read.read->path_text()))};
                 }
 
                 throw compile_error{
-                    read.src_loc_tk,
+                    read.read->first_token(),
                     std::format("{} may have been overwritten in the same "
                                 "statement",
-                                in_quotes(read.read_text))};
+                                in_quotes(read.read->path_text()))};
             }
         });
 
@@ -243,8 +243,9 @@ class stmt_assign_var final : public statement {
             return true;
         }
 
-        return read.src_loc_tk.text() == stmt_ident_.first_token().text() and
-               not read.read_path.has_run_time_index() and
+        return read.read->first_token().text() ==
+                   stmt_ident_.first_token().text() and
+               not read.read->accessed_path().has_run_time_index() and
                not place.path.has_run_time_index();
     }
 

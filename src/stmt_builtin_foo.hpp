@@ -118,18 +118,11 @@ class stmt_builtin_foo final : public statement {
     }
 
     auto trace_assignment(assignment_flow& flow) const -> void override {
-        ident_.assert_var_not_used(flow);
+        ident_.assert_result_not_read(flow);
 
         if (count_) {
-            count_->count.assert_var_not_used(flow);
+            count_->count.assert_result_not_read(flow);
         }
-
-        // the loop names hide the traced variable only in the body
-        const assignment_flow::block_scope scope{flow};
-
-        flow.declare("e");
-        flow.declare("i");
-        flow.declare("n");
 
         flow.trace_loop(code_, loop_end::also_when_done);
     }

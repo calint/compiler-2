@@ -96,6 +96,8 @@ inline stmt_identifier::stmt_identifier(toc& tc, token tk, tokenizer& tz)
     resolve_accessed_bytes(tc);
 
     tc.record_use(first_token().text(), access_path_, use_kind::read);
+
+    names_result_ = tc.scopes().names_result(first_token().text());
 }
 
 inline auto stmt_identifier::path_source_to(std::ostream& os) const -> void {
@@ -124,11 +126,10 @@ inline auto stmt_identifier::visit_operands(const operand_visitor visitor) const
     }
 }
 
-inline auto stmt_identifier::visit_index_reads(const read_filter var,
-                                               const read_visitor reader) const
+inline auto stmt_identifier::visit_index_reads(const read_visitor reader) const
     -> void {
 
-    statement::visit_reads(var, reader);
+    statement::visit_reads(reader);
 }
 
 inline auto stmt_identifier::assert_count_in_bounds(const toc& tc,

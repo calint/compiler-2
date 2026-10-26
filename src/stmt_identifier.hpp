@@ -369,6 +369,10 @@ class stmt_identifier final : public statement {
     // the fields and indexes of this path
     access_path access_path_;
 
+    // the root is the result of the function being parsed, which the
+    // definite assignment traces
+    bool names_result_{};
+
     // e.g. '.add' in 'lst.add(x)', the path is the receiver
     struct method_tokens {
         token dot_tk;
@@ -502,15 +506,9 @@ class stmt_identifier final : public statement {
     // the indexes in their order, e.g. the 'h(i)' of 'a[h(i)]'
     auto visit_operands(const operand_visitor visitor) const -> void override;
 
-    auto visit_reads(const read_filter var, const read_visitor reader) const
-        -> void override {
-
-        // a path such as 'p.y' reads its root variable
-        if (not var or first_token().is_text(*var)) {
-            reader(first_token(), path_text(), accessed_bytes_, access_path_);
-        }
-
-        visit_index_reads(var, reader);
+    auto visit_reads(const read_visitor reader) const -> void override {
+        reader(*this);
+        visit_index_reads(reader);
     }
 
     //
@@ -519,6 +517,12 @@ class stmt_identifier final : public statement {
 
     // the fields and indexes from the root variable to what this path names,
     // e.g. 'es[1].items[i]'
+    // the bytes of the root variable that the path reaches, the whole array
+    // after a run-time index
+    [[nodiscard]] auto accessed_bytes() const -> const byte_range& {
+        return accessed_bytes_;
+    }
+
     [[nodiscard]] auto accessed_path() const -> access_path {
         return access_path_;
     }
@@ -767,6 +771,8 @@ class stmt_identifier final : public statement {
         return method_->name_tk;
     }
 
+    [[nodiscard]] auto names_result() const -> bool { return names_result_; }
+
     auto operator=(stmt_identifier&&) noexcept -> stmt_identifier&;
 
     auto path_source_to(std::ostream& os) const -> void;
@@ -780,11 +786,7 @@ class stmt_identifier final : public statement {
 
     // a run-time index does not prove which element is written
     auto record_assignment(assignment_flow& flow) const -> void {
-        const std::optional<std::string_view> var{flow.traced_var()};
-
-        if (not var or not first_token().is_text(*var) or
-            not is_exact_access()) {
-
+        if (not names_result_ or not is_exact_access()) {
             return;
         }
 
@@ -838,8 +840,7 @@ class stmt_identifier final : public statement {
     }
 
     // index expressions are read even when the path is written
-    auto visit_index_reads(const read_filter var,
-                           const read_visitor reader) const -> void;
+    auto visit_index_reads(const read_visitor reader) const -> void;
 
     //
     // statics
@@ -1228,23 +1229,62 @@ statement::visit_call_effects(const toc& tc,
 
 // the reads of 'operand', the indexes alone of a written place
 inline auto visit_operand_reads(const list_operand& operand,
-                                const read_filter var,
                                 const read_visitor reader) -> void {
 
     if (operand.written_place != nullptr) {
-        operand.written_place->visit_index_reads(var, reader);
+        operand.written_place->visit_index_reads(reader);
         return;
     }
 
-    operand.node->visit_reads(var, reader);
+    operand.node->visit_reads(reader);
 }
 
-inline auto statement::visit_reads(const read_filter var,
-                                   const read_visitor reader) const -> void {
-
-    visit_operands([&var, &reader](const list_operand& operand) -> void {
-        visit_operand_reads(operand, var, reader);
+inline auto statement::visit_reads(const read_visitor reader) const -> void {
+    visit_operands([&reader](const list_operand& operand) -> void {
+        visit_operand_reads(operand, reader);
     });
+}
+
+inline auto statement::assert_result_not_read(const assignment_flow& flow) const
+    -> void {
+
+    visit_reads([&flow](const stmt_identifier& read) -> void {
+        if (not read.names_result() or
+            flow.assigned().covers(read.accessed_bytes())) {
+
+            return;
+        }
+
+        throw_uninitialized(read.first_token(), read.first_token().text());
+    });
+}
+
+// a path such as 'p.y' reads its root variable
+inline auto statement::assert_var_not_used(const std::string_view var,
+                                           const assigned_bytes& assigned) const
+    -> void {
+
+    visit_reads([&var, &assigned](const stmt_identifier& read) -> void {
+        if (not read.first_token().is_text(var) or
+            assigned.covers(read.accessed_bytes())) {
+
+            return;
+        }
+
+        throw_uninitialized(read.first_token(), var);
+    });
+}
+
+inline auto statement::reads_var(const std::string_view var) const -> bool {
+    bool is_read{};
+
+    visit_reads([&var, &is_read](const stmt_identifier& read) -> void {
+        if (read.first_token().is_text(var)) {
+            is_read = true;
+        }
+    });
+
+    return is_read;
 }
 
 inline auto statement::bare_path() const -> const stmt_identifier* {

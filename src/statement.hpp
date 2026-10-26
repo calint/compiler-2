@@ -338,10 +338,10 @@ class statement {
 
     [[nodiscard]] virtual auto tok() const -> const token& { return token_; }
 
-    // definite assignment: checks the reads of the traced variable and records
-    // its assignments
+    // definite assignment: checks the reads of the result and records its
+    // assignments
     virtual auto trace_assignment(assignment_flow& flow) const -> void {
-        assert_var_not_used(flow);
+        assert_result_not_read(flow);
     }
 
     // reports what the bodies of the calls in this node read and write, in
@@ -362,47 +362,22 @@ class statement {
         std::unreachable();
     }
 
-    // reports every read of 'var' in this statement, of every variable when
-    // none; the reads of the operands, of a written place only its indexes
-    // ('stmt_identifier.hpp')
-    virtual auto visit_reads(const read_filter var,
-                             const read_visitor reader) const -> void;
+    // reports every read in this statement: the reads of the operands, of a
+    // written place only its indexes ('stmt_identifier.hpp')
+    virtual auto visit_reads(const read_visitor reader) const -> void;
 
     //
     // class methods
     //
 
-    // definite assignment: throws if the traced variable is read outside of
-    // the assigned bytes
-    auto assert_var_not_used(const assignment_flow& flow) const -> void {
-        const std::optional<std::string_view> var{flow.traced_var()};
-
-        if (not var) {
-            return;
-        }
-
-        assert_var_not_used(*var, flow.assigned());
-    }
+    // definite assignment: throws if the result is read outside of the
+    // bytes assigned so far ('stmt_identifier.hpp')
+    auto assert_result_not_read(const assignment_flow& flow) const -> void;
 
     // definite assignment: throws if 'var' is read outside of the 'assigned'
-    // bytes
-    auto assert_var_not_used(const std::string_view var,
-                             const assigned_bytes& assigned) const -> void {
-
-        visit_reads(
-            var,
-            [&var, &assigned](
-                const token& src_loc_tk,
-                [[maybe_unused]] const std::string_view read_text,
-                const byte_range& accessed_bytes,
-                [[maybe_unused]] const access_path& accessed_path) -> void {
-                if (assigned.covers(accessed_bytes)) {
-                    return;
-                }
-
-                throw_uninitialized(src_loc_tk, var);
-            });
-    }
+    // bytes ('stmt_identifier.hpp')
+    auto assert_var_not_used(std::string_view var,
+                             const assigned_bytes& assigned) const -> void;
 
     // the path of names, fields and indexes this node is, the operand path
     // without unary ops, e.g. 'p.x' or 'a[i]', not '-x'; a constant or a
@@ -451,19 +426,8 @@ class statement {
         return operand_path() == nullptr;
     }
 
-    [[nodiscard]] auto reads_var(const std::string_view var) const -> bool {
-        bool is_read{};
-
-        visit_reads(
-            var,
-            [&is_read]([[maybe_unused]] const token& src_loc_tk,
-                       [[maybe_unused]] const std::string_view read_text,
-                       [[maybe_unused]] const byte_range& accessed_bytes,
-                       [[maybe_unused]] const access_path& accessed_path)
-                -> void { is_read = true; });
-
-        return is_read;
-    }
+    // 'stmt_identifier.hpp'
+    [[nodiscard]] auto reads_var(std::string_view var) const -> bool;
 
     auto set_type(const type& tp) -> void { type_ = &tp; }
 

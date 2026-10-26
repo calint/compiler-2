@@ -468,13 +468,6 @@ class stmt_def_func final : public statement {
         }
     }
 
-    // the definite-assignment walk without a variable, see
-    // 'stmt_block::trace_assignment'
-    auto assert_statements_reached() const -> void {
-        assignment_flow flow{assignment_flow::reachability_only(tok())};
-        code_.trace_assignment(flow);
-    }
-
     // 'func' is a keyword so no user name or internal label starts with 'func.'
     // e.g. 'func.sum.len.4.8' for array lengths 4 and 8
     [[nodiscard]] auto
@@ -844,18 +837,16 @@ class stmt_def_func final : public statement {
         }
     }
 
-    // every path through the body sets the result, also the end, which
-    // returns like a 'return' statement
+    // every statement is reached and every path through the body sets the
+    // result, also the end, which returns like a 'return' statement
     auto assert_sets_result() const -> void {
         if (not result_) {
+            assignment_flow flow{tok(), 0};
+            code_.trace_assignment(flow);
             return;
         }
 
-        assignment_flow flow{
-            result_->name_tk.text(),
-            result_->name_tk,
-            result_type().size_bytes(),
-        };
+        assignment_flow flow{result_->name_tk, result_type().size_bytes()};
 
         code_.trace_assignment(flow);
         flow.assert_set_at_return();
@@ -965,7 +956,6 @@ class stmt_def_func final : public statement {
         // checked here so that the error of an instance gets its frames, a
         // signature that 'main' cannot have first
         assert_main_signature();
-        assert_statements_reached();
         assert_sets_result();
 
         body_uses_ = tc.scopes().current_func_scope().body_uses_of_func();
