@@ -337,10 +337,6 @@ class machine_x86_64 final : public machine {
 
         comment(src_loc_tk, indent, "frame capacity check begin");
 
-        const std::string failed{
-            failure_label(frame_overflow_failure, src_loc_tk),
-        };
-
         const operand start{
             alloc_scratch_register(src_loc_tk, indent, default_type()),
         };
@@ -356,7 +352,9 @@ class machine_x86_64 final : public machine {
             assembler_x86_64::memory::of_symbol(variables_label));
 
         cmp(src_loc_tk, indent, start, remaining);
-        assembler_.jcc(indent, condition::b, failed);
+
+        branch_to_failure(src_loc_tk, indent, condition::b,
+                          frame_overflow_failure);
 
         // an absolute address reaches beyond the 2 GiB of 'rip' relative ones
         assembler_.instruction(indent, op::mov, to_argument(remaining),
@@ -364,7 +362,10 @@ class machine_x86_64 final : public machine {
                                    variables_end_label));
 
         cmp(src_loc_tk, indent, start, remaining);
-        assembler_.jcc(indent, condition::a, failed);
+
+        branch_to_failure(src_loc_tk, indent, condition::a,
+                          frame_overflow_failure);
+
         emit_op(src_loc_tk, indent, op::sub, remaining, start);
 
         // note: the value of 'start' is no longer needed, its register is
@@ -372,7 +373,10 @@ class machine_x86_64 final : public machine {
 
         mov(src_loc_tk, indent, start, frame_size_bytes);
         cmp(src_loc_tk, indent, start, remaining);
-        assembler_.jcc(indent, condition::a, failed);
+
+        branch_to_failure(src_loc_tk, indent, condition::a,
+                          frame_overflow_failure);
+
         free_scratch_register(src_loc_tk, indent, remaining);
         free_scratch_register(src_loc_tk, indent, start);
         comment(src_loc_tk, indent, "frame capacity check end");
@@ -1144,24 +1148,16 @@ class machine_x86_64 final : public machine {
     auto branch_on_overflow(const token& src_loc_tk, const size_t indent)
         -> void {
 
-        branch_to_overflow_failure(src_loc_tk, indent, condition::o);
+        branch_to_failure(src_loc_tk, indent, condition::o, overflow_failure);
     }
 
     // a reported line goes through the stub of its line, which sets rbp for
     // the handler, so a passing check keeps rbp and loads nothing
-    auto branch_to_bounds_failure(const token& src_loc_tk, const size_t indent,
-                                  const condition failed) -> void {
+    auto branch_to_failure(const token& src_loc_tk, const size_t indent,
+                           const condition failed,
+                           const failure_handler& handler) -> void {
 
-        assembler_.jcc(indent, failed,
-                       failure_label(bounds_failure, src_loc_tk));
-    }
-
-    auto branch_to_overflow_failure(const token& src_loc_tk,
-                                    const size_t indent, const condition failed)
-        -> void {
-
-        assembler_.jcc(indent, failed,
-                       failure_label(overflow_failure, src_loc_tk));
+        assembler_.jcc(indent, failed, failure_label(handler, src_loc_tk));
     }
 
     // the built-in integer type of 'size_bytes'
@@ -1229,7 +1225,7 @@ class machine_x86_64 final : public machine {
         mov(src_loc_tk, indent, right, low_byte);
         cmp(src_loc_tk, indent, right, left);
 
-        branch_to_overflow_failure(src_loc_tk, indent, condition::ne);
+        branch_to_failure(src_loc_tk, indent, condition::ne, overflow_failure);
     }
 
     // the source in 'rsi', the destination in 'rdi' and the byte count in
@@ -1240,10 +1236,6 @@ class machine_x86_64 final : public machine {
         -> void {
 
         comment(src_loc_tk, indent, "overlap check begin");
-
-        const std::string failed{
-            failure_label(overlap_failure, src_loc_tk),
-        };
 
         const std::string passed{
             std::format(".Lbaz_overlap.{}", overlap_label_count_++),
@@ -1263,7 +1255,7 @@ class machine_x86_64 final : public machine {
         comment(src_loc_tk, indent, "destination starts inside the source");
 
         cmp(src_loc_tk, indent, distance, qword_register("rcx"));
-        assembler_.jcc(indent, condition::b, failed);
+        branch_to_failure(src_loc_tk, indent, condition::b, overlap_failure);
         assembler_.label(indent, passed);
         free_scratch_register(src_loc_tk, indent, distance);
 
@@ -1286,14 +1278,10 @@ class machine_x86_64 final : public machine {
 
         comment(src_loc_tk, indent, "division check begin");
 
-        const std::string failed{
-            failure_label(division_failure, src_loc_tk),
-        };
-
         comment(src_loc_tk, indent, "zero divisor");
 
         cmp(src_loc_tk, indent, divisor, immediate(0));
-        assembler_.jcc(indent, condition::e, failed);
+        branch_to_failure(src_loc_tk, indent, condition::e, division_failure);
 
         comment(src_loc_tk, indent, "minimum divided by -1 overflows");
 
@@ -1301,7 +1289,7 @@ class machine_x86_64 final : public machine {
         assembler_.jcc(indent, condition::ne, not_minimum);
         mov(src_loc_tk, indent, qword_register("rdx"), immediate(minimum));
         cmp(src_loc_tk, indent, qword_register("rax"), qword_register("rdx"));
-        assembler_.jcc(indent, condition::e, failed);
+        branch_to_failure(src_loc_tk, indent, condition::e, division_failure);
         assembler_.label(indent, not_minimum);
 
         comment(src_loc_tk, indent, "division check end");
@@ -1333,14 +1321,10 @@ class machine_x86_64 final : public machine {
 
         comment(src_loc_tk, indent, "shift check begin");
 
-        const std::string failed{
-            failure_label(shift_failure, src_loc_tk),
-        };
-
         cmp(src_loc_tk, indent, sized_register("rcx", dst_type.size_bytes()),
             immediate(static_cast<int64_t>(dst_type.size_bits())));
 
-        assembler_.jcc(indent, condition::ae, failed);
+        branch_to_failure(src_loc_tk, indent, condition::ae, shift_failure);
 
         comment(src_loc_tk, indent, "shift check end");
     }
@@ -1360,7 +1344,8 @@ class machine_x86_64 final : public machine {
             cmp(src_loc_tk, indent, range.checked,
                 immediate(range.array_count));
 
-            branch_to_bounds_failure(src_loc_tk, indent, out_of_bounds);
+            branch_to_failure(src_loc_tk, indent, out_of_bounds,
+                              bounds_failure);
 
             return;
         }
@@ -1381,14 +1366,14 @@ class machine_x86_64 final : public machine {
         } else {
             mov(src_loc_tk, indent, reg_top_idx, range.checked);
             add(src_loc_tk, indent, reg_top_idx, range.count);
-            branch_to_bounds_failure(src_loc_tk, indent, condition::o);
+            branch_to_failure(src_loc_tk, indent, condition::o, bounds_failure);
         }
 
         cmp(src_loc_tk, indent, reg_top_idx, immediate(range.array_count));
 
         free_scratch_register(src_loc_tk, indent, reg_top_idx);
 
-        branch_to_bounds_failure(src_loc_tk, indent, out_of_bounds);
+        branch_to_failure(src_loc_tk, indent, out_of_bounds, bounds_failure);
     }
 
     auto cmp(const token& src_loc_tk, const size_t indent,
@@ -2198,7 +2183,7 @@ class machine_x86_64 final : public machine {
         }
 
         test(src_loc_tk, indent, value, value);
-        branch_to_bounds_failure(src_loc_tk, indent, condition::s);
+        branch_to_failure(src_loc_tk, indent, condition::s, bounds_failure);
     }
 
     auto with_lowered_addresses(

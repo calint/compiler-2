@@ -223,7 +223,22 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
     G. options and targets
        G.1. a check option as one row tying its name, handler and help text
             (X6); a target as one row in main.cpp (X7)
+       => G.1 done, X6 reduced (2026-10-26): the help is the constant
+          'usage_format' and a 'static_assert' checks that it lists every
+          check of 'check_names' as a line and that its 'noub' entry names
+          every check 'noub' turns on (a scratch copy without 'stack' there
+          fails to compile); generating the help from the table would need a
+          reflow that keeps the text equal, not done; X7: 'target_name' holds
+          the maker ('make_machine<machine_t>') and 'writes_image',
+          'make_backend' and 'target_text' go ('target_of')
        G.2. the backends name the same check steps alike (C8)
+       G.2. the backends name the same check steps alike (C8)
+       => G.2 done (2026-10-26): x86_64 'branch_to_failure(tk, indent,
+          condition, handler)' for every kind, the two wrappers and the four
+          'failed' locals go; rv32i 'emit_lower_bound' -> 'check_lower_bound'
+          like x86_64, its 'check_lower_bounds' -> 'branch_on_negative';
+          both suites, the CLI tests, test-rv32i and clang-tidy clean;
+          listings equal
     asks:
        1. A.3 of the reviewer: node members initialized in the member list,
           the default constructors deleted (20 classes; error order kept by

@@ -1618,6 +1618,31 @@ class machine_rv32i : public machine {
             needs_normalize(instruction, dst, src, constant));
     }
 
+    // passing checks branch to 'bounds_pass_' and failing ones to
+    // 'bounds_fail_', the last check branches past the handler on success so
+    // failures fall through to it
+    auto branch_on_negative(const size_t indent, const std::string_view index,
+                            const operand& reg_count, const bool is_last)
+        -> void {
+
+        const auto check_negative = [&](const std::string_view reg,
+                                        const bool last) -> void {
+            assembler_.branch_zero(indent, last ? op::bgez : op::bltz, reg,
+                                   last ? bounds_pass_.reference
+                                        : bounds_fail_.reference);
+        };
+
+        if (reg_count.is_empty()) {
+            check_negative(index, is_last);
+            return;
+        }
+
+        check_negative(index, false);
+
+        // a negative count passes 'start + count' but spans the address space
+        check_negative(reg_count.register_name(), is_last);
+    }
+
     // a jump to 'handler', which is marked used; with the line, the line in
     // a0 and a jump to the entry of the handler for the file of 'src_loc_tk'
     auto branch_to_failure(const token& src_loc_tk, const size_t indent,
@@ -1863,29 +1888,21 @@ class machine_rv32i : public machine {
         assembler_.label(indent, fits.name);
     }
 
-    // passing checks branch to 'bounds_pass_' and failing ones to
-    // 'bounds_fail_', the last check branches past the handler on success so
-    // failures fall through to it
-    auto check_lower_bounds(const size_t indent, const std::string_view index,
-                            const operand& reg_count, const bool is_last)
-        -> void {
+    // the lower bound, the last check of the bounds check branches past the
+    // handler, see 'branch_on_negative'
+    auto check_lower_bound(const token& src_loc_tk, const size_t indent,
+                           const bounds_range& range, const bounds_plan& plan,
+                           const bool is_last) -> void {
 
-        const auto check_negative = [&](const std::string_view reg,
-                                        const bool last) -> void {
-            assembler_.branch_zero(indent, last ? op::bgez : op::bltz, reg,
-                                   last ? bounds_pass_.reference
-                                        : bounds_fail_.reference);
-        };
+        comment_lower_bound(src_loc_tk, indent, range, plan);
 
-        if (reg_count.is_empty()) {
-            check_negative(index, is_last);
-            return;
+        if (not plan.upper_covers_lower) {
+            branch_on_negative(indent, range.checked.register_name(),
+                               plan.count_known ? operand{} : range.count,
+                               is_last);
         }
 
-        check_negative(index, false);
-
-        // a negative count passes 'start + count' but spans the address space
-        check_negative(reg_count.register_name(), is_last);
+        mark_lower_checked(range);
     }
 
     // after the checked multiply helper: the flag is in 'a1', the product in
@@ -2776,8 +2793,8 @@ class machine_rv32i : public machine {
         };
 
         if (options.lower) {
-            emit_lower_bound(src_loc_tk, indent, range, plan,
-                             not options.upper);
+            check_lower_bound(src_loc_tk, indent, range, plan,
+                              not options.upper);
         }
 
         if (options.upper) {
@@ -3204,23 +3221,6 @@ class machine_rv32i : public machine {
         assembler_.label(0, message_label);
         assembler_.string_data(message);
         assembler_.switch_section(section::text);
-    }
-
-    // the lower bound, the last check of the bounds check branches past the
-    // handler, see 'check_lower_bounds'
-    auto emit_lower_bound(const token& src_loc_tk, const size_t indent,
-                          const bounds_range& range, const bounds_plan& plan,
-                          const bool is_last) -> void {
-
-        comment_lower_bound(src_loc_tk, indent, range, plan);
-
-        if (not plan.upper_covers_lower) {
-            check_lower_bounds(indent, range.checked.register_name(),
-                               plan.count_known ? operand{} : range.count,
-                               is_last);
-        }
-
-        mark_lower_checked(range);
     }
 
     auto emit_multiply_body() -> void {

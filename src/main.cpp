@@ -55,17 +55,54 @@ constexpr size_t memory_alignment{4096};
 
 enum class target : uint8_t { x86_64, rv32i, rv32i_qemu, rv32i_fpga };
 
+// a target of '--target': its name, the backend it makes and whether it
+// writes a binary image beside the assembly
 struct target_name {
     target kind;
     std::string_view text;
+    std::unique_ptr<machine> (*make)(const builtin_type_set& builtins,
+                                     const source_files& files,
+                                     const machine::target_options& options);
+    bool writes_image;
 };
 
-// the names of '--target', in the order of the usage text
+// the backend 'machine_t' of a target
+template <class machine_t>
+[[nodiscard]] auto make_machine(const builtin_type_set& builtins,
+                                const source_files& files,
+                                const machine::target_options& options)
+    -> std::unique_ptr<machine> {
+
+    return std::make_unique<machine_t>(builtins, files, options);
+}
+
+// the targets of '--target', in the order of the usage text
+// todo: x86_64 writes no binary, see etc/todo.txt
 constexpr std::array<target_name, 4> target_names{
-    target_name{.kind{target::x86_64}, .text{"x86_64"}},
-    target_name{.kind{target::rv32i}, .text{"rv32i"}},
-    target_name{.kind{target::rv32i_qemu}, .text{"rv32i-qemu"}},
-    target_name{.kind{target::rv32i_fpga}, .text{"rv32i-fpga"}},
+    target_name{
+        .kind{target::x86_64},
+        .text{"x86_64"},
+        .make{&make_machine<machine_x86_64>},
+        .writes_image{},
+    },
+    target_name{
+        .kind{target::rv32i},
+        .text{"rv32i"},
+        .make{&make_machine<machine_rv32i_linux>},
+        .writes_image{true},
+    },
+    target_name{
+        .kind{target::rv32i_qemu},
+        .text{"rv32i-qemu"},
+        .make{&make_machine<machine_rv32i_qemu>},
+        .writes_image{true},
+    },
+    target_name{
+        .kind{target::rv32i_fpga},
+        .text{"rv32i-fpga"},
+        .make{&make_machine<machine_rv32i_fpga>},
+        .writes_image{true},
+    },
 };
 
 struct kept_version_name {
@@ -164,7 +201,7 @@ auto check_reproduced_source(const program& prg, const source_files& files)
 [[nodiscard]] auto find_target(const std::string_view text)
     -> std::optional<target>;
 
-[[nodiscard]] auto target_text(target kind) -> std::string_view;
+[[nodiscard]] auto target_of(target kind) -> const target_name&;
 
 [[nodiscard]] auto
 default_binary_file_name(const std::string_view src_file_name,
@@ -173,12 +210,6 @@ default_binary_file_name(const std::string_view src_file_name,
 // 'path' names one of the files, also through another path
 [[nodiscard]] auto is_source_file(const std::string_view path,
                                   const source_files& files) -> bool;
-
-[[nodiscard]] auto make_backend(const target machine_target,
-                                const builtin_type_set& builtins,
-                                const source_files& files,
-                                const machine::target_options& target_opts)
-    -> std::unique_ptr<machine>;
 
 auto print_option_error(const std::string_view message) -> void;
 
@@ -442,8 +473,10 @@ template <typename Name, size_t count>
 }
 
 // same layout as the readme usage section which pastes this output
-auto print_help(const char* const program_name) -> void {
-    std::print(R"(usage: {0} [options] [file]
+// the text of '--help', its format arguments are the program name and the
+// size defaults, see 'print_help'
+constexpr std::string_view usage_format{
+    R"(usage: {0} [options] [file]
 compiles file (default: prog.baz) to assembly on stdout, rv32i targets also
 write a binary image
 
@@ -516,9 +549,12 @@ examples:
   {0} --target=rv32i-fpga --checks=upper,lower prog.baz > prog.s
   {0} --target=rv32i-fpga --memory=0x100000 prog.baz > prog.s
   {0} --target=rv32i-qemu --bin=image.bin prog.baz > prog.s
-)",
-               program_name, vars_alignment, default_vars_size_bytes,
-               stack_alignment, default_stack_size_bytes, memory_alignment,
+)"};
+
+auto print_help(const char* const program_name) -> void {
+    std::print(usage_format, program_name, vars_alignment,
+               default_vars_size_bytes, stack_alignment,
+               default_stack_size_bytes, memory_alignment,
                default_memory_size_bytes, machine_rv32i::leaf_stack_bytes());
 }
 
@@ -554,7 +590,7 @@ examples:
         };
 
         const std::unique_ptr<machine> backend{
-            make_backend(opts.machine_target, builtins, files, target_opts),
+            target_of(opts.machine_target).make(builtins, files, target_opts),
         };
 
         // the checks the target cannot honor are off, e.g. x86_64 has no
@@ -564,9 +600,8 @@ examples:
 
         program prg{*backend, builtins, files, opts.vars_size_bytes, checks};
 
-        // the image would replace a source file, the parse read the includes;
-        // x86_64 writes no image
-        if (opts.machine_target != target::x86_64 and
+        // the image would replace a source file, the parse read the includes
+        if (target_of(opts.machine_target).writes_image and
             is_source_file(binary, files)) {
 
             throw option_error{std::format("invalid --bin: {} is a source file",
@@ -748,6 +783,29 @@ constexpr std::array<check_name, 10> check_names{
     },
 };
 
+// the help lists every check as a line of its own, and its 'noub' entry
+// names every check that 'noub' turns on, so the text follows the table
+static_assert([] -> bool {
+    const std::string_view checks{
+        usage_format.substr(usage_format.find("\nchecks:\n")),
+    };
+
+    const std::string_view noub{
+        checks.substr(checks.find("\n  noub "),
+                      checks.find("\n  -NAME") - checks.find("\n  noub ")),
+    };
+
+    return std::ranges::all_of(
+        check_names, [&](const check_name& name) -> bool {
+            const std::string line_start{
+                std::string{"\n  "} + std::string{name.text} + " ",
+            };
+
+            return checks.contains(line_start) and
+                   (not name.is_ub or noub.contains(name.text));
+        });
+}());
+
 // each '--checks' replaces the earlier ones, empty parts are ignored, 'alias'
 // stays on unless '-alias' is given, 'name' and '+name' enable a check,
 // '-name' disables it after all enables, so the order in the list does not
@@ -828,10 +886,10 @@ constexpr std::array<check_name, 10> check_names{
     return std::nullopt;
 }
 
-[[nodiscard]] auto target_text(const target kind) -> std::string_view {
+[[nodiscard]] auto target_of(const target kind) -> const target_name& {
     for (const target_name& name : target_names) {
         if (name.kind == kind) {
-            return name.text;
+            return name;
         }
     }
 
@@ -845,7 +903,9 @@ default_binary_file_name(const std::string_view src_file_name,
 
     std::filesystem::path path{src_file_name};
     path.replace_extension();
-    return std::format("{}-{}.bin", path.string(), target_text(machine_target));
+
+    return std::format("{}-{}.bin", path.string(),
+                       target_of(machine_target).text);
 }
 
 [[nodiscard]] auto is_source_file(const std::string_view path,
@@ -860,33 +920,6 @@ default_binary_file_name(const std::string_view src_file_name,
     }
 
     return false;
-}
-
-[[nodiscard]] auto make_backend(const target machine_target,
-                                const builtin_type_set& builtins,
-                                const source_files& files,
-                                const machine::target_options& target_opts)
-    -> std::unique_ptr<machine> {
-
-    // todo: x86_64 writes no binary, see etc/todo.txt
-    if (machine_target == target::x86_64) {
-        return std::make_unique<machine_x86_64>(builtins, files, target_opts);
-    }
-
-    if (machine_target == target::rv32i) {
-        return std::make_unique<machine_rv32i_linux>(builtins, files,
-                                                     target_opts);
-    }
-
-    if (machine_target == target::rv32i_qemu) {
-        return std::make_unique<machine_rv32i_qemu>(builtins, files,
-                                                    target_opts);
-    }
-
-    // the command line accepts only these four targets
-    assert(machine_target == target::rv32i_fpga);
-
-    return std::make_unique<machine_rv32i_fpga>(builtins, files, target_opts);
 }
 
 // every command line error ends with the same hint
