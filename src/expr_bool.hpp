@@ -224,15 +224,17 @@ class expr_bool_op final : public statement {
                         in_quotes(comparison))};
     }
 
-    // an element of an 'and' list and the last element of any list: it
-    // branches when false, nowhere when 'jmp_to_if_false' is empty;
-    // 'inverted' is the inversion of the list, 'joined_by' its connective
-    // after the inversion
+    // an element of a list: it branches to 'target' when its value is
+    // 'branch_on_true', nowhere when 'target' is empty; an 'and' element and
+    // the last element of any list branch when false, an 'or' element before
+    // the last when true; 'inverted' is the inversion of the list, 'joined_by'
+    // its connective after the inversion; the result is known when the
+    // expression evaluated at compile time
     [[nodiscard]] auto
-    compile_branch_if_false(toc& tc, const size_t indent,
-                            const std::string_view jmp_to_if_false,
-                            const bool inverted, const connective joined_by,
-                            const operand& dst) const -> condition_result {
+    compile_branch(toc& tc, const size_t indent, const std::string_view target,
+                   const bool branch_on_true, const bool inverted,
+                   const connective joined_by, const operand& dst) const
+        -> condition_result {
 
         const std::string_view list_op{
             joined_by == connective::logical_or ? "or" : "and",
@@ -243,24 +245,8 @@ class expr_bool_op final : public statement {
                                    .operation{operation()},
                                    .inverted{inverted != is_negated()},
                                    .destination{dst},
-                                   .target{jmp_to_if_false},
-                                   .branch_on_true{},
-                               });
-    }
-
-    // an element of an 'or' list before the last: it branches when true; the
-    // result is known when the expression evaluated at compile time
-    [[nodiscard]] auto compile_branch_if_true(
-        toc& tc, const size_t indent, const std::string_view jmp_to_if_true,
-        const bool inverted, const operand& dst) const -> condition_result {
-
-        return compile_element(tc, indent, comment_label("or", inverted),
-                               {
-                                   .operation{operation()},
-                                   .inverted{inverted != is_negated()},
-                                   .destination{dst},
-                                   .target{jmp_to_if_true},
-                                   .branch_on_true{true},
+                                   .target{target},
+                                   .branch_on_true{branch_on_true},
                                });
     }
 
@@ -1429,13 +1415,9 @@ class expr_bool final : public statement {
 
         const expr_bool_op& expr{std::get<expr_bool_op>(bools_.at(expr_index))};
 
-        if (is_or) {
-            return expr.compile_branch_if_true(tc, indent, targets.if_true,
-                                               inverted, dst);
-        }
-
-        return expr.compile_branch_if_false(tc, indent, targets.if_false,
-                                            inverted, joined_by(inverted), dst);
+        return expr.compile_branch(tc, indent,
+                                   is_or ? targets.if_true : targets.if_false,
+                                   is_or, inverted, joined_by(inverted), dst);
     }
 
     [[nodiscard]] auto compile_last_element(
@@ -1476,8 +1458,8 @@ class expr_bool final : public statement {
         const expr_bool_op& expr{std::get<expr_bool_op>(bools_.back())};
 
         const condition_result const_eval{
-            expr.compile_branch_if_false(tc, indent, if_false, inverted,
-                                         joined_by(inverted), dst),
+            expr.compile_branch(tc, indent, if_false, false, inverted,
+                                joined_by(inverted), dst),
         };
 
         if (is_known(const_eval)) {

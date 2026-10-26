@@ -176,6 +176,11 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
           dispatch; 'parse_builtin_value', 'assert_builtin_has_value' and
           'is_builtin_used_either_way' go; the crash item is fixed (tests
           1695, 1696); listings equal; src -22 lines; P B and P C next
+       => B.7 P B, P C done (2026-10-26): one 'expr_bool_op::compile_branch'
+          for both list elements; the bare built-in type is a typed
+          'expr_zero', the conversion always has its argument (4 'if (not
+          argument_)' and the second constructor go); listings equal; src
+          -32 lines
     C. a fix: P G, a comparison folds through one function that checks its
        sides, 'let b = k == 1000' with 'k' an 'i8' is rejected like 'var';
        behavior, with tests

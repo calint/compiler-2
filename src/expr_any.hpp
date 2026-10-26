@@ -994,7 +994,8 @@ class expr_any final : public statement {
             }
 
             return builtin_value(
-                tc, tz, std::make_unique<stmt_builtin_convert>(tc, tk));
+                tc, tz,
+                std::make_unique<expr_zero>(tc.get_type_or_throw(tk), tk));
         }
 
         tz.put_back_token(tk);

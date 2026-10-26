@@ -55,8 +55,7 @@ class stmt_builtin_convert final : public statement {
         token close_paren_tk;
     };
 
-    // none in the bare form, e.g. the 'i8' of 'var x = i8'
-    std::optional<argument_part> argument_;
+    argument_part argument_;
 
   public:
     // where the argument is computed for a target at most as wide as the type
@@ -67,26 +66,15 @@ class stmt_builtin_convert final : public statement {
         set_type(tc.get_type_or_throw(tk));
     }
 
-    // e.g. 'i8' in 'var x = i8' is 'i8(0)'
-    stmt_builtin_convert(const toc& tc, const token tk) : statement{tk, {}} {
-        set_type(tc.get_type_or_throw(tk));
-    }
-
     //
     // overridden methods
     //
 
     auto source_to(std::ostream& os) const -> void override {
         statement::source_to(os);
-
-        // the bare form has no argument
-        if (not argument_) {
-            return;
-        }
-
-        argument_->open_paren_tk.source_to(os);
-        argument_->arg.source_to(os);
-        argument_->close_paren_tk.source_to(os);
+        argument_.open_paren_tk.source_to(os);
+        argument_.arg.source_to(os);
+        argument_.close_paren_tk.source_to(os);
     }
 
     auto compile(toc& tc, const size_t indent, const destination& dst) const
@@ -121,14 +109,6 @@ class stmt_builtin_convert final : public statement {
     // where under the overflow check a result that does not fit is an error
     [[nodiscard]] auto fold(const toc& tc, const value_use& use) const
         -> std::optional<folded_value> override {
-
-        // the bare form has no argument, e.g. the 'i8' of 'var x = i8'
-        if (not argument_) {
-            return folded_value{
-                .value{},
-                .own_type{&get_type()},
-            };
-        }
 
         const value_use arg_use{
             .width{&width_type()},
@@ -177,25 +157,15 @@ class stmt_builtin_convert final : public statement {
     }
 
     auto visit_operands(const operand_visitor visitor) const -> void override {
-        // the bare form has no operand
-        if (not argument_) {
-            return;
-        }
-
         visitor({
-            .node{&argument_->arg},
+            .node{&argument_.arg},
             .written_place{},
         });
     }
 
   private:
-    // note: the bare form folds, so only a conversion with an argument
-    //       compiles
-
     [[nodiscard]] auto argument() const -> const expr_arith& {
-        assert(argument_);
-
-        return argument_->arg;
+        return argument_.arg;
     }
 
     // the arithmetic of the argument wraps, 'uops' apply to the converted
