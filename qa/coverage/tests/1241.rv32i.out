@@ -1,4 +1,4 @@
 
-1241.baz:8:10: expected type 'i32', got 'bool' from 'nb', use 'i32(...)'
+1241.baz:8:10: expected type 'i32', got 'bool', use 'i32(...)'
     exit(nb())
          ^~

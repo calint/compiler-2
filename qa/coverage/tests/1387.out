@@ -1,4 +1,4 @@
 
-1387.baz:8:9: expected type 'bool', got 'point'
+1387.baz:8:9: an instance of 'point' is not a 'bool'
     b = p
         ^

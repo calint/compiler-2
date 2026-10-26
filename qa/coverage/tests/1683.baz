@@ -1,0 +1,14 @@
+# an instance is not a condition, at the parse, so also in a branch that
+# folds away
+
+type point {x, y}
+
+func main() {
+    var p = point{1, 2}
+    if 1 == 2 {
+        if p {
+            exit(1)
+        }
+    }
+    exit(0)
+}

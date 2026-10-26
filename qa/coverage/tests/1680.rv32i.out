@@ -1,0 +1,4 @@
+
+1680.baz:11:13: expected type 'i32', got 'bool', use 'i32(...)'
+        x = f()
+            ^

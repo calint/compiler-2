@@ -5258,3 +5258,19 @@ SRC=1678 && EXP=6 && RUN
 # the version that a call's value keeps sets the peaks of the footer: the
 # scratch version takes a temporary that the kept one does not
 SRC=1679 && EXP=3 && RUN
+
+# a 'bool' call result is not a number, at the parse, so also in a
+# branch that folds away
+SRC=1680 && COMPERR
+
+# 'arrays_equal' is a 'bool', not a number, at the parse, so also in a
+# branch that folds away
+SRC=1681 && COMPERR
+
+# an instance call result is not a number, at the parse, so also in a
+# branch that folds away
+SRC=1682 && COMPERR
+
+# an instance is not a condition, at the parse, so also in a branch that
+# folds away
+SRC=1683 && COMPERR

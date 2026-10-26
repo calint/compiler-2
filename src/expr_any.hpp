@@ -895,24 +895,42 @@ class expr_any final : public statement {
         return *e;
     }
 
-    // a 'bool' is not an integer, 'int(b)' converts it; an arithmetic operand
-    // and a call result are checked by rules of their own
-    static auto assert_not_boolean_name(const toc& tc, const expr_arith& value,
-                                        const type& tp) -> void {
+    // a number destination takes a number: not a 'bool', 'int(b)' converts
+    // it, and not an instance, whatever the value, e.g. 'c', 'f()' or
+    // 'arrays_equal(a, b, n)'; at the parse, so also in code that is not
+    // compiled; the width is checked where the value is compiled
+    static auto assert_number_kind(const toc& tc, const expr_arith& value,
+                                   const type& tp) -> void {
 
-        if (value.operand_path() == nullptr or not value.get_type().is_bool()) {
+        const type& value_type{value.get_type()};
+
+        if (value_type.is_builtin() and not value_type.is_bool()) {
             return;
         }
 
-        // a whole array of 'bool' is bytes to a built-in, e.g. 'flags' of
-        // 'write(1, flags)'
+        // a whole array is bytes to a built-in, e.g. the 'bool' array 'flags'
+        // of 'write(1, flags)'
         if (const std::optional<place> array{as_place(tc, value)};
             array and array->info.is_array()) {
 
             return;
         }
 
-        throw_type_mismatch(value.tok(), tp.name(), value.get_type().name());
+        // e.g. the name 'f' of the call 'f()'
+        const token& value_tk{
+            value.is_single_operand() ? value.single_operand().tok()
+                                      : value.tok(),
+        };
+
+        if (not value_type.is_bool()) {
+            throw_type_mismatch(value_tk, tp.name(), value_type.name());
+        }
+
+        throw compile_error{
+            value_tk,
+            std::format("expected type {}, got 'bool', use '{}(...)'",
+                        in_quotes(tp.name()), tp.name()),
+        };
     }
 
     // a built-in value whose only element is parsed, e.g. the zero value of
@@ -1006,7 +1024,9 @@ class expr_any final : public statement {
             expr_arith value{tc, tz,
                              expr_arith::options::plain(destination_type)};
 
-            assert_not_boolean_name(tc, value, tp);
+            if (not tp.is_bool()) {
+                assert_number_kind(tc, value, tp);
+            }
 
             // e.g. the '>' of 'int(a > 2)', which would end the number
             expr_arith::assert_no_condition_next(tz);

@@ -1,4 +1,4 @@
 
-0348.baz:9:10: expected type 'i16', got 'bool'
+0348.baz:9:10: expected type 'i16', got 'bool', use 'i16(...)'
     take(arrays_equal(src, cmp, 2))
          ^~~~~~~~~~~~

@@ -1,4 +1,4 @@
 
-1605.baz:3:16: expected type 'i64', got 'bool'
+1605.baz:3:16: expected type 'i64', got 'bool', use 'i64(...)'
     var a = i8[true]
-               ^
+               ^~~~

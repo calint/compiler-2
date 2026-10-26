@@ -42,8 +42,10 @@ class stmt_builtin_arrays_equal final : public statement {
     auto compile(toc& tc, const size_t indent, const destination& dst) const
         -> void override {
 
-        // the destination is named in the source, the error is at its name
-        assert_destination_type(dst.type_ref(), dst.error_token(tok()));
+        // note: the parse rejected a destination that is not a 'bool'
+        //       ('expr_any::assert_number_kind')
+
+        assert(dst.type_ref().is_bool());
 
         compile_arrays_equal(tc, indent, dst.operand(), false);
     }
@@ -87,16 +89,5 @@ class stmt_builtin_arrays_equal final : public statement {
 
     auto visit_operands(const operand_visitor visitor) const -> void override {
         operands_.visit_operands(visitor);
-    }
-
-  private:
-    auto assert_destination_type(const type& dst_type,
-                                 const token& src_loc_tk) const -> void {
-
-        if (dst_type.is_same(get_type())) {
-            return;
-        }
-
-        throw_type_mismatch(src_loc_tk, dst_type.name(), get_type().name());
     }
 };

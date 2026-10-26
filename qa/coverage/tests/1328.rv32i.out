@@ -1,4 +1,4 @@
 
-1328.baz:11:13: expected type 'i32', got 'bool' from 't', use 'i32(...)'
+1328.baz:11:13: expected type 'i32', got 'bool', use 'i32(...)'
     s = {1, t()}
             ^

@@ -71,6 +71,20 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
             phase with one text and one caret for every value kind and
             direction, also in code not reached (C1); behavior (messages,
             dead code rejects more)
+       => B.3 done (2026-10-26): at the parse, 'expr_any::assert_number_kind'
+          (was 'assert_not_boolean_name', a name only) rejects a 'bool' or
+          an instance going to a number, whatever the value ("expected type
+          'i64', got 'bool', use 'i64(...)'" at the value, the hint for a
+          'bool'); 'expr_bool_op::assert_boolean_operands' rejects an
+          instance going to a 'bool' or a condition ("an instance of 'point'
+          is not a 'bool'"); the compile checks they replace are asserts
+          ('arrays_equal' destination, 'stmt_identifier::assert_not_narrowed'
+          instance, the shorthand condition); the width stays at compile
+          ('call_site' result, narrowing); tests 1680-1683 (dead branches);
+          messages and carets of 23 cases; both suites, the CLI tests, roome,
+          clang-tidy, the lints and fuzz-reject, exprs, generics, methods,
+          data, constructs clean; an instance comparison was already
+          rejected at the parse
        B.4. 'stmt_assign_var::visit_operands' states the order it emits:
             the destination's indexes first (U2, p7)
        => B.4 done (2026-10-26): the destination, then the value; only the

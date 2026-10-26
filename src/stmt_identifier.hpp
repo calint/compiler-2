@@ -451,12 +451,10 @@ class stmt_identifier final : public statement {
 
         const type& src_type{info.type_ref()};
 
-        // a built-in destination takes a number, e.g. not the instance 'a'
-        // of 'y = a'
-        if (not src_type.is_builtin()) {
-            throw_type_mismatch(first_token(), dst_type.name(),
-                                src_type.name());
-        }
+        // note: the parse rejected an instance in a built-in destination,
+        //       e.g. the 'a' of 'y = a' ('expr_any::assert_number_kind')
+
+        assert(src_type.is_builtin());
 
         if (src_type.size_bytes() <= dst_type.size_bytes()) {
             return;

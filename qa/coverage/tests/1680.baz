@@ -1,0 +1,14 @@
+# a 'bool' call result is not a number, at the parse, so also in a
+# branch that folds away
+
+func f() res bool {
+    res = true
+}
+
+func main() {
+    var x = 1
+    if 1 == 2 {
+        x = f()
+    }
+    exit(x)
+}

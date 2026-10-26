@@ -1,4 +1,4 @@
 
-1243.baz:12:12: expected type 'i64', got 'bool' from 'nb', use 'i64(...)'
+1243.baz:12:12: expected type 'i64', got 'bool', use 'i64(...)'
     exit(w(nb()))
            ^~

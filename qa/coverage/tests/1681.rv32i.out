@@ -1,0 +1,4 @@
+
+1681.baz:9:13: expected type 'i32', got 'bool', use 'i32(...)'
+        x = arrays_equal(a, b, 4)
+            ^~~~~~~~~~~~

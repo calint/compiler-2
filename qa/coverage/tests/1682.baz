@@ -1,0 +1,16 @@
+# an instance call result is not a number, at the parse, so also in a
+# branch that folds away
+
+type point {x, y}
+
+func mk() res point {
+    res = {1, 2}
+}
+
+func main() {
+    var n = 1
+    if 1 == 2 {
+        n = mk()
+    }
+    exit(n)
+}

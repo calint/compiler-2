@@ -1,4 +1,4 @@
 
-1221.baz:6:7: expected type 'i64', got 'bool'
+1221.baz:6:7: expected type 'i64', got 'bool', use 'i64(...)'
     a[b] = 1
       ^

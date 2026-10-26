@@ -202,9 +202,16 @@ class expr_bool_op final : public statement {
 
         const type& lhs_type{lhs_.get_type()};
 
-        // an instance is reported as a condition when it is compiled
-        if (lhs_type.is_bool() or not lhs_type.is_builtin()) {
+        if (lhs_type.is_bool()) {
             return;
+        }
+
+        // a condition tests a number, an instance would be tested as its
+        // first field
+        if (not lhs_type.is_builtin()) {
+            throw compile_error{lhs_.tok(),
+                                std::format("an instance of {} is not a 'bool'",
+                                            in_quotes(lhs_type.name()))};
         }
 
         const std::string source{statement::trimmed_source(lhs_)};
@@ -487,7 +494,9 @@ class expr_bool_op final : public statement {
                                     action);
         }
 
-        assert_not_instance_condition(lhs_);
+        // note: the parse rejected an instance ('assert_boolean_operands')
+        assert(lhs_.get_type().is_builtin());
+
         resolve_cmp_shorthand(tc, indent, condition, action);
 
         return condition_result::unknown;
@@ -729,19 +738,6 @@ class expr_bool_op final : public statement {
         if (next == '!') {
             throw compile_error{tz, "expected '!='"};
         }
-    }
-
-    // a condition tests a number, an instance would be tested as its first
-    // field; checked when compiling since the initializer of a 'var' parses
-    // its expression to learn the type, e.g. 'var b = a' copies the instance
-    static auto assert_not_instance_condition(const expr_arith& side) -> void {
-        if (side.get_type().is_builtin()) {
-            return;
-        }
-
-        throw compile_error{side.tok(),
-                            std::format("an instance of {} is not a condition",
-                                        in_quotes(side.get_type().name()))};
     }
 
     static auto assert_not_record(const expr_arith& side,

@@ -1,4 +1,4 @@
 
-0345.baz:7:5: expected type 'i16', got 'bool'
+0345.baz:7:14: expected type 'i16', got 'bool', use 'i16(...)'
     result = arrays_equal(a, b, 1)
-    ^~~~~~
+             ^~~~~~~~~~~~

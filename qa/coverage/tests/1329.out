@@ -1,4 +1,4 @@
 
-1329.baz:8:20: expected type 'i64', got 'bool'
+1329.baz:8:20: expected type 'i64', got 'bool', use 'i64(...)'
     var s = rec{1, arrays_equal(x, y, 2)}
                    ^~~~~~~~~~~~

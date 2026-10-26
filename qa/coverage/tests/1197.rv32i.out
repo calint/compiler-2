@@ -1,4 +1,4 @@
 
-1197.baz:6:9: expected type 'i32', got 'bool'
+1197.baz:6:9: expected type 'i32', got 'bool', use 'i32(...)'
     r = b
         ^

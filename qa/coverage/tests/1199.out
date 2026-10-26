@@ -1,4 +1,4 @@
 
-1199.baz:6:9: expected type 'i8', got 'bool'
+1199.baz:6:9: expected type 'i8', got 'bool', use 'i8(...)'
     r = b
         ^

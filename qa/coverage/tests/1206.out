@@ -1,4 +1,4 @@
 
-1206.baz:5:22: expected type 'i32', got 'bool'
+1206.baz:5:22: expected type 'i32', got 'bool', use 'i32(...)'
     var a = i32[]{1, b}
                      ^

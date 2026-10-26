@@ -1,4 +1,4 @@
 
-1200.baz:5:11: expected type 'i32', got 'bool'
+1200.baz:5:11: expected type 'i32', got 'bool', use 'i32(...)'
     res = b
           ^

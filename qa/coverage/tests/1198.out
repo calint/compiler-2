@@ -1,4 +1,4 @@
 
-1198.baz:5:9: expected type 'i64', got 'bool'
+1198.baz:5:9: expected type 'i64', got 'bool', use 'i64(...)'
     r = true
-        ^
+        ^~~~

@@ -1,0 +1,4 @@
+
+1683.baz:9:12: an instance of 'point' is not a 'bool'
+        if p {
+           ^

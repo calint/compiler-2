@@ -1,4 +1,4 @@
 
-1327.baz:10:20: expected type 'i64', got 'bool' from 't', use 'i64(...)'
+1327.baz:10:20: expected type 'i64', got 'bool', use 'i64(...)'
     var s = rec{2, t()}
                    ^
