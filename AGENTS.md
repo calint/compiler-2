@@ -123,6 +123,10 @@
   optimizations stay, e.g. the jump optimizer, '--nopt', '--report' and the
   versions. A simpler implementation may make the generated code somewhat
   longer: measure and report the growth, do not revert for it.
+- No unnecessary scratch register: compute in place unless the order of
+  reads needs one (a clobber), the destination cannot hold the value, or a
+  measured version is shorter; never as a simpler default, it also holds a
+  register across nested inlined calls (decided 2026-10-26).
 - Current focus: refactor until the design is clean before looking for bugs
   again; a bug that a refactor removes is fixed by the refactor.
 - Baz evaluates left to right: the operands, arguments and parts of a

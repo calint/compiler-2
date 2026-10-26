@@ -5423,3 +5423,12 @@ SRC=1711 && EXP=29 && RUN
 # them are disjoint or only read
 SRC=1712 && EXP=34 && RUN
 SRC=1713 && COMPERR
+
+# a 'let' folded at its type wraps without the overflow check, the compile
+# folds it the same way
+SRC=1714 && EXP=0 && OPTS="--checks=upper" RUN
+SRC=1715 && OPTS="--checks=overflow" COMPERR
+
+# an expression in memory with an inlined call is not measured in versions,
+# so a deep chain compiles in linear time
+SRC=1716 && EXP=48 && RUN

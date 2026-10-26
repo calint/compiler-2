@@ -1,0 +1,11 @@
+# a 'let' that folds from a typed constant wraps at its type without the
+# overflow check, and is rejected with it
+
+func main() {
+    let x = i8(127)
+    let y = x + 1
+    if y != -128 {
+        exit(1)
+    }
+    exit(0)
+}

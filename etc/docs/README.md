@@ -1208,7 +1208,11 @@ an indexed argument to pass down, so on rv32i each level doubles the work. Such
 a recursion 11 levels deep compiles in about 0.4 s on rv32i against 5 ms on
 x86_64; a 'noinline' function compiles its body once.
 
-Not every choice is measured. The padding of an instance is zeroed gap by gap
+Not every choice is measured. An expression stored to memory that calls an
+inlined function is compiled in place ('statement::has_inlined_call'):
+measuring it would compile the body of the call once per version, so a chain
+of such calls, e.g. 'var t = f(x) * 2 + x' in each body, would double the work
+per level. The padding of an instance is zeroed gap by gap
 or as the whole instance by a gap count that each backend measured once
 ('machine::zero_padding'): compiling both would multiply the versions above
 it, and an instance with thousands of gaps would cost compile time.
@@ -1812,6 +1816,10 @@ message, x86_64 and rv32i linux stop with a signal.
 - The check of a body without its calls ends at the first error that depends on
   a call other than an inlined recursion, e.g. running out of scratch registers,
   so the code after it is not checked there (1.5).
+- The x86_64 listing leaves the size of each jump to nasm. On rare listings
+  nasm's default search ('-Ox') does not settle ("unable to find valid values
+  for all labels"), e.g. a '--nopt' listing of 'fuzz-flow' seed 71;
+  'nasm -O1' assembles it, with longer jumps.
 
 ## 9. Changing a target or a check
 

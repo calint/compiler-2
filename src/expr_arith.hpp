@@ -583,6 +583,15 @@ class expr_arith final : public statement {
             return;
         }
 
+        // note: each version would compile the body of an inlined call again,
+        //       so nested calls would double the compile time per level; in
+        //       place holds no register across the call
+
+        if (has_inlined_call()) {
+            compile_steps(tc, indent, dst, steps);
+            return;
+        }
+
         // a scratch register saves loads and stores of a memory destination
         // or costs a copy, which depends on the elements, so both are measured
         tc.emit_most_efficient(

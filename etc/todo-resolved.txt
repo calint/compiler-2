@@ -1,6 +1,58 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[-] medium: 'qa/fuzz/fuzz-programs.py' (seeds 59, 61) finds programs that
+    are rejected with "cannot allocate register rdx because it holds a
+    scratch value allocated at L:C", the same location, e.g. inside 'res =
+    (acc0 & 0xffff) - 32768' of a deep expression; also with the binaries
+    of the morning of 2026-10-24, so older than round 13's later phases;
+    findings in qa/fuzz/findings ('gen-reject-*'); decide whether it is a
+    register limit of a valid program (then the message and a smaller
+    lowering) or a bug of a lowering that names a register it holds
+    => discarded (2026-10-26, the class decided 2026-10-23: a register
+       conflict is a compile error that asks for a 'let'): e.g. 'p0[p2] < p2
+       * (a / (p0[-p0[a / 3]] | 1))' in a noinline body, the divisor's scratch
+       is 'rdx', which the inner division needs, 3 registers free; tried
+       (user): 'rsi' and 'rdi' before 'rdx' and 'rax' in the x86 order
+       removes all 18 rejections of the 37 findings and accepts 0726, no
+       test changes size, but roome is rejected ('self.array[ix] = { from,
+       kind, text }', the string copy needs 'rsi'); no order serves both,
+       reverted
+[-] medium: bug: an x86_64 listing with '--nopt' that nasm cannot assemble,
+    "unable to find valid values for all labels after 1005 passes"
+    (fuzz-flow seed 71, qa/fuzz/findings/invalid-asm-bb20f37477.baz, 147
+    lines, also at HEAD 41db859e); find the construct that makes the jump
+    sizes oscillate, reduce with 'fuzz-reduce.py'
+    => discarded (2026-10-26, user: document it): the listing is valid,
+       'nasm -O1' assembles it and the program is right; nasm's '-Ox' jump
+       sizing does not settle; README 8.3 names it
+[x] easy: 'qa/coverage/test-arena.py' large offset runtime: its panic harness
+    jumps to 'baz_bounds_panic', which a program compiled with
+    '--checks=line' does not define (the handler is under the labels of its
+    lines, e.g. 'baz_bounds_line_5'); nasm fails before the probe runs; the
+    harness should jump to a label the compile defines, or the mode without
+    'line' should test the panic (found 2026-10-24 running it for A.3 of
+    round 14, fails at HEAD too)
+    => done (2026-10-26): the harness jumps to a line label of the listing
+       ('baz_bounds_line_N') and expects the message with that line
+[x] easy: case 0006 fails on the target rv32i (qemu user) that 'test-all.sh'
+    runs, already at 1594bb3e (2026-10-26): 'diff out 0006.rv32i.diff' shows
+    that the expected '--nopt' difference removes one more branch ('beq t0,
+    zero, bool.15.14.end') than the compiler now does, the other targets'
+    diffs hold; find whether a jump optimization stopped applying on rv32i
+    (last change of the expected file: 451da0a8) before updating it
+    => done (2026-10-26): no optimization stopped; 451da0a8 made the 'bool'
+       of line 15 without a branch and updated the expected diffs of
+       x86_64 and rv32i-fpga only; the rv32i and rv32i-qemu diffs are
+       regenerated, the same change
+[x] easy: bug: a constant that overflows a narrow type without
+    '--checks=overflow' fails the assert of 'stmt_def_const::compile'
+    (stmt_def_var.hpp:374), e.g. 'let x = i8(127)' then 'let y = x + 1'; with
+    'overflow' it is rejected ("constant expression overflows the type"),
+    both targets (2026-10-26)
+    => done (2026-10-26): 'stmt_def_const::compile' asserts the fold at the
+       declared type, as the parse folds it, where it wraps without the
+       check (tests 1714, 1715)
 [x] medium: a conversion of an expression, e.g. 'i8(2 + 3)', does not fold:
     computed at run time in a 'var' and rejected in a 'dat'; the fold of the
     conversion folds only a name or literal argument, an expression argument

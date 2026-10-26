@@ -6,11 +6,6 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
 --------------------------------------------------------------------------------
 1. clean up
 --------------------------------------------------------------------------------
-[ ] medium: bug: an x86_64 listing with '--nopt' that nasm cannot assemble,
-    "unable to find valid values for all labels after 1005 passes"
-    (fuzz-flow seed 71, qa/fuzz/findings/invalid-asm-bb20f37477.baz, 147
-    lines, also at HEAD 41db859e); find the construct that makes the jump
-    sizes oscillate, reduce with 'fuzz-reduce.py'
 [ ] hard: design review round 22, simplification (2026-10-26, user: go on
     simplifying, generated code may grow; six reviewers P parse and
     expressions, S statements and calls, N names and 'toc', U no-UB checks,
@@ -159,6 +154,12 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
        C.2. H1-2 compile time doubles per level of inlined calls in an
             expression stored to memory (depth 14: 25 s); a list with an
             inlined call is not measured; README 5.2 says linear
+       => C.2 done (2026-10-26, user: fix the bugs first): a list stored to
+          memory that has an inlined call ('statement::has_inlined_call') is
+          compiled in place, not measured; a scratch register would hold one
+          register per level (depth 16 out of registers); depth 16 compiles
+          in 9 ms (test 1716); instruction lines x86 76884 -> 76888, rv32i
+          101367 -> 101421; README 5.2
        C.3. D1-4 one lexer: 'one_line_source' through a 'source_sink' (-125,
             ~60 signatures change), D1-6, D2-4 4.3 the forward declarations
             of 'main.cpp' (-85)
@@ -545,11 +546,6 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
        are the bulk and io built-ins, local and checked: README 7.14 and the
        3.1 sentence
     order: F, G.1, G.2, H.1, H.2 (a pause for a commit after each)
-[ ] easy: bug: a constant that overflows a narrow type without
-    '--checks=overflow' fails the assert of 'stmt_def_const::compile'
-    (stmt_def_var.hpp:374), e.g. 'let x = i8(127)' then 'let y = x + 1'; with
-    'overflow' it is rejected ("constant expression overflows the type"),
-    both targets (2026-10-26)
 [ ] hard: design review round 19 (2026-10-26, six angles: architect A,
     consistency C, documentation D (repeated), no-UB by construction U, tests
     as design T, simplicity S; findings in the session scratchpad r19; all
@@ -782,12 +778,6 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
     after the round: a bug-hunt round under 'noub' (fuzz-ub, fuzz-effects,
     inline against noinline, x86_64 against rv32i)
     order: A.1, B.1, A.2, B.4, B.2, B.3, C, D, E, F, then the asks
-[ ] easy: case 0006 fails on the target rv32i (qemu user) that 'test-all.sh'
-    runs, already at 1594bb3e (2026-10-26): 'diff out 0006.rv32i.diff' shows
-    that the expected '--nopt' difference removes one more branch ('beq t0,
-    zero, bool.15.14.end') than the compiler now does, the other targets'
-    diffs hold; find whether a jump optimization stopped applying on rv32i
-    (last change of the expected file: 451da0a8) before updating it
 [ ] easy: low priority: whether a 'let' is a constant is decided at the
     parse ('make_stmt_def_var', 'may_fold'), where the 'n' of a 'foo' over an
     unsized array parameter is a variable, so 'let m = n' stays a variable
@@ -800,21 +790,6 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
     (drops the token shapes of 'value_type', about 70 lines); messages of
     malformed arguments may change (design review 2026-10-23 E.5, optional,
     lower confidence; round 14 F.3 kept the two deductions apart)
-[ ] easy: 'qa/coverage/test-arena.py' large offset runtime: its panic harness
-    jumps to 'baz_bounds_panic', which a program compiled with
-    '--checks=line' does not define (the handler is under the labels of its
-    lines, e.g. 'baz_bounds_line_5'); nasm fails before the probe runs; the
-    harness should jump to a label the compile defines, or the mode without
-    'line' should test the panic (found 2026-10-24 running it for A.3 of
-    round 14, fails at HEAD too)
-[ ] medium: 'qa/fuzz/fuzz-programs.py' (seeds 59, 61) finds programs that
-    are rejected with "cannot allocate register rdx because it holds a
-    scratch value allocated at L:C", the same location, e.g. inside 'res =
-    (acc0 & 0xffff) - 32768' of a deep expression; also with the binaries
-    of the morning of 2026-10-24, so older than round 13's later phases;
-    findings in qa/fuzz/findings ('gen-reject-*'); decide whether it is a
-    register limit of a valid program (then the message and a smaller
-    lowering) or a bug of a lowering that names a register it holds
 [ ] easy: x86_64: 'threshold_for_rep_stos_size_bytes_' (32),
     'threshold_for_rep_movs_size_bytes_' (16) and
     'memory_counter_pressure_count_' (6) have no reason recorded (R8 X-10);
@@ -883,22 +858,23 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
        scale until a stop time, findings deduplicated by key, a summary at
        the end; sanitizer build refreshed first; log in 'findings/night.log'
     => 5. run it, triage findings one by one (reduce with 'fuzz-reduce.py')
-[ ] hard: x86_64: a call whose arguments are indexed elements runs out of
-    registers, rv32i accepts the same program; the address registers of every
-    argument stay allocated until the callee frame is written
-    ('noinline_call::frame_slot_addresses' then 'write_frame_slots')
-    e.g. 'res = sum(v[i], v[i], v[i], v[i], v[i], v[i])' in a noinline body
-    with 'v' and 'i' parameters: "out of scratch registers, simplify the
-    expression" with nothing to simplify; 12 forwarded parameters fail the
-    same way; an inlined 'sum' fails too (its bindings hold the registers)
-    => repro: round 7 'bugs/np2.baz', 'nd.baz', 'ni2.baz' (scratchpad r7)
-    => idea: write each slot as soon as its address is computed and free its
-       registers; the frame and stack checks move before the arguments
-    => caution: an argument with a call in its index, e.g. 'v[g(1)]', builds
-       the frame of 'g' at the same next frame address, so an early write is
-       overwritten; today 'sum(v[g(1)], v[g(2)])' is correct
-    => inlined calls: spill a binding address to a temporary when the pool runs
-       out
+[ ] medium: x86_64: a call with many indexed arguments in a noinline body
+    runs out of registers where rv32i accepts it (2026-10-26, user: medium):
+    the body reaches its array parameter through its address, and x86_64
+    keeps the address and the index of each argument in two registers until
+    the call is made, e.g. 'res = sum(v[i], v[i], v[i], v[i], v[i], v[i])' in
+    a noinline 'g(v [], i)': 13 of 13 registers; the callee may be inlined
+    or noinline; an inlined caller, also with a parameter bound to 'rows[j]',
+    is accepted (an inlined binding keeps a computed address in one
+    register); probes in the session scratchpad 'regs'
+    => fix: keep an argument's address in one register once it is computed
+       (fold the base and the index), as rv32i does; in the shared code that
+       keeps a call argument's address, so only noinline bodies change;
+       compare every listing to confirm
+    => older idea: write each frame slot as soon as its address is computed
+       (covers a noinline callee only); caution: an argument with a call in
+       its index, e.g. 'v[g(1)]', builds the frame of 'g' at the same next
+       frame address, so an early write is overwritten
 [ ] hard: noinline calls: cost of the call protocol (x86_64, no checks, every
     function but 'main' noinline: 4117 instructions against 4467 all inline;
     the call protocol is 68% of the reachable code, about 11 instructions per

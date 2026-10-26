@@ -1876,6 +1876,10 @@ class stmt_call : public statement {
         assert_own_type_not_narrowed(dst_type);
     }
 
+    [[nodiscard]] auto has_inlined_call() const -> bool override {
+        return callee().is_inlined() or statement::has_inlined_call();
+    }
+
     // the calls in the arguments run first, then the body
     auto visit_call_effects(const toc& tc,
                             const call_effect_visitor visitor) const

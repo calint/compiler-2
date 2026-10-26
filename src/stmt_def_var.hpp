@@ -371,7 +371,11 @@ class stmt_def_const final : public statement {
         //       compiled, a name that is a constant only with a call is a
         //       variable in the parse, e.g. the 'n' of a 'foo'
 
-        assert(initializer_.constant_value(tc) == constant_.value);
+        // note: folded at the declared type like the parse, where it wraps
+        //       without the overflow check, e.g. 'x + 1' of an 'i8' 127
+
+        assert(folded_value::value_of(initializer_.fold_checked(
+                   tc, tc.use_at(get_type()))) == constant_.value);
 
         tc.add_const(name_tk_, indent, name_tk_.text(), constant_);
     }

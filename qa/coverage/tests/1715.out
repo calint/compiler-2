@@ -1,0 +1,4 @@
+
+1715.baz:6:17: constant expression overflows the type
+    let y = x + 1
+                ^

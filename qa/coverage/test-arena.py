@@ -328,12 +328,15 @@ probe_values: times 32 db 0
             result = compile_source(directory, source, (offset + 4111) // 16 * 16, options)
             assert result.returncode == 0, (offset, mode, result.stderr)
             assembly = directory / "probe.s"
-            panic_harness = """
+            # with '--checks=line' a failed check jumps to the label of its
+            # line, which sets the line and reports it
+            line_label = re.search(r"^(baz_bounds_line_(\d+)):", result.stdout, re.MULTILINE)
+            assert line_label or mode == "production", (offset, mode)
+            panic_harness = f"""
 section .text
 global panic_entry
 panic_entry:
-    mov ebp, 123
-    jmp baz_bounds_panic
+    jmp {line_label.group(1)}
 """ if mode != "production" else ""
             assembly.write_text(result.stdout + harness + panic_harness)
             subprocess.run(["nasm", "-Werror", "-f", "elf64", "probe.s"], cwd=directory, check=True)
@@ -350,7 +353,9 @@ panic_entry:
                 )
                 run = subprocess.run([str(directory / "panic")], capture_output=True)
                 assert run.returncode == 255, (offset, mode, run.returncode, run.stderr)
-                assert run.stderr == b"panic: bounds at line 123\n", run.stderr
+                expected = f"arena.baz:{line_label.group(2)}\n".encode()
+                assert run.stderr.startswith(b"\npanic: bounds at "), run.stderr
+                assert run.stderr.endswith(expected), run.stderr
         print(f"arena large offset runtime {offset}: ok", flush=True)
 
     source = COMMON + """func noinline update(value mut i32) { value = value + 1 }
