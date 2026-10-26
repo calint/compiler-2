@@ -168,7 +168,7 @@ class generator {
 
             result.path.add_fixed_index(index);
             result.steps.push_back({
-                .kind{path_step::kind_type::fixed_index},
+                .kind{path_step::kind_type::index_range},
                 .offset{index},
                 .elem_bytes{array.elem->size_bytes},
                 .length{array.length},
@@ -196,7 +196,7 @@ auto starts_of(const access& acc) -> std::vector<size_t> {
         for (const size_t start : starts) {
             if (step.kind == path_step::kind_type::field) {
                 next.push_back(start + step.offset);
-            } else if (step.kind == path_step::kind_type::fixed_index) {
+            } else if (step.kind == path_step::kind_type::index_range) {
                 next.push_back(start + (step.offset * step.elem_bytes));
             } else {
                 for (size_t k{}; k < step.length; ++k) {

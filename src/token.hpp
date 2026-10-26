@@ -141,7 +141,6 @@ class token final {
     size_t end_ix_{};           // token text end index in source
     std::string_view ws_right_; // whitespace right of token text
     size_t at_line_{};          // line number in the source
-    bool is_str_{};             // true if the text is a string literal
 
     // what a backslash in string or character text starts, see 'escape_at'
     struct escape {
@@ -156,10 +155,10 @@ class token final {
     token(const size_t file_ix, const std::string_view ws_left,
           const size_t start_ix, const std::string_view name,
           const size_t end_ix, const std::string_view ws_right,
-          const size_t at_line, const bool is_str)
+          const size_t at_line)
         : file_ix_{file_ix}, ws_left_{ws_left}, start_ix_{start_ix},
-          text_{name}, end_ix_{end_ix}, ws_right_{ws_right}, at_line_{at_line},
-          is_str_{is_str} {}
+          text_{name}, end_ix_{end_ix}, ws_right_{ws_right}, at_line_{at_line} {
+    }
 
     token() = default;
 
@@ -175,30 +174,29 @@ class token final {
         return ws_left_.empty() and text_.empty() and ws_right_.empty();
     }
 
-    // no word was read here: the source ends or a delimiter follows; the
-    // string '""' is a token
-    [[nodiscard]] auto is_none() const -> bool {
-        return text_.empty() and not is_str_;
-    }
+    // no word was read here: the source ends or a delimiter follows
+    [[nodiscard]] auto is_none() const -> bool { return text_.empty(); }
 
     // a word that starts with a digit, e.g. '12' or '0x1f'
     [[nodiscard]] auto is_number() const -> bool {
         return is_word() and starts_number(text_);
     }
 
-    [[nodiscard]] auto is_string() const -> bool { return is_str_; }
+    // the text of a string literal keeps its quotes, like a character
+    [[nodiscard]] auto is_string() const -> bool {
+        return text_.starts_with('"');
+    }
 
-    // a string literal is never a keyword or a name, whatever it says
+    // a string literal is never a keyword or a name, its text is quoted
     [[nodiscard]] auto is_text(const std::string_view s) const -> bool {
-        return not is_str_ and text_ == s;
+        return text_ == s;
     }
 
     // a name, a keyword or a number, not a string or no token
     [[nodiscard]] auto is_word() const -> bool {
-        return not text_.empty() and not is_str_;
+        return not text_.empty() and not is_string();
     }
 
-    // the indexes include the quotes that string token text excludes
     [[nodiscard]] auto source_begin_index() const -> size_t {
         return start_ix_ - ws_left_.length();
     }
@@ -208,12 +206,7 @@ class token final {
     }
 
     auto source_to(std::ostream& os) const -> void {
-        if (not is_str_) {
-            std::print(os, "{}{}{}", ws_left_, text_, ws_right_);
-            return;
-        }
-
-        std::print(os, "{}\"{}\"{}", ws_left_, text_, ws_right_);
+        std::print(os, "{}{}{}", ws_left_, text_, ws_right_);
     }
 
     [[nodiscard]] auto start_index() const -> size_t { return start_ix_; }
@@ -224,26 +217,36 @@ class token final {
         return position(file_index(), start_index(), at_line());
     }
 
+    // the text of a string literal between its quotes
+    [[nodiscard]] auto string_body() const -> std::string_view {
+        assert(is_string() and text_.size() >= 2);
+
+        return text_.substr(1, text_.size() - 2);
+        // note: 1 and -2 because the quotes are at both ends
+    }
+
     // the bytes of a string literal, its escapes decoded, e.g. '\n' is one
     // byte; a backslash before a line end is dropped with the line end, so
     // the string continues on the next line
     [[nodiscard]] auto string_bytes() const -> std::string {
+        const std::string_view body{string_body()};
+
         std::string bytes;
 
-        for (size_t i{}; i < text_.size(); ++i) {
-            if (text_.at(i) != '\\') {
-                bytes += text_.at(i);
+        for (size_t i{}; i < body.size(); ++i) {
+            if (body.at(i) != '\\') {
+                bytes += body.at(i);
                 continue;
             }
 
             // note: the tokenizer reads a character after every backslash and
             //       rejected an unsupported escape ('unsupported_escape')
 
-            assert(i + 1 < text_.size());
+            assert(i + 1 < body.size());
 
             // a whole escape is consumed, so an escaped backslash is not
             // taken as a continuation
-            const escape esc{escape_at(text_, i)};
+            const escape esc{escape_at(body, i)};
 
             if (not esc.is_continuation) {
                 assert(esc.decoded);
@@ -266,18 +269,20 @@ class token final {
     // the first unsupported escape of a string token, as 'decode_escape'
     // rejects it, located at its backslash, e.g. '\q'
     [[nodiscard]] auto unsupported_escape() const -> std::optional<token> {
+        const std::string_view body{string_body()};
+
         size_t line{at_line_};
-        for (size_t i{}; i < text_.size(); ++i) {
-            if (text_.at(i) == '\n') {
+        for (size_t i{}; i < body.size(); ++i) {
+            if (body.at(i) == '\n') {
                 ++line;
                 continue;
             }
 
-            if (text_.at(i) != '\\') {
+            if (body.at(i) != '\\') {
                 continue;
             }
 
-            const escape esc{escape_at(text_, i)};
+            const escape esc{escape_at(body, i)};
 
             // the line end of a continuation is counted by the loop
             if (esc.is_continuation) {
@@ -288,7 +293,7 @@ class token final {
                 const size_t backslash_index{start_ix_ + 1 + i};
                 // note: +1 because the text starts after the opening quote
 
-                return synthetic(file_ix_, text_.substr(i, 1 + esc.size),
+                return synthetic(file_ix_, body.substr(i, 1 + esc.size),
                                  backslash_index, line);
             }
 
@@ -426,7 +431,7 @@ class token final {
                                         const size_t index, const size_t line)
         -> token {
 
-        return {file_ix, "", index, text, index, "", line, false};
+        return {file_ix, "", index, text, index, "", line};
     }
 
   private:

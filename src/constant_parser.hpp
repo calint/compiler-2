@@ -45,7 +45,7 @@ class constant_parser final {
     // e.g. '12', ''a'' or 'true'; a number may still be malformed, e.g. '12x'
     [[nodiscard]] static auto is_literal(const token& tk) -> bool {
         return tk.is_number() or is_character_literal(tk.text()) or
-               (not tk.is_string() and is_bool_literal(tk.text()));
+               is_bool_literal(tk.text());
     }
 
     // e.g. '0x10', ''a'' or 'true', empty for a text that is no literal

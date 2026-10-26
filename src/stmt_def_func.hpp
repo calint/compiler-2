@@ -336,12 +336,14 @@ struct func_result {
 
         const token type_tk{tz.next_token()};
 
-        // a word before the '{' of the body names the type, else a missing
-        // '{' is reported by the body, e.g. 'func f() res number {'
+        // a word or a string before the '{' of the body is meant as the
+        // type, else a missing '{' is reported by the body, e.g. 'func f()
+        // res number {'
         // note: the '{' also tells the type of a generic definition, where
         //       'T' of 'res T {' is not a type yet
         const bool is_type_before_body{
-            type_tk.is_word() and tz.peek_char_after_whitespace() == '{',
+            (type_tk.is_word() or type_tk.is_string()) and
+                tz.peek_char_after_whitespace() == '{',
         };
 
         if (not tc.types().has(type_tk.text()) and not is_type_before_body) {

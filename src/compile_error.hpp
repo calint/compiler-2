@@ -200,10 +200,6 @@ class compile_error final : public std::exception {
 
 // the token as the source writes it, a string with its double quotes
 [[nodiscard]] inline auto in_quotes(const token& tk) -> std::string {
-    if (tk.is_string()) {
-        return in_quotes(std::format("\"{}\"", tk.text()));
-    }
-
     return in_quotes(tk.text());
 }
 

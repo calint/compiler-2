@@ -158,7 +158,17 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
        the 'fixed_index' kind and 'index_end' go (-14 lines); the defaulted
        '==' of D1-5 (a) not done, the clang-tidy rule
        'fuchsia-overloaded-operator' forbids overloading operators; listings
-       equal
+       equal; 'qa/fuzz/alias-path-fuzz.cpp' uses 'index_range' too (found
+       by the B.4 phase checks)
+    => B.4 done (2026-10-26): a string token keeps its quotes, like a
+       character; 'is_str_' and its constructor parameter go, 'is_string'
+       reads the text, 'string_body' gives the text between the quotes;
+       'source_to', 'in_quotes', 'is_token_text_at_source' and two guards
+       ('is_literal', 'is_identifier') lose their special case (-7 lines);
+       a string before the '{' of a body is taken as the result type, so
+       any string there is "expected a type name, got a string" (test 1430
+       was so only because '"i8"' read like 'i8'); listings, errors and
+       '--reproduce-source' of every test equal
     C. asks
        C.1. D2-3 the later-argument rule only for arguments passed by
             reference (accepts more, +10)

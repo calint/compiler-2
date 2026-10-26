@@ -187,8 +187,8 @@ class tokenizer final {
         const size_t end_ix{char_ix_};
         const std::string_view ws_after{next_trailing_whitespace()};
 
-        return token{file_ix_, ws_before, bgn_ix,  txt,
-                     end_ix,   ws_after,  at_line, false};
+        return token{file_ix_, ws_before, bgn_ix, txt,
+                     end_ix,   ws_after,  at_line};
     }
 
     [[nodiscard]] auto is_peek_char(const char ch) const -> bool {
@@ -219,8 +219,7 @@ class tokenizer final {
         const size_t end_ix{char_ix_};
         const std::string_view ws_after{next_trailing_whitespace()};
 
-        return {file_ix_, ws_before, bgn_ix,  txt,
-                end_ix,   ws_after,  at_line, false};
+        return {file_ix_, ws_before, bgn_ix, txt, end_ix, ws_after, at_line};
     }
 
     // the position of the next token, past the whitespace and comments
@@ -236,9 +235,7 @@ class tokenizer final {
     // 'statement')
     [[nodiscard]] auto next_whitespace_token() -> token {
         const std::string_view ws_before{next_whitespace()};
-
-        return {file_ix_, ws_before, char_ix_, "",
-                char_ix_, "",        at_line_, false};
+        return {file_ix_, ws_before, char_ix_, "", char_ix_, "", at_line_};
     }
 
     [[nodiscard]] auto peek_char() const -> char {
@@ -312,8 +309,7 @@ class tokenizer final {
         const size_t bgn_ix{char_ix_};
         char_ix_ += text.size();
 
-        return token{file_ix_, ws_before, bgn_ix,  text,
-                     char_ix_, "",        at_line, false};
+        return token{file_ix_, ws_before, bgn_ix, text, char_ix_, "", at_line};
     }
 
     // skips an argument of a call, up to the ',' or ')' that ends it
@@ -407,8 +403,8 @@ class tokenizer final {
         const std::string_view ws_after{next_trailing_whitespace()};
 
         const token literal_tk{
-            file_ix_, ws_before, bgn_ix,  src_.substr(bgn_ix, end_ix - bgn_ix),
-            end_ix,   ws_after,  at_line, false};
+            file_ix_, ws_before, bgn_ix, src_.substr(bgn_ix, end_ix - bgn_ix),
+            end_ix,   ws_after,  at_line};
 
         // checked where it is read like a string, also in a generic body that
         // no instance parses
@@ -460,11 +456,10 @@ class tokenizer final {
         const size_t end_ix{char_ix_};
         const std::string_view ws_after{next_trailing_whitespace()};
 
-        token string_tk{file_ix_, ws_before,
-                        bgn_ix,   src_.substr(bgn_ix + 1, end_ix - bgn_ix - 2),
-                        end_ix,   ws_after,
-                        at_line,  true};
-        // note: +1 and -2 because the text is between the quotes
+        const token string_tk{
+            file_ix_, ws_before, bgn_ix,  src_.substr(bgn_ix, end_ix - bgn_ix),
+            end_ix,   ws_after,  at_line,
+        };
 
         if (const std::optional<token> escape_tk{
                 string_tk.unsupported_escape(),
@@ -493,12 +488,8 @@ class tokenizer final {
     }
 
     [[nodiscard]] auto is_token_text_at_source(const token& t) const -> bool {
-        // the text of a string token excludes its quotes
-        const size_t quote_count{t.is_string() ? 1UZ : 0UZ};
-
-        return src_.substr(t.start_index() + quote_count,
-                           t.end_index() - t.start_index() -
-                               (2 * quote_count)) == t.text();
+        return src_.substr(t.start_index(), t.end_index() - t.start_index()) ==
+               t.text();
     }
 
     auto move_back(size_t nchars) -> void {

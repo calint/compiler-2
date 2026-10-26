@@ -3214,7 +3214,7 @@ class toc final {
     [[nodiscard]] auto get_type_or_throw(const token& type_tk) const
         -> const type& {
 
-        // note: the text of a string token reads like a name
+        // e.g. the '"i8"' of 'func f() res "i8" {'
         if (type_tk.is_string()) {
             throw compile_error{type_tk, "expected a type name, got a string"};
         }
@@ -3505,8 +3505,7 @@ class toc final {
                    ch == '_';
         };
 
-        return not name_tk.is_string() and not text.empty() and
-               is_letter(text.front()) and
+        return not text.empty() and is_letter(text.front()) and
                std::ranges::all_of(text, [&](const char ch) -> bool {
                    return is_letter(ch) or (ch >= '0' and ch <= '9');
                });

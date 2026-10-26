@@ -16,8 +16,8 @@
 - Short, plain, impersonal; no emphasis words or emojis.
 - Flag misspellings briefly ("inneficiencies" -> "inefficiencies").
 - Failed precondition: stop and explain, no weaker version.
-- Workspace-relative paths; numbered lists nested as 1.1, 1.2, 2.3.
-- Always number bullet points in answers, so they can be referred to.
+- Workspace-relative paths; every list in an answer is numbered, nested as
+  1.1, 1.2, 2.3, so its items can be referred to.
 
 ## C++ style
 
@@ -60,8 +60,8 @@
   `// add aliases`); a data member may say what it holds.
 - The formatter writes the section banners (`// statics`, `// class methods`),
   keep them.
-- Markers: `todo:` for work left; `note:` for a remark or annotation that
-  the code relies on, e.g. why an `assert` holds or why a choice was made.
+- Markers: `todo:` for work left; `note:` for a remark or annotation that the
+  code relies on, e.g. why an `assert` holds or why a choice was made.
 - Magic numbers whose reason is not obvious (`subspan(1, n - 2)` over quotes):
   a `note:` line below naming offset and reason, e.g. `// note: +1 because the
   text starts after the opening quote`. Idioms and offsets that a named
@@ -114,38 +114,43 @@
   target, on inline versus noinline, or on optimization; whether a program is
   accepted may depend on what an inlined call folds from its constant
   arguments (README 1.5). The exceptions are listed in README chapter 8,
-  mainly the default type 'int', the register width (decided 2026-10-26):
-  its arithmetic depends on the target.
+  mainly the default type 'int', the register width: its arithmetic depends
+  on the target.
 - Standing goal, never finished: the compiler as simple as possible. Remove
   what a guarantee does not need; where a work-around handles an exception,
-  try to remove the exception instead (decided 2026-10-26). Simplify the code
-  that implements a feature, never remove the feature: options, reports and
-  optimizations stay, e.g. the jump optimizer, '--nopt', '--report' and the
-  versions. A simpler implementation may make the generated code somewhat
-  longer: measure and report the growth, do not revert for it.
-- No unnecessary scratch register: compute in place unless the order of
-  reads needs one (a clobber), the destination cannot hold the value, or a
-  measured version is shorter; never as a simpler default, it also holds a
-  register across nested inlined calls (decided 2026-10-26).
-- Current focus: refactor until the design is clean before looking for bugs
-  again; a bug that a refactor removes is fixed by the refactor.
+  try to remove the exception instead. Simplify the code that implements a
+  feature, never remove the feature: options, reports and optimizations stay,
+  e.g. the jump optimizer, '--nopt', '--report' and the versions. A simpler
+  implementation may make the generated code somewhat longer: measure and
+  report the growth, do not revert for it.
+- No unnecessary scratch register: compute in place unless the order of reads
+  needs one (a clobber), the destination cannot hold the value, or a measured
+  version is shorter; never as a simpler default, it also holds a register
+  across nested inlined calls.
 - Baz evaluates left to right: the operands, arguments and parts of a
   statement, and the parts a literal writes. The no-UB checks assume this and
   rely on it. They walk a statement in evaluation order and check each read
   only against what was written before it. Code generation follows the same
   order, so the code that is checked is the code that is emitted.
-- Design tasks: propose the best design even if it changes interfaces; plan
-  first, wait for go-ahead.
-- Plan: problem, chosen design, rejected alternatives (one line each with the
-  reason), invariants, tests.
+- A design task or a big change (several files or interfaces): propose the
+  best design even if it changes interfaces, plan it in `etc/todo.txt` and
+  wait for go-ahead. A plan: problem, chosen design, rejected alternatives
+  (one line each with the reason), invariants, tests.
 - Follow existing patterns; a new pattern needs a reason in the plan.
 - New class or pass: a header comment with its role and invariants.
 - Carry invariants in types and names over comments and asserts when cheap.
 - Update all callers; no compatibility shims or leftover old paths.
 - Mechanical moves and behavior changes in separate steps, so each diff reads
-  on its own.
+  on its own; a mechanical step preserves behavior. Ask before changing
+  optimization, allocation or functionality.
 - Design problems outside the topic: add to `etc/todo.txt`, do not fix in
   passing.
+- A refactor earns its place only if it removes a concept, exception,
+  special case or code path; fixes a bug or makes a guarantee easier to
+  check; or carries an invariant in a type or name instead of a comment.
+  Moves, renames for taste and idiom swaps do not. A review round that
+  finds none of these ends the refactor loop; a change that would undo an
+  earlier round's change also counts as none.
 
 ## Baz code
 
@@ -154,39 +159,36 @@
 
 ## Tests
 
-- Enough: `qa/coverage/test-coverage.sh --target=x86_64` and
-  `--target=rv32i-fpga`, and `qa/coverage/test-cli.sh`. The CLI tests cover
-  the options, the reports and the target limits; they take seconds.
 - Iterate with `./make.sh -O3 build` and `test-coverage.sh ... run` without
   `build`: its sanitizer and coverage build compiles about 66 times slower.
   The user runs the `build` and the full suite before committing; do not run
   `build`.
+- Per step:
+  1. `qa/coverage/test-coverage.sh --target=x86_64 run`, the same with
+     `--target=rv32i-fpga`, and `qa/coverage/test-cli.sh` (the options, the
+     reports and the target limits, in seconds);
+  2. the linters;
+  3. for a pure refactor, the listings and errors of every test on x86_64 and
+     rv32i compared with a compiler built from HEAD, compiled in parallel on
+     all cores.
+- Per phase, or for a step that changes behavior, also
+  `qa/coverage/test-far-jumps.sh`, `test-far-jumps-no-scratch.sh`,
+  `test-versions.sh`, `roome/qa/test.sh`, the asan build and the fuzzers in
+  parallel.
+- Run each check once per round; do not edit sources while a check runs. The
+  two `test-coverage.sh` targets and `test-cli.sh` share `gen.s`: run them one
+  after the other.
 - `UPDATE=1 qa/coverage/test-coverage.sh --target=x86_64 run` writes expected
   `.out` files; run for x86_64 and rv32i-fpga, then review the diff.
 - After every change to `roome/src/main.baz`, run `roome/qa/test.sh`. No
   formatter or linter run needed there.
-- Per step: the set above, the linters and, for a pure refactor, the
-  listings and errors of every test on x86_64 and rv32i compared with a
-  compiler built from HEAD, compiled in parallel on all cores.
-- Per phase, or for a step that changes behavior: also
-  `qa/coverage/test-far-jumps.sh`, `test-far-jumps-no-scratch.sh`,
-  `test-versions.sh`, `roome/qa/test.sh`, the asan build and the fuzzers,
-  the fuzzers in parallel.
-- Run each check once per round; do not edit sources while a check runs
-  (decided 2026-10-26).
-- The two `test-coverage.sh` targets and `test-cli.sh` share `gen.s`: run
-  them one after the other, not in parallel.
 
 ## Process
 
 - Subagents for searching and lookups use model 'sonnet'; review and
   bug-hunting agents keep the default.
-- Fixes: within a clean design, no hacks; refactor first when needed. Tell
-  the user the intended fix (and any refactor) before changing code.
-- Mechanical refactors preserve behavior; ask before changing optimization,
-  allocation or functionality.
-- Big change (several files or interfaces): plan in the todo file, wait for
-  go-ahead.
+- Fixes: within a clean design, no hacks; refactor first when needed. Tell the
+  user the intended fix (and any refactor) before changing code.
 - Do not split large headers for size.
 - Put helper classes near the class that uses them in the same file.
 - New source files: only when the code cannot be placed near its use in an
@@ -198,14 +200,14 @@
 - Done means: built, focused tests run, linter clean (clang-tidy and
   `qa/lint/check-all.sh`), formatter applied.
 - Never commit unless told; the message is always `.` (no body, no trailer).
-- Review loops: after each review round and each fix phase, pause for the
-  user to commit, then continue.
+- After each step, review round or fix phase, pause for the user to commit,
+  then continue.
 - Shell scripts `cd` to their own directory and use relative paths.
 
 ## Tools
 
-- Run symbol renames before `git mv`/file renames (open buffers at the old path
-  recreate old files on save).
+- Run symbol renames before `git mv`/file renames (open buffers at the old
+  path recreate old files on save).
 - `make.sh` (without `build`) and `roome/run.sh` read input: after `make.sh`
   type return; after `roome/run.sh` type "go home".
 - Large sources, e.g. `src/machine_rv32i.hpp` (5.7k lines), `src/toc.hpp`:
