@@ -137,10 +137,8 @@ checks:
   upper    runtime upper array bounds only, a negative index passes
   lower    runtime lower array bounds, catches negative indexes
   line     report line number on failed bounds, division, shift, overlap or
-           overflow check, rv32i-fpga ignores it
+           overflow check
   frame    runtime non-inlined function frame capacity
-  alias    compile time rejection of calls where a result may share storage
-           with an argument, on by default
   division runtime division by zero and 'MIN / -1'
   shift    runtime shift count below zero or not below the width of the type
   overlap  runtime 'array_copy' whose destination starts inside the source
@@ -149,10 +147,13 @@ checks:
            a program that overflows the stack
   overflow runtime signed overflow of '+', '-', '*' and unary '-', a constant
            expression that overflows is rejected at compile time
-  noub     all checks against undefined behavior: upper, lower, frame, alias,
-           division, shift, overlap, stack and overflow
+  noub     all checks against undefined behavior: upper, lower, frame,
+           division, shift, overlap, stack and overflow; a program accepted
+           with 'noub' has no undefined behavior, by default none is on;
+           arguments, a result and globals that may share storage are
+           rejected at compile time always
   -NAME    turns a check off after the others are applied, e.g.
-           noub,-division or -alias (also when noub is given), +NAME is NAME
+           noub,-division, +NAME is NAME
 
 examples:
   ./baz prog.baz > prog.s
@@ -176,10 +177,10 @@ examples:
 ```text
 Language                     files          blank        comment           code
 -------------------------------------------------------------------------------
-C/C++ Header                    65           9252           5191          27306
-C++                              1            232             72            776
+C/C++ Header                    66           9345           6150          27846
+C++                              1            245             87            862
 -------------------------------------------------------------------------------
-SUM:                            66           9484           5263          28082
+SUM:                            67           9590           6237          28708
 -------------------------------------------------------------------------------
 ```
 
