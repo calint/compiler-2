@@ -40,13 +40,8 @@ class stmt_continue final : public statement {
 
         tc.end_path();
 
-        if (not loop->is_foo) {
-            x.branch(indent, loop->label);
-            return;
-        }
-
-        // a 'foo' advances its counter before the next iteration
-        x.branch(indent, toc::continue_label(loop->label));
+        // e.g. the head of a 'loop', the counter step of a 'foo'
+        x.branch(indent, loop->continue_label);
     }
 
     // the next iteration starts with at least the loop entry coverage

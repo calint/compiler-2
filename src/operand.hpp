@@ -299,48 +299,157 @@ enum class comparison_operator : uint8_t {
     greater_equal,
 };
 
-// the operator that gives the same result with the operands swapped
-[[nodiscard]] inline auto mirrored(const comparison_operator op)
-    -> comparison_operator {
+// the method of 'machine' that computes an operator
+enum class operator_family : uint8_t {
+    add_subtract,
+    multiply,
+    divide,
+    bitwise,
+    shift,
+};
 
-    if (op == comparison_operator::less) {
-        return comparison_operator::greater;
-    }
+// the facts of a binary arithmetic operator: its spelling, the machine
+// method, how tightly it binds (a higher precedence first), whether the
+// constant passes may move and merge its constants, the constant that leaves
+// a value unchanged, and whether its low bits depend on higher bits of an
+// operand, which a narrower width would lose
+struct binary_operator_traits {
+    arithmetic_operator op;
+    std::string_view text;
+    operator_family family;
+    uint8_t precedence;
+    bool is_regroupable;
+    std::optional<int64_t> identity;
+    bool reads_high_bits;
+};
 
-    if (op == comparison_operator::less_equal) {
-        return comparison_operator::greater_equal;
-    }
+inline constexpr auto binary_operators{
+    std::to_array<binary_operator_traits>({
+        {
+            .op{arithmetic_operator::add},
+            .text{"+"},
+            .family{operator_family::add_subtract},
+            .precedence{1},
+            .is_regroupable{true},
+            .identity{0},
+            .reads_high_bits{},
+        },
+        {
+            .op{arithmetic_operator::subtract},
+            .text{"-"},
+            .family{operator_family::add_subtract},
+            .precedence{1},
+            .is_regroupable{true},
+            .identity{0},
+            .reads_high_bits{},
+        },
+        {
+            .op{arithmetic_operator::multiply},
+            .text{"*"},
+            .family{operator_family::multiply},
+            .precedence{2},
+            .is_regroupable{true},
+            .identity{1},
+            .reads_high_bits{},
+        },
+        {
+            .op{arithmetic_operator::divide},
+            .text{"/"},
+            .family{operator_family::divide},
+            .precedence{2},
+            .is_regroupable{},
+            .identity{1},
+            .reads_high_bits{true},
+        },
+        {
+            .op{arithmetic_operator::remainder},
+            .text{"%"},
+            .family{operator_family::divide},
+            .precedence{2},
+            .is_regroupable{},
+            .identity{},
+            .reads_high_bits{true},
+        },
+        {
+            .op{arithmetic_operator::bit_and},
+            .text{"&"},
+            .family{operator_family::bitwise},
+            .precedence{4},
+            .is_regroupable{true},
+            .identity{-1},
+            .reads_high_bits{},
+        },
+        {
+            .op{arithmetic_operator::bit_or},
+            .text{"|"},
+            .family{operator_family::bitwise},
+            .precedence{3},
+            .is_regroupable{true},
+            .identity{0},
+            .reads_high_bits{},
+        },
+        {
+            .op{arithmetic_operator::bit_xor},
+            .text{"^"},
+            .family{operator_family::bitwise},
+            .precedence{5},
+            .is_regroupable{true},
+            .identity{0},
+            .reads_high_bits{},
+        },
+        {
+            .op{arithmetic_operator::shift_left},
+            .text{"<<"},
+            .family{operator_family::shift},
+            .precedence{6},
+            .is_regroupable{},
+            .identity{},
+            .reads_high_bits{},
+        },
+        {
+            .op{arithmetic_operator::shift_right},
+            .text{">>"},
+            .family{operator_family::shift},
+            .precedence{6},
+            .is_regroupable{},
+            .identity{},
+            .reads_high_bits{true},
+        },
+    }),
+};
 
-    if (op == comparison_operator::greater) {
-        return comparison_operator::less;
-    }
-
-    if (op == comparison_operator::greater_equal) {
-        return comparison_operator::less_equal;
-    }
-
-    return op;
+// a binary operator, not 'assign' or a unary one
+[[nodiscard]] constexpr auto is_binary(const arithmetic_operator op) -> bool {
+    return std::ranges::contains(binary_operators, op,
+                                 &binary_operator_traits::op);
 }
 
-// the spelling of each binary arithmetic operator in the source
+// the row of the binary operator 'op'
+[[nodiscard]] constexpr auto traits_of(const arithmetic_operator op)
+    -> const binary_operator_traits& {
+
+    assert(is_binary(op));
+
+    for (const binary_operator_traits& traits : binary_operators) {
+        if (traits.op == op) {
+            return traits;
+        }
+    }
+
+    std::unreachable();
+}
+
+// above every operator, where a list starts
+inline constexpr uint8_t list_start_precedence{
+    std::ranges::max(binary_operators, {}, &binary_operator_traits::precedence)
+            .precedence +
+        1,
+};
+
+// the spelling of a prefix operator in the source
 struct arithmetic_spelling {
     arithmetic_operator op;
     std::string_view text;
-};
-
-inline constexpr auto arithmetic_spellings{
-    std::to_array<arithmetic_spelling>({
-        {.op{arithmetic_operator::add}, .text{"+"}},
-        {.op{arithmetic_operator::subtract}, .text{"-"}},
-        {.op{arithmetic_operator::multiply}, .text{"*"}},
-        {.op{arithmetic_operator::divide}, .text{"/"}},
-        {.op{arithmetic_operator::remainder}, .text{"%"}},
-        {.op{arithmetic_operator::bit_and}, .text{"&"}},
-        {.op{arithmetic_operator::bit_or}, .text{"|"}},
-        {.op{arithmetic_operator::bit_xor}, .text{"^"}},
-        {.op{arithmetic_operator::shift_left}, .text{"<<"}},
-        {.op{arithmetic_operator::shift_right}, .text{">>"}},
-    }),
 };
 
 // the prefix operators of an operand
@@ -359,9 +468,9 @@ inline constexpr auto unary_spellings{
         return "=";
     }
 
-    for (const arithmetic_spelling& spelling : arithmetic_spellings) {
-        if (spelling.op == op) {
-            return spelling.text;
+    for (const binary_operator_traits& traits : binary_operators) {
+        if (traits.op == op) {
+            return traits.text;
         }
     }
 
@@ -378,9 +487,9 @@ inline constexpr auto unary_spellings{
 [[nodiscard]] inline auto binary_operator_of(const std::string_view text)
     -> std::optional<arithmetic_operator> {
 
-    for (const arithmetic_spelling& spelling : arithmetic_spellings) {
-        if (spelling.text == text) {
-            return spelling.op;
+    for (const binary_operator_traits& traits : binary_operators) {
+        if (traits.text == text) {
+            return traits.op;
         }
     }
 
@@ -400,22 +509,89 @@ inline constexpr auto unary_spellings{
     return std::nullopt;
 }
 
-// the spelling of each comparison operator in the source
+// the facts of a comparison operator: its spelling, the operator true when
+// it is false, and the one with the same result when the operands swap
 struct comparison_spelling {
     comparison_operator op;
     std::string_view text;
+    comparison_operator negated;
+    comparison_operator mirrored;
 };
 
 inline constexpr auto comparison_spellings{
     std::to_array<comparison_spelling>({
-        {.op{comparison_operator::equal}, .text{"=="}},
-        {.op{comparison_operator::not_equal}, .text{"!="}},
-        {.op{comparison_operator::less}, .text{"<"}},
-        {.op{comparison_operator::less_equal}, .text{"<="}},
-        {.op{comparison_operator::greater}, .text{">"}},
-        {.op{comparison_operator::greater_equal}, .text{">="}},
+        {
+            .op{comparison_operator::equal},
+            .text{"=="},
+            .negated{comparison_operator::not_equal},
+            .mirrored{comparison_operator::equal},
+        },
+        {
+            .op{comparison_operator::not_equal},
+            .text{"!="},
+            .negated{comparison_operator::equal},
+            .mirrored{comparison_operator::not_equal},
+        },
+        {
+            .op{comparison_operator::less},
+            .text{"<"},
+            .negated{comparison_operator::greater_equal},
+            .mirrored{comparison_operator::greater},
+        },
+        {
+            .op{comparison_operator::less_equal},
+            .text{"<="},
+            .negated{comparison_operator::greater},
+            .mirrored{comparison_operator::greater_equal},
+        },
+        {
+            .op{comparison_operator::greater},
+            .text{">"},
+            .negated{comparison_operator::less_equal},
+            .mirrored{comparison_operator::less},
+        },
+        {
+            .op{comparison_operator::greater_equal},
+            .text{">="},
+            .negated{comparison_operator::less},
+            .mirrored{comparison_operator::less_equal},
+        },
     }),
 };
+
+// the row of the comparison 'op'
+[[nodiscard]] constexpr auto facts_of(const comparison_operator op)
+    -> const comparison_spelling& {
+
+    for (const comparison_spelling& spelling : comparison_spellings) {
+        if (spelling.op == op) {
+            return spelling;
+        }
+    }
+
+    std::unreachable();
+}
+
+// the operator that is true when 'op' is false
+[[nodiscard]] constexpr auto negated(const comparison_operator op)
+    -> comparison_operator {
+
+    return facts_of(op).negated;
+}
+
+// the operator that gives the same result with the operands swapped
+[[nodiscard]] constexpr auto mirrored(const comparison_operator op)
+    -> comparison_operator {
+
+    return facts_of(op).mirrored;
+}
+
+// negating or mirroring twice gives the operator back
+static_assert(std::ranges::all_of(
+    comparison_spellings, [](const comparison_spelling& spelling) -> bool {
+        return negated(spelling.negated) == spelling.op and
+               mirrored(spelling.mirrored) == spelling.op;
+    }));
 
 // the operator as written in the source
 [[nodiscard]] inline auto source_text(const comparison_operator op)

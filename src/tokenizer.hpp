@@ -34,12 +34,27 @@ class tokenizer final {
         "/",  "%",  "&",  "|",  "^",  "<",  ">", "~",
     };
 
+    // note: the longer first, an operator is never after one that is its
+    //       prefix, e.g. '<<' before '<'
+
+    static_assert([] -> bool {
+        for (size_t i{}; i < operators_.size(); ++i) {
+            for (size_t j{i + 1}; j < operators_.size(); ++j) {
+                if (operators_.at(j).starts_with(operators_.at(i))) {
+                    return false;
+                }
+            }
+        }
+
+        return true;
+    }());
+
     // note: the operators are the texts of the spelling tables, so a text
     //       missing here would end an expression silently
 
     static_assert(std::ranges::all_of(
-        arithmetic_spellings, [](const arithmetic_spelling& spelling) -> bool {
-            return std::ranges::contains(operators_, spelling.text);
+        binary_operators, [](const binary_operator_traits& traits) -> bool {
+            return std::ranges::contains(operators_, traits.text);
         }));
     static_assert(std::ranges::all_of(
         unary_spellings, [](const arithmetic_spelling& spelling) -> bool {

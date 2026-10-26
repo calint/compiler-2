@@ -1977,35 +1977,6 @@ class machine {
                                       : range.count.register_name();
     }
 
-    // the operator that is true when 'op' is false
-    [[nodiscard]] static auto negated(const comparison_operator op)
-        -> comparison_operator {
-
-        if (op == comparison_operator::equal) {
-            return comparison_operator::not_equal;
-        }
-
-        if (op == comparison_operator::not_equal) {
-            return comparison_operator::equal;
-        }
-
-        if (op == comparison_operator::less) {
-            return comparison_operator::greater_equal;
-        }
-
-        if (op == comparison_operator::less_equal) {
-            return comparison_operator::greater;
-        }
-
-        if (op == comparison_operator::greater) {
-            return comparison_operator::less_equal;
-        }
-
-        assert(op == comparison_operator::greater_equal);
-
-        return comparison_operator::less;
-    }
-
     // e.g. 'panic: bounds'; the newline in front separates it from the output
     // of the program, which may not end with one
     [[nodiscard]] static auto panic_message(const std::string_view name)

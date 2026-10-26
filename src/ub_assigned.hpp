@@ -12,6 +12,10 @@
 #include "token.hpp"
 #include "type.hpp"
 
+// how the end of a loop is reached: only at a 'break', e.g. 'loop', or also
+// when it runs out, e.g. 'foo'
+enum class loop_end : uint8_t { at_break, also_when_done };
+
 // definite assignment: which bytes of a variable are set before they are read
 // and before a function returns
 
@@ -124,8 +128,8 @@ class assigned_bytes final {
 // walk of which statements are reached ('reachability_only', no variable);
 // the statements report what they do ('declare', 'assign', 'end_path',
 // 'record_break') and the rules that join paths are here: a block scopes
-// its declarations ('block_scope'), 'trace_loop' and 'trace_foo' trace a body,
-// 'path_merge' joins the paths of an 'if'
+// its declarations ('block_scope'), 'trace_loop' traces a body by its
+// 'loop_end', 'path_merge' joins the paths of an 'if'
 class assignment_flow final {
     // empty when the walk answers reachability only
     std::optional<std::string_view> var_;
@@ -245,22 +249,21 @@ class assignment_flow final {
         end_path();
     }
 
-    // the body of a 'foo' may run zero times, so after it the coverage is the
-    // one at the 'foo'; 'body' has 'trace_assignment(assignment_flow&)'
-    auto trace_foo(const auto& body) -> void {
+    // 'body' has 'trace_assignment(assignment_flow&)'; a loop that also ends
+    // when it runs out may run zero times, so after it the coverage is the
+    // one at the loop; a loop left only at a 'break' has the coverage common
+    // to its breaks after it, without a 'break' only 'return' or 'exit'
+    // leave it
+    auto trace_loop(const auto& body, const loop_end end) -> void {
         const assigned_bytes entry{assigned_};
 
-        std::ignore = trace_loop_body(body);
-
-        assigned_ = entry;
-        is_reachable_ = true;
-    }
-
-    // a 'loop' is left only at a 'break', so after it the coverage is the one
-    // common to its breaks; without a 'break' only 'return' or 'exit' leave
-    // it; 'body' has 'trace_assignment(assignment_flow&)'
-    auto trace_loop(const auto& body) -> void {
         const std::optional<assigned_bytes> breaks{trace_loop_body(body)};
+
+        if (end == loop_end::also_when_done) {
+            assigned_ = entry;
+            is_reachable_ = true;
+            return;
+        }
 
         if (not breaks) {
             end_path();

@@ -19,7 +19,10 @@ class stmt_loop final : public statement {
         : statement{src_loc_tk} {
 
         const std::string label{tc.create_unique_label(tok(), "loop")};
-        const toc::scope_entry loop{tc, scope::loop(label)};
+
+        const toc::scope_entry loop{
+            tc, scope::loop(label, loop_end::at_break, label)};
+
         code_ = {tc, tz};
     }
 
@@ -46,7 +49,9 @@ class stmt_loop final : public statement {
         x.label(indent, label);
 
         {
-            const toc::scope_entry loop{tc, scope::loop(label)};
+            const toc::scope_entry loop{
+                tc, scope::loop(label, loop_end::at_break, label)};
+
             code_.compile(tc, indent, destination{});
 
             // the end is reached only by a 'break' that is compiled, the parse
@@ -59,6 +64,6 @@ class stmt_loop final : public statement {
     }
 
     auto trace_assignment(assignment_flow& flow) const -> void override {
-        flow.trace_loop(code_);
+        flow.trace_loop(code_, loop_end::at_break);
     }
 };

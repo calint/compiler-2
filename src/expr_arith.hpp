@@ -62,22 +62,12 @@ class arith_steps final {
     [[nodiscard]] static auto identity_of(const arithmetic_operator op)
         -> int64_t {
 
-        if (op == arithmetic_operator::add or
-            op == arithmetic_operator::bit_or or
-            op == arithmetic_operator::bit_xor) {
+        const std::optional<int64_t> identity{traits_of(op).identity};
 
-            return 0;
-        }
+        // note: asked of a regroupable operator or of a divisor
+        assert(identity);
 
-        if (op == arithmetic_operator::multiply or
-            op == arithmetic_operator::divide) {
-
-            return 1;
-        }
-
-        assert(op == arithmetic_operator::bit_and);
-
-        return -1;
+        return *identity;
     }
 
     [[nodiscard]] static auto is_merged(const step& s) -> bool {
@@ -90,12 +80,7 @@ class arith_steps final {
     [[nodiscard]] static auto is_regroupable(const arithmetic_operator op)
         -> bool {
 
-        return op == arithmetic_operator::add or
-               op == arithmetic_operator::subtract or
-               op == arithmetic_operator::multiply or
-               op == arithmetic_operator::bit_and or
-               op == arithmetic_operator::bit_or or
-               op == arithmetic_operator::bit_xor;
+        return is_binary(op) and traits_of(op).is_regroupable;
     }
 
     // the passes in order; 'is_negated_operand' tells whether an element is a
@@ -375,13 +360,6 @@ class expr_arith final : public statement {
         bool has_unary_ops{};
     };
 
-    static constexpr uint8_t precedence_additive_{1};
-    static constexpr uint8_t precedence_multiplicative_{2};
-    static constexpr uint8_t precedence_bitwise_or_{3};
-    static constexpr uint8_t precedence_bitwise_and_{4};
-    static constexpr uint8_t precedence_bitwise_xor_{5};
-    static constexpr uint8_t precedence_shift_{6};
-
   public:
     // how a list starts, made by one of the statics
     struct options {
@@ -526,7 +504,7 @@ class expr_arith final : public statement {
                 return;
             }
 
-            const uint8_t next_precedence{precedence_for_op(*next_op)};
+            const uint8_t next_precedence{traits_of(*next_op).precedence};
 
             // a higher precedence groups the previous element with what
             // follows, so parse that as a sub-expression
@@ -559,7 +537,7 @@ class expr_arith final : public statement {
     expr_arith() = default;
 
     // higher than the highest precedence
-    static constexpr uint8_t initial_precedence{precedence_shift_ + 1};
+    static constexpr uint8_t initial_precedence{list_start_precedence};
 
     //
     // overridden methods
@@ -734,9 +712,7 @@ class expr_arith final : public statement {
         for (const spelled_operator<arithmetic_operator>& spelled : ops_) {
             const arithmetic_operator o{spelled.op};
 
-            if (o == arithmetic_operator::divide or
-                o == arithmetic_operator::remainder or
-                o == arithmetic_operator::shift_right) {
+            if (traits_of(o).reads_high_bits) {
 
                 return false;
             }
@@ -1376,8 +1352,7 @@ class expr_arith final : public statement {
                                         const int64_t value,
                                         const type& width_type) -> void {
 
-        if (op == arithmetic_operator::divide or
-            op == arithmetic_operator::remainder) {
+        if (is_division(op)) {
 
             assert_divisor_not_zero(src_loc_tk, value);
         }
@@ -1561,8 +1536,7 @@ class expr_arith final : public statement {
             return;
         }
 
-        if (op == arithmetic_operator::divide or
-            op == arithmetic_operator::remainder) {
+        if (is_division(op)) {
 
             x.divide(src_loc_tk, indent, op, dst.operand(), value,
                      tc.checks().division_options());
@@ -1652,18 +1626,20 @@ class expr_arith final : public statement {
 
         assert_constant_operand(rhs_element.tok(), op, rhs, width_type);
 
-        const bool is_division{
-            op == arithmetic_operator::divide or
-                op == arithmetic_operator::remainder,
-        };
-
-        if (is_division and tc.checks().division and
+        if (is_division(op) and tc.checks().division and
             constant_arith::division_overflows(lhs, rhs, width_type)) {
 
             return std::nullopt;
         }
 
         return constant_arith::apply_operation(lhs, op, rhs, width_type);
+    }
+
+    [[nodiscard]] static auto is_division(const arithmetic_operator op)
+        -> bool {
+
+        return is_binary(op) and
+               traits_of(op).family == operator_family::divide;
     }
 
     // a lone negation folds into add/sub: 'a - -b' is 'a + b'
@@ -1675,8 +1651,7 @@ class expr_arith final : public statement {
     }
 
     [[nodiscard]] static auto is_shift(const arithmetic_operator op) -> bool {
-        return op == arithmetic_operator::shift_left or
-               op == arithmetic_operator::shift_right;
+        return is_binary(op) and traits_of(op).family == operator_family::shift;
     }
 
     // a register or memory location, neither computed nor constant
@@ -1731,41 +1706,6 @@ class expr_arith final : public statement {
             .is_enclosed{},
             .has_unary_ops{has_unary_ops},
         };
-    }
-
-    // higher value higher precedence
-    [[nodiscard]] static auto precedence_for_op(const arithmetic_operator op)
-        -> uint8_t {
-
-        if (op == arithmetic_operator::add or
-            op == arithmetic_operator::subtract) {
-
-            return precedence_additive_;
-        }
-
-        if (op == arithmetic_operator::multiply or
-            op == arithmetic_operator::divide or
-            op == arithmetic_operator::remainder) {
-
-            return precedence_multiplicative_;
-        }
-
-        if (op == arithmetic_operator::bit_or) {
-            return precedence_bitwise_or_;
-        }
-
-        if (op == arithmetic_operator::bit_and) {
-            return precedence_bitwise_and_;
-        }
-
-        if (op == arithmetic_operator::bit_xor) {
-            return precedence_bitwise_xor_;
-        }
-
-        assert(op == arithmetic_operator::shift_left or
-               op == arithmetic_operator::shift_right);
-
-        return precedence_shift_;
     }
 
     // a marker at the start of 'element', without its whitespace

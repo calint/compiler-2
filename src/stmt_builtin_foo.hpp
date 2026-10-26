@@ -50,7 +50,10 @@ class stmt_builtin_foo final : public statement {
         // block can name them
         const ident_info array_info{make_ident_info(tc, ident_)};
         const std::string label{tc.create_unique_label(tok(), "foo")};
-        const toc::scope_entry foo{tc, scope::foo(label)};
+
+        const toc::scope_entry foo{tc,
+                                   scope::loop(label, loop_end::also_when_done,
+                                               toc::continue_label(label))};
 
         add_loop_names(tc, 0, src_loc_tk, array_info, var_placement{},
                        var_placement{});
@@ -108,7 +111,9 @@ class stmt_builtin_foo final : public statement {
             compile_limit(tc, indent, array_info.element_count(), held),
         };
 
-        const toc::scope_entry foo{tc, scope::foo(loop_label)};
+        const toc::scope_entry foo{
+            tc, scope::loop(loop_label, loop_end::also_when_done,
+                            toc::continue_label(loop_label))};
 
         const operand counter{
             declare_loop_names(tc, indent, array_info, reg_iter, held),
@@ -131,7 +136,7 @@ class stmt_builtin_foo final : public statement {
 
         x.label(indent, end_label);
 
-        tc.join_foo();
+        tc.join_loop();
     }
 
     auto trace_assignment(assignment_flow& flow) const -> void override {
@@ -148,7 +153,7 @@ class stmt_builtin_foo final : public statement {
         flow.declare("i");
         flow.declare("n");
 
-        flow.trace_foo(code_);
+        flow.trace_loop(code_, loop_end::also_when_done);
     }
 
   private:

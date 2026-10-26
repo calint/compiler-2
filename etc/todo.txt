@@ -188,10 +188,38 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
        E.1. a traits row per operator beside the spellings (family,
             precedence, regroupable, identity), the if-chains read it (X1,
             M4); comparison facts the same
+       => E.1 done (2026-10-25): 'binary_operators', a row per binary
+          operator in operand.hpp (spelling, 'operator_family', precedence,
+          regroupable, identity, reads high bits), 'traits_of' and
+          'is_binary'; 'precedence_for_op' and the six precedence constants
+          go ('list_start_precedence' is the highest plus one),
+          'is_regroupable', 'identity_of', 'is_shift', a new 'is_division'
+          and 'keeps_low_bits' read the row; 'constant_arith' dispatches on
+          the family and its two implicit elses (divide or remainder, left or
+          right shift) assert the other op; the rv32i shifts assert it too;
+          the comparison rows hold 'negated' and 'mirrored', both lookups
+          (machine's 'negated' goes), a 'static_assert' that both are
+          involutions; note: 'traits_of' asserts a binary operator, the
+          first version without 'is_binary' guards crashed on the 'assign'
+          op of a first step, which the old chains answered "no" to
        E.2. the tokenizer's longest-first order checked (X5)
+       E.2. the tokenizer's longest-first order checked (X5)
+       => E.2 done (2026-10-25): a 'static_assert' that no operator follows
+          one that is its prefix; a scratch copy with '<' before '<<' fails
+          to compile; both suites, the CLI tests, test-rv32i, clang-tidy,
+          fuzz-exprs, ub, constructs, reject and data clean for phase E
     F. loops
        F.1. a loop end and a continue label instead of the two kinds 'loop'
             and 'foo' in four places (X4)
+       => F.1 done (2026-10-25): 'loop_end' {at_break, also_when_done} in
+          ub_assigned.hpp (included by toc.hpp, same layer); 'scope::loop'
+          takes the end and the continue label, 'scope_kind::foo', 'is_foo',
+          'scope::foo', 'join_foo' and 'trace_foo' go; 'loop_target' holds
+          the continue label, 'stmt_continue' jumps to it; 'join_loop' and
+          'assignment_flow::trace_loop' read the end; README 1.5.1, 3.11 and
+          9 (also the operator list stale since E.1); both suites, the CLI
+          tests, test-rv32i, clang-tidy, fuzz-flow, constructs, programs and
+          reject clean; labels and listings equal
     G. options and targets
        G.1. a check option as one row tying its name, handler and help text
             (X6); a target as one row in main.cpp (X7)

@@ -29,14 +29,13 @@ class constant_arith final {
                     const int64_t rhs, const type& width_type)
         -> std::optional<int64_t> {
 
-        if (op == arithmetic_operator::divide or
-            op == arithmetic_operator::remainder) {
+        const operator_family family{traits_of(op).family};
 
+        if (family == operator_family::divide) {
             return apply_division(lhs, op, rhs, width_type);
         }
 
-        if (op == arithmetic_operator::shift_left or
-            op == arithmetic_operator::shift_right) {
+        if (family == operator_family::shift) {
 
             assert(rhs >= 0 and std::cmp_less(rhs, width_type.size_bits()));
 
@@ -206,9 +205,13 @@ class constant_arith final {
             return std::nullopt;
         }
 
-        return wrap_to_width(op == arithmetic_operator::divide ? lhs / rhs
-                                                               : lhs % rhs,
-                             width_type);
+        if (op == arithmetic_operator::divide) {
+            return wrap_to_width(lhs / rhs, width_type);
+        }
+
+        assert(op == arithmetic_operator::remainder);
+
+        return wrap_to_width(lhs % rhs, width_type);
     }
 
     // a count within the width shifts the same on both targets
@@ -222,6 +225,8 @@ class constant_arith final {
             return wrap_to_width(static_cast<int64_t>(bits << count),
                                  width_type);
         }
+
+        assert(op == arithmetic_operator::shift_right);
 
         // 'lhs' is sign extended so shifting in its sign bit keeps the width
         if (lhs < 0) {

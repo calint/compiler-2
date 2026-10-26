@@ -28,6 +28,7 @@
 #include "operand.hpp"
 #include "token.hpp"
 #include "type.hpp"
+#include "ub_assigned.hpp"
 
 //
 // the table of contents: what the names of the program are while it is parsed
@@ -335,7 +336,6 @@ class scope final {
     enum class scope_kind : uint8_t {
         block,
         loop,
-        foo,
         main_func,
         inlined_func,
         noinline_dry_run,
@@ -390,9 +390,13 @@ class scope final {
     // variables declared in this scope
     lut<var_info> vars_;
 
-    // a 'loop' or 'foo' scope: a 'break' of it was compiled, so its end is
-    // reached; only 'toc::join_loop' reads it, a 'foo' always reaches its end
+    // a loop scope: a 'break' of it was compiled, so its end is reached;
+    // only 'toc::join_loop' reads it
     bool is_left_by_break_{};
+    // a loop scope: how its end is reached and where a 'continue' jumps,
+    // e.g. the head of a 'loop' or the counter step of a 'foo'
+    loop_end loop_end_{loop_end::at_break};
+    std::string continue_label_;
 
     scope_kind kind_{scope_kind::block};
     std::optional<function_part> func_;
@@ -439,6 +443,12 @@ class scope final {
 
     [[nodiscard]] auto call_path() const -> std::string_view {
         return func_part().call_path;
+    }
+
+    [[nodiscard]] auto continue_label() const -> std::string_view {
+        assert(is_loop());
+
+        return continue_label_;
     }
 
     [[nodiscard]] auto frame_base_register() const -> std::string_view {
@@ -497,10 +507,6 @@ class scope final {
         return func_part().is_reachable or func_part().is_left_by_return;
     }
 
-    [[nodiscard]] auto is_foo() const -> bool {
-        return kind_ == scope_kind::foo;
-    }
-
     [[nodiscard]] auto is_func() const -> bool { return func_.has_value(); }
 
     // only a call inlined for real; 'main' and a dry run are compiled in place
@@ -535,6 +541,12 @@ class scope final {
 
     [[nodiscard]] auto is_result(const std::string_view name) const -> bool {
         return func_part().result_name == name;
+    }
+
+    [[nodiscard]] auto loop_end_kind() const -> loop_end {
+        assert(is_loop());
+
+        return loop_end_;
     }
 
     auto make_var_read_only(const std::string_view name,
@@ -590,11 +602,6 @@ class scope final {
         return {"", scope_kind::block};
     }
 
-    // the body of a 'foo' named by its loop label
-    [[nodiscard]] static auto foo(const std::string_view name) -> scope {
-        return {name, scope_kind::foo};
-    }
-
     // a function compiled in place, 'call_path' keeps its labels unique and
     // 'return' jumps to 'return_label'
     [[nodiscard]] static auto inlined_func(const std::string_view name,
@@ -605,9 +612,16 @@ class scope final {
                         std::move(return_label));
     }
 
-    // the body of a loop named by its label
-    [[nodiscard]] static auto loop(const std::string_view name) -> scope {
-        return {name, scope_kind::loop};
+    // the body of a loop named by its label, a 'continue' jumps to
+    // 'continue_label'
+    [[nodiscard]] static auto loop(const std::string_view name,
+                                   const loop_end end,
+                                   std::string continue_label) -> scope {
+
+        scope scp{name, scope_kind::loop};
+        scp.loop_end_ = end;
+        scp.continue_label_ = std::move(continue_label);
+        return scp;
     }
 
     // 'main' is compiled in place, 'return' exits the program
@@ -1179,10 +1193,10 @@ struct usage_statistics {
     std::vector<std::string> uninstantiated_generics;
 };
 
-// a 'loop' or a 'foo' named by its label
+// a loop named by its label and where its 'continue' jumps
 struct loop_target {
     std::string_view label;
-    bool is_foo{};
+    std::string_view continue_label;
 };
 
 // what a name means where it is used, see 'scope_stack::lookup'
@@ -1304,10 +1318,10 @@ class scope_stack final {
     // or a 'continue'
     [[nodiscard]] auto innermost_loop() const -> std::optional<loop_target> {
         for (const scope& scp : scopes_ | std::views::reverse) {
-            if (scp.is_loop() or scp.is_foo()) {
+            if (scp.is_loop()) {
                 return loop_target{
                     .label{scp.name()},
-                    .is_foo{scp.is_foo()},
+                    .continue_label{scp.continue_label()},
                 };
             }
 
@@ -1428,7 +1442,7 @@ class scope_stack final {
     // 'scope::is_left_by_break'
     auto record_break() -> void {
         for (scope& scp : scopes_ | std::views::reverse) {
-            if (scp.is_loop() or scp.is_foo()) {
+            if (scp.is_loop()) {
                 scp.mark_left_by_break();
                 return;
             }
@@ -2817,8 +2831,7 @@ class variable_comments final {
 //                  'reach_scope_check', 'call_path_at', 'create_cmp_label',
 //                  'create_unique_label', 'next_frame_address', 'storage_of',
 //                  the reachability ('is_reachable', 'end_path',
-//                  'record_break', 'record_return', 'join_loop', 'join_foo',
-//                  'path_merge')
+//                  'record_break', 'record_return', 'join_loop', 'path_merge')
 //   both           'add_var' and 'add_const' (placed and commented only while
 //                  compiling), 'make_var_read_only', 'scope_entry',
 //                  'resolve_declared', 'get_func_or_throw',
@@ -3528,24 +3541,24 @@ class toc final {
 
     // the code after the current statement of the function being compiled
     // runs on some path, the words of 'assignment_flow': 'end_path',
-    // 'record_break', 'path_merge', 'join_loop', 'join_foo'; a block stops
+    // 'record_break', 'path_merge', 'join_loop'; a block stops
     // compiling at an unreached statement, e.g. after the 'return' of
     // 'if n == 0 return' in an inlined call with the constant argument 0
     [[nodiscard]] auto is_reachable() const -> bool {
         return scopes_.current_func_scope().is_reachable();
     }
 
-    // the end of a 'foo' is reached when the count runs out or at a 'break'
-    auto join_foo() -> void { scopes_.set_reachable(true); }
-
-    // the end of a 'loop' is reached only by a compiled 'break'; called as
-    // the last step inside the loop's scope
+    // the end of a loop is reached by a compiled 'break' or, for one that
+    // also ends when it runs out, always; called as the last step inside the
+    // loop's scope
     auto join_loop() -> void {
         const scope& loop{scopes_.back()};
 
         assert(loop.is_loop());
 
-        scopes_.set_reachable(loop.is_left_by_break());
+        scopes_.set_reachable(loop.loop_end_kind() ==
+                                  loop_end::also_when_done or
+                              loop.is_left_by_break());
     }
 
     [[nodiscard]] auto layout() const -> const storage_layout& {

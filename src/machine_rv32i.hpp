@@ -3922,6 +3922,9 @@ class machine_rv32i : public machine {
         // known counts are below the width of the value
         const bool is_left{operation == arithmetic_operator::shift_left};
 
+        // note: 'sra' and 'srai' are the right shift, no other op reaches here
+        assert(is_left or operation == arithmetic_operator::shift_right);
+
         assembler_.immediate_op(indent, is_left ? op::slli : op::srai,
                                 loaded.value.register_name(),
                                 loaded.value.register_name(), shift_count);
@@ -3945,6 +3948,9 @@ class machine_rv32i : public machine {
         }
 
         const bool is_left{operation == arithmetic_operator::shift_left};
+
+        // note: 'sra' and 'srai' are the right shift, no other op reaches here
+        assert(is_left or operation == arithmetic_operator::shift_right);
 
         assembler_.register_op(
             indent, is_left ? op::sll : op::sra, loaded.value.register_name(),

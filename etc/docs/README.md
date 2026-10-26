@@ -381,8 +381,8 @@ or after a 'loop' whose 'break' folds away. The compile says it in the words
 of the parse walk ('assignment_flow'): the function scope keeps whether the
 current statement is reached ('toc::is_reachable'), 'toc::end_path' and
 'toc::record_break' end a path, 'toc::path_merge' joins the branches of an
-'if' with the same chain rule as the parse, 'toc::join_loop' and
-'toc::join_foo' end the loops ('scope::is_left_by_break'), an inlined call
+'if' with the same chain rule as the parse, 'toc::join_loop' ends a loop by
+its 'loop_end' ('scope::is_left_by_break'), an inlined call
 whose body reaches neither its end nor a 'return' leaves the code after the
 call unreached ('toc::pop_scope'), and the end of 'main' is emitted when the
 compile reaches it. So the rules checked while compiling do not run in such code: a constant argument of an inlined
@@ -1165,7 +1165,8 @@ bodies ([8.3](#83-known-limits)).
 read. 'assignment_flow' walks one variable through a function body by name,
 before 'toc' resolves the names: each statement reports what it does
 ('declare', 'assign', 'end_path', 'record_break'), the class joins the paths
-('block_scope', 'trace_loop', 'trace_foo', 'path_merge' for an 'if'), and
+('block_scope', 'trace_loop' with its 'loop_end', 'path_merge' for an 'if'),
+and
 'assigned_bytes' keeps the byte ranges set on every path. A read outside them
 is "use of uninitialized variable".
 
@@ -1914,16 +1915,15 @@ What a change touches, the copies outside 'src' included; a table that nothing
 ties to the others is named so it is not missed.
 
 1. A binary operator, e.g. a logical shift right:
-   - the operator and its spelling in 'operand.hpp' ('arithmetic_operator',
-     'arithmetic_spellings'); the tokenizer's 'operators_' lists it before
-     any shorter operator it starts with, and a 'static_assert' checks that
-     it is there
-   - 'expr_arith.hpp': its precedence ('precedence_for_op'), the shift rules
-     ('is_shift', 'keeps_low_bits', 'assert_constant_operand'), the operation
-     ('emit_operation', 'fold_operation'), and 'arith_steps' if its constants
-     regroup ('is_regroupable', 'identity_of')
-   - 'constant_arith.hpp' ('apply_operation'), a 'machine' operation and its
-     two backends with their assembler mnemonics
+   - the operator in 'arithmetic_operator' and a row of 'binary_operators'
+     in 'operand.hpp' (spelling, family, precedence, regroupable, identity,
+     high bits), which 'expr_arith', 'arith_steps' and 'constant_arith' read;
+     the tokenizer's 'operators_' lists it, longest first, two
+     'static_assert's check both
+   - the arm of its family that computes it: 'constant_arith' (e.g.
+     'shift_constant'), the 'machine' operation and its two backends with
+     their assembler mnemonics; each such arm asserts the operators it
+     knows
    - outside: 'etc/nvim/tree-sitter-baz/grammar.js' (its own precedence
      ladder), the language 'README.md'
 2. A built-in, e.g. 'array_fill(a, v, n)':
@@ -1943,9 +1943,10 @@ ties to the others is named so it is not missed.
 3. A statement, e.g. 'while cond {}':
    - a keyword in 'token.hpp' ('keywords'), a node and its branch in
      'parse_keyword_statement'
-   - a loop is one of two kinds, 'loop' and 'foo', in 'toc.hpp' (the scope
-     kinds, 'innermost_loop', 'record_break', 'join_loop' and 'join_foo'), in
-     'ub_assigned.hpp' ('trace_loop', 'trace_foo') and in 'stmt_continue.hpp'
+   - a loop is a 'scope::loop' with its 'loop_end' (only at a 'break', or
+     also when it runs out) and its continue label; 'join_loop' and
+     'assignment_flow::trace_loop' read the end, 'stmt_continue' jumps to the
+     label, so a new loop form needs no new kind
    - outside: 'grammar.js' (keywords), 'fuzz-compiler.py', the label prefixes
      of 1.6.1
 4. A target or a check option:
