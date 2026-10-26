@@ -468,7 +468,7 @@ destination only through the list that holds it ('expr_arith', the
 immediate by 'folded_value::operand_at'); the nodes in a list never emit one.
 A comparison side has its own rule ('expr_bool_op::right_operand',
 'immediate_of'): the backend compares at the width of the left side, so an
-untyped constant on the right is checked to fit it ('assert_rhs_fits_lhs')
+untyped constant on the right is checked to fit it ('assert_sides_fit')
 and a typed one keeps its type.
 
 The result: a typed constant and a variable of the same type and value get the

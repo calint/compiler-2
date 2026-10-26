@@ -377,6 +377,10 @@ class expr_bool_op final : public statement {
         // e.g. the 'i' of 'i == h(i)' with 'h' writing 'i'
         assert_not_written_later(tc, operands_of(*this), "operand");
 
+        if (not cmp.is_memory) {
+            assert_sides_fit(lhs, rhs, cmp.op);
+        }
+
         // a constant 'lhs' becomes an immediate 'rhs' instead of a scratch
         // register copy, the width check then applies to the swapped sides
         if (lhs.folded and not lhs.is_typed_constant()) {
@@ -514,8 +518,6 @@ class expr_bool_op final : public statement {
         const operand dst{left_operand(tc, indent, lhs, held)};
         const operand src{right_operand(tc, indent, rhs, held)};
 
-        assert_rhs_fits_lhs(lhs, rhs, action.operation, dst, src);
-
         x.compare_and_branch(tok(), indent, dst, src, action);
     }
 
@@ -626,37 +628,6 @@ class expr_bool_op final : public statement {
                         in_quotes(typed_type.name()))};
     }
 
-    static auto assert_folded_sides_fit(const comparison_side& lhs,
-                                        const comparison_side& rhs,
-                                        const comparison_operator op) -> void {
-
-        const bool is_lhs_typed{lhs.is_typed_constant()};
-        const bool is_rhs_typed{rhs.is_typed_constant()};
-
-        if (is_lhs_typed and not is_rhs_typed) {
-            assert_constant_fits(*lhs.node, lhs.node->get_type(), rhs);
-            return;
-        }
-
-        if (is_rhs_typed and not is_lhs_typed) {
-            assert_constant_fits(*rhs.node, rhs.node->get_type(), lhs);
-            return;
-        }
-
-        if (not is_rhs_typed) {
-            return;
-        }
-
-        const type& lhs_type{lhs.node->get_type()};
-        const type& rhs_type{rhs.node->get_type()};
-
-        if (rhs_type.size_bytes() <= lhs_type.size_bytes()) {
-            return;
-        }
-
-        throw_rhs_wider(*lhs.node, *rhs.node, op, lhs_type, rhs_type);
-    }
-
     // an operator would compare a user type instance as its first field only
     // e.g. the 'mk()' of 'p == mk()', an instance is compared as memory,
     // which only a variable has
@@ -717,28 +688,37 @@ class expr_bool_op final : public statement {
         throw_not_a_number(side.tok(), type_name);
     }
 
-    // the backends compare at the width of 'lhs' which would truncate 'rhs'
-    static auto assert_rhs_fits_lhs(const comparison_side& lhs,
-                                    const comparison_side& rhs,
-                                    const comparison_operator op,
-                                    const operand& lhs_op,
-                                    const operand& rhs_op) -> void {
+    // the backends compare at the width of 'lhs': an untyped constant side
+    // fits the type of the other, else 'rhs' is not wider
+    static auto assert_sides_fit(const comparison_side& lhs,
+                                 const comparison_side& rhs,
+                                 const comparison_operator op) -> void {
 
-        const type& lhs_type{lhs_op.type_ref()};
+        const bool is_lhs_untyped{lhs.folded and not lhs.is_typed_constant()};
+        const bool is_rhs_untyped{rhs.folded and not rhs.is_typed_constant()};
 
-        // a typed constant, e.g. an argument of an inlined call, is compared
-        // as a variable of its type
-        if (not rhs_op.is_immediate() or rhs.is_typed_constant()) {
-            const type& rhs_type{rhs_op.type_ref()};
-
-            if (rhs_type.size_bytes() <= lhs_type.size_bytes()) {
-                return;
-            }
-
-            throw_rhs_wider(*lhs.node, *rhs.node, op, lhs_type, rhs_type);
+        if (is_lhs_untyped and is_rhs_untyped) {
+            return;
         }
 
-        assert_constant_fits(*lhs.node, lhs_type, rhs);
+        if (is_rhs_untyped) {
+            assert_constant_fits(*lhs.node, lhs.node->get_type(), rhs);
+            return;
+        }
+
+        if (is_lhs_untyped) {
+            assert_constant_fits(*rhs.node, rhs.node->get_type(), lhs);
+            return;
+        }
+
+        const type& lhs_type{lhs.node->get_type()};
+        const type& rhs_type{rhs.node->get_type()};
+
+        if (rhs_type.size_bytes() <= lhs_type.size_bytes()) {
+            return;
+        }
+
+        throw_rhs_wider(*lhs.node, *rhs.node, op, lhs_type, rhs_type);
     }
 
     // the bytes that both sides hold, they hold the same type and, as arrays,
@@ -852,7 +832,7 @@ class expr_bool_op final : public statement {
             return std::nullopt;
         }
 
-        assert_folded_sides_fit(lhs, rhs, op);
+        assert_sides_fit(lhs, rhs, op);
 
         return constant_arith::eval_constant(lhs.folded->value, op,
                                              rhs.folded->value);

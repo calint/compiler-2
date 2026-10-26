@@ -101,6 +101,10 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
        parts it reaches); accepts 'f(a, a)' with 'f' writing 'p.x' and
        reading 'q.y' (tests 1712, 1713); messages and listings of every
        other test equal; README 4.2, 8.1
+    => C.4 P D done (2026-10-26): 'expr_bool_op::assert_sides_fit' states
+       the width rule once, for a folded and a compiled comparison (before
+       its operands compile); 'assert_folded_sides_fit' and
+       'assert_rhs_fits_lhs' go (-20 lines); listings and errors equal
     D. dropped (user, 2026-10-26: simplify the code of a feature, never
        remove the feature): the versions (B1), the padding gap walk (B2),
        rv32i constant bytes (B3) and shared-base copy (B4), the receiver
