@@ -1,5 +1,4 @@
-# '-noub' turns off every check that 'noub' turns on, here the aliasing check
-# that would reject the call
+# '-noub' does not turn off the rejection of storage that may be shared
 
 type pair {a, b}
 

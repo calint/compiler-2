@@ -127,8 +127,7 @@ class stmt_if final : public statement {
             paths.begin_path();
 
             // note: spelled out because clang-tidy does not see that
-            // 'has_else_code'
-            //       checks 'else_'
+            //       'has_else_code' checks 'else_'
 
             if (else_ and not else_->code.is_empty()) {
                 x.label(indent, label_else_branch);

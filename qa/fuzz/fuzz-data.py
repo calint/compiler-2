@@ -25,6 +25,7 @@ import sys
 import tempfile
 
 import fuzzlib as fl
+from fuzzlib import mix
 
 # "int" is the default type, 64 bits on x86_64 and 32 on rv32i: the model
 # keeps its values inside 32 bits
@@ -36,13 +37,8 @@ PRECEDENCE = {"+": 1, "-": 1, "*": 2, "|": 3, "&": 4, "^": 5, "<<": 6,
               ">>": 6}
 
 
-def mix(acc, value):
-    return ((acc ^ (value & 0xffff)) * 31) & 0xffff
-
-
 def limits(t):
-    bits = SCALARS[t]
-    return -(1 << (bits - 1)), (1 << (bits - 1)) - 1
+    return fl.signed_limits(SCALARS[t])
 
 
 class Scalar:

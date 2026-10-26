@@ -332,7 +332,8 @@ class expr_arith final : public statement {
     std::optional<token> open_paren_tk_;
     std::optional<token> close_paren_tk_;
 
-    // true when this list was created because of a higher-precedence operation
+    // true when this list was created because of a higher-precedence operation,
+    // which starts it at the precedence of its operator
     //   1 + 2 * 3 + 4  => 1 + [2 * 3] + 4
     bool is_implied_subexpression_{};
 
@@ -370,9 +371,6 @@ class expr_arith final : public statement {
         // enclosed
         std::optional<token> open_paren_tk;
 
-        // a list that was created for an operation of a higher precedence
-        bool is_implied_subexpression{};
-
         uint8_t first_op_precedence{initial_precedence};
 
         // an element the caller has already parsed, e.g. the 'b' of 'b * c' in
@@ -394,7 +392,6 @@ class expr_arith final : public statement {
             return {
                 .uops{},
                 .open_paren_tk{},
-                .is_implied_subexpression{},
                 .first_op_precedence{initial_precedence},
                 .first_expression{std::move(first)},
                 .destination_type{},
@@ -409,7 +406,6 @@ class expr_arith final : public statement {
             return {
                 .uops{std::move(uops_in)},
                 .open_paren_tk{open_paren_tk_in},
-                .is_implied_subexpression{},
                 .first_op_precedence{initial_precedence},
                 .first_expression{},
                 .destination_type{destination_type_in},
@@ -426,7 +422,6 @@ class expr_arith final : public statement {
             return {
                 .uops{},
                 .open_paren_tk{},
-                .is_implied_subexpression{true},
                 .first_op_precedence{precedence},
                 .first_expression{std::move(first)},
                 .destination_type{destination_type_in},
@@ -440,7 +435,6 @@ class expr_arith final : public statement {
             return {
                 .uops{},
                 .open_paren_tk{},
-                .is_implied_subexpression{},
                 .first_op_precedence{initial_precedence},
                 .first_expression{},
                 .destination_type{destination_type_in},
@@ -454,10 +448,12 @@ class expr_arith final : public statement {
     // the list is located where its first element starts
     expr_arith(toc& tc, tokenizer& tz, options opts)
         : statement{opts.first_expression
-                        ? start_marker_of(*opts.first_expression)
+                        ? opts.first_expression->tok().start_position()
                         : tz.next_token_position()},
           list_uops_{std::move(opts.uops)}, open_paren_tk_{opts.open_paren_tk},
-          is_implied_subexpression_{opts.is_implied_subexpression},
+          is_implied_subexpression_{
+              opts.first_op_precedence != initial_precedence,
+          },
           destination_type_{opts.destination_type} {
 
         const toc::parse_nesting_scope nesting{tc, tz};
@@ -591,13 +587,7 @@ class expr_arith final : public statement {
         // inlined function
         // e.g. 'r = a + r * 2' would copy 'a' into 'r' before 'r * 2' reads it
         if (destination_is_clobbered_before_read(tc, dst, steps)) {
-            if (dst.is_register()) {
-                compile_through_scratch_as(tc, indent, dst, dst.type_ref());
-                return;
-            }
-
             compile_through_scratch(tc, indent, dst);
-
             return;
         }
 
@@ -853,34 +843,8 @@ class expr_arith final : public statement {
         // note: the ')' closed the list, see 'is_closed'
         assert(open_paren_tk_);
 
-        throw compile_error{
-            *open_paren_tk_,
-            std::format("parentheses around a single value group nothing, "
-                        "write {}",
-                        in_quotes(statement::trimmed_source(*exprs_.front())))};
-    }
-
-    // a narrow memory destination truncates when stored, which gives the same
-    // value when the low bits do not depend on the high bits
-    [[nodiscard]] auto can_compute_wide(const toc& tc,
-                                        const destination& dst) const -> bool {
-
-        // note: a register destination is compiled directly by 'compile'
-        assert(dst.operand().is_memory());
-
-        if (dst.type_ref().size_bytes() >=
-            tc.builtins().default_type().size_bytes()) {
-
-            return false;
-        }
-
-        // the wide result must be checked against the narrow type, and a
-        // shift count against the width of the narrow type
-        if (tc.checks_overflow(dst) or tc.checks().shift) {
-            return false;
-        }
-
-        return keeps_low_bits(width_change::widened);
+        throw_parentheses_group_nothing(
+            *open_paren_tk_, statement::trimmed_source(*exprs_.front()));
     }
 
     // a nested list is folded when it is compiled as an element:
@@ -959,38 +923,11 @@ class expr_arith final : public statement {
     auto compile_through_scratch(toc& tc, const size_t indent,
                                  const destination& dst) const -> void {
 
-        const type& dst_type{dst.type_ref()};
-
-        if (not can_compute_wide(tc, dst)) {
-            compile_through_scratch_as(tc, indent, dst, dst_type);
-            return;
-        }
-
-        // a target without narrow register operations normalizes a narrow
-        // register after each operation, a wide register needs only the store
-        tc.emit_most_efficient(
-            tok(), indent,
-            [&] -> void {
-                compile_through_scratch_as(tc, indent, dst, dst_type);
-            },
-            [&] -> void {
-                compile_through_scratch_as(tc, indent, dst,
-                                           tc.builtins().default_type());
-            });
-    }
-
-    auto compile_through_scratch_as(toc& tc, const size_t indent,
-                                    const destination& dst,
-                                    const type& scratch_type) const -> void {
-
         machine& x{tc.machine()};
 
         const operand reg{
-            x.alloc_scratch_register(tok(), indent, scratch_type),
+            x.alloc_scratch_register(tok(), indent, dst.type_ref()),
         };
-
-        // note: the register may be wider than 'dst', so it has steps of its
-        //       own
 
         const destination reg_dst{dst.in_register(reg)};
 
@@ -1146,10 +1083,6 @@ class expr_arith final : public statement {
     //   if not returning then becomes: a - [b * c + 3]
     [[nodiscard]] auto is_end_of_implied_subexpression(
         const uint8_t precedence, const uint8_t next_precedence) const -> bool {
-
-        // note: a sub-expression starts at an operator, so it has a precedence
-        assert(not is_implied_subexpression_ or
-               precedence != initial_precedence);
 
         return is_implied_subexpression_ and next_precedence < precedence;
     }
@@ -1429,7 +1362,7 @@ class expr_arith final : public statement {
                   in_quotes(folded_source));
 
         x.copy_value(src_loc_tk, indent, dst.operand(),
-                     folded_value::untyped(value).operand_at(dst.type_ref()));
+                     constant_operand(dst, value));
     }
 
     // an identifier copies itself, anything else is assigned with '='
@@ -1700,10 +1633,4 @@ class expr_arith final : public statement {
     }
 
     // a marker at the start of 'element', without its whitespace
-    [[nodiscard]] static auto start_marker_of(const statement& element)
-        -> token {
-
-        const token& tk{element.tok()};
-        return token::position(tk.file_index(), tk.start_index(), tk.at_line());
-    }
 };

@@ -9,8 +9,7 @@
 register use at the failure: 13 of 13 registers live
 
   held  frame, registers (allocated at)
-     0  main
-    13  f called at 11:5
+    13  f (noinline body)
           r15 6:18
           r14 6:23
           r13 6:28
@@ -24,6 +23,3 @@ register use at the failure: 13 of 13 registers live
           rsi 6:68
           rdi 6:73
           rcx 6:78
-
-no noinline frame helps, the registers are held by the innermost frame, simplify
-its expression

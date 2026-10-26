@@ -35,7 +35,7 @@ import tempfile
 
 import fuzzlib as fl
 
-BITS = {"i8": 8, "i16": 16, "i32": 32, "i64": 64}
+from fuzzlib import BITS, fits, limits, trunc_div, wrap
 CHECKS = os.environ.get("FUZZ_CHECKS", "noub")
 
 
@@ -54,22 +54,6 @@ class Rejected(Exception):
 class Skip(Exception):
     # a program whose outcome the model does not decide
     pass
-
-
-def limits(t):
-    bits = BITS[t]
-    return -(1 << (bits - 1)), (1 << (bits - 1)) - 1
-
-
-def fits(t, value):
-    low, high = limits(t)
-    return low <= value <= high
-
-
-def wrap(t, value):
-    bits = BITS[t]
-    value &= (1 << bits) - 1
-    return value - (1 << bits) if value >> (bits - 1) else value
 
 
 def interesting(rnd, t, benign=False):
@@ -92,11 +76,6 @@ def interesting(rnd, t, benign=False):
 
 def literal(t, value):
     return f"{t}({value})"
-
-
-def trunc_div(a, b):
-    q = abs(a) // abs(b)
-    return q if (a < 0) == (b < 0) else -q
 
 
 def apply(t, op, a, b):

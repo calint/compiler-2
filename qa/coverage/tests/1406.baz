@@ -1,7 +1,6 @@
 # a value that reads another name of the destination once is computed in the
 # destination
-# with '--checks=-alias': the function uses the global the call passes it,
-# which the alias check rejects
+# the call is rejected: the function uses the global the call passes it
 
 var g = 3
 

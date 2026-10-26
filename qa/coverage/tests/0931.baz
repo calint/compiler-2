@@ -1,5 +1,5 @@
-# 'alias' (on by default): the argument and the data the function reads are different
-# fields of one record
+# the argument and the data the function reads are different fields of one
+# record
 
 type world {
     items[4],

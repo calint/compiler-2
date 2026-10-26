@@ -71,7 +71,6 @@ struct target_description {
     // stack: calls check that the stack has room and a failure has a handler
     bool is_stack_bounded{};
     std::string_view frame_base_register;
-    std::string_view stack_pointer_register;
     std::string_view variables_base_register;
     // the register that carries the address of the receiver of a method call
     std::string_view slot_register;
@@ -92,7 +91,7 @@ struct target_description {
 // the instructions, the names of its registers and the order it picks scratch
 // registers in; the public interface by group:
 //
-//   lifecycle      in the order 'program' calls it: 'start', 'end_main',
+//   lifecycle      in the order 'program' calls it: 'start',
 //                  'begin_noinline_body' and 'end_noinline_body' for each
 //                  body, 'emit_runtime', 'emit_string_constants',
 //                  'begin_data', 'reserve_variables', 'finish',
@@ -281,6 +280,33 @@ class machine {
         std::string_view result;
     };
 
+  protected:
+    // the lines of the failures in each file, with '--checks=line'
+    using failure_lines = std::map<size_t, std::set<size_t>>;
+
+  private:
+    using routine_uses = std::map<std::string, failure_lines, std::less<>>;
+
+    // what compiling a version of code changes in the machine
+    struct version_state {
+        // the indexes are those of the names of the backend, see
+        // 'register_index_of'
+        register_pool registers;
+        bool frame_base_reserved{};
+        // the inlined calls being compiled and what the registers held
+        register_trace trace;
+        // the most scratch registers in use
+        size_t max_scratch_regs{};
+        // the routines, helpers and failure handlers the code uses, by label,
+        // each with the locations its failures report; emitted after the
+        // code, see 'mark_used'
+        routine_uses used_routines;
+    };
+
+    // saved before a version and put back after it, see 'version_scope'
+    version_state state_;
+
+  public:
     // the registers allocated while it lives belong to the call it names in
     // the register trace, see 'register_peak_report'; it ends the frame of
     // the trace when it goes out of scope, an error leaves it too
@@ -292,7 +318,8 @@ class machine {
                              std::string name, const frame_kind kind)
             : machine_{backend} {
 
-            backend.begin_trace_frame(call_site_tk, std::move(name), kind);
+            backend.state_.trace.begin_frame(call_site_tk, std::move(name),
+                                             kind);
         }
 
         register_trace_scope(const register_trace_scope&) = delete;
@@ -302,7 +329,7 @@ class machine {
         auto operator=(register_trace_scope&&)
             -> register_trace_scope& = delete;
 
-        ~register_trace_scope() { machine_.end_trace_frame(); }
+        ~register_trace_scope() { machine_.state_.trace.end_frame(); }
     };
 
     // the scratch registers a front-end step allocates for its operands and
@@ -358,9 +385,6 @@ class machine {
         other,
     };
 
-    // the lines of the failures in each file, with '--checks=line'
-    using failure_lines = std::map<size_t, std::set<size_t>>;
-
     // the addresses and the result of a comparison of two arrays, 'alignment'
     // is the alignment known for both
     struct equality_request {
@@ -382,29 +406,6 @@ class machine {
         runtime_check overlap;
     };
 
-  private:
-    using routine_uses = std::map<std::string, failure_lines, std::less<>>;
-
-    // what compiling a version of code changes in the machine
-    struct version_state {
-        // the indexes are those of the names of the backend, see
-        // 'register_index_of'
-        register_pool registers;
-        bool frame_base_reserved{};
-        // the inlined calls being compiled and what the registers held
-        register_trace trace;
-        // the most scratch registers in use
-        size_t max_scratch_regs{};
-        // the routines, helpers and failure handlers the code uses, by label,
-        // each with the locations its failures report; emitted after the
-        // code, see 'mark_used'
-        routine_uses used_routines;
-    };
-
-    // saved before a version and put back after it, see 'version_scope'
-    version_state state_;
-
-  protected:
     // keeps the registers of its operands, and the base and index registers
     // of memory operands, from being picked for scratch while an operation is
     // lowered. on exit, also while an exception unwinds, it frees the
@@ -538,14 +539,14 @@ class machine {
 
       public:
         explicit version_scope(machine& backend)
-            : machine_{backend}, start_{backend.version_state_now()} {}
+            : machine_{backend}, start_{backend.state_} {}
 
         version_scope(const version_scope&) = delete;
         version_scope(version_scope&&) = delete;
         auto operator=(const version_scope&) -> version_scope& = delete;
         auto operator=(version_scope&&) -> version_scope& = delete;
 
-        ~version_scope() { machine_.restore_version_state(std::move(start_)); }
+        ~version_scope() { machine_.state_ = std::move(start_); }
     };
 
     // the lines of a compiled version with the state it ended in
@@ -719,10 +720,6 @@ class machine {
     [[nodiscard]] virtual auto
     can_lower_index_scale(const size_t size_bytes) const -> bool = 0;
 
-    virtual auto check_bounds(const token& src_loc_tk, const size_t indent,
-                              const bounds_range& range,
-                              const bounds_check_options& options) -> void = 0;
-
     // jumps to the frame overflow handler when the callee frame at
     // 'frame_address' of 'frame_size_bytes' does not fit in the variables
     virtual auto check_frame_capacity(const token& src_loc_tk,
@@ -770,8 +767,6 @@ class machine {
                         const arithmetic_operator operation, const operand& dst,
                         const operand& divisor, const runtime_check& check)
         -> void = 0;
-
-    virtual auto end_main() -> void = 0;
 
     // 'emit_count' compiles the element count into the register it is given,
     // the elements of both arrays are compared at the width 'alignment' allows
@@ -856,7 +851,7 @@ class machine {
                          const std::string_view register_name,
                          const type& type_ref) -> operand {
 
-        reserve_named_register(src_loc_tk, indent, register_name, type_ref);
+        reserve_named_register(src_loc_tk, indent, register_name);
         return allocated_operand(register_name, type_ref);
     }
 
@@ -864,8 +859,6 @@ class machine {
     [[nodiscard]] auto alloc_scratch_register(const token& src_loc_tk,
                                               const size_t indent,
                                               const type& type_ref) -> operand {
-
-        validate_register_type(src_loc_tk, type_ref);
 
         for (const std::string_view register_name : scratch_registers()) {
             if (state_.registers.is_unavailable(register_mask(register_name))) {
@@ -925,13 +918,15 @@ class machine {
 
         assert(frame_address.is_memory());
         assert(frame_address.index_register().empty());
-        assert(not is_stack_pointer(frame_address.base_register()));
+
+        assert(frame_address.base_register() == frame_base_register() or
+               frame_address.base_register() == variables_base_register());
 
         // the callee may use every register but the variables base, so only
         // values live at the call need saving
         const std::vector<size_t> saved{registers_saved_by_call()};
 
-        record_noinline_call(src_loc_tk, label, saved.size());
+        state_.trace.record_noinline_call(src_loc_tk, label, saved.size());
 
         if (not saved.empty()) {
             comment(src_loc_tk, indent,
@@ -978,7 +973,30 @@ class machine {
         assert(function != target_call::exit);
 
         assert_target_call_registers(function, args, result);
-        emit_target_call(src_loc_tk, indent, function, args, result);
+        emit_target_call(src_loc_tk, indent, function, result);
+    }
+
+    // jumps to the bounds failure handler when 'range' is outside its array,
+    // by the bounds that 'options' turns on
+    auto check_bounds(const token& src_loc_tk, const size_t indent,
+                      const bounds_range& range,
+                      const bounds_check_options& options) -> void {
+
+        if (not options.upper and not options.lower) {
+            return;
+        }
+
+        // note: an index and a count are values of the default type
+        assert(range.checked.type_ref().size_bytes() ==
+               default_type().size_bytes());
+
+        const bounds_plan plan{plan_bounds_check(options, range)};
+
+        comment(src_loc_tk, indent, "bounds check begin");
+
+        emit_bounds_check(src_loc_tk, indent, range, options, plan);
+
+        comment(src_loc_tk, indent, "bounds check end");
     }
 
     // synthetic tokens and standalone backend calls have no source location;
@@ -1123,7 +1141,7 @@ class machine {
 
         compiled_version& kept{keeps_first ? *first : *second};
 
-        restore_version_state(std::move(kept.end_state));
+        state_ = std::move(kept.end_state);
 
         output.append(std::move(kept.lines));
 
@@ -1333,7 +1351,10 @@ class machine {
         assert(not state_.frame_base_reserved);
         assert(state_.registers.scratch_count() == 0);
 
-        push_backend_allocation(frame_base_register());
+        // a register the backend holds itself, which no source location asked
+        // for
+        push_allocation(token{}, 0, frame_base_register(),
+                        register_pool::holder_kind::backend);
 
         state_.frame_base_reserved = true;
 
@@ -1366,7 +1387,8 @@ class machine {
         comment(token{}, 0, "allocate named register {}",
                 variables_base_register());
 
-        push_backend_allocation(variables_base_register());
+        push_allocation(token{}, 0, variables_base_register(),
+                        register_pool::holder_kind::backend);
 
         variables_base_reserved_ = true;
     }
@@ -1493,6 +1515,13 @@ class machine {
     [[nodiscard]] virtual auto address_text(const operand& address) const
         -> std::string = 0;
 
+    // the compares and branches of 'check_bounds' after its plan, between the
+    // begin and end comments
+    virtual auto emit_bounds_check(const token& src_loc_tk, const size_t indent,
+                                   const bounds_range& range,
+                                   const bounds_check_options& options,
+                                   const bounds_plan& plan) -> void = 0;
+
     // the call instruction of 'call_function'
     virtual auto emit_call(const size_t indent, const std::string_view label)
         -> void = 0;
@@ -1508,10 +1537,9 @@ class machine {
     // reserved, none by default; 'return_function' is its exit
     virtual auto emit_frame_entry() -> void {}
 
-    // the call of 'call_target', its registers checked
+    // the call of 'call_target', its arguments in their registers
     virtual auto emit_target_call(const token& src_loc_tk, const size_t indent,
                                   const target_call function,
-                                  const std::span<const operand> args,
                                   const operand& result) -> void = 0;
 
     // the setup a target needs before 'main', none by default
@@ -1549,19 +1577,13 @@ class machine {
 
     [[nodiscard]] virtual auto target_assembler() const -> const assembler& = 0;
 
-    // throws when a register of the target cannot hold a value of 'type_ref',
-    // any type fits by default
-    virtual auto
-    validate_register_type([[maybe_unused]] const token& src_loc_tk,
-                           [[maybe_unused]] const type& type_ref) const
-        -> void {}
-
     //
     // class methods
     //
 
     // the arguments of a call of 'function' and its result, empty when it has
-    // none, are in the registers 'registers_for_target_call' gives it
+    // none, are in the registers 'registers_for_target_call' gives it, at the
+    // width of a register
     auto assert_target_call_registers(const target_call function,
                                       const std::span<const operand> arguments,
                                       const operand& result) const -> void {
@@ -1577,13 +1599,16 @@ class machine {
 
             assert(arg.is_register() and
                    register_index_of(arg.register_name()) ==
-                       register_index_of(name));
+                       register_index_of(name) and
+                   arg.type_ref().size_bytes() == default_type().size_bytes());
         }
 
         assert(result.is_empty() == registers.result.empty());
 
-        assert(result.is_empty() or register_index_of(result.register_name()) ==
-                                        register_index_of(registers.result));
+        assert(result.is_empty() or
+               (register_index_of(result.register_name()) ==
+                    register_index_of(registers.result) and
+                result.type_ref().size_bytes() == default_type().size_bytes()));
     }
 
     // a routine marked while another one is emitted is emitted only if a
@@ -1760,11 +1785,14 @@ class machine {
         return error;
     }
 
-    // 'signed_max' is the largest value of the signed type of the compare
+    // the compare is at the default type, 'signed_max' its largest value
     [[nodiscard]] auto plan_bounds_check(const bounds_check_options& options,
-                                         const bounds_range& range,
-                                         const uint64_t signed_max) const
+                                         const bounds_range& range) const
         -> bounds_plan {
+
+        const uint64_t signed_max{
+            (uint64_t{1} << (default_type().size_bits() - 1)) - 1,
+        };
 
         const bool count_known{
             range.count and state_.registers.is_lower_checked(
@@ -1784,14 +1812,6 @@ class machine {
     // enclosing 'operation_scope' ends
     auto protect_register(const std::string_view name) -> void {
         state_.registers.protect(register_mask(name));
-    }
-
-    // a call of the function with the body 'label' saves 'saved' registers
-    auto record_noinline_call(const token& call_site_tk,
-                              const std::string_view label, const size_t saved)
-        -> void {
-
-        state_.trace.record_noinline_call(call_site_tk, label, saved);
     }
 
     // the mask of the register 'name' in the pool, 0 for text that names no
@@ -1837,16 +1857,10 @@ class machine {
         pop_allocation(register_name);
     }
 
-    // see 'target_options::reports_line'
-    [[nodiscard]] auto reports_line() const -> bool { return reports_line_; }
-
     // 'alloc_named_register' without an operand, for a register that the
     // backend uses by name
     auto reserve_named_register(const token& src_loc_tk, const size_t indent,
-                                const std::string_view register_name,
-                                const type& type_ref) -> void {
-
-        validate_register_type(src_loc_tk, type_ref);
+                                const std::string_view register_name) -> void {
 
         comment(src_loc_tk, indent, "allocate named register {}",
                 register_name);
@@ -2040,15 +2054,6 @@ class machine {
         return result;
     }
 
-    // the registers allocated until 'end_trace_frame' belong to the inlined
-    // call of 'name' made at 'call_site_tk', the first frame is the function
-    // being compiled and has no call site
-    auto begin_trace_frame(const token& call_site_tk, std::string name,
-                           const frame_kind kind) -> void {
-
-        state_.trace.begin_frame(call_site_tk, std::move(name), kind);
-    }
-
     // the lines of 'emit' with the state they end in, compiled from the
     // current state, which is put back
     [[nodiscard]] auto compile_version(const std::function_ref<void()> emit)
@@ -2061,7 +2066,7 @@ class machine {
 
             return compiled_version{
                 .lines{std::move(lines)},
-                .end_state{version_state_now()},
+                .end_state{state_},
             };
         } catch (const compile_error& e) {
             if (e.kind != compile_error::error_kind::out_of_registers and
@@ -2087,8 +2092,6 @@ class machine {
     [[nodiscard]] auto current_trace_frame() const -> size_t {
         return state_.trace.current_frame();
     }
-
-    auto end_trace_frame() -> void { state_.trace.end_frame(); }
 
     // the optional jump optimization
     auto finish_output() -> void {
@@ -2117,13 +2120,6 @@ class machine {
     }
 
     // a register of any size that names the stack pointer
-    [[nodiscard]] auto is_stack_pointer(const std::string_view name) const
-        -> bool {
-
-        return register_index_of(name) ==
-               register_index_of(target_.stack_pointer_register);
-    }
-
     // of two versions, at least one available, the one to keep
     [[nodiscard]] auto keeps_first_version(const version_result& first,
                                            const version_result& second) const
@@ -2236,19 +2232,6 @@ class machine {
         state_.trace.record_allocation(state_.registers);
     }
 
-    // a register the backend holds itself, which no source location asked for
-    auto push_backend_allocation(const std::string_view register_name) -> void {
-        state_.registers.push({
-            .index{pool_index(register_name)},
-            .src_loc_tk{},
-            .indent{},
-            .holder{register_pool::holder_kind::backend},
-            .frame{current_trace_frame()},
-        });
-
-        state_.trace.record_allocation(state_.registers);
-    }
-
     // an error that the registers ran out or are held by a value, with how the
     // registers are used by each frame and what a 'noinline' frame would give;
     // defined in 'register_report.hpp'
@@ -2299,10 +2282,6 @@ class machine {
                         "is needed here too, compute the operand that needs "
                         "it with 'let' before that operation",
                         name, holder_location));
-    }
-
-    auto restore_version_state(version_state state) -> void {
-        state_ = std::move(state);
     }
 
     // the scratch registers that can hold values beside the ones the backend
@@ -2380,9 +2359,5 @@ class machine {
                            "instructions, {}",
                            keeps_first ? "first" : "second", first_count,
                            second_count, reason);
-    }
-
-    [[nodiscard]] auto version_state_now() const -> version_state {
-        return state_;
     }
 };

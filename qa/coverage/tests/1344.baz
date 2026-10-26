@@ -1,5 +1,0 @@
-# the limit of a chain of noinline calls does not depend on the order of the
-# calls: the script compiles a generated chain called in several orders
-func main() {
-    exit(0)
-}

@@ -1,6 +1,0 @@
-# an inlined or a noinline call past the scope limit in the dry runs of a
-# chain of noinline calls is reported as the chain: the script compiles
-# generated chains
-func main() {
-    exit(0)
-}

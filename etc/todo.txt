@@ -22,21 +22,94 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
             of 'reserve_named_register' go, 'push_backend_allocation' goes,
             the 'stack_pointer_register' field, 'end_main' (x86 listings lose
             a blank line), 'reports_line'
+       => A.1 done (2026-10-26): all eight; 'machine::check_bounds' is the one
+          frame over the protected 'emit_bounds_check' with the plan at the
+          default width; the target-call width asserted once in
+          'assert_target_call_registers'; the rv32i driver calls 'exit' for
+          'end_main'; listings of every test on both targets equal but for
+          the x86 blank line; both suites, test-rv32i, the CLI tests and
+          clang-tidy clean
        A.2. the checks (U3 -28: the 'without_call_check' counter derived
             from the scopes; U5 -12; U7 -5; S4/U4 -25: the two count-first
             checks of README 7.14 as one helper in 'ub_order.hpp')
+       => A.2 done (2026-10-26): U3 'is_checking_without_call' reads the
+          scopes ('scope_stack::is_in_body_taking_from_call'), the
+          'without_call_check' class and counter go; U7 'reach_state' keeps
+          the innermost loop's flag; U5 a callee's globals through
+          'toc::record_storage_use', the two 'record_callee_globals' go;
+          U4 'operands_of' in 'ub_order.hpp' for both count-first nodes
+          (io passes its subspans), the hand-made lists go; listings equal,
+          both suites clean
        A.3. calls and statements (S6-S10, -70): one 'expr_any' constructor
             for a path argument, 'call_kind' without 'call_kind_item', the
             notes of 'dry_run_body', 'func_instantiator' in one helper, the
             leftovers
+       => A.3 done (2026-10-26): 'path_argument' and 'token::start_position'
+          (also P D, 'expr_arith::start_marker_of' goes), 'call_kind' without
+          'call_kind_item', the 'dry_run_body' notes point at README 4.4,
+          'func_instantiator::add_instance', the duplicate result assert, the
+          one-use unary wrapper, the 'stmt_if' note; not done: holding
+          'syntax' in 'stmt_def_func_param' (the struct would have to come
+          before the members, against the class layout, -6), the
+          'stmt_def_type' helpers as statics (0 lines); listings equal, both
+          suites and the CLI tests clean
        A.4. expressions (P D, E, F, H, I, -56): 'token::start_position', the
             state 'expr_arith' keeps twice, local duplicates, the operator
             lookups over 'traits_of', 'is_hidden_by_value' inlined
+       => A.4 done (2026-10-26): D with A.3 ('token::start_position'), E part
+          2 ('is_implied_subexpression' from the precedence, the option and
+          its assert go), F ('throw_parentheses_group_nothing',
+          'as_statement' at the visits, 'constant_operand'), H, I; E part 1
+          (the list's unary ops in the base class) not done, it needs the
+          reproduce-source runs of its own (-6); listings equal
+       => A.5 folded into B.1 (2026-10-26): N2 rewrites what B.1 replaces;
+          N3 was done with U5
        A.5. names (N2 -25, N3 -3): 'ident_info' keeps the path once
        A.6. docs and qa (W2 -88, W3 -110, W4 -120, W5 -60, W8 -30): the
             README contents and one form of section reference, text said
             twice and chapter 9 for a final language, the fuzzers on
             'fuzzlib.run_fuzzer', the alias fuzzers on fuzzlib
+       => A.6 done (2026-10-26, by a fork): W2 the README contents and the
+          67 anchor links go, references are numbers; W3 chapter 9 keeps
+          only a target or a check, 1.7 and 8.2 point to 7.12, 1.2 to 7.2,
+          3.8 and 5.4 one line naming their script, 7.8 to 1.9 and 1.4; the
+          README 2098 -> 1919 lines; W4 'fl.run_fuzzer' used by fuzz-exprs,
+          programs, compiler, roome, options; W5 'alias-foo-fuzz.py' on
+          'run_fuzzer', 'fuzz-alias-long.sh' goes; W8 the model helpers in
+          fuzzlib, 'KIND_CODE' is 'PANIC_CODE'; qa/fuzz -158 lines; equal
+          counts for seed 5 before and after
+       A.7. exceptions removed (user, 2026-10-26: solve an exception instead
+            of working around it): the noinline dry run per call kind goes,
+            an error of a noinline body names its first call; then the
+            '-alias' option goes, the rejection of shared storage is always
+            on (the dry run only mattered for verdicts under '-alias')
+       => A.7 done (2026-10-26): 'dry_run_ledger', 'call_kind', the dry-run
+          levels and their limit, 'scope_kind::noinline_dry_run' and
+          'inline_call::dry_run' go; 'noinline_body' keeps the call token
+          and source of its first call for the "called from" frame;
+          'check_options::alias' goes, 'assert_no_shared_storage' checks the
+          result and the globals always; 20 '-alias' cases are rejections
+          now, 1280, 1344, 1356 (the dry-run limits) go, 1240 is a chain of
+          1000; README 1.4, 1.5, 3.7, chapter 4 (4.3-4.5 go), 8.1-8.3; both
+          suites, the CLI tests
+       A.8. versions (measured per site against x86 76184 and rv32i 100492
+            instruction lines, user: remove 2, 3, 4, 5, 7): the narrow or
+            wide register of 'expr_arith' (0), the conversion (0), the
+            indexed result address of a call (rv32i +50), the unary ops of
+            a call (+22), the displacement (+30); sites 1 (scratch or in
+            place) and 6 (argument addresses) stay
+       => A.8 done (2026-10-26): 'expr_arith' computes through a scratch
+          register of the destination's type ('can_compute_wide' and the
+          '_as' variant go); a conversion is computed in the target or in a
+          scratch register ('computation_plan' and its 'measured' go,
+          'plan_scratch_type'); 'inline_call' binds a memory result as it is
+          ('compile_to_destination', 'compile_with_result_address_register',
+          'comment_result_address', 'emit_most_efficient_address' go) and an
+          address register holds the displacement ('load_indexed_address'
+          goes); instruction lines x86 76145 equal (7 tests change both
+          ways), rv32i 100477 -> 100575; an rv32i recursion that passes a new
+          indexed argument per level doubles per level instead of tripling
+          (11 levels 34 s -> 0.37 s); README 5.1, 5.2
     B. refactors (about -700 lines)
        B.1. N1 (-450, -18 concepts, +6): a name path resolved once, a
             binding holds what its argument resolved to ('resolved_name'),
@@ -235,6 +308,11 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
        are the bulk and io built-ins, local and checked: README 7.14 and the
        3.1 sentence
     order: F, G.1, G.2, H.1, H.2 (a pause for a commit after each)
+[ ] easy: bug: a constant that overflows a narrow type without
+    '--checks=overflow' fails the assert of 'stmt_def_const::compile'
+    (stmt_def_var.hpp:374), e.g. 'let x = i8(127)' then 'let y = x + 1'; with
+    'overflow' it is rejected ("constant expression overflows the type"),
+    both targets (2026-10-26)
 [ ] easy: bug: a built-in without a value used as a value without '(',
     e.g. 'if n == 2 or (exit + 0) exit(2)', fails the assert of
     'parse_builtin_value' (parse_statement.hpp:288), also at 1594bb3e;
@@ -478,12 +556,6 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
     zero, bool.15.14.end') than the compiler now does, the other targets'
     diffs hold; find whether a jump optimization stopped applying on rv32i
     (last change of the expected file: 451da0a8) before updating it
-[ ] medium: a cycle of noinline call kinds, e.g. 'f(a, b)' calling 'f(b,
-    a)', is measured from where it was entered ('dry_run_ledger'), so a chain
-    that reaches it near the limit of nested dry runs can be accepted or
-    rejected depending on which of its calls was checked first (README 4.3,
-    8.3); storing the height of a cycle only once the outermost dry run of
-    its call kinds ends would make the verdict independent of the order
 [ ] easy: low priority: whether a 'let' is a constant is decided at the
     parse ('make_stmt_def_var', 'may_fold'), where the 'n' of a 'foo' over an
     unsized array parameter is a variable, so 'let m = n' stays a variable

@@ -1,5 +1,5 @@
-# a noinline body that fits alone is called inside an expression that holds registers,
-# rv32i: the dry run of the body at the call site has fewer registers than the body
+# a noinline body that fits alone is called inside an expression that holds
+# registers, rv32i: the body has its own registers
 
 func noinline f(a i32, b i32) res i32 {
     res = ((a * b) + ((a * b) + ((a * b) + ((a * b) + ((a * b) + ((a * b) + ((a * b) + ((a * b) + ((a * b) + ((a * b) + ((a * b) + ((a * b) + ((a * b) + ((a * b) + ((a * b) + ((a * b) + ((a * b) + ((a * b) + ((a * b) + ((a * b) + ((a * b) + ((a * b) + ((a * b) + ((a * b) + (a * b)))))))))))))))))))))))))

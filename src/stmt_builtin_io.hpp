@@ -137,11 +137,13 @@ class stmt_builtin_io final : public statement {
     auto compile(toc& tc, const size_t indent, const destination& dst) const
         -> void override {
 
+        const std::vector<list_operand> operands{operands_of(*this)};
+
         // e.g. the 'i' of 'read(0, a[i], f())' with 'f' writing 'i'; the 'b'
         // of 'read(0, b, n)' is written
-        assert_operands_not_written_later(tc, *this, "argument");
+        assert_not_written_later(tc, operands, "argument");
 
-        assert_count_not_written_by_buffer(tc);
+        assert_count_not_written_by_buffer(tc, operands);
 
         const place buffer{assert_buffer(tc)};
 
@@ -371,33 +373,6 @@ class stmt_builtin_io final : public statement {
                 },
                 .array_name{buffer.ident->dotted_path()},
             });
-    }
-
-    // the count and the start are computed before the buffer, its range check
-    // needs them; the call is accepted only when that order and the source
-    // order give the same result, e.g. 'read(0, a[g()].buf, n)' with 'g'
-    // writing 'n' is rejected
-    auto assert_count_not_written_by_buffer(const toc& tc) const -> void {
-        std::vector<list_operand> computed_first;
-        computed_first.reserve(args_.count());
-
-        for (size_t i{buffer_index_ + 1}; i < args_.count(); ++i) {
-            computed_first.push_back({
-                .node{&args_.at(i)},
-                .written_place{},
-            });
-        }
-
-        const std::array<list_operand, 1> buffer{
-            list_operand{
-                .node{&args_.at(buffer_index_)},
-                .written_place{},
-            },
-        };
-
-        assert_not_written_after(tc, computed_first, buffer,
-                                 "the buffer argument, the count and the start "
-                                 "are computed before the buffer");
     }
 
     // a sector is a whole number of elements and fits in the array
@@ -663,6 +638,19 @@ class stmt_builtin_io final : public statement {
     //
     // statics
     //
+
+    // the count and the start are computed before the buffer, its range check
+    // needs them; the call is accepted only when that order and the source
+    // order give the same result, e.g. 'read(0, a[g()].buf, n)' with 'g'
+    // writing 'n' is rejected
+    static auto assert_count_not_written_by_buffer(
+        const toc& tc, const std::span<const list_operand> operands) -> void {
+
+        assert_not_written_after(tc, operands.subspan(buffer_index_ + 1),
+                                 operands.subspan(buffer_index_, 1),
+                                 "the buffer argument, the count and the start "
+                                 "are computed before the buffer");
+    }
 
     // 'read(fd, buf, count, start)': the count and the start are optional,
     // a sector function has no count

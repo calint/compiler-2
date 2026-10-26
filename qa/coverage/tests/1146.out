@@ -1,0 +1,4 @@
+
+1146.baz:12:9: argument 1 'g.b' may share storage with the global 'g' that 'set' uses, use a temporary variable for one of them
+    set(g.b)
+        ^

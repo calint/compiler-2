@@ -257,6 +257,18 @@ class compile_error final : public std::exception {
                                     in_quotes(expected), in_quotes(got))};
 }
 
+// parentheses around one plain value at 'open_paren_tk', e.g. '(x)', group
+// nothing; 'value_source' is the value as written
+[[noreturn]] inline auto
+throw_parentheses_group_nothing(const token& open_paren_tk,
+                                const std::string_view value_source) -> void {
+
+    throw compile_error{
+        open_paren_tk,
+        std::format("parentheses around a single value group nothing, write {}",
+                    in_quotes(value_source))};
+}
+
 // an enclosed list met 'next_tk', which is not its ')', e.g. the 'exit' of
 // 'x = (1 + 2 exit(x)'
 [[noreturn]] inline auto throw_unclosed_list(const token& next_tk) -> void {

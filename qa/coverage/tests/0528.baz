@@ -1,4 +1,4 @@
-# 'alias' (on by default): calls whose references cannot share storage are accepted
+# calls whose references cannot share storage are accepted
 
 func assert(err, ok bool) { if not ok exit(err) }
 

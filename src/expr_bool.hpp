@@ -1171,8 +1171,7 @@ class expr_bool final : public statement {
 
         const size_t element_count{bools_.size()};
         for (size_t i{}; i < element_count; ++i) {
-            bools_.at(i).visit(
-                [&os](const auto& e) -> void { e.source_to(os); });
+            as_statement(bools_.at(i)).source_to(os);
 
             if (i < element_count - 1) {
                 // note: -1 because there is one operator fewer than elements
@@ -1338,19 +1337,11 @@ class expr_bool final : public statement {
             return;
         }
 
-        const statement& value{
-            *only.visit(
-                [](const statement& e) -> const statement* { return &e; }),
-        };
-
         // note: only a parenthesized list asks, see its constructor
         assert(open_paren_tk_);
 
-        throw compile_error{
-            *open_paren_tk_,
-            std::format("parentheses around a single value group nothing, "
-                        "write {}",
-                        in_quotes(statement::trimmed_source(value)))};
+        throw_parentheses_group_nothing(
+            *open_paren_tk_, statement::trimmed_source(as_statement(only)));
     }
 
     // e.g. 'a or b and c' is rejected, '(a or b) and c' is not

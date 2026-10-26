@@ -2396,7 +2396,7 @@ auto check_multiply_divide_routines() -> void {
         assert(not output.str().contains(".Lbaz_multiply:"));
         assert(not output.str().contains(".Lbaz_divide:"));
 
-        backend.end_main();
+        backend.exit(token{}, 1, operand::imm(0, integer));
         backend.emit_runtime();
         backend.begin_data(4);
 
@@ -2539,7 +2539,7 @@ auto generate_noninline() -> void {
         backend.free_named_register(token{}, 0, reg);
     }
 
-    backend.end_main();
+    backend.exit(token{}, 1, operand::imm(0, integer));
     backend.label(0, "call_failure");
     backend.exit(token{}, 1, operand::imm(1, integer));
 
@@ -2630,7 +2630,7 @@ auto generate_frame_checks() -> void {
     }
 
     backend.free_named_register(token{}, 0, continuation);
-    backend.end_main();
+    backend.exit(token{}, 1, operand::imm(0, integer));
 
     // the backend jumps to the label, so it defines it
     backend.label(0, machine::frame_overflow_failure.label);
@@ -2679,7 +2679,7 @@ auto generate_long_loop() -> void {
     }
 
     hand_written(backend, "    addi sp, sp, 16");
-    backend.end_main();
+    backend.exit(token{}, 1, operand::imm(0, integer));
     backend.label(0, "long_loop_failure");
     backend.exit(token{}, 1, operand::imm(1, integer));
     backend.finish();
@@ -2756,7 +2756,7 @@ auto generate_far_jumps(const assembler::jump_mode jumps) -> void {
     backend.add_subtract(token{}, 1, op_of('+'), stack,
                          operand::imm(16, integer));
 
-    backend.end_main();
+    backend.exit(token{}, 1, operand::imm(0, integer));
     padding(270000);
     backend.label(0, "far_failure");
     backend.exit(token{}, 1, operand::imm(1, integer));
@@ -2909,7 +2909,7 @@ auto generate_bounds_matrix(machine_rv32i& backend) -> void {
     }
 
     backend.free_named_register(token{}, 0, continuation);
-    backend.end_main();
+    backend.exit(token{}, 1, operand::imm(0, integer));
     // the checks jump to the panic label, so it is the backend's
     backend.label(0, "baz_bounds_panic");
     hand_written(backend, "    li a3, 1\n    jr s3\nbounds_failure:");
@@ -3926,7 +3926,7 @@ auto generate_runtime_program() -> void {
 
     // the end of the straight-line test; the symbols below are entered by
     // 'test-rv32i.sh' as separate programs
-    backend.end_main();
+    backend.exit(token{}, 1, operand::imm(0, integer));
 
     hand_written(backend, ".globl divide_by_zero\ndivide_by_zero:\n    li a0, 17");
     backend.divide(token{}, 1, op_of('/'), operand::reg("a0", integer),

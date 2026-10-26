@@ -1,6 +1,5 @@
-# a result that aliases an argument compiles on every target
-
-# with '--checks=-alias' the value is undefined, the program does not read it
+# a result that may share storage with an argument is rejected on every
+# target
 
 var total = 3
 

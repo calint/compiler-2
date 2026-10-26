@@ -22,43 +22,21 @@
 #
 # usage: [FUZZ_CHECKS=noub] [FUZZ_SPELLING=1] fuzz-exprs.py [count] [seed]
 #        [jobs]
-import concurrent.futures
 import os
 import random
 import shutil
 import sys
 import tempfile
-import time
 
 import fuzzlib as fl
 
-BITS = {"i8": 8, "i16": 16, "i32": 32, "i64": 64}
+from fuzzlib import BITS, fits, limits, trunc_div, wrap
 CHECKS = os.environ.get("FUZZ_CHECKS", "noub")
 SPELLING = os.environ.get("FUZZ_SPELLING") == "1"
 
 
 class Reject(Exception):
     pass
-
-
-def limits(t):
-    return -(1 << (BITS[t] - 1)), (1 << (BITS[t] - 1)) - 1
-
-
-def fits(t, v):
-    low, high = limits(t)
-    return low <= v <= high
-
-
-def wrap(t, v):
-    bits = BITS[t]
-    v &= (1 << bits) - 1
-    return v - (1 << bits) if v >> (bits - 1) else v
-
-
-def trunc_div(a, b):
-    q = abs(a) // abs(b)
-    return q if (a < 0) == (b < 0) else -q
 
 
 class Value:
@@ -666,49 +644,21 @@ def constant_overflow(expected):
     return expected[1].startswith("constant")
 
 
-KIND_CODE = {"overflow": 249, "overlap": 251, "shift": 252, "division": 253}
-
-
 def matches(expected, got):
     if expected[0] == "compile":
         return got[0] == "compile"
     if expected[0] == "panic":
-        codes = {KIND_CODE[k] for k in expected[1]}
+        codes = {fl.PANIC_CODE[k] for k in expected[1]}
         # a failed bounds check has no kind here; the model has none
         return got[0] == "panic" and got[1] in codes
     return got == expected
 
 
 def main():
-    count = int(sys.argv[1]) if len(sys.argv) > 1 else 500
-    seed = int(sys.argv[2]) if len(sys.argv) > 2 else random.randrange(1 << 30)
-    jobs = int(sys.argv[3]) if len(sys.argv) > 3 else max(1, (os.cpu_count() or 2) - 2)
-    findings = fl.Findings()
+    count, seed, jobs = fl.arguments(500)
     mode = "spelling" if SPELLING else f"checks {CHECKS}"
-    print(f"seed {seed}, {count} programs, {jobs} jobs, {mode}")
-    tally = {"exit": 0, "panic": 0, "compile": 0}
-    new = 0
-    total = 0
-    begin = time.time()
-    with concurrent.futures.ProcessPoolExecutor(jobs) as pool:
-        for n, (source, found, kind) in enumerate(
-                pool.map(fuzz_spelling if SPELLING else fuzz_one,
-                         [(seed, i) for i in range(count)],
-                         chunksize=4), 1):
-            tally[kind] += 1
-            for category, key, detail in found:
-                total += 1
-                if findings.add(category, key, source, detail):
-                    new += 1
-                    print(f"NEW {category}: {key[:150]}", flush=True)
-            if n % 500 == 0:
-                print(f"  {n}/{count} {time.time() - begin:.0f}s {tally}", flush=True)
-    print(f"{count} programs: {tally['exit']} ran to the end, "
-          f"{tally['panic']} modeled panics, {tally['compile']} rejected, "
-          f"{total} mismatches, {time.time() - begin:.0f}s")
-    print(f"{new} new findings in {fl.FINDINGS}")
-    return 1 if new else 0
-
+    return fl.run_fuzzer(fuzz_spelling if SPELLING else fuzz_one, count,
+                         seed, jobs, heading=f", {mode}", chunksize=4)
 
 if __name__ == "__main__":
     sys.exit(main())

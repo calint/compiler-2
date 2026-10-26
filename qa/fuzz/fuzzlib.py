@@ -51,6 +51,41 @@ FPGA_PANIC = re.compile(rb"\npanic: ([a-z ]+?)(?: at [^\n]*)?\n\Z")
 # 13xx is a 'sw' and 4 the write and 5 the read sector address; x86_64 prints
 # 'panic: sd card' instead, both are the outcome 'sdcard'
 SDCARD_PAST_END_ERRORS = (1304, 1305)
+# the model of the signed integers of the language, shared by the fuzzers
+# that compute what a program prints: the width of each type, its range, the
+# value an operation wraps to, the quotient that truncates toward zero, and a
+# hash of the values a program prints
+BITS = {"i8": 8, "i16": 16, "i32": 32, "i64": 64}
+
+
+def signed_limits(bits):
+    return -(1 << (bits - 1)), (1 << (bits - 1)) - 1
+
+
+def limits(t):
+    return signed_limits(BITS[t])
+
+
+def fits(t, value):
+    low, high = limits(t)
+    return low <= value <= high
+
+
+def wrap(t, value):
+    bits = BITS[t]
+    value &= (1 << bits) - 1
+    return value - (1 << bits) if value >> (bits - 1) else value
+
+
+def trunc_div(a, b):
+    q = abs(a) // abs(b)
+    return q if (a < 0) == (b < 0) else -q
+
+
+def mix(acc, value):
+    return ((acc ^ (value & 0xffff)) * 31) & 0xffff
+
+
 # the code of the outcome 'sdcard', no exit code of a program
 SDCARD_CODE = -1
 CRASH_SIGNALS = (signal.SIGSEGV, signal.SIGFPE, signal.SIGILL, signal.SIGBUS,
@@ -142,6 +177,9 @@ def assert_fresh(compiler):
     # change, e.g. 'build/baz-asan' not built again by 'build-asan.sh'
     if compiler in _fresh:
         return
+    if not os.path.exists(compiler):
+        raise SystemExit(f"{compiler} is missing, build it ('make.sh' or "
+                         "'build-asan.sh')")
     src = os.path.join(ROOT, "src")
     newest = max(os.path.getmtime(os.path.join(src, name))
                  for name in os.listdir(src))
@@ -444,31 +482,44 @@ def judge(work, source, expected, stdin=b"", targets=TARGETS,
     return found
 
 
-def run_fuzzer(fuzz_one, count, seed, jobs):
-    # runs 'fuzz_one((seed, index))' in processes, each returns (source,
-    # findings), prints the first example of each finding, returns 1 when
-    # there is a new one
+def run_fuzzer(fuzz_one, count, seed, jobs, label="programs", heading="",
+               task_args=(), initializer=None, chunksize=2):
+    # runs 'fuzz_one((seed, index, *task_args))' in processes, each returns
+    # (source, findings) or (source, findings, counts), 'counts' a dict summed
+    # over the run or one key counted once, e.g. "exit"; prints the first
+    # example of each finding and the counts, returns 1 when a finding is new
     import concurrent.futures
     import time
     findings = Findings()
-    print(f"seed {seed}, {count} programs, {jobs} jobs")
+    print(f"seed {seed}, {count} {label}, {jobs} jobs{heading}")
     new = 0
-    total = 0
+    counts = {}
+    categories = {}
     begin = time.time()
-    with concurrent.futures.ProcessPoolExecutor(jobs) as pool:
-        for n, (source, found) in enumerate(
-                pool.map(fuzz_one, [(seed, i) for i in range(count)],
-                         chunksize=2), 1):
+    tasks = [(seed, i, *task_args) for i in range(count)]
+    with concurrent.futures.ProcessPoolExecutor(
+            jobs, initializer=initializer) as pool:
+        for n, result in enumerate(
+                pool.map(fuzz_one, tasks, chunksize=chunksize), 1):
+            source, found = result[0], result[1]
+            extra = result[2] if len(result) > 2 else {}
+            for key, value in ({extra: 1} if isinstance(extra, str)
+                               else extra).items():
+                counts[key] = counts.get(key, 0) + value
             for category, key, detail in found:
-                total += 1
+                categories[category] = categories.get(category, 0) + 1
                 if findings.add(category, key, source, detail):
                     new += 1
                     print(f"NEW {category}: {key[:150]}\n    {detail[:300]}",
                           flush=True)
             if n % 200 == 0:
-                print(f"  {n}/{count} {time.time() - begin:.0f}s", flush=True)
-    print(f"{count} programs, {total} mismatches, "
+                print(f"  {n}/{count} {time.time() - begin:.0f}s {counts}",
+                      flush=True)
+    total = sum(categories.values())
+    print(f"{count} {label}, {total} mismatches, {counts}, "
           f"{time.time() - begin:.0f}s")
+    print("findings by category (all occurrences):",
+          dict(sorted(categories.items())))
     print(f"{new} new findings in {FINDINGS}")
     return 1 if new else 0
 

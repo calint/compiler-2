@@ -1,4 +1,4 @@
-# 'alias' (on by default): a global passed to a non-inline function that also names it
+# a global passed to a non-inline function that also names it
 
 var total = 3
 

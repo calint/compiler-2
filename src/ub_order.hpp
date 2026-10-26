@@ -201,6 +201,19 @@ assert_not_written_later(const toc& tc,
     }
 }
 
+// the operands of 'node' in its 'visit_operands' order; a 'statement' or a
+// part of one that lists operands the same way, e.g. 'bulk_operands'
+[[nodiscard]] inline auto operands_of(const auto& node)
+    -> std::vector<list_operand> {
+
+    std::vector<list_operand> operands;
+
+    node.visit_operands(
+        [&operands](const list_operand& o) -> void { operands.push_back(o); });
+
+    return operands;
+}
+
 // the operands of 'node' in its 'visit_operands' order, 'operand' names one
 // in the message, e.g. "argument"
 inline auto assert_operands_not_written_later(const toc& tc,
@@ -208,10 +221,5 @@ inline auto assert_operands_not_written_later(const toc& tc,
                                               const std::string_view operand)
     -> void {
 
-    std::vector<list_operand> operands;
-
-    node.visit_operands(
-        [&operands](const list_operand& o) -> void { operands.push_back(o); });
-
-    assert_not_written_later(tc, operands, operand);
+    assert_not_written_later(tc, operands_of(node), operand);
 }

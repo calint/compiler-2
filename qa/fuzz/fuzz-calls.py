@@ -223,7 +223,7 @@ def fuzz_one(args):
         found = fl.judge(
             work, source, expected, prefix="calls",
             option_lists=(("--checks=noub",), ("--checks=noub", "--nopt"),
-                          ("--checks=overflow",), ("--checks=-alias",),
+                          ("--checks=overflow",),
                           ("--checks=noub,line", "--nopt")))
     finally:
         shutil.rmtree(work, ignore_errors=True)

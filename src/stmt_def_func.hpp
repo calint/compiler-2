@@ -369,7 +369,7 @@ struct frame_slot {
 };
 
 // a function: its signature, its body and the checks of the body; 'compile'
-// emits nothing, the body is compiled by its calls; the four ways a body is
+// emits nothing, the body is compiled by its calls; the three ways a body is
 // compiled:
 //
 //   when                  scope              the parameters
@@ -377,8 +377,6 @@ struct frame_slot {
 //                         'noinline_func'
 //   an inlined call       'inlined_func'     bindings to the arguments
 //   ('inline_call')
-//   the dry run of a      'noinline_dry_run' bindings to the arguments
-//   noinline call
 //   a noinline body,      'noinline_func'    variables reached through the
 //   'emit_noinline_body'                     addresses in the frame
 //   and 'check_body'                         ('compile_in_frame')
@@ -501,12 +499,6 @@ class stmt_def_func final : public statement {
             array_param_count() != 0 or
                 (is_inlined() and (not params().empty() or has_result())),
         };
-
-        std::optional<toc::without_call_check> check;
-
-        if (takes_from_call) {
-            check.emplace(tc);
-        }
 
         std::optional<compile_error> error{
             tc.dry_run([&] -> void {
@@ -1308,6 +1300,37 @@ class func_instantiator final {
     // statics
     //
 
+    // the instance of the definition at 'func_tk' read with 'head'; a method
+    // of a generic type keeps the method it instantiates and the constants of
+    // 'receiver', e.g. 'str.append<i8>' keeps 'text.append' and those of
+    // 'text<8>'; 'receiver' null for a generic function of no type
+    static auto add_instance(toc& tc, const token& func_tk,
+                             const func_head& head, tokenizer& tz,
+                             std::string name, const generic_trace& trace,
+                             const generic_type_instance* const receiver)
+        -> void {
+
+        func_instance instance{
+            .name{std::move(name)},
+            .generic_method{},
+            .constants{},
+            .trace{trace},
+        };
+
+        if (receiver != nullptr) {
+            // note: the head of an instance names the receiver type
+            assert(head.method);
+
+            instance.generic_method =
+                receiver->method_name(head.method->name_tk.text());
+
+            instance.constants = receiver->constants();
+        }
+
+        tc.add_func_instance(std::make_shared<stmt_def_func>(
+            tc, func_tk, head, tz, std::move(instance)));
+    }
+
     [[nodiscard]] static auto deduction_of(const std::string_view param_name,
                                            const generic_signature& signature)
         -> generic_deduction {
@@ -1399,27 +1422,9 @@ class func_instantiator final {
 
         const func_head head{func_head::read(tc, tz)};
 
-        func_instance instance{
-            .name{name},
-            .generic_method{},
-            .constants{},
-            .trace{call_trace},
-        };
-
-        // e.g. 'str.append<i8>' keeps 'text.append' and the constants of
-        // 'text<8>', like the instance of a method without type parameters
-        if (generic.receiver) {
-            // note: the head of an instance names the receiver type
-            assert(head.method);
-
-            instance.generic_method =
-                generic.receiver->method_name(head.method->name_tk.text());
-
-            instance.constants = generic.receiver->constants();
-        }
-
-        tc.add_func_instance(std::make_shared<stmt_def_func>(
-            tc, generic.func_tk, head, tz, std::move(instance)));
+        add_instance(tc, generic.func_tk, head, tz, std::string{name},
+                     call_trace,
+                     generic.receiver ? &*generic.receiver : nullptr);
     }
 
     // e.g. 'str.print' of 'func text.print()', 'text' names 'str' while the
@@ -1449,15 +1454,8 @@ class func_instantiator final {
             return;
         }
 
-        func_instance instance{
-            .name{head.name},
-            .generic_method{receiver.method_name(head.method->name_tk.text())},
-            .constants{receiver.constants()},
-            .trace{receiver.trace},
-        };
-
-        tc.add_func_instance(std::make_shared<stmt_def_func>(
-            tc, method.func_tk, head, tz, std::move(instance)));
+        add_instance(tc, method.func_tk, head, tz, head.name, receiver.trace,
+                     &receiver);
     }
 };
 

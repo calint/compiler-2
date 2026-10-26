@@ -1,5 +1,5 @@
-# 'alias' (on by default): arguments sharing storage are allowed when both parameters
-# are not 'mut', for inline and non-inline functions
+# arguments sharing storage are allowed when both parameters are not 'mut',
+# for inline and non-inline functions
 
 type buf {
     data i8[4],

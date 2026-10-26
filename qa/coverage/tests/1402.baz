@@ -1,8 +1,6 @@
 # a part of a value read under another name of the destination is overwritten
-# like one read under its own name: the dry run of the noinline call binds 'p'
-# to 'g'
-# with '--checks=-alias', which otherwise rejects the call first: the
-# function uses the global the call passes it
+# like one read under its own name: the noinline call binds 'p' to 'g'
+# the call is rejected: the function uses the global the call passes it
 
 type point {x, y}
 

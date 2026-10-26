@@ -1,5 +1,5 @@
-# 'alias' (on by default): three nested 'foo' read another field of the element of the
-# array the second one iterates, which is accepted
+# three nested 'foo' read another field of the element of the array the
+# second one iterates, which is accepted
 
 type leaf {
     v i32[2],

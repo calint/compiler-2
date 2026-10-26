@@ -1,5 +1,5 @@
-# 'alias' (on by default): the read has two run-time indexes and the destination one, the
-# fields in the elements are different, which is accepted
+# the read has two run-time indexes and the destination one, the fields in
+# the elements are different, which is accepted
 
 type item {
     f i32,

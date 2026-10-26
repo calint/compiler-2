@@ -1,7 +1,4 @@
 
-0943.baz:14:14: argument 2 'g[0]' may share storage with argument 1 'a' (both name 'g'), use a temporary variable for one of them
-    inner(a, g[0])
-             ^
-0943.baz:18:5: called from
+0943.baz:17:11: argument 1 'g[0]' may share storage with the global 'g' that 'outer' uses, use a temporary variable for one of them
     outer(g[0])
-    ^~~~~
+          ^

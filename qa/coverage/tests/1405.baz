@@ -1,8 +1,7 @@
 # a value read under another name of the destination while it is computed
 # goes through a scratch register: 'g' would be written before 'p' is read
 # again
-# with '--checks=-alias': the function uses the global the call passes it,
-# which the alias check rejects
+# the call is rejected: the function uses the global the call passes it
 
 var g = 3
 

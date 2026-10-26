@@ -1,5 +1,5 @@
-# 'alias' (on by default): the element 'e' of a 'foo' inside the element of another 'foo'
-# reads another field of the outer array, which is accepted
+# the element 'e' of a 'foo' inside the element of another 'foo' reads
+# another field of the outer array, which is accepted
 
 type item {
     data i32[2],

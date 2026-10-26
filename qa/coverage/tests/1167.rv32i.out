@@ -9,8 +9,7 @@
 register use at the failure: 28 of 28 registers live
 
   held  frame, registers (allocated at)
-     0  main
-    28  f called at 11:5
+    28  f (noinline body)
           t0 6:18
           t1 6:23
           t2 6:28
@@ -39,6 +38,3 @@ register use at the failure: 28 of 28 registers live
           a6 6:143
           a7 6:148
           a0 6:153
-
-no noinline frame helps, the registers are held by the innermost frame, simplify
-its expression

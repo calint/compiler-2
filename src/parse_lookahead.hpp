@@ -16,14 +16,6 @@
 #include "token.hpp"
 #include "tokenizer.hpp"
 
-// e.g. 'let point = 3' makes 'point' in 'point + 1' the constant, not the type
-[[nodiscard]] inline auto is_hidden_by_value(const toc& tc,
-                                             const std::string_view name)
-    -> bool {
-
-    return tc.scopes().lookup(name).is_value();
-}
-
 // e.g. '[]{1, 2}' has the default type, no expression starts with '['
 [[nodiscard]] inline auto is_default_array_literal(const tokenizer& tz)
     -> bool {
@@ -182,7 +174,9 @@ struct term {
         };
     }
 
-    const bool is_hidden{is_hidden_by_value(tc, text)};
+    // e.g. 'let point = 3' makes 'point' in 'point + 1' the constant, not the
+    // type
+    const bool is_hidden{tc.scopes().lookup(text).is_value()};
 
     if (not is_hidden and tc.generics().has_func(text) and
         (next == '<' or next == '(')) {

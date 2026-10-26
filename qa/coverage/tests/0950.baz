@@ -1,6 +1,6 @@
-# 'alias' (on by default): the element 'e' of a 'foo' inside the element of another 'foo'
-# reads the same field of the outer array, which can be the element itself
-# the value is computed before the destination is written
+# the element 'e' of a 'foo' inside the element of another 'foo' reads the
+# same field of the outer array, which can be the element itself the value is
+# computed before the destination is written
 
 type item {
     data i32[2],

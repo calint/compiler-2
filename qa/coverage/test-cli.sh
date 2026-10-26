@@ -159,22 +159,22 @@ CLI_JUMP_OPTIMIZATIONS() {
 CLI_CHECKS_NOUB() {
     echo -n "cli --checks=noub expansion: "
     "$BIN" --checks=noub 0015.baz >gen.s 2>err
-    "$BIN" --checks=upper,lower,frame,alias,division,shift,overlap,stack,overflow 0015.baz >out 2>err
+    "$BIN" --checks=upper,lower,frame,division,shift,overlap,stack,overflow 0015.baz >out 2>err
     cmp -s gen.s out
     "$BIN" --checks=line,noub 0015.baz >gen.s 2>err
-    "$BIN" --checks=upper,lower,line,frame,alias,division,shift,overlap,stack,overflow 0015.baz >out 2>err
+    "$BIN" --checks=upper,lower,line,frame,division,shift,overlap,stack,overflow 0015.baz >out 2>err
     cmp -s gen.s out
     "$BIN" --checks=noub,-division,-shift,-overlap,-stack,-overflow 0015.baz >gen.s 2>err
-    "$BIN" --checks=upper,lower,frame,alias 0015.baz >out 2>err
+    "$BIN" --checks=upper,lower,frame 0015.baz >out 2>err
     cmp -s gen.s out
     "$BIN" --checks=-division,-shift,-overlap,-stack,-overflow,noub 0015.baz >gen.s 2>err
     cmp -s gen.s out
     "$BIN" --checks=+division 0015.baz >gen.s 2>err
     "$BIN" --checks=division 0015.baz >out 2>err
     cmp -s gen.s out
-    # '-noub' turns off what 'noub' turns on, also the 'alias' that is on
+    # '-noub' turns off what 'noub' turns on
     "$BIN" --checks=noub,line,-noub 0015.baz >gen.s 2>err
-    "$BIN" --checks=line,-alias 0015.baz >out 2>err
+    "$BIN" --checks=line 0015.baz >out 2>err
     cmp -s gen.s out
     echo ok
 }
@@ -712,12 +712,8 @@ CLI --stack=17 1 --help
 CLI --stack=16junk 1 --help
 CLI --no-reproduce 1 --help
 CLI --checks=frame 0 0015.baz
-CLI --checks=alias 0 0015.baz
-CLI --checks=upper,lower,line,frame,alias 0 0015.baz
+CLI --checks=upper,lower,line,frame 0 0015.baz
 CLI --checks=noub 0 0015.baz
-CLI --checks=-alias 0 0941.baz
-CLI --checks=upper,-alias 0 0941.baz
-CLI --checks=-alias,noub 0 0941.baz
 CLI --checks=+division 0 0015.baz
 CLI --checks=noub,-division 0 0015.baz
 CLI --checks=-noub 0 0015.baz

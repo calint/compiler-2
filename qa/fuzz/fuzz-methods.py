@@ -22,15 +22,12 @@ import sys
 import tempfile
 
 import fuzzlib as fl
+from fuzzlib import mix
 
 
 def wrap32(v):
     v &= 0xffffffff
     return v - (1 << 32) if v >> 31 else v
-
-
-def mix(acc, value):
-    return ((acc ^ (value & 0xffff)) * 31) & 0xffff
 
 
 class Record:

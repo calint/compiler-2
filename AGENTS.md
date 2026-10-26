@@ -116,6 +116,9 @@
   arguments (README 1.5). The exceptions are listed in README chapter 8,
   mainly the default type 'int', the register width (decided 2026-10-26):
   its arithmetic depends on the target.
+- Standing goal, never finished: the compiler as simple as possible. Remove
+  what a guarantee does not need; where a work-around handles an exception,
+  try to remove the exception instead (decided 2026-10-26).
 - Current focus: refactor until the design is clean before looking for bugs
   again; a bug that a refactor removes is fixed by the refactor.
 - Baz evaluates left to right: the operands, arguments and parts of a

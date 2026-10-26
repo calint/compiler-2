@@ -1,6 +1,5 @@
 # a global reaches a global named by a callee through two non-inline calls
-# with '--checks=-alias', which otherwise rejects the call first: the
-# function uses the global the call passes it
+# the call is rejected: the function uses the global the call passes it
 
 var g = 2
 

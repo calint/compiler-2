@@ -1,0 +1,4 @@
+
+0958.baz:27:9: argument 1 'es[i].items[j].f' may share storage with the global 'es' that 'put' uses, use a temporary variable for one of them
+    put(es[i].items[j].f, k)
+        ^

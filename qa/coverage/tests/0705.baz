@@ -1,6 +1,5 @@
 # an error in a method body names the method call
-# with '--checks=-alias', which otherwise rejects the call first: the
-# function uses the global the call passes it
+# the call is rejected: the function uses the global the call passes it
 
 type point {
     x,

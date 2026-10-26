@@ -1,7 +1,6 @@
 # a part of a value may read under another name a part of the destination
 # that is not written yet
-# with '--checks=-alias': the function uses the global the call passes it,
-# which the alias check rejects
+# the call is rejected: the function uses the global the call passes it
 
 type point {x, y}
 

@@ -1,5 +1,5 @@
-# 'alias' (on by default): the method writes a field of an element chosen at run time and
-# reads another field of an element, so the bytes are never the same
+# the method writes a field of an element chosen at run time and reads
+# another field of an element, so the bytes are never the same
 
 type entity {
     len i32,

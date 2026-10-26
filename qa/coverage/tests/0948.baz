@@ -1,5 +1,5 @@
-# 'alias' (on by default): the element 'e' of a 'foo' is passed to a function that reads
-# another array, which is accepted
+# the element 'e' of a 'foo' is passed to a function that reads another
+# array, which is accepted
 
 dat g = i32[4]{ 1, 2, 3, 4 }
 dat h = i32[4]{ 1, 2, 3, 4 }

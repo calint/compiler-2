@@ -1,5 +1,5 @@
-# the dry run of a call of a 'noinline' function has the registers of its
-# body, the variables base and the frame base are not handed out
+# the body of a 'noinline' function has its own registers, the variables base
+# and the frame base are not handed out
 
 func noinline f() {
     var a = 1

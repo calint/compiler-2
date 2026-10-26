@@ -48,8 +48,6 @@
 //                   error use it for a call level
 //   tables          'type_table', 'noinline_worklist' (the noinline bodies to
 //                   emit), 'function_table'
-//   'dry_run_ledger' the heights ('dry_run_height') of the checked dry runs
-//                   of noinline calls
 //   'data_table'    the dats ('dat_extent' as declared, 'placed_dat' as
 //                   placed) and the read-only constants
 //   options         'check_options', 'usage_statistics'
@@ -91,6 +89,10 @@ struct noinline_body {
     const stmt_def_func* func{};
     // one per array parameter, in parameter order
     std::vector<size_t> array_lengths;
+    // the first call that asked for the body, where an error in the body
+    // reports it was called from, e.g. 'third(b)'
+    token call_tk;
+    std::string call_source;
 };
 
 // whether a use of a variable reads or writes it, see 'toc::record_use'
@@ -331,14 +333,13 @@ enum class var_kind : uint8_t { var, dat, param, result };
 // a block, a loop or a function being compiled; the static functions make
 // each kind, e.g. 'scope::block()'
 class scope final {
-    // a function scope is 'main_func', 'inlined_func', 'noinline_dry_run' or
-    // 'noinline_func', see the statics that make them
+    // a function scope is 'main_func', 'inlined_func' or 'noinline_func', see
+    // the statics that make them
     enum class scope_kind : uint8_t {
         block,
         loop,
         main_func,
         inlined_func,
-        noinline_dry_run,
         noinline_func,
     };
 
@@ -518,8 +519,8 @@ class scope final {
 
     [[nodiscard]] auto is_func() const -> bool { return func_.has_value(); }
 
-    // only a call inlined for real; 'main' and a dry run are compiled in place
-    // too but are not one ('is_compiled_in_place')
+    // only a call inlined; 'main' is compiled in place too but is not one
+    // ('is_compiled_in_place')
     [[nodiscard]] auto is_inlined_func() const -> bool {
         return kind_ == scope_kind::inlined_func;
     }
@@ -542,10 +543,6 @@ class scope final {
 
     [[nodiscard]] auto is_name(const std::string_view name) const -> bool {
         return name_ == name;
-    }
-
-    [[nodiscard]] auto is_noinline_dry_run() const -> bool {
-        return kind_ == scope_kind::noinline_dry_run;
     }
 
     [[nodiscard]] auto is_reachable() const -> bool {
@@ -667,17 +664,6 @@ class scope final {
         scp.mark_without_call(false);
 
         return scp;
-    }
-
-    // a noinline function compiled in place, the dry run for the errors of a
-    // call to it, see 'noinline_call::dry_run_body'
-    [[nodiscard]] static auto noinline_dry_run(const std::string_view name,
-                                               std::string call_path,
-                                               std::string return_label)
-        -> scope {
-
-        return function(name, scope_kind::noinline_dry_run,
-                        std::move(call_path), std::move(return_label));
     }
 
     // a function with a body of its own, its variables are placed in its
@@ -872,7 +858,9 @@ class noinline_worklist final {
   public:
     // a body is emitted once per array lengths
     auto add_noinline_body(const stmt_def_func& func,
-                           std::vector<size_t> array_lengths) -> void {
+                           std::vector<size_t> array_lengths,
+                           const token& call_tk, std::string call_source)
+        -> void {
 
         const auto is_same_body = [&](const noinline_body& known) -> bool {
             return known.func == &func and known.array_lengths == array_lengths;
@@ -885,6 +873,8 @@ class noinline_worklist final {
         noinline_bodies_.push_back({
             .func{&func},
             .array_lengths{std::move(array_lengths)},
+            .call_tk{call_tk},
+            .call_source{std::move(call_source)},
         });
     }
 
@@ -955,92 +945,6 @@ class function_table final {
     [[nodiscard]] auto has(const std::string_view name) const -> bool {
         return funcs_.has(name) and
                order_.get().is_visible(funcs_.get_const_ref(name).definition);
-    }
-};
-
-// what the dry run of a checked noinline call reached below it, see
-// 'noinline_call::dry_run_body'
-struct dry_run_height {
-    // the noinline dry runs nested in it
-    size_t levels{};
-    // the scopes above it at the deepest check of the scope limit
-    size_t scopes{};
-};
-
-// the dry runs of noinline calls: the height of each call kind checked and
-// the deepest level and scope check reached in the dry run being checked, see
-// 'noinline_call::dry_run_body'
-class dry_run_ledger final {
-    // the dry-run levels below each call kind dry run
-    std::map<std::string, dry_run_height, std::less<>> heights_;
-    // the deepest level of noinline dry runs reached in the dry run being
-    // checked
-    size_t deepest_level_{};
-    // the most scopes at a check of the scope limit in that dry run
-    size_t deepest_scope_check_{};
-
-  public:
-    // none when the call kind is not dry run yet
-    [[nodiscard]] auto height_of(const std::string_view kind) const
-        -> std::optional<dry_run_height> {
-
-        const auto it{heights_.find(kind)};
-
-        if (it == heights_.end()) {
-            return std::nullopt;
-        }
-
-        return it->second;
-    }
-
-    // the dry run of the kind of noinline call 'kind' at 'level' with
-    // 'scope_count' scopes: the kind counts as dry run with the height 0
-    // while 'dry_run' runs, so the same kind reached inside returns, then the
-    // levels and scopes reached below are its height and the enclosing dry
-    // run reaches them too
-    auto measure(const std::string_view kind, const size_t level,
-                 const size_t scope_count,
-                 const std::function_ref<void()> dry_run) -> void {
-
-        const size_t enclosing_deepest{
-            std::exchange(deepest_level_, level),
-        };
-
-        const size_t enclosing_scope_check{
-            std::exchange(deepest_scope_check_, scope_count),
-        };
-
-        // note: a measured kind is not dry run again, see
-        //       'noinline_call::dry_run_body'
-
-        assert(not heights_.contains(kind));
-
-        heights_.insert_or_assign(std::string{kind}, dry_run_height{});
-
-        // note: an error out of 'dry_run' ends the compile, see
-        //       'toc::dry_run_call_kind', so the height 0 never outlives a
-        //       failed dry run
-
-        dry_run();
-
-        heights_.insert_or_assign(
-            std::string{kind}, dry_run_height{
-                                   .levels{deepest_level_ - level},
-                                   .scopes{deepest_scope_check_ - scope_count},
-                               });
-
-        deepest_level_ = std::max(enclosing_deepest, deepest_level_);
-
-        deepest_scope_check_ =
-            std::max(enclosing_scope_check, deepest_scope_check_);
-    }
-
-    auto reach_level(const size_t level) -> void {
-        deepest_level_ = std::max(deepest_level_, level);
-    }
-
-    auto reach_scope_check(const size_t scope_count) -> void {
-        deepest_scope_check_ = std::max(deepest_scope_check_, scope_count);
     }
 };
 
@@ -1164,8 +1068,6 @@ struct check_options {
     // read by 'main' only, the machine has it as 'target_options::reports_line'
     bool reports_line{};
     bool frame{};
-    // on unless '--checks=-alias'
-    bool alias{true};
     bool division{};
     bool shift{};
     bool overlap{};
@@ -1270,7 +1172,9 @@ class scope_stack final {
     // code compiled only for its checks, see 'toc::check_skipped': a 'break'
     // or a 'return' there must not end the paths of the code that runs
     struct reach_state {
-        std::vector<bool> left_by_break;
+        // the innermost loop, the one a 'break' of skipped code marks
+        std::optional<size_t> loop_index;
+        bool is_left_by_break{};
         bool is_reachable{};
         bool is_left_by_return{};
     };
@@ -1380,6 +1284,15 @@ class scope_stack final {
 
     [[nodiscard]] auto is_empty() const -> bool { return scopes_.empty(); }
 
+    // a check of a body that takes from a call is in the stack, see
+    // 'toc::is_checking_without_call'
+    [[nodiscard]] auto is_in_body_taking_from_call() const -> bool {
+        return std::ranges::any_of(scopes_, [](const scope& scp) -> bool {
+            return scp.is_func() and scp.is_without_call() and
+                   scp.takes_from_call();
+        });
+    }
+
     // the initializer of a global variable is outside of any function
     [[nodiscard]] auto is_in_func() const -> bool {
         return std::ranges::any_of(
@@ -1462,15 +1375,6 @@ class scope_stack final {
         return max_scope_count_;
     }
 
-    // the dry runs of noinline calls nested here, see
-    // 'scope::noinline_dry_run'
-    [[nodiscard]] auto noinline_dry_run_level() const -> size_t {
-        return static_cast<size_t>(
-            std::ranges::count_if(scopes_, [](const scope& scp) -> bool {
-                return scp.is_noinline_dry_run();
-            }));
-    }
-
     auto pop() -> void { scopes_.pop_back(); }
 
     auto push(scope scp) -> void {
@@ -1479,17 +1383,23 @@ class scope_stack final {
     }
 
     [[nodiscard]] auto reach_state_now() const -> reach_state {
-        reach_state state{
-            .left_by_break{},
+        std::optional<size_t> loop_index;
+
+        for (size_t i{scopes_.size()}; i > 0; --i) {
+            if (scopes_.at(i - 1).is_loop()) {
+                loop_index = i - 1;
+                break;
+            }
+        }
+
+        return {
+            .loop_index{loop_index},
+            .is_left_by_break{
+                loop_index and scopes_.at(*loop_index).is_left_by_break(),
+            },
             .is_reachable{current_func_scope().is_reachable()},
             .is_left_by_return{current_func_scope().is_left_by_return()},
         };
-
-        for (const scope& scp : scopes_) {
-            state.left_by_break.push_back(scp.is_left_by_break());
-        }
-
-        return state;
     }
 
     // a 'break' of the innermost 'loop' or 'foo' is compiled, see
@@ -1503,13 +1413,6 @@ class scope_stack final {
         }
 
         std::unreachable();
-    }
-
-    // the globals that a function called in the body being parsed uses
-    auto record_callee_globals(const body_uses& callee) -> void {
-        for (const body_uses::global_use& u : callee.globals()) {
-            func_scope().body_uses_ref().add_global(u.storage, u.is_written);
-        }
     }
 
     // a variable, data or constant of the root scope
@@ -1555,10 +1458,9 @@ class scope_stack final {
     }
 
     auto restore_reach_state(const reach_state& state) -> void {
-        assert(state.left_by_break.size() == scopes_.size());
-
-        for (size_t i{}; i < scopes_.size(); ++i) {
-            scopes_.at(i).restore_left_by_break(state.left_by_break.at(i));
+        if (state.loop_index) {
+            scopes_.at(*state.loop_index)
+                .restore_left_by_break(state.is_left_by_break);
         }
 
         func_scope().set_reachable(state.is_reachable);
@@ -2905,11 +2807,9 @@ class variable_comments final {
 //                  'assert_valid_unqualified_name', 'begin_definition',
 //                  'current_definition', 'instance_visibility',
 //                  'constant_value_of', 'record_use',
-//                  'record_callee_globals', 'parse_nesting_scope'
+//                  'record_storage_use', 'parse_nesting_scope'
 //   compile        'add_binding', 'add_bytes_constant', 'add_string_constant',
-//                  'add_noinline_body', 'dry_run',
-//                  'dry_run_call_kind', 'emit_most_efficient',
-//                  'reach_dry_run_level', 'reach_scope_check',
+//                  'add_noinline_body', 'dry_run', 'emit_most_efficient',
 //                  'create_cmp_label', 'next_frame_address', the reachability
 //                  ('is_reachable', 'end_path', 'record_break',
 //                  'record_return', 'join_loop', 'path_merge')
@@ -2921,7 +2821,7 @@ class variable_comments final {
 //                  'source_of', 'storage_of', 'call_path_at' and
 //                  'create_unique_label' (a loop scope of the parse has a
 //                  label)
-//   tables         'builtins', 'checks', 'data', 'dry_runs',
+//   tables         'builtins', 'checks', 'data',
 //                  'funcs', 'generics', 'layout', 'machine',
 //                  'noinline_worklist', 'scopes', 'types', 'usage'
 //
@@ -2950,13 +2850,9 @@ class toc final {
     variable_comments var_comments_;
     storage_layout storage_;
     check_options checks_;
-    dry_run_ledger dry_runs_;
     // above zero inside 'dry_run': no noinline body is added and the storage
     // capacity is not checked there
     size_t dry_run_depth_{};
-    // above zero inside a check without the call that gives the body
-    // something, see 'without_call_check'
-    size_t without_call_checks_{};
     // false while the program is parsed: the names are declared without
     // storage and without comments
     bool is_compiling_{};
@@ -3004,28 +2900,6 @@ class toc final {
     };
 
   public:
-    // while it lives the code is compiled only for its checks, without the
-    // call that gives its body something, so a recursive inlined call is not
-    // expanded, see 'stmt_call::check_arguments_alone'; the body check of a
-    // function that takes from a call and skipped code checked in it make
-    // one
-    class without_call_check final {
-        toc& tc_;
-
-      public:
-        explicit without_call_check(toc& tc) : tc_{tc} {
-            ++tc_.without_call_checks_;
-        }
-
-        without_call_check(const without_call_check&) = delete;
-        without_call_check(without_call_check&&) = delete;
-        auto operator=(const without_call_check&)
-            -> without_call_check& = delete;
-        auto operator=(without_call_check&&) -> without_call_check& = delete;
-
-        ~without_call_check() { --tc_.without_call_checks_; }
-    };
-
     // the paths of an 'if' start at the 'if', its end is reached when one
     // path that runs reaches it; set when the merge ends, also when an error
     // unwinds, like 'assignment_flow::path_merge'
@@ -3274,9 +3148,11 @@ class toc final {
     }
 
     // a body is emitted once per array lengths, for a call that is
-    // compiled for real: a dry run leaves no trace, the call is compiled again
+    // compiled for real: a dry run leaves no trace
     auto add_noinline_body(const stmt_def_func& func,
-                           std::vector<size_t> array_lengths) -> void {
+                           std::vector<size_t> array_lengths,
+                           const token& call_tk, std::string call_source)
+        -> void {
 
         assert(is_compiling_);
 
@@ -3284,7 +3160,8 @@ class toc final {
             return;
         }
 
-        noinline_worklist_.add_noinline_body(func, std::move(array_lengths));
+        noinline_worklist_.add_noinline_body(func, std::move(array_lengths),
+                                             call_tk, std::move(call_source));
     }
 
     // identical strings share the label of the first one compiled
@@ -3527,17 +3404,7 @@ class toc final {
 
         scopes_.set_reachable(true);
 
-        std::optional<compile_error> error;
-
-        {
-            std::optional<without_call_check> check;
-
-            if (takes_from_call) {
-                check.emplace(*this);
-            }
-
-            error = dry_run(compile);
-        }
+        std::optional<compile_error> error{dry_run(compile)};
 
         scopes_.restore_reach_state(reach);
 
@@ -3617,30 +3484,6 @@ class toc final {
         }
 
         return std::nullopt;
-    }
-
-    // the dry run of the kind of noinline call 'kind' at 'level', measured
-    // by 'dry_run_ledger::measure'
-    //
-    // note: an error out of the dry run ends the compile: it is a 'source'
-    //       error, which no reader of 'compile_error::error_kind' drops;
-    //       'dry_run_scope' puts the tables back as it unwinds, the ledger
-    //       keeps the entry of the kind, which is safe because the compile
-    //       ends
-    auto dry_run_call_kind(const std::string_view kind, const size_t level,
-                           const std::function_ref<void()> compile) -> void {
-
-        assert(is_compiling_);
-
-        dry_runs_.measure(kind, level, scopes_.count(), [&] -> void {
-            if (std::optional<compile_error> error{dry_run(compile)}) {
-                throw_dry_run_error(std::move(*error));
-            }
-        });
-    }
-
-    [[nodiscard]] auto dry_runs() const -> const dry_run_ledger& {
-        return dry_runs_;
     }
 
     // 'machine::emit_most_efficient' with each version compiled from the
@@ -3780,10 +3623,13 @@ class toc final {
         return {order_, definition};
     }
 
+    // inside the check of a body that takes from a call, see
+    // 'stmt_def_func::check_body': a recursive inlined call is not expanded
+    // there ('stmt_call::check_arguments_alone')
     [[nodiscard]] auto is_checking_without_call() const -> bool {
         assert(is_compiling_);
 
-        return without_call_checks_ != 0;
+        return scopes_.is_in_body_taking_from_call();
     }
 
     [[nodiscard]] auto is_func(const std::string_view name) const -> bool {
@@ -3857,20 +3703,6 @@ class toc final {
         return checks_.overflow_options();
     }
 
-    auto reach_dry_run_level(const size_t level) -> void {
-        assert(is_compiling_);
-
-        dry_runs_.reach_level(level);
-    }
-
-    // a check of the scope limit with 'scope_count' scopes, which a cached
-    // noinline check repeats, see 'noinline_call::dry_run_body'
-    auto reach_scope_check(const size_t scope_count) -> void {
-        assert(is_compiling_);
-
-        dry_runs_.reach_scope_check(scope_count);
-    }
-
     // a 'break' leaves the innermost 'loop' or 'foo', whose end is then
     // reached, and the code after it unreached
     auto record_break() -> void {
@@ -3880,15 +3712,6 @@ class toc final {
         scopes_.set_reachable(false);
     }
 
-    // the globals that a function called in the body uses
-    auto record_callee_globals(const body_uses& callee) -> void {
-        assert(not is_compiling_);
-
-        if (scopes_.is_in_func()) {
-            scopes_.record_callee_globals(callee);
-        }
-    }
-
     // a 'return' leaves the code after it unreached and reaches the end of an
     // inlined call
     auto record_return() -> void {
@@ -3896,6 +3719,16 @@ class toc final {
 
         scopes_.record_return();
         end_path();
+    }
+
+    // a resolved 'storage' the body being parsed uses, e.g. a global that a
+    // function it calls uses, so a local of the same name does not shadow it
+    auto record_storage_use(const storage_path& storage, const use_kind kind)
+        -> void {
+
+        assert(not is_compiling_);
+
+        scopes_.record_storage_use(storage, kind == use_kind::write);
     }
 
     // a path in a function body whose root is 'name', see 'body_uses';
@@ -3910,10 +3743,9 @@ class toc final {
         }
 
         // note: the parse records the uses, no name is bound to an argument
-        assert(not is_compiling_);
 
         if (const std::optional<storage_path> storage{storage_of(name, path)}) {
-            scopes_.record_storage_use(*storage, kind == use_kind::write);
+            record_storage_use(*storage, kind);
         }
     }
 
@@ -4030,9 +3862,7 @@ class toc final {
 
     // an error that ends a dry run is reported as an error of the source:
     // the registers the run starts with do not depend on the code around it,
-    // so it is not one of a version there; the dry run of a noinline call is
-    // the verdict of that call, which an enclosing check must not drop, and
-    // the dry run of 'check_body' is a body that takes nothing from a call
+    // so it is not one of a version there
     [[noreturn]] static auto throw_dry_run_error(compile_error error) -> void {
         error.kind = compile_error::error_kind::source;
         throw error;

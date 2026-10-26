@@ -15,7 +15,6 @@
 #                     '--memory' is larger than the memory of the emulator
 #
 # usage: fuzz-options.py [count] [seed] [jobs]
-import concurrent.futures
 import os
 import random
 import shutil
@@ -58,7 +57,7 @@ SIZES = ["0", "16", "4096", "65536", "0x10000", "0x1000", "0x20000", "1048576",
          "1e3", "", "99999999999999999999", "0xffffffff", "4294967296",
          "0x7fffffffffffffff", "2147483648", "1_000", " 16", "16 ", "+16",
          "0b101", "0o20", "4095", "4097", "0xfffffff0"]
-CHECK_NAMES = ["upper", "lower", "line", "frame", "alias", "division", "shift",
+CHECK_NAMES = ["upper", "lower", "line", "frame", "division", "shift",
                "overlap", "stack", "overflow", "noub"]
 REPORTS = ["registers", "bogus", "", "registers,registers", "Registers"]
 FLAGS = ["--nopt", "--reproduce-source", "--help", "-h", "--unknown",
@@ -227,32 +226,11 @@ def judge(outcome, expected, name, options, description, found):
 
 
 def main():
-    count = int(sys.argv[1]) if len(sys.argv) > 1 else 1000
-    seed = int(sys.argv[2]) if len(sys.argv) > 2 else random.randrange(1 << 30)
-    jobs = int(sys.argv[3]) if len(sys.argv) > 3 else max(1, (os.cpu_count() or 2) - 2)
-    if not os.path.exists(fl.COMPILER_ASAN):
-        sys.exit("build the compiler first: build-asan.sh")
-    findings = fl.Findings()
-    print(f"seed {seed}, {count} runs, {jobs} jobs")
-    categories = {}
-    new = 0
-    begin = time.time()
-    with concurrent.futures.ProcessPoolExecutor(jobs) as pool:
-        for n, (text, found) in enumerate(
-                pool.map(fuzz_one, [(seed, i) for i in range(count)],
-                         chunksize=8), 1):
-            for category, key, detail in found:
-                categories[category] = categories.get(category, 0) + 1
-                if findings.add(category, key, text, detail):
-                    new += 1
-                    print(f"NEW {category}: {key[:150]}", flush=True)
-            if n % 500 == 0:
-                print(f"  {n}/{count} {time.time() - begin:.0f}s", flush=True)
-    print(f"{count} runs, {time.time() - begin:.0f}s")
-    print("findings by category (all occurrences):", dict(sorted(categories.items())))
-    print(f"{new} new findings in {fl.FINDINGS}")
-    return 1 if new else 0
-
+    count, seed, jobs = fl.arguments(1000)
+    # note: the runs call the compiler through 'fl.run', which does not ask
+    fl.assert_fresh(fl.COMPILER_ASAN)
+    return fl.run_fuzzer(fuzz_one, count, seed, jobs, label="runs",
+                         chunksize=8)
 
 if __name__ == "__main__":
     sys.exit(main())

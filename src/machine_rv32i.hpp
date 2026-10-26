@@ -450,6 +450,41 @@ class machine_rv32i : public machine {
         return text;
     }
 
+    // the operation scope frees its temporaries before the end comment
+    auto emit_bounds_check(const token& src_loc_tk, const size_t indent,
+                           const bounds_range& range,
+                           const bounds_check_options& options,
+                           const bounds_plan& plan) -> void override {
+
+        // array lengths are limited by the variables that hold the arrays, the
+        // line is loaded with 'li' into a 32-bit register
+        assert(range.array_count <= std::numeric_limits<uint32_t>::max() and
+               src_loc_tk.at_line() <= std::numeric_limits<uint32_t>::max());
+
+        operation_scope scope{*this, range.checked};
+
+        if (range.count) {
+            scope.protect(*range.count);
+        }
+
+        if (options.lower) {
+            check_lower_bound(src_loc_tk, indent, range, plan,
+                              not options.upper);
+        }
+
+        if (options.upper) {
+            comment(src_loc_tk, indent, "upper bound");
+
+            check_upper_bound(src_loc_tk, indent, range, options.lower);
+        }
+
+        assembler_.label(indent, bounds_fail_.name);
+
+        branch_to_failure(src_loc_tk, indent, bounds_failure);
+
+        assembler_.label(indent, bounds_pass_.name);
+    }
+
     auto emit_call(const size_t indent, const std::string_view label)
         -> void override {
 
@@ -527,13 +562,12 @@ class machine_rv32i : public machine {
     // 'emit_read_call', the sector functions routines
     auto emit_target_call(const token& src_loc_tk, const size_t indent,
                           const target_call function,
-                          const std::span<const operand> args,
-                          const operand& result) -> void override {
+                          [[maybe_unused]] const operand& result)
+        -> void override {
 
         if (function == target_call::read or function == target_call::write) {
             const operand call_register{
-                reserve_io_call_register(src_loc_tk, indent, result, args.at(0),
-                                         args.at(1), args.at(2)),
+                reserve_call_register(src_loc_tk, indent),
             };
 
             if (function == target_call::read) {
@@ -547,8 +581,7 @@ class machine_rv32i : public machine {
             return;
         }
 
-        call_sector_routine(src_loc_tk, indent, args.at(0), args.at(1),
-                            args.at(2), function);
+        call_sector_routine(src_loc_tk, indent, function);
     }
 
     // unused routines contribute no code
@@ -618,12 +651,6 @@ class machine_rv32i : public machine {
 
     [[nodiscard]] auto target_assembler() const -> const ::assembler& override {
         return assembler_;
-    }
-
-    auto validate_register_type([[maybe_unused]] const token& src_loc_tk,
-                                const type& type_ref) const -> void override {
-
-        assert_scalar(type_ref);
     }
 
     //
@@ -803,26 +830,6 @@ class machine_rv32i : public machine {
 
         return std::has_single_bit(size_bytes) and
                size_bytes <= std::numeric_limits<uint32_t>::max();
-    }
-
-    auto check_bounds(const token& src_loc_tk, const size_t indent,
-                      const bounds_range& range,
-                      const bounds_check_options& options) -> void override {
-
-        if (not options.upper and not options.lower) {
-            return;
-        }
-
-        // array lengths are limited by the variables that hold the arrays, the
-        // line is loaded with 'li' into a 32-bit register
-        assert(range.array_count <= std::numeric_limits<uint32_t>::max() and
-               src_loc_tk.at_line() <= std::numeric_limits<uint32_t>::max());
-
-        comment(src_loc_tk, indent, "bounds check begin");
-
-        emit_bounds_check(src_loc_tk, indent, range, options);
-
-        comment(src_loc_tk, indent, "bounds check end");
     }
 
     auto check_frame_capacity(const token& src_loc_tk, const size_t indent,
@@ -1088,10 +1095,6 @@ class machine_rv32i : public machine {
                                check);
     }
 
-    auto end_main() -> void override {
-        exit(token{}, 1, operand::imm(0, default_type()));
-    }
-
     auto
     equal_elements(const token& src_loc_tk, const size_t indent,
                    const size_t element_size_bytes,
@@ -1170,7 +1173,9 @@ class machine_rv32i : public machine {
                                              const type& value_type) const
         -> operand override {
 
-        // the allocating callers validated the type with their token
+        // note: the front end rejects 'i64' and an instance first, e.g.
+        //       "'i64' is not available on this target"
+
         assert(is_scalar(value_type));
 
         const size_t index{register_index(name)};
@@ -1454,7 +1459,6 @@ class machine_rv32i : public machine {
             .string_alignment{word_size_bytes_},
             .is_stack_bounded{},
             .frame_base_register{"s1"},
-            .stack_pointer_register{"sp"},
             .variables_base_register{"s0"},
             // the last of the saved registers, no built-in names it
             .slot_register{"s11"},
@@ -1757,12 +1761,10 @@ class machine_rv32i : public machine {
 
     // the sector is in a0 where 'read' has the descriptor, there is no result
     auto call_sector_routine(const token& src_loc_tk, const size_t indent,
-                             const operand& sector, const operand& address,
-                             const operand& size, const target_call function)
-        -> void {
+                             const target_call function) -> void {
 
         const operand call_register{
-            reserve_call_register(src_loc_tk, indent, sector, address, size),
+            reserve_call_register(src_loc_tk, indent),
         };
 
         const std::string_view label{
@@ -2782,40 +2784,6 @@ class machine_rv32i : public machine {
         if (inverted != complement) {
             assembler_.xori(indent, result, result, 1);
         }
-    }
-
-    // the operation scope frees its temporaries before the end comment
-    auto emit_bounds_check(const token& src_loc_tk, const size_t indent,
-                           const bounds_range& range,
-                           const bounds_check_options& options) -> void {
-
-        operation_scope scope{*this, range.checked};
-
-        if (range.count) {
-            scope.protect(*range.count);
-        }
-
-        const bounds_plan plan{
-            plan_bounds_check(options, range,
-                              std::numeric_limits<int32_t>::max()),
-        };
-
-        if (options.lower) {
-            check_lower_bound(src_loc_tk, indent, range, plan,
-                              not options.upper);
-        }
-
-        if (options.upper) {
-            comment(src_loc_tk, indent, "upper bound");
-
-            check_upper_bound(src_loc_tk, indent, range, options.lower);
-        }
-
-        assembler_.label(indent, bounds_fail_.name);
-
-        branch_to_failure(src_loc_tk, indent, bounds_failure);
-
-        assembler_.label(indent, bounds_pass_.name);
     }
 
     // a sum or difference computed by 'emit_binary_instruction' must fit the
@@ -3862,31 +3830,12 @@ class machine_rv32i : public machine {
     }
 
     // the arguments are in the registers of 'registers_for_target_call',
-    // checked by the caller
-    auto reserve_call_register(const token& src_loc_tk, const size_t indent,
-                               const operand& first, const operand& address,
-                               const operand& count) -> operand {
-
-        for (const operand* value : {&first, &address, &count}) {
-            assert(value->is_register() and
-                   value->type_ref().size_bytes() == word_size_bytes_);
-        }
+    // checked by 'call_target'
+    auto reserve_call_register(const token& src_loc_tk, const size_t indent)
+        -> operand {
 
         // selects the system call or receives the return address
         return alloc_named_register(src_loc_tk, indent, "a7", default_type());
-    }
-
-    // the byte count of 'read' and 'write' replaces the descriptor in a0
-    auto reserve_io_call_register(const token& src_loc_tk, const size_t indent,
-                                  const operand& dst, const operand& descriptor,
-                                  const operand& address, const operand& count)
-        -> operand {
-
-        assert(dst.is_register() and
-               dst.type_ref().size_bytes() == word_size_bytes_);
-
-        return reserve_call_register(src_loc_tk, indent, descriptor, address,
-                                     count);
     }
 
     // the loop ends when its pointer reaches 'end', replacing a counter that

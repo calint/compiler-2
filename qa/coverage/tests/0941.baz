@@ -1,5 +1,4 @@
-# --checks=-alias: indexes that differ at run time are accepted, whatever the
-# order in the list
+# indexes that may be equal at run time may share storage
 
 func inv(v i32) res i32 {
     res = ~v

@@ -290,42 +290,6 @@ class machine_x86_64 final : public machine {
         return std::ranges::contains(index_register_scalings_, size_bytes);
     }
 
-    auto check_bounds(const token& src_loc_tk, const size_t indent,
-                      const bounds_range& range,
-                      const bounds_check_options& options) -> void override {
-
-        if (not options.upper and not options.lower) {
-            return;
-        }
-
-        const bounds_plan plan{
-            plan_bounds_check(options, range, signed_maximum(range.checked)),
-        };
-
-        comment(src_loc_tk, indent, "bounds check begin");
-
-        if (options.lower) {
-            check_lower_bound(src_loc_tk, indent, range, plan);
-        }
-
-        if (options.upper) {
-            comment(src_loc_tk, indent, "upper bound");
-
-            // the end of a range is 'start + count', neither is negative
-            // here but the sum can pass the signed maximum and then looks
-            // negative to a signed compare, the unsigned compare sees it large
-            // e.g. 'array_copy(x[0x7fffffffffffffff], y[0], 1)' on 'i8[4]'
-            // ends at 0x8000000000000000, signed it is below 4 and passes
-            const bool is_unsigned_compare{
-                plan.upper_covers_lower or (options.lower and range.count),
-            };
-
-            check_upper_bound(src_loc_tk, indent, range, is_unsigned_compare);
-        }
-
-        comment(src_loc_tk, indent, "bounds check end");
-    }
-
     auto check_frame_capacity(const token& src_loc_tk, const size_t indent,
                               const operand& frame_address,
                               const operand& frame_size_bytes)
@@ -471,10 +435,10 @@ class machine_x86_64 final : public machine {
         assert(operation == arithmetic_operator::divide or
                operation == arithmetic_operator::remainder);
 
-        reserve_named_register(src_loc_tk, indent, "rax", default_type());
+        reserve_named_register(src_loc_tk, indent, "rax");
         mov(src_loc_tk, indent, qword_register("rax"), dst);
 
-        reserve_named_register(src_loc_tk, indent, "rdx", default_type());
+        reserve_named_register(src_loc_tk, indent, "rdx");
 
         emit_signed_divide(src_loc_tk, indent, divisor, check,
                            dst.type_ref().size_bytes());
@@ -485,11 +449,6 @@ class machine_x86_64 final : public machine {
 
         release_named_register(src_loc_tk, indent, "rdx");
         release_named_register(src_loc_tk, indent, "rax");
-    }
-
-    auto end_main() -> void override {
-        exit(token{}, 1, immediate(0));
-        assembler_.add_separator_newline();
     }
 
     auto
@@ -571,11 +530,11 @@ class machine_x86_64 final : public machine {
         // only 'repe cmpsq' counts in 'rcx'
         const bool is_counted{compares.front() == op::repe_cmpsq};
 
-        reserve_named_register(src_loc_tk, indent, "rsi", default_type());
-        reserve_named_register(src_loc_tk, indent, "rdi", default_type());
+        reserve_named_register(src_loc_tk, indent, "rsi");
+        reserve_named_register(src_loc_tk, indent, "rdi");
 
         if (is_counted) {
-            reserve_named_register(src_loc_tk, indent, "rcx", default_type());
+            reserve_named_register(src_loc_tk, indent, "rcx");
         }
 
         load_bulk_addresses(src_loc_tk, indent, std::nullopt, request.lhs,
@@ -718,7 +677,7 @@ class machine_x86_64 final : public machine {
             return;
         }
 
-        reserve_named_register(src_loc_tk, indent, "rcx", default_type());
+        reserve_named_register(src_loc_tk, indent, "rcx");
 
         // note: a count wider than the value is rejected as narrowed
         assert(count.type_ref().size_bytes() <= dst.type_ref().size_bytes());
@@ -825,9 +784,9 @@ class machine_x86_64 final : public machine {
         -> void override {
 
         if (size_bytes > threshold_for_rep_stos_size_bytes_) {
-            reserve_named_register(src_loc_tk, indent, "rax", default_type());
-            reserve_named_register(src_loc_tk, indent, "rdi", default_type());
-            reserve_named_register(src_loc_tk, indent, "rcx", default_type());
+            reserve_named_register(src_loc_tk, indent, "rax");
+            reserve_named_register(src_loc_tk, indent, "rdi");
+            reserve_named_register(src_loc_tk, indent, "rcx");
 
             const operand al{sized_register("rax", size_byte_)};
             xor_op(src_loc_tk, indent, al, al);
@@ -890,7 +849,6 @@ class machine_x86_64 final : public machine {
             .string_alignment{1},
             .is_stack_bounded{},
             .frame_base_register{"rbx"},
-            .stack_pointer_register{"rsp"},
             .variables_base_register{"rbp"},
             .slot_register{"r11"},
             .variables_base_past_vars_bytes{std::nullopt},
@@ -911,6 +869,31 @@ class machine_x86_64 final : public machine {
         -> std::string override {
 
         return assembler_x86_64::address_text(to_address(address));
+    }
+
+    auto emit_bounds_check(const token& src_loc_tk, const size_t indent,
+                           const bounds_range& range,
+                           const bounds_check_options& options,
+                           const bounds_plan& plan) -> void override {
+
+        if (options.lower) {
+            check_lower_bound(src_loc_tk, indent, range, plan);
+        }
+
+        if (options.upper) {
+            comment(src_loc_tk, indent, "upper bound");
+
+            // the end of a range is 'start + count', neither is negative
+            // here but the sum can pass the signed maximum and then looks
+            // negative to a signed compare, the unsigned compare sees it large
+            // e.g. 'array_copy(x[0x7fffffffffffffff], y[0], 1)' on 'i8[4]'
+            // ends at 0x8000000000000000, signed it is below 4 and passes
+            const bool is_unsigned_compare{
+                plan.upper_covers_lower or (options.lower and range.count),
+            };
+
+            check_upper_bound(src_loc_tk, indent, range, is_unsigned_compare);
+        }
     }
 
     auto emit_call(const size_t indent, const std::string_view label)
@@ -987,26 +970,20 @@ class machine_x86_64 final : public machine {
 
     // 'read' and 'write' are system calls, the sector functions routines
     auto emit_target_call(const token& src_loc_tk, const size_t indent,
-                          const target_call function,
-                          const std::span<const operand> args,
-                          const operand& result) -> void override {
+                          const target_call function, const operand& result)
+        -> void override {
 
         if (function == target_call::read) {
-            io_syscall(src_loc_tk, indent, result, args.at(0), args.at(1),
-                       args.at(2), syscall_read_);
-
+            io_syscall(src_loc_tk, indent, result, syscall_read_);
             return;
         }
 
         if (function == target_call::write) {
-            io_syscall(src_loc_tk, indent, result, args.at(0), args.at(1),
-                       args.at(2), syscall_write_);
-
+            io_syscall(src_loc_tk, indent, result, syscall_write_);
             return;
         }
 
-        call_sector_routine(src_loc_tk, indent, args.at(0), args.at(1),
-                            args.at(2), function);
+        call_sector_routine(src_loc_tk, indent, function);
     }
 
     // unused routines contribute no code
@@ -1129,8 +1106,8 @@ class machine_x86_64 final : public machine {
     [[nodiscard]] auto begin_bulk(const token& src_loc_tk, const size_t indent)
         -> operand {
 
-        reserve_named_register(src_loc_tk, indent, "rsi", default_type());
-        reserve_named_register(src_loc_tk, indent, "rdi", default_type());
+        reserve_named_register(src_loc_tk, indent, "rsi");
+        reserve_named_register(src_loc_tk, indent, "rdi");
         return alloc_named_register(src_loc_tk, indent, "rcx", default_type());
     }
 
@@ -1185,14 +1162,7 @@ class machine_x86_64 final : public machine {
     // the routine changes 'rax', 'rcx', 'r10' and 'r11' besides the
     // arguments, the allocated ones are saved around the call
     auto call_sector_routine(const token& src_loc_tk, const size_t indent,
-                             const operand& sector, const operand& address,
-                             const operand& size, const target_call function)
-        -> void {
-
-        for (const operand* value : {&sector, &address, &size}) {
-            assert(value->is_register() and
-                   value->type_ref().size_bytes() == size_qword_);
-        }
+                             const target_call function) -> void {
 
         static constexpr std::array<std::string_view, 4> clobbered{
             "rax",
@@ -1877,14 +1847,7 @@ class machine_x86_64 final : public machine {
     }
 
     auto io_syscall(const token& src_loc_tk, const size_t indent,
-                    const operand& dst, const operand& descriptor,
-                    const operand& address, const operand& count,
-                    const int syscall_number) -> void {
-
-        for (const operand* value : {&dst, &descriptor, &address, &count}) {
-            assert(value->is_register() and
-                   value->type_ref().size_bytes() == size_qword_);
-        }
+                    const operand& dst, const int syscall_number) -> void {
 
         mov(src_loc_tk, indent, dst, immediate(syscall_number));
         invoke_syscall(indent);
@@ -2380,11 +2343,6 @@ class machine_x86_64 final : public machine {
                lhs.index_register() == rhs.index_register() and
                lhs.displacement() == rhs.displacement() and
                lhs.scale() == rhs.scale();
-    }
-
-    // the most that a value of the width of 'value' holds as a signed number
-    [[nodiscard]] static auto signed_maximum(const operand& value) -> uint64_t {
-        return (uint64_t{1} << (value.type_ref().size_bits() - 1)) - 1;
     }
 
     [[nodiscard]] static auto sized_register_name(const std::string_view name,

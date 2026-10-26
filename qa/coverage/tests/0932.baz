@@ -1,5 +1,5 @@
-# 'alias' (on by default): a call result is written into data that the function reads
-# rejected inlined as well as noinline
+# a call result is written into data that the function reads rejected inlined
+# as well as noinline
 
 dat g = i32[4]{ 1, 2, 3, 4 }
 

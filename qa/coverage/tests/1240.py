@@ -4,8 +4,8 @@ import os
 import subprocess
 import tempfile
 
-# compiles a chain of noinline functions, each calling the one before it, of
-# the length of the limit and longer, and prints the exit code and the message
+# compiles a chain of noinline functions, each calling the one before it, and
+# prints the exit code and the message
 machine = os.environ.get('MACHINE')
 compiler = os.path.abspath('../../../baz')
 
@@ -20,7 +20,7 @@ def chain(length):
 
 
 with tempfile.TemporaryDirectory() as root:
-    for length in (100, 101, 1000):
+    for length in (1000,):
         source = os.path.join(root, 'chain.baz')
         with open(source, 'w') as f:
             f.write(chain(length))

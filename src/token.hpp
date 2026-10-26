@@ -218,6 +218,12 @@ class token final {
 
     [[nodiscard]] auto start_index() const -> size_t { return start_ix_; }
 
+    // a marker where this token starts, e.g. the position of a node whose
+    // whitespace its first token holds
+    [[nodiscard]] auto start_position() const -> token {
+        return position(file_index(), start_index(), at_line());
+    }
+
     // the bytes of a string literal, its escapes decoded, e.g. '\n' is one
     // byte
     [[nodiscard]] auto string_bytes() const -> std::string {

@@ -1,7 +1,4 @@
 
-0705.baz:13:22: 'g.x' is read but has been overwritten in the same statement
-    g = {v + self.x, g.x}
-                     ^
-0705.baz:18:5: called from
+0705.baz:17:11: argument 1 'g.y' may share storage with the global 'g' that 'point.bad' uses, use a temporary variable for one of them
     p.bad(g.y)
-    ^
+          ^

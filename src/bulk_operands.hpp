@@ -216,11 +216,7 @@ class bulk_operands final {
     //       checks of the starts need it; the list is accepted only when that
     //       order and the source order give the same result
     auto assert_not_written_later(const toc& tc) const -> void {
-        std::vector<list_operand> operands;
-
-        visit_operands([&operands](const list_operand& operand) -> void {
-            operands.push_back(operand);
-        });
+        const std::vector<list_operand> operands{operands_of(*this)};
 
         ::assert_not_written_later(tc, operands, "argument");
 

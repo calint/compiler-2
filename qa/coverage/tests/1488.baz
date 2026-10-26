@@ -1,4 +1,5 @@
-# '--checks=-alias' does not compare the result with the globals
+# a result that may share storage with a global the function uses is
+# rejected
 var g = 5
 
 func f() res {

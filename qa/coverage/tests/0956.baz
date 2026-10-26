@@ -1,5 +1,5 @@
-# 'alias' (on by default): two run-time indexes in a path, the read is of another field
-# of the elements, which is accepted
+# two run-time indexes in a path, the read is of another field of the
+# elements, which is accepted
 
 type item {
     f i32,

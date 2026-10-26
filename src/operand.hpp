@@ -468,10 +468,8 @@ inline constexpr auto unary_spellings{
         return "=";
     }
 
-    for (const binary_operator_traits& traits : binary_operators) {
-        if (traits.op == op) {
-            return traits.text;
-        }
+    if (is_binary(op)) {
+        return traits_of(op).text;
     }
 
     for (const arithmetic_spelling& spelling : unary_spellings) {
@@ -597,13 +595,7 @@ static_assert(std::ranges::all_of(
 [[nodiscard]] inline auto source_text(const comparison_operator op)
     -> std::string_view {
 
-    for (const comparison_spelling& spelling : comparison_spellings) {
-        if (spelling.op == op) {
-            return spelling.text;
-        }
-    }
-
-    std::unreachable();
+    return facts_of(op).text;
 }
 
 // the comparison 'text' spells, none for any other text

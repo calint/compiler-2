@@ -1,5 +1,5 @@
-# 'alias' (on by default): a call result and an argument that are the same field of one
-# variable share storage
+# a call result and an argument that are the same field of one variable share
+# storage
 
 type pair {
     x,

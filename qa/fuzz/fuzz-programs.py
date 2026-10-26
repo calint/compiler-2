@@ -21,14 +21,12 @@
 #
 # usage: fuzz-programs.py [count] [seed] [jobs] [compiler]
 # 'compiler' is 'asan' (default, the sanitizer build) or 'plain'
-import concurrent.futures
 import os
 import random
 import re
 import shutil
 import sys
 import tempfile
-import time
 
 import fuzzlib as fl
 
@@ -501,39 +499,20 @@ def fuzz_one(args):
     return source, found, stats
 
 
-def main():
-    count = int(sys.argv[1]) if len(sys.argv) > 1 else 300
-    seed = int(sys.argv[2]) if len(sys.argv) > 2 else random.randrange(1 << 30)
-    jobs = int(sys.argv[3]) if len(sys.argv) > 3 else max(1, (os.cpu_count() or 2) - 2)
-    kind = sys.argv[4] if len(sys.argv) > 4 else "asan"
-    if kind == "asan" and not os.path.exists(fl.COMPILER_ASAN):
-        sys.exit("build the compiler first: build-asan.sh")
-    findings = fl.Findings()
-    print(f"seed {seed}, {count} programs, {jobs} jobs, {kind} compiler")
-    totals = {"ok": 0, "rejected": 0}
-    categories = {}
-    new = 0
-    begin = time.time()
-    with concurrent.futures.ProcessPoolExecutor(jobs) as pool:
-        for n, (source, found, stats) in enumerate(
-                pool.map(fuzz_one, [(seed, i, kind) for i in range(count)],
-                         chunksize=2), 1):
-            for k in totals:
-                totals[k] += stats[k]
-            for category, key, detail in found:
-                categories[category] = categories.get(category, 0) + 1
-                if findings.add("gen-" + category if not category.startswith("gen-") else category, key, source, detail):
-                    new += 1
-                    print(f"NEW {category}: {key[:150]}", flush=True)
-            if n % 200 == 0:
-                print(f"  {n}/{count} {time.time() - begin:.0f}s {totals}",
-                      flush=True)
-    print(f"{count} programs: {totals['ok']} ran, {totals['rejected']} "
-          f"rejected, {time.time() - begin:.0f}s")
-    print("findings by category (all occurrences):", dict(sorted(categories.items())))
-    print(f"{new} new findings in {fl.FINDINGS}")
-    return 1 if new else 0
+# the findings of the generator are kept as 'gen-' categories, e.g.
+# 'gen-compiler-crash'
+def fuzz_one_kept(args):
+    source, found, stats = fuzz_one(args)
+    kept = [(category if category.startswith("gen-") else "gen-" + category,
+             key, detail) for category, key, detail in found]
+    return source, kept, stats
 
+
+def main():
+    count, seed, jobs = fl.arguments(300)
+    kind = sys.argv[4] if len(sys.argv) > 4 else "asan"
+    return fl.run_fuzzer(fuzz_one_kept, count, seed, jobs,
+                         heading=f", {kind} compiler", task_args=(kind,))
 
 if __name__ == "__main__":
     sys.exit(main())

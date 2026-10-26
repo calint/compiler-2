@@ -1,6 +1,0 @@
-# a noinline call checked once is rejected where its check would run out of
-# frames, whatever the order of the calls: the script compiles a generated
-# program with and without an earlier call at a shallow depth
-func main() {
-    exit(0)
-}

@@ -1,4 +1,4 @@
-# 'alias' (on by default): a parameter without 'mut' may not share storage with the result
+# a parameter without 'mut' may not share storage with the result
 
 func f(a) res {
     res = a + 1

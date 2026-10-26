@@ -21,10 +21,7 @@ import sys
 import tempfile
 
 import fuzzlib as fl
-
-
-def mix(acc, value):
-    return ((acc ^ (value & 0xffff)) * 31) & 0xffff
+from fuzzlib import mix
 
 
 class Buffer:

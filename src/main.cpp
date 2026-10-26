@@ -608,8 +608,6 @@ checks:
   line     report line number on failed bounds, division, shift, overlap or
            overflow check
   frame    runtime non-inlined function frame capacity
-  alias    compile time rejection of calls where a result may share storage
-           with an argument, on by default
   division runtime division by zero and 'MIN / -1'
   shift    runtime shift count below zero or not below the width of the type
   overlap  runtime 'array_copy' whose destination starts inside the source
@@ -618,12 +616,13 @@ checks:
            a program that overflows the stack
   overflow runtime signed overflow of '+', '-', '*' and unary '-', a constant
            expression that overflows is rejected at compile time
-  noub     all checks against undefined behavior: upper, lower, frame, alias,
+  noub     all checks against undefined behavior: upper, lower, frame,
            division, shift, overlap, stack and overflow; a program accepted
-           with 'noub' has no undefined behavior, by default only 'alias' is
-           on
+           with 'noub' has no undefined behavior, by default none is on;
+           arguments, a result and globals that may share storage are
+           rejected at compile time always
   -NAME    turns a check off after the others are applied, e.g.
-           noub,-division or -alias (also when noub is given), +NAME is NAME
+           noub,-division, +NAME is NAME
 
 examples:
   {0} prog.baz > prog.s
@@ -859,13 +858,12 @@ struct check_name {
     bool is_ub;
 };
 
-constexpr std::array<check_name, 10> check_names{
+constexpr std::array<check_name, 9> check_names{
     {
         {.text{"upper"}, .member{&check_options::bounds_upper}, .is_ub{true}},
         {.text{"lower"}, .member{&check_options::bounds_lower}, .is_ub{true}},
         {.text{"line"}, .member{&check_options::reports_line}, .is_ub{false}},
         {.text{"frame"}, .member{&check_options::frame}, .is_ub{true}},
-        {.text{"alias"}, .member{&check_options::alias}, .is_ub{true}},
         {.text{"division"}, .member{&check_options::division}, .is_ub{true}},
         {.text{"shift"}, .member{&check_options::shift}, .is_ub{true}},
         {.text{"overlap"}, .member{&check_options::overlap}, .is_ub{true}},
@@ -897,10 +895,9 @@ static_assert([] -> bool {
         });
 }());
 
-// each '--checks' replaces the earlier ones, empty parts are ignored, 'alias'
-// stays on unless '-alias' is given, 'name' and '+name' enable a check,
-// '-name' disables it after all enables, so the order in the list does not
-// matter
+// each '--checks' replaces the earlier ones, empty parts are ignored, 'name'
+// and '+name' enable a check, '-name' disables it after all enables, so the
+// order in the list does not matter
 [[nodiscard]] auto parse_checks(const std::string_view checks)
     -> std::optional<check_options> {
 

@@ -1,0 +1,4 @@
+
+0945.baz:14:13: argument 1 'e' may share storage with the global 'g' that 'put' uses, use a temporary variable for one of them
+        put(e, 10)
+            ^

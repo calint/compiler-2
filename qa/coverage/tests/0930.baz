@@ -1,5 +1,5 @@
-# 'alias' (on by default): the argument and the data the function reads are different
-# elements of one array
+# the argument and the data the function reads are different elements of one
+# array
 
 dat g = i32[4]{ 1, 2, 3, 4 }
 

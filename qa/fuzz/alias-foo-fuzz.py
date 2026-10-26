@@ -1,25 +1,26 @@
 #!/usr/bin/env python3
-# end to end fuzz of '--checks=alias': random programs whose destination is the
-# element 'e' of a 'foo' or a 'mut' parameter, the value reads a variable; the
-# verdict of the compiler ("may share storage" or not) against a brute force of
-# the bytes, every value of every run-time index is tried. a 'mut' argument
-# that may overlap a global the callee reads is rejected at the call, inline or
-# noinline; the element of a 'foo' is inline code, which computes the value
-# before it writes it
+# end to end fuzz of the aliasing check: random programs whose destination is
+# the element 'e' of a 'foo' or a 'mut' parameter, the value reads a variable;
+# the verdict of the compiler ("may share storage" or not) against a brute
+# force of the bytes, every value of every run-time index is tried. a 'mut'
+# argument that may overlap a global the callee reads is rejected at the call,
+# inline or noinline; the element of a 'foo' is inline code, which computes the
+# value before it writes it
 #
-# usage: alias-foo-fuzz.py [programs] [seed] [compiler]
-# exits 1 on a missed overlap (a call accepted, bytes can be the same), on a
-# false positive (rejected, bytes never are or the code is a 'foo') or on an
-# error that is not an alias error
+# usage: alias-foo-fuzz.py [programs] [seed] [compiler] [jobs]
+# the findings are a missed overlap (a call accepted, bytes can be the same), a
+# false positive (rejected, bytes never are or the code is a 'foo') and an
+# error that is not an alias error; exits 1 when one is new
 #
 # note: a read under the name of the destination ('e.f = e.g') is handled where
 #       the value is compiled, not by this check, so it must be accepted
 
 import os
 import random
-import subprocess
 import sys
 import tempfile
+
+import fuzzlib as fl
 
 SCALARS = [("i8", 1), ("i16", 2), ("i32", 4), ("i64", 8)]
 
@@ -234,44 +235,51 @@ def gen_param(rng):
     return "\n".join(src) + "\n", truth
 
 
+# the verdicts that are findings, the others say the check was right
+FAILURES = ("other error", "missed overlap", "false positive")
+
+
+def fuzz_one(args):
+    seed, index, compiler = args
+    rng = random.Random(seed * 100003 + index)
+    while True:
+        scenario = "foo" if rng.random() < 0.5 else "param"
+        made = (gen_foo if scenario == "foo" else gen_param)(rng)
+        if made is not None:
+            break
+    src, truth = made
+    with tempfile.TemporaryDirectory() as tmp:
+        path = os.path.join(tmp, "p.baz")
+        with open(path, "w") as f:
+            f.write(src)
+        run = fl.run([compiler, path], fl.COMPILE_TIMEOUT)
+    rejected = "may share storage" in run.stderr
+    if run.returncode != 0 and not rejected:
+        verdict = "other error"
+    elif truth and not rejected:
+        verdict = "missed overlap"
+    elif not truth and rejected:
+        verdict = "false positive"
+    else:
+        verdict = "reject" if truth else "accept"
+    found = []
+    if verdict in FAILURES:
+        found.append(("alias-" + verdict.replace(" ", "-"), scenario,
+                      run.stderr.strip()[:300]))
+    return src, found, {f"{scenario} {verdict}": 1}
+
+
 def main():
     count = int(sys.argv[1]) if len(sys.argv) > 1 else 5000
     seed = int(sys.argv[2]) if len(sys.argv) > 2 else 1
-    compiler = sys.argv[3] if len(sys.argv) > 3 else "../../baz"
-    rng = random.Random(seed)
-    stats = {"foo": {}, "param": {}}
-    failures = 0
-    with tempfile.TemporaryDirectory(dir="/tmp") as tmp:
-        path = os.path.join(tmp, "p.baz")
-        done = 0
-        while done < count:
-            scenario = "foo" if rng.random() < 0.5 else "param"
-            made = (gen_foo if scenario == "foo" else gen_param)(rng)
-            if made is None:
-                continue
-            src, truth = made
-            with open(path, "w") as f:
-                f.write(src)
-            run = subprocess.run([compiler, "--checks=alias", path],
-                                 capture_output=True, text=True, check=False)
-            rejected = "may share storage" in run.stderr
-            if run.returncode != 0 and not rejected:
-                verdict = "other error"
-            elif truth and not rejected:
-                verdict = "missed overlap"
-            elif not truth and rejected:
-                verdict = "false positive"
-            else:
-                verdict = "reject" if truth else "accept"
-            stats[scenario][verdict] = stats[scenario].get(verdict, 0) + 1
-            if verdict in ("other error", "missed overlap", "false positive"):
-                failures += 1
-                if failures <= 5:
-                    print(f"{scenario}: {verdict}\n{run.stderr.strip()[:300]}\n{src}")
-            done += 1
-    for scenario, counts in stats.items():
-        print(f"{scenario}: {dict(sorted(counts.items()))}")
-    return 1 if failures else 0
+    compiler = os.path.abspath(sys.argv[3]) if len(sys.argv) > 3 else \
+        fl.COMPILER
+    jobs = int(sys.argv[4]) if len(sys.argv) > 4 else \
+        max(1, (os.cpu_count() or 2) - 2)
+    fl.assert_fresh(compiler)
+    return fl.run_fuzzer(fuzz_one, count, seed, jobs, task_args=(compiler,),
+                         chunksize=50)
 
 
-sys.exit(main())
+if __name__ == "__main__":
+    sys.exit(main())

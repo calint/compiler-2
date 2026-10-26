@@ -1,4 +1,4 @@
-# 'alias' (on by default): the data is a record, the argument and the read are the same element
+# the data is a record, the argument and the read are the same element
 # rejected inlined as well as noinline
 
 type world {

@@ -25,7 +25,6 @@
 #   reproduce         '--reproduce-source' fails or writes a different source
 #
 # usage: fuzz-compiler.py [count] [seed] [jobs]
-import concurrent.futures
 import os
 import random
 import re
@@ -33,7 +32,6 @@ import shutil
 import signal
 import sys
 import tempfile
-import time
 
 import fuzzlib as fl
 
@@ -434,42 +432,11 @@ def stack_difference(x86, rv):
 
 
 def main():
-    count = int(sys.argv[1]) if len(sys.argv) > 1 else 500
-    seed = int(sys.argv[2]) if len(sys.argv) > 2 else random.randrange(1 << 30)
-    jobs = int(sys.argv[3]) if len(sys.argv) > 3 else max(1, (os.cpu_count() or 2) - 2)
-    if not os.path.exists(fl.COMPILER_ASAN):
-        sys.exit("build the compiler first: build-asan.sh")
+    count, seed, jobs = fl.arguments(500)
     load_seeds()
-    findings = fl.Findings()
-    print(f"seed {seed}, {count} programs, {jobs} jobs, {len(SEEDS)} seeds")
-    totals = {"accepted": 0, "rejected": 0, "compared": 0}
-    categories = {}
-    new = 0
-    begin = time.time()
-    with concurrent.futures.ProcessPoolExecutor(jobs, initializer=load_seeds) as pool:
-        for n, (text, found, stats) in enumerate(
-                pool.map(fuzz_one, [(seed, i) for i in range(count)],
-                         chunksize=4), 1):
-            for k in totals:
-                totals[k] += stats[k]
-            for category, key, detail in found:
-                categories[category] = categories.get(category, 0) + 1
-                if findings.add(category, key, text, detail):
-                    new += 1
-                    print(f"NEW {category}: {key[:150]}", flush=True)
-            if n % 200 == 0:
-                print(f"  {n}/{count} {time.time() - begin:.0f}s "
-                      f"accepted {totals['accepted']} rejected "
-                      f"{totals['rejected']} compared {totals['compared']}",
-                      flush=True)
-    print(f"{count} programs: {totals['accepted']} accepted, "
-          f"{totals['rejected']} rejected, {totals['compared']} compared "
-          f"on both targets, {time.time() - begin:.0f}s")
-    print("findings by category (all occurrences):",
-          dict(sorted(categories.items())))
-    print(f"{new} new findings in {fl.FINDINGS}")
-    return 1 if new else 0
-
+    return fl.run_fuzzer(fuzz_one, count, seed, jobs,
+                         heading=f", {len(SEEDS)} seeds",
+                         initializer=load_seeds, chunksize=4)
 
 if __name__ == "__main__":
     sys.exit(main())

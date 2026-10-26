@@ -12,13 +12,11 @@
 #   roome-timeout  no end in time
 #
 # usage: fuzz-roome.py [count] [seed] [jobs]
-import concurrent.futures
 import os
 import random
 import re
 import sys
 import tempfile
-import time
 
 import fuzzlib as fl
 
@@ -158,31 +156,10 @@ def fuzz_one(args):
 
 
 def main():
-    count = int(sys.argv[1]) if len(sys.argv) > 1 else 500
-    seed = int(sys.argv[2]) if len(sys.argv) > 2 else random.randrange(1 << 30)
-    jobs = int(sys.argv[3]) if len(sys.argv) > 3 else max(1, (os.cpu_count() or 2) - 2)
+    count, seed, jobs = fl.arguments(500)
     build()
-    findings = fl.Findings()
-    print(f"seed {seed}, {count} sessions, {jobs} jobs")
-    categories = {}
-    new = 0
-    begin = time.time()
-    with concurrent.futures.ProcessPoolExecutor(jobs) as pool:
-        for n, (text, found) in enumerate(
-                pool.map(fuzz_one, [(seed, i) for i in range(count)],
-                         chunksize=4), 1):
-            for category, key, detail in found:
-                categories[category] = categories.get(category, 0) + 1
-                if findings.add(category, key, text, detail):
-                    new += 1
-                    print(f"NEW {category}: {key[:150]}", flush=True)
-            if n % 200 == 0:
-                print(f"  {n}/{count} {time.time() - begin:.0f}s", flush=True)
-    print(f"{count} sessions, {time.time() - begin:.0f}s")
-    print("findings by category (all occurrences):", dict(sorted(categories.items())))
-    print(f"{new} new findings in {fl.FINDINGS}")
-    return 1 if new else 0
-
+    return fl.run_fuzzer(fuzz_one, count, seed, jobs, label="sessions",
+                         chunksize=4)
 
 if __name__ == "__main__":
     sys.exit(main())

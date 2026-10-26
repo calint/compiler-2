@@ -410,18 +410,12 @@ struct noinline_arg {
 };
 
 // the limits on how deep the compile of calls nests, each a recursion of the
-// compiler: the scopes being compiled, the inlined calls of one function in
-// each other and the levels of noinline dry runs; the errors are located at
-// the call 'call_tk'
+// compiler: the scopes being compiled and the inlined calls of one function in
+// each other; the errors are located at the call 'call_tk'
 class call_limits final {
   public:
-    // a scope being compiled: a block, a loop or a function body, inlined or
-    // the dry run of a noinline call
+    // a scope being compiled: a block, a loop or a function body
     static constexpr size_t max_scope_count{256};
-
-    // a level is the dry run of a noinline call nested in the dry run of the
-    // call that reaches it, see 'noinline_call::dry_run_body'
-    static constexpr size_t max_noinline_dry_run_level{100};
 
     // an inlined recursion ends at compile time when a constant argument
     // makes its condition fold, otherwise it would expand without end
@@ -439,50 +433,8 @@ class call_limits final {
             throw recursion_error(call_tk, func);
         }
 
-        // note: in the dry run of a noinline call the scopes count the chain
-        //       of noinline calls checked, so the error does not suggest
-        //       'noinline', see 'noinline_call::dry_run_body'
-
-        assert_scope_count(tc, call_tk, tc.scopes().count(),
-                           tc.scopes().noinline_dry_run_level() != 0);
-    }
-
-    // 'level' counts the dry runs of noinline calls in each other
-    static auto assert_noinline_level(const token& call_tk, const size_t level)
-        -> void {
-
-        if (level <= max_noinline_dry_run_level) {
+        if (tc.scopes().count() < max_scope_count) {
             return;
-        }
-
-        throw compile_error{
-            call_tk,
-            std::format("noinline calls are nested too deep to check their "
-                        "arguments, the limit is {} levels",
-                        max_noinline_dry_run_level),
-        };
-    }
-
-    // a body compiled 'scope_count' scopes deep; 'is_dry_run' when it checks
-    // the arguments of a noinline call, which the message says
-    static auto assert_scope_count(toc& tc, const token& call_tk,
-                                   const size_t scope_count,
-                                   const bool is_dry_run) -> void {
-
-        tc.reach_scope_check(scope_count);
-
-        if (scope_count < max_scope_count) {
-            return;
-        }
-
-        if (is_dry_run) {
-            throw compile_error{
-                call_tk,
-                std::format("inlined calls and blocks are nested too deep to "
-                            "check the arguments of a noinline call, the "
-                            "limit is {} scopes",
-                            max_scope_count),
-            };
         }
 
         throw inlining_limit_error(
@@ -823,29 +775,21 @@ struct call_site {
 //   1. 'compile': a result narrower than the operand it widens into is
 //      computed in a register and widened ('compile_widened'), an instance
 //      literal or a call result argument is made in a temporary
-//   2. 'compile_to_destination': a memory destination may get its address in
-//      a register ('compile_with_result_address_register'), or unary
-//      operators may work on a scratch register
-//   3. 'compile_with_bindings': the bindings of the result and the arguments
+//   2. 'compile_with_bindings': the bindings of the result and the arguments
 //      ('make_bindings'), an indexed argument may get its address in a
 //      register ('compile_with_address_choice',
 //      'compile_body_with_address_registers')
-//   4. 'compile_body': the body under labels unique to the call, with the
+//   3. 'compile_body': the body under labels unique to the call, with the
 //      bindings added
-//
-// 'dry_run' runs step 3 for the errors of a 'noinline_call', whose callee is
-// noinline
 class inline_call {
-    // what the body names by its result and its parameters; the result has
-    // its own address choice in 'compile_to_destination'
+    // what the body names by its result and its parameters
     struct call_bindings {
         std::optional<param_binding> result;
         std::vector<param_binding> arguments;
     };
 
     call_site call_;
-    // one per argument, for an inlined call or, in the dry run of a noinline
-    // call, for that call
+    // one per argument
     call_site::call_plan plan_;
 
   public:
@@ -865,14 +809,9 @@ class inline_call {
 
         if (call_.func->has_result() and
             call_site::result_type_differs(dst, *call_.func)) {
-            // note: 'stmt_call::assert_result_type' allows a type mismatch
-            //       only for a narrower integer
-
-            assert(call_site::is_widened_integer(call_.func->result_type(),
-                                                 dst.type_ref()));
+            // note: a narrower integer, see 'stmt_call::assert_result_type'
 
             compile_widened(tc, indent, dst);
-
             return;
         }
 
@@ -885,18 +824,8 @@ class inline_call {
                     }
                 }
 
-                compile_to_destination(tc, indent, dst);
+                compile_with_bindings(tc, indent, dst);
             });
-    }
-
-    // the errors of a 'noinline' call checked by compiling its body in place
-    // and discarding the code; the call made its temporaries
-    auto dry_run(toc& tc, const size_t indent, const destination& dst) const
-        -> void {
-
-        assert(not call_.func->is_inlined());
-
-        compile_with_bindings(tc, indent, dst);
     }
 
   private:
@@ -922,24 +851,6 @@ class inline_call {
                            call_.uops_check);
     }
 
-    // the id has no indexes, so an id naming an array means the result is
-    // one of its elements
-    auto comment_result_address(toc& tc, const size_t indent,
-                                const destination& dst) const -> void {
-
-        machine& x{tc.machine()};
-
-        if (tc.resolve_declared(call_.tk, dst.name()).is_array()) {
-            x.comment(call_.tk, indent, "address of result element {}",
-                      in_quotes(dst.text()));
-
-            return;
-        }
-
-        x.comment(call_.tk, indent, "address of indexed result {}",
-                  in_quotes(dst.text()));
-    }
-
     auto compile_body(toc& tc, const size_t indent,
                       const call_bindings& bindings) const -> void {
 
@@ -959,15 +870,10 @@ class inline_call {
 
         x.label(indent, call_label);
 
-        // note: a noinline function is compiled in place only in its dry run
-        const bool is_inlined{call_.func->is_inlined()};
-
         const toc::scope_entry body{
             tc,
-            is_inlined ? scope::inlined_func(call_.func->name(), new_call_path,
-                                             ret_jmp_label)
-                       : scope::noinline_dry_run(call_.func->name(),
-                                                 new_call_path, ret_jmp_label),
+            scope::inlined_func(call_.func->name(), new_call_path,
+                                ret_jmp_label),
             call_.tk,
         };
 
@@ -1014,9 +920,9 @@ class inline_call {
 
     // a new register per argument because the index register may belong to
     // an enclosing binding that is used after the call
-    auto compile_body_with_address_registers(
-        toc& tc, const size_t indent, call_bindings bindings,
-        const bool keeps_displacement) const -> void {
+    auto compile_body_with_address_registers(toc& tc, const size_t indent,
+                                             call_bindings bindings) const
+        -> void {
 
         machine& x{tc.machine()};
 
@@ -1043,69 +949,12 @@ class inline_call {
             x.comment(call_.tk, indent, "address of parameter {}",
                       in_quotes(binding.from));
 
-            named.lea = load_indexed_address(x, indent, address, *named.lea,
-                                             keeps_displacement);
+            x.address_of(call_.tk, indent, address, *named.lea);
+
+            named.lea = operand::mem(address, named.lea->type_ref());
         }
 
         compile_body(tc, indent, bindings);
-    }
-
-    auto compile_to_destination(toc& tc, const size_t indent,
-                                const destination& dst) const -> void {
-
-        if (not dst.operand().is_memory()) {
-            compile_with_bindings(tc, indent, dst);
-            return;
-        }
-
-        machine& x{tc.machine()};
-
-        const bool has_unary_ops{not call_.uops.is_empty()};
-
-        const bool has_indexed_result{
-            not dst.operand().index_register().empty(),
-        };
-
-        // without base + index addressing each result access adds base and
-        // index again, computing the address once can be shorter
-        if (not has_unary_ops and has_indexed_result and
-            not x.has_indexed_addressing()) {
-
-            tc.emit_most_efficient(
-                call_.tk, indent,
-                [&] -> void { compile_with_bindings(tc, indent, dst); },
-                [&] -> void {
-                    emit_most_efficient_address(
-                        tc, indent, [&](const bool keeps) -> void {
-                            compile_with_result_address_register(tc, indent,
-                                                                 dst, keeps);
-                        });
-                });
-
-            return;
-        }
-
-        if (not has_unary_ops) {
-            compile_with_bindings(tc, indent, dst);
-            return;
-        }
-
-        // unary ops on a memory result are a load, modify and store on a
-        // load/store machine, a scratch register can be shorter
-        tc.emit_most_efficient(
-            call_.tk, indent,
-            [&] -> void { compile_with_bindings(tc, indent, dst); },
-            [&] -> void {
-                const operand reg{
-                    x.alloc_scratch_register(call_.tk, indent, dst.type_ref()),
-                };
-
-                compile_with_bindings(tc, indent,
-                                      destination::of_register(reg));
-
-                x.copy_value(call_.tk, indent, dst.operand(), reg);
-                x.free_scratch_register(call_.tk, indent, reg);
-            });
     }
 
     // the result is made at its type in a register that the body names, the
@@ -1134,22 +983,18 @@ class inline_call {
                            call_.uops_check);
     }
 
-    // note: the body is compiled in three versions and the one with the least
+    // note: the body is compiled in two versions and the one with the least
     //       code is kept
     //
     //       1. bindings use the indexed addresses as they are, e.g.
     //          '[s0 + t0 * 4 + 28]'
     //       2. each indexed address goes once into a new register, the
     //          displacement included, e.g. '[t1]'
-    //       3. as 2 but the displacement stays in each access, e.g.
-    //          '[t1 + 28]'
     //
     //       rv32i has no base + index addressing, so in version 1 every
     //       access adds base and index again; a register pays off only when
-    //       the body accesses the argument more than once, and a kept
-    //       displacement saves an 'addi' unless the field offsets then exceed
-    //       the 12-bit immediate range; which is shorter is only known after
-    //       compiling the body
+    //       the body accesses the argument more than once, which is only
+    //       known after compiling the body
     //
     //       the argument registers are shared by all versions, so they are
     //       freed after the choice by 'compile_with_bindings'
@@ -1162,15 +1007,10 @@ class inline_call {
             call_.tk, indent,
             [&] -> void { compile_body(tc, indent, bindings); },
             [&] -> void {
-                emit_most_efficient_address(
-                    tc, indent, [&](const bool keeps) -> void {
-                        compile_body_with_address_registers(tc, indent,
-                                                            bindings, keeps);
-                    });
+                compile_body_with_address_registers(tc, indent, bindings);
             });
     }
 
-    // the dry run of a 'noinline' call starts at this step
     auto compile_with_bindings(toc& tc, const size_t indent,
                                const destination& dst) const -> void {
 
@@ -1193,66 +1033,6 @@ class inline_call {
         }
 
         compile_with_address_choice(tc, indent, bindings);
-    }
-
-    // a new register because the index register may belong to an enclosing
-    // binding that is used after the call
-    auto compile_with_result_address_register(
-        toc& tc, const size_t indent, const destination& dst,
-        const bool keeps_displacement) const -> void {
-
-        machine& x{tc.machine()};
-
-        const operand address{
-            x.alloc_scratch_register(call_.tk, indent, tc.builtins().address()),
-        };
-
-        comment_result_address(tc, indent, dst);
-
-        const destination address_info{
-            dst.with_operand(load_indexed_address(
-                x, indent, address, dst.operand(), keeps_displacement)),
-        };
-
-        compile_with_bindings(tc, indent, address_info);
-
-        x.free_scratch_register(call_.tk, indent, address);
-    }
-
-    // the address register holds the address with or without the
-    // displacement, the first is shorter when the accesses exceed the load
-    // and store immediate range
-    auto emit_most_efficient_address(
-        toc& tc, const size_t indent,
-        const std::function_ref<void(bool keeps_displacement)> emit) const
-        -> void {
-
-        tc.emit_most_efficient(
-            call_.tk, indent, [&] -> void { emit(false); },
-            [&] -> void { emit(true); });
-    }
-
-    // a displacement kept in the operand saves adding it to the address, e.g.
-    // 'add t1, s0, t0' and '28(t1)' without 'addi t1, t1, 28', but offsets
-    // beyond the load and store immediate range then cost more per access
-    [[nodiscard]] auto load_indexed_address(machine& x, const size_t indent,
-                                            const operand& dst,
-                                            const operand& location,
-                                            const bool keeps_displacement) const
-        -> operand {
-
-        if (not keeps_displacement) {
-            x.address_of(call_.tk, indent, dst, location);
-            return operand::mem(dst, location.type_ref());
-        }
-
-        x.address_of(call_.tk, indent, dst,
-                     operand::mem(location.base_register(),
-                                  location.index_register(), location.scale(),
-                                  0, location.type_ref()));
-
-        return operand::mem(dst.register_name(), {}, 1, location.displacement(),
-                            location.type_ref());
     }
 
     // the bindings of the result and of the arguments of the inlined body
@@ -1534,22 +1314,12 @@ class inline_call {
 //      is copied and the unary ops applied after the call
 //   2. 'compile_with_arguments': the arguments agree with the parameters,
 //      checked by 'stmt_call::assert_argument_types' before ('assert_call'
-//      asserts it); the errors that depend on this call, e.g. shared
-//      storage, are found by a dry run of the body as an inlined call
-//      ('dry_run_body', see 'etc/docs/README.md' chapter 4)
+//      asserts it); shared storage is checked at the call, the body is
+//      compiled once per array lengths ('stmt_def_func::emit_noinline_body')
 //   3. the addresses are written to the callee frame ('populate_frame':
 //      'frame_slot_addresses', 'write_frame_slots' and the frame and stack
 //      checks) and the function is called
 class noinline_call {
-    // what the call kind reads of the result or of an argument
-    struct call_kind_item {
-        // the variable and the bytes of it, e.g. 'v' of the scope 2 and the
-        // field 'x' of 'v.x'
-        std::optional<storage_path> target;
-        bool holds_address{};
-        array_shape shape;
-    };
-
     // a slot of the callee frame and the address it holds
     struct addressed_slot {
         frame_slot slot;
@@ -1585,16 +1355,6 @@ class noinline_call {
     }
 
   private:
-    // the callee has written the result, the operators of the call follow
-    auto apply_unary_ops_to_destination(toc& tc, const size_t indent,
-                                        const destination& dst) const -> void {
-
-        machine& x{tc.machine()};
-
-        call_.uops.compile(x, indent, call_.tk, dst.operand(),
-                           call_.uops_check);
-    }
-
     auto comment_frame_slot(machine& x, const size_t indent,
                             const frame_slot& slot) const -> void {
 
@@ -1659,7 +1419,11 @@ class noinline_call {
             compile_with_arguments(tc, indent, dst, arguments);
         }
 
-        apply_unary_ops_to_destination(tc, indent, dst);
+        // the callee has written the result, the operators of the call follow
+        machine& x{tc.machine()};
+
+        call_.uops.compile(x, indent, call_.tk, dst.operand(),
+                           call_.uops_check);
     }
 
     auto
@@ -1668,7 +1432,6 @@ class noinline_call {
         -> void {
 
         assert_call(dst, *call_.func, arguments);
-        dry_run_body(tc, indent, dst, arguments);
 
         machine& x{tc.machine()};
 
@@ -1678,7 +1441,8 @@ class noinline_call {
 
         // a body is emitted for a function that is called, once for all calls
         // without array parameters
-        tc.add_noinline_body(*call_.func, array_lengths);
+        tc.add_noinline_body(*call_.func, array_lengths, call_.begin_tk,
+                             call_.source);
 
         // start the callee frame after the caller's storage, not on the stack
         // pointer, the layout of README 4.1
@@ -1693,67 +1457,6 @@ class noinline_call {
         // a register that holds a value of the caller is not lost
         x.call_function(call_.tk, indent, call_.func->body_label(array_lengths),
                         frame_address, register_address(slots));
-    }
-
-    // the body is compiled once for all callers, so the errors that depend on
-    // this call are found by compiling the body as an inline call and
-    // dropping the code
-    auto dry_run_body(toc& tc, const size_t indent, const destination& dst,
-                      const std::span<const noinline_arg> arguments) const
-        -> void {
-
-        const std::optional<std::string> kind{
-            call_kind(dst, *call_.func, arguments),
-        };
-
-        // note: what the body can reject depends only on which arguments are
-        //       the same variable, e.g. 'f(v, v, n)' but not 'f(v, w, n)',
-        //       on which are a global, since the body may name that global
-        //       too, e.g. 'f(v, g, n)', and on the bytes of each that are
-        //       passed, e.g. 'f(g.a)' and 'f(g.b)'; so 'f(v, w, n)' and
-        //       'f(x, y, z)' give the same result and are checked once
-        //
-        //       the call is added before its dry run, so the same kind of
-        //       call reached inside it, e.g. a recursive call, returns here;
-        //       the kinds are finitely many, so the nested dry runs end
-
-        if (not kind) {
-            return;
-        }
-
-        // e.g. 1 for a call in 'main'
-        const size_t level{tc.scopes().noinline_dry_run_level() + 1};
-
-        const std::optional<dry_run_height> checked_height{
-            tc.dry_runs().height_of(*kind),
-        };
-
-        const dry_run_height below{checked_height.value_or(dry_run_height{})};
-
-        // e.g. a chain of noinline calls nests a dry run in each; a checked
-        // call counts the levels and the scopes below it, so the verdict does
-        // not depend on which calls were checked first
-        call_limits::assert_noinline_level(call_.tk, level + below.levels);
-
-        call_limits::assert_scope_count(
-            tc, call_.tk, tc.scopes().count() + below.scopes, true);
-
-        // note: a call reached again inside its own dry run, e.g. 'f(a, b)'
-        //       calling 'f(b, a)' calling 'f(a, b)', finds the height 0 its
-        //       dry run has until it ends, so the height of a cycle depends on
-        //       where it was entered, by at most the number of its kinds;
-        //       a known limitation: near the limit the verdict of a chain
-        //       through a cycle depends on the order of the calls (docs 4.3)
-
-        if (checked_height) {
-            tc.reach_dry_run_level(level + below.levels);
-            return;
-        }
-
-        const inline_call dry_run{call_, plan_};
-
-        tc.dry_run_call_kind(*kind, level,
-                             [&] -> void { dry_run.dry_run(tc, indent, dst); });
     }
 
     // the address each slot of the callee holds: the destination for the
@@ -1904,101 +1607,6 @@ class noinline_call {
         }
     }
 
-    // what the checks of the body depend on: the callee, the bytes each
-    // argument passes (a global or which local, and the access path), the
-    // array lengths and whether each argument is a temporary or a variable.
-    // empty when an argument holds an address, e.g. a parameter of the
-    // enclosing noinline function, whose calls are checked with their own
-    // arguments
-    [[nodiscard]] static auto
-    call_kind(const destination& dst, const stmt_def_func& func,
-              const std::span<const noinline_arg> arguments)
-        -> std::optional<std::string> {
-
-        std::vector<call_kind_item> items;
-
-        // note: a destination that holds an address is resolved to it before,
-        //       and the result is not an array, see 'assert_call'
-
-        if (func.has_result()) {
-            items.push_back({
-                .target{dst.storage()},
-                .holds_address{},
-                .shape{},
-            });
-        }
-
-        for (const noinline_arg& argument : arguments) {
-            items.push_back({
-                .target{argument.target},
-                .holds_address{argument.info.holds_address()},
-                .shape{argument.info.shape()},
-            });
-        }
-
-        std::string kind{func.name()};
-        std::vector<root_variable> locals;
-
-        for (const call_kind_item& item : items) {
-            const std::optional<std::string> part{
-                call_kind_part(item, locals),
-            };
-
-            if (not part) {
-                return std::nullopt;
-            }
-
-            kind += *part;
-        }
-
-        // a temporary aliases no variable, a variable may be named by the body
-        for (const noinline_arg& argument : arguments) {
-            kind += argument.is_temporary() ? " temporary" : " variable";
-        }
-
-        return kind;
-    }
-
-    // what an argument adds to the call kind, e.g. ' local 0.8' or
-    // ' global g[?]', none for one that holds an address, which the call kind
-    // cannot tell; 'locals' are the variables met so far
-    [[nodiscard]] static auto call_kind_part(const call_kind_item& item,
-                                             std::vector<root_variable>& locals)
-        -> std::optional<std::string> {
-
-        if (item.holds_address) {
-            return std::nullopt;
-        }
-
-        std::string part;
-
-        // the body can reject an index by the length of its array
-        if (item.shape.is_array()) {
-            const std::optional<size_t> length{item.shape.length()};
-
-            // note: an unsized array without a call is a parameter of a
-            //       function checked as a noinline body, it holds an address
-
-            assert(length);
-
-            part += std::format(" array {}", *length);
-        }
-
-        // note: the result and the arguments are variables in memory
-        assert(item.target);
-
-        const storage_path& target{*item.target};
-
-        const std::string path{target.path.text()};
-
-        if (target.root.is_global()) {
-            return part + std::format(" global {}{}", target.root.name, path);
-        }
-
-        return part + std::format(" local {}{}",
-                                  local_index(locals, target.root), path);
-    }
-
     // the callee writes the result through its address at the type of the
     // result
     [[nodiscard]] static auto has_result_temporary(const destination& dst,
@@ -2008,21 +1616,6 @@ class noinline_call {
         return func.has_result() and
                (not dst.operand().is_memory() or
                 call_site::result_type_differs(dst, func));
-    }
-
-    // the index of 'root' among the locals met so far, added when it is new
-    [[nodiscard]] static auto local_index(std::vector<root_variable>& locals,
-                                          const root_variable& root) -> size_t {
-
-        for (size_t i{}; i < locals.size(); ++i) {
-            if (locals.at(i).is_same(root)) {
-                return i;
-            }
-        }
-
-        locals.push_back(root);
-
-        return locals.size() - 1;
     }
 
     // the address the callee finds in a register, none when no slot is in it
@@ -2082,6 +1675,15 @@ inline auto assert_call_in_func(const toc& tc, const token& call_tk) -> void {
             "a call runs only inside a function, not in the initializer of a "
             "global"};
     }
+}
+
+// a path as an argument, e.g. the receiver of a method or the array of
+// 'array_length'; the whitespace before it belongs to its first token
+[[nodiscard]] inline auto path_argument(stmt_identifier path) -> expr_any {
+    const token pos_tk{path.first_token().start_position()};
+
+    return {pos_tk,
+            expr_type{std::make_unique<stmt_identifier>(std::move(path))}};
 }
 
 // the arguments of a built-in that parses like a call, e.g. '(1, buf, 4)' of
@@ -2168,20 +1770,11 @@ class builtin_arguments {
 
   private:
     // an array or an element, checked where it is read like the arrays of
-    // 'bulk_operands'; the whitespace before the path belongs to its first
-    // token
+    // 'bulk_operands'
     auto add_array_argument(stmt_identifier array) -> void {
         array.assert_array_or_element();
 
-        const token& first_tk{array.first_token()};
-
-        const token pos_tk{
-            token::position(first_tk.file_index(), first_tk.start_index(),
-                            first_tk.at_line()),
-        };
-
-        args_.emplace_back(pos_tk, expr_type{std::make_unique<stmt_identifier>(
-                                       std::move(array))});
+        args_.push_back(path_argument(std::move(array)));
     }
 };
 
@@ -2481,17 +2074,7 @@ class stmt_call : public statement {
   private:
     // the receiver is the first argument
     auto add_receiver_argument(stmt_identifier receiver) -> void {
-        // the whitespace before the receiver belongs to its first token
-        const token& first_tk{receiver.first_token()};
-
-        const token receiver_pos_tk{
-            token::position(first_tk.file_index(), first_tk.start_index(),
-                            first_tk.at_line()),
-        };
-
-        args_.emplace_back(
-            receiver_pos_tk,
-            expr_type{std::make_unique<stmt_identifier>(std::move(receiver))});
+        args_.push_back(path_argument(std::move(receiver)));
     }
 
     // the type of each argument, one verdict for an inlined and a noinline
@@ -2609,21 +2192,13 @@ class stmt_call : public statement {
 
     // the callee writes a 'mut' parameter in place, so storage shared with
     // another argument could be read after it changed, unless both
-    // parameters are read-only. the result destination is only compared with
-    // '--checks=alias'. with it, a global that the callee uses counts as an
-    // argument, see 'body_uses'
+    // parameters are read-only; the result destination and a global that the
+    // callee uses count as arguments, see 'body_uses'
     auto assert_no_shared_storage(const toc& tc, const destination& dst) const
         -> void {
 
-        const bool is_result_checked{
-            tc.checks().alias and dst.is_storage(),
-        };
-
-        std::optional<storage_path> result;
-
-        if (is_result_checked) {
-            result = dst.storage();
-        }
+        // none for a destination without storage, e.g. a register
+        const std::optional<storage_path>& result{dst.storage()};
 
         std::vector<reference> references;
 
@@ -2644,9 +2219,7 @@ class stmt_call : public statement {
             // note: a variable has storage
             assert(target);
 
-            if (is_result_checked) {
-                assert_not_shared_with_result(i, *target, dst, result);
-            }
+            assert_not_shared_with_result(i, *target, dst, result);
 
             const bool is_read_only{callee().param(i).is_read_only()};
 
@@ -2660,9 +2233,8 @@ class stmt_call : public statement {
             });
         }
 
-        if (not tc.checks().alias) {
-            return;
-        }
+        // note: always, a body compiled once for all calls, a noinline one,
+        //       cannot see that a parameter names a global it also uses
 
         for (const body_uses::global_use& global : callee().uses().globals()) {
             assert_not_shared_with_global(global, references, dst, result);
@@ -2781,7 +2353,7 @@ class stmt_call : public statement {
         }
     }
 
-    // an argument that names the result destination, only for '--checks=alias'
+    // an argument that may share storage with the result destination
     auto assert_not_shared_with_result(
         const size_t index, const storage_path& target, const destination& dst,
         const std::optional<storage_path>& result) const -> void {
@@ -2982,7 +2554,10 @@ class stmt_call : public statement {
 
         const body_uses& callee_uses{callee().uses()};
 
-        tc.record_callee_globals(callee_uses);
+        for (const body_uses::global_use& u : callee_uses.globals()) {
+            tc.record_storage_use(u.storage, u.is_written ? use_kind::write
+                                                          : use_kind::read);
+        }
 
         const bool is_recursive{
             tc.scopes().current_func_scope().is_name(callee().name()),

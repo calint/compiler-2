@@ -503,7 +503,7 @@ class program final {
         // the compile knows the conditions it folded, e.g. with constant
         // arguments of an inlined call
         if (tc.is_reachable()) {
-            x.end_main();
+            x.exit(token{}, 1, operand::imm(0, tc.builtins().default_type()));
         }
     }
 
@@ -521,7 +521,13 @@ class program final {
                 tc.noinline_worklist().noinline_body_at(i),
             };
 
-            body.func->emit_noinline_body(tc, body.array_lengths);
+            // an error in the body reports the call that asked for it
+            try {
+                body.func->emit_noinline_body(tc, body.array_lengths);
+            } catch (compile_error& e) {
+                e.add_call_frame(body.call_tk, body.call_source);
+                throw;
+            }
         }
     }
 

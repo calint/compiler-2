@@ -1,0 +1,4 @@
+
+0942.baz:20:5: receiver 'entities[i]' may share storage with the global 'entities' that 'entity.set' uses, use a temporary variable for one of them
+    entities[i].set(j)
+    ^~~~~~~~

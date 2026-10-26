@@ -1,6 +1,5 @@
-# a chain of noinline calls nests the dry runs that check their arguments, a
-# chain deeper than the limit is an error, not a crash: the script compiles
-# generated chains
+# a long chain of noinline calls compiles, each body once: the script compiles
+# a generated chain
 func main() {
     exit(0)
 }

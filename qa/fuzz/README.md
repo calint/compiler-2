@@ -1,9 +1,8 @@
 # fuzzers
 
 Fuzzers of the compiler and of the programs it builds. Every fuzzer prints the
-first example of each finding and keeps it in `findings/` (ignored by git),
-except the alias fuzzers (`fuzz-alias.sh`, `fuzz-alias-long.sh`), which print a
-mismatch and stop. `fuzz-all.sh [scale] [seed]` runs them all.
+first example of each finding and keeps it in `findings/` (ignored by git).
+`fuzz-all.sh [scale] [seed]` runs them all.
 
 ## Undefined behavior of a baz program
 
@@ -39,7 +38,7 @@ operation.
 | `fuzz-options.py` | the command line: sizes, check lists, targets, odd files |
 | `fuzz-roome.py` | mutated sessions of `roome/src/main.baz` on both targets |
 | `fuzz-alias.sh` | the alias check against a brute force of the bytes |
-| `fuzz-ub.sh --mutants`, `fuzz-alias-long.sh` | the check of the checks, a longer alias run |
+| `fuzz-ub.sh --mutants` | the check of the checks |
 | `fuzz-reduce.py`, `fuzz-reduce-roome.py` | shrink a finding |
 
 `build-asan.sh` builds `build/baz-asan` (AddressSanitizer and

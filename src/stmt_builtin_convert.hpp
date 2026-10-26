@@ -45,13 +45,11 @@
 //                    its computation below
 //
 // where the argument is computed for a target 't' at most T wide,
-// 'plan_computation', the first row that matches:
+// 'plan_scratch_type', the first row that matches:
 //   1   a list narrower than T: at T, in 't' when it is as wide as T, else
 //       in a scratch register of T
 //   2   't' has the argument's type or the argument keeps its low bits, and
-//       no checked shift is narrowed: in 't' when it is a register or wider
-//       than the argument, else measured against a scratch register of the
-//       argument's type
+//       no checked shift is narrowed: in 't'
 //   3a  an argument at least as wide as T, or a single operand without unary
 //       ops: in a scratch register of the argument's type
 //   3b  a narrower single operand with unary ops, e.g. 'i16(-g())': as row 1
@@ -74,23 +72,8 @@ class stmt_builtin_convert final : public statement {
         after_widening,
     };
 
-    // where the argument is computed for a target at most as wide as the type
-    struct computation_plan {
-        enum class computed_in : uint8_t {
-            // the target, at its width
-            destination,
-            // a register of 'scratch_type', then copied into the target
-            scratch,
-            // the shorter of 'destination' and 'scratch'
-            measured,
-        };
-
-        computed_in where{computed_in::destination};
-        // null for 'destination'
-        const type* scratch_type{};
-    };
-
   public:
+    // where the argument is computed for a target at most as wide as the type
     stmt_builtin_convert(toc& tc, unary_ops uops, const token tk, tokenizer& tz)
         : statement{tk, std::move(uops)},
           argument_{parse_argument(tc, tz, tk)} {
@@ -278,38 +261,20 @@ class stmt_builtin_convert final : public statement {
 
         const machine::runtime_check uops_check{tc.overflow_options(target)};
 
-        const auto in_destination{
-            [&] -> void {
-                argument().compile(tc, indent, target.as_wrapping());
+        const type* const scratch_type{plan_scratch_type(tc, target)};
 
-                machine& x{tc.machine()};
+        if (scratch_type != nullptr) {
+            compile_in_scratch(tc, indent, target, uops, uops_check,
+                               *scratch_type);
 
-                uops.compile(x, indent, tok(), target.operand(), uops_check);
-            },
-        };
-
-        const computation_plan plan{plan_computation(tc, target)};
-
-        const auto in_scratch{
-            [&] -> void {
-                compile_in_scratch(tc, indent, target, uops, uops_check,
-                                   *plan.scratch_type);
-            },
-        };
-
-        if (plan.where == computation_plan::computed_in::destination) {
-            in_destination();
             return;
         }
 
-        if (plan.where == computation_plan::computed_in::scratch) {
-            in_scratch();
-            return;
-        }
+        argument().compile(tc, indent, target.as_wrapping());
 
-        // a load/store machine operates on the memory destination with a
-        // load and a store each time, a wide register needs one store
-        tc.emit_most_efficient(tok(), indent, in_destination, in_scratch);
+        machine& x{tc.machine()};
+
+        uops.compile(x, indent, tok(), target.operand(), uops_check);
     }
 
     // the argument is made in 'reg' at the width of the type, where its
@@ -428,25 +393,21 @@ class stmt_builtin_convert final : public statement {
 
     // the argument is computed at the width of the type
     [[nodiscard]] auto plan_at_type(const destination& target) const
-        -> computation_plan {
+        -> const type* {
 
         // e.g. the 'i16' of 'i8(i16(a * (a >> 1)))' is narrowed after it
         if (target.type_ref().size_bytes() < get_type().size_bytes()) {
-            return {
-                .where{computation_plan::computed_in::scratch},
-                .scratch_type{&get_type()},
-            };
+            return &get_type();
         }
 
-        return {
-            .where{computation_plan::computed_in::destination},
-            .scratch_type{},
-        };
+        return nullptr;
     }
 
-    [[nodiscard]] auto plan_computation(const toc& tc,
-                                        const destination& target) const
-        -> computation_plan {
+    // the type of the scratch register the argument is computed in, null
+    // when it is computed in the target
+    [[nodiscard]] auto plan_scratch_type(const toc& tc,
+                                         const destination& target) const
+        -> const type* {
 
         const size_t type_size_bytes{get_type().size_bytes()};
         const size_t target_size_bytes{target.type_ref().size_bytes()};
@@ -479,21 +440,7 @@ class stmt_builtin_convert final : public statement {
         if ((keeps_low_bits or target.type_ref().is_same(arg_type)) and
             not narrows_checked_shift) {
 
-            // a narrower argument wraps at the width of the target, a
-            // register of the argument's width would wrap earlier
-            if (target.is_register() or
-                arg_type.size_bytes() < target_size_bytes) {
-
-                return {
-                    .where{computation_plan::computed_in::destination},
-                    .scratch_type{},
-                };
-            }
-
-            return {
-                .where{computation_plan::computed_in::measured},
-                .scratch_type{&arg_type},
-            };
+            return nullptr;
         }
 
         // note: a narrower argument here is a single operand, the first
@@ -504,10 +451,7 @@ class stmt_builtin_convert final : public statement {
         if (arg_type.size_bytes() >= type_size_bytes or
             argument().single_operand().get_unary_ops().is_empty()) {
 
-            return {
-                .where{computation_plan::computed_in::scratch},
-                .scratch_type{&arg_type},
-            };
+            return &arg_type;
         }
 
         // the unary ops of a narrower single operand apply at the width of

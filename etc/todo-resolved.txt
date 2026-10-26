@@ -1,6 +1,14 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] medium: a cycle of noinline call kinds, e.g. 'f(a, b)' calling 'f(b,
+    a)', is measured from where it was entered ('dry_run_ledger'), so a chain
+    that reaches it near the limit of nested dry runs can be accepted or
+    rejected depending on which of its calls was checked first (README 4.3,
+    8.3); storing the height of a cycle only once the outermost dry run of
+    its call kinds ends would make the verdict independent of the order
+    => done (2026-10-26): round 21 A.7, the noinline dry run and its limits
+       are gone
 [x] medium: the check of a function body without its call ends at the first
     error that depends on a call, e.g. an inlined recursion 'r(n)' that no
     constant ends; the code after it is not checked, so 'g(3)' of round 20

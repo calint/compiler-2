@@ -1,5 +1,5 @@
-# 'alias' (on by default): a 'foo' element assigned from its own value, other arrays and
-# a separate variable is accepted
+# a 'foo' element assigned from its own value, other arrays and a separate
+# variable is accepted
 
 func main() {
     var arr = []{ i32(1), 2, 3, 4 }

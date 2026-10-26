@@ -1651,25 +1651,25 @@ SRC=0520 && EXP=255 && RUN_ERR
 # runtime multiply for many constants, operands and widths
 SRC=0521 && EXP=0 && RUN
 
-# 'alias' (on by default): an inline result may share storage with an argument
+# an inline result may share storage with an argument
 SRC=0522 && COMPERR
 
-# 'alias' (on by default): an instance result may share storage with another element
+# an instance result may share storage with another element
 SRC=0523 && COMPERR
 
-# 'alias' (on by default): a non-inline result may share storage with an argument
+# a non-inline result may share storage with an argument
 SRC=0524 && COMPERR
 
 # two by-reference arguments may share storage when one is 'mut'
 SRC=0525 && COMPERR
 
-# 'alias' (on by default): an inline parameter resolves to the global it aliases
+# an inline parameter resolves to the global it aliases
 SRC=0526 && COMPERR
 
-# 'alias' (on by default): a global passed to a non-inline function that also names it
+# a global passed to a non-inline function that also names it
 SRC=0527 && COMPERR
 
-# 'alias' (on by default): calls whose references cannot share storage are accepted
+# calls whose references cannot share storage are accepted
 SRC=0528 && EXP=0 && RUN
 
 # comments inside arithmetic expressions and call arguments
@@ -2030,8 +2030,8 @@ SRC=0632 && EXP=10 && RUN
 # leading whitespace of the next line is part of the string
 SRC=0633 && EXP=0 && RUN
 
-# 'alias' (on by default): arguments sharing storage are allowed when both parameters
-# are not 'mut', for inline and non-inline functions
+# arguments sharing storage are allowed when both parameters are not 'mut',
+# for inline and non-inline functions
 SRC=0634 && EXP=0 && RUN
 
 # a parameter without 'mut' cannot be assigned
@@ -2059,8 +2059,7 @@ SRC=0641 && COMPERR
 # a 'mut' parameter still conflicts with a read-only one
 SRC=0642 && COMPERR
 
-# 'alias' (on by default): a parameter without 'mut' may not share storage with the
-# result
+# a parameter without 'mut' may not share storage with the result
 SRC=0643 && COMPERR
 
 # 'mut' goes after the parameter name
@@ -2268,13 +2267,13 @@ SRC=0701 && EXP=255 && OPTS="--vars=0x10000 --checks=lower --reproduce-source" R
 SRC=0702 && EXP=0 && OPTS="--vars=0x10000 --checks=lower --reproduce-source" RUN_ERR
 
 # a global passed to a non-inline function that also names it shares storage
-SRC=0703 && OPTS="--vars=0x40000 --checks=upper,lower,line,-alias --reproduce-source" COMPERR
+SRC=0703 && OPTS="--vars=0x40000 --checks=upper,lower,line --reproduce-source" COMPERR
 
 # a constant passed to a mut parameter cannot be written
 SRC=0704 && COMPERR
 
 # an error in a method body names the method call
-SRC=0705 && OPTS="--vars=0x40000 --checks=upper,lower,line,-alias --reproduce-source" COMPERR
+SRC=0705 && OPTS="--vars=0x40000 --checks=upper,lower,line --reproduce-source" COMPERR
 
 # a constant element decides a boolean list passed to an inline function
 SRC=0706 && EXP=2 && RUN
@@ -2429,13 +2428,13 @@ SRC=0753 && EXP=5 && RUN
 SRC=0754 && EXP=21 && RUN
 
 # a global reaches a global named by a callee through two non-inline calls
-SRC=0755 && OPTS="--vars=0x40000 --checks=upper,lower,line,-alias --reproduce-source" COMPERR
+SRC=0755 && OPTS="--vars=0x40000 --checks=upper,lower,line --reproduce-source" COMPERR
 
 # a recursive non-inline call is checked once
 SRC=0756 && EXP=0 && RUN
 
 # an indexed argument may be the array element a non-inline body names
-SRC=0757 && OPTS="--vars=0x40000 --checks=upper,lower,line,-alias --reproduce-source" COMPERR
+SRC=0757 && OPTS="--vars=0x40000 --checks=upper,lower,line --reproduce-source" COMPERR
 
 # a type or array initializer without '{}' is the same as with an empty '{}'
 SRC=0758 && EXP=0 && RUN
@@ -2789,8 +2788,8 @@ SRC=0869 && COMPERR
 # an inlined recursion that does not end at compile time is rejected
 SRC=0870 && COMPERR
 
-# a result that aliases an argument compiles on every target
-SRC=0871 && EXP=0 && OPTS="--vars=0x40000 --checks=upper,lower,line,-alias" RUN
+# a result that may share storage with an argument is rejected on every target
+SRC=0871 && OPTS="--vars=0x40000 --checks=upper,lower,line" COMPERR
 
 # a delimiter where a definition should start is rejected
 SRC=0872 && COMPERR
@@ -2937,55 +2936,53 @@ SRC=0917 && EXP=0 && RUN
 # a string cannot span lines, the source is echoed in assembly comments
 SRC=0918 && COMPERR
 
-# 'alias' (on by default): a 'foo' element assigned a value that reads the array gets
-# the value computed before it is written
+# a 'foo' element assigned a value that reads the array gets the value
+# computed before it is written
 SRC=0919 && EXP=0 && RUN
 
-# 'alias' (on by default): a 'foo' element assigned from itself, another array and a
-# separate variable is accepted
+# a 'foo' element assigned from itself, another array and a separate variable
+# is accepted
 SRC=0920 && EXP=0 && RUN
 
-# 'alias' (on by default): a 'foo' element reading other fields of its variable and its
-# own field
+# a 'foo' element reading other fields of its variable and its own field
 SRC=0921 && EXP=0 && RUN
 
-# 'alias' (on by default): a result and an argument that are different fields are accepted
+# a result and an argument that are different fields are accepted
 SRC=0922 && EXP=0 && RUN
 
-# 'alias' (on by default): a result and an argument that are the same field conflict
+# a result and an argument that are the same field conflict
 SRC=0923 && COMPERR
 
-# 'alias' (on by default): a function that writes a 'mut' parameter and reads the data
-# that the argument names is rejected, inlined and noinline alike
+# a function that writes a 'mut' parameter and reads the data that the
+# argument names is rejected, inlined and noinline alike
 SRC=0924 && COMPERR
 SRC=0925 && COMPERR
 SRC=0926 && COMPERR
 SRC=0927 && COMPERR
 SRC=0928 && COMPERR
 
-# 'alias' (on by default): arguments that are other bytes than the data the function
-# reads are accepted
+# arguments that are other bytes than the data the function reads are
+# accepted
 SRC=0929 && EXP=0 && RUN
 SRC=0930 && EXP=0 && RUN
 SRC=0931 && EXP=0 && RUN
 
-# 'alias' (on by default): a call result written into data that the function reads is
-# rejected, inlined and noinline alike
+# a call result written into data that the function reads is rejected,
+# inlined and noinline alike
 SRC=0932 && COMPERR
 SRC=0933 && COMPERR
 
-# 'alias' (on by default): a run-time element written and read at the same field is
-# rejected
+# a run-time element written and read at the same field is rejected
 SRC=0934 && COMPERR
 
-# 'alias' (on by default): a run-time element written and read at different fields
+# a run-time element written and read at different fields
 SRC=0935 && EXP=0 && RUN
 
-# 'alias' (on by default): a destination set from its own whole value
+# a destination set from its own whole value
 SRC=0936 && EXP=0 && RUN
 
 # a noinline body that fits alone is called inside an expression that holds
-# registers, the dry run of the body at the call site must not run out of them
+# registers, the body has its own registers
 if [[ $MACHINE == x86_64 ]]; then SRC=0937 && EXP=15 && RUN; fi
 if [[ $MACHINE != x86_64 ]]; then SRC=0938 && EXP=31 && RUN; fi
 
@@ -2994,85 +2991,82 @@ if [[ $MACHINE != x86_64 ]]; then SRC=0938 && EXP=31 && RUN; fi
 if [[ $MACHINE == x86_64 ]]; then SRC=0939 && EXP=15 && RUN; fi
 if [[ $MACHINE != x86_64 ]]; then SRC=0940 && EXP=31 && RUN; fi
 
-# --checks=-alias: indexes that differ at run time are accepted, whatever the
-# order in the list
-SRC=0941 && EXP=0 && OPTS="--vars=0x40000 --checks=noub,-alias" RUN
-SRC=0941 && EXP=0 && OPTS="--vars=0x40000 --checks=-alias,alias" RUN
+# indexes that may be equal at run time may share storage
 SRC=0941 && COMPERR
 
-# 'alias' (on by default): arrays of different element sizes that overlap are assumed to
-# reach the same bytes
-SRC=0942 && EXP=0 && OPTS="--vars=0x40000 --checks=upper,lower,line,-alias --reproduce-source" RUN
+# arrays of different element sizes that overlap are assumed to reach the
+# same bytes
+SRC=0942 && OPTS="--vars=0x40000 --checks=upper,lower,line --reproduce-source" COMPERR
 
-# 'alias' (on by default): the aliasing is made inside the body of the function that
-# passes a parameter and a global that name the same data
-SRC=0943 && OPTS="--vars=0x40000 --checks=upper,lower,line,-alias --reproduce-source" COMPERR
+# the aliasing is made inside the body of the function that passes a
+# parameter and a global that name the same data
+SRC=0943 && OPTS="--vars=0x40000 --checks=upper,lower,line --reproduce-source" COMPERR
 
-# 'alias' (on by default): the same for non-inlined functions, the aliasing is made
-# inside the body of the function that passes a parameter and a global
-SRC=0944 && OPTS="--vars=0x40000 --checks=upper,lower,line,-alias --reproduce-source" COMPERR
+# the same for non-inlined functions, the aliasing is made inside the body of
+# the function that passes a parameter and a global
+SRC=0944 && OPTS="--vars=0x40000 --checks=upper,lower,line --reproduce-source" COMPERR
 
-# 'alias' (on by default): the element 'e' of a 'foo' is passed to a function that reads
-# the array, which can be the element itself
-SRC=0945 && EXP=0 && OPTS="--vars=0x40000 --checks=upper,lower,line,-alias --reproduce-source" RUN
+# the element 'e' of a 'foo' is passed to a function that reads the array,
+# which can be the element itself
+SRC=0945 && OPTS="--vars=0x40000 --checks=upper,lower,line --reproduce-source" COMPERR
 
-# 'alias' (on by default): the same for a non-inlined function
+# the same for a non-inlined function
 SRC=0946 && COMPERR
 
-# 'alias' (on by default): a call result is written into the element 'e' of a 'foo' and
-# the function reads the array, which can be the element itself
-SRC=0947 && EXP=0 && OPTS="--vars=0x40000 --checks=upper,lower,line,-alias --reproduce-source" RUN
+# a call result is written into the element 'e' of a 'foo' and the function
+# reads the array, which can be the element itself
+SRC=0947 && OPTS="--vars=0x40000 --checks=upper,lower,line --reproduce-source" COMPERR
 
-# 'alias' (on by default): the element 'e' of a 'foo' is passed to a function that reads
-# another array, which is accepted
+# the element 'e' of a 'foo' is passed to a function that reads another
+# array, which is accepted
 SRC=0948 && EXP=0 && RUN
 
-# 'alias' (on by default): the element 'e' of a 'foo' inside the element of another 'foo'
-# reads another field of the outer array, which is accepted
+# the element 'e' of a 'foo' inside the element of another 'foo' reads
+# another field of the outer array, which is accepted
 SRC=0949 && EXP=0 && RUN
 
-# 'alias' (on by default): the element 'e' of a 'foo' inside the element of another 'foo'
-# reads the same field of the outer array, which can be the element itself
+# the element 'e' of a 'foo' inside the element of another 'foo' reads the
+# same field of the outer array, which can be the element itself
 SRC=0950 && EXP=0 && RUN
 
-# 'alias' (on by default): three nested 'foo' read a field outside the arrays they
-# iterate, which is accepted
+# three nested 'foo' read a field outside the arrays they iterate, which is
+# accepted
 SRC=0951 && EXP=0 && RUN
 
-# 'alias' (on by default): three nested 'foo' read the array the second one iterates,
-# which can contain the element itself
+# three nested 'foo' read the array the second one iterates, which can
+# contain the element itself
 SRC=0952 && EXP=0 && RUN
 
-# 'alias' (on by default): three nested 'foo' read another field of the element of the
-# array the second one iterates, which is accepted
+# three nested 'foo' read another field of the element of the array the
+# second one iterates, which is accepted
 SRC=0953 && EXP=0 && RUN
 
-# 'alias' (on by default): the element 'e' of a 'foo' inside another 'foo' is assigned
-# from another field of the same inner array element, which is accepted
+# the element 'e' of a 'foo' inside another 'foo' is assigned from another
+# field of the same inner array element, which is accepted
 SRC=0954 && EXP=0 && RUN
 
-# 'alias' (on by default): two run-time indexes in a path, the read is of the same field
-# of an element that both indexes can select
-SRC=0955 && EXP=0 && OPTS="--vars=0x40000 --checks=upper,lower,line,-alias --reproduce-source" RUN
+# two run-time indexes in a path, the read is of the same field of an element
+# that both indexes can select
+SRC=0955 && OPTS="--vars=0x40000 --checks=upper,lower,line --reproduce-source" COMPERR
 
-# 'alias' (on by default): two run-time indexes in a path, the read is of another field
-# of the elements, which is accepted
+# two run-time indexes in a path, the read is of another field of the
+# elements, which is accepted
 SRC=0956 && EXP=0 && RUN
 
-# 'alias' (on by default): the destination has two run-time indexes and the read one, the
-# fields in the elements are different, which is accepted
+# the destination has two run-time indexes and the read one, the fields in
+# the elements are different, which is accepted
 SRC=0957 && EXP=0 && RUN
 
-# 'alias' (on by default): the destination has two run-time indexes and the read one, the
-# read is of the same field that the destination can select
-SRC=0958 && EXP=0 && OPTS="--vars=0x40000 --checks=upper,lower,line,-alias --reproduce-source" RUN
+# the destination has two run-time indexes and the read one, the read is of
+# the same field that the destination can select
+SRC=0958 && OPTS="--vars=0x40000 --checks=upper,lower,line --reproduce-source" COMPERR
 
-# 'alias' (on by default): the destination has one run-time index and the read two, the
-# fields in the elements are different, which is accepted
+# the destination has one run-time index and the read two, the fields in the
+# elements are different, which is accepted
 SRC=0959 && EXP=0 && RUN
 
-# 'alias' (on by default): the read has two run-time indexes and the destination one, the
-# fields in the elements are different, which is accepted
+# the read has two run-time indexes and the destination one, the fields in
+# the elements are different, which is accepted
 SRC=0960 && EXP=0 && RUN
 
 # disjoint elements forwarded through parameters do not share storage, which is
@@ -3082,12 +3076,12 @@ SRC=0961 && EXP=0 && RUN
 # the same element forwarded through parameters shares storage
 SRC=0962 && COMPERR
 
-# 'alias' (on by default): the element of a 'foo' over a constant element field and the
-# read of another field of an element at a run-time index, which is accepted
+# the element of a 'foo' over a constant element field and the read of
+# another field of an element at a run-time index, which is accepted
 SRC=0963 && EXP=0 && RUN
 
-# 'alias' (on by default): the element of a 'foo' over a constant element field and the
-# read of the same field of an element at a run-time index
+# the element of a 'foo' over a constant element field and the read of the
+# same field of an element at a run-time index
 SRC=0964 && EXP=0 && RUN
 
 # --checks=division: defined divisions pass
@@ -3680,9 +3674,8 @@ SRC=1144 && COMPERR
 # an included file of comments only is reproduced by '--reproduce-source'
 SRC=1145 && EXP=0 && RUN
 
-# '-noub' turns off every check that 'noub' turns on, here the aliasing check
-# that would reject the call
-SRC=1146 && EXP=3 && OPTS="--vars=0x40000 --checks=noub,-noub --reproduce-source" RUN
+# '-noub' does not turn off the rejection of storage that may be shared
+SRC=1146 && OPTS="--checks=noub,-noub" COMPERR
 
 # a constant count past the end of the buffer of 'write' is rejected
 SRC=1147 && COMPERR
@@ -3753,8 +3746,8 @@ SRC=1165 && COMPERR
 # parameter on its right is rejected like with a variable of that type
 SRC=1166 && COMPERR
 
-# the dry run of a call of a 'noinline' function has the registers of its
-# body, the variables base and the frame base are not handed out
+# the body of a 'noinline' function has its own registers, the variables base
+# and the frame base are not handed out
 SRC=1167 && COMPERR
 
 # a 'dat' in a block is rejected at the 'dat' before its initializer is
@@ -4021,9 +4014,8 @@ SRC=1238 && COMPERR
 # indexed element
 SRC=1239 && EXP=18 && RUN
 
-# a chain of noinline calls nests the dry runs that check their arguments, a
-# chain deeper than the limit is an error, not a crash: the script compiles
-# generated chains
+# a long chain of noinline calls compiles, each body once: the script compiles
+# a generated chain
 SRC=1240 && DIFFPY
 
 # a 'bool' result of a noinline call is not an integer, also when it is
@@ -4160,11 +4152,6 @@ SRC=1278 && EXP=1 && RUN
 # a noinline call's narrower result alone as the argument of an inlined
 # call widens into a temporary of the parameter, a name would be rejected
 SRC=1279 && EXP=1 && RUN
-
-# an inlined or a noinline call past the scope limit in the dry runs of a
-# chain of noinline calls is reported as the chain: the script compiles
-# generated chains
-SRC=1280 && DIFFPY
 
 # a call into an instance whose padding lies in the elements of an array
 # zeroes the whole instance before the call, the code stays small
@@ -4409,10 +4396,6 @@ SRC=1342 && EXP=0 && RUN
 # wider width than its type does not overflow
 SRC=1343 && EXP=0 && OPTS="--checks=overflow --reproduce-source" RUN_ERR
 
-# the limit of a chain of noinline calls does not depend on the order of the
-# calls: the script compiles a generated chain called in several orders
-SRC=1344 && DIFFPY
-
 # a noinline recursion that swaps a global and a local argument is checked for
 # both kinds of call and ends
 SRC=1345 && EXP=12 && RUN
@@ -4456,11 +4439,6 @@ SRC=1354 && OPTS="--checks=overflow" COMPERR
 # --checks=upper: a range whose start plus count passes the signed maximum is
 # out of bounds also without the lower bound check
 SRC=1355 && EXP=255 && OPTS="--checks=upper --reproduce-source" RUN_ERR
-
-# a noinline call checked once is rejected where its check would run out of
-# frames, whatever the order of the calls: the script compiles a generated
-# program with and without an earlier call at a shallow depth
-SRC=1356 && DIFFPY
 
 # an uncalled inlined function with a result and no parameters is checked
 # without the errors a call can avoid: its result is the destination of the
@@ -4603,17 +4581,18 @@ SRC=1400 && COMPERR
 
 # a part read under another name of the destination: a parameter, inline and
 # noinline, the element of a 'foo', and a local that hides the global
-SRC=1401 && OPTS="--vars=0x40000 --checks=upper,lower,line,-alias --reproduce-source" COMPERR
-SRC=1402 && OPTS="--vars=0x40000 --checks=upper,lower,line,-alias --reproduce-source" COMPERR
+SRC=1401 && OPTS="--vars=0x40000 --checks=upper,lower,line --reproduce-source" COMPERR
+SRC=1402 && OPTS="--vars=0x40000 --checks=upper,lower,line --reproduce-source" COMPERR
 SRC=1403 && COMPERR
 SRC=1404 && EXP=0 && RUN
 
 # a part read under another name of the destination: while it is computed,
-# inline and noinline, not written yet and already written
-SRC=1405 && EXP=0 && OPTS="--vars=0x40000 --checks=upper,lower,line,-alias --reproduce-source" RUN
-SRC=1406 && EXP=0 && OPTS="--vars=0x40000 --checks=upper,lower,line,-alias --reproduce-source" RUN
-SRC=1407 && EXP=0 && OPTS="--vars=0x40000 --checks=upper,lower,line,-alias --reproduce-source" RUN
-SRC=1408 && OPTS="--vars=0x40000 --checks=upper,lower,line,-alias --reproduce-source" COMPERR
+# inline and noinline, not written yet and already written, rejected as storage
+# that may be shared
+SRC=1405 && OPTS="--vars=0x40000 --checks=upper,lower,line --reproduce-source" COMPERR
+SRC=1406 && OPTS="--vars=0x40000 --checks=upper,lower,line --reproduce-source" COMPERR
+SRC=1407 && OPTS="--vars=0x40000 --checks=upper,lower,line --reproduce-source" COMPERR
+SRC=1408 && OPTS="--vars=0x40000 --checks=upper,lower,line --reproduce-source" COMPERR
 SRC=1409 && COMPERR
 SRC=1410 && COMPERR
 
@@ -4774,7 +4753,7 @@ SRC=1484 && COMPERR
 SRC=1485 && COMPERR
 SRC=1486 && COMPERR
 SRC=1487 && EXP=19 && RUN
-SRC=1488 && EXP=6 && OPTS="--vars=0x40000 --checks=-alias" RUN
+SRC=1488 && COMPERR
 SRC=1489 && COMPERR
 
 # '{}' is a whole value of a typed destination, not an operand

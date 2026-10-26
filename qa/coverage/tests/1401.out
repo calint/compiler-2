@@ -1,7 +1,4 @@
 
-1401.baz:11:13: 'p.x' is read but has been overwritten in the same statement
-    g = {1, p.x}
-            ^
-1401.baz:15:5: called from
+1401.baz:14:7: argument 1 'g' may share storage with the global 'g' that 'f' uses, use a temporary variable for one of them
     f(g)
-    ^
+      ^
