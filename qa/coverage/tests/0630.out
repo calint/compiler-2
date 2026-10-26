@@ -1,4 +1,4 @@
 
-0630.baz:5:9: expected constant, identifier, or function call
+0630.baz:5:9: expected a constant, a name or a call
 dat p = { 1, 2 }
         ^

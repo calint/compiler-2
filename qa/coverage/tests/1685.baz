@@ -1,0 +1,6 @@
+# a conversion without its argument is reported as its argument count
+
+func main() {
+    var x = int()
+    exit(x)
+}

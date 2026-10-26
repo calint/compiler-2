@@ -1,4 +1,4 @@
 
-0228.baz:2:1: expected constant, identifier, or function call
+0228.baz:2:1: expected a constant, a name or a call
 }
 ^

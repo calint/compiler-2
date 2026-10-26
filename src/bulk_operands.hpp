@@ -29,6 +29,9 @@
 // bounds of both once 'check' has run, which is at compile time because the
 // types are resolved then
 class bulk_operands final {
+    // the two arrays and the count
+    static constexpr size_t argument_count{3};
+
     token open_paren_tk_;
     stmt_identifier first_;
     token first_delim_tk_;
@@ -62,7 +65,9 @@ class bulk_operands final {
         machine::address_emitter second;
     };
 
-    bulk_operands(toc& tc, tokenizer& tz, const std::string_view first_role,
+    // 'name_tk' is the name of the built-in, e.g. 'array_copy'
+    bulk_operands(toc& tc, tokenizer& tz, const token& name_tk,
+                  const std::string_view first_role,
                   const std::string_view second_role, const second_use use)
         : open_paren_tk_{
               tz.expect_char_token(
@@ -70,22 +75,21 @@ class bulk_operands final {
                   std::format("expected '(', {}, {}, 'count', and ')'",
                               in_quotes(first_role), in_quotes(second_role))),
           },
-          first_{parse_array(tc, tz)},
+          first_{parse_array(tc, tz, name_tk)},
           first_delim_tk_{
-              tz.expect_char_token(
-                  ',', std::format("expected ',' followed by {} and 'count'",
-                                   in_quotes(second_role))),
+              expect_delimiter(
+                  tz, name_tk,
+                  std::format("expected ',' followed by {} and 'count'",
+                              in_quotes(second_role))),
           },
-          second_{parse_array(tc, tz)},
+          second_{parse_array(tc, tz, name_tk)},
           second_delim_tk_{
-              tz.expect_char_token(',', "expected ',' followed by 'count'"),
+              expect_delimiter(tz, name_tk, "expected ',' followed by 'count'"),
           },
           count_{tc, tz, tc.builtins().default_type(),
                  literal_typing::from_destination},
-          close_paren_tk_{
-              tz.expect_char_token(')', "expected ')' after the arguments"),
-          },
-          first_role_{first_role}, second_role_{second_role},
+          close_paren_tk_{expect_close(tz, name_tk)}, first_role_{first_role},
+          second_role_{second_role},
           is_second_written_{use == second_use::written} {}
 
     // the checks of the arguments in the order the statement reads: no
@@ -252,8 +256,35 @@ class bulk_operands final {
     // statics
     //
 
-    [[nodiscard]] static auto parse_array(toc& tc, tokenizer& tz)
+    // a ',' after the count is an argument too many
+    [[nodiscard]] static auto expect_close(tokenizer& tz, const token& name_tk)
+        -> token {
+
+        tz.assert_no_surplus_argument(name_tk.text(), argument_count);
+        return tz.expect_char_token(')', "expected ')' after the arguments");
+    }
+
+    // the ',' after an argument; a ')' before or after it is an argument
+    // missing, e.g. 'array_copy(a, b)'
+    [[nodiscard]] static auto expect_delimiter(tokenizer& tz,
+                                               const token& name_tk,
+                                               const std::string& message)
+        -> token {
+
+        tz.assert_no_missing_argument(name_tk.text(), argument_count);
+
+        const token delimiter_tk{tz.expect_char_token(',', message)};
+
+        tz.assert_no_missing_argument(name_tk.text(), argument_count);
+
+        return delimiter_tk;
+    }
+
+    [[nodiscard]] static auto parse_array(toc& tc, tokenizer& tz,
+                                          const token& name_tk)
         -> stmt_identifier {
+
+        tz.assert_no_missing_argument(name_tk.text(), argument_count);
 
         stmt_identifier array{stmt_identifier::parse_array_argument(tc, tz)};
 

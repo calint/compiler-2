@@ -1,4 +1,4 @@
 
-1471.baz:4:19: expected constructor name after '.'
+1471.baz:4:19: expected a constructor name after '.'
     var p = point.""(1)
                   ^~

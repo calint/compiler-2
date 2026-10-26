@@ -1,4 +1,4 @@
 
-1470.baz:3:11: expected method name after '.'
+1470.baz:3:11: expected a method name after '.'
 func list."" () {}
           ^~

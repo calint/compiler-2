@@ -24,7 +24,11 @@ class stmt_builtin_array_copy final : public statement {
 
   public:
     stmt_builtin_array_copy(toc& tc, const token src_loc_tk, tokenizer& tz)
-        : statement{src_loc_tk}, operands_{tc, tz, "source", "destination",
+        : statement{src_loc_tk}, operands_{tc,
+                                           tz,
+                                           src_loc_tk,
+                                           "source",
+                                           "destination",
                                            bulk_operands::second_use::written} {
 
         const stmt_identifier& dst{operands_.second()};

@@ -33,7 +33,7 @@ class stmt_builtin_array_length final : public statement {
               tz.expect_char_token('(',
                                    "expected '(' followed by an identifier"),
           },
-          stmt_ident_{stmt_identifier::parse_whole_array(tc, tz)},
+          stmt_ident_{read_argument(tc, tz, src_loc_tk)},
           close_paren_tk_{
               tz.expect_char_token(')', "expected ')' after the argument"),
           } {
@@ -126,5 +126,23 @@ class stmt_builtin_array_length final : public statement {
             .node{&stmt_ident_},
             .written_place{&stmt_ident_},
         });
+    }
+
+  private:
+    //
+    // statics
+    //
+
+    [[nodiscard]] static auto read_argument(toc& tc, tokenizer& tz,
+                                            const token& name_tk)
+        -> stmt_identifier {
+
+        tz.assert_no_missing_argument(name_tk.text(), 1);
+
+        stmt_identifier array{stmt_identifier::parse_whole_array(tc, tz)};
+
+        tz.assert_no_surplus_argument(name_tk.text(), 1);
+
+        return array;
     }
 };

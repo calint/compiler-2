@@ -1,4 +1,4 @@
 
-1469.baz:3:8: expected method name after '.'
+1469.baz:3:8: expected a method name after '.'
 func t.""() {}
        ^~

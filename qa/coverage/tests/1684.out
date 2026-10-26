@@ -1,0 +1,4 @@
+
+1684.baz:5:24: 'array_length' takes 1 argument
+    exit(array_length(a, 1))
+                       ^

@@ -22,9 +22,7 @@ class stmt_builtin_exit final : public statement {
         : statement{tk}, args_{tc, tz, std::nullopt} {
 
         if (args_.count() != 1) {
-            throw compile_error{tok(), std::format("{} takes {}",
-                                                   in_quotes(tok().text()),
-                                                   counted(1, "argument"))};
+            throw compile_error{tok(), argument_count_text(tok().text(), 1, 1)};
         }
     }
 

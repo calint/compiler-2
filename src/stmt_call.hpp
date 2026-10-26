@@ -2671,9 +2671,8 @@ class stmt_call : public statement {
             }
         }
 
-        throw compile_error{tz,
-                            std::format("{} takes {}", in_quotes(func_name_),
-                                        counted(param_count, "argument"))};
+        throw compile_error{
+            tz, argument_count_text(func_name_, param_count, param_count)};
     }
 
     // an argument that names the storage of an earlier one, unless both
@@ -2821,7 +2820,7 @@ class stmt_call : public statement {
 
         if (not name_tk.is_word()) {
             throw compile_error{tz.position_of(name_tk),
-                                "expected constructor name after '.'"};
+                                "expected a constructor name after '.'"};
         }
 
         if (not tc.is_func(func_name_)) {
@@ -2919,7 +2918,7 @@ class stmt_call : public statement {
 
         // e.g. 'f(a, b' lacks it
         close_paren_tk_ =
-            tz.expect_char_token(')', "expected ')' after arguments");
+            tz.expect_char_token(')', "expected ')' after the arguments");
 
         // e.g. the '.' of 'mk().y' or 'mk().sum()', a result has no storage
         // to read a field of or to call a method on

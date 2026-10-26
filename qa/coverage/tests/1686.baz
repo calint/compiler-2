@@ -1,0 +1,6 @@
+# a surplus argument of a conversion is reported as its argument count
+
+func main() {
+    var x = i8(1, 2)
+    exit(x)
+}

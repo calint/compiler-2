@@ -1,4 +1,4 @@
 
-1300.baz:6:9: expected ')' after arguments
+1300.baz:6:9: expected ')' after the arguments
     f(1 2)
         ^

@@ -92,7 +92,7 @@ class stmt_builtin_convert final : public statement {
 
   public:
     stmt_builtin_convert(toc& tc, unary_ops uops, const token tk, tokenizer& tz)
-        : statement{tk, std::move(uops)}, argument_{read_argument(tc, tz)} {
+        : statement{tk, std::move(uops)}, argument_{read_argument(tc, tz, tk)} {
 
         set_type(tc.get_type_or_throw(tk));
     }
@@ -528,12 +528,15 @@ class stmt_builtin_convert final : public statement {
     //
 
     // note: the parse takes a type name followed by '(' as a conversion
-    [[nodiscard]] static auto read_argument(toc& tc, tokenizer& tz)
+    [[nodiscard]] static auto read_argument(toc& tc, tokenizer& tz,
+                                            const token& type_tk)
         -> argument_part {
 
         const std::optional<token> open_paren_tk{tz.is_next_char_token('(')};
 
         assert(open_paren_tk);
+
+        tz.assert_no_missing_argument(type_tk.text(), 1);
 
         expr_arith arg{tc, tz};
 
@@ -548,6 +551,8 @@ class stmt_builtin_convert final : public statement {
         // e.g. the '>' of 'int(a > 2)', a 'bool' converts but a condition
         // is stored first
         expr_arith::assert_no_condition_next(tz);
+
+        tz.assert_no_surplus_argument(type_tk.text(), 1);
 
         const token close_paren_tk{
             tz.expect_char_token(')', "expected ')' after the argument"),

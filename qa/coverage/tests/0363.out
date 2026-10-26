@@ -1,4 +1,4 @@
 
-0363.baz:3:25: expected constant, identifier, or function call
+0363.baz:3:25: expected a constant, a name or a call
 func main() { var x = (()) }
                         ^

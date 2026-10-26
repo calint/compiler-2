@@ -24,8 +24,8 @@ class stmt_builtin_arrays_equal final : public statement {
     stmt_builtin_arrays_equal(toc& tc, unary_ops uops, const token src_loc_tk,
                               tokenizer& tz)
         : statement{src_loc_tk, std::move(uops)},
-          operands_{tc, tz, "first", "second",
-                    bulk_operands::second_use::read} {
+          operands_{tc,      tz,       src_loc_tk,
+                    "first", "second", bulk_operands::second_use::read} {
 
         set_type(tc.builtins().boolean());
     }

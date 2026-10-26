@@ -1,0 +1,4 @@
+
+1688.baz:5:24: a trailing ',' is not allowed in a call
+    exit(array_length(a,))
+                       ^

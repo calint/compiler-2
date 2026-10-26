@@ -209,6 +209,26 @@ class compile_error final : public std::exception {
     return std::format("{} {}{}", count, noun, count == 1 ? "" : "s");
 }
 
+// e.g. "'f' takes 1 argument", "'sector_read' takes 2 or 3 arguments" or
+// "'write' takes 2 to 4 arguments"
+[[nodiscard]] inline auto argument_count_text(const std::string_view name,
+                                              const size_t min_count,
+                                              const size_t max_count)
+    -> std::string {
+
+    if (min_count == max_count) {
+        return std::format("{} takes {}", in_quotes(name),
+                           counted(min_count, "argument"));
+    }
+
+    const std::string_view conjunction{
+        max_count == min_count + 1 ? "or" : "to",
+    };
+
+    return std::format("{} takes {} {} {} arguments", in_quotes(name),
+                       min_count, conjunction, max_count);
+}
+
 // a value of the type 'got' where the type 'expected' is needed
 [[noreturn]] inline auto throw_type_mismatch(const token& src_loc_tk,
                                              const std::string_view expected,

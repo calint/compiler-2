@@ -1,0 +1,9 @@
+# a surplus argument of 'arrays_equal' is reported as its argument count
+
+func main() {
+    var a = i8[4]
+    var b = i8[4]
+    if arrays_equal(a, b, 1, 2) {
+        exit(1)
+    }
+}

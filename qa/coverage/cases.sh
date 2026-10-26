@@ -5274,3 +5274,18 @@ SRC=1682 && COMPERR
 # an instance is not a condition, at the parse, so also in a branch that
 # folds away
 SRC=1683 && COMPERR
+
+# a surplus argument of 'array_length' is reported as its argument count
+SRC=1684 && COMPERR
+
+# a conversion without its argument is reported as its argument count
+SRC=1685 && COMPERR
+
+# a surplus argument of a conversion is reported as its argument count
+SRC=1686 && COMPERR
+
+# a surplus argument of 'arrays_equal' is reported as its argument count
+SRC=1687 && COMPERR
+
+# a trailing ',' after the argument of a built-in is the error of a call
+SRC=1688 && COMPERR

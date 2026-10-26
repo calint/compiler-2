@@ -1,4 +1,4 @@
 
-1527.baz:3:17: expected constant, identifier, or function call
+1527.baz:3:17: expected a constant, a name or a call
     var a = i8[-]{1, 2}
                 ^

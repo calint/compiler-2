@@ -1,0 +1,6 @@
+# a trailing ',' after the argument of a built-in is the error of a call
+
+func main() {
+    var a = i8[4]
+    exit(array_length(a,))
+}

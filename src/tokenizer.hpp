@@ -78,6 +78,38 @@ class tokenizer final {
         assert(char_ix_ <= src_.size());
     }
 
+    // the arguments of a built-in of a fixed count, e.g. 'array_length(a)':
+    // a ')' where an argument starts is a missing one, e.g. 'int()'
+    auto assert_no_missing_argument(const std::string_view name,
+                                    const size_t count) const -> void {
+
+        if (peek_char_after_whitespace() != ')') {
+            return;
+        }
+
+        throw compile_error{*this, argument_count_text(name, count, count)};
+    }
+
+    // a ',' where the last argument of a built-in of a fixed count ends is a
+    // surplus one, e.g. 'array_length(a, 1)', or a trailing ','
+    auto assert_no_surplus_argument(const std::string_view name,
+                                    const size_t count) const -> void {
+
+        if (peek_char_after_whitespace() != ',') {
+            return;
+        }
+
+        tokenizer probe{*this};
+
+        const std::optional<token> delimiter_tk{probe.is_next_char_token(',')};
+
+        assert(delimiter_tk);
+
+        probe.assert_no_trailing_delimiter(*delimiter_tk, ')', "a call");
+
+        throw compile_error{*this, argument_count_text(name, count, count)};
+    }
+
     // e.g. the last ',' of 'f(1, 2,)', 'close' ends the list; a braced list
     // may end with a ',', see the value literals and the type definitions
     auto assert_no_trailing_delimiter(const token& delimiter_tk,
@@ -305,7 +337,7 @@ class tokenizer final {
 
             if (not is_next_char_token('}')) {
                 if (is_eos()) {
-                    throw compile_error{*this, "expected '}' to end block"};
+                    throw compile_error{*this, "expected '}' to close block"};
                 }
 
                 skip_token();

@@ -93,6 +93,15 @@ struct func_head {
     // none until it is read, e.g. after 'list.add' of 'func list.add('
     std::optional<token> open_paren_tk;
 
+    // e.g. 'func f<T type> {' has no '(' after its name
+    auto assert_open_paren(const tokenizer& tz) const -> void {
+        if (open_paren_tk) {
+            return;
+        }
+
+        throw compile_error{tz, "expected '(' after function name"};
+    }
+
     // a constructor builds an instance of its receiver type, e.g. 'func
     // point.at(x, y) self'
     auto assert_receiver_for_self(const token& self_tk) const -> void {
@@ -177,7 +186,7 @@ struct func_head {
 
         if (not name_tk.is_word()) {
             throw compile_error{tz.position_of(name_tk),
-                                "expected method name after '.'"};
+                                "expected a method name after '.'"};
         }
 
         toc::assert_valid_name(name_tk);
@@ -1009,9 +1018,7 @@ class stmt_def_func final : public statement {
 
     // '(parameters) [result]', then the calls after it know the function
     auto parse_signature(toc& tc, tokenizer& tz) -> void {
-        if (not head_.open_paren_tk) {
-            throw compile_error{tz, "expected '(' after function name"};
-        }
+        head_.assert_open_paren(tz);
 
         parse_params(tc, tz);
 
@@ -1461,10 +1468,7 @@ class stmt_def_func_generic final : public statement {
         //       definition makes the instances of the types already defined,
         //       e.g. 'str.print'
 
-        // e.g. 'func f<T type> {'
-        if (not head.open_paren_tk) {
-            throw compile_error{tz, "expected '(' after function name"};
-        }
+        head.assert_open_paren(tz);
 
         const generic_signature signature{read_signature(tc, head, tz)};
 

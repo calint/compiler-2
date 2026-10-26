@@ -92,7 +92,24 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
           changed; test 1678 ('arr[h(i)] = i' is 6 on both targets)
     C. messages
        C.1. the argument count of a built-in reported one way (C2)
+       => C.1 done (2026-10-26): 'argument_count_text' (compile_error.hpp)
+          for user calls, 'exit' and io; the fixed counts ('array_length', a
+          conversion, 'array_copy', 'arrays_equal') report a ')' where an
+          argument starts or a ',' after the last one as the count
+          ('tokenizer::assert_no_missing_argument',
+          'assert_no_surplus_argument', the latter with the trailing ','
+          message of a call); tests 1684-1688, 0213's message; both suites,
+          the CLI tests, clang-tidy, the lints and fuzz-reject, constructs,
+          compiler, io clean
        C.2. a missing delimiter spelled by one helper (C3)
+       => C.2 done, reduced (2026-10-26): the texts of the same token
+          aligned ("'}' to close block", "')' after the arguments", "a field,
+          method, constructor name", "a constant, a name or a call"); the two
+          hand-made "'(' after function name" checks are
+          'func_head::assert_open_paren'; no lint added (54 distinct texts,
+          most in one context each); 19 expected outputs; both suites, the
+          CLI tests, clang-tidy, check-messages, fuzz-reject, constructs,
+          compiler clean
     D. names and small duplications
        D.1. 'read_' and 'parse_' prefixes by one rule, the getter
             'parse_constant' renamed (C6); 'written_place' and 'place' one

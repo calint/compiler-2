@@ -32,7 +32,7 @@ class stmt_def_type_field final : public statement {
         : statement{tk} {
 
         if (not tk.is_word()) {
-            throw compile_error{tk, "expected field name"};
+            throw compile_error{tk, "expected a field name"};
         }
 
         // e.g. 'tags[4]' and the 'x' of '{x, y}' have the default type

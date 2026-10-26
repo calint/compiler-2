@@ -425,8 +425,7 @@ inline auto parse_operand(toc& tc, tokenizer& tz, unary_ops uops,
     }
 
     if (tk.is_none()) {
-        throw compile_error{tk,
-                            "expected constant, identifier, or function call"};
+        throw compile_error{tk, "expected a constant, a name or a call"};
     }
 
     // e.g. the 'not b' of 'int(not b)' or of 'a == not b'
