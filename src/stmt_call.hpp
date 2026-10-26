@@ -809,8 +809,14 @@ class inline_call {
             return;
         }
 
+        // a result the body passes to a 'mut' parameter needs storage, a
+        // register destination gets it through a temporary of the call
+        const bool has_result_temporary{
+            dst.is_register() and call_.func->uses().is_result_passed_as_mut(),
+        };
+
         call_site::in_temporaries_block(
-            tc, plan_.has_temporaries(), [&] -> void {
+            tc, plan_.has_temporaries() or has_result_temporary, [&] -> void {
                 for (size_t i{}; i < plan_.arguments.size(); ++i) {
                     if (plan_.arguments.at(i).is_temporary) {
                         std::ignore =
@@ -818,7 +824,28 @@ class inline_call {
                     }
                 }
 
-                compile_with_bindings(tc, indent, dst);
+                if (not has_result_temporary) {
+                    compile_with_bindings(tc, indent, dst);
+                    return;
+                }
+
+                const std::string name{call_.temporary_result_name()};
+
+                const ident_info result_info{
+                    call_.add_temporary(tc, indent, name,
+                                        call_.func->result_type()),
+                };
+
+                compile_with_bindings(
+                    tc, indent,
+                    destination::of_name(
+                        result_info, name,
+                        call_site::temporary_storage(tc, name)));
+
+                machine& x{tc.machine()};
+
+                x.copy_value(call_.tk, indent, dst.operand(),
+                             result_info.operand());
             });
     }
 
@@ -2543,6 +2570,15 @@ class stmt_call : public statement {
             const stmt_identifier& ident{*passed->ident};
 
             const std::string_view root{ident.first_token().text()};
+
+            // note: a 'mut' argument needs storage, the result of an inlined
+            //       call may be bound to a register
+
+            if (not callee().param(i).is_read_only() and
+                tc.scopes().names_result(root)) {
+
+                tc.record_result_passed_as_mut();
+            }
 
             if (is_recursive) {
                 tc.record_use(root, ident.accessed_path(),

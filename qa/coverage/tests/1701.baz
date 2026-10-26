@@ -1,0 +1,15 @@
+# the same with the result read after the call that writes it
+
+func noinline inc(x mut) res {
+    x = x + 10
+    res = 1
+}
+
+func f() res {
+    res = 1
+    res = inc(res) + res
+}
+
+func main() {
+    exit(f())
+}

@@ -1,0 +1,15 @@
+# a result held in a register that the body passes to a 'mut' parameter of
+# a noinline function keeps the write: it is compiled through a temporary
+
+func noinline bump(x mut) {
+    x = x + 10
+}
+
+func f() res {
+    res = 1
+    bump(res)
+}
+
+func main() {
+    exit(f())
+}

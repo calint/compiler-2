@@ -1,0 +1,7 @@
+
+1702.baz:11:11: 'res' may be written by the call of 'inc' in a later operand, use a temporary variable
+    res = res + inc(res)
+          ^~~
+1702.baz:15:10: called from 'f()'
+    exit(f())
+         ^

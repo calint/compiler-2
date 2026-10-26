@@ -118,9 +118,11 @@
   its arithmetic depends on the target.
 - Standing goal, never finished: the compiler as simple as possible. Remove
   what a guarantee does not need; where a work-around handles an exception,
-  try to remove the exception instead (decided 2026-10-26). In the
-  simplification stage a simpler compiler wins over shorter generated code:
-  measure and report the growth, do not revert for it.
+  try to remove the exception instead (decided 2026-10-26). Simplify the code
+  that implements a feature, never remove the feature: options, reports and
+  optimizations stay, e.g. the jump optimizer, '--nopt', '--report' and the
+  versions. A simpler implementation may make the generated code somewhat
+  longer: measure and report the growth, do not revert for it.
 - Current focus: refactor until the design is clean before looking for bugs
   again; a bug that a refactor removes is fixed by the refactor.
 - Baz evaluates left to right: the operands, arguments and parts of a

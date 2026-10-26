@@ -6,6 +6,68 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
 --------------------------------------------------------------------------------
 1. clean up
 --------------------------------------------------------------------------------
+[ ] hard: design review round 22, simplification (2026-10-26, user: go on
+    simplifying, generated code may grow; six reviewers P parse and
+    expressions, S statements and calls, N names and 'toc', U no-UB checks,
+    B backends, W docs, options and qa; findings in the session scratchpad
+    r22; spot-checked: the U bug (q6 exits 1 noinline, 11 inlined; q1 aborts
+    the compiler)); each step one commit, listings compared, growth of the
+    generated code measured and reported
+    A. bug first: a result of an inlined call held in a register is passed
+       to a 'mut' parameter; a noinline callee's write is lost (the result
+       depends on inlining) and 'res + inc(res)' aborts at the
+       'assert(target)' of 'stmt_call::visit_call_effects'; design: a
+       result that the body passes to a 'mut' parameter is bound to memory
+       (a temporary of the call), so a 'mut' argument always has storage as
+       the note says; tests q1, q3/q4, q6/q7/q8 on both targets
+    => A done (2026-10-26): the parse marks a body that passes its result
+       to a 'mut' parameter ('body_uses::is_result_passed_as_mut'), an
+       inlined call of it with a register destination makes the result in a
+       temporary of the call and copies it; the lost write and the abort are
+       gone, 'res + inc(res)' is rejected like a variable; tests 1700-1702;
+       listings of every other test equal
+    B. pure refactors, no output change (about -540 lines)
+       B.1. N2 dead code: 'destination::error_token', 'is_storage',
+            'with_operand', 'access_path::text', then the source token of
+            'destination' and 'ident_info' (-60)
+       B.2. P B 'classify_term' returns a 'term_kind', the 'term' struct
+            goes (-70); P C one loop decodes a string (-30); P E one path
+            for a memory comparison (-25); P F leftovers (-35)
+       B.3. S: a call's unary ops applied once after the call (-28), the
+            per-argument plan derived again (the dry run it served is gone,
+            -15), 'noinline_arg::target' (-5), leftovers (-17)
+       B.4. U3 'assigned_bytes' one flag per byte (-59); U4 the
+            'storage_read' adapter goes for 'stmt_identifier::may_reach'
+            (-38); U6 (-14), U7 (-9), U8 comments said twice (-13)
+       B.5. W6 the 'target' enum from 'target_names' (-25); W7 the
+            clang-tidy annotations as a commented YAML list (-27); W5 the
+            20 fixed 'Rejected' programs of 'constructs.py' that cases and
+            'fuzz-reject' cover (-80); W4 README repeats and the stale
+            "about 50 s" of 7.5 (-45); N4 two comments moved
+    C. refactors that rest on an argument or accept more (about -230)
+       C.1. N1 a parameter or the result is a root of its own:
+            'resolved_name' and the binding branch of 'resolve_storage' go
+            (-45); holds because 'assert_no_shared_storage' runs before
+            every call; a nested-call message may name 'p' for 'a'
+       C.2. U1 one mapping of the callee's record for the effects and the
+            caller's record (-34); S the result as reference 0 of the
+            shared-storage check (-22)
+       C.3. U2 the shared-storage check as one pairwise rule over what the
+            call reaches (-70, accepts more: two read-only paths, no test
+            verdict changed in the reviewer's build; fuzz-effects model)
+       C.4. P D the comparison width rule written once (-25); N3 the array
+            shape kept once in 'destination' (check the array field case
+            first, -6); U5 one overwrite message (-32, 11 messages change)
+    D. dropped (user, 2026-10-26: simplify the code of a feature, never
+       remove the feature): the versions (B1), the padding gap walk (B2),
+       rv32i constant bytes (B3) and shared-base copy (B4), the receiver
+       slot (S), '-x' and 'foo' counter and constant 'array_copy' paths (S),
+       '--reproduce-source' (W2), and the asks (jump optimizer, '--report',
+       'upper'/'lower', '--checks=line', the rv32i multiply) stay as
+       features; P A (a conversion computed at W) only if no generated code
+       grows, since it replaces a code-size plan; a simpler implementation
+       of any of these that keeps its output is welcome
+    order: A, B, C, then P A; a pause for a commit after each step
 [ ] hard: design review round 21, simplification (2026-10-26, user: refactor
     to simplify; six reviewers P parse and expressions, S statements and
     calls, N names and 'toc', U no-UB checks, B backends, W docs and qa;

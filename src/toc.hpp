@@ -120,6 +120,9 @@ class body_uses final {
     // in the order of first use, one per path
     std::vector<global_use> globals_;
     std::vector<binding_use> bindings_;
+    // the result is passed to a 'mut' parameter, so an inlined call keeps it
+    // in memory, see 'inline_call::compile'
+    bool is_result_passed_as_mut_{};
 
   public:
     auto add_binding(const std::optional<size_t> param_index,
@@ -163,6 +166,14 @@ class body_uses final {
 
     [[nodiscard]] auto globals() const -> std::span<const global_use> {
         return globals_;
+    }
+
+    [[nodiscard]] auto is_result_passed_as_mut() const -> bool {
+        return is_result_passed_as_mut_;
+    }
+
+    auto mark_result_passed_as_mut() -> void {
+        is_result_passed_as_mut_ = true;
     }
 };
 
@@ -1351,6 +1362,11 @@ class scope_stack final {
     auto record_global(const std::string_view name) -> void {
         global_definitions_.try_emplace(std::string{name},
                                         order_.get().current());
+    }
+
+    // the body being parsed passes its result to a 'mut' parameter
+    auto record_result_passed_as_mut() -> void {
+        func_scope().body_uses_ref().mark_result_passed_as_mut();
     }
 
     // a 'return' of the innermost function is compiled, see
@@ -3357,6 +3373,13 @@ class toc final {
 
         scopes_.record_break();
         scopes_.set_reachable(false);
+    }
+
+    // see 'body_uses::is_result_passed_as_mut'
+    auto record_result_passed_as_mut() -> void {
+        assert(not is_compiling_);
+
+        scopes_.record_result_passed_as_mut();
     }
 
     // a 'return' leaves the code after it unreached and reaches the end of an

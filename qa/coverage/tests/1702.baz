@@ -1,0 +1,16 @@
+# a result read before a later call writes it through a 'mut' parameter is
+# rejected like a variable
+
+func inc(x mut) res {
+    x = x + 10
+    res = 1
+}
+
+func f() res {
+    res = 1
+    res = res + inc(res)
+}
+
+func main() {
+    exit(f())
+}

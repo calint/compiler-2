@@ -212,7 +212,9 @@ the 'g()' of 'w + g()': an inlined result is made in a register of its type and
 copied ('inline_call::compile_widened'); a call is an argument by its value, so
 it widens into a parameter where a name, bound to the parameter, must have its
 type. 'stmt_call::compile' checks the result before the inlined and the noinline
-paths split, so both accept the same.
+paths split, so both accept the same. A result that the body passes to a 'mut'
+parameter is made in a temporary of the call when the destination is a register,
+so a 'mut' argument always has storage ('body_uses::is_result_passed_as_mut').
 
 A noinline function has a body of its own and a frame in memory that holds the
 addresses of its result and arguments (4.1).

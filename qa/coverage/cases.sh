@@ -5390,3 +5390,10 @@ SRC=1696 && COMPERR
 SRC=1697 && COMPERR
 SRC=1698 && COMPERR
 SRC=1699 && COMPERR
+
+# a result of an inlined call that its body passes to a 'mut' parameter has
+# storage, also when the destination is a register: the write of a noinline
+# callee is kept, and the order check sees it like that of a variable
+SRC=1700 && EXP=11 && RUN
+SRC=1701 && EXP=12 && RUN
+SRC=1702 && COMPERR
