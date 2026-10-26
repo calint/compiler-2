@@ -111,6 +111,11 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
        come from it or the register, 'type_ptr_' and 'shape_' go; a field
        now has its own shape (no listing changed); src +13 lines, -3
        members; listings and errors equal
+    => C.4 U5 done (2026-10-26): the written parts are storage paths, the
+       certain overwrite is the one without a run-time index on either side;
+       'written_part' and 'is_certain_overwrite' (the binding-name case) go
+       (-25 lines); since C.1 a parameter is a root of its own, so no
+       message changed; listings and errors equal
     D. dropped (user, 2026-10-26: simplify the code of a feature, never
        remove the feature): the versions (B1), the padding gap walk (B2),
        rv32i constant bytes (B3) and shared-base copy (B4), the receiver

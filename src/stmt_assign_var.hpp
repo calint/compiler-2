@@ -32,13 +32,6 @@ class stmt_assign_var final : public statement {
     expr_any expr_;
     token equals_tk_;
 
-    // a part of the value: its storage and its path under the destination's
-    // name
-    struct written_part {
-        storage_path storage;
-        access_path path;
-    };
-
   public:
     stmt_assign_var(toc& tc, tokenizer& tz, stmt_identifier ident,
                     const token equals_tk)
@@ -143,59 +136,6 @@ class stmt_assign_var final : public statement {
     [[nodiscard]] auto expression() const -> const expr_any& { return expr_; }
 
   private:
-    // 'item' reads none of the 'written' parts, under any name, nor does a call
-    // in it read or write one
-    auto assert_no_read_of_written_part(
-        const toc& tc, const statement& item,
-        const std::span<const written_part> written) const -> void {
-
-        item.visit_reads([&](const stmt_identifier& read) -> void {
-            // a constant or a value in a register reaches no storage
-            const std::optional<storage_path> reached{read.storage(tc)};
-
-            if (not reached) {
-                return;
-            }
-
-            for (const written_part& place : written) {
-                if (not reached->may_overlap(place.storage)) {
-                    continue;
-                }
-
-                if (is_certain_overwrite(read, *reached, place)) {
-                    throw compile_error{
-                        read.first_token(),
-                        std::format("{} is read but has been overwritten in "
-                                    "the same statement",
-                                    in_quotes(read.path_text()))};
-                }
-
-                throw compile_error{
-                    read.first_token(),
-                    std::format("{} may have been overwritten in the same "
-                                "statement",
-                                in_quotes(read.path_text()))};
-            }
-        });
-
-        // e.g. 'gr()' of 'g = {1, gr()}' with 'gr' reading 'g.x'
-        item.visit_call_effects(tc, [&](const call_effect& effect) -> void {
-            for (const written_part& place : written) {
-                if (not effect.storage.may_overlap(place.storage)) {
-                    continue;
-                }
-
-                throw compile_error{
-                    effect.call_tk,
-                    std::format("the call of {} reaches {}, which has been "
-                                "written in the same statement, use a "
-                                "temporary variable",
-                                in_quotes(effect.call_tk),
-                                in_quotes(effect.name))};
-            }
-        });
-    }
-
     // the value is written part by part, so a part must not read what is
     // already written, e.g. the 'p.x' of 'p = {p.y, p.x}'; 'unsized_count'
     // is the size of an unsized array destination
@@ -214,7 +154,7 @@ class stmt_assign_var final : public statement {
         expr_.plan_writes(tc, part_location{}, unsized_count, plan);
 
         // the parts written by the steps before the current one
-        std::vector<written_part> written;
+        std::vector<storage_path> written;
 
         for (const write_step& step : plan) {
             if (const value_write* const value{
@@ -226,39 +166,75 @@ class stmt_assign_var final : public statement {
 
             for (const access_path& part : step.covered) {
                 written.push_back({
-                    .storage{
-                        .root{dst->root},
-                        .path{dst->path.extended_by(part)},
-                    },
-                    .path{stmt_ident_.accessed_path().extended_by(part)},
+                    .root{dst->root},
+                    .path{dst->path.extended_by(part)},
                 });
             }
         }
     }
 
-    // the read is of the written bytes, not only maybe: no run-time index
-    // on either side, or none under the destination's name, which reaches
-    // the bytes through the same binding, e.g. 'p.x' of 'p = {1, p.x}' with
-    // 'p' bound to 'ps[i]'
-    [[nodiscard]] auto is_certain_overwrite(const stmt_identifier& read,
-                                            const storage_path& reached,
-                                            const written_part& place) const
-        -> bool {
-
-        if (not reached.path.has_run_time_index() and
-            not place.storage.path.has_run_time_index()) {
-
-            return true;
-        }
-
-        return read.first_token().text() == stmt_ident_.first_token().text() and
-               not read.accessed_path().has_run_time_index() and
-               not place.path.has_run_time_index();
-    }
-
     //
     // statics
     //
+
+    // 'item' reads none of the 'written' parts, under any name, nor does a call
+    // in it read or write one
+    static auto
+    assert_no_read_of_written_part(const toc& tc, const statement& item,
+                                   const std::span<const storage_path> written)
+        -> void {
+
+        item.visit_reads([&](const stmt_identifier& read) -> void {
+            // a constant or a value in a register reaches no storage
+            const std::optional<storage_path> reached{read.storage(tc)};
+
+            if (not reached) {
+                return;
+            }
+
+            for (const storage_path& place : written) {
+                if (not reached->may_overlap(place)) {
+                    continue;
+                }
+
+                // note: without a run-time index on either side the read is
+                //       of the written bytes, not only maybe
+
+                if (not reached->path.has_run_time_index() and
+                    not place.path.has_run_time_index()) {
+
+                    throw compile_error{
+                        read.first_token(),
+                        std::format("{} is read but has been overwritten in "
+                                    "the same statement",
+                                    in_quotes(read.path_text()))};
+                }
+
+                throw compile_error{
+                    read.first_token(),
+                    std::format("{} may have been overwritten in the same "
+                                "statement",
+                                in_quotes(read.path_text()))};
+            }
+        });
+
+        // e.g. 'gr()' of 'g = {1, gr()}' with 'gr' reading 'g.x'
+        item.visit_call_effects(tc, [&](const call_effect& effect) -> void {
+            for (const storage_path& place : written) {
+                if (not effect.storage.may_overlap(place)) {
+                    continue;
+                }
+
+                throw compile_error{
+                    effect.call_tk,
+                    std::format("the call of {} reaches {}, which has been "
+                                "written in the same statement, use a "
+                                "temporary variable",
+                                in_quotes(effect.call_tk),
+                                in_quotes(effect.name))};
+            }
+        });
+    }
 
     // the write is recorded before the value parses; the value is parsed as
     // the type of the destination, which gives the type of a literal, e.g.
