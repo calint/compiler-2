@@ -47,12 +47,6 @@ class stmt_builtin_arrays_equal final : public statement {
 
         assert(dst.type_ref().is_bool());
 
-        compile_arrays_equal(tc, indent, dst.operand(), false);
-    }
-
-    auto compile_arrays_equal(toc& tc, const size_t indent, const operand& dst,
-                              const bool inverted) const -> void override {
-
         machine& x{tc.machine()};
 
         x.comment(tok(), indent, statement::trimmed_source(*this));
@@ -61,9 +55,8 @@ class stmt_builtin_arrays_equal final : public statement {
 
         // no elements are compared, the ranges are equal
         if (operands_.is_constant_empty(tc)) {
-            x.copy_value(
-                tok(), indent, dst,
-                operand::imm(inverted ? 0 : 1, tc.builtins().boolean()));
+            x.copy_value(tok(), indent, dst.operand(),
+                         operand::imm(1, tc.builtins().boolean()));
 
             return;
         }
@@ -78,13 +71,9 @@ class stmt_builtin_arrays_equal final : public statement {
                              .alignment{arrays.first.type_ref().alignment()},
                              .lhs{emit.first},
                              .rhs{emit.second},
-                             .dst{dst},
-                             .inverted{inverted},
+                             .dst{dst.operand()},
+                             .inverted{},
                          });
-    }
-
-    [[nodiscard]] auto is_arrays_equal_call() const -> bool override {
-        return true;
     }
 
     auto visit_operands(const operand_visitor visitor) const -> void override {

@@ -614,14 +614,6 @@ class expr_arith final : public statement {
         }
     }
 
-    auto compile_arrays_equal(toc& tc, const size_t indent, const operand& dst,
-                              const bool inverted) const -> void override {
-
-        assert(is_arrays_equal_call());
-
-        exprs_.front()->compile_arrays_equal(tc, indent, dst, inverted);
-    }
-
     // an element wraps at the width as its register holds it; the first
     // element gives the list its type, e.g. 'i16(300) + 1' is typed
     [[nodiscard]] auto fold(const toc& tc, const value_use& use) const
@@ -681,11 +673,6 @@ class expr_arith final : public statement {
             .value{constant_arith::wrap_to_width(result, width_type)},
             .own_type{first->own_type},
         };
-    }
-
-    [[nodiscard]] auto is_arrays_equal_call() const -> bool override {
-        return list_uops_.is_empty() and exprs_.size() == 1 and
-               exprs_.front()->is_arrays_equal_call();
     }
 
     // '/', '%' and '>>' read the high bits of their operands. narrowed, a

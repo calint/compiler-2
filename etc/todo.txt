@@ -205,13 +205,22 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
        2. S2 (-50, low confidence): the result address of an inlined call
           as one more indexed binding; changes code; recommended: try and
           measure, keep only if no listing grows
+          => S2 done by A.8 (2026-10-26): the second address choice of the
+             result went with the version sites 4 and 7
        3. W6 (-50): the two 'statement' virtuals of the 'arrays_equal'
           shorthand; changes code; recommended: as 2
+          => W6 done (2026-10-26, user: code may grow in the simplification
+             stage): 'arrays_equal' is a 'bool' value like any other, the
+             two virtuals, their forwarders and the shorthand branch go;
+             src -56 lines; instruction lines x86 76141 -> 76307, rv32i
+             100563 -> 100643, 46 listings change
        4. W7 (-200, low confidence): a 'dat' initializer through the write
           plan; changes listings; recommended: as 2, after B
+          => W7 skipped (2026-10-26, user): the dat walk stays
        5. W9: 'test-coverage-full.sh' (kept in round 20 as a convenience)
           and 'cppcheck.sh' (in no lint step); recommended: keep the first,
           remove the second if you do not run it
+          => W9 decided (2026-10-26, user): both stay
        6. U6 (-7, unprobed), N4 (messages print the path without indexes):
           recommended: no
     order: A, B.1, B.2-B.7, C, then the asks

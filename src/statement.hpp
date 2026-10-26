@@ -248,9 +248,6 @@ class stmt_identifier;
 //                  'stmt_call' and the built-ins, forwarded by 'expr_arith'
 //                  and 'expr_any'; 'keeps_low_bits': 'stmt_identifier' and
 //                  'stmt_builtin_convert', forwarded by 'expr_arith'
-//   a condition    'is_arrays_equal_call' and 'compile_arrays_equal':
-//                  'stmt_builtin_arrays_equal', forwarded by 'expr_arith',
-//                  so 'expr_bool' needs not include the built-in
 //   a place        'operand_path': 'stmt_identifier', forwarded by
 //                  'expr_arith', 'expr_any' and 'expr_type' when they hold
 //                  one; 'bare_path' and 'as_place' derive from it, the
@@ -291,17 +288,6 @@ class statement {
         std::unreachable();
     }
 
-    // the result of a call to 'arrays_equal' stored in 'dst', negated when
-    // 'inverted', e.g. the shorthand 'ok = not arrays_equal(a, b, 4)'
-    virtual auto
-    compile_arrays_equal([[maybe_unused]] toc& tc,
-                         [[maybe_unused]] const size_t indent,
-                         [[maybe_unused]] const operand& dst,
-                         [[maybe_unused]] const bool inverted) const -> void {
-
-        std::unreachable();
-    }
-
     // the value known at compile time where it is used, wrapped to its
     // width, empty when it is computed at run time; it does not check that
     // the value fits, a conversion computes its argument at a narrower width
@@ -311,10 +297,6 @@ class statement {
         -> std::optional<folded_value> {
 
         return std::nullopt;
-    }
-
-    [[nodiscard]] virtual auto is_arrays_equal_call() const -> bool {
-        return false;
     }
 
     // true when computing at the width that 'change' gives keeps the low bits

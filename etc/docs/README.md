@@ -1490,14 +1490,12 @@ other, also not when they are 'noinline' ('etc/todo.txt' section 4).
 
 ### 7.3 One base class for every node
 
-'statement' has 13 virtual methods, each node overrides the ones it needs
+'statement' has 11 virtual methods, each node overrides the ones it needs
 (the groups are listed above the class). A default that no other node reaches
 is 'std::unreachable()', the others answer for a node that lacks the
-capability, e.g. 'fold' is empty. Every node parses, writes its
-source back, compiles and takes part in the definite assignment walk. Code
-asks a node a few capability queries ('operand_path', 'fold',
-...); one query names a kind, 'is_arrays_equal_call', so that 'expr_bool'
-need not include the built-in.
+capability, e.g. 'fold' is empty. Every node parses, writes its source back,
+compiles and takes part in the definite assignment walk. Code asks a node a few
+capability queries ('operand_path', 'fold', ...); none names a kind.
 
 Rejected: the nodes as a 'std::variant', a closed set gains nothing when
 nothing switches on the kind, and every child would be boxed and every node
