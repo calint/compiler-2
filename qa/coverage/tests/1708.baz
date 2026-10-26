@@ -1,0 +1,21 @@
+# 'arrays_equal' reads 'res.a[1]' to 'res.a[3]' while only 'res.a[1]' is
+# assigned
+
+type r {a i8[4]}
+
+func f() res r {
+    res.a[1] = 0
+    var b = i8[3]
+    var eq = arrays_equal(res.a[1], b, 3)
+    res.a[0] = 0
+    if eq {
+        res.a[0] = 1
+    }
+    res.a[2] = 0
+    res.a[3] = 0
+}
+
+func main() {
+    var v = f()
+    exit(v.a[0])
+}

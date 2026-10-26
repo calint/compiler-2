@@ -972,7 +972,9 @@ Examples:
 ### 3.6 Building paths
 
 An identifier adds a step per element of what it names: '.name' adds a field,
-'[3]' a constant index, '[i]' a run-time index.
+'[3]' a constant index, '[i]' a run-time index. The start element of a bulk
+operand, e.g. 'g[1]' of 'array_copy(s, g[1], 3)', adds the range from it to the
+end of the array.
 
 A parameter or the result of an inlined call is a root variable of its own:
 storage it shares with a name of the caller is rejected at the call (4.2), so
@@ -1022,11 +1024,13 @@ programs: 'qa/fuzz/fuzz-alias.sh', see 'qa/fuzz/README.md'.
 ### 3.9 What a call does
 
 The effect of a call is a summary that the parse makes of its body ('body_uses',
-4.2): the globals the body reads and writes, also through its calls, and for
-each 'mut' parameter the whole storage of its argument as written
-('stmt_call::visit_call_effects'). The calls in the arguments come first. The
-summary is per parameter as the signature says, like the record of a recursive
-call, so it needs no fixed point over the bodies (8.3).
+4.2): the globals the body reads and writes, also through its calls, and what
+it reads and writes of each argument through its parameter, e.g. only 'q.y'
+of 'sety(q)' ('stmt_call::visit_callee_reach'). The calls in the arguments
+come first. The parse records the same summary for the caller. A function
+that calls itself has no complete summary yet: there the argument of a 'mut'
+parameter is written whole and of another parameter read whole, so no fixed
+point over the bodies is needed (8.3).
 
 ### 3.10 Definite assignment
 
@@ -1791,9 +1795,9 @@ message, x86_64 and rv32i linux stop with a signal.
 
 ### 8.3 Known limits
 
-- A call's effects treat every argument of a 'mut' parameter as written in
-  whole, whatever the body writes, so a recursive call needs no fixed point
-  of its summary; this rejects more than needed, it accepts no undefined
+- A recursive call's effects treat every argument of a 'mut' parameter as
+  written in whole, whatever the body writes, so it needs no fixed point of
+  its summary; this rejects more than needed, it accepts no undefined
   behavior.
 - Definite assignment does not count the writes of a call, e.g.
   'init(res)' is a read of 'res'; a conservative rejection.

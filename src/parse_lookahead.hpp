@@ -138,8 +138,11 @@ enum class term_kind : uint8_t {
     // type
     const bool is_hidden{tc.scopes().lookup(text).is_value()};
 
-    if (not is_hidden and tc.generics().has_func(text) and
-        (next == '<' or next == '(')) {
+    // note: a call 'f()' still calls a hidden function, a hidden 'f<'
+    //       starts a comparison
+
+    if (tc.generics().has_func(text) and
+        (next == '(' or (next == '<' and not is_hidden))) {
 
         return term_kind::generic_call;
     }

@@ -16,8 +16,8 @@
 // one step of the path from a root variable to what is accessed: a field, a
 // constant index, a constant range of indexes or a run-time index, e.g.
 // 'es[1].items[i]' is a constant index, a field and a run-time index. an index
-// always follows a field or the root variable; a range is written only, e.g.
-// the elements a literal zeroes
+// always follows a field or the root variable; a range is e.g. the elements a
+// literal zeroes or those from the start of a bulk operand on
 struct path_step {
     enum class kind_type : uint8_t {
         field,

@@ -1,0 +1,16 @@
+# a constant that hides a generic function does not hide its call: 'mk()'
+# deduces its type from the 'bool' destination like without the constant
+
+func mk<T type>() res T {
+    res = {}
+}
+
+func main() {
+    var b = bool
+    let mk = 1
+    b = mk()
+    if b {
+        exit(2)
+    }
+    exit(mk)
+}

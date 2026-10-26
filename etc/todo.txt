@@ -88,6 +88,11 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
        'assert_not_shared_with_result' and the result loop of the global
        check go (-26 lines); listings and errors equal; U1 next, a step of
        its own since it accepts more
+    => C.2 U1 done (2026-10-26): 'stmt_call::visit_callee_reach' maps the
+       callee's record onto the arguments once, for the effects and for the
+       caller's record; a call writes of a 'mut' argument what its body
+       writes, a recursive call its whole argument (accepts more, test
+       1711); listings and errors of every other test equal; README 3.9, 8.3
     D. dropped (user, 2026-10-26: simplify the code of a feature, never
        remove the feature): the versions (B1), the padding gap walk (B2),
        rv32i constant bytes (B3) and shared-base copy (B4), the receiver
@@ -134,6 +139,13 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
        C.3. D1-4 one lexer: 'one_line_source' through a 'source_sink' (-125,
             ~60 signatures change), D1-6, D2-4 4.3 the forward declarations
             of 'main.cpp' (-85)
+    => A done (2026-10-26): A.1 'make_bindings' makes a temporary where it
+       binds it, in argument order (tests 1703, 1704); A.2 a bulk operand
+       is a 'stmt_identifier' of 'path_reach::to_end': its start element
+       adds an index range to the end of the array and its bytes reach the
+       end (tests 1705-1709, README 3.6); A.3 a generic function followed
+       by '(' is its call even when hidden (test 1710); listings and errors
+       of every other test equal
 [ ] hard: design review round 21, simplification (2026-10-26, user: refactor
     to simplify; six reviewers P parse and expressions, S statements and
     calls, N names and 'toc', U no-UB checks, B backends, W docs and qa;

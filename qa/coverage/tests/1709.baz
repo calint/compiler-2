@@ -1,0 +1,14 @@
+# the argument 'g[3]' is written by 'f' through the start element 'g[1]' of
+# 'array_copy'
+
+var g = [4]
+
+func f(x) res {
+    var s = []{9, 9, 9}
+    array_copy(s, g[1], 3)
+    res = x
+}
+
+func main() {
+    exit(f(g[3]))
+}

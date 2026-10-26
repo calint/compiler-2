@@ -5397,3 +5397,24 @@ SRC=1699 && COMPERR
 SRC=1700 && EXP=11 && RUN
 SRC=1701 && EXP=12 && RUN
 SRC=1702 && COMPERR
+
+# an inlined call makes the temporaries of its arguments in argument order,
+# like a noinline one: a call in an earlier argument runs first
+SRC=1703 && EXP=55 && RUN
+SRC=1704 && EXP=77 && RUN
+
+# the start element of a bulk operand, e.g. 'g[1]' of 'array_copy(s, g[1],
+# 3)', reaches to the end of the array: the order, the shared-storage and the
+# definite-assignment checks see the elements after it
+SRC=1705 && EXP=6 && RUN
+SRC=1706 && EXP=1 && RUN
+SRC=1707 && COMPERR
+SRC=1708 && COMPERR
+SRC=1709 && COMPERR
+
+# a call of a generic function hidden by a value is still its call
+SRC=1710 && EXP=1 && RUN
+
+# a call writes of a 'mut' argument what its body writes: an earlier read of
+# another field is accepted
+SRC=1711 && EXP=29 && RUN

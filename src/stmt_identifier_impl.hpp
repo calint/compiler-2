@@ -41,7 +41,11 @@ inline auto stmt_identifier::ident_elem::source_to(std::ostream& os) const
 }
 
 inline stmt_identifier::stmt_identifier(toc& tc, token tk, tokenizer& tz)
-    : statement{tk}, dotted_path_{tk.text()} {
+    : stmt_identifier{tc, tk, tz, path_reach::element} {}
+
+inline stmt_identifier::stmt_identifier(toc& tc, token tk, tokenizer& tz,
+                                        const path_reach reach)
+    : statement{tk}, dotted_path_{tk.text()}, reach_{reach} {
 
     // e.g. '"abc"' in 'array_copy("abc", b, 3)'
     if (tk.is_string()) {
@@ -167,8 +171,8 @@ inline auto stmt_identifier::constant_start_index(const toc& tc) const
 
 inline auto stmt_identifier::narrow_to_element(toc& tc,
                                                const expr_any& index_expr,
-                                               const ident_info& array_info)
-    -> void {
+                                               const ident_info& array_info,
+                                               const path_reach reach) -> void {
 
     const std::optional<size_t> index{
         in_range_constant_index(tc, index_expr, array_info),
@@ -183,16 +187,25 @@ inline auto stmt_identifier::narrow_to_element(toc& tc,
 
     const size_t element_offset{*index * element_size_bytes};
 
-    // the last element keeps the padding after the array
+    const std::optional<size_t> array_len{array_info.array_len()};
+
     // note: an index in range has a known length
-    const bool is_last_element{array_info.array_len() == *index + 1};
+    assert(array_len);
 
-    access_path_.add_fixed_index(*index);
+    if (reach == path_reach::to_end) {
+        access_path_.add_index_range(*index, *array_len);
+    } else {
+        access_path_.add_fixed_index(*index);
+    }
 
-    narrow_accessed_bytes(element_offset,
-                          is_last_element
-                              ? accessed_bytes_.size_bytes - element_offset
-                              : element_size_bytes);
+    // the last element keeps the padding after the array
+    const bool is_to_end{
+        reach == path_reach::to_end or *array_len == *index + 1,
+    };
+
+    narrow_accessed_bytes(
+        element_offset, is_to_end ? accessed_bytes_.size_bytes - element_offset
+                                  : element_size_bytes);
 }
 
 inline auto stmt_identifier::parse_element(toc& tc, tokenizer& tz,
@@ -263,7 +276,8 @@ inline auto stmt_identifier::resolve_accessed_bytes(toc& tc) -> void {
         }
 
         if (elem.index) {
-            narrow_to_element(tc, elem.index_expr(), *step.info);
+            narrow_to_element(tc, elem.index_expr(), *step.info,
+                              step.is_last ? reach_ : path_reach::element);
         }
     });
 }

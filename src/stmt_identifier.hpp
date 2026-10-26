@@ -171,6 +171,10 @@ class stmt_identifier;
 // 'expr_any' (the constructor, the element parse, the index steps of the walk)
 // are in 'stmt_identifier_impl.hpp'
 class stmt_identifier final : public statement {
+    // what an indexed path reaches: the element, or from it to the end of
+    // the array, e.g. the 'g[1]' of 'array_copy(s, g[1], 3)'
+    enum class path_reach : uint8_t { element, to_end };
+
     // e.g. the '[i]' of 'rooms[i]'
     struct index_part {
         token open_bracket_tk;
@@ -373,6 +377,8 @@ class stmt_identifier final : public statement {
     // definite assignment traces
     bool names_result_{};
 
+    path_reach reach_{};
+
     // e.g. '.add' in 'lst.add(x)', the path is the receiver
     struct method_tokens {
         token dot_tk;
@@ -396,6 +402,8 @@ class stmt_identifier final : public statement {
   public:
     // a path of names, fields and indexes from 'tk', which is read
     stmt_identifier(toc& tc, token tk, tokenizer& tz);
+
+    stmt_identifier(toc& tc, token tk, tokenizer& tz, path_reach reach);
 
     // note: 'expr_any' is incomplete here, the special members are defined in
     //       'stmt_identifier_impl.hpp', where a 'unique_ptr' of it is complete
@@ -895,7 +903,10 @@ class stmt_identifier final : public statement {
                                                 in_quotes(tk))};
         }
 
-        stmt_identifier array{tc, tk, tz};
+        // note: the operand of a bulk operation reaches from the element it
+        //       names on
+
+        stmt_identifier array{tc, tk, tz, path_reach::to_end};
 
         array.assert_not_method();
 
@@ -1021,7 +1032,8 @@ class stmt_identifier final : public statement {
     // an unknown element leaves the whole array as the accessed range and
     // adds a run-time index to the path
     auto narrow_to_element(toc& tc, const expr_any& index_expr,
-                           const ident_info& array_info) -> void;
+                           const ident_info& array_info, path_reach reach)
+        -> void;
 
     // a path element with an optional '[index]'
     auto parse_element(toc& tc, tokenizer& tz, const token& tk) -> void;

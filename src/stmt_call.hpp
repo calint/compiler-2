@@ -805,13 +805,6 @@ class inline_call {
 
         call_site::in_temporaries_block(
             tc, plan_.has_temporaries() or has_result_temporary, [&] -> void {
-                for (size_t i{}; i < plan_.arguments.size(); ++i) {
-                    if (plan_.is_temporary(plan_.arguments.at(i))) {
-                        std::ignore =
-                            call_.make_argument_temporary(tc, indent, i);
-                    }
-                }
-
                 if (not has_result_temporary) {
                     compile_with_bindings(tc, indent, dst);
                     return;
@@ -1035,16 +1028,18 @@ class inline_call {
              std::views::zip(std::views::iota(size_t{}), call_.args,
                              call_.func->params(), plan_.arguments)) {
 
-            // note: a temporary is bound by the name that
-            //       'make_argument_temporary' gave it, so each level of an
-            //       inlined recursion resolves its own
+            // note: a temporary is made here, in the order of the arguments,
+            //       and named per call, so each level of an inlined recursion
+            //       binds its own
 
             if (plan_.is_temporary(planned)) {
-                const std::string temporary{call_.temporary_argument_name(i)};
+                const noinline_arg temporary{
+                    call_.make_argument_temporary(tc, indent, i),
+                };
 
-                bindings.arguments.push_back(param_binding::make_name(
-                    param.name(), tc.resolve_declared(call_.tk, temporary),
-                    temporary));
+                bindings.arguments.push_back(
+                    param_binding::make_name(param.name(), temporary.info,
+                                             call_.temporary_argument_name(i)));
 
                 continue;
             }
@@ -1883,52 +1878,13 @@ class stmt_call : public statement {
         assert_own_type_not_narrowed(dst_type);
     }
 
-    // the calls in the arguments run first, then the body reads and writes
-    // the globals it uses and may write an argument passed to a 'mut'
-    // parameter, its whole storage
-    // note: per parameter as the signature says, like the record of a
-    //       recursive call ('record_uses_of_call'), so no fixed point over
-    //       the bodies is needed
+    // the calls in the arguments run first, then the body
     auto visit_call_effects(const toc& tc,
                             const call_effect_visitor visitor) const
         -> void override {
 
         statement::visit_call_effects(tc, visitor);
-
-        for (const body_uses::global_use& u : callee().uses().globals()) {
-            visitor({
-                .call_tk{tok()},
-                .name{u.storage.root.name},
-                .storage{u.storage},
-                .is_write{u.is_written},
-            });
-        }
-
-        for (const auto [arg, param] :
-             std::views::zip(args_, callee().params())) {
-
-            if (param.is_read_only()) {
-                continue;
-            }
-
-            // note: a 'mut' argument is a variable, see
-            //       'assert_argument_writable'
-
-            const stmt_identifier& ident{*arg.bare_path()};
-
-            const std::optional<storage_path> target{
-                ident.storage(tc),
-            };
-
-            assert(target);
-
-            visitor({
-                .call_tk{tok()},
-                .name{ident.dotted_path()},
-                .storage{*target},
-                .is_write{true},
-            });
-        }
+        visit_callee_reach(tc, visitor);
     }
 
     // the arguments in their order
@@ -2430,64 +2386,31 @@ class stmt_call : public statement {
         open_paren_tk_ = *open_paren_tk;
     }
 
-    // what the callee reaches through a parameter the caller reaches through
-    // the argument, and the globals it uses are the caller's too; a call of
-    // the function being parsed has no complete record yet, so a 'mut'
-    // argument counts as written whole
+    // what the callee reaches of the caller is the caller's use too, see
+    // 'visit_callee_reach'
     auto record_uses_of_call(toc& tc) const -> void {
 
         // note: a call outside a function was rejected ('read_open_paren')
         assert(tc.scopes().is_in_func());
 
-        const body_uses& callee_uses{callee().uses()};
-
-        for (const body_uses::global_use& u : callee_uses.globals()) {
-            tc.record_storage_use(u.storage, u.is_written ? use_kind::write
-                                                          : use_kind::read);
-        }
-
-        const bool is_recursive{
-            tc.scopes().current_func_scope().is_name(callee().name()),
-        };
+        visit_callee_reach(tc, [&](const call_effect& effect) -> void {
+            tc.record_storage_use(effect.storage, effect.is_write
+                                                      ? use_kind::write
+                                                      : use_kind::read);
+        });
 
         for (size_t i{}; i < args_.size(); ++i) {
-            const expr_any& arg{args_.at(i)};
 
             // a value or a constant is passed as a copy
-            const std::optional<place> passed{as_place(tc, arg)};
-
-            if (not passed) {
-                continue;
-            }
-
-            const stmt_identifier& ident{*passed->ident};
-
-            const std::string_view root{ident.first_token().text()};
+            const std::optional<place> passed{as_place(tc, args_.at(i))};
 
             // note: a 'mut' argument needs storage, the result of an inlined
             //       call may be bound to a register
 
-            if (not callee().param(i).is_read_only() and
-                tc.scopes().names_result(root)) {
+            if (passed and not callee().param(i).is_read_only() and
+                tc.scopes().names_result(passed->ident->first_token().text())) {
 
                 tc.record_result_passed_as_mut();
-            }
-
-            if (is_recursive) {
-                tc.record_use(root, ident.accessed_path(),
-                              callee().param(i).is_read_only()
-                                  ? use_kind::read
-                                  : use_kind::write);
-
-                continue;
-            }
-
-            for (const body_uses::binding_use& u : callee_uses.bindings()) {
-                if (u.param_index == i) {
-                    tc.record_use(
-                        root, ident.accessed_path().extended_by(u.path),
-                        u.is_written ? use_kind::write : use_kind::read);
-                }
             }
         }
     }
@@ -2583,6 +2506,75 @@ class stmt_call : public statement {
         throw compile_error{
             arg.tok(), std::format("{} cannot be passed to a 'mut' parameter{}",
                                    what, hint)};
+    }
+
+    // the globals the callee uses and what its body reaches of an argument
+    // through its parameter; a call of the function being parsed has no
+    // complete record yet, so its argument is reached whole, written when the
+    // parameter is 'mut'
+    // note: a name is defined before it is used, so only a function that
+    //       calls itself has an incomplete record (README 7.2)
+    auto visit_callee_reach(const toc& tc,
+                            const call_effect_visitor visitor) const -> void {
+
+        const body_uses& callee_uses{callee().uses()};
+
+        for (const body_uses::global_use& u : callee_uses.globals()) {
+            visitor({
+                .call_tk{tok()},
+                .name{u.storage.root.name},
+                .storage{u.storage},
+                .is_write{u.is_written},
+            });
+        }
+
+        const bool is_recursive{
+            tc.scopes().current_func_scope().is_name(callee().name()),
+        };
+
+        for (size_t i{}; i < args_.size(); ++i) {
+
+            // a value or a constant is passed as a copy
+            const std::optional<place> passed{as_place(tc, args_.at(i))};
+
+            if (not passed) {
+                continue;
+            }
+
+            const stmt_identifier& ident{*passed->ident};
+
+            const std::optional<storage_path> target{ident.storage(tc)};
+
+            // note: a variable has storage
+            assert(target);
+
+            if (is_recursive) {
+                visitor({
+                    .call_tk{tok()},
+                    .name{ident.dotted_path()},
+                    .storage{*target},
+                    .is_write{not callee().param(i).is_read_only()},
+                });
+
+                continue;
+            }
+
+            for (const body_uses::binding_use& u : callee_uses.bindings()) {
+                if (u.param_index != i) {
+                    continue;
+                }
+
+                visitor({
+                    .call_tk{tok()},
+                    .name{ident.dotted_path()},
+                    .storage{
+                        .root{target->root},
+                        .path{target->path.extended_by(u.path)},
+                    },
+                    .is_write{u.is_written},
+                });
+            }
+        }
     }
 
     //

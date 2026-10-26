@@ -1,0 +1,25 @@
+# a 'mut' argument written by a call in an earlier argument is read after
+# the write by an instance literal, inlined and noinline
+
+type pt {x, y}
+
+func set(v mut) res {
+    v = 7
+    res = 1
+}
+
+func f(a, p pt) res {
+    res = p.x
+}
+
+func noinline fn(a, p pt) res {
+    res = p.x
+}
+
+func main() {
+    var x = 0
+    var y = 0
+    var a = f(set(x), {x, 0})
+    var b = fn(set(y), {y, 0})
+    exit(a * 10 + b)
+}

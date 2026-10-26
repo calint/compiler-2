@@ -1,0 +1,26 @@
+# an argument computed into a temporary of the call, an instance literal, is
+# made in the order of the arguments, inlined and noinline: 'inc()' writes
+# 'g' before '{g, 0}' reads it
+
+type pt {x, y}
+
+var g = 1
+
+func inc() res {
+    g = g + 1
+    res = g
+}
+
+func f(a, p pt) res {
+    res = a * 10 + p.x
+}
+
+func noinline fn(a, p pt) res {
+    res = a * 10 + p.x
+}
+
+func main() {
+    var a = f(inc(), {g, 0})
+    var b = fn(inc(), {g, 0})
+    exit(a + b)
+}

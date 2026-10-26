@@ -1,0 +1,17 @@
+# 'f' writes 'g[1]' to 'g[3]' through the start element of 'array_copy', so
+# the read of 'g[3]' before the call is not computed in place: left to right
+# gives 5 + 1
+
+var g = [4]
+
+func f() res {
+    var s = []{9, 9, 9}
+    array_copy(s, g[1], 3)
+    res = 1
+}
+
+func main() {
+    var k = 5
+    g[3] = k + f()
+    exit(g[3])
+}

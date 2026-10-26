@@ -1,0 +1,4 @@
+
+1708.baz:9:27: use of uninitialized variable 'res'
+    var eq = arrays_equal(res.a[1], b, 3)
+                          ^~~
