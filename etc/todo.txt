@@ -154,6 +154,11 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
        temporary for both call compilers (-20 lines); D2-4 4.1 kept (removing
        'call_plan::is_inlined' splits 'is_temporary' between the compilers),
        4.2 done with A.1; B.2 done with round 22 C.4 N3; listings equal
+    => B.3 done (2026-10-26): a constant index is the range of one index,
+       the 'fixed_index' kind and 'index_end' go (-14 lines); the defaulted
+       '==' of D1-5 (a) not done, the clang-tidy rule
+       'fuchsia-overloaded-operator' forbids overloading operators; listings
+       equal
     C. asks
        C.1. D2-3 the later-argument rule only for arguments passed by
             reference (accepts more, +10)

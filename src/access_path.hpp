@@ -14,14 +14,13 @@
 // constant elements
 
 // one step of the path from a root variable to what is accessed: a field, a
-// constant index, a constant range of indexes or a run-time index, e.g.
-// 'es[1].items[i]' is a constant index, a field and a run-time index. an index
-// always follows a field or the root variable; a range is e.g. the elements a
+// constant range of indexes or a run-time index, e.g. 'es[1].items[i]' is the
+// range of the one index 1, a field and a run-time index. an index always
+// follows a field or the root variable; a longer range is e.g. the elements a
 // literal zeroes or those from the start of a bulk operand on
 struct path_step {
     enum class kind_type : uint8_t {
         field,
-        fixed_index,
         index_range,
         run_time_index,
     };
@@ -29,19 +28,11 @@ struct path_step {
     kind_type kind{};
 
     // the offset of a field in its parent, which identifies the field, or the
-    // index of an element, or the first index of a range
+    // first index of a range
     size_t number{};
 
     // the index after the last of a range
     size_t range_end{};
-
-    // the indexes from 'number' to before this, one for a constant index
-    [[nodiscard]] auto index_end() const -> size_t {
-        assert(kind == kind_type::fixed_index or
-               kind == kind_type::index_range);
-
-        return kind == kind_type::index_range ? range_end : number + 1;
-    }
 
     [[nodiscard]] auto is_same(const path_step& other) const -> bool {
         return kind == other.kind and number == other.number and
@@ -65,11 +56,7 @@ struct access_path {
 
     // an element of the array at a constant index
     auto add_fixed_index(const size_t index) -> void {
-        steps.push_back({
-            .kind{path_step::kind_type::fixed_index},
-            .number{index},
-            .range_end{},
-        });
+        add_index_range(index, index + 1);
     }
 
     // the elements from 'first' to before 'end' of the array
@@ -166,10 +153,9 @@ struct access_path {
                 continue;
             }
 
-            // constant indexes and ranges are disjoint when no index is in
-            // both
-            if (lhs_step.index_end() <= rhs_step.number or
-                rhs_step.index_end() <= lhs_step.number) {
+            // ranges are disjoint when no index is in both
+            if (lhs_step.range_end <= rhs_step.number or
+                rhs_step.range_end <= lhs_step.number) {
 
                 return true;
             }
