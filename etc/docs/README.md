@@ -127,7 +127,7 @@ assembler.hpp    buffers the lines, optimizes the jumps
 The build is one translation unit: 'main.cpp' includes the headers.
 
 The headers in layers, a header includes only headers of its own layer and of
-the layers above it:
+the layers above it ('qa/lint/check-layers.py' checks it):
 
 ```text
 1. vocabulary        token, lut, compile_error, operand, type,
@@ -1951,8 +1951,9 @@ ties to the others is named so it is not missed.
      of 1.6.1
 4. A target or a check option:
    - a target: a subclass of 'machine_rv32i_bare_metal' or 'machine_rv32i'
-     with its 'target_description', and in 'main.cpp' the target enum, its
-     name, 'make_backend', the image rule and the help text; outside:
+     with its 'target_description', and in 'main.cpp' the target enum and
+     its row in 'target_names' (name, backend, image, the options it reads)
+     and the help text; outside:
      'qa/coverage/test-coverage.sh' (its lists of targets)
    - a check: a field of 'check_options' ('toc.hpp'), its name and help text
      in 'main.cpp', a 'failure_handler' with its exit code in 'machine.hpp',

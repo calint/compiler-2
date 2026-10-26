@@ -644,6 +644,45 @@ CLI_OPTION_MESSAGES() {
     echo ok
 }
 
+# the options only some targets read are rejected by the others, also when
+# '--target' comes after them
+CLI_TARGET_OPTIONS() {
+    echo -n "cli options a target does not read: "
+    local exit_code
+    local -a rejected=(
+        "--stack=0x10000 0426.baz"
+        "--target=rv32i --stack=0x10000 0426.baz"
+        "--memory=0x100000 --target=rv32i-qemu 0426.baz"
+        "--target=x86_64 --memory=0x100000 0426.baz"
+        "--target=rv32i-fpga --sdcard=other.img 0426.baz"
+        "--sdcard=other.img --target=rv32i-qemu 0426.baz"
+    )
+    local args
+    for args in "${rejected[@]}"; do
+        set +e
+        # shellcheck disable=SC2086
+        "$BIN" --bin=gen-rv32i.bin $args >gen.s 2>err
+        exit_code=$?
+        set -e
+        [[ $exit_code -eq 1 ]]
+        grep -Eq "^error: invalid --(stack|memory|sdcard): target '[^']+' does not read it, the targets that do are: " err
+    done
+    grep -Fq "error: invalid --sdcard: target 'rv32i-qemu' does not read it, the targets that do are: x86_64, rv32i" err
+    "$BIN" --stack=0x10000 0426.baz 2>err >/dev/null || true
+    grep -Fq "the targets that do are: rv32i-qemu, rv32i-fpga" err
+    "$BIN" --memory=0x100000 0426.baz 2>err >/dev/null || true
+    grep -Fq "the targets that do are: rv32i-fpga" err
+    # the targets that read them accept them, 1059 calls the sector functions
+    "$BIN" --sdcard=other.img 1059.baz >gen.s 2>err
+    grep -Fq "other.img" gen.s
+    "$BIN" --target=rv32i --bin=gen-rv32i.bin --sdcard=other.img 1059.baz >gen.s 2>err
+    grep -Fq "other.img" gen.s
+    "$BIN" --stack=0x10000 --target=rv32i-qemu --bin=gen-rv32i.bin 0426.baz >gen.s 2>err
+    "$BIN" --target=rv32i-fpga --bin=gen-rv32i.bin --stack=0x10000 --memory=0x100000 0426.baz >gen.s 2>err
+    [[ ! -s err ]]
+    echo ok
+}
+
 CLI -h 0
 CLI --vars=65536 0 --help
 CLI --vars=0x10000 0 --help
@@ -711,6 +750,7 @@ CLI_FPGA_MEMORY
 CLI_QEMU_STACK
 CLI_SMALL_STACK
 CLI_OPTION_MESSAGES
+CLI_TARGET_OPTIONS
 CLI_VARS_RANGE
 CLI_STACK_HANDLER
 CLI_NOINLINE_REPORT

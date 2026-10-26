@@ -52,11 +52,13 @@ constexpr size_t default_stack_size_bytes{0x10000};
 constexpr size_t stack_alignment{16};
 constexpr size_t default_memory_size_bytes{0x800000};
 constexpr size_t memory_alignment{4096};
+constexpr std::string_view default_sd_card_file_name{"sdcard.img"};
 
 enum class target : uint8_t { x86_64, rv32i, rv32i_qemu, rv32i_fpga };
 
-// a target of '--target': its name, the backend it makes and whether it
-// writes a binary image beside the assembly
+// a target of '--target': its name, the backend it makes, whether it writes
+// a binary image beside the assembly and the options only some targets read,
+// the others reject them
 struct target_name {
     target kind;
     std::string_view text;
@@ -64,6 +66,9 @@ struct target_name {
                                      const source_files& files,
                                      const machine::target_options& options);
     bool writes_image;
+    bool reads_stack;
+    bool reads_memory;
+    bool reads_sd_card;
 };
 
 // the backend 'machine_t' of a target
@@ -84,24 +89,36 @@ constexpr std::array<target_name, 4> target_names{
         .text{"x86_64"},
         .make{&make_machine<machine_x86_64>},
         .writes_image{},
+        .reads_stack{},
+        .reads_memory{},
+        .reads_sd_card{true},
     },
     target_name{
         .kind{target::rv32i},
         .text{"rv32i"},
         .make{&make_machine<machine_rv32i_linux>},
         .writes_image{true},
+        .reads_stack{},
+        .reads_memory{},
+        .reads_sd_card{true},
     },
     target_name{
         .kind{target::rv32i_qemu},
         .text{"rv32i-qemu"},
         .make{&make_machine<machine_rv32i_qemu>},
         .writes_image{true},
+        .reads_stack{true},
+        .reads_memory{},
+        .reads_sd_card{},
     },
     target_name{
         .kind{target::rv32i_fpga},
         .text{"rv32i-fpga"},
         .make{&make_machine<machine_rv32i_fpga>},
         .writes_image{true},
+        .reads_stack{true},
+        .reads_memory{true},
+        .reads_sd_card{},
     },
 };
 
@@ -137,8 +154,9 @@ struct options {
     bool src_file_given{};
     target machine_target{target::x86_64};
     size_t vars_size_bytes{default_vars_size_bytes};
-    size_t stack_size_bytes{default_stack_size_bytes};
-    size_t memory_size_bytes{default_memory_size_bytes};
+    // the options only some targets read are empty until given
+    std::optional<size_t> stack_size_bytes;
+    std::optional<size_t> memory_size_bytes;
     check_options checks;
     bool optimize_jumps{true};
     bool reproduce_source{};
@@ -147,7 +165,7 @@ struct options {
     // empty until given, the default depends on the source and target
     std::string_view binary_file_name;
     // read and written by the sector functions on x86_64 and rv32i
-    std::string_view sd_card_file_name{"sdcard.img"};
+    std::optional<std::string_view> sd_card_file_name;
 };
 
 // an option with a value, e.g. '--vars=0x40000'
@@ -159,6 +177,9 @@ struct value_option {
 // the exit code when the program should stop instead of compiling
 [[nodiscard]] auto parse_options(const std::span<const char*> args,
                                  options& opts) -> std::optional<int>;
+
+// false after printing the error
+[[nodiscard]] auto check_target_reads(const options& opts) -> bool;
 
 // false after printing the error
 [[nodiscard]] auto parse_option(const char* const argument, options& opts)
@@ -276,7 +297,70 @@ namespace {
         }
     }
 
+    // note: after the loop because '--target' may follow the options
+    if (not check_target_reads(opts)) {
+        return 1;
+    }
+
     return std::nullopt;
+}
+
+// an option of the target rows, e.g. '--stack' and 'reads_stack'
+struct target_option {
+    std::string_view name;
+    bool target_name::* reads;
+    bool given;
+};
+
+[[nodiscard]] auto check_target_reads(const options& opts) -> bool {
+    const std::array<target_option, 3> target_options{
+        target_option{
+            .name{"--stack"},
+            .reads{&target_name::reads_stack},
+            .given{opts.stack_size_bytes.has_value()},
+        },
+        target_option{
+            .name{"--memory"},
+            .reads{&target_name::reads_memory},
+            .given{opts.memory_size_bytes.has_value()},
+        },
+        target_option{
+            .name{"--sdcard"},
+            .reads{&target_name::reads_sd_card},
+            .given{opts.sd_card_file_name.has_value()},
+        },
+    };
+
+    const target_name& chosen{target_of(opts.machine_target)};
+
+    for (const target_option& option : target_options) {
+        if (not option.given or chosen.*option.reads) {
+            continue;
+        }
+
+        std::string readers;
+
+        for (const target_name& name : target_names) {
+            if (not(name.*option.reads)) {
+                continue;
+            }
+
+            if (not readers.empty()) {
+                readers += ", ";
+            }
+
+            readers += name.text;
+        }
+
+        print_option_error(
+            std::format("invalid {}: target {} does not read it, the targets "
+                        "that do are: {}",
+                        option.name, in_quotes(chosen.text), readers));
+
+        return false;
+    }
+
+    return true;
 }
 
 // e.g. '0x40000' of '--vars=0x40000'
@@ -292,9 +376,9 @@ namespace {
 }
 
 // a failed parse has printed its error
-template <typename T>
-[[nodiscard]] auto store_parsed(const std::optional<T>& parsed, T& destination)
-    -> bool {
+template <typename T, typename Destination>
+[[nodiscard]] auto store_parsed(const std::optional<T>& parsed,
+                                Destination& destination) -> bool {
 
     if (not parsed) {
         return false;
@@ -445,12 +529,12 @@ template <typename Name, size_t count>
 [[nodiscard]] auto apply_sdcard(const std::string_view value, options& opts)
     -> bool {
 
-    opts.sd_card_file_name = value;
-
-    if (opts.sd_card_file_name.empty()) {
+    if (value.empty()) {
         print_option_error("invalid --sdcard: empty file name");
         return false;
     }
+
+    opts.sd_card_file_name = value;
 
     return true;
 }
@@ -505,7 +589,7 @@ options:
                       extension followed by -MACHINE.bin)
   --sdcard=FILE       x86_64 and rv32i sd card image that 'sector_read' and
                       'sector_write' open at run time, relative to the working
-                      directory of the program (default: sdcard.img)
+                      directory of the program (default: {8})
   --nopt              no jump optimizations
   --versions=KEPT     of two versions of the same code keep the smaller
                       (default), or for testing the first or the last
@@ -555,7 +639,8 @@ auto print_help(const char* const program_name) -> void {
     std::print(usage_format, program_name, vars_alignment,
                default_vars_size_bytes, stack_alignment,
                default_stack_size_bytes, memory_alignment,
-               default_memory_size_bytes, machine_rv32i::leaf_stack_bytes());
+               default_memory_size_bytes, machine_rv32i::leaf_stack_bytes(),
+               default_sd_card_file_name);
 }
 
 [[nodiscard]] auto compile_file(const options& opts) -> int {
@@ -582,10 +667,16 @@ auto print_help(const char* const program_name) -> void {
             },
             .kept{opts.kept_version},
             .register_report{opts.reports.registers},
-            .sd_card_file_name{opts.sd_card_file_name},
+            .sd_card_file_name{
+                opts.sd_card_file_name.value_or(default_sd_card_file_name),
+            },
             .binary_file_name{binary},
-            .stack_size_bytes{opts.stack_size_bytes},
-            .memory_size_bytes{opts.memory_size_bytes},
+            .stack_size_bytes{
+                opts.stack_size_bytes.value_or(default_stack_size_bytes),
+            },
+            .memory_size_bytes{
+                opts.memory_size_bytes.value_or(default_memory_size_bytes),
+            },
             .reports_line{opts.checks.reports_line},
         };
 

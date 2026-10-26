@@ -245,6 +245,10 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
           hand); recommended: yes, phase by phase after C
        2. A.4: a script in qa/lint that checks the include layer table of
           README 1.1 (a new file); recommended: yes
+       => 2 done (2026-10-26): 'qa/lint/check-layers.py' reads the table
+          of README 1.1 and checks every include of src/, names in the table
+          without a file and files missing from it; passes; README 1.1
+          names it
        3. A.1 part 3: a compile footprint asserted equal after the two
           versions (a 'toc' forwarder for 'emit_most_efficient', 7 sites);
           recommended: yes
@@ -256,6 +260,18 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
        6. the options a target does not read are accepted silently
           ('--stack' on x86_64, '--memory' on rv32i-qemu): reject them;
           behavior; recommended: yes, with CLI tests
+       => 6 done (2026-10-26): the rows of 'target_names' carry
+          'reads_stack', 'reads_memory' and 'reads_sd_card'; '--stack',
+          '--memory' and '--sdcard' are optional until given and
+          'check_target_reads' rejects them after the options are read
+          ("invalid --stack: target 'x86_64' does not read it, the targets
+          that do are: rv32i-qemu, rv32i-fpga"); CLI test
+          'CLI_TARGET_OPTIONS'; not done: '--bin' on x86_64 (every test
+          script passes it to every target, an existing test relies on it
+          being ignored and a todo plans an x86_64 binary) and
+          '--checks=stack' (the help names it as off on the targets with an
+          operating system, and 'noub' includes it everywhere); both suites,
+          the CLI tests, test-rv32i and clang-tidy clean
        7. M3, reopening round 14's kept item: the rv32i known-size walks
           written three times as one walk; recommended: no unless C-G leave
           time, the reason it was kept still holds
