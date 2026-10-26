@@ -112,6 +112,10 @@ class stmt_if final : public statement {
 
             if (ends_chain(known)) {
                 reaches_else = false;
+
+                check_skipped_after(tc, indent, i, if_label, label_else_branch,
+                                    label_after_if);
+
                 break;
             }
         }
@@ -163,6 +167,28 @@ class stmt_if final : public statement {
     }
 
   private:
+    // the branches after 'branch_index', whose condition is true, and the
+    // 'else' never run; they hold the compile rules too, see
+    // 'toc::check_skipped'
+    auto check_skipped_after(toc& tc, const size_t indent,
+                             const size_t branch_index,
+                             const std::string_view if_label,
+                             const std::string_view label_else_branch,
+                             const std::string_view label_after_if) const
+        -> void {
+
+        tc.check_skipped([&] -> void {
+            for (size_t i{branch_index + 1}; i < branches_.size(); ++i) {
+                std::ignore = compile_branch_at(
+                    tc, indent, i, if_label, label_else_branch, label_after_if);
+            }
+
+            if (else_) {
+                else_->code.compile(tc, indent, destination{});
+            }
+        });
+    }
+
     // the branch at 'branch_index', what it found of its condition
     [[nodiscard]] auto
     compile_branch_at(toc& tc, const size_t indent, const size_t branch_index,

@@ -46,7 +46,7 @@
 //                   of a noinline call, while the register trace
 //                   ('scope_entry', 'register_trace') and 'call_frame' of an
 //                   error use it for a call level
-//   tables          'type_table', 'compile_records' (the noinline bodies to
+//   tables          'type_table', 'noinline_worklist' (the noinline bodies to
 //                   emit), 'function_table'
 //   'dry_run_ledger' the heights ('dry_run_height') of the checked dry runs
 //                   of noinline calls
@@ -362,6 +362,15 @@ class scope final {
         // inlined call, see 'toc::pop_scope'
         bool is_left_by_return{};
 
+        // compiled without a call, so what it folds is no constant of a call:
+        // 'main' and the body check of 'stmt_def_func::check_body', see
+        // 'toc::check_skipped'
+        bool is_without_call{};
+        // such a body that a call gives something, its parameters or an
+        // unsized array, so an error that depends on a call is no error of
+        // the body, see 'compile_error::depends_on_call'
+        bool takes_from_call{};
+
         // the name of the result, empty when there is none
         std::string result_name;
 
@@ -519,6 +528,10 @@ class scope final {
         return is_left_by_break_;
     }
 
+    [[nodiscard]] auto is_left_by_return() const -> bool {
+        return func_part().is_left_by_return;
+    }
+
     [[nodiscard]] auto is_loop() const -> bool {
         return kind_ == scope_kind::loop;
     }
@@ -543,6 +556,10 @@ class scope final {
         return func_part().result_name == name;
     }
 
+    [[nodiscard]] auto is_without_call() const -> bool {
+        return func_part().is_without_call;
+    }
+
     [[nodiscard]] auto loop_end_kind() const -> loop_end {
         assert(is_loop());
 
@@ -558,6 +575,11 @@ class scope final {
     auto mark_left_by_break() -> void { is_left_by_break_ = true; }
 
     auto mark_left_by_return() -> void { func_part().is_left_by_return = true; }
+
+    auto mark_without_call(const bool takes_from_call_in) -> void {
+        func_part().is_without_call = true;
+        func_part().takes_from_call = takes_from_call_in;
+    }
 
     [[nodiscard]] auto name() const -> std::string_view { return name_; }
 
@@ -586,12 +608,24 @@ class scope final {
         frm.peak_size_bytes = std::max(frm.peak_size_bytes, size_bytes);
     }
 
+    auto restore_left_by_break(const bool is_left) -> void {
+        is_left_by_break_ = is_left;
+    }
+
+    auto restore_left_by_return(const bool is_left) -> void {
+        func_part().is_left_by_return = is_left;
+    }
+
     auto restore_peak_frame_size_bytes(const size_t size_bytes) -> void {
         frame().peak_size_bytes = size_bytes;
     }
 
     auto set_reachable(const bool is_reachable_in) -> void {
         func_part().is_reachable = is_reachable_in;
+    }
+
+    [[nodiscard]] auto takes_from_call() const -> bool {
+        return func_part().takes_from_call;
     }
 
     //
@@ -626,7 +660,13 @@ class scope final {
 
     // 'main' is compiled in place, 'return' exits the program
     [[nodiscard]] static auto main_func() -> scope {
-        return function(reserved_names::main, scope_kind::main_func, {}, {});
+        scope scp{
+            function(reserved_names::main, scope_kind::main_func, {}, {}),
+        };
+
+        scp.mark_without_call(false);
+
+        return scp;
     }
 
     // a noinline function compiled in place, the dry run for the errors of a
@@ -705,6 +745,8 @@ class scope final {
             .bindings{},
             .is_reachable{true},
             .is_left_by_return{},
+            .is_without_call{},
+            .takes_from_call{},
             .result_name{},
             .param_names{},
             .uses{},
@@ -824,7 +866,7 @@ class type_table final {
 
 // what a compile made: the bodies of the noinline functions to emit, a
 // worklist that grows while they compile
-class compile_records final {
+class noinline_worklist final {
     std::vector<noinline_body> noinline_bodies_;
 
   public:
@@ -1224,6 +1266,15 @@ class scope_stack final {
     std::map<std::string, size_t, std::less<>> global_definitions_;
 
   public:
+    // whether the code after the current statement is reached, saved around
+    // code compiled only for its checks, see 'toc::check_skipped': a 'break'
+    // or a 'return' there must not end the paths of the code that runs
+    struct reach_state {
+        std::vector<bool> left_by_break;
+        bool is_reachable{};
+        bool is_left_by_return{};
+    };
+
     explicit scope_stack(const definition_order& order) : order_{order} {}
 
     [[nodiscard]] auto all() const -> const std::vector<scope>& {
@@ -1427,6 +1478,20 @@ class scope_stack final {
         track_scope_count();
     }
 
+    [[nodiscard]] auto reach_state_now() const -> reach_state {
+        reach_state state{
+            .left_by_break{},
+            .is_reachable{current_func_scope().is_reachable()},
+            .is_left_by_return{current_func_scope().is_left_by_return()},
+        };
+
+        for (const scope& scp : scopes_) {
+            state.left_by_break.push_back(scp.is_left_by_break());
+        }
+
+        return state;
+    }
+
     // a 'break' of the innermost 'loop' or 'foo' is compiled, see
     // 'scope::is_left_by_break'
     auto record_break() -> void {
@@ -1487,6 +1552,17 @@ class scope_stack final {
 
             func.body_uses_ref().add_binding(index, storage.path, is_written);
         }
+    }
+
+    auto restore_reach_state(const reach_state& state) -> void {
+        assert(state.left_by_break.size() == scopes_.size());
+
+        for (size_t i{}; i < scopes_.size(); ++i) {
+            scopes_.at(i).restore_left_by_break(state.left_by_break.at(i));
+        }
+
+        func_scope().set_reachable(state.is_reachable);
+        func_scope().restore_left_by_return(state.is_left_by_return);
     }
 
     auto set_max_scope_count(const size_t count) -> void {
@@ -2189,11 +2265,7 @@ class ident_resolver final {
 
         // e.g. the 'f' of 'x = f + 1'
         if (funcs_.get().has(ident)) {
-            throw compile_error{
-                src_loc_tk,
-                std::format("{} is a function, not a value, a call ends with "
-                            "'()'",
-                            in_quotes(ident))};
+            throw_function_as_value(src_loc_tk, ident);
         }
 
         // a broken number, e.g. '0x' or '12_000'
@@ -2849,9 +2921,9 @@ class variable_comments final {
 //                  'source_of', 'storage_of', 'call_path_at' and
 //                  'create_unique_label' (a loop scope of the parse has a
 //                  label)
-//   tables         'builtins', 'checks', 'compiled', 'data', 'dry_runs',
-//                  'funcs', 'generics', 'layout', 'machine', 'scopes',
-//                  'types', 'usage'
+//   tables         'builtins', 'checks', 'data', 'dry_runs',
+//                  'funcs', 'generics', 'layout', 'machine',
+//                  'noinline_worklist', 'scopes', 'types', 'usage'
 //
 // a statement may be compiled more than once (each inlined call, both
 // versions of 'emit_most_efficient', dry runs, 'check_body'), so what a
@@ -2869,7 +2941,7 @@ class toc final {
     scope_stack scopes_;
     data_table data_;
     function_table funcs_;
-    compile_records compiled_;
+    ::noinline_worklist noinline_worklist_;
     generic_registry generics_;
     type_table types_;
     definition_checks definitions_;
@@ -2882,6 +2954,9 @@ class toc final {
     // above zero inside 'dry_run': no noinline body is added and the storage
     // capacity is not checked there
     size_t dry_run_depth_{};
+    // above zero inside a check without the call that gives the body
+    // something, see 'without_call_check'
+    size_t without_call_checks_{};
     // false while the program is parsed: the names are declared without
     // storage and without comments
     bool is_compiling_{};
@@ -2929,6 +3004,28 @@ class toc final {
     };
 
   public:
+    // while it lives the code is compiled only for its checks, without the
+    // call that gives its body something, so a recursive inlined call is not
+    // expanded, see 'stmt_call::check_arguments_alone'; the body check of a
+    // function that takes from a call and skipped code checked in it make
+    // one
+    class without_call_check final {
+        toc& tc_;
+
+      public:
+        explicit without_call_check(toc& tc) : tc_{tc} {
+            ++tc_.without_call_checks_;
+        }
+
+        without_call_check(const without_call_check&) = delete;
+        without_call_check(without_call_check&&) = delete;
+        auto operator=(const without_call_check&)
+            -> without_call_check& = delete;
+        auto operator=(without_call_check&&) -> without_call_check& = delete;
+
+        ~without_call_check() { --tc_.without_call_checks_; }
+    };
+
     // the paths of an 'if' start at the 'if', its end is reached when one
     // path that runs reaches it; set when the merge ends, also when an error
     // unwinds, like 'assignment_flow::path_merge'
@@ -3187,7 +3284,7 @@ class toc final {
             return;
         }
 
-        compiled_.add_noinline_body(func, std::move(array_lengths));
+        noinline_worklist_.add_noinline_body(func, std::move(array_lengths));
     }
 
     // identical strings share the label of the first one compiled
@@ -3350,7 +3447,7 @@ class toc final {
         scopes_.set_max_scope_count(0);
 
         // note: the parse compiles no call
-        assert(compiled_.is_empty());
+        assert(noinline_worklist_.is_empty());
 
         is_compiling_ = true;
     }
@@ -3408,6 +3505,47 @@ class toc final {
             "{}.{}", source_location_for_use_in_label(src_loc_tk), call_path);
     }
 
+    // code that the compile skips, e.g. a branch that folds to false or the
+    // code after a statement that leaves on every path, is compiled for its
+    // checks where what it folds is no constant of a call: in 'main' and in
+    // the body check of a function; there every compile rule holds in all
+    // code, the compile decides; in a body that takes from a call an error
+    // that depends on a call is dropped as in that check, any other rejects
+    // the program
+    auto check_skipped(const std::function_ref<void()> compile) -> void {
+        assert(is_compiling_);
+
+        const scope& func{scopes_.current_func_scope()};
+
+        if (not func.is_without_call()) {
+            return;
+        }
+
+        const bool takes_from_call{func.takes_from_call()};
+
+        const scope_stack::reach_state reach{scopes_.reach_state_now()};
+
+        scopes_.set_reachable(true);
+
+        std::optional<compile_error> error;
+
+        {
+            std::optional<without_call_check> check;
+
+            if (takes_from_call) {
+                check.emplace(*this);
+            }
+
+            error = dry_run(compile);
+        }
+
+        scopes_.restore_reach_state(reach);
+
+        if (error and not(takes_from_call and error->depends_on_call())) {
+            throw_dry_run_error(std::move(*error));
+        }
+    }
+
     // what '--checks' turned on
     [[nodiscard]] auto checks() const -> const check_options& {
         return checks_;
@@ -3417,10 +3555,6 @@ class toc final {
     // overflow
     [[nodiscard]] auto checks_overflow(const destination& dst) const -> bool {
         return overflow_options(dst).enabled;
-    }
-
-    [[nodiscard]] auto compiled() const -> const compile_records& {
-        return compiled_;
     }
 
     // a number or a constant
@@ -3646,6 +3780,12 @@ class toc final {
         return {order_, definition};
     }
 
+    [[nodiscard]] auto is_checking_without_call() const -> bool {
+        assert(is_compiling_);
+
+        return without_call_checks_ != 0;
+    }
+
     [[nodiscard]] auto is_func(const std::string_view name) const -> bool {
         return funcs_.has(name) or generics_.has_func(name);
     }
@@ -3701,6 +3841,10 @@ class toc final {
         assert(is_compiling_);
 
         return storage_.next_frame_address(builtins_.address());
+    }
+
+    [[nodiscard]] auto noinline_worklist() const -> const ::noinline_worklist& {
+        return noinline_worklist_;
     }
 
     [[nodiscard]] auto overflow_options(const destination& dst) const
@@ -4004,6 +4148,20 @@ class toc final {
 //      parsed again, 'type_table' holds the type names of the innermost scope
 //
 
+// a generic argument of the wrong kind, e.g. a constant for a type
+// parameter; 'got' is what was given, e.g. "a string"
+[[noreturn]] inline auto throw_generic_arg_mismatch(
+    const token& arg_tk, const std::string_view generic_name,
+    const std::string_view param_name, const std::string_view expected,
+    const std::string_view got) -> void {
+
+    throw compile_error{arg_tk,
+                        std::format("generic parameter {} of {} needs a {}, "
+                                    "got {}",
+                                    in_quotes(param_name),
+                                    in_quotes(generic_name), expected, got)};
+}
+
 // e.g. 'i8' of 'list<i8, 8>' for 'T'
 [[nodiscard]] inline auto resolve_type_arg(const toc& tc,
                                            const std::string_view generic_name,
@@ -4011,11 +4169,9 @@ class toc final {
                                            const token& arg_tk) -> const type& {
 
     if (tc.constant_value_of(arg_tk)) {
-        throw compile_error{
-            arg_tk, std::format("generic parameter {} of {} needs a "
-                                "type, got the constant {}",
-                                in_quotes(param_name), in_quotes(generic_name),
-                                in_quotes(arg_tk.text()))};
+        throw_generic_arg_mismatch(
+            arg_tk, generic_name, param_name, "type",
+            std::format("the constant {}", in_quotes(arg_tk.text())));
     }
 
     return tc.get_type_or_throw(arg_tk);
@@ -4030,13 +4186,11 @@ class toc final {
     const std::optional<int64_t> value{tc.constant_value_of(arg_tk)};
 
     if (not value) {
-        throw compile_error{
-            arg_tk,
-            std::format("generic parameter {} of {} needs a "
-                        "constant, got {}{}",
-                        in_quotes(param_name), in_quotes(generic_name),
+        throw_generic_arg_mismatch(
+            arg_tk, generic_name, param_name, "constant",
+            std::format("{}{}",
                         tc.types().has(arg_tk.text()) ? "the type " : "",
-                        in_quotes(arg_tk.text()))};
+                        in_quotes(arg_tk.text())));
     }
 
     return *value;
@@ -4058,11 +4212,9 @@ resolve_generic_args(const toc& tc, const std::string_view generic_name,
         const std::string_view name{param.name_tk.text()};
 
         if (arg_tk.is_string()) {
-            throw compile_error{
-                arg_tk, std::format("generic parameter {} of {} needs a "
-                                    "{}, got a string",
-                                    in_quotes(name), in_quotes(generic_name),
-                                    param.is_type ? "type" : "constant")};
+            throw_generic_arg_mismatch(arg_tk, generic_name, name,
+                                       param.is_type ? "type" : "constant",
+                                       "a string");
         }
 
         if (param.is_type) {

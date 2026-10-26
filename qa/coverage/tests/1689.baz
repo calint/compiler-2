@@ -1,0 +1,42 @@
+# a narrower integer from a call result widens into a wider destination like
+# a name, inlined and noinline, a negative value keeps its sign
+
+func f8() res i8 {
+    res = -2
+}
+
+func noinline n8() res i8 {
+    res = -3
+}
+
+func one() res i8 {
+    res = 1
+}
+
+func main() {
+    var y = i16
+    y = f8()
+    if y != -2 {
+        exit(1)
+    }
+    y = n8()
+    if y != -3 {
+        exit(2)
+    }
+    var a = i16[2]
+    a[1] = n8()
+    if a[1] != -3 {
+        exit(3)
+    }
+    var b = i8[4]
+    b[one()] = 7
+    if b[1] != 7 {
+        exit(4)
+    }
+    var w = int
+    w = f8()
+    if w != -2 {
+        exit(5)
+    }
+    exit(one())
+}

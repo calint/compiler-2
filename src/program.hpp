@@ -514,8 +514,12 @@ class program final {
         // note: the calls in a body can request more bodies, so the count
         //       is read on every pass
 
-        for (size_t i{}; i < tc.compiled().noinline_body_count(); ++i) {
-            const noinline_body body{tc.compiled().noinline_body_at(i)};
+        for (size_t i{}; i < tc.noinline_worklist().noinline_body_count();
+             ++i) {
+
+            const noinline_body body{
+                tc.noinline_worklist().noinline_body_at(i),
+            };
 
             body.func->emit_noinline_body(tc, body.array_lengths);
         }

@@ -1,4 +1,4 @@
-# --checks=alias: a 'foo' element assigned from its own value, other arrays and
+# 'alias' (on by default): a 'foo' element assigned from its own value, other arrays and
 # a separate variable is accepted
 
 func main() {

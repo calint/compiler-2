@@ -1,7 +1,9 @@
-# an inline result names the destination so the types must match
+# an inlined narrower result is made in a register of its type and widens
+# into the destination
 func narrow(v i32) res i8 { res = i8(v) }
 func main() {
     var big = i32(0x1234)
     var x = i32(0)
     x = narrow(big)
+    exit(x)
 }

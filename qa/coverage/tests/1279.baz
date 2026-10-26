@@ -1,5 +1,5 @@
 # a noinline call's narrower result alone as the argument of an inlined
-# call is rejected like a variable
+# call widens into a temporary of the parameter, a name would be rejected
 func noinline g() res i8 {
     res = 1
 }

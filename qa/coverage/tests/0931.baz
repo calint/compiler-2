@@ -1,4 +1,4 @@
-# --checks=alias: the argument and the data the function reads are different
+# 'alias' (on by default): the argument and the data the function reads are different
 # fields of one record
 
 type world {

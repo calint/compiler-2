@@ -502,9 +502,19 @@ class stmt_def_func final : public statement {
                 (is_inlined() and (not params().empty() or has_result())),
         };
 
+        std::optional<toc::without_call_check> check;
+
+        if (takes_from_call) {
+            check.emplace(tc);
+        }
+
         std::optional<compile_error> error{
             tc.dry_run([&] -> void {
-                const toc::scope_entry body{tc, frame_scope(tc, {})};
+                scope body_scope{frame_scope(tc, {})};
+
+                body_scope.mark_without_call(takes_from_call);
+
+                const toc::scope_entry body{tc, std::move(body_scope)};
 
                 std::ignore = compile_in_frame(tc, indent, {});
             }),

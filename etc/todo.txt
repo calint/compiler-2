@@ -6,6 +6,169 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
 --------------------------------------------------------------------------------
 1. clean up
 --------------------------------------------------------------------------------
+[ ] medium: design review round 20 (2026-10-26, a convergence round with the
+    angles of round 19, findings tagged structural or local; findings in the
+    session scratchpad r20; verdicts: great (A, T), good (C, D, U, S); stop:
+    yes (A, T, S, D), no (C, U); spot-checked: U1 (q10), C1 (d6, a1, a2)):
+    the structural items share one root, compile-time rules run only in
+    compiled code; decided (user, 2026-10-26): the last design round, the
+    class stays the documented limit (a), a call result widens like a name
+    (C2); then the noub bug hunt
+    A. T1: 'fuzz-ub.sh --mutants' counts a harness failure (a stale or
+       missing compiler) as a caught mutant; caught only on a mismatch
+    => A done (2026-10-26): a mutant is caught only by a 'MISMATCH' line,
+       else "not caught" with the tail of the output (checked with a stale
+       'baz-asan': all 16 not caught); 'fuzz-ub.sh' builds 'baz-asan' when
+       it is missing, not '../../baz'
+    B. U1: the body check without a call ends at the first error that
+       depends on a call (an inlined recursion), the code after it is not
+       checked; fix if small, else a known limit in 8.3
+    => B (2026-10-26): not small (the body check would need a mode in which
+       an inlined call at its limit stops expanding instead of throwing): a
+       known limit in README 8.3 and the item below
+    C. C2: a narrower integer from a call result widens where one from a
+       name does, e.g. 'exit(f8())', 'a[f8()]'; behavior, accepts more
+    => C done (2026-10-26): 'assert_result_type' accepts a narrower integer
+       for every destination and is an assert (every other mismatch is
+       rejected earlier: the kind at the parse, an instance type, a wider
+       integer by 'assert_not_narrowed', probed); 'destination::as_operand'
+       and 'is_operand_' go with their four call sites; README 1.3 states
+       the rule and why a name argument keeps its type; test 1689 (signs,
+       inlined and noinline, index, element), 0419 now the wider result,
+       0493 and 1277-1279 run tests of the widening
+    D. docs (a): README 1.5.1 says what holds in code that is not compiled
+       (C1), the target claims (D1, U2), 3.1 "by construction" (D2), the
+       seams of chapters 3-4 (D3), copied lists (D4), catalog owners (D5),
+       the B.1 leftovers (S1 texts), the 'out_of_storage' listing comment
+       and README 5.4 (A.1)
+    => D done (2026-10-26, by a fork): chapter 8 intro the one list of
+       what depends on the target (the default type: arithmetic, constants,
+       shift counts, mixing; 'i64' on rv32i; the number of scratch
+       registers; '--vars', memory and the stack), 1.7, 7.11, 7.12 and
+       AGENTS.md point there; 1.5.1 what holds in code that is not compiled
+       (the parse rules, not those of the compile), 8.3 its bullet and the
+       U1 limit (q10), 1.5 item 2 'out_of_storage' and the code after a
+       call-dependent error; 3.1 says what holds instead of "by
+       construction"; chapter 3 reordered (fuzzing after aliasing, one
+       definite assignment section), chapter 4 "the frame and the dry run"
+       with the call first; 1.4 names 'version_state'; 'noinline_call' and
+       'statement::compile' point to their owners; 8.1 without "rule A",
+       'assert_constant_index' and 0750-0752; the B.1 texts of 1.8, 7.5,
+       'type.hpp', 'generics.hpp'; 5.3, 5.4 registers or variable storage;
+       the listing comment names what a dropped version ran out of
+       ('machine::unavailable_version')
+    E. local: 'compile_records' renamed for the worklist (S1); the runner's
+       hidden rules (T2), the alias comments of 42 sources (T3),
+       'check-error-tests.py' over all error types and 'main.cpp' (T4),
+       leftovers (T5); C3 the "not an array" texts as one helper, C4 the
+       two 'parse_' names and the stale comment
+    => E done (2026-10-26): 'noinline_worklist' (was 'compile_records',
+       the getter 'noinline_worklist()'); T2: a run output is keyed by the
+       run target, then the compiler target, a compile output by the
+       compiler target (header), LISTING fails on a missing file unless
+       'UPDATE=1' (the one-target cases under an 'if'), DIFF, DIFFINP and
+       DIFFPY fail with "expected 0 got N"; T3: the 42 sources say "'alias'
+       (on by default)", the header claims less; T4: 'check-error-tests.py'
+       reads the three error types, 'file_level' and 'main.cpp' (256
+       messages), counts the 'grep -F' parts of 'test-cli.sh' and only its
+       lines that are not comments, lists the far-jump message as an
+       exception with its reason; T5: the empty '.err' files and the
+       'summary.txt' exception go, the 'tests/.gitignore' comment, README
+       step 4 names 'test-coverage-full.sh' (kept, not deleted); C3: one
+       helper each for "does not return a value", "return value is
+       discarded", the function-as-value and the generic argument messages
+       (the three "not an array" texts keep their subjects); C4:
+       'read_name', 'read_generic_args', the 'expr_any' comment
+    order: A, B, C, D, E
+    F. the compile decides (user, 2026-10-26: the parse is only the first
+       step of validation): code that a compile skips is compiled once in a
+       dry run, so every compile rule holds in it
+       F.1. 'check_body' runs for every function, 'main' too
+       F.2. in that check an inlined call at its expansion limit stops
+            expanding (no body) instead of throwing, so the check goes on
+            after it (U1)
+       F.3. in that check a branch that folds to false, and the code after a
+            statement that leaves on every path, is compiled in a nested dry
+            run; its errors that depend on a call are dropped as in
+            'check_body', the others reject; a dry run inside it does not
+            start another for the same code
+       F.4. README 1.5, 1.5.1 and 8.3 say every compile rule holds in all
+            code; tests: the C1 probes (r20/c), q10, 'if 1 == 2' in 'main'
+       F.5. every rule that judges a program has the compile as its one
+            owner (user, 2026-10-26): the kind checks that round 19 B.3 put
+            at the parse go back to the compile with their single texts; the
+            parse keeps a check only where it needs the kind to build its
+            node
+       => F.5 discarded (2026-10-26), tried and reverted: the compile reaches
+          a value in about seven ways (compile, write plan, a fold as a
+          write and as a question, index, constant value, instance field),
+          each one covered showed the next ('bool[]{2}' of a 'dat', a field
+          of a literal, then 'let b = true' rejected); the parse has one
+          point every value passes, and after F the phase changes no
+          verdict; README 7.13 states the decision and its cost
+       => F.1-F.4 done (2026-10-26): F.1 needed no change, 'main' is a scope
+          compiled without a call; 'toc::check_skipped' compiles skipped code
+          in a dry run where the innermost function is compiled without a
+          call ('scope::is_without_call': 'main', the body check): a branch
+          that folds to false ('stmt_if_branch'), the branches and 'else'
+          after one that always runs ('stmt_if::check_skipped_after'), the
+          operands after the one that decides an 'and' or 'or' list
+          ('expr_bool::compile_elements_from'), the code after a statement
+          that leaves ('stmt_block::compile_from'); a 'break' or 'return' in
+          it keeps the paths of the code that runs
+          ('scope_stack::reach_state'); in a body that takes from a call
+          ('scope::takes_from_call') an error that depends on a call is
+          dropped and a recursive inlined call is not expanded
+          ('toc::without_call_check', 'stmt_call::check_arguments_alone'),
+          elsewhere every error rejects (1289: a noinline body that takes
+          nothing keeps its recursion error); README 1.5, 1.5.1, 8.3; tests
+          1690-1694; 18 C1 probes and q10 rejected, the others valid also
+          live; both suites with no output changed, test-versions, the CLI
+          tests, test-rv32i, roome, clang-tidy, the lints, 12 fuzzers on a
+          fresh asan build and the 16 mutants clean
+       risk: behavior, rejects programs accepted now (only code that never
+       runs); compile time (one dry run per skipped branch in the check);
+       an inlined recursion that ends through a constant-false branch must
+       still compile (F.2 bounds it); size: medium (stmt_def_func, stmt_if,
+       stmt_call inline limit, toc flag, program; about 150 lines)
+    G. the order tied (user): each node's 'compile' runs its operands in the
+       order of 'visit_operands', checked on every compile
+       G.1. 'statement::compile' becomes a non-virtual wrapper of a virtual
+            'compile_node' (a mechanical rename of 28 overrides, own step)
+       G.2. the wrapper keeps a trace in 'toc': the nodes compiled while a
+            node compiles, each mapped to the operand of 'visit_operands'
+            whose source span holds it; at the end of the node the operands
+            met must be in the order of the list; an operand that a backend
+            computes first carries 'computed_first' in its 'list_operand'
+            (the count of 'array_copy' and the io built-ins), which also
+            replaces the hand-picked spans of 'assert_not_written_after'
+       G.3. README 3.1 says the order is checked, not reviewed
+       cost: about 150 lines beside the rename, the wrapper on every compile
+       (a vector push and a span test per node), asserts in every build;
+       rejected: emitting from 'visit_operands' (every 'compile' rewritten)
+    H. a name path resolved once (user): round 19 S1
+       H.1. 'for_each_prefix' resolves the root once and steps the fields
+            ('ident_info::field', 'as_element'), 'compile_lea' reads the
+            stepped operand; the second field walk and the prefix
+            re-resolves go (medium, 2-3 files)
+       H.2. a 'bound_name' holds what its argument resolved to, a binding is
+            followed by stepping, not by rewriting the text; 'ident_path',
+            the split of 'ident_builder', 'root_of' and the dotted
+            'destination::name_' go, a dotted text stays for messages and
+            comments (large)
+       risk: pure refactor, listings, messages and carets equal
+    => G decided (2026-10-26, user): kept as it is with a documentation note;
+       the tie of the whole order (a compile trace) was 300-400 lines, a
+       'computed_first' tag only cosmetic, a deferred range check a second
+       mode of the general address code; the only nodes out of source order
+       are the bulk and io built-ins, local and checked: README 7.14 and the
+       3.1 sentence
+    order: F, G.1, G.2, H.1, H.2 (a pause for a commit after each)
+[ ] easy: bug: a built-in without a value used as a value without '(',
+    e.g. 'if n == 2 or (exit + 0) exit(2)', fails the assert of
+    'parse_builtin_value' (parse_statement.hpp:288), also at 1594bb3e;
+    'assert_builtin_has_value' rejects it only before a '(' (fuzz-compiler
+    finding compiler-crash-03063a836c, 2026-10-26)
 [ ] hard: design review round 19 (2026-10-26, six angles: architect A,
     consistency C, documentation D (repeated), no-UB by construction U, tests
     as design T, simplicity S; findings in the session scratchpad r19; all

@@ -920,10 +920,7 @@ class expr_arith final : public statement {
             return;
         }
 
-        // e.g. the 'g()' of 'g() + 1' but not of '(g())'
-        const destination first_dst{ops_.empty() ? dst : dst.as_operand()};
-
-        compile_first_element(tc, indent, first_dst, *first.element);
+        compile_first_element(tc, indent, dst, *first.element);
 
         // only a zero constant leaves a subtracted element first: '2 - b - 2'
         if (first.op == arithmetic_operator::subtract) {
@@ -1460,7 +1457,7 @@ class expr_arith final : public statement {
         };
 
         // note: the callers are the operators after the first element
-        src.compile(tc, indent, dst.in_register(reg).as_operand());
+        src.compile(tc, indent, dst.in_register(reg));
 
         return reg;
     }

@@ -235,6 +235,17 @@ class compile_error final : public std::exception {
                        min_count, conjunction, max_count);
 }
 
+// a function name where a value is needed, e.g. the 'f' of 'x = f + 1'
+[[noreturn]] inline auto throw_function_as_value(const token& src_loc_tk,
+                                                 const std::string_view name)
+    -> void {
+
+    throw compile_error{
+        src_loc_tk,
+        std::format("{} is a function, not a value, a call ends with '()'",
+                    in_quotes(name))};
+}
+
 // a value of the type 'got' where the type 'expected' is needed
 [[noreturn]] inline auto throw_type_mismatch(const token& src_loc_tk,
                                              const std::string_view expected,

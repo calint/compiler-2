@@ -280,8 +280,7 @@ class stmt_builtin_convert final : public statement {
 
         const auto in_destination{
             [&] -> void {
-                argument().compile(tc, indent,
-                                   target.as_wrapping().as_operand());
+                argument().compile(tc, indent, target.as_wrapping());
 
                 machine& x{tc.machine()};
 
@@ -334,9 +333,8 @@ class stmt_builtin_convert final : public statement {
             x.alloc_scratch_register(tok(), indent, scratch_type),
         };
 
-        argument().compile(
-            tc, indent,
-            destination::of_register(wide).as_wrapping().as_operand());
+        argument().compile(tc, indent,
+                           destination::of_register(wide).as_wrapping());
 
         // a 'bool' is not negated, e.g. the '-' of '-i8(b)' applies
         // to the copy

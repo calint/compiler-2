@@ -1,4 +1,4 @@
-# --checks=alias: three nested 'foo' read a field outside the arrays they
+# 'alias' (on by default): three nested 'foo' read a field outside the arrays they
 # iterate, which is accepted
 
 type leaf {

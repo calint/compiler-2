@@ -495,6 +495,7 @@ class expr_bool_op final : public statement {
         }
 
         // note: the parse rejected an instance ('assert_boolean_operands')
+
         assert(lhs_.get_type().is_builtin());
 
         resolve_cmp_shorthand(tc, indent, condition, action);
@@ -1364,6 +1365,44 @@ class expr_bool final : public statement {
                             "mixing 'and' and 'or' without parentheses"};
     }
 
+    // the elements from 'first'; a constant that decides the list ends it,
+    // the elements after it never run and hold the compile rules too, see
+    // 'toc::check_skipped'
+    [[nodiscard]] auto
+    compile_elements_from(toc& tc, const size_t indent,
+                          const branch_targets& targets, const bool inverted,
+                          const operand& dst, const size_t first) const
+        -> condition_result {
+
+        bool has_runtime_element{};
+
+        const size_t last_index{bools_.size() - 1};
+
+        for (size_t expr_index{first}; expr_index < last_index; ++expr_index) {
+            const condition_result const_eval{
+                compile_inner_element(tc, indent, expr_index, targets, inverted,
+                                      dst),
+            };
+
+            if (not is_known(const_eval)) {
+                has_runtime_element = true;
+                continue;
+            }
+
+            if (is_short_circuit(result_value(const_eval), inverted)) {
+                tc.check_skipped([&] -> void {
+                    std::ignore = compile_elements_from(
+                        tc, indent, targets, inverted, dst, expr_index + 1);
+                });
+
+                return const_eval;
+            }
+        }
+
+        return compile_last_element(tc, indent, targets, inverted, dst,
+                                    has_runtime_element);
+    }
+
     // an element that does not decide the list continues at the next element
     [[nodiscard]] auto
     compile_inner_element(toc& tc, const size_t indent, const size_t expr_index,
@@ -1491,29 +1530,7 @@ class expr_bool final : public statement {
         // inverted, according to De Morgan's laws
         const bool inverted{outer_inverted != is_negated()};
 
-        bool has_runtime_element{};
-
-        const size_t last_index{bools_.size() - 1};
-
-        for (size_t expr_index{}; expr_index < last_index; ++expr_index) {
-            const condition_result const_eval{
-                compile_inner_element(tc, indent, expr_index, targets, inverted,
-                                      dst),
-            };
-
-            if (not is_known(const_eval)) {
-                has_runtime_element = true;
-                continue;
-            }
-
-            if (is_short_circuit(result_value(const_eval), inverted)) {
-
-                return const_eval;
-            }
-        }
-
-        return compile_last_element(tc, indent, targets, inverted, dst,
-                                    has_runtime_element);
+        return compile_elements_from(tc, indent, targets, inverted, dst, 0);
     }
 
     // the condition stores its value in 'dst', so both outcomes continue at

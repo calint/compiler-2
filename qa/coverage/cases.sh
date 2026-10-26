@@ -1,7 +1,7 @@
 # The list of compiler test cases, sourced by 'test-coverage.sh' after it
 # defines the helpers below. One case is a source
 # 'tests/NNN.baz' and a helper that says how it is judged. The comment above a
-# case is the first comment of its source.
+# case describes it, mostly as the first comment of its source does.
 #
 #   EXP=N        the expected exit code of the program or run
 #   RUN          compile, run, and compare the exit code with 'EXP'
@@ -17,7 +17,7 @@
 #                'NNN.out'
 #   LISTING KIND compile without the checks, and compare the part of the
 #                listing that 'listing.py KIND' extracts with
-#                'NNN.TARGET.KIND'; a target without the file skips the case
+#                'NNN.TARGET.KIND'
 #
 # Prefixes of one helper call, e.g. 'OPTS="--checks=noub" RUN':
 #
@@ -26,8 +26,11 @@
 #   SDCARD=SIZE  the sd card image of this case, sparse, e.g. 1M; without it
 #                an empty image
 #
-# A case expects 'NNN.TARGET.out' instead of 'NNN.out' when that file exists;
-# TARGET is the target of the run, e.g. 'NNN.rv32i.out'.
+# A case expects 'NNN.TARGET.out' instead of 'NNN.out' when that file exists.
+# For the output of a compile (COMPERR, LISTING) TARGET is the target of the
+# compiler, rv32i also for rv32i-qemu and rv32i-fpga; for the output of a run
+# it is the target of the run, else that of the compiler. A program judged by
+# its output (DIFF, DIFFINP, DIFFPY) must exit 0.
 #
 # A case inside 'if [[ $MACHINE ... ]]' runs only for those targets (x86_64,
 # rv32i, rv32i-qemu, rv32i-fpga), e.g. a 'RUN' whose exit code differs by
@@ -1310,7 +1313,8 @@ SRC=0417 && EXP=2 && RUN
 # a non-inline result is written to an element of an array literal
 SRC=0418 && EXP=0 && RUN
 
-# non-inline result destination must have the declared type
+# non-inline result wider than its destination is rejected, a narrower one
+# widens
 SRC=0419 && COMPERR
 
 # non-inline argument can be a computed expression
@@ -1555,8 +1559,9 @@ SRC=0491 && COMPERR
 # a constant outside the signed range must be stated with the builtin
 SRC=0492 && COMPERR
 
-# an inline result names the destination so the types must match
-SRC=0493 && COMPERR
+# an inlined narrower result is made in a register of its type and widens
+# into the destination
+SRC=0493 && EXP=52 && RUN
 
 # an instance literal assigns every element of an array-of-instances field
 SRC=0494 && EXP=0 && RUN
@@ -1854,7 +1859,7 @@ SRC=0585 && COMPERR
 # rv32i bulk loops use words when the addresses prove more alignment than the
 # type; tails and unaligned addresses keep smaller accesses
 SRC=0586 && EXP=0 && RUN
-SRC=0586 && LISTING widths
+if [[ $MACHINE != x86_64 ]]; then SRC=0586 && LISTING widths; fi
 
 # rv32i unrolled zero, copy and constant stores at an address inside a word
 # take a byte and a halfword up to the word boundary, then words and a tail; a
@@ -1865,7 +1870,7 @@ SRC=0587 && EXP=0 && RUN
 # and a halfword head up to the loop width when every address is the same
 # distance from it; a run-time count may end within the head
 SRC=0588 && EXP=0 && RUN
-SRC=0588 && LISTING widths
+if [[ $MACHINE != x86_64 ]]; then SRC=0588 && LISTING widths; fi
 
 # constant elements of an arithmetic list fold at compile at the width of the
 # destination and give the same values as the run-time computation; the
@@ -1891,7 +1896,7 @@ SRC=0593 && COMPERR
 # '==' of a known size compares the qwords, then the remaining dword, word
 # and byte; a difference in any byte of any part makes it false
 SRC=0594 && EXP=0 && RUN
-SRC=0594 && LISTING compares
+if [[ $MACHINE == x86_64 ]]; then SRC=0594 && LISTING compares; fi
 
 # constructors: 'func point.at(x, y) self' builds a 'point' in 'self' and is
 # called as 'point.at(1, 2)'
@@ -4144,17 +4149,17 @@ SRC=1275 && EXP=7 && RUN
 # apply at the width of the operand
 SRC=1276 && EXP=7 && RUN
 
-# a noinline call's narrower result assigned alone is rejected like an
-# inlined one
-SRC=1277 && COMPERR
+# a noinline call's narrower result assigned alone widens like an inlined
+# one
+SRC=1277 && EXP=1 && RUN
 
-# a noinline call's narrower result alone as the argument of 'exit' is
-# rejected like an inlined one
-SRC=1278 && COMPERR
+# a noinline call's narrower result alone as the argument of 'exit' widens
+# like an inlined one
+SRC=1278 && EXP=1 && RUN
 
 # a noinline call's narrower result alone as the argument of an inlined
-# call is rejected like a variable
-SRC=1279 && COMPERR
+# call widens into a temporary of the parameter, a name would be rejected
+SRC=1279 && EXP=1 && RUN
 
 # an inlined or a noinline call past the scope limit in the dry runs of a
 # chain of noinline calls is reported as the chain: the script compiles
@@ -5370,3 +5375,27 @@ SRC=1687 && COMPERR
 
 # a trailing ',' after the argument of a built-in is the error of a call
 SRC=1688 && COMPERR
+
+# a narrower integer from a call result widens into a wider destination like
+# a name, inlined and noinline, a negative value keeps its sign
+SRC=1689 && EXP=1 && RUN
+
+# code that a constant condition skips holds the compile rules, e.g. a whole
+# array is no number in a branch that never runs
+SRC=1690 && COMPERR
+
+# the else after a branch that always runs holds the compile rules, e.g. the
+# element types of 'array_copy'
+SRC=1691 && COMPERR
+
+# an operand after a constant that decides an 'and' list holds the compile
+# rules, e.g. the element types of 'arrays_equal'
+SRC=1692 && COMPERR
+
+# the code after an inlined call that leaves on every path holds the
+# compile rules
+SRC=1693 && COMPERR
+
+# the check of a body without its call goes on after an inlined recursion
+# that no constant ends, the code after it is checked
+SRC=1694 && COMPERR

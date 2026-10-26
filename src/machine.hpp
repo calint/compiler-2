@@ -557,7 +557,13 @@ class machine {
     // a version that runs out of registers or of variable storage is not
     // available, its error is kept to be thrown when the other version runs
     // out too
-    using version_result = std::expected<compiled_version, std::exception_ptr>;
+    struct unavailable_version {
+        std::exception_ptr error;
+        // what it ran out of, for the comment of the choice
+        std::string_view resource;
+    };
+
+    using version_result = std::expected<compiled_version, unavailable_version>;
 
     using jump_mode = assembler::jump_mode;
 
@@ -1107,7 +1113,7 @@ class machine {
         version_result second{compile_version(emit_second)};
 
         if (not first and not second) {
-            std::rethrow_exception(first.error());
+            std::rethrow_exception(first.error().error);
         }
 
         const bool keeps_first{keeps_first_version(first, second)};
@@ -2064,7 +2070,16 @@ class machine {
                 throw;
             }
 
-            return std::unexpected{std::current_exception()};
+            const bool is_registers{
+                e.kind == compile_error::error_kind::out_of_registers,
+            };
+
+            const unavailable_version unavailable{
+                .error{std::current_exception()},
+                .resource{is_registers ? "registers" : "variable storage"},
+            };
+
+            return std::unexpected{unavailable};
         }
     }
 
@@ -2335,13 +2350,15 @@ class machine {
         -> std::string {
 
         if (not second) {
-            return "kept the first of two versions, the second runs out of "
-                   "registers";
+            return std::format("kept the first of two versions, the second "
+                               "runs out of {}",
+                               second.error().resource);
         }
 
         if (not first) {
-            return "kept the second of two versions, the first runs out of "
-                   "registers";
+            return std::format("kept the second of two versions, the first "
+                               "runs out of {}",
+                               first.error().resource);
         }
 
         const assembler& output{target_assembler()};

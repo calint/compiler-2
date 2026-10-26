@@ -1,0 +1,11 @@
+# code that a constant condition skips holds the compile rules, e.g. a whole
+# array is no number in a branch that never runs
+
+func main() {
+    var a = i8[4]
+    var n = 1
+    if 1 == 2 {
+        n = a
+    }
+    exit(n)
+}

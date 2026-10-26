@@ -1,5 +1,5 @@
-# a noinline call's narrower result assigned alone is rejected like an
-# inlined one
+# a noinline call's narrower result assigned alone widens like an inlined
+# one
 func noinline g() res i8 {
     res = 1
 }

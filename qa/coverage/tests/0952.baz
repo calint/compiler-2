@@ -1,4 +1,4 @@
-# --checks=alias: three nested 'foo' read the array the second one iterates,
+# 'alias' (on by default): three nested 'foo' read the array the second one iterates,
 # which can contain the element itself
 # the value is computed before the destination is written
 

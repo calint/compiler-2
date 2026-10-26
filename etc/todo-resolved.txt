@@ -1,6 +1,14 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] medium: the check of a function body without its call ends at the first
+    error that depends on a call, e.g. an inlined recursion 'r(n)' that no
+    constant ends; the code after it is not checked, so 'g(3)' of round 20
+    q10 is accepted inlined (README 8.3); a fix: in that check an inlined
+    call at its expansion limit stops expanding instead of throwing
+    => done (2026-10-26): round 20 F.2, in the check of a body that takes
+       from a call a recursive inlined call is not expanded, its value
+       arguments are compiled at the parameter types (test 1694)
 [x] medium: a version that 'emit_most_efficient' discards still raises
     the peaks of 'toc': the max scope count, the storage peak
     ('max_body_vars_size_bytes'), the peak frame size of the scope and the

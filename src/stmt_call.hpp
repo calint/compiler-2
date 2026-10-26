@@ -783,7 +783,7 @@ struct call_site {
     }
 
     // 'dst' has another type than the result, after 'assert_result_type' a
-    // widening of an operand
+    // widening
     [[nodiscard]] static auto result_type_differs(const destination& dst,
                                                   const stmt_def_func& func)
         -> bool {
@@ -866,9 +866,10 @@ class inline_call {
         if (call_.func->has_result() and
             call_site::result_type_differs(dst, *call_.func)) {
             // note: 'stmt_call::assert_result_type' allows a type mismatch
-            //       only for an operand
+            //       only for a narrower integer
 
-            assert(dst.is_operand());
+            assert(call_site::is_widened_integer(call_.func->result_type(),
+                                                 dst.type_ref()));
 
             compile_widened(tc, indent, dst);
 
@@ -1680,23 +1681,7 @@ class noinline_call {
         tc.add_noinline_body(*call_.func, array_lengths);
 
         // start the callee frame after the caller's storage, not on the stack
-        // pointer
-        // example: caller uses 24 bytes; callee returns a value and takes one
-        // argument
-        //
-        // base      +------------------------+
-        //           | caller's storage       | 24 bytes
-        // base + 24 +------------------------+ <- frame_address; callee's base
-        //           | result address         | 1 address
-        //           +------------------------+
-        //           | argument address       | 1 address
-        //           +------------------------+
-        //           | callee's locals        |
-        //           +------------------------+
-        //
-        // the base is the frame base register, x86_64 'rbx' and rv32i 's1';
-        // root calls use the variables base register instead, x86_64 'rbp' and
-        // rv32i 's0'
+        // pointer, the layout of README 4.1
         const operand frame_address{tc.next_frame_address()};
 
         const std::vector<addressed_slot> slots{
@@ -2364,11 +2349,19 @@ class stmt_call : public statement {
             return;
         }
 
-        call_limits::assert_inline_nesting(tc, call.tk, callee());
-
         const bool is_recursion{
             tc.scopes().inlined_nesting(callee().name()) != 0,
         };
+
+        // a check without a call does not expand a recursion: the body is
+        // checked where the recursion is entered and in its own check, a
+        // constant that would end it is one of a call
+        if (is_recursion and tc.is_checking_without_call()) {
+            check_arguments_alone(tc, indent);
+            return;
+        }
+
+        call_limits::assert_inline_nesting(tc, call.tk, callee());
 
         // a recursion that does not end with constant arguments runs out of
         // registers before it reaches the nesting limit, the advice is the same
@@ -2451,6 +2444,37 @@ class stmt_call : public statement {
                 .node{&e},
                 .written_place{},
             });
+        }
+    }
+
+    //
+    // class methods
+    //
+
+    // the value arguments of a call that is not expanded, compiled at the type
+    // of their parameter for their checks; a place, an array and an instance
+    // are checked where they are parsed and by 'assert_call_accepted'
+    auto check_arguments_alone(toc& tc, const size_t indent) const -> void {
+        machine& x{tc.machine()};
+
+        for (const auto [arg, param] :
+             std::views::zip(args_, callee().params())) {
+
+            const type& param_type{param.get_type()};
+
+            if (not param.is_read_only() or param.is_array() or
+                not param_type.is_builtin()) {
+
+                continue;
+            }
+
+            const operand reg{
+                x.alloc_scratch_register(tok(), indent, param_type),
+            };
+
+            arg.compile(tc, indent, destination::of_register(reg));
+
+            x.free_scratch_register(tok(), indent, reg);
         }
     }
 
@@ -2777,26 +2801,17 @@ class stmt_call : public statement {
                         use_temporary_fix_)};
     }
 
-    // the result has the type of the destination, an operand widens a
-    // narrower integer, see 'destination::as_operand'
-    auto assert_result_type(const destination& dst) const -> void {
-        if (not call_site::result_type_differs(dst, callee())) {
-            return;
-        }
+    // the result has the type of the destination or is a narrower integer,
+    // which widens into it like a name, e.g. 'exit(f8())'
+    //
+    // note: the parse rejected another kind ('expr_any::assert_number_kind')
+    //       or instance type, 'assert_not_narrowed' a wider integer
+    auto assert_result_type([[maybe_unused]] const destination& dst) const
+        -> void {
 
-        if (dst.is_operand() and call_site::is_widened_integer(
-                                     callee().result_type(), dst.type_ref())) {
-
-            return;
-        }
-
-        throw compile_error{
-            dst.error_token(tok()),
-            std::format("expected type {}, got {} from {}, use '{}(...)'",
-                        in_quotes(dst.type_ref().name()),
-                        in_quotes(callee().result_type().name()),
-                        in_quotes(callee().name()), dst.type_ref().name()),
-        };
+        assert(not call_site::result_type_differs(dst, callee()) or
+               call_site::is_widened_integer(callee().result_type(),
+                                             dst.type_ref()));
     }
 
     // the receiver of a method is written before the name

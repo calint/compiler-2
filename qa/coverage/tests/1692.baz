@@ -1,0 +1,9 @@
+# an operand after a constant that decides an 'and' list holds the compile
+# rules, e.g. the element types of 'arrays_equal'
+
+func main() {
+    var a = i8[4]
+    var w = i16[4]
+    var b = 1 == 2 and arrays_equal(a, w, 4)
+    exit(0)
+}

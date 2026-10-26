@@ -470,8 +470,6 @@ class destination final {
     bool is_final_address_{};
     // an unsized one gets its length from the argument
     array_shape shape_;
-    // an operand of an operator, e.g. the 'g()' of 'w + g()', see 'as_operand'
-    bool is_operand_{};
     // its arithmetic wraps on purpose, see 'as_wrapping'; otherwise the
     // overflow check is as '--checks' asks
     bool wraps_{};
@@ -492,14 +490,6 @@ class destination final {
 
     [[nodiscard]] auto array_len() const -> std::optional<size_t> {
         return shape_.length();
-    }
-
-    // a call result narrower than an operand widens into it like a variable,
-    // alone it has the type of its destination, e.g. 'x = g()'
-    [[nodiscard]] auto as_operand() const -> destination {
-        destination result{*this};
-        result.is_operand_ = true;
-        return result;
     }
 
     // the argument of a conversion, whose arithmetic wraps, e.g. the '+' of
@@ -574,8 +564,6 @@ class destination final {
     [[nodiscard]] auto is_length_unknown() const -> bool {
         return shape_.is_length_unknown();
     }
-
-    [[nodiscard]] auto is_operand() const -> bool { return is_operand_; }
 
     [[nodiscard]] auto is_register() const -> bool {
         return not storage_ and operand_.is_register();

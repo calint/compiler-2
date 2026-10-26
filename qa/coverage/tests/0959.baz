@@ -1,4 +1,4 @@
-# --checks=alias: the destination has one run-time index and the read two, the
+# 'alias' (on by default): the destination has one run-time index and the read two, the
 # bytes in the elements are different, which is accepted
 
 type item {

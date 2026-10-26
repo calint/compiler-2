@@ -1,4 +1,4 @@
-# --checks=alias: the element 'e' of a 'foo' inside another 'foo' is assigned
+# 'alias' (on by default): the element 'e' of a 'foo' inside another 'foo' is assigned
 # from another field of the same inner array element, which is accepted
 
 type leaf {

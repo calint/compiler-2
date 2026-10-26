@@ -1,0 +1,12 @@
+# the else after a branch that always runs holds the compile rules, e.g. the
+# element types of 'array_copy'
+
+func main() {
+    var a = i8[4]
+    var w = i16[4]
+    if 1 == 1 {
+        exit(0)
+    } else {
+        array_copy(a, w, 4)
+    }
+}

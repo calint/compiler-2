@@ -1,0 +1,4 @@
+
+1692.baz:7:40: first type 'i8' does not match second type 'i16'
+    var b = 1 == 2 and arrays_equal(a, w, 4)
+                                       ^

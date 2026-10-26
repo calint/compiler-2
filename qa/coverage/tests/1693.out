@@ -1,0 +1,4 @@
+
+1693.baz:12:9: array 'a' must be indexed
+    n = a
+        ^

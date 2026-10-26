@@ -7,7 +7,9 @@
 set -eu
 cd "$(dirname "$0")"
 
-[ -x ../../baz ] || ../../make.sh build
+# the sanitizer build that 'fuzzlib' runs, 'fuzzlib.assert_fresh' stops a
+# stale one
+[ -x build/baz-asan ] || ./build-asan.sh
 [ -x ../../fpga-emulator/osqa ] || ../../fpga-emulator/make.sh
 
 if [ "${1:-}" != "--mutants" ]; then
@@ -21,12 +23,15 @@ FUZZ_FINDINGS=$(mktemp -d)
 export FUZZ_FINDINGS
 # check turned off, scenario that must catch it, number of programs
 while read -r checks scenario count; do
-    if FUZZ_CHECKS="noub,$checks" ./fuzz-ub.py "$count" 1 "$scenario" \
-        >/dev/null; then
-        echo "not caught: $checks ($scenario)"
-        missed=1
-    else
+    # caught only by a mismatch, a fuzzer that fails otherwise caught nothing
+    output=$(FUZZ_CHECKS="noub,$checks" ./fuzz-ub.py "$count" 1 "$scenario" \
+        2>&1) || true
+    if printf '%s\n' "$output" | grep -q '^MISMATCH '; then
         echo "caught: $checks ($scenario)"
+    else
+        echo "not caught: $checks ($scenario)"
+        printf '%s\n' "$output" | tail -n 3
+        missed=1
     fi
 done <<EOF
 -overflow arith 40

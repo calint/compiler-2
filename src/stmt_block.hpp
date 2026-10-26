@@ -76,16 +76,7 @@ class stmt_block final : public statement {
 
         const toc::scope_entry block{tc, scope::block()};
 
-        // the parse rejects a statement after a path that does not continue;
-        // the compile stops after what it folds and the parse could not, e.g.
-        // an 'if' on a constant argument of an inlined call
-        for (const std::unique_ptr<statement>& s : statements_) {
-            s->compile(tc, indent + 1, destination{});
-
-            if (not tc.is_reachable()) {
-                break;
-            }
-        }
+        compile_from(tc, indent, 0);
     }
 
     auto trace_assignment(assignment_flow& flow) const -> void override {
@@ -111,6 +102,29 @@ class stmt_block final : public statement {
     [[nodiscard]] auto is_empty() const -> bool { return statements_.empty(); }
 
   private:
+    // the parse rejects a statement after a path that does not continue; the
+    // compile stops after what it folds and the parse could not, e.g. an 'if'
+    // on a constant argument of an inlined call, and the code after it holds
+    // the compile rules too, see 'toc::check_skipped'
+    auto compile_from(toc& tc, const size_t indent, const size_t first) const
+        -> void {
+
+        for (size_t i{first}; i < statements_.size(); ++i) {
+            statements_.at(i)->compile(tc, indent + 1, destination{});
+
+            if (tc.is_reachable()) {
+                continue;
+            }
+
+            if (i + 1 < statements_.size()) {
+                tc.check_skipped(
+                    [&] -> void { compile_from(tc, indent, i + 1); });
+            }
+
+            return;
+        }
+    }
+
     [[nodiscard]] auto is_one_statement() const -> bool {
         return not open_brace_tk_;
     }

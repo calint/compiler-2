@@ -897,8 +897,8 @@ class expr_any final : public statement {
 
     // a number destination takes a number: not a 'bool', 'int(b)' converts
     // it, and not an instance, whatever the value, e.g. 'c', 'f()' or
-    // 'arrays_equal(a, b, n)'; at the parse, so also in code that is not
-    // compiled; the width is checked where the value is compiled
+    // 'arrays_equal(a, b, n)'; at the parse, the one point every value passes
+    // (README 7.13); the width is checked where the value is compiled
     static auto assert_number_kind(const toc& tc, const expr_arith& value,
                                    const type& tp) -> void {
 
@@ -908,8 +908,8 @@ class expr_any final : public statement {
             return;
         }
 
-        // a whole array is bytes to a built-in, e.g. the 'bool' array 'flags'
-        // of 'write(1, flags)'
+        // a whole array is an argument of an array parameter, e.g. the 'a' of
+        // 'f(a)'; its element type is checked where the call is compiled
         if (const std::optional<place> array{as_place(tc, value)};
             array and array->info.is_array()) {
 

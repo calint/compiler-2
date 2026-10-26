@@ -1,4 +1,4 @@
-# --checks=alias: the element 'e' of a 'foo' inside the element of another 'foo'
+# 'alias' (on by default): the element 'e' of a 'foo' inside the element of another 'foo'
 # reads another field of the outer array, which is accepted
 
 type item {

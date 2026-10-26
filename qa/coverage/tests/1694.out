@@ -1,0 +1,4 @@
+
+1694.baz:26:21: 'i' may be written by the call of 'h' in a later argument, use a temporary variable
+        res = k(arr[i], h(i))
+                    ^

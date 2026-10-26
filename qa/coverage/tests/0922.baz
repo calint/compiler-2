@@ -1,4 +1,4 @@
-# --checks=alias: a call result and an argument that are different fields of
+# 'alias' (on by default): a call result and an argument that are different fields of
 # one variable do not share storage
 
 type pair {

@@ -114,7 +114,7 @@ report)
     llvm-cov show -format=html -output-dir=report/ -instr-profile=baz.profdata "${objects[@]}" 2>cov.err
     grep -v 'functions have mismatched data' cov.err >&2 || true
     rm -f -- cov.err
-    # plain text table of the same data, small enough to commit and diff
+    # plain text table of the same data
     llvm-cov report -instr-profile=baz.profdata "${objects[@]}" >report/summary.txt 2>/dev/null
     echo $SEP
     echo "coverage report generated in $SCRIPT_DIR/report/"
@@ -254,12 +254,25 @@ check_output() {
     fi
 }
 
-# the expected output of a case, 'NNN.TARGET.out' when the target differs
+# the expected output of a run: 'NNN.TARGET.out' for the target of the run,
+# else for the target of the compiler, e.g. 'NNN.rv32i.out' for rv32i-fpga,
+# else 'NNN.out'
 expected_output_file() {
     if [[ -e "${SRC%.*}.$MACHINE.out" ]]; then
         echo "${SRC%.*}.$MACHINE.out"
+    elif [[ -e "${SRC%.*}.$COMPILER_MACHINE.out" ]]; then
+        echo "${SRC%.*}.$COMPILER_MACHINE.out"
     else
         echo "${SRC%.*}.out"
+    fi
+}
+
+# a program judged by its output must exit 0
+expect_exit_zero() {
+    local exit_code=$1
+    if [[ $exit_code -ne 0 ]]; then
+        echo "FAILED. expected 0 got $exit_code"
+        exit 1
     fi
 }
 
@@ -310,7 +323,9 @@ RUN_ERR() {
 DIFF() {
     echo -n "$SRC: "
     compile_and_build
-    execute_program >out
+    local exit_code=0
+    execute_program >out || exit_code=$?
+    expect_exit_zero $exit_code
     check_output "$(expected_output_file)"
 }
 
@@ -318,7 +333,9 @@ DIFF() {
 DIFFINP() {
     echo -n "$SRC: "
     compile_and_build
-    execute_program <"${SRC%.*}.in" >out
+    local exit_code=0
+    execute_program <"${SRC%.*}.in" >out || exit_code=$?
+    expect_exit_zero $exit_code
     check_output "$(expected_output_file)"
 }
 
@@ -339,8 +356,10 @@ DIFFPY() {
     echo -n "$SRC: "
     compile_and_build
     program_command
+    local exit_code=0
     MACHINE="$MACHINE" PROGRAM_COMMAND_LINES="$(printf '%s\n' "${PROGRAM_COMMAND[@]}")" \
-        "./${SRC%.*}.py" >out
+        "./${SRC%.*}.py" >out || exit_code=$?
+    expect_exit_zero $exit_code
     check_output "$(expected_output_file)"
 }
 
@@ -379,9 +398,14 @@ LISTING() {
     echo -n "$SRC: "
     local expected="${SRC%.*}.$COMPILER_MACHINE.$1"
     # the expected listing is that of the default version
-    if [[ -n "$VERSION_OPTS" || ! -e "$expected" ]]; then
+    if [[ -n "$VERSION_OPTS" ]]; then
         echo skipped
         return
+    fi
+    # 'UPDATE=1' writes the first one
+    if [[ ! -e "$expected" && -z "${UPDATE:-}" ]]; then
+        echo "FAILED. no expected listing '$expected'"
+        exit 1
     fi
     if ! "$BIN" "$SRC.baz" --target="$COMPILER_MACHINE" --bin=gen-rv32i.bin 2>err >gen.s; then
         echo "compiler failed. see 'err' and 'gen.s'" >&2

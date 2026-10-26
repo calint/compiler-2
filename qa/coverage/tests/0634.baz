@@ -1,4 +1,4 @@
-# --checks=alias: arguments sharing storage are allowed when both parameters
+# 'alias' (on by default): arguments sharing storage are allowed when both parameters
 # are not 'mut', for inline and non-inline functions
 
 type buf {

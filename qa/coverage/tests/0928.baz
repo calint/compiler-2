@@ -1,4 +1,4 @@
-# --checks=alias: the read is in a function called by the one that writes the parameter
+# 'alias' (on by default): the read is in a function called by the one that writes the parameter
 # rejected inlined as well as noinline
 
 dat g = i32[4]{ 1, 2, 3, 4 }

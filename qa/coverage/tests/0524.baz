@@ -1,4 +1,4 @@
-# --checks=alias: a non-inline result may share storage with an argument
+# 'alias' (on by default): a non-inline result may share storage with an argument
 
 func noinline add_one(a) res {
     res = 1

@@ -29,7 +29,7 @@
 //
 //   'type_fields'            the braces, fields and delimiters of a body
 //   'comment_type_layout', 'assert_arg_count', 'assert_generic_type',
-//   'parse_generic_args'     the free helpers of the two classes after them
+//   'read_generic_args'     the free helpers of the two classes after them
 //   'generic_type_use'       the generic type named after an '='
 //   'stmt_def_type'          a plain type, 'type point { x, y }'
 //   'stmt_def_type_generic'  a generic definition, kept as text
@@ -182,8 +182,8 @@ inline auto assert_generic_type(const toc& tc, const token& generic_tk,
 }
 
 // e.g. '<8>' after 'text'
-[[nodiscard]] inline auto parse_generic_args(tokenizer& tz,
-                                             const token& generic_tk)
+[[nodiscard]] inline auto read_generic_args(tokenizer& tz,
+                                            const token& generic_tk)
     -> generic_arg_tokens {
 
     const std::optional<token> open_tk{tz.is_next_char_token('<')};
@@ -227,7 +227,7 @@ struct generic_type_use {
 
         assert_generic_type(tc, name_tk, user);
 
-        generic_arg_tokens args{parse_generic_args(tz, name_tk)};
+        generic_arg_tokens args{read_generic_args(tz, name_tk)};
 
         assert_arg_count(name_tk, tc.generics().get_type(name_tk.text()),
                          args.arg_tks);

@@ -78,7 +78,13 @@ class stmt_if_branch final : public statement {
                                {}),
         };
 
+        // note: code that never runs holds the compile rules too, see
+        //       'toc::check_skipped'
+
         if (const_eval == condition_result::always_false) {
+            tc.check_skipped(
+                [&] -> void { code_.compile(tc, indent, destination{}); });
+
             return const_eval;
         }
 

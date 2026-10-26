@@ -1,4 +1,4 @@
-# --checks=alias: the element 'e' of a 'foo' over a constant element field is
+# 'alias' (on by default): the element 'e' of a 'foo' over a constant element field is
 # assigned from another field of an element at a run-time index
 
 type item {

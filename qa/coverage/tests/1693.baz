@@ -1,0 +1,13 @@
+# the code after an inlined call that leaves on every path holds the
+# compile rules
+
+func stop() {
+    exit(3)
+}
+
+func main() {
+    var a = i8[4]
+    var n = 1
+    stop()
+    n = a
+}

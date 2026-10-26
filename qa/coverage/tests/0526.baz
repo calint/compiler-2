@@ -1,4 +1,4 @@
-# --checks=alias: an inline parameter resolves to the global it aliases
+# 'alias' (on by default): an inline parameter resolves to the global it aliases
 
 var total = 3
 

@@ -93,7 +93,7 @@ class stmt_def_dat final : public statement {
 
   public:
     stmt_def_dat(toc& tc, const token src_loc_tk, tokenizer& tz)
-        : statement{src_loc_tk}, name_tk_{parse_name(tc, tz)},
+        : statement{src_loc_tk}, name_tk_{read_name(tc, tz)},
           equals_tk_{initializer_declaration::read_equals(tz, "dat")},
           initializer_{parse_initializer(tc, tz, name_tk_)},
           root_elem_{fold(tc, initializer_.get_type(), initializer_)} {
@@ -416,9 +416,7 @@ class stmt_def_dat final : public statement {
         return declaration.parse_value(tc, tz);
     }
 
-    [[nodiscard]] static auto parse_name(const toc& tc, tokenizer& tz)
-        -> token {
-
+    [[nodiscard]] static auto read_name(const toc& tc, tokenizer& tz) -> token {
         const token name_tk{tz.next_token()};
 
         tc.assert_valid_unqualified_name(name_tk);

@@ -1,4 +1,5 @@
-# non-inline result destination must have the declared type
+# non-inline result wider than its destination is rejected, a narrower one
+# widens
 
-func noinline target() result i16 { result = 1 }
-func main() { var result = i32(0) result = target() }
+func noinline target() result i32 { result = 1 }
+func main() { var result = i16(0) result = target() }

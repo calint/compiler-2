@@ -40,6 +40,17 @@
 #include "tokenizer.hpp"
 #include "unary_ops.hpp"
 
+// a call of a function without a result where a value is needed, e.g. 'x =
+// array_copy(a, b, 1)'
+[[noreturn]] inline auto throw_no_value(const token& call_tk) -> void {
+    throw compile_error{call_tk, "function does not return a value"};
+}
+
+// a call with a result as a statement of its own, e.g. 'f(x)'
+[[noreturn]] inline auto throw_discarded_result(const token& call_tk) -> void {
+    throw compile_error{call_tk, "return value is discarded"};
+}
+
 // 'exit' ends the program, 'array_copy' and the sector functions only
 // transfer, they have no value to use
 inline auto assert_builtin_has_value(const token& tk, const tokenizer& tz)
@@ -54,7 +65,7 @@ inline auto assert_builtin_has_value(const token& tk, const tokenizer& tz)
     };
 
     if (has_no_value and tz.peek_char_after_whitespace() == '(') {
-        throw compile_error{tk, "function does not return a value"};
+        throw_no_value(tk);
     }
 }
 
@@ -181,7 +192,7 @@ inline auto parse_keyword_statement(toc& tc, tokenizer& tz, const token tk)
     if (builtin_value_type(tc, tk, classify_term(tc, tk, tz)) != nullptr and
         not is_builtin_used_either_way(tk)) {
 
-        throw compile_error{tk, "return value is discarded"};
+        throw_discarded_result(tk);
     }
 
     if (const stmt_builtin_io::io_function* const io{
@@ -226,7 +237,7 @@ inline auto value_call(const toc& tc, std::unique_ptr<stmt_call> call)
     -> std::unique_ptr<statement> {
 
     if (call->get_type().is_same(tc.builtins().void_type())) {
-        throw compile_error{call->tok(), "function does not return a value"};
+        throw_no_value(call->tok());
     }
 
     return call;
@@ -339,10 +350,7 @@ inline auto parse_call_or_identifier(toc& tc, tokenizer& tz, const token& tk,
     if (tm.is(term_kind::function_name) and
         not tc.generics().has_func(tk.text())) {
 
-        throw compile_error{
-            tk, std::format("{} is a function, not a value, a call ends with "
-                            "'()'",
-                            in_quotes(tk.text()))};
+        throw_function_as_value(tk, tk.text());
     }
 
     // e.g. 'x', 'p.x', 'a[i]' or the literal '0x80'
@@ -381,7 +389,7 @@ inline auto parse_name_statement(toc& tc, tokenizer& tz, const token tk)
         }) {
 
         if (not(*call)->get_type().is_same(tc.builtins().void_type())) {
-            throw compile_error{(*call)->tok(), "return value is discarded"};
+            throw_discarded_result((*call)->tok());
         }
 
         return std::move(*call);

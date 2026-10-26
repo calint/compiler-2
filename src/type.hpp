@@ -152,7 +152,7 @@ class array_shape final {
     [[nodiscard]] auto is_array() const -> bool { return is_array_; }
 
     // an unsized array parameter where no call gave it a length: in the parse
-    // and in the check of a function that nothing calls
+    // and in the check of a function without its calls
     [[nodiscard]] auto is_length_unknown() const -> bool {
         return is_array_ and not length_;
     }
