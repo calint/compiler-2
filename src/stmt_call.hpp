@@ -871,7 +871,7 @@ class inline_call {
 
             const auto add_binding{
                 [&](const param_binding& e) -> void {
-                    const ident_info& bound{e.target.info};
+                    const ident_info& bound{e.info};
 
                     x.comment_binding(call_.tk, indent + 1, e.from, e.text,
                                       bound.is_address_by_call()
@@ -918,7 +918,7 @@ class inline_call {
                 continue;
             }
 
-            ident_info& bound{binding.target.info};
+            ident_info& bound{binding.info};
 
             const operand address{
                 x.alloc_scratch_register(call_.tk, indent,
@@ -1043,11 +1043,7 @@ class inline_call {
                 const std::string temporary{call_.temporary_argument_name(i)};
 
                 bindings.arguments.push_back(param_binding::make_name(
-                    param.name(),
-                    {
-                        .info{tc.resolve_declared(call_.tk, temporary)},
-                        .storage{call_site::temporary_storage(tc, temporary)},
-                    },
+                    param.name(), tc.resolve_declared(call_.tk, temporary),
                     temporary));
 
                 continue;
@@ -1083,7 +1079,7 @@ class inline_call {
                 return bind_reference(tc, indent, arg, ident, param, held);
             }
 
-            return bind_name(param, ident, arg_place->info, tc);
+            return bind_name(param, ident, arg_place->info);
         }
 
         if (std::holds_alternative<call_site::argument_form::computed>(
@@ -1130,15 +1126,10 @@ class inline_call {
     // a place of the caller that 'ident' names and 'info' resolves
     [[nodiscard]] static auto bind_name(const stmt_def_func_param& param,
                                         const stmt_identifier& ident,
-                                        const ident_info& info, const toc& tc)
+                                        const ident_info& info)
         -> param_binding {
 
-        return param_binding::make_name(param.name(),
-                                        {
-                                            .info{info},
-                                            .storage{ident.storage(tc)},
-                                        },
-                                        ident.path_text());
+        return param_binding::make_name(param.name(), info, ident.path_text());
     }
 
     // a constant, a name bound to a register or a name with unary operators
@@ -1167,7 +1158,7 @@ class inline_call {
         }
 
         if (ident.get_unary_ops().is_empty()) {
-            return bind_name(param, ident, arg_info, tc);
+            return bind_name(param, ident, arg_info);
         }
 
         const operand reg{
@@ -1202,11 +1193,7 @@ class inline_call {
                               }),
         };
 
-        return param_binding::make_name(param.name(),
-                                        {
-                                            .info{arg_info.at_address(lea)},
-                                            .storage{ident.storage(tc)},
-                                        },
+        return param_binding::make_name(param.name(), arg_info.at_address(lea),
                                         ident.path_text());
     }
 
@@ -1227,19 +1214,14 @@ class inline_call {
                                                 dst.text());
         }
 
-        return param_binding::make_name(name,
-                                        {
-                                            .info{dst.bound_info()},
-                                            .storage{dst.storage()},
-                                        },
-                                        dst.text());
+        return param_binding::make_name(name, dst.bound_info(), dst.text());
     }
 
     // e.g. [s0 + t0 * 4 + 28] but not [t1 + 28]
     [[nodiscard]] static auto is_indexed_reference(const param_binding& binding)
         -> bool {
 
-        const ident_info& bound{binding.target.info};
+        const ident_info& bound{binding.info};
 
         return bound.is_address_by_call() and bound.operand().is_memory() and
                not bound.operand().index_register().empty();

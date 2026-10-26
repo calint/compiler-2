@@ -74,6 +74,14 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
        C.4. P D the comparison width rule written once (-25); N3 the array
             shape kept once in 'destination' (check the array field case
             first, -6); U5 one overwrite message (-32, 11 messages change)
+    => C.1 done (2026-10-26): a binding holds the 'ident_info' only,
+       'resolve_storage' makes a bound variable a root of its own;
+       'resolved_name' and the storage of a binding go (src -32 lines);
+       listings and errors of every test equal on both targets; README 1.3,
+       3.6, 3.7, 4.2; with it the '-alias' leftovers of A.7: README checks
+       list ('alias' under "always on"), 'prog.baz', 'etc/tutorial.baz',
+       'etc/codegen-inefficiencies.baz' (was rejected, a temporary now, its
+       listing regenerated)
     D. dropped (user, 2026-10-26: simplify the code of a feature, never
        remove the feature): the versions (B1), the padding gap walk (B2),
        rv32i constant bytes (B3) and shared-base copy (B4), the receiver

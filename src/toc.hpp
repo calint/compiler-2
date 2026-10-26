@@ -36,9 +36,8 @@
 // order:
 //
 //   records         'func_info', 'noinline_body', 'body_uses' (what a body
-//                   reaches that its callers name too), 'resolved_name' (what
-//                   a name means where it is used), 'param_binding' (what a
-//                   parameter of an inlined call stands for), 'const_info'
+//                   reaches that its callers name too), 'param_binding' (what
+//                   a parameter of an inlined call stands for), 'const_info'
 //   'scope'         a block, a loop or a function being compiled: its
 //                   constants, variables and parameter bindings; "frame" in
 //                   'scope' and 'storage_layout' is memory, e.g. the frame
@@ -177,23 +176,13 @@ class body_uses final {
     }
 };
 
-// what a name means where it is used, with the storage it reaches; a
-// parameter or the result of an inlined call stands for what its argument or
-// the destination resolved to in the scopes of the caller
-struct resolved_name {
-    ident_info info;
-    // the root variable and the path that the name reaches, empty when it
-    // holds no storage, e.g. a constant or a value in a register
-    std::optional<storage_path> storage;
-};
-
 // what the name of a parameter or of the result of an inlined call stands
 // for in its body: a constant, e.g. 'x' of 'f(3)', which decides the body at
 // compile time; a register, e.g. 'x' of 'f(a + 1)'; or a place of the caller,
 // e.g. 'p' of 'f(world.rooms[i])' at the address the call computed
 struct param_binding {
     std::string from;
-    resolved_name target;
+    ident_info info;
     // what the parameter stands for, as the comments show it
     std::string text;
 
@@ -211,28 +200,25 @@ struct param_binding {
 
         return {
             .from{std::string{name}},
-            .target{
-                .info{
-                    ident_info::make_const(param_type,
-                                           {
-                                               .value{value},
-                                               .own_type{&param_type},
-                                           }),
-                },
-                .storage{},
+            .info{
+                ident_info::make_const(param_type,
+                                       {
+                                           .value{value},
+                                           .own_type{&param_type},
+                                       }),
             },
             .text{std::format("{}", value)},
         };
     }
 
     [[nodiscard]] static auto make_name(const std::string_view name,
-                                        resolved_name target,
+                                        const ident_info& info,
                                         const std::string_view text)
         -> param_binding {
 
         return {
             .from{std::string{name}},
-            .target{std::move(target)},
+            .info{info},
             .text{std::string{text}},
         };
     }
@@ -246,10 +232,7 @@ struct param_binding {
 
         return {
             .from{std::string{name}},
-            .target{
-                .info{ident_info::make_register(reg)},
-                .storage{},
-            },
+            .info{ident_info::make_register(reg)},
             .text{std::string{text}},
         };
     }
@@ -1840,7 +1823,7 @@ class builtin_roles final {
 
 // resolves one name by 'scope_stack::lookup' to what it means, a variable, a
 // register or a constant ('resolve'), and to the storage it reaches
-// ('resolve_storage'); a binding gives what its argument resolved to in the
+// ('resolve_storage'); a binding means what its argument resolved to in the
 // caller, the fields and the indexes of a path are stepped by
 // 'stmt_identifier'
 class ident_resolver final {
@@ -1903,30 +1886,33 @@ class ident_resolver final {
     }
 
     // what 'name' names with 'path' inside it, as a root variable and the
-    // path inside it, empty when it holds no storage, e.g. a constant. a
-    // parameter reaches what its argument reaches and the element 'e' of a
-    // 'foo' is any element of the array it iterates
+    // path inside it, empty when it holds no storage, e.g. a constant. the
+    // element 'e' of a 'foo' is any element of the array it iterates
     [[nodiscard]] auto resolve_storage(const std::string_view name,
                                        const access_path& path) const
         -> std::optional<storage_path> {
 
         const name_meaning meaning{scopes_.get().lookup(name)};
 
+        // note: a binding is a root of its own, storage it shares with the
+        //       caller is rejected at the call, see
+        //       'stmt_call::assert_no_shared_storage'
+
         if (meaning.is_binding()) {
-            const std::optional<storage_path>& bound{
-                scopes_.get()
-                    .at(meaning.scope_index)
-                    .get_binding(name)
-                    .target.storage,
+            const ident_info& bound{
+                scopes_.get().at(meaning.scope_index).get_binding(name).info,
             };
 
-            if (not bound) {
+            if (not bound.is_var()) {
                 return std::nullopt;
             }
 
             return storage_path{
-                .root{bound->root},
-                .path{bound->path.extended_by(path)},
+                .root{
+                    .name{std::string{name}},
+                    .scope_index{meaning.scope_index},
+                },
+                .path{path},
             };
         }
 
@@ -2015,7 +2001,7 @@ class ident_resolver final {
         }
 
         // the argument was resolved where the call is made
-        return scp.get_binding(ident).target.info;
+        return scp.get_binding(ident).info;
     }
 
     [[nodiscard]] auto resolve_var(const var_info& var) const -> ident_info {

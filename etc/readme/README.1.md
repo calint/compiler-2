@@ -47,10 +47,9 @@ the binary image itself.
     the destination at runtime, a constant expression that overflows is
     rejected at compile time, the arithmetic of an explicit conversion such as
     `i8(a + b)` still wraps
-  * `alias`: on by default, compile time rejection of calls and assignments
-    where the value may read the destination under another name
-  * always on: compile time rejection of arguments that may share storage when
-    a parameter is `mut`
+  * always on: compile time rejection of calls and assignments where the
+    value may read the destination under another name (aliasing), and of
+    arguments that may share storage when a parameter is `mut`
 * keywords: `func`, `noinline`, `mut`, `type`, `dat`, `var`, `let`, `foo`,
   `loop`, `if`, `else`, `continue`, `break`, `return`, `self`, `and`, `or`,
   `not`, `true`, `false`, `include`

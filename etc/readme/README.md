@@ -47,10 +47,9 @@ the binary image itself.
     the destination at runtime, a constant expression that overflows is
     rejected at compile time, the arithmetic of an explicit conversion such as
     `i8(a + b)` still wraps
-  * `alias`: on by default, compile time rejection of calls and assignments
-    where the value may read the destination under another name
-  * always on: compile time rejection of arguments that may share storage when
-    a parameter is `mut`
+  * always on: compile time rejection of calls and assignments where the
+    value may read the destination under another name (aliasing), and of
+    arguments that may share storage when a parameter is `mut`
 * keywords: `func`, `noinline`, `mut`, `type`, `dat`, `var`, `let`, `foo`,
   `loop`, `if`, `else`, `continue`, `break`, `return`, `self`, `and`, `or`,
   `not`, `true`, `false`, `include`
@@ -177,10 +176,10 @@ examples:
 ```text
 Language                     files          blank        comment           code
 -------------------------------------------------------------------------------
-C/C++ Header                    66           9345           6150          27846
+C/C++ Header                    66           9345           6146          27818
 C++                              1            245             87            862
 -------------------------------------------------------------------------------
-SUM:                            67           9590           6237          28708
+SUM:                            67           9590           6233          28680
 -------------------------------------------------------------------------------
 ```
 
@@ -458,8 +457,7 @@ func main() {
     # initializing from an array copies it, `==` compares same size arrays
 
 #   arr[ix] = ~inv(arr[ix - 1])
-#   rejected because "return" and the argument may share storage,
-#   `--checks=-alias` allows it
+#   rejected because "return" and the argument may share storage
 
     ix = 3
     var tmp = ~inv(arr[ix - 1])

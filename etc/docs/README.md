@@ -204,8 +204,8 @@ maps each parameter name to the argument ('param_binding'), e.g. 'p' to
 'world.rooms[i]' with the address of that element computed once, '3' to the
 constant 3, or 'x' to a scratch register holding the value of an expression. The
 result name maps to the destination of the call. A binding holds what the
-argument resolved to in the scopes of the caller ('resolved_name'): resolving
-'p' in the body gives it, and 'p.x' steps to the field from there. The scopes
+argument resolved to in the scopes of the caller: resolving 'p' in the body
+gives it, and 'p.x' steps to the field from there. The scopes
 below the binding do not change while the body compiles, so this is what a
 lookup in the caller would find. The result has the type of the destination,
 except that a narrower integer widens into it like a name, e.g. 'exit(f8())' or
@@ -974,11 +974,10 @@ Examples:
 An identifier adds a step per element of what it names: '.name' adds a field,
 '[3]' a constant index, '[i]' a run-time index.
 
-A bound name (a parameter, a result, the element 'e' of a 'foo') stands for the
-path of what it names, and an access through it is the path of the target
-followed by the path of the access inside it. This way an access through any
-number of bound names is compared as if it were written out on the root
-variable. The element 'e' of a 'foo' adds a run-time index, since it is any
+A parameter or the result of an inlined call is a root variable of its own:
+storage it shares with a name of the caller is rejected at the call (4.2), so
+in an accepted call only a body's own names overlap. The element 'e' of a
+'foo' stands for the array it iterates with a run-time index, since it is any
 element of the array.
 
 The whole variable has the empty path, e.g. a temporary of a call, which is a
@@ -989,9 +988,8 @@ root variable of its own.
 A value is written part by part, in the order 'compile' writes it ('plan_writes'
 makes a 'write_plan'): a field list field by field, a braced array element by
 element, a call or a copy at once. Each part has its path from the destination.
-Each read of a part is resolved to its root variable ('toc::storage_of'), so a
-parameter, the element 'e' of a 'foo' and the name itself reach the same
-variable:
+Each read of a part is resolved to its root variable ('toc::storage_of'), so
+the element 'e' of a 'foo' and the array it iterates reach the same variable:
 
 ```text
 p = {p.y, p.x}                 'x' is written first, then 'p.x' reads it =>
@@ -1123,10 +1121,9 @@ calls (1.5).
 
 ### 4.2 Shared storage
 
-An inline call is compiled at the call site, so its parameters are bound to the
-arguments and the aliasing check (chapter 3) sees which arguments name the same
-variable. A noinline body is compiled once and receives addresses, so it cannot
-know which arguments are the same variable. Whether a body is unsafe depends on
+A noinline body is compiled once and receives addresses, so it cannot know
+which arguments are the same variable; an inlined body treats a parameter as a
+variable of its own too (3.6). Whether a body is unsafe depends on
 the call, so the error ("may share storage") is reported at the call, not once
 for the body.
 
