@@ -1,3 +1,5 @@
+# loop with a local and a mutable parameter, printing part of a data array
+
 dat hello="hello\n"
 dat world="world\n"
 

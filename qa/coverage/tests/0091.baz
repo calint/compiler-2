@@ -1,3 +1,5 @@
+# prints 32-bit values as hex with shifts, masks and a separator
+
 func assert(expr bool) {
     if not expr exit(1)
 }

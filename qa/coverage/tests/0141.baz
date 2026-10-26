@@ -1,3 +1,5 @@
+# constant and non-constant conditions with 'not', 'and', 'or' and 'else'
+
 func assert(expr bool) { if not expr exit(1) }
 
 func foozi(x i8, y i16) {

@@ -1,3 +1,5 @@
+# struct literal built from structs and a comparison, plus a call
+
 func assert(x bool) { if not x exit(1) }
 
 func baz(arg) res {

@@ -1,3 +1,5 @@
+# 'arrays_equal' on input arrays, equal and different prefixes
+
 func assert(expr bool) {
     if not expr exit(1)
 }

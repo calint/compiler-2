@@ -1,3 +1,5 @@
+# calling a constructor that the type does not have is rejected
+
 type point {
     x,
     y

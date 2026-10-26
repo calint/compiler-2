@@ -133,8 +133,27 @@ def run(command, timeout, cwd=None, memory=0, env=None,
                       timed_out)
 
 
+# the compilers found as new as the sources, see 'assert_fresh'
+_fresh = set()
+
+
+def assert_fresh(compiler):
+    # a compiler older than a file of 'src/' would test the code before the
+    # change, e.g. 'build/baz-asan' not built again by 'build-asan.sh'
+    if compiler in _fresh:
+        return
+    src = os.path.join(ROOT, "src")
+    newest = max(os.path.getmtime(os.path.join(src, name))
+                 for name in os.listdir(src))
+    if os.path.getmtime(compiler) < newest:
+        raise SystemExit(f"{compiler} is older than 'src/', build it again "
+                         "('make.sh' or 'build-asan.sh')")
+    _fresh.add(compiler)
+
+
 def compile_source(compiler, path, options, assembly_path=None, cwd=None):
     # the assembler listing is written to 'assembly_path' when given
+    assert_fresh(compiler)
     begin = time.time()
     result = _compile_source(compiler, path, options, assembly_path, cwd)
     seconds = time.time() - begin
@@ -152,6 +171,7 @@ def note_if_slow(begin, compiler, options, path):
 def run_compiler(compiler, options, path, cwd=None):
     # runs the compiler on 'path' with all the limits for a compile and notes
     # a slow one
+    assert_fresh(compiler)
     begin = time.time()
     result = run([compiler] + options + [path], COMPILE_TIMEOUT, cwd=cwd,
                  file_size=1 << 30)

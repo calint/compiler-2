@@ -1,3 +1,5 @@
+# prints integers of several widths including the extreme 32-bit values
+
 func assert(expr bool) {
     if not expr exit(1)
 }

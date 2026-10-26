@@ -1,3 +1,5 @@
+# left shift by array elements, constants and a complemented operand
+
 func assert(expr bool) { if not expr exit(1) }
 
 

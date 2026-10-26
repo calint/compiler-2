@@ -1,3 +1,5 @@
+# reads lines into struct array elements and prints them with their lengths
+
 func assert(expr bool) {
     if not expr exit(1)
 }

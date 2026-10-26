@@ -1,3 +1,5 @@
+# a variable named 'self' is rejected
+
 type point {
     x,
     y

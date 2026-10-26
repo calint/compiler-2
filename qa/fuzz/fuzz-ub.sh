@@ -16,6 +16,9 @@ if [ "${1:-}" != "--mutants" ]; then
 fi
 
 missed=0
+# the mismatches of a mutant are expected, they are not findings
+FUZZ_FINDINGS=$(mktemp -d)
+export FUZZ_FINDINGS
 # check turned off, scenario that must catch it, number of programs
 while read -r checks scenario count; do
     if FUZZ_CHECKS="noub,$checks" ./fuzz-ub.py "$count" 1 "$scenario" \
@@ -43,4 +46,5 @@ done <<EOF
 -overlap indexes 300
 -frame,-stack deep 10
 EOF
+rm -rf -- "$FUZZ_FINDINGS"
 exit $missed

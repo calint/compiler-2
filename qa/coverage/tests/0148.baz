@@ -1,3 +1,5 @@
+# 'dat' initializers of scalars, arrays, structs and strings, then mutation
+
 func assert(expr bool) { if not expr exit(1) }
 
 type point { x, y }

@@ -1,4 +1,4 @@
 
-0602.baz:8:9: 'self' is a keyword
+0602.baz:10:9: 'self' is a keyword
     var self = 1
         ^~~~

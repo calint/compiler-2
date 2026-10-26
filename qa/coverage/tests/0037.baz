@@ -1,3 +1,5 @@
+# negation of a function result that is itself negated
+
 func f(a) res{
     res=-a*2
 }

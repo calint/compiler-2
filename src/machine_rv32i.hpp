@@ -620,10 +620,10 @@ class machine_rv32i : public machine {
         return assembler_;
     }
 
-    auto validate_register_type(const token& src_loc_tk,
+    auto validate_register_type([[maybe_unused]] const token& src_loc_tk,
                                 const type& type_ref) const -> void override {
 
-        validate_scalar(src_loc_tk, type_ref);
+        assert_scalar(type_ref);
     }
 
     //
@@ -1021,7 +1021,7 @@ class machine_rv32i : public machine {
     auto copy_value(const token& src_loc_tk, const size_t indent,
                     const operand& dst, const operand& src) -> void override {
 
-        validate_operands(src_loc_tk, dst, src);
+        validate_operands(dst, src);
 
         assert(not src.is_empty());
 
@@ -1076,8 +1076,8 @@ class machine_rv32i : public machine {
         assert(operation == arithmetic_operator::divide or
                operation == arithmetic_operator::remainder);
 
-        validate_scalar(src_loc_tk, dst.type_ref());
-        validate_scalar(src_loc_tk, divisor.type_ref());
+        assert_scalar(dst.type_ref());
+        assert_scalar(divisor.type_ref());
 
         assert(dst.is_register() or dst.is_memory());
 
@@ -1202,8 +1202,8 @@ class machine_rv32i : public machine {
                   [[maybe_unused]] const factor_use use,
                   const runtime_check& check = {}) -> void override {
 
-        validate_scalar(src_loc_tk, product.type_ref());
-        validate_scalar(src_loc_tk, factor.type_ref());
+        assert_scalar(product.type_ref());
+        assert_scalar(factor.type_ref());
         validate_destination_storage(product);
 
         // validate memory operands even when a constant eliminates the
@@ -1249,8 +1249,8 @@ class machine_rv32i : public machine {
         assert(operation == arithmetic_operator::shift_left or
                operation == arithmetic_operator::shift_right);
 
-        validate_scalar(src_loc_tk, dst.type_ref());
-        validate_scalar(src_loc_tk, count.type_ref());
+        assert_scalar(dst.type_ref());
+        assert_scalar(count.type_ref());
         validate_destination_storage(dst);
 
         const std::optional<int32_t> constant{immediate_value(count)};
@@ -1351,7 +1351,7 @@ class machine_rv32i : public machine {
         // note: the front end rejects a 'bool' as an arithmetic operand
         assert(not dst.type_ref().is_bool());
 
-        validate_scalar(src_loc_tk, dst.type_ref());
+        assert_scalar(dst.type_ref());
 
         assert(dst.is_register() or dst.is_memory());
 
@@ -1586,7 +1586,7 @@ class machine_rv32i : public machine {
                           const operand& src, const runtime_check& check = {})
         -> void {
 
-        validate_operands(src_loc_tk, dst, src);
+        validate_operands(dst, src);
 
         const std::optional<int32_t> constant{
             narrowed_immediate(src, dst.type_ref()),
@@ -3004,8 +3004,8 @@ class machine_rv32i : public machine {
 
         const operation_scope scope{*this, lhs, rhs};
 
-        validate_scalar(src_loc_tk, lhs.type_ref());
-        validate_scalar(src_loc_tk, rhs.type_ref());
+        assert_scalar(lhs.type_ref());
+        assert_scalar(rhs.type_ref());
 
         const comparison_operator operation{action.operation};
 
@@ -4609,6 +4609,13 @@ class machine_rv32i : public machine {
                not keeps_destination(instruction, *constant, width));
     }
 
+    // note: the front end rejects 'i64' and an instance first, e.g. "'i64' is
+    //       not available on this target"
+
+    static auto assert_scalar([[maybe_unused]] const type& value_type) -> void {
+        assert(is_scalar(value_type));
+    }
+
     // aligned hardware requires every access to be within the known alignment:
     // 1 selects 'lbu'/'sb', 2 'lhu'/'sh', 4 and above 'lw'/'sw'
     [[nodiscard]] static auto bulk_width(const size_t alignment) -> size_t {
@@ -5258,24 +5265,15 @@ class machine_rv32i : public machine {
     }
 
     // scalar operands in a register or an address of the target
-    static auto validate_operands(const token& src_loc_tk, const operand& dst,
-                                  const operand& src) -> void {
+    static auto validate_operands(const operand& dst, const operand& src)
+        -> void {
 
-        validate_scalar(src_loc_tk, dst.type_ref());
-        validate_scalar(src_loc_tk, src.type_ref());
+        assert_scalar(dst.type_ref());
+        assert_scalar(src.type_ref());
         validate_destination_storage(dst);
 
         if (src.is_memory()) {
             validate_address(src);
-        }
-    }
-
-    static auto validate_scalar(const token& src_loc_tk, const type& value_type)
-        -> void {
-
-        if (not is_scalar(value_type)) {
-            throw compile_error{src_loc_tk,
-                                "RV32I requires an 8-, 16-, or 32-bit scalar"};
         }
     }
 

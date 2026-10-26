@@ -1,1 +1,3 @@
+# a program without a 'main' function is rejected
+
 func f() {}

@@ -1,3 +1,5 @@
+# discarding the value built by a constructor is rejected
+
 type point {
     x,
     y

@@ -1,3 +1,5 @@
+# struct array elements passed through two nested function calls
+
 func assert(expr bool) { if not expr exit(1) }
 
 func print(str i8[], len) {

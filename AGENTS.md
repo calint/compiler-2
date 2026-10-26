@@ -172,7 +172,8 @@
 - Todo items one by one, each with a focused check. Resolved or discarded
   `etc/todo.txt` items move to the top of `etc/todo-resolved.txt`, below its
   legend, newest first (`[x]` with a `=> done (date): ...` note).
-- Done means: built, focused tests run, linter clean, formatter applied.
+- Done means: built, focused tests run, linter clean (clang-tidy and
+  `qa/lint/check-all.sh`), formatter applied.
 - Never commit unless told; the message is always `.` (no body, no trailer).
 - Review loops: after each review round and each fix phase, pause for the
   user to commit, then continue.

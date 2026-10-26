@@ -1,2 +1,4 @@
+# a function that may return without setting its result is rejected
+
 func f() r {}
 func main() {}

@@ -21,3 +21,5 @@ __pycache__/
 *.swp
 *.swo
 *~
+# the logs of the lint runs, written on every run
+/qa/lint/*.log

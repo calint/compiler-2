@@ -1,3 +1,5 @@
+# an array size of -1 in a field is rejected
+
 type person {
     name i8[-1]
 }

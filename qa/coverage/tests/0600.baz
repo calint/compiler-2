@@ -1,3 +1,5 @@
+# a result named 'self' in a function that is not a constructor is rejected
+
 type point {
     x,
     y

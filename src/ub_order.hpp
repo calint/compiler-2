@@ -29,10 +29,12 @@
 //                  an expression computed in its destination reads nothing of
 //                  it, else it is computed in a scratch register first
 //                  ('expr_arith', 'expr_bool')
-//   'assert_not_written_later'
+//   'assert_not_written_later', 'assert_operands_not_written_later'
 //                  the operands of a list read nothing a call in a later
 //                  operand writes; the list order, in which the arguments and
-//                  operands are compiled
+//                  operands are compiled; the second takes the operands of a
+//                  node ('visit_operands'): a call, a list, a comparison and
+//                  the io built-ins
 //   'assert_not_written_after'
 //                  where a backend computes an operand before ones that come
 //                  earlier in the source, e.g. the count of 'array_copy', the

@@ -3488,10 +3488,11 @@ class toc final {
     // the dry run of the kind of noinline call 'kind' at 'level', measured
     // by 'dry_run_ledger::measure'
     //
-    // note: an error out of the dry run ends the compile, so nothing is put
-    //       back: it is a 'source' error, which only
-    //       'machine::compile_version' ('out_of_registers') and
-    //       'stmt_def_func::check_body' (not 'source') would drop
+    // note: an error out of the dry run ends the compile: it is a 'source'
+    //       error, which no reader of 'compile_error::error_kind' drops;
+    //       'dry_run_scope' puts the tables back as it unwinds, the ledger
+    //       keeps the entry of the kind, which is safe because the compile
+    //       ends
     auto dry_run_call_kind(const std::string_view kind, const size_t level,
                            const std::function_ref<void()> compile) -> void {
 

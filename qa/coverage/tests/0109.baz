@@ -1,3 +1,5 @@
+# deeply nested structs and arrays initialized, transformed and verified
+
 func assert(expr bool) {
     if not expr exit(1)
 }

@@ -1,3 +1,5 @@
+# reading a field of 'self' before it is assigned is rejected
+
 type point {
     x,
     y

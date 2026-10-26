@@ -1,3 +1,5 @@
+# argument aliasing an array element with 'i32' multiply and complement
+
 func assert(expr bool) { if not expr exit(1) }
 
 func fiz(x i32, y i32) res i32 {

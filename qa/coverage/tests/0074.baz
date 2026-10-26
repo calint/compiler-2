@@ -1,3 +1,5 @@
+# boolean conditions mixing comparisons, bitwise and shift operators
+
 func assert(expr bool) {
     if not expr exit(1)
 }

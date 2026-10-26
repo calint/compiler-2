@@ -3,16 +3,8 @@
 import subprocess
 import os
 
-machine = os.environ.get('MACHINE')
-command = ['./gen']
-if machine == 'rv32i':
-    command = ['qemu-riscv32', './gen']
-if machine == 'rv32i-qemu':
-    command = ['qemu-system-riscv32', '-machine', 'virt', '-bios', 'none',
-               '-display', 'none', '-serial', 'stdio', '-monitor', 'none',
-               '-kernel', 'gen-rv32i.bin']
-if machine == 'rv32i-fpga':
-    command = ['../../../fpga-emulator/osqa', 'gen-rv32i.bin', '/dev/null']
+# the command of the target, from the runner
+command = os.environ['PROGRAM_COMMAND_LINES'].splitlines()
 p = subprocess.Popen(command,
                            stdin=subprocess.PIPE,
                            stdout=subprocess.PIPE,

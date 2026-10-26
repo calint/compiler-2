@@ -1,2 +1,4 @@
+# a result type written as 'r int.x' is rejected
+
 func f() r int.x { r = 1 }
 func main() {}

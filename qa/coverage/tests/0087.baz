@@ -1,3 +1,5 @@
+# reads input into a local byte array and prints it
+
 func assert(expr bool) {
     if not expr exit(1)
 }

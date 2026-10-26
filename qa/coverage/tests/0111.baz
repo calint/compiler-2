@@ -1,3 +1,5 @@
+# struct array elements passed by value to a function
+
 func assert(expr bool) { if not expr exit(1) }
 
 func print(str i8[], len) {

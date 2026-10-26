@@ -1,3 +1,5 @@
+# struct literals with nested and partial fields, array field assignment
+
 func assert(expr bool) { if not expr exit(1) }
 
 type point { x, y }

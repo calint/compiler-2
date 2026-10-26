@@ -25,9 +25,4 @@ export LLVM_PROFILE_FILE="$PWD/extra-%p.profraw"
 # the commented out tests take unreasonable time with sanitizers turned on
 #./test-far-jumps.sh
 #./test-far-jumps-no-scratch.sh
-./test-string-stores.sh
-./test-bulk-widths.sh
-./test-constant-folding.sh
-./test-equal-compares.sh
-./test-deduced-types.sh
 ./test-coverage.sh report

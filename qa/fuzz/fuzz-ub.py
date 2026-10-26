@@ -30,26 +30,13 @@
 # the checks can be changed to see that the fuzzer catches a missing one
 import os
 import random
-import subprocess
 import sys
 import tempfile
 
-HERE = os.path.dirname(os.path.abspath(__file__))
-ROOT = os.path.join(HERE, "..", "..")
-COMPILER = os.path.join(ROOT, "baz")
-EMULATOR = os.path.join(ROOT, "fpga-emulator", "osqa")
+import fuzzlib as fl
 
 BITS = {"i8": 8, "i16": 16, "i32": 32, "i64": 64}
-# the exit code of a panic, the same on every target
-PANIC_EXIT = {"overflow": 249, "stack": 250, "overlap": 251, "shift": 252,
-              "division": 253, "frame": 254, "bounds": 255}
-# stderr of a panic on x86_64
-X86_PANIC = {"overflow": "panic: overflow", "overlap": "panic: overlap",
-             "shift": "panic: shift", "division": "panic: division",
-             "frame": "panic: frame overflow", "bounds": "panic: bounds"}
 CHECKS = os.environ.get("FUZZ_CHECKS", "noub")
-SIGSEGV = 139
-TIMEOUT = 1000
 
 
 class Panic(Exception):
@@ -731,7 +718,7 @@ class Deep:
                 f"func main() {{\n    exit(rec(0) & 127)\n}}\n")
 
     def evaluate(self):
-        raise Panic("frame", "stack", "signal")
+        raise Panic("frame overflow", "stack overflow", "signal")
 
 
 # indexes: index and count variables of every width with the values around the
@@ -1347,53 +1334,19 @@ class Narrowing:
 SCENARIOS = [Arith, Widen, Arrays, Calls, Deep, Indexes, Shifts, Params, Contexts, Narrowing]
 
 
-def run(command, **kw):
-    try:
-        return subprocess.run(command, capture_output=True, text=True,
-                              errors="replace", stdin=subprocess.DEVNULL, **kw)
-    except subprocess.TimeoutExpired:
-        return subprocess.CompletedProcess(command, TIMEOUT, "", "timeout")
-
-
+# what the program did on 'target', built and run by 'fuzzlib': ("exit",
+# code), ("panic", name) with the names of 'fuzzlib.PANIC_CODE', ("panic",
+# "signal") for a signal on x86_64, e.g. the operating system stopping a
+# recursion, ("compile", stderr), or how it did not end, e.g. ("timeout", ...)
 def compile_run(work, source, target):
-    path = os.path.join(work, "f.baz")
-    with open(path, "w") as f:
-        f.write(source)
-    if target == "x86_64":
-        c = run([COMPILER, "--target=x86_64", "--checks=" + CHECKS, path])
-        if c.returncode:
-            return ("compile", c.stderr)
-        with open(os.path.join(work, "f.s"), "w") as f:
-            f.write(c.stdout)
-        a = run(["nasm", "-f", "elf64", os.path.join(work, "f.s"), "-o",
-                 os.path.join(work, "f.o")])
-        a2 = run(["ld", "-s", "-T", os.path.join(ROOT, "baz.ld"), os.path.join(work, "f.o"), "-o",
-                  os.path.join(work, "f.x")])
-        if a.returncode or a2.returncode:
-            return ("assemble", a.stderr + a2.stderr)
-        r = run([os.path.join(work, "f.x")], timeout=20)
-        if r.returncode == TIMEOUT:
-            return ("timeout", "")
-        if r.returncode < 0 or r.returncode == SIGSEGV:
-            return ("panic", "signal")
-        for kind, message in X86_PANIC.items():
-            if r.returncode == PANIC_EXIT[kind] and message in r.stderr:
-                return ("panic", kind)
-        if "panic: " in r.stderr:
-            return ("panic", "unknown:" + r.stderr.strip())
-        return ("exit", r.returncode)
-    image = os.path.join(work, "f.bin")
-    c = run([COMPILER, "--target=rv32i-fpga", "--checks=" + CHECKS,
-             "--bin=" + image, path])
-    if c.returncode:
-        return ("compile", c.stderr)
-    r = run([EMULATOR, image, "/dev/null"], timeout=20)
-    if r.returncode == TIMEOUT:
-        return ("timeout", "")
-    for kind, code in PANIC_EXIT.items():
-        if r.returncode == code:
-            return ("panic", kind)
-    return ("exit", r.returncode)
+    got = fl.build_and_run(work, source, target, ["--checks=" + CHECKS])
+    if got[0] == "exit":
+        return ("exit", got[1])
+    if got[0] == "panic":
+        return ("panic", got[1].split(" ", 1)[1])
+    if got[0] == "signal":
+        return ("panic", "signal")
+    return got
 
 
 def matches(expected, got):
@@ -1427,6 +1380,7 @@ def main():
     print(f"seed {seed}, {count} programs")
     failures = 0
     tally = {}
+    findings = fl.Findings()
     with tempfile.TemporaryDirectory() as work:
         for n in range(count):
             rnd = random.Random(seed * 100003 + n)
@@ -1450,13 +1404,13 @@ def main():
                     continue
                 if not matches(expected, got):
                     failures += 1
-                    keep = os.path.join(tempfile.gettempdir(),
-                                        f"fuzz-ub-{seed}-{n}.baz")
-                    with open(keep, "w") as f:
-                        f.write(source)
-                    print(f"MISMATCH {program.name} {target}: expected "
-                          f"{expected}, got {got[0]} {str(got[1])[:200]}; "
-                          f"program in {keep}")
+                    detail = (f"expected {expected}, got {got[0]} "
+                              f"{str(got[1])[:200]}")
+                    findings.add("ub-mismatch",
+                                 f"{program.name} {target} --checks={CHECKS} "
+                                 f"{got[0]}", source, detail)
+                    print(f"MISMATCH {program.name} {target}: {detail}; seed "
+                          f"{seed}, program {n}")
     for name, (ran, panicked, rejected) in tally.items():
         print(f"{name}: {ran} ran to the end, {panicked} modeled panics, "
               f"{rejected} rejected")

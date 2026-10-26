@@ -1,3 +1,5 @@
+# a constructor that leaves a field of 'self' unset is rejected
+
 type point {
     x,
     y

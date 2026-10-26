@@ -1,3 +1,5 @@
+# nested structs in arrays passed as 'mut' parameters, scaled and verified
+
 func assert(expr bool) {
     if not expr exit(1)
 }

@@ -1,3 +1,5 @@
+# complement of an array element result kept in a temporary
+
 func assert(code, expr bool) {
     if not expr exit(code)
 }

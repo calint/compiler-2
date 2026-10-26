@@ -1,3 +1,5 @@
+# seventeen live variables summed in one expression
+
 func assert(expr bool) { if not expr exit(1) }
 
 # Many variables simultaneously to stress register allocation

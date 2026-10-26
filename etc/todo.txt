@@ -157,16 +157,63 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
             and stale counts (D3), what a reader meets first (D4), a hub for
             the no-UB design (D2); README 8.1 run-time rows name their owners
             (U7 part 1)
+       => E.1 done (2026-10-26, by a fork): one owner per list: README 3.1
+          states the rule and names the 'statement' class comment and the
+          'ub_order.hpp' map (which now lists
+          'assert_operands_not_written_later'); 1.9 the kinds with
+          'out_of_storage', the readers at 'error_kind'; 7.8 links 1.9; 5.3
+          links 1.4; the rerun rule once in 1.4; 9.2 says 'visit_operands';
+          7.7 three headers, the 'stmt_identifier.hpp' map; the
+          'dry_run_call_kind' note; 4.2 "no trace in the output"; the 8.1
+          aliasing row split ('mut' arguments always, the result and globals
+          under 'alias', checked with '-alias'), each row links its section,
+          the run-time rows name their owner; 8 intro the four phases; 8.3
+          without "(V-3)" and "yet"; the unchecked counts gone; 1.1 layers
+          by number, the formatter's sort order, 'type.hpp' and
+          'register_pool.hpp' in the reading order; new 4.5 the call and its
+          frame; 1.5 '--checks=line'; class comments on 'compile_error' and
+          'token'; chapter 3 "Reads and writes: the no-UB checks" reordered;
+          prose reflowed to 80 columns
     F. tests
        F.1. 'test-cases.sh' removed (T2); per-case options one spelling,
             'UB_ALIAS' and the SDCARD carry-over (T3); one run command per
             target (T9); 0437 run, the 64 cases without a description get
             one (T1 part)
+       => F.1 done (2026-10-26): 'test-cases.sh' removed; one spelling of
+          the options of a case, 'OPTS="..."' ('RUN_ERR_OPTS' and
+          'RUN_NO_CHECKS' go, the same option sets), 'UB_ALIAS' goes (its 30
+          cases compile alike with the defaults, checked on both targets),
+          its comments say "'alias' (on by default)"; 'SDCARD=SIZE' is a
+          prefix of one case, the image is made per case (1218 inherited
+          one, it names its own now); 'DIFFPY' passes
+          'PROGRAM_COMMAND_LINES', 0062.py has no table of its own; 0437 is
+          a case (also read by 'CLI_JUMP_OPTIMIZATIONS'), the 64 cases
+          without a description have one in the source and in 'cases.sh'
+          (19 '.out' with shifted line numbers only, checked); the rv32i
+          target's stale 0006 diff is an item below
        F.2. one script runs the lints (T6), with a message-coverage lint
             (T5, 'validate_scalar' an assert if unreachable) and the 8.1
             test column checked (U7 part 2)
+       => F.2 done (2026-10-26): 'qa/lint/check-all.sh' runs every
+          'check-*.py', named in README step 5 and AGENTS.md "Done means";
+          'check-error-tests.py': every compile error message of 'src/' is
+          expected by a test (233 found, all covered); 'validate_scalar' is
+          'assert_scalar' (no test reached it, the front end rejects 'i64'
+          and instances first); 'check-readme-names.py' checks that the 77
+          tests of the 8.1 column are cases; not done: the generated
+          'clang-tidy.log' and 'cppcheck.log' stay tracked (ask)
        F.3. fuzz: 'fuzz-ub.py' on fuzzlib (T7); route from a finding to a
             case, one catalog of undefined behavior (T8)
+       => F.3 done (2026-10-26): 'fuzz-ub.py' runs through
+          'fuzzlib.build_and_run' (the sanitizer build, 'split_include', the
+          panic names of 'PANIC_CODE'), keeps mismatches in 'findings/'
+          ('ub-mismatch'), the mutants of 'fuzz-ub.sh' keep theirs in a
+          temporary directory; the same tallies for seed 7, every mutant
+          caught; the fuzz README links the catalog and says how a fixed
+          finding becomes a case; 'fuzzlib.assert_fresh' stops a fuzzer
+          whose compiler is older than 'src/' (the asan build of 2026-10-25
+          had been run all session: rebuilt, the asan fuzzers run again,
+          clean)
     asks:
        1. C8: 'builtin_arguments' to a file of its own like 'bulk_operands'
           (a new file); recommended: no, it sits near its use
@@ -176,9 +223,27 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
           recommended: yes, after F.2
        4. S1: a name path resolved once as a path, not as text; large;
           recommended: no unless a bug needs it
+       => asks (2026-10-26, as recommended): 1 C8, 2 T1 (descriptions
+          instead, F.1) and 4 S1 not done; 3 T4 done: 'qa/coverage/
+          listing.py' reads the located comments once and holds the five
+          extractors (folds, stores, widths, compares, types), ported from
+          the awk of the five scripts and equal on all 11 expected files;
+          'LISTING KIND' in 'cases.sh' (8 cases) compiles without the checks
+          for the target of the compiler and compares with
+          'NNN.TARGET.KIND', a target without the file skips; 'types' has
+          expected files now and fails on a type other than the marker;
+          the five 'test-*.sh' scripts and their 'test-all.sh' lines go, so
+          the listings are in the "enough" suites; F.2's open ask: the
+          lint logs are no longer tracked ('.gitignore')
     after the round: a bug-hunt round under 'noub' (fuzz-ub, fuzz-effects,
     inline against noinline, x86_64 against rv32i)
     order: A.1, B.1, A.2, B.4, B.2, B.3, C, D, E, F, then the asks
+[ ] easy: case 0006 fails on the target rv32i (qemu user) that 'test-all.sh'
+    runs, already at 1594bb3e (2026-10-26): 'diff out 0006.rv32i.diff' shows
+    that the expected '--nopt' difference removes one more branch ('beq t0,
+    zero, bool.15.14.end') than the compiler now does, the other targets'
+    diffs hold; find whether a jump optimization stopped applying on rv32i
+    (last change of the expected file: 451da0a8) before updating it
 [ ] medium: a cycle of noinline call kinds, e.g. 'f(a, b)' calling 'f(b,
     a)', is measured from where it was entered ('dry_run_ledger'), so a chain
     that reaches it near the limit of nested dry runs can be accepted or

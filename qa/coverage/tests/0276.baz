@@ -1,3 +1,5 @@
+# unusual spacing between tokens, constants, nested types and calls
+
 let C1  =   100
 let    C2     =      -20
 let       C3        =         50

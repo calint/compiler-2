@@ -1,4 +1,4 @@
 
-0188.baz:2:15: cannot assign to constant 'x'
+0188.baz:4:15: cannot assign to constant 'x'
 func main() { x = 2 }
               ^

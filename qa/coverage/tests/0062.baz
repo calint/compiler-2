@@ -1,3 +1,5 @@
+# interactive loop: prompts, rejects short names, greets, ends on empty line
+
 
 func print(str i8[], len) {
     write(1, str, len)

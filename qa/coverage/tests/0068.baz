@@ -1,3 +1,5 @@
+# nested 'and', 'or' and 'not' over comparisons and constants
+
 func assert(expr bool) {
     if not expr exit(1)
 }

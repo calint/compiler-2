@@ -1,3 +1,5 @@
+# calling a method on the type instead of on a value is rejected
+
 type point {
     x,
     y

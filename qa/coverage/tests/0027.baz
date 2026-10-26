@@ -1,3 +1,5 @@
+# negated parameter and negated product in a function result
+
 func f(x) res{
     res=-x*2
 }

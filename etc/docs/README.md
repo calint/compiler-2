@@ -9,12 +9,13 @@ For a reviewer:
 2. the code: the reading order in 1.1, the choices in chapter 7
 3. build: './make.sh build' (clang++ with c++26), one translation unit
 4. test: 'qa/coverage/test-coverage.sh --target=x86_64 run' and
-   '--target=rv32i-fpga run' run the about 1600 cases of 'cases.sh' on the
-   two main targets; 'qa/coverage/test-all.sh' runs them on all four
+   '--target=rv32i-fpga run' run the cases of 'cases.sh' on the two main
+   targets; 'qa/coverage/test-all.sh' runs them on all four
    targets with the other suites and a coverage report in
    'qa/coverage/report/' (needs nasm, ld, llvm-mc, ld.lld, qemu-riscv32 and
    qemu-system-riscv32)
-5. lint and format: 'qa/lint/clang-tidy.sh', 'qa/lint/format-source.sh'
+5. lint and format: 'qa/lint/clang-tidy.sh', 'qa/lint/check-all.sh' (the
+   design rules), 'qa/lint/format-source.sh'
 6. fuzzing: 'qa/fuzz/fuzz-all.sh', see 'qa/fuzz/README.md'
 7. known limitations and planned work: 'etc/todo.txt', the reasons of past
    decisions: 'etc/todo-resolved.txt'
@@ -44,23 +45,25 @@ For a reviewer:
     - [2.8 Errors](#28-errors)
     - [2.9 Order rules](#29-order-rules)
     - [2.10 Generic functions](#210-generic-functions)
-- [3. Access paths: aliasing check of what is reached through run-time indexes](#3-access-paths-aliasing-check-of-what-is-reached-through-run-time-indexes)
-    - [3.1 Problem](#31-problem)
-    - [3.2 The path](#32-the-path)
-    - [3.3 Why paths and not bytes](#33-why-paths-and-not-bytes)
-    - [3.4 Comparing two paths](#34-comparing-two-paths)
-    - [3.5 Building paths](#35-building-paths)
-    - [3.6 A value written in parts](#36-a-value-written-in-parts)
-    - [3.7 The other checks on a read](#37-the-other-checks-on-a-read)
-    - [3.8 Fuzzing](#38-fuzzing)
-    - [3.9 Reads, writes and their order](#39-reads-writes-and-their-order)
-    - [3.10 What a call does](#310-what-a-call-does)
-    - [3.11 Definite assignment](#311-definite-assignment)
+    - [2.11 Where in the code](#211-where-in-the-code)
+- [3. Reads and writes: the no-UB checks](#3-reads-and-writes-the-no-ub-checks)
+    - [3.1 Reads, writes and their order](#31-reads-writes-and-their-order)
+    - [3.2 Aliasing: the problem](#32-aliasing-the-problem)
+    - [3.3 The path](#33-the-path)
+    - [3.4 Why paths and not bytes](#34-why-paths-and-not-bytes)
+    - [3.5 Comparing two paths](#35-comparing-two-paths)
+    - [3.6 Building paths](#36-building-paths)
+    - [3.7 A value written in parts](#37-a-value-written-in-parts)
+    - [3.8 The other checks on a read](#38-the-other-checks-on-a-read)
+    - [3.9 What a call does](#39-what-a-call-does)
+    - [3.10 Definite assignment](#310-definite-assignment)
+    - [3.11 Fuzzing the aliasing check](#311-fuzzing-the-aliasing-check)
 - [4. Noinline calls: the body dry run once per kind of call](#4-noinline-calls-the-body-dry-run-once-per-kind-of-call)
     - [4.1 Problem](#41-problem)
     - [4.2 Dry run](#42-dry-run)
     - [4.3 Call kind: dry run once per kind of call](#43-call-kind-dry-run-once-per-kind-of-call)
     - [4.4 Temporaries](#44-temporaries)
+    - [4.5 The call and its frame](#45-the-call-and-its-frame)
 - [5. Versions of the same code: compiled, measured, the shorter kept](#5-versions-of-the-same-code-compiled-measured-the-shorter-kept)
     - [5.1 Why](#51-why)
     - [5.2 Why so many](#52-why-so-many)
@@ -127,7 +130,7 @@ assembler.hpp    buffers the lines, optimizes the jumps
 The build is one translation unit: 'main.cpp' includes the headers.
 
 The headers in layers, a header includes only headers of its own layer and of
-the layers above it ('qa/lint/check-layers.py' checks it):
+the layers with a lower number ('qa/lint/check-layers.py' checks it):
 
 ```text
 1. vocabulary        token, lut, compile_error, operand, type,
@@ -144,23 +147,25 @@ the layers above it ('qa/lint/check-layers.py' checks it):
 6. driver            program, main.cpp
 ```
 
-The backend calls back into earlier layers through callbacks: the versions of
-'machine::emit_most_efficient' and the code of 'machine::emit_discarded'
-compile statements, as do the count and address emitters of the bulk
-operations; 'store_bytes' asks 'toc' for a read-only label.
+The backend, layer 3, reaches the layers with a higher number only through
+callbacks: the versions of 'machine::emit_most_efficient' and the code of
+'machine::emit_discarded' compile statements, as do the count and address
+emitters of the bulk operations; 'store_bytes' asks 'toc' for a read-only
+label.
 
-Reading order, each step builds on the ones before it. The files add up to
-about 30k lines, so the code takes more than a day: 'read' marks what to read
-through, 'skim' what to read by its header comments and class maps first.
+Reading order, each step builds on the ones before it. The code takes more
+than a day: 'read' marks what to read through, 'skim' what to read by its
+header comments and class maps first.
 
 ```text
 1. main.cpp, program.hpp       skim: the driver and the passes
 2. compile_error.hpp           read: the error every step throws (1.9)
-   ident_info.hpp, operand.hpp, access_path.hpp, ub_reads.hpp, ub_assigned.hpp
+   type.hpp, operand.hpp, ident_info.hpp, access_path.hpp, ub_reads.hpp,
+   ub_assigned.hpp
                                skim: the vocabulary of the node signatures,
-                               'destination', 'ident_info', 'folded_value',
-                               'value_use', and the walks every node takes
-                               part in (3.9)
+                               'type', 'operand', 'destination',
+                               'ident_info', 'folded_value', 'value_use', and
+                               the walks every node takes part in (3.1)
    toc.hpp, its file map       read the map at the top, not the file: what
                                every node asks 'toc' for (the file is step 11)
 3. statement.hpp               read: the node interface every statement has
@@ -191,9 +196,10 @@ through, 'skim' what to read by its header comments and class maps first.
                                skim: functions, inlined and noinline calls,
                                the generic instances (2.11)
 11. toc.hpp                    skim: what the names are while compiling
-12. machine.hpp, machine_x86_64.hpp, assembler.hpp
-                               skim: the operations and one backend; the
-                               class map of 'machine' is read
+12. machine.hpp, register_pool.hpp, machine_x86_64.hpp, assembler.hpp
+                               skim: the operations, the registers (1.8) and
+                               one backend; the class map of 'machine' is
+                               read
 13. machine_rv32i.hpp, assembler_rv32i.hpp
                                skim: the load/store backend and its image
 ```
@@ -201,13 +207,19 @@ through, 'skim' what to read by its header comments and class maps first.
 A first day: chapters 1, 7, 3 and 4 of this document, then the header
 comments and class maps of steps 1 to 5.
 
+The formatter ('qa/lint/format-source.sh') sorts the members of a class by
+name within their section banners ('// statics', '// class methods', ...), so
+a class does not read top to bottom in the order its steps run; the class and
+file maps at the top give that order, e.g. those of 'toc', 'machine' and
+'stmt_call'.
+
 Invariants the code relies on:
 
 1. a statement parses in its constructor and emits nothing until it is
    compiled; a node has no default constructor, its members are made in
    the member list (the one exception is the body of a 'stmt_def_func',
-   see 'stmt_block'); a compile may run more than once ([1.4](#14-dry-runs)) and adds
-   the same to 'toc' each time, or what it adds is put back by its owner
+   see 'stmt_block'); a compile may run more than once
+   ([1.4](#14-dry-runs))
 2. the front end never writes assembly, it calls 'machine' operations
    with operands; the backend lowers them to what the target encodes
 3. registers are freed in the reverse order of their allocation, an
@@ -223,28 +235,28 @@ Invariants the code relies on:
 
 1. parse ('program' constructor): every statement parses itself in its
    constructor and emits nothing, 'toc::begin_compile' ends the parse. The
-   grammar needs to know the names, e.g. 'point{' is a record literal only
-   when 'point' is a type, 'f<' is a generic call only when 'f' is a generic
-   function, so the parse declares types, functions, constants and
-   variables in 'toc' as it goes. Where a type or a size is learned from the
-   initializer, the initializer is parsed, the tokenizer rewound and parsed
-   again ('initializer_declaration::trial_parse'). A generic definition is kept as text
-   and parsed again for each instance ('generics.hpp'). A function checks
+   grammar needs to know the names, e.g. 'point{' is a record literal only when
+   'point' is a type, 'f<' is a generic call only when 'f' is a generic
+   function, so the parse declares types, functions, constants and variables in
+   'toc' as it goes. Where a type or a size is learned from the initializer, the
+   initializer is parsed, the tokenizer rewound and parsed again
+   ('initializer_declaration::trial_parse'). A generic definition is kept as
+   text and parsed again for each instance ('generics.hpp'). A function checks
    when parsed that every path through it sets its result
    ('stmt_def_func::assert_sets_result', 'ub_assigned.hpp').
 
 2. compile ('program::build'): the statements are walked again with a fresh
    scope stack in 'toc'. Global variables and data are declared again, then
    'main' is compiled where the program starts. An inlined call compiles the
-   body of the callee in place ([1.3](#13-names-during-compile-scopes-and-bindings)). A noinline call adds a body to
-   compile for the array lengths of its arguments; the bodies are compiled
-   after 'main', and compiling one can add more. Then each function but
+   body of the callee in place
+   ([1.3](#13-names-during-compile-scopes-and-bindings)). A noinline call adds a
+   body to compile for the array lengths of its arguments; the bodies are
+   compiled after 'main', and compiling one can add more. Then each function but
    'main' is checked once without its calls and emits nothing
-   ([1.5](#15-checks)). Then the
-   failure handlers that the code branches to
+   ([1.5](#15-checks)). Then the failure handlers that the code branches to
    ('machine::emit_used_failure_handlers'), the routines and helpers the code
-   and the handlers marked used ('machine::emit_used_routines'), the
-   read-only strings, the data and the variables.
+   and the handlers marked used ('machine::emit_used_routines'), the read-only
+   strings, the data and the variables.
 
 3. output ('machine::finish', 'write_assembly'): the buffered lines get their
    jumps optimized, the assembly is written, the rv32i targets also write the
@@ -283,11 +295,12 @@ type and copied. 'stmt_call::compile' checks the result before the inlined and
 the noinline paths split, so both accept the same.
 
 A noinline function has a body of its own and a frame in memory that holds the
-addresses of its result and arguments ('stmt_call.hpp', 'noinline_call').
+addresses of its result and arguments
+([4.5](#45-the-call-and-its-frame)).
 
-What resolution gives is an 'ident_info': a constant, a register or a
-variable with its memory operand and the deepest address an inlined call
-computed ('call_address'). 'statement::compile' writes its value to a 'destination':
+What resolution gives is an 'ident_info': a constant, a register or a variable
+with its memory operand and the deepest address an inlined call computed
+('call_address'). 'statement::compile' writes its value to a 'destination':
 nowhere for a statement, a register, or the storage a resolved name is at.
 
 ### 1.4 Dry runs
@@ -300,10 +313,11 @@ the longer of two versions after both are measured:
    errors that depend on that call, see
    [chapter 4](#4-noinline-calls-the-body-dry-run-once-per-kind-of-call),
    and the body of each function without its calls ([1.5](#15-checks))
-2. 'toc::emit_most_efficient' over 'machine::emit_most_efficient': two
-   versions are compiled, each from the state before it, and the one with fewer
+2. 'toc::emit_most_efficient' over 'machine::emit_most_efficient': two versions
+   are compiled, each from the state before it, and the one with fewer
    instructions is kept with the state it ended in, e.g. with and without a
-   scratch register, see [5.3](#53-state-each-version-starts-from-the-same-machine)
+   scratch register, see
+   [5.3](#53-state-each-version-starts-from-the-same-machine)
 
 What dropped code changed is put back by its owner, also when an error
 unwinds it:
@@ -324,19 +338,20 @@ unwinds it:
 A dry run keeps one record, the call kind it entered ('dry_run_ledger',
 [7.8](#78-the-first-error-ends-the-compile)).
 
-So a statement can be compiled more than once. What its compile adds to 'toc'
-must be the same the second time: labels are named by source location and
-call path, string constants with the same text share a label, a noinline body
-and a checked call are added once.
+So a statement can be compiled more than once, and what its compile adds to
+'toc' is the same each time or put back by its owner; the class comment of
+'toc' lists each write of a compile and how it keeps the rule, and
+'statement::compile' points there.
 
 ### 1.5 Checks
 
 '--checks' ('check_options' in 'toc.hpp') turns on run-time checks, which the
 machine emits as a compare and a branch to a failure handler, and one
-compile-time rejection, 'alias'; the other compile-time rules (narrowing,
-uninitialized reads, constants out of range) always hold, see
-[8.1](#81-the-catalog). 'toc::checks' gives the options, they build the
-option records of the machine methods.
+compile-time rejection, 'alias'; 'line' adds the source line to the message
+of a failed bounds, division, shift, overlap or overflow check. The other
+compile-time rules (narrowing, uninitialized reads, constants out of range)
+always hold, see [8.1](#81-the-catalog). 'toc::checks' gives the options, they
+build the option records of the machine methods.
 
 The rule: whether a program is accepted does not depend on its calls, except
 for what needs the arguments of a call. So it can depend on inlining: in
@@ -591,17 +606,16 @@ prints it with its frames.
    ('generic_trace'), and a noinline call adds itself to the error of its dry
    run.
 2. Kinds ('compile_error::error_kind'): 'source', an error of the program,
-   and 'out_of_registers' and 'inlining_limit', which depend on the arguments
-   of a call. Three places read the kind and change the error:
-   - 'machine::compile_version' drops 'out_of_registers' of a version when
-     the other version is available ([5.3](#53-state-each-version-starts-from-the-same-machine))
-   - 'stmt_call::compile' turns 'out_of_registers' in an inlined recursion
-     into the error of the recursion, which gives the same advice
-   - 'stmt_def_func::check_body' drops both kinds when the body takes from a
-     call ([1.5](#15-checks))
-
-   'toc::throw_dry_run_error' resets the kind of an error that ends a dry run
-   to 'source', so no reader above drops it.
+   and the kinds that depend on the code compiled or on the arguments of a
+   call: 'out_of_registers', 'out_of_storage' and 'inlining_limit'. Three
+   places read the kind and change the error instead of ending with it: a
+   version that runs out is dropped when the other one is available
+   ([5.3](#53-state-each-version-starts-from-the-same-machine)), an inlined
+   recursion that runs out of registers is reported as the recursion, and the
+   check of a function without its calls ends at such an error
+   ([1.5](#15-checks)); the comment of 'error_kind' names the functions. An
+   error that ends a dry run is a 'source' one ('toc::throw_dry_run_error'),
+   so none of them drops it.
 3. A file that cannot be read is an 'unlocated_error', which
    'program::load_file' locates at its 'include'.
 
@@ -677,9 +691,9 @@ type str = text<8>
 The generic type must already be defined, and the count of arguments must
 match. Each argument is checked against its parameter: a type parameter gets a
 type, a constant parameter gets a constant. The result is a list of bindings
-('capacity' = 8), from which the instance is built ([2.6](#26-building-the-instance-level-by-level)),
-'str' is registered as a real type, and the methods are made
-([2.7](#27-methods)).
+('capacity' = 8), from which the instance is built
+([2.6](#26-building-the-instance-level-by-level)), 'str' is registered as a
+real type, and the methods are made ([2.7](#27-methods)).
 
 ### 2.6 Building the instance, level by level
 
@@ -947,9 +961,41 @@ generic_reparse, generic_scope        the text parsed again with each
 generic_trace (generics.hpp)          the instances that led to an error
 ```
 
-## 3. Access paths: aliasing check of what is reached through run-time indexes
+## 3. Reads and writes: the no-UB checks
 
-### 3.1 Problem
+### 3.1 Reads, writes and their order
+
+Evaluation is left to right: the operands of a list, the arguments of a
+call, the parts of a statement and the parts a literal writes. Code
+generation follows the same order, so the checks walk a statement in that
+order and check each read only against what was written before it; the code
+that is checked is the code that is emitted.
+
+Each node states its operands in evaluation order once, in its
+'visit_operands', and the walks of the checks follow from it, so a check
+cannot read a node in an order its code does not run. The default of
+'visit_operands' is 'std::unreachable()': a node that is asked and does not
+say fails in the tests instead of skipping the checks. An operand is a
+'list_operand' ('ub_reads.hpp'): a node it reads, or a place of which only
+the indexes are read, e.g. the buffer that 'read' fills. The walks and their
+defaults are listed in the class comment of 'statement': 'visit_reads' (every
+read of a variable, with its bytes for the definite assignment and its path
+for the aliasing), 'visit_call_effects' (what the bodies of the calls read
+and write, [3.9](#39-what-a-call-does)) and 'trace_assignment' (the walk for
+the definite assignment, [3.10](#310-definite-assignment)).
+
+The order checks are in 'ub_order.hpp', whose header lists each one with the
+order it relies on and where the code emits that order: a value written in
+parts reads no part written before it ([3.7](#37-a-value-written-in-parts)),
+an expression computed in its destination reads nothing of it, an operand of
+a list reads nothing that a call in a later operand writes, e.g. the 'i' of
+'f(arr[i], h(i))' with 'h' writing 'i', and where a backend computes an
+operand first, e.g. the count of 'array_copy', the earlier ones write nothing
+it reads. The aliasing of the arguments of a call is not an order, it is
+[3.2](#32-aliasing-the-problem) to [3.7](#37-a-value-written-in-parts)
+('stmt_call::assert_no_shared_storage').
+
+### 3.2 Aliasing: the problem
 
 Two accesses to the same root variable alias when they can reach a common
 byte. With a run-time index the byte is not known, so the check must answer
@@ -960,7 +1006,7 @@ Anything unknown is "may alias": a missed alias is undefined behavior in the
 compiled program, a false alarm only asks for the code to be written
 differently.
 
-### 3.2 The path
+### 3.3 The path
 
 An access is described by the path from its root variable: one step per
 field, constant index or run-time index. The root variable itself is not a
@@ -985,7 +1031,7 @@ A field is identified by its offset in the parent. Fields never overlap (every
 field has a size, a type has a field and an array has at least one element),
 so different offsets are different fields.
 
-### 3.3 Why paths and not bytes
+### 3.4 Why paths and not bytes
 
 A run-time index turns a single byte range into a set of ranges, one per
 element, spaced by the element size. Comparing two such sets as bytes means
@@ -995,7 +1041,7 @@ the bytes lose: two accesses that take different fields at the same position
 can never meet, whatever the indexes are. The check never compares bytes, so
 it is exact for every path the language can write.
 
-### 3.4 Comparing two paths
+### 3.5 Comparing two paths
 
 The steps line up, so they are walked together:
 
@@ -1025,29 +1071,29 @@ Examples:
     the first path ran out                            => may alias
 ```
 
-### 3.5 Building paths
+### 3.6 Building paths
 
 An identifier adds a step per element of what it names: '.name' adds a field,
 '[3]' a constant index, '[i]' a run-time index.
 
-A bound name (a parameter, a result, the element 'e' of a 'foo') stands for
-the path of what it names, and an access through it is the path of the target
+A bound name (a parameter, a result, the element 'e' of a 'foo') stands for the
+path of what it names, and an access through it is the path of the target
 followed by the path of the access inside it. This way an access through any
-number of bound names is compared as if it were written out on the root variable.
-The element 'e' of a 'foo' adds a run-time index, since it is any element of
-the array.
+number of bound names is compared as if it were written out on the root
+variable. The element 'e' of a 'foo' adds a run-time index, since it is any
+element of the array.
 
 The whole variable has the empty path, e.g. a temporary of a call, which is a
 root variable of its own.
 
-### 3.6 A value written in parts
+### 3.7 A value written in parts
 
-A value is written part by part, in the order 'compile' writes it
-('plan_writes' makes a 'write_plan'): a field list field by field, a braced array element by
-element, a call or a copy at once. Each part has its path from the
-destination. Each read of a part is resolved to its root variable
-('toc::storage_of'), so a parameter, the element 'e' of a 'foo' and the name
-itself reach the same variable:
+A value is written part by part, in the order 'compile' writes it ('plan_writes'
+makes a 'write_plan'): a field list field by field, a braced array element by
+element, a call or a copy at once. Each part has its path from the destination.
+Each read of a part is resolved to its root variable ('toc::storage_of'), so a
+parameter, the element 'e' of a 'foo' and the name itself reach the same
+variable:
 
 ```text
 p = {p.y, p.x}                 'x' is written first, then 'p.x' reads it =>
@@ -1074,7 +1120,7 @@ callee uses. An overlap
 that the body sees itself, e.g. the element 'e' of a 'foo' and the array it
 iterates, is protected like in an inlined body.
 
-### 3.7 The other checks on a read
+### 3.8 The other checks on a read
 
 Other checks look at the reads of a variable and do need bytes, because they
 ask whether a read is inside what has been assigned:
@@ -1105,7 +1151,35 @@ stay the whole array: a write through 'arr[i]' assigns nothing, and a read
 through it needs the whole array to be assigned. Both are the safe answer when
 the element is not known.
 
-### 3.8 Fuzzing
+### 3.9 What a call does
+
+The effect of a call is a summary that the parse makes of its body
+('body_uses', [4.1](#41-problem)): the globals the body reads and writes,
+also through its calls, and for each 'mut' parameter the whole storage of its
+argument as written ('stmt_call::visit_call_effects'). The calls in the
+arguments come first. The summary is per parameter as the signature says,
+like the record of a recursive call, so it needs no fixed point over the
+bodies ([8.3](#83-known-limits)).
+
+### 3.10 Definite assignment
+
+'ub_assigned.hpp' tells which bytes of a variable are set before they are read.
+'assignment_flow' walks one variable through a function body by name, before
+'toc' resolves the names: each statement reports what it does ('declare',
+'assign', 'end_path', 'record_break'), the class joins the paths ('block_scope',
+'trace_loop' with its 'loop_end', 'path_merge' for an 'if'), and
+'assigned_bytes' keeps the byte ranges set on every path. A read outside them is
+"use of uninitialized variable".
+
+It walks the result of a function, which every path must set before it
+returns ('stmt_def_func::assert_sets_result'), and, without a variable,
+which statements are reached ('assignment_flow::reachability_only',
+[1.5.1](#151-code-that-is-not-reached)). A variable is set where it is
+declared, so the one local that can be read unset is the variable its own
+initializer names, e.g. 'var x = x + 1' ('stmt_def_var'). The compile tells
+which code is reached with the same join rules ('toc::path_merge').
+
+### 3.11 Fuzzing the aliasing check
 
 The aliasing check is tested against a brute force of the bytes, in which
 every value of every run-time index is tried. Two fuzzers do this:
@@ -1117,96 +1191,22 @@ every value of every run-time index is tried. Two fuzzers do this:
    and 'mut' parameters, inline and noinline, against a read of the variable,
    with mixed scalar sizes; "may share storage" must be reported exactly when
    the bytes can be the same through a noinline call, inline code computes the
-   value before it writes it (3.6)
+   value before it writes it (3.7)
 
 A long run, one seed per core with large counts, takes about six minutes on 16
 cores and is meant for any change to the check.
-
-### 3.9 Reads, writes and their order
-
-Evaluation is left to right: the operands of a list, the arguments of a
-call, the parts of a statement and the parts a literal writes. Code
-generation follows the same order, so the checks walk a statement in that
-order and check each read only against what was written before it; the code
-that is checked is the code that is emitted.
-
-The walks every node takes part in are virtuals of 'statement', their types
-are in 'ub_reads.hpp':
-
-1. 'visit_operands': the operands of the node in evaluation order, each a
-   'list_operand', a place the node writes with only its indexes read; the
-   one place a node states its order, the two walks below and the order
-   checks read it; the default is 'std::unreachable()', so a node that is
-   asked and does not say fails in the tests instead of skipping the checks,
-   and a leaf says it has none
-2. 'visit_reads': every read of a variable, with the bytes it reaches, for
-   the definite assignment, and its path, for the aliasing checks; the reads
-   of the operands, 'stmt_identifier' adds its own
-3. 'visit_call_effects': what the bodies of the calls in a node read and
-   write, in the order they are called ([3.10](#310-what-a-call-does)); the
-   effects of the operands, a call adds what its body does
-4. 'trace_assignment': the walk of the statements for the definite
-   assignment and for which statements are reached
-   ([3.11](#311-definite-assignment))
-
-The order checks are in 'ub_order.hpp', whose header names the order each
-one relies on and where that order is emitted:
-
-1. a value written in parts reads no part written before it
-   ('stmt_assign_var::assert_parts_not_clobbered', the order of the steps of
-   the 'write_plan', 3.6)
-2. an expression computed in its destination reads nothing of it, else it is
-   computed in a scratch register first ('reaches_destination')
-3. an operand of a list reads nothing that a call in a later operand of the
-   list writes ('assert_not_written_later'), e.g. the 'i' of 'f(arr[i],
-   h(i))' with 'h' writing 'i': the compile reads a name where it is used, so
-   the list would read the written value
-4. where a backend computes an operand before ones that come earlier in the
-   source, e.g. the count of 'array_copy' or of 'read', the earlier ones
-   write nothing it reads ('assert_not_written_after')
-
-The aliasing of the arguments of a call is not an order, it is chapter 3
-('stmt_call::assert_no_shared_storage').
-
-### 3.10 What a call does
-
-The effect of a call is a summary that the parse makes of its body
-('body_uses', [4.1](#41-problem)): the globals the body reads and writes,
-also through its calls, and for each 'mut' parameter the whole storage of its
-argument as written ('stmt_call::visit_call_effects'). The calls in the
-arguments come first. The summary is per parameter as the signature says,
-like the record of a recursive call, so it needs no fixed point over the
-bodies ([8.3](#83-known-limits)).
-
-### 3.11 Definite assignment
-
-'ub_assigned.hpp' tells which bytes of a variable are set before they are
-read. 'assignment_flow' walks one variable through a function body by name,
-before 'toc' resolves the names: each statement reports what it does
-('declare', 'assign', 'end_path', 'record_break'), the class joins the paths
-('block_scope', 'trace_loop' with its 'loop_end', 'path_merge' for an 'if'),
-and
-'assigned_bytes' keeps the byte ranges set on every path. A read outside them
-is "use of uninitialized variable".
-
-It walks the result of a function, which every path must set before it
-returns ('stmt_def_func::assert_sets_result'), and, without a variable,
-which statements are reached ('assignment_flow::reachability_only',
-[1.5.1](#151-code-that-is-not-reached)). A variable is set where it is
-declared, so the one local that can be read unset is the variable its own
-initializer names, e.g. 'var x = x + 1' ('stmt_def_var'). The compile tells
-which code is reached with the same join rules ('toc::path_merge').
 
 ## 4. Noinline calls: the body dry run once per kind of call
 
 ### 4.1 Problem
 
-An inline call is compiled at the call site, so its parameters are bound to
-the arguments and the aliasing check ([chapter 3](#3-access-paths-aliasing-check-of-what-is-reached-through-run-time-indexes)) sees
-which arguments name the same variable. A noinline body is compiled once and
-receives addresses, so it cannot know which arguments are the same variable.
-Whether a body is unsafe depends on the call, so the error ("may share
-storage") has to be reported at the call, not once for the body.
+An inline call is compiled at the call site, so its parameters are bound to the
+arguments and the aliasing check ([chapter
+3](#3-reads-and-writes-the-no-ub-checks)) sees which arguments name the same
+variable. A noinline body is compiled once and receives addresses, so it cannot
+know which arguments are the same variable. Whether a body is unsafe depends on
+the call, so the error ("may share storage") has to be reported at the call, not
+once for the body.
 
 A global that the callee uses, also through its calls, counts as an argument,
 inlined and noinline alike. The parse records what each body reaches that its
@@ -1219,20 +1219,21 @@ f()' where 'f' reads 'g'.
 ### 4.2 Dry run
 
 At each noinline call, before the call is compiled for real, the body is
-compiled as if it were inlined with these arguments, and the result is
-dropped. The errors that this inline compilation raises are the errors of the
-call: shared storage, and any other error that depends on the arguments, e.g.
-an index checked against the length of an array argument or a nesting limit. An error carries the call as a frame, so it points both at
-the call and at the line in the body.
+compiled as if it were inlined with these arguments, and the result is dropped.
+The errors that this inline compilation raises are the errors of the call:
+shared storage, and any other error that depends on the arguments, e.g. an index
+checked against the length of an array argument or a nesting limit. An error
+carries the call as a frame, so it points both at the call and at the line in
+the body.
 
 This reuses the inline check as it is. A separate analysis of which parameters
 a body writes and reads would duplicate the check and could disagree with it.
 
-A dry run must leave no trace, or the program would change depending on which
-calls were checked: its code is discarded and what it changed is put back
-([1.4](#14-dry-runs) lists it by owner). The locals of the body live in the
-callee's own frame, so the caller's frame capacity is not checked against
-them.
+A dry run leaves no trace in the output, or the program would change depending
+on which calls were checked: its code is discarded and what it changed is put
+back; what it keeps is the record of its call kind, see [1.4](#14-dry-runs),
+which lists both by owner. The locals of the body live in the callee's own
+frame, so the caller's frame capacity is not checked against them.
 
 ### 4.3 Call kind: dry run once per kind of call
 
@@ -1248,7 +1249,7 @@ name + for the result and each argument:
                         the length
     ' global g' path    a global, by name
     ' local K' path     a local, K is the order of first appearance
-    path                the bytes passed, the access path of chapter 3:
+    path                the bytes passed, the access path of 3.3:
                         '.8' the field at offset 8, '[2]' element 2, '[?]'
                         an element at a run-time index, nothing for the
                         whole variable
@@ -1303,6 +1304,46 @@ of the caller that the body does not see. The temporary is storage, not a
 constant of the body, so the dry run does not depend on the value, just as
 the body compiled once does not. A temporary aliases no variable, so whether
 an argument is a temporary or a variable is part of the call kind.
+
+### 4.5 The call and its frame
+
+A noinline function has one body per set of array lengths of its array
+arguments, emitted after 'main' ('toc::add_noinline_body'), and its callers
+pass addresses, not values ('noinline_call' in 'stmt_call.hpp'):
+
+```text
+frame base +------------------------+
+           | caller's storage       |
+frame      +------------------------+ <- 'toc::next_frame_address',
+address    | result address         |    the callee's frame base
+           | argument address       |    one slot per parameter
+           +------------------------+
+           | callee's locals        |
+           +------------------------+
+```
+
+1. The slots: the address of the result when there is one, then one per
+   parameter ('stmt_def_func::frame_slots'); the receiver of a method is
+   passed in the slot register instead, x86_64 'r11' and rv32i 's11'. A
+   result or an argument that is not a variable in memory goes through a
+   temporary of the call, the result is copied out after the call.
+2. The frame starts after the storage of the caller, aligned to an address,
+   not at the stack pointer: in a noinline body after its frame, which its
+   frame base holds (x86_64 'rbx', rv32i 's1'), in 'main' at the variables
+   base (x86_64 'rbp', rv32i 's0'). The frame size of a body is the peak of
+   its storage, a constant named after the body ('frame_size_label').
+3. 'machine::call_function' saves the registers allocated at the call on the
+   stack, all but the variables base, since the callee may use every other
+   register, sets the frame base to the frame address, calls and restores
+   them.
+4. With '--checks=frame' the call checks that the callee frame fits in the
+   variables ('machine::check_frame_capacity', '--vars'), with
+   '--checks=stack' on the bare-metal targets that the call fits in the
+   stack ('machine::check_stack_capacity'), both in
+   'noinline_call::populate_frame' before the slots are written.
+
+Before the call is compiled for real, its dry run checks the body with these
+arguments ([4.2](#42-dry-run)).
 
 ## 5. Versions of the same code: compiled, measured, the shorter kept
 
@@ -1370,31 +1411,28 @@ it, and an instance with thousands of gaps would cost compile time.
 
 ### 5.3 State: each version starts from the same machine
 
-A version changes more than the lines it emits. 'machine::version_scope' saves
-what it changes in the machine and puts it back when the version ends, also
-when an error unwinds it ([1.4](#14-dry-runs) lists it): the registers held,
-with what a passed lower bounds check proved; the trace of the calls, which
-the register report and errors print; the most scratch registers in use, the
-footer of the output; and the routines, helpers and failure stubs marked used
-('machine::mark_used'), a set of values like the registers, so those of a
-dropped version or of discarded code are dropped.
+A version changes more than the lines it emits. 'machine::version_scope' and
+'toc::emit_most_efficient' save what it changes and put it back when the
+version ends, also when an error unwinds it; [1.4](#14-dry-runs) lists it by
+owner. The registers held carry what a passed lower bounds check proved, and
+the routines marked used ('machine::mark_used') are a set of values like the
+registers, so those of a dropped version or of discarded code are dropped.
 
 Each version starts from the saved state; after the choice the state the kept
-version ended in remains; 'toc::emit_most_efficient' does the same for the
-peaks of 'toc' (1.4). So the footer and '--report=registers' describe the
+version ended in remains. So the footer and '--report=registers' describe the
 code that is in the output, and a routine only a dropped version calls is not
 emitted.
 
 A version that runs out of scratch registers or of variable storage is not
-available and the other one is kept, e.g. an inlined call with fifteen
-indexed arguments on rv32i where folding each address into a register would
-need more registers than there are, or the temporary of a scratch version
-past '--vars'. The error carries the kind 'compile_error::error_kind::
-out_of_registers' or 'out_of_storage', which is set where the error is made;
-when both versions run out, the error of the first is reported. Any other error is an error of
-the program and ends the compile. An error of discarded code is never one of
-a version: discarded code starts from the registers of a noinline body, which
-do not depend on the code around it.
+available and the other one is kept, e.g. an inlined call with fifteen indexed
+arguments on rv32i where folding each address into a register would need more
+registers than there are, or the temporary of a scratch version past '--vars'.
+The error carries the kind 'compile_error::error_kind:: out_of_registers' or
+'out_of_storage', which is set where the error is made; when both versions run
+out, the error of the first is reported. Any other error is an error of the
+program and ends the compile. An error of discarded code is never one of a
+version: discarded code starts from the registers of a noinline body, which do
+not depend on the code around it.
 
 What a failed version entered must be left when its error unwinds:
 
@@ -1677,7 +1715,7 @@ Cost: a virtual with a default lets a new node compile without the
 capability: a default that no other node reaches is 'std::unreachable()', so
 a missing override shows when the compiler runs, not when it is built; the
 operands of the no-UB checks ('visit_operands',
-[3.9](#39-reads-writes-and-their-order)) have that default too, so no node
+[3.1](#31-reads-writes-and-their-order)) have that default too, so no node
 skips the checks without failing a test that reaches it.
 
 ### 7.4 Generic definitions are text parsed again
@@ -1710,8 +1748,8 @@ Cost:
 
 1. a parameter and another name may reach the same bytes, so aliasing is
    checked at compile time (chapter 3)
-2. a noinline body cannot see its calls, so its body is dry run once per
-   kind of call ([chapter 4](#4-noinline-calls-the-body-dry-run-once-per-kind-of-call))
+2. a noinline body cannot see its calls, so its body is dry run once per kind of
+   call ([chapter 4](#4-noinline-calls-the-body-dry-run-once-per-kind-of-call))
 3. a function that nothing calls is checked like a noinline body, and an
    error that needs the arguments of a call is dropped there
    ([1.5](#15-checks))
@@ -1736,9 +1774,9 @@ the statements ask at every step, which has a 'toc' method that forwards it:
 'toc' is also the compile context: it carries the machine and whether the
 program is being parsed or compiled, and whether a dry run is active. A
 statement compiles with the names and the machine together, e.g. a variable
-resolves to an operand that the machine then uses, and the mode decides what
-a declaration does, e.g. the parse declares names without storage; one parameter keeps
-them consistent.
+resolves to an operand that the machine then uses, and the mode decides what a
+declaration does, e.g. the parse declares names without storage; one parameter
+keeps them consistent.
 
 Rejected: passing the tables one by one, every signature would carry the
 ones its callees need.
@@ -1754,10 +1792,11 @@ sees the whole program. The include cycles between the statement classes are
 broken in 'decouple.hpp', 'parse_statement.hpp', 'expr_type_impl.hpp' and
 'stmt_identifier_impl.hpp' (the members of 'stmt_identifier' that use its
 index expressions, so that the expressions can include 'stmt_identifier.hpp');
-for
-the same reason two headers define members of an earlier class: 'tokenizer.hpp'
-the 'compile_error' of a tokenizer, 'register_report.hpp'
-'machine::register_error' and 'machine::register_peak_report'. A forward
+for the same reason three headers define members of an earlier class:
+'tokenizer.hpp' the 'compile_error' of a tokenizer, 'register_report.hpp'
+'machine::register_error' and 'machine::register_peak_report', and
+'stmt_identifier.hpp' the operand walks of 'statement' ('visit_reads',
+'visit_call_effects') and 'statement::bare_path'. A forward
 declaration of a class used only by reference or pointer is the opaque-pointer
 pattern and is also allowed: 'stmt_def_dat' and 'stmt_def_func' in 'toc.hpp'.
 
@@ -1770,18 +1809,12 @@ Cost: every change rebuilds everything.
 
 An error is a 'compile_error' at the token that caused it, with the
 inlined calls and generic instances that led there ([1.9](#19-errors)). No
-code recovers from an error, so no error leads to a second, wrong one. Three
-places change an error instead of ending with it: a version of code that runs
-out of scratch registers, where the other version is kept and the error is
-dropped with the state of the failed version
-([5.3](#53-state-each-version-starts-from-the-same-machine)); the check of a
-function that nothing calls, where an error that depends on the arguments of
-a call ends the check and the function is accepted ([1.5](#15-checks)); and
-an inlined recursion that runs out of registers, reported as the recursion.
-An error in the dry run of a noinline call ends the compile like any other;
-the dry run puts its state back like dropped code ([1.4](#14-dry-runs)) but
-keeps the call kind it recorded before it ran ('toc::dry_run_call_kind'),
-which is safe because the compile ends.
+code recovers from an error, so no error leads to a second, wrong one; the
+three places that change an error instead of ending with it are listed in
+1.9. An error in the dry run of a noinline call ends the compile like any
+other; the dry run puts its state back like dropped code
+([1.4](#14-dry-runs)) but keeps the call kind it recorded before it ran
+('toc::dry_run_call_kind'), which is safe because the compile ends.
 
 Rejected: reporting several errors, each statement would need a point to
 recover at and later errors could be caused by earlier ones.
@@ -1843,11 +1876,11 @@ register, so a value of it needs no extension or second register.
 Rejected: one default type on every target; 'i64' doubles every value on
 rv32i, 'i32' gives up the width of x86_64 (decided 2026-10-26).
 
-Cost: the one exception to the goal that a result does not depend on the
-target ([chapter 8](#8-undefined-behavior-what-is-rejected-and-what-is-checked)):
-the result of the default type's arithmetic, a panic included, and whether a
-program that mixes it with a fixed width is accepted depend on the target; a
-program that writes its types does not.
+Cost: the one exception to the goal that a result does not depend on the target
+([chapter 8](#8-undefined-behavior-what-is-rejected-and-what-is-checked)): the
+result of the default type's arithmetic, a panic included, and whether a program
+that mixes it with a fixed width is accepted depend on the target; a program
+that writes its types does not.
 
 ## 8. Undefined behavior: what is rejected and what is checked
 
@@ -1859,24 +1892,32 @@ The one exception is the default type, the width of a register
 ([1.7](#17-values-known-at-compile-time), 7.12): its arithmetic and whether a
 program mixing it with a fixed width is accepted depend on the target.
 
+The checks run in four phases: the parse rejects the reads of what is not
+assigned and the kinds of value a destination does not take, the compile the
+order, the aliasing, the narrowing and the constants out of range, the dry
+run of a noinline call what depends on its arguments
+([chapter 4](#4-noinline-calls-the-body-dry-run-once-per-kind-of-call)), and
+the code the run-time checks.
+
 ### 8.1 The catalog
 
 | class | example | how | option | tests |
 |---|---|---|---|---|
-| uninitialized read | 'var x = x' | rejected (definite assignment, 'ub_assigned.hpp') | always | 0099, 1301-1303, 1367 |
-| a result or an argument sharing storage with another argument | 'p = f(p)' with 'f' writing its result before it reads 'p' | rejected ('stmt_call::assert_no_shared_storage', chapter 3) | 'alias', on by default | 0522-0524; '-alias': 0941 |
-| a value written in parts reading a part written before it | 'p = {p.y, p.x}', 'q = {{1}, q.a[3]}', 'g = {7, gx()}' | rejected (rule A, 'stmt_assign_var', the 'write_plan' of 'expr_type.hpp') | always | 1608-1612, 1634, 1635, 1644 |
-| evaluation order | 'f(arr[i], h(i))', 'i == h(i)' with 'h' writing 'i' | evaluation is left to right; an operand that a call in a later operand of the same list may write is rejected ('assert_not_written_later'); a destination that a call writes or reads is written last ('reaches_destination') | always | 1636-1642; accepted: 1630-1633, 1643 |
-| narrowing | 'b = w' with 'b' an 'i8' and 'w' an 'i16' | rejected; a conversion such as 'i8(w)' wraps on purpose | always | 0725, 0856, 0865, 1016-1022 |
-| a constant out of range | 'a[9]' of 'a = i8[4]', 'x / 0', 'x << 70' | rejected ('fold') | always | 0305, 0306 |
+| uninitialized read | 'var x = x' | rejected (definite assignment, 'ub_assigned.hpp', [3.10](#310-definite-assignment)) | always | 0099, 1301-1303, 1367 |
+| a 'mut' argument sharing storage with another argument | 'f(x, x)' with 'f' writing both | rejected ('stmt_call::assert_no_shared_storage', [3.7](#37-a-value-written-in-parts)) | always | 0525, 0642, 0676 |
+| a result or a global sharing storage with an argument | 'p = f(p)' with 'f' writing its result before it reads 'p', 'f(g)' with 'f' using the global 'g' | rejected ('stmt_call::assert_no_shared_storage', [3.7](#37-a-value-written-in-parts), [4.1](#41-problem)) | 'alias', on by default | 0522-0524, 0526, 0527; '-alias': 0941 |
+| a value written in parts reading a part written before it | 'p = {p.y, p.x}', 'q = {{1}, q.a[3]}', 'g = {7, gx()}' | rejected (rule A, 'stmt_assign_var', the 'write_plan' of 'expr_type.hpp', [3.7](#37-a-value-written-in-parts)) | always | 1608-1612, 1634, 1635, 1644 |
+| evaluation order | 'f(arr[i], h(i))', 'i == h(i)' with 'h' writing 'i' | evaluation is left to right; an operand that a call in a later operand of the same list may write is rejected ('assert_not_written_later'); a destination that a call writes or reads is written last ('reaches_destination'), [3.1](#31-reads-writes-and-their-order) | always | 1636-1642, 1676; accepted: 1630-1633, 1643, 1678 |
+| narrowing | 'b = w' with 'b' an 'i8' and 'w' an 'i16' | rejected; a conversion such as 'i8(w)' wraps on purpose ([1.7](#17-values-known-at-compile-time)) | always | 0725, 0856, 0865, 1016-1022 |
+| a constant out of range | 'a[9]' of 'a = i8[4]', 'x / 0', 'x << 70' | rejected ('fold', [1.7](#17-values-known-at-compile-time)) | always | 0305, 0306 |
 | a constant expression that overflows | '0x7fffffffffffffff + 1' | rejected ('fold'), else it wraps | 'overflow' | 0995, 1002, 1010 |
-| array index out of bounds | 'a[i]' | run time | 'upper', 'lower' | 0302, 0303, 0307-0309, 0626, 0627, 1355 |
-| division by zero and 'MIN / -1' | 'a / b' | run time | 'division' | 0965-0967 |
-| shift count below zero or not below the width | 'a << n' | run time | 'shift' | 0975-0977 |
-| signed overflow | 'a + b' | run time | 'overflow' | 0988, 0989, 0994 |
-| 'array_copy' whose destination starts inside the source | 'array_copy(a, a[1], 3)' | run time | 'overlap' | 0981-0983 |
-| the variables of a noinline call past '--vars' | deep noinline recursion | run time | 'frame' | 0413, 0414, 0434 |
-| the stack of a noinline call | deep noinline recursion | run time on rv32i-qemu and rv32i-fpga; on x86_64 and rv32i the operating system stops the program | 'stack' | 0985-0987 |
+| array index out of bounds | 'a[i]' | run time ('machine::check_bounds' from 'stmt_identifier::check_array_bounds', the start of an io built-in and the count of a 'foo') | 'upper', 'lower' | 0302, 0303, 0307-0309, 0626, 0627, 1355 |
+| division by zero and 'MIN / -1' | 'a / b' | run time ('machine::divide' with 'check_options::division_options', from 'expr_arith::emit_operation') | 'division' | 0965-0967 |
+| shift count below zero or not below the width | 'a << n' | run time ('machine::shift' with 'check_options::shift_options', from 'expr_arith::emit_operation') | 'shift' | 0975-0977 |
+| signed overflow | 'a + b' | run time ('machine::add_subtract', 'multiply' and 'unary' with 'toc::overflow_options') | 'overflow' | 0988, 0989, 0994 |
+| 'array_copy' whose destination starts inside the source | 'array_copy(a, a[1], 3)' | run time ('machine::copy_elements' with the overlap check of 'stmt_builtin_array_copy') | 'overlap' | 0981-0983 |
+| the variables of a noinline call past '--vars' | deep noinline recursion | run time ('machine::check_frame_capacity' from 'noinline_call::populate_frame', [4.5](#45-the-call-and-its-frame)) | 'frame' | 0413, 0414, 0434 |
+| the stack of a noinline call | deep noinline recursion | run time on rv32i-qemu and rv32i-fpga ('machine::check_stack_capacity' from 'noinline_call::populate_frame'); on x86_64 and rv32i the operating system stops the program | 'stack' | 0985-0987 |
 
 'noub' turns on every check of the table: 'upper', 'lower', 'frame',
 'alias', 'division', 'shift', 'overlap', 'stack' and 'overflow'.
@@ -1884,14 +1925,15 @@ program mixing it with a fixed width is accepted depend on the target.
 ### 8.2 Without the run-time checks
 
 The goal holds under 'noub'. By default only 'alias' is on, so an accepted
-program can reach the run-time classes of the table; the defaults stay so
-for the size and the speed of the code (decided 2026-10-23). Measured on x86_64 without '--checks': a write past an
-array goes on silently, a division by zero stops the program with a floating
-point exception, a shift by 65 shifts by 1 because the machine masks the
-count to the width of the register (6 bits on x86_64, 5 on rv32i) and a
-signed overflow wraps, also a constant one. Such a result depends on the target, also because the
-default type is 'i64' on x86_64 and 'i32' on rv32i. With 'noub' each of them
-stops at a panic that names the check, e.g. 'panic: bounds'.
+program can reach the run-time classes of the table; the defaults stay so for
+the size and the speed of the code (decided 2026-10-23). Measured on x86_64
+without '--checks': a write past an array goes on silently, a division by zero
+stops the program with a floating point exception, a shift by 65 shifts by 1
+because the machine masks the count to the width of the register (6 bits on
+x86_64, 5 on rv32i) and a signed overflow wraps, also a constant one. Such a
+result depends on the target, also because the default type is 'i64' on x86_64
+and 'i32' on rv32i. With 'noub' each of them stops at a panic that names the
+check, e.g. 'panic: bounds'.
 
 A panic prints its message on a line of its own after the output of the
 program, on standard error where there is one, on the uart of rv32i-fpga, and
@@ -1918,16 +1960,18 @@ message, x86_64 and rv32i linux stop with a signal.
   whole, whatever the body writes, so a recursive call needs no fixed point
   of its summary; this rejects more than needed, it accepts no undefined
   behavior.
-- Definite assignment does not count the writes of a call yet, e.g.
-  'init(res)' is a read of 'res' (V-3); a conservative rejection.
+- Definite assignment does not count the writes of a call, e.g.
+  'init(res)' is a read of 'res'; a conservative rejection.
 - A cycle of noinline calls near the limit of nested dry runs has a verdict
   that depends on where the cycle is entered
-  ([4.3](#43-call-kind-dry-run-once-per-kind-of-call)).
+  ([4.3](#43-call-kind-dry-run-once-per-kind-of-call)); an item of
+  'etc/todo.txt'.
 - Whether a 'let' is a constant is decided at the parse
   ('make_stmt_def_var'), where the 'n' of a 'foo' over an unsized array
   parameter is a variable; so 'let m = n' stays a variable also at a call
   that gives the length, and 's[m]' past the end is left to the run-time
-  bounds check where 's[n]' is rejected at compile time.
+  bounds check where 's[n]' is rejected at compile time; an item of
+  'etc/todo.txt'.
 - A branch whose condition folds to false without a call, e.g. 'if 1 == 2',
   and the code after a statement that leaves on every path there are not
   compiled, their compile-time rules do not run
@@ -1942,8 +1986,8 @@ ties to the others is named so it is not missed.
    - the operator in 'arithmetic_operator' and a row of 'binary_operators'
      in 'operand.hpp' (spelling, family, precedence, regroupable, identity,
      high bits), which 'expr_arith', 'arith_steps' and 'constant_arith' read;
-     the tokenizer's 'operators_' lists it, longest first, two
-     'static_assert's check both
+     the tokenizer's 'operators_' lists it, longest first; 'static_assert's
+     in 'tokenizer.hpp' and 'operand.hpp' check that the two agree
    - the arm of its family that computes it: 'constant_arith' (e.g.
      'shift_constant'), the 'machine' operation and its two backends with
      their assembler mnemonics; each such arm asserts the operators it
@@ -1953,14 +1997,16 @@ ties to the others is named so it is not missed.
 2. A built-in, e.g. 'array_fill(a, v, n)':
    - a row of the catalog in 'token.hpp' ('builtin_functions': name, value,
      where it may stand), a node in a file of its own like the other
-     'stmt_builtin_*.hpp' (a new file, ask first) and its branch in 'parse_keyword_statement' or
-     'parse_builtin_value' ('parse_statement.hpp')
+     'stmt_builtin_*.hpp' (a new file, ask first) and its branch in
+     'parse_keyword_statement' or 'parse_builtin_value' ('parse_statement.hpp')
    - its arguments read like those of its kind ('bulk_operands' for two
      arrays and a count, 'builtin_arguments' for values), a bulk operation
      of 'machine' in both backends
-   - the no-UB walks of its node, 'visit_reads' and 'visit_call_effects', the
-     order check of its arguments ('assert_not_written_later') and the write
-     of a written array ('stmt_identifier::record_write'),
+   - the operands of its node in evaluation order ('visit_operands'), from which
+     the no-UB walks 'visit_reads' and 'visit_call_effects' follow; the order
+     check of its arguments ('assert_operands_not_written_later' over its
+     operands, or 'bulk_operands::check' for two arrays and a count) and the
+     write of a written array ('stmt_identifier::record_write');
      'stmt_builtin_array_copy.hpp' as the model
    - outside: 'qa/fuzz/fuzz-compiler.py' and 'qa/fuzz/constructs.py' (the
      names of the built-ins), chapters 1.1 and 8 here

@@ -1,3 +1,5 @@
+# a constructor result with a written type is rejected
+
 type point {
     x,
     y

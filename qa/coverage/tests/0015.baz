@@ -1,3 +1,5 @@
+# data array passed through functions and printed in a loop
+
 dat hello="hello\n"
 
 func print(str i8[], len) {

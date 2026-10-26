@@ -1,3 +1,5 @@
+# calling a constructor on a value instead of the type is rejected
+
 type point {
     x,
     y

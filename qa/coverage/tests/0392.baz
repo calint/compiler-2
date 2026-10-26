@@ -1,3 +1,5 @@
+# function results of struct type set by field and by literal
+
 func assert(err, x bool) { if not x exit(err) }
 
 type point {x, y}

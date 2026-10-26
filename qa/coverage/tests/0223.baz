@@ -1,2 +1,4 @@
+# a function name not followed by '(' is rejected
+
 func f {}
 func main() {}

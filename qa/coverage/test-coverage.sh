@@ -69,7 +69,7 @@ COMPILER_MACHINE="${COMPILER_MACHINE%-fpga}"
 QEMU_SYSTEM=(qemu-system-riscv32 -machine virt -bios none -display none
     -serial stdio -monitor none -kernel gen-rv32i.bin)
 
-# the image of the sector functions, see 'SDCARD'
+# the image of the sector functions, see 'make_sdcard'
 FPGA_EMULATOR_DIR="$SCRIPT_DIR/../../fpga-emulator"
 FPGA_EMULATOR=("$FPGA_EMULATOR_DIR/osqa" gen-rv32i.bin sdcard.img)
 
@@ -217,29 +217,14 @@ execute_program_errors_to_out() {
     esac
 }
 
+# also makes the sd card image of the case, see 'make_sdcard'
 compile_and_build() {
     if ! "$BIN" "$SRC.baz" --target="$MACHINE" --bin=gen-rv32i.bin $OPTS $VERSION_OPTS 2>err >gen.s; then
         echo "compiler failed. see 'err' and 'gen.s'" >&2
         exit 1
     fi
     assemble_and_link
-}
-
-compile_and_build_no_checks() {
-    if ! "$BIN" "$SRC.baz" --target="$MACHINE" --bin=gen-rv32i.bin --reproduce-source $VERSION_OPTS 2>err >gen.s; then
-        echo "compiler failed. see 'err' and 'gen.s'" >&2
-        exit 1
-    fi
-    assemble_and_link
-}
-
-compile_and_build_with_opts() {
-    local opts="$1"
-    if ! "$BIN" "$SRC.baz" --target="$MACHINE" --bin=gen-rv32i.bin $opts --reproduce-source $VERSION_OPTS 2>err >gen.s; then
-        echo "compiler failed. see 'err' and 'gen.s'" >&2
-        exit 1
-    fi
-    assemble_and_link
+    make_sdcard
 }
 
 # the compile fails with exit code 1, its message is in 'out'
@@ -278,13 +263,12 @@ expected_output_file() {
     fi
 }
 
-# the sd card image 'sdcard.img' of the cases that follow, a sparse file of the
-# size of the argument, e.g. 5G, or no image for 'none'
-SDCARD() {
+# the sd card image 'sdcard.img' of the case, a sparse file of the size of the
+# prefix 'SDCARD', e.g. 'SDCARD=5G', empty without it; the emulator opens the
+# image also for the cases that do not use it
+make_sdcard() {
     rm -f sdcard.img
-    if [[ $1 != none ]]; then
-        truncate -s "$1" sdcard.img
-    fi
+    truncate -s "${SDCARD:-0}" sdcard.img
 }
 
 # Test with exit code
@@ -322,40 +306,6 @@ RUN_ERR() {
     check_output "$(expected_output_file)"
 }
 
-RUN_ERR_OPTS() {
-    echo -n "$SRC: "
-    compile_and_build_with_opts "$1"
-
-    set +e
-    execute_program_errors_to_out
-    local exit_code=$?
-    set -e
-
-    if [ $exit_code -ne $EXP ]; then
-        echo "FAILED. expected $EXP got $exit_code"
-        exit 1
-    fi
-
-    check_output "$(expected_output_file)"
-}
-
-RUN_NO_CHECKS() {
-    echo -n "$SRC: "
-    compile_and_build_no_checks
-
-    set +e
-    execute_program 2>err
-    local exit_code=$?
-    set -e
-
-    if [ $exit_code -eq $EXP ]; then
-        echo ok
-    else
-        echo "FAILED. expected $EXP got $exit_code"
-        exit 1
-    fi
-}
-
 # Test with output comparison (no input)
 DIFF() {
     echo -n "$SRC: "
@@ -383,11 +333,14 @@ DIFFINP2() {
     check_output "$(expected_output_file)"
 }
 
-# Test with Python script
+# Test with Python script, which runs the program with the command in
+# 'PROGRAM_COMMAND_LINES', one argument per line
 DIFFPY() {
     echo -n "$SRC: "
     compile_and_build
-    MACHINE="$MACHINE" "./${SRC%.*}.py" >out
+    program_command
+    MACHINE="$MACHINE" PROGRAM_COMMAND_LINES="$(printf '%s\n' "${PROGRAM_COMMAND[@]}")" \
+        "./${SRC%.*}.py" >out
     check_output "$(expected_output_file)"
 }
 
@@ -419,6 +372,28 @@ DIFFNOPT() {
     check_output "${SRC%.*}.$MACHINE.diff"
 }
 
+# the part of the listing that 'listing.py' extracts for the kind of the
+# argument, compiled without the checks for the target of the compiler,
+# compared with 'NNN.TARGET.KIND'
+LISTING() {
+    echo -n "$SRC: "
+    local expected="${SRC%.*}.$COMPILER_MACHINE.$1"
+    # the expected listing is that of the default version
+    if [[ -n "$VERSION_OPTS" || ! -e "$expected" ]]; then
+        echo skipped
+        return
+    fi
+    if ! "$BIN" "$SRC.baz" --target="$COMPILER_MACHINE" --bin=gen-rv32i.bin 2>err >gen.s; then
+        echo "compiler failed. see 'err' and 'gen.s'" >&2
+        exit 1
+    fi
+    if ! "$SCRIPT_DIR/listing.py" "$1" "$SRC.baz" "$COMPILER_MACHINE" <gen.s >out; then
+        echo "FAILED. see: out"
+        exit 1
+    fi
+    check_output "$expected"
+}
+
 # Test with output comparison of compiler (no input)
 COMPERR() {
     echo -n "$SRC: "
@@ -434,9 +409,6 @@ COMPERR() {
     fi
     check_output "$expected"
 }
-
-# the emulator opens the image also for the cases that do not use it
-SDCARD 0
 
 # Run all test cases
 source "$SCRIPT_DIR/cases.sh"

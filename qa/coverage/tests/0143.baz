@@ -1,3 +1,5 @@
+# constant evaluation of the last operand of grouped boolean expressions
+
 func assert(expr bool) { if not expr exit(1) }
 
 func main() {

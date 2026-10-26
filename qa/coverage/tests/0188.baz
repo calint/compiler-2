@@ -1,2 +1,4 @@
+# assignment to a 'let' constant is rejected
+
 let x = 1
 func main() { x = 2 }

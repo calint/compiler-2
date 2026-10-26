@@ -1,3 +1,5 @@
+# function result used as an argument, loop with 'break' after printing
+
 dat hello="hello\n"
 dat world="world\n"
 

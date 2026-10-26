@@ -1,22 +1,17 @@
 # fuzzers
 
 Fuzzers of the compiler and of the programs it builds. Every fuzzer prints the
-first example of each finding and keeps it in `findings/` (ignored by git).
-`fuzz-all.sh [scale] [seed]` runs them all.
+first example of each finding and keeps it in `findings/` (ignored by git),
+except the alias fuzzers (`fuzz-alias.sh`, `fuzz-alias-long.sh`), which print a
+mismatch and stop. `fuzz-all.sh [scale] [seed]` runs them all.
 
 ## Undefined behavior of a baz program
 
-1. signed overflow of `+ - *` and unary `-`: `overflow`
-2. division by zero, `MIN / -1`, `MIN % -1`: `division`
-3. shift count outside the width of the type: `shift`
-4. index outside an array, also nested in fields: bounds (`upper`, `lower`)
-5. range outside an array in `array_copy`, `arrays_equal`, `read`, `write`:
-   bounds
-6. `array_copy` whose destination starts inside the source: `overlap`
-7. unbounded recursion of a `noinline` function: `frame`, `stack` or the
-   operating system
-8. narrowing, an unset result, an unset variable: rejected by the compiler
-9. aliasing arguments and results: rejected by the compiler
+The classes are those of the catalog, 8.1 of `etc/docs/README.md`:
+`fuzz-ub.sh` models the run-time classes, `fuzz-effects.py` the evaluation
+order, parts written before and shared storage, `fuzz-alias.sh` the aliasing
+of paths, `fuzz-reject.py` and `fuzz-constructs.py` the compile-time
+rejections.
 
 With `--checks=noub` a program ends in a caught failure or runs to the end with
 the value of the language, never with the result of a wrapped or out of range
@@ -49,7 +44,8 @@ operation.
 
 `build-asan.sh` builds `build/baz-asan` (AddressSanitizer and
 UndefinedBehaviorSanitizer) that most fuzzers use, run it after the compiler
-changed.
+changed; a compile through `fuzzlib.py` stops the fuzzer when the compiler is
+older than a file of `src/` (`assert_fresh`).
 
 A compile that takes more than 60 seconds (`SLOW_COMPILE` in `fuzzlib.py`) is
 the finding `compiler-slow`, the program is kept with the time and options.
@@ -64,6 +60,8 @@ an included file (`split_include` in `fuzzlib.py`).
   --checks=noub"` shrinks a program that makes the compiler print text,
   `--accepted-by="--target=x86_64"` keeps it valid.
 - delete the files of a finding to see it reported again.
+- a fixed finding is reduced and added as a case of `qa/coverage/cases.sh`,
+  its comment names the fuzzer, e.g. "(fuzz-effects)".
 
 ## Differences that are not defects
 

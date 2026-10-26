@@ -38,6 +38,10 @@
 //                            are in 'stmt_identifier_impl.hpp'
 //   'place', 'make_ident_info', 'make_scalar_ident_info', 'as_place',
 //   'assert_not_whole_array' what a value names when it is a place
+//   'visit_operand_reads', 'statement::visit_call_effects',
+//   'statement::visit_reads', 'statement::bare_path'
+//                            the operand walks of 'statement', defined here
+//                            because they need 'stmt_identifier'
 //
 
 // a constant index out of bounds is always a bug; an unsized array parameter

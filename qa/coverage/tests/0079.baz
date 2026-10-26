@@ -1,3 +1,6 @@
+# mutable struct parameters, hex and binary literals, complement in nested
+# struct array elements
+
 func assert(expr bool) {
     if not expr exit(1)
 }

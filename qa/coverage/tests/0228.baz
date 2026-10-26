@@ -1,2 +1,4 @@
+# a missing initializer expression after '=' is rejected
+
 func main() { var x = # comment
 }

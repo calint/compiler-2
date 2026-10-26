@@ -1,1 +1,3 @@
+# a variable declaration without '=' and an initializer is rejected
+
 func main() { var x nope }

@@ -1,3 +1,5 @@
+# bytes read from input into a data array and printed minus the newline
+
 dat name="............................................................"
 
 func print(str i8[], len) {

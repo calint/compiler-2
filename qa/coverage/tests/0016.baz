@@ -1,3 +1,5 @@
+# mutable parameter counts a loop down, early 'return' inside a loop
+
 dat hello="hello\n"
 dat world="world\n"
 

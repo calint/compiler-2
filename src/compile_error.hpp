@@ -57,18 +57,24 @@ struct source_span {
     }
 };
 
+// an error of the program at the token that caused it, with the inlined calls
+// and generic instances it was found through ('call_frames', added while it
+// unwinds); the first one ends the compile, no code recovers from it
+// (README 1.9, 7.8)
 class compile_error final : public std::exception {
   public:
     // running out of scratch registers or of variable storage depends on the
     // code compiled, another version of the same code may not run out
     // ('machine::emit_most_efficient'); they and the limit of inlined calls
-    // depend on the arguments of a call, so a function that nothing calls
-    // cannot be judged by them; the readers: 'machine::compile_version' drops
-    // 'out_of_registers' and 'out_of_storage', 'stmt_call' turns it into a
-    // recursion error in an inlined recursion, 'stmt_def_func::check_body'
-    // drops both when the body takes from a call; 'toc::throw_dry_run_error'
-    // resets the kind to 'source' so that none of them drops the error of a dry
-    // run
+    // depend on the arguments of a call, so a function checked without its
+    // calls cannot be judged by them; the readers, the only code that
+    // changes an error instead of ending with it: 'machine::compile_version'
+    // drops 'out_of_registers' and 'out_of_storage' of a version,
+    // 'stmt_call' turns 'out_of_registers' into a recursion error in an
+    // inlined recursion, 'stmt_def_func::check_body' drops every kind but
+    // 'source' when the body takes from a call; 'toc::throw_dry_run_error'
+    // resets the kind to 'source' so that none of them drops the error of a
+    // dry run
     enum class error_kind : uint8_t {
         source,
         out_of_registers,
