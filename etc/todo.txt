@@ -157,6 +157,11 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
           string argument 1255, the count at the name 1687); src -64 lines
        B.5. S3 (-35): one path for the unary ops of a conversion, the
             'ops_place' enum goes; output changes, never longer (measured)
+       => B.5 done (2026-10-26): 'compile_at_type_register' for the three
+          rows, 'is_made_at_type' for 'ops_place'; a register destination
+          saves the scratch register or the copy; instruction lines x86
+          76145 -> 76141, rv32i 100575 -> 100563, 12 listings change, none
+          grows; src -48 lines
        B.6. S5 (-18): a value argument's fit checked once before the
             inlined and noinline paths split
        B.7. P A (-35): the built-ins dispatched by the catalog's 'use' in

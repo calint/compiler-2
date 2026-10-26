@@ -32,17 +32,11 @@
 // else) and its own unary ops apply at W. The conversion's own '-' and '~'
 // apply where the value is used, at the width D of the destination.
 //
-// where the conversion's own unary ops apply, 'ops_place_for', the first row
-// that matches:
-//   widened          D > T, no ops: made in a register of T, then widened
-//                    into the destination
-//   after_widening   D > T, ops: made at T in the destination register (a
-//                    scratch one for memory), widened in place, the ops
-//                    applied at D
-//   checked_at_type  D == T, ops, the overflow check: in a register of T,
-//                    checked there, then copied
-//   fused            otherwise (D <= T): with the argument, at the width of
-//                    its computation below
+// where the conversion's own unary ops apply ('is_made_at_type'): when D > T,
+// or D == T with ops under the overflow check, the value is made at T in the
+// destination register (a scratch one for memory), widened in place to D,
+// the ops applied at D; otherwise (D <= T) with the argument, at the width of
+// its computation below
 //
 // where the argument is computed for a target 't' at most T wide,
 // 'plan_scratch_type', the first row that matches:
@@ -63,14 +57,6 @@ class stmt_builtin_convert final : public statement {
 
     // none in the bare form, e.g. the 'i8' of 'var x = i8'
     std::optional<argument_part> argument_;
-
-    // where the conversion's own unary ops apply, see the class comment
-    enum class ops_place : uint8_t {
-        fused,
-        checked_at_type,
-        widened,
-        after_widening,
-    };
 
   public:
     // where the argument is computed for a target at most as wide as the type
@@ -113,17 +99,8 @@ class stmt_builtin_convert final : public statement {
         // at, e.g. the 'i16' 'b' of 'i8(a + b)' is narrowed to 'i8'
         argument().assert_not_narrowed(tc, width_type());
 
-        const ops_place place{ops_place_for(tc, dst)};
-
-        if (place == ops_place::widened or
-            place == ops_place::checked_at_type) {
-
-            compile_in_type_register(tc, indent, dst);
-            return;
-        }
-
-        if (place == ops_place::after_widening) {
-            compile_after_widening(tc, indent, dst);
+        if (is_made_at_type(tc, dst)) {
+            compile_at_type_register(tc, indent, dst);
             return;
         }
 
@@ -221,37 +198,6 @@ class stmt_builtin_convert final : public statement {
         return argument_->arg;
     }
 
-    // the value is made in the register at the width of the type, the unary
-    // ops apply after it widens in place; a memory destination gets it from a
-    // scratch register
-    auto compile_after_widening(toc& tc, const size_t indent,
-                                const destination& dst) const -> void {
-
-        machine& x{tc.machine()};
-
-        const operand converted{
-            dst.is_register()
-                ? x.register_view(dst.operand(), get_type())
-                : x.alloc_scratch_register(tok(), indent, get_type()),
-        };
-
-        compile_at_type(tc, indent, converted);
-
-        const operand widened{x.register_view(converted, dst.type_ref())};
-
-        x.copy_value(tok(), indent, widened, converted);
-
-        get_unary_ops().compile(x, indent, tok(), widened,
-                                tc.overflow_options(dst));
-
-        if (dst.is_register()) {
-            return;
-        }
-
-        x.copy_value(tok(), indent, dst.operand(), widened);
-        x.free_scratch_register(tok(), indent, converted);
-    }
-
     // the arithmetic of the argument wraps, 'uops' apply to the converted
     // value as the target checks them; the argument is an operand, so a
     // narrower call result widens into a wider register, e.g. 'i16((g()))'
@@ -283,6 +229,40 @@ class stmt_builtin_convert final : public statement {
         -> void {
 
         compile_argument(tc, indent, destination::of_register(reg), {});
+    }
+
+    // the value is made in the register at the width of the type, the unary
+    // ops apply after it widens in place, e.g. '-i8(x)' of an 'x' of 128
+    // overflows 'i8' there; a memory destination gets it from a scratch
+    // register
+    auto compile_at_type_register(toc& tc, const size_t indent,
+                                  const destination& dst) const -> void {
+
+        machine& x{tc.machine()};
+
+        const operand converted{
+            dst.is_register()
+                ? x.register_view(dst.operand(), get_type())
+                : x.alloc_scratch_register(tok(), indent, get_type()),
+        };
+
+        compile_at_type(tc, indent, converted);
+
+        const operand widened{x.register_view(converted, dst.type_ref())};
+
+        if (dst.type_ref().size_bytes() > get_type().size_bytes()) {
+            x.copy_value(tok(), indent, widened, converted);
+        }
+
+        get_unary_ops().compile(x, indent, tok(), widened,
+                                tc.overflow_options(dst));
+
+        if (dst.is_register()) {
+            return;
+        }
+
+        x.copy_value(tok(), indent, dst.operand(), widened);
+        x.free_scratch_register(tok(), indent, converted);
     }
 
     // the argument in a scratch register of 'scratch_type', the unary ops
@@ -340,55 +320,27 @@ class stmt_builtin_convert final : public statement {
         x.free_scratch_register(tok(), indent, wide);
     }
 
-    // the value is made in a register of the type, where the unary ops apply,
-    // then copied, e.g. '-i8(x)' of an 'x' of 128 overflows 'i8' there; a
-    // wider destination widens the copy
-    auto compile_in_type_register(toc& tc, const size_t indent,
-                                  const destination& dst) const -> void {
+    // a wider destination would compute the argument at its own width and
+    // keep the bits that the conversion drops; the unary ops apply where the
+    // value is used, e.g. 'w + -i8(v)' of a 'v' of -128 adds 128, and under
+    // the overflow check to the converted value
+    [[nodiscard]] auto is_made_at_type(const toc& tc,
+                                       const destination& dst) const -> bool {
 
-        machine& x{tc.machine()};
-
-        const operand converted{
-            x.alloc_scratch_register(tok(), indent, get_type()),
-        };
-
-        compile_at_type(tc, indent, converted);
-
-        get_unary_ops().compile(x, indent, tok(), converted,
-                                tc.overflow_options(dst));
-
-        x.copy_value(tok(), indent, dst.operand(), converted);
-        x.free_scratch_register(tok(), indent, converted);
-    }
-
-    [[nodiscard]] auto ops_place_for(const toc& tc,
-                                     const destination& dst) const
-        -> ops_place {
-
-        // a wider destination would compute the argument at its own width and
-        // keep the bits that the conversion drops; the unary ops apply where
-        // the value is used, e.g. 'w + -i8(v)' of a 'v' of -128 adds 128
         if (dst.type_ref().size_bytes() > get_type().size_bytes()) {
-            if (get_unary_ops().is_empty()) {
-                return ops_place::widened;
-            }
-
-            return ops_place::after_widening;
+            return true;
         }
 
-        // the arithmetic of the argument wraps, the unary ops of the
-        // conversion apply to the converted value as the destination checks
-        // them
-        if (tc.checks_overflow(dst) and not get_unary_ops().is_empty()) {
-            // note: a narrower destination is only the argument of an outer
-            //       conversion, whose arithmetic wraps
-
-            assert(dst.type_ref().size_bytes() == get_type().size_bytes());
-
-            return ops_place::checked_at_type;
+        if (not tc.checks_overflow(dst) or get_unary_ops().is_empty()) {
+            return false;
         }
 
-        return ops_place::fused;
+        // note: a narrower destination is only the argument of an outer
+        //       conversion, whose arithmetic wraps
+
+        assert(dst.type_ref().size_bytes() == get_type().size_bytes());
+
+        return true;
     }
 
     // the argument is computed at the width of the type
