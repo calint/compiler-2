@@ -1110,7 +1110,7 @@ class machine_rv32i : public machine {
         const bulk_operation& bulk{bulk_operations_.back()};
         {
             // scaling the count must not pick the result registers
-            const operation_scope scope{*this, request.dst, operand{}};
+            const operation_scope scope{*this, request.dst};
 
             comment(src_loc_tk, indent,
                     "{}: elements to bytes ({} bytes/element)",
@@ -1185,12 +1185,14 @@ class machine_rv32i : public machine {
                       const size_t size_bytes, const equality_request& request)
         -> void override {
 
-        request.lhs({}, {}, [&](const operand& left) -> void {
-            request.rhs({}, {}, [&](const operand& right) -> void {
-                compare_memory(src_loc_tk, indent, size_bytes, left, right,
-                               request);
+        request.lhs(
+            std::nullopt, std::nullopt, [&](const operand& left) -> void {
+                request.rhs(std::nullopt, std::nullopt,
+                            [&](const operand& right) -> void {
+                                compare_memory(src_loc_tk, indent, size_bytes,
+                                               left, right, request);
+                            });
             });
-        });
     }
 
     auto multiply(const token& src_loc_tk, const size_t indent,
@@ -1293,7 +1295,7 @@ class machine_rv32i : public machine {
                      const std::function_ref<std::string()> add_constant)
         -> void override {
 
-        const operation_scope scope{*this, dst, operand{}};
+        const operation_scope scope{*this, dst};
 
         const size_t width{bulk_width(access_alignment(dst, alignment))};
 
@@ -1351,7 +1353,7 @@ class machine_rv32i : public machine {
 
         assert(dst.is_register() or dst.is_memory());
 
-        const operation_scope scope{*this, dst, operand{}};
+        const operation_scope scope{*this, dst};
 
         const loaded_destination loaded{
             load_destination(src_loc_tk, indent, dst),
@@ -1622,8 +1624,8 @@ class machine_rv32i : public machine {
     // 'bounds_fail_', the last check branches past the handler on success so
     // failures fall through to it
     auto branch_on_negative(const size_t indent, const std::string_view index,
-                            const operand& reg_count, const bool is_last)
-        -> void {
+                            const std::optional<operand>& reg_count,
+                            const bool is_last) -> void {
 
         const auto check_negative = [&](const std::string_view reg,
                                         const bool last) -> void {
@@ -1632,7 +1634,7 @@ class machine_rv32i : public machine {
                                         : bounds_fail_.reference);
         };
 
-        if (reg_count.is_empty()) {
+        if (not reg_count) {
             check_negative(index, is_last);
             return;
         }
@@ -1640,7 +1642,7 @@ class machine_rv32i : public machine {
         check_negative(index, false);
 
         // a negative count passes 'start + count' but spans the address space
-        check_negative(reg_count.register_name(), is_last);
+        check_negative(reg_count->register_name(), is_last);
     }
 
     // a jump to 'handler', which is marked used; with the line, the line in
@@ -1898,7 +1900,7 @@ class machine_rv32i : public machine {
 
         if (not plan.upper_covers_lower) {
             branch_on_negative(indent, range.checked.register_name(),
-                               plan.count_known ? operand{} : range.count,
+                               plan.count_known ? std::nullopt : range.count,
                                is_last);
         }
 
@@ -2147,7 +2149,7 @@ class machine_rv32i : public machine {
 
         const operation_scope operand_scope{*this, right, left};
 
-        const operation_scope result_scope{*this, result, operand{}};
+        const operation_scope result_scope{*this, result};
 
         const std::array<operand, 2> in_use{left, right};
 
@@ -2310,7 +2312,7 @@ class machine_rv32i : public machine {
 
         const operation_scope operand_scope{*this, right, left};
 
-        const operation_scope result_scope{*this, result, operand{}};
+        const operation_scope result_scope{*this, result};
 
         const std::array<operand, 3> in_use{left, right, count};
 
@@ -2785,7 +2787,11 @@ class machine_rv32i : public machine {
                            const bounds_range& range,
                            const bounds_check_options& options) -> void {
 
-        const operation_scope scope{*this, range.checked, range.count};
+        operation_scope scope{*this, range.checked};
+
+        if (range.count) {
+            scope.protect(*range.count);
+        }
 
         const bounds_plan plan{
             plan_bounds_check(options, range,
@@ -2992,8 +2998,7 @@ class machine_rv32i : public machine {
                          const operand& lhs, const operand& rhs,
                          const comparison_action& action) -> void {
 
-        const operation_scope destination_scope{*this, action.destination,
-                                                operand{}};
+        const operation_scope destination_scope{*this, action.destination};
 
         const operation_scope scope{*this, lhs, rhs};
 
@@ -4047,7 +4052,7 @@ class machine_rv32i : public machine {
                                const operand& dst, const int32_t constant)
         -> void {
 
-        const operation_scope scope{*this, dst, operand{}};
+        const operation_scope scope{*this, dst};
 
         const operand address{
             dst.is_memory() ? lower_address(src_loc_tk, indent, dst)
@@ -4124,18 +4129,19 @@ class machine_rv32i : public machine {
                     const bool lower_checked) -> std::string {
 
         const std::string_view index{range.checked.register_name()};
-        const operand& reg_count{range.count};
 
         // a negative index is left to the lower check, which has already
         // failed it when enabled
-        if (reg_count.is_empty() and not lower_checked) {
+        if (not range.count and not lower_checked) {
             assembler_.bltz(indent, index, bounds_pass_.reference);
             return std::string{index};
         }
 
-        if (reg_count.is_empty()) {
+        if (not range.count) {
             return std::string{index};
         }
+
+        const operand& reg_count{*range.count};
 
         const operand sum{
             alloc_scratch_register(src_loc_tk, indent, default_type()),
@@ -4390,7 +4396,7 @@ class machine_rv32i : public machine {
                          const operand& dst, const size_t size_bytes,
                          const access_start& start) -> void {
 
-        const operation_scope scope{*this, dst, operand{}};
+        const operation_scope scope{*this, dst};
 
         const std::span<const access_start> starts{&start, 1};
 

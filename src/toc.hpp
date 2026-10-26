@@ -192,9 +192,9 @@ struct bound_name {
     // as written, for the comments, e.g. 'copy[2]' where 'dotted_path' is
     // 'copy'
     std::string text;
-    // the address computed at the call, empty when the path finds it, e.g.
+    // the address computed at the call, none when the path finds it, e.g.
     // '[rbp + r15 * 8 + 16]' for a run-time index
-    operand lea;
+    std::optional<operand> lea;
     // e.g. 'i' -> 'arr[ix]' names one element, not the array 'arr'
     bool is_element{};
     // the root variable and the path that the parameter names, found where
@@ -2418,9 +2418,9 @@ class ident_resolver final {
             next.is_element = true;
         }
 
-        if (not next.address_by_call and not named.lea.is_empty()) {
+        if (not next.address_by_call and named.lea) {
             next.address_by_call = call_address{
-                .address{named.lea},
+                .address{*named.lea},
                 .trailing_count{step.id.path().size() - 1},
             };
 
@@ -2787,12 +2787,14 @@ class variable_comments final {
 
         // the iterator 'e' is memory at its register, the counter 'i' is the
         // register
-        const operand reg{register_of(var.placement)};
+        const std::optional<operand> reg{register_of(var.placement)};
 
         ::machine& x{machine_.get()};
 
-        if (not reg.is_empty()) {
-            x.comment(src_loc_tk, indent, "{} ({})", text, reg.register_name());
+        if (reg) {
+            x.comment(src_loc_tk, indent, "{} ({})", text,
+                      reg->register_name());
+
             return;
         }
 

@@ -213,7 +213,8 @@ auto hold_scratch_registers(machine& backend, const size_t count,
 // an address of a bulk operation that is 'address' whatever the backend
 // offers
 auto fixed_address(const operand& address) -> machine::address_emitter {
-    return [address](const operand&, const operand&,
+    return [address](const std::optional<operand>&,
+                     const std::optional<operand>&,
                      const machine::address_use use) -> void { use(address); };
 }
 
@@ -1422,7 +1423,8 @@ auto check_memory_comparison_tail() -> void {
                     .lhs{fixed_address(buffer)},
                     // note: the text before the right address sets up the
                     //       count and is not checked
-                    .rhs{[&](const operand&, const operand&,
+                    .rhs{[&](const std::optional<operand>&,
+                             const std::optional<operand>&,
                              const machine::address_use use) -> void {
                         use(buffer);
                         rv32i.output.clear();
@@ -2498,7 +2500,8 @@ auto generate_noninline() -> void {
     }
 
     backend.call_function(token{}, 1, "outer",
-                          operand::mem("s0", {}, 1, 4096, integer), operand{});
+                          operand::mem("s0", {}, 1, 4096, integer),
+                          std::nullopt);
 
     // every register after the call is saved and compared with what it held
     for (size_t index{1}; index < register_count; ++index) {
@@ -2545,7 +2548,8 @@ auto generate_noninline() -> void {
     backend.reserve_frame_base();
     expect_frame_base(backend, 6128);
     backend.call_function(token{}, 1, "inner",
-                          operand::mem("s1", {}, 1, 8192, integer), operand{});
+                          operand::mem("s1", {}, 1, 8192, integer),
+                          std::nullopt);
 
     // the frame base is live here, so the call restores it
     expect_frame_base(backend, 6128);
@@ -2846,7 +2850,9 @@ auto emit_bounds_case(machine_rv32i& backend, const bounds_case& parameters,
         token{}, 1,
         {
             .checked{operand::reg("a0", integer)},
-            .count{parameters.slice ? operand::reg("a1", integer) : operand{}},
+            .count{parameters.slice
+                       ? std::optional{operand::reg("a1", integer)}
+                       : std::nullopt},
             .array_count{parameters.size},
             .allow_end{parameters.allow_end},
         },

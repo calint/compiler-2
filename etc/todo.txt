@@ -262,6 +262,22 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
        4. I1, medium: the empty operand as "none" at about ten interfaces
           becomes 'std::optional<operand>' where it is a state;
           recommended: yes, after B
+       => 4 done (2026-10-26): 'std::optional<operand>' in
+          'bounds_range::count', 'address_emitter' (count, preferred),
+          'lea_request' (reg_count, address_register), the range count down
+          to 'compile_checked_index', 'path_address' (address_register_,
+          index_register_, 'fold_register', 'start'), 'register_of',
+          'bound_name::lea', 'register_address', 'call_function' and
+          'load_slot_address', 'comment_binding'; 'operation_scope' takes one
+          operand or none and 'protect' adds one, the 'operand{}' arguments
+          go; x86_64 'test_sign' loses its empty guard; trap: an 'operand{}'
+          passed where an optional is expected is a present empty operand,
+          test-rv32i caught one (its bounds matrix); not changed: the backend
+          locals and helpers (rv32i 'emit_shift_add_sequence', x86_64
+          'with_lowered_addresses' and 'call_target' result), the io 'start'
+          and 'comparison_action' (kept by the reviewer); both suites, the CLI
+          tests, test-rv32i, clang-tidy and fuzz-data, calls, io, ub,
+          constructs clean, listings equal
        5. C5: optional parts with a node as one optional struct each (else,
           'foo' count, conversion argument, brackets); recommended: yes
        => 5 done (2026-10-26): 'stmt_if::else_part', 'stmt_builtin_foo::

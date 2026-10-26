@@ -125,8 +125,9 @@ class stmt_builtin_array_copy final : public statement {
                                destination::of_register(count_register));
         }
 
-        const operand src_count{
-            src_check == range_check::run_time ? count_register : operand{},
+        const std::optional<operand> src_count{
+            src_check == range_check::run_time ? std::optional{count_register}
+                                               : std::nullopt,
         };
 
         x.comment(src.tok(), indent, statement::trimmed_source(src));
@@ -141,8 +142,9 @@ class stmt_builtin_array_copy final : public statement {
                 }),
         };
 
-        const operand dst_count{
-            dst_check == range_check::run_time ? count_register : operand{},
+        const std::optional<operand> dst_count{
+            dst_check == range_check::run_time ? std::optional{count_register}
+                                               : std::nullopt,
         };
 
         x.comment(dst.tok(), indent, statement::trimmed_source(dst));

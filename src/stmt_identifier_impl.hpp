@@ -272,10 +272,9 @@ inline auto stmt_identifier::resolve_accessed_bytes(toc& tc) -> void {
     });
 }
 
-inline auto stmt_identifier::path_address::add_index(const ident_elem& cur_elem,
-                                                     const ident_info& cur_info,
-                                                     const operand& reg_count,
-                                                     const operand& address)
+inline auto stmt_identifier::path_address::add_index(
+    const ident_elem& cur_elem, const ident_info& cur_info,
+    const std::optional<operand>& range_count, const operand& address)
     -> operand {
 
     toc& tc{tc_.get()};
@@ -287,19 +286,19 @@ inline auto stmt_identifier::path_address::add_index(const ident_elem& cur_elem,
 
     // a register kept by an earlier fold is reused since the fold already
     // consumed its value
-    if (index_register_.is_empty()) {
+    if (not index_register_) {
         // index expressions are parsed with the default type
         index_register_ = x.alloc_scratch_register(
             index_tk, indent, tc.builtins().default_type());
 
-        held_.get().add(index_register_);
+        held_.get().add(*index_register_);
     }
 
-    const operand& index_register{index_register_};
+    const operand& index_register{*index_register_};
 
     int64_t addend_elements{
         compile_checked_index(tc, indent, cur_elem.index_expr(), index_register,
-                              cur_info.element_count(), reg_count),
+                              cur_info.element_count(), range_count),
     };
 
     const size_t type_size{cur_info.type_ref().size_bytes()};
@@ -342,7 +341,7 @@ inline auto stmt_identifier::path_address::add_index(const ident_elem& cur_elem,
 inline auto stmt_identifier::compile_checked_index(
     toc& tc, const size_t indent, const expr_any& index_expr,
     const operand& index_register, const size_t array_length,
-    const operand& range_count) -> int64_t {
+    const std::optional<operand>& range_count) -> int64_t {
 
     machine& x{tc.machine()};
 
@@ -369,10 +368,10 @@ inline auto stmt_identifier::compile_checked_index(
     index_expr.compile(tc, indent, index_dst);
 
     const machine::bounds_range checked{
-        range_count.is_empty()
-            ? machine::bounds_range::index(index_register, array_length)
-            : machine::bounds_range::range(index_register, range_count,
-                                           array_length),
+        range_count
+            ? machine::bounds_range::range(index_register, *range_count,
+                                           array_length)
+            : machine::bounds_range::index(index_register, array_length),
     };
 
     check_array_bounds(tc, indent, index_expr.tok(), checked);
@@ -382,7 +381,7 @@ inline auto stmt_identifier::compile_checked_index(
 
 inline auto stmt_identifier::path_address::indexed_element(
     const ident_elem& cur_elem, const std::string_view path,
-    const ident_info& cur_info, const operand& range_count,
+    const ident_info& cur_info, const std::optional<operand>& range_count,
     const operand& address) -> operand {
 
     const std::optional<int64_t> constant_index{
@@ -391,11 +390,11 @@ inline auto stmt_identifier::path_address::indexed_element(
 
     if (constant_index) {
         assert_constant_index(cur_info, cur_elem.index_expr().tok(), path,
-                              *constant_index, not range_count.is_empty());
+                              *constant_index, range_count.has_value());
     }
 
     // with a range count the run-time check covers 'index + count'
-    if (constant_index and range_count.is_empty()) {
+    if (constant_index and not range_count) {
         operand folded{address};
 
         folded.increment_offset(

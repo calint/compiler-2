@@ -214,24 +214,25 @@ class stmt_identifier final : public statement {
         token src_loc_tk_;
         std::reference_wrapper<machine::held_registers> held_;
         size_t owned_from_;
-        // where the caller prefers the address, empty without a preference
-        operand address_register_;
+        // where the caller prefers the address, none without a preference
+        std::optional<operand> address_register_;
         // kept between the indexes of the path while it is not in the way
-        operand index_register_;
+        std::optional<operand> index_register_;
 
       public:
         path_address(toc& tc, const size_t indent, const token& src_loc_tk,
-                     machine::held_registers& held, operand address_register)
+                     machine::held_registers& held,
+                     std::optional<operand> address_register)
             : tc_{tc}, indent_{indent}, src_loc_tk_{src_loc_tk}, held_{held},
               owned_from_{held.registers().size()},
               address_register_{std::move(address_register)} {}
 
         // the range of an unindexed array is checked once, at the last element
-        auto check_unindexed_range(const ident_info& cur_info,
-                                   const bool is_last_elem,
-                                   const operand& reg_count) const -> void {
+        auto check_unindexed_range(
+            const ident_info& cur_info, const bool is_last_elem,
+            const std::optional<operand>& reg_count) const -> void {
 
-            if (not cur_info.is_array() or reg_count.is_empty()) {
+            if (not cur_info.is_array() or not reg_count) {
                 return;
             }
 
@@ -240,24 +241,24 @@ class stmt_identifier final : public statement {
 
             check_array_bounds(tc_, indent_, src_loc_tk_,
                                machine::bounds_range::count_alone(
-                                   reg_count, cur_info.element_count()));
+                                   *reg_count, cur_info.element_count()));
         }
 
         // the address after the element index, a constant index goes into the
         // displacement and any other one into an index register
-        [[nodiscard]] auto indexed_element(const ident_elem& cur_elem,
-                                           std::string_view path,
-                                           const ident_info& cur_info,
-                                           const operand& range_count,
-                                           const operand& address) -> operand;
+        [[nodiscard]] auto
+        indexed_element(const ident_elem& cur_elem, std::string_view path,
+                        const ident_info& cur_info,
+                        const std::optional<operand>& range_count,
+                        const operand& address) -> operand;
 
         // the address a call computed, the address a slot holds or the
         // storage
-        [[nodiscard]] auto start(const operand& known_operand,
+        [[nodiscard]] auto start(const std::optional<operand>& known_operand,
                                  const ident_info& storage) -> operand {
 
-            if (not known_operand.is_empty()) {
-                return known_operand;
+            if (known_operand) {
+                return *known_operand;
             }
 
             if (storage.holds_address()) {
@@ -272,7 +273,7 @@ class stmt_identifier final : public statement {
         // index yet, keeping its base and displacement
         [[nodiscard]] auto add_index(const ident_elem& cur_elem,
                                      const ident_info& cur_info,
-                                     const operand& reg_count,
+                                     const std::optional<operand>& range_count,
                                      const operand& address) -> operand;
 
         // computes 'address' into a register so another index can be added
@@ -281,31 +282,31 @@ class stmt_identifier final : public statement {
 
             machine& x{tc_.get().machine()};
 
-            operand target{
-                fold_register(address),
-            };
+            std::optional<operand> target{fold_register(address)};
 
-            if (target.is_empty()) {
+            if (not target) {
                 target = x.alloc_scratch_register(
                     src_loc_tk_, indent_, tc_.get().builtins().address());
 
-                held_.get().add(target);
+                held_.get().add(*target);
             }
 
-            x.address_of(src_loc_tk_, indent_, target, address);
+            x.address_of(src_loc_tk_, indent_, *target, address);
 
-            return target;
+            return *target;
         }
 
-        // picks a register that 'lea target, [address]' may overwrite, or
-        // empty when a new one must be allocated
+        // picks a register that 'lea target, [address]' may overwrite, none
+        // when a new one must be allocated
         // note: only 'address' refers to an owned register and the fold
         //       replaces 'address', so an owned base is dead once 'lea' has
         //       read it
-        [[nodiscard]] auto fold_register(const operand& address) -> operand {
+        [[nodiscard]] auto fold_register(const operand& address)
+            -> std::optional<operand> {
+
             // the caller loads the final address into it anyway, so it is free
             // until then and folding there may save the final move
-            if (not address_register_.is_empty()) {
+            if (address_register_) {
                 return address_register_;
             }
 
@@ -321,14 +322,14 @@ class stmt_identifier final : public statement {
 
             // the base must survive, so without an index register a new one is
             // needed
-            if (index_register_.is_empty()) {
-                return {};
+            if (not index_register_) {
+                return std::nullopt;
             }
 
             // 'lea' may write the index register it reads, the next index then
             // gets its own register so it never overwrites the new base
-            const operand folded_into{index_register_};
-            index_register_ = {};
+            const std::optional<operand> folded_into{index_register_};
+            index_register_.reset();
 
             return folded_into;
         }
@@ -541,11 +542,12 @@ class stmt_identifier final : public statement {
                        const range_check check = range_check::run_time) const
         -> machine::address_emitter {
 
-        return [this, &tc, indent, &src_loc_tk, &info, check](
-                   const operand& reg_count, const operand& address_register,
-                   const machine::address_use use) -> void {
-            const operand range_count{
-                check == range_check::run_time ? reg_count : operand{},
+        return [this, &tc, indent, &src_loc_tk, &info,
+                check](const std::optional<operand>& reg_count,
+                       const std::optional<operand>& address_register,
+                       const machine::address_use use) -> void {
+            const std::optional<operand> range_count{
+                check == range_check::run_time ? reg_count : std::nullopt,
             };
 
             compile_address(tc, indent, src_loc_tk,
@@ -643,8 +645,9 @@ class stmt_identifier final : public statement {
             const ident_info& cur_info{*step.info};
 
             if (step.parent_type == nullptr) {
-                address = builder.start(by_call == nullptr ? operand{}
-                                                           : by_call->address,
+                address = builder.start(by_call == nullptr
+                                            ? std::nullopt
+                                            : std::optional{by_call->address},
                                         cur_info);
             } else {
                 // field offsets stay in the operand, not in the base register
@@ -663,7 +666,7 @@ class stmt_identifier final : public statement {
 
             address = builder.indexed_element(
                 *step.elem, step.path, cur_info,
-                step.is_last ? request.reg_count : operand{}, address);
+                step.is_last ? request.reg_count : std::nullopt, address);
         });
 
         return operand::mem(address, *value_type);
@@ -1079,7 +1082,7 @@ class stmt_identifier final : public statement {
     [[nodiscard]] static auto compile_checked_index(
         toc& tc, const size_t indent, const expr_any& index_expr,
         const operand& index_register, const size_t array_length,
-        const operand& range_count) -> int64_t;
+        const std::optional<operand>& range_count) -> int64_t;
 
     // empty when the index is computed at run time or is out of range
     [[nodiscard]] static auto

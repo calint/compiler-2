@@ -505,7 +505,8 @@ class stmt_builtin_io final : public statement {
         };
 
         compile_buffer_address(tc, indent, buffer_reg, buffer,
-                               is_count_checked_by_lea ? count : operand{});
+                               is_count_checked_by_lea ? std::optional{count}
+                                                       : std::nullopt);
 
         const operand element_size_bytes{
             operand::imm(buffer_info.type_ref().size_bytes(), type_default),
@@ -521,7 +522,8 @@ class stmt_builtin_io final : public statement {
     // count that a bare count check covers
     auto compile_buffer_address(toc& tc, const size_t indent,
                                 const operand& buffer_reg, const place& buffer,
-                                const operand& range) const -> void {
+                                const std::optional<operand>& range) const
+        -> void {
 
         machine& x{tc.machine()};
 

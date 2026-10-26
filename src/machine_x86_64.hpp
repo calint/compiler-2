@@ -317,8 +317,7 @@ class machine_x86_64 final : public machine {
             // e.g. 'array_copy(x[0x7fffffffffffffff], y[0], 1)' on 'i8[4]'
             // ends at 0x8000000000000000, signed it is below 4 and passes
             const bool is_unsigned_compare{
-                plan.upper_covers_lower or
-                    (options.lower and not range.count.is_empty()),
+                plan.upper_covers_lower or (options.lower and range.count),
             };
 
             check_upper_bound(src_loc_tk, indent, range, is_unsigned_compare);
@@ -579,7 +578,8 @@ class machine_x86_64 final : public machine {
             reserve_named_register(src_loc_tk, indent, "rcx", default_type());
         }
 
-        load_bulk_addresses(src_loc_tk, indent, {}, request.lhs, request.rhs);
+        load_bulk_addresses(src_loc_tk, indent, std::nullopt, request.lhs,
+                            request.rhs);
 
         if (is_counted) {
             mov(src_loc_tk, indent, qword_register("rcx"),
@@ -1306,8 +1306,8 @@ class machine_x86_64 final : public machine {
 
             // a negative count passes 'start + count' but spans the address
             // space
-            if (not plan.count_known) {
-                test_sign(src_loc_tk, indent, range.count);
+            if (range.count and not plan.count_known) {
+                test_sign(src_loc_tk, indent, *range.count);
             }
         }
 
@@ -1340,7 +1340,7 @@ class machine_x86_64 final : public machine {
             out_of_bounds_condition(range.allow_end, is_unsigned_compare),
         };
 
-        if (range.count.is_empty()) {
+        if (not range.count) {
             cmp(src_loc_tk, indent, range.checked,
                 immediate(range.array_count));
 
@@ -1350,22 +1350,24 @@ class machine_x86_64 final : public machine {
             return;
         }
 
+        const operand& count{*range.count};
+
         const operand reg_top_idx{
             alloc_scratch_register(src_loc_tk, indent, default_type()),
         };
 
         // index and count registers have the default type
-        assert(range.count.type_ref().size_bytes() == size_qword_ and
+        assert(count.type_ref().size_bytes() == size_qword_ and
                range.checked.type_ref().size_bytes() == size_qword_);
 
         if (is_unsigned_compare) {
             lea(src_loc_tk, indent, reg_top_idx,
-                operand::mem(range.count.register_name(),
+                operand::mem(count.register_name(),
                              range.checked.register_name(), 1, 0,
                              builtin_type_i64()));
         } else {
             mov(src_loc_tk, indent, reg_top_idx, range.checked);
-            add(src_loc_tk, indent, reg_top_idx, range.count);
+            add(src_loc_tk, indent, reg_top_idx, count);
             branch_to_failure(src_loc_tk, indent, condition::o, bounds_failure);
         }
 
@@ -1922,15 +1924,15 @@ class machine_x86_64 final : public machine {
     }
 
     auto load_bulk_addresses(const token& src_loc_tk, const size_t indent,
-                             const operand& count,
+                             const std::optional<operand>& count,
                              const address_emitter& to_rsi,
                              const address_emitter& to_rdi) -> void {
 
-        to_rsi(count, {}, [&](const operand& address) -> void {
+        to_rsi(count, std::nullopt, [&](const operand& address) -> void {
             lea(src_loc_tk, indent, qword_register("rsi"), address);
         });
 
-        to_rdi(count, {}, [&](const operand& address) -> void {
+        to_rdi(count, std::nullopt, [&](const operand& address) -> void {
             lea(src_loc_tk, indent, qword_register("rdi"), address);
         });
     }
@@ -2177,10 +2179,6 @@ class machine_x86_64 final : public machine {
     // a negative value is out of bounds, an empty operand has none to test
     auto test_sign(const token& src_loc_tk, const size_t indent,
                    const operand& value) -> void {
-
-        if (value.is_empty()) {
-            return;
-        }
 
         test(src_loc_tk, indent, value, value);
         branch_to_failure(src_loc_tk, indent, condition::s, bounds_failure);

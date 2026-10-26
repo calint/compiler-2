@@ -110,9 +110,9 @@ using var_placement =
     return stored != nullptr and stored->holds_address;
 }
 
-// the register of a variable in a register or at one, empty in storage
+// the register of a variable in a register or at one, none in storage
 [[nodiscard]] inline auto register_of(const var_placement& placement)
-    -> operand {
+    -> std::optional<operand> {
 
     if (const at_address_register* const pointed{
             std::get_if<at_address_register>(&placement),
@@ -128,7 +128,7 @@ using var_placement =
         return in_register->reg;
     }
 
-    return {};
+    return std::nullopt;
 }
 
 // the name of a variable the compiler adds, e.g. 'call-arg-12-0', it has a
@@ -682,12 +682,13 @@ class destination final {
 
 // what a caller asks of the address of an identifier
 struct lea_request {
-    // the count of a span operation on an array, empty without one
-    operand reg_count;
+    // the count of a span operation on an array, none without one
+    std::optional<operand> reg_count;
 
     // the deepest address of the path an inlined call computed
     std::optional<call_address> address_by_call;
 
-    // the register the caller prefers the address to start in
-    operand address_register;
+    // the register the caller prefers the address to start in, none without
+    // a preference
+    std::optional<operand> address_register;
 };

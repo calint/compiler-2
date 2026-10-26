@@ -151,10 +151,11 @@ class machine {
     using address_use = std::function_ref<void(const operand& address)>;
 
     // emits one address of a bulk operation: 'count' is the register of the
-    // element count, empty for a known size, 'preferred' a register the address
-    // may be built in, empty when the backend has none to offer
+    // element count, none for a known size, 'preferred' a register the address
+    // may be built in, none when the backend has none to offer
     using address_emitter = std::function<void(
-        const operand& count, const operand& preferred, address_use use)>;
+        const std::optional<operand>& count,
+        const std::optional<operand>& preferred, address_use use)>;
 
     // whether an operation may overwrite a register operand, e.g. a scratch
     // register that holds a factor and is freed after the operation
@@ -219,8 +220,8 @@ class machine {
     struct bounds_range {
         // the index, the count alone or the start of the range
         operand checked;
-        // the count of a range, empty otherwise
-        operand count;
+        // the count of a range, none otherwise
+        std::optional<operand> count;
         size_t array_count{};
         bool allow_end{};
 
@@ -416,25 +417,25 @@ class machine {
         size_t saved_count_;
 
       public:
-        operation_scope(machine& backend, const operand& dst,
-                        const operand& src)
-            : machine_{backend},
-              saved_mask_{backend.state_.registers.unavailable_mask()},
-              saved_count_{backend.state_.registers.allocations().size()} {
-
-            for (const operand* value : {&dst, &src}) {
-                if (value->is_register()) {
-                    backend.protect_register(value->register_name());
-                } else if (value->is_memory()) {
-                    backend.protect_register(value->base_register());
-                    backend.protect_register(value->index_register());
-                }
-            }
-        }
-
         // protects nothing, only frees what is allocated while it lives
         explicit operation_scope(machine& backend)
-            : operation_scope{backend, operand{}, operand{}} {}
+            : machine_{backend},
+              saved_mask_{backend.state_.registers.unavailable_mask()},
+              saved_count_{backend.state_.registers.allocations().size()} {}
+
+        operation_scope(machine& backend, const operand& value)
+            : operation_scope{backend} {
+
+            protect(value);
+        }
+
+        operation_scope(machine& backend, const operand& dst,
+                        const operand& src)
+            : operation_scope{backend} {
+
+            protect(dst);
+            protect(src);
+        }
 
         operation_scope(const operation_scope&) = delete;
         operation_scope(operation_scope&&) = delete;
@@ -460,6 +461,17 @@ class machine {
             }
 
             pool.restore_unavailable(saved_mask_);
+        }
+
+        // the registers of 'value' are not picked for scratch until the scope
+        // ends
+        auto protect(const operand& value) -> void {
+            if (value.is_register()) {
+                machine_.protect_register(value.register_name());
+            } else if (value.is_memory()) {
+                machine_.protect_register(value.base_register());
+                machine_.protect_register(value.index_register());
+            }
         }
     };
 
@@ -898,11 +910,11 @@ class machine {
     }
 
     // 'slot_address' is the address the callee finds in
-    // 'slot_register', empty when the register is not used
+    // 'slot_register', none when the register is not used
     auto call_function(const token& src_loc_tk, const size_t indent,
                        const std::string_view label,
                        const operand& frame_address,
-                       const operand& slot_address) -> void {
+                       const std::optional<operand>& slot_address) -> void {
 
         assert(frame_address.is_memory());
         assert(frame_address.index_register().empty());
@@ -929,7 +941,6 @@ class machine {
         const operation_scope slot_kept{
             *this,
             make_register_operand(slot_register(), default_type()),
-            operand{},
         };
 
         address_of(src_loc_tk, indent,
@@ -996,15 +1007,15 @@ class machine {
     // computed when it did
     auto comment_binding(const token& src_loc_tk, const size_t indent,
                          const std::string_view from, const std::string_view to,
-                         const operand& address) -> void {
+                         const std::optional<operand>& address) -> void {
 
-        if (address.is_empty()) {
+        if (not address) {
             comment(src_loc_tk, indent, "bind {} -> {}", from, to);
             return;
         }
 
         comment(src_loc_tk, indent, "bind {} -> {} (address: {})", from, to,
-                address_text(address));
+                address_text(*address));
     }
 
     // e.g. 'b: bag (address @ [rbx])', the slot holds the address of the
@@ -1617,8 +1628,10 @@ class machine {
         }
 
         if (plan.count_known) {
+            assert(range.count);
+
             comment(src_loc_tk, indent, "count {} lower bound already checked",
-                    range.count.register_name());
+                    range.count->register_name());
         }
     }
 
@@ -1671,10 +1684,10 @@ class machine {
     // loaded before the frame base is set, the address may be relative to the
     // caller's; the receiver already in the register is passed as is
     auto load_slot_address(const token& src_loc_tk, const size_t indent,
-                           const operand& slot_address) -> void {
+                           const std::optional<operand>& slot_address) -> void {
 
-        if (slot_address.is_empty() or
-            slot_address.is_address_in_register(slot_register())) {
+        if (not slot_address or
+            slot_address->is_address_in_register(slot_register())) {
 
             return;
         }
@@ -1683,7 +1696,7 @@ class machine {
 
         address_of(src_loc_tk, indent,
                    make_register_operand(slot_register(), default_type()),
-                   slot_address);
+                   *slot_address);
     }
 
     // marks 'handler' used for the failure at 'src_loc_tk'; true when the
@@ -1744,14 +1757,13 @@ class machine {
         -> bounds_plan {
 
         const bool count_known{
-            not range.count.is_empty() and
-                state_.registers.is_lower_checked(
-                    register_mask(range.count.register_name())),
+            range.count and state_.registers.is_lower_checked(
+                                register_mask(range.count->register_name())),
         };
 
         return {
             .upper_covers_lower{
-                options.lower and options.upper and range.count.is_empty() and
+                options.lower and options.upper and not range.count and
                     range.array_count <= signed_max,
             },
             .count_known{count_known},
@@ -1973,8 +1985,11 @@ class machine {
     [[nodiscard]] static auto lower_checked_register(const bounds_range& range)
         -> std::string_view {
 
-        return range.count.is_empty() ? range.checked.register_name()
-                                      : range.count.register_name();
+        if (not range.count) {
+            return range.checked.register_name();
+        }
+
+        return range.count->register_name();
     }
 
     // e.g. 'panic: bounds'; the newline in front separates it from the output

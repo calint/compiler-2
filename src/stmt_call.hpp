@@ -983,7 +983,7 @@ class inline_call {
 
                     x.comment_binding(
                         call_.tk, indent + 1, e.from, e.target_text(),
-                        named == nullptr ? operand{} : named->lea);
+                        named == nullptr ? std::nullopt : named->lea);
 
                     tc.add_binding(e);
                 },
@@ -1029,6 +1029,9 @@ class inline_call {
 
             bound_name& named{std::get<bound_name>(binding.target)};
 
+            // note: an indexed reference has an address
+            assert(named.lea);
+
             const operand address{
                 x.alloc_scratch_register(call_.tk, indent,
                                          tc.builtins().address()),
@@ -1039,7 +1042,7 @@ class inline_call {
             x.comment(call_.tk, indent, "address of parameter {}",
                       in_quotes(binding.from));
 
-            named.lea = load_indexed_address(x, indent, address, named.lea,
+            named.lea = load_indexed_address(x, indent, address, *named.lea,
                                              keeps_displacement);
         }
 
@@ -1494,8 +1497,9 @@ class inline_call {
                                                 dst.operand(), dst.name());
         }
 
-        operand dst_lea{
-            dst.is_final_address() ? dst.operand() : operand{},
+        std::optional<operand> dst_lea{
+            dst.is_final_address() ? std::optional{dst.operand()}
+                                   : std::nullopt,
         };
 
         // a destination such as 'arr[1]' is not an array
@@ -1517,8 +1521,8 @@ class inline_call {
             std::get_if<bound_name>(&binding.target),
         };
 
-        return named != nullptr and named->lea.is_memory() and
-               not named->lea.index_register().empty();
+        return named != nullptr and named->lea and named->lea->is_memory() and
+               not named->lea->index_register().empty();
     }
 };
 
@@ -2040,9 +2044,10 @@ class noinline_call {
         return locals.size() - 1;
     }
 
-    // the address the callee finds in a register, empty when none
+    // the address the callee finds in a register, none when no slot is in it
     [[nodiscard]] static auto
-    register_address(const std::span<const addressed_slot> slots) -> operand {
+    register_address(const std::span<const addressed_slot> slots)
+        -> std::optional<operand> {
 
         for (const addressed_slot& addressed : slots) {
             if (addressed.slot.is_in_register) {
@@ -2050,7 +2055,7 @@ class noinline_call {
             }
         }
 
-        return {};
+        return std::nullopt;
     }
 
     // a temporary is a plain variable, not indexed like its argument
