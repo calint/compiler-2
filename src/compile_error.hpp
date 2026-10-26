@@ -105,8 +105,7 @@ class compile_error final : public std::exception {
         }
     };
 
-    // a token without a place, e.g. of a backend test, gives an error without
-    // one like 'file_level'; the compiler always passes a token of the source
+    // a token without a place gives an error without one like 'file_level'
     compile_error(const token& src_loc_tk, std::string message)
         : msg{std::move(message)} {
 

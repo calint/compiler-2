@@ -141,7 +141,7 @@ given the extent of the features.
 
 ### From doubt to hope
 
-After 20 or so rounds of the same review prompt, the AI found the design as "good".
+After 20 or so rounds of the same review prompt, the AI rated the design "good".
 
 Besides the goal of no undefined behavior, the AI now also looks for the
 simplest possible solution. Many concepts it had introduced, each of which made

@@ -192,6 +192,16 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
        1. W1: the rv32i backend test driver (4208 lines) tests calls no
           source makes, about -1500 to -2500; measure its coverage beside
           the cases first; recommended: measure, then decide
+          => W1 done (2026-10-26, user: remove): measured with coverage
+             builds, the driver reached 79 compiler lines the cases do not:
+             22 accessors only it used, about 51 of the far-jump growth that
+             'test-far-jumps.sh' and '-no-scratch.sh' cover (8 s and 3 s),
+             5 of the rv32i linux target; 'test-rv32i-address.cpp' and
+             'test-rv32i.sh' go (-4325 lines), the accessors go
+             ('emitted_text', 'emitted_line_count', 'text_from',
+             'line_count'), the members public only for it become private
+             or protected, 'finish_registers' releases unconditionally;
+             AGENTS.md names the far-jump scripts in the phase checks
        2. S2 (-50, low confidence): the result address of an inlined call
           as one more indexed binding; changes code; recommended: try and
           measure, keep only if no listing grows
@@ -618,9 +628,6 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
     (drops the token shapes of 'value_type', about 70 lines); messages of
     malformed arguments may change (design review 2026-10-23 E.5, optional,
     lower confidence; round 14 F.3 kept the two deductions apart)
-[ ] easy: 'qa/coverage/test-rv32i-address.cpp' discards the result of
-    'toc::dry_run' (the '[[nodiscard]]' warning at its 'dry run only' test,
-    present at HEAD 2026-10-25); 'std::ignore =' or check the result
 [ ] easy: 'qa/coverage/test-arena.py' large offset runtime: its panic harness
     jumps to 'baz_bounds_panic', which a program compiled with
     '--checks=line' does not define (the handler is under the labels of its

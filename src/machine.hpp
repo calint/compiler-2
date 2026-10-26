@@ -103,8 +103,7 @@ struct target_description {
 //                  'held_registers' (what a front-end step holds),
 //                  'free_named_register(s)', 'slot_register', 'register_view',
 //                  'alloc_named_register', 'make_register_operand',
-//                  'registers_for_target_call', 'reserve_variables_base' (in
-//                  'start' and the backend tests)
+//                  'registers_for_target_call'
 //   operations     'add_subtract', 'multiply', 'divide', 'shift', 'bitwise',
 //                  'unary', 'zero', 'copy_value', 'store_bytes',
 //                  'address_of', 'scale_index', 'store_boolean',
@@ -127,10 +126,6 @@ struct target_description {
 //   reports        'register_peak_report', 'separate_report', 'statistics';
 //                  the queries of the register report are private, for
 //                  'register_reporter'
-//   backend tests  'assert_registers_free', 'emitted_line_count',
-//                  'emitted_text', 'free_scratch_registers',
-//                  'release_variables_base', 'reserve_frame_base',
-//                  'release_frame_base' (in a body the begin and end pair)
 class machine {
   public:
     // which of two versions of the same code 'emit_most_efficient' keeps: the
@@ -880,14 +875,6 @@ class machine {
         throw out_of_registers_error(src_loc_tk);
     }
 
-    // every operation freed what it allocated, also checked by backend tests
-    // between their cases
-    auto assert_registers_free() const -> void {
-        assert(state_.registers.is_empty());
-        assert(state_.registers.unavailable_mask() == 0);
-        assert(not state_.frame_base_reserved);
-    }
-
     // starts the data section, after the code and every routine it uses
     auto begin_data(const size_t alignment) -> void {
         assembler& output{target_assembler()};
@@ -1188,19 +1175,6 @@ class machine {
         target_assembler().zero_data(size_bytes);
     }
 
-    // the lines buffered so far, for backend tests that read what an emit
-    // adds with 'emitted_text'
-    [[nodiscard]] auto emitted_line_count() const -> size_t {
-        return target_assembler().line_count();
-    }
-
-    // the text of the lines buffered from 'first_line' on
-    [[nodiscard]] auto emitted_text(const size_t first_line) const
-        -> std::string {
-
-        return target_assembler().text_from(first_line);
-    }
-
     // releases the frame base and ends the body
     auto end_noinline_body() -> void {
         release_frame_base();
@@ -1249,15 +1223,6 @@ class machine {
                register_pool::holder_kind::scratch);
 
         pop_allocation(reg.allocation_register());
-    }
-
-    auto free_scratch_registers(const token& src_loc_tk, const size_t indent,
-                                const std::span<const operand> registers)
-        -> void {
-
-        for (const operand& reg : registers | std::views::reverse) {
-            free_scratch_register(src_loc_tk, indent, reg);
-        }
     }
 
     [[nodiscard]] auto has_indexed_addressing() const -> bool {
@@ -1327,43 +1292,6 @@ class machine {
         };
     }
 
-    // the frame base is held while a 'noinline' body is compiled, which starts
-    // and ends with no scratch register held
-    auto release_frame_base() -> void {
-        assert(state_.frame_base_reserved);
-        assert(state_.registers.scratch_count() == 0);
-
-        comment(token{}, 0, "free named register {}", frame_base_register());
-        pop_allocation(frame_base_register());
-
-        state_.frame_base_reserved = false;
-    }
-
-    auto release_variables_base() -> void {
-        assert(variables_base_reserved_);
-
-        release_named_register(token{}, 0, variables_base_register());
-
-        variables_base_reserved_ = false;
-    }
-
-    auto reserve_frame_base() -> void {
-        assert(not state_.frame_base_reserved);
-        assert(state_.registers.scratch_count() == 0);
-
-        // a register the backend holds itself, which no source location asked
-        // for
-        push_allocation(token{}, 0, frame_base_register(),
-                        register_pool::holder_kind::backend);
-
-        state_.frame_base_reserved = true;
-
-        comment(token{}, 0, "allocate named register {}",
-                frame_base_register());
-
-        emit_frame_entry();
-    }
-
     // ends the data at 'dat.end', then the zeroed variables from 'vars' to
     // 'vars.end'
     auto reserve_variables(const size_t alignment, const size_t size_bytes)
@@ -1378,19 +1306,6 @@ class machine {
         output.label(0, variables_label);
         output.reserve(size_bytes);
         output.label(0, variables_end_label);
-    }
-
-    // held from 'start' to 'finish'
-    auto reserve_variables_base() -> void {
-        assert(not variables_base_reserved_);
-
-        comment(token{}, 0, "allocate named register {}",
-                variables_base_register());
-
-        push_allocation(token{}, 0, variables_base_register(),
-                        register_pool::holder_kind::backend);
-
-        variables_base_reserved_ = true;
     }
 
     // an index or a count of elements becomes a byte offset
@@ -1702,6 +1617,15 @@ class machine {
 
         return std::format("{} at {}:", panic_message(name),
                            locations_.file_name(file_ix));
+    }
+
+    auto free_scratch_registers(const token& src_loc_tk, const size_t indent,
+                                const std::span<const operand> registers)
+        -> void {
+
+        for (const operand& reg : registers | std::views::reverse) {
+            free_scratch_register(src_loc_tk, indent, reg);
+        }
     }
 
     [[nodiscard]] auto is_frame_base_reserved() const -> bool {
@@ -2054,6 +1978,13 @@ class machine {
         return result;
     }
 
+    // every operation freed what it allocated
+    auto assert_registers_free() const -> void {
+        assert(state_.registers.is_empty());
+        assert(state_.registers.unavailable_mask() == 0);
+        assert(not state_.frame_base_reserved);
+    }
+
     // the lines of 'emit' with the state they end in, compiled from the
     // current state, which is put back
     [[nodiscard]] auto compile_version(const std::function_ref<void()> emit)
@@ -2102,13 +2033,10 @@ class machine {
         }
     }
 
-    // releases the variables base that 'start' reserved, backend tests that
-    // do not start hold none, and asserts that every register is free
+    // releases the variables base that 'start' reserved and asserts that
+    // every register is free
     auto finish_registers() -> void {
-        if (variables_base_reserved_) {
-            release_variables_base();
-        }
-
+        release_variables_base();
         assert_registers_free();
     }
 
@@ -2282,6 +2210,56 @@ class machine {
                         "is needed here too, compute the operand that needs "
                         "it with 'let' before that operation",
                         name, holder_location));
+    }
+
+    // the frame base is held while a 'noinline' body is compiled, which starts
+    // and ends with no scratch register held
+    auto release_frame_base() -> void {
+        assert(state_.frame_base_reserved);
+        assert(state_.registers.scratch_count() == 0);
+
+        comment(token{}, 0, "free named register {}", frame_base_register());
+        pop_allocation(frame_base_register());
+
+        state_.frame_base_reserved = false;
+    }
+
+    auto release_variables_base() -> void {
+        assert(variables_base_reserved_);
+
+        release_named_register(token{}, 0, variables_base_register());
+
+        variables_base_reserved_ = false;
+    }
+
+    auto reserve_frame_base() -> void {
+        assert(not state_.frame_base_reserved);
+        assert(state_.registers.scratch_count() == 0);
+
+        // a register the backend holds itself, which no source location asked
+        // for
+        push_allocation(token{}, 0, frame_base_register(),
+                        register_pool::holder_kind::backend);
+
+        state_.frame_base_reserved = true;
+
+        comment(token{}, 0, "allocate named register {}",
+                frame_base_register());
+
+        emit_frame_entry();
+    }
+
+    // held from 'start' to 'finish'
+    auto reserve_variables_base() -> void {
+        assert(not variables_base_reserved_);
+
+        comment(token{}, 0, "allocate named register {}",
+                variables_base_register());
+
+        push_allocation(token{}, 0, variables_base_register(),
+                        register_pool::holder_kind::backend);
+
+        variables_base_reserved_ = true;
     }
 
     // the scratch registers that can hold values beside the ones the backend

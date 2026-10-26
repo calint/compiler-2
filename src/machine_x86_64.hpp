@@ -816,22 +816,6 @@ class machine_x86_64 final : public machine {
     }
 
     //
-    // class methods
-    //
-
-    // 'syscall' changes 'rcx' and 'r11', the allocated ones are saved; public
-    // for the backend tests
-    auto invoke_syscall(const size_t indent) -> void {
-        static constexpr std::array<std::string_view, 2> clobbered{
-            "rcx",
-            "r11",
-        };
-
-        with_saved_registers(indent, clobbered,
-                             [&] -> void { syscall(indent); });
-    }
-
-    //
     // statics
     //
 
@@ -1844,6 +1828,17 @@ class machine_x86_64 final : public machine {
         -> void {
 
         emit_unary(src_loc_tk, indent, op::inc, dst);
+    }
+
+    // 'syscall' changes 'rcx' and 'r11', the allocated ones are saved
+    auto invoke_syscall(const size_t indent) -> void {
+        static constexpr std::array<std::string_view, 2> clobbered{
+            "rcx",
+            "r11",
+        };
+
+        with_saved_registers(indent, clobbered,
+                             [&] -> void { syscall(indent); });
     }
 
     auto io_syscall(const token& src_loc_tk, const size_t indent,

@@ -262,8 +262,6 @@ class assembler {
                   std::format("{}{}:", indentation(indent), name));
     }
 
-    [[nodiscard]] auto line_count() const -> size_t { return lines_.size(); }
-
     // the bodies of each noinline function with their calls and size, in
     // the order of definition
     [[nodiscard]] auto noinline_summaries() const
@@ -326,22 +324,6 @@ class assembler {
                 changed = optimize_jump(index, labels, referenced) or changed;
             }
         }
-    }
-
-    // the text of the lines from 'first_line' on, as 'write' writes them
-    [[nodiscard]] auto text_from(const size_t first_line) const -> std::string {
-        assert(captures_.empty());
-
-        std::string text;
-
-        for (const line& l : lines_ | std::views::drop(first_line)) {
-            if (not l.removed) {
-                text += l.text;
-                text += '\n';
-            }
-        }
-
-        return text;
     }
 
   protected:

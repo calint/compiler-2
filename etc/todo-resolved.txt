@@ -1,6 +1,10 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[-] easy: 'qa/coverage/test-rv32i-address.cpp' discards the result of
+    'toc::dry_run' (the '[[nodiscard]]' warning at its 'dry run only' test,
+    present at HEAD 2026-10-25); 'std::ignore =' or check the result
+    => discarded (2026-10-26): round 21 W1 removed the driver
 [x] easy: bug: a built-in without a value used as a value without '(',
     e.g. 'if n == 2 or (exit + 0) exit(2)', fails the assert of
     'parse_builtin_value' (parse_statement.hpp:288), also at 1594bb3e;

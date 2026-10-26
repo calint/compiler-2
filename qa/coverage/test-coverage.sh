@@ -78,7 +78,7 @@ clean)
     echo $SEP
     # 'find' since the profiles outgrow the argument list of 'rm'
     find . -maxdepth 1 -name '*.profraw' -delete
-    rm -f -- baz.profdata cov.err profiles.txt rv32i-driver gen gen.o gen.s diff.baz out err
+    rm -f -- baz.profdata cov.err profiles.txt gen gen.o gen.s diff.baz out err
     rm -f -- tests/gen tests/gen.o tests/gen.s tests/gen-nopt.s tests/gen-rv32i.bin tests/diff.baz tests/out tests/err
     rm -f -- tests/gen-image.o tests/gen-image.elf tests/gen-image.bin tests/sdcard.img
     rm -rf -- report/
@@ -104,18 +104,9 @@ report)
     fi
     llvm-profdata merge -o baz.profdata -sparse -input-files=profiles.txt
     rm -f -- profiles.txt
-    objects=(-object="$BIN")
-    # the driver of 'test-rv32i.sh' reaches lines the compiler cases do not
-    if [[ -x rv32i-driver ]]; then
-        objects+=(-object=rv32i-driver)
-    fi
-    # 'llvm-cov' warns about 4 functions of the merged profile of the compiler
-    # and the driver that it cannot match, the functions are not identified
-    llvm-cov show -format=html -output-dir=report/ -instr-profile=baz.profdata "${objects[@]}" 2>cov.err
-    grep -v 'functions have mismatched data' cov.err >&2 || true
-    rm -f -- cov.err
+    llvm-cov show -format=html -output-dir=report/ -instr-profile=baz.profdata "$BIN"
     # plain text table of the same data
-    llvm-cov report -instr-profile=baz.profdata "${objects[@]}" >report/summary.txt 2>/dev/null
+    llvm-cov report -instr-profile=baz.profdata "$BIN" >report/summary.txt 2>/dev/null
     echo $SEP
     echo "coverage report generated in $SCRIPT_DIR/report/"
     echo $SEP

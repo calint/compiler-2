@@ -161,8 +161,9 @@
   listings and errors of every test on x86_64 and rv32i compared with a
   compiler built from HEAD, compiled in parallel on all cores.
 - Per phase, or for a step that changes behavior: also
-  `qa/coverage/test-rv32i.sh`, `test-versions.sh`, `roome/qa/test.sh`, the
-  asan build and the fuzzers, the fuzzers in parallel.
+  `qa/coverage/test-far-jumps.sh`, `test-far-jumps-no-scratch.sh`,
+  `test-versions.sh`, `roome/qa/test.sh`, the asan build and the fuzzers,
+  the fuzzers in parallel.
 - Run each check once per round; do not edit sources while a check runs
   (decided 2026-10-26).
 
