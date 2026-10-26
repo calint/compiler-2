@@ -6,6 +6,77 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
 --------------------------------------------------------------------------------
 1. clean up
 --------------------------------------------------------------------------------
+[ ] hard: design review round 21, simplification (2026-10-26, user: refactor
+    to simplify; six reviewers P parse and expressions, S statements and
+    calls, N names and 'toc', U no-UB checks, B backends, W docs and qa;
+    findings with measured net lines in the session scratchpad r21;
+    spot-checked: N1 sizes ('ident_builder' 149, 'ident_resolver' 310, two
+    readers of 'ident_info::id'), U3 is round 20 F code): each step a pure
+    refactor unless marked, listings and messages equal, a pause for a commit
+    after each phase
+    A. small and local (about -400 lines)
+       A.1. backends (B1-B8, -136, no code change): the target-call argument
+            check once in 'machine', 'state_' used directly instead of five
+            forwarders, 'check_bounds' one frame over a virtual
+            'emit_bounds_check', 'validate_register_type' and the 'type_ref'
+            of 'reserve_named_register' go, 'push_backend_allocation' goes,
+            the 'stack_pointer_register' field, 'end_main' (x86 listings lose
+            a blank line), 'reports_line'
+       A.2. the checks (U3 -28: the 'without_call_check' counter derived
+            from the scopes; U5 -12; U7 -5; S4/U4 -25: the two count-first
+            checks of README 7.14 as one helper in 'ub_order.hpp')
+       A.3. calls and statements (S6-S10, -70): one 'expr_any' constructor
+            for a path argument, 'call_kind' without 'call_kind_item', the
+            notes of 'dry_run_body', 'func_instantiator' in one helper, the
+            leftovers
+       A.4. expressions (P D, E, F, H, I, -56): 'token::start_position', the
+            state 'expr_arith' keeps twice, local duplicates, the operator
+            lookups over 'traits_of', 'is_hidden_by_value' inlined
+       A.5. names (N2 -25, N3 -3): 'ident_info' keeps the path once
+       A.6. docs and qa (W2 -88, W3 -110, W4 -120, W5 -60, W8 -30): the
+            README contents and one form of section reference, text said
+            twice and chapter 9 for a final language, the fuzzers on
+            'fuzzlib.run_fuzzer', the alias fuzzers on fuzzlib
+    B. refactors (about -700 lines)
+       B.1. N1 (-450, -18 concepts, +6): a name path resolved once, a
+            binding holds what its argument resolved to ('resolved_name'),
+            'ident_info::field' and 'at_address' step; 'ident_path',
+            'ident_builder', the text rewrite of 'follow_binding',
+            'call_address' with 'trailing_count', the three 'bound_*' go;
+            in steps, each with both suites showing equal listings and
+            errors; README 1.3, 6.5, 6.8
+       B.2. U1 (-55): definite assignment traces the result as the parse
+            resolved it, its own hiding model goes, one walk per body
+       B.3. U2 (-20): a read is a 'stmt_identifier', no path text per read
+       B.4. S1 (-55): the bulk built-ins parse their arguments with
+            'builtin_arguments'; messages of 5 tests change
+       B.5. S3 (-35): one path for the unary ops of a conversion, the
+            'ops_place' enum goes; output changes, never longer (measured)
+       B.6. S5 (-18): a value argument's fit checked once before the
+            inlined and noinline paths split
+       B.7. P A (-35): the built-ins dispatched by the catalog's 'use' in
+            one place, also fixes the crash item ('exit + 0', 'var x =
+            array_copy'); P B (-18), P C (-15)
+    C. a fix: P G, a comparison folds through one function that checks its
+       sides, 'let b = k == 1000' with 'k' an 'i8' is rejected like 'var';
+       behavior, with tests
+    asks:
+       1. W1: the rv32i backend test driver (4208 lines) tests calls no
+          source makes, about -1500 to -2500; measure its coverage beside
+          the cases first; recommended: measure, then decide
+       2. S2 (-50, low confidence): the result address of an inlined call
+          as one more indexed binding; changes code; recommended: try and
+          measure, keep only if no listing grows
+       3. W6 (-50): the two 'statement' virtuals of the 'arrays_equal'
+          shorthand; changes code; recommended: as 2
+       4. W7 (-200, low confidence): a 'dat' initializer through the write
+          plan; changes listings; recommended: as 2, after B
+       5. W9: 'test-coverage-full.sh' (kept in round 20 as a convenience)
+          and 'cppcheck.sh' (in no lint step); recommended: keep the first,
+          remove the second if you do not run it
+       6. U6 (-7, unprobed), N4 (messages print the path without indexes):
+          recommended: no
+    order: A, B.1, B.2-B.7, C, then the asks
 [ ] medium: design review round 20 (2026-10-26, a convergence round with the
     angles of round 19, findings tagged structural or local; findings in the
     session scratchpad r20; verdicts: great (A, T), good (C, D, U, S); stop:
