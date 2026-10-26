@@ -390,8 +390,6 @@ class expr_bool_op final : public statement {
                 constant_comparison(lhs, cmp.op, rhs),
             }) {
 
-            assert_folded_sides_fit(lhs, rhs, cmp.op);
-
             return compile_constant(tc, indent, *constant != action.inverted,
                                     action);
         }
@@ -662,7 +660,6 @@ class expr_bool_op final : public statement {
                         in_quotes(typed_type.name()))};
     }
 
-    // a comparison that folds is checked like one that is compiled
     static auto assert_folded_sides_fit(const comparison_side& lhs,
                                         const comparison_side& rhs,
                                         const comparison_operator op) -> void {
@@ -878,7 +875,8 @@ class expr_bool_op final : public statement {
     }
 
     // the value of a comparison whose sides fold, without the element's
-    // 'not's, empty otherwise
+    // 'not's, empty otherwise; the one fold of the parse, a 'let' and the
+    // compile, so its sides are checked like those of a compiled comparison
     [[nodiscard]] static auto constant_comparison(const comparison_side& lhs,
                                                   const comparison_operator op,
                                                   const comparison_side& rhs)
@@ -887,6 +885,8 @@ class expr_bool_op final : public statement {
         if (not lhs.folded or not rhs.folded) {
             return std::nullopt;
         }
+
+        assert_folded_sides_fit(lhs, rhs, op);
 
         return constant_arith::eval_constant(lhs.folded->value, op,
                                              rhs.folded->value);

@@ -1,0 +1,8 @@
+# a folded comparison of a 'let' inside an 'or' list is checked like a
+# compiled one
+
+func main() {
+    let k = i8(3)
+    let b = k == 1 or k == 1000
+    exit(int(b))
+}

@@ -1,0 +1,8 @@
+# a folded comparison of a 'let' is checked like a compiled one: a typed
+# side wider than the left side
+
+func main() {
+    let k = i8(3)
+    let b = k < i16(300)
+    exit(int(b))
+}

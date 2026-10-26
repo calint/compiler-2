@@ -5383,3 +5383,10 @@ SRC=1694 && COMPERR
 # without '(': an operand and an initializer
 SRC=1695 && COMPERR
 SRC=1696 && COMPERR
+
+# a comparison that folds is checked like one that is compiled, also the
+# initializer of a 'let', which is never compiled: a constant that does not
+# fit, a wider typed side, and inside an 'or' list
+SRC=1697 && COMPERR
+SRC=1698 && COMPERR
+SRC=1699 && COMPERR

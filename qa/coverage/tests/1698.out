@@ -1,0 +1,4 @@
+
+1698.baz:6:17: 'i16(300)' of type 'i16' is wider than 'k' of type 'i8', swap the operands: 'i16(300) > k'
+    let b = k < i16(300)
+                ^

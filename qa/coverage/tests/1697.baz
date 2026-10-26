@@ -1,0 +1,8 @@
+# a folded comparison of a 'let' is checked like a compiled one: a constant
+# that does not fit the typed side
+
+func main() {
+    let k = i8(3)
+    let b = k == 1000
+    exit(int(b))
+}

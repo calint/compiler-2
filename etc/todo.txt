@@ -184,6 +184,10 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
     C. a fix: P G, a comparison folds through one function that checks its
        sides, 'let b = k == 1000' with 'k' an 'i8' is rejected like 'var';
        behavior, with tests
+    => C done (2026-10-26): 'constant_comparison' checks the folded sides
+       ('assert_folded_sides_fit'), 'compile_comparison' no longer does it
+       itself; a 'let' gets the verdict of a 'var' (tests 1697-1699); no
+       other test changes
     asks:
        1. W1: the rv32i backend test driver (4208 lines) tests calls no
           source makes, about -1500 to -2500; measure its coverage beside

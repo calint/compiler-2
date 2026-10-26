@@ -1,0 +1,4 @@
+
+1699.baz:6:28: constant '1000' does not fit 'k' of type 'i8'
+    let b = k == 1 or k == 1000
+                           ^
