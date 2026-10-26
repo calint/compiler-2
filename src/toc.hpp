@@ -47,7 +47,7 @@
 //                   ('scope_entry', 'register_trace') and 'call_frame' of an
 //                   error use it for a call level
 //   tables          'type_table', 'compile_records' (the noinline bodies to
-//                   emit, the compiled functions), 'function_table'
+//                   emit), 'function_table'
 //   'dry_run_ledger' the heights ('dry_run_height') of the checked dry runs
 //                   of noinline calls
 //   'data_table'    the dats ('dat_extent' as declared, 'placed_dat' as
@@ -823,11 +823,9 @@ class type_table final {
 };
 
 // what a compile made: the bodies of the noinline functions to emit, a
-// worklist that grows while they compile, and the functions whose body was
-// compiled, also in a dry run
+// worklist that grows while they compile
 class compile_records final {
     std::vector<noinline_body> noinline_bodies_;
-    std::set<const stmt_def_func*> compiled_funcs_;
 
   public:
     // a body is emitted once per array lengths
@@ -848,17 +846,8 @@ class compile_records final {
         });
     }
 
-    [[nodiscard]] auto is_compiled(const stmt_def_func& func) const -> bool {
-        return compiled_funcs_.contains(&func);
-    }
-
-    // a noinline body to emit or a compiled function
     [[nodiscard]] auto is_empty() const -> bool {
-        return noinline_bodies_.empty() and compiled_funcs_.empty();
-    }
-
-    auto mark_compiled(const stmt_def_func& func) -> void {
-        compiled_funcs_.insert(&func);
+        return noinline_bodies_.empty();
     }
 
     // a copy, the list grows while the bodies compile
@@ -1561,8 +1550,9 @@ class storage_layout final {
     size_t max_body_vars_size_bytes_{};
 
   public:
-    // what a dry run changes and 'end_dry_run' puts back
-    struct dry_run_state {
+    // the peaks that a dry run or a version of 'toc::emit_most_efficient'
+    // raises and 'restore_peaks' puts back
+    struct peaks {
         size_t max_body_vars_size_bytes;
         // the index of the scope, scopes added meanwhile may move the scopes
         std::optional<size_t> frame_scope_index;
@@ -1633,40 +1623,13 @@ class storage_layout final {
 
         scopes_.get().back().add_storage_bytes(allocated_size_bytes);
 
-        // note: a dry run puts the peak back ('end_dry_run')
+        // note: a dry run puts the peak back ('restore_peaks')
         max_body_vars_size_bytes_ =
             std::max(used_vars_size_bytes(), max_body_vars_size_bytes_);
     }
 
     auto assert_released() const -> void {
         assert(used_vars_size_bytes() == 0);
-    }
-
-    auto begin_dry_run() -> dry_run_state {
-        const std::optional<size_t> scope_index{
-            find_storage_location().scope_index,
-        };
-
-        const dry_run_state saved{
-            .max_body_vars_size_bytes{max_body_vars_size_bytes_},
-            .frame_scope_index{scope_index},
-            .peak_frame_size_bytes{
-                scope_index ? scope_at(*scope_index).peak_frame_size_bytes()
-                            : 0,
-            },
-        };
-
-        return saved;
-    }
-
-    auto end_dry_run(const dry_run_state& saved) -> void {
-        max_body_vars_size_bytes_ = saved.max_body_vars_size_bytes;
-
-        if (saved.frame_scope_index) {
-            scopes_.get()
-                .at(*saved.frame_scope_index)
-                .restore_peak_frame_size_bytes(saved.peak_frame_size_bytes);
-        }
     }
 
     [[nodiscard]] auto max_body_vars_size_bytes() const -> size_t {
@@ -1707,6 +1670,23 @@ class storage_layout final {
         return scope_at(*scope_index).peak_frame_size_bytes();
     }
 
+    [[nodiscard]] auto peaks_now() const -> peaks {
+        const std::optional<size_t> scope_index{
+            find_storage_location().scope_index,
+        };
+
+        const peaks saved{
+            .max_body_vars_size_bytes{max_body_vars_size_bytes_},
+            .frame_scope_index{scope_index},
+            .peak_frame_size_bytes{
+                scope_index ? scope_at(*scope_index).peak_frame_size_bytes()
+                            : 0,
+            },
+        };
+
+        return saved;
+    }
+
     // the storage of the dat 'var' is where the data table placed it, before
     // the variables; its offset is set, the scopes hold none of its bytes
     auto place_dat(const token& src_loc_tk, var_info& var) const -> void {
@@ -1722,6 +1702,16 @@ class storage_layout final {
             src_loc_tk,
             add_storage_size(src_loc_tk, dat.offset_bytes,
                              var_storage_size_bytes(src_loc_tk, var)));
+    }
+
+    auto restore_peaks(const peaks& saved) -> void {
+        max_body_vars_size_bytes_ = saved.max_body_vars_size_bytes;
+
+        if (saved.frame_scope_index) {
+            scopes_.get()
+                .at(*saved.frame_scope_index)
+                .restore_peak_frame_size_bytes(saved.peak_frame_size_bytes);
+        }
     }
 
     [[nodiscard]] auto var_storage_alignment(const var_info& var) const
@@ -1778,19 +1768,7 @@ class storage_layout final {
             return;
         }
 
-        // the name of a temporary is not in the source, the error is at its
-        // call
-        if (var.is_temporary()) {
-            throw compile_error{src_loc_tk,
-                                "a temporary of the call does not fit in the "
-                                "variable storage, see '--vars'"};
-        }
-
-        throw compile_error{
-            src_loc_tk,
-            std::format("variable {} does not fit in the variable storage, "
-                        "see '--vars'",
-                        in_quotes(var.name))};
+        throw vars_capacity_error(src_loc_tk, var);
     }
 
     // the dats, the padding after them and the variables of every scope
@@ -1870,6 +1848,35 @@ class storage_layout final {
     [[nodiscard]] auto vars_start_bytes() const -> size_t {
         return sum_storage_size(data_.get().total_size_bytes(),
                                 data_.get().dat_var_padding_bytes());
+    }
+
+    //
+    // statics
+    //
+
+    // of the kind that lets another version of the code be kept
+    [[nodiscard]] static auto vars_capacity_error(const token& src_loc_tk,
+                                                  const var_info& var)
+        -> compile_error {
+
+        std::string message{
+            std::format("variable {} does not fit in the variable storage, "
+                        "see '--vars'",
+                        in_quotes(var.name)),
+        };
+
+        // the name of a temporary is not in the source, the error is at its
+        // call
+        if (var.is_temporary()) {
+            message = "a temporary of the call does not fit in the variable "
+                      "storage, see '--vars'";
+        }
+
+        compile_error error{src_loc_tk, std::move(message)};
+
+        error.kind = compile_error::error_kind::out_of_storage;
+
+        return error;
     }
 };
 
@@ -2828,12 +2835,13 @@ class variable_comments final {
 //                  'constant_value_of', 'record_use',
 //                  'record_callee_globals', 'parse_nesting_scope'
 //   compile        'add_binding', 'add_bytes_constant', 'add_string_constant',
-//                  'add_noinline_body', 'mark_func_compiled', 'dry_run',
-//                  'dry_run_call_kind', 'reach_dry_run_level',
-//                  'reach_scope_check', 'call_path_at', 'create_cmp_label',
-//                  'create_unique_label', 'next_frame_address', 'storage_of',
-//                  the reachability ('is_reachable', 'end_path',
-//                  'record_break', 'record_return', 'join_loop', 'path_merge')
+//                  'add_noinline_body', 'dry_run',
+//                  'dry_run_call_kind', 'emit_most_efficient',
+//                  'reach_dry_run_level', 'reach_scope_check', 'call_path_at',
+//                  'create_cmp_label', 'create_unique_label',
+//                  'next_frame_address', 'storage_of', the reachability
+//                  ('is_reachable', 'end_path', 'record_break',
+//                  'record_return', 'join_loop', 'path_merge')
 //   both           'add_var' and 'add_const' (placed and commented only while
 //                  compiling), 'make_var_read_only', 'scope_entry',
 //                  'resolve_declared', 'get_func_or_throw',
@@ -2848,10 +2856,10 @@ class variable_comments final {
 // versions of 'emit_most_efficient', dry runs, 'check_body'), so what a
 // compile adds here is the same each time: a constant is kept once by its
 // bytes ('add_read_only_constant'), a noinline body once
-// ('add_noinline_body'), a compiled function is a set
-// ('mark_func_compiled'), the scopes and their variables are popped
-// ('scope_entry'), and a dry run puts back the scope count, the constant
-// count and the storage peak ('dry_run_scope')
+// ('add_noinline_body'), the scopes and their variables are popped
+// ('scope_entry'); the peaks ('compile_peaks') are put back by a dry run
+// with the constant count ('dry_run_scope') and set to those of the kept
+// version by 'emit_most_efficient'
 class toc final {
     std::reference_wrapper<::machine> machine_;
     source_locations locations_;
@@ -2883,21 +2891,26 @@ class toc final {
     // of them, see 'parse_nesting_scope'
     size_t parse_nesting_{};
 
+    // the peaks that compiling raises, put back by a dry run and set to those
+    // of the kept version by 'emit_most_efficient'
+    struct compile_peaks {
+        size_t max_scope_count{};
+        storage_layout::peaks storage;
+    };
+
     // what a dry run changes in 'toc' is put back when it ends, also when an
-    // error unwinds: the deepest scope count, the string constants and the
-    // use of storage; while it lives a noinline body that a call asks for is
-    // not added, the call is compiled again for real
+    // error unwinds: the peaks and the string constants; while it lives a
+    // noinline body that a call asks for is not added, the call is compiled
+    // again for real
     class dry_run_scope final {
         toc& tc_;
-        size_t kept_max_scope_count_;
+        compile_peaks kept_peaks_;
         size_t kept_string_constant_count_;
-        storage_layout::dry_run_state kept_storage_;
 
       public:
         explicit dry_run_scope(toc& tc)
-            : tc_{tc}, kept_max_scope_count_{tc.scopes_.max_scope_count()},
-              kept_string_constant_count_{tc.data_.constant_count()},
-              kept_storage_{tc.storage_.begin_dry_run()} {
+            : tc_{tc}, kept_peaks_{tc.peaks_now()},
+              kept_string_constant_count_{tc.data_.constant_count()} {
 
             ++tc_.dry_run_depth_;
         }
@@ -2909,8 +2922,7 @@ class toc final {
 
         ~dry_run_scope() {
             --tc_.dry_run_depth_;
-            tc_.storage_.end_dry_run(kept_storage_);
-            tc_.scopes_.set_max_scope_count(kept_max_scope_count_);
+            tc_.restore_peaks(kept_peaks_);
             tc_.data_.resize_constants(kept_string_constant_count_);
         }
     };
@@ -3451,6 +3463,43 @@ class toc final {
         return dry_runs_;
     }
 
+    // 'machine::emit_most_efficient' with each version compiled from the
+    // peaks before it, so the peaks that remain are those of the kept
+    // version, e.g. the frame size of a noinline body; a string constant
+    // that the other version added stays, unused, so the labels stay unique
+    auto emit_most_efficient(const token& src_loc_tk, const size_t indent,
+                             const std::function_ref<void()> emit_first,
+                             const std::function_ref<void()> emit_second)
+        -> void {
+
+        assert(is_compiling_);
+
+        const compile_peaks start{peaks_now()};
+
+        compile_peaks first_end{start};
+        compile_peaks second_end{start};
+
+        const auto first = [&] -> void {
+            restore_peaks(start);
+            emit_first();
+            first_end = peaks_now();
+        };
+
+        const auto second = [&] -> void {
+            restore_peaks(start);
+            emit_second();
+            second_end = peaks_now();
+        };
+
+        ::machine& x{machine()};
+
+        const bool keeps_first{
+            x.emit_most_efficient(src_loc_tk, indent, first, second),
+        };
+
+        restore_peaks(keeps_first ? first_end : second_end);
+    }
+
     // 'continue' and 'exit' leave the code after them unreached
     auto end_path() -> void { scopes_.set_reachable(false); }
 
@@ -3575,13 +3624,6 @@ class toc final {
                             const read_only_cause cause) -> void {
 
         scopes_.back().make_var_read_only(name, cause);
-    }
-
-    // also in a dry run, the errors of the body were checked
-    auto mark_func_compiled(const stmt_def_func& func) -> void {
-        assert(is_compiling_);
-
-        compiled_.mark_compiled(func);
     }
 
     auto mark_generic_func_instantiated(const std::string_view name) -> void {
@@ -3826,6 +3868,13 @@ class toc final {
         return types_.is_builtin(name);
     }
 
+    [[nodiscard]] auto peaks_now() const -> compile_peaks {
+        return {
+            .max_scope_count{scopes_.max_scope_count()},
+            .storage{storage_.peaks_now()},
+        };
+    }
+
     // a scope is pushed by 'scope_entry' and popped here with its storage; an
     // inlined call whose body does not reach its end, e.g. a 'loop' whose
     // 'break' folds away for a constant argument, leaves the code after the
@@ -3850,6 +3899,11 @@ class toc final {
         if (scopes_.is_at_root()) {
             scopes_.record_global(name);
         }
+    }
+
+    auto restore_peaks(const compile_peaks& peaks) -> void {
+        scopes_.set_max_scope_count(peaks.max_scope_count);
+        storage_.restore_peaks(peaks.storage);
     }
 
     [[nodiscard]] auto

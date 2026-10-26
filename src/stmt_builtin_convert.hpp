@@ -307,11 +307,9 @@ class stmt_builtin_convert final : public statement {
             return;
         }
 
-        machine& x{tc.machine()};
-
         // a load/store machine operates on the memory destination with a
         // load and a store each time, a wide register needs one store
-        x.emit_most_efficient(tok(), indent, in_destination, in_scratch);
+        tc.emit_most_efficient(tok(), indent, in_destination, in_scratch);
     }
 
     // the argument is made in 'reg' at the width of the type, where its

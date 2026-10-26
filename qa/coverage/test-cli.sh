@@ -583,6 +583,15 @@ CLI_VERSIONS() {
     grep -Fxq "# max scratch registers in use: 15" gen.s
     "$BIN" --target=rv32i-fpga --bin=gen-rv32i.bin --versions=last 1224.baz >gen.s 2>err
     grep -Fxq "# max scratch registers in use: 29" gen.s
+    # 1679.baz: the peaks are those of the kept version, and the temporary
+    # of the dropped one does not reject the program
+    "$BIN" --versions=first 1679.baz >gen.s 2>err
+    grep -Fxq ";           max body vars size: 16 B" gen.s
+    grep -Fxq ";            max scopes in use: 3" gen.s
+    "$BIN" --versions=last 1679.baz >gen.s 2>err
+    grep -Fxq ";           max body vars size: 24 B" gen.s
+    "$BIN" --vars=16 1679.baz >gen.s 2>err
+    [[ ! -s err ]]
     echo ok
 }
 

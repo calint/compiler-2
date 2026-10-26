@@ -120,16 +120,17 @@ class stmt_assign_var final : public statement {
         stmt_ident_.record_assignment(flow);
     }
 
-    // the value, then the destination, which is written
+    // as 'compile' emits it: the indexes of the destination, its address
+    // computed first, then the value; the destination is written last
     auto visit_operands(const operand_visitor visitor) const -> void override {
-        visitor({
-            .node{&expr_},
-            .written_place{},
-        });
-
         visitor({
             .node{&stmt_ident_},
             .written_place{&stmt_ident_},
+        });
+
+        visitor({
+            .node{&expr_},
+            .written_place{},
         });
     }
 

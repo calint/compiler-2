@@ -1,0 +1,13 @@
+# a guard on a parameter is not folded without the call: a division by it is
+# checked at run time, a constant argument folds the branch away
+
+func ratio(a, b) res {
+    res = 0
+    if b != 0 {
+        res = a / b
+    }
+}
+
+func main() {
+    exit(ratio(7, 0) + ratio(9, 3))
+}

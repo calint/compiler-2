@@ -59,18 +59,20 @@ struct source_span {
 
 class compile_error final : public std::exception {
   public:
-    // running out of scratch registers depends on the code compiled, another
-    // version of the same code may not run out
-    // ('machine::emit_most_efficient'); both it and the limit of inlined calls
+    // running out of scratch registers or of variable storage depends on the
+    // code compiled, another version of the same code may not run out
+    // ('machine::emit_most_efficient'); they and the limit of inlined calls
     // depend on the arguments of a call, so a function that nothing calls
     // cannot be judged by them; the readers: 'machine::compile_version' drops
-    // 'out_of_registers', 'stmt_call' turns it into a recursion error in an
-    // inlined recursion, 'stmt_def_func::check_body' drops both when the body
-    // takes from a call; 'toc::throw_dry_run_error' resets the kind to
-    // 'source' so that none of them drops the error of a dry run
+    // 'out_of_registers' and 'out_of_storage', 'stmt_call' turns it into a
+    // recursion error in an inlined recursion, 'stmt_def_func::check_body'
+    // drops both when the body takes from a call; 'toc::throw_dry_run_error'
+    // resets the kind to 'source' so that none of them drops the error of a dry
+    // run
     enum class error_kind : uint8_t {
         source,
         out_of_registers,
+        out_of_storage,
         inlining_limit,
     };
 

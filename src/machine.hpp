@@ -554,8 +554,9 @@ class machine {
         version_state end_state;
     };
 
-    // a version that runs out of registers is not available, its error is
-    // kept to be thrown when the other version runs out too
+    // a version that runs out of registers or of variable storage is not
+    // available, its error is kept to be thrown when the other version runs
+    // out too
     using version_result = std::expected<compiled_version, std::exception_ptr>;
 
     using jump_mode = assembler::jump_mode;
@@ -1091,13 +1092,14 @@ class machine {
 
     // emits both versions and keeps the one with less code, the first on ties,
     // or the one that '--versions' names; a version that runs out of
-    // registers is not kept, when both do the error of the first is thrown.
-    // each version starts from the state before it, the state of the kept
-    // one remains
-    auto emit_most_efficient(const token& src_loc_tk, const size_t indent,
-                             const std::function_ref<void()> emit_first,
-                             const std::function_ref<void()> emit_second)
-        -> void {
+    // registers or of variable storage is not kept, when both do the error of
+    // the first is thrown. each version starts from the state before it, the
+    // state of the kept one remains; true when the first is kept, 'toc' keeps
+    // its peaks ('toc::emit_most_efficient')
+    [[nodiscard]] auto
+    emit_most_efficient(const token& src_loc_tk, const size_t indent,
+                        const std::function_ref<void()> emit_first,
+                        const std::function_ref<void()> emit_second) -> bool {
 
         assembler& output{target_assembler()};
 
@@ -1118,6 +1120,8 @@ class machine {
         restore_version_state(std::move(kept.end_state));
 
         output.append(std::move(kept.lines));
+
+        return keeps_first;
     }
 
     auto emit_repeated_data(const size_t element_size_bytes, const size_t count,
@@ -2054,7 +2058,9 @@ class machine {
                 .end_state{version_state_now()},
             };
         } catch (const compile_error& e) {
-            if (e.kind != compile_error::error_kind::out_of_registers) {
+            if (e.kind != compile_error::error_kind::out_of_registers and
+                e.kind != compile_error::error_kind::out_of_storage) {
+
                 throw;
             }
 

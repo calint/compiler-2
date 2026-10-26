@@ -1,6 +1,365 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] medium: a version that 'emit_most_efficient' discards still raises
+    the peaks of 'toc': the max scope count, the storage peak
+    ('max_body_vars_size_bytes'), the peak frame size of the scope and the
+    constants it added stay (0508: the scratch version takes a temporary,
+    peak 16 B where the kept one needs 8 B), and its errors other than
+    'out_of_registers' reject the program even with '--versions=first';
+    the machine puts its own state back per version ('version_scope',
+    'restore_version_state'), 'toc' does not; a 'toc' forwarder that saves
+    these like 'dry_run_scope' and keeps those of the kept version would
+    make the tables follow the kept code (round 18 ask 3)
+    => done (2026-10-26): round 19 B.2, 'toc::emit_most_efficient' keeps the
+       peaks of the kept version, a version past '--vars' is not available
+[x] medium: language: whether a program is accepted depends on the target
+    through the default type ('int' is 'i64' on x86_64 and 'i32' on rv32i):
+    an untyped variable or parameter mixed with a fixed width, e.g. 'a[i] <=
+    lim' with 'a' an 'i32[]', or 'array_copy' from an untyped dat to an
+    'i32' array, is rejected on x86_64 only (round 16 N4, 2026-10-25); the
+    goal "a result never depends on the target" (AGENTS.md) holds for the
+    results, README 1.7 and 8 say it; options: one default type on every
+    target, or a target-neutral rule for an untyped value (e.g. judged as
+    the widest default); a language question
+    => decided (2026-10-26, user): 'int' stays the register width; README
+       1.7, 7.12, 8 and AGENTS.md state it as the one exception to the goal
+[x] hard: design review round 18 (2026-10-25, judged as a whole from six
+    angles: architect A, extensibility X, measured outliers M, consistency C,
+    invariants in types I, documentation D; findings in the session
+    scratchpad r18; verdicts: good (A, X, M, I), good not yet great (C, D);
+    spot-checked: X2 (the default 'visit_call_effects' does nothing), A.1,
+    M1, D6): what stands between "good" and "great" is how the core
+    contracts are carried: the operand order of a node is written three
+    times and its no-UB walks default to "nothing" (X2, M1); the built-ins
+    come in hand-made shapes, so one rule runs at different phases (C1-C4);
+    operator facts are spread over if-chains (X1, M4); the re-runnable
+    compile and the 'toc' facade have no stated contract (A.1, A.2, D8); a
+    pause for a commit after each phase
+    A. contracts and docs (no code change)
+       A.1. the re-runnable compile stated where it is relied on (A.1 parts
+            1-2): 'statement::compile' says it may run more than once, the
+            'toc' class comment lists the writes made while compiling and
+            how each keeps the rule
+       => A.1 done (2026-10-25): 'statement::compile' says it may run more
+          than once and points at 'toc'; the 'toc' class comment lists the
+          writes of a compile and how each keeps the rule
+       A.2. a class map on 'toc' like 'machine's, by group, with the parse
+            and compile phases (A.2, D8)
+       => A.2 done (2026-10-25): the class comment groups the public
+          methods by phase (parse, compile, both, tables); 'dry_run',
+          'add_noinline_body' and 'mark_func_compiled' assert the compile
+          phase (both suites, the CLI tests and test-rv32i hold)
+       A.3. file maps where a multi-class file opens with its first helper
+            (A.5, seven files), a header comment on main.cpp
+       => A.3 done (2026-10-25): maps at the top of expr_bool.hpp,
+          expr_type.hpp, stmt_identifier.hpp, stmt_def_var.hpp, type.hpp,
+          program.hpp; a header comment on main.cpp
+       A.4. README contradictions and loose claims: 1.5 '--checks' (D1); the
+            three lists of what a dry run or a version puts back, 7.8 (D4);
+            the claims stated more absolutely than the code (D9)
+       A.5. README chapters for what every node relies on: the evaluation
+            order and definite-assignment walks (D3), register discipline
+            and error flow (D5); 1.5 restructured as a rule with numbered
+            parts (D6)
+       => A.4, A.5 done (2026-10-25): 1.5 '--checks' names 'alias' as the
+          one compile-time option; one list of what dropped code puts back in
+          1.4, split by owner, 4.2 and 5.3 link to it, 7.8 rewritten (three
+          places change an error, a dry run keeps its call-kind record); D9
+          items (5.1 the first version on ties, 7.3 the one kind query, the
+          case count, the conversion widths moved to 1.7, the 4.3 cycle an
+          item); new 1.8 Registers, 1.9 Errors, 3.9 reads, writes and their
+          order, 3.10 what a call does, 3.11 definite assignment; 1.5 the
+          rule with four numbered parts and 1.5.1 for code not reached; the
+          's[m]' case is a known limit in 8.3 and a low-priority item
+       A.6. chapter 7 costs: each decision lists its costs, and "the open
+            costs are todo items" becomes true (an item per cost, e.g. the
+            4.3 cycle limit, the exponential versions of 5.2) (D2)
+       => A.6 done (2026-10-25): every 7.x has why, rejected and cost;
+          7.5 lists its five costs with links; new 7.10 two versions, 7.11
+          registers in stack order, 7.12 the default type is the register
+          width; the intro says a cost with planned work names its item, the
+          others are accepted (the 5.2 exponential case: noinline is the way
+          out); the 4.3 cycle is an item now
+       A.7. reading order: 'toc.hpp' earlier, the code order with a "first
+            day" subset (D7); README "Extending": what a new operator,
+            built-in, statement, target or check touches, the copies outside
+            'src' included (X8)
+       => A.7 done (2026-10-25): step 2 has 'compile_error.hpp' and the
+          'toc.hpp' map, each step marked read or skim, a first-day path,
+          "builds on"; chapter 9 "Extending" with the four change lists and
+          the copies outside 'src'; check-readme-names clean
+    B. small invariants in types
+       B.1. a register allocation's holder as an enum {scratch, named,
+            backend} (I4, M2; round 17 D.4 chose a second bool, the enum was
+            the better of its two designs); the bare 'true'/'false' at call
+            sites named (M5)
+       => B.1 done, M5 reduced (2026-10-25): 'register_pool::holder_kind'
+          {scratch, named, backend} replaces the two bools; 'push_allocation'
+          takes the kind, the report and the pool compare it; the "no
+          location" assert of 'register_in_use_error' asks the kind; the other
+          literal sites of M5 have the parameter named a few lines away or a
+          comment above, kept
+       B.2. 'func_head' holds a method as one optional part (I2)
+       B.2. 'func_head' holds a method as one optional part (I2)
+       => B.2 done (2026-10-25): 'std::optional<method_part> method' (dot,
+          name, receiver of a type or of a generic type), 'receiver_of_type'
+          holds a reference; 'receiver_none' and the seven name asserts go
+       B.3. 'var_access' and 'slot_register' as one mode value (I3)
+       B.3. 'var_access' and 'slot_register' as one mode value (I3)
+       => B.3 done (2026-10-25): 'var_access' is 'std::variant<names_only,
+          through_frame>', 'through_frame' holds the optional slot register;
+          the empty operand of the parse goes
+       B.4. the bounded-stack operations in 'machine_rv32i_bare_metal', the
+            only class that reaches them (I5)
+       => B.4 reduced (2026-10-25): moving 'check_stack_capacity' would make
+          six private members of 'machine_rv32i' protected (the assembler,
+          'local_label', 'branch_to_failure', 'frame_save_bytes_',
+          'saved_registers_size_bytes', 'registers_saved_by_call'), more than
+          the assert it removes; done: 'emit_variables_base_load' reads its
+          own constant, the unreachable branch goes
+       B.5. never-null pointers in aggregates as references or
+            'std::reference_wrapper' where the aggregate allows it (I7)
+       => B.5 discarded (2026-10-25): about 110 uses would gain '.get()';
+          every initializer names these members with an address and none of
+          the structs is default-constructed, so the invariant holds in
+          practice; both suites, the CLI tests, test-rv32i, clang-tidy and
+          fuzz-methods, generics, calls, reject clean for phase B
+    C. the operand contract (the central change)
+       C.1. 'visit_reads' and 'visit_call_effects' without an empty default
+            (X2): each value node says what it reads and calls, a leaf says
+            "nothing" explicitly
+       => C.1 done with C.2 (2026-10-25): the empty defaults go; the two
+          walks are defaults over 'visit_operands', whose own default is
+          'std::unreachable()' (the README 7.3 pattern); 'expr_zero' says it
+          has no operands; a scratch build that aborted with the token in
+          that default passed both suites, the CLI tests, test-rv32i and 12
+          fuzzers (effects, ub, reject, exprs, flow, calls, data, constructs,
+          programs, io, methods, generics) after 'expr_zero' got its override
+       C.2. one 'visit_operands' per node in evaluation order as
+            'list_operand' (node and 'written_place'), which the two walks and
+            'assert_not_written_later' read (M1); 'stmt_identifier' and
+            'stmt_call' keep what they add; a scratch try first for
+            'expr_bool', whose 'and'/'or' list is not one ordered list for the
+            order check
+       => C.2 done (2026-10-25): 'statement::visit_operands' reports
+          'list_operand's (moved to ub_reads.hpp, its reads walk is the free
+          'visit_operand_storage_reads'); 'visit_reads' and
+          'visit_call_effects' walk it by default ('stmt_identifier.hpp',
+          beside 'bare_path'); the overrides that stay add something:
+          'stmt_identifier::visit_reads' (its own read), 'stmt_call' and
+          'stmt_builtin_io' 'visit_call_effects' (the body's effects, the
+          buffer written); 14 pairs of walks became one 'visit_operands'
+          each, 'builtin_arguments' and 'bulk_operands' got one too;
+          'assert_operands_not_written_later(tc, node, noun)' reads the same
+          list for 'expr_arith', 'expr_bool_op', 'stmt_call' and the io
+          built-ins ('assert_arguments_not_written_later' and
+          'builtin_arguments::assert_not_written_later' go); the 'and'/'or'
+          list has no order check, its elements are only walked; README 3.9
+          and 7.3 updated; listings and messages equal
+       C.3. "does this node reach storage S through its reads or calls" once
+            (C7); "which argument is written" one encoding (C6)
+       => C.3 done in part (2026-10-25): C6 by
+          'bulk_operands::second_use' at construction, read by its
+          'visit_operands' and its order check; C7 kept: the three sites need
+          different halves and results (a bool, a throw per read or per call
+          with their messages), the shared part is two calls
+    D. the built-ins in one shape
+       D.1. one phase for "the result is used": a user call's discarded
+            result rejected at the parse like a built-in's (C1, behavior: a
+            dead branch rejects 'f()' as it rejects 'i8(x)'; tests)
+       => D.1 done (2026-10-25): 'parse_name_statement' rejects a call
+          whose result stands alone, like a built-in's; 'assert_result_use'
+          becomes an assert in 'assert_call_accepted'; test 0624 loses the
+          "called from" frame (the error is the definition's now), test 1672
+          (a dead branch)
+       D.2. the io buffer read by 'parse_array_argument' like the other
+            array arguments (C2, messages change; tests)
+       => D.2 done (2026-10-25): 'builtin_arguments' takes the index of an
+          array argument and reads it with 'parse_array_argument', checked
+          with 'assert_array_or_element' where it is read; the io buffer is
+          always a place, the 'as_place' guards and 'assert_array_buffer' go
+          (asserts); 'parse_array_argument' says "a unary operator makes a
+          value, not an array" (was "expected an identifier" for
+          'array_length(-a)'); messages: tests 0694, 1304, 1305, 1451, 1529
+          change (now as 'array_length'), the caret of 0513 and 1052 spans
+          the name; tests 1673-1675
+       D.3. one helper per repeated message, "is not an array" first (C3)
+       D.3. one helper per repeated message, "is not an array" first (C3)
+       => D.3 done, reduced (2026-10-25): 'stmt_identifier::assert_array' for
+          'array_length' and 'foo'; 'throw_not_a_number' in compile_error.hpp
+          for the three "an instance of ... is not a number"; the two "takes
+          N arguments" stay: one is located at the tokenizer, one at a token
+       D.4. 'arrays_equal' through the general 'bool' operand rule (C4)
+       D.4. 'arrays_equal' through the general 'bool' operand rule (C4)
+       => D.4 done (2026-10-25): 'assert_no_unary_ops' goes, the general rule
+          says "a 'bool' is not an arithmetic operand, convert it"; test 0246
+       D.5. a built-in's catalog row tied to its maker by an assert (X3); the
+            address emitters of 'array_copy' and 'arrays_equal' made once
+            (M6)
+       => D.5 done (2026-10-25): both makers assert that a name of the
+          catalog reached no null return; 'bulk_operands::emitters' gives
+          the count and the two address emitters; both suites, the CLI tests,
+          test-rv32i, clang-tidy, check-messages, fuzz-io, reject, calls,
+          data and constructs clean for phase D
+    E. operator facts in rows
+       E.1. a traits row per operator beside the spellings (family,
+            precedence, regroupable, identity), the if-chains read it (X1,
+            M4); comparison facts the same
+       => E.1 done (2026-10-25): 'binary_operators', a row per binary
+          operator in operand.hpp (spelling, 'operator_family', precedence,
+          regroupable, identity, reads high bits), 'traits_of' and
+          'is_binary'; 'precedence_for_op' and the six precedence constants
+          go ('list_start_precedence' is the highest plus one),
+          'is_regroupable', 'identity_of', 'is_shift', a new 'is_division'
+          and 'keeps_low_bits' read the row; 'constant_arith' dispatches on
+          the family and its two implicit elses (divide or remainder, left or
+          right shift) assert the other op; the rv32i shifts assert it too;
+          the comparison rows hold 'negated' and 'mirrored', both lookups
+          (machine's 'negated' goes), a 'static_assert' that both are
+          involutions; note: 'traits_of' asserts a binary operator, the
+          first version without 'is_binary' guards crashed on the 'assign'
+          op of a first step, which the old chains answered "no" to
+       E.2. the tokenizer's longest-first order checked (X5)
+       E.2. the tokenizer's longest-first order checked (X5)
+       => E.2 done (2026-10-25): a 'static_assert' that no operator follows
+          one that is its prefix; a scratch copy with '<' before '<<' fails
+          to compile; both suites, the CLI tests, test-rv32i, clang-tidy,
+          fuzz-exprs, ub, constructs, reject and data clean for phase E
+    F. loops
+       F.1. a loop end and a continue label instead of the two kinds 'loop'
+            and 'foo' in four places (X4)
+       => F.1 done (2026-10-25): 'loop_end' {at_break, also_when_done} in
+          ub_assigned.hpp (included by toc.hpp, same layer); 'scope::loop'
+          takes the end and the continue label, 'scope_kind::foo', 'is_foo',
+          'scope::foo', 'join_foo' and 'trace_foo' go; 'loop_target' holds
+          the continue label, 'stmt_continue' jumps to it; 'join_loop' and
+          'assignment_flow::trace_loop' read the end; README 1.5.1, 3.11 and
+          9 (also the operator list stale since E.1); both suites, the CLI
+          tests, test-rv32i, clang-tidy, fuzz-flow, constructs, programs and
+          reject clean; labels and listings equal
+    G. options and targets
+       G.1. a check option as one row tying its name, handler and help text
+            (X6); a target as one row in main.cpp (X7)
+       => G.1 done, X6 reduced (2026-10-26): the help is the constant
+          'usage_format' and a 'static_assert' checks that it lists every
+          check of 'check_names' as a line and that its 'noub' entry names
+          every check 'noub' turns on (a scratch copy without 'stack' there
+          fails to compile); generating the help from the table would need a
+          reflow that keeps the text equal, not done; X7: 'target_name' holds
+          the maker ('make_machine<machine_t>') and 'writes_image',
+          'make_backend' and 'target_text' go ('target_of')
+       G.2. the backends name the same check steps alike (C8)
+       G.2. the backends name the same check steps alike (C8)
+       => G.2 done (2026-10-26): x86_64 'branch_to_failure(tk, indent,
+          condition, handler)' for every kind, the two wrappers and the four
+          'failed' locals go; rv32i 'emit_lower_bound' -> 'check_lower_bound'
+          like x86_64, its 'check_lower_bounds' -> 'branch_on_negative';
+          both suites, the CLI tests, test-rv32i and clang-tidy clean;
+          listings equal
+    asks:
+       1. A.3 of the reviewer: node members initialized in the member list,
+          the default constructors deleted (20 classes; error order kept by
+          hand); recommended: yes, phase by phase after C
+       => 1 done (2026-10-26): no node class has a default constructor;
+          the members are made in the member list through named steps:
+          'stmt_loop::parse_code', 'stmt_if_branch::parse_condition' and
+          'constant_of' (the constant before the block, as before),
+          'stmt_builtin_foo::parse_code' and 'parse_count',
+          'expr_bool_op::parse_comparison', 'stmt_assign_var::parse_value'
+          (the write recorded before the value parses),
+          'stmt_def_var::declare_and_assign', 'stmt_def_dat::parse_name' and
+          'parse_initializer', 'expr_any::parse_form' (members reordered:
+          'destination_' and 'array_count_' first), 'bulk_operands' and
+          'stmt_builtin_array_length' in the list, the array prefix built
+          once; 'stmt_identifier::parse_whole_array' for 'foo' and
+          'array_length'; 'initializer_declaration::parse_value' holds the
+          value in an optional inside its placeholder scope; exception, with
+          a note: 'stmt_block' keeps a default for the body of
+          'stmt_def_func', whose signature registers the function and
+          declares its names through members before the body parses
+          ('statement()' protected for it); README 1.1 invariant 1 says so;
+          messages and listings equal (both suites, the CLI tests,
+          test-rv32i), clang-tidy and fuzz-reject, constructs, data, flow,
+          methods, generics, io, programs clean
+       2. A.4: a script in qa/lint that checks the include layer table of
+          README 1.1 (a new file); recommended: yes
+       => 2 done (2026-10-26): 'qa/lint/check-layers.py' reads the table
+          of README 1.1 and checks every include of src/, names in the table
+          without a file and files missing from it; passes; README 1.1
+          names it
+       3. A.1 part 3: a compile footprint asserted equal after the two
+          versions (a 'toc' forwarder for 'emit_most_efficient', 7 sites);
+          recommended: yes
+       => 3 discarded (2026-10-26), failed precondition: the two versions
+          do not compile the same statements; in 0508 ('var x = one() + 1')
+          the scratch version reads the noinline result through a
+          temporary in a scope of its own, so after the second version the
+          max scope count is 4 where the first left 3 and the storage peak
+          16 B where it left 8 B; the assert fired in both suites; filed as
+          the item below on what a discarded version leaves in the tables
+       4. I1, medium: the empty operand as "none" at about ten interfaces
+          becomes 'std::optional<operand>' where it is a state;
+          recommended: yes, after B
+       => 4 done (2026-10-26): 'std::optional<operand>' in
+          'bounds_range::count', 'address_emitter' (count, preferred),
+          'lea_request' (reg_count, address_register), the range count down
+          to 'compile_checked_index', 'path_address' (address_register_,
+          index_register_, 'fold_register', 'start'), 'register_of',
+          'bound_name::lea', 'register_address', 'call_function' and
+          'load_slot_address', 'comment_binding'; 'operation_scope' takes one
+          operand or none and 'protect' adds one, the 'operand{}' arguments
+          go; x86_64 'test_sign' loses its empty guard; trap: an 'operand{}'
+          passed where an optional is expected is a present empty operand,
+          test-rv32i caught one (its bounds matrix); not changed: the backend
+          locals and helpers (rv32i 'emit_shift_add_sequence', x86_64
+          'with_lowered_addresses' and 'call_target' result), the io 'start'
+          and 'comparison_action' (kept by the reviewer); both suites, the CLI
+          tests, test-rv32i, clang-tidy and fuzz-data, calls, io, ub,
+          constructs clean, listings equal
+       5. C5: optional parts with a node as one optional struct each (else,
+          'foo' count, conversion argument, brackets); recommended: yes
+       => 5 done (2026-10-26): 'stmt_if::else_part', 'stmt_builtin_foo::
+          count_part', 'stmt_builtin_convert::argument_part' (read by
+          'read_argument', the parse reaches it only before a '('),
+          'stmt_def_type_field::array_part' (the count derived from its size)
+          and 'stmt_def_func_param::bracket_tokens' (also in 'syntax', read by
+          'read_brackets'); 'has_count' goes; an 'if' without 'else' traces an
+          empty path ('assignment_flow::path_merge::trace_empty'); an empty
+          'else' still compiles as none; both suites (with
+          '--reproduce-source'), the CLI tests and clang-tidy clean
+       6. the options a target does not read are accepted silently
+          ('--stack' on x86_64, '--memory' on rv32i-qemu): reject them;
+          behavior; recommended: yes, with CLI tests
+       => 6 done (2026-10-26): the rows of 'target_names' carry
+          'reads_stack', 'reads_memory' and 'reads_sd_card'; '--stack',
+          '--memory' and '--sdcard' are optional until given and
+          'check_target_reads' rejects them after the options are read
+          ("invalid --stack: target 'x86_64' does not read it, the targets
+          that do are: rv32i-qemu, rv32i-fpga"); CLI test
+          'CLI_TARGET_OPTIONS'; not done: '--bin' on x86_64 (every test
+          script passes it to every target, an existing test relies on it
+          being ignored and a todo plans an x86_64 binary) and
+          '--checks=stack' (the help names it as off on the targets with an
+          operating system, and 'noub' includes it everywhere); both suites,
+          the CLI tests, test-rv32i and clang-tidy clean
+       7. M3, reopening round 14's kept item: the rv32i known-size walks
+          written three times as one walk; recommended: no unless C-G leave
+          time, the reason it was kept still holds
+       8. A.6: 'ident_info.hpp' renamed for what it holds (the compile
+          vocabulary, 'destination' among it); a file rename; recommended:
+          no, a header comment instead
+       9. D6: 's[m]' after 'let m = n' over an unsized parameter is checked
+          at run time where 's[n]' is rejected at compile time; decide
+          whether it is intended; recommended: look at it in A.5 and file it
+          if it is a seam
+       => 7, 8 not done as recommended (2026-10-26); 9 done in A.5
+          (the 's[m]' case is a known limit in README 8.3 and an item)
+    order: A, B, C, D, E, F, G, then the asks
+    kept (reviewers, with reasons in r18): see the "considered and kept"
+    lists of r18 ({A,X,M,C,I,D}.md)
+    => done (2026-10-26): phases A-G and asks 1, 2, 4-6 done, ask 3
+       discarded with an item, asks 7, 8 not done; next: round 19
 [x] hard: design review round 17 (2026-10-25, a check round, six reviewers:
     front end F, expressions E, statements and calls S, tables and checks T,
     backends B, a newcomer N; findings in the session scratchpad r17, each

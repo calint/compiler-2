@@ -38,9 +38,9 @@
 //   'report_entry', 'report_section', 'report_renderer'
 //                            the '--report' text
 //   'program'                parses the source, compiles 'main', the
-//                            noinline bodies it reaches and the functions
-//                            nothing compiled ('check_body'), writes the
-//                            output
+//                            noinline bodies it reaches, checks every
+//                            function without its calls ('check_body'),
+//                            writes the output
 //
 
 // a line of a report section, e.g. 'removed unreachable jumps: 0', without a
@@ -319,7 +319,7 @@ class program final {
 
             compile_main(tc_, tc_.get_main_or_throw());
             compile_noinline_functions(tc_);
-            check_uncompiled_functions(tc_);
+            check_function_bodies(tc_);
         }
 
         machine& x{tc_.machine()};
@@ -465,21 +465,24 @@ class program final {
     //
 
     // the rules checked while compiling, e.g. a constant index in bounds,
-    // hold in a function that nothing compiled too, so whether a program is
-    // accepted does not depend on its calls; this includes the instances
-    // that an alias of a generic type makes of its methods; the list is taken
-    // before the checks, a check compiles the functions it calls without
-    // checking them on their own
-    static auto check_uncompiled_functions(toc& tc) -> void {
-        std::vector<const stmt_def_func*> uncompiled;
+    // hold in every function without its calls too, also where a call folds
+    // the code away, so whether a program is accepted does not depend on its
+    // calls; this includes the instances that an alias of a generic type
+    // makes of its methods; 'main' takes nothing from a call and was
+    // compiled whole; the list is taken before the checks, a check compiles
+    // the functions it calls without checking them on their own
+    static auto check_function_bodies(toc& tc) -> void {
+        const stmt_def_func& func_main{tc.get_main_or_throw()};
+
+        std::vector<const stmt_def_func*> funcs;
 
         for (const stmt_def_func* const f : tc.funcs().defs()) {
-            if (not tc.compiled().is_compiled(*f)) {
-                uncompiled.push_back(f);
+            if (f != &func_main) {
+                funcs.push_back(f);
             }
         }
 
-        for (const stmt_def_func* const f : uncompiled) {
+        for (const stmt_def_func* const f : funcs) {
             f->check_body(tc, 0);
         }
     }

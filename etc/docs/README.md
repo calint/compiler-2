@@ -207,7 +207,7 @@ Invariants the code relies on:
    compiled; a node has no default constructor, its members are made in
    the member list (the one exception is the body of a 'stmt_def_func',
    see 'stmt_block'); a compile may run more than once ([1.4](#14-dry-runs)) and adds
-   the same to 'toc' each time
+   the same to 'toc' each time, or what it adds is put back by its owner
 2. the front end never writes assembly, it calls 'machine' operations
    with operands; the backend lowers them to what the target encodes
 3. registers are freed in the reverse order of their allocation, an
@@ -238,8 +238,9 @@ Invariants the code relies on:
    'main' is compiled where the program starts. An inlined call compiles the
    body of the callee in place ([1.3](#13-names-during-compile-scopes-and-bindings)). A noinline call adds a body to
    compile for the array lengths of its arguments; the bodies are compiled
-   after 'main', and compiling one can add more. Then each function that
-   nothing compiled is checked and emits nothing ([1.5](#15-checks)). Then the
+   after 'main', and compiling one can add more. Then each function but
+   'main' is checked once without its calls and emits nothing
+   ([1.5](#15-checks)). Then the
    failure handlers that the code branches to
    ('machine::emit_used_failure_handlers'), the routines and helpers the code
    and the handlers marked used ('machine::emit_used_routines'), the
@@ -298,26 +299,30 @@ the longer of two versions after both are measured:
    function compiled as if inlined with the arguments of a call, for the
    errors that depend on that call, see
    [chapter 4](#4-noinline-calls-the-body-dry-run-once-per-kind-of-call),
-   and the body of a function that nothing compiled ([1.5](#15-checks))
-2. 'machine::emit_most_efficient': two versions
-   are compiled, each from the state before it, and the one with fewer
+   and the body of each function without its calls ([1.5](#15-checks))
+2. 'toc::emit_most_efficient' over 'machine::emit_most_efficient': two
+   versions are compiled, each from the state before it, and the one with fewer
    instructions is kept with the state it ended in, e.g. with and without a
    scratch register, see [5.3](#53-state-each-version-starts-from-the-same-machine)
 
 What dropped code changed is put back by its owner, also when an error
 unwinds it:
 
-1. 'toc::dry_run_scope', for a dry run: the deepest scope count, the string
-   constants added and the use of storage; a noinline call reached inside a
-   dry run adds no body to compile ('toc::add_noinline_body')
-2. 'machine::version_scope', for a version and for the code of
+1. 'toc::dry_run_scope', for a dry run: the peaks ('toc::compile_peaks': the
+   deepest scope count, the storage peak and the frame peak of the scope
+   that holds the storage) and the string constants added; a noinline call
+   reached inside a dry run adds no body to compile ('toc::add_noinline_body')
+2. 'toc::emit_most_efficient', for a version: the same peaks, each version
+   starts from those before it and the kept one's remain, e.g. the frame size
+   of a noinline body that '--checks=frame' checks; a string constant that
+   the dropped version added stays, unused, so the labels stay unique
+3. 'machine::version_scope', for a version and for the code of
    'machine::emit_discarded': the registers held, the trace of the calls, the
    most scratch registers in use, and the routines, helpers and failure
    stubs marked used ('machine::mark_used')
 
-A version puts back no state of 'toc': both versions compile the same
-statements, so they add the same to it (below). A dry run keeps one record,
-the call kind it entered ('dry_run_ledger', [7.8](#78-the-first-error-ends-the-compile)).
+A dry run keeps one record, the call kind it entered ('dry_run_ledger',
+[7.8](#78-the-first-error-ends-the-compile)).
 
 So a statement can be compiled more than once. What its compile adds to 'toc'
 must be the same the second time: labels are named by source location and
@@ -334,14 +339,19 @@ uninitialized reads, constants out of range) always hold, see
 option records of the machine methods.
 
 The rule: whether a program is accepted does not depend on its calls, except
-for what needs the arguments of a call.
+for what needs the arguments of a call. So it can depend on inlining: in
+'res = 1 << n' an inlined 'sh(65)' folds the count and is rejected, a noinline
+'sh' checks it at run time ('shift'). The run-time result of an accepted
+program does not depend on inlining.
 
-1. Every function is checked, also one that nothing calls. 'compile_records'
-   records the functions whose body was compiled, in place, as a noinline
-   body or in a dry run; after the noinline bodies,
-   'program::check_uncompiled_functions' compiles each other function like a
-   noinline body under 'toc::dry_run' ('stmt_def_func::check_body'). Its
-   errors have no "called from" frame. An instance of a generic definition is
+1. Every function is checked once without its calls, also one that nothing
+   calls: after the noinline bodies, 'program::check_function_bodies'
+   compiles each function but 'main' like a noinline body under
+   'toc::dry_run' ('stmt_def_func::check_body'). So a rule that needs no
+   argument holds also in code that the constant arguments of a call fold
+   away ([1.5.1](#151-code-that-is-not-reached)), and adding a call cannot
+   make a rejected function accepted. Its errors have no "called from"
+   frame. An instance of a generic definition is
    a function like the others: a use of a generic function makes it, an
    alias of a generic type makes its methods, and an instance that nothing
    calls is checked too; a generic function that nothing instantiates is
@@ -387,12 +397,17 @@ current statement is reached ('toc::is_reachable'), 'toc::end_path' and
 its 'loop_end' ('scope::is_left_by_break'), an inlined call
 whose body reaches neither its end nor a 'return' leaves the code after the
 call unreached ('toc::pop_scope'), and the end of 'main' is emitted when the
-compile reaches it. So the rules checked while compiling do not run in such code: a constant argument of an inlined
-call decides it, e.g. 'if b != 0 { res = a / b }' in 'ratio(10, 0)' guards
-the division. The branch is parsed like any code, so the rules of the parse
-hold in it, e.g. the names, the types and 'break' in a loop. Checking it
-with the constants of the call would reject the guard, and checking it
-without them would need a second copy of the rules that use no constant.
+compile reaches it. So the rules checked while compiling do not run in such
+code in that compile: a constant argument of an inlined call decides it, e.g.
+'if b != 0 { res = a / b }' in 'ratio(10, 0)' guards the division. They run
+in the check of the body without its calls (1.5 part 1), where the guard is
+not folded, so a rule that needs no argument holds in every branch, e.g.
+'k(arr[i], h(i))' with 'h' writing 'i' is rejected also in a branch that a
+call folds away. What stays unchecked is a branch whose condition folds to
+false without a call, e.g. 'if 1 == 2' or on the constant argument of a
+generic instance, and the code after a statement that leaves on every path
+there. Such a branch is parsed like any code, so the rules of the parse hold
+in it, e.g. the names, the types and 'break' in a loop.
 
 ### 1.6 Reports
 
@@ -483,11 +498,13 @@ kept ('ident_info', the alias of an inlined argument, the constant of a 'let'):
   it is used, e.g. 'let k = 5' fits an 'i8', 'let k = 300' does not
 
 The default type ('int') is 'i64' on x86_64 and 'i32' on rv32i, the width of
-a register. A variable or a parameter without a type has it, so a program
-that mixes it with a type of fixed width can be accepted on one target and
-rejected on the other, e.g. 'a[i] <= lim' with 'a' an 'i32[]' and 'lim'
-untyped is a narrowing on x86_64 only; a portable program writes the type,
-e.g. 'lim i32'.
+a register. A variable or a parameter without a type has it, so its
+arithmetic is target dependent by design: 'x + x' with 'x' 2000000000 is
+4000000000 on x86_64 and an overflow on rv32i (a panic under 'overflow'),
+and a program that mixes it with a type of fixed width can be accepted on one
+target and rejected on the other, e.g. 'a[i] <= lim' with 'a' an 'i32[]' and
+'lim' untyped is a narrowing on x86_64 only; a portable program writes the
+type, e.g. 'lim i32'. Nothing else makes a result depend on the target.
 
 Where it is used is a 'value_use': the width the value is computed at and
 whether its arithmetic is checked for overflow, made by 'toc::use_of' from a
@@ -1313,7 +1330,7 @@ change. Compiling each version and measuring is exact and needs no model.
 The versions are measured in machine instructions, a pseudo instruction
 counts as the ones it expands to. The shorter is kept, on ties the first; a
 caller passes first the version without an extra register where one of them
-has it ('machine::emit_most_efficient').
+has it ('toc::emit_most_efficient').
 
 ### 5.2 Why so many
 
@@ -1363,16 +1380,18 @@ footer of the output; and the routines, helpers and failure stubs marked used
 dropped version or of discarded code are dropped.
 
 Each version starts from the saved state; after the choice the state the kept
-version ended in remains. So the footer and '--report=registers' describe the
+version ended in remains; 'toc::emit_most_efficient' does the same for the
+peaks of 'toc' (1.4). So the footer and '--report=registers' describe the
 code that is in the output, and a routine only a dropped version calls is not
 emitted.
 
-A version that runs out of scratch registers is not available and the other
-one is kept, e.g. an inlined call with fifteen indexed arguments on rv32i
-where folding each address into a register would need more registers than
-there are. The error carries the kind 'compile_error::error_kind::
-out_of_registers', which is set where the error is made; when both versions
-run out, the error of the first is reported. Any other error is an error of
+A version that runs out of scratch registers or of variable storage is not
+available and the other one is kept, e.g. an inlined call with fifteen
+indexed arguments on rv32i where folding each address into a register would
+need more registers than there are, or the temporary of a scratch version
+past '--vars'. The error carries the kind 'compile_error::error_kind::
+out_of_registers' or 'out_of_storage', which is set where the error is made;
+when both versions run out, the error of the first is reported. Any other error is an error of
 the program and ends the compile. An error of discarded code is never one of
 a version: discarded code starts from the registers of a noinline body, which
 do not depend on the code around it.
@@ -1821,13 +1840,14 @@ version or the check of an uncalled function may drop ([1.9](#19-errors)).
 and 'i32' on rv32i ([1.7](#17-values-known-at-compile-time)), the width of a
 register, so a value of it needs no extension or second register.
 
-Rejected for now: one default type on every target, the open question of an
-item in 'etc/todo.txt' section 3.
+Rejected: one default type on every target; 'i64' doubles every value on
+rv32i, 'i32' gives up the width of x86_64 (decided 2026-10-26).
 
-Cost: whether a program that mixes the default type with a fixed width is
-accepted can depend on the target, against the goal that a result never
-depends on the target
-([chapter 8](#8-undefined-behavior-what-is-rejected-and-what-is-checked)).
+Cost: the one exception to the goal that a result does not depend on the
+target ([chapter 8](#8-undefined-behavior-what-is-rejected-and-what-is-checked)):
+the result of the default type's arithmetic, a panic included, and whether a
+program that mixes it with a fixed width is accepted depend on the target; a
+program that writes its types does not.
 
 ## 8. Undefined behavior: what is rejected and what is checked
 
@@ -1835,8 +1855,9 @@ The goal is that every program the compiler accepts is free of undefined
 behavior: each case below is either rejected at compile time or, with its
 '--checks' option, checked at run time, so a result does not depend on the
 target, on whether a call is inlined or on which version of code is kept.
-Whether a program is accepted can depend on the target through the default
-type, see 1.7.
+The one exception is the default type, the width of a register
+([1.7](#17-values-known-at-compile-time), 7.12): its arithmetic and whether a
+program mixing it with a fixed width is accepted depend on the target.
 
 ### 8.1 The catalog
 
@@ -1907,9 +1928,10 @@ message, x86_64 and rv32i linux stop with a signal.
   parameter is a variable; so 'let m = n' stays a variable also at a call
   that gives the length, and 's[m]' past the end is left to the run-time
   bounds check where 's[n]' is rejected at compile time.
-- A branch whose condition folds to false and the code after a statement
-  that leaves on every path are not compiled, their compile-time rules do not
-  run ([1.5.1](#151-code-that-is-not-reached)).
+- A branch whose condition folds to false without a call, e.g. 'if 1 == 2',
+  and the code after a statement that leaves on every path there are not
+  compiled, their compile-time rules do not run
+  ([1.5.1](#151-code-that-is-not-reached)).
 
 ## 9. Extending
 

@@ -1,0 +1,24 @@
+# a rule that needs no argument holds in a branch that a constant argument of
+# an inlined call folds away
+
+func h(i mut) res {
+    i = i + 1
+    res = 0
+}
+
+func k(a, b) res {
+    res = a + b
+}
+
+func g(n) res {
+    var arr = int[4]
+    var i = 0
+    res = 0
+    if n > 5 {
+        res = k(arr[i], h(i))
+    }
+}
+
+func main() {
+    exit(g(3))
+}

@@ -374,7 +374,7 @@ struct frame_slot {
 //   'emit_noinline_body'                     addresses in the frame
 //   and 'check_body'                         ('compile_in_frame')
 //
-// 'check_body' compiles a function that nothing compiled like a noinline
+// 'check_body' compiles a function without its calls like a noinline
 // body; 'toc' keeps the address of the definition, so it is not
 // copied or moved
 class stmt_def_func final : public statement {
@@ -478,8 +478,9 @@ class stmt_def_func final : public statement {
                            name_with_lengths(array_lengths));
     }
 
-    // for the errors of a function that nothing compiled, compiled like a
-    // noinline body and discarded; an unsized array parameter has no length
+    // for the errors of a function without its calls, also those in code a
+    // call folds away, compiled like a noinline body and discarded; an unsized
+    // array parameter has no length
     // ('ident_info::is_length_unknown'). an error that depends on the
     // arguments of a call, e.g. an inlined recursion that a constant argument
     // ends, cannot be told and ends the check; a body that takes nothing from
@@ -510,7 +511,6 @@ class stmt_def_func final : public statement {
 
     // in place or in a body of its own, the function is compiled
     auto compile_statements(toc& tc, const size_t indent) const -> void {
-        tc.mark_func_compiled(*this);
         code_.compile(tc, indent, destination{});
     }
 

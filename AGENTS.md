@@ -110,8 +110,11 @@
   done.
 - Standing goal, never finished: every program the compiler accepts is free
   of undefined behavior. Each case is either rejected at compile time or
-  checked at run time. A result never depends on the target, on inline
-  versus noinline, or on optimization.
+  checked at run time (under `--checks=noub`). A result never depends on the
+  target, on inline versus noinline, or on optimization; whether a program is
+  accepted may depend on what an inlined call folds from its constant
+  arguments (README 1.5). The one exception is the default type 'int', the
+  register width (decided 2026-10-26): its arithmetic depends on the target.
 - Current focus: refactor until the design is clean before looking for bugs
   again; a bug that a refactor removes is fixed by the refactor.
 - Baz evaluates left to right: the operands, arguments and parts of a

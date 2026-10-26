@@ -1,0 +1,12 @@
+# the version that a call's value keeps sets the peaks of the footer: the
+# scratch version takes a temporary that the kept one does not
+
+func noinline one() res {
+    res = 1
+}
+
+func main() {
+    var a = 2
+    var x = one() + a
+    exit(x)
+}

@@ -5242,3 +5242,19 @@ SRC=1674 && COMPERR
 # the buffer of an io built-in is an array where it is parsed, also in a branch
 # that is not compiled
 SRC=1675 && COMPERR
+
+# a rule that needs no argument holds in a branch that a constant argument of
+# an inlined call folds away
+SRC=1676 && COMPERR
+
+# a guard on a parameter is not folded without the call: a division by it is
+# checked at run time, a constant argument folds the branch away
+SRC=1677 && EXP=3 && RUN
+
+# the indexes of a destination are computed before the value: the call in the
+# index writes 'i' before the value reads it
+SRC=1678 && EXP=6 && RUN
+
+# the version that a call's value keeps sets the peaks of the footer: the
+# scratch version takes a temporary that the kept one does not
+SRC=1679 && EXP=3 && RUN

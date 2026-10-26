@@ -1,0 +1,14 @@
+# the indexes of a destination are computed before the value: the call in the
+# index writes 'i' before the value reads it
+
+func h(i mut) res {
+    i = i + 1
+    res = 0
+}
+
+func main() {
+    var arr = int[4]
+    var i = 5
+    arr[h(i)] = i
+    exit(arr[0])
+}

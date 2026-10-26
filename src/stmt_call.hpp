@@ -1070,7 +1070,7 @@ class inline_call {
         if (not has_unary_ops and has_indexed_result and
             not x.has_indexed_addressing()) {
 
-            x.emit_most_efficient(
+            tc.emit_most_efficient(
                 call_.tk, indent,
                 [&] -> void { compile_with_bindings(tc, indent, dst); },
                 [&] -> void {
@@ -1091,7 +1091,7 @@ class inline_call {
 
         // unary ops on a memory result are a load, modify and store on a
         // load/store machine, a scratch register can be shorter
-        x.emit_most_efficient(
+        tc.emit_most_efficient(
             call_.tk, indent,
             [&] -> void { compile_with_bindings(tc, indent, dst); },
             [&] -> void {
@@ -1157,9 +1157,7 @@ class inline_call {
                                      const call_bindings& bindings) const
         -> void {
 
-        machine& x{tc.machine()};
-
-        x.emit_most_efficient(
+        tc.emit_most_efficient(
             call_.tk, indent,
             [&] -> void { compile_body(tc, indent, bindings); },
             [&] -> void {
@@ -1228,9 +1226,7 @@ class inline_call {
         const std::function_ref<void(bool keeps_displacement)> emit) const
         -> void {
 
-        machine& x{tc.machine()};
-
-        x.emit_most_efficient(
+        tc.emit_most_efficient(
             call_.tk, indent, [&] -> void { emit(false); },
             [&] -> void { emit(true); });
     }
