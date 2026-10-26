@@ -164,6 +164,10 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
           grows; src -48 lines
        B.6. S5 (-18): a value argument's fit checked once before the
             inlined and noinline paths split
+       => B.6 done (2026-10-26): 'assert_argument_types' asserts the fit of
+          every value argument of a built-in parameter; 'computed::is_name'
+          and the two asserts in the bindings go, 'bind_expression' folds
+          without a second check; listings and errors equal; src -15 lines
        B.7. P A (-35): the built-ins dispatched by the catalog's 'use' in
             one place, also fixes the crash item ('exit + 0', 'var x =
             array_copy'); P B (-18), P C (-15)

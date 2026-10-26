@@ -492,12 +492,8 @@ struct call_site {
         // an instance literal or a call result of a user type
         struct instance_temporary {};
 
-        // computed into a register unless it folds; 'is_name' for a name at a
-        // computed address with unary operators, e.g. '-a[i]', which must fit
-        // the parameter like a name
-        struct computed {
-            bool is_name{};
-        };
+        // computed into a register unless it folds
+        struct computed {};
 
         // a name that is no place: a constant, a name bound to a register, or
         // a name with unary operators, e.g. '-x'
@@ -692,11 +688,7 @@ struct call_site {
         // e.g. '-a[i]'
         if (ident->has_computed_address(info)) {
             return {
-                .kind{
-                    argument_form::computed{
-                        .is_name{true},
-                    },
-                },
+                .kind{argument_form::computed{}},
             };
         }
 
@@ -1114,15 +1106,8 @@ class inline_call {
             return bind_name(param, ident, arg_place->info, tc);
         }
 
-        if (const call_site::argument_form::computed* const computed{
-                std::get_if<call_site::argument_form::computed>(&argument.kind),
-            }) {
-
-            // e.g. '-a[i]' must fit the parameter like a name with unary
-            // operators
-            if (computed->is_name) {
-                arg.assert_not_narrowed(tc, param.get_type());
-            }
+        if (std::holds_alternative<call_site::argument_form::computed>(
+                argument.kind)) {
 
             return bind_expression(tc, indent, arg, param, held);
         }
@@ -1141,7 +1126,7 @@ class inline_call {
         -> param_binding {
 
         const std::optional<folded_value> folded{
-            arg.fold_checked(tc, tc.use_at(param.get_type())),
+            arg.fold(tc, tc.use_at(param.get_type())),
         };
 
         if (folded) {
@@ -1182,10 +1167,6 @@ class inline_call {
                      const call_site::argument_form::named_value& value,
                      const stmt_def_func_param& param,
                      machine::held_registers& held) -> param_binding {
-
-        // constants and unary ops pass a value, not storage, so the value
-        // must fit the parameter
-        arg.assert_not_narrowed(tc, param.get_type());
 
         const stmt_identifier& ident{*value.ident};
         const ident_info& arg_info{value.info};
@@ -2060,11 +2041,15 @@ class stmt_call : public statement {
 
     // the type of each argument, one verdict for an inlined and a noinline
     // call: a name or a typed constant has the type of its parameter, its
-    // storage or typed value is passed; an untyped constant is checked by its
-    // value and a computed value by its compile, e.g. 'a + 1' and '-a' widen
+    // storage or typed value is passed; a value that is not a place must fit
+    // its built-in parameter, e.g. 'a + 1' and '-a' widen into it
     auto assert_argument_types(const toc& tc) const -> void {
         for (const auto [arg, param] :
              std::views::zip(args_, callee().params())) {
+
+            if (param.get_type().is_builtin() and not as_place(tc, arg)) {
+                arg.assert_not_narrowed(tc, param.get_type());
+            }
 
             const stmt_identifier* const ident{arg.bare_path()};
 
