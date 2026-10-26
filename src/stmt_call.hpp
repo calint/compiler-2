@@ -1734,9 +1734,14 @@ class stmt_call : public statement {
         "use a temporary variable for one of them",
     };
 
-    // an argument that names a variable, kept to compare with the next ones
+    // the result destination or an argument that names a variable, kept to
+    // compare with the next ones
     struct reference {
-        size_t index;
+        // empty for the result, like 'body_uses::binding_use'
+        std::optional<size_t> param_index;
+        token tk;
+        // e.g. "argument 1 'a'" or "the result destination 'x'"
+        std::string text;
         storage_path target;
         bool is_read_only;
     };
@@ -2134,10 +2139,21 @@ class stmt_call : public statement {
     auto assert_no_shared_storage(const toc& tc, const destination& dst) const
         -> void {
 
-        // none for a destination without storage, e.g. a register
-        const std::optional<storage_path>& result{dst.storage()};
-
         std::vector<reference> references;
+
+        // none for a destination without storage, e.g. a register
+        if (dst.storage()) {
+            references.push_back({
+                .param_index{},
+                .tk{tok()},
+                .text{
+                    std::format("the result destination {}",
+                                in_quotes(dst.text())),
+                },
+                .target{*dst.storage()},
+                .is_read_only{},
+            });
+        }
 
         for (size_t i{}; i < args_.size(); ++i) {
             const expr_any& arg{args_.at(i)};
@@ -2156,25 +2172,26 @@ class stmt_call : public statement {
             // note: a variable has storage
             assert(target);
 
-            assert_not_shared_with_result(i, *target, dst, result);
-
-            const bool is_read_only{callee().param(i).is_read_only()};
-
-            assert_not_shared_with_earlier(references, i, *target,
-                                           is_read_only);
-
-            references.push_back({
-                .index{i},
+            reference arg_reference{
+                .param_index{i},
+                .tk{arg.tok()},
+                .text{
+                    std::format("{} {}", describe_argument(i),
+                                in_quotes(statement::trimmed_source(arg))),
+                },
                 .target{std::move(*target)},
-                .is_read_only{is_read_only},
-            });
+                .is_read_only{callee().param(i).is_read_only()},
+            };
+
+            assert_not_shared_with_earlier(references, arg_reference);
+            references.push_back(std::move(arg_reference));
         }
 
         // note: always, a body compiled once for all calls, a noinline one,
         //       cannot see that a parameter names a global it also uses
 
         for (const body_uses::global_use& global : callee().uses().globals()) {
-            assert_not_shared_with_global(global, references, dst, result);
+            assert_not_shared_with_global(global, references);
         }
     }
 
@@ -2208,106 +2225,39 @@ class stmt_call : public statement {
             tz, argument_count_text(func_name_, param_count, param_count)};
     }
 
-    // an argument that names the storage of an earlier one, unless both
-    // parameters are read-only or the bytes they reach are disjoint
-    auto assert_not_shared_with_earlier(
-        const std::span<const reference> earlier, const size_t index,
-        const storage_path& target, const bool is_read_only) const -> void {
-
-        const expr_any& arg{args_.at(index)};
-
-        for (const reference& other : earlier) {
-            if (is_read_only and other.is_read_only) {
-                continue;
-            }
-
-            if (not target.may_overlap(other.target)) {
-                continue;
-            }
-
-            throw compile_error{
-                arg.tok(),
-                std::format(
-                    "{} {} may share storage with {} {}{}, {}",
-                    describe_argument(index),
-                    in_quotes(statement::trimmed_source(arg)),
-                    describe_argument(other.index),
-                    in_quotes(statement::trimmed_source(args_.at(other.index))),
-                    shared_name_note(target.root.name), use_temporary_fix_)};
-        }
-    }
-
     // what the callee writes through the result or an argument may be a
     // global it uses, or what it writes to the global may be what it reaches
     // through them, e.g. 'g = add_g()' where 'add_g' sets 'res' and reads 'g'
     auto assert_not_shared_with_global(
         const body_uses::global_use& global,
-        const std::span<const reference> args, const destination& dst,
-        const std::optional<storage_path>& result) const -> void {
+        const std::span<const reference> references) const -> void {
 
-        // the part of 'target' that the callee reaches through it as 'u'
-        const auto overlaps = [&](const storage_path& target,
-                                  const body_uses::binding_use& u) -> bool {
-            const storage_path reached{
-                .root{target.root},
-                .path{target.path.extended_by(u.path)},
-            };
-
-            return (u.is_written or global.is_written) and
-                   reached.may_overlap(global.storage);
-        };
-
-        for (const body_uses::binding_use& u : callee().uses().bindings()) {
-            if (u.param_index or not result or not overlaps(*result, u)) {
-                continue;
-            }
-
-            throw compile_error{
-                tok(), std::format("the result destination {} may share "
-                                   "storage with the global {} that {} "
-                                   "uses, {}",
-                                   in_quotes(dst.text()),
-                                   in_quotes(global.storage.root.name),
-                                   in_quotes(func_name_), use_temporary_fix_)};
-        }
-
-        for (const reference& arg : args) {
+        for (const reference& ref : references) {
             for (const body_uses::binding_use& u : callee().uses().bindings()) {
-                if (u.param_index != arg.index or not overlaps(arg.target, u)) {
+                if (u.param_index != ref.param_index) {
+                    continue;
+                }
+
+                // the part of the reference that the callee reaches as 'u'
+                const storage_path reached{
+                    .root{ref.target.root},
+                    .path{ref.target.path.extended_by(u.path)},
+                };
+
+                if (not(u.is_written or global.is_written) or
+                    not reached.may_overlap(global.storage)) {
+
                     continue;
                 }
 
                 throw compile_error{
-                    args_.at(arg.index).tok(),
-                    std::format("{} {} may share storage with the global "
+                    ref.tk,
+                    std::format("{} may share storage with the global "
                                 "{} that {} uses, {}",
-                                describe_argument(arg.index),
-                                in_quotes(statement::trimmed_source(
-                                    args_.at(arg.index))),
-                                in_quotes(global.storage.root.name),
+                                ref.text, in_quotes(global.storage.root.name),
                                 in_quotes(func_name_), use_temporary_fix_)};
             }
         }
-    }
-
-    // an argument that may share storage with the result destination
-    auto assert_not_shared_with_result(
-        const size_t index, const storage_path& target, const destination& dst,
-        const std::optional<storage_path>& result) const -> void {
-
-        if (not result or not target.may_overlap(*result)) {
-            return;
-        }
-
-        throw compile_error{
-            args_.at(index).tok(),
-            std::format("{} {} may share storage with the "
-                        "result destination {}{}, {}",
-                        describe_argument(index),
-                        in_quotes(statement::trimmed_source(args_.at(index))),
-                        in_quotes(dst.text()),
-                        shared_name_note(target.root.name),
-                        use_temporary_fix_)};
     }
 
     // the result has the type of the destination or is a narrower integer,
@@ -2668,6 +2618,30 @@ class stmt_call : public statement {
         // the binding would make the parameter name the whole array
         if (const stmt_identifier* const ident{arg.operand_path()}) {
             assert_not_whole_array(*ident, make_ident_info(tc, *ident));
+        }
+    }
+
+    // an argument that names the storage of an earlier one or of the result,
+    // unless both parameters are read-only or the bytes they reach are
+    // disjoint
+    static auto
+    assert_not_shared_with_earlier(const std::span<const reference> earlier,
+                                   const reference& ref) -> void {
+
+        for (const reference& other : earlier) {
+            if (ref.is_read_only and other.is_read_only) {
+                continue;
+            }
+
+            if (not ref.target.may_overlap(other.target)) {
+                continue;
+            }
+
+            throw compile_error{
+                ref.tk,
+                std::format("{} may share storage with {}{}, {}", ref.text,
+                            other.text, shared_name_note(ref.target.root.name),
+                            use_temporary_fix_)};
         }
     }
 

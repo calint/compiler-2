@@ -82,6 +82,12 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
        list ('alias' under "always on"), 'prog.baz', 'etc/tutorial.baz',
        'etc/codegen-inefficiencies.baz' (was rejected, a temporary now, its
        listing regenerated)
+    => C.2 S done (2026-10-26): the result destination is the first
+       'reference' of 'assert_no_shared_storage' (its 'param_index' empty,
+       like 'body_uses::binding_use', with its token and text);
+       'assert_not_shared_with_result' and the result loop of the global
+       check go (-26 lines); listings and errors equal; U1 next, a step of
+       its own since it accepts more
     D. dropped (user, 2026-10-26: simplify the code of a feature, never
        remove the feature): the versions (B1), the padding gap walk (B2),
        rv32i constant bytes (B3) and shared-base copy (B4), the receiver
@@ -92,6 +98,42 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
        grows, since it replaces a code-size plan; a simpler implementation
        of any of these that keeps its output is welcome
     order: A, B, C, then P A; a pause for a commit after each step
+[ ] hard: design review round 23 (2026-10-26, user: finish the product;
+    simplification and design rounds until the design is good, then the bug
+    hunt; two reviewers D1 front end and checks, D2 statements, calls and
+    backends, one hunter H1; reports in the session scratchpad r23)
+    A. design defects where the emitted code differs from the checked code
+       (README 3.1), each a behavior change with tests on both targets
+       A.1. D2-1 an inlined call makes its instance and call-result
+            temporaries before its other arguments, 'f(inc(), {g, 0})' 21
+            inlined, 22 noinline; the temporary made where it is bound, in
+            argument order (-5)
+       A.2. H1-1 the slice operand 'g[1]' of 'array_copy' and
+            'arrays_equal' is checked as one element but reaches 'g[1..]':
+            every check misses it (results depend on target and inlining,
+            an unassigned read accepted); the operand reaches from its start
+            on, like 'g[i]' (+8, accepts less)
+       A.3. D1-1 a value hiding a generic function changes the verdict of
+            'b = mk()' for a 'bool' destination; '(' after a generic
+            function is always its call, only '<' is hidden (0, accepts
+            more)
+    B. pure refactors
+       B.1. D2-2 one helper for a temporary of a call, the result temporary
+            once for both call compilers (-14), with D2-4 4.1 and 4.2 (-6)
+       B.2. D1-2 'destination' keeps what a stored name resolved to once
+            (with round 22 C.4 N3, -12)
+       B.3. D1-5 defaulted '==' for the path types, a constant index as a
+            range of one element (-25)
+       B.4. D1-3 a string token keeps its quotes like a character (-12)
+    C. asks
+       C.1. D2-3 the later-argument rule only for arguments passed by
+            reference (accepts more, +10)
+       C.2. H1-2 compile time doubles per level of inlined calls in an
+            expression stored to memory (depth 14: 25 s); a list with an
+            inlined call is not measured; README 5.2 says linear
+       C.3. D1-4 one lexer: 'one_line_source' through a 'source_sink' (-125,
+            ~60 signatures change), D1-6, D2-4 4.3 the forward declarations
+            of 'main.cpp' (-85)
 [ ] hard: design review round 21, simplification (2026-10-26, user: refactor
     to simplify; six reviewers P parse and expressions, S statements and
     calls, N names and 'toc', U no-UB checks, B backends, W docs and qa;

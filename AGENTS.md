@@ -170,6 +170,8 @@
   the fuzzers in parallel.
 - Run each check once per round; do not edit sources while a check runs
   (decided 2026-10-26).
+- The two `test-coverage.sh` targets and `test-cli.sh` share `gen.s`: run
+  them one after the other, not in parallel.
 
 ## Process
 
