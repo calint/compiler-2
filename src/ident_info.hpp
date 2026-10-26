@@ -403,32 +403,33 @@ struct value_use {
 // where 'compile' writes a value: nowhere for a statement, a register, or the
 // storage that a name of the source resolves to, e.g. 'p.x'; it is not changed
 // after it is made, a field or an element of it is a destination of its own
-// note: the kind follows from the members: storage when 'storage_' is set, a
-//       register when the operand is one, nowhere without a type
+// note: the kind follows from the members: storage when 'stored_' is set, a
+//       register when the operand is one, nowhere else
 
 class destination final {
     ::operand operand_;
-    const type* type_ptr_{};
     // the root as written, e.g. 'ps' of 'ps[i].x', the register of a register
     // destination
     std::string root_name_;
-    // what the root resolved to, stepped with 'field' and 'element'; none for
-    // a register destination
-    std::optional<ident_info> info_;
     // the destination as written, for the comments and the diagnostics, e.g.
     // 'w.ps[0]'; a temporary has its name, a register its register
     std::string text_;
     // the operand is the address, the name need not be resolved again, e.g.
     // an indexed element or an address loaded from a slot
     bool is_final_address_{};
-    // an unsized one gets its length from the argument
-    array_shape shape_;
     // its arithmetic wraps on purpose, see 'as_wrapping'; otherwise the
     // overflow check is as '--checks' asks
     bool wraps_{};
-    // the root variable and the path of it that this names, set exactly for
-    // storage
-    std::optional<storage_path> storage_;
+
+    // what a name in storage resolved to and the root variable and the path
+    // of it that it names, both stepped with 'field' and 'element'
+    struct stored_name {
+        ident_info info;
+        storage_path storage;
+    };
+
+    // none for a register or nowhere
+    std::optional<stored_name> stored_;
 
     // what a resolved name adds when it is the destination of an assignment
     struct name_parts {
@@ -443,7 +444,7 @@ class destination final {
     destination() = default;
 
     [[nodiscard]] auto array_len() const -> std::optional<size_t> {
-        return shape_.length();
+        return shape().length();
     }
 
     // the argument of a conversion, whose arithmetic wraps, e.g. the '+' of
@@ -459,21 +460,20 @@ class destination final {
     // destination: the storage at the address computed for it, or as resolved
     [[nodiscard]] auto bound_info() const -> ident_info {
         // note: a register destination is bound as a register
-        assert(info_);
+        assert(stored_);
 
         if (is_final_address_) {
-            return info_->at_address(operand_);
+            return stored_->info.at_address(operand_);
         }
 
-        return *info_;
+        return stored_->info;
     }
 
     // the element 'index' of the array, e.g. of an array literal; the type
     // of an array destination is its element type
     [[nodiscard]] auto element(const size_t index) const -> destination {
         // note: an array is in storage
-        assert(storage_);
-        assert(info_);
+        assert(stored_);
 
         destination result{*this};
 
@@ -481,9 +481,8 @@ class destination final {
             address_offset(index * type_ref().size_bytes()));
 
         result.is_final_address_ = true;
-        result.shape_ = {};
-        result.info_ = info_->as_element();
-        result.storage_->path.add_fixed_index(index);
+        result.stored_->info = stored_->info.as_element();
+        result.stored_->storage.path.add_fixed_index(index);
         result.text_ += std::format("[{}]", index);
 
         return result;
@@ -492,15 +491,13 @@ class destination final {
     // the field 'fld', as the comments name it
     [[nodiscard]] auto field(const type_field& fld) const -> destination {
         // note: a record is in storage
-        assert(storage_);
-        assert(info_);
+        assert(stored_);
 
         destination result{*this};
         result.operand_ = operand_at(fld.offset, fld.type());
         result.is_final_address_ = true;
-        result.info_ = info_->field(fld);
-        result.type_ptr_ = &fld.type();
-        result.storage_->path.add_field(fld.offset);
+        result.stored_->info = stored_->info.field(fld);
+        result.stored_->storage.path.add_field(fld.offset);
         result.text_ += std::format(".{}", fld.name);
 
         return result;
@@ -514,9 +511,11 @@ class destination final {
         return result;
     }
 
-    [[nodiscard]] auto is_array() const -> bool { return shape_.is_array(); }
+    [[nodiscard]] auto is_array() const -> bool { return shape().is_array(); }
 
-    [[nodiscard]] auto is_empty() const -> bool { return type_ptr_ == nullptr; }
+    [[nodiscard]] auto is_empty() const -> bool {
+        return not stored_ and not operand_.is_register();
+    }
 
     [[nodiscard]] auto is_final_address() const -> bool {
         return is_final_address_;
@@ -524,11 +523,11 @@ class destination final {
 
     // see 'array_shape::is_length_unknown'
     [[nodiscard]] auto is_length_unknown() const -> bool {
-        return shape_.is_length_unknown();
+        return shape().is_length_unknown();
     }
 
     [[nodiscard]] auto is_register() const -> bool {
-        return not storage_ and operand_.is_register();
+        return not stored_ and operand_.is_register();
     }
 
     [[nodiscard]] auto operand() const -> const ::operand& { return operand_; }
@@ -547,16 +546,30 @@ class destination final {
         return root_name_;
     }
 
-    [[nodiscard]] auto storage() const -> const std::optional<storage_path>& {
-        return storage_;
+    // an unsized one gets its length from the argument
+    [[nodiscard]] auto shape() const -> array_shape {
+        return stored_ ? stored_->info.shape() : array_shape{};
+    }
+
+    [[nodiscard]] auto storage() const -> std::optional<storage_path> {
+        if (not stored_) {
+            return std::nullopt;
+        }
+
+        return stored_->storage;
     }
 
     [[nodiscard]] auto text() const -> const std::string& { return text_; }
 
     [[nodiscard]] auto type_ref() const -> const type& {
-        assert(type_ptr_ != nullptr);
+        if (stored_) {
+            return stored_->info.type_ref();
+        }
 
-        return *type_ptr_;
+        // note: nowhere has no type
+        assert(operand_.is_register());
+
+        return operand_.type_ref();
     }
 
     [[nodiscard]] auto wraps() const -> bool { return wraps_; }
@@ -591,17 +604,16 @@ class destination final {
 
         destination result;
         result.operand_ = std::move(parts.address);
-        result.type_ptr_ = &info.type_ref();
         result.root_name_ = std::move(parts.root);
         result.text_ = std::move(parts.text);
 
         result.is_final_address_ = parts.is_final_address;
 
-        result.shape_ = info.shape();
-        result.storage_ = std::move(parts.storage);
-
-        if (info.is_var()) {
-            result.info_ = info;
+        if (parts.storage) {
+            result.stored_ = {
+                .info{info},
+                .storage{std::move(*parts.storage)},
+            };
         }
 
         return result;
@@ -613,7 +625,6 @@ class destination final {
 
         destination result;
         result.operand_ = reg;
-        result.type_ptr_ = &reg.type_ref();
         result.root_name_ = reg.register_name();
         result.text_ = reg.register_name();
 

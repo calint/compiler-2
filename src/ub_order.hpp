@@ -55,20 +55,22 @@
                                               const statement& st,
                                               const destination& dst) -> bool {
 
-    if (not dst.storage()) {
+    const std::optional<storage_path> dst_storage{dst.storage()};
+
+    if (not dst_storage) {
         return st.first_read_of(dst.root_name()) != nullptr;
     }
 
     bool is_read{};
 
     st.visit_reads([&](const stmt_identifier& read) -> void {
-        if (read.may_reach(tc, *dst.storage())) {
+        if (read.may_reach(tc, *dst_storage)) {
             is_read = true;
         }
     });
 
     st.visit_call_effects(tc, [&](const call_effect& effect) -> void {
-        if (effect.storage.may_overlap(*dst.storage())) {
+        if (effect.storage.may_overlap(*dst_storage)) {
             is_read = true;
         }
     });

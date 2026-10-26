@@ -105,6 +105,12 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
        the width rule once, for a folded and a compiled comparison (before
        its operands compile); 'assert_folded_sides_fit' and
        'assert_rhs_fits_lhs' go (-20 lines); listings and errors equal
+    => C.4 N3 done (2026-10-26, with round 23 D1-2): 'destination' keeps a
+       stored name once ('stored_name' of the 'ident_info' and the storage,
+       stepped together by 'field' and 'element'); the type and the shape
+       come from it or the register, 'type_ptr_' and 'shape_' go; a field
+       now has its own shape (no listing changed); src +13 lines, -3
+       members; listings and errors equal
     D. dropped (user, 2026-10-26: simplify the code of a feature, never
        remove the feature): the versions (B1), the padding gap walk (B2),
        rv32i constant bytes (B3) and shared-base copy (B4), the receiver
