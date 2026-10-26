@@ -1,0 +1,7 @@
+# a built-in without a value is rejected in a value also without '(', e.g.
+# 'exit' as an operand
+
+func main() {
+    var y = exit + 0
+    exit(y)
+}

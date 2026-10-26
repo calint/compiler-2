@@ -5378,3 +5378,8 @@ SRC=1693 && COMPERR
 # the check of a body without its call goes on after an inlined recursion
 # that no constant ends, the code after it is checked
 SRC=1694 && COMPERR
+
+# a built-in without a value is rejected where a value is parsed, with or
+# without '(': an operand and an initializer
+SRC=1695 && COMPERR
+SRC=1696 && COMPERR

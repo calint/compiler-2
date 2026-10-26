@@ -1,0 +1,4 @@
+
+1695.baz:5:13: function does not return a value
+    var y = exit + 0
+            ^~~~

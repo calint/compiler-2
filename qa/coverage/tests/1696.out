@@ -1,0 +1,4 @@
+
+1696.baz:6:13: function does not return a value
+    var x = array_copy
+            ^~~~~~~~~~

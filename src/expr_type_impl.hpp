@@ -174,7 +174,7 @@ inline auto expr_type::parse_copy_source(toc& tc, tokenizer& tz, const type& tp,
 
     // a built-in is not a function, its value is a scalar of a built-in type
     if (const std::unique_ptr<statement> builtin{
-            parse_builtin_value(tc, tz, tok(), tm, no_uops),
+            parse_builtin(tc, tz, tok(), tm, no_uops, builtin_place::value),
         }) {
 
         if (is_array_destination_) {

@@ -51,33 +51,6 @@
     throw compile_error{call_tk, "return value is discarded"};
 }
 
-// 'exit' ends the program, 'array_copy' and the sector functions only
-// transfer, they have no value to use
-inline auto assert_builtin_has_value(const token& tk, const tokenizer& tz)
-    -> void {
-
-    const reserved_names::builtin_function* const fn{
-        reserved_names::find_builtin_function(tk.text()),
-    };
-
-    const bool has_no_value{
-        fn != nullptr and fn->use == reserved_names::builtin_use::statement,
-    };
-
-    if (has_no_value and tz.peek_char_after_whitespace() == '(') {
-        throw_no_value(tk);
-    }
-}
-
-// a call of the built-in at 'tk' may stand alone or in a value, e.g. 'read'
-[[nodiscard]] inline auto is_builtin_used_either_way(const token& tk) -> bool {
-    const reserved_names::builtin_function* const fn{
-        reserved_names::find_builtin_function(tk.text()),
-    };
-
-    return fn != nullptr and fn->use == reserved_names::builtin_use::either;
-}
-
 // a built-in is not generic, e.g. 'read<i8>(0, buf)'
 inline auto assert_builtin_without_type_args(const token& tk,
                                              const tokenizer& tz) -> void {
@@ -100,7 +73,7 @@ inline auto assert_builtin_without_type_args(const token& tk,
 
 // the type of the value of the built-in at 'tk', classified as 'tm', e.g. 'i8'
 // of 'i8(1)', none when 'tk' names no built-in with a value;
-// 'parse_builtin_value' makes a statement for each
+// 'parse_builtin' makes a statement for each
 [[nodiscard]] inline auto builtin_value_type(const toc& tc, const token& tk,
                                              const term& tm) -> const type* {
 
@@ -132,11 +105,82 @@ inline auto assert_builtin_without_type_args(const token& tk,
     return nullptr;
 }
 
-// a statement that starts with a keyword or a built-in, null for a name
-inline auto parse_keyword_statement(toc& tc, tokenizer& tz, const token tk)
+// where a call of a built-in is parsed: in a value, or alone as a statement
+enum class builtin_place : uint8_t { value, statement };
+
+// a call of the built-in at 'tk', classified as 'tm', e.g. 'i8(x)',
+// 'array_copy(a, b, 4)' or 'read(0, b, n)', null when 'tk' names none; the
+// catalog says where it may stand, e.g. 'exit' has no value and
+// 'arrays_equal' is no statement; 'uops' are taken only by a statement made
+inline auto parse_builtin(toc& tc, tokenizer& tz, const token& tk,
+                          const term& tm, unary_ops& uops,
+                          const builtin_place at)
     -> std::unique_ptr<statement> {
 
     assert_builtin_without_type_args(tk, tz);
+
+    const reserved_names::builtin_function* const fn{
+        reserved_names::find_builtin_function(tk.text()),
+    };
+
+    if (fn == nullptr and not is_integer_conversion(tm)) {
+        return nullptr;
+    }
+
+    // a conversion has a value only
+    const reserved_names::builtin_use use{
+        fn == nullptr ? reserved_names::builtin_use::value : fn->use,
+    };
+
+    if (at == builtin_place::value and
+        use == reserved_names::builtin_use::statement) {
+
+        throw_no_value(tk);
+    }
+
+    if (at == builtin_place::statement and
+        use == reserved_names::builtin_use::value) {
+
+        throw_discarded_result(tk);
+    }
+
+    if (const stmt_builtin_io::io_function* const io{
+            stmt_builtin_io::find(tk.text()),
+        }) {
+
+        return std::make_unique<stmt_builtin_io>(tc, *io, std::move(uops), tk,
+                                                 tz);
+    }
+
+    if (tk.is_text("array_copy")) {
+        return std::make_unique<stmt_builtin_array_copy>(tc, tk, tz);
+    }
+
+    if (tk.is_text("exit")) {
+        return std::make_unique<stmt_builtin_exit>(tc, tk, tz);
+    }
+
+    if (tk.is_text("array_length")) {
+        return std::make_unique<stmt_builtin_array_length>(tc, std::move(uops),
+                                                           tk, tz);
+    }
+
+    if (tk.is_text("arrays_equal")) {
+        return std::make_unique<stmt_builtin_arrays_equal>(tc, std::move(uops),
+                                                           tk, tz);
+    }
+
+    // note: every built-in of 'reserved_names::builtin_functions' has a
+    //       branch above, what is left is an integer conversion
+
+    assert(fn == nullptr);
+
+    return std::make_unique<stmt_builtin_convert>(tc, std::move(uops), tk, tz);
+}
+
+// a statement that starts with a keyword or a built-in, null for a name
+inline auto parse_keyword_statement(toc& tc, tokenizer& tz, const token tk)
+    -> std::unique_ptr<statement> {
 
     if (tk.is_text("var") or tk.is_text("let")) {
         return make_stmt_def_var(tc, tk, tz);
@@ -171,10 +215,6 @@ inline auto parse_keyword_statement(toc& tc, tokenizer& tz, const token tk)
         return std::make_unique<stmt_return>(tk);
     }
 
-    if (tk.is_text("array_copy")) {
-        return std::make_unique<stmt_builtin_array_copy>(tc, tk, tz);
-    }
-
     if (tk.is_text("loop")) {
         return std::make_unique<stmt_loop>(tc, tk, tz);
     }
@@ -183,35 +223,16 @@ inline auto parse_keyword_statement(toc& tc, tokenizer& tz, const token tk)
         return std::make_unique<stmt_if>(tc, tk, tz);
     }
 
-    if (tk.is_text("exit")) {
-        return std::make_unique<stmt_builtin_exit>(tc, tk, tz);
-    }
-
-    // e.g. 'arrays_equal(a, b, 4)' or 'i8(x)' alone, its value is all it
-    // does; 'read' and 'write' may stand alone ('builtin_use::either')
-    if (builtin_value_type(tc, tk, classify_term(tc, tk, tz)) != nullptr and
-        not is_builtin_used_either_way(tk)) {
-
-        throw_discarded_result(tk);
-    }
-
-    if (const stmt_builtin_io::io_function* const io{
-            stmt_builtin_io::find(tk.text()),
-        }) {
-
-        return std::make_unique<stmt_builtin_io>(tc, *io, unary_ops{}, tk, tz);
-    }
-
     if (tk.is_text(reserved_names::foo)) {
         return std::make_unique<stmt_builtin_foo>(tc, tk, tz);
     }
 
-    // note: every built-in of 'reserved_names::builtin_functions' that may
-    //       stand alone has a branch above, one with a value only was rejected
+    // e.g. 'arrays_equal(a, b, 4)' or 'i8(x)' alone is rejected, its value is
+    // all it does
+    unary_ops no_uops;
 
-    assert(not reserved_names::find_builtin_function(tk.text()));
-
-    return nullptr;
+    return parse_builtin(tc, tz, tk, classify_term(tc, tk, tz), no_uops,
+                         builtin_place::statement);
 }
 
 // e.g. 'show<name>(x)' where 'show' is not generic, says so instead of reading
@@ -246,49 +267,6 @@ inline auto value_call(const toc& tc, std::unique_ptr<stmt_call> call)
 // a call, or an identifier that is not the receiver of a method
 using call_or_identifier =
     std::variant<std::unique_ptr<stmt_call>, std::unique_ptr<stmt_identifier>>;
-
-// a built-in with a value at 'tk', classified as 'tm', e.g. 'i8(x)',
-// 'array_length(a)' or 'read(0, b, n)', null when 'tk' names none; a built-in
-// without a value is rejected; 'uops' are taken only by a statement made
-inline auto parse_builtin_value(toc& tc, tokenizer& tz, const token& tk,
-                                const term& tm, unary_ops& uops)
-    -> std::unique_ptr<statement> {
-
-    assert_builtin_without_type_args(tk, tz);
-
-    const stmt_builtin_io::io_function* const io{
-        stmt_builtin_io::find(tk.text()),
-    };
-
-    if (io != nullptr and io->has_result()) {
-        return std::make_unique<stmt_builtin_io>(tc, *io, std::move(uops), tk,
-                                                 tz);
-    }
-
-    assert_builtin_has_value(tk, tz);
-
-    if (tk.is_text("array_length")) {
-        return std::make_unique<stmt_builtin_array_length>(tc, std::move(uops),
-                                                           tk, tz);
-    }
-
-    if (tk.is_text("arrays_equal")) {
-        return std::make_unique<stmt_builtin_arrays_equal>(tc, std::move(uops),
-                                                           tk, tz);
-    }
-
-    if (is_integer_conversion(tm)) {
-        return std::make_unique<stmt_builtin_convert>(tc, std::move(uops), tk,
-                                                      tz);
-    }
-
-    // note: every built-in of 'reserved_names::builtin_functions' with a
-    //       value has a branch above, one without a value was rejected
-
-    assert(not reserved_names::find_builtin_function(tk.text()));
-
-    return nullptr;
-}
 
 // parses what follows the token 'tk', classified as 'tm', as a call of a
 // function, a generic function, a constructor or a method, otherwise as an
@@ -461,7 +439,7 @@ inline auto parse_operand(toc& tc, tokenizer& tz, unary_ops uops,
     }
 
     if (std::unique_ptr<statement> builtin{
-            parse_builtin_value(tc, tz, tk, tm, uops),
+            parse_builtin(tc, tz, tk, tm, uops, builtin_place::value),
         }) {
 
         return builtin;

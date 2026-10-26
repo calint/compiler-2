@@ -1,0 +1,8 @@
+# a built-in without a value is rejected as the initializer of a variable
+# also without '('
+
+func main() {
+    var a = i8[4]
+    var x = array_copy
+    exit(a[0] + x)
+}

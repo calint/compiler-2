@@ -1,6 +1,13 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: bug: a built-in without a value used as a value without '(',
+    e.g. 'if n == 2 or (exit + 0) exit(2)', fails the assert of
+    'parse_builtin_value' (parse_statement.hpp:288), also at 1594bb3e;
+    'assert_builtin_has_value' rejects it only before a '(' (fuzz-compiler
+    finding compiler-crash-03063a836c, 2026-10-26)
+    => done (2026-10-26): round 21 B.7, one 'parse_builtin' rejects a
+       built-in without a value wherever a value is parsed (tests 1695, 1696)
 [x] medium: a cycle of noinline call kinds, e.g. 'f(a, b)' calling 'f(b,
     a)', is measured from where it was entered ('dry_run_ledger'), so a chain
     that reaches it near the limit of nested dry runs can be accepted or

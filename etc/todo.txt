@@ -171,6 +171,11 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
        B.7. P A (-35): the built-ins dispatched by the catalog's 'use' in
             one place, also fixes the crash item ('exit + 0', 'var x =
             array_copy'); P B (-18), P C (-15)
+       => B.7 P A done (2026-10-26): 'parse_builtin(..., builtin_place)'
+          for a value and a statement, the catalog's 'use' decides, one
+          dispatch; 'parse_builtin_value', 'assert_builtin_has_value' and
+          'is_builtin_used_either_way' go; the crash item is fixed (tests
+          1695, 1696); listings equal; src -22 lines; P B and P C next
     C. a fix: P G, a comparison folds through one function that checks its
        sides, 'let b = k == 1000' with 'k' an 'i8' is rejected like 'var';
        behavior, with tests
@@ -354,11 +359,6 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
     (stmt_def_var.hpp:374), e.g. 'let x = i8(127)' then 'let y = x + 1'; with
     'overflow' it is rejected ("constant expression overflows the type"),
     both targets (2026-10-26)
-[ ] easy: bug: a built-in without a value used as a value without '(',
-    e.g. 'if n == 2 or (exit + 0) exit(2)', fails the assert of
-    'parse_builtin_value' (parse_statement.hpp:288), also at 1594bb3e;
-    'assert_builtin_has_value' rejects it only before a '(' (fuzz-compiler
-    finding compiler-crash-03063a836c, 2026-10-26)
 [ ] hard: design review round 19 (2026-10-26, six angles: architect A,
     consistency C, documentation D (repeated), no-UB by construction U, tests
     as design T, simplicity S; findings in the session scratchpad r19; all
