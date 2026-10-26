@@ -24,10 +24,15 @@
 // or of its first 'count' elements, with 'e' the element, 'i' its index and
 // 'n' the length of the array; the body may run zero times
 class stmt_builtin_foo final : public statement {
+    // e.g. the ', len' of 'foo arr, len'
+    struct count_part {
+        token delim_tk;
+        expr_any count;
+    };
+
     stmt_identifier ident_;
-    // the ',' before the count, none when every element is visited
-    std::optional<token> count_delim_tk_;
-    expr_any count_;
+    // none when every element is visited
+    std::optional<count_part> count_;
     stmt_block code_;
 
   public:
@@ -39,11 +44,16 @@ class stmt_builtin_foo final : public statement {
         ident_.assert_array();
 
         // e.g. 'foo arr, len' visits the first 'len' elements
-        count_delim_tk_ = tz.is_next_char_token(',');
-
-        if (has_count()) {
-            count_ = {tc, tz, tc.builtins().default_type(),
-                      literal_typing::from_destination};
+        if (const std::optional<token> delim_tk{tz.is_next_char_token(',')}) {
+            count_ = {
+                .delim_tk{*delim_tk},
+                .count{
+                    tc,
+                    tz,
+                    tc.builtins().default_type(),
+                    literal_typing::from_destination,
+                },
+            };
         }
 
         // the element and the counter are declared during the parse so the
@@ -71,9 +81,9 @@ class stmt_builtin_foo final : public statement {
         statement::source_to(os);
         ident_.source_to(os);
 
-        if (count_delim_tk_) {
-            count_delim_tk_->source_to(os);
-            count_.source_to(os);
+        if (count_) {
+            count_->delim_tk.source_to(os);
+            count_->count.source_to(os);
         }
 
         code_.source_to(os);
@@ -142,8 +152,8 @@ class stmt_builtin_foo final : public statement {
     auto trace_assignment(assignment_flow& flow) const -> void override {
         ident_.assert_var_not_used(flow);
 
-        if (has_count()) {
-            count_.assert_var_not_used(flow);
+        if (count_) {
+            count_->count.assert_var_not_used(flow);
         }
 
         // the loop names hide the traced variable only in the body
@@ -225,8 +235,8 @@ class stmt_builtin_foo final : public statement {
     auto comment_header(machine& x, const size_t indent) const -> void {
         std::string header{statement::trimmed_source(ident_)};
 
-        if (has_count()) {
-            header += ", " + statement::trimmed_source(count_);
+        if (count_) {
+            header += ", " + statement::trimmed_source(count_->count);
         }
 
         x.comment(tok(), indent, "foo {}", header);
@@ -239,30 +249,32 @@ class stmt_builtin_foo final : public statement {
                                      machine::held_registers& held) const
         -> operand {
 
-        if (not has_count()) {
+        if (not count_) {
             return operand::imm(array_len, tc.builtins().default_type());
         }
 
-        if (const std::optional<int64_t> count{count_.constant_value(tc)}) {
-            ident_.assert_count_in_bounds(tc, count_.tok(), *count);
-            return operand::imm(*count, tc.builtins().default_type());
+        const expr_any& count{count_->count};
+
+        if (const std::optional<int64_t> value{count.constant_value(tc)}) {
+            ident_.assert_count_in_bounds(tc, count.tok(), *value);
+            return operand::imm(*value, tc.builtins().default_type());
         }
 
         machine& x{tc.machine()};
 
         const operand reg_count{
-            x.alloc_scratch_register(count_.tok(), indent,
+            x.alloc_scratch_register(count.tok(), indent,
                                      tc.builtins().default_type()),
         };
 
         held.add(reg_count);
 
-        x.comment(count_.tok(), indent, "count {}",
-                  statement::trimmed_source(count_));
+        x.comment(count.tok(), indent, "count {}",
+                  statement::trimmed_source(count));
 
-        count_.compile(tc, indent, destination::of_register(reg_count));
+        count.compile(tc, indent, destination::of_register(reg_count));
 
-        x.check_bounds(count_.tok(), indent,
+        x.check_bounds(count.tok(), indent,
                        machine::bounds_range::count_alone(reg_count, array_len),
                        tc.checks().bounds_options());
 
@@ -310,10 +322,6 @@ class stmt_builtin_foo final : public statement {
         return ident_.storage(tc);
     }
 
-    [[nodiscard]] auto has_count() const -> bool {
-        return count_delim_tk_.has_value();
-    }
-
     // an indexed or forwarded array needs its address computed
     auto load_array_address(toc& tc, const size_t indent,
                             const ident_info& array_info,
@@ -346,7 +354,7 @@ class stmt_builtin_foo final : public statement {
                          const operand& limit,
                          const std::string_view end_label) const -> void {
 
-        if (not has_count()) {
+        if (not count_) {
             return;
         }
 
@@ -359,7 +367,7 @@ class stmt_builtin_foo final : public statement {
             return;
         }
 
-        x.compare_and_branch(count_.tok(), indent, limit,
+        x.compare_and_branch(count_->count.tok(), indent, limit,
                              operand::imm(0, tc.builtins().default_type()),
                              {
                                  .operation{comparison_operator::less_equal},

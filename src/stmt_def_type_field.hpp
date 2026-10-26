@@ -4,6 +4,7 @@
 #include <optional>
 #include <ostream>
 #include <string_view>
+#include <utility>
 
 #include "compile_error.hpp"
 #include "expr_any.hpp"
@@ -14,14 +15,17 @@
 // a field 'name [type][[size]]' of a type, its type resolved when parsed like
 // a parameter's, the default type when none is written
 class stmt_def_type_field final : public statement {
+    // e.g. the '[4]' of 'tags[4]'
+    struct array_part {
+        token open_bracket_tk;
+        stmt_array_size size;
+        token close_bracket_tk;
+    };
+
     // none for the default type
     std::optional<token> type_tk_;
     // none when not an array
-    std::optional<token> open_bracket_tk_;
-    token close_bracket_tk_;
-    stmt_array_size array_size_;
-    // empty when not an array
-    std::optional<size_t> array_count_;
+    std::optional<array_part> array_;
 
   public:
     stmt_def_type_field(toc& tc, const token tk, tokenizer& tz)
@@ -47,25 +51,29 @@ class stmt_def_type_field final : public statement {
         set_type(type_tk_ ? tc.get_type_or_throw(*type_tk_)
                           : tc.builtins().default_type());
 
-        open_bracket_tk_ = tz.is_next_char_token('[');
+        const std::optional<token> open_bracket_tk{tz.is_next_char_token('[')};
 
-        if (not open_bracket_tk_) {
+        if (not open_bracket_tk) {
             return;
         }
 
-        array_size_ = {tc, tz};
+        stmt_array_size size{tc, tz};
 
         // a field has no initializer to give an unsized array its length
-        if (not array_size_.has_value()) {
+        if (not size.has_value()) {
             throw compile_error{
-                array_size_.tok(),
-                "expected a constant array size greater than 0"};
+                size.tok(), "expected a constant array size greater than 0"};
         }
 
-        array_count_ = array_size_.array_size();
+        const token close_bracket_tk{
+            tz.expect_char_token(']', "expected ']' after array size"),
+        };
 
-        close_bracket_tk_ =
-            tz.expect_char_token(']', "expected ']' after array size");
+        array_ = {
+            .open_bracket_tk{*open_bracket_tk},
+            .size{std::move(size)},
+            .close_bracket_tk{close_bracket_tk},
+        };
     }
 
     stmt_def_type_field() = default;
@@ -79,10 +87,10 @@ class stmt_def_type_field final : public statement {
 
         token::source_to(os, type_tk_);
 
-        if (open_bracket_tk_) {
-            open_bracket_tk_->source_to(os);
-            array_size_.source_to(os);
-            close_bracket_tk_.source_to(os);
+        if (array_) {
+            array_->open_bracket_tk.source_to(os);
+            array_->size.source_to(os);
+            array_->close_bracket_tk.source_to(os);
         }
     }
 
@@ -91,12 +99,14 @@ class stmt_def_type_field final : public statement {
     //
 
     [[nodiscard]] auto array_count() const -> std::optional<size_t> {
-        return array_count_;
+        if (not array_) {
+            return std::nullopt;
+        }
+
+        return array_->size.array_size();
     }
 
-    [[nodiscard]] auto is_array() const -> bool {
-        return array_count_.has_value();
-    }
+    [[nodiscard]] auto is_array() const -> bool { return array_.has_value(); }
 
     [[nodiscard]] auto name() const -> std::string_view { return tok().text(); }
 };

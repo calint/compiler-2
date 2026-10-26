@@ -252,11 +252,27 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
        3. A.1 part 3: a compile footprint asserted equal after the two
           versions (a 'toc' forwarder for 'emit_most_efficient', 7 sites);
           recommended: yes
+       => 3 discarded (2026-10-26), failed precondition: the two versions
+          do not compile the same statements; in 0508 ('var x = one() + 1')
+          the scratch version reads the noinline result through a
+          temporary in a scope of its own, so after the second version the
+          max scope count is 4 where the first left 3 and the storage peak
+          16 B where it left 8 B; the assert fired in both suites; filed as
+          the item below on what a discarded version leaves in the tables
        4. I1, medium: the empty operand as "none" at about ten interfaces
           becomes 'std::optional<operand>' where it is a state;
           recommended: yes, after B
        5. C5: optional parts with a node as one optional struct each (else,
           'foo' count, conversion argument, brackets); recommended: yes
+       => 5 done (2026-10-26): 'stmt_if::else_part', 'stmt_builtin_foo::
+          count_part', 'stmt_builtin_convert::argument_part' (read by
+          'read_argument', the parse reaches it only before a '('),
+          'stmt_def_type_field::array_part' (the count derived from its size)
+          and 'stmt_def_func_param::bracket_tokens' (also in 'syntax', read by
+          'read_brackets'); 'has_count' goes; an 'if' without 'else' traces an
+          empty path ('assignment_flow::path_merge::trace_empty'); an empty
+          'else' still compiles as none; both suites (with
+          '--reproduce-source'), the CLI tests and clang-tidy clean
        6. the options a target does not read are accepted silently
           ('--stack' on x86_64, '--memory' on rv32i-qemu): reject them;
           behavior; recommended: yes, with CLI tests
@@ -285,6 +301,16 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
     order: A, B, C, D, E, F, G, then the asks
     kept (reviewers, with reasons in r18): see the "considered and kept"
     lists of r18 ({A,X,M,C,I,D}.md)
+[ ] medium: a version that 'emit_most_efficient' discards still raises
+    the peaks of 'toc': the max scope count, the storage peak
+    ('max_body_vars_size_bytes'), the peak frame size of the scope and the
+    constants it added stay (0508: the scratch version takes a temporary,
+    peak 16 B where the kept one needs 8 B), and its errors other than
+    'out_of_registers' reject the program even with '--versions=first';
+    the machine puts its own state back per version ('version_scope',
+    'restore_version_state'), 'toc' does not; a 'toc' forwarder that saves
+    these like 'dry_run_scope' and keeps those of the kept version would
+    make the tables follow the kept code (round 18 ask 3)
 [ ] medium: a cycle of noinline call kinds, e.g. 'f(a, b)' calling 'f(b,
     a)', is measured from where it was entered ('dry_run_ledger'), so a chain
     that reaches it near the limit of nested dry runs can be accepted or

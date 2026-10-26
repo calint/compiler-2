@@ -56,10 +56,15 @@
 //       ops: in a scratch register of the argument's type
 //   3b  a narrower single operand with unary ops, e.g. 'i16(-g())': as row 1
 class stmt_builtin_convert final : public statement {
+    // e.g. the '(a + 1)' of 'i8(a + 1)'
+    struct argument_part {
+        token open_paren_tk;
+        expr_arith arg;
+        token close_paren_tk;
+    };
+
     // none in the bare form, e.g. the 'i8' of 'var x = i8'
-    std::optional<token> open_paren_tk_;
-    expr_arith arg_;
-    token close_paren_tk_;
+    std::optional<argument_part> argument_;
 
     // where the conversion's own unary ops apply, see the class comment
     enum class ops_place : uint8_t {
@@ -87,27 +92,9 @@ class stmt_builtin_convert final : public statement {
 
   public:
     stmt_builtin_convert(toc& tc, unary_ops uops, const token tk, tokenizer& tz)
-        : statement{tk, std::move(uops)},
-          open_paren_tk_{tz.is_next_char_token('(')} {
+        : statement{tk, std::move(uops)}, argument_{read_argument(tc, tz)} {
 
         set_type(tc.get_type_or_throw(tk));
-
-        arg_ = {tc, tz};
-
-        if (not arg_.get_type().is_builtin()) {
-            throw compile_error{
-                arg_.tok(),
-                std::format("cannot convert a value of type {}",
-                            in_quotes(arg_.get_type().name())),
-            };
-        }
-
-        // e.g. the '>' of 'int(a > 2)', a 'bool' converts but a condition
-        // is stored first
-        expr_arith::assert_no_condition_next(tz);
-
-        close_paren_tk_ =
-            tz.expect_char_token(')', "expected ')' after the argument");
     }
 
     // e.g. 'i8' in 'var x = i8' is 'i8(0)'
@@ -125,13 +112,13 @@ class stmt_builtin_convert final : public statement {
         statement::source_to(os);
 
         // the bare form has no argument
-        if (not open_paren_tk_) {
+        if (not argument_) {
             return;
         }
 
-        open_paren_tk_->source_to(os);
-        arg_.source_to(os);
-        close_paren_tk_.source_to(os);
+        argument_->open_paren_tk.source_to(os);
+        argument_->arg.source_to(os);
+        argument_->close_paren_tk.source_to(os);
     }
 
     auto compile(toc& tc, const size_t indent, const destination& dst) const
@@ -142,7 +129,7 @@ class stmt_builtin_convert final : public statement {
 
         // the argument follows the rule of a list at the width it is computed
         // at, e.g. the 'i16' 'b' of 'i8(a + b)' is narrowed to 'i8'
-        arg_.assert_not_narrowed(tc, width_type());
+        argument().assert_not_narrowed(tc, width_type());
 
         const ops_place place{ops_place_for(tc, dst)};
 
@@ -177,7 +164,7 @@ class stmt_builtin_convert final : public statement {
         -> std::optional<folded_value> override {
 
         // the bare form has no argument, e.g. the 'i8' of 'var x = i8'
-        if (not open_paren_tk_) {
+        if (not argument_) {
             return folded_value{
                 .value{},
                 .own_type{&get_type()},
@@ -189,7 +176,7 @@ class stmt_builtin_convert final : public statement {
             .checks_overflow{false},
         };
 
-        const std::optional<folded_value> arg{arg_.fold(tc, arg_use)};
+        const std::optional<folded_value> arg{argument().fold(tc, arg_use)};
 
         if (not arg) {
             return std::nullopt;
@@ -198,8 +185,8 @@ class stmt_builtin_convert final : public statement {
         // note: an untyped constant converts whole, e.g. 'i32(0xfedc1234)' on
         //       a target whose default type is 'i32', a list is a list at W
 
-        if (arg->is_typed() or not arg_.is_single_operand()) {
-            arg_.assert_not_narrowed(tc, width_type());
+        if (arg->is_typed() or not argument().is_single_operand()) {
+            argument().assert_not_narrowed(tc, width_type());
         }
 
         const int64_t converted{
@@ -231,13 +218,27 @@ class stmt_builtin_convert final : public statement {
     }
 
     auto visit_operands(const operand_visitor visitor) const -> void override {
+        // the bare form has no operand
+        if (not argument_) {
+            return;
+        }
+
         visitor({
-            .node{&arg_},
+            .node{&argument_->arg},
             .written_place{},
         });
     }
 
   private:
+    // note: the bare form folds, so only a conversion with an argument
+    //       compiles
+
+    [[nodiscard]] auto argument() const -> const expr_arith& {
+        assert(argument_);
+
+        return argument_->arg;
+    }
+
     // the value is made in the register at the width of the type, the unary
     // ops apply after it widens in place; a memory destination gets it from a
     // scratch register
@@ -280,7 +281,8 @@ class stmt_builtin_convert final : public statement {
 
         const auto in_destination{
             [&] -> void {
-                arg_.compile(tc, indent, target.as_wrapping().as_operand());
+                argument().compile(tc, indent,
+                                   target.as_wrapping().as_operand());
 
                 machine& x{tc.machine()};
 
@@ -335,8 +337,9 @@ class stmt_builtin_convert final : public statement {
             x.alloc_scratch_register(tok(), indent, scratch_type),
         };
 
-        arg_.compile(tc, indent,
-                     destination::of_register(wide).as_wrapping().as_operand());
+        argument().compile(
+            tc, indent,
+            destination::of_register(wide).as_wrapping().as_operand());
 
         // a 'bool' is not negated, e.g. the '-' of '-i8(b)' applies
         // to the copy
@@ -452,12 +455,12 @@ class stmt_builtin_convert final : public statement {
 
         const size_t type_size_bytes{get_type().size_bytes()};
         const size_t target_size_bytes{target.type_ref().size_bytes()};
-        const type& arg_type{arg_.get_type()};
+        const type& arg_type{argument().get_type()};
 
         // a narrower argument is computed at the width of the type, where its
         // arithmetic wraps, e.g. 'i16(a * (a >> 1))' of an 'i8' 'a' of 20 is
         // 200; a single operand keeps its own width, e.g. a call's result
-        if (not arg_.is_single_operand() and
+        if (not argument().is_single_operand() and
             arg_type.size_bytes() < type_size_bytes) {
 
             return plan_at_type(target);
@@ -467,8 +470,8 @@ class stmt_builtin_convert final : public statement {
         const bool is_narrowed{target_size_bytes < arg_type.size_bytes()};
 
         const bool keeps_low_bits{
-            arg_.keeps_low_bits(is_narrowed ? width_change::narrowed
-                                            : width_change::widened),
+            argument().keeps_low_bits(is_narrowed ? width_change::narrowed
+                                                  : width_change::widened),
         };
 
         // a shift count is checked against the width the shift is computed
@@ -504,7 +507,7 @@ class stmt_builtin_convert final : public statement {
         // '/', '%', '>>' and calls are computed at the argument's width, a
         // call's result must also have its declared type
         if (arg_type.size_bytes() >= type_size_bytes or
-            arg_.single_operand().get_unary_ops().is_empty()) {
+            argument().single_operand().get_unary_ops().is_empty()) {
 
             return {
                 .where{computation_plan::place::scratch},
@@ -521,12 +524,45 @@ class stmt_builtin_convert final : public statement {
     // first element; on a tie the argument's type, so the 'b' of 'i8(b)' is
     // checked as a 'bool'
     [[nodiscard]] auto width_type() const -> const type& {
-        return *wider(arg_.get_type(), get_type());
+        return *wider(argument().get_type(), get_type());
     }
 
     //
     // statics
     //
+
+    // note: the parse takes a type name followed by '(' as a conversion
+    [[nodiscard]] static auto read_argument(toc& tc, tokenizer& tz)
+        -> argument_part {
+
+        const std::optional<token> open_paren_tk{tz.is_next_char_token('(')};
+
+        assert(open_paren_tk);
+
+        expr_arith arg{tc, tz};
+
+        if (not arg.get_type().is_builtin()) {
+            throw compile_error{
+                arg.tok(),
+                std::format("cannot convert a value of type {}",
+                            in_quotes(arg.get_type().name())),
+            };
+        }
+
+        // e.g. the '>' of 'int(a > 2)', a 'bool' converts but a condition
+        // is stored first
+        expr_arith::assert_no_condition_next(tz);
+
+        const token close_paren_tk{
+            tz.expect_char_token(')', "expected ')' after the argument"),
+        };
+
+        return {
+            .open_paren_tk{*open_paren_tk},
+            .arg{std::move(arg)},
+            .close_paren_tk{close_paren_tk},
+        };
+    }
 
     // 'a' on a size tie; a type lives in the type table, so the pointer
     // stays valid

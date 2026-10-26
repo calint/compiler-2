@@ -200,6 +200,12 @@ class assignment_flow final {
             merged_.intersect(flow_.assigned_);
             is_reachable_ = is_reachable_ or flow_.is_reachable_;
         }
+
+        // a path without statements, e.g. that of an 'if' without 'else'
+        auto trace_empty() -> void {
+            merged_.intersect(entry_);
+            is_reachable_ = true;
+        }
     };
 
     assignment_flow(const std::optional<std::string_view> var,

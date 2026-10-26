@@ -27,12 +27,17 @@ class stmt_if final : public statement {
         token if_tk;
     };
 
+    // e.g. 'else {z = 3}'
+    struct else_part {
+        token else_tk;
+        stmt_block code;
+    };
+
     std::vector<stmt_if_branch> branches_;
     // one for each branch after the first, kept to reproduce the source
     std::vector<else_if_tokens> else_if_tokens_;
-    // none without an 'else', whose code is then empty
-    std::optional<token> else_tk_;
-    stmt_block else_code_;
+    // none without an 'else'
+    std::optional<else_part> else_;
 
   public:
     stmt_if(toc& tc, const token src_loc_tk, tokenizer& tz)
@@ -68,9 +73,9 @@ class stmt_if final : public statement {
         }
 
         // the 'else' code, also when it is empty
-        if (else_tk_) {
-            else_tk_->source_to(os);
-            else_code_.source_to(os);
+        if (else_) {
+            else_->else_tk.source_to(os);
+            else_->code.source_to(os);
         }
     }
 
@@ -83,7 +88,7 @@ class stmt_if final : public statement {
         const std::string label_after_if{toc::end_label(if_label)};
 
         const std::string label_else_branch{
-            create_label_else_branch(else_code_, if_label, label_after_if),
+            create_label_else_branch(has_else_code(), if_label, label_after_if),
         };
 
         toc::path_merge paths{tc};
@@ -119,9 +124,13 @@ class stmt_if final : public statement {
         if (reaches_else) {
             paths.begin_path();
 
-            if (not else_code_.is_empty()) {
+            // note: spelled out because clang-tidy does not see that
+            // 'has_else_code'
+            //       checks 'else_'
+
+            if (else_ and not else_->code.is_empty()) {
                 x.label(indent, label_else_branch);
-                else_code_.compile(tc, indent, destination{});
+                else_->code.compile(tc, indent, destination{});
             }
 
             paths.join_path();
@@ -148,7 +157,11 @@ class stmt_if final : public statement {
         }
 
         // an empty 'else' is the path that skips every branch
-        paths.trace(else_code_);
+        if (else_) {
+            paths.trace(else_->code);
+        } else {
+            paths.trace_empty();
+        }
     }
 
   private:
@@ -179,7 +192,7 @@ class stmt_if final : public statement {
 
         // the last branch without an 'else' continues after the 'if'
         // without a jump
-        const bool falls_through{is_last_branch and else_code_.is_empty()};
+        const bool falls_through{is_last_branch and not has_else_code()};
 
         if (const_eval == condition_result::unknown and not falls_through) {
             machine& x{tc.machine()};
@@ -188,6 +201,11 @@ class stmt_if final : public statement {
         }
 
         return const_eval;
+    }
+
+    // an empty 'else' compiles as none
+    [[nodiscard]] auto has_else_code() const -> bool {
+        return else_ and not else_->code.is_empty();
     }
 
     // reads what follows a branch: 'else if' continues the chain, 'else' ends
@@ -212,8 +230,11 @@ class stmt_if final : public statement {
         }
 
         tz.put_back_token(if_tk);
-        else_tk_ = else_tk;
-        else_code_ = {tc, tz};
+
+        else_ = {
+            .else_tk{else_tk},
+            .code{tc, tz},
+        };
 
         return false;
     }
@@ -236,10 +257,10 @@ class stmt_if final : public statement {
     }
 
     [[nodiscard]] static auto create_label_else_branch(
-        const stmt_block& else_code, const std::string_view if_label,
+        const bool has_else_code, const std::string_view if_label,
         const std::string_view label_after_if) -> std::string {
 
-        if (else_code.is_empty()) {
+        if (not has_else_code) {
             return std::string{label_after_if};
         }
 
