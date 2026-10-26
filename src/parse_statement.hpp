@@ -67,25 +67,29 @@ inline auto assert_builtin_without_type_args(const token& tk,
 }
 
 // e.g. 'i8(x)'; 'bool' has no conversion
-[[nodiscard]] inline auto is_integer_conversion(const term& tm) -> bool {
-    return tm.is(term_kind::conversion) and tm.named_type->is_integer();
+[[nodiscard]] inline auto is_integer_conversion(const toc& tc, const token& tk,
+                                                const term_kind tm) -> bool {
+
+    return tm == term_kind::conversion and
+           tc.types().get(tk.text()).is_integer();
 }
 
 // the type of the value of the built-in at 'tk', classified as 'tm', e.g. 'i8'
 // of 'i8(1)', none when 'tk' names no built-in with a value;
 // 'parse_builtin' makes a statement for each
 [[nodiscard]] inline auto builtin_value_type(const toc& tc, const token& tk,
-                                             const term& tm) -> const type* {
+                                             const term_kind tm)
+    -> const type* {
 
-    if (tm.is(term_kind::conversion)) {
-        if (not is_integer_conversion(tm)) {
+    if (tm == term_kind::conversion) {
+        if (not is_integer_conversion(tc, tk, tm)) {
             return nullptr;
         }
 
         return &tc.get_type_or_throw(tk);
     }
 
-    if (not tm.is(term_kind::builtin_function)) {
+    if (tm != term_kind::builtin_function) {
         return nullptr;
     }
 
@@ -113,7 +117,7 @@ enum class builtin_place : uint8_t { value, statement };
 // catalog says where it may stand, e.g. 'exit' has no value and
 // 'arrays_equal' is no statement; 'uops' are taken only by a statement made
 inline auto parse_builtin(toc& tc, tokenizer& tz, const token& tk,
-                          const term& tm, unary_ops& uops,
+                          const term_kind tm, unary_ops& uops,
                           const builtin_place at)
     -> std::unique_ptr<statement> {
 
@@ -123,7 +127,7 @@ inline auto parse_builtin(toc& tc, tokenizer& tz, const token& tk,
         reserved_names::find_builtin_function(tk.text()),
     };
 
-    if (fn == nullptr and not is_integer_conversion(tm)) {
+    if (fn == nullptr and not is_integer_conversion(tc, tk, tm)) {
         return nullptr;
     }
 
@@ -238,10 +242,11 @@ inline auto parse_keyword_statement(toc& tc, tokenizer& tz, const token tk)
 // e.g. 'show<name>(x)' where 'show' is not generic, says so instead of reading
 // the '<' as an operator; a variable or a constant of that name is an operand
 // of '<'
-inline auto assert_no_type_args_for_plain_func(const token& tk, const term& tm,
+inline auto assert_no_type_args_for_plain_func(const token& tk,
+                                               const term_kind tm,
                                                const tokenizer& tz) -> void {
 
-    if (not tm.is(term_kind::function_name) or
+    if (tm != term_kind::function_name or
         tz.peek_char_after_whitespace() != '<') {
 
         return;
@@ -273,14 +278,14 @@ using call_or_identifier =
 // identifier, 'uops' go to the call or the identifier and 'expected_type' is
 // the type the call is assigned to or null
 inline auto parse_call_or_identifier(toc& tc, tokenizer& tz, const token& tk,
-                                     const term& tm, unary_ops uops,
+                                     const term_kind tm, unary_ops uops,
                                      const type* const expected_type)
     -> call_or_identifier {
 
     const char next{tz.peek_char_after_whitespace()};
 
     // e.g. 'point{1, 2}' after 'var point = 1', the value hides the type
-    if (tm.is(term_kind::value) and tc.types().has(tk.text()) and next == '{') {
+    if (tm == term_kind::value and tc.types().has(tk.text()) and next == '{') {
 
         throw compile_error{
             tk, std::format("{} names a value here, which hides the type "
@@ -295,13 +300,13 @@ inline auto parse_call_or_identifier(toc& tc, tokenizer& tz, const token& tk,
     }
 
     // e.g. 'bool(5)', only the integer types convert
-    if (tm.is(term_kind::conversion) and tm.named_type->is_bool()) {
+    if (tm == term_kind::conversion and tc.types().get(tk.text()).is_bool()) {
         throw compile_error{tk, "'bool' has no conversion, compare "
                                 "instead, e.g. 'x != 0'"};
     }
 
     // e.g. 'point(5)'
-    if (tm.is(term_kind::type_called)) {
+    if (tm == term_kind::type_called) {
 
         throw compile_error{
             tk, std::format("{} is a type, not a function, an instance "
@@ -310,7 +315,7 @@ inline auto parse_call_or_identifier(toc& tc, tokenizer& tz, const token& tk,
     }
 
     // e.g. 'f(x)' or 'show<name>(x)', the call reads the type arguments
-    if (next == '(' or tm.is(term_kind::generic_call)) {
+    if (next == '(' or tm == term_kind::generic_call) {
         return std::make_unique<stmt_call>(tc, std::move(uops), tk, tz,
                                            expected_type);
     }
@@ -318,14 +323,14 @@ inline auto parse_call_or_identifier(toc& tc, tokenizer& tz, const token& tk,
     assert_no_type_args_for_plain_func(tk, tm, tz);
 
     // e.g. 'point.at(1, 2)'
-    if (tm.is(term_kind::constructor_call)) {
+    if (tm == term_kind::constructor_call) {
         return std::make_unique<stmt_call>(constructor_call_tag{}, tc,
                                            std::move(uops), tk, tz);
     }
 
     // e.g. the 'f' of 'x = f + 1'; the resolver tells a generic function
     // that it needs type arguments
-    if (tm.is(term_kind::function_name) and
+    if (tm == term_kind::function_name and
         not tc.generics().has_func(tk.text())) {
 
         throw_function_as_value(tk, tk.text());
@@ -420,11 +425,11 @@ inline auto parse_operand(toc& tc, tokenizer& tz, unary_ops uops,
                                 "operand here, store it in a 'bool' first"};
     }
 
-    const term tm{classify_term(tc, tk, tz)};
+    const term_kind tm{classify_term(tc, tk, tz)};
 
     // e.g. the 'point{1, 2}' of 'p == point{1, 2}', an instance is compared
     // as memory, which only a variable has
-    if (tm.is(term_kind::record_literal)) {
+    if (tm == term_kind::record_literal) {
         throw compile_error{
             tk, std::format("an instance literal of {} is not an operand "
                             "here, store it in a variable first",
@@ -433,7 +438,7 @@ inline auto parse_operand(toc& tc, tokenizer& tz, unary_ops uops,
 
     // e.g. the 'i8' of 'i8 + 1', the 'point' of '1 + point' or the 'i8[]' of
     // 'x + i8[]{1}'
-    if (tm.is_bare_type() or tm.is(term_kind::array_literal)) {
+    if (is_bare_type(tm) or tm == term_kind::array_literal) {
         throw compile_error{
             tk, std::format("{} is a type, not a value", in_quotes(tk.text()))};
     }

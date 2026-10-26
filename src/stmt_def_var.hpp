@@ -199,8 +199,8 @@ class initializer_declaration final {
         // 'expr_arith' cannot parse the '{' of an instance literal
         const token tk{tz.next_token()};
 
-        if (const term tm{classify_term(tc, tk, tz)};
-            tm.is(term_kind::record_literal) or tm.is(term_kind::record_type)) {
+        if (const term_kind tm{classify_term(tc, tk, tz)};
+            tm == term_kind::record_literal or tm == term_kind::record_type) {
 
             set_type(tc.get_type_or_throw(tk));
             return;
@@ -311,7 +311,7 @@ class initializer_declaration final {
         const token tk{tz.next_token()};
 
         const bool is_literal{
-            classify_term(tc, tk, tz).is(term_kind::array_literal),
+            classify_term(tc, tk, tz) == term_kind::array_literal,
         };
 
         tz.put_back_token(tk);
@@ -405,9 +405,9 @@ class stmt_def_var final : public statement {
         set_type(declaration.type_ref());
 
         // the newly defined variable is not yet assigned in its initialization
-        assert_var_not_used(
-            name_tk_.text(),
-            assigned_bytes{shape_.value_size_bytes(name_tk_, get_type())});
+        if (const stmt_identifier* const read{first_read_of(name_tk_.text())}) {
+            throw_uninitialized(read->first_token(), name_tk_.text());
+        }
 
         // marked after the initializer, which writes the variable; statements
         // parsed from here on cannot assign it

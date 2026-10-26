@@ -87,28 +87,11 @@ enum class term_kind : uint8_t {
     unknown,
 };
 
-// what 'classify_term' found
-struct term {
-    term_kind kind{term_kind::none};
-    // the type of a type kind, e.g. 'i8' for a type parameter bound to it;
-    // set for 'conversion', 'builtin_type', 'array_literal', 'record_literal',
-    // 'constructor_call', 'record_type' and 'type_called', null otherwise
-    // note: what the name means; a value of the type is asked for by
-    //       'toc::get_type_or_throw', which also rejects 'void' and a type
-    //       wider than the target computes, e.g. 'i64' on rv32i
-    const type* named_type{};
-
-    [[nodiscard]] auto is(const term_kind other) const -> bool {
-        return kind == other;
-    }
-
-    // a user or built-in type that is not converted, called or made an
-    // instance of by a constructor
-    [[nodiscard]] auto is_bare_type() const -> bool {
-        return kind == term_kind::builtin_type or
-               kind == term_kind::record_type;
-    }
-};
+// a user or built-in type that is not converted, called or made an instance
+// of by a constructor
+[[nodiscard]] inline auto is_bare_type(const term_kind kind) -> bool {
+    return kind == term_kind::builtin_type or kind == term_kind::record_type;
+}
 
 // what 'tk', with 'tz' after it, denotes where a value or a statement starts;
 // the rules of hiding: a variable, a parameter or a constant
@@ -116,62 +99,39 @@ struct term {
 // still calls the function; built-in types, built-in functions and keywords
 // are reserved names, nothing hides them
 [[nodiscard]] inline auto classify_term(const toc& tc, const token& tk,
-                                        const tokenizer& tz) -> term {
+                                        const tokenizer& tz) -> term_kind {
 
     if (tk.is_string()) {
-        return {
-            .kind{term_kind::string},
-            .named_type{},
-        };
+        return term_kind::string;
     }
 
     if (tk.is_none()) {
-        return {
-            .kind{term_kind::none},
-            .named_type{},
-        };
+        return term_kind::none;
     }
 
     const std::string_view text{tk.text()};
 
     if (constant_parser::is_literal(tk)) {
 
-        return {
-            .kind{term_kind::literal},
-            .named_type{},
-        };
+        return term_kind::literal;
     }
 
     if (reserved_names::find_builtin_function(text) != nullptr) {
-        return {
-            .kind{term_kind::builtin_function},
-            .named_type{},
-        };
+        return term_kind::builtin_function;
     }
 
     const char next{tz.peek_char_after_whitespace()};
 
     if (tc.types().has(text) and tc.types().get(text).is_builtin()) {
-        const type* const builtin{&tc.types().get(text)};
-
         if (next == '(') {
-            return {
-                .kind{term_kind::conversion},
-                .named_type{builtin},
-            };
+            return term_kind::conversion;
         }
 
         if (next == '[') {
-            return {
-                .kind{term_kind::array_literal},
-                .named_type{builtin},
-            };
+            return term_kind::array_literal;
         }
 
-        return {
-            .kind{term_kind::builtin_type},
-            .named_type{builtin},
-        };
+        return term_kind::builtin_type;
     }
 
     // e.g. 'let point = 3' makes 'point' in 'point + 1' the constant, not the
@@ -181,10 +141,7 @@ struct term {
     if (not is_hidden and tc.generics().has_func(text) and
         (next == '<' or next == '(')) {
 
-        return {
-            .kind{term_kind::generic_call},
-            .named_type{},
-        };
+        return term_kind::generic_call;
     }
 
     if (next == '(') {
@@ -192,73 +149,41 @@ struct term {
         if (not is_hidden and tc.types().has(text) and
             not tc.funcs().has(text)) {
 
-            return {
-                .kind{term_kind::type_called},
-                .named_type{&tc.types().get(text)},
-            };
+            return term_kind::type_called;
         }
 
-        return {
-            .kind{term_kind::call},
-            .named_type{},
-        };
+        return term_kind::call;
     }
 
     if (is_hidden) {
-        return {
-            .kind{term_kind::value},
-            .named_type{},
-        };
+        return term_kind::value;
     }
 
     if (not tc.types().has(text)) {
         if (tc.is_func(text)) {
-            return {
-                .kind{term_kind::function_name},
-                .named_type{},
-            };
+            return term_kind::function_name;
         }
 
         if (std::ranges::contains(reserved_names::keywords, text)) {
-            return {
-                .kind{term_kind::keyword},
-                .named_type{},
-            };
+            return term_kind::keyword;
         }
 
-        return {
-            .kind{term_kind::unknown},
-            .named_type{},
-        };
+        return term_kind::unknown;
     }
 
-    const type* const named{&tc.types().get(text)};
-
     if (next == '{') {
-        return {
-            .kind{term_kind::record_literal},
-            .named_type{named},
-        };
+        return term_kind::record_literal;
     }
 
     if (next == '[') {
-        return {
-            .kind{term_kind::array_literal},
-            .named_type{named},
-        };
+        return term_kind::array_literal;
     }
 
     if (next == '.') {
-        return {
-            .kind{term_kind::constructor_call},
-            .named_type{named},
-        };
+        return term_kind::constructor_call;
     }
 
-    return {
-        .kind{term_kind::record_type},
-        .named_type{named},
-    };
+    return term_kind::record_type;
 }
 
 // a call of a generic function without type arguments is the whole value,
@@ -269,7 +194,7 @@ struct term {
     tokenizer probe{tz};
     const token tk{probe.next_token()};
 
-    if (not classify_term(tc, tk, probe).is(term_kind::generic_call) or
+    if (classify_term(tc, tk, probe) != term_kind::generic_call or
         not probe.is_next_char_token('(')) {
 
         return false;
@@ -285,6 +210,6 @@ struct term {
 [[nodiscard]] inline auto is_bare_builtin_type(const toc& tc, const token& tk,
                                                const tokenizer& tz) -> bool {
 
-    return classify_term(tc, tk, tz).is(term_kind::builtin_type) and
+    return classify_term(tc, tk, tz) == term_kind::builtin_type and
            not continues_expression(tz);
 }

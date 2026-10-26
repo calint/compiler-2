@@ -6,6 +6,11 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
 --------------------------------------------------------------------------------
 1. clean up
 --------------------------------------------------------------------------------
+[ ] medium: bug: an x86_64 listing with '--nopt' that nasm cannot assemble,
+    "unable to find valid values for all labels after 1005 passes"
+    (fuzz-flow seed 71, qa/fuzz/findings/invalid-asm-bb20f37477.baz, 147
+    lines, also at HEAD 41db859e); find the construct that makes the jump
+    sizes oscillate, reduce with 'fuzz-reduce.py'
 [ ] hard: design review round 22, simplification (2026-10-26, user: go on
     simplifying, generated code may grow; six reviewers P parse and
     expressions, S statements and calls, N names and 'toc', U no-UB checks,
@@ -44,6 +49,17 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
             20 fixed 'Rejected' programs of 'constructs.py' that cases and
             'fuzz-reject' cover (-80); W4 README repeats and the stale
             "about 50 s" of 7.5 (-45); N4 two comments moved
+    => B done (2026-10-26): B.1 N2 the dead 'destination' and 'access_path'
+       members and the source token of 'ident_info'; B.2 P B 'term' is a
+       'term_kind', P C one loop decodes a string, P E one memory comparison
+       path, P F leftovers (the stale 'i8(2 + 3)' item resolved); B.3 S a
+       call's unary ops applied once after the call (12 listings differ in
+       register names only, instruction counts equal), the temporary flag of
+       an argument derived again, 'noinline_arg::target', leftovers; B.4 U3
+       one flag per byte, U4 'stmt_identifier::may_reach' for the adapter,
+       U6 'first_read_of', U7, U8; B.5 W6 the target enum, W7 the commented
+       clang-tidy list, W4 the stale cost and pointers, N4; W5 kept (the 20
+       fixed rejections are cheap tests); src about -400 lines
     C. refactors that rest on an argument or accept more (about -230)
        C.1. N1 a parameter or the result is a root of its own:
             'resolved_name' and the binding branch of 'resolve_storage' go
@@ -763,12 +779,6 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
     copy more (0589 'i8(1 << 7)', 1226 on rv32i); a '<<' by a count below
     the narrower width keeps its low bits when narrowed, e.g. a constant
     count ('keeps_low_bits', an optimization)
-[ ] medium: a conversion of an expression, e.g. 'i8(2 + 3)', does not fold:
-    computed at run time in a 'var' and rejected in a 'dat'; the fold of the
-    conversion folds only a name or literal argument, an expression argument
-    would fold with a 'value_use' that does not check overflow, as its
-    compile does since the policy is on the destination; changes the code of
-    a 'var' (an optimization)
 [ ] medium: fuzzers cover every construct of 'etc/tutorial.baz', then a
     night-long run
     => 1. 'fuzz-constructs.py': lists the constructs of the tutorial (tokens,

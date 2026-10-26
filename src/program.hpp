@@ -469,21 +469,14 @@ class program final {
     // the code away, so whether a program is accepted does not depend on its
     // calls; this includes the instances that an alias of a generic type
     // makes of its methods; 'main' takes nothing from a call and was
-    // compiled whole; the list is taken before the checks, a check compiles
-    // the functions it calls without checking them on their own
+    // compiled whole
     static auto check_function_bodies(toc& tc) -> void {
         const stmt_def_func& func_main{tc.get_main_or_throw()};
 
-        std::vector<const stmt_def_func*> funcs;
-
         for (const stmt_def_func* const f : tc.funcs().defs()) {
             if (f != &func_main) {
-                funcs.push_back(f);
+                f->check_body(tc, 0);
             }
-        }
-
-        for (const stmt_def_func* const f : funcs) {
-            f->check_body(tc, 0);
         }
     }
 

@@ -391,15 +391,12 @@ class expr_type final : public statement {
         return call != nullptr ? call->get() : nullptr;
     }
 
-    auto compile_call_field(toc& tc, const size_t indent,
-                            const destination& dst) const -> void;
-
     auto compile_identifier_copy(toc& tc, const size_t indent,
                                  const destination& dst) const -> void;
 
     // creates the 'stmt_call' or 'stmt_identifier'
     auto parse_copy_source(toc& tc, tokenizer& tz, const type& tp,
-                           const term& tm) -> void;
+                           const term_kind tm) -> void;
 
     // creates an 'expr_any' for each field
     auto parse_fields(toc& tc, tokenizer& tz, const type& tp) -> void;
@@ -447,15 +444,5 @@ class expr_type final : public statement {
         };
 
         std::get<field_list>(value_).delims_tk.emplace_back(delimiter_tk);
-    }
-
-    // a call writes the fields only, so the padding is zeroed before it and
-    // '==' can compare instances byte by byte
-    auto zero_padding(toc& tc, const size_t indent, const type& dst_type,
-                      const operand& dst) const -> void {
-
-        machine& x{tc.machine()};
-
-        x.zero_padding(tok(), indent, dst, dst_type);
     }
 };

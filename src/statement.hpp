@@ -238,7 +238,7 @@ class stmt_identifier;
 //                  (control flow); 'visit_operands' (the default is
 //                  'std::unreachable()'): a value, and a node whose
 //                  'trace_assignment' checks its reads with
-//                  'assert_var_not_used', a leaf says it has none;
+//                  'assert_result_not_read', a leaf says it has none;
 //                  'visit_reads' and 'visit_call_effects' walk the operands,
 //                  'stmt_identifier' adds its own read, 'stmt_call' and
 //                  'stmt_builtin_io' what the call writes
@@ -356,11 +356,6 @@ class statement {
     // bytes assigned so far ('stmt_identifier.hpp')
     auto assert_result_not_read(const assignment_flow& flow) const -> void;
 
-    // definite assignment: throws if 'var' is read outside of the 'assigned'
-    // bytes ('stmt_identifier.hpp')
-    auto assert_var_not_used(std::string_view var,
-                             const assigned_bytes& assigned) const -> void;
-
     // the path of names, fields and indexes this node is, the operand path
     // without unary ops, e.g. 'p.x' or 'a[i]', not '-x'; a constant or a
     // literal is a path too, 'as_place' tells storage
@@ -375,6 +370,11 @@ class statement {
         assert_not_narrowed(tc, dst.type_ref());
         compile(tc, indent, dst);
     }
+
+    // the first read of 'var', in evaluation order, null when none reads it
+    // ('stmt_identifier.hpp')
+    [[nodiscard]] auto first_read_of(std::string_view var) const
+        -> const stmt_identifier*;
 
     // the fold of a value that must fit where it is used, checked as its
     // compile is, so a folded value is rejected where a computed one is
@@ -409,7 +409,6 @@ class statement {
     }
 
     // 'stmt_identifier.hpp'
-    [[nodiscard]] auto reads_var(std::string_view var) const -> bool;
 
     auto set_type(const type& tp) -> void { type_ = &tp; }
 

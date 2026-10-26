@@ -550,7 +550,7 @@ class expr_any final : public statement {
         const token tk{tz.next_token()};
 
         const bool is_typed{
-            classify_term(tc, tk, tz).is(term_kind::array_literal),
+            classify_term(tc, tk, tz) == term_kind::array_literal,
         };
 
         if (not is_typed) {
@@ -939,7 +939,10 @@ class expr_any final : public statement {
                                             std::unique_ptr<statement> first)
         -> expr_variant {
 
-        return expr_arith{tc, tz, expr_arith::options::after(std::move(first))};
+        return expr_arith{
+            tc, tz,
+            expr_arith::options::implied(expr_arith::initial_precedence,
+                                         std::move(first), nullptr)};
     }
 
     [[nodiscard]] static auto parse_variant(toc& tc, tokenizer& tz,

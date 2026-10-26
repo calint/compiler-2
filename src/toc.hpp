@@ -2014,12 +2014,8 @@ class ident_resolver final {
             return ident_info::make_const(constant_type, constant);
         }
 
-        // the argument was resolved where the call is made, the place in the
-        // source is that of the use
-        ident_info bound{scp.get_binding(ident).target.info};
-        bound.set_src_loc_tk({});
-
-        return bound;
+        // the argument was resolved where the call is made
+        return scp.get_binding(ident).target.info;
     }
 
     [[nodiscard]] auto resolve_var(const var_info& var) const -> ident_info {

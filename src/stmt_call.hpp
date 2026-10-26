@@ -58,8 +58,9 @@
 // an argument, from the parse to the body:
 //
 //   'call_site::argument_form'   what the argument is ('argument_form_of')
-//   'call_site::planned_argument' and whether it goes through a temporary
-//                                ('argument_plan', once per compile)
+//   'call_site::call_plan'       the forms of one compile and whether an
+//                                argument goes through a temporary
+//                                ('argument_plan')
 //   'param_binding'              inlined: what the parameter stands for
 //                                ('inline_call::make_bindings')
 //   'noinline_arg'               noinline: the variable passed, or the
@@ -163,16 +164,16 @@ struct generic_call {
         }
 
         const token tk{tz.next_token()};
-        const term tm{classify_term(tc, tk, tz)};
+        const term_kind tm{classify_term(tc, tk, tz)};
 
         // e.g. 'show(nope)', an unknown name is reported as such, not as a
         // type that cannot be deduced
-        if (tm.is(term_kind::unknown)) {
+        if (tm == term_kind::unknown) {
             std::ignore = tc.resolve_declared(tk, tk.text());
         }
 
         // e.g. 'show(nope(1))', reported as an unknown function
-        if (tm.is(term_kind::call) and not tc.is_func(tk.text()) and
+        if (tm == term_kind::call and not tc.is_func(tk.text()) and
             not tc.types().has(tk.text())) {
 
             std::ignore = tc.get_func_or_throw(tk, tk.text());
@@ -183,7 +184,7 @@ struct generic_call {
             return nullptr;
         }
 
-        if (not tm.is(term_kind::value)) {
+        if (tm != term_kind::value) {
             return value_type(tc, tz, tk, tm);
         }
 
@@ -300,7 +301,7 @@ struct generic_call {
     //       here without a parse, unlike a 'var' initializer, see
     //       'initializer_declaration::deduce_from_initializer'
     [[nodiscard]] static auto value_type(toc& tc, tokenizer& tz,
-                                         const token& tk, const term& tm)
+                                         const token& tk, const term_kind tm)
         -> const type* {
 
         const auto is_whole_argument = [&] -> bool {
@@ -309,13 +310,13 @@ struct generic_call {
         };
 
         // e.g. 'point{1, 2}'
-        if (tm.is(term_kind::record_literal)) {
+        if (tm == term_kind::record_literal) {
             tz.skip_braced_block();
             return is_whole_argument() ? &tc.get_type_or_throw(tk) : nullptr;
         }
 
         // e.g. 'point.at(1, 2)'
-        if (tm.is(term_kind::constructor_call)) {
+        if (tm == term_kind::constructor_call) {
             std::ignore = tz.is_next_char_token('.');
 
             // the type names the result, the constructor, e.g. 'at', does not
@@ -345,7 +346,7 @@ struct generic_call {
 
         // e.g. 'mk(1, 2)', a generic function has no return type before it is
         // instantiated
-        if (not tm.is(term_kind::call) or not tc.funcs().has(tk.text())) {
+        if (tm != term_kind::call or not tc.funcs().has(tk.text())) {
             return nullptr;
         }
 
@@ -401,8 +402,6 @@ struct generic_call {
 // 'call_site::make_argument_temporary'
 struct noinline_arg {
     ident_info info;
-    // the variable and the bytes of it that the callee reaches
-    std::optional<storage_path> target;
     // the path of the variable the argument names, null for a temporary
     const stmt_identifier* path{};
 
@@ -509,25 +508,31 @@ struct call_site {
         }
     };
 
-  private:
-    // how one argument reaches the body, decided once per compile of the call
-    struct planned_argument {
-        argument_form form;
-        // reached through the temporary of the call named by
-        // 'temporary_argument_name'
-        bool is_temporary{};
-    };
-
-  public:
     // the arguments of one compile of the call, for the body of its callee
     struct call_plan {
-        std::vector<planned_argument> arguments;
+        std::vector<argument_form> arguments;
+        bool is_inlined{};
 
         [[nodiscard]] auto has_temporaries() const -> bool {
             return std::ranges::any_of(
-                arguments, [](const planned_argument& planned) -> bool {
-                    return planned.is_temporary;
+                arguments, [this](const argument_form& form) -> bool {
+                    return is_temporary(form);
                 });
+        }
+
+        // reached through the temporary of the call named by
+        // 'temporary_argument_name': in an inlined body an instance literal
+        // or a call result, e.g. 'point{1, 2}'; in a noinline body a value
+        // without storage, e.g. a literal or an expression
+        [[nodiscard]] auto is_temporary(const argument_form& form) const
+            -> bool {
+
+            if (is_inlined) {
+                return std::holds_alternative<
+                    argument_form::instance_temporary>(form.kind);
+            }
+
+            return not form.is_place();
         }
     };
 
@@ -540,11 +545,6 @@ struct call_site {
     std::string source;
     // a method receiver is the first argument
     std::span<const expr_any> args;
-    // e.g. the '~' of '~f(x)', applied to the result
-    unary_ops uops;
-    // the overflow check of 'uops', that of the destination of the call,
-    // e.g. none in the argument of a conversion
-    machine::runtime_check uops_check;
     // the callee, resolved when the call was parsed; never null
     const stmt_def_func* func{};
 
@@ -576,13 +576,12 @@ struct call_site {
         return tc.resolve_declared(tk, name);
     }
 
-    // the form of each argument and whether the body reaches it through a
-    // temporary of the call: an inlined body for an instance literal or a
-    // call result, e.g. 'point{1, 2}'; a noinline body for a value without
-    // storage, e.g. a literal or an expression, an array is only passed by
-    // name
+    // the form of each argument, an array is only passed by name
     [[nodiscard]] auto argument_plan(const toc& tc) const -> call_plan {
-        call_plan plan;
+        call_plan plan{
+            .arguments{},
+            .is_inlined{func->is_inlined()},
+        };
 
         plan.arguments.reserve(args.size());
 
@@ -592,17 +591,7 @@ struct call_site {
             // note: an array argument is a place, see 'assert_argument_usable'
             assert(not param.is_array() or form.is_place());
 
-            const bool is_temporary{
-                func->is_inlined()
-                    ? std::holds_alternative<argument_form::instance_temporary>(
-                          form.kind)
-                    : not form.is_place(),
-            };
-
-            plan.arguments.push_back({
-                .form{std::move(form)},
-                .is_temporary{is_temporary},
-            });
+            plan.arguments.push_back(std::move(form));
         }
 
         return plan;
@@ -630,7 +619,6 @@ struct call_site {
 
         return {
             .info{temporary},
-            .target{target},
             .path{},
         };
     }
@@ -818,7 +806,7 @@ class inline_call {
         call_site::in_temporaries_block(
             tc, plan_.has_temporaries() or has_result_temporary, [&] -> void {
                 for (size_t i{}; i < plan_.arguments.size(); ++i) {
-                    if (plan_.arguments.at(i).is_temporary) {
+                    if (plan_.is_temporary(plan_.arguments.at(i))) {
                         std::ignore =
                             call_.make_argument_temporary(tc, indent, i);
                     }
@@ -850,28 +838,6 @@ class inline_call {
     }
 
   private:
-    auto apply_unary_ops_to_result(toc& tc, const size_t indent) const -> void {
-        if (call_.uops.is_empty()) {
-            return;
-        }
-
-        const std::optional<func_result>& result{call_.func->result()};
-
-        // note: unary ops apply to a value, 'value_call' rejects a call
-        //       without one
-
-        assert(result);
-
-        const ident_info ret_info{
-            tc.resolve_declared(call_.tk, result->name_tk.text()),
-        };
-
-        machine& x{tc.machine()};
-
-        call_.uops.compile(x, indent, call_.tk, ret_info.operand(),
-                           call_.uops_check);
-    }
-
     auto compile_body(toc& tc, const size_t indent,
                       const call_bindings& bindings) const -> void {
 
@@ -934,8 +900,6 @@ class inline_call {
 
         // provide the exit label for 'return' to jump to
         x.label(indent, ret_jmp_label);
-
-        apply_unary_ops_to_result(tc, indent);
     }
 
     // a new register per argument because the index register may belong to
@@ -976,8 +940,7 @@ class inline_call {
     }
 
     // the result is made at its type in a register that the body names, the
-    // copy into the operand widens it and the unary ops of the call apply at
-    // the width of the operand, as on a variable
+    // copy into the operand widens it
     auto compile_widened(toc& tc, const size_t indent,
                          const destination& dst) const -> void {
 
@@ -988,17 +951,10 @@ class inline_call {
                                      call_.func->result_type()),
         };
 
-        call_site narrow_call{call_};
-        narrow_call.uops = {};
-
-        inline_call{narrow_call, plan_}.compile(
-            tc, indent, destination::of_register(result));
+        compile(tc, indent, destination::of_register(result));
 
         x.copy_value(call_.tk, indent, dst.operand(), result);
         x.free_scratch_register(call_.tk, indent, result);
-
-        call_.uops.compile(x, indent, call_.tk, dst.operand(),
-                           call_.uops_check);
     }
 
     // note: the body is compiled in two versions and the one with the least
@@ -1079,14 +1035,11 @@ class inline_call {
              std::views::zip(std::views::iota(size_t{}), call_.args,
                              call_.func->params(), plan_.arguments)) {
 
-            // note: the dry run of a 'noinline' call must not name the
-            //       register of the caller that the body does not see
-
             // note: a temporary is bound by the name that
-            //       'make_argument_temporary' gave it, also in the dry run, so
-            //       each level of an inlined recursion resolves its own
+            //       'make_argument_temporary' gave it, so each level of an
+            //       inlined recursion resolves its own
 
-            if (planned.is_temporary) {
+            if (plan_.is_temporary(planned)) {
                 const std::string temporary{call_.temporary_argument_name(i)};
 
                 bindings.arguments.push_back(param_binding::make_name(
@@ -1101,7 +1054,7 @@ class inline_call {
             }
 
             bindings.arguments.push_back(
-                bind_argument(tc, indent, arg, param, planned.form, held));
+                bind_argument(tc, indent, arg, param, planned, held));
         }
 
         return bindings;
@@ -1370,18 +1323,17 @@ class noinline_call {
         for (const auto [i, planned] :
              std::views::zip(std::views::iota(size_t{}), plan_.arguments)) {
 
-            if (planned.is_temporary) {
+            if (plan_.is_temporary(planned)) {
                 arguments.push_back(
                     call_.make_argument_temporary(tc, indent, i));
 
                 continue;
             }
 
-            const place& arg_place{std::get<place>(planned.form.kind)};
+            const place& arg_place{std::get<place>(planned.kind)};
 
             arguments.push_back({
                 .info{arg_place.info},
-                .target{arg_place.ident->storage(tc)},
                 .path{arg_place.ident},
             });
         }
@@ -1408,12 +1360,6 @@ class noinline_call {
         } else {
             compile_with_arguments(tc, indent, dst, arguments);
         }
-
-        // the callee has written the result, the operators of the call follow
-        machine& x{tc.machine()};
-
-        call_.uops.compile(x, indent, call_.tk, dst.operand(),
-                           call_.uops_check);
     }
 
     auto
@@ -1913,7 +1859,7 @@ class stmt_call : public statement {
         // note: the built-ins that parse like a call, e.g. 'exit' and the io
         //       functions, are nodes of their own ('stmt_builtin_*')
 
-        const call_site call{site(tc.overflow_options(dst))};
+        const call_site call{site()};
 
         machine& x{tc.machine()};
 
@@ -1921,18 +1867,9 @@ class stmt_call : public statement {
 
         assert_call_accepted(tc, dst);
 
-        if (not callee().is_inlined()) {
-            noinline_call{
-                call,
-                call.argument_plan(tc),
-            }
-                .compile(tc, indent, dst);
-
-            return;
-        }
-
         const bool is_recursion{
-            tc.scopes().inlined_nesting(callee().name()) != 0,
+            callee().is_inlined() and
+                tc.scopes().inlined_nesting(callee().name()) != 0,
         };
 
         // a check without a call does not expand a recursion: the body is
@@ -1943,25 +1880,13 @@ class stmt_call : public statement {
             return;
         }
 
-        call_limits::assert_inline_nesting(tc, call.tk, callee());
+        compile_call(tc, indent, dst, call, is_recursion);
 
-        // a recursion that does not end with constant arguments runs out of
-        // registers before it reaches the nesting limit, the advice is the same
-        try {
-            inline_call{
-                call,
-                call.argument_plan(tc),
-            }
-                .compile(tc, indent, dst);
-        } catch (const compile_error& e) {
-            if (not is_recursion or
-                e.kind != compile_error::error_kind::out_of_registers) {
-
-                throw;
-            }
-
-            throw call_limits::recursion_error(call.tk, callee());
-        }
+        // the operators of the call apply to its result where it is used, at
+        // the width and with the overflow check of the destination, e.g. the
+        // '~' of '~f(x)'
+        get_unary_ops().compile(x, indent, tok(), dst.operand(),
+                                tc.overflow_options(dst));
     }
 
     // reported at the call because an inlined result aliases the destination
@@ -2057,6 +1982,42 @@ class stmt_call : public statement {
             arg.compile(tc, indent, destination::of_register(reg));
 
             x.free_scratch_register(tok(), indent, reg);
+        }
+    }
+
+    // the call without its operators, inlined or noinline
+    auto compile_call(toc& tc, const size_t indent, const destination& dst,
+                      const call_site& call, const bool is_recursion) const
+        -> void {
+
+        if (not callee().is_inlined()) {
+            noinline_call{
+                call,
+                call.argument_plan(tc),
+            }
+                .compile(tc, indent, dst);
+
+            return;
+        }
+
+        call_limits::assert_inline_nesting(tc, call.tk, callee());
+
+        // a recursion that does not end with constant arguments runs out of
+        // registers before it reaches the nesting limit, the advice is the same
+        try {
+            inline_call{
+                call,
+                call.argument_plan(tc),
+            }
+                .compile(tc, indent, dst);
+        } catch (const compile_error& e) {
+            if (not is_recursion or
+                e.kind != compile_error::error_kind::out_of_registers) {
+
+                throw;
+            }
+
+            throw call_limits::recursion_error(call.tk, callee());
         }
     }
 
@@ -2160,7 +2121,7 @@ class stmt_call : public statement {
 
         assert_argument_types(tc);
         // e.g. the 'i' of 'f(arr[i], h(i))' with 'h' writing 'i'
-        assert_operands_not_written_later(tc, *this, "argument");
+        assert_not_written_later(tc, operands_of(*this), "argument");
     }
 
     // the function is a method and the receiver is a value
@@ -2625,17 +2586,13 @@ class stmt_call : public statement {
     }
 
     // what 'inline_call' and 'noinline_call' need of this call
-    [[nodiscard]] auto site(const machine::runtime_check& uops_check) const
-        -> call_site {
-
+    [[nodiscard]] auto site() const -> call_site {
         return {
             .tk{tok()},
             .begin_tk{call_begin_token()},
             .close_paren_tk{close_paren_tk_},
             .source{statement::trimmed_source(*this)},
             .args{args_},
-            .uops{get_unary_ops()},
-            .uops_check{uops_check},
             .func{func_},
         };
     }

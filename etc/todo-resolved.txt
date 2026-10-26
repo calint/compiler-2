@@ -1,6 +1,14 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] medium: a conversion of an expression, e.g. 'i8(2 + 3)', does not fold:
+    computed at run time in a 'var' and rejected in a 'dat'; the fold of the
+    conversion folds only a name or literal argument, an expression argument
+    would fold with a 'value_use' that does not check overflow, as its
+    compile does since the policy is on the destination; changes the code of
+    a 'var' (an optimization)
+    => done (2026-10-26, found in round 22 P F): it folds, 'var x = i8(2 + 3)'
+       stores 5 and a 'dat' accepts it
 [-] easy: 'qa/coverage/test-rv32i-address.cpp' discards the result of
     'toc::dry_run' (the '[[nodiscard]]' warning at its 'dry run only' test,
     present at HEAD 2026-10-25); 'std::ignore =' or check the result

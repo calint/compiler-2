@@ -155,8 +155,9 @@ Invariants the code relies on:
 1. parse ('program' constructor): every statement parses itself in its
    constructor and emits nothing, 'toc::begin_compile' ends the parse. The
    grammar needs to know the names (7.2), so the parse declares types,
-   functions, constants and variables in 'toc' as it goes. Where a type or a size is learned from the initializer, the
-   initializer is parsed, the tokenizer rewound and parsed again
+   functions, constants and variables in 'toc' as it goes. Where a type or a
+   size is learned from the initializer, the initializer is parsed, the
+   tokenizer rewound and parsed again
    ('initializer_declaration::trial_parse'). A generic definition is kept as
    text and parsed again for each instance ('generics.hpp'). A function checks
    when parsed that every path through it sets its result
@@ -889,7 +890,7 @@ does not say fails in the tests instead of skipping the checks. An operand is a
 indexes are read, e.g. the buffer that 'read' fills. The walks and their
 defaults are listed in the class comment of 'statement', the order checks with
 the order each relies on in the header of 'ub_order.hpp'. The aliasing of the
-arguments of a call is not an order, it is 3.2 to 3.7
+arguments of a call is not an order, it is 3.2 to 3.7 and the call rule of 4.2
 ('stmt_call::assert_no_shared_storage').
 
 ### 3.2 Aliasing: the problem
@@ -1010,13 +1011,9 @@ The compile decides that in
 'expr_arith::destination_is_clobbered_before_read', with the reads resolved
 like above.
 
-A noinline body is compiled once and reaches its parameters through addresses,
-so it cannot see that a parameter is a global it also names and cannot protect
-the read. The call is rejected instead, inlined and noinline alike: an argument
-may not share storage with a 'mut' argument, with the result or with a global
-the callee uses (4.2). So two names of a body that reach the same storage are
-made by the body itself, e.g. the element 'e' of a 'foo' and the array it
-iterates, and the compile protects the read as above.
+Two names that the body makes itself, e.g. the element 'e' of a 'foo' and the
+array it iterates, are protected by the compile as above; storage that only a
+call shares between two names is rejected at the call (4.2).
 
 ### 3.8 Fuzzing the aliasing check
 
@@ -1546,7 +1543,7 @@ Cost:
    error that needs the arguments of a call ends that check (1.5)
 4. a statement compiles once per inlined call and per version, so its compile
    must add the same to 'toc' each time (1.4), and the compile time multiplies
-   along nested choices, about 50 s for an 11-level recursion on rv32i (5.2)
+   along nested choices (5.2)
 5. an inlined body holds the registers of its caller (1.8), and the limits of
    inlined calls ('call_limits', e.g. 64 levels of an inlined recursion) depend
    on the caller
@@ -1819,8 +1816,8 @@ The language is final; what a target or a check option touches, the copies
 outside 'src' included:
 
 - a target: a subclass of 'machine_rv32i_bare_metal' or 'machine_rv32i' with
-  its 'target_description', and in 'main.cpp' the target enum and its row in
-  'target_names' (name, backend, image, the options it reads) and the help
+  its 'target_description', and in 'main.cpp' its row in 'target_names'
+  (name, backend, image, the options it reads) and the help
   text; outside: 'qa/coverage/test-coverage.sh' (its lists of targets)
 - a check: a field of 'check_options' ('toc.hpp'), its name and help text in
   'main.cpp', a 'failure_handler' with its exit code in 'machine.hpp', the

@@ -225,42 +225,40 @@ class token final {
     }
 
     // the bytes of a string literal, its escapes decoded, e.g. '\n' is one
-    // byte
+    // byte; a backslash before a line end is dropped with the line end, so
+    // the string continues on the next line
     [[nodiscard]] auto string_bytes() const -> std::string {
-        return decode_string(string_text());
+        std::string bytes;
+
+        for (size_t i{}; i < text_.size(); ++i) {
+            if (text_.at(i) != '\\') {
+                bytes += text_.at(i);
+                continue;
+            }
+
+            // note: the tokenizer reads a character after every backslash and
+            //       rejected an unsupported escape ('unsupported_escape')
+
+            assert(i + 1 < text_.size());
+
+            // a whole escape is consumed, so an escaped backslash is not
+            // taken as a continuation
+            const escape esc{escape_at(text_, i)};
+
+            if (not esc.is_continuation) {
+                assert(esc.decoded);
+
+                bytes += *esc.decoded;
+            }
+
+            i += esc.size;
+        }
+
+        return bytes;
     }
 
     [[nodiscard]] auto string_size_bytes() const -> size_t {
         return string_bytes().size();
-    }
-
-    // string text with each backslash before a line end removed together
-    // with the line end, so the string continues on the next line
-    [[nodiscard]] auto string_text() const -> std::string {
-        std::string joined;
-        joined.reserve(text_.size());
-        for (size_t i{}; i < text_.size(); ++i) {
-            if (text_.at(i) != '\\') {
-                joined += text_.at(i);
-                continue;
-            }
-
-            // note: the tokenizer reads a character after every backslash
-            assert(i + 1 < text_.size());
-
-            const escape esc{escape_at(text_, i)};
-
-            // keep an escape whole so an escaped backslash is not taken as a
-            // continuation
-            if (not esc.is_continuation) {
-                joined += text_.substr(i, 1 + esc.size);
-            }
-
-            i += esc.size;
-            // note: the loop skips the last character of the escape
-        }
-
-        return joined;
     }
 
     [[nodiscard]] auto text() const -> std::string_view { return text_; }
@@ -356,29 +354,6 @@ class token final {
         default:
             return std::nullopt;
         }
-    }
-
-    // the bytes of string text such as "a\n", whose escapes the tokenizer
-    // has checked
-    [[nodiscard]] static auto decode_string(const std::string_view text)
-        -> std::string {
-
-        std::string bytes;
-        for (size_t i{}; i < text.size(); ++i) {
-            if (text.at(i) != '\\') {
-                bytes += text.at(i);
-                continue;
-            }
-
-            const escape esc{escape_at(text, i)};
-
-            assert(esc.decoded);
-
-            bytes += *esc.decoded;
-            i += esc.size;
-        }
-
-        return bytes;
     }
 
     // the escape whose backslash is at 'backslash_index' of 'text': a line

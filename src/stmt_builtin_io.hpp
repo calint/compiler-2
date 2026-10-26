@@ -24,14 +24,15 @@
 // sd card functions 'sector_read(sector, buf, start)' and
 // 'sector_write(sector, buf, start)' that transfer one sector
 class stmt_builtin_io final : public statement {
+    // the buffer follows the descriptor or the sector
+    static constexpr size_t buffer_index_{1};
+
   public:
     // what tells the functions apart, a sector function takes a sector in
     // place of the descriptor and has no count and no result
     struct io_function {
         std::string_view name;
         machine::target_call function{};
-        size_t min_arg_count{};
-        size_t max_arg_count{};
         bool fills_buffer{};
         bool is_sector{};
 
@@ -39,10 +40,25 @@ class stmt_builtin_io final : public statement {
             return not is_sector;
         }
 
+        // also the count and the start of a transfer, the start of a sector
+        // function
+        [[nodiscard]] constexpr auto max_arg_count() const -> size_t {
+            return is_sector ? buffer_index_ + 2 : buffer_index_ + 3;
+        }
+
         // the count of a transfer, nothing for a sector function
         [[nodiscard]] auto result_type(const toc& tc) const -> const type& {
             return has_result() ? tc.builtins().default_type()
                                 : tc.builtins().void_type();
+        }
+
+        //
+        // statics
+        //
+
+        // the descriptor or the sector, and the buffer
+        [[nodiscard]] static constexpr auto min_arg_count() -> size_t {
+            return buffer_index_ + 1;
         }
     };
 
@@ -51,39 +67,28 @@ class stmt_builtin_io final : public statement {
         io_function{
             .name{"read"},
             .function{machine::target_call::read},
-            .min_arg_count{2},
-            .max_arg_count{4},
             .fills_buffer{true},
             .is_sector{false},
         },
         io_function{
             .name{"write"},
             .function{machine::target_call::write},
-            .min_arg_count{2},
-            .max_arg_count{4},
             .fills_buffer{false},
             .is_sector{false},
         },
         io_function{
             .name{"sector_read"},
             .function{machine::target_call::sector_read},
-            .min_arg_count{2},
-            .max_arg_count{3},
             .fills_buffer{true},
             .is_sector{true},
         },
         io_function{
             .name{"sector_write"},
             .function{machine::target_call::sector_write},
-            .min_arg_count{2},
-            .max_arg_count{3},
             .fills_buffer{false},
             .is_sector{true},
         },
     };
-
-    // the buffer follows the descriptor or the sector
-    static constexpr size_t buffer_index_{1};
     static constexpr std::array<size_t, 1> array_indexes_{buffer_index_};
 
     // where the optional arguments are, e.g. 2 and 3 of 'read(0, b, 4, 2)',
@@ -281,8 +286,8 @@ class stmt_builtin_io final : public statement {
 
   private:
     auto assert_argument_count() const -> void {
-        const size_t min_count{io_.min_arg_count};
-        const size_t max_count{io_.max_arg_count};
+        const size_t min_count{io_function::min_arg_count()};
+        const size_t max_count{io_.max_arg_count()};
 
         if (args_.count() >= min_count and args_.count() <= max_count) {
             return;
@@ -661,7 +666,7 @@ class stmt_builtin_io final : public statement {
             not io.is_sector and arg_count > buffer_index_ + 1,
         };
 
-        const bool has_start{arg_count == io.max_arg_count};
+        const bool has_start{arg_count == io.max_arg_count()};
 
         return {
             .count{has_count ? std::optional{buffer_index_ + 1} : std::nullopt},

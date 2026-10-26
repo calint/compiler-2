@@ -312,26 +312,6 @@ class expr_bool_op final : public statement {
                             "a 'bool' is compared only with a 'bool'"};
     }
 
-    // the result that 'resolve_memory_cmp' stored in
-    // 'action.destination' is branched on using 'action.branch_on_true'
-    auto branch_on_stored_result(toc& tc, const size_t indent,
-                                 const machine::comparison_action& action) const
-        -> void {
-
-        machine::comparison_action branch_action{action};
-
-        // the stored result has the inversion applied
-        branch_action.operation = comparison_operator::not_equal;
-        branch_action.destination = {};
-        branch_action.inverted = false;
-
-        machine& x{tc.machine()};
-
-        x.compare_and_branch(tok(), indent, action.destination,
-                             operand::imm(0, tc.builtins().default_type()),
-                             branch_action);
-    }
-
     // two instances or arrays are compared as memory, anything else as
     // numbers, e.g. 'p1 == p2' of instances, but 'p1 < p2' or 'p1 == 1' is
     // rejected; true for memory
@@ -395,7 +375,7 @@ class expr_bool_op final : public statement {
         }
 
         // e.g. the 'i' of 'i == h(i)' with 'h' writing 'i'
-        assert_operands_not_written_later(tc, *this, "operand");
+        assert_not_written_later(tc, operands_of(*this), "operand");
 
         // a constant 'lhs' becomes an immediate 'rhs' instead of a scratch
         // register copy, the width check then applies to the swapped sides
@@ -590,35 +570,35 @@ class expr_bool_op final : public statement {
             cmp.op == comparison_operator::not_equal,
         };
 
-        if (not action.destination.is_empty()) {
-            compile_memory_equality(tc, indent + 1, tok(), lhs, rhs,
-                                    action.destination,
-                                    action.inverted != is_not_equal);
-
-            if (not action.target.empty()) {
-                branch_on_stored_result(tc, indent, action);
-            }
-
-            return;
-        }
-
         machine& x{tc.machine()};
 
+        // a stored result has the inversion applied, a branch applies it
+        const bool is_stored{not action.destination.is_empty()};
+
         const operand result{
-            x.alloc_scratch_register(tok(), indent, tc.builtins().boolean()),
+            is_stored ? action.destination
+                      : x.alloc_scratch_register(tok(), indent,
+                                                 tc.builtins().boolean()),
         };
 
         compile_memory_equality(tc, indent + 1, tok(), lhs, rhs, result,
-                                is_not_equal);
+                                (is_stored and action.inverted) !=
+                                    is_not_equal);
 
-        machine::comparison_action branch_action{action};
-        branch_action.operation = comparison_operator::not_equal;
+        if (not is_stored or not action.target.empty()) {
+            machine::comparison_action branch_action{action};
+            branch_action.operation = comparison_operator::not_equal;
+            branch_action.destination = {};
+            branch_action.inverted = not is_stored and action.inverted;
 
-        x.compare_and_branch(tok(), indent, result,
-                             operand::imm(0, tc.builtins().default_type()),
-                             branch_action);
+            x.compare_and_branch(tok(), indent, result,
+                                 operand::imm(0, tc.builtins().default_type()),
+                                 branch_action);
+        }
 
-        x.free_scratch_register(tok(), indent, result);
+        if (not is_stored) {
+            x.free_scratch_register(tok(), indent, result);
+        }
     }
 
     //

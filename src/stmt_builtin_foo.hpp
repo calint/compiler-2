@@ -138,8 +138,10 @@ class stmt_builtin_foo final : public statement {
                         const var_placement& element,
                         const var_placement& counter) const -> void {
 
-        // note: before 'e' is added, see 'foo_array'
-        const std::optional<storage_path> array{foo_array(tc)};
+        // the root of the iterated array and the bytes of it that 'e' ranges
+        // over, found before this 'foo' adds its own 'e' so that a name that is
+        // the 'e' of an outer 'foo' is that one
+        const std::optional<storage_path> array{ident_.storage(tc)};
 
         tc.add_var(
             src_loc_tk, indent,
@@ -272,15 +274,6 @@ class stmt_builtin_foo final : public statement {
                        in_value_register{reg_counter});
 
         return reg_counter;
-    }
-
-    // the root of the iterated array and the bytes of it that 'e' ranges over,
-    // found before this 'foo' adds its own 'e' so that a name that is the 'e'
-    // of an outer 'foo' is that one
-    [[nodiscard]] auto foo_array(const toc& tc) const
-        -> std::optional<storage_path> {
-
-        return ident_.storage(tc);
     }
 
     // an indexed or forwarded array needs its address computed

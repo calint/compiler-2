@@ -186,9 +186,6 @@ class ident_info final {
         ::operand reg;
     };
 
-    // where the name is in the source, set by 'make_ident_info(tc, st)',
-    // empty when resolved without a statement
-    token src_loc_tk_;
     const type* type_ptr_{};
     // a constant: a literal, a named constant or, typed, the value of an
     // argument of an inlined call, which has the type of its parameter
@@ -310,18 +307,10 @@ class ident_info final {
         return var == nullptr ? read_only_cause::none : var->read_only_why;
     }
 
-    auto set_src_loc_tk(const token& tk) -> void { src_loc_tk_ = tk; }
-
     // not an array when the name has no storage, e.g. a constant
     [[nodiscard]] auto shape() const -> array_shape {
         const var_part* const var{std::get_if<var_part>(&part_)};
         return var == nullptr ? array_shape{} : var->shape;
-    }
-
-    // where the name is in the source, set by 'make_ident_info(tc, st)',
-    // empty when resolved without a statement
-    [[nodiscard]] auto src_loc_tk() const -> const token& {
-        return src_loc_tk_;
     }
 
     [[nodiscard]] auto type_ref() const -> const type& {
@@ -429,8 +418,6 @@ class destination final {
     // the destination as written, for the comments and the diagnostics, e.g.
     // 'w.ps[0]'; a temporary has its name, a register its register
     std::string text_;
-    // where the name is in the source, empty when it is not
-    token src_loc_tk_;
     // the operand is the address, the name need not be resolved again, e.g.
     // an indexed element or an address loaded from a slot
     bool is_final_address_{};
@@ -502,14 +489,7 @@ class destination final {
         return result;
     }
 
-    // the name for an error about it, 'fallback' without a place in the source
-    [[nodiscard]] auto error_token(const token& fallback) const -> token {
-        return src_loc_tk_.is_empty() ? fallback : src_loc_tk_;
-    }
-
-    // the field 'fld', as the comments name it; the source names no field of
-    // a literal, so an error about it is at its value, e.g. the 't()' of
-    // 'rec{2, t()}'
+    // the field 'fld', as the comments name it
     [[nodiscard]] auto field(const type_field& fld) const -> destination {
         // note: a record is in storage
         assert(storage_);
@@ -520,7 +500,6 @@ class destination final {
         result.is_final_address_ = true;
         result.info_ = info_->field(fld);
         result.type_ptr_ = &fld.type();
-        result.src_loc_tk_ = {};
         result.storage_->path.add_field(fld.offset);
         result.text_ += std::format(".{}", fld.name);
 
@@ -552,11 +531,6 @@ class destination final {
         return not storage_ and operand_.is_register();
     }
 
-    // storage named in the source, a variable or a temporary
-    [[nodiscard]] auto is_storage() const -> bool {
-        return storage_.has_value();
-    }
-
     [[nodiscard]] auto operand() const -> const ::operand& { return operand_; }
 
     // 'offset' bytes into the destination as 'value_type', e.g. the padding
@@ -583,13 +557,6 @@ class destination final {
         assert(type_ptr_ != nullptr);
 
         return *type_ptr_;
-    }
-
-    // the same destination at another operand, e.g. its address in a register
-    [[nodiscard]] auto with_operand(const ::operand& op) const -> destination {
-        destination moved{*this};
-        moved.operand_ = op;
-        return moved;
     }
 
     [[nodiscard]] auto wraps() const -> bool { return wraps_; }
@@ -627,7 +594,6 @@ class destination final {
         result.type_ptr_ = &info.type_ref();
         result.root_name_ = std::move(parts.root);
         result.text_ = std::move(parts.text);
-        result.src_loc_tk_ = info.src_loc_tk();
 
         result.is_final_address_ = parts.is_final_address;
 

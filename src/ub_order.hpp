@@ -29,12 +29,11 @@
 //                  an expression computed in its destination reads nothing of
 //                  it, else it is computed in a scratch register first
 //                  ('expr_arith', 'expr_bool')
-//   'assert_not_written_later', 'assert_operands_not_written_later'
+//   'assert_not_written_later'
 //                  the operands of a list read nothing a call in a later
 //                  operand writes; the list order, in which the arguments and
-//                  operands are compiled; the second takes the operands of a
-//                  node ('visit_operands'): a call, a list, a comparison and
-//                  the io built-ins
+//                  operands are compiled, of a node ('operands_of'): a call, a
+//                  list, a comparison and the bulk and io built-ins
 //   'assert_not_written_after'
 //                  where a backend computes an operand before ones that come
 //                  earlier in the source, e.g. the count of 'array_copy', the
@@ -47,42 +46,6 @@
 // arguments of a call is not an order: 'stmt_call::assert_no_shared_storage';
 // every check by the undefined behavior it rules out: README 8.1
 
-// a read resolved to the storage it reaches, e.g. 'p.x' with 'p' bound to
-// 'ps[i]' reaches the field 'x' of any element of 'ps'
-struct storage_read {
-    // its root token is where an error points
-    const stmt_identifier* read{};
-    storage_path storage;
-};
-
-using storage_read_visitor = std::function_ref<void(const storage_read& read)>;
-
-// a 'read_visitor' that hands each read that reaches storage to 'visitor', a
-// constant or a value in a register reaches none
-[[nodiscard]] inline auto storage_reader(const toc& tc,
-                                         const storage_read_visitor visitor) {
-
-    return [&tc, visitor](const stmt_identifier& read) -> void {
-        const std::optional<storage_path> storage{read.storage(tc)};
-
-        if (not storage) {
-            return;
-        }
-
-        visitor({
-            .read{&read},
-            .storage{*storage},
-        });
-    };
-}
-
-// every read of 'st' that reaches storage
-inline auto visit_storage_reads(const toc& tc, const statement& st,
-                                const storage_read_visitor visitor) -> void {
-
-    st.visit_reads(storage_reader(tc, visitor));
-}
-
 // 'st' reads 'dst', or a call in it reads or writes it; a register has no
 // storage and is reached under its own name, storage by the bytes a read
 // reaches under any name, e.g. the 'p' of 'g = p + 1' with 'p' bound to 'g',
@@ -93,13 +56,13 @@ inline auto visit_storage_reads(const toc& tc, const statement& st,
                                               const destination& dst) -> bool {
 
     if (not dst.storage()) {
-        return st.reads_var(dst.root_name());
+        return st.first_read_of(dst.root_name()) != nullptr;
     }
 
     bool is_read{};
 
-    visit_storage_reads(tc, st, [&](const storage_read& read) -> void {
-        if (read.storage.may_overlap(*dst.storage())) {
+    st.visit_reads([&](const stmt_identifier& read) -> void {
+        if (read.may_reach(tc, *dst.storage())) {
             is_read = true;
         }
     });
@@ -113,16 +76,6 @@ inline auto visit_storage_reads(const toc& tc, const statement& st,
     return is_read;
 }
 
-// every read of 'operand' that reaches storage, the indexes alone of a
-// written place
-inline auto visit_operand_storage_reads(const toc& tc,
-                                        const list_operand& operand,
-                                        const storage_read_visitor visitor)
-    -> void {
-
-    visit_operand_reads(operand, storage_reader(tc, visitor));
-}
-
 // 'earlier' reads nothing that 'write', an effect of an operand computed
 // after it, reaches; 'writer' says where the call is in the message, e.g. "a
 // later argument"
@@ -130,19 +83,18 @@ inline auto assert_not_read_before(const toc& tc, const list_operand& earlier,
                                    const call_effect& write,
                                    const std::string_view writer) -> void {
 
-    visit_operand_storage_reads(
-        tc, earlier, [&](const storage_read& read) -> void {
-            if (not read.storage.may_overlap(write.storage)) {
-                return;
-            }
+    visit_operand_reads(earlier, [&](const stmt_identifier& read) -> void {
+        if (not read.may_reach(tc, write.storage)) {
+            return;
+        }
 
-            throw compile_error{
-                read.read->first_token(),
-                std::format("{} may be written by the call of {} in {}, use a "
-                            "temporary variable",
-                            in_quotes(read.read->path_text()),
-                            in_quotes(write.call_tk), writer)};
-        });
+        throw compile_error{
+            read.first_token(),
+            std::format("{} may be written by the call of {} in {}, use a "
+                        "temporary variable",
+                        in_quotes(read.path_text()), in_quotes(write.call_tk),
+                        writer)};
+    });
 }
 
 // a backend that computes 'computed_first' before 'computed_after', which come
@@ -201,14 +153,4 @@ assert_not_written_later(const toc& tc,
         [&operands](const list_operand& o) -> void { operands.push_back(o); });
 
     return operands;
-}
-
-// the operands of 'node' in its 'visit_operands' order, 'operand' names one
-// in the message, e.g. "argument"
-inline auto assert_operands_not_written_later(const toc& tc,
-                                              const statement& node,
-                                              const std::string_view operand)
-    -> void {
-
-    assert_not_written_later(tc, operands_of(node), operand);
 }

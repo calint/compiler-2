@@ -44,12 +44,12 @@ inline expr_type::expr_type(toc& tc, tokenizer& tz, const type& tp,
 
     set_type(tp);
 
-    const term tm{classify_term(tc, tok(), tz)};
-    const bool is_bare{tm.is(term_kind::record_type)};
+    const term_kind tm{classify_term(tc, tok(), tz)};
+    const bool is_bare{tm == term_kind::record_type};
 
     // e.g. 'point{x, y}' names the type that '{x, y}' takes from the
     // destination
-    const bool is_typed_literal{tm.is(term_kind::record_literal) or is_bare};
+    const bool is_typed_literal{tm == term_kind::record_literal or is_bare};
 
     // an array is copied from an array, a value of its element type is not one
     if (is_array_destination_ and is_typed_literal) {
@@ -168,7 +168,7 @@ inline expr_type::expr_type(std::unique_ptr<stmt_identifier> receiver)
 // e.g. 'obj.pos = p', 'obj.pos = f()', 'o.pos = lst.first()' or
 // 'o.pos = point.at(1, 2)'
 inline auto expr_type::parse_copy_source(toc& tc, tokenizer& tz, const type& tp,
-                                         const term& tm) -> void {
+                                         const term_kind tm) -> void {
 
     unary_ops no_uops;
 
@@ -274,8 +274,14 @@ inline auto expr_type::operand_path() const -> const stmt_identifier* {
 inline auto expr_type::compile(toc& tc, const size_t indent,
                                const destination& dst) const -> void {
 
-    if (call_source() != nullptr) {
-        compile_call_field(tc, indent, dst);
+    // a call writes the fields only, so the padding is zeroed before it and
+    // '==' can compare instances byte by byte, e.g. 'f()' in '{f(), 3}'
+    if (const stmt_call* const call{call_source()}) {
+        machine& x{tc.machine()};
+
+        x.zero_padding(tok(), indent, dst.operand(), dst.type_ref());
+        call->compile(tc, indent, dst);
+
         return;
     }
 
@@ -285,15 +291,6 @@ inline auto expr_type::compile(toc& tc, const size_t indent,
     assert(operand_path() != nullptr);
 
     compile_identifier_copy(tc, indent, dst);
-}
-
-// e.g. 'f()' in '{f(), 3}' writes the field in place
-inline auto expr_type::compile_call_field(toc& tc, const size_t indent,
-                                          const destination& dst) const
-    -> void {
-
-    zero_padding(tc, indent, dst.type_ref(), dst.operand());
-    call_source()->compile(tc, indent, dst);
 }
 
 // e.g. '{1, 2}' writes the fields in order, then zeroes the unlisted fields

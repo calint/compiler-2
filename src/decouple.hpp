@@ -10,6 +10,7 @@
 //   - 'stmt_call' deduces a type argument from the value of a built-in, whose
 //     statement headers include 'stmt_call.hpp'
 
+#include <cstdint>
 #include <memory>
 
 #include "token.hpp"
@@ -17,7 +18,7 @@
 class toc;
 class tokenizer;
 class statement;
-struct term;
+enum class term_kind : uint8_t;
 class stmt_identifier;
 class stmt_call;
 class expr_any;
@@ -36,4 +37,4 @@ class unary_ops;
     -> std::unique_ptr<statement>;
 
 [[nodiscard]] auto builtin_value_type(const toc& tc, const token& tk,
-                                      const term& tm) -> const type*;
+                                      const term_kind tm) -> const type*;

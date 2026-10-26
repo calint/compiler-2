@@ -6,7 +6,6 @@
 #include <cassert>
 #include <charconv>
 #include <cstddef>
-#include <cstdint>
 #include <exception>
 #include <filesystem>
 #include <format>
@@ -22,7 +21,6 @@
 #include <string>
 #include <string_view>
 #include <system_error>
-#include <utility>
 #include <vector>
 
 #include "assembler.hpp"
@@ -54,13 +52,10 @@ constexpr size_t default_memory_size_bytes{0x800000};
 constexpr size_t memory_alignment{4096};
 constexpr std::string_view default_sd_card_file_name{"sdcard.img"};
 
-enum class target : uint8_t { x86_64, rv32i, rv32i_qemu, rv32i_fpga };
-
 // a target of '--target': its name, the backend it makes, whether it writes
 // a binary image beside the assembly and the options only some targets read,
 // the others reject them
 struct target_name {
-    target kind;
     std::string_view text;
     std::unique_ptr<machine> (*make)(const builtin_type_set& builtins,
                                      const source_files& files,
@@ -85,7 +80,6 @@ template <class machine_t>
 // todo: x86_64 writes no binary, see etc/todo.txt
 constexpr std::array<target_name, 4> target_names{
     target_name{
-        .kind{target::x86_64},
         .text{"x86_64"},
         .make{&make_machine<machine_x86_64>},
         .writes_image{},
@@ -94,7 +88,6 @@ constexpr std::array<target_name, 4> target_names{
         .reads_sd_card{true},
     },
     target_name{
-        .kind{target::rv32i},
         .text{"rv32i"},
         .make{&make_machine<machine_rv32i_linux>},
         .writes_image{true},
@@ -103,7 +96,6 @@ constexpr std::array<target_name, 4> target_names{
         .reads_sd_card{true},
     },
     target_name{
-        .kind{target::rv32i_qemu},
         .text{"rv32i-qemu"},
         .make{&make_machine<machine_rv32i_qemu>},
         .writes_image{true},
@@ -112,7 +104,6 @@ constexpr std::array<target_name, 4> target_names{
         .reads_sd_card{},
     },
     target_name{
-        .kind{target::rv32i_fpga},
         .text{"rv32i-fpga"},
         .make{&make_machine<machine_rv32i_fpga>},
         .writes_image{true},
@@ -152,7 +143,8 @@ constexpr std::array<report_name, 1> report_names{
 struct options {
     const char* src_file_name{"prog.baz"};
     bool src_file_given{};
-    target machine_target{target::x86_64};
+    // a row of 'target_names'; never null
+    const target_name* target{&target_names.front()};
     size_t vars_size_bytes{default_vars_size_bytes};
     // the options only some targets read are empty until given
     std::optional<size_t> stack_size_bytes;
@@ -219,14 +211,13 @@ auto check_reproduced_source(const program& prg, const source_files& files)
 [[nodiscard]] auto parse_reports(const std::string_view reports)
     -> std::optional<report_options>;
 
+// null for a name of no target
 [[nodiscard]] auto find_target(const std::string_view text)
-    -> std::optional<target>;
-
-[[nodiscard]] auto target_of(target kind) -> const target_name&;
+    -> const target_name*;
 
 [[nodiscard]] auto
 default_binary_file_name(const std::string_view src_file_name,
-                         const target machine_target) -> std::string;
+                         const target_name& target) -> std::string;
 
 // 'path' names one of the files, also through another path
 [[nodiscard]] auto is_source_file(const std::string_view path,
@@ -331,7 +322,7 @@ struct target_option {
         },
     };
 
-    const target_name& chosen{target_of(opts.machine_target)};
+    const target_name& chosen{*opts.target};
 
     for (const target_option& option : target_options) {
         if (not option.given or chosen.*option.reads) {
@@ -486,9 +477,9 @@ template <typename Name, size_t count>
 [[nodiscard]] auto apply_target(const std::string_view value, options& opts)
     -> bool {
 
-    const std::optional<target> found{find_target(value)};
+    const target_name* const found{find_target(value)};
 
-    if (not found) {
+    if (found == nullptr) {
         print_option_error(
             std::format("invalid --target: {}, supported targets are: {}",
                         in_quotes(value), joined_texts(target_names)));
@@ -496,7 +487,7 @@ template <typename Name, size_t count>
         return false;
     }
 
-    opts.machine_target = *found;
+    opts.target = found;
 
     return true;
 }
@@ -654,8 +645,7 @@ auto print_help(const char* const program_name) -> void {
 
         const std::string binary{
             opts.binary_file_name.empty()
-                ? default_binary_file_name(opts.src_file_name,
-                                           opts.machine_target)
+                ? default_binary_file_name(opts.src_file_name, *opts.target)
                 : std::string{opts.binary_file_name},
         };
 
@@ -680,7 +670,7 @@ auto print_help(const char* const program_name) -> void {
         };
 
         const std::unique_ptr<machine> backend{
-            target_of(opts.machine_target).make(builtins, files, target_opts),
+            opts.target->make(builtins, files, target_opts),
         };
 
         // the checks the target cannot honor are off, e.g. x86_64 has no
@@ -691,8 +681,7 @@ auto print_help(const char* const program_name) -> void {
         program prg{*backend, builtins, files, opts.vars_size_bytes, checks};
 
         // the image would replace a source file, the parse read the includes
-        if (target_of(opts.machine_target).writes_image and
-            is_source_file(binary, files)) {
+        if (opts.target->writes_image and is_source_file(binary, files)) {
 
             throw option_error{std::format("invalid --bin: {} is a source file",
                                            in_quotes(binary))};
@@ -963,37 +952,25 @@ static_assert([] -> bool {
 }
 
 [[nodiscard]] auto find_target(const std::string_view text)
-    -> std::optional<target> {
+    -> const target_name* {
 
     for (const target_name& name : target_names) {
         if (name.text == text) {
-            return name.kind;
+            return &name;
         }
     }
 
-    return std::nullopt;
-}
-
-[[nodiscard]] auto target_of(const target kind) -> const target_name& {
-    for (const target_name& name : target_names) {
-        if (name.kind == kind) {
-            return name;
-        }
-    }
-
-    std::unreachable();
+    return nullptr;
 }
 
 // keeps the directory so the image lands next to its source
 [[nodiscard]] auto
 default_binary_file_name(const std::string_view src_file_name,
-                         const target machine_target) -> std::string {
+                         const target_name& target) -> std::string {
 
     std::filesystem::path path{src_file_name};
     path.replace_extension();
-
-    return std::format("{}-{}.bin", path.string(),
-                       target_of(machine_target).text);
+    return std::format("{}-{}.bin", path.string(), target.text);
 }
 
 [[nodiscard]] auto is_source_file(const std::string_view path,

@@ -124,27 +124,6 @@ struct access_path {
         return not are_disjoint(steps, other.steps);
     }
 
-    // e.g. '[1].8[?]' is element 1, its field at offset 8 and an element of
-    // that at a run-time index
-    [[nodiscard]] auto text() const -> std::string {
-        std::string result;
-
-        for (const path_step& step : steps) {
-            if (step.kind == path_step::kind_type::field) {
-                result += std::format(".{}", step.number);
-            } else if (step.kind == path_step::kind_type::fixed_index) {
-                result += std::format("[{}]", step.number);
-            } else if (step.kind == path_step::kind_type::index_range) {
-                result +=
-                    std::format("[{}..{}]", step.number, step.range_end - 1);
-            } else {
-                result += "[?]";
-            }
-        }
-
-        return result;
-    }
-
     //
     // statics
     //

@@ -384,20 +384,6 @@ class expr_arith final : public statement {
         // statics
         //
 
-        // a list that starts with an element the caller made, e.g. the zero
-        // value of 'i8 + 1'
-        [[nodiscard]] static auto after(std::unique_ptr<statement> first)
-            -> options {
-
-            return {
-                .uops{},
-                .open_paren_tk{},
-                .first_op_precedence{initial_precedence},
-                .first_expression{std::move(first)},
-                .destination_type{},
-            };
-        }
-
         // a list in parentheses, e.g. '-(a + b)'
         [[nodiscard]] static auto
         enclosed(unary_ops uops_in, const token& open_paren_tk_in,
@@ -731,7 +717,7 @@ class expr_arith final : public statement {
 
     // e.g. the 'gx' of 'gx + g()' with 'g' writing 'gx'
     auto assert_elements_not_written_later(const toc& tc) const -> void {
-        assert_operands_not_written_later(tc, *this, "operand");
+        assert_not_written_later(tc, operands_of(*this), "operand");
     }
 
     // compiles the list without its trailing added constant and returns that
@@ -1182,10 +1168,18 @@ class expr_arith final : public statement {
             return;
         }
 
-        if (op == arithmetic_operator::add or
-            op == arithmetic_operator::subtract) {
+        // note: the rewrite hides an overflow of the negation, the check
+        //       computes it
 
-            asm_op_add_sub(tc, indent, op, dst, src);
+        const bool is_add_sub{
+            op == arithmetic_operator::add or
+                op == arithmetic_operator::subtract,
+        };
+
+        if (is_add_sub and not tc.checks_overflow(dst) and
+            is_negated_operand(tc, src)) {
+
+            compile_negated_operand(tc, indent, op, dst, src);
             return;
         }
 
@@ -1201,45 +1195,6 @@ class expr_arith final : public statement {
             tc, indent, src, dst,
             [&](const operand& value, const machine::factor_use use) -> void {
                 emit_operation(tc, indent, src.tok(), op, dst, value, use);
-            });
-    }
-
-    static auto asm_op_add_sub(toc& tc, const size_t indent,
-                               const arithmetic_operator op,
-                               const destination& dst, const statement& src)
-        -> void {
-
-        machine& x{tc.machine()};
-
-        // note: the rewrite hides an overflow of the negation, the check
-        //       computes it
-
-        if (not tc.checks_overflow(dst) and is_negated_operand(tc, src)) {
-            x.comment(src.tok(), indent, "src: negated operand");
-
-            const stmt_identifier& ident{*src.operand_path()};
-            const ident_info src_info{make_scalar_ident_info(tc, ident)};
-            machine::held_registers held{x, src.tok(), indent};
-
-            const operand src_operand{
-                ident.get_lea_operand(tc, indent, src_info, held),
-            };
-
-            x.add_subtract(
-                src.tok(), indent,
-                op == arithmetic_operator::add ? arithmetic_operator::subtract
-                                               : arithmetic_operator::add,
-                dst.operand(), src_operand, tc.overflow_options(dst));
-
-            return;
-        }
-
-        // a negated operand is computed at the width of the destination so
-        // the overflow check sees it
-        emit_with_source(
-            tc, indent, src, dst,
-            [&](const operand& term, const machine::factor_use use) -> void {
-                emit_operation(tc, indent, src.tok(), op, dst, term, use);
             });
     }
 
@@ -1363,6 +1318,31 @@ class expr_arith final : public statement {
         }
 
         asm_op(tc, indent, arithmetic_operator::assign, dst, first);
+    }
+
+    // 'a + -b' is 'a - b' and 'a - -b' is 'a + b'
+    static auto compile_negated_operand(toc& tc, const size_t indent,
+                                        const arithmetic_operator op,
+                                        const destination& dst,
+                                        const statement& src) -> void {
+
+        machine& x{tc.machine()};
+
+        x.comment(src.tok(), indent, "src: negated operand");
+
+        const stmt_identifier& ident{*src.operand_path()};
+        const ident_info src_info{make_scalar_ident_info(tc, ident)};
+        machine::held_registers held{x, src.tok(), indent};
+
+        const operand src_operand{
+            ident.get_lea_operand(tc, indent, src_info, held),
+        };
+
+        x.add_subtract(src.tok(), indent,
+                       op == arithmetic_operator::add
+                           ? arithmetic_operator::subtract
+                           : arithmetic_operator::add,
+                       dst.operand(), src_operand, tc.overflow_options(dst));
     }
 
     [[nodiscard]] static auto compile_to_scratch(toc& tc, const size_t indent,
@@ -1618,6 +1598,4 @@ class expr_arith final : public statement {
             .has_unary_ops{has_unary_ops},
         };
     }
-
-    // a marker at the start of 'element', without its whitespace
 };

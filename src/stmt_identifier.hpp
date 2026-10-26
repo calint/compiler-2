@@ -515,14 +515,14 @@ class stmt_identifier final : public statement {
     // class methods
     //
 
-    // the fields and indexes from the root variable to what this path names,
-    // e.g. 'es[1].items[i]'
     // the bytes of the root variable that the path reaches, the whole array
     // after a run-time index
     [[nodiscard]] auto accessed_bytes() const -> const byte_range& {
         return accessed_bytes_;
     }
 
+    // the fields and indexes from the root variable to what this path names,
+    // e.g. 'es[1].items[i]'
     [[nodiscard]] auto accessed_path() const -> access_path {
         return access_path_;
     }
@@ -759,6 +759,16 @@ class stmt_identifier final : public statement {
         return elems_.back().name_tk;
     }
 
+    // this path may reach bytes of 'target', e.g. 'p.x' with 'p' bound to
+    // 'ps[i]' reaches the field 'x' of any element of 'ps'; a constant or a
+    // value in a register reaches none
+    [[nodiscard]] auto may_reach(const toc& tc,
+                                 const storage_path& target) const -> bool {
+
+        const std::optional<storage_path> reached{storage(tc)};
+        return reached and reached->may_overlap(target);
+    }
+
     [[nodiscard]] auto method_dot_token() const -> const token& {
         assert(method_);
 
@@ -859,19 +869,19 @@ class stmt_identifier final : public statement {
         }
 
         const token tk{tz.next_token()};
-        const term tm{classify_term(tc, tk, tz)};
+        const term_kind tm{classify_term(tc, tk, tz)};
 
-        if (tm.is_bare_type() or tm.is(term_kind::array_literal) or
-            tm.is(term_kind::record_literal)) {
+        if (is_bare_type(tm) or tm == term_kind::array_literal or
+            tm == term_kind::record_literal) {
 
             throw compile_error{
                 tk, std::format("{} is a type, not an array", in_quotes(tk))};
         }
 
-        if (tm.is(term_kind::call) or tm.is(term_kind::type_called) or
-            tm.is(term_kind::generic_call) or tm.is(term_kind::conversion) or
-            tm.is(term_kind::builtin_function) or
-            tm.is(term_kind::constructor_call)) {
+        if (tm == term_kind::call or tm == term_kind::type_called or
+            tm == term_kind::generic_call or tm == term_kind::conversion or
+            tm == term_kind::builtin_function or
+            tm == term_kind::constructor_call) {
 
             throw compile_error{
                 tk, std::format("a call of {} is not an array, store its "
@@ -879,7 +889,7 @@ class stmt_identifier final : public statement {
                                 in_quotes(tk))};
         }
 
-        if (tm.is(term_kind::function_name)) {
+        if (tm == term_kind::function_name) {
             throw compile_error{tk, std::format("{} is a function, not an "
                                                 "array",
                                                 in_quotes(tk))};
@@ -1110,6 +1120,9 @@ class stmt_identifier final : public statement {
         return not path_type.has_field(name_tk.text());
     }
 
+    // what follows the path read so far, resolved as 'prefix': nothing, a '.'
+    // and a field, or a '.' and a method name, which ends the path as its
+    // receiver; reads the '.' and the name
     [[nodiscard]] static auto read_continuation(const toc& tc, tokenizer& tz,
                                                 const ident_info& prefix)
         -> path_continuation {
@@ -1143,9 +1156,6 @@ class stmt_identifier final : public statement {
         };
     }
 
-    // what follows the path read so far, resolved as 'prefix': nothing, a '.'
-    // and a field, or a '.' and a method name, which ends the path as its
-    // receiver; reads the '.' and the name
     // the field 'name_tk' of what the path up to it resolved to, a constant
     // named 'root' has none
     [[nodiscard]] static auto step_field(const ident_info& prefix,
@@ -1185,14 +1195,7 @@ struct place {
 
     // the name refers to the declared array, 'ps[1]' accesses one element
     const ident_info declared{ident.resolve_path(tc)};
-
-    ident_info info{
-        ident.is_array_element() ? declared.as_element() : declared,
-    };
-
-    info.set_src_loc_tk(ident.last_token());
-
-    return info;
+    return ident.is_array_element() ? declared.as_element() : declared;
 }
 
 inline auto assert_not_whole_array(const stmt_identifier& ident,
@@ -1260,31 +1263,18 @@ inline auto statement::assert_result_not_read(const assignment_flow& flow) const
 }
 
 // a path such as 'p.y' reads its root variable
-inline auto statement::assert_var_not_used(const std::string_view var,
-                                           const assigned_bytes& assigned) const
-    -> void {
+inline auto statement::first_read_of(const std::string_view var) const
+    -> const stmt_identifier* {
 
-    visit_reads([&var, &assigned](const stmt_identifier& read) -> void {
-        if (not read.first_token().is_text(var) or
-            assigned.covers(read.accessed_bytes())) {
+    const stmt_identifier* first{};
 
-            return;
-        }
-
-        throw_uninitialized(read.first_token(), var);
-    });
-}
-
-inline auto statement::reads_var(const std::string_view var) const -> bool {
-    bool is_read{};
-
-    visit_reads([&var, &is_read](const stmt_identifier& read) -> void {
-        if (read.first_token().is_text(var)) {
-            is_read = true;
+    visit_reads([&var, &first](const stmt_identifier& read) -> void {
+        if (first == nullptr and read.first_token().is_text(var)) {
+            first = &read;
         }
     });
 
-    return is_read;
+    return first;
 }
 
 inline auto statement::bare_path() const -> const stmt_identifier* {

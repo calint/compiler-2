@@ -1,6 +1,7 @@
 #pragma once
 
 #include <algorithm>
+#include <cassert>
 #include <cstddef>
 #include <optional>
 #include <string_view>
@@ -19,70 +20,49 @@ enum class loop_end : uint8_t { at_break, also_when_done };
 // definite assignment: which bytes of a variable are set before they are read
 // and before a function returns
 
-// byte ranges of a variable that are definitely assigned
+// the bytes of a variable that are definitely assigned, one flag per byte
 class assigned_bytes final {
-    // sorted by offset, neither overlapping nor adjacent
-    std::vector<byte_range> ranges_;
-    size_t size_bytes_{};
+    std::vector<bool> is_assigned_;
 
   public:
+    // note: parentheses, braces would make a list of one flag
     explicit assigned_bytes(const size_t size_bytes)
-        : size_bytes_{size_bytes} {}
+        : is_assigned_(size_bytes, false) {}
 
     auto add(const byte_range assigned) -> void {
-        if (assigned.size_bytes == 0) {
-            return;
+        for (size_t i{}; i < assigned.size_bytes; ++i) {
+            is_assigned_.at(assigned.offset + i) = true;
         }
-
-        ranges_.push_back(assigned);
-        normalize();
     }
 
     [[nodiscard]] auto covers(const byte_range accessed) const -> bool {
-        if (accessed.size_bytes == 0) {
-            return true;
+        for (size_t i{}; i < accessed.size_bytes; ++i) {
+            if (not is_assigned_.at(accessed.offset + i)) {
+                return false;
+            }
         }
 
-        const size_t accessed_end{accessed.offset + accessed.size_bytes};
-
-        return std::ranges::any_of(ranges_, [&](const byte_range& r) -> bool {
-            return r.offset <= accessed.offset and
-                   accessed_end <= r.offset + r.size_bytes;
-        });
+        return true;
     }
 
     // keeps only the bytes assigned on both paths
     auto intersect(const assigned_bytes& other) -> void {
-        std::vector<byte_range> common;
-        for (const byte_range& a : ranges_) {
-            for (const byte_range& b : other.ranges_) {
-                const size_t begin{std::max(a.offset, b.offset)};
+        assert(is_assigned_.size() == other.is_assigned_.size());
 
-                const size_t end{
-                    std::min(a.offset + a.size_bytes, b.offset + b.size_bytes),
-                };
-
-                if (begin < end) {
-                    common.push_back({
-                        .offset{begin},
-                        .size_bytes{end - begin},
-                    });
-                }
-            }
+        for (size_t i{}; i < is_assigned_.size(); ++i) {
+            is_assigned_.at(i) =
+                is_assigned_.at(i) and other.is_assigned_.at(i);
         }
-
-        ranges_ = std::move(common);
-        normalize();
     }
 
     [[nodiscard]] auto is_full() const -> bool {
-        return covers({
-            .offset{},
-            .size_bytes{size_bytes_},
-        });
+        return std::ranges::all_of(
+            is_assigned_, [](const bool is_set) -> bool { return is_set; });
     }
 
-    [[nodiscard]] auto size_bytes() const -> size_t { return size_bytes_; }
+    [[nodiscard]] auto size_bytes() const -> size_t {
+        return is_assigned_.size();
+    }
 
     //
     // statics
@@ -90,37 +70,8 @@ class assigned_bytes final {
 
     [[nodiscard]] static auto full(const size_t size_bytes) -> assigned_bytes {
         assigned_bytes coverage{size_bytes};
-
-        coverage.add({
-            .offset{},
-            .size_bytes{size_bytes},
-        });
-
+        coverage.is_assigned_.flip();
         return coverage;
-    }
-
-  private:
-    auto normalize() -> void {
-        std::ranges::sort(ranges_, {}, &byte_range::offset);
-
-        std::vector<byte_range> merged;
-        for (const byte_range& r : ranges_) {
-            if (merged.empty() or
-                merged.back().offset + merged.back().size_bytes < r.offset) {
-
-                merged.push_back(r);
-                continue;
-            }
-
-            // overlapping or adjacent ranges become one
-            byte_range& last{merged.back()};
-
-            last.size_bytes = std::max(last.offset + last.size_bytes,
-                                       r.offset + r.size_bytes) -
-                              last.offset;
-        }
-
-        ranges_ = std::move(merged);
     }
 };
 

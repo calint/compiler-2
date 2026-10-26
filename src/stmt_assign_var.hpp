@@ -149,25 +149,32 @@ class stmt_assign_var final : public statement {
         const toc& tc, const statement& item,
         const std::span<const written_part> written) const -> void {
 
-        visit_storage_reads(tc, item, [&](const storage_read& read) -> void {
+        item.visit_reads([&](const stmt_identifier& read) -> void {
+            // a constant or a value in a register reaches no storage
+            const std::optional<storage_path> reached{read.storage(tc)};
+
+            if (not reached) {
+                return;
+            }
+
             for (const written_part& place : written) {
-                if (not read.storage.may_overlap(place.storage)) {
+                if (not reached->may_overlap(place.storage)) {
                     continue;
                 }
 
-                if (is_certain_overwrite(read, place)) {
+                if (is_certain_overwrite(read, *reached, place)) {
                     throw compile_error{
-                        read.read->first_token(),
+                        read.first_token(),
                         std::format("{} is read but has been overwritten in "
                                     "the same statement",
-                                    in_quotes(read.read->path_text()))};
+                                    in_quotes(read.path_text()))};
                 }
 
                 throw compile_error{
-                    read.read->first_token(),
+                    read.first_token(),
                     std::format("{} may have been overwritten in the same "
                                 "statement",
-                                in_quotes(read.read->path_text()))};
+                                in_quotes(read.path_text()))};
             }
         });
 
@@ -233,19 +240,19 @@ class stmt_assign_var final : public statement {
     // on either side, or none under the destination's name, which reaches
     // the bytes through the same binding, e.g. 'p.x' of 'p = {1, p.x}' with
     // 'p' bound to 'ps[i]'
-    [[nodiscard]] auto is_certain_overwrite(const storage_read& read,
+    [[nodiscard]] auto is_certain_overwrite(const stmt_identifier& read,
+                                            const storage_path& reached,
                                             const written_part& place) const
         -> bool {
 
-        if (not read.storage.path.has_run_time_index() and
+        if (not reached.path.has_run_time_index() and
             not place.storage.path.has_run_time_index()) {
 
             return true;
         }
 
-        return read.read->first_token().text() ==
-                   stmt_ident_.first_token().text() and
-               not read.read->accessed_path().has_run_time_index() and
+        return read.first_token().text() == stmt_ident_.first_token().text() and
+               not read.accessed_path().has_run_time_index() and
                not place.path.has_run_time_index();
     }
 

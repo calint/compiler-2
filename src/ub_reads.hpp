@@ -7,15 +7,8 @@
 #include "token.hpp"
 #include "type.hpp"
 
-// the types of the walks shared by the checks, the checks are in
-// 'ub_assigned.hpp', 'ub_order.hpp' and 'stmt_call.hpp':
-//   the operands ('statement::visit_operands'): the operands of a node in
-//   evaluation order, which the two walks below and the order checks read
-//   the reads ('statement::visit_reads'): each read of a variable hands out
-//   its bytes for the definite assignment check and its path for the
-//   aliasing checks
-//   the calls ('statement::visit_call_effects'): what the calls of a
-//   statement read and write, see 'call_effect'
+// the types of the walks shared by the checks, see the class comment of
+// 'statement'
 
 class statement;
 class stmt_identifier;
