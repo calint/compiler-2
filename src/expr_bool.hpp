@@ -861,15 +861,14 @@ class expr_bool_op final : public statement {
 
         machine& x{tc.machine()};
 
-        x.memory_equal(
-            src_loc_tk, indent, *size_bytes,
-            {
-                .alignment{lhs_info.type_ref().alignment()},
-                .lhs{lhs.address_emitter_of(tc, indent, src_loc_tk, lhs_info)},
-                .rhs{rhs.address_emitter_of(tc, indent, src_loc_tk, rhs_info)},
-                .dst{dst},
-                .inverted{inverted},
-            });
+        x.memory_equal(src_loc_tk, indent, *size_bytes,
+                       {
+                           .alignment{lhs_info.type_ref().alignment()},
+                           .lhs{lhs.address_emitter_of(tc, indent, src_loc_tk)},
+                           .rhs{rhs.address_emitter_of(tc, indent, src_loc_tk)},
+                           .dst{dst},
+                           .inverted{inverted},
+                       });
     }
 
     [[nodiscard]] static auto compile_to_scratch(toc& tc, const size_t indent,

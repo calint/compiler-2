@@ -143,7 +143,8 @@ Invariants the code relies on:
 3. registers are freed in the reverse order of their allocation, an
    operation frees the registers it allocated before it returns
 4. a name is resolved again at every compile through the scopes, an
-   inlined parameter is bound to its argument, never a copy
+   inlined parameter is bound to what its argument resolved to, never a
+   copy
 5. a 'destination' is not changed after it is made, a field or element
    of it is a destination of its own
 6. labels are named by source location and call path, so a body inlined
@@ -200,24 +201,28 @@ is compiled.
 An inlined call does not copy its arguments. It enters a function scope that
 maps each parameter name to the argument ('param_binding'), e.g. 'p' to
 'world.rooms[i]' with the address of that element computed once, '3' to the
-constant 3, or 'x' to a scratch register holding the value of an expression.
-The result name maps to the destination of the call. Resolving 'p.x' in the
-body follows the binding and continues the walk in the scopes of the caller.
-The result has the type of the destination, except that a narrower integer
-widens into it like a name, e.g. 'exit(f8())' or the 'g()' of 'w + g()': an
-inlined result is made in a register of its type and copied
-('inline_call::compile_widened'); a call is an argument by its value, so it
-widens into a parameter where a name, bound to the parameter, must have its
-type. 'stmt_call::compile' checks the result before the inlined and
-the noinline paths split, so both accept the same.
+constant 3, or 'x' to a scratch register holding the value of an expression. The
+result name maps to the destination of the call. A binding holds what the
+argument resolved to in the scopes of the caller ('resolved_name'): resolving
+'p' in the body gives it, and 'p.x' steps to the field from there. The scopes
+below the binding do not change while the body compiles, so this is what a
+lookup in the caller would find. The result has the type of the destination,
+except that a narrower integer widens into it like a name, e.g. 'exit(f8())' or
+the 'g()' of 'w + g()': an inlined result is made in a register of its type and
+copied ('inline_call::compile_widened'); a call is an argument by its value, so
+it widens into a parameter where a name, bound to the parameter, must have its
+type. 'stmt_call::compile' checks the result before the inlined and the noinline
+paths split, so both accept the same.
 
 A noinline function has a body of its own and a frame in memory that holds the
 addresses of its result and arguments (4.1).
 
 What resolution gives is an 'ident_info': a constant, a register or a variable
-with its memory operand and the deepest address an inlined call computed
-('call_address'). 'statement::compile' writes its value to a 'destination':
-nowhere for a statement, a register, or the storage a resolved name is at.
+with its memory operand, which may be an address an inlined call computed. The
+resolver looks up one name; a path resolves its root and steps each field
+('ident_info::field', 'stmt_identifier::for_each_prefix'). 'statement::compile'
+writes its value to a 'destination': nowhere for a statement, a register, or the
+storage a resolved name is at.
 
 ### 1.4 Dry runs
 
@@ -1375,10 +1380,10 @@ count of a bulk operation, e.g. 'array_copy(a[i], b, n)', the check covers
 
 ### 6.5 Addresses an inlined call computed
 
-An argument with a run-time index is computed once at the call, the body of
-the inlined function reaches it through its parameter. The binding of the
-parameter keeps the operand ('bound_name::lea') and, for the comment, the
-argument as written ('bound_name::text'):
+An argument with a run-time index is computed once at the call, the body of the
+inlined function reaches it through its parameter. The binding of the parameter
+keeps the operand ('ident_info::at_address') and, for the comment, the argument
+as written ('param_binding::text'):
 
 ```text
 w.rooms[i].items[j].set(8)            func mut item.set(v) { self.x = v }
@@ -1388,11 +1393,9 @@ w.rooms[i].items[j].set(8)            func mut item.set(v) { self.x = v }
     mov qword [r15 + r14 + 8], 8      'self.x'
 ```
 
-A path in the body starts at that address instead of at the root variable
-('call_address'): its 'trailing_count' is the number of elements of the path
-after the parameter, 1 for the 'x' of 'self.x', so 'compile_lea' starts at the
-element the address belongs to and adds only the rest. The registers stay
-allocated until the body is compiled. On rv32i the body may instead use the
+A path in the body starts at that address, the operand its root resolves to, and
+'compile_lea' adds only the rest, the offset of 'x' for 'self.x'. The registers
+stay allocated until the body is compiled. On rv32i the body may instead use the
 address folded into one register, whichever is shorter (5.1).
 
 ### 6.6 The bases
@@ -1442,9 +1445,6 @@ stmt_identifier::compile_checked_index
                                       (_impl)
 stmt_identifier::get_lea_operand      an operand without a path to walk is
                                       the storage of the name
-ident_builder::operand_below_call_address
-                                      a built-in reached below a known
-                                      address, for the resolver
 machine_x86_64::with_lowered_addresses, machine_rv32i::lower_address
                                       what the target encodes
 ```

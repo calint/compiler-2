@@ -53,16 +53,14 @@ inline stmt_identifier::stmt_identifier(toc& tc, token tk, tokenizer& tz)
     }
 
     // the path read so far, resolved at its last name
-    std::optional<ident_info> prefix;
+    ident_info prefix{tc.resolve_declared(tk, tk.text())};
 
     // a path of elements, e.g. 'rooms[i].entities[j].name'
     while (true) {
-        prefix.emplace(tc.resolve_declared(tk, dotted_path_));
-
-        assert_indexable(*prefix, tz, tk);
+        assert_indexable(prefix, tz, tk);
         parse_element(tc, tz, tk);
 
-        const path_continuation next{read_continuation(tc, tz, *prefix)};
+        const path_continuation next{read_continuation(tc, tz, prefix)};
 
         // the path so far is resolved as the receiver
         if (const method_tokens* const method{
@@ -79,25 +77,25 @@ inline stmt_identifier::stmt_identifier(toc& tc, token tk, tokenizer& tz)
             break;
         }
 
-        assert_element_selected(*prefix, tk);
-        assert_not_method_call(*prefix, tz, field->name_tk);
+        assert_element_selected(prefix, tk);
+        assert_not_method_call(prefix, tz, field->name_tk);
 
         elem_delims_tk_.emplace_back(field->dot_tk);
         tk = field->name_tk;
         dotted_path_.push_back('.');
         dotted_path_ += tk.text();
+        prefix = step_field(prefix, first_token().text(), tk);
     }
 
     // note: a function name is rejected before a path is parsed
     //       ('parse_call_or_identifier', 'parse_array_argument'), the name of
     //       a generic function by the resolver here
 
-    resolve_type(*prefix);
+    resolve_type(prefix);
 
     resolve_accessed_bytes(tc);
 
-    tc.record_use(ident_info::root_of(dotted_path_), access_path_,
-                  use_kind::read);
+    tc.record_use(first_token().text(), access_path_, use_kind::read);
 }
 
 inline auto stmt_identifier::path_source_to(std::ostream& os) const -> void {
@@ -138,9 +136,7 @@ inline auto stmt_identifier::assert_count_in_bounds(const toc& tc,
                                                     const int64_t count) const
     -> void {
 
-    const ident_info array_info{
-        tc.resolve_declared(first_token(), dotted_path_),
-    };
+    const ident_info array_info{resolve_path(tc)};
 
     assert_constant_range(
         array_info,
@@ -239,12 +235,14 @@ inline auto stmt_identifier::resolve_accessed_bytes(toc& tc) -> void {
     for_each_prefix(tc, std::nullopt, [&](const prefix_step& step) -> void {
         const ident_elem& elem{*step.elem};
 
-        if (step.parent_type == nullptr) {
+        if (step.fld == nullptr) {
             accessed_bytes_ = root_range(*step.info);
         } else {
+            const size_t field_offset{step.fld->offset};
+
             // a field covers its trailing padding so that assigning every
             // field assigns the whole instance
-            access_path_.add_field(step.field_offset);
+            access_path_.add_field(field_offset);
 
             const size_t extent_bytes{
                 step.parent_type->field_extent_bytes(elem.name_tk,
@@ -254,14 +252,13 @@ inline auto stmt_identifier::resolve_accessed_bytes(toc& tc) -> void {
             // the last field keeps the padding after the instance that
             // holds it, like the last element
             const bool is_last_field{
-                step.field_offset + extent_bytes ==
-                    step.parent_type->size_bytes(),
+                field_offset + extent_bytes == step.parent_type->size_bytes(),
             };
 
-            narrow_accessed_bytes(step.field_offset,
-                                  is_last_field ? accessed_bytes_.size_bytes -
-                                                      step.field_offset
-                                                : extent_bytes);
+            narrow_accessed_bytes(
+                field_offset, is_last_field
+                                  ? accessed_bytes_.size_bytes - field_offset
+                                  : extent_bytes);
         }
 
         if (elem.index) {

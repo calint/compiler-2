@@ -624,11 +624,13 @@ struct call_site {
         };
 
         const std::optional<storage_path> target{
-            temporary_storage(tc, temporary.root_id()),
+            temporary_storage(tc, temporary_argument_name(index)),
         };
 
-        args.at(index).compile(tc, indent,
-                               destination::of_name(temporary, target));
+        args.at(index).compile(
+            tc, indent,
+            destination::of_name(temporary, temporary_argument_name(index),
+                                 target));
 
         return {
             .info{temporary},
@@ -884,13 +886,12 @@ class inline_call {
 
             const auto add_binding{
                 [&](const param_binding& e) -> void {
-                    const bound_name* const named{
-                        std::get_if<bound_name>(&e.target),
-                    };
+                    const ident_info& bound{e.target.info};
 
-                    x.comment_binding(
-                        call_.tk, indent + 1, e.from, e.target_text(),
-                        named == nullptr ? std::nullopt : named->lea);
+                    x.comment_binding(call_.tk, indent + 1, e.from, e.text,
+                                      bound.is_address_by_call()
+                                          ? std::optional{bound.operand()}
+                                          : std::nullopt);
 
                     tc.add_binding(e);
                 },
@@ -934,10 +935,7 @@ class inline_call {
                 continue;
             }
 
-            bound_name& named{std::get<bound_name>(binding.target)};
-
-            // note: an indexed reference has an address
-            assert(named.lea);
+            ident_info& bound{binding.target.info};
 
             const operand address{
                 x.alloc_scratch_register(call_.tk, indent,
@@ -949,9 +947,10 @@ class inline_call {
             x.comment(call_.tk, indent, "address of parameter {}",
                       in_quotes(binding.from));
 
-            x.address_of(call_.tk, indent, address, *named.lea);
+            x.address_of(call_.tk, indent, address, bound.operand());
 
-            named.lea = operand::mem(address, named.lea->type_ref());
+            bound = bound.at_address(
+                operand::mem(address, bound.operand().type_ref()));
         }
 
         compile_body(tc, indent, bindings);
@@ -1054,8 +1053,7 @@ class inline_call {
 
             assert(dst.type_ref().is_same(call_.func->result_type()));
 
-            bindings.result =
-                bind_result(dst, *result, call_.func->result_type());
+            bindings.result = bind_result(dst, *result);
         }
 
         for (const auto [i, arg, param, planned] :
@@ -1072,9 +1070,13 @@ class inline_call {
             if (planned.is_temporary) {
                 const std::string temporary{call_.temporary_argument_name(i)};
 
-                bindings.arguments.push_back(
-                    bind_name(param, temporary, temporary,
-                              call_site::temporary_storage(tc, temporary)));
+                bindings.arguments.push_back(param_binding::make_name(
+                    param.name(),
+                    {
+                        .info{tc.resolve_declared(call_.tk, temporary)},
+                        .storage{call_site::temporary_storage(tc, temporary)},
+                    },
+                    temporary));
 
                 continue;
             }
@@ -1109,8 +1111,7 @@ class inline_call {
                 return bind_reference(tc, indent, arg, ident, param, held);
             }
 
-            return bind_name(param, ident.dotted_path(), ident.path_text(),
-                             ident.storage(tc));
+            return bind_name(param, ident, arg_place->info, tc);
         }
 
         if (const call_site::argument_form::computed* const computed{
@@ -1157,25 +1158,22 @@ class inline_call {
         held.add(reg);
         arg.compile(tc, indent, destination::of_register(reg));
 
-        return param_binding::make_register(param.name(), param.get_type(),
-                                            reg);
+        return param_binding::make_register(param.name(), reg,
+                                            reg.register_name());
     }
 
-    // a variable of the caller or a temporary of the call, named by 'path'
-    // and written as 'text'
-    [[nodiscard]] static auto
-    bind_name(const stmt_def_func_param& param, const std::string_view path,
-              const std::string_view text,
-              const std::optional<storage_path>& bound) -> param_binding {
+    // a place of the caller that 'ident' names and 'info' resolves
+    [[nodiscard]] static auto bind_name(const stmt_def_func_param& param,
+                                        const stmt_identifier& ident,
+                                        const ident_info& info, const toc& tc)
+        -> param_binding {
 
-        return param_binding::make_name(param.name(), param.get_type(),
+        return param_binding::make_name(param.name(),
                                         {
-                                            .dotted_path{std::string{path}},
-                                            .text{std::string{text}},
-                                            .lea{},
-                                            .is_element{},
-                                            .bound{bound},
-                                        });
+                                            .info{info},
+                                            .storage{ident.storage(tc)},
+                                        },
+                                        ident.path_text());
     }
 
     // a constant, a name bound to a register or a name with unary operators
@@ -1208,8 +1206,7 @@ class inline_call {
         }
 
         if (ident.get_unary_ops().is_empty()) {
-            return bind_name(param, ident.dotted_path(), ident.path_text(),
-                             ident.storage(tc));
+            return bind_name(param, ident, arg_info, tc);
         }
 
         const operand reg{
@@ -1218,8 +1215,8 @@ class inline_call {
                                         tc.checks().overflow_options(), held),
         };
 
-        return param_binding::make_register(param.name(), param.get_type(),
-                                            reg);
+        return param_binding::make_register(param.name(), reg,
+                                            reg.register_name());
     }
 
     // an indexed argument keeps its computed address, e.g.
@@ -1240,26 +1237,21 @@ class inline_call {
             ident.compile_lea(tc, indent, arg.tok(), held,
                               {
                                   .reg_count{},
-                                  .address_by_call{arg_info.address_by_call()},
                                   .address_register{},
                               }),
         };
 
-        return param_binding::make_name(
-            param.name(), param.get_type(),
-            {
-                .dotted_path{std::string{ident.dotted_path()}},
-                .text{ident.path_text()},
-                .lea{lea},
-                .is_element{ident.is_array_element()},
-                .bound{ident.storage(tc)},
-            });
+        return param_binding::make_name(param.name(),
+                                        {
+                                            .info{arg_info.at_address(lea)},
+                                            .storage{ident.storage(tc)},
+                                        },
+                                        ident.path_text());
     }
 
     // the result name of the function refers to the destination
     [[nodiscard]] static auto bind_result(const destination& dst,
-                                          const func_result& result,
-                                          const type& result_type)
+                                          const func_result& result)
         -> param_binding {
 
         const std::string_view name{result.name_tk.text()};
@@ -1270,36 +1262,26 @@ class inline_call {
             // note: a register has no address to keep
             assert(not dst.is_final_address());
 
-            return param_binding::make_register(name, result_type,
-                                                dst.operand(), dst.name());
+            return param_binding::make_register(name, dst.operand(),
+                                                dst.text());
         }
 
-        std::optional<operand> dst_lea{
-            dst.is_final_address() ? std::optional{dst.operand()}
-                                   : std::nullopt,
-        };
-
-        // a destination such as 'arr[1]' is not an array
-        return param_binding::make_name(name, result_type,
+        return param_binding::make_name(name,
                                         {
-                                            .dotted_path{dst.name()},
-                                            .text{dst.text()},
-                                            .lea{std::move(dst_lea)},
-                                            .is_element{not dst.is_array()},
-                                            .bound{dst.storage()},
-                                        });
+                                            .info{dst.bound_info()},
+                                            .storage{dst.storage()},
+                                        },
+                                        dst.text());
     }
 
     // e.g. [s0 + t0 * 4 + 28] but not [t1 + 28]
     [[nodiscard]] static auto is_indexed_reference(const param_binding& binding)
         -> bool {
 
-        const bound_name* const named{
-            std::get_if<bound_name>(&binding.target),
-        };
+        const ident_info& bound{binding.target.info};
 
-        return named != nullptr and named->lea and named->lea->is_memory() and
-               not named->lea->index_register().empty();
+        return bound.is_address_by_call() and bound.operand().is_memory() and
+               not bound.operand().index_register().empty();
     }
 };
 
@@ -1406,9 +1388,9 @@ class noinline_call {
 
             compile_with_arguments(
                 tc, indent,
-                destination::of_name(
-                    result_info,
-                    call_site::temporary_storage(tc, result_info.root_id())),
+                destination::of_name(result_info, call_.temporary_result_name(),
+                                     call_site::temporary_storage(
+                                         tc, call_.temporary_result_name())),
                 arguments);
 
             machine& x{tc.machine()};
@@ -2142,7 +2124,8 @@ class stmt_call : public statement {
                 index, arg,
                 std::format("read-only {}",
                             in_quotes(written->ident->dotted_path())),
-                read_only_hint(written->info));
+                read_only_hint(written->ident->first_token().text(),
+                               written->info));
         }
     }
 
@@ -2575,9 +2558,7 @@ class stmt_call : public statement {
 
             const stmt_identifier& ident{*passed->ident};
 
-            const std::string_view root{
-                ident_info::root_of(ident.dotted_path()),
-            };
+            const std::string_view root{ident.first_token().text()};
 
             if (is_recursive) {
                 tc.record_use(root, ident.accessed_path(),

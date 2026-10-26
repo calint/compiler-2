@@ -102,13 +102,15 @@ class stmt_assign_var final : public statement {
         };
 
         const destination var_dst{
-            destination::of_name(var_info,
-                                 {
-                                     .address{address},
-                                     .is_final_address{is_final_address},
-                                     .storage{dst_storage},
-                                     .text{stmt_ident_.path_text()},
-                                 }),
+            destination::of_name(
+                var_info,
+                {
+                    .root{std::string{stmt_ident_.first_token().text()}},
+                    .address{address},
+                    .is_final_address{is_final_address},
+                    .storage{dst_storage},
+                    .text{stmt_ident_.path_text()},
+                }),
         };
 
         expr_.compile(tc, indent, var_dst);

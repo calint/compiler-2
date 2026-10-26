@@ -571,6 +571,7 @@ class statement {
     static auto assert_not_read_only(const token& src_loc_tk,
                                      const std::string_view action,
                                      const std::string_view name,
+                                     const std::string_view root,
                                      const ident_info& info) -> void {
 
         if (not info.is_read_only()) {
@@ -579,14 +580,15 @@ class statement {
 
         throw compile_error{src_loc_tk,
                             std::format("cannot {} read-only {}{}", action,
-                                        in_quotes(name), read_only_hint(info))};
+                                        in_quotes(name),
+                                        read_only_hint(root, info))};
     }
 
-    // why the name cannot be written, e.g. ", 'x' is declared with 'let'"
-    [[nodiscard]] static auto read_only_hint(const ident_info& info)
+    // why the name 'root' cannot be written, e.g. ", 'x' is declared with
+    // 'let'"
+    [[nodiscard]] static auto read_only_hint(const std::string_view root,
+                                             const ident_info& info)
         -> std::string {
-
-        const std::string_view root{info.root_id()};
 
         if (info.read_only_why() == read_only_cause::let) {
             return std::format(", {} is declared with 'let'", in_quotes(root));

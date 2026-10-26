@@ -118,6 +118,22 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
             'call_address' with 'trailing_count', the three 'bound_*' go;
             in steps, each with both suites showing equal listings and
             errors; README 1.3, 6.5, 6.8
+       => B.1 done (2026-10-26): N2 first ('ident_info' keeps one type);
+          then N1: a binding holds a 'resolved_name' (the 'ident_info' and
+          the storage its argument or destination resolved to in the
+          caller), the resolver looks up one name, a path resolves its root
+          and steps each field ('ident_info::field', 'type::first_builtin'),
+          an address computed at a call is 'ident_info::at_address';
+          'ident_path', 'ident_builder', the walk and 'follow_binding',
+          'lookup_below', the three 'bound_*', 'bound_storage_of',
+          'call_address' with 'trailing_count', 'by_call_in_path',
+          'lea_request::address_by_call', 'type::field_offset' x2, the name
+          text of 'ident_info' ('id', 'root_id', 'root_of') and the dotted
+          'destination::name_' go ('destination' keeps its root name and
+          info, 'bound_info'); not done: moving the narrowing of the accessed
+          bytes into the constructor loop (it would change which of two
+          errors of a path is reported); src -428 lines; listings and errors
+          of every test on both targets equal to HEAD
        B.2. U1 (-55): definite assignment traces the result as the parse
             resolved it, its own hiding model goes, one walk per body
        B.3. U2 (-20): a read is a 'stmt_identifier', no path text per read

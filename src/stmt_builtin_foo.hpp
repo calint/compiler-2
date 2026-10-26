@@ -305,13 +305,11 @@ class stmt_builtin_foo final : public statement {
         machine::held_registers held{x, tok(), indent};
 
         const operand op{
-            ident_.compile_lea(
-                tc, indent, tok(), held,
-                {
-                    .reg_count{},
-                    .address_by_call{array_info.address_by_call()},
-                    .address_register{},
-                }),
+            ident_.compile_lea(tc, indent, tok(), held,
+                               {
+                                   .reg_count{},
+                                   .address_register{},
+                               }),
         };
 
         x.address_of(tok(), indent, reg_iter, op);

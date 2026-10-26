@@ -3,10 +3,9 @@
 // what a name resolves to ('ident_info'), what a variable is declared as
 // ('var_info'), where 'compile' writes a value ('destination'), what a
 // caller asks of the address of an identifier ('lea_request'), why a name
-// cannot be written ('read_only_cause'), an address computed at an inlined
-// call ('call_address'), a value known at compile time ('folded_value'),
-// where a variable lives ('var_placement') and how a value is used
-// ('value_use')
+// cannot be written ('read_only_cause'), a value known at compile time
+// ('folded_value'), where a variable lives ('var_placement') and how a value
+// is used ('value_use')
 
 #include <cassert>
 #include <cstddef>
@@ -166,26 +165,17 @@ struct var_info {
     }
 };
 
-// the address of an element of a path computed at an inlined call, e.g.
-// '[rbp + r15 * 8 + 16]' for 'rooms[i]' of the argument 'world.rooms[i]';
-// 'trailing_count' is the elements of the path after it, e.g. 1 for the 'x'
-// of 'p.x' when 'p' names 'world.rooms[i]'
-struct call_address {
-    operand address;
-    size_t trailing_count{};
-};
-
-// what a name resolves to: nothing, a constant, a register or storage; the
-// path has one entry per element from the root with its type, e.g. 'p' and
-// 'x' for 'p.x'; what else is known depends on the kind and is in its part,
-// the accessors give what a kind does not have as empty, e.g. 'is_array' of a
-// constant is false
+// what a name resolves to: nothing, a constant, a register or storage, with
+// the type of the last element of its path, e.g. that of 'x' for 'p.x'; what
+// else is known depends on the kind and is in its part, the accessors give
+// what a kind does not have as empty, e.g. 'is_array' of a constant is false
 class ident_info final {
     // a variable or the storage that an argument names
     struct var_part {
         ::operand operand;
-        // the deepest address an inlined call computed, empty when none did
-        std::optional<call_address> address_by_call;
+        // the operand is an address an inlined call computed, e.g.
+        // '[rbp + r15 * 8 + 16]' for the argument 'rooms[i]'
+        bool is_address_by_call{};
         array_shape shape;
         bool holds_address{};
         read_only_cause read_only_why{};
@@ -196,22 +186,15 @@ class ident_info final {
         ::operand reg;
     };
 
-    std::string id_;
     // where the name is in the source, set by 'make_ident_info(tc, st)',
     // empty when resolved without a statement
     token src_loc_tk_;
-    std::vector<std::string> elem_path_;
-    std::vector<const type*> type_path_;
+    const type* type_ptr_{};
     // a constant: a literal, a named constant or, typed, the value of an
     // argument of an inlined call, which has the type of its parameter
     std::variant<std::monostate, folded_value, register_part, var_part> part_;
 
   public:
-    [[nodiscard]] auto address_by_call() const -> std::optional<call_address> {
-        const var_part* const var{std::get_if<var_part>(&part_)};
-        return var == nullptr ? std::nullopt : var->address_by_call;
-    }
-
     [[nodiscard]] auto array_len() const -> std::optional<size_t> {
         return shape().length();
     }
@@ -228,13 +211,21 @@ class ident_info final {
         return element;
     }
 
-    [[nodiscard]] auto constant() const -> const folded_value& {
-        return std::get<folded_value>(part_);
+    // the same storage at 'address', which an inlined call computed for an
+    // argument or a destination
+    [[nodiscard]] auto at_address(const ::operand& address) const
+        -> ident_info {
+
+        ident_info result{*this};
+        var_part& var{std::get<var_part>(result.part_)};
+        var.operand = address;
+        var.is_address_by_call = true;
+        var.holds_address = false;
+        return result;
     }
 
-    // e.g. 'p', 'x' for 'p.x'
-    [[nodiscard]] auto elem_path() const -> const std::vector<std::string>& {
-        return elem_path_;
+    [[nodiscard]] auto constant() const -> const folded_value& {
+        return std::get<folded_value>(part_);
     }
 
     // 1 for a name that is not an array, see 'discarded_array_len'
@@ -242,8 +233,20 @@ class ident_info final {
         return shape().element_count();
     }
 
-    [[nodiscard]] auto has_address_by_call() const -> bool {
-        return address_by_call().has_value();
+    // the field 'fld' of the instance a variable names, its operand moved by
+    // the offset of the field; a constant or a register has no fields
+    [[nodiscard]] auto field(const type_field& fld) const -> ident_info {
+        ident_info result{*this};
+        var_part& var{std::get<var_part>(result.part_)};
+
+        var.operand =
+            ::operand::mem(var.operand, fld.type_ptr->first_builtin());
+
+        var.operand.increment_offset(address_offset(fld.offset));
+        var.shape = fld.shape;
+        result.type_ptr_ = fld.type_ptr;
+
+        return result;
     }
 
     [[nodiscard]] auto holds_address() const -> bool {
@@ -251,13 +254,15 @@ class ident_info final {
         return var != nullptr and var->holds_address;
     }
 
-    // e.g. 'p.x', the name as resolved
-    [[nodiscard]] auto id() const -> const std::string& { return id_; }
+    [[nodiscard]] auto is_address_by_call() const -> bool {
+        const var_part* const var{std::get_if<var_part>(&part_)};
+        return var != nullptr and var->is_address_by_call;
+    }
 
     // the root holds an address, or is an argument whose address an inlined
     // call computed at run time
     [[nodiscard]] auto is_address_computed() const -> bool {
-        return holds_address() or has_address_by_call();
+        return holds_address() or is_address_by_call();
     }
 
     [[nodiscard]] auto is_array() const -> bool { return shape().is_array(); }
@@ -305,11 +310,6 @@ class ident_info final {
         return var == nullptr ? read_only_cause::none : var->read_only_why;
     }
 
-    // variable name without the field path
-    [[nodiscard]] auto root_id() const -> std::string_view {
-        return root_of(id_);
-    }
-
     auto set_src_loc_tk(const token& tk) -> void { src_loc_tk_ = tk; }
 
     // not an array when the name has no storage, e.g. a constant
@@ -324,37 +324,25 @@ class ident_info final {
         return src_loc_tk_;
     }
 
-    // the type of each element of 'elem_path'
-    [[nodiscard]] auto type_path() const -> const std::vector<const type*>& {
-        return type_path_;
-    }
-
     [[nodiscard]] auto type_ref() const -> const type& {
         assert(validate_invariants());
 
-        return *type_path_.back();
+        return *type_ptr_;
     }
 
-    // an empty info has no type, every path has one entry per element
+    // an empty info has no type
     [[nodiscard]] auto validate_invariants() const -> bool {
-        const bool paths_match{
-            not id_.empty() and not elem_path_.empty() and
-                elem_path_.size() == type_path_.size(),
-        };
-
-        if (is_const()) {
-            return paths_match and elem_path_.size() == 1;
-        }
+        const bool is_typed{type_ptr_ != nullptr};
 
         if (is_register()) {
             const ::operand& reg{std::get<register_part>(part_).reg};
 
-            return paths_match and elem_path_.size() == 1 and
-                   reg.is_register() and not reg.register_name().empty() and
+            return is_typed and reg.is_register() and
+                   not reg.register_name().empty() and
                    reg.index_register().empty() and reg.displacement() == 0;
         }
 
-        return paths_match and is_var();
+        return is_typed and (is_const() or is_var());
     }
 
     // the bytes of the value, e.g. the whole array, not an address
@@ -368,20 +356,15 @@ class ident_info final {
     // statics
     //
 
-    [[nodiscard]] static auto make_const(const std::string_view ident,
-                                         const type& tp,
+    [[nodiscard]] static auto make_const(const type& tp,
                                          const folded_value& constant)
         -> ident_info {
-
-        assert(not ident.empty());
 
         // note: a typed constant has the type of its parameter
         assert(not constant.is_typed() or constant.own_type == &tp);
 
         ident_info info;
-        info.id_ = ident;
-        info.elem_path_ = {std::string{ident}};
-        info.type_path_ = {&tp};
+        info.type_ptr_ = &tp;
         info.part_ = constant;
 
         return info;
@@ -389,17 +372,13 @@ class ident_info final {
 
     [[nodiscard]] static auto make_empty() -> ident_info { return {}; }
 
-    [[nodiscard]] static auto make_register(const std::string_view ident,
-                                            const ::operand& reg)
+    [[nodiscard]] static auto make_register(const ::operand& reg)
         -> ident_info {
 
-        assert(not ident.empty());
         assert(reg.is_register());
 
         ident_info info;
-        info.id_ = ident;
-        info.elem_path_ = {std::string{ident}};
-        info.type_path_ = {&reg.type_ref()};
+        info.type_ptr_ = &reg.type_ref();
 
         info.part_ = register_part{
             .reg{reg},
@@ -408,29 +387,13 @@ class ident_info final {
         return info;
     }
 
-    [[nodiscard]] static auto make_var(std::string ident,
-                                       std::vector<std::string> elem_path,
-                                       std::vector<const type*> type_path,
-                                       var_part var) -> ident_info {
-
-        assert(not ident.empty());
-        assert(not elem_path.empty());
-        assert(elem_path.size() == type_path.size());
+    [[nodiscard]] static auto make_var(const type& tp, var_part var)
+        -> ident_info {
 
         ident_info info;
-        info.id_ = std::move(ident);
-        info.elem_path_ = std::move(elem_path);
-        info.type_path_ = std::move(type_path);
+        info.type_ptr_ = &tp;
         info.part_ = std::move(var);
-
         return info;
-    }
-
-    // 'p' of 'p.x.y', the variable name without the field path
-    [[nodiscard]] static auto root_of(const std::string_view path)
-        -> std::string_view {
-
-        return path.substr(0, path.find('.'));
     }
 };
 
@@ -457,9 +420,12 @@ struct value_use {
 class destination final {
     ::operand operand_;
     const type* type_ptr_{};
-    // the path without indexes, e.g. 'ps.x' of 'ps[i].x', the root and the
-    // binding of a result name it; the register of a register destination
-    std::string name_;
+    // the root as written, e.g. 'ps' of 'ps[i].x', the register of a register
+    // destination
+    std::string root_name_;
+    // what the root resolved to, stepped with 'field' and 'element'; none for
+    // a register destination
+    std::optional<ident_info> info_;
     // the destination as written, for the comments and the diagnostics, e.g.
     // 'w.ps[0]'; a temporary has its name, a register its register
     std::string text_;
@@ -479,6 +445,7 @@ class destination final {
 
     // what a resolved name adds when it is the destination of an assignment
     struct name_parts {
+        std::string root;
         ::operand address;
         bool is_final_address{};
         std::optional<storage_path> storage;
@@ -501,11 +468,25 @@ class destination final {
         return result;
     }
 
+    // what the result of an inlined call stands for when this is its
+    // destination: the storage at the address computed for it, or as resolved
+    [[nodiscard]] auto bound_info() const -> ident_info {
+        // note: a register destination is bound as a register
+        assert(info_);
+
+        if (is_final_address_) {
+            return info_->at_address(operand_);
+        }
+
+        return *info_;
+    }
+
     // the element 'index' of the array, e.g. of an array literal; the type
     // of an array destination is its element type
     [[nodiscard]] auto element(const size_t index) const -> destination {
         // note: an array is in storage
         assert(storage_);
+        assert(info_);
 
         destination result{*this};
 
@@ -514,6 +495,7 @@ class destination final {
 
         result.is_final_address_ = true;
         result.shape_ = {};
+        result.info_ = info_->as_element();
         result.storage_->path.add_fixed_index(index);
         result.text_ += std::format("[{}]", index);
 
@@ -531,11 +513,12 @@ class destination final {
     [[nodiscard]] auto field(const type_field& fld) const -> destination {
         // note: a record is in storage
         assert(storage_);
+        assert(info_);
 
         destination result{*this};
         result.operand_ = operand_at(fld.offset, fld.type());
         result.is_final_address_ = true;
-        result.name_ += std::format(".{}", fld.name);
+        result.info_ = info_->field(fld);
         result.type_ptr_ = &fld.type();
         result.src_loc_tk_ = {};
         result.storage_->path.add_field(fld.offset);
@@ -574,8 +557,6 @@ class destination final {
         return storage_.has_value();
     }
 
-    [[nodiscard]] auto name() const -> const std::string& { return name_; }
-
     [[nodiscard]] auto operand() const -> const ::operand& { return operand_; }
 
     // 'offset' bytes into the destination as 'value_type', e.g. the padding
@@ -588,9 +569,8 @@ class destination final {
         return result;
     }
 
-    // the variable name without the field path
-    [[nodiscard]] auto root_id() const -> std::string_view {
-        return ident_info::root_of(name_);
+    [[nodiscard]] auto root_name() const -> const std::string& {
+        return root_name_;
     }
 
     [[nodiscard]] auto storage() const -> const std::optional<storage_path>& {
@@ -618,16 +598,19 @@ class destination final {
     // statics
     //
 
-    // a name resolved as 'info' with its 'storage', at the operand of 'info'
+    // a name resolved as 'info' with its 'storage', at the operand of 'info',
+    // e.g. a temporary
     [[nodiscard]] static auto of_name(const ident_info& info,
+                                      const std::string_view name,
                                       std::optional<storage_path> storage)
         -> destination {
 
         return of_name(info, {
+                                 .root{std::string{name}},
                                  .address{info.operand()},
-                                 .is_final_address{info.has_address_by_call()},
+                                 .is_final_address{info.is_address_by_call()},
                                  .storage{std::move(storage)},
-                                 .text{info.id()},
+                                 .text{std::string{name}},
                              });
     }
 
@@ -642,7 +625,7 @@ class destination final {
         destination result;
         result.operand_ = std::move(parts.address);
         result.type_ptr_ = &info.type_ref();
-        result.name_ = info.id();
+        result.root_name_ = std::move(parts.root);
         result.text_ = std::move(parts.text);
         result.src_loc_tk_ = info.src_loc_tk();
 
@@ -650,6 +633,10 @@ class destination final {
 
         result.shape_ = info.shape();
         result.storage_ = std::move(parts.storage);
+
+        if (info.is_var()) {
+            result.info_ = info;
+        }
 
         return result;
     }
@@ -661,7 +648,7 @@ class destination final {
         destination result;
         result.operand_ = reg;
         result.type_ptr_ = &reg.type_ref();
-        result.name_ = reg.register_name();
+        result.root_name_ = reg.register_name();
         result.text_ = reg.register_name();
 
         return result;
@@ -672,9 +659,6 @@ class destination final {
 struct lea_request {
     // the count of a span operation on an array, none without one
     std::optional<operand> reg_count;
-
-    // the deepest address of the path an inlined call computed
-    std::optional<call_address> address_by_call;
 
     // the register the caller prefers the address to start in, none without
     // a preference

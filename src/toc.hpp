@@ -36,10 +36,9 @@
 // order:
 //
 //   records         'func_info', 'noinline_body', 'body_uses' (what a body
-//                   reaches that its callers name too), 'param_binding' (what
-//                   a parameter of an inlined call stands for, one of
-//                   'bound_constant', 'bound_register', 'bound_name'),
-//                   'const_info'
+//                   reaches that its callers name too), 'resolved_name' (what
+//                   a name means where it is used), 'param_binding' (what a
+//                   parameter of an inlined call stands for), 'const_info'
 //   'scope'         a block, a loop or a function being compiled: its
 //                   constants, variables and parameter bindings; "frame" in
 //                   'scope' and 'storage_layout' is memory, e.g. the frame
@@ -56,10 +55,7 @@
 //                   ('name_meaning'), the target of 'break' ('loop_target')
 //   'storage_layout' where variables are placed and how much storage is used
 //   'builtin_roles' the types the front end needs by role
-//   'ident_path'    a name as its path of elements, e.g. 'p.x'
-//   'ident_builder' the 'ident_info' of a variable and of a path below a known
-//                   address
-//   'ident_resolver' resolves a name by walking the scopes, following bindings
+//   'ident_resolver' resolves one name by 'lookup'
 //   'definition_checks' the errors of a name defined twice
 //   'variable_comments' the comment of where a variable is stored
 //   'toc'           the facade the statements use, owns all of the above; a
@@ -170,89 +166,25 @@ class body_uses final {
     }
 };
 
-// a parameter that is a constant, e.g. 'x' of 'f(3)' or of 'f(2 * n)' when
-// 'n' is a constant, the body is decided at compile time
-struct bound_constant {
-    // typed with the type of the parameter
-    folded_value constant;
-};
-
-// a parameter whose value is in a register, e.g. 'x' of 'f(a + 1)'
-struct bound_register {
-    operand reg;
-    // how the comments show it, the register or the name that held it
-    std::string name;
-};
-
-// a parameter that names a place of the caller by its path, resolved again in
-// the scopes of the caller: storage, e.g. 'p' of 'f(world.rooms[i])', a name
-// held in a register, e.g. the counter 'i' of a 'foo', or the result that
-// names the destination
-struct bound_name {
-    // e.g. 'world.rooms', resolved in the scopes of the caller
-    std::string dotted_path;
-    // as written, for the comments, e.g. 'copy[2]' where 'dotted_path' is
-    // 'copy'
-    std::string text;
-    // the address computed at the call, none when the path finds it, e.g.
-    // '[rbp + r15 * 8 + 16]' for a run-time index
-    std::optional<operand> lea;
-    // e.g. 'i' -> 'arr[ix]' names one element, not the array 'arr'
-    bool is_element{};
-    // the root variable and the path that the parameter names, found where
-    // the call is made because the callee does not see the caller's names,
-    // e.g. the element 'e' of a 'foo'; empty when the argument holds no
-    // storage, e.g. a value in a register
-    std::optional<storage_path> bound;
+// what a name means where it is used, with the storage it reaches; a
+// parameter or the result of an inlined call stands for what its argument or
+// the destination resolved to in the scopes of the caller
+struct resolved_name {
+    ident_info info;
+    // the root variable and the path that the name reaches, empty when it
+    // holds no storage, e.g. a constant or a value in a register
+    std::optional<storage_path> storage;
 };
 
 // what the name of a parameter or of the result of an inlined call stands
-// for in its body
+// for in its body: a constant, e.g. 'x' of 'f(3)', which decides the body at
+// compile time; a register, e.g. 'x' of 'f(a + 1)'; or a place of the caller,
+// e.g. 'p' of 'f(world.rooms[i])' at the address the call computed
 struct param_binding {
     std::string from;
-    // the type of the parameter or the result
-    const type* type_ptr{};
-    std::variant<bound_constant, bound_register, bound_name> target;
-
-    // the storage that the parameter names with 'path' inside it, empty when
-    // its argument holds none, e.g. a constant or a value in a register
-    [[nodiscard]] auto bound_storage_of(const access_path& path) const
-        -> std::optional<storage_path> {
-
-        const bound_name* const named{
-            std::get_if<bound_name>(&target),
-        };
-
-        if (named == nullptr or not named->bound) {
-            return std::nullopt;
-        }
-
-        const storage_path& bound{*named->bound};
-
-        return storage_path{
-            .root{bound.root},
-            .path{bound.path.extended_by(path)},
-        };
-    }
-
+    resolved_name target;
     // what the parameter stands for, as the comments show it
-    [[nodiscard]] auto target_text() const -> std::string {
-        if (const bound_constant* const bound{
-                std::get_if<bound_constant>(&target),
-            }) {
-
-            return std::format("{}", bound->constant.value);
-        }
-
-        if (const bound_register* const reg{
-                std::get_if<bound_register>(&target),
-            }) {
-
-            return reg->name;
-        }
-
-        return std::get<bound_name>(target).text;
-    }
+    std::string text;
 
     //
     // statics
@@ -268,54 +200,47 @@ struct param_binding {
 
         return {
             .from{std::string{name}},
-            .type_ptr{&param_type},
             .target{
-                bound_constant{
-                    .constant{
-                        .value{value},
-                        .own_type{&param_type},
-                    },
+                .info{
+                    ident_info::make_const(param_type,
+                                           {
+                                               .value{value},
+                                               .own_type{&param_type},
+                                           }),
                 },
+                .storage{},
             },
+            .text{std::format("{}", value)},
         };
     }
 
     [[nodiscard]] static auto make_name(const std::string_view name,
-                                        const type& param_type,
-                                        bound_name named) -> param_binding {
-
-        return {
-            .from{std::string{name}},
-            .type_ptr{&param_type},
-            .target{std::move(named)},
-        };
-    }
-
-    [[nodiscard]] static auto
-    make_register(const std::string_view name, const type& param_type,
-                  const operand& reg, const std::string_view reg_name)
+                                        resolved_name target,
+                                        const std::string_view text)
         -> param_binding {
 
-        assert(reg.is_register());
-
         return {
             .from{std::string{name}},
-            .type_ptr{&param_type},
-            .target{
-                bound_register{
-                    .reg{reg},
-                    .name{std::string{reg_name}},
-                },
-            },
+            .target{std::move(target)},
+            .text{std::string{text}},
         };
     }
 
+    // 'text' is how the comments show it, the register or the name that
+    // held it
     [[nodiscard]] static auto make_register(const std::string_view name,
-                                            const type& param_type,
-                                            const operand& reg)
+                                            const operand& reg,
+                                            const std::string_view text)
         -> param_binding {
 
-        return make_register(name, param_type, reg, reg.register_name());
+        return {
+            .from{std::string{name}},
+            .target{
+                .info{ident_info::make_register(reg)},
+                .storage{},
+            },
+            .text{std::string{text}},
+        };
     }
 };
 
@@ -1299,25 +1224,18 @@ class scope_stack final {
             scopes_, [](const scope& scp) -> bool { return scp.is_func(); });
     }
 
-    // what 'name' means in the innermost scope
+    // what 'name' means in the innermost scope, the one rule of what a name
+    // means: the scopes of the innermost function from the innermost out,
+    // then the root scope. a scope declares a variable or a constant of a
+    // name, not both; in a function scope a parameter hides a constant of the
+    // generic instance, which is the context of the definition
     [[nodiscard]] auto lookup(const std::string_view name) const
         -> name_meaning {
 
-        return lookup_below(name, scopes_.size());
-    }
-
-    // what 'name' means to the scopes below the index 'end', the one rule of
-    // what a name means: the scopes of the innermost function from the
-    // innermost out, then the root scope. a scope declares a variable or a
-    // constant of a name, not both; in a function scope a parameter hides a
-    // constant of the generic instance, which is the context of the definition
-    [[nodiscard]] auto lookup_below(const std::string_view name,
-                                    const size_t end) const -> name_meaning {
-
         // the root is checked after the loop, where the order of the
         // definitions applies
-        for (const size_t index :
-             std::views::iota(size_t{1}, end) | std::views::reverse) {
+        for (const size_t index : std::views::iota(size_t{1}, scopes_.size()) |
+                                      std::views::reverse) {
 
             const scope& scp{scopes_.at(index)};
 
@@ -1890,245 +1808,17 @@ class builtin_roles final {
     }
 };
 
-// an identifier and its path split at the '.', e.g. 'p.pos.x'
-class ident_path final {
-    std::string id_;
-    std::vector<std::string> path_;
-
-  public:
-    explicit ident_path(std::string id) : id_{std::move(id)} {
-        assert(not id_.empty());
-
-        refresh_path();
-
-        assert(not path_.empty());
-    }
-
-    auto append(const std::string_view path_elem) -> void {
-        id_ = std::format("{}.{}", id_, path_elem);
-        refresh_path();
-    }
-
-    [[nodiscard]] auto base() const -> std::string_view {
-        assert(not path_.empty());
-
-        return path_.at(0);
-    }
-
-    [[nodiscard]] auto path() const -> const std::vector<std::string>& {
-        return path_;
-    }
-
-    // the path with its base replaced by 'new_base', e.g. 'pt.x' with the base
-    // 'p' becomes 'p.x' and 'lnk.count' with 'world.room.link' becomes
-    // 'world.room.link.count'
-    [[nodiscard]] auto rebased(const std::string_view new_base) const
-        -> ident_path {
-
-        ident_path target{std::string{new_base}};
-
-        for (const std::string& s : path_ | std::views::drop(1)) {
-            target.append(s);
-        }
-
-        return target;
-    }
-
-    [[nodiscard]] auto str() const -> const std::string& { return id_; }
-
-  private:
-    auto refresh_path() -> void {
-        path_.clear();
-        for (const auto part : id_ | std::views::split('.')) {
-            path_.emplace_back(part.begin(), part.end());
-        }
-    }
-};
-
-// builds the identifier info of a variable's path, finished, the address held
-// below a run-time index included; used by 'ident_resolver' only
-class ident_builder final {
-  public:
-    //
-    // statics
-    //
-
-    // the identifier 'ident' of the variable 'var', its path walks the fields
-    // of the type of the variable, 'base_register' is where its storage starts
-    // unless the variable has a base of its own; a built-in reached below an
-    // address an inlined call computed ('by_call') is addressed from it
-    [[nodiscard]] static auto make_var_ident_info(
-        const token& src_loc_tk, const std::string_view ident,
-        const std::vector<std::string>& path, const var_info& var,
-        const std::string_view base_register,
-        const std::optional<call_address>& by_call) -> ident_info {
-
-        const type* tp{var.type_ptr};
-
-        std::vector<const type*> type_path;
-        type_path.emplace_back(tp);
-
-        size_t offset{};
-        array_shape shape{var.shape};
-
-        for (const std::string& field_name : path | std::views::drop(1)) {
-            // note: drop 1 because the first element is retrieved outside the
-            //       loop
-
-            const type_field& tf{tp->field(src_loc_tk, field_name)};
-            offset = sum_storage_size(offset, tf.offset);
-            tp = tf.type_ptr;
-
-            shape = tf.shape;
-
-            type_path.emplace_back(tp);
-        }
-
-        const bool is_below_call_address{
-            by_call and type_path.back()->is_builtin(),
-        };
-
-        // a memory operand needs a built-in type, the first field of an
-        // instance starts at its address
-        while (not tp->is_builtin()) {
-            tp = tp->fields().front().type_ptr;
-        }
-
-        const operand op{
-            is_below_call_address ? operand_below_call_address(
-                                        src_loc_tk, path, type_path, *by_call)
-                                  : memory_at(var.placement, base_register,
-                                              address_offset(offset), *tp),
-        };
-
-        return ident_info::make_var(std::string{ident}, path,
-                                    std::move(type_path),
-                                    {
-                                        .operand{op},
-                                        .address_by_call{by_call},
-                                        .shape{shape},
-                                        .holds_address{
-                                            holds_address(var.placement),
-                                        },
-                                        .read_only_why{var.read_only_why},
-                                    });
-    }
-
-  private:
-    //
-    // statics
-    //
-
-    // the memory 'offset' bytes into a variable placed at 'placement', in
-    // storage from its own base or else from 'base_register'
-    [[nodiscard]] static auto memory_at(const var_placement& placement,
-                                        const std::string_view base_register,
-                                        const int64_t offset,
-                                        const type& value_type) -> operand {
-
-        if (const at_address_register* const pointed{
-                std::get_if<at_address_register>(&placement),
-            }) {
-
-            return operand::mem(pointed->reg.register_name(), "", 1, offset,
-                                value_type);
-        }
-
-        // note: a variable in a value register has no memory, 'resolve_var'
-        //       makes its register operand
-
-        const in_storage& stored{std::get<in_storage>(placement)};
-
-        const std::string_view memory_base{
-            stored.base_register.empty() ? base_register : stored.base_register,
-        };
-
-        return operand::mem(memory_base, "", 1,
-                            add_address_offset(stored.offset, offset),
-                            value_type);
-    }
-
-    // a built-in identifier below a run-time indexed element is addressed from
-    // the last address held, e.g. 'wld.rooms[ix].description.data'
-    [[nodiscard]] static auto
-    operand_below_call_address(const token& src_loc_tk,
-                               const std::vector<std::string>& path,
-                               const std::vector<const type*>& type_path,
-                               const call_address& by_call) -> operand {
-
-        const operand& lea{by_call.address};
-
-        const size_t lea_index{path.size() - 1 - by_call.trailing_count};
-
-        // example of resulting data structure:
-        //
-        // type string { len i8, data i8[127] }
-        // type room { name string, description string, note string }
-        // type world { rooms room[128] }
-        //
-        // id path     |  type  |  lea          |
-        // ------------|--------|---------------|
-        // wld         | world  | -             |
-        // rooms[i]    | room   | r15           |
-        // description | string | -             |
-        // data        | i8     | r15 + 129     |
-        //
-        // the index into 'rooms' is known only at run time, so the address of
-        // 'rooms[i]' is in a register and the fields after it are addressed
-        // from that register
-
-        // the fields after the call address are at fixed offsets from it
-        const std::span<const std::string> elem_path_from_lea{
-            std::span{path}.subspan(lea_index),
-        };
-
-        const size_t offset{
-            type_path.at(lea_index)->field_offset(src_loc_tk,
-                                                  elem_path_from_lea),
-        };
-
-        operand element{operand::mem(lea, *type_path.back())};
-
-        if (offset != 0) {
-            element.increment_offset(address_offset(offset));
-        }
-
-        return element;
-    }
-};
-
-// resolves a name by 'scope_stack::lookup_below' to its operand, a variable,
-// a register or a constant ('resolve'), and to the storage it reaches
-// ('resolve_storage'); a binding is followed into the scopes of the caller;
-// a binding to an element gives the element ('as_element'), an index written
-// in the path itself is handled by the free 'make_ident_info'
+// resolves one name by 'scope_stack::lookup' to what it means, a variable, a
+// register or a constant ('resolve'), and to the storage it reaches
+// ('resolve_storage'); a binding gives what its argument resolved to in the
+// caller, the fields and the indexes of a path are stepped by
+// 'stmt_identifier'
 class ident_resolver final {
     std::reference_wrapper<const scope_stack> scopes_;
     std::reference_wrapper<const ::machine> machine_;
     std::reference_wrapper<const function_table> funcs_;
     std::reference_wrapper<const generic_registry> generics_;
     std::reference_wrapper<const builtin_roles> builtins_;
-
-    // where the walk through the scopes has got to
-    struct walk {
-        walk(ident_path identifier, const size_t end_in)
-            : id{std::move(identifier)}, end{end_in} {}
-
-        // the identifier, a binding rewrites it to what the parameter stands
-        // for
-        ident_path id;
-
-        // the base is looked up in the scopes below this index, a binding
-        // continues below its own scope
-        size_t end{};
-
-        // the first address met is the deepest, outer bindings only rewrite
-        // the base of the path
-        std::optional<call_address> address_by_call;
-
-        // a binding to an element names the element, not the array holding it
-        bool is_element{};
-    };
 
   public:
     ident_resolver(const scope_stack& scopes, const ::machine& backend,
@@ -2184,8 +1874,8 @@ class ident_resolver final {
 
     // what 'name' names with 'path' inside it, as a root variable and the
     // path inside it, empty when it holds no storage, e.g. a constant. a
-    // parameter is followed to its argument and the element 'e' of a 'foo' is
-    // any element of the array it iterates
+    // parameter reaches what its argument reaches and the element 'e' of a
+    // 'foo' is any element of the array it iterates
     [[nodiscard]] auto resolve_storage(const std::string_view name,
                                        const access_path& path) const
         -> std::optional<storage_path> {
@@ -2193,11 +1883,21 @@ class ident_resolver final {
         const name_meaning meaning{scopes_.get().lookup(name)};
 
         if (meaning.is_binding()) {
-            const param_binding& binding{
-                scopes_.get().at(meaning.scope_index).get_binding(name),
+            const std::optional<storage_path>& bound{
+                scopes_.get()
+                    .at(meaning.scope_index)
+                    .get_binding(name)
+                    .target.storage,
             };
 
-            return binding.bound_storage_of(path);
+            if (not bound) {
+                return std::nullopt;
+            }
+
+            return storage_path{
+                .root{bound->root},
+                .path{bound->path.extended_by(path)},
+            };
         }
 
         if (not meaning.is_variable()) {
@@ -2232,184 +1932,117 @@ class ident_resolver final {
   private:
     // a number, 'true' or 'false', else empty: the caller reports an unknown
     // name with its own wording
-    [[nodiscard]] auto resolve_literal_or_empty(const token& src_loc_tk,
-                                                const std::string_view ident,
-                                                const ident_path& id) const
-        -> ident_info {
+    [[nodiscard]] auto
+    resolve_literal_or_empty(const token& src_loc_tk,
+                             const std::string_view ident) const -> ident_info {
 
         // e.g. '0x10' or 'true'
-        if (const std::optional<constant_parser::literal> literal{
-                constant_parser::literal_value(src_loc_tk, id.str()),
-            }) {
+        const std::optional<constant_parser::literal> literal{
+            constant_parser::literal_value(src_loc_tk, ident),
+        };
 
-            const type& literal_type{
-                literal->is_bool ? builtins_.get().boolean()
-                                 : builtins_.get().default_type(),
-            };
-
-            return ident_info::make_const(
-                ident, literal_type, folded_value::untyped(literal->value));
+        if (not literal) {
+            return ident_info::make_empty();
         }
 
-        // e.g. '1.x' or 'true.x'; note: a character literal may hold a '.',
-        //       it was parsed whole above
-        if (id.path().size() > 1 and
-            (constant_parser::is_bool_literal(id.base()) or
-             starts_number(id.base()))) {
+        const type& literal_type{
+            literal->is_bool ? builtins_.get().boolean()
+                             : builtins_.get().default_type(),
+        };
 
-            throw compile_error{
-                src_loc_tk,
-                std::format("{} is a constant, it has no field {}",
-                            in_quotes(id.base()), in_quotes(id.path().at(1)))};
-        }
-
-        return ident_info::make_empty();
+        return ident_info::make_const(literal_type,
+                                      folded_value::untyped(literal->value));
     }
 
-    // the root name of the identifier is looked up in the scopes below 'end',
-    // a binding rewrites the identifier and the lookup goes on in the scopes of
-    // the caller
     [[nodiscard]] auto resolve_or_empty(const token& src_loc_tk,
                                         const std::string_view ident) const
         -> ident_info {
 
         assert(not ident.empty());
 
-        // e.g. 'lnks' of 'lnks[1].pos.y'
-        walk step{ident_path{std::string{ident}}, scopes_.get().count()};
+        const name_meaning meaning{scopes_.get().lookup(ident)};
 
-        while (true) {
-            const name_meaning meaning{
-                scopes_.get().lookup_below(step.id.base(), step.end),
-            };
-
-            if (not meaning.is_value()) {
-                return resolve_literal_or_empty(src_loc_tk, ident, step.id);
-            }
-
-            const scope& scp{scopes_.get().at(meaning.scope_index)};
-
-            if (meaning.is_variable()) {
-                const ident_info info{
-                    resolve_var(src_loc_tk, ident, step.id,
-                                scp.get_var_const_ref(step.id.base()),
-                                step.address_by_call),
-                };
-
-                return step.is_element ? info.as_element() : info;
-            }
-
-            // a constant has no fields and no elements
-            if (meaning.is_constant()) {
-                if (step.id.path().size() != 1) {
-                    throw compile_error{src_loc_tk,
-                                        std::format("constant {} has no fields",
-                                                    in_quotes(step.id.base()))};
-                }
-
-                const folded_value& constant{
-                    scp.get_const(step.id.base()).constant,
-                };
-
-                // an untyped constant reads at the default type
-                const type& constant_type{
-                    constant.is_typed() ? *constant.own_type
-                                        : builtins_.get().default_type(),
-                };
-
-                return ident_info::make_const(ident, constant_type, constant);
-            }
-
-            std::variant<ident_info, walk> next{
-                follow_binding(scp.get_binding(step.id.base()), ident, step,
-                               meaning.scope_index),
-            };
-
-            if (ident_info* const found{std::get_if<ident_info>(&next)}) {
-                return std::move(*found);
-            }
-
-            step = std::get<walk>(std::move(next));
+        if (not meaning.is_value()) {
+            return resolve_literal_or_empty(src_loc_tk, ident);
         }
+
+        const scope& scp{scopes_.get().at(meaning.scope_index)};
+
+        if (meaning.is_variable()) {
+            return resolve_var(scp.get_var_const_ref(ident));
+        }
+
+        if (meaning.is_constant()) {
+            const folded_value& constant{scp.get_const(ident).constant};
+
+            // an untyped constant reads at the default type
+            const type& constant_type{
+                constant.is_typed() ? *constant.own_type
+                                    : builtins_.get().default_type(),
+            };
+
+            return ident_info::make_const(constant_type, constant);
+        }
+
+        // the argument was resolved where the call is made, the place in the
+        // source is that of the use
+        ident_info bound{scp.get_binding(ident).target.info};
+        bound.set_src_loc_tk({});
+
+        return bound;
     }
 
-    [[nodiscard]] auto
-    resolve_var(const token& src_loc_tk, const std::string_view ident,
-                const ident_path& id, const var_info& var,
-                const std::optional<call_address>& by_call) const
-        -> ident_info {
-
+    [[nodiscard]] auto resolve_var(const var_info& var) const -> ident_info {
         if (const in_value_register* const in_register{
                 std::get_if<in_value_register>(&var.placement),
-            };
-            in_register != nullptr and id.path().size() == 1) {
+            }) {
 
-            return ident_info::make_register(ident, in_register->reg);
+            return ident_info::make_register(in_register->reg);
         }
 
-        return ident_builder::make_var_ident_info(
-            src_loc_tk, ident, id.path(), var,
-            machine_.get().variables_base_register(), by_call);
+        return ident_info::make_var(
+            *var.type_ptr,
+            {
+                .operand{
+                    memory_at(var.placement,
+                              machine_.get().variables_base_register(),
+                              var.type_ptr->first_builtin()),
+                },
+                .is_address_by_call{},
+                .shape{var.shape},
+                .holds_address{holds_address(var.placement)},
+                .read_only_why{var.read_only_why},
+            });
     }
 
     //
     // statics
     //
 
-    // the constant or the register a parameter stands for, else the walk one
-    // binding further: the identifier rewritten to the variable that it is
-    // bound to, looked up below the binding's scope 'binding_scope_index'
-    [[nodiscard]] static auto
-    follow_binding(const param_binding& binding, const std::string_view ident,
-                   const walk& step, const size_t binding_scope_index)
-        -> std::variant<ident_info, walk> {
+    // the memory of a variable placed at 'placement', in storage from its own
+    // base or else from 'base_register'
+    [[nodiscard]] static auto memory_at(const var_placement& placement,
+                                        const std::string_view base_register,
+                                        const type& value_type) -> operand {
 
-        const bool is_single{step.id.path().size() == 1};
-
-        // the value of an argument keeps the type of its parameter
-        if (const bound_constant* const bound{
-                std::get_if<bound_constant>(&binding.target),
+        if (const at_address_register* const pointed{
+                std::get_if<at_address_register>(&placement),
             }) {
 
-            // note: a built-in has no fields and no elements
-            assert(is_single);
-
-            return ident_info::make_const(ident, *binding.type_ptr,
-                                          bound->constant);
+            return operand::mem(pointed->reg.register_name(), "", 1, 0,
+                                value_type);
         }
 
-        if (const bound_register* const reg{
-                std::get_if<bound_register>(&binding.target),
-            }) {
+        // note: a variable in a value register has no memory, 'resolve_var'
+        //       makes its register operand
 
-            // note: a built-in has no fields and no elements
-            assert(is_single);
+        const in_storage& stored{std::get<in_storage>(placement)};
 
-            return ident_info::make_register(ident, reg->reg);
-        }
+        const std::string_view memory_base{
+            stored.base_register.empty() ? base_register : stored.base_register,
+        };
 
-        const bound_name& named{std::get<bound_name>(binding.target)};
-
-        walk next{step.id.rebased(named.dotted_path), binding_scope_index};
-        next.address_by_call = step.address_by_call;
-        next.is_element = step.is_element;
-
-        // a field path such as 'p.x' gets its array-ness from the field
-        if (named.is_element and is_single) {
-            next.is_element = true;
-        }
-
-        if (not next.address_by_call and named.lea) {
-            next.address_by_call = call_address{
-                .address{*named.lea},
-                .trailing_count{step.id.path().size() - 1},
-            };
-
-            // note: -1 because the parameter names the first element of the
-            //       path
-        }
-
-        return next;
+        return operand::mem(memory_base, "", 1, stored.offset, value_type);
     }
 };
 

@@ -165,9 +165,9 @@ class stmt_identifier;
 // ('as_place') when it reaches storage: a variable, a field or an element; the
 // parse resolves the type and the bytes of the root variable that the path
 // reaches ('accessed_bytes_', the whole array after a run-time index), the
-// compile resolves the names again in the current scopes and builds one memory
-// operand ('compile_lea', see 'etc/docs/README.md' chapter 6); a path that
-// names a constant has no storage; the members that use
+// compile resolves the root again in the current scopes, steps the fields and
+// builds one memory operand ('compile_lea', see 'etc/docs/README.md' chapter
+// 6); a path that names a constant has no storage; the members that use
 // 'expr_any' (the constructor, the element parse, the index steps of the walk)
 // are in 'stmt_identifier_impl.hpp'
 class stmt_identifier final : public statement {
@@ -204,8 +204,8 @@ class stmt_identifier final : public statement {
         const ident_info* info{};
         // the instance that holds the field, null for the root
         const type* parent_type{};
-        // the offset of the field in 'parent_type', 0 for the root
-        size_t field_offset{};
+        // the field in 'parent_type', null for the root
+        const type_field* fld{};
         bool is_last{};
     };
 
@@ -258,13 +258,7 @@ class stmt_identifier final : public statement {
 
         // the address a call computed, the address a slot holds or the
         // storage
-        [[nodiscard]] auto start(const std::optional<operand>& known_operand,
-                                 const ident_info& storage) -> operand {
-
-            if (known_operand) {
-                return *known_operand;
-            }
-
+        [[nodiscard]] auto start(const ident_info& storage) -> operand {
             if (storage.holds_address()) {
                 return load_held_address(storage.operand());
             }
@@ -529,8 +523,7 @@ class stmt_identifier final : public statement {
         return access_path_;
     }
 
-    // the emitter of the address of this statement for a bulk operation,
-    // 'info' is what 'toc' resolved it to
+    // the emitter of the address of this statement for a bulk operation;
     // nothing is emitted here, the backend calls the returned emitter when it
     // needs the address: the emitter builds it with 'compile_address', which
     // passes it to the backend's 'use' while the scratch registers that built
@@ -538,11 +531,10 @@ class stmt_identifier final : public statement {
     // arguments, so it is only valid within the call that made it
     [[nodiscard]] auto
     address_emitter_of(toc& tc, const size_t indent, const token& src_loc_tk,
-                       const ident_info& info,
                        const range_check check = range_check::run_time) const
         -> machine::address_emitter {
 
-        return [this, &tc, indent, &src_loc_tk, &info,
+        return [this, &tc, indent, &src_loc_tk,
                 check](const std::optional<operand>& reg_count,
                        const std::optional<operand>& address_register,
                        const machine::address_use use) -> void {
@@ -553,7 +545,6 @@ class stmt_identifier final : public statement {
             compile_address(tc, indent, src_loc_tk,
                             {
                                 .reg_count{range_count},
-                                .address_by_call{info.address_by_call()},
                                 .address_register{address_register},
                             },
                             use);
@@ -631,10 +622,6 @@ class stmt_identifier final : public statement {
                 machine::held_registers& held, const lea_request& request) const
         -> operand {
 
-        const call_address* const by_call{
-            by_call_in_path(request.address_by_call),
-        };
-
         path_address builder{tc, indent, src_loc_tk, held,
                              request.address_register};
 
@@ -644,14 +631,11 @@ class stmt_identifier final : public statement {
         for_each_prefix(tc, src_loc_tk, [&](const prefix_step& step) -> void {
             const ident_info& cur_info{*step.info};
 
-            if (step.parent_type == nullptr) {
-                address = builder.start(by_call == nullptr
-                                            ? std::nullopt
-                                            : std::optional{by_call->address},
-                                        cur_info);
+            if (step.fld == nullptr) {
+                address = builder.start(cur_info);
             } else {
                 // field offsets stay in the operand, not in the base register
-                address.increment_offset(address_offset(step.field_offset));
+                address.increment_offset(address_offset(step.fld->offset));
             }
 
             value_type = &cur_info.type_ref();
@@ -708,9 +692,8 @@ class stmt_identifier final : public statement {
     [[nodiscard]] auto constant_start_index(const toc& tc) const
         -> std::optional<int64_t>;
 
-    // the text the resolver looks up, the path without indexes, e.g. 'b.items'
-    // of 'b.items[i]', or a literal such as '3' or 'true', which resolve to
-    // constants
+    // the path without indexes as the messages name it, e.g. 'b.items' of
+    // 'b.items[i]', or a literal such as '3' or 'true'
     [[nodiscard]] auto dotted_path() const -> std::string_view {
         return dotted_path_;
     }
@@ -733,7 +716,6 @@ class stmt_identifier final : public statement {
         return compile_lea(tc, indent, tok(), held,
                            {
                                .reg_count{},
-                               .address_by_call{info.address_by_call()},
                                .address_register{},
                            });
     }
@@ -816,7 +798,8 @@ class stmt_identifier final : public statement {
                       const std::string_view action,
                       const ident_info& info) const -> void {
 
-        assert_not_read_only(src_loc_tk, action, dotted_path_, info);
+        assert_not_read_only(src_loc_tk, action, dotted_path_,
+                             first_token().text(), info);
 
         // note: a parameter that would name a constant argument is read-only
         //       or 'mut', which takes no constant, so this is the only check
@@ -827,8 +810,21 @@ class stmt_identifier final : public statement {
                                             in_quotes(dotted_path_))};
         }
 
-        tc.record_use(ident_info::root_of(dotted_path_), accessed_path(),
-                      use_kind::write);
+        tc.record_use(first_token().text(), accessed_path(), use_kind::write);
+    }
+
+    // what the path resolves to at its last name, an indexed last name as the
+    // array, e.g. 'w.rooms' of 'w.rooms[i]'
+    [[nodiscard]] auto resolve_path(const toc& tc) const -> ident_info {
+        ident_info last;
+
+        for_each_prefix(tc, tok(), [&](const prefix_step& step) -> void {
+            if (step.is_last) {
+                last = *step.info;
+            }
+        });
+
+        return last;
     }
 
     [[nodiscard]] auto shape() const -> array_shape { return shape_; }
@@ -957,61 +953,43 @@ class stmt_identifier final : public statement {
         }
     }
 
-    // the address a call computed when it is of the root of this path, null
-    // when none did or it is before the path, e.g. in the argument that a
-    // parameter names
-    [[nodiscard]] auto
-    by_call_in_path(const std::optional<call_address>& by_call) const
-        -> const call_address* {
-
-        // note: the first binding met while resolving a path is its root, so a
-        //       call address is of the root or before the path
-
-        if (not by_call or by_call->trailing_count != elems_.size() - 1) {
-            return nullptr;
-        }
-
-        return &*by_call;
-    }
-
-    // walks the elements from the root, each with the path up to it resolved,
-    // e.g. 'w', 'w.rooms' and 'w.rooms.items'; a resolve error is located at
-    // 'src_loc_tk', at the name of each element when none
+    // walks the elements from the root: the root resolved, then each field
+    // stepped, e.g. 'w', 'w.rooms' and 'w.rooms.items'; a resolve error is
+    // located at 'src_loc_tk', at the name of the root when none
     auto for_each_prefix(
         const toc& tc, const std::optional<token>& src_loc_tk,
         const std::function_ref<void(const prefix_step&)> visit) const -> void {
 
-        std::string path;
-        const type* parent_type{};
+        const token& root_tk{first_token()};
+
+        std::string path{root_tk.text()};
+
+        ident_info info{
+            tc.resolve_declared(src_loc_tk.value_or(root_tk), root_tk.text()),
+        };
 
         for (size_t i{}; i < elems_.size(); ++i) {
             const ident_elem& elem{elems_.at(i)};
 
-            size_t field_offset{};
+            const type* parent_type{};
+            const type_field* fld{};
 
-            if (parent_type != nullptr) {
+            if (i != 0) {
+                parent_type = &info.type_ref();
+                fld = &parent_type->field(elem.name_tk, elem.name_tk.text());
+                info = info.field(*fld);
                 path.push_back('.');
-
-                field_offset = parent_type->field_offset(elem.name_tk,
-                                                         elem.name_tk.text());
+                path += elem.name_tk.text();
             }
-
-            path += elem.name_tk.text();
-
-            const ident_info info{
-                tc.resolve_declared(src_loc_tk.value_or(elem.name_tk), path),
-            };
 
             visit({
                 .elem{&elem},
                 .path{path},
                 .info{&info},
                 .parent_type{parent_type},
-                .field_offset{field_offset},
+                .fld{fld},
                 .is_last{i == elems_.size() - 1},
             });
-
-            parent_type = &info.type_ref();
         }
     }
 
@@ -1131,9 +1109,6 @@ class stmt_identifier final : public statement {
         return not path_type.has_field(name_tk.text());
     }
 
-    // what follows the path read so far, resolved as 'prefix': nothing, a '.'
-    // and a field, or a '.' and a method name, which ends the path as its
-    // receiver; reads the '.' and the name
     [[nodiscard]] static auto read_continuation(const toc& tc, tokenizer& tz,
                                                 const ident_info& prefix)
         -> path_continuation {
@@ -1166,6 +1141,32 @@ class stmt_identifier final : public statement {
             .name_tk{next_tk},
         };
     }
+
+    // what follows the path read so far, resolved as 'prefix': nothing, a '.'
+    // and a field, or a '.' and a method name, which ends the path as its
+    // receiver; reads the '.' and the name
+    // the field 'name_tk' of what the path up to it resolved to, a constant
+    // named 'root' has none
+    [[nodiscard]] static auto step_field(const ident_info& prefix,
+                                         const std::string_view root,
+                                         const token& name_tk) -> ident_info {
+
+        if (not prefix.is_const()) {
+            return prefix.field(
+                prefix.type_ref().field(name_tk, name_tk.text()));
+        }
+
+        // e.g. '1.x' or 'true.x'
+        if (constant_parser::is_bool_literal(root) or starts_number(root)) {
+            throw compile_error{
+                name_tk,
+                std::format("{} is a constant, it has no field {}",
+                            in_quotes(root), in_quotes(name_tk.text()))};
+        }
+
+        throw compile_error{
+            name_tk, std::format("constant {} has no fields", in_quotes(root))};
+    }
 };
 
 // storage that a node names and that is read or passed in place, e.g. the
@@ -1182,9 +1183,7 @@ struct place {
     -> ident_info {
 
     // the name refers to the declared array, 'ps[1]' accesses one element
-    const ident_info declared{
-        tc.resolve_declared(ident.tok(), ident.dotted_path()),
-    };
+    const ident_info declared{ident.resolve_path(tc)};
 
     ident_info info{
         ident.is_array_element() ? declared.as_element() : declared,

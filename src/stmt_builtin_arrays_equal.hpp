@@ -69,7 +69,7 @@ class stmt_builtin_arrays_equal final : public statement {
         }
 
         const bulk_operands::run_time_emitters emit{
-            operands_.emitters(tc, indent, tok(), arrays),
+            operands_.emitters(tc, indent, tok()),
         };
 
         x.equal_elements(tok(), indent, arrays.first.type_ref().size_bytes(),

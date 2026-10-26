@@ -121,17 +121,16 @@ class bulk_operands final {
     }
 
     [[nodiscard]] auto emitters(toc& tc, const size_t indent,
-                                const token& src_loc_tk,
-                                const arrays_info& arrays) const
+                                const token& src_loc_tk) const
         -> run_time_emitters {
 
         const machine::address_emitter first{
-            first_.address_emitter_of(tc, indent, src_loc_tk, arrays.first,
+            first_.address_emitter_of(tc, indent, src_loc_tk,
                                       range_check_of(tc, first_)),
         };
 
         const machine::address_emitter second{
-            second_.address_emitter_of(tc, indent, src_loc_tk, arrays.second,
+            second_.address_emitter_of(tc, indent, src_loc_tk,
                                        range_check_of(tc, second_)),
         };
 

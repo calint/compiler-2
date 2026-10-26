@@ -104,7 +104,7 @@ inline auto visit_storage_reads(const toc& tc, const statement& st,
                                               const destination& dst) -> bool {
 
     if (not dst.storage()) {
-        return st.reads_var(dst.root_id());
+        return st.reads_var(dst.root_name());
     }
 
     bool is_read{};

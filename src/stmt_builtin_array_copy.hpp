@@ -73,7 +73,7 @@ class stmt_builtin_array_copy final : public statement {
         }
 
         const bulk_operands::run_time_emitters emit{
-            operands_.emitters(tc, indent, tok(), arrays),
+            operands_.emitters(tc, indent, tok()),
         };
 
         x.copy_elements(tok(), indent, arrays.first.type_ref().size_bytes(),
@@ -135,13 +135,11 @@ class stmt_builtin_array_copy final : public statement {
         x.comment(src.tok(), indent, statement::trimmed_source(src));
 
         const operand src_operand{
-            src.compile_lea(
-                tc, indent, src.first_token(), held,
-                {
-                    .reg_count{src_count},
-                    .address_by_call{arrays.first.address_by_call()},
-                    .address_register{},
-                }),
+            src.compile_lea(tc, indent, src.first_token(), held,
+                            {
+                                .reg_count{src_count},
+                                .address_register{},
+                            }),
         };
 
         const std::optional<operand> dst_count{
@@ -152,13 +150,11 @@ class stmt_builtin_array_copy final : public statement {
         x.comment(dst.tok(), indent, statement::trimmed_source(dst));
 
         const operand dst_operand{
-            dst.compile_lea(
-                tc, indent, dst.first_token(), held,
-                {
-                    .reg_count{dst_count},
-                    .address_by_call{arrays.second.address_by_call()},
-                    .address_register{},
-                }),
+            dst.compile_lea(tc, indent, dst.first_token(), held,
+                            {
+                                .reg_count{dst_count},
+                                .address_register{},
+                            }),
         };
 
         x.copy_block(tok(), indent, dst_operand, src_operand,

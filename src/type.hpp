@@ -354,34 +354,20 @@ class type final {
         return next_offset - fields_.at(i).offset;
     }
 
-    [[nodiscard]] auto
-    field_offset(const token& src_loc_tk,
-                 const std::span<const std::string> path) const -> size_t {
-
-        size_t offset{};
-
-        const type* tp{this};
-        for (const std::string& field_name : path | std::views::drop(1)) {
-            // note: drop 1 because the first element names the variable of
-            //       this type, not a field
-
-            const type_field& tf{tp->field(src_loc_tk, field_name)};
-            offset = sum_storage_size(offset, tf.offset);
-            tp = tf.type_ptr;
-        }
-
-        return offset;
-    }
-
-    [[nodiscard]] auto field_offset(const token& src_loc_tk,
-                                    const std::string_view field_name) const
-        -> size_t {
-
-        return field(src_loc_tk, field_name).offset;
-    }
-
     [[nodiscard]] auto fields() const -> std::span<const type_field> {
         return fields_;
+    }
+
+    // the type a memory operand of this type is read as: the first built-in
+    // field of an instance, which starts at its address
+    [[nodiscard]] auto first_builtin() const -> const type& {
+        const type* tp{this};
+
+        while (not tp->is_builtin()) {
+            tp = tp->fields().front().type_ptr;
+        }
+
+        return *tp;
     }
 
     [[nodiscard]] auto has_field(const std::string_view name) const -> bool {

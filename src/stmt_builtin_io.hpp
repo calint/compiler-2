@@ -499,13 +499,11 @@ class stmt_builtin_io final : public statement {
         machine::held_registers held{x, tok(), indent};
 
         const operand buffer_lea{
-            ident.compile_lea(
-                tc, indent, ident.tok(), held,
-                {
-                    .reg_count{range},
-                    .address_by_call{buffer.info.address_by_call()},
-                    .address_register{},
-                }),
+            ident.compile_lea(tc, indent, ident.tok(), held,
+                              {
+                                  .reg_count{range},
+                                  .address_register{},
+                              }),
         };
 
         x.address_of(tok(), indent, buffer_reg, buffer_lea);
