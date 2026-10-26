@@ -6,7 +6,6 @@
 // 'stmt_block' and 'expr_arith', which call them, are included by the
 // statements they make; 'program' keeps the files and their includes
 
-#include <algorithm>
 #include <format>
 #include <memory>
 #include <utility>

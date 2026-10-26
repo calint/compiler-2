@@ -4,7 +4,6 @@
 #include <cassert>
 #include <cstddef>
 #include <cstdint>
-#include <format>
 #include <span>
 #include <string>
 #include <vector>

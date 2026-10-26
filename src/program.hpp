@@ -24,8 +24,6 @@
 #include "statement.hpp"
 #include "stmt_def_dat.hpp"
 #include "stmt_def_func.hpp"
-#include "stmt_def_type.hpp"
-#include "stmt_def_var.hpp"
 #include "stmt_include.hpp"
 #include "toc.hpp"
 #include "token.hpp"

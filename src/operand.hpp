@@ -16,9 +16,6 @@
 #include <string_view>
 #include <utility>
 
-#include "compile_error.hpp"
-#include "token.hpp"
-
 class type;
 
 [[nodiscard]] inline auto address_offset(const size_t size_bytes) -> int64_t {

@@ -10,7 +10,6 @@
 #include <expected>
 #include <format>
 #include <functional>
-#include <initializer_list>
 #include <limits>
 #include <map>
 #include <optional>

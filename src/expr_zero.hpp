@@ -2,7 +2,6 @@
 
 #include <optional>
 #include <ostream>
-#include <string_view>
 
 #include "ident_info.hpp"
 #include "statement.hpp"

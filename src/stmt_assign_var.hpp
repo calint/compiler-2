@@ -20,7 +20,6 @@
 #include "toc.hpp"
 #include "token.hpp"
 #include "ub_assigned.hpp"
-#include "ub_order.hpp"
 #include "ub_reads.hpp"
 
 // 'dst = value' and the initializer of a declaration: the value is parsed as

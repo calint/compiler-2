@@ -17,7 +17,6 @@
 
 #include "compile_error.hpp"
 #include "ident_info.hpp"
-#include "machine.hpp"
 #include "toc.hpp"
 #include "token.hpp"
 #include "tokenizer.hpp"

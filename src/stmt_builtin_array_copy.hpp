@@ -5,7 +5,6 @@
 #include <functional>
 #include <optional>
 #include <ostream>
-#include <vector>
 
 #include "bulk_operands.hpp"
 #include "expr_any.hpp"

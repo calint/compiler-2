@@ -3,7 +3,6 @@
 #include <cassert>
 #include <cstddef>
 #include <cstdint>
-#include <format>
 #include <optional>
 #include <ostream>
 #include <string_view>

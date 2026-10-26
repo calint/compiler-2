@@ -7,7 +7,6 @@
 #include <ostream>
 #include <string>
 #include <string_view>
-#include <vector>
 
 #include "compile_error.hpp"
 #include "expr_any.hpp"
@@ -18,7 +17,6 @@
 #include "toc.hpp"
 #include "token.hpp"
 #include "ub_assigned.hpp"
-#include "unary_ops.hpp"
 
 // 'foo arr' or 'foo arr, count': the body runs once per element of the array,
 // or of its first 'count' elements, with 'e' the element, 'i' its index and

@@ -1,7 +1,6 @@
 #pragma once
 
 #include <cstddef>
-#include <format>
 #include <functional>
 #include <ostream>
 #include <utility>
@@ -9,7 +8,6 @@
 #include "bulk_operands.hpp"
 #include "compile_error.hpp"
 #include "statement.hpp"
-#include "stmt_identifier.hpp"
 #include "toc.hpp"
 #include "token.hpp"
 #include "ub_reads.hpp"

@@ -1,7 +1,6 @@
 #pragma once
 
 #include <format>
-#include <functional>
 #include <optional>
 #include <span>
 #include <string>
@@ -14,7 +13,6 @@
 #include "statement.hpp"
 #include "stmt_identifier.hpp"
 #include "toc.hpp"
-#include "token.hpp"
 #include "ub_reads.hpp"
 
 // reads against writes: a statement is checked in the order its code runs, a

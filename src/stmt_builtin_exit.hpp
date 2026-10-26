@@ -2,7 +2,6 @@
 
 #include <cassert>
 #include <cstddef>
-#include <format>
 
 #include "ident_info.hpp"
 #include "machine.hpp"

@@ -5,7 +5,6 @@
 
 #include "access_path.hpp"
 #include "token.hpp"
-#include "type.hpp"
 
 // the types of the walks shared by the checks, see the class comment of
 // 'statement'
