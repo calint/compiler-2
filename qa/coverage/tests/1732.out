@@ -1,0 +1,4 @@
+
+1732.baz:11:15: expected '(' after method name
+    var x = p.get
+              ^~~

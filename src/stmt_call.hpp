@@ -1590,12 +1590,11 @@ class builtin_arguments {
     token close_paren_tk_;
 
   public:
-    // the name of the built-in is read
-    builtin_arguments(toc& tc, tokenizer& tz,
+    // the name of the built-in, 'name_tk', is read; a missing '(' is
+    // reported at it, the next token can be on a later line
+    builtin_arguments(toc& tc, tokenizer& tz, const token& name_tk,
                       const std::span<const size_t> array_indexes)
-        : open_paren_tk_{
-              tz.expect_char_token('(', "expected '(' after function name"),
-          } {
+        : open_paren_tk_{read_open_paren(tz, name_tk)} {
 
         while (true) {
             if (const std::optional<token> close_paren_tk{
@@ -1668,6 +1667,22 @@ class builtin_arguments {
 
         args_.push_back(path_argument(std::move(array)));
     }
+
+    //
+    // statics
+    //
+
+    [[nodiscard]] static auto read_open_paren(tokenizer& tz,
+                                              const token& name_tk) -> token {
+
+        const std::optional<token> open_paren_tk{tz.is_next_char_token('(')};
+
+        if (not open_paren_tk) {
+            throw compile_error{name_tk, "expected '(' after function name"};
+        }
+
+        return *open_paren_tk;
+    }
 };
 
 // a call of a function, a method or a constructor
@@ -1731,7 +1746,7 @@ class stmt_call : public statement {
             resolve_callee(tc, tz, expected_type),
         };
 
-        read_open_paren(tc, tz, "function name");
+        read_open_paren(tc, tz, tok(), "function name");
 
         // note: a call of 'main' can only be in 'main' or after it, in a
         //       function that nothing calls, since names are defined before use
@@ -1768,7 +1783,7 @@ class stmt_call : public statement {
             resolve_callee(tc, tz, expected_type),
         };
 
-        read_open_paren(tc, tz, "method name");
+        read_open_paren(tc, tz, tok(), "method name");
 
         assert_method_receiver(receiver);
 
@@ -1791,7 +1806,7 @@ class stmt_call : public statement {
         // note: 'func_instantiator::define_func' rejects a generic constructor
         assert(not tc.generics().has_func(func_name_));
 
-        read_open_paren(tc, tz, "constructor name");
+        read_open_paren(tc, tz, constructor_->name_tk, "constructor name");
 
         parse_arguments(tc, tz, {});
     }
@@ -2374,8 +2389,9 @@ class stmt_call : public statement {
 
     // a call is in a function; the type is the result type of the callee,
     // resolved before, so an unknown callee is reported before a missing '(';
-    // 'what' names the callee in that error
-    auto read_open_paren(const toc& tc, tokenizer& tz,
+    // that error is at 'name_tk', the next token can be on a later line, and
+    // 'what' names the callee
+    auto read_open_paren(const toc& tc, tokenizer& tz, const token& name_tk,
                          const std::string_view what) -> void {
 
         assert_call_in_func(tc, tok());
@@ -2386,7 +2402,8 @@ class stmt_call : public statement {
         set_type(callee().result_type());
 
         if (not open_paren_tk) {
-            throw compile_error{tz, std::format("expected '(' after {}", what)};
+            throw compile_error{name_tk,
+                                std::format("expected '(' after {}", what)};
         }
 
         open_paren_tk_ = *open_paren_tk;

@@ -5488,3 +5488,7 @@ SRC=1730 && EXP=10 && RUN
 # later argument that calls a noinline function, and the callee writes through
 # it
 SRC=1731 && EXP=42 && RUN
+
+# a method name without '(' at the end of a line is reported at the name, not
+# at the next line
+SRC=1732 && COMPERR

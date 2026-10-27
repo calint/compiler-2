@@ -6,104 +6,23 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
 --------------------------------------------------------------------------------
 1. clean up
 --------------------------------------------------------------------------------
-[o] hard: bug hunt round 2 (2026-10-27, user: loop until a round finds no
-    bugs; hunters M1 arithmetic and constants, M2 control flow and layout, M3
-    data layout, addresses and generic types; reports in the session
-    scratchpad bh2)
-    M3.1. a noinline call computes the index of a place argument after the
-          temporaries of later arguments: 'pick(v[w()], g + 1)' with 'w'
-          writing 'g' exits 214 inlined, 209 noinline; the note of
-          'assert_not_written_later' holds for the inlined call only
-    M3.2. 'array_copy', 'arrays_equal', 'write' and 'read' compute the count
-          first and miss a count whose call writes what a call in an array
-          index reads: 'array_copy(a[h()], w, f())' copies 'b' for 'a', a
-          false bounds panic
-    M3.3. 'read' and 'sector_read' into a 'bool' or a record with padding
-          give a 'bool' that is neither true nor false, equal records that
-          compare unequal
-    M2.1. rv32i: the jump optimizer inverts a branch to the target of the
-          jump after it and keeps the branch's empty far-jump scratch: a
-          'break' out of a 1.08 MiB loop body with every register held is
-          "no scratch register is free" by default, accepted with '--nopt'
-    M2.2. rv32i, '--checks=...,line': the far jump to a failure handler
-          takes a0 for its scratch, holding the line just loaded: "panic:
-          bounds at far2.baz:1151420" for line 20
-    M1. no bug; an index is computed in the default type, so 'a[i + i]' of
-        an 'i32' panics 'bounds' on x86_64 and 'overflow' on rv32i
-    => M1 note done (2026-10-27): README 8 item 1 names the index
-    => M3.3 decided (2026-10-27, user: document it, assume the bytes read
-       were written from the same type): README 8 states the assumption
-    => M2.1 done (2026-10-27): 'assembler::invert' takes the removed jump's
-       target and scratch, chosen after the compared registers were freed;
-       'test-far-jumps-no-scratch.sh' runs the 'break' with and without
-       '--nopt' (fails at HEAD)
-    => M2.2 done (2026-10-27): 'branch_to_failure' protects a0 while it
-       holds the line, so the far jump takes another register or is "no
-       scratch register is free"; 'ra' is not free for it, it holds values;
-       'test-far-jumps-no-scratch.sh' checks the line 12 'foo' deep and the
-       error 13 deep (wrong line at HEAD)
-    => M3.2 done (2026-10-27): 'assert_same_in_either_order' replaces
-       'assert_not_written_after': where a backend computes the count before
-       earlier operands, a call on either side may not write what the other
-       reads, also through a call ('assert_not_reached_by_call'); the reverse
-       direction, 'array_copy(a[w()], b, f())' with 'w' writing what 'f'
-       reads, was missed too; tests 1725-1728; README 7.14; no other test
-       changed its verdict
-    => M3.1 done (2026-10-27, user: left to right, not a values-first
-       order): a noinline call compiles its arguments in their order, a
-       place gets its address at its argument ('noinline_arg::address', the
-       path walk at the frame goes), held until the frame is written
-       ('held_registers::release' before 'call_function'); tests 1729-1731;
-       README 4.1; listings: 4 tests differ in order and register names
-       only, no growth (1345 peaks at 4 scratch registers for 3), verdicts
-       of every test equal
-    M3.1 plan (2026-10-27, go-ahead given)
-       problem: 'noinline_call::compile_arguments_and_call' compiles every
-       temporary argument first, then 'populate_frame' computes the address
-       of each place argument ('slot_address_of', 'get_lea_operand'); a call
-       in the index of a place, 'v[w()]', runs after the later arguments;
-       the checks assume source order ('assert_not_written_later' note: "a
-       call among the earlier operands has run before the later ones",
-       README 7.14 "every node emits its operands in the order of the
-       source"), so the emitted code is not the checked code (README 3.1)
-       design: one pass in argument order; a temporary argument is compiled
-       into its temporary, a place argument gets its address at its
-       position, held in a register when it has a run-time index, until
-       the frame is written; 'noinline_arg' keeps the address operand
-       ('slot_address_of' returns it, no path walk at the frame);
-       'held_registers' moves from 'populate_frame' to
-       'compile_arguments_and_call', freed before 'call_function' as now
-       (an address in a register is loaded after the registers are saved);
-       the result slot and the frame and stack checks stay in
-       'populate_frame'
-       rejected:
-         1. the address written to its frame slot at its position: a
-            noinline call in a later argument puts its frame at the same
-            'next_frame_address' and overwrites the slot
-         2. reject an index call that conflicts with a later argument (the
-            M3.2 rule): accepts less, also for the inlined call to keep
-            the verdict independent of inlining; the emitted code stays
-            unlike the checked code
-         3. the index of a place compiled into an integer temporary: a
-            second form of a path (the index replaced), several indexes per
-            path, for one case
-         4. hold only places with a call in an index: two orders of
-            argument code, the exception the design removes
-       invariants: the code of each argument runs in argument order, also
-       for a noinline call (the note of 'assert_not_written_later' and
-       README 7.14 hold without exception); a place's address register is
-       held from its argument to the write of the frame
-       cost: a place with a run-time index before a temporary argument holds
-       its register across the temporary's code (needed by the order, the
-       scratch rule allows it); more x86_64 "cannot allocate register"
-       rejections are possible (the open many-indexed-arguments item);
-       measure listing growth and the verdicts of every test and of the
-       fuzzers
-       tests: 'pick(v[w()], g + 1)' (214) and 'pick(v[h()], f())' (10)
-       noinline on both targets, equal to the inlined results; a place with
-       a run-time index before a temporary that has a noinline call (the
-       held register survives the nested call); listings and verdicts of
-       every other test compared with HEAD
+[o] hard: bug hunt round 3 (2026-10-27, user: loop until a round finds no
+    bugs; hunters N1 inlined calls and bindings, N2 methods, generic
+    functions and noinline frames, N3 the image encoder, the assemblers and
+    the bare-metal targets; reports in the session scratchpad bh3)
+    N2.1. a missing '(' after a constructor or method name is reported at
+          the next line ('var x = point.at'); so are a built-in call
+          ('exit' alone, 0688) and a definition ('func f<T type>', 1448)
+    N2.2. README 2.10.1 says errors name a generic method after its generic
+          type ('text.append'), they name the instance ('str.append', 0780)
+    N3.1. rv32i linux: '--vars=0xffff0000' is accepted and the link fails,
+          the range check counts from address 0, the linker places the
+          program at about 0x11000
+    N1. no bug
+    => N2.1 done (2026-10-27): every "expected '(' after ..." is reported
+       at the name ('read_open_paren' of 'stmt_call' and of
+       'builtin_arguments', 'func_head::assert_open_paren'); 8 expected
+       outputs point at the name, test 1732 (a method at a line end)
 [ ] hard: design review round 23 (2026-10-26, user: finish the product;
     simplification and design rounds until the design is good, then the bug
     hunt; two reviewers D1 front end and checks, D2 statements, calls and

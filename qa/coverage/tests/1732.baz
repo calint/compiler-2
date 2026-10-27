@@ -1,0 +1,13 @@
+# a method name without '(' at the end of a line is reported at the name, not
+# at the next line
+type point {x, y}
+
+func point.get() res {
+    res = self.x
+}
+
+func main() {
+    var p = point{1, 2}
+    var x = p.get
+    exit(x)
+}

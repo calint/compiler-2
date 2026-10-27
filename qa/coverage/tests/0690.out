@@ -1,4 +1,4 @@
 
-0690.baz:15:1: expected '(' after constructor name
-}
-^
+0690.baz:14:19: expected '(' after constructor name
+    var p = point.at
+                  ^~

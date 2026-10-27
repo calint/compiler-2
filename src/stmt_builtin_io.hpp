@@ -108,7 +108,7 @@ class stmt_builtin_io final : public statement {
     stmt_builtin_io(toc& tc, const io_function& io, unary_ops uops,
                     const token tk, tokenizer& tz)
         : statement{tk, std::move(uops)}, io_{io},
-          args_{tc, tz, array_indexes_} {
+          args_{tc, tz, tk, array_indexes_} {
 
         assert_call_in_func(tc, tok());
 

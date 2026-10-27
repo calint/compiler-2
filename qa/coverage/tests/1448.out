@@ -1,4 +1,4 @@
 
-1448.baz:4:1: expected '(' after function name
-func main() {
-^
+1448.baz:3:6: expected '(' after function name
+func f<T type>
+     ^

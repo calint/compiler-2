@@ -1,4 +1,4 @@
 
-0211.baz:5:16: expected '(' after function name
+0211.baz:5:5: expected '(' after function name
     array_copy a,a,1
-               ^
+    ^~~~~~~~~~
