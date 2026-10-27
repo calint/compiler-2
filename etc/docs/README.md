@@ -715,8 +715,11 @@ type parameter where a call can find it:
 
 A method of a generic type with type parameters of its own, e.g.
 'func text.append<T type>(s T)', is one generic function per instance of the
-type ('str.append', 'name.append'). Errors name it after the generic type,
-'text.append', which is the name written in the source.
+type ('str.append', 'name.append'). An error in a call or in the body names
+the instance, e.g. "cannot deduce 'T' of generic function 'str.append'"
+(0780); a clash of two definitions and the report of a generic never
+instantiated name it after the generic type, 'text.append', the name written
+in the source.
 
 #### 2.10.2 Call: the type arguments
 
@@ -1744,7 +1747,10 @@ What depends on the target is listed here, nothing else does:
 4. the limits of a target: '--vars' and the memory it addresses, which a
    type stays below, e.g. a field 'i8[0x100000000]' is rejected on rv32i,
    and a deep noinline recursion, which 'stack' stops on the bare-metal
-   targets and the operating system on x86_64 and rv32i (8.1)
+   targets and the operating system on x86_64 and rv32i (8.1); on rv32i
+   linux the linker places the program, so code, data and variables that
+   fit in 4 GiB from address 0 can still fail the link, e.g.
+   '--vars=0xffff0000' with 'ld.lld', which starts it at about 0x11000
 
 So whether a program is accepted can depend on the target through 1 to 4,
 and its result through 1 and 4; under 'noub' the result of an accepted

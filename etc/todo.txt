@@ -23,6 +23,12 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
        at the name ('read_open_paren' of 'stmt_call' and of
        'builtin_arguments', 'func_head::assert_open_paren'); 8 expected
        outputs point at the name, test 1732 (a method at a line end)
+    => N2.2 done (2026-10-27): README 2.10.1 says an error in a call or
+       the body names the instance, a clash of definitions and the report
+       the generic method
+    => N3.1 done (2026-10-27, user: document it): README 8 item 4 says the
+       rv32i linux linker places the program and can fail a layout that
+       fits from address 0
 [ ] hard: design review round 23 (2026-10-26, user: finish the product;
     simplification and design rounds until the design is good, then the bug
     hunt; two reviewers D1 front end and checks, D2 statements, calls and
