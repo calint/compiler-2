@@ -1,0 +1,15 @@
+# a keyword before '(' in the argument of a generic call is not a call: the
+# type argument comes from the destination as for 'gid(not b)'
+func gid<T type>(x T) res T {
+    res = x
+}
+
+func main() {
+    var a = 1
+    var z = false
+    z = gid(not (a == 2))
+    if z {
+        exit(4)
+    }
+    exit(2)
+}

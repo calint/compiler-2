@@ -120,6 +120,11 @@ enum class term_kind : uint8_t {
         return term_kind::builtin_function;
     }
 
+    // a keyword before '(' is not a call, e.g. 'not (a == 2)'
+    if (std::ranges::contains(reserved_names::keywords, text)) {
+        return term_kind::keyword;
+    }
+
     const char next{tz.peek_char_after_whitespace()};
 
     if (tc.types().has(text) and tc.types().get(text).is_builtin()) {
@@ -165,10 +170,6 @@ enum class term_kind : uint8_t {
     if (not tc.types().has(text)) {
         if (tc.is_func(text)) {
             return term_kind::function_name;
-        }
-
-        if (std::ranges::contains(reserved_names::keywords, text)) {
-            return term_kind::keyword;
         }
 
         return term_kind::unknown;

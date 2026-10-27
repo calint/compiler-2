@@ -1,0 +1,4 @@
+
+1766.baz:9:13: index 2 is out of bounds for array 'res.arr' of size 2
+    res.arr[2].y = 4
+            ^

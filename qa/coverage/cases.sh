@@ -5621,3 +5621,14 @@ SRC=1763 && OPTS="--checks=noub" DIFF
 
 # a run-time start with a constant count past the end fails the bounds check
 SRC=1764 && EXP=255 && RUN
+
+# a keyword before '(' in the argument of a generic call is not a call
+SRC=1765 && EXP=4 && RUN
+
+# a constant index past the end in a write of a result is reported as out of
+# bounds before the check of the result
+SRC=1766 && COMPERR
+
+# a constant index past the end in an argument is reported as out of bounds
+# before the check of shared storage
+SRC=1767 && COMPERR

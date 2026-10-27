@@ -1,0 +1,11 @@
+# a constant index past the end in an argument is reported as out of bounds,
+# not as storage shared with another argument
+func cp(src i8, dst mut i8) {
+    dst = src
+}
+
+func main() {
+    var a = i8[1]
+    cp(a[0], a[1])
+    exit(a[0])
+}

@@ -299,10 +299,25 @@ inline auto stmt_identifier::resolve_accessed_bytes(toc& tc) -> void {
                                   : extent_bytes);
         }
 
-        if (elem.index) {
-            narrow_to_element(tc, elem.index_expr(), *step.info,
-                              step.is_last ? reach_ : path_reach::element);
+        if (not elem.index) {
+            return;
         }
+
+        const path_reach reach{step.is_last ? reach_ : path_reach::element};
+
+        const std::optional<int64_t> constant_index{
+            elem.index_expr().constant_value(tc),
+        };
+
+        // the checks that use the accessed bytes would report an unknown
+        // element first, e.g. a result that may be unset
+        if (constant_index) {
+            assert_constant_index(*step.info, elem.index_expr().tok(),
+                                  step.path, *constant_index,
+                                  reach == path_reach::to_end);
+        }
+
+        narrow_to_element(tc, elem.index_expr(), *step.info, reach);
     });
 }
 

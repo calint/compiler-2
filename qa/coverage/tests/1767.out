@@ -1,0 +1,4 @@
+
+1767.baz:9:16: index 1 is out of bounds for array 'a' of size 1
+    cp(a[0], a[1])
+               ^

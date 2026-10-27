@@ -1,7 +1,4 @@
 
-0325.baz:4:12: index -1 is out of bounds for array 'values' of size 8
+0325.baz:4:12: index -1 is negative
     values[-1] = 1
            ^
-0325.baz:9:5: called from
-    legacy_write(values)
-    ^~~~~~~~~~~~

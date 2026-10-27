@@ -1,6 +1,21 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: bug hunt round 9 W3-1: a constant index past the end of an array
+    of known length was recorded as a run-time index by 'narrow_to_element',
+    so the checks before the compile's bounds check reported another error
+    first: 'res.arr[2].y = 4' on 'inner[2]' gave "may return without
+    setting its return value", 'cp(a[0], a[1])' on 'i8[1]' "may share
+    storage" (message only, nothing accepted)
+    => done (2026-10-27): 'resolve_accessed_bytes' checks a constant index
+       with 'assert_constant_index' (the end allowed for a range start)
+       before it narrows; tests 1766, 1767; 0325 now reports "index -1 is
+       negative" at the parse of the body, without the frame of the call
+[x] easy: bug hunt round 9 W2-2: 'gid(not (a == 2))' was rejected with
+    "function 'not' not found": 'classify_term' took a name before '(' for
+    a call before it looked for keywords
+    => done (2026-10-27): keywords are classified before the call; test
+       1765 (rejected at HEAD)
 [x] medium: bug hunt round 9 W1-1: 'array_copy', 'arrays_equal', 'read',
     'write' and the sector functions compute the count (and the start)
     before the arrays or the buffer; 'assert_same_in_either_order' sees
