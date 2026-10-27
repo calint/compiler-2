@@ -5457,3 +5457,19 @@ SRC=1723 && EXP=8 && RUN
 
 # a missing body is reported at the keyword of the next definition
 SRC=1724 && COMPERR
+
+# the count of 'array_copy' is computed before the arrays, a call in the count
+# that writes what a call in an array argument reads is rejected
+SRC=1725 && COMPERR
+
+# the count of 'arrays_equal' is computed before the arrays, a call in the
+# count that writes what a call in an array argument reads is rejected
+SRC=1726 && COMPERR
+
+# the count of 'write' is computed before the buffer, a call in the count that
+# writes what a call in the buffer argument reads is rejected
+SRC=1727 && COMPERR
+
+# the count of 'array_copy' is computed before the arrays, a call in an array
+# argument that writes what a call in the count reads is rejected
+SRC=1728 && COMPERR

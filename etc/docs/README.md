@@ -1704,9 +1704,10 @@ arrays, 'read', 'write' and the sector functions the count and the start
 before the buffer. The range check of where an array starts needs the count,
 and on x86_64 the count, the source and the destination are held in 'rcx',
 'rsi' and 'rdi' at once. Each of the two nodes checks that the order makes no
-difference: an operand before the count that a call in the count may write,
-or the reverse, is rejected with a message that names the order
-('bulk_operands::assert_not_written_later',
+difference: a call on one side that may write what the other side reads, also
+through a call, is rejected with a message that names the order, e.g.
+'array_copy(a[h()], b, f())' with 'f' writing what 'h' reads
+('assert_same_in_either_order', 'bulk_operands::assert_not_written_later',
 'stmt_builtin_io::assert_count_not_written_by_buffer').
 
 Rejected: the count first in the language, e.g. 'array_copy(n, a, b)' (a

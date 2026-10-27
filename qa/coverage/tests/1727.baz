@@ -1,0 +1,20 @@
+# the count of 'write' is computed before the buffer, a call in the count that
+# writes what a call in the buffer argument reads is rejected
+type s { buf[4], }
+
+var n = 0
+
+func h() res {
+    res = n
+}
+
+func f() res {
+    n = n + 1
+    res = 1
+}
+
+func main() {
+    var a = s[2]
+    var k = write(1, a[h()].buf, f())
+    exit(k)
+}

@@ -650,10 +650,12 @@ class stmt_builtin_io final : public statement {
     static auto assert_count_not_written_by_buffer(
         const toc& tc, const std::span<const list_operand> operands) -> void {
 
-        assert_not_written_after(tc, operands.subspan(buffer_index_ + 1),
-                                 operands.subspan(buffer_index_, 1),
-                                 "the buffer argument, the count and the start "
-                                 "are computed before the buffer");
+        assert_same_in_either_order(
+            tc, operands.subspan(buffer_index_ + 1),
+            operands.subspan(buffer_index_, 1),
+            "the count or the start, computed before the buffer",
+            "the buffer argument, the count and the start are computed before "
+            "the buffer");
     }
 
     // 'read(fd, buf, count, start)': the count and the start are optional,

@@ -1,0 +1,19 @@
+# the count of 'array_copy' is computed before the arrays, a call in the count
+# that writes what a call in an array argument reads is rejected
+var n = 0
+
+func h() res {
+    res = n
+}
+
+func f() res {
+    n = n + 1
+    res = 1
+}
+
+func main() {
+    var a = i8[4]
+    var b = i8[4]
+    array_copy(a[h()], b, f())
+    exit(b[0])
+}

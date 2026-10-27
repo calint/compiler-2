@@ -42,6 +42,13 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
        scratch register is free"; 'ra' is not free for it, it holds values;
        'test-far-jumps-no-scratch.sh' checks the line 12 'foo' deep and the
        error 13 deep (wrong line at HEAD)
+    => M3.2 done (2026-10-27): 'assert_same_in_either_order' replaces
+       'assert_not_written_after': where a backend computes the count before
+       earlier operands, a call on either side may not write what the other
+       reads, also through a call ('assert_not_reached_by_call'); the reverse
+       direction, 'array_copy(a[w()], b, f())' with 'w' writing what 'f'
+       reads, was missed too; tests 1725-1728; README 7.14; no other test
+       changed its verdict
 [ ] hard: design review round 23 (2026-10-26, user: finish the product;
     simplification and design rounds until the design is good, then the bug
     hunt; two reviewers D1 front end and checks, D2 statements, calls and

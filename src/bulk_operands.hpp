@@ -200,8 +200,9 @@ class bulk_operands final {
             std::span{operands}.first(2),
         };
 
-        ::assert_not_written_after(
+        assert_same_in_either_order(
             tc, std::span{operands}.last(1), arrays,
+            "the count, computed before the arrays",
             "an array argument, the count is computed before the arrays");
     }
 
