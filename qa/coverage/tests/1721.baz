@@ -1,0 +1,13 @@
+# the same for an instance of a generic type, sized by its constant argument
+
+type w<n> {v i8[n], b i8}
+
+type big = w<0xffffffff>
+
+func copy(x mut big, y big) {
+    x = y
+}
+
+func main() {
+    exit(0)
+}

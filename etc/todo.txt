@@ -27,6 +27,11 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
        test 1719 (rv32i); listings of every other test equal
     K3.1. rv32i: a type over 4 GiB is accepted and a body using it aborts
           the backend ('copy_block', 'compare_memory', 'emit_bounds_check')
+    => K3.1 done (2026-10-27): 'toc::add_type' rejects a type that is not
+       smaller than what the target addresses ('assert_type_fits_target'), a
+       definition and an alias of an instance; tests 1720, 1721 (x86_64
+       accepts, rv32i rejects); README 8.1 item 4; listings of every other
+       test equal
     K3.2. a 'bool' constant is accepted as the constant argument of a
           generic type ('w<b>' with 'let b = true' is 'w<1>')
     K3.3. a constant named like a function stops the deduction from a call
@@ -837,6 +842,9 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
     8.3; no undefined behavior, a verdict that depends on the spelling);
     deciding the constness again when a noinline instance knows the length
     would remove it (round 18 D6)
+[ ] easy: low priority: the compile time of a value of a huge type grows
+    with its bytes where it is a result, a constructor or '{}' (about 9 ns
+    per byte, a field of 64 MiB 0.6 s; bug hunt round 1 K3.1)
 [ ] medium: low priority: one lexer (round 23 C.3, D1-4): 'one_line_source'
     ('statement.hpp') scans the source text of a statement again for the
     comments of the listing; 'source_to' writing through a 'source_sink' with

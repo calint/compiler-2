@@ -1735,11 +1735,12 @@ What depends on the target is listed here, nothing else does:
 2. the types a target has: 'i64' is rejected on rv32i
 3. the number of scratch registers: an expression that runs out of them on one
    target can be accepted on another (7.11)
-4. the limits of a target: '--vars' and the memory it addresses, and a deep
-   noinline recursion, which 'stack' stops on the bare-metal targets and the
-   operating system on x86_64 and rv32i (8.1)
+4. the limits of a target: '--vars' and the memory it addresses, which a
+   type stays below, e.g. a field 'i8[0x100000000]' is rejected on rv32i,
+   and a deep noinline recursion, which 'stack' stops on the bare-metal
+   targets and the operating system on x86_64 and rv32i (8.1)
 
-So whether a program is accepted can depend on the target through 1 to 3,
+So whether a program is accepted can depend on the target through 1 to 4,
 and its result through 1 and 4; under 'noub' the result of an accepted
 program that writes its types and stays within the limits does not.
 

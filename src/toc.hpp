@@ -2831,6 +2831,7 @@ class toc final {
         assert(not is_compiling_);
 
         definitions_.assert_type_not_defined(src_loc_tk, tpe.name());
+        assert_type_fits_target(src_loc_tk, tpe);
 
         types_.add(src_loc_tk, tpe);
     }
@@ -3538,6 +3539,27 @@ class toc final {
         // note: the bytes of a literal may differ per call, e.g. '{k, 2}'
         return data_.add_constant(create_unique_label(src_loc_tk, kind),
                                   std::move(bytes));
+    }
+
+    // a value of the type, e.g. a parameter, is addressed by the target even
+    // when no storage of it is ever allocated; a value is smaller than the
+    // address space, so its size and element counts fit an address
+    auto assert_type_fits_target(const token& src_loc_tk, const type& tpe) const
+        -> void {
+
+        const ::machine& x{machine_.get()};
+
+        const size_t max_bytes{x.max_storage_bytes()};
+
+        if (tpe.size_bytes() < max_bytes) {
+            return;
+        }
+
+        throw compile_error{
+            src_loc_tk,
+            std::format("type {} of {} B is too large, the target addresses "
+                        "{} B",
+                        in_quotes(tpe.name()), tpe.size_bytes(), max_bytes)};
     }
 
     // the built-in integer or 'bool' type that 'tk' names, also through a

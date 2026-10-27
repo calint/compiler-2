@@ -5441,3 +5441,10 @@ SRC=1718 && COMPERR
 # a version that runs out of registers inside an inlined body leaves the code
 # after the call reached
 if [[ $MACHINE != x86_64 ]]; then SRC=1719 && EXP=3 && RUN; fi
+
+# a type is smaller than what the target addresses, rv32i rejects a type of
+# 4 GiB that x86_64 accepts
+if [[ $MACHINE == x86_64 ]]; then SRC=1720 && EXP=0 && RUN; fi
+if [[ $MACHINE != x86_64 ]]; then SRC=1720 && COMPERR; fi
+if [[ $MACHINE == x86_64 ]]; then SRC=1721 && EXP=0 && RUN; fi
+if [[ $MACHINE != x86_64 ]]; then SRC=1721 && COMPERR; fi

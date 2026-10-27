@@ -1,0 +1,12 @@
+# a type is smaller than what the target addresses, also when no storage of
+# it is allocated: rv32i addresses 4294967296 B, x86_64 accepts the type
+
+type q {a i8[0x100000000]}
+
+func eq(x q, y q) res bool {
+    res = x == y
+}
+
+func main() {
+    exit(0)
+}
