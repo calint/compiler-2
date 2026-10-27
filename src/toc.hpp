@@ -2514,18 +2514,27 @@ class toc final {
         storage_layout::peaks storage;
     };
 
+    // what a dry run and a version that is not kept put back: the peaks and
+    // whether the code after is reached, which an error unwinding an inlined
+    // body ends ('pop_scope')
+    struct compile_state {
+        compile_peaks peaks;
+        // none outside a function, e.g. the check of a body
+        std::optional<scope_stack::reach_state> reach;
+    };
+
     // what a dry run changes in 'toc' is put back when it ends, also when an
-    // error unwinds: the peaks and the string constants; while it lives a
-    // noinline body that a call asks for is not added, the call is compiled
-    // again for real
+    // error unwinds: the 'compile_state' and the string constants; while it
+    // lives a noinline body that a call asks for is not added, the call is
+    // compiled again for real
     class dry_run_scope final {
         toc& tc_;
-        compile_peaks kept_peaks_;
+        compile_state kept_state_;
         size_t kept_string_constant_count_;
 
       public:
         explicit dry_run_scope(toc& tc)
-            : tc_{tc}, kept_peaks_{tc.peaks_now()},
+            : tc_{tc}, kept_state_{tc.compile_state_now()},
               kept_string_constant_count_{tc.data_.constant_count()} {
 
             ++tc_.dry_run_depth_;
@@ -2538,7 +2547,7 @@ class toc final {
 
         ~dry_run_scope() {
             --tc_.dry_run_depth_;
-            tc_.restore_peaks(kept_peaks_);
+            tc_.restore_compile_state(kept_state_);
             tc_.data_.resize_constants(kept_string_constant_count_);
         }
     };
@@ -3131,9 +3140,10 @@ class toc final {
     }
 
     // 'machine::emit_most_efficient' with each version compiled from the
-    // peaks before it, so the peaks that remain are those of the kept
-    // version, e.g. the frame size of a noinline body; a string constant
-    // that the other version added stays, unused, so the labels stay unique
+    // state before it ('compile_state'), so the state that remains is that of
+    // the kept version, e.g. the frame size of a noinline body; a string
+    // constant that the other version added stays, unused, so the labels stay
+    // unique
     auto emit_most_efficient(const token& src_loc_tk, const size_t indent,
                              const std::function_ref<void()> emit_first,
                              const std::function_ref<void()> emit_second)
@@ -3141,21 +3151,21 @@ class toc final {
 
         assert(is_compiling_);
 
-        const compile_peaks start{peaks_now()};
+        const compile_state start{compile_state_now()};
 
-        compile_peaks first_end{start};
-        compile_peaks second_end{start};
+        compile_state first_end{start};
+        compile_state second_end{start};
 
         const auto first = [&] -> void {
-            restore_peaks(start);
+            restore_compile_state(start);
             emit_first();
-            first_end = peaks_now();
+            first_end = compile_state_now();
         };
 
         const auto second = [&] -> void {
-            restore_peaks(start);
+            restore_compile_state(start);
             emit_second();
-            second_end = peaks_now();
+            second_end = compile_state_now();
         };
 
         ::machine& x{machine()};
@@ -3164,7 +3174,7 @@ class toc final {
             x.emit_most_efficient(src_loc_tk, indent, first, second),
         };
 
-        restore_peaks(keeps_first ? first_end : second_end);
+        restore_compile_state(keeps_first ? first_end : second_end);
     }
 
     // 'continue' and 'exit' leave the code after them unreached
@@ -3553,6 +3563,20 @@ class toc final {
         return dry_run_depth_ == 0;
     }
 
+    [[nodiscard]] auto compile_state_now() const -> compile_state {
+        if (not scopes_.is_in_func()) {
+            return {
+                .peaks{peaks_now()},
+                .reach{},
+            };
+        }
+
+        return {
+            .peaks{peaks_now()},
+            .reach{scopes_.reach_state_now()},
+        };
+    }
+
     [[nodiscard]] auto get_func_info_or_throw(const token& src_loc_tk,
                                               const std::string_view name) const
         -> const func_info& {
@@ -3602,6 +3626,14 @@ class toc final {
     auto record_if_global(const std::string_view name) -> void {
         if (scopes_.is_at_root()) {
             scopes_.record_global(name);
+        }
+    }
+
+    auto restore_compile_state(const compile_state& state) -> void {
+        restore_peaks(state.peaks);
+
+        if (state.reach) {
+            scopes_.restore_reach_state(*state.reach);
         }
     }
 

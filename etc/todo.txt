@@ -21,6 +21,10 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
           leaves the caller unreached (the unwinding 'pop_scope' ends its
           path, 'toc::emit_most_efficient' restores only the peaks): the
           rest of 'main' is not emitted, the program runs into the helpers
+    => K2.1 done (2026-10-27): a version and a dry run start from the
+       'compile_state' before them, the peaks and whether the code after is
+       reached (none outside a function), the kept version's state remains;
+       test 1719 (rv32i); listings of every other test equal
     K3.1. rv32i: a type over 4 GiB is accepted and a body using it aborts
           the backend ('copy_block', 'compare_memory', 'emit_bounds_check')
     K3.2. a 'bool' constant is accepted as the constant argument of a

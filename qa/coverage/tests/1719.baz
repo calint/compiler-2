@@ -1,0 +1,17 @@
+# rv32i compiles the inlined call 'g(a[i])' in two versions, the second runs
+# out of registers inside the 'if' of the body: the code after the call is
+# still reached, the kept version starts from the state before it (x86_64
+# rejects the expression for registers)
+
+func g(p) res {
+    res = p
+    if p == p + (p * p * (p + p + (p * p * (p + p + (p * p * (p + p + (p * p * (p + p + (p * p * (p + p + (p * p * (p + p + (p * p * (p + p + (p * p * (p + p + (p * p * (p + p + (p * p * (p + p + (p * p * (p + p + (p * p * (p + p + (p * p * (p + p)))))))))))))))))))))))))) return
+}
+
+func main() {
+    var a = []{1, 2, 3, 4}
+    var i = 1
+    var y = g(a[i])
+    if y == 77 exit(9)
+    exit(3)
+}

@@ -5437,3 +5437,7 @@ SRC=1716 && EXP=48 && RUN
 # directly or through a method of a type argument
 SRC=1717 && COMPERR
 SRC=1718 && COMPERR
+
+# a version that runs out of registers inside an inlined body leaves the code
+# after the call reached
+if [[ $MACHINE != x86_64 ]]; then SRC=1719 && EXP=3 && RUN; fi
