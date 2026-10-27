@@ -1661,6 +1661,10 @@ class machine_rv32i : public machine {
             return;
         }
 
+        // a far jump to the entry must not take a0 for its scratch
+        const operation_scope scope{*this};
+        protect_register("a0");
+
         comment(src_loc_tk, indent, "source line");
         assembler_.li(indent, "a0", src_loc_tk.at_line());
 

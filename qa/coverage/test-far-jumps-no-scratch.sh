@@ -3,7 +3,9 @@
 # is free for its far form: a loop nested 14 deep with a body of 1.08 MiB;
 # and that a branch the jump optimizer inverts takes the scratch register of
 # the jump it replaces: a 'break' out of a 1.08 MiB loop body 13 'foo' deep,
-# compiled with and without the jump optimizer and executed under qemu
+# compiled with and without the jump optimizer and executed under qemu; and
+# that the far jump to a failure handler keeps the line in a0: a bounds check
+# 12 'foo' deep panics at its line, 13 deep only a0 is free and is not taken
 #
 # the body takes minutes to compile with the coverage build, so the check is a
 # script of its own
@@ -89,3 +91,55 @@ for optimize in "" "--nopt"; do
     [[ $status -eq 62 ]]
     echo ok
 done
+
+# writes 'line.baz': a bounds check 'depth' 'foo' deep, its failure handler
+# beyond 1 MiB of 'y = y + 1'
+generate_line() {
+    python3 - "$1" <<'EOF'
+import sys
+depth = int(sys.argv[1])
+source = [
+    "dat a = []{1}",
+    "func main() {",
+    "    var y = 0",
+    "    var b = int[4]",
+    "    var k = 7",
+]
+for level in range(depth):
+    source.append("    " * (level + 1) + "foo a {")
+source.append("        y = b[k]")
+source.append("        y = y + 1\n" * 90000)
+for level in reversed(range(depth)):
+    source.append("    " * (level + 1) + "}")
+source.append("    exit(y)")
+source.append("}")
+open("line.baz", "w").write("\n".join(source) + "\n")
+EOF
+}
+
+echo -n "far jumps to failure handler with line rv32i: "
+generate_line 12
+"$BIN" line.baz --target=rv32i --checks=upper,lower,line --bin=line.bin \
+    >line.s
+llvm-mc -triple=riscv32 -mattr=-m,-a,-f,-d,-c -filetype=obj line.s -o line.o
+ld.lld -m elf32lriscv -e _start -o line line.o
+set +e
+timeout -k 1s 60s qemu-riscv32 ./line 2>err
+status=$?
+set -e
+[[ $status -eq 255 ]]
+# note: line 18 because the check follows the 5 lines of the head and the 12
+#       lines of 'foo'
+grep -q "panic: bounds at line.baz:18" err
+echo ok
+
+echo -n "far jumps to failure handler with line, a0 only free rv32i: "
+generate_line 13
+set +e
+"$BIN" line.baz --target=rv32i --checks=upper,lower,line --bin=line.bin \
+    >line.s 2>err
+status=$?
+set -e
+[[ $status -ne 0 ]]
+grep -q "exceeds 1 MiB and no scratch register is free" err
+echo ok

@@ -37,6 +37,11 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
        target and scratch, chosen after the compared registers were freed;
        'test-far-jumps-no-scratch.sh' runs the 'break' with and without
        '--nopt' (fails at HEAD)
+    => M2.2 done (2026-10-27): 'branch_to_failure' protects a0 while it
+       holds the line, so the far jump takes another register or is "no
+       scratch register is free"; 'ra' is not free for it, it holds values;
+       'test-far-jumps-no-scratch.sh' checks the line 12 'foo' deep and the
+       error 13 deep (wrong line at HEAD)
 [ ] hard: design review round 23 (2026-10-26, user: finish the product;
     simplification and design rounds until the design is good, then the bug
     hunt; two reviewers D1 front end and checks, D2 statements, calls and
