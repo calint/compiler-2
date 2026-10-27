@@ -1,0 +1,18 @@
+# a noinline call computes the address of a place in the order of the
+# arguments: the call in the index of 'v[w()]' writes 'g' before the later
+# argument reads it
+var g = 0
+
+func w() res {
+    g = 5
+    res = 1
+}
+
+func noinline pick(a, n) res {
+    res = a * 100 + n
+}
+
+func main() {
+    var v = []{10, 20, 30}
+    exit(pick(v[w()], g + 1) % 256)
+}

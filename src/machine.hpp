@@ -366,6 +366,13 @@ class machine {
         [[nodiscard]] auto registers() const -> std::span<const operand> {
             return registers_;
         }
+
+        // frees the registers before the scope ends, e.g. before a call
+        // that would save them as live
+        auto release() -> void {
+            machine_.free_scratch_registers(src_loc_tk_, indent_, registers_);
+            registers_.clear();
+        }
     };
 
   protected:

@@ -1102,7 +1102,11 @@ address    | result address         |    the callee's frame base
    parameter ('stmt_def_func::frame_slots'); the receiver of a method is
    passed in the slot register instead, x86_64 'r11' and rv32i 's11'. A
    result or an argument that is not a variable in memory goes through a
-   temporary of the call, the result is copied out after the call.
+   temporary of the call, the result is copied out after the call. The
+   arguments are compiled in their order: a temporary is computed at its
+   argument, so is the address of a variable, held in a register until the
+   slots are written when it has a run-time index, e.g. the 'w()' of
+   'f(v[w()], g + 1)' runs before 'g + 1' (1729).
 2. The frame starts after the storage of the caller, aligned to an address,
    not at the stack pointer: in a noinline body after its frame, which its
    frame base holds (x86_64 'rbx', rv32i 's1'), in 'main' at the variables

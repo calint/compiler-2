@@ -5473,3 +5473,18 @@ SRC=1727 && COMPERR
 # the count of 'array_copy' is computed before the arrays, a call in an array
 # argument that writes what a call in the count reads is rejected
 SRC=1728 && COMPERR
+
+# a noinline call computes the address of a place in the order of the
+# arguments: the call in the index of 'v[w()]' writes 'g' before the later
+# argument reads it
+SRC=1729 && EXP=214 && RUN
+
+# a noinline call computes the address of a place in the order of the
+# arguments: the call in the index of 'v[h()]' reads 'g' before the call in
+# the later argument writes it
+SRC=1730 && EXP=10 && RUN
+
+# the address of a place with a run-time index is held in a register across a
+# later argument that calls a noinline function, and the callee writes through
+# it
+SRC=1731 && EXP=42 && RUN

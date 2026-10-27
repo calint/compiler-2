@@ -403,10 +403,9 @@ struct generic_call {
 // 'call_site::make_argument_temporary'
 struct noinline_arg {
     ident_info info;
-    // the path of the variable the argument names, null for a temporary
-    const stmt_identifier* path{};
-
-    [[nodiscard]] auto is_temporary() const -> bool { return path == nullptr; }
+    // computed at the argument's position in the list, in a register held
+    // until the frame is written when the variable has a run-time index
+    operand address;
 };
 
 // the limits on how deep the compile of calls nests, each a recursion of the
@@ -634,7 +633,7 @@ struct call_site {
 
         return {
             .info{temporary.bound_info()},
-            .path{},
+            .address{temporary.operand()},
         };
     }
 
@@ -1225,7 +1224,8 @@ class inline_call {
 //
 //   1. 'compile' and 'compile_arguments_and_call': a result or an argument
 //      that is not a variable in memory goes through a temporary, the result
-//      is copied and the unary ops applied after the call
+//      is copied and the unary ops applied after the call; the arguments are
+//      compiled in their order, the address of a variable at its argument
 //   2. 'compile_with_arguments': the arguments agree with the parameters,
 //      checked by 'stmt_call::assert_argument_types' before ('assert_call'
 //      asserts it); shared storage is checked at the call, the body is
@@ -1285,9 +1285,14 @@ class noinline_call {
     }
 
     // an argument or a result that needs one goes through a temporary of the
-    // current block
+    // current block; the arguments are compiled in their order, a call in the
+    // index of a place runs before the later arguments as the checks assume
     auto compile_arguments_and_call(toc& tc, const size_t indent,
                                     const destination& dst) const -> void {
+
+        machine& x{tc.machine()};
+
+        machine::held_registers held{x, call_.tk, indent};
 
         std::vector<noinline_arg> arguments;
 
@@ -1303,27 +1308,34 @@ class noinline_call {
 
             const place& arg_place{std::get<place>(planned.kind)};
 
+            const operand address{
+                arg_place.ident->get_lea_operand(tc, indent, arg_place.info,
+                                                 held),
+            };
+
             arguments.push_back({
                 .info{arg_place.info},
-                .path{arg_place.ident},
+                .address{address},
             });
         }
 
         if (not has_result_temporary(dst, *call_.func)) {
-            compile_with_arguments(tc, indent, dst, arguments);
+            compile_with_arguments(tc, indent, dst, arguments, held);
             return;
         }
 
         call_.compile_through_result_temporary(
             tc, indent, dst, [&](const destination& result) -> void {
-                compile_with_arguments(tc, indent, result, arguments);
+                compile_with_arguments(tc, indent, result, arguments, held);
             });
     }
 
-    auto
-    compile_with_arguments(toc& tc, const size_t indent, const destination& dst,
-                           const std::span<const noinline_arg> arguments) const
-        -> void {
+    // 'held' holds the addresses of the arguments, freed once the frame is
+    // written
+    auto compile_with_arguments(toc& tc, const size_t indent,
+                                const destination& dst,
+                                const std::span<const noinline_arg> arguments,
+                                machine::held_registers& held) const -> void {
 
         assert_call(dst, *call_.func, arguments);
 
@@ -1347,6 +1359,8 @@ class noinline_call {
                            array_lengths),
         };
 
+        held.release();
+
         // the address in a register is loaded after the registers are saved,
         // a register that holds a value of the caller is not lost
         x.call_function(call_.tk, indent, call_.func->body_label(array_lengths),
@@ -1356,17 +1370,14 @@ class noinline_call {
     // the address each slot of the callee holds: the destination for the
     // result, the argument for a parameter
     [[nodiscard]] auto
-    frame_slot_addresses(toc& tc, const size_t indent, const destination& dst,
-                         const std::span<const noinline_arg> arguments,
-                         machine::held_registers& held) const
+    frame_slot_addresses(const destination& dst,
+                         const std::span<const noinline_arg> arguments) const
         -> std::vector<addressed_slot> {
 
         std::vector<addressed_slot> slots;
 
         for (const frame_slot& slot : call_.func->frame_slots()) {
-            const operand address{
-                slot_address_of(tc, indent, dst, slot, arguments, held),
-            };
+            const operand address{slot_address_of(dst, slot, arguments)};
 
             slots.push_back({
                 .slot{slot},
@@ -1387,13 +1398,11 @@ class noinline_call {
                    const std::span<const size_t> array_lengths) const
         -> std::vector<addressed_slot> {
 
-        machine& x{tc.machine()};
-
-        machine::held_registers held{x, call_.tk, indent};
-
         std::vector<addressed_slot> slots{
-            frame_slot_addresses(tc, indent, dst, arguments, held),
+            frame_slot_addresses(dst, arguments),
         };
+
+        machine& x{tc.machine()};
 
         if (tc.checks().frame) {
             x.check_frame_capacity(
@@ -1526,25 +1535,15 @@ class noinline_call {
         return std::nullopt;
     }
 
-    // a temporary is a plain variable, not indexed like its argument
     [[nodiscard]] static auto
-    slot_address_of(toc& tc, const size_t indent, const destination& dst,
-                    const frame_slot& slot,
-                    const std::span<const noinline_arg> arguments,
-                    machine::held_registers& held) -> operand {
+    slot_address_of(const destination& dst, const frame_slot& slot,
+                    const std::span<const noinline_arg> arguments) -> operand {
 
         if (not slot.param_index) {
             return dst.operand();
         }
 
-        const size_t index{*slot.param_index};
-        const noinline_arg& argument{arguments.at(index)};
-
-        if (argument.is_temporary()) {
-            return argument.info.operand();
-        }
-
-        return argument.path->get_lea_operand(tc, indent, argument.info, held);
+        return arguments.at(*slot.param_index).address;
     }
 };
 

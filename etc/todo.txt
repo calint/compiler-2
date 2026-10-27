@@ -49,6 +49,61 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
        direction, 'array_copy(a[w()], b, f())' with 'w' writing what 'f'
        reads, was missed too; tests 1725-1728; README 7.14; no other test
        changed its verdict
+    => M3.1 done (2026-10-27, user: left to right, not a values-first
+       order): a noinline call compiles its arguments in their order, a
+       place gets its address at its argument ('noinline_arg::address', the
+       path walk at the frame goes), held until the frame is written
+       ('held_registers::release' before 'call_function'); tests 1729-1731;
+       README 4.1; listings: 4 tests differ in order and register names
+       only, no growth (1345 peaks at 4 scratch registers for 3), verdicts
+       of every test equal
+    M3.1 plan (2026-10-27, go-ahead given)
+       problem: 'noinline_call::compile_arguments_and_call' compiles every
+       temporary argument first, then 'populate_frame' computes the address
+       of each place argument ('slot_address_of', 'get_lea_operand'); a call
+       in the index of a place, 'v[w()]', runs after the later arguments;
+       the checks assume source order ('assert_not_written_later' note: "a
+       call among the earlier operands has run before the later ones",
+       README 7.14 "every node emits its operands in the order of the
+       source"), so the emitted code is not the checked code (README 3.1)
+       design: one pass in argument order; a temporary argument is compiled
+       into its temporary, a place argument gets its address at its
+       position, held in a register when it has a run-time index, until
+       the frame is written; 'noinline_arg' keeps the address operand
+       ('slot_address_of' returns it, no path walk at the frame);
+       'held_registers' moves from 'populate_frame' to
+       'compile_arguments_and_call', freed before 'call_function' as now
+       (an address in a register is loaded after the registers are saved);
+       the result slot and the frame and stack checks stay in
+       'populate_frame'
+       rejected:
+         1. the address written to its frame slot at its position: a
+            noinline call in a later argument puts its frame at the same
+            'next_frame_address' and overwrites the slot
+         2. reject an index call that conflicts with a later argument (the
+            M3.2 rule): accepts less, also for the inlined call to keep
+            the verdict independent of inlining; the emitted code stays
+            unlike the checked code
+         3. the index of a place compiled into an integer temporary: a
+            second form of a path (the index replaced), several indexes per
+            path, for one case
+         4. hold only places with a call in an index: two orders of
+            argument code, the exception the design removes
+       invariants: the code of each argument runs in argument order, also
+       for a noinline call (the note of 'assert_not_written_later' and
+       README 7.14 hold without exception); a place's address register is
+       held from its argument to the write of the frame
+       cost: a place with a run-time index before a temporary argument holds
+       its register across the temporary's code (needed by the order, the
+       scratch rule allows it); more x86_64 "cannot allocate register"
+       rejections are possible (the open many-indexed-arguments item);
+       measure listing growth and the verdicts of every test and of the
+       fuzzers
+       tests: 'pick(v[w()], g + 1)' (214) and 'pick(v[h()], f())' (10)
+       noinline on both targets, equal to the inlined results; a place with
+       a run-time index before a temporary that has a noinline call (the
+       held register survives the nested call); listings and verdicts of
+       every other test compared with HEAD
 [ ] hard: design review round 23 (2026-10-26, user: finish the product;
     simplification and design rounds until the design is good, then the bug
     hunt; two reviewers D1 front end and checks, D2 statements, calls and
