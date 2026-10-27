@@ -1730,8 +1730,9 @@ What depends on the target is listed here, nothing else does:
 
 1. the default type, the width of a register (1.7, 7.12): its arithmetic, a
    panic included, its constants, e.g. 'var k = 3000000000' is rejected on
-   rv32i, its shift counts, e.g. 'x << 40', and whether it mixes with a fixed
-   width
+   rv32i, its shift counts, e.g. 'x << 40', whether it mixes with a fixed
+   width, and an index, computed in it: 'a[i + i]' with 'i' an 'i32' of
+   2000000000 panics 'bounds' on x86_64 and 'overflow' on rv32i
 2. the types a target has: 'i64' is rejected on rv32i
 3. the number of scratch registers: an expression that runs out of them on one
    target can be accepted on another (7.11)
@@ -1743,6 +1744,12 @@ What depends on the target is listed here, nothing else does:
 So whether a program is accepted can depend on the target through 1 to 4,
 and its result through 1 and 4; under 'noub' the result of an accepted
 program that writes its types and stays within the limits does not.
+
+The bytes that 'read' and 'sector_read' put into a buffer are assumed to be
+written from the same type, e.g. by 'write' or 'sector_write' of such a
+buffer: a 'bool' is 0 or 1 and the padding of a record is 0. Other bytes are
+not checked; a 'bool' read as 120 is then neither true nor false, and two
+records with equal fields compare unequal, since '==' compares their bytes.
 
 The checks run in three phases: the parse rejects the reads of what is not
 assigned and the kinds of value a destination does not take, the compile the

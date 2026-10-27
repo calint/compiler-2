@@ -6,6 +6,37 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
 --------------------------------------------------------------------------------
 1. clean up
 --------------------------------------------------------------------------------
+[o] hard: bug hunt round 2 (2026-10-27, user: loop until a round finds no
+    bugs; hunters M1 arithmetic and constants, M2 control flow and layout, M3
+    data layout, addresses and generic types; reports in the session
+    scratchpad bh2)
+    M3.1. a noinline call computes the index of a place argument after the
+          temporaries of later arguments: 'pick(v[w()], g + 1)' with 'w'
+          writing 'g' exits 214 inlined, 209 noinline; the note of
+          'assert_not_written_later' holds for the inlined call only
+    M3.2. 'array_copy', 'arrays_equal', 'write' and 'read' compute the count
+          first and miss a count whose call writes what a call in an array
+          index reads: 'array_copy(a[h()], w, f())' copies 'b' for 'a', a
+          false bounds panic
+    M3.3. 'read' and 'sector_read' into a 'bool' or a record with padding
+          give a 'bool' that is neither true nor false, equal records that
+          compare unequal
+    M2.1. rv32i: the jump optimizer inverts a branch to the target of the
+          jump after it and keeps the branch's empty far-jump scratch: a
+          'break' out of a 1.08 MiB loop body with every register held is
+          "no scratch register is free" by default, accepted with '--nopt'
+    M2.2. rv32i, '--checks=...,line': the far jump to a failure handler
+          takes a0 for its scratch, holding the line just loaded: "panic:
+          bounds at far2.baz:1151420" for line 20
+    M1. no bug; an index is computed in the default type, so 'a[i + i]' of
+        an 'i32' panics 'bounds' on x86_64 and 'overflow' on rv32i
+    => M1 note done (2026-10-27): README 8 item 1 names the index
+    => M3.3 decided (2026-10-27, user: document it, assume the bytes read
+       were written from the same type): README 8 states the assumption
+    => M2.1 done (2026-10-27): 'assembler::invert' takes the removed jump's
+       target and scratch, chosen after the compared registers were freed;
+       'test-far-jumps-no-scratch.sh' runs the 'break' with and without
+       '--nopt' (fails at HEAD)
 [ ] hard: design review round 23 (2026-10-26, user: finish the product;
     simplification and design rounds until the design is good, then the bug
     hunt; two reviewers D1 front end and checks, D2 statements, calls and

@@ -556,12 +556,14 @@ class assembler {
         return std::nullopt;
     }
 
-    // every branch the optimizer sees has an inverse
-    auto invert(line& l, std::string target) const -> void {
+    // every branch the optimizer sees has an inverse; the branch takes the
+    // removed jump's scratch, chosen after the compared registers were freed
+    auto invert(line& l, const jump_info& removed) const -> void {
         jump_info& jump{*l.jump};
 
         jump.mnemonic = inverse_branch_mnemonic(jump.mnemonic);
-        jump.target = std::move(target);
+        jump.target = removed.target;
+        jump.scratch = removed.scratch;
         l.text = std::string{leading_whitespace(l.text)} + format_jump(jump);
     }
 
@@ -647,7 +649,7 @@ class assembler {
             return false;
         }
 
-        invert(branch, jump.jump->target);
+        invert(branch, *jump.jump);
 
         remove(jump);
         ++optimizations_.inverted_branches;
