@@ -5520,3 +5520,7 @@ SRC=1738 && EXP=5 && RUN
 # a 'foo' with a constant count of 0 outside an inlined call still checks its
 # body, as a branch that folds to false does
 SRC=1739 && COMPERR
+
+# a 'dat' after the first variable names that variable, also a 'let' of an
+# array, which is a read-only variable
+SRC=1740 && COMPERR

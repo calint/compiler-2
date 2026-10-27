@@ -209,6 +209,12 @@ inline auto expr_type::parse_copy_source(toc& tc, tokenizer& tz, const type& tp,
 
     const ident_info src_info{make_ident_info(tc, ident)};
 
+    // before the type, which a literal takes from the target, e.g. the '5'
+    // of 'a = 5' with 'a' an 'i8' array
+    if (is_array_destination_ and not src_info.is_array()) {
+        throw compile_error{tok(), "source must be an array"};
+    }
+
     if (not tp.is_same(src_info.type_ref())) {
         throw_type_mismatch(ident.last_token(), tp.name(),
                             src_info.type_ref().name());

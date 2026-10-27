@@ -2500,8 +2500,8 @@ class toc final {
     // false while the program is parsed: the names are declared without
     // storage and without comments
     bool is_compiling_{};
-    // a global that is not a 'dat' was declared, a 'dat' after it is rejected
-    bool is_global_var_declared_{};
+    // the first global that is not a 'dat', a 'dat' after it is rejected
+    std::optional<token> first_global_var_tk_;
     // the parsers recurse on the one stack, e.g. a generic instance is parsed
     // inside the parse that needs it, so the levels are counted once for all
     // of them, see 'parse_nesting_scope'
@@ -2723,9 +2723,13 @@ class toc final {
         // note: a 'dat' in a block is rejected when it is parsed
         assert(scopes_.is_at_root());
 
-        if (is_global_var_declared_) {
-            throw compile_error{dat_tk,
-                                "'dat' can only be declared before any 'var'"};
+        if (first_global_var_tk_) {
+            throw compile_error{
+                dat_tk,
+                std::format("'dat' can only be declared before the first "
+                            "variable, {} at {}",
+                            in_quotes(first_global_var_tk_->text()),
+                            locations_.for_message(*first_global_var_tk_))};
         }
 
         const size_t size_bytes{
@@ -2876,8 +2880,10 @@ class toc final {
 
         record_if_global(var.name);
 
-        if (scopes_.is_at_root() and kind != var_kind::dat) {
-            is_global_var_declared_ = true;
+        if (scopes_.is_at_root() and kind != var_kind::dat and
+            not first_global_var_tk_) {
+
+            first_global_var_tk_ = src_loc_tk;
         }
 
         if (is_compiling_) {

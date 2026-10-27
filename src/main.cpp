@@ -649,6 +649,17 @@ auto print_help(const char* const program_name) -> void {
                 : std::string{opts.binary_file_name},
         };
 
+        // the backend checks the stack against the memory without knowing
+        // which was given, a default stack that does not fit is the memory's
+        if (opts.memory_size_bytes and not opts.stack_size_bytes and
+            *opts.memory_size_bytes < default_stack_size_bytes) {
+
+            throw option_error{
+                std::format("invalid --memory: {} B is smaller than the "
+                            "default stack of {} B, give a smaller --stack",
+                            *opts.memory_size_bytes, default_stack_size_bytes)};
+        }
+
         const machine::target_options target_opts{
             .jumps{
                 opts.optimize_jumps ? assembler::jump_mode::optimized

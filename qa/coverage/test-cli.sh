@@ -422,6 +422,14 @@ CLI_FPGA_MEMORY() {
     [[ $exit_code -eq 1 ]]
     grep -Fq "error: invalid --stack: $((memory_size + 16)) B exceeds the $memory_size B of device memory" err
     grep -Fq "use --help for usage information" err
+    # a memory smaller than the default stack names '--memory', the stack was
+    # not given
+    set +e
+    "$BIN" --target=rv32i-fpga --bin=gen-rv32i.bin --memory=0x1000 0426.baz >gen.s 2>err
+    exit_code=$?
+    set -e
+    [[ $exit_code -eq 1 ]]
+    grep -Fq "error: invalid --memory: 4096 B is smaller than the default stack of 65536 B, give a smaller --stack" err
     # a stack larger than the memory is rejected before a stack check of a
     # 'noinline' call is generated with it
     set +e

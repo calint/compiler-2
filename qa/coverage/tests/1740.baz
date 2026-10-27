@@ -1,0 +1,8 @@
+# a 'dat' after the first variable names that variable, also a 'let' of an
+# array, which is a read-only variable
+let k = i8[]{1, 2}
+dat d = "ab"
+
+func main() {
+    exit(k[0])
+}

@@ -1,4 +1,4 @@
 
-0367.baz:4:1: 'dat' can only be declared before any 'var'
+0367.baz:4:1: 'dat' can only be declared before the first variable, 'value' at 3:5
 dat data = 2
 ^~~
