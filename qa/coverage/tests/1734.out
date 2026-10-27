@@ -1,0 +1,4 @@
+
+1734.baz:7:29: index 2 is out of bounds for array 'hs' of size 2
+    var s = array_length(hs[2].v)
+                            ^

@@ -140,6 +140,10 @@ class stmt_builtin_array_length final : public statement {
 
         stmt_identifier array{stmt_identifier::parse_whole_array(tc, tz)};
 
+        // the length is folded, so an index would be neither computed nor
+        // checked at run time
+        array.assert_constant_indexes(tc, name_tk.text());
+
         tz.assert_no_surplus_argument(name_tk.text(), 1);
 
         return array;

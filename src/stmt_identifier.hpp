@@ -588,6 +588,12 @@ class stmt_identifier final : public statement {
             std::format("{} is not an array", in_quotes(dotted_path()))};
     }
 
+    // every index is a constant within its array, e.g. the '1' of
+    // 'array_length(hs[1].v)', whose result no index changes; 'what' names
+    // the built-in in the message
+    auto assert_constant_indexes(const toc& tc, std::string_view what) const
+        -> void;
+
     // a constant count of a bulk operation that starts at this path, see
     // 'assert_constant_range'
     auto assert_count_in_bounds(const toc& tc, const token& count_tk,

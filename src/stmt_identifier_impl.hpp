@@ -135,6 +135,31 @@ inline auto stmt_identifier::visit_index_reads(const read_visitor reader) const
     statement::visit_reads(reader);
 }
 
+inline auto stmt_identifier::assert_constant_indexes(
+    const toc& tc, const std::string_view what) const -> void {
+
+    for_each_prefix(tc, tok(), [&](const prefix_step& step) -> void {
+        if (not step.elem->index) {
+            return;
+        }
+
+        const expr_any& index{step.elem->index_expr()};
+
+        const std::optional<int64_t> constant_index{index.constant_value(tc)};
+
+        if (not constant_index) {
+            throw compile_error{
+                index.tok(),
+                std::format("an index in the argument of {} must be a "
+                            "constant, every element has the same length",
+                            in_quotes(what))};
+        }
+
+        assert_constant_index(*step.info, index.tok(), step.path,
+                              *constant_index, false);
+    });
+}
+
 inline auto stmt_identifier::assert_count_in_bounds(const toc& tc,
                                                     const token& count_tk,
                                                     const int64_t count) const

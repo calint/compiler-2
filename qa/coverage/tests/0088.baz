@@ -26,7 +26,7 @@ func main() {
 
     var i = 0
     loop {
-      locations[i].name.len = input(locations[i].name.data, array_length(locations[i].name.data))
+      locations[i].name.len = input(locations[i].name.data, array_length(locations[0].name.data))
       i = i + 1
       if i == 4 break
     }

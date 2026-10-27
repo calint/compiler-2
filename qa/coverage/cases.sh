@@ -5492,3 +5492,11 @@ SRC=1731 && EXP=42 && RUN
 # a method name without '(' at the end of a line is reported at the name, not
 # at the next line
 SRC=1732 && COMPERR
+
+# the length of an element's array is folded, an index in the argument of
+# 'array_length' must be a constant: the call in 'm[f()]' would not run
+SRC=1733 && COMPERR
+
+# a constant index in the argument of 'array_length' is checked against its
+# array like any other
+SRC=1734 && COMPERR

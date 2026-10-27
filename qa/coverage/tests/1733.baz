@@ -1,0 +1,16 @@
+# the length of an element's array is folded, an index in the argument of
+# 'array_length' must be a constant: the call in 'm[f()]' would not run
+type row { a i8[2] }
+
+var g = 0
+
+func f() res {
+    g = g + 1
+    res = 0
+}
+
+func main() {
+    var m = row[3]
+    var k = array_length(m[f()].a) + g
+    exit(k)
+}

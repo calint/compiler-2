@@ -1,6 +1,369 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] medium: low priority: conversions: a register destination wider than the
+    type is also rewidened in place when the conversion has no unary ops
+    ('ops_place::widened' as 'after_widening'), one scratch register less;
+    changes code and the register report of correct cases (phase R4b, plan 1
+    rejected alternative 3)
+    => done (2026-10-27, todo triage): by design round 21 B.5,
+       'compile_at_type_register' builds the value in the destination
+       register and widens it in place; 'ops_place' is gone
+[-] medium: --checks=alias: route inline builtin results through a scratch
+    register instead of rejecting (0077.baz, 0135.baz, 0393.baz now use a
+    temporary variable, 0481.baz is a '--checks=noub' error test); it would
+    become a run test again if the semantics change
+    => discarded (2026-10-27, todo triage): '--checks=alias' is gone, the
+       shared-storage rejection is always on; accepting more is the
+       conservative-rejections item
+[-] hard: --checks=alias: runtime address check or a frame temporary for the
+    remaining instance and non-inline results with runtime indexes
+    => discarded (2026-10-27, todo triage): '--checks=alias' is gone, the
+       shared-storage rejection is always on; accepting more is the
+       conservative-rejections item
+[-] medium: rv32i: check loop iteration regarding large span
+    => discarded (2026-10-27, todo triage): loops over 1 MiB take the far
+       jump form, 'test-far-jumps.sh' and 'test-far-jumps-no-scratch.sh'
+       cover them
+[-] easy: should 'if str == "abc"' be supported?
+    => an argument against: it is a magic string and should be a dat
+    => discarded (2026-10-27, todo triage): the design is frozen, the item
+       argues against it
+[-] easy: consider a result that is an array ('func make_points() : point[]
+    res')
+    => confusing, 'func init_points(pts : point[])' is better
+    => discarded (2026-10-27, todo triage): the design is frozen, the item
+       argues against it
+[-] easy: messages about an argument or a destination that is read-only or a
+    constant print the name without its indexes ('name_or_literal'), e.g.
+    "read-only 'ps.x'" for 'ps[0].x'; the shared storage messages quote the
+    source text ('statement::trimmed_source', 'destination::text')
+    => discarded (2026-10-27, user: no, as design round 21 ask 6 N4):
+       small gain, many messages change
+[x] hard: design review round 23 (2026-10-26, user: finish the product;
+    simplification and design rounds until the design is good, then the bug
+    hunt; two reviewers D1 front end and checks, D2 statements, calls and
+    backends, one hunter H1; reports in the session scratchpad r23)
+    A. design defects where the emitted code differs from the checked code
+       (README 3.1), each a behavior change with tests on both targets
+       A.1. D2-1 an inlined call makes its instance and call-result
+            temporaries before its other arguments, 'f(inc(), {g, 0})' 21
+            inlined, 22 noinline; the temporary made where it is bound, in
+            argument order (-5)
+       A.2. H1-1 the slice operand 'g[1]' of 'array_copy' and
+            'arrays_equal' is checked as one element but reaches 'g[1..]':
+            every check misses it (results depend on target and inlining,
+            an unassigned read accepted); the operand reaches from its start
+            on, like 'g[i]' (+8, accepts less)
+       A.3. D1-1 a value hiding a generic function changes the verdict of
+            'b = mk()' for a 'bool' destination; '(' after a generic
+            function is always its call, only '<' is hidden (0, accepts
+            more)
+    B. pure refactors
+       B.1. D2-2 one helper for a temporary of a call, the result temporary
+            once for both call compilers (-14), with D2-4 4.1 and 4.2 (-6)
+       B.2. D1-2 'destination' keeps what a stored name resolved to once
+            (with round 22 C.4 N3, -12)
+       B.3. D1-5 defaulted '==' for the path types, a constant index as a
+            range of one element (-25)
+       B.4. D1-3 a string token keeps its quotes like a character (-12)
+    => B.1 done (2026-10-26): 'call_site::add_temporary' returns the
+       destination of the new variable ('temporary_storage' goes),
+       'call_site::compile_through_result_temporary' makes the result in a
+       temporary for both call compilers (-20 lines); D2-4 4.1 kept (removing
+       'call_plan::is_inlined' splits 'is_temporary' between the compilers),
+       4.2 done with A.1; B.2 done with round 22 C.4 N3; listings equal
+    => B.3 done (2026-10-26): a constant index is the range of one index,
+       the 'fixed_index' kind and 'index_end' go (-14 lines); the defaulted
+       '==' of D1-5 (a) not done, the clang-tidy rule
+       'fuchsia-overloaded-operator' forbids overloading operators; listings
+       equal; 'qa/fuzz/alias-path-fuzz.cpp' uses 'index_range' too (found
+       by the B.4 phase checks)
+    => B.4 done (2026-10-26): a string token keeps its quotes, like a
+       character; 'is_str_' and its constructor parameter go, 'is_string'
+       reads the text, 'string_body' gives the text between the quotes;
+       'source_to', 'in_quotes', 'is_token_text_at_source' and two guards
+       ('is_literal', 'is_identifier') lose their special case (-7 lines);
+       a string before the '{' of a body is taken as the result type, so
+       any string there is "expected a type name, got a string" (test 1430
+       was so only because '"i8"' read like 'i8'); listings, errors and
+       '--reproduce-source' of every test equal
+    C. asks
+       C.1. D2-3 the later-argument rule only for arguments passed by
+            reference (accepts more, +10)
+       C.2. H1-2 compile time doubles per level of inlined calls in an
+            expression stored to memory (depth 14: 25 s); a list with an
+            inlined call is not measured; README 5.2 says linear
+       => C.2 done (2026-10-26, user: fix the bugs first): a list stored to
+          memory that has an inlined call ('statement::has_inlined_call') is
+          compiled in place, not measured; a scratch register would hold one
+          register per level (depth 16 out of registers); depth 16 compiles
+          in 9 ms (test 1716); instruction lines x86 76884 -> 76888, rv32i
+          101367 -> 101421; README 5.2
+       C.3. D1-4 one lexer: 'one_line_source' through a 'source_sink' (-125,
+            ~60 signatures change), D1-6, D2-4 4.3 the forward declarations
+            of 'main.cpp' (-85)
+       => C.3 kept as a todo item of its own (user, 2026-10-26)
+       => C.1 discarded (2026-10-27, user: no): sound, every value argument
+          is read at its position in both compilers (since bug hunt round
+          2 M3.1 also noinline), but a second classification in the one
+          order rule for about 10 lines; the rejection is conservative and
+          a temporary variable states the order
+    => A done (2026-10-26): A.1 'make_bindings' makes a temporary where it
+       binds it, in argument order (tests 1703, 1704); A.2 a bulk operand
+       is a 'stmt_identifier' of 'path_reach::to_end': its start element
+       adds an index range to the end of the array and its bytes reach the
+       end (tests 1705-1709, README 3.6); A.3 a generic function followed
+       by '(' is its call even when hidden (test 1710); listings and errors
+       of every other test equal
+    => done (2026-10-27): A, B and C.2 done, C.1 discarded, C.3 a todo item
+       of its own
+[x] hard: design review round 21, simplification (2026-10-26, user: refactor
+    to simplify; six reviewers P parse and expressions, S statements and
+    calls, N names and 'toc', U no-UB checks, B backends, W docs and qa;
+    findings with measured net lines in the session scratchpad r21;
+    spot-checked: N1 sizes ('ident_builder' 149, 'ident_resolver' 310, two
+    readers of 'ident_info::id'), U3 is round 20 F code): each step a pure
+    refactor unless marked, listings and messages equal, a pause for a commit
+    after each phase
+    A. small and local (about -400 lines)
+       A.1. backends (B1-B8, -136, no code change): the target-call argument
+            check once in 'machine', 'state_' used directly instead of five
+            forwarders, 'check_bounds' one frame over a virtual
+            'emit_bounds_check', 'validate_register_type' and the 'type_ref'
+            of 'reserve_named_register' go, 'push_backend_allocation' goes,
+            the 'stack_pointer_register' field, 'end_main' (x86 listings lose
+            a blank line), 'reports_line'
+       => A.1 done (2026-10-26): all eight; 'machine::check_bounds' is the one
+          frame over the protected 'emit_bounds_check' with the plan at the
+          default width; the target-call width asserted once in
+          'assert_target_call_registers'; the rv32i driver calls 'exit' for
+          'end_main'; listings of every test on both targets equal but for
+          the x86 blank line; both suites, test-rv32i, the CLI tests and
+          clang-tidy clean
+       A.2. the checks (U3 -28: the 'without_call_check' counter derived
+            from the scopes; U5 -12; U7 -5; S4/U4 -25: the two count-first
+            checks of README 7.14 as one helper in 'ub_order.hpp')
+       => A.2 done (2026-10-26): U3 'is_checking_without_call' reads the
+          scopes ('scope_stack::is_in_body_taking_from_call'), the
+          'without_call_check' class and counter go; U7 'reach_state' keeps
+          the innermost loop's flag; U5 a callee's globals through
+          'toc::record_storage_use', the two 'record_callee_globals' go;
+          U4 'operands_of' in 'ub_order.hpp' for both count-first nodes
+          (io passes its subspans), the hand-made lists go; listings equal,
+          both suites clean
+       A.3. calls and statements (S6-S10, -70): one 'expr_any' constructor
+            for a path argument, 'call_kind' without 'call_kind_item', the
+            notes of 'dry_run_body', 'func_instantiator' in one helper, the
+            leftovers
+       => A.3 done (2026-10-26): 'path_argument' and 'token::start_position'
+          (also P D, 'expr_arith::start_marker_of' goes), 'call_kind' without
+          'call_kind_item', the 'dry_run_body' notes point at README 4.4,
+          'func_instantiator::add_instance', the duplicate result assert, the
+          one-use unary wrapper, the 'stmt_if' note; not done: holding
+          'syntax' in 'stmt_def_func_param' (the struct would have to come
+          before the members, against the class layout, -6), the
+          'stmt_def_type' helpers as statics (0 lines); listings equal, both
+          suites and the CLI tests clean
+       A.4. expressions (P D, E, F, H, I, -56): 'token::start_position', the
+            state 'expr_arith' keeps twice, local duplicates, the operator
+            lookups over 'traits_of', 'is_hidden_by_value' inlined
+       => A.4 done (2026-10-26): D with A.3 ('token::start_position'), E part
+          2 ('is_implied_subexpression' from the precedence, the option and
+          its assert go), F ('throw_parentheses_group_nothing',
+          'as_statement' at the visits, 'constant_operand'), H, I; E part 1
+          (the list's unary ops in the base class) not done, it needs the
+          reproduce-source runs of its own (-6); listings equal
+       => A.5 folded into B.1 (2026-10-26): N2 rewrites what B.1 replaces;
+          N3 was done with U5
+       A.5. names (N2 -25, N3 -3): 'ident_info' keeps the path once
+       A.6. docs and qa (W2 -88, W3 -110, W4 -120, W5 -60, W8 -30): the
+            README contents and one form of section reference, text said
+            twice and chapter 9 for a final language, the fuzzers on
+            'fuzzlib.run_fuzzer', the alias fuzzers on fuzzlib
+       => A.6 done (2026-10-26, by a fork): W2 the README contents and the
+          67 anchor links go, references are numbers; W3 chapter 9 keeps
+          only a target or a check, 1.7 and 8.2 point to 7.12, 1.2 to 7.2,
+          3.8 and 5.4 one line naming their script, 7.8 to 1.9 and 1.4; the
+          README 2098 -> 1919 lines; W4 'fl.run_fuzzer' used by fuzz-exprs,
+          programs, compiler, roome, options; W5 'alias-foo-fuzz.py' on
+          'run_fuzzer', 'fuzz-alias-long.sh' goes; W8 the model helpers in
+          fuzzlib, 'KIND_CODE' is 'PANIC_CODE'; qa/fuzz -158 lines; equal
+          counts for seed 5 before and after
+       A.7. exceptions removed (user, 2026-10-26: solve an exception instead
+            of working around it): the noinline dry run per call kind goes,
+            an error of a noinline body names its first call; then the
+            '-alias' option goes, the rejection of shared storage is always
+            on (the dry run only mattered for verdicts under '-alias')
+       => A.7 done (2026-10-26): 'dry_run_ledger', 'call_kind', the dry-run
+          levels and their limit, 'scope_kind::noinline_dry_run' and
+          'inline_call::dry_run' go; 'noinline_body' keeps the call token
+          and source of its first call for the "called from" frame;
+          'check_options::alias' goes, 'assert_no_shared_storage' checks the
+          result and the globals always; 20 '-alias' cases are rejections
+          now, 1280, 1344, 1356 (the dry-run limits) go, 1240 is a chain of
+          1000; README 1.4, 1.5, 3.7, chapter 4 (4.3-4.5 go), 8.1-8.3; both
+          suites, the CLI tests
+       A.8. versions (measured per site against x86 76184 and rv32i 100492
+            instruction lines, user: remove 2, 3, 4, 5, 7): the narrow or
+            wide register of 'expr_arith' (0), the conversion (0), the
+            indexed result address of a call (rv32i +50), the unary ops of
+            a call (+22), the displacement (+30); sites 1 (scratch or in
+            place) and 6 (argument addresses) stay
+       => A.8 done (2026-10-26): 'expr_arith' computes through a scratch
+          register of the destination's type ('can_compute_wide' and the
+          '_as' variant go); a conversion is computed in the target or in a
+          scratch register ('computation_plan' and its 'measured' go,
+          'plan_scratch_type'); 'inline_call' binds a memory result as it is
+          ('compile_to_destination', 'compile_with_result_address_register',
+          'comment_result_address', 'emit_most_efficient_address' go) and an
+          address register holds the displacement ('load_indexed_address'
+          goes); instruction lines x86 76145 equal (7 tests change both
+          ways), rv32i 100477 -> 100575; an rv32i recursion that passes a new
+          indexed argument per level doubles per level instead of tripling
+          (11 levels 34 s -> 0.37 s); README 5.1, 5.2
+    B. refactors (about -700 lines)
+       B.1. N1 (-450, -18 concepts, +6): a name path resolved once, a
+            binding holds what its argument resolved to ('resolved_name'),
+            'ident_info::field' and 'at_address' step; 'ident_path',
+            'ident_builder', the text rewrite of 'follow_binding',
+            'call_address' with 'trailing_count', the three 'bound_*' go;
+            in steps, each with both suites showing equal listings and
+            errors; README 1.3, 6.5, 6.8
+       => B.1 done (2026-10-26): N2 first ('ident_info' keeps one type);
+          then N1: a binding holds a 'resolved_name' (the 'ident_info' and
+          the storage its argument or destination resolved to in the
+          caller), the resolver looks up one name, a path resolves its root
+          and steps each field ('ident_info::field', 'type::first_builtin'),
+          an address computed at a call is 'ident_info::at_address';
+          'ident_path', 'ident_builder', the walk and 'follow_binding',
+          'lookup_below', the three 'bound_*', 'bound_storage_of',
+          'call_address' with 'trailing_count', 'by_call_in_path',
+          'lea_request::address_by_call', 'type::field_offset' x2, the name
+          text of 'ident_info' ('id', 'root_id', 'root_of') and the dotted
+          'destination::name_' go ('destination' keeps its root name and
+          info, 'bound_info'); not done: moving the narrowing of the accessed
+          bytes into the constructor loop (it would change which of two
+          errors of a path is reported); src -428 lines; listings and errors
+          of every test on both targets equal to HEAD
+       B.2. U1 (-55): definite assignment traces the result as the parse
+            resolved it, its own hiding model goes, one walk per body
+       => B.2 done (2026-10-26, after B.3): 'stmt_identifier::names_result_'
+          set at the parse by 'scope_stack::names_result' (the one lookup);
+          'assignment_flow' traces the result's bytes, 0 without a result;
+          'block_scope', 'declare', 'traced_var', 'reachability_only', the
+          traced name, 'assert_statements_reached' (one walk per body) and
+          the declaring overrides of 'var' and 'foo' go; 'var x = x' keeps
+          its by-name check; errors of every test equal
+       B.3. U2 (-20): a read is a 'stmt_identifier', no path text per read
+       => B.3 done (2026-10-26): 'read_visitor' takes the
+          'stmt_identifier' that reads, 'read_filter' and the copies in
+          'storage_read' go, a message asks 'path_text'; listings equal
+       B.4. S1 (-55): the bulk built-ins parse their arguments with
+            'builtin_arguments'; messages of 5 tests change
+       => B.4 done (2026-10-26): 'bulk_operands' holds a 'builtin_arguments'
+          (its arrays at '{0, 1}', 'array_indexes' a span), checks the count
+          like 'exit'; its own parser (5 tokens, 'parse_array',
+          'expect_delimiter', 'expect_close') goes; 10 tests get the generic
+          texts of 'read' and 'exit' (0182, 0211-0214, 0248, 0249, 0269, a
+          string argument 1255, the count at the name 1687); src -64 lines
+       B.5. S3 (-35): one path for the unary ops of a conversion, the
+            'ops_place' enum goes; output changes, never longer (measured)
+       => B.5 done (2026-10-26): 'compile_at_type_register' for the three
+          rows, 'is_made_at_type' for 'ops_place'; a register destination
+          saves the scratch register or the copy; instruction lines x86
+          76145 -> 76141, rv32i 100575 -> 100563, 12 listings change, none
+          grows; src -48 lines
+       B.6. S5 (-18): a value argument's fit checked once before the
+            inlined and noinline paths split
+       => B.6 done (2026-10-26): 'assert_argument_types' asserts the fit of
+          every value argument of a built-in parameter; 'computed::is_name'
+          and the two asserts in the bindings go, 'bind_expression' folds
+          without a second check; listings and errors equal; src -15 lines
+       B.7. P A (-35): the built-ins dispatched by the catalog's 'use' in
+            one place, also fixes the crash item ('exit + 0', 'var x =
+            array_copy'); P B (-18), P C (-15)
+       => B.7 P A done (2026-10-26): 'parse_builtin(..., builtin_place)'
+          for a value and a statement, the catalog's 'use' decides, one
+          dispatch; 'parse_builtin_value', 'assert_builtin_has_value' and
+          'is_builtin_used_either_way' go; the crash item is fixed (tests
+          1695, 1696); listings equal; src -22 lines; P B and P C next
+       => B.7 P B, P C done (2026-10-26): one 'expr_bool_op::compile_branch'
+          for both list elements; the bare built-in type is a typed
+          'expr_zero', the conversion always has its argument (4 'if (not
+          argument_)' and the second constructor go); listings equal; src
+          -32 lines
+    C. a fix: P G, a comparison folds through one function that checks its
+       sides, 'let b = k == 1000' with 'k' an 'i8' is rejected like 'var';
+       behavior, with tests
+    => C done (2026-10-26): 'constant_comparison' checks the folded sides
+       ('assert_folded_sides_fit'), 'compile_comparison' no longer does it
+       itself; a 'let' gets the verdict of a 'var' (tests 1697-1699); no
+       other test changes
+    asks:
+       1. W1: the rv32i backend test driver (4208 lines) tests calls no
+          source makes, about -1500 to -2500; measure its coverage beside
+          the cases first; recommended: measure, then decide
+          => W1 done (2026-10-26, user: remove): measured with coverage
+             builds, the driver reached 79 compiler lines the cases do not:
+             22 accessors only it used, about 51 of the far-jump growth that
+             'test-far-jumps.sh' and '-no-scratch.sh' cover (8 s and 3 s),
+             5 of the rv32i linux target; 'test-rv32i-address.cpp' and
+             'test-rv32i.sh' go (-4325 lines), the accessors go
+             ('emitted_text', 'emitted_line_count', 'text_from',
+             'line_count'), the members public only for it become private
+             or protected, 'finish_registers' releases unconditionally;
+             AGENTS.md names the far-jump scripts in the phase checks
+       2. S2 (-50, low confidence): the result address of an inlined call
+          as one more indexed binding; changes code; recommended: try and
+          measure, keep only if no listing grows
+          => S2 done by A.8 (2026-10-26): the second address choice of the
+             result went with the version sites 4 and 7
+       3. W6 (-50): the two 'statement' virtuals of the 'arrays_equal'
+          shorthand; changes code; recommended: as 2
+          => W6 done (2026-10-26, user: code may grow in the simplification
+             stage): 'arrays_equal' is a 'bool' value like any other, the
+             two virtuals, their forwarders and the shorthand branch go;
+             src -56 lines; instruction lines x86 76141 -> 76307, rv32i
+             100563 -> 100643, 46 listings change
+       4. W7 (-200, low confidence): a 'dat' initializer through the write
+          plan; changes listings; recommended: as 2, after B
+          => W7 skipped (2026-10-26, user): the dat walk stays
+       5. W9: 'test-coverage-full.sh' (kept in round 20 as a convenience)
+          and 'cppcheck.sh' (in no lint step); recommended: keep the first,
+          remove the second if you do not run it
+          => W9 decided (2026-10-26, user): both stay
+       6. U6 (-7, unprobed), N4 (messages print the path without indexes):
+          recommended: no
+          => 6 discarded (2026-10-27, user: no): small gains, N4 changes
+             many messages for little clarity
+    order: A, B.1, B.2-B.7, C, then the asks
+    => done (2026-10-27): A, B and C done, the asks decided
+[x] hard: bug hunt round 3 (2026-10-27, user: loop until a round finds no
+    bugs; hunters N1 inlined calls and bindings, N2 methods, generic
+    functions and noinline frames, N3 the image encoder, the assemblers and
+    the bare-metal targets; reports in the session scratchpad bh3)
+    N2.1. a missing '(' after a constructor or method name is reported at
+          the next line ('var x = point.at'); so are a built-in call
+          ('exit' alone, 0688) and a definition ('func f<T type>', 1448)
+    N2.2. README 2.10.1 says errors name a generic method after its generic
+          type ('text.append'), they name the instance ('str.append', 0780)
+    N3.1. rv32i linux: '--vars=0xffff0000' is accepted and the link fails,
+          the range check counts from address 0, the linker places the
+          program at about 0x11000
+    N1. no bug
+    => N2.1 done (2026-10-27): every "expected '(' after ..." is reported
+       at the name ('read_open_paren' of 'stmt_call' and of
+       'builtin_arguments', 'func_head::assert_open_paren'); 8 expected
+       outputs point at the name, test 1732 (a method at a line end)
+    => N2.2 done (2026-10-27): README 2.10.1 says an error in a call or
+       the body names the instance, a clash of definitions and the report
+       the generic method
+    => N3.1 done (2026-10-27, user: document it): README 8 item 4 says the
+       rv32i linux linker places the program and can fail a layout that
+       fits from address 0
+    => done (2026-10-27): N2.1 fixed, N2.2 and N3.1 documented; the phase
+       checks clean; only message and doc findings, no wrong result
 [x] hard: bug hunt round 2 (2026-10-27, user: loop until a round finds no
     bugs; hunters M1 arithmetic and constants, M2 control flow and layout, M3
     data layout, addresses and generic types; reports in the session

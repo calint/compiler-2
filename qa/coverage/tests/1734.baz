@@ -1,0 +1,9 @@
+# a constant index in the argument of 'array_length' is checked against its
+# array like any other
+type holder { v i8[4] }
+
+func main() {
+    var hs = holder[2]
+    var s = array_length(hs[2].v)
+    exit(s)
+}

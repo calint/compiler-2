@@ -44,7 +44,7 @@ func main() {
         var len = 
             input(
                 locations[i].name.data,
-                array_length(locations[i].name.data)
+                array_length(locations[0].name.data)
             )
         locations[i].name.size = i8(len)
         i = i + 1

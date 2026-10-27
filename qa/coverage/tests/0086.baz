@@ -57,7 +57,7 @@ func main() {
 
     var i = 0
     loop {
-      locations[i].name_len = input(locations[i].name, array_length(locations[i].name))
+      locations[i].name_len = input(locations[i].name, array_length(locations[0].name))
       pn(locations[i].name_len)
       nl()
       print(locations[i].name, locations[i].name_len)
