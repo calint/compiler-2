@@ -5432,3 +5432,8 @@ SRC=1715 && OPTS="--checks=overflow" COMPERR
 # an expression in memory with an inlined call is not measured in versions,
 # so a deep chain compiles in linear time
 SRC=1716 && EXP=48 && RUN
+
+# a generic instance cannot call back the function whose body instantiates it,
+# directly or through a method of a type argument
+SRC=1717 && COMPERR
+SRC=1718 && COMPERR

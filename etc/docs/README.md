@@ -1492,7 +1492,10 @@ move to a second walk over the tree; generic bodies are already kept as text
 (7.4), so the grammar alone would not need the names.
 
 Cost: a name is defined before it is used, so two functions cannot call each
-other, also not when they are 'noinline' ('etc/todo.txt' section 4).
+other, also not when they are 'noinline' ('etc/todo.txt' section 4). A
+generic instance parsed inside a body could call that body's function back,
+e.g. 'gen<W>' calling 'W.run' that instantiates it, before its summary (3.9)
+is complete: such a call is rejected.
 
 ### 7.3 One base class for every node
 

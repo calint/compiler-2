@@ -1,0 +1,19 @@
+# the same through two instances of one generic function: 'f<W2,W1>' cannot
+# call back 'f<W1,W2>' that instantiates it
+
+type W1 {v}
+
+type W2 {v}
+
+func f<A type, B type>(d) res {
+    res = 5
+    if d == 0 {
+        return
+    }
+    var k = f<B, A>(d - 1)
+}
+
+func main() {
+    var z = f<W1, W2>(1)
+    exit(z)
+}

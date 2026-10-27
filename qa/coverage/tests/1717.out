@@ -1,0 +1,7 @@
+
+1717.baz:14:7: 'W.run' is called before its body ends, two functions cannot call each other
+    t.run(d - 1)
+      ^~~
+1717.baz:18:13: instantiated by 'gen<W>'
+    var k = gen<W>(d)
+            ^~~

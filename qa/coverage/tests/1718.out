@@ -1,0 +1,10 @@
+
+1718.baz:13:13: 'f<W1,W2>' is called before its body ends, two functions cannot call each other
+    var k = f<B, A>(d - 1)
+            ^
+1718.baz:13:13: instantiated by 'f<W2,W1>'
+    var k = f<B, A>(d - 1)
+            ^
+1718.baz:17:13: instantiated by 'f<W1,W2>'
+    var z = f<W1, W2>(1)
+            ^

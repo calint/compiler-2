@@ -6,6 +6,31 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
 --------------------------------------------------------------------------------
 1. clean up
 --------------------------------------------------------------------------------
+[o] hard: bug hunt round 1 (2026-10-26, user: find and fix bugs until none
+    are found; hunters K1 no-UB soundness, K2 code generation, K3 front end
+    and options; reports in the session scratchpad bh1)
+    K1.1. a generic instance parsed inside a body calls that body's function
+          back ('gen<W>' calling 'W.run'), whose record is still empty: the
+          instance's record misses its globals, 'g = 1 + gen<W>(2)' exits
+          206 for 6
+    => K1.1 done (2026-10-26): a call of a function whose body is still
+       parsed, other than the current one, is rejected
+       ('stmt_call::assert_callee_body_parsed', 'is_body_parsed'); tests
+       1717, 1718; README 7.2; listings of every other test equal
+    K2.1. rv32i: a version that runs out of registers inside an inlined 'if'
+          leaves the caller unreached (the unwinding 'pop_scope' ends its
+          path, 'toc::emit_most_efficient' restores only the peaks): the
+          rest of 'main' is not emitted, the program runs into the helpers
+    K3.1. rv32i: a type over 4 GiB is accepted and a body using it aborts
+          the backend ('copy_block', 'compare_memory', 'emit_bounds_check')
+    K3.2. a 'bool' constant is accepted as the constant argument of a
+          generic type ('w<b>' with 'let b = true' is 'w<1>')
+    K3.3. a constant named like a function stops the deduction from a call
+          argument ('id(mk())' with 'let mk = 5')
+    K3.4. a missing body is reported at the name of the next definition
+          ('func' is read as the result name)
+    K3.5. a hard link to an included file is loaded twice; '--bin' tells
+          files apart with 'equivalent', the includes by canonical path
 [ ] hard: design review round 22, simplification (2026-10-26, user: go on
     simplifying, generated code may grow; six reviewers P parse and
     expressions, S statements and calls, N names and 'toc', U no-UB checks,
@@ -184,6 +209,7 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
        C.3. D1-4 one lexer: 'one_line_source' through a 'source_sink' (-125,
             ~60 signatures change), D1-6, D2-4 4.3 the forward declarations
             of 'main.cpp' (-85)
+       => C.3 kept as a todo item of its own (user, 2026-10-26)
     => A done (2026-10-26): A.1 'make_bindings' makes a temporary where it
        binds it, in argument order (tests 1703, 1704); A.2 a bulk operand
        is a 'stmt_identifier' of 'path_reach::to_end': its start element
@@ -807,6 +833,14 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
     8.3; no undefined behavior, a verdict that depends on the spelling);
     deciding the constness again when a noinline instance knows the length
     would remove it (round 18 D6)
+[ ] medium: low priority: one lexer (round 23 C.3, D1-4): 'one_line_source'
+    ('statement.hpp') scans the source text of a statement again for the
+    comments of the listing; 'source_to' writing through a 'source_sink' with
+    a one-line mode drops comments and collapses whitespace per token
+    (-150 +25, about 60 'source_to' signatures change); with it D1-6
+    'stmt_identifier::dotted_path_' derived from 'elems_' (-3); listings and
+    '--reproduce-source' of every test equal; the forward declarations of
+    'main.cpp' (D2-4 4.3) dropped, a move only
 [ ] medium: low priority: generic deduction by a trial parse like 'var'
     (drops the token shapes of 'value_type', about 70 lines); messages of
     malformed arguments may change (design review 2026-10-23 E.5, optional,

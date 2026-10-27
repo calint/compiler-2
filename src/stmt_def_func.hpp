@@ -397,6 +397,8 @@ class stmt_def_func final : public statement {
     std::optional<func_instance> instance_;
     // what the body reaches that its callers name too, see 'body_uses'
     body_uses body_uses_;
+    // false while the body is parsed, its record is then incomplete
+    bool is_body_parsed_{};
 
     // how the body reaches the result and the parameters: a parsed body only
     // names them, a compiled noinline body has their addresses in its frame
@@ -594,6 +596,10 @@ class stmt_def_func final : public statement {
     // a method of a type, a constructor builds its 'self' instead
     [[nodiscard]] auto has_self_param() const -> bool {
         return head_.method and not is_constructor();
+    }
+
+    [[nodiscard]] auto is_body_parsed() const -> bool {
+        return is_body_parsed_;
     }
 
     // e.g. 'func point.at(x, y) self'
@@ -961,6 +967,7 @@ class stmt_def_func final : public statement {
         assert_sets_result();
 
         body_uses_ = tc.scopes().current_func_scope().body_uses_of_func();
+        is_body_parsed_ = true;
     }
 
     // e.g. 'a i32, b i32' up to the closing parenthesis

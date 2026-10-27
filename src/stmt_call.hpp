@@ -2048,6 +2048,25 @@ class stmt_call : public statement {
         assert_not_written_later(tc, operands_of(*this), "argument");
     }
 
+    // a function is called after its body or from inside it, so the record of
+    // a callee is complete except for a call of itself; a generic instance
+    // parsed inside a body may name that body's function, e.g. 'gen<W>'
+    // calling back 'W.run' that instantiates it (README 7.2)
+    auto assert_callee_body_parsed(const toc& tc) const -> void {
+        const bool is_recursive{
+            tc.scopes().current_func_scope().is_name(callee().name()),
+        };
+
+        if (callee().is_body_parsed() or is_recursive) {
+            return;
+        }
+
+        throw compile_error{
+            tok(), std::format("{} is called before its body ends, two "
+                               "functions cannot call each other",
+                               in_quotes(callee().name()))};
+    }
+
     // the function is a method and the receiver is a value
     auto assert_method_receiver(const stmt_identifier& receiver) const -> void {
 
@@ -2359,6 +2378,7 @@ class stmt_call : public statement {
                          const std::string_view what) -> void {
 
         assert_call_in_func(tc, tok());
+        assert_callee_body_parsed(tc);
 
         const std::optional<token> open_paren_tk{tz.is_next_char_token('(')};
 
@@ -2497,8 +2517,8 @@ class stmt_call : public statement {
     // through its parameter; a call of the function being parsed has no
     // complete record yet, so its argument is reached whole, written when the
     // parameter is 'mut'
-    // note: a name is defined before it is used, so only a function that
-    //       calls itself has an incomplete record (README 7.2)
+    // note: only a function that calls itself has an incomplete record
+    //       ('assert_callee_body_parsed')
     auto visit_callee_reach(const toc& tc,
                             const call_effect_visitor visitor) const -> void {
 

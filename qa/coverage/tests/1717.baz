@@ -1,0 +1,25 @@
+# a generic instance cannot call back the function whose body instantiates
+# it: two functions cannot call each other, 'W.run' has no complete record yet
+
+dat g = 10
+
+type W {v}
+
+func noinline gen<T type>(d) res {
+    res = 5
+    if d == 0 {
+        return
+    }
+    var t = T
+    t.run(d - 1)
+}
+
+func noinline W.run(d) {
+    var k = gen<W>(d)
+    g = g + 100
+}
+
+func main() {
+    g = 1 + gen<W>(2)
+    exit(g)
+}
