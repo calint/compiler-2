@@ -130,13 +130,6 @@ class bulk_operands final {
         return *args_.at(0).bare_path();
     }
 
-    // a constant count of 0 reaches no element, so a start at the end of the
-    // array, which only a range may have, is not addressed
-    [[nodiscard]] auto is_constant_empty(const toc& tc) const -> bool {
-        const std::optional<int64_t> constant_count{count().constant_value(tc)};
-        return constant_count and *constant_count == 0;
-    }
-
     // 'array' is 'first' or 'second', see 'range_check'
     [[nodiscard]] auto range_check_of(const toc& tc,
                                       const stmt_identifier& array) const

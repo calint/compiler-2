@@ -5549,3 +5549,22 @@ if [[ $MACHINE == rv32i* ]]; then SRC=1745 && EXP=108 && RUN; fi
 # code that a constant condition skips in 'main' is checked with the registers
 # it would have if it ran, not with those of a noinline body
 SRC=1746 && EXP=1 && RUN
+
+# a constant count of 0 still evaluates both paths: the calls in their indexes
+# run
+SRC=1747 && EXP=12 && RUN
+
+# a run-time start past the end of the array is rejected at run time also with
+# a constant count of 0
+SRC=1748 && EXP=255 && RUN_ERR
+
+# the run-time index of an element on the path of a constant count of 0 is
+# checked
+SRC=1749 && EXP=255 && RUN_ERR
+
+# an inlined count that folds to 0 evaluates the paths as a noinline call does
+SRC=1750 && EXP=1 && RUN
+
+# the end of an array, where a range may start, is out of bounds for an element
+# compared as a whole value
+SRC=1751 && COMPERR

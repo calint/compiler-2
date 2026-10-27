@@ -1,0 +1,12 @@
+# a run-time start past the end of the array is rejected at run time also with
+# a constant count of 0
+
+func main() {
+    var a = i8[4]
+    var b = i8[4]
+    var k = 9
+    if arrays_equal(a[k], b, 0) {
+        exit(3)
+    }
+    exit(4)
+}

@@ -636,6 +636,9 @@ struct lea_request {
     // the count of a span operation on an array, none without one
     std::optional<operand> reg_count;
 
+    // the path starts a range, so its last constant index may be the end
+    bool is_range_start{};
+
     // the register the caller prefers the address to start in, none without
     // a preference
     std::optional<operand> address_register;

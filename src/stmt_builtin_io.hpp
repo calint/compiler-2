@@ -508,6 +508,7 @@ class stmt_builtin_io final : public statement {
             ident.compile_lea(tc, indent, ident.tok(), held,
                               {
                                   .reg_count{range},
+                                  .is_range_start{range.has_value()},
                                   .address_register{},
                               }),
         };

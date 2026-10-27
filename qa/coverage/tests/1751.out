@@ -1,0 +1,4 @@
+
+1751.baz:9:10: index 2 is out of bounds for array 'a' of size 2
+    if a[2] == b {
+         ^

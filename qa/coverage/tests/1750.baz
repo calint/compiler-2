@@ -1,0 +1,19 @@
+# an inlined count that folds to 0 evaluates the paths as a noinline call does
+
+var g = 0
+
+func f(v) r {
+    g = g + 1
+    r = v
+}
+
+func cp(a i8[], b mut i8[], n) {
+    array_copy(a[f(1)], b, n)
+}
+
+func main() {
+    var a = i8[4]{1, 2, 3, 4}
+    var b = i8[4]
+    cp(a, b, 0)
+    exit(i8(g))
+}

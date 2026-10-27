@@ -1,0 +1,19 @@
+# a constant count of 0 still evaluates both paths: the calls in their
+# indexes run
+
+var g = 0
+
+func f(v) r {
+    g = g + 1
+    r = v
+}
+
+func main() {
+    var a = i8[4]{1, 2, 3, 4}
+    var b = i8[4]
+    array_copy(a[f(1)], b, 0)
+    if arrays_equal(a, b[f(2)], 0) {
+        g = g + 10
+    }
+    exit(i8(g))
+}

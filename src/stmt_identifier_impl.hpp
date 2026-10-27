@@ -416,7 +416,7 @@ inline auto stmt_identifier::compile_checked_index(
 inline auto stmt_identifier::path_address::indexed_element(
     const ident_elem& cur_elem, const std::string_view path,
     const ident_info& cur_info, const std::optional<operand>& range_count,
-    const operand& address) -> operand {
+    const bool allow_end, const operand& address) -> operand {
 
     const std::optional<int64_t> constant_index{
         cur_elem.index_expr().constant_value(tc_),
@@ -424,7 +424,7 @@ inline auto stmt_identifier::path_address::indexed_element(
 
     if (constant_index) {
         assert_constant_index(cur_info, cur_elem.index_expr().tok(), path,
-                              *constant_index, range_count.has_value());
+                              *constant_index, allow_end);
     }
 
     // with a range count the run-time check covers 'index + count'

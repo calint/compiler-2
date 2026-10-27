@@ -1,6 +1,25 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] hard: bug hunt round 7 (2026-10-27, user: loop until a round finds no
+    bugs; hunters U1 the builtins and 'dat', U2 boolean expressions and the
+    jump optimizer, U3 register allocation and the reports; reports in the
+    session scratchpad bh7)
+    U1-1. a constant count of 0 skips both paths of 'array_copy' and
+          'arrays_equal': the calls in their indexes do not run and a
+          run-time index is not checked ('array_copy(a[f(1)], b, 0)' never
+          calls 'f', 'arrays_equal(a[k], b, 0)' with 'k' 9 runs on); an
+          inlined count that folds to 0 makes the result depend on inline
+          versus noinline
+    => U1-1 done (2026-10-27): the shortcut 'bulk_operands::is_constant_empty'
+       removed, both paths always compiled; 'lea_request::is_range_start'
+       accepts the end as the last constant index of a range start, which a
+       range checked at compile time no longer infers from a run-time count;
+       'address_emitter_of' takes the range check of a range, none for a
+       whole value ('a[2] == b' stays rejected); tests 1747-1750 (fail at
+       HEAD), 1751; growth only where the count is a constant 0, e.g. 1558
+       rv32i 41 -> 125 instructions
+    => done (2026-10-27): U2, U3 no bugs; U1-1 fixed
 [x] hard: bug hunt round 6 (2026-10-27, user: loop until a round finds no
     bugs; hunters S1 the backends on 'i8', 'i16' and 'bool' values in memory
     and registers, S2 limits and scale of the compiler, S3 one generator

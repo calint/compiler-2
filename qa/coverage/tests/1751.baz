@@ -1,0 +1,13 @@
+# the end of an array, where a range may start, is out of bounds for an
+# element compared as a whole value
+
+type p {x, y}
+
+func main() {
+    var a = p[2]
+    var b = p
+    if a[2] == b {
+        exit(1)
+    }
+    exit(2)
+}

@@ -54,11 +54,6 @@ class stmt_builtin_array_copy final : public statement {
 
         const bulk_operands::arrays_info arrays{operands_.check(tc)};
 
-        // nothing is copied
-        if (operands_.is_constant_empty(tc)) {
-            return;
-        }
-
         const std::optional<int64_t> count{
             operands_.count().constant_value(tc),
         };
@@ -137,6 +132,7 @@ class stmt_builtin_array_copy final : public statement {
             src.compile_lea(tc, indent, src.first_token(), held,
                             {
                                 .reg_count{src_count},
+                                .is_range_start{true},
                                 .address_register{},
                             }),
         };
@@ -152,6 +148,7 @@ class stmt_builtin_array_copy final : public statement {
             dst.compile_lea(tc, indent, dst.first_token(), held,
                             {
                                 .reg_count{dst_count},
+                                .is_range_start{true},
                                 .address_register{},
                             }),
         };

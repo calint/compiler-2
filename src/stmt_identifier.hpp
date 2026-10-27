@@ -258,7 +258,7 @@ class stmt_identifier final : public statement {
         indexed_element(const ident_elem& cur_elem, std::string_view path,
                         const ident_info& cur_info,
                         const std::optional<operand>& range_count,
-                        const operand& address) -> operand;
+                        bool allow_end, const operand& address) -> operand;
 
         // the address a call computed, the address a slot holds or the
         // storage
@@ -541,10 +541,11 @@ class stmt_identifier final : public statement {
     // needs the address: the emitter builds it with 'compile_address', which
     // passes it to the backend's 'use' while the scratch registers that built
     // it are still allocated and frees them afterwards. it refers to its
-    // arguments, so it is only valid within the call that made it
-    [[nodiscard]] auto
-    address_emitter_of(toc& tc, const size_t indent, const token& src_loc_tk,
-                       const range_check check = range_check::run_time) const
+    // arguments, so it is only valid within the call that made it; 'check'
+    // is that of the range this path starts, none for a whole value
+    [[nodiscard]] auto address_emitter_of(
+        toc& tc, const size_t indent, const token& src_loc_tk,
+        const std::optional<range_check> check = std::nullopt) const
         -> machine::address_emitter {
 
         return [this, &tc, indent, &src_loc_tk,
@@ -558,6 +559,7 @@ class stmt_identifier final : public statement {
             compile_address(tc, indent, src_loc_tk,
                             {
                                 .reg_count{range_count},
+                                .is_range_start{check.has_value()},
                                 .address_register{address_register},
                             },
                             use);
@@ -669,7 +671,8 @@ class stmt_identifier final : public statement {
 
             address = builder.indexed_element(
                 *step.elem, step.path, cur_info,
-                step.is_last ? request.reg_count : std::nullopt, address);
+                step.is_last ? request.reg_count : std::nullopt,
+                step.is_last and request.is_range_start, address);
         });
 
         return operand::mem(address, *value_type);

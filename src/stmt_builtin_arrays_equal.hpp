@@ -51,14 +51,6 @@ class stmt_builtin_arrays_equal final : public statement {
 
         const bulk_operands::arrays_info arrays{operands_.check(tc)};
 
-        // no elements are compared, the ranges are equal
-        if (operands_.is_constant_empty(tc)) {
-            x.copy_value(tok(), indent, dst.operand(),
-                         operand::imm(1, tc.builtins().boolean()));
-
-            return;
-        }
-
         const bulk_operands::run_time_emitters emit{
             operands_.emitters(tc, indent, tok()),
         };

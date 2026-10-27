@@ -1,0 +1,12 @@
+# the run-time index of an element on the path of a constant count of 0 is
+# checked
+
+type t {a i8[4]}
+
+func main() {
+    var m = t[2]
+    var b = i8[4]
+    var k = 5
+    array_copy(m[k].a, b, 0)
+    exit(3)
+}
