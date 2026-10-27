@@ -1,0 +1,10 @@
+# a whole array of instances assigned to a number is rejected as an array that
+# must be indexed, before its type is asked
+type cell { tag }
+
+func main() {
+    var cs = cell[3]
+    var x = 0
+    x = cs
+    exit(x)
+}

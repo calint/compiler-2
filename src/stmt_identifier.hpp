@@ -452,7 +452,8 @@ class stmt_identifier final : public statement {
         // instances are copied whole and cannot narrow
         assert(dst_type.is_builtin());
 
-        const ident_info info{make_ident_info(tc, *this)};
+        // a whole array is rejected before its type is asked, as in 'compile'
+        const ident_info info{make_scalar_ident_info(tc, *this)};
 
         if (info.is_const() and not info.constant().is_typed()) {
             assert_constant_fits(info, dst_type);

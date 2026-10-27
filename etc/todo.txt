@@ -6,75 +6,29 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
 --------------------------------------------------------------------------------
 1. clean up
 --------------------------------------------------------------------------------
-[o] hard: bug hunt round 4 (2026-10-27, user: loop until a round finds no
-    bugs; hunters P1 tokenizer, includes and error locations, P2 'foo',
-    array parameters and loops over arrays, P3 program structure, globals
-    and whole-program options; reports in the session scratchpad bh4)
-    P2-1. 'array_length(m[f()].a)' folds the length and never runs 'f' or
-          checks the index ('m[die()]' exits 2 for 7, 'hs[2].v' accepted)
-    P2-2. a 'foo' whose count an inlined call folds to 0 still checks its
-          body ('res / k' rejected inlined, runs noinline)
-    P3.1. a scalar given to an array is a type message that differs by
-          target (0845, 0845.rv32i)
-    P3.2. '--memory' alone gives "invalid --stack" when the default stack
-          does not fit
-    P3.3. "'dat' can only be declared before any 'var'" after a 'let' array
-          or a 'var' in an included file, without its location
-    P3.4. methods of a generic type without an instance are neither checked
-          nor listed in the report
-    P1.1. '--reproduce-source' "generated source differs" for a 'bool'
-          array element that starts a line
-    P1.2. 'array_length' without '(' at a line end is reported at the next
-          line
-    P1.3. an unreached block is reported at column 1 before its comments
-    P1.4. about 19 "token missing at a line end" sites report at the next
-          line (README 1.9); 'func main()' with 'exit(0)' on the next line
-          reads 'exit' as the result name
-    => P2-1 done (2026-10-27): 'array_length' takes constant indexes only,
-       checked against their arrays ('stmt_identifier::
-       assert_constant_indexes' at the parse); 0086, 0088, 0092 index 0
-       instead of 'i' (same results); tests 1733, 1734
-    => P1.1 done (2026-10-27): an 'element_list' reads the whitespace
-       before each element apart ('elements_ws_tk', 'spaced_element'), as a
-       single value does, so a 'bool' name or literal that
-       'release_name_or_literal' unwraps keeps it; test 1735 (fails at
-       HEAD); listings and errors of every test equal
-    => P1.2 done (2026-10-27): 'array_length' reads its '(' like the N2.1
-       sites and reports a missing one at its name; 0180 points at the
-       name; test 1736
-    => P1.3 done (2026-10-27): a block's token is the position of the next
-       token, its '{', not the cursor before the comments; test 1737;
-       listings of every test equal
-    => P1.4 discarded (2026-10-27, user: no complexity for error
-       positions): it needs a second position in the tokenizer, kept up to
-       date on every read, put-back and rewind; README 1.9 documents where
-       a missing token is reported; the 'func main()' result name read
-       across a line end goes with it
-    => P2-2 done (2026-10-27): a 'foo' whose count folds to 0 compiles its
-       body through 'toc::check_skipped', as a branch that folds to false;
-       the branch over the body goes; tests 1738 (fails at HEAD), 1739;
-       listings of every test equal
-    => P3.1 done (2026-10-27): 'expr_type::parse_copy_source' checks that
-       an array destination gets an array before it compares the types;
-       0845 is "source must be an array" on both targets (0845.rv32i.out
-       goes)
-    => P3.2 done (2026-10-27): 'main' rejects a '--memory' below the
-       default stack when '--stack' was not given, naming '--memory'
-       ('test-cli.sh')
-    => P3.3 done (2026-10-27): 'toc' keeps the first global variable's
-       token ('first_global_var_tk_'), the message names it and its file;
-       0367, test 1740
-    => P3.4 moved (2026-10-27, user: no complexity): to the item "a generic
-       that is never instantiated is not checked"; it needs a record of
-       the instances of a generic type
-    => docs done (2026-10-27): the README compared with the code (two
-       reviewers, chapters 1-4 and 5-9, reports in the session scratchpad
-       readme); 16 corrections (dry runs and skipped code, error kinds, the
-       either-order rule, index ranges of paths, labels, 'type_instantiator',
-       virtual counts, the 8.1 tests, chapter 9 copies outside 'src', uart
-       panics); the 'error_kind' comment names 'toc::check_skipped';
-       'test-coverage.sh' adds '--reproduce-source' to a case's own options,
-       so the 29 cases with their own 'OPTS' are reproduced too (all pass)
+[o] hard: bug hunt round 5 (2026-10-27, user: loop until a round finds no
+    bugs; hunters Q1 every 'assert' and 'std::unreachable' that user input
+    may reach, Q2 values written in parts and assignments, Q3 versions,
+    dry runs and the compile state; reports in the session scratchpad bh5)
+    Q1-1. a whole array of instances in a number destination aborts the
+          compiler ('x = cs', 'a[cs]', '[]{cs, 1}', "Assertion
+          `src_type.is_builtin()' failed"): 'assert_not_narrowed' asks the
+          type before the whole array is rejected
+    Q1-2. 'y = a' with 'a' an 'int' array and 'y' an 'i8' is "narrowed"
+          before "must be indexed" (same cause)
+    Q2-1. a constant index into an array parameter (length unknown at the
+          parse) is a run-time step of its path: 'ps[0] = {ps[1].y,
+          ps[1].x}' and 'swap(s[0], s[1])' rejected, accepted on a local
+    Q3.1. rv32i: an inlined recursion that runs out of registers in one
+          version is a recursion error ('inlining_limit') that
+          'compile_version' rethrows, the version that fits is not kept
+    Q3.2. skipped code in 'main' is checked with the noinline body pool,
+          one register fewer: 'if 1 == 2 {X}' rejected, 'if 1 == 1 {X}'
+          accepted
+    => Q1-1, Q1-2 done (2026-10-27): 'stmt_identifier::assert_not_narrowed'
+       resolves with 'make_scalar_ident_info', as 'compile' does, so a whole
+       array is "must be indexed" before its type is asked; tests 1741-1743
+       (abort at HEAD), 1744; listings and errors of every test equal
 [ ] easy: low priority: whether a 'let' is a constant is decided at the
     parse ('make_stmt_def_var', 'may_fold'), where the 'n' of a 'foo' over an
     unsized array parameter is a variable, so 'let m = n' stays a variable
@@ -158,6 +112,22 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
     => 5. run it, triage findings one by one (reduce with 'fuzz-reduce.py');
        steps 1-4 done ('fuzz-coverage.py': 81/81 constructs emitted), the
        night run is the release criterion "fuzz night clean"
+    => release check, once a bug hunt round finds no bugs (2026-10-27):
+       1. the user: 'qa/coverage/test-all.sh' (the coverage build, the cases
+          on the four targets, 'test-versions.sh', 'test-cli.sh',
+          'test-arena.py', 'test-far-jumps.sh short', the coverage report)
+       2. the checks 'test-all.sh' leaves out, with the '-O3' build:
+          'test-far-jumps.sh', 'test-far-jumps-no-scratch.sh',
+          'roome/qa/test.sh', 'roome/qa/test-fpga.sh'
+       3. the linters: 'qa/lint/clang-tidy.sh', 'qa/lint/check-all.sh',
+          'qa/lint/format-source.sh' changes nothing
+       4. 'qa/fuzz/build-asan.sh', then 'qa/fuzz/fuzz-night.sh 8' with
+          nothing else on the cores; clean: no new finding but instances of
+          the decided register-conflict class ('gen-reject', each checked
+          at HEAD); any other finding is reduced ('fuzz-reduce.py') and
+          triaged one by one
+       5. the README: 'check-readme-names.py', and the sections changed
+          since the comparison of 2026-10-27 compared again with the code
 [ ] medium: x86_64: a call with many indexed arguments in a noinline body
     runs out of registers where rv32i accepts it (2026-10-26, user: medium):
     the body reaches its array parameter through its address, and x86_64

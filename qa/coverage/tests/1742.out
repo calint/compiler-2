@@ -1,0 +1,4 @@
+
+1742.baz:8:12: array 'cs' must be indexed
+    exit(a[cs])
+           ^~

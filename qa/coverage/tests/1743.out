@@ -1,0 +1,4 @@
+
+1743.baz:7:16: array 'cs' must be indexed
+    var a = []{cs, 1}
+               ^~

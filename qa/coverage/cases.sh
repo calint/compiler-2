@@ -5524,3 +5524,19 @@ SRC=1739 && COMPERR
 # a 'dat' after the first variable names that variable, also a 'let' of an
 # array, which is a read-only variable
 SRC=1740 && COMPERR
+
+# a whole array of instances assigned to a number is rejected as an array that
+# must be indexed, before its type is asked
+SRC=1741 && COMPERR
+
+# a whole array of instances as an index is rejected as an array that must be
+# indexed
+SRC=1742 && COMPERR
+
+# a whole array of instances as an element of an array literal is rejected as
+# an array that must be indexed
+SRC=1743 && COMPERR
+
+# a whole array given to a narrower number is rejected as an array that must be
+# indexed, not as narrowed
+SRC=1744 && COMPERR
