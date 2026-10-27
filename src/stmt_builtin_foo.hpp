@@ -100,6 +100,17 @@ class stmt_builtin_foo final : public statement {
         x.copy_value(tok(), indent, counter,
                      operand::imm(0, tc.builtins().default_type()));
 
+        // a count that folds to 0 skips the body like a branch that folds to
+        // false, see 'toc::check_skipped'
+        if (limit.is_immediate() and limit.immediate() == 0) {
+            tc.check_skipped(
+                [&] -> void { code_.compile(tc, indent, destination{}); });
+
+            tc.join_loop();
+
+            return;
+        }
+
         skip_empty_loop(x, tc, indent, limit, end_label);
 
         x.label(indent, loop_label);
@@ -325,12 +336,10 @@ class stmt_builtin_foo final : public statement {
             return;
         }
 
-        // note: a constant count is not negative, see 'compile_limit'
-        if (limit.is_immediate()) {
-            if (limit.immediate() == 0) {
-                x.branch(indent, end_label);
-            }
+        // note: a constant count is not negative, see 'compile_limit', and
+        //       one of 0 skips the body in 'compile'
 
+        if (limit.is_immediate()) {
             return;
         }
 

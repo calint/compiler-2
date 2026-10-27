@@ -1,0 +1,13 @@
+# a 'foo' whose count an inlined call folds to 0 skips its body like a branch
+# that folds to false: the division by the count is not checked there
+func f(a [], k) res {
+    res = 5
+    foo a, k {
+        res = res / k
+    }
+}
+
+func main() {
+    var a = []{1, 2}
+    exit(f(a, 0))
+}

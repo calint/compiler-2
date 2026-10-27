@@ -1,0 +1,4 @@
+
+1739.baz:7:15: index 5 is out of bounds for array 'a' of size 2
+        x = a[5]
+              ^

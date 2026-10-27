@@ -5512,3 +5512,11 @@ SRC=1736 && COMPERR
 # a block that is not reached is reported at its '{', after the comments
 # before it
 SRC=1737 && COMPERR
+
+# a 'foo' whose count an inlined call folds to 0 skips its body like a branch
+# that folds to false: the division by the count is not checked there
+SRC=1738 && EXP=5 && RUN
+
+# a 'foo' with a constant count of 0 outside an inlined call still checks its
+# body, as a branch that folds to false does
+SRC=1739 && COMPERR

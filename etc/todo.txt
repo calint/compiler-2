@@ -50,6 +50,10 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
        date on every read, put-back and rewind; README 1.9 documents where
        a missing token is reported; the 'func main()' result name read
        across a line end goes with it
+    => P2-2 done (2026-10-27): a 'foo' whose count folds to 0 compiles its
+       body through 'toc::check_skipped', as a branch that folds to false;
+       the branch over the body goes; tests 1738 (fails at HEAD), 1739;
+       listings of every test equal
 [ ] easy: low priority: whether a 'let' is a constant is decided at the
     parse ('make_stmt_def_var', 'may_fold'), where the 'n' of a 'foo' over an
     unsized array parameter is a variable, so 'let m = n' stays a variable
