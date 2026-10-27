@@ -235,30 +235,13 @@ class stmt_identifier final : public statement {
               owned_from_{held.registers().size()},
               address_register_{std::move(address_register)} {}
 
-        // the range of an unindexed array is checked once, at the last element
-        auto check_unindexed_range(
-            const ident_info& cur_info, const bool is_last_elem,
-            const std::optional<operand>& reg_count) const -> void {
-
-            if (not cur_info.is_array() or not reg_count) {
-                return;
-            }
-
-            // note: an array before the last element is indexed
-            assert(is_last_elem);
-
-            check_array_bounds(tc_, indent_, src_loc_tk_,
-                               machine::bounds_range::count_alone(
-                                   *reg_count, cur_info.element_count()));
-        }
-
         // the address after the element index, a constant index goes into the
         // displacement and any other one into an index register
-        [[nodiscard]] auto
-        indexed_element(const ident_elem& cur_elem, std::string_view path,
-                        const ident_info& cur_info,
-                        const std::optional<operand>& range_count,
-                        bool allow_end, const operand& address) -> operand;
+        [[nodiscard]] auto indexed_element(const ident_elem& cur_elem,
+                                           std::string_view path,
+                                           const ident_info& cur_info,
+                                           const lea_request& request,
+                                           const operand& address) -> operand;
 
         // the address a call computed, the address a slot holds or the
         // storage
@@ -275,7 +258,7 @@ class stmt_identifier final : public statement {
         // index yet, keeping its base and displacement
         [[nodiscard]] auto add_index(const ident_elem& cur_elem,
                                      const ident_info& cur_info,
-                                     const std::optional<operand>& range_count,
+                                     const lea_request& request,
                                      const operand& address) -> operand;
 
         // computes 'address' into a register so another index can be added
@@ -541,25 +524,20 @@ class stmt_identifier final : public statement {
     // needs the address: the emitter builds it with 'compile_address', which
     // passes it to the backend's 'use' while the scratch registers that built
     // it are still allocated and frees them afterwards. it refers to its
-    // arguments, so it is only valid within the call that made it; 'check'
-    // is that of the range this path starts, none for a whole value
-    [[nodiscard]] auto address_emitter_of(
-        toc& tc, const size_t indent, const token& src_loc_tk,
-        const std::optional<range_check> check = std::nullopt) const
+    // arguments, so it is only valid within the call that made it; 'range'
+    // is that of the range this path starts, empty for a whole value
+    [[nodiscard]] auto address_emitter_of(toc& tc, const size_t indent,
+                                          const token& src_loc_tk,
+                                          const lea_request& range = {}) const
         -> machine::address_emitter {
 
         return [this, &tc, indent, &src_loc_tk,
-                check](const std::optional<operand>& reg_count,
-                       const std::optional<operand>& address_register,
+                range](const std::optional<operand>& address_register,
                        const machine::address_use use) -> void {
-            const std::optional<operand> range_count{
-                check == range_check::run_time ? reg_count : std::nullopt,
-            };
-
             compile_address(tc, indent, src_loc_tk,
                             {
-                                .reg_count{range_count},
-                                .is_range_start{check.has_value()},
+                                .range_count{range.range_count},
+                                .start_register{range.start_register},
                                 .address_register{address_register},
                             },
                             use);
@@ -646,6 +624,13 @@ class stmt_identifier final : public statement {
         path_address builder{tc, indent, src_loc_tk, held,
                              request.address_register};
 
+        // only the last element starts a range
+        const lea_request inner_request{
+            .range_count{},
+            .start_register{},
+            .address_register{},
+        };
+
         operand address;
         const type* value_type{};
 
@@ -661,18 +646,14 @@ class stmt_identifier final : public statement {
 
             value_type = &cur_info.type_ref();
 
-            // an unindexed element only needs a possible range bounds check
+            // the range of an unindexed array is checked by the caller
             if (not step.elem->index) {
-                builder.check_unindexed_range(cur_info, step.is_last,
-                                              request.reg_count);
-
                 return;
             }
 
             address = builder.indexed_element(
                 *step.elem, step.path, cur_info,
-                step.is_last ? request.reg_count : std::nullopt,
-                step.is_last and request.is_range_start, address);
+                step.is_last ? request : inner_request, address);
         });
 
         return operand::mem(address, *value_type);
@@ -737,7 +718,8 @@ class stmt_identifier final : public statement {
 
         return compile_lea(tc, indent, tok(), held,
                            {
-                               .reg_count{},
+                               .range_count{},
+                               .start_register{},
                                .address_register{},
                            });
     }
@@ -1105,7 +1087,7 @@ class stmt_identifier final : public statement {
     [[nodiscard]] static auto compile_checked_index(
         toc& tc, const size_t indent, const expr_any& index_expr,
         const operand& index_register, const size_t array_length,
-        const std::optional<operand>& range_count) -> int64_t;
+        const std::optional<size_t>& range_count) -> int64_t;
 
     // empty when the index is computed at run time or is out of range
     [[nodiscard]] static auto

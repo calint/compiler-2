@@ -1,6 +1,50 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] medium: bug hunt round 9 W1-1: 'array_copy', 'arrays_equal', 'read',
+    'write' and the sector functions compute the count (and the start)
+    before the arrays or the buffer; 'assert_same_in_either_order' sees
+    only writes to variables, so output, 'exit' and panics on both sides
+    run in the reverse of the source order ('array_copy(a[p(1)], b, q(2))'
+    with 'p' and 'q' printing gives 'Q P'; 'array_copy(a[5], b, x / 0)'
+    panics 'division' before 'bounds')
+    => plan: every operand in source order: the addresses, then the count,
+       then the range check of each start
+       1. the address walk checks a run-time start as 0 <= start <= length
+          ('count_alone', the end allowed) and copies it into a register the
+          caller allocated before the walk ('lea_request::start_register',
+          replaces 'reg_count'); a constant start or an unindexed array
+          needs no register
+       2. after the count: 'range(start, count, length)' for a run-time
+          start, 'count_alone(count, length - start)' for a constant one;
+          the start registers are freed there, in stack order
+       3. 'machine::address_emitter' loses its count; both backends emit the
+          addresses, then 'emit_count', which compiles the count and the
+          range checks; 'bulk_operands::run_time_emitters' holds the starts
+          between the two
+       4. io: descriptor, buffer address, count, start, range checks
+       5. removed: 'assert_same_in_either_order', its two callers and
+          messages, README 7.14
+    => rejected: output, 'exit' and checked operations as effects of the
+       order check (a new concept, rejects 'array_copy(a[i], b, n - 1)'
+       under 'overflow'); a range check by addresses (the end of an inner
+       array of 'm[i].v[j]' needs 'i')
+    => invariants: the operands of these built-ins are emitted in source
+       order; no element is read or written before every range check
+       passed; a start register is held from its address to its check
+    => tests: W1's reproducers (print order, 'exit' and 'division' against
+       'bounds'), range edges (end at the length, start at the length with
+       count 0, negative start or count, 'start + count' past the maximum),
+       the former either-order rejections accepted with left-to-right
+       output; measure the listing growth (a held start register)
+    => done (2026-10-27): the plan as written; 'assert_not_reached_by_call'
+       went with its only caller; a constant count checks a run-time start
+       in the walk against the length less the count, so the constant copy
+       of 'array_copy' needs no count register; tests 1650-1652, 1725-1728
+       now accepted with left-to-right results, 1760-1764 (1760-1762 give
+       the wrong order at HEAD); instructions over the tests that use these
+       built-ins: x86_64 -0.4%, rv32i +0.1% (a start held across later
+       calls, fewer count registers)
 [x] hard: bug hunt round 8 (2026-10-27, user: loop until a round finds no
     bugs; hunters V1 reads of values that may be unset, V2 names, scopes and
     '--reproduce-source', V3 records and arrays as whole values; reports in

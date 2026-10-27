@@ -1,4 +1,0 @@
-
-1728.baz:17:27: 'n' reached by the call of 'f' may be written by the call of 'w' in an array argument, the count is computed before the arrays, use a temporary variable
-    array_copy(a[w()], b, f())
-                          ^

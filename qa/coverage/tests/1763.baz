@@ -1,0 +1,25 @@
+# ranges at the end of the arrays: a run-time start at the length with a count
+# of 0, run-time and constant starts and counts that end at the length
+dat s = "abcd"
+
+func main() {
+    var a = i8[4]
+    a = {1, 2, 3, 4}
+    var b = i8[4]
+    var i = 4
+    var n = 0
+    array_copy(a[i], b[i], n)
+    i = 2
+    n = 2
+    array_copy(a[i], b[2], n)
+    array_copy(a[i], b[i], 2)
+    array_copy(a[0], b[0], n)
+    if not arrays_equal(a[i], b[i], n) {
+        exit(1)
+    }
+    if not arrays_equal(a[2], b[2], n) {
+        exit(2)
+    }
+    var r = write(1, s, n, i)
+    exit(b[0] + b[1] + b[2] + b[3] - 10)
+}

@@ -1,4 +1,0 @@
-
-1726.baz:17:26: 'n' reached by the call of 'h' may be written by the call of 'f' in the count, computed before the arrays, use a temporary variable
-    if arrays_equal(a, b[h()], f()) {
-                         ^

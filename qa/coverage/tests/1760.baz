@@ -1,0 +1,38 @@
+# the arguments of 'array_copy', 'arrays_equal' and 'write' are computed in
+# their order, the count after the arrays and the buffer
+dat s1 = "1\n"
+dat s2 = "2\n"
+dat s3 = "3\n"
+dat s4 = "4\n"
+
+type row { v i8[2], }
+
+func noinline p1(v) res {
+    var r = write(1, s1)
+    res = v
+}
+
+func noinline p2(v) res {
+    var r = write(1, s2)
+    res = v
+}
+
+func noinline p3(v) res {
+    var r = write(1, s3)
+    res = v
+}
+
+func noinline p4(v) res {
+    var r = write(1, s4)
+    res = v
+}
+
+func main() {
+    var a = i8[4]
+    var b = i8[4]
+    var m = row[3]
+    array_copy(a[p1(1)], b[p2(1)], p3(1))
+    var e = arrays_equal(a[p1(0)], b[p2(0)], p3(2))
+    var r = write(p1(1), m[p2(1)].v, p3(0), p4(0))
+    exit(0)
+}

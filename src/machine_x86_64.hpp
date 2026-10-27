@@ -536,8 +536,7 @@ class machine_x86_64 final : public machine {
             reserve_named_register(src_loc_tk, indent, "rcx");
         }
 
-        load_bulk_addresses(src_loc_tk, indent, std::nullopt, request.lhs,
-                            request.rhs);
+        load_bulk_addresses(src_loc_tk, indent, request.lhs, request.rhs);
 
         if (is_counted) {
             mov(src_loc_tk, indent, qword_register("rcx"),
@@ -1881,15 +1880,14 @@ class machine_x86_64 final : public machine {
     }
 
     auto load_bulk_addresses(const token& src_loc_tk, const size_t indent,
-                             const std::optional<operand>& count,
                              const address_emitter& to_rsi,
                              const address_emitter& to_rdi) -> void {
 
-        to_rsi(count, std::nullopt, [&](const operand& address) -> void {
+        to_rsi(std::nullopt, [&](const operand& address) -> void {
             lea(src_loc_tk, indent, qword_register("rsi"), address);
         });
 
-        to_rdi(count, std::nullopt, [&](const operand& address) -> void {
+        to_rdi(std::nullopt, [&](const operand& address) -> void {
             lea(src_loc_tk, indent, qword_register("rdi"), address);
         });
     }
@@ -1904,8 +1902,8 @@ class machine_x86_64 final : public machine {
 
         const operand count{begin_bulk(src_loc_tk, indent)};
 
+        load_bulk_addresses(src_loc_tk, indent, to_rsi, to_rdi);
         emit_count(count);
-        load_bulk_addresses(src_loc_tk, indent, count, to_rsi, to_rdi);
 
         scale_index(src_loc_tk, indent, qword_register("rcx"),
                     element_size_bytes);

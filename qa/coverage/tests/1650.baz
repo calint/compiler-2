@@ -1,5 +1,5 @@
-# the count of 'array_copy' is computed before the arrays, a call in an array
-# argument that writes what the count reads is rejected
+# the arrays of 'array_copy' are computed before the count: the count reads
+# 'n' after the call in an array argument wrote it
 var n = 1
 
 func g() res {

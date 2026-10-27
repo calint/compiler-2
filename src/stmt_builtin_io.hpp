@@ -149,8 +149,6 @@ class stmt_builtin_io final : public statement {
         // of 'read(0, b, n)' is written
         assert_not_written_later(tc, operands, "argument");
 
-        assert_count_not_written_by_buffer(tc, operands);
-
         const place buffer{assert_buffer(tc)};
 
         machine& x{tc.machine()};
@@ -431,10 +429,8 @@ class stmt_builtin_io final : public statement {
     }
 
     // every argument into the register of the call the target takes it in,
-    // computed in the order descriptor, count, start, buffer address, then
-    // the byte count; the count and start are in elements
-    // note: the count before the buffer is safe by
-    //       'assert_count_not_written_by_buffer'
+    // in the order of the arguments, then the range check and the byte
+    // count; the count and start are in elements
     [[nodiscard]] auto
     compile_arguments(toc& tc, const size_t indent,
                       const std::span<const std::string_view> registers,
@@ -458,6 +454,8 @@ class stmt_builtin_io final : public statement {
 
         args_.at(0).compile(tc, indent, destination::of_register(descriptor));
 
+        compile_buffer_address(tc, indent, buffer_reg, buffer);
+
         const ident_info& buffer_info{buffer.info};
 
         compile_count(tc, indent, count, buffer_info);
@@ -469,17 +467,12 @@ class stmt_builtin_io final : public statement {
         if (at_.start) {
             start = compile_start(tc, indent, *at_.start, count, buffer_info,
                                   check);
+        } else if (at_.count and check == range_check::run_time) {
+            x.check_bounds(args_.at(*at_.count).tok(), indent,
+                           machine::bounds_range::count_alone(
+                               count, buffer_info.element_count()),
+                           tc.checks().bounds_options());
         }
-
-        // a count with a start is checked by 'compile_start', a bare count by
-        // 'compile_lea'
-        const bool is_count_checked_by_lea{
-            at_.count and not at_.start and check == range_check::run_time,
-        };
-
-        compile_buffer_address(tc, indent, buffer_reg, buffer,
-                               is_count_checked_by_lea ? std::optional{count}
-                                                       : std::nullopt);
 
         const operand element_size_bytes{
             operand::imm(buffer_info.type_ref().size_bytes(), type_default),
@@ -491,12 +484,11 @@ class stmt_builtin_io final : public statement {
         return args;
     }
 
-    // the buffer register receives the address of the array, 'range' is the
-    // count that a bare count check covers
+    // the buffer register receives the address of the array, the range is
+    // checked after the count
     auto compile_buffer_address(toc& tc, const size_t indent,
-                                const operand& buffer_reg, const place& buffer,
-                                const std::optional<operand>& range) const
-        -> void {
+                                const operand& buffer_reg,
+                                const place& buffer) const -> void {
 
         machine& x{tc.machine()};
 
@@ -507,8 +499,8 @@ class stmt_builtin_io final : public statement {
         const operand buffer_lea{
             ident.compile_lea(tc, indent, ident.tok(), held,
                               {
-                                  .reg_count{range},
-                                  .is_range_start{range.has_value()},
+                                  .range_count{},
+                                  .start_register{},
                                   .address_register{},
                               }),
         };
@@ -643,21 +635,6 @@ class stmt_builtin_io final : public statement {
     //
     // statics
     //
-
-    // the count and the start are computed before the buffer, its range check
-    // needs them; the call is accepted only when that order and the source
-    // order give the same result, e.g. 'read(0, a[g()].buf, n)' with 'g'
-    // writing 'n' is rejected
-    static auto assert_count_not_written_by_buffer(
-        const toc& tc, const std::span<const list_operand> operands) -> void {
-
-        assert_same_in_either_order(
-            tc, operands.subspan(buffer_index_ + 1),
-            operands.subspan(buffer_index_, 1),
-            "the count or the start, computed before the buffer",
-            "the buffer argument, the count and the start are computed before "
-            "the buffer");
-    }
 
     // 'read(fd, buf, count, start)': the count and the start are optional,
     // a sector function has no count

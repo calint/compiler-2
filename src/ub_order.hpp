@@ -32,12 +32,6 @@
 //                  operand writes; the list order, in which the arguments and
 //                  operands are compiled, of a node ('operands_of'): a call, a
 //                  list, a comparison and the bulk and io built-ins
-//   'assert_same_in_either_order'
-//                  where a backend computes an operand before ones that come
-//                  earlier in the source, e.g. the count of 'array_copy',
-//                  neither side writes by a call what the other reaches; the
-//                  io built-ins compute the count before the buffer the same
-//                  way ('stmt_builtin_io::assert_count_not_written_by_buffer')
 //
 // the definite assignment ('ub_assigned.hpp') walks the statements in the same
 // order by name, it runs before 'toc' resolves the names; the aliasing of the
@@ -97,27 +91,6 @@ inline auto assert_not_read_before(const toc& tc, const list_operand& earlier,
     });
 }
 
-// 'other' reaches by a call nothing that 'write', an effect of a call in an
-// operand computed in the other order, reaches; 'writer' says where that call
-// is in the message
-inline auto assert_not_reached_by_call(const toc& tc, const list_operand& other,
-                                       const call_effect& write,
-                                       const std::string_view writer) -> void {
-
-    other.node->visit_call_effects(tc, [&](const call_effect& effect) -> void {
-        if (not effect.storage.may_overlap(write.storage)) {
-            return;
-        }
-
-        throw compile_error{
-            effect.call_tk,
-            std::format("{} reached by the call of {} may be written by the "
-                        "call of {} in {}, use a temporary variable",
-                        in_quotes(effect.name), in_quotes(effect.call_tk),
-                        in_quotes(write.call_tk), writer)};
-    });
-}
-
 // each write of a call in 'operands'
 inline auto visit_call_writes(const toc& tc,
                               const std::span<const list_operand> operands,
@@ -131,40 +104,6 @@ inline auto visit_call_writes(const toc& tc,
                 }
             });
     }
-}
-
-// a call in 'writers' writes nothing that 'others' read or reach by a call
-inline auto
-assert_calls_write_nothing_reached(const toc& tc,
-                                   const std::span<const list_operand> writers,
-                                   const std::span<const list_operand> others,
-                                   const std::string_view writer) -> void {
-
-    visit_call_writes(tc, writers, [&](const call_effect& effect) -> void {
-        for (const list_operand& other : others) {
-            assert_not_read_before(tc, other, effect, writer);
-            assert_not_reached_by_call(tc, other, effect, writer);
-        }
-    });
-}
-
-// a backend that computes 'computed_first' before 'computed_after', which come
-// earlier in the source, gives the left-to-right result only when neither
-// writes by a call what the other reads or reaches by a call, e.g. the 'n' of
-// 'array_copy(a[g()], b, n)' with 'g' writing 'n'; 'first_writer' and
-// 'after_writer' say where a call is in the message
-inline auto
-assert_same_in_either_order(const toc& tc,
-                            const std::span<const list_operand> computed_first,
-                            const std::span<const list_operand> computed_after,
-                            const std::string_view first_writer,
-                            const std::string_view after_writer) -> void {
-
-    assert_calls_write_nothing_reached(tc, computed_after, computed_first,
-                                       after_writer);
-
-    assert_calls_write_nothing_reached(tc, computed_first, computed_after,
-                                       first_writer);
 }
 
 // evaluation is left to right, but the compile reads a name where it is

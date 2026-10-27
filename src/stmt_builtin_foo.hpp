@@ -302,7 +302,8 @@ class stmt_builtin_foo final : public statement {
         const operand op{
             ident_.compile_lea(tc, indent, tok(), held,
                                {
-                                   .reg_count{},
+                                   .range_count{},
+                                   .start_register{},
                                    .address_register{},
                                }),
         };

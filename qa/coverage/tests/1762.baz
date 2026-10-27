@@ -1,0 +1,16 @@
+# the start of a range is checked before the count is computed: the bounds
+# check fails before the call in the count exits
+func noinline q(v) res {
+    if v == 2 {
+        exit(7)
+    }
+    res = v
+}
+
+func main() {
+    var a = i8[4]
+    var b = i8[4]
+    var i = 9
+    array_copy(a[i], b, q(2))
+    exit(0)
+}

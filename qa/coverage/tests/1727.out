@@ -1,4 +1,1 @@
-
-1727.baz:18:24: 'n' reached by the call of 'h' may be written by the call of 'f' in the count or the start, computed before the buffer, use a temporary variable
-    var k = write(1, a[h()].buf, f())
-                       ^
+A

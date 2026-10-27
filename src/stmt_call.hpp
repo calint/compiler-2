@@ -1189,7 +1189,8 @@ class inline_call {
         const operand lea{
             ident.compile_lea(tc, indent, arg.tok(), held,
                               {
-                                  .reg_count{},
+                                  .range_count{},
+                                  .start_register{},
                                   .address_register{},
                               }),
         };

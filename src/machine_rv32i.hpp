@@ -1002,10 +1002,9 @@ class machine_rv32i : public machine {
             begin_array_operation(src_loc_tk, indent, "source", "destination"),
         };
 
-        emit_count(count);
+        load_bulk_addresses(src_loc_tk, indent, request.src, request.dst);
 
-        load_bulk_addresses(src_loc_tk, indent, count, request.src,
-                            request.dst);
+        emit_count(count);
 
         const bulk_operation& bulk{bulk_operations_.back()};
 
@@ -1107,10 +1106,9 @@ class machine_rv32i : public machine {
             begin_array_operation(src_loc_tk, indent, "lhs", "rhs"),
         };
 
-        emit_count(count);
+        load_bulk_addresses(src_loc_tk, indent, request.lhs, request.rhs);
 
-        load_bulk_addresses(src_loc_tk, indent, count, request.lhs,
-                            request.rhs);
+        emit_count(count);
 
         const bulk_operation& bulk{bulk_operations_.back()};
         {
@@ -1192,14 +1190,12 @@ class machine_rv32i : public machine {
                       const size_t size_bytes, const equality_request& request)
         -> void override {
 
-        request.lhs(
-            std::nullopt, std::nullopt, [&](const operand& left) -> void {
-                request.rhs(std::nullopt, std::nullopt,
-                            [&](const operand& right) -> void {
-                                compare_memory(src_loc_tk, indent, size_bytes,
-                                               left, right, request);
-                            });
+        request.lhs(std::nullopt, [&](const operand& left) -> void {
+            request.rhs(std::nullopt, [&](const operand& right) -> void {
+                compare_memory(src_loc_tk, indent, size_bytes, left, right,
+                               request);
             });
+        });
     }
 
     auto multiply(const token& src_loc_tk, const size_t indent,
@@ -3508,15 +3504,15 @@ class machine_rv32i : public machine {
 
     // borrowed pointers avoid a temporary address and final move for indexing
     auto load_bulk_addresses(const token& src_loc_tk, const size_t indent,
-                             const operand& count, const address_emitter& first,
+                             const address_emitter& first,
                              const address_emitter& second) -> void {
 
-        first(count, bulk_operations_.back().pointer(0),
+        first(bulk_operations_.back().pointer(0),
               [&](const operand& address) -> void {
                   load_bulk_address(src_loc_tk, indent, 0, address);
               });
 
-        second(count, bulk_operations_.back().pointer(1),
+        second(bulk_operations_.back().pointer(1),
                [&](const operand& address) -> void {
                    load_bulk_address(src_loc_tk, indent, 1, address);
                });

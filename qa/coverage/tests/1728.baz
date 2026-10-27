@@ -1,5 +1,5 @@
-# the count of 'array_copy' is computed before the arrays, a call in an array
-# argument that writes what a call in the count reads is rejected
+# the arrays of 'array_copy' are computed before the count: the call in the
+# count reads 'n' after the call in an array argument wrote it
 var n = 0
 
 func w() res {
@@ -13,7 +13,9 @@ func f() res {
 
 func main() {
     var a = i8[4]
+    a[0] = 4
+    a[1] = 5
     var b = i8[4]
     array_copy(a[w()], b, f())
-    exit(n)
+    exit(b[1])
 }

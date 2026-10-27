@@ -5218,17 +5218,17 @@ SRC=1648 && COMPERR
 # compiled; a constant false branch runs no code
 SRC=1649 && EXP=6 && RUN
 
-# the count of 'array_copy' is computed before the arrays, a call in an array
-# argument that writes what the count reads is rejected
-SRC=1650 && COMPERR
+# the arrays of 'array_copy' are computed before the count, which reads what
+# a call in an array argument wrote
+SRC=1650 && EXP=3 && RUN
 
-# the count of 'arrays_equal' is computed before the arrays, a call in an
-# array argument that writes what the count reads is rejected
-SRC=1651 && COMPERR
+# the arrays of 'arrays_equal' are computed before the count, which reads what
+# a call in an array argument wrote
+SRC=1651 && EXP=0 && RUN
 
-# the count of 'read' is computed before the buffer, a call in the buffer
-# argument that writes what the count reads is rejected
-SRC=1652 && COMPERR
+# the buffer of 'write' is computed before the count, which reads what a call
+# in the buffer argument wrote
+SRC=1652 && DIFF
 
 # a call in an array argument of 'array_copy' that writes nothing the count
 # reads gives the left-to-right result
@@ -5458,21 +5458,21 @@ SRC=1723 && EXP=8 && RUN
 # a missing body is reported at the keyword of the next definition
 SRC=1724 && COMPERR
 
-# the count of 'array_copy' is computed before the arrays, a call in the count
-# that writes what a call in an array argument reads is rejected
-SRC=1725 && COMPERR
+# the arrays of 'array_copy' are computed before the count, a call in an array
+# argument reads what a call in the count writes later
+SRC=1725 && EXP=5 && RUN
 
-# the count of 'arrays_equal' is computed before the arrays, a call in the
-# count that writes what a call in an array argument reads is rejected
-SRC=1726 && COMPERR
+# the arrays of 'arrays_equal' are computed before the count, a call in an
+# array argument reads what a call in the count writes later
+SRC=1726 && EXP=1 && RUN
 
-# the count of 'write' is computed before the buffer, a call in the count that
-# writes what a call in the buffer argument reads is rejected
-SRC=1727 && COMPERR
+# the buffer of 'write' is computed before the count, a call in the buffer
+# argument reads what a call in the count writes later
+SRC=1727 && DIFF
 
-# the count of 'array_copy' is computed before the arrays, a call in an array
-# argument that writes what a call in the count reads is rejected
-SRC=1728 && COMPERR
+# the arrays of 'array_copy' are computed before the count, a call in the
+# count reads what a call in an array argument wrote
+SRC=1728 && EXP=5 && RUN
 
 # a noinline call computes the address of a place in the order of the
 # arguments: the call in the index of 'v[w()]' writes 'g' before the later
@@ -5602,3 +5602,22 @@ SRC=1758 && COMPERR
 # lists with run-time elements in the initializers of globals, one with a
 # constant element that does not decide it
 SRC=1759 && EXP=3 && RUN
+
+# the arguments of 'array_copy', 'arrays_equal' and 'write' are computed in
+# their order, the count after the arrays and the buffer
+SRC=1760 && DIFF
+
+# the start of a range is checked before the count: the bounds check fails
+# before the division by zero in the count
+SRC=1761 && EXP=255 && OPTS="--checks=noub" RUN
+
+# the start of a range is checked before the count: the bounds check fails
+# before the call in the count exits
+SRC=1762 && EXP=255 && OPTS="--checks=noub" RUN
+
+# ranges that end at the length of the arrays, a start at the length with a
+# count of 0
+SRC=1763 && OPTS="--checks=noub" DIFF
+
+# a run-time start with a constant count past the end fails the bounds check
+SRC=1764 && EXP=255 && RUN

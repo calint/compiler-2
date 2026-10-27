@@ -143,11 +143,9 @@ class machine {
     // receives an address while the registers that built it are allocated
     using address_use = std::function_ref<void(const operand& address)>;
 
-    // emits one address of a bulk operation: 'count' is the register of the
-    // element count, none for a known size, 'preferred' a register the address
-    // may be built in, none when the backend has none to offer
+    // emits one address of a bulk operation: 'preferred' a register the
+    // address may be built in, none when the backend has none to offer
     using address_emitter = std::function<void(
-        const std::optional<operand>& count,
         const std::optional<operand>& preferred, address_use use)>;
 
     // whether an operation may overwrite a register operand, e.g. a scratch
@@ -260,6 +258,20 @@ class machine {
                 .checked{start},
                 .count{count},
                 .array_count{array_count},
+                .allow_end{true},
+            };
+        }
+
+        // a start checked before its count is computed: 'last_start' is the
+        // end of the array less the elements the count has at least
+        [[nodiscard]] static auto range_start(const operand& start,
+                                              const size_t last_start)
+            -> bounds_range {
+
+            return {
+                .checked{start},
+                .count{},
+                .array_count{last_start},
                 .allow_end{true},
             };
         }
@@ -756,8 +768,8 @@ class machine {
                             const size_t size_bytes, const size_t alignment)
         -> void = 0;
 
-    // copies the count of elements 'emit_count' compiles, the request emits
-    // the addresses
+    // copies the count of elements 'emit_count' compiles after the request
+    // emits the addresses, in the order of the arguments
     virtual auto
     copy_elements(const token& src_loc_tk, const size_t indent,
                   const size_t element_size_bytes,
@@ -774,7 +786,8 @@ class machine {
                         const operand& divisor, const runtime_check& check)
         -> void = 0;
 
-    // 'emit_count' compiles the element count into the register it is given,
+    // 'emit_count' compiles the element count into the register it is given
+    // after the request emits the addresses, in the order of the arguments,
     // the elements of both arrays are compared at the width 'alignment' allows
     // and the result, 1 when they are equal, goes to 'dst'
     virtual auto

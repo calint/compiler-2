@@ -51,16 +51,14 @@ class stmt_builtin_arrays_equal final : public statement {
 
         const bulk_operands::arrays_info arrays{operands_.check(tc)};
 
-        const bulk_operands::run_time_emitters emit{
-            operands_.emitters(tc, indent, tok()),
-        };
+        bulk_operands::run_time_emitters emit{operands_, tc, indent, tok()};
 
         x.equal_elements(tok(), indent, arrays.first.type_ref().size_bytes(),
-                         emit.count,
+                         emit.count(),
                          {
                              .alignment{arrays.first.type_ref().alignment()},
-                             .lhs{emit.first},
-                             .rhs{emit.second},
+                             .lhs{emit.first()},
+                             .rhs{emit.second()},
                              .dst{dst.operand()},
                              .inverted{},
                          });

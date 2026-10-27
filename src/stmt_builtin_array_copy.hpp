@@ -66,16 +66,14 @@ class stmt_builtin_array_copy final : public statement {
             return;
         }
 
-        const bulk_operands::run_time_emitters emit{
-            operands_.emitters(tc, indent, tok()),
-        };
+        bulk_operands::run_time_emitters emit{operands_, tc, indent, tok()};
 
         x.copy_elements(tok(), indent, arrays.first.type_ref().size_bytes(),
-                        emit.count,
+                        emit.count(),
                         {
                             .alignment{arrays.first.type_ref().alignment()},
-                            .src{emit.first},
-                            .dst{emit.second},
+                            .src{emit.first()},
+                            .dst{emit.second()},
                             .overlap{tc.checks().overlap_options()},
                         });
     }
@@ -93,53 +91,21 @@ class stmt_builtin_array_copy final : public statement {
 
         const stmt_identifier& src{operands_.first()};
         const stmt_identifier& dst{operands_.second()};
-        const expr_any& count_expr{operands_.count()};
 
         machine& x{tc.machine()};
 
         machine::held_registers held{x, tok(), indent};
 
-        const range_check src_check{operands_.range_check_of(tc, src)};
-        const range_check dst_check{operands_.range_check_of(tc, dst)};
-
-        // the range checks of a run-time start compare 'start + count' in
-        // registers
-        operand count_register;
-
-        if (tc.checks().is_bounds() and (src_check == range_check::run_time or
-                                         dst_check == range_check::run_time)) {
-
-            count_register = x.alloc_scratch_register(
-                tok(), indent, tc.builtins().default_type());
-
-            held.add(count_register);
-
-            x.comment(count_expr.tok(), indent,
-                      statement::trimmed_source(count_expr));
-
-            count_expr.compile(tc, indent,
-                               destination::of_register(count_register));
-        }
-
-        const std::optional<operand> src_count{
-            src_check == range_check::run_time ? std::optional{count_register}
-                                               : std::nullopt,
-        };
-
+        // the walk checks a run-time start against the end less the count
         x.comment(src.tok(), indent, statement::trimmed_source(src));
 
         const operand src_operand{
             src.compile_lea(tc, indent, src.first_token(), held,
                             {
-                                .reg_count{src_count},
-                                .is_range_start{true},
+                                .range_count{count},
+                                .start_register{},
                                 .address_register{},
                             }),
-        };
-
-        const std::optional<operand> dst_count{
-            dst_check == range_check::run_time ? std::optional{count_register}
-                                               : std::nullopt,
         };
 
         x.comment(dst.tok(), indent, statement::trimmed_source(dst));
@@ -147,8 +113,8 @@ class stmt_builtin_array_copy final : public statement {
         const operand dst_operand{
             dst.compile_lea(tc, indent, dst.first_token(), held,
                             {
-                                .reg_count{dst_count},
-                                .is_range_start{true},
+                                .range_count{count},
+                                .start_register{},
                                 .address_register{},
                             }),
         };

@@ -1,5 +1,5 @@
-# the count of 'arrays_equal' is computed before the arrays, a call in the
-# count that writes what a call in an array argument reads is rejected
+# the arrays of 'arrays_equal' are computed before the count: the call in an
+# array argument reads 'n' before the call in the count writes it
 var n = 0
 
 func h() res {
@@ -13,7 +13,10 @@ func f() res {
 
 func main() {
     var a = i8[4]
+    a[0] = 7
     var b = i8[4]
+    b[0] = 7
+    b[1] = 8
     if arrays_equal(a, b[h()], f()) {
         exit(1)
     }

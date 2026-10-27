@@ -1,6 +1,6 @@
-# the count of 'write' is computed before the buffer, a call in the count that
-# writes what a call in the buffer argument reads is rejected
-type s { buf[4], }
+# the buffer of 'write' is computed before the count: the call in the buffer
+# argument reads 'n' before the call in the count writes it
+type s { buf i8[4], }
 
 var n = 0
 
@@ -10,11 +10,13 @@ func h() res {
 
 func f() res {
     n = n + 1
-    res = 1
+    res = 2
 }
 
 func main() {
     var a = s[2]
+    a[0].buf = {'A', '\n', 0, 0}
+    a[1].buf = {'B', '\n', 0, 0}
     var k = write(1, a[h()].buf, f())
-    exit(k)
+    exit(k - 2)
 }

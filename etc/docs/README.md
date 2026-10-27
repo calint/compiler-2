@@ -890,10 +890,8 @@ that is checked is the code that is emitted.
 
 Each node states its operands in evaluation order in its 'visit_operands', and
 the walks of the checks follow from it; its 'compile' emits them in that order,
-held by review and the tests, e.g. 1678. Two kinds of built-in are the
-exceptions, a backend computes their count first (7.14); a check of
-'ub_order.hpp' makes sure that neither side writes by a call what the other
-reads, also through a call ('assert_same_in_either_order'). The
+held by review and the tests, e.g. 1678, also for the built-ins that check a
+range after its count (7.14). The
 default of 'visit_operands' is 'std::unreachable()': a node that is asked and
 does not say fails in the tests instead of skipping the checks. An operand is a
 'list_operand' ('ub_reads.hpp'): a node it reads, or a place of which only the
@@ -1715,29 +1713,24 @@ covered showed the next one).
 Cost: one rule of the value at its destination is split by phase, the kind at
 the parse and the width at the compile.
 
-### 7.14 Two built-ins compute their count first
+### 7.14 The range of a bulk operation is checked after its count
 
-Every node emits its operands in the order of the source, except two kinds of
-built-in: 'array_copy' and 'arrays_equal' compute the count before the two
-arrays, 'read', 'write' and the sector functions the count and the start
-before the buffer. The range check of where an array starts needs the count,
-and on x86_64 the count, the source and the destination are held in 'rcx',
-'rsi' and 'rdi' at once. Each of the two nodes checks that the order makes no
-difference: a call on one side that may write what the other side reads, also
-through a call, is rejected with a message that names the order, e.g.
-'array_copy(a[h()], b, f())' with 'f' writing what 'h' reads
-('assert_same_in_either_order', 'bulk_operands::assert_not_written_later',
-'stmt_builtin_io::assert_count_not_written_by_buffer').
+'array_copy', 'arrays_equal', 'read', 'write' and the sector functions emit
+their arguments in the order of the source: the arrays or the buffer, then
+the count. The range from a start needs the count, so the check is split. The
+address walk checks a run-time start as '0 <= start <= length', or against
+the length less a constant count, and copies it into a register the caller
+allocated before the walk ('lea_request::start_register'); after the count,
+'bulk_operands::run_time_emitters' checks 'start + count <= length' and frees
+the register. No element is read or written before the check.
 
-Rejected: the count first in the language, e.g. 'array_copy(n, a, b)' (a
-language change for a code generation detail, and 'read' would take optional
-arguments before its buffer); the range check of a start deferred until after
-the count (a second mode of the address code that every indexed access uses,
-and the interface of both backends).
+Rejected: the count first, with a check that the order makes no difference
+(the check saw only writes to variables, so output, 'exit' and the run-time
+checks ran in the reverse of the source order, bug hunt round 9 W1-1); the
+count first in the language, e.g. 'array_copy(n, a, b)' (a language change for
+a code generation detail).
 
-Cost: the exception is local to the two nodes; a program whose result would
-depend on the order is rejected, e.g. 'array_copy(a[g(n)], b, n)' with 'g'
-writing 'n'.
+Cost: a run-time start is held in a register while the count is computed.
 
 ## 8. Undefined behavior: what is rejected and what is checked
 
