@@ -6,45 +6,11 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
 --------------------------------------------------------------------------------
 1. clean up
 --------------------------------------------------------------------------------
-[o] hard: bug hunt round 5 (2026-10-27, user: loop until a round finds no
-    bugs; hunters Q1 every 'assert' and 'std::unreachable' that user input
-    may reach, Q2 values written in parts and assignments, Q3 versions,
-    dry runs and the compile state; reports in the session scratchpad bh5)
-    Q1-1. a whole array of instances in a number destination aborts the
-          compiler ('x = cs', 'a[cs]', '[]{cs, 1}', "Assertion
-          `src_type.is_builtin()' failed"): 'assert_not_narrowed' asks the
-          type before the whole array is rejected
-    Q1-2. 'y = a' with 'a' an 'int' array and 'y' an 'i8' is "narrowed"
-          before "must be indexed" (same cause)
-    Q2-1. a constant index into an array parameter (length unknown at the
-          parse) is a run-time step of its path: 'ps[0] = {ps[1].y,
-          ps[1].x}' and 'swap(s[0], s[1])' rejected, accepted on a local
-    Q3.1. rv32i: an inlined recursion that runs out of registers in one
-          version is a recursion error ('inlining_limit') that
-          'compile_version' rethrows, the version that fits is not kept
-    Q3.2. skipped code in 'main' is checked with the noinline body pool,
-          one register fewer: 'if 1 == 2 {X}' rejected, 'if 1 == 1 {X}'
-          accepted
-    => Q1-1, Q1-2 done (2026-10-27): 'stmt_identifier::assert_not_narrowed'
-       resolves with 'make_scalar_ident_info', as 'compile' does, so a whole
-       array is "must be indexed" before its type is asked; tests 1741-1743
-       (abort at HEAD), 1744; listings and errors of every test equal
-    => Q3.1 done (2026-10-27): 'machine::compile_version' drops every error
-       that depends on the code compiled (every kind but 'source'), the
-       comment of the choice names the resource ('exhausted_resource'); the
-       recursion error keeps its kind; test 1745 (rv32i, fails at HEAD);
-       README 5.3; listings of every other test equal
-    => Q3.2 done (2026-10-27): 'machine::emit_discarded' starts from the
-       registers of the code it stands for ('discarded_code'): the check of
-       a body from the noinline body pool, skipped code
-       ('toc::check_skipped') from the registers held where it stands; test
-       1746 (fails at HEAD); README 1.5.1, 5.3; listings and errors of every
-       other test equal
-    => Q2-1 kept (2026-10-27, user: no complexity): the fix needs a second
-       flag "bytes unknown" next to 'is_exact_access', a constant step of
-       an array of unknown length would make the path exact while its
-       bytes stay the whole array; added to the conservative rejections
-       item
+[o] hard: bug hunt round 6 (2026-10-27, user: loop until a round finds no
+    bugs; hunters S1 the backends on 'i8', 'i16' and 'bool' values in memory
+    and registers, S2 limits and scale of the compiler, S3 one generator
+    that mixes every feature against a reference model; reports in the
+    session scratchpad bh6)
 [ ] easy: low priority: whether a 'let' is a constant is decided at the
     parse ('make_stmt_def_var', 'may_fold'), where the 'n' of a 'foo' over an
     unsized array parameter is a variable, so 'let m = n' stays a variable
