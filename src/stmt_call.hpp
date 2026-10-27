@@ -649,6 +649,21 @@ struct call_site {
         return temporary_name(tk, "call-result", 0);
     }
 
+    // the result is written field by field, so its padding is zeroed for
+    // '==' to compare instances byte by byte; after the arguments, which may
+    // read the destination, e.g. 'p = f(p.a + 1)'
+    auto zero_result_padding(toc& tc, const size_t indent,
+                             const destination& dst) const -> void {
+
+        if (dst.is_empty()) {
+            return;
+        }
+
+        machine& x{tc.machine()};
+
+        x.zero_padding(tk, indent, dst.operand(), dst.type_ref());
+    }
+
     //
     // statics
     //
@@ -976,6 +991,8 @@ class inline_call {
         machine::held_registers held{x, call_.tk, indent + 1};
 
         const call_bindings bindings{make_bindings(tc, indent, dst, held)};
+
+        call_.zero_result_padding(tc, indent, dst);
 
         const bool has_indexed_argument{
             std::ranges::any_of(bindings.arguments, is_indexed_reference),
@@ -1342,6 +1359,8 @@ class noinline_call {
         assert_call(dst, *call_.func, arguments);
 
         machine& x{tc.machine()};
+
+        call_.zero_result_padding(tc, indent, dst);
 
         const std::vector<size_t> array_lengths{
             array_argument_lengths(*call_.func, arguments),

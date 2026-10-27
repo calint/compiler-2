@@ -1,0 +1,13 @@
+# an inlined loop without 'break' in a later element of an 'and' does not end
+# the statement
+
+func spin() res bool {
+    loop {
+    }
+}
+
+func main() {
+    var x = 1
+    var b = x > 5 and spin()
+    exit(9)
+}

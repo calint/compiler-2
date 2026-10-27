@@ -1,6 +1,39 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] hard: bug hunt round 8 (2026-10-27, user: loop until a round finds no
+    bugs; hunters V1 reads of values that may be unset, V2 names, scopes and
+    '--reproduce-source', V3 records and arrays as whole values; reports in
+    the session scratchpad bh8)
+    V1-1. an inlined call that never returns in a later element of an
+          'and'/'or' list ends the path of the whole statement: the code
+          after it is not emitted ('x > 0 or die(3) > 0' then 'exit(9)'
+          crashes inline, 9 noinline; statements after it dropped)
+    V3-1. a call result whose type has more padding gaps than the target
+          zeroes one by one is zeroed as a whole instance before the
+          arguments, which may read it ('p = mk(p.a + 1)': x86_64 1, rv32i
+          43 for 5 gaps, both wrong for 10)
+    V1-1b. a list in the initializer of a global aborts the compiler where
+          a constant decides it ('var g = 1 == 2 and x > 1', also at HEAD)
+          and, with the fix of V1-1, where an element runs at run time:
+          'check_skipped' and the reachability ask for a function scope
+    => V1-1 done (2026-10-27): 'expr_bool::compile_elements_from' joins the
+       path after each element decided at run time ('toc::path_merge'), the
+       end of the list is reached when one of them is; tests 1752-1754
+       (fail at HEAD); rejected: removing the compile's reachability (a
+       guard 'return' folded from a constant argument would compile the
+       dead code after it: '10 / n' with 'n' 0 rejected, test 1645's
+       inlined recursion no longer ends)
+    => V3-1 done (2026-10-27): 'call_site::zero_result_padding' after the
+       arguments, in the inlined and the noinline call, not in
+       'expr_type::compile'; tests 1755, 1756 (fail at HEAD); listings
+       differ by the order only, instruction counts equal
+    => V1-1b done (2026-10-27): outside a function every path continues
+       ('toc::is_reachable' true, the scope stack keeps no reach state) and
+       'check_skipped' checks as in 'main'; tests 1757, 1758 (abort at
+       HEAD), 1759; rejected: a function scope per global initializer (a
+       frame of the register trace, temporaries placed as locals)
+    => done (2026-10-27): V2 no bugs; V1-1, V1-1b, V3-1 fixed
 [x] hard: bug hunt round 7 (2026-10-27, user: loop until a round finds no
     bugs; hunters U1 the builtins and 'dat', U2 boolean expressions and the
     jump optimizer, U3 register allocation and the reports; reports in the

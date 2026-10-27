@@ -1308,6 +1308,16 @@ class scope_stack final {
     }
 
     [[nodiscard]] auto reach_state_now() const -> reach_state {
+        // see 'toc::is_reachable'
+        if (not is_in_func()) {
+            return {
+                .loop_index{},
+                .is_left_by_break{},
+                .is_reachable{true},
+                .is_left_by_return{},
+            };
+        }
+
         std::optional<size_t> loop_index;
 
         for (size_t i{scopes_.size()}; i > 0; --i) {
@@ -1388,6 +1398,10 @@ class scope_stack final {
     }
 
     auto restore_reach_state(const reach_state& state) -> void {
+        if (not is_in_func()) {
+            return;
+        }
+
         if (state.loop_index) {
             scopes_.at(*state.loop_index)
                 .restore_left_by_break(state.is_left_by_break);
@@ -1403,6 +1417,10 @@ class scope_stack final {
 
     // see 'toc::is_reachable'
     auto set_reachable(const bool is_reachable) -> void {
+        if (not is_in_func()) {
+            return;
+        }
+
         func_scope().set_reachable(is_reachable);
     }
 
@@ -2553,9 +2571,10 @@ class toc final {
     };
 
   public:
-    // the paths of an 'if' start at the 'if', its end is reached when one
-    // path that runs reaches it; set when the merge ends, also when an error
-    // unwinds, like 'assignment_flow::path_merge'
+    // the paths of an 'if' start at the 'if', of an 'and'/'or' list at an
+    // element that may end it; the end is reached when one path that runs
+    // reaches it; set when the merge ends, also when an error unwinds, like
+    // 'assignment_flow::path_merge'
     class path_merge final {
         toc& tc_;
         bool is_reachable_{};
@@ -3045,20 +3064,24 @@ class toc final {
     // code that the compile skips, e.g. a branch that folds to false or the
     // code after a statement that leaves on every path, is compiled for its
     // checks where what it folds is no constant of a call: in 'main' and in
-    // the body check of a function; there every compile rule holds in all
+    // the body check of a function, and in the initializer of a global, which
+    // takes nothing from a call either; there every compile rule holds in all
     // code, the compile decides; in a body that takes from a call an error
     // that depends on a call is dropped as in that check, any other rejects
     // the program
     auto check_skipped(const std::function_ref<void()> compile) -> void {
         assert(is_compiling_);
 
-        const scope& func{scopes_.current_func_scope()};
+        if (scopes_.is_in_func() and
+            not scopes_.current_func_scope().is_without_call()) {
 
-        if (not func.is_without_call()) {
             return;
         }
 
-        const bool takes_from_call{func.takes_from_call()};
+        const bool takes_from_call{
+            scopes_.is_in_func() and
+                scopes_.current_func_scope().takes_from_call(),
+        };
 
         const scope_stack::reach_state reach{scopes_.reach_state_now()};
 
@@ -3305,9 +3328,15 @@ class toc final {
     // runs on some path, the words of 'assignment_flow': 'end_path',
     // 'record_break', 'path_merge', 'join_loop'; a block stops
     // compiling at an unreached statement, e.g. after the 'return' of
-    // 'if n == 0 return' in an inlined call with the constant argument 0
+    // 'if n == 0 return' in an inlined call with the constant argument 0;
+    // outside a function, in the initializer of a global, every path
+    // continues, it makes no call
     [[nodiscard]] auto is_reachable() const -> bool {
         assert(is_compiling_);
+
+        if (not scopes_.is_in_func()) {
+            return true;
+        }
 
         return scopes_.current_func_scope().is_reachable();
     }

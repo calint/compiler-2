@@ -1,0 +1,13 @@
+# a list in the initializer of a global that a constant decides: the elements
+# after it are skipped, outside of any function
+
+var x = 3
+var both = 1 == 2 and x > 1
+
+func main() {
+    if both {
+        exit(3)
+    }
+
+    exit(4)
+}

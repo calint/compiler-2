@@ -1,0 +1,18 @@
+# the statements after a list whose later element never returns are compiled
+# in a noinline body
+
+func die(c) res {
+    exit(c)
+}
+
+func noinline f(x) res {
+    res = 5
+    var b = x > 0 or die(3) > 0
+    if b {
+        res = 6
+    }
+}
+
+func main() {
+    exit(f(1))
+}

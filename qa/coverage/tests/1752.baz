@@ -1,0 +1,12 @@
+# an inlined call that never returns in a later element of an 'or' does not
+# end the statement: the short circuit of 'x > 0' reaches the code after it
+
+func die(c) res {
+    exit(c)
+}
+
+func main() {
+    var x = 1
+    var b = x > 0 or die(3) > 0
+    exit(9)
+}

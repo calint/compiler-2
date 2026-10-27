@@ -1,0 +1,4 @@
+
+1758.baz:5:22: index 9 is out of bounds for array 'a' of size 4
+var g = 1 == 2 and a[9] > 0
+                     ^

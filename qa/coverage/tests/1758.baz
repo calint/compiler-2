@@ -1,0 +1,9 @@
+# the skipped elements of a list in the initializer of a global are checked as
+# in 'main'
+
+var a = i8[4]
+var g = 1 == 2 and a[9] > 0
+
+func main() {
+    exit(3)
+}

@@ -280,14 +280,11 @@ inline auto expr_type::operand_path() const -> const stmt_identifier* {
 inline auto expr_type::compile(toc& tc, const size_t indent,
                                const destination& dst) const -> void {
 
-    // a call writes the fields only, so the padding is zeroed before it and
-    // '==' can compare instances byte by byte, e.g. 'f()' in '{f(), 3}'
+    // note: the call zeroes the padding of the result, see
+    //       'call_site::zero_result_padding'
+
     if (const stmt_call* const call{call_source()}) {
-        machine& x{tc.machine()};
-
-        x.zero_padding(tok(), indent, dst.operand(), dst.type_ref());
         call->compile(tc, indent, dst);
-
         return;
     }
 

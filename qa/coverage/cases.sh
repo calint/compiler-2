@@ -5568,3 +5568,37 @@ SRC=1750 && EXP=1 && RUN
 # the end of an array, where a range may start, is out of bounds for an element
 # compared as a whole value
 SRC=1751 && COMPERR
+
+# an inlined call that never returns in a later element of an 'or' does not end
+# the statement: the short circuit of 'x > 0' reaches the code after it
+SRC=1752 && EXP=9 && RUN
+
+# the statements after a list whose later element never returns are compiled
+# in a noinline body
+SRC=1753 && EXP=6 && RUN
+
+# an inlined loop without 'break' in a later element of an 'and' does not end
+# the statement
+SRC=1754 && EXP=9 && RUN
+
+# the padding of a call result is zeroed after the arguments are computed: the
+# whole instance is zeroed for its 5 gaps on x86_64, the argument reads the
+# destination first
+SRC=1755 && EXP=43 && RUN
+
+# the padding of a call result is zeroed after the arguments are computed, on
+# both targets the whole instance for its 10 gaps; inlined and noinline, the
+# result an element of a literal
+SRC=1756 && EXP=86 && RUN
+
+# a list in the initializer of a global that a constant decides: the elements
+# after it are skipped, outside of any function
+SRC=1757 && EXP=4 && RUN
+
+# the skipped elements of a list in the initializer of a global are checked as
+# in 'main'
+SRC=1758 && COMPERR
+
+# lists with run-time elements in the initializers of globals, one with a
+# constant element that does not decide it
+SRC=1759 && EXP=3 && RUN

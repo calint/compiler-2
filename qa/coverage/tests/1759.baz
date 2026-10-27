@@ -1,0 +1,15 @@
+# lists with run-time elements in the initializers of globals, one with a
+# constant element that does not decide it
+
+var x = 3
+var y = 0
+var both = x > 1 and y < 1
+var either = x < 1 or 1 == 2 or y > 0
+
+func main() {
+    if both and not either {
+        exit(3)
+    }
+
+    exit(4)
+}

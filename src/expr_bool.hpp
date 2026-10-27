@@ -1298,6 +1298,11 @@ class expr_bool final : public statement {
 
         bool has_runtime_element{};
 
+        // an element decided at run time may end the list, so the code after
+        // the list is reached when the code after that element is, e.g. the
+        // 'x > 0' of 'x > 0 or die(3) > 0' with 'die' an inlined 'exit'
+        toc::path_merge paths{tc};
+
         const size_t last_index{bools_.size() - 1};
 
         for (size_t expr_index{first}; expr_index < last_index; ++expr_index) {
@@ -1308,6 +1313,7 @@ class expr_bool final : public statement {
 
             if (not is_known(const_eval)) {
                 has_runtime_element = true;
+                paths.join_path();
                 continue;
             }
 
@@ -1317,12 +1323,20 @@ class expr_bool final : public statement {
                         tc, indent, targets, inverted, dst, expr_index + 1);
                 });
 
+                paths.join_path();
+
                 return const_eval;
             }
         }
 
-        return compile_last_element(tc, indent, targets, inverted, dst,
-                                    has_runtime_element);
+        const condition_result last{
+            compile_last_element(tc, indent, targets, inverted, dst,
+                                 has_runtime_element),
+        };
+
+        paths.join_path();
+
+        return last;
     }
 
     // an element that does not decide the list continues at the next element
