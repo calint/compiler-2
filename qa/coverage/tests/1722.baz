@@ -1,0 +1,13 @@
+# a 'bool' constant is no number for the constant parameter of a generic
+# type, like 'true'
+
+let b = true
+
+type w<n> {v i8[n]}
+
+type s = w<b>
+
+func main() {
+    var x = s
+    exit(array_length(x.v))
+}

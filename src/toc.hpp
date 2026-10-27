@@ -1134,7 +1134,7 @@ class scope_stack final {
 
     // the value of 'name' when it means a constant
     [[nodiscard]] auto const_value(const std::string_view name) const
-        -> std::optional<int64_t> {
+        -> std::optional<folded_value> {
 
         const name_meaning meaning{lookup(name)};
 
@@ -1142,7 +1142,7 @@ class scope_stack final {
             return std::nullopt;
         }
 
-        return scopes_.at(meaning.scope_index).get_const(name).constant.value;
+        return scopes_.at(meaning.scope_index).get_const(name).constant;
     }
 
     [[nodiscard]] auto count() const -> size_t { return scopes_.size(); }
@@ -3078,9 +3078,9 @@ class toc final {
         return overflow_options(dst).enabled;
     }
 
-    // a number or a constant
+    // a number, untyped, or a constant with its type
     [[nodiscard]] auto constant_value_of(const token& tk) const
-        -> std::optional<int64_t> {
+        -> std::optional<folded_value> {
 
         assert(not is_compiling_);
 
@@ -3089,7 +3089,7 @@ class toc final {
             };
             value) {
 
-            return value;
+            return folded_value::untyped(*value);
         }
 
         return scopes_.const_value(tk.text());
@@ -3717,9 +3717,9 @@ class toc final {
                                             const std::string_view param_name,
                                             const token& arg_tk) -> int64_t {
 
-    const std::optional<int64_t> value{tc.constant_value_of(arg_tk)};
+    const std::optional<folded_value> constant{tc.constant_value_of(arg_tk)};
 
-    if (not value) {
+    if (not constant) {
         throw_generic_arg_mismatch(
             arg_tk, generic_name, param_name, "constant",
             std::format("{}{}",
@@ -3727,7 +3727,14 @@ class toc final {
                         in_quotes(arg_tk.text())));
     }
 
-    return *value;
+    // e.g. 'b' of 'let b = true', no number like 'true'
+    if (constant->is_typed() and constant->own_type->is_bool()) {
+        throw_generic_arg_mismatch(
+            arg_tk, generic_name, param_name, "number",
+            std::format("the 'bool' constant {}", in_quotes(arg_tk.text())));
+    }
+
+    return constant->value;
 }
 
 // a type parameter needs a type, a constant parameter a constant, e.g. 'T' is

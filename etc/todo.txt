@@ -34,6 +34,10 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
        test equal
     K3.2. a 'bool' constant is accepted as the constant argument of a
           generic type ('w<b>' with 'let b = true' is 'w<1>')
+    => K3.2 done (2026-10-27): 'toc::constant_value_of' gives the constant
+       with its type, 'resolve_const_arg' rejects a 'bool' constant ("needs
+       a number, got the 'bool' constant 'b'"); test 1722; listings of every
+       other test equal
     K3.3. a constant named like a function stops the deduction from a call
           argument ('id(mk())' with 'let mk = 5')
     K3.4. a missing body is reported at the name of the next definition

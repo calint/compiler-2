@@ -1,0 +1,4 @@
+
+1722.baz:8:12: generic parameter 'n' of 'w' needs a number, got the 'bool' constant 'b'
+type s = w<b>
+           ^

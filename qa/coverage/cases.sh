@@ -5448,3 +5448,6 @@ if [[ $MACHINE == x86_64 ]]; then SRC=1720 && EXP=0 && RUN; fi
 if [[ $MACHINE != x86_64 ]]; then SRC=1720 && COMPERR; fi
 if [[ $MACHINE == x86_64 ]]; then SRC=1721 && EXP=0 && RUN; fi
 if [[ $MACHINE != x86_64 ]]; then SRC=1721 && COMPERR; fi
+
+# a 'bool' constant is no number for the constant parameter of a generic type
+SRC=1722 && COMPERR
