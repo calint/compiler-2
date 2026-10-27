@@ -29,6 +29,11 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
        resolves with 'make_scalar_ident_info', as 'compile' does, so a whole
        array is "must be indexed" before its type is asked; tests 1741-1743
        (abort at HEAD), 1744; listings and errors of every test equal
+    => Q3.1 done (2026-10-27): 'machine::compile_version' drops every error
+       that depends on the code compiled (every kind but 'source'), the
+       comment of the choice names the resource ('exhausted_resource'); the
+       recursion error keeps its kind; test 1745 (rv32i, fails at HEAD);
+       README 5.3; listings of every other test equal
 [ ] easy: low priority: whether a 'let' is a constant is decided at the
     parse ('make_stmt_def_var', 'may_fold'), where the 'n' of a 'foo' over an
     unsized array parameter is a variable, so 'let m = n' stays a variable

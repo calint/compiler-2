@@ -5540,3 +5540,8 @@ SRC=1743 && COMPERR
 # a whole array given to a narrower number is rejected as an array that must be
 # indexed, not as narrowed
 SRC=1744 && COMPERR
+
+# rv32i: an inlined recursion that runs out of registers in one version only
+# keeps the other version, the error of the dropped one does not end the
+# compile
+if [[ $MACHINE == rv32i* ]]; then SRC=1745 && EXP=108 && RUN; fi

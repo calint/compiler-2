@@ -1246,11 +1246,12 @@ version ended in remains. So the footer and '--report=registers' describe the
 code that is in the output, and a routine only a dropped version calls is not
 emitted.
 
-A version that runs out of scratch registers or of variable storage is not
-available and the other one is kept, e.g. an inlined call with fifteen indexed
-arguments on rv32i where folding each address into a register would need more
-registers than there are, or the temporary of a scratch version past '--vars'.
-The error carries the kind 'out_of_registers' or 'out_of_storage'
+A version that runs out of scratch registers or of variable storage, or of
+inlined call levels, is not available and the other one is kept, e.g. an
+inlined call with fifteen indexed arguments on rv32i where folding each address
+into a register would need more registers than there are, the temporary of a
+scratch version past '--vars', or an inlined recursion that runs out of
+registers in one version only. The error carries a kind other than 'source'
 ('compile_error::error_kind'), which is set where the error is made; when both
 versions run out, the error of the first is reported. Any other error is an
 error of the program and ends the compile. An error of discarded code is never

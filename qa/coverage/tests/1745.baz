@@ -1,0 +1,23 @@
+# rv32i: an inlined recursion that runs out of registers in one version only
+# keeps the other version, the error of the dropped one does not end the
+# compile
+func r(x, n) res {
+    if n == 0 {
+        res = x
+        return
+    }
+    res = x + r(x + 1, n - 1)
+}
+
+func f(v mut, w) {
+    v = w + r(v, 12)
+    v = v + w
+}
+
+func main() {
+    var a = []{1, 2, 3, 4}
+    var i = 1
+    var b = a
+    f(a[i], b[i])
+    exit(a[i])
+}

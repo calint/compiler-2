@@ -69,7 +69,7 @@ class compile_error final : public std::exception {
     // depend on the arguments of a call, so a function checked without its
     // calls cannot be judged by them; the readers, the only code that
     // changes an error instead of ending with it: 'machine::compile_version'
-    // drops 'out_of_registers' and 'out_of_storage' of a version,
+    // drops every kind but 'source' of a version,
     // 'stmt_call' turns 'out_of_registers' into a recursion error in an
     // inlined recursion, 'stmt_def_func::check_body' drops every kind but
     // 'source' when the body takes from a call, and 'toc::check_skipped'

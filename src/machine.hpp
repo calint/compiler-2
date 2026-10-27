@@ -556,9 +556,9 @@ class machine {
         version_state end_state;
     };
 
-    // a version that runs out of registers or of variable storage is not
-    // available, its error is kept to be thrown when the other version runs
-    // out too
+    // a version that fails with an error that depends on the code compiled,
+    // e.g. running out of registers, is not available, its error is kept to
+    // be thrown when the other version fails too
     struct unavailable_version {
         std::exception_ptr error;
         // what it ran out of, for the comment of the choice
@@ -1108,11 +1108,11 @@ class machine {
     }
 
     // emits both versions and keeps the one with less code, the first on ties,
-    // or the one that '--versions' names; a version that runs out of
-    // registers or of variable storage is not kept, when both do the error of
-    // the first is thrown. each version starts from the state before it, the
-    // state of the kept one remains; true when the first is kept, 'toc' keeps
-    // its peaks ('toc::emit_most_efficient')
+    // or the one that '--versions' names; a version that fails with an error
+    // other than 'source', e.g. running out of registers, is not kept, when
+    // both do the error of the first is thrown. each version starts from the
+    // state before it, the state of the kept one remains; true when the first
+    // is kept, 'toc' keeps its peaks ('toc::emit_most_efficient')
     [[nodiscard]] auto
     emit_most_efficient(const token& src_loc_tk, const size_t indent,
                         const std::function_ref<void()> emit_first,
@@ -2006,19 +2006,16 @@ class machine {
                 .end_state{state_},
             };
         } catch (const compile_error& e) {
-            if (e.kind != compile_error::error_kind::out_of_registers and
-                e.kind != compile_error::error_kind::out_of_storage) {
+            // note: every kind but 'source' depends on the code compiled, the
+            //       other version may not reach it
 
+            if (not e.depends_on_call()) {
                 throw;
             }
 
-            const bool is_registers{
-                e.kind == compile_error::error_kind::out_of_registers,
-            };
-
             const unavailable_version unavailable{
                 .error{std::current_exception()},
-                .resource{is_registers ? "registers" : "variable storage"},
+                .resource{exhausted_resource(e.kind)},
             };
 
             return std::unexpected{unavailable};
@@ -2343,5 +2340,26 @@ class machine {
                            "instructions, {}",
                            keeps_first ? "first" : "second", first_count,
                            second_count, reason);
+    }
+
+    //
+    // statics
+    //
+
+    // what a version that fails with 'kind' ran out of, for the comment of
+    // the choice
+    [[nodiscard]] static auto
+    exhausted_resource(const compile_error::error_kind kind)
+        -> std::string_view {
+
+        if (kind == compile_error::error_kind::out_of_registers) {
+            return "registers";
+        }
+
+        if (kind == compile_error::error_kind::out_of_storage) {
+            return "variable storage";
+        }
+
+        return "inlined call levels";
     }
 };
