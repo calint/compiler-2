@@ -103,8 +103,22 @@ class expr_any final : public statement {
         std::optional<array_prefix> prefix;
         token open_brace_tk;
         std::vector<expr_variant> elements;
+        // the whitespace before each element, read apart like that of a
+        // single value, a 'bool' name the element unwraps would drop it
+        std::vector<token> elements_ws_tk;
         std::vector<token> delims_tk;
         token close_brace_tk;
+    };
+
+    // an element of an 'element_list' after the whitespace before it
+    struct spaced_element {
+        const token* ws_tk{};
+        const statement* value{};
+
+        auto source_to(std::ostream& os) const -> void {
+            ws_tk->source_to(os);
+            value->source_to(os);
+        }
     };
 
     // e.g. 'i8[4]', every element is zero
@@ -184,8 +198,11 @@ class expr_any final : public statement {
         const auto elements{
             std::views::iota(size_t{}, list->elements.size()) |
                 std::views::transform(
-                    [this](const size_t i) -> const statement& {
-                        return element(i);
+                    [this, list](const size_t i) -> spaced_element {
+                        return {
+                            .ws_tk{&list->elements_ws_tk.at(i)},
+                            .value{&element(i)},
+                        };
                     }),
         };
 
@@ -632,6 +649,8 @@ class expr_any final : public statement {
 
             assert_room_for_element(tz, list);
 
+            list.elements_ws_tk.emplace_back(tz.next_whitespace_token());
+
             // the array gives the type of its elements
             list.elements.emplace_back(
                 parse_variant(tc, tz, tp, literal_typing::from_destination));
@@ -719,6 +738,7 @@ class expr_any final : public statement {
             .prefix{std::move(prefix)},
             .open_brace_tk{*open_brace_tk},
             .elements{},
+            .elements_ws_tk{},
             .delims_tk{},
             .close_brace_tk{},
         };

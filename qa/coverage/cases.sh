@@ -5500,3 +5500,7 @@ SRC=1733 && COMPERR
 # a constant index in the argument of 'array_length' is checked against its
 # array like any other
 SRC=1734 && COMPERR
+
+# a 'bool' element that starts a line keeps the whitespace and comments before
+# it in the reproduced source, as a number does
+SRC=1735 && EXP=3 && RUN
