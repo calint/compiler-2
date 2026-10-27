@@ -512,15 +512,17 @@ class stmt_def_func final : public statement {
         };
 
         std::optional<compile_error> error{
-            tc.dry_run([&] -> void {
-                scope body_scope{frame_scope(tc, {})};
+            tc.dry_run(
+                [&] -> void {
+                    scope body_scope{frame_scope(tc, {})};
 
-                body_scope.mark_without_call(takes_from_call);
+                    body_scope.mark_without_call(takes_from_call);
 
-                const toc::scope_entry body{tc, std::move(body_scope)};
+                    const toc::scope_entry body{tc, std::move(body_scope)};
 
-                std::ignore = compile_in_frame(tc, indent, {});
-            }),
+                    std::ignore = compile_in_frame(tc, indent, {});
+                },
+                machine::discarded_code::body),
         };
 
         if (not error or (takes_from_call and error->depends_on_call())) {

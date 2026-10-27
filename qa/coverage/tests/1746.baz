@@ -1,0 +1,15 @@
+# code that a constant condition skips in 'main' is checked with the registers
+# it would have if it ran, not with those of a noinline body
+func h(x mut, y0, y1, y2, y3, y4, y5, y6, y7, y8, y9, y10, y11) {
+    x = y0 + y1 + y2 + y3 + y4 + y5 + y6 + y7 + y8 + y9 + y10 + y11
+}
+
+func main() {
+    var a = []{3, 1, 4, 1, 5, 9, 2, 6, 5, 3, 5, 8}
+    var b = []{2, 7, 1, 8, 2, 8, 1, 8, 2, 8, 4, 5}
+    var i = 1
+    if 1 == 2 {
+        h(a[i], b[i + 0], b[i + 1], b[i + 2], b[i + 3], b[i + 0], b[i + 1], b[i + 2], b[i + 3], b[i + 0], b[i + 1], b[i + 2], b[i + 3])
+    }
+    exit(a[1])
+}

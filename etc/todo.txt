@@ -34,6 +34,17 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
        comment of the choice names the resource ('exhausted_resource'); the
        recursion error keeps its kind; test 1745 (rv32i, fails at HEAD);
        README 5.3; listings of every other test equal
+    => Q3.2 done (2026-10-27): 'machine::emit_discarded' starts from the
+       registers of the code it stands for ('discarded_code'): the check of
+       a body from the noinline body pool, skipped code
+       ('toc::check_skipped') from the registers held where it stands; test
+       1746 (fails at HEAD); README 1.5.1, 5.3; listings and errors of every
+       other test equal
+    => Q2-1 kept (2026-10-27, user: no complexity): the fix needs a second
+       flag "bytes unknown" next to 'is_exact_access', a constant step of
+       an array of unknown length would make the path exact while its
+       bytes stay the whole array; added to the conservative rejections
+       item
 [ ] easy: low priority: whether a 'let' is a constant is decided at the
     parse ('make_stmt_def_var', 'may_fold'), where the 'n' of a 'foo' over an
     unsized array parameter is a variable, so 'let m = n' stays a variable
@@ -365,6 +376,10 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
 [ ] hard: UB detection: conservative rejections: a write through a runtime index
     covers nothing, 'array_copy' into a result is not an assignment, 'foo'
     bodies do not count as assigning
+    => a constant index into an array parameter, whose length is unknown at
+       the parse, is a run-time step of its path, so 'swap(s[0], s[1])' and
+       'ps[0] = {ps[1].y, ps[1].x}' are rejected (bug hunt round 5 Q2-1); a
+       constant step needs a flag "bytes unknown" next to 'is_exact_access'
 [ ] hard: UB detection: accept partial results when the caller's destination is
     already initialized (call-site coverage summary); a body that sets only
     'res.pos.y' is "may return without setting its return value"

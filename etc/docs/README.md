@@ -341,7 +341,7 @@ that always runs, the operands of 'and' and 'or' after the one that decides
 the list, the body of a 'foo' whose count folds to 0, and the code after a
 statement that leaves on every path, e.g.
 'if 1 == 2 { n = a }' with 'a' an array is rejected. Such code is judged as if
-it ran; a 'break' or 'return' in it does not end the paths of the code that
+it ran, with the registers held where it stands; a 'break' or 'return' in it does not end the paths of the code that
 runs ('scope_stack::reach_state'). In a compile with the constants of a call
 skipped code is not checked, a constant argument decides it: 'if b != 0 { res
 = a / b }' in 'ratio(10, 0)' guards the division, and the check of the body
@@ -1254,9 +1254,11 @@ scratch version past '--vars', or an inlined recursion that runs out of
 registers in one version only. The error carries a kind other than 'source'
 ('compile_error::error_kind'), which is set where the error is made; when both
 versions run out, the error of the first is reported. Any other error is an
-error of the program and ends the compile. An error of discarded code is never
-one of a version: discarded code starts from the registers of a noinline body,
-which do not depend on the code around it.
+error of the program and ends the compile. An error of discarded code is a
+'source' error ('toc::throw_dry_run_error'), so a version never drops it; the
+check of a body starts from the registers of a noinline body, which do not
+depend on the code around it, and skipped code from the registers held where
+it stands, as if it ran ('machine::discarded_code').
 
 What a failed version entered must be left when its error unwinds:
 

@@ -3064,7 +3064,9 @@ class toc final {
 
         scopes_.set_reachable(true);
 
-        std::optional<compile_error> error{dry_run(compile)};
+        std::optional<compile_error> error{
+            dry_run(compile, machine::discarded_code::here),
+        };
 
         scopes_.restore_reach_state(reach);
 
@@ -3127,8 +3129,10 @@ class toc final {
 
     // runs 'compile' for its errors only: its output, string constants and
     // use of storage leave no trace; the error it ends at, if any, is handed
-    // back, see 'throw_dry_run_error'
-    [[nodiscard]] auto dry_run(const std::function_ref<void()> compile)
+    // back, see 'throw_dry_run_error'; 'code' says which registers it starts
+    // with ('machine::emit_discarded')
+    [[nodiscard]] auto dry_run(const std::function_ref<void()> compile,
+                               const machine::discarded_code code)
         -> std::optional<compile_error> {
 
         assert(is_compiling_);
@@ -3138,7 +3142,7 @@ class toc final {
         ::machine& x{machine()};
 
         try {
-            x.emit_discarded(compile);
+            x.emit_discarded(compile, code);
         } catch (compile_error& e) {
             return std::move(e);
         }

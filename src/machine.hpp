@@ -154,6 +154,11 @@ class machine {
     // register that holds a factor and is freed after the operation
     enum class factor_use : uint8_t { read_only, may_overwrite };
 
+    // what discarded code stands for, which decides the registers it starts
+    // with ('emit_discarded'): the body of a function checked without its
+    // calls, or code that a compile skips where it stands
+    enum class discarded_code : uint8_t { body, here };
+
     using frame_kind = register_trace::frame_kind;
 
     // at namespace scope because a default argument '= {}' of a member
@@ -1095,14 +1100,19 @@ class machine {
     }
 
     // runs 'emit' for its checks, nothing it emits is kept and the registers
-    // it used are not counted. it starts with the registers that the body of
-    // a 'noinline' function holds, the body it stands for, so the registers
-    // that the caller holds do not make it run out
-    auto emit_discarded(const std::function_ref<void()> emit) -> void {
+    // it used are not counted. it starts with the registers of the code it
+    // stands for: the body of a 'noinline' function holds its own, so the
+    // registers that the caller holds do not make it run out; code skipped
+    // where it stands holds those held there
+    auto emit_discarded(const std::function_ref<void()> emit,
+                        const discarded_code code) -> void {
+
         const version_scope discarded{*this};
 
-        state_.registers = noinline_body_pool();
-        state_.frame_base_reserved = true;
+        if (code == discarded_code::body) {
+            state_.registers = noinline_body_pool();
+            state_.frame_base_reserved = true;
+        }
 
         std::ignore = target_assembler().capture(emit);
     }

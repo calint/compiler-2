@@ -5545,3 +5545,7 @@ SRC=1744 && COMPERR
 # keeps the other version, the error of the dropped one does not end the
 # compile
 if [[ $MACHINE == rv32i* ]]; then SRC=1745 && EXP=108 && RUN; fi
+
+# code that a constant condition skips in 'main' is checked with the registers
+# it would have if it ran, not with those of a noinline body
+SRC=1746 && EXP=1 && RUN
