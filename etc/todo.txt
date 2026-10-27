@@ -39,6 +39,17 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
        single value does, so a 'bool' name or literal that
        'release_name_or_literal' unwraps keeps it; test 1735 (fails at
        HEAD); listings and errors of every test equal
+    => P1.2 done (2026-10-27): 'array_length' reads its '(' like the N2.1
+       sites and reports a missing one at its name; 0180 points at the
+       name; test 1736
+    => P1.3 done (2026-10-27): a block's token is the position of the next
+       token, its '{', not the cursor before the comments; test 1737;
+       listings of every test equal
+    => P1.4 discarded (2026-10-27, user: no complexity for error
+       positions): it needs a second position in the tokenizer, kept up to
+       date on every read, put-back and rewind; README 1.9 documents where
+       a missing token is reported; the 'func main()' result name read
+       across a line end goes with it
 [ ] easy: low priority: whether a 'let' is a constant is decided at the
     parse ('make_stmt_def_var', 'may_fold'), where the 'n' of a 'foo' over an
     unsized array parameter is a variable, so 'let m = n' stays a variable

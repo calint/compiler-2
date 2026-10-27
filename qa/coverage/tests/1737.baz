@@ -1,0 +1,11 @@
+# a block that is not reached is reported at its '{', after the comments
+# before it
+func main() {
+    var x = 1
+    exit(x)
+    # not reached
+
+    {
+        x = 2
+    }
+}

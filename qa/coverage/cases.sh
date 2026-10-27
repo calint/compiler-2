@@ -5504,3 +5504,11 @@ SRC=1734 && COMPERR
 # a 'bool' element that starts a line keeps the whitespace and comments before
 # it in the reproduced source, as a number does
 SRC=1735 && EXP=3 && RUN
+
+# 'array_length' without '(' at the end of a line is reported at the name, not
+# at the next line
+SRC=1736 && COMPERR
+
+# a block that is not reached is reported at its '{', after the comments
+# before it
+SRC=1737 && COMPERR

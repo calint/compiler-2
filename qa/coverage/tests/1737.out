@@ -1,0 +1,4 @@
+
+1737.baz:8:5: statement is not reached, the path before it does not continue
+    {
+    ^

@@ -1,0 +1,7 @@
+# 'array_length' without '(' at the end of a line is reported at the name, not
+# at the next line
+func main() {
+    var a = i8[2]
+    var n = array_length
+    exit(n)
+}

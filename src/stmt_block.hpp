@@ -30,7 +30,7 @@ class stmt_block final : public statement {
     // without '{' the block is one statement unless braces are required,
     // e.g. the 'exit(1)' of 'if a == 1 exit(1)'
     stmt_block(toc& tc, tokenizer& tz, const block_braces braces = {})
-        : statement{tz.cur_position_token()},
+        : statement{tz.next_token_position()},
           open_brace_tk_{tz.is_next_char_token('{')} {
 
         const toc::parse_nesting_scope nesting{tc, tz};

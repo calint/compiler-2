@@ -28,10 +28,7 @@ class stmt_builtin_array_length final : public statement {
     stmt_builtin_array_length(toc& tc, unary_ops uops, const token src_loc_tk,
                               tokenizer& tz)
         : statement{src_loc_tk, std::move(uops)},
-          open_paren_tk_{
-              tz.expect_char_token('(',
-                                   "expected '(' followed by an identifier"),
-          },
+          open_paren_tk_{read_open_paren(tz, src_loc_tk)},
           stmt_ident_{parse_argument(tc, tz, src_loc_tk)},
           close_paren_tk_{
               tz.expect_char_token(')', "expected ')' after the argument"),
@@ -147,5 +144,19 @@ class stmt_builtin_array_length final : public statement {
         tz.assert_no_surplus_argument(name_tk.text(), 1);
 
         return array;
+    }
+
+    // reported at the name, the next token can be on a later line
+    [[nodiscard]] static auto read_open_paren(tokenizer& tz,
+                                              const token& name_tk) -> token {
+
+        const std::optional<token> open_paren_tk{tz.is_next_char_token('(')};
+
+        if (not open_paren_tk) {
+            throw compile_error{name_tk,
+                                "expected '(' followed by an identifier"};
+        }
+
+        return *open_paren_tk;
     }
 };

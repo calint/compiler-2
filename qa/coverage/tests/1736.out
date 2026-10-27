@@ -1,0 +1,4 @@
+
+1736.baz:5:13: expected '(' followed by an identifier
+    var n = array_length
+            ^~~~~~~~~~~~
