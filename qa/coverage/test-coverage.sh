@@ -21,7 +21,9 @@ cd "$SCRIPT_DIR"
 
 BIN="$SCRIPT_DIR/../../baz"
 MACHINE="${MACHINE:-x86_64}"
-OPTS="--vars=0x40000 --checks=upper,lower,line --reproduce-source"
+OPTS="--vars=0x40000 --checks=upper,lower,line"
+# also with the options of a case: every source is reproduced exactly
+REPRODUCE="--reproduce-source"
 # the version of the same code that is kept, empty for the default
 VERSION_OPTS="${VERSIONS:+--versions=$VERSIONS}"
 SEP="--------------------------------------------------------------------------------"
@@ -136,7 +138,7 @@ cd "$SCRIPT_DIR/tests"
 rm -f gen.s out err
 
 echo $SEP
-echo "running: $BIN --target=$MACHINE $OPTS $VERSION_OPTS"
+echo "running: $BIN --target=$MACHINE $OPTS $REPRODUCE $VERSION_OPTS"
 echo $SEP
 
 export UBSAN_OPTIONS="print_stacktrace=1"
@@ -210,7 +212,7 @@ execute_program_errors_to_out() {
 
 # also makes the sd card image of the case, see 'make_sdcard'
 compile_and_build() {
-    if ! "$BIN" "$SRC.baz" --target="$MACHINE" --bin=gen-rv32i.bin $OPTS $VERSION_OPTS 2>err >gen.s; then
+    if ! "$BIN" "$SRC.baz" --target="$MACHINE" --bin=gen-rv32i.bin $OPTS $REPRODUCE $VERSION_OPTS 2>err >gen.s; then
         echo "compiler failed. see 'err' and 'gen.s'" >&2
         exit 1
     fi
@@ -221,7 +223,7 @@ compile_and_build() {
 # the compile fails with exit code 1, its message is in 'out'
 compile_expect_error() {
     set +e
-    "$BIN" "$SRC.baz" --target="$MACHINE" --bin=gen-rv32i.bin $OPTS >gen.s 2>out
+    "$BIN" "$SRC.baz" --target="$MACHINE" --bin=gen-rv32i.bin $OPTS $REPRODUCE >gen.s 2>out
     local exit_code=$?
     set -e
     if [[ $exit_code -ne 1 ]]; then

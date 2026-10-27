@@ -72,7 +72,8 @@ class compile_error final : public std::exception {
     // drops 'out_of_registers' and 'out_of_storage' of a version,
     // 'stmt_call' turns 'out_of_registers' into a recursion error in an
     // inlined recursion, 'stmt_def_func::check_body' drops every kind but
-    // 'source' when the body takes from a call; 'toc::throw_dry_run_error'
+    // 'source' when the body takes from a call, and 'toc::check_skipped'
+    // drops them in skipped code there; 'toc::throw_dry_run_error'
     // resets the kind to 'source' so that none of them drops the error of a
     // dry run
     enum class error_kind : uint8_t {

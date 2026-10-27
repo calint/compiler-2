@@ -34,7 +34,7 @@ nodes            statement.hpp, stmt_*.hpp, expr_*.hpp: a node parses
   |              and the checks) into 'machine'
   v
 machine.hpp      one virtual method per operation the front end needs,
-  |              e.g. 'add_subtract', 'copy_block', 'check_bounds'; allocates
+  |              e.g. 'add_subtract', 'copy_block', 'emit_bounds_check'; allocates
   |              the registers ('register_pool')
   |              machine_x86_64.hpp, machine_rv32i.hpp with its targets
   |              machine_rv32i_linux.hpp and the bare-metal
@@ -233,8 +233,10 @@ Some code is compiled and then dropped: a dry run only to be checked, and
 the longer of two versions after both are measured:
 
 1. 'toc::dry_run' and 'machine::emit_discarded': the body of each function
-   without its calls (1.5) and the code after a statement that leaves on every
-   path (1.5.1)
+   without its calls (1.5), and code that a compile skips ('toc::check_skipped',
+   1.5.1): the code after a statement that leaves on every path, a branch whose
+   condition folds to false, the operands of 'and' and 'or' after the one that
+   decides and the body of a 'foo' whose count folds to 0
 2. 'toc::emit_most_efficient' over 'machine::emit_most_efficient': two versions
    are compiled, each from the state before it, and the one with fewer
    instructions is kept with the state it ended in, e.g. with and without a
@@ -296,9 +298,11 @@ program does not depend on inlining.
      e.g. twelve parameters that one call gives the same argument, or of the
      variable storage ('out_of_storage'), and the limits of inlined calls,
      e.g. 'r(x - 1)' in 'r(x)' that a constant argument ends; such an error
-     ends the check and the function is accepted; a recursive inlined call
-     is not expanded in the check ('toc::is_checking_without_call'), its value
-     arguments are compiled at the types of their parameters
+     ends the check and the function is accepted, in skipped code it is
+     dropped and the check goes on ('toc::check_skipped'); a recursive
+     inlined call is not expanded in the check
+     ('toc::is_checking_without_call'), its value arguments are compiled at
+     the types of their parameters
      ('stmt_call::check_arguments_alone'), so a recursion that only a
      constant argument ends does not end the check
 3. A function that takes nothing from a call, a noinline one without unsized
@@ -334,7 +338,8 @@ checks in a dry run ('toc::check_skipped') where what it folds is no constant
 of a call: in 'main' and in the check of a body without its calls. That is a
 branch whose condition folds to false, the branches and the 'else' after one
 that always runs, the operands of 'and' and 'or' after the one that decides
-the list, and the code after a statement that leaves on every path, e.g.
+the list, the body of a 'foo' whose count folds to 0, and the code after a
+statement that leaves on every path, e.g.
 'if 1 == 2 { n = a }' with 'a' an array is rejected. Such code is judged as if
 it ran; a 'break' or 'return' in it does not end the paths of the code that
 runs ('scope_stack::reach_state'). In a compile with the constants of a call
@@ -385,7 +390,8 @@ func.NAME      a noinline body, 'func.NAME.len.4' for array lengths,
 baz_NAME       a failure handler, and a routine of the x86_64 runtime,
                e.g. 'baz_bounds_panic'
 .Lbaz_NAME     a routine of the rv32i runtime; numbered, a jump target
-               inside one operation, e.g. '.Lbaz_equal.0'
+               inside one operation, e.g. '.Lbaz_equal.0' on x86_64 and
+               '.Lbaz_jump.0' on rv32i
 ```
 
 E.g. 'if.7.5.36.13' is the 'if' at 7:5 in a body inlined by the call at
@@ -519,11 +525,12 @@ compile (7.8), 'main.cpp' prints it with its frames.
    needed the body (4.1).
 2. Kinds ('compile_error::error_kind'): 'source', an error of the program, and
    the kinds that depend on the code compiled or on the arguments of a call:
-   'out_of_registers', 'out_of_storage' and 'inlining_limit'. Three places read
+   'out_of_registers', 'out_of_storage' and 'inlining_limit'. Four places read
    the kind and change the error instead of ending with it: a version that runs
    out is dropped when the other one is available (5.3), an inlined recursion
-   that runs out of registers is reported as the recursion, and the check of a
-   function without its calls ends at such an error (1.5); the comment of
+   that runs out of registers is reported as the recursion, the check of a
+   function without its calls ends at such an error (1.5), and skipped code in
+   a body that takes from a call drops it ('toc::check_skipped'); the comment of
    'error_kind' names the functions. An error that ends a dry run is a 'source'
    one ('toc::throw_dry_run_error'), so none of them drops it.
 3. A file that cannot be read is an 'unlocated_error', which
@@ -859,7 +866,6 @@ example.baz:13:13: instantiated by 'make<name>'
 generic_registry (generics.hpp)       the generic definitions and their
                                       instances, kept as text
 type_instantiator (stmt_def_type.hpp) a generic type instance from an alias
-                                      or a type argument
 func_instantiator::define_func        a generic function or method kept as
   (stmt_def_func.hpp)                 text
 generic_call::parse (stmt_call.hpp)   the type arguments of a call, written
@@ -886,7 +892,8 @@ Each node states its operands in evaluation order in its 'visit_operands', and
 the walks of the checks follow from it; its 'compile' emits them in that order,
 held by review and the tests, e.g. 1678. Two kinds of built-in are the
 exceptions, a backend computes their count first (7.14); a check of
-'ub_order.hpp' makes sure the operands before it write nothing it reads. The
+'ub_order.hpp' makes sure that neither side writes by a call what the other
+reads, also through a call ('assert_same_in_either_order'). The
 default of 'visit_operands' is 'std::unreachable()': a node that is asked and
 does not say fails in the tests instead of skipping the checks. An operand is a
 'list_operand' ('ub_reads.hpp'): a node it reads, or a place of which only the
@@ -911,12 +918,13 @@ differently.
 
 An access is described by the path from its root variable: one step per
 field, constant index or run-time index. The root variable itself is not a
-step.
+step. A constant index is a range of indexes, one long for 'a[1]', from its
+start for the start of a bulk operand (3.6).
 
 ```text
 step         holds
 field        offset of the field in its parent
-fixed index  the index
+index range  the first index and the end
 run-time     nothing
 
 rooms[i].items[1].name
@@ -949,8 +957,8 @@ The steps line up, so they are walked together:
 ```text
 run-time index on either side             => go on, may be the same
 field, different offset in the parent     => disjoint
-constant indexes, different               => disjoint
-same field (same offset) or same index    => go on
+constant index ranges, no index in both   => disjoint
+same field (same offset) or ranges meet   => go on
 paths ran out                             => may alias (one is inside the
                                              other, or they are the same)
 ```
@@ -1506,7 +1514,7 @@ is complete: such a call is rejected.
 
 ### 7.3 One base class for every node
 
-'statement' has 11 virtual methods, each node overrides the ones it needs
+'statement' has 12 virtual methods, each node overrides the ones it needs
 (the groups are listed above the class). A default that no other node reaches
 is 'std::unreachable()', the others answer for a node that lacks the
 capability, e.g. 'fold' is empty. Every node parses, writes its source back,
@@ -1600,7 +1608,8 @@ for the same reason three headers define members of an earlier class:
 'tokenizer.hpp' the 'compile_error' of a tokenizer, 'register_report.hpp'
 'machine::register_error' and 'machine::register_peak_report', and
 'stmt_identifier.hpp' the operand walks of 'statement' ('visit_reads',
-'visit_call_effects') and 'statement::bare_path'. A forward
+'visit_call_effects', 'has_inlined_call', 'first_read_of',
+'assert_result_not_read') and 'statement::bare_path'. A forward
 declaration of a class used only by reference or pointer is the opaque-pointer
 pattern and is also allowed: 'stmt_def_dat' and 'stmt_def_func' in 'toc.hpp'.
 
@@ -1661,11 +1670,11 @@ Rejected: virtual registers and an allocator, which need a representation below
 the statements (7.1).
 
 Cost: an expression can run out of scratch registers where an allocator would
-spill to memory, the error advises a 'let'; and which register a value takes
-depends on how many are live, so the error is one of the kinds a version or the
-check of a function without its calls may drop (1.9); the targets have different
-numbers of scratch registers, so whether such an expression is accepted depends
-on the target (chapter 8).
+spill to memory, the error advises to simplify the expression; and which
+register a value takes depends on how many are live, so the error is one of the
+kinds a version or the check of a function without its calls may drop (1.9);
+the targets have different numbers of scratch registers, so whether such an
+expression is accepted depends on the target (chapter 8).
 
 ### 7.12 The default type is the width of a register
 
@@ -1771,12 +1780,12 @@ constants out of range, and the code the run-time checks.
 
 | class | example | how | option | tests |
 |---|---|---|---|---|
-| uninitialized read | 'var x = x' | rejected (definite assignment, 'ub_assigned.hpp', 3.10) | always | 0099, 1301-1303, 1367 |
+| uninitialized read | 'var x = x' | rejected (definite assignment, 'ub_assigned.hpp', 3.10) | always | 0099, 1301-1303 |
 | an argument sharing bytes with another argument that the call writes | 'f(a, a)' with 'f' writing 'p.x' and reading 'q.x' | rejected ('stmt_call::assert_no_shared_storage', 3.7) | always | 0525, 0642, 0676 |
 | a result or a global sharing storage with an argument | 'p = f(p)' with 'f' writing its result before it reads 'p', 'f(g)' with 'f' using the global 'g' | rejected ('stmt_call::assert_no_shared_storage', 3.7, 4.2) | always | 0522-0524, 0526, 0527, 0941 |
 | a value written in parts reading a part written before it | 'p = {p.y, p.x}', 'q = {{1}, q.a[3]}', 'g = {7, gx()}' | rejected ('stmt_assign_var', the 'write_plan' of 'expr_type.hpp', 3.7) | always | 1608-1612, 1634, 1635, 1644 |
 | evaluation order | 'f(arr[i], h(i))', 'i == h(i)' with 'h' writing 'i' | evaluation is left to right; an operand that a call in a later operand of the same list may write is rejected ('assert_not_written_later'); a destination that the value reads, also through a call, is written last ('reaches_destination'), 3.1 | always | 1636-1642, 1676; accepted: 1630-1633, 1643, 1678 |
-| narrowing | 'b = w' with 'b' an 'i8' and 'w' an 'i16' | rejected; a conversion such as 'i8(w)' wraps on purpose (1.7) | always | 0725, 0856, 0865, 1016-1022 |
+| narrowing | 'b = w' with 'b' an 'i8' and 'w' an 'i16' | rejected; a conversion such as 'i8(w)' wraps on purpose (1.7) | always | 0725, 0856, 0865, 1016, 1017, 1019, 1021, 1022 |
 | a constant out of range | 'a[9]' of 'a = i8[4]', 'x / 0', 'x << 70' | rejected ('assert_constant_index' for an index, 'fold' for the others, 1.7) | always | 0305, 0306, 0750-0752 |
 | a constant expression that overflows | '0x7fffffffffffffff + 1' | rejected ('fold'), else it wraps | 'overflow' | 0995, 1002, 1010 |
 | array index out of bounds | 'a[i]' | run time ('machine::check_bounds' from 'stmt_identifier::check_array_bounds', the start of an io built-in and the count of a 'foo') | 'upper', 'lower' | 0302, 0303, 0307-0309, 0626, 0627, 1355 |
@@ -1803,7 +1812,8 @@ result depends on the target. With 'noub' each of them stops at a panic that
 names the check, e.g. 'panic: bounds'.
 
 A panic prints its message on a line of its own after the output of the
-program, on standard error where there is one, on the uart of rv32i-fpga, and
+program, on standard error where there is one, on the uart of rv32i-qemu and
+rv32i-fpga, and
 exits with the code of its check, the same on every target
 ('machine::failure_handler'):
 
@@ -1851,8 +1861,10 @@ outside 'src' included:
 - a target: a subclass of 'machine_rv32i_bare_metal' or 'machine_rv32i' with
   its 'target_description', and in 'main.cpp' its row in 'target_names'
   (name, backend, image, the options it reads) and the help
-  text; outside: 'qa/coverage/test-coverage.sh' (its lists of targets)
+  text; outside: 'qa/coverage/test-coverage.sh' and 'qa/coverage/test-all.sh'
+  (their lists of targets) and 'qa/fuzz/fuzz-options.py'
 - a check: a field of 'check_options' ('toc.hpp'), its name and help text in
   'main.cpp', a 'failure_handler' with its exit code in 'machine.hpp', the
   operation that takes the check in both backends, and the tables of chapter
-  8
+  8; outside: 'qa/fuzz/fuzzlib.py' (the exit codes of the panics) and
+  'qa/fuzz/fuzz-options.py' (the check names)
