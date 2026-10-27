@@ -1,6 +1,15 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] hard: bug hunt round 6 (2026-10-27, user: loop until a round finds no
+    bugs; hunters S1 the backends on 'i8', 'i16' and 'bool' values in memory
+    and registers, S2 limits and scale of the compiler, S3 one generator
+    that mixes every feature against a reference model; reports in the
+    session scratchpad bh6)
+    => done (2026-10-27): S1 no bugs (about 9000 programs on narrow values),
+       S3 no bugs (about 65000 builds of the mixed-feature generator), S2
+       found the stack overflow of a deep inlined chain, left open in
+       'etc/todo.txt' (user)
 [x] hard: bug hunt round 5 (2026-10-27, user: loop until a round finds no
     bugs; hunters Q1 every 'assert' and 'std::unreachable' that user input
     may reach, Q2 values written in parts and assignments, Q3 versions,

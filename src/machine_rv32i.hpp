@@ -748,8 +748,8 @@ class machine_rv32i : public machine {
     }
 
   public:
-    // 'binary_file_name' receives the image of the resolved output, backend
-    // tests without complete programs leave it empty
+    // 'options.binary_file_name' receives the image of the resolved output,
+    // backend tests without complete programs leave it empty
     machine_rv32i(const builtin_type_set& builtins, const source_files& files,
                   const target_options& options = {})
         : machine_rv32i{builtins, files, options, rv32i_target()} {}

@@ -6,11 +6,17 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
 --------------------------------------------------------------------------------
 1. clean up
 --------------------------------------------------------------------------------
-[o] hard: bug hunt round 6 (2026-10-27, user: loop until a round finds no
-    bugs; hunters S1 the backends on 'i8', 'i16' and 'bool' values in memory
-    and registers, S2 limits and scale of the compiler, S3 one generator
-    that mixes every feature against a reference model; reports in the
-    session scratchpad bh6)
+[ ] medium: a chain of distinct inlined functions with deeply nested
+    expressions overflows the compiler's stack (segfault on both targets,
+    bug hunt round 6 S2): each limit holds alone, parse nesting 128 per body
+    and 256 inlined scopes, but the compile walk nests them, up to about
+    126 x 124 expression levels; e.g. 100 functions each 100 parentheses
+    deep crash with the default 8 MiB stack, the deepest chain the limits
+    allow compiles with 16 MiB in 47 s
+    => fix: run the compile on a thread with a fixed stack sized for the
+       bound (64 MiB, headroom for the asan build); a test that crashes at
+       HEAD; rejected: a third limit on the compile depth (a new concept,
+       a counter at every expression kind)
 [ ] easy: low priority: whether a 'let' is a constant is decided at the
     parse ('make_stmt_def_var', 'may_fold'), where the 'n' of a 'foo' over an
     unsized array parameter is a variable, so 'let m = n' stays a variable

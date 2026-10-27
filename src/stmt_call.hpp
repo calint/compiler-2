@@ -399,8 +399,7 @@ struct generic_call {
 };
 
 // what a noinline call passes for an argument: the variable it names or a
-// temporary of the current block that holds its value, see
-// 'call_site::make_argument_temporary'
+// temporary of the current block that holds its value
 struct noinline_arg {
     ident_info info;
     // computed at the argument's position in the list, in a register held
@@ -622,7 +621,7 @@ struct call_site {
     // compiled into it
     [[nodiscard]] auto make_argument_temporary(toc& tc, const size_t indent,
                                                const size_t index) const
-        -> noinline_arg {
+        -> destination {
 
         const destination temporary{
             add_temporary(tc, indent, temporary_argument_name(index),
@@ -631,10 +630,7 @@ struct call_site {
 
         args.at(index).compile(tc, indent, temporary);
 
-        return {
-            .info{temporary.bound_info()},
-            .address{temporary.operand()},
-        };
+        return temporary;
     }
 
     // unique per call and argument, an inlined body names it through the
@@ -1026,13 +1022,13 @@ class inline_call {
             //       binds its own
 
             if (plan_.is_temporary(planned)) {
-                const noinline_arg temporary{
+                const destination temporary{
                     call_.make_argument_temporary(tc, indent, i),
                 };
 
-                bindings.arguments.push_back(
-                    param_binding::make_name(param.name(), temporary.info,
-                                             call_.temporary_argument_name(i)));
+                bindings.arguments.push_back(param_binding::make_name(
+                    param.name(), temporary.bound_info(),
+                    call_.temporary_argument_name(i)));
 
                 continue;
             }
@@ -1300,8 +1296,14 @@ class noinline_call {
              std::views::zip(std::views::iota(size_t{}), plan_.arguments)) {
 
             if (plan_.is_temporary(planned)) {
-                arguments.push_back(
-                    call_.make_argument_temporary(tc, indent, i));
+                const destination temporary{
+                    call_.make_argument_temporary(tc, indent, i),
+                };
+
+                arguments.push_back({
+                    .info{temporary.bound_info()},
+                    .address{temporary.operand()},
+                });
 
                 continue;
             }
