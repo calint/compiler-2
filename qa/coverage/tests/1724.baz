@@ -1,0 +1,8 @@
+# a function without a body: the keyword 'func' of the next definition is no
+# result name, the missing '{' is reported at it
+
+func f()
+
+func main() {
+    exit(0)
+}

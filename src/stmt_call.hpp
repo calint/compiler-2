@@ -178,13 +178,15 @@ struct generic_call {
             std::ignore = tc.get_func_or_throw(tk, tk.text());
         }
 
+        // e.g. 'mk()' hidden by 'let mk = 5' is still a call, its result
+        // tells the type
+        if (tm != term_kind::value) {
+            return value_type(tc, tz, tk, tm);
+        }
+
         // note: a constant does not tell its type, like a literal
         if (tc.scopes().lookup(tk.text()).is_constant()) {
             return nullptr;
-        }
-
-        if (tm != term_kind::value) {
-            return value_type(tc, tz, tk, tm);
         }
 
         // note: read from the copy to find where the argument ends and its

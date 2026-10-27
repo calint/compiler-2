@@ -1,4 +1,4 @@
 
-0441.baz:5:1: expected '{' to begin block
-func main() { helper() }
-^
+0441.baz:4:5: expected '{' to begin block
+    return
+    ^

@@ -349,6 +349,18 @@ struct func_result {
         if (not tc.types().has(type_tk.text()) and not is_type_before_body) {
             tz.put_back_token(type_tk);
 
+            // a keyword without a '{' after it starts what follows a function
+            // that lacks its body, e.g. the 'func' of the next definition;
+            // before a '{' it is reported as a keyword
+            const bool is_keyword{
+                std::ranges::contains(reserved_names::keywords, name_tk.text()),
+            };
+
+            if (is_keyword and tz.peek_char_after_whitespace() != '{') {
+                tz.put_back_token(name_tk);
+                return std::nullopt;
+            }
+
             return func_result{
                 .name_tk{name_tk},
                 .type_tk{std::nullopt},

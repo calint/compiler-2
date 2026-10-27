@@ -1,0 +1,16 @@
+# a call hidden by a constant of its name still tells its type to the
+# deduction of a generic function: 'mk()' is 'i8'
+
+func id<T type>(a T) res T {
+    res = a
+}
+
+func mk() res i8 {
+    res = 3
+}
+
+func main() {
+    let mk = 5
+    var r = id(mk())
+    exit(r + mk)
+}

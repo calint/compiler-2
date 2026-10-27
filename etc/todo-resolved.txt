@@ -1,6 +1,568 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] hard: bug hunt round 1 (2026-10-26, user: find and fix bugs until none
+    are found; hunters K1 no-UB soundness, K2 code generation, K3 front end
+    and options; reports in the session scratchpad bh1)
+    K1.1. a generic instance parsed inside a body calls that body's function
+          back ('gen<W>' calling 'W.run'), whose record is still empty: the
+          instance's record misses its globals, 'g = 1 + gen<W>(2)' exits
+          206 for 6
+    => K1.1 done (2026-10-26): a call of a function whose body is still
+       parsed, other than the current one, is rejected
+       ('stmt_call::assert_callee_body_parsed', 'is_body_parsed'); tests
+       1717, 1718; README 7.2; listings of every other test equal
+    K2.1. rv32i: a version that runs out of registers inside an inlined 'if'
+          leaves the caller unreached (the unwinding 'pop_scope' ends its
+          path, 'toc::emit_most_efficient' restores only the peaks): the
+          rest of 'main' is not emitted, the program runs into the helpers
+    => K2.1 done (2026-10-27): a version and a dry run start from the
+       'compile_state' before them, the peaks and whether the code after is
+       reached (none outside a function), the kept version's state remains;
+       test 1719 (rv32i); listings of every other test equal
+    K3.1. rv32i: a type over 4 GiB is accepted and a body using it aborts
+          the backend ('copy_block', 'compare_memory', 'emit_bounds_check')
+    => K3.1 done (2026-10-27): 'toc::add_type' rejects a type that is not
+       smaller than what the target addresses ('assert_type_fits_target'), a
+       definition and an alias of an instance; tests 1720, 1721 (x86_64
+       accepts, rv32i rejects); README 8.1 item 4; listings of every other
+       test equal
+    K3.2. a 'bool' constant is accepted as the constant argument of a
+          generic type ('w<b>' with 'let b = true' is 'w<1>')
+    => K3.2 done (2026-10-27): 'toc::constant_value_of' gives the constant
+       with its type, 'resolve_const_arg' rejects a 'bool' constant ("needs
+       a number, got the 'bool' constant 'b'"); test 1722; listings of every
+       other test equal
+    K3.3. a constant named like a function stops the deduction from a call
+          argument ('id(mk())' with 'let mk = 5')
+    => K3.3 done (2026-10-27): 'generic_call::argument_type' applies "a
+       constant does not tell its type" to a value only, a hidden call tells
+       its result type; test 1723
+    K3.4. a missing body is reported at the name of the next definition
+          ('func' is read as the result name)
+    => K3.4 done (2026-10-27): 'func_result::read' puts back a keyword
+       that no '{' follows, the body reports the missing '{' at it; a
+       keyword before '{' is still "is a keyword" (1038); test 1724, 0441
+       and 1420 point at the keyword
+    K3.5. a hard link to an included file is loaded twice; '--bin' tells
+          files apart with 'equivalent', the includes by canonical path
+    => K3.5 discarded (2026-10-27, user: ignore the hard link and symbolic
+       link issue): kept as decided in round 9 3.7 (2026-10-23)
+    => done (2026-10-27): K1.1, K2.1, K3.1-K3.4 fixed, K3.5 discarded; the
+       phase checks clean but for new instances of the decided
+       register-conflict class ('gen-reject', also at HEAD)
+[x] hard: design review round 22, simplification (2026-10-26, user: go on
+    simplifying, generated code may grow; six reviewers P parse and
+    expressions, S statements and calls, N names and 'toc', U no-UB checks,
+    B backends, W docs, options and qa; findings in the session scratchpad
+    r22; spot-checked: the U bug (q6 exits 1 noinline, 11 inlined; q1 aborts
+    the compiler)); each step one commit, listings compared, growth of the
+    generated code measured and reported
+    A. bug first: a result of an inlined call held in a register is passed
+       to a 'mut' parameter; a noinline callee's write is lost (the result
+       depends on inlining) and 'res + inc(res)' aborts at the
+       'assert(target)' of 'stmt_call::visit_call_effects'; design: a
+       result that the body passes to a 'mut' parameter is bound to memory
+       (a temporary of the call), so a 'mut' argument always has storage as
+       the note says; tests q1, q3/q4, q6/q7/q8 on both targets
+    => A done (2026-10-26): the parse marks a body that passes its result
+       to a 'mut' parameter ('body_uses::is_result_passed_as_mut'), an
+       inlined call of it with a register destination makes the result in a
+       temporary of the call and copies it; the lost write and the abort are
+       gone, 'res + inc(res)' is rejected like a variable; tests 1700-1702;
+       listings of every other test equal
+    B. pure refactors, no output change (about -540 lines)
+       B.1. N2 dead code: 'destination::error_token', 'is_storage',
+            'with_operand', 'access_path::text', then the source token of
+            'destination' and 'ident_info' (-60)
+       B.2. P B 'classify_term' returns a 'term_kind', the 'term' struct
+            goes (-70); P C one loop decodes a string (-30); P E one path
+            for a memory comparison (-25); P F leftovers (-35)
+       B.3. S: a call's unary ops applied once after the call (-28), the
+            per-argument plan derived again (the dry run it served is gone,
+            -15), 'noinline_arg::target' (-5), leftovers (-17)
+       B.4. U3 'assigned_bytes' one flag per byte (-59); U4 the
+            'storage_read' adapter goes for 'stmt_identifier::may_reach'
+            (-38); U6 (-14), U7 (-9), U8 comments said twice (-13)
+       B.5. W6 the 'target' enum from 'target_names' (-25); W7 the
+            clang-tidy annotations as a commented YAML list (-27); W5 the
+            20 fixed 'Rejected' programs of 'constructs.py' that cases and
+            'fuzz-reject' cover (-80); W4 README repeats and the stale
+            "about 50 s" of 7.5 (-45); N4 two comments moved
+    => B done (2026-10-26): B.1 N2 the dead 'destination' and 'access_path'
+       members and the source token of 'ident_info'; B.2 P B 'term' is a
+       'term_kind', P C one loop decodes a string, P E one memory comparison
+       path, P F leftovers (the stale 'i8(2 + 3)' item resolved); B.3 S a
+       call's unary ops applied once after the call (12 listings differ in
+       register names only, instruction counts equal), the temporary flag of
+       an argument derived again, 'noinline_arg::target', leftovers; B.4 U3
+       one flag per byte, U4 'stmt_identifier::may_reach' for the adapter,
+       U6 'first_read_of', U7, U8; B.5 W6 the target enum, W7 the commented
+       clang-tidy list, W4 the stale cost and pointers, N4; W5 kept (the 20
+       fixed rejections are cheap tests); src about -400 lines
+    C. refactors that rest on an argument or accept more (about -230)
+       C.1. N1 a parameter or the result is a root of its own:
+            'resolved_name' and the binding branch of 'resolve_storage' go
+            (-45); holds because 'assert_no_shared_storage' runs before
+            every call; a nested-call message may name 'p' for 'a'
+       C.2. U1 one mapping of the callee's record for the effects and the
+            caller's record (-34); S the result as reference 0 of the
+            shared-storage check (-22)
+       C.3. U2 the shared-storage check as one pairwise rule over what the
+            call reaches (-70, accepts more: two read-only paths, no test
+            verdict changed in the reviewer's build; fuzz-effects model)
+       C.4. P D the comparison width rule written once (-25); N3 the array
+            shape kept once in 'destination' (check the array field case
+            first, -6); U5 one overwrite message (-32, 11 messages change)
+    => C.1 done (2026-10-26): a binding holds the 'ident_info' only,
+       'resolve_storage' makes a bound variable a root of its own;
+       'resolved_name' and the storage of a binding go (src -32 lines);
+       listings and errors of every test equal on both targets; README 1.3,
+       3.6, 3.7, 4.2; with it the '-alias' leftovers of A.7: README checks
+       list ('alias' under "always on"), 'prog.baz', 'etc/tutorial.baz',
+       'etc/codegen-inefficiencies.baz' (was rejected, a temporary now, its
+       listing regenerated)
+    => C.2 S done (2026-10-26): the result destination is the first
+       'reference' of 'assert_no_shared_storage' (its 'param_index' empty,
+       like 'body_uses::binding_use', with its token and text);
+       'assert_not_shared_with_result' and the result loop of the global
+       check go (-26 lines); listings and errors equal; U1 next, a step of
+       its own since it accepts more
+    => C.2 U1 done (2026-10-26): 'stmt_call::visit_callee_reach' maps the
+       callee's record onto the arguments once, for the effects and for the
+       caller's record; a call writes of a 'mut' argument what its body
+       writes, a recursive call its whole argument (accepts more, test
+       1711); listings and errors of every other test equal; README 3.9, 8.3
+    => C.3 done (2026-10-26): one rule over what the call reaches of the
+       result, each argument and each global ('visit_reach_of' by the
+       record, the whole of it for a call of the function it is in): two may
+       not reach the same bytes where one writes them; the read-only
+       exemption and the whole-argument comparison go ('reference' keeps the
+       parts it reaches); accepts 'f(a, a)' with 'f' writing 'p.x' and
+       reading 'q.y' (tests 1712, 1713); messages and listings of every
+       other test equal; README 4.2, 8.1
+    => C.4 P D done (2026-10-26): 'expr_bool_op::assert_sides_fit' states
+       the width rule once, for a folded and a compiled comparison (before
+       its operands compile); 'assert_folded_sides_fit' and
+       'assert_rhs_fits_lhs' go (-20 lines); listings and errors equal
+    => C.4 N3 done (2026-10-26, with round 23 D1-2): 'destination' keeps a
+       stored name once ('stored_name' of the 'ident_info' and the storage,
+       stepped together by 'field' and 'element'); the type and the shape
+       come from it or the register, 'type_ptr_' and 'shape_' go; a field
+       now has its own shape (no listing changed); src +13 lines, -3
+       members; listings and errors equal
+    => C.4 U5 done (2026-10-26): the written parts are storage paths, the
+       certain overwrite is the one without a run-time index on either side;
+       'written_part' and 'is_certain_overwrite' (the binding-name case) go
+       (-25 lines); since C.1 a parameter is a root of its own, so no
+       message changed; listings and errors equal
+    D. dropped (user, 2026-10-26: simplify the code of a feature, never
+       remove the feature): the versions (B1), the padding gap walk (B2),
+       rv32i constant bytes (B3) and shared-base copy (B4), the receiver
+       slot (S), '-x' and 'foo' counter and constant 'array_copy' paths (S),
+       '--reproduce-source' (W2), and the asks (jump optimizer, '--report',
+       'upper'/'lower', '--checks=line', the rv32i multiply) stay as
+       features; P A (a conversion computed at W) only if no generated code
+       grows, since it replaces a code-size plan; a simpler implementation
+       of any of these that keeps its output is welcome
+    order: A, B, C, then P A; a pause for a commit after each step
+    => P A discarded (2026-10-26): tried, a wrong result in 0490 and an
+       rv32i abort
+    => done (2026-10-27): A, B, C done, D dropped, P A discarded
+[x] medium: design review round 20 (2026-10-26, a convergence round with the
+    angles of round 19, findings tagged structural or local; findings in the
+    session scratchpad r20; verdicts: great (A, T), good (C, D, U, S); stop:
+    yes (A, T, S, D), no (C, U); spot-checked: U1 (q10), C1 (d6, a1, a2)):
+    the structural items share one root, compile-time rules run only in
+    compiled code; decided (user, 2026-10-26): the last design round, the
+    class stays the documented limit (a), a call result widens like a name
+    (C2); then the noub bug hunt
+    A. T1: 'fuzz-ub.sh --mutants' counts a harness failure (a stale or
+       missing compiler) as a caught mutant; caught only on a mismatch
+    => A done (2026-10-26): a mutant is caught only by a 'MISMATCH' line,
+       else "not caught" with the tail of the output (checked with a stale
+       'baz-asan': all 16 not caught); 'fuzz-ub.sh' builds 'baz-asan' when
+       it is missing, not '../../baz'
+    B. U1: the body check without a call ends at the first error that
+       depends on a call (an inlined recursion), the code after it is not
+       checked; fix if small, else a known limit in 8.3
+    => B (2026-10-26): not small (the body check would need a mode in which
+       an inlined call at its limit stops expanding instead of throwing): a
+       known limit in README 8.3 and the item below
+    C. C2: a narrower integer from a call result widens where one from a
+       name does, e.g. 'exit(f8())', 'a[f8()]'; behavior, accepts more
+    => C done (2026-10-26): 'assert_result_type' accepts a narrower integer
+       for every destination and is an assert (every other mismatch is
+       rejected earlier: the kind at the parse, an instance type, a wider
+       integer by 'assert_not_narrowed', probed); 'destination::as_operand'
+       and 'is_operand_' go with their four call sites; README 1.3 states
+       the rule and why a name argument keeps its type; test 1689 (signs,
+       inlined and noinline, index, element), 0419 now the wider result,
+       0493 and 1277-1279 run tests of the widening
+    D. docs (a): README 1.5.1 says what holds in code that is not compiled
+       (C1), the target claims (D1, U2), 3.1 "by construction" (D2), the
+       seams of chapters 3-4 (D3), copied lists (D4), catalog owners (D5),
+       the B.1 leftovers (S1 texts), the 'out_of_storage' listing comment
+       and README 5.4 (A.1)
+    => D done (2026-10-26, by a fork): chapter 8 intro the one list of
+       what depends on the target (the default type: arithmetic, constants,
+       shift counts, mixing; 'i64' on rv32i; the number of scratch
+       registers; '--vars', memory and the stack), 1.7, 7.11, 7.12 and
+       AGENTS.md point there; 1.5.1 what holds in code that is not compiled
+       (the parse rules, not those of the compile), 8.3 its bullet and the
+       U1 limit (q10), 1.5 item 2 'out_of_storage' and the code after a
+       call-dependent error; 3.1 says what holds instead of "by
+       construction"; chapter 3 reordered (fuzzing after aliasing, one
+       definite assignment section), chapter 4 "the frame and the dry run"
+       with the call first; 1.4 names 'version_state'; 'noinline_call' and
+       'statement::compile' point to their owners; 8.1 without "rule A",
+       'assert_constant_index' and 0750-0752; the B.1 texts of 1.8, 7.5,
+       'type.hpp', 'generics.hpp'; 5.3, 5.4 registers or variable storage;
+       the listing comment names what a dropped version ran out of
+       ('machine::unavailable_version')
+    E. local: 'compile_records' renamed for the worklist (S1); the runner's
+       hidden rules (T2), the alias comments of 42 sources (T3),
+       'check-error-tests.py' over all error types and 'main.cpp' (T4),
+       leftovers (T5); C3 the "not an array" texts as one helper, C4 the
+       two 'parse_' names and the stale comment
+    => E done (2026-10-26): 'noinline_worklist' (was 'compile_records',
+       the getter 'noinline_worklist()'); T2: a run output is keyed by the
+       run target, then the compiler target, a compile output by the
+       compiler target (header), LISTING fails on a missing file unless
+       'UPDATE=1' (the one-target cases under an 'if'), DIFF, DIFFINP and
+       DIFFPY fail with "expected 0 got N"; T3: the 42 sources say "'alias'
+       (on by default)", the header claims less; T4: 'check-error-tests.py'
+       reads the three error types, 'file_level' and 'main.cpp' (256
+       messages), counts the 'grep -F' parts of 'test-cli.sh' and only its
+       lines that are not comments, lists the far-jump message as an
+       exception with its reason; T5: the empty '.err' files and the
+       'summary.txt' exception go, the 'tests/.gitignore' comment, README
+       step 4 names 'test-coverage-full.sh' (kept, not deleted); C3: one
+       helper each for "does not return a value", "return value is
+       discarded", the function-as-value and the generic argument messages
+       (the three "not an array" texts keep their subjects); C4:
+       'read_name', 'read_generic_args', the 'expr_any' comment
+    order: A, B, C, D, E
+    F. the compile decides (user, 2026-10-26: the parse is only the first
+       step of validation): code that a compile skips is compiled once in a
+       dry run, so every compile rule holds in it
+       F.1. 'check_body' runs for every function, 'main' too
+       F.2. in that check an inlined call at its expansion limit stops
+            expanding (no body) instead of throwing, so the check goes on
+            after it (U1)
+       F.3. in that check a branch that folds to false, and the code after a
+            statement that leaves on every path, is compiled in a nested dry
+            run; its errors that depend on a call are dropped as in
+            'check_body', the others reject; a dry run inside it does not
+            start another for the same code
+       F.4. README 1.5, 1.5.1 and 8.3 say every compile rule holds in all
+            code; tests: the C1 probes (r20/c), q10, 'if 1 == 2' in 'main'
+       F.5. every rule that judges a program has the compile as its one
+            owner (user, 2026-10-26): the kind checks that round 19 B.3 put
+            at the parse go back to the compile with their single texts; the
+            parse keeps a check only where it needs the kind to build its
+            node
+       => F.5 discarded (2026-10-26), tried and reverted: the compile reaches
+          a value in about seven ways (compile, write plan, a fold as a
+          write and as a question, index, constant value, instance field),
+          each one covered showed the next ('bool[]{2}' of a 'dat', a field
+          of a literal, then 'let b = true' rejected); the parse has one
+          point every value passes, and after F the phase changes no
+          verdict; README 7.13 states the decision and its cost
+       => F.1-F.4 done (2026-10-26): F.1 needed no change, 'main' is a scope
+          compiled without a call; 'toc::check_skipped' compiles skipped code
+          in a dry run where the innermost function is compiled without a
+          call ('scope::is_without_call': 'main', the body check): a branch
+          that folds to false ('stmt_if_branch'), the branches and 'else'
+          after one that always runs ('stmt_if::check_skipped_after'), the
+          operands after the one that decides an 'and' or 'or' list
+          ('expr_bool::compile_elements_from'), the code after a statement
+          that leaves ('stmt_block::compile_from'); a 'break' or 'return' in
+          it keeps the paths of the code that runs
+          ('scope_stack::reach_state'); in a body that takes from a call
+          ('scope::takes_from_call') an error that depends on a call is
+          dropped and a recursive inlined call is not expanded
+          ('toc::without_call_check', 'stmt_call::check_arguments_alone'),
+          elsewhere every error rejects (1289: a noinline body that takes
+          nothing keeps its recursion error); README 1.5, 1.5.1, 8.3; tests
+          1690-1694; 18 C1 probes and q10 rejected, the others valid also
+          live; both suites with no output changed, test-versions, the CLI
+          tests, test-rv32i, roome, clang-tidy, the lints, 12 fuzzers on a
+          fresh asan build and the 16 mutants clean
+       risk: behavior, rejects programs accepted now (only code that never
+       runs); compile time (one dry run per skipped branch in the check);
+       an inlined recursion that ends through a constant-false branch must
+       still compile (F.2 bounds it); size: medium (stmt_def_func, stmt_if,
+       stmt_call inline limit, toc flag, program; about 150 lines)
+    G. the order tied (user): each node's 'compile' runs its operands in the
+       order of 'visit_operands', checked on every compile
+       G.1. 'statement::compile' becomes a non-virtual wrapper of a virtual
+            'compile_node' (a mechanical rename of 28 overrides, own step)
+       G.2. the wrapper keeps a trace in 'toc': the nodes compiled while a
+            node compiles, each mapped to the operand of 'visit_operands'
+            whose source span holds it; at the end of the node the operands
+            met must be in the order of the list; an operand that a backend
+            computes first carries 'computed_first' in its 'list_operand'
+            (the count of 'array_copy' and the io built-ins), which also
+            replaces the hand-picked spans of 'assert_not_written_after'
+       G.3. README 3.1 says the order is checked, not reviewed
+       cost: about 150 lines beside the rename, the wrapper on every compile
+       (a vector push and a span test per node), asserts in every build;
+       rejected: emitting from 'visit_operands' (every 'compile' rewritten)
+    H. a name path resolved once (user): round 19 S1
+       H.1. 'for_each_prefix' resolves the root once and steps the fields
+            ('ident_info::field', 'as_element'), 'compile_lea' reads the
+            stepped operand; the second field walk and the prefix
+            re-resolves go (medium, 2-3 files)
+       H.2. a 'bound_name' holds what its argument resolved to, a binding is
+            followed by stepping, not by rewriting the text; 'ident_path',
+            the split of 'ident_builder', 'root_of' and the dotted
+            'destination::name_' go, a dotted text stays for messages and
+            comments (large)
+       risk: pure refactor, listings, messages and carets equal
+    => G decided (2026-10-26, user): kept as it is with a documentation note;
+       the tie of the whole order (a compile trace) was 300-400 lines, a
+       'computed_first' tag only cosmetic, a deferred range check a second
+       mode of the general address code; the only nodes out of source order
+       are the bulk and io built-ins, local and checked: README 7.14 and the
+       3.1 sentence
+    order: F, G.1, G.2, H.1, H.2 (a pause for a commit after each)
+    => done (2026-10-27): A, C, D, E, F.1-F.4 done, B a known limit, F.5
+       discarded, G decided, H done as round 21 B.1
+[x] hard: design review round 19 (2026-10-26, six angles: architect A,
+    consistency C, documentation D (repeated), no-UB by construction U, tests
+    as design T, simplicity S; findings in the session scratchpad r19; all
+    verdicts good; spot-checked: U1, U5, U6 and p7 reproduced on x86_64 and
+    rv32i, C1 probes): the language is final (user, 2026-10-26), so items
+    that guard only a future node or built-in are dropped (U2 except its
+    wrong order, U3, U4, C5, A.3, A.4); under 'noub' no undefined behavior
+    was found; 'int' stays the register width (user, 2026-10-26); a pause
+    for a commit after each phase
+    A. the goal stated as it holds
+       A.1. 'int' is the register width: README 7.12, 8 intro, 1.7 and
+            AGENTS.md "Design" say that the result of 'int' arithmetic, a
+            panic included, and whether a program is accepted can depend on
+            the target through the default type, and nothing else does
+            (U5); the section 3 item on the default type closes as decided
+       => A.1 done (2026-10-26): README 1.7 (an example of 'x + x'), 7.12
+          (rejected and cost), the chapter 8 intro and AGENTS.md "Design"
+          name the default type as the one exception; the section 3 item is
+          resolved
+       A.2. inlining: one sentence in AGENTS.md and README 1.5 on what may
+            depend on an inlined call (U6), written after B.1
+       => A.2 done (2026-10-26): AGENTS.md "Design" says acceptance may
+          depend on what an inlined call folds, and that the run-time checks
+          are those of 'noub'; README 1.5 the rule with the 'sh(65)' example
+    B. behavior
+       B.1. every function body checked once without its call, as an
+            uncalled one is ('check_uncompiled_functions' becomes
+            'check_function_bodies'), so adding a call cannot make a
+            rejected function accepted (U1, reopens A8 with p12); README 1.5,
+            1.5.1 and 8.3 shrink; tests p12, a guarded 'ratio'; behavior
+       => B.1 done (2026-10-26): 'program::check_function_bodies' checks
+          every function but 'main'; the set of compiled functions
+          ('compile_records::is_compiled', 'toc::mark_func_compiled') had no
+          other reader and goes; README 1.1, 1.4, 1.5, 1.5.1, 8.3; tests 1676
+          (p12 rejected), 1677 (a guarded 'ratio' accepted); no expected
+          output changed in both suites; the CLI tests, roome, clang-tidy and
+          fuzz-flow, calls, effects, methods, generics, constructs clean;
+          fuzz-programs' 5 register rejections are in 'main', the same on
+          HEAD (the open item below); roome compiles in 0.28 s, was 0.20 s,
+          the output equal
+       B.2. dropped code: 'toc' owns putting back a dropped version (a
+            'toc::compile_state' shared with 'dry_run_scope', one
+            'toc::emit_most_efficient' for the 7 sites), so the footer peaks
+            and a capacity error are those of the kept version (A.1, closes
+            the item on 'emit_most_efficient' below); ask: drop a version's
+            capacity error like 'out_of_registers'; recommended: yes
+       => B.2 done (2026-10-26): 'toc::compile_peaks' (the max scope count,
+          'storage_layout::peaks': the storage peak and the frame peak) is
+          shared by 'dry_run_scope' and 'toc::emit_most_efficient', which
+          runs each version from the peaks before it and keeps those of the
+          kept one ('machine::emit_most_efficient' returns whether the first
+          is kept); the 7 sites call 'toc'; ask as recommended: a version past
+          '--vars' is not available ('out_of_storage', made by
+          'storage_layout::vars_capacity_error'); a string constant of the
+          dropped version stays (its label stays unique); README 1.1, 1.4,
+          5.1, 5.3, the 'toc' and 'statement::compile' comments; test 1679
+          and 'CLI_VERSIONS' (footer 16 B where it was 24 B, '--vars=16'
+          accepted, x86_64 panics 'frame overflow' under 'noub'); both suites,
+          test-versions, the CLI tests, roome, clang-tidy and fuzz-exprs,
+          data, calls, flow, effects, reject clean; the open item below
+          closes
+       B.3. the kind of a value against its destination checked at one
+            phase with one text and one caret for every value kind and
+            direction, also in code not reached (C1); behavior (messages,
+            dead code rejects more)
+       => B.3 done (2026-10-26): at the parse, 'expr_any::assert_number_kind'
+          (was 'assert_not_boolean_name', a name only) rejects a 'bool' or
+          an instance going to a number, whatever the value ("expected type
+          'i64', got 'bool', use 'i64(...)'" at the value, the hint for a
+          'bool'); 'expr_bool_op::assert_boolean_operands' rejects an
+          instance going to a 'bool' or a condition ("an instance of 'point'
+          is not a 'bool'"); the compile checks they replace are asserts
+          ('arrays_equal' destination, 'stmt_identifier::assert_not_narrowed'
+          instance, the shorthand condition); the width stays at compile
+          ('call_site' result, narrowing); tests 1680-1683 (dead branches);
+          messages and carets of 23 cases; both suites, the CLI tests, roome,
+          clang-tidy, the lints and fuzz-reject, exprs, generics, methods,
+          data, constructs clean; an instance comparison was already
+          rejected at the parse
+       B.4. 'stmt_assign_var::visit_operands' states the order it emits:
+            the destination's indexes first (U2, p7)
+       => B.4 done (2026-10-26): the destination, then the value; only the
+          order checks read the order and the node calls none, so no output
+          changed; test 1678 ('arr[h(i)] = i' is 6 on both targets)
+    C. messages
+       C.1. the argument count of a built-in reported one way (C2)
+       => C.1 done (2026-10-26): 'argument_count_text' (compile_error.hpp)
+          for user calls, 'exit' and io; the fixed counts ('array_length', a
+          conversion, 'array_copy', 'arrays_equal') report a ')' where an
+          argument starts or a ',' after the last one as the count
+          ('tokenizer::assert_no_missing_argument',
+          'assert_no_surplus_argument', the latter with the trailing ','
+          message of a call); tests 1684-1688, 0213's message; both suites,
+          the CLI tests, clang-tidy, the lints and fuzz-reject, constructs,
+          compiler, io clean
+       C.2. a missing delimiter spelled by one helper (C3)
+       => C.2 done, reduced (2026-10-26): the texts of the same token
+          aligned ("'}' to close block", "')' after the arguments", "a field,
+          method, constructor name", "a constant, a name or a call"); the two
+          hand-made "'(' after function name" checks are
+          'func_head::assert_open_paren'; no lint added (54 distinct texts,
+          most in one context each); 19 expected outputs; both suites, the
+          CLI tests, clang-tidy, check-messages, fuzz-reject, constructs,
+          compiler clean
+    D. names and small duplications
+       D.1. 'read_' and 'parse_' prefixes by one rule, the getter
+            'parse_constant' renamed (C6); 'written_place' and 'place' one
+            meaning each (S5); the backend bulk and io step names alike (C4)
+       => D.1 done, reduced (2026-10-26): the rule in the 'statement' class
+          comment ('parse_' makes a node or a part holding one, 'read_' takes
+          tokens); 'parse_argument' (conversion, 'array_length'),
+          'read_equals', 'read_field_delimiter', 'read_element_delimiter',
+          'resolve_callee', 'constant_at_parse'; 'stmt_assign_var::
+          written_part', 'computation_plan::computed_in'; the bulk steps
+          'begin_bulk', 'load_bulk_addresses', 'release_bulk' in both
+          backends; not done: a bulk scope type (rv32i has
+          'bulk_depth_scope', x86_64 holds named registers) and the io pair,
+          whose steps differ (a system call against a routine); both suites,
+          the CLI tests, test-rv32i, clang-tidy clean, roome listings equal
+       D.2. 'assert_not_written_later' over 'assert_not_written_after', one
+            written-place dispatch (S2); one unwind policy for the register
+            guards (S3)
+       => D.2 S2 done (2026-10-26): 'assert_not_written_later' is a loop of
+          'assert_not_written_after' over each prefix (messages and their
+          order equal); one 'visit_operand_reads' (stmt_identifier.hpp) for
+          the default 'visit_reads' and 'visit_operand_storage_reads'; part
+          3 (an 'operands_of' helper) not done, one user; both suites,
+          fuzz-effects, calls, io clean
+       => D.2 S3 discarded (2026-10-26): with the three guards leaving their
+          state while an error unwinds, test-rv32i fails: its
+          'rejected_with' catches an error without a 'version_scope' and
+          goes on with the same backend, relying on 'operation_scope'
+          freeing on unwind; 'held_registers' cannot free by count (it
+          frees named registers, other allocations may lie above them), so
+          the two policies stay as their comments say
+       D.3. the two stolen comments (C7)
+       => D.3 done (2026-10-26): 'condition_start' and 'count_emitter' have
+          their comments back; the formatter check not added (low value)
+       D.4. phase asserts on the phase-bound 'toc' methods (A.2)
+       => D.4 done (2026-10-26): every method of the parse and compile groups
+          of the 'toc' map asserts its phase (35 added); three were in the
+          wrong group and move to "both": 'storage_of' ('record_use' at the
+          parse), 'create_unique_label' and 'call_path_at' (a loop scope of
+          the parse has a label); every test on both targets, the CLI tests,
+          test-rv32i, roome and fuzz-generics, methods, programs, flow,
+          reject, compiler hold them
+    E. docs
+       E.1. drifted and doubled contract lists (D1, S4, D5), loose claims
+            and stale counts (D3), what a reader meets first (D4), a hub for
+            the no-UB design (D2); README 8.1 run-time rows name their owners
+            (U7 part 1)
+       => E.1 done (2026-10-26, by a fork): one owner per list: README 3.1
+          states the rule and names the 'statement' class comment and the
+          'ub_order.hpp' map (which now lists
+          'assert_operands_not_written_later'); 1.9 the kinds with
+          'out_of_storage', the readers at 'error_kind'; 7.8 links 1.9; 5.3
+          links 1.4; the rerun rule once in 1.4; 9.2 says 'visit_operands';
+          7.7 three headers, the 'stmt_identifier.hpp' map; the
+          'dry_run_call_kind' note; 4.2 "no trace in the output"; the 8.1
+          aliasing row split ('mut' arguments always, the result and globals
+          under 'alias', checked with '-alias'), each row links its section,
+          the run-time rows name their owner; 8 intro the four phases; 8.3
+          without "(V-3)" and "yet"; the unchecked counts gone; 1.1 layers
+          by number, the formatter's sort order, 'type.hpp' and
+          'register_pool.hpp' in the reading order; new 4.5 the call and its
+          frame; 1.5 '--checks=line'; class comments on 'compile_error' and
+          'token'; chapter 3 "Reads and writes: the no-UB checks" reordered;
+          prose reflowed to 80 columns
+    F. tests
+       F.1. 'test-cases.sh' removed (T2); per-case options one spelling,
+            'UB_ALIAS' and the SDCARD carry-over (T3); one run command per
+            target (T9); 0437 run, the 64 cases without a description get
+            one (T1 part)
+       => F.1 done (2026-10-26): 'test-cases.sh' removed; one spelling of
+          the options of a case, 'OPTS="..."' ('RUN_ERR_OPTS' and
+          'RUN_NO_CHECKS' go, the same option sets), 'UB_ALIAS' goes (its 30
+          cases compile alike with the defaults, checked on both targets),
+          its comments say "'alias' (on by default)"; 'SDCARD=SIZE' is a
+          prefix of one case, the image is made per case (1218 inherited
+          one, it names its own now); 'DIFFPY' passes
+          'PROGRAM_COMMAND_LINES', 0062.py has no table of its own; 0437 is
+          a case (also read by 'CLI_JUMP_OPTIMIZATIONS'), the 64 cases
+          without a description have one in the source and in 'cases.sh'
+          (19 '.out' with shifted line numbers only, checked); the rv32i
+          target's stale 0006 diff is an item below
+       F.2. one script runs the lints (T6), with a message-coverage lint
+            (T5, 'validate_scalar' an assert if unreachable) and the 8.1
+            test column checked (U7 part 2)
+       => F.2 done (2026-10-26): 'qa/lint/check-all.sh' runs every
+          'check-*.py', named in README step 5 and AGENTS.md "Done means";
+          'check-error-tests.py': every compile error message of 'src/' is
+          expected by a test (233 found, all covered); 'validate_scalar' is
+          'assert_scalar' (no test reached it, the front end rejects 'i64'
+          and instances first); 'check-readme-names.py' checks that the 77
+          tests of the 8.1 column are cases; not done: the generated
+          'clang-tidy.log' and 'cppcheck.log' stay tracked (ask)
+       F.3. fuzz: 'fuzz-ub.py' on fuzzlib (T7); route from a finding to a
+            case, one catalog of undefined behavior (T8)
+       => F.3 done (2026-10-26): 'fuzz-ub.py' runs through
+          'fuzzlib.build_and_run' (the sanitizer build, 'split_include', the
+          panic names of 'PANIC_CODE'), keeps mismatches in 'findings/'
+          ('ub-mismatch'), the mutants of 'fuzz-ub.sh' keep theirs in a
+          temporary directory; the same tallies for seed 7, every mutant
+          caught; the fuzz README links the catalog and says how a fixed
+          finding becomes a case; 'fuzzlib.assert_fresh' stops a fuzzer
+          whose compiler is older than 'src/' (the asan build of 2026-10-25
+          had been run all session: rebuilt, the asan fuzzers run again,
+          clean)
+    asks:
+       1. C8: 'builtin_arguments' to a file of its own like 'bulk_operands'
+          (a new file); recommended: no, it sits near its use
+       2. T1: the case list ordered by rule; recommended: no, large and
+          the numbers are referenced; descriptions instead (F.1)
+       3. T4: the five listing-check scripts as one in the suite;
+          recommended: yes, after F.2
+       4. S1: a name path resolved once as a path, not as text; large;
+          recommended: no unless a bug needs it
+       => asks (2026-10-26, as recommended): 1 C8, 2 T1 (descriptions
+          instead, F.1) and 4 S1 not done; 3 T4 done: 'qa/coverage/
+          listing.py' reads the located comments once and holds the five
+          extractors (folds, stores, widths, compares, types), ported from
+          the awk of the five scripts and equal on all 11 expected files;
+          'LISTING KIND' in 'cases.sh' (8 cases) compiles without the checks
+          for the target of the compiler and compares with
+          'NNN.TARGET.KIND', a target without the file skips; 'types' has
+          expected files now and fails on a type other than the marker;
+          the five 'test-*.sh' scripts and their 'test-all.sh' lines go, so
+          the listings are in the "enough" suites; F.2's open ask: the
+          lint logs are no longer tracked ('.gitignore')
+    after the round: a bug-hunt round under 'noub' (fuzz-ub, fuzz-effects,
+    inline against noinline, x86_64 against rv32i)
+    order: A.1, B.1, A.2, B.4, B.2, B.3, C, D, E, F, then the asks
+    => done (2026-10-27): A-F done, the asks as recommended; the bug hunt
+       after the round done in the bug phase (2026-10-26)
 [-] medium: 'qa/fuzz/fuzz-programs.py' (seeds 59, 61) finds programs that
     are rejected with "cannot allocate register rdx because it holds a
     scratch value allocated at L:C", the same location, e.g. inside 'res =

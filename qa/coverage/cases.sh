@@ -5451,3 +5451,9 @@ if [[ $MACHINE != x86_64 ]]; then SRC=1721 && COMPERR; fi
 
 # a 'bool' constant is no number for the constant parameter of a generic type
 SRC=1722 && COMPERR
+
+# a call hidden by a constant of its name still tells its type to a deduction
+SRC=1723 && EXP=8 && RUN
+
+# a missing body is reported at the keyword of the next definition
+SRC=1724 && COMPERR
