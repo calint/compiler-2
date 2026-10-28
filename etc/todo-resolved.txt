@@ -1,6 +1,22 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] hard: bug hunt round 15 (2026-10-28, user: loop until a round finds no
+    bugs; hunters C1 loops, C2 the library of roome and string literals, C3
+    generic code against its hand-written instance; reports in the session
+    scratchpad bh15)
+    => done (2026-10-28): C3-1 fixed; C1 found nothing in about 9700
+       generated loop programs against a reference interpreter, C2 nothing
+       in about 9300 list, text and input programs against a Python model
+       and 350 roome runs
+[x] medium: bug hunt round 15 C3-1: the methods of an alias made after them
+    were made level by level, the base first, and those defined after the
+    alias in source order, so whether a method body found a method of
+    another level depended on where the alias stood
+    => done (2026-10-28): an alias makes the methods of all its levels in
+       the order they are defined ('func_instantiator::instantiate_methods'),
+       as a type written by hand; README 2.7 item 1; tests 1787, 1788;
+       listings of every other test unchanged
 [x] hard: bug hunt round 14 (2026-10-28, user: loop until a round finds no
     bugs; hunters B1 the fixes of rounds 12 and 13, B2 evaluation order made
     visible, B3 folding against no folding; reports in the session

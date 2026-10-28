@@ -442,16 +442,16 @@ class type_instantiator final {
         }
 
         // step 4, the methods of each generic type see the arguments of its
-        // instance, the methods of a base are made first
+        // instance
         tc.add_type(alias_tk, tp);
 
         for (const generic_type_instance& instance :
              instances | std::views::reverse) {
 
             tc.add_generic_type_instance(instance);
-
-            func_instantiator::instantiate_methods(tc, instance);
         }
+
+        func_instantiator::instantiate_methods(tc, instances);
     }
 
   private:

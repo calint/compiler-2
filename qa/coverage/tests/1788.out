@@ -1,0 +1,7 @@
+
+1788.baz:7:16: method 'l' not found in type 'str'
+    res = self.l()
+               ^
+1788.baz:14:6: instantiated by
+type str = text<4>
+     ^~~

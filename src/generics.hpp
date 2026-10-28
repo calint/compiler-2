@@ -631,6 +631,13 @@ class generic_registry final {
         instantiated_funcs_.emplace(funcs_.get_const_ref(name).report_name);
     }
 
+    // in the order they are defined
+    [[nodiscard]] auto methods() const
+        -> const std::vector<generic_method_info>& {
+
+        return methods_;
+    }
+
     // the parameters of every generic definition, e.g. 'T' of 'func f<T
     // type>()', 'U' of 'func box.f<U type>()' and 'n' of 'type list<T type,
     // n>'; not those of the functions that instances of a generic type make

@@ -675,9 +675,10 @@ A method of a generic type is a recipe too, for the same reason as the fields:
 its body depends on the parameters. Every instance of the type gets its own
 copy, read again with the bindings of that instance visible.
 
-1. When an alias is made, the methods are made for every level, starting at
-   the deepest base. So 'str' gets the methods of 'list' first, then those of
-   'text', and a method of 'text' can call one of 'list'.
+1. When an alias is made, the methods are made for every level in the order
+   they are defined, as for a type written by hand: a method of 'text' can
+   call one of 'list' defined before it, and one of 'list' can call one of
+   'text' defined before it.
 2. When a method of a generic type is defined after some aliases already
    exist, it is made at once for each of them. Otherwise the order of methods
    and aliases in the source would decide which instances have the method.

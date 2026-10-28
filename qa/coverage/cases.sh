@@ -5693,3 +5693,11 @@ SRC=1785 && EXP=5 && RUN
 
 # a 'continue' reaches the counter step of a 'foo' whose body never returns
 SRC=1786 && EXP=7 && RUN
+
+# the methods of an alias's levels are made in the order they are defined:
+# a method of the base calls one of the alias's level defined before it
+SRC=1787 && EXP=7 && RUN
+
+# the methods of an alias's levels are made in the order they are defined:
+# a method does not see one of another level defined after it
+SRC=1788 && COMPERR

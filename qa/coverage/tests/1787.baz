@@ -1,0 +1,19 @@
+# the methods of an alias's levels are made in the order they are defined,
+# so a method of the base calls one of the alias's level defined before it
+type list<T type, n> { a T[n], len }
+type text<n> = list<i8, n>
+
+func text.t() res {
+    res = 7
+}
+
+func list.l() res {
+    res = self.t()
+}
+
+type str = text<4>
+
+func main() {
+    var s = str
+    exit(s.l())
+}

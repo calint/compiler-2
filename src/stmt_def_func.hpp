@@ -1198,8 +1198,9 @@ class stmt_def_func final : public statement {
 //      'define_method' records a method and makes it for the instances of the
 //      type made so far
 //   2. an alias: 'instantiate_methods' makes each method for the new instance
-//      ('instantiate_method', 'parse_method_instance'), a method with type
-//      parameters of its own goes to 'define_func'
+//      and its bases in the order they are defined ('instantiate_method',
+//      'parse_method_instance'), a method with type parameters of its own
+//      goes to 'define_func'
 //   3. a call: 'instantiate_func' makes the instance for the type arguments
 //      once ('parse_func_instance')
 class func_instantiator final {
@@ -1320,16 +1321,20 @@ class func_instantiator final {
         return name;
     }
 
-    // the methods defined so far for a new instance of a generic type, e.g.
-    // 'str.print' of 'func text.print()' for 'type str = text<8>'
-    static auto instantiate_methods(toc& tc,
-                                    const generic_type_instance& instance)
-        -> void {
+    // the methods defined so far for a new instance of a generic type and its
+    // bases ('levels'), e.g. 'str.print' of 'func text.print()' for 'type str
+    // = text<8>'; made in the order they are defined, as a method defined
+    // after the alias is, so a body sees the methods a hand-written type
+    // would
+    static auto instantiate_methods(
+        toc& tc, const std::vector<generic_type_instance>& levels) -> void {
 
-        for (const generic_method_info& method :
-             tc.generics().get_methods(instance.generic_name)) {
-
-            instantiate_method(tc, method, instance);
+        for (const generic_method_info& method : tc.generics().methods()) {
+            for (const generic_type_instance& level : levels) {
+                if (level.generic_name == method.type_tk.text()) {
+                    instantiate_method(tc, method, level);
+                }
+            }
         }
     }
 
