@@ -1024,12 +1024,11 @@ class expr_any final : public statement {
 
         value.assert_boolean_operands();
 
-        // a name is read and passed where it is stored like a name of another
-        // type, e.g. the 'x' of 'f(x)' that a 'mut bool' parameter writes
-        if (std::optional<expr_arith> name{value.release_name_or_literal()};
-            name) {
-
-            return std::move(*name);
+        // one operand is compiled like a value of another type, a name is
+        // passed where it is stored, e.g. the 'x' of 'f(x)' that a 'mut bool'
+        // parameter writes, a call binds its result to the destination
+        if (std::optional<expr_arith> operand{value.release_operand()}) {
+            return std::move(*operand);
         }
 
         return value;

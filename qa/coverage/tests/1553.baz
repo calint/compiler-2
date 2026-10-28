@@ -11,7 +11,8 @@ func g(x int, v bool) res bool {
 
 func h(x int) res bool {
     res = false
-    res = g(x, res)
+    var v = res
+    res = g(x, v)
 }
 
 func main() {

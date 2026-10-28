@@ -1222,9 +1222,9 @@ class expr_bool final : public statement {
         return (not is_or_list()) != inverted;
     }
 
-    // the operand when the whole expression is a name or a literal, e.g. 'x'
-    // but not 'not x', else none and the expression is unchanged
-    [[nodiscard]] auto release_name_or_literal() -> std::optional<expr_arith> {
+    // the operand when the whole expression is one 'bool' operand, e.g. 'x'
+    // or 'f(x)' but not 'not x', else none and the expression is unchanged
+    [[nodiscard]] auto release_operand() -> std::optional<expr_arith> {
         if (bools_.size() != 1 or has_not()) {
             return std::nullopt;
         }
@@ -1237,7 +1237,7 @@ class expr_bool final : public statement {
 
         const expr_arith* const arith{op->arithmetic()};
 
-        if (arith == nullptr or arith->operand_path() == nullptr) {
+        if (arith == nullptr) {
             return std::nullopt;
         }
 

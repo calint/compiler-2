@@ -1,0 +1,4 @@
+
+1805.baz:10:16: argument 2 'res' may share storage with the result destination 'res' (both name 'res'), use a temporary variable for one of them
+    res = g(x, res)
+               ^

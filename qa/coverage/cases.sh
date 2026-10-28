@@ -5757,3 +5757,6 @@ SRC=1803 && EXP=0 && OPTS="--checks=overflow" RUN
 
 # --checks=overflow: a 32 bit add of a large constant past the maximum
 SRC=1804 && EXP=249 && OPTS="--checks=overflow" RUN_ERR
+
+# a 'bool' result passed to the call that writes it shares storage
+SRC=1805 && COMPERR
