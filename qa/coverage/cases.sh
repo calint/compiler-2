@@ -5652,3 +5652,6 @@ SRC=1772 && COMPERR
 # the bodies that only skipped code and the checks without calls ask for are
 # checked, not emitted; a length unknown there asks for none
 SRC=1773 && EXP=7 && RUN
+
+# an array is not a condition
+SRC=1774 && COMPERR

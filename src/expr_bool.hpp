@@ -202,6 +202,14 @@ class expr_bool_op final : public statement {
 
         const type& lhs_type{lhs_.get_type()};
 
+        if (const stmt_identifier* const path{lhs_.operand_path()};
+            path != nullptr and path->is_array()) {
+
+            throw compile_error{path->tok(),
+                                std::format("array {} must be indexed",
+                                            in_quotes(path->dotted_path()))};
+        }
+
         if (lhs_type.is_bool()) {
             return;
         }

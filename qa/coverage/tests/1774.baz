@@ -1,0 +1,8 @@
+# an array is not a condition, an element is
+func main() {
+    var a = i8[2]
+    if a {
+        exit(1)
+    }
+    exit(0)
+}
