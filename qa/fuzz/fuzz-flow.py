@@ -78,6 +78,8 @@ class Generator:
         self.globals = Scope()
         self.globals.values["h"] = 0
         self.read_only = {"h"}
+        # the 'let' names, which the parse may fold
+        self.lets = set()
 
     def fresh(self, prefix):
         self.counter += 1
@@ -107,12 +109,13 @@ class Generator:
 
     # a jump whose condition the parse folds to true leaves the code after it
     # unreached, which the compiler rejects; 'v == v' of a variable keeps the
-    # parse from folding it and does not change its value
+    # parse from folding it and does not change its value, a 'let' may fold
     def jump_cond(self, names):
         c = self.cond(names, 1, False)
-        if not names:
+        variables = [n for n in names if n not in self.lets]
+        if not variables:
             return c
-        v = ("var", self.rnd.choice(names))
+        v = ("var", self.rnd.choice(variables))
         return ("and", c, ("cmp", "==", v, v))
 
     def cond(self, names, depth, allow_call=True):
@@ -245,7 +248,9 @@ class Generator:
         if r < 0.76:
             return ("var", self.fresh("w"), self.expr(names, 2, False))
         if r < 0.82:
-            return ("let", self.fresh("k"), self.expr(names, 2, False))
+            name = self.fresh("k")
+            self.lets.add(name)
+            return ("let", name, self.expr(names, 2, False))
         if r < 0.88 and in_loop:
             return (rnd.choice(["break", "continue"]), self.jump_cond(names))
         if r < 0.92 and in_function:

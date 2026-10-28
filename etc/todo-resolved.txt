@@ -1,6 +1,28 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] hard: bug hunt round 18 (2026-10-28, user: another comprehensive
+    bug hunt; hunters F1 every fuzzer with new seeds for about 85 minutes,
+    F2 the bare-metal targets against rv32i and x86_64, F3 code size at the
+    rv32i branch and jump ranges; reports in the session scratchpad bh18)
+    => done (2026-10-28): no compiler bugs; F3.1 fixed; F1 and F2 found two
+       fuzzer models out of date and a fuzzer guard that a 'let' folds
+       (fixed), and target differences missing from README 8 (item 5)
+[x] medium: bug hunt round 18 F3.1: '--checks=line' made the compile time
+    grow faster than quadratically: every failure line was in
+    'version_state', which each version and dry run copies; 20000
+    statements took 141 s against 2 s without 'line'
+    => done (2026-10-28): the failure lines are a log beside the version
+       state ('machine::failure_locations_'), cut back when a version is
+       dropped and given back when it is kept, as the assembler's captured
+       lines; 20000 statements take 0.8 s; listings of every test unchanged
+[x] easy: bug hunt round 18 F1-1, F1-2, F1-3, F2-1: 'fuzz-exprs.py' expected a
+    run-time panic for a constant 'MIN / -1', which round 12 Z3-1 rejects
+    at compile time, in both modes; the 'v == v' guard of 'fuzz-flow.py'
+    could pick a 'let', which folds
+    => done (2026-10-28): the model rejects it ('static_expr',
+       'constant_check', 'FOLDED_PANICS'); the guard picks no 'let'; the
+       seeds that found them give no mismatch
 [x] hard: bug hunt round 17 (2026-10-28, user: one more round for good
     measure; hunters E1 regressions against the compiler before round 1
     (da442005), E2 the generators of earlier rounds rerun and crossed, E3

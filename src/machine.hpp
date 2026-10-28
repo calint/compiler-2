@@ -291,13 +291,7 @@ class machine {
         std::string_view result;
     };
 
-  protected:
-    // the lines of the failures in each file, with '--checks=line'
-    using failure_lines = std::map<size_t, std::set<size_t>>;
-
   private:
-    using routine_uses = std::map<std::string, failure_lines, std::less<>>;
-
     // what compiling a version of code changes in the machine
     struct version_state {
         // the indexes are those of the names of the backend, see
@@ -308,10 +302,9 @@ class machine {
         register_trace trace;
         // the most scratch registers in use
         size_t max_scratch_regs{};
-        // the routines, helpers and failure handlers the code uses, by label,
-        // each with the locations its failures report; emitted after the
-        // code, see 'mark_used'
-        routine_uses used_routines;
+        // the routines, helpers and failure handlers the code uses, by label;
+        // emitted after the code, see 'mark_used'
+        std::set<std::string, std::less<>> used_routines;
     };
 
     // saved before a version and put back after it, see 'version_scope'
@@ -392,7 +385,90 @@ class machine {
         }
     };
 
+  private:
+    // a failure that reports its line, see 'mark_used'
+    struct failure_location {
+        std::string_view routine;
+        size_t file_ix{};
+        size_t line{};
+    };
+
+    // in the order they are marked; not in 'version_state', which each version
+    // copies: 'version_scope' drops those its version added
+    std::vector<failure_location> failure_locations_;
+
+    target_description target_;
+    source_locations locations_;
+    std::reference_wrapper<const builtin_type_set> builtins_;
+    assembler::jump_mode jump_mode_;
+    // the image of the sd card on targets with an operating system
+    std::string sd_card_file_name_;
+
+    bool variables_base_reserved_{};
+    kept_version kept_version_{kept_version::smaller};
+    // see 'target_options::reports_line'
+    bool reports_line_{};
+
+    // the state before a version, put back when the scope ends, also when an
+    // error unwinds; a version that is kept is given its end state again
+    // ('emit_most_efficient'), discarded code is not ('emit_discarded')
+    class version_scope final {
+        machine& machine_;
+        version_state start_;
+        size_t failures_start_;
+
+      public:
+        explicit version_scope(machine& backend)
+            : machine_{backend}, start_{backend.state_},
+              failures_start_{backend.failure_locations_.size()} {}
+
+        version_scope(const version_scope&) = delete;
+        version_scope(version_scope&&) = delete;
+        auto operator=(const version_scope&) -> version_scope& = delete;
+        auto operator=(version_scope&&) -> version_scope& = delete;
+
+        ~version_scope() {
+            machine_.state_ = std::move(start_);
+            machine_.failure_locations_.resize(failures_start_);
+        }
+
+        // the failures marked since the scope began, given back by a kept
+        // version
+        [[nodiscard]] auto added_failures() const
+            -> std::vector<failure_location> {
+
+            const std::span<const failure_location> added{
+                std::span{machine_.failure_locations_}.subspan(failures_start_),
+            };
+
+            return {added.begin(), added.end()};
+        }
+    };
+
+    // the lines of a compiled version with the state it ended in
+    struct compiled_version {
+        assembler::captured_lines lines;
+        version_state end_state;
+        std::vector<failure_location> failures;
+    };
+
+    // a version that fails with an error that depends on the code compiled,
+    // e.g. running out of registers, is not available, its error is kept to
+    // be thrown when the other version fails too
+    struct unavailable_version {
+        std::exception_ptr error;
+        // what it ran out of, for the comment of the choice
+        std::string_view resource;
+    };
+
+    using version_result = std::expected<compiled_version, unavailable_version>;
+
+    using jump_mode = assembler::jump_mode;
+
   protected:
+    // the lines of the failures in each file, with '--checks=line'
+    using failure_lines = std::map<size_t, std::set<size_t>>;
+
     // how a constant factor multiplies, decided at its width
     enum class factor_kind : uint8_t {
         zero,
@@ -534,57 +610,6 @@ class machine {
             return text;
         }
     };
-
-  private:
-    target_description target_;
-    source_locations locations_;
-    std::reference_wrapper<const builtin_type_set> builtins_;
-    assembler::jump_mode jump_mode_;
-    // the image of the sd card on targets with an operating system
-    std::string sd_card_file_name_;
-
-    bool variables_base_reserved_{};
-    kept_version kept_version_{kept_version::smaller};
-    // see 'target_options::reports_line'
-    bool reports_line_{};
-
-    // the state before a version, put back when the scope ends, also when an
-    // error unwinds; a version that is kept is given its end state again
-    // ('emit_most_efficient'), discarded code is not ('emit_discarded')
-    class version_scope final {
-        machine& machine_;
-        version_state start_;
-
-      public:
-        explicit version_scope(machine& backend)
-            : machine_{backend}, start_{backend.state_} {}
-
-        version_scope(const version_scope&) = delete;
-        version_scope(version_scope&&) = delete;
-        auto operator=(const version_scope&) -> version_scope& = delete;
-        auto operator=(version_scope&&) -> version_scope& = delete;
-
-        ~version_scope() { machine_.state_ = std::move(start_); }
-    };
-
-    // the lines of a compiled version with the state it ended in
-    struct compiled_version {
-        assembler::captured_lines lines;
-        version_state end_state;
-    };
-
-    // a version that fails with an error that depends on the code compiled,
-    // e.g. running out of registers, is not available, its error is kept to
-    // be thrown when the other version fails too
-    struct unavailable_version {
-        std::exception_ptr error;
-        // what it ran out of, for the comment of the choice
-        std::string_view resource;
-    };
-
-    using version_result = std::expected<compiled_version, unavailable_version>;
-
-    using jump_mode = assembler::jump_mode;
 
   public:
     // 'files' locate the tokens of comments
@@ -1158,6 +1183,7 @@ class machine {
         compiled_version& kept{keeps_first ? *first : *second};
 
         state_ = std::move(kept.end_state);
+        failure_locations_.append_range(kept.failures);
 
         output.append(std::move(kept.lines));
 
@@ -1558,7 +1584,7 @@ class machine {
     // a routine marked while another one is emitted is emitted only if a
     // later step of 'emit_runtime' asks for it
     auto assert_used_routines_emitted() const -> void {
-        for (const auto& [routine, uses] : state_.used_routines) {
+        for (const std::string& routine : state_.used_routines) {
             // note: the code marks the handlers, they are emitted first and a
             //       handler that reports lines is under the labels of its lines
 
@@ -1635,8 +1661,15 @@ class machine {
     [[nodiscard]] auto failure_lines_of(const std::string_view routine) const
         -> failure_lines {
 
-        const auto it{state_.used_routines.find(routine)};
-        return it == state_.used_routines.end() ? failure_lines{} : it->second;
+        failure_lines lines;
+
+        for (const failure_location& failure : failure_locations_) {
+            if (failure.routine == routine) {
+                lines[failure.file_ix].insert(failure.line);
+            }
+        }
+
+        return lines;
     }
 
     // e.g. 'panic: bounds at prog.baz:', the line follows
@@ -1713,7 +1746,7 @@ class machine {
     // the routine is emitted after the code; the use is version state, so a
     // version that is not kept and discarded code use nothing
     auto mark_used(const std::string_view routine) -> void {
-        state_.used_routines.try_emplace(std::string{routine});
+        state_.used_routines.emplace(routine);
     }
 
     // the failure at 'src_loc_tk' is reported by the handler of 'routine',
@@ -1721,8 +1754,13 @@ class machine {
     auto mark_used(const std::string_view routine, const token& src_loc_tk)
         -> void {
 
-        state_.used_routines[std::string{routine}][src_loc_tk.file_index()]
-            .insert(src_loc_tk.at_line());
+        mark_used(routine);
+
+        failure_locations_.push_back({
+            .routine{routine},
+            .file_ix{src_loc_tk.file_index()},
+            .line{src_loc_tk.at_line()},
+        });
     }
 
     [[nodiscard]] auto out_of_registers_error(const token& src_loc_tk) const
@@ -2027,6 +2065,7 @@ class machine {
             return compiled_version{
                 .lines{std::move(lines)},
                 .end_state{state_},
+                .failures{version.added_failures()},
             };
         } catch (const compile_error& e) {
             // note: every kind but 'source' depends on the code compiled, the

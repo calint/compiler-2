@@ -415,7 +415,8 @@ SPELLING_TYPES = ("i8", "i16", "i32")
 SPELLING_OPTIONS = (("--checks=division",), ("--checks=division,overflow",))
 # the compile errors that are a panic at run time when the value is a variable
 FOLDED_PANICS = {"constant expression overflows the type": 249,
-                 "divisor must not be zero": 253}
+                 "divisor must not be zero": 253,
+                 "constant division of the minimum by -1": 253}
 
 
 class Leaf:
