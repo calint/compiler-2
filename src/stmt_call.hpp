@@ -471,11 +471,10 @@ struct call_site {
     //   place               'p', 'a[i]'     the name, or the   its address
     //                                       computed address
     //   computed            'x + 1',        a constant or a    a temporary
-    //                       '-a[i]', '3',   register
-    //                       'k'
-    //   named value         '-x'            the name of its    a temporary
-    //                                       register or a
-    //                                       register
+    //                       '-a[i]', '-x',  register
+    //                       '3', 'k'
+    //   named value         'x' bound to    the name of its    a temporary
+    //                       a register      register
     struct argument_form {
         // an instance literal or a call result of a user type
         struct instance_temporary {};
@@ -483,8 +482,7 @@ struct call_site {
         // computed into a register unless it folds
         struct computed {};
 
-        // a name that is no place and no constant: a name bound to a register,
-        // or a name with unary operators, e.g. '-x'
+        // a name bound to a register, it is no place and no constant
         struct named_value {
             const stmt_identifier* ident{};
             ident_info info;
@@ -688,9 +686,11 @@ struct call_site {
 
         ident_info info{make_ident_info(tc, *ident)};
 
-        // e.g. '-a[i]', or a constant, which the callee's own constants would
-        // shadow and which must fold, e.g. '~1'
-        if (ident->has_computed_address(info) or info.is_const()) {
+        // e.g. '-a[i]', '-x', or a constant, which the callee's own constants
+        // would shadow and which must fold, e.g. '~k'
+        if (ident->has_computed_address(info) or info.is_const() or
+            not ident->get_unary_ops().is_empty()) {
+
             return {
                 .kind{argument_form::computed{}},
             };
@@ -1071,10 +1071,11 @@ class inline_call final {
             return bind_expression(tc, indent, arg, param, held);
         }
 
-        return bind_named_value(
-            tc, indent, arg,
+        const call_site::argument_form::named_value& named{
             std::get<call_site::argument_form::named_value>(argument.kind),
-            param, held);
+        };
+
+        return bind_name(param, *named.ident, named.info);
     }
 
     // a constant lets the inlined body be decided at compile time
@@ -1113,30 +1114,6 @@ class inline_call final {
         -> param_binding {
 
         return param_binding::make_name(param.name(), info, ident.path_text());
-    }
-
-    // a name bound to a register or a name with unary operators
-    [[nodiscard]] static auto
-    bind_named_value(toc& tc, const size_t indent, const expr_any& arg,
-                     const call_site::argument_form::named_value& value,
-                     const stmt_def_func_param& param,
-                     machine::held_registers& held) -> param_binding {
-
-        const stmt_identifier& ident{*value.ident};
-        const ident_info& arg_info{value.info};
-
-        if (ident.get_unary_ops().is_empty()) {
-            return bind_name(param, ident, arg_info);
-        }
-
-        const operand reg{
-            ident.compile_value_operand(tc, indent, arg.tok(), arg_info,
-                                        param.get_type(),
-                                        tc.checks().overflow_options(), held),
-        };
-
-        return param_binding::make_register(param.name(), reg,
-                                            reg.register_name());
     }
 
     // an indexed argument keeps its computed address, e.g.

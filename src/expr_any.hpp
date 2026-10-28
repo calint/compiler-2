@@ -1108,9 +1108,7 @@ class expr_any final : public statement {
         if (not array_count) {
             // arrays of zero length are not allowed
             if (size_bytes == 0) {
-                throw compile_error{string_tk,
-                                    "an empty string is not valid for an array "
-                                    "with unspecified size"};
+                throw compile_error{string_tk, "an empty string needs a size"};
             }
 
             return size_bytes;

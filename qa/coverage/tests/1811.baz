@@ -1,0 +1,9 @@
+# a constant 'let' checks the operands after the one that decides the list
+# like a 'var'
+
+func main() {
+    var a = i8[4]
+    let k = true or a == 1
+    if not k exit(1)
+    exit(0)
+}

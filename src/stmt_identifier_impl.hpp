@@ -44,7 +44,7 @@ inline stmt_identifier::stmt_identifier(toc& tc, token tk, tokenizer& tz)
 
 inline stmt_identifier::stmt_identifier(toc& tc, token tk, tokenizer& tz,
                                         const path_reach reach)
-    : statement{tk}, dotted_path_{tk.text()}, reach_{reach} {
+    : statement{tk}, dotted_path_{tk.text()} {
 
     // note: the callers read a name, a string or no token was rejected
     //       before, e.g. by 'parse_array_argument'
@@ -92,7 +92,7 @@ inline stmt_identifier::stmt_identifier(toc& tc, token tk, tokenizer& tz,
 
     resolve_type(prefix);
 
-    resolve_accessed_bytes(tc);
+    resolve_accessed_bytes(tc, reach);
 
     tc.record_use(tok().text(), access_path_, use_kind::read);
 
@@ -263,8 +263,11 @@ inline auto stmt_identifier::parse_element(toc& tc, tokenizer& tz,
     });
 }
 
-inline auto stmt_identifier::resolve_accessed_bytes(toc& tc) -> void {
-    for_each_prefix(tc, std::nullopt, [&](const prefix_step& step) -> void {
+inline auto stmt_identifier::resolve_accessed_bytes(toc& tc,
+                                                    const path_reach reach)
+    -> void {
+
+    for_each_prefix(tc, tok(), [&](const prefix_step& step) -> void {
         const ident_elem& elem{*step.elem};
 
         if (step.fld == nullptr) {
@@ -297,7 +300,9 @@ inline auto stmt_identifier::resolve_accessed_bytes(toc& tc) -> void {
             return;
         }
 
-        const path_reach reach{step.is_last ? reach_ : path_reach::element};
+        const path_reach elem_reach{
+            step.is_last ? reach : path_reach::element,
+        };
 
         const std::optional<int64_t> constant_index{
             elem.index_expr().constant_value(tc),
@@ -308,10 +313,10 @@ inline auto stmt_identifier::resolve_accessed_bytes(toc& tc) -> void {
         if (constant_index) {
             assert_constant_index(*step.info, elem.index_expr().tok(),
                                   step.path, *constant_index,
-                                  reach == path_reach::to_end);
+                                  elem_reach == path_reach::to_end);
         }
 
-        narrow_to_element(constant_index, *step.info, reach);
+        narrow_to_element(constant_index, *step.info, elem_reach);
     });
 }
 

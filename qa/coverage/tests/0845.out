@@ -1,4 +1,4 @@
 
-0845.baz:3:12: source must be an array
+0845.baz:3:12: expected an array
 dat x = t{ 5, 1 }
            ^

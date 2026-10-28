@@ -284,7 +284,17 @@ inline auto parse_call_or_identifier(toc& tc, tokenizer& tz, const token& tk,
     // e.g. the 'loop' of 'x = loop(1)' or a 'mut' that starts a statement
     if (tm == term_kind::keyword) {
         throw compile_error{
-            tk, std::format("unexpected keyword {}", in_quotes(tk))};
+            tk, std::format("unexpected keyword {}", in_quotes(tk.text()))};
+    }
+
+    // e.g. the 'i8' of 'i8 + 1' or of 'i8 = 1', the 'point' of '1 + point'
+    // or of 'point{1, 2}' that starts a statement, or the 'i8[]' of
+    // 'x + i8[]{1}'
+    if (is_bare_type(tm) or tm == term_kind::array_literal or
+        tm == term_kind::record_literal) {
+
+        throw compile_error{
+            tk, std::format("{} is a type, not a value", in_quotes(tk.text()))};
     }
 
     const char next{tz.peek_char_after_whitespace()};
@@ -438,13 +448,6 @@ inline auto parse_operand(toc& tc, tokenizer& tz, unary_ops uops,
                             in_quotes(tk.text()))};
     }
 
-    // e.g. the 'i8' of 'i8 + 1', the 'point' of '1 + point' or the 'i8[]' of
-    // 'x + i8[]{1}'
-    if (is_bare_type(tm) or tm == term_kind::array_literal) {
-        throw compile_error{
-            tk, std::format("{} is a type, not a value", in_quotes(tk.text()))};
-    }
-
     if (std::unique_ptr<statement> builtin{
             parse_builtin(tc, tz, tk, tm, uops, builtin_place::value),
         }) {
@@ -513,5 +516,5 @@ inline auto parse_statement(toc& tc, tokenizer& tz, const token tk)
     throw compile_error{
         tk, std::format("expected a definition ('func', 'type', 'var', "
                         "'let' or 'dat'), got {}",
-                        in_quotes(tk))};
+                        in_quotes(tk.text()))};
 }

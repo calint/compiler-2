@@ -1,0 +1,8 @@
+# a constant 'let' checks the operands after the one that decides the list
+# like a 'var', a constant divisor of zero
+
+func main() {
+    let k = false and 1 / 0 == 1
+    if k exit(1)
+    exit(0)
+}

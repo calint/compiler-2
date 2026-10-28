@@ -94,7 +94,8 @@ struct generic_param {
                                             in_quotes(param.name_tk.text()))};
         }
 
-        tz.assert_no_trailing_delimiter(*delimiter_tk, '>', "parameters");
+        tz.assert_no_trailing_delimiter(*delimiter_tk, '>',
+                                        "generic parameters");
 
         return false;
     }
@@ -198,10 +199,12 @@ struct generic_arg_tokens {
 
             const token delim_tk{
                 tz.expect_char_token(
-                    ',', "expected ',' or '>' after generic argument"),
+                    ',', std::format("expected ',' or '>' after generic "
+                                     "argument {}",
+                                     in_quotes(arg_tk.text()))),
             };
 
-            tz.assert_no_trailing_delimiter(delim_tk, '>', "type arguments");
+            tz.assert_no_trailing_delimiter(delim_tk, '>', "generic arguments");
 
             args.list_tks.emplace_back(delim_tk);
         }

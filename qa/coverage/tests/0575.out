@@ -1,4 +1,4 @@
 
-0575.baz:7:13: source must not be an array
+0575.baz:7:13: array 'ps' must be indexed
     qs[0] = ps
             ^~

@@ -1,0 +1,7 @@
+# an instance literal at the start of a statement is not a value
+
+type point {x, y}
+
+func main() {
+    point{1, 2}
+}

@@ -1,4 +1,4 @@
 
-1454.baz:11:18: 'a.m' is a method, expected an array
+1454.baz:11:18: 'a.m' is a method, not an array
     array_copy(a.m, b, 2)
                  ^

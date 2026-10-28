@@ -1,4 +1,4 @@
 
-0781.baz:14:22: expected ',' or '>' after generic argument
+0781.baz:14:22: expected ',' or '>' after generic argument 'name'
     var m = make<name(2)
                      ^

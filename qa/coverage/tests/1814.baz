@@ -1,0 +1,5 @@
+# a type at the start of a statement is not a value
+
+func main() {
+    i8 = 1
+}

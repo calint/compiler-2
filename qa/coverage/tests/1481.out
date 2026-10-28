@@ -1,4 +1,4 @@
 
-1481.baz:4:17: a trailing ',' is not allowed in type arguments
+1481.baz:4:17: a trailing ',' is not allowed in generic arguments
 type a = list<i8,>
                 ^

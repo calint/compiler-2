@@ -5775,3 +5775,18 @@ SRC=1809 && COMPERR
 
 # a string where a built-in takes an array
 SRC=1810 && COMPERR
+
+# a constant 'let' checks the operands after the one that decides the list
+SRC=1811 && COMPERR
+
+# a constant 'let' checks a zero divisor after the one that decides the list
+SRC=1812 && COMPERR
+
+# a global constant 'let' checks the operands after the one that decides it
+SRC=1813 && COMPERR
+
+# a type at the start of a statement is not a value
+SRC=1814 && COMPERR
+
+# an instance literal at the start of a statement is not a value
+SRC=1815 && COMPERR

@@ -199,11 +199,6 @@ class compile_error final : public std::exception {
     return std::format("'{}'", source);
 }
 
-// the token as the source writes it, a string with its double quotes
-[[nodiscard]] inline auto in_quotes(const token& tk) -> std::string {
-    return in_quotes(tk.text());
-}
-
 // a count with its noun for a message, e.g. '1 argument' or '2 arguments'
 [[nodiscard]] inline auto counted(const size_t count,
                                   const std::string_view noun) -> std::string {

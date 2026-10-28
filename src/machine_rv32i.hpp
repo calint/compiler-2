@@ -3480,11 +3480,8 @@ class machine_rv32i : public machine {
             return;
         }
 
-        // adding zero copies a register without changing its bits
         if (src.is_register()) {
-            assembler_.addi(indent, value.register_name(), src.register_name(),
-                            0);
-
+            assembler_.mv(indent, value.register_name(), src.register_name());
             return;
         }
 

@@ -1161,8 +1161,9 @@ class scope_stack final {
     // e.g. the 'break' of 'if 1 == 2 { break }'
     auto assert_in_loop(const token& src_loc_tk) const -> void {
         if (not innermost_loop()) {
-            throw compile_error{src_loc_tk, std::format("{} is not in a loop",
-                                                        in_quotes(src_loc_tk))};
+            throw compile_error{src_loc_tk,
+                                std::format("{} is not in a loop",
+                                            in_quotes(src_loc_tk.text()))};
         }
     }
 

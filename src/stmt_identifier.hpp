@@ -37,10 +37,13 @@
 //   'assert_constant_range'  the constant checks of an index and a range
 //   'stmt_identifier'        the path node; its members that use 'expr_any'
 //                            are in 'stmt_identifier_impl.hpp'
-//   'place', 'make_ident_info', 'make_scalar_ident_info', 'as_place',
-//   'assert_not_whole_array' what a value names when it is a place
-//   'visit_operand_reads', 'statement::visit_call_effects',
-//   'statement::visit_reads', 'statement::bare_path'
+//   'place', 'make_ident_info', 'assert_not_whole_array',
+//   'make_scalar_ident_info', 'as_place'
+//                            what a value names when it is a place
+//   'statement::visit_call_effects', 'visit_operand_reads',
+//   'statement::has_inlined_call', 'statement::visit_reads',
+//   'statement::assert_result_not_read', 'statement::first_read_of',
+//   'statement::bare_path'
 //                            the operand walks of 'statement', defined here
 //                            because they need 'stmt_identifier'
 //
@@ -357,8 +360,6 @@ class stmt_identifier final : public statement {
     // the root is the result of the function being parsed, which the
     // definite assignment traces
     bool names_result_{};
-
-    path_reach reach_{};
 
     // e.g. '.add' in 'lst.add(x)', the path is the receiver
     struct method_tokens {
@@ -861,14 +862,14 @@ class stmt_identifier final : public statement {
         // e.g. the '"abc"' of 'array_length("abc")'
         if (tm == term_kind::string) {
             throw compile_error{
-                tk, std::format("{} is not an array", in_quotes(tk))};
+                tk, std::format("{} is not an array", in_quotes(tk.text()))};
         }
 
         if (is_bare_type(tm) or tm == term_kind::array_literal or
             tm == term_kind::record_literal) {
 
-            throw compile_error{
-                tk, std::format("{} is a type, not an array", in_quotes(tk))};
+            throw compile_error{tk, std::format("{} is a type, not an array",
+                                                in_quotes(tk.text()))};
         }
 
         if (tm == term_kind::call or tm == term_kind::type_called or
@@ -879,13 +880,13 @@ class stmt_identifier final : public statement {
             throw compile_error{
                 tk, std::format("a call of {} is not an array, store its "
                                 "result in a variable first",
-                                in_quotes(tk))};
+                                in_quotes(tk.text()))};
         }
 
         if (tm == term_kind::function_name) {
             throw compile_error{tk, std::format("{} is a function, not an "
                                                 "array",
-                                                in_quotes(tk))};
+                                                in_quotes(tk.text()))};
         }
 
         // note: the operand of a bulk operation reaches from the element it
@@ -968,16 +969,16 @@ class stmt_identifier final : public statement {
 
         throw compile_error{
             method_->name_tk,
-            std::format("{} is a method, expected an array",
+            std::format("{} is a method, not an array",
                         in_quotes(std::format("{}.{}", dotted_path_,
                                               method_->name_tk.text())))};
     }
 
     // walks the elements from the root: the root resolved, then each field
     // stepped, e.g. 'w', 'w.rooms' and 'w.rooms.items'; a resolve error is
-    // located at 'src_loc_tk', at the name of the root when none
+    // located at 'src_loc_tk'
     auto for_each_prefix(
-        const toc& tc, const std::optional<token>& src_loc_tk,
+        const toc& tc, const token& src_loc_tk,
         const std::function_ref<void(const prefix_step&)> visit) const -> void {
 
         const token& root_tk{tok()};
@@ -985,7 +986,7 @@ class stmt_identifier final : public statement {
         std::string path{root_tk.text()};
 
         ident_info info{
-            tc.resolve_declared(src_loc_tk.value_or(root_tk), root_tk.text()),
+            tc.resolve_declared(src_loc_tk, root_tk.text()),
         };
 
         for (size_t i{}; i < elems_.size(); ++i) {
@@ -1041,7 +1042,8 @@ class stmt_identifier final : public statement {
     // a path element with an optional '[index]'
     auto parse_element(toc& tc, tokenizer& tz, const token& tk) -> void;
 
-    auto resolve_accessed_bytes(toc& tc) -> void;
+    // 'reach' is that of the last element
+    auto resolve_accessed_bytes(toc& tc, path_reach reach) -> void;
 
     // the path is an array only while its last element is not indexed
     auto resolve_type(const ident_info& info) -> void {
@@ -1218,6 +1220,30 @@ inline auto assert_not_whole_array(const stmt_identifier& ident,
     return info;
 }
 
+// the storage 'st' names in place, empty for a value: a node with operators
+// or unary ops, a call, a method path, a literal, a constant or a name bound
+// to a register
+[[nodiscard]] inline auto as_place(const toc& tc, const statement& st)
+    -> std::optional<place> {
+
+    const stmt_identifier* const ident{st.bare_path()};
+
+    if (ident == nullptr) {
+        return std::nullopt;
+    }
+
+    ident_info info{make_ident_info(tc, *ident)};
+
+    if (not info.is_var()) {
+        return std::nullopt;
+    }
+
+    return place{
+        .ident{ident},
+        .info{std::move(info)},
+    };
+}
+
 // see the declaration in 'statement.hpp'
 inline auto
 statement::visit_call_effects(const toc& tc,
@@ -1293,28 +1319,4 @@ inline auto statement::bare_path() const -> const stmt_identifier* {
     }
 
     return ident;
-}
-
-// the storage 'st' names in place, empty for a value: a node with operators
-// or unary ops, a call, a method path, a literal, a constant or a name bound
-// to a register
-[[nodiscard]] inline auto as_place(const toc& tc, const statement& st)
-    -> std::optional<place> {
-
-    const stmt_identifier* const ident{st.bare_path()};
-
-    if (ident == nullptr) {
-        return std::nullopt;
-    }
-
-    ident_info info{make_ident_info(tc, *ident)};
-
-    if (not info.is_var()) {
-        return std::nullopt;
-    }
-
-    return place{
-        .ident{ident},
-        .info{std::move(info)},
-    };
 }

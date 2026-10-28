@@ -1,0 +1,9 @@
+# a global constant 'let' checks the operands after the one that decides the
+# list like a 'var'
+
+let k = true or 1 / 0 == 1
+
+func main() {
+    if not k exit(1)
+    exit(0)
+}

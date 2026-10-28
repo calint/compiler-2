@@ -1,4 +1,4 @@
 
-1316.baz:6:9: source must be an array
+1316.baz:6:9: expected an array
     a = read(0, buf, 4)
         ^~~~

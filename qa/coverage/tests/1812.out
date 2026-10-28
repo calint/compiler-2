@@ -1,0 +1,4 @@
+
+1812.baz:5:27: divisor must not be zero
+    let k = false and 1 / 0 == 1
+                          ^

@@ -1,4 +1,4 @@
 
-0344.baz:3:13: an empty string is not valid for an array with unspecified size
+0344.baz:3:13: an empty string needs a size
 dat value = ""
             ^~

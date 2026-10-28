@@ -1,4 +1,4 @@
 
-0577.baz:7:10: source must be an array
+0577.baz:7:10: expected an array
     qs = ps[1]
          ^~

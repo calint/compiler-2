@@ -169,12 +169,8 @@ class stmt_def_dat final : public statement {
             x.emit_data_array(tp.size_bytes(), values);
         }
 
-        // the elements not listed are zero, as in a 'var'
-        if (list.array_count != values.size()) {
-            x.emit_zero_data(
-                multiply_storage_size(list.src_loc_tk, tp.size_bytes(),
-                                      list.array_count - values.size()));
-        }
+        compile_zero_elements(x, list.src_loc_tk, tp,
+                              list.array_count - values.size());
     }
 
     static auto compile_data_rec(toc& tc, const type& tp, const elem& el)
@@ -226,18 +222,8 @@ class stmt_def_dat final : public statement {
             compile_data_record(tc, tp, std::get<elem::fields>(e.form));
         }
 
-        // zero out the remaining array elements
-        const size_t remaining_count{list.array_count - list.items.size()};
-
-        if (remaining_count == 0) {
-            return;
-        }
-
-        x.comment(list.src_loc_tk, 0, "pad {} {} of size {}", remaining_count,
-                  in_quotes(tp.name()), tp.size_bytes());
-
-        x.emit_zero_data(multiply_storage_size(list.src_loc_tk, tp.size_bytes(),
-                                               remaining_count));
+        compile_zero_elements(x, list.src_loc_tk, tp,
+                              list.array_count - list.items.size());
     }
 
     static auto compile_data_record(toc& tc, const type& tp,
@@ -285,13 +271,27 @@ class stmt_def_dat final : public statement {
         x.emit_string_data(str.string_tk.string_bytes());
         const size_t size_bytes{str.string_tk.string_size_bytes()};
 
-        // the bytes after the text are zero, as in a 'var'
-        if (size_bytes < str.array_count) {
-            x.comment(str.string_tk, 0, "zero remaining array");
+        // note: the parse rejected a string longer than its array
+        assert(size_bytes <= str.array_count);
 
-            x.emit_zero_data(multiply_storage_size(
-                str.string_tk, tp.size_bytes(), str.array_count - size_bytes));
+        compile_zero_elements(x, str.string_tk, tp,
+                              str.array_count - size_bytes);
+    }
+
+    // the elements after the listed ones are zero, as in a 'var'
+    static auto compile_zero_elements(machine& x, const token& src_loc_tk,
+                                      const type& tp, const size_t count)
+        -> void {
+
+        if (count == 0) {
+            return;
         }
+
+        x.comment(src_loc_tk, 0, "pad {} {} of size {}", count,
+                  in_quotes(tp.name()), tp.size_bytes());
+
+        x.emit_zero_data(
+            multiply_storage_size(src_loc_tk, tp.size_bytes(), count));
     }
 
     // the constants of 'value' at the type 'tp', e.g. '{1, 2 * 3}' of 'point'

@@ -1793,7 +1793,9 @@ What depends on the target is listed here, nothing else does:
 3. the number of scratch registers: an expression that runs out of them on one
    target can be accepted on another (7.11), and the run-time checks take
    some, e.g. the 'frame' check of a noinline call with many indexed
-   arguments
+   arguments; also the registers an instruction fixes:
+   'exit(int(arrays_equal(a[s], b, c)))' is rejected on x86_64, where
+   'arrays_equal' needs the 'rdi' that 'exit' holds
 4. the limits of a target: '--vars' and the memory it addresses, which a
    type stays below, e.g. a field 'i8[0x100000000]' is rejected on rv32i,
    and a deep noinline recursion, which 'stack' stops on the bare-metal

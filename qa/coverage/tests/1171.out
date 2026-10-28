@@ -1,4 +1,4 @@
 
-1171.baz:7:9: source must be an array
+1171.baz:7:9: expected an array
     b = array_length(a)
         ^~~~~~~~~~~~

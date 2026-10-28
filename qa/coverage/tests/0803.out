@@ -1,4 +1,4 @@
 
-0803.baz:3:21: a trailing ',' is not allowed in parameters
+0803.baz:3:21: a trailing ',' is not allowed in generic parameters
 type pair<first type, > {
                     ^

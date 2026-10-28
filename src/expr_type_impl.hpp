@@ -184,7 +184,7 @@ inline auto expr_type::parse_copy_source(toc& tc, tokenizer& tz, const type& tp,
         }) {
 
         if (is_array_destination_) {
-            throw compile_error{tok(), "source must be an array"};
+            throw compile_error{tok(), "expected an array"};
         }
 
         throw_type_mismatch(tok(), tp.name(), builtin->get_type().name());
@@ -218,7 +218,7 @@ inline auto expr_type::parse_copy_source(toc& tc, tokenizer& tz, const type& tp,
     // before the type, which a literal takes from the target, e.g. the '5'
     // of 'a = 5' with 'a' an 'i8' array
     if (is_array_destination_ and not src_info.is_array()) {
-        throw compile_error{tok(), "source must be an array"};
+        throw compile_error{tok(), "expected an array"};
     }
 
     if (not tp.is_same(src_info.type_ref())) {
@@ -382,9 +382,11 @@ inline auto expr_type::assert_copy_source_shape(const toc& tc) const -> void {
         return;
     }
 
-    throw compile_error{tok(), is_array_destination_
-                                   ? "source must be an array"
-                                   : "source must not be an array"};
+    if (is_array_destination_) {
+        throw compile_error{tok(), "expected an array"};
+    }
+
+    throw_unindexed_array(tok(), ident->dotted_path());
 }
 
 // e.g. 'pt1 = pt2'

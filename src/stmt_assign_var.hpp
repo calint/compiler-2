@@ -230,7 +230,7 @@ class stmt_assign_var final : public statement {
                     std::format("the call of {} reaches {}, which has been "
                                 "written in the same statement, use a "
                                 "temporary variable",
-                                in_quotes(effect.call_tk),
+                                in_quotes(effect.call_tk.text()),
                                 in_quotes(effect.name))};
             }
         });
