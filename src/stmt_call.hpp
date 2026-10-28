@@ -1094,7 +1094,7 @@ class inline_call final {
 
         if (folded) {
             // note: as a noinline call, which compiles every argument
-            arg.check_folded_condition(tc, indent);
+            arg.check_folded_conditions(tc, indent);
 
             return param_binding::make_constant(param.name(), param.get_type(),
                                                 folded->value);
@@ -2291,6 +2291,7 @@ class stmt_call final : public statement {
             }
 
             assert_not_string_argument(tz);
+            assert_not_array_literal_argument(tc, tz, params.at(i));
 
             const bool is_deducing{
                 std::ranges::contains(deducing_args,
@@ -2546,7 +2547,6 @@ class stmt_call final : public statement {
     // statics
     //
 
-    // an array parameter takes a whole array, a scalar parameter does not
     static auto assert_argument_usable(const toc& tc, const expr_any& arg,
                                        const stmt_def_func_param& param)
         -> void {
@@ -2576,6 +2576,43 @@ class stmt_call final : public statement {
         if (const stmt_identifier* const ident{arg.operand_path()}) {
             assert_not_whole_array(*ident, make_ident_info(tc, *ident));
         }
+    }
+
+    // an array parameter takes a whole array, a scalar parameter does not
+    // an array literal has no storage that an array parameter refers to, e.g.
+    // '{1, 2}' or 'i8[]{1, 2}'; '{}' is reported where it is used
+    static auto
+    assert_not_array_literal_argument(const toc& tc, const tokenizer& tz,
+                                      const stmt_def_func_param& param)
+        -> void {
+
+        if (not param.is_array()) {
+            return;
+        }
+
+        tokenizer probe{tz};
+
+        std::optional<token> literal_tk{probe.is_next_char_token('{')};
+
+        if (literal_tk and probe.peek_char_after_whitespace() == '}') {
+            return;
+        }
+
+        if (not literal_tk) {
+            const token tk{probe.next_token()};
+
+            if (classify_term(tc, tk, probe) != term_kind::array_literal) {
+                return;
+            }
+
+            literal_tk = tk;
+        }
+
+        throw compile_error{
+            *literal_tk,
+            std::format("an array literal is not an argument, parameter {} "
+                        "takes an array",
+                        in_quotes(param.name()))};
     }
 
     // an argument that reaches a part of an earlier one or of the result that

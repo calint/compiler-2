@@ -1,0 +1,8 @@
+# an array literal is not an argument of an array parameter
+
+func f(s i8[]) {
+}
+
+func main() {
+    f({1, 2, 3})
+}

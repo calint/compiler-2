@@ -1,0 +1,13 @@
+# a 'return' in a branch false at the parse returns without the result set,
+# as in a 'foo' that never runs
+
+func f() res {
+    if false {
+        return
+    }
+    res = 1
+}
+
+func main() {
+    exit(f())
+}

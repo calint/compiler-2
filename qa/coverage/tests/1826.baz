@@ -1,0 +1,11 @@
+# a 'dat' checks the elements of a condition in a field after the one that
+# decides it
+
+type r {b bool, n i32}
+
+dat d = r{true or 1 / 0 == 1, 2}
+
+func main() {
+    if not d.b exit(1)
+    exit(0)
+}

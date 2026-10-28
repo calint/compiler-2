@@ -1,0 +1,10 @@
+# a statement after an 'exit' in a branch false at the parse is not reached
+
+func main() {
+    var a = 1
+    if false {
+        exit(1)
+        a = 2
+    }
+    exit(a)
+}

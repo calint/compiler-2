@@ -1,0 +1,4 @@
+
+1831.baz:4:10: function may return without setting its return value
+func f() res {
+         ^~~

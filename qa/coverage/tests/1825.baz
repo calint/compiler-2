@@ -1,0 +1,10 @@
+# a 'dat' checks the elements of a condition in an array literal after the
+# one that decides it
+
+dat a = i8[2]{1, 2}
+dat d = bool[1]{true or a == 1}
+
+func main() {
+    if not d[0] exit(1)
+    exit(0)
+}

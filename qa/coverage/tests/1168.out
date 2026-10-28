@@ -1,4 +1,4 @@
 
-1168.baz:5:5: 'dat' can only be declared in global scope
+1168.baz:5:5: 'dat' can only be in global scope
     dat x = 1 / 0
     ^~~

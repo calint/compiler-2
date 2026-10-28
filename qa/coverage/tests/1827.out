@@ -1,0 +1,4 @@
+
+1827.baz:7:20: index -1 is out of bounds for array 'a' of size 4
+    write(1, a, n, -1)
+                   ^

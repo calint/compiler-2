@@ -1,0 +1,4 @@
+
+1833.baz:4:5: 'void' is not a type of a value
+    void(1)
+    ^~~~

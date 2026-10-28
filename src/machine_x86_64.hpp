@@ -209,7 +209,9 @@ class machine_x86_64 final : public machine {
     // note: in order of likelihood they are not used by name, 'rsi', 'rdi'
     //       and 'rcx' last since 'rep movsb' and 'repe cmpsb' need all three
 
-    // scratch values live from which an array loop counts in memory
+    // scratch values live from which an array loop counts in memory: 'inc'
+    // and 'cmp' work on memory, so a loop counter leaves its register to the
+    // values that need one once many are live
     static constexpr size_t memory_counter_pressure_count_{6};
 
     // numbers the local labels of a memory compare, a division check and a
@@ -504,12 +506,6 @@ class machine_x86_64 final : public machine {
             immediate(syscall_exit_));
 
         assembler_.instruction(indent, op::syscall);
-    }
-
-    // 'inc' and 'cmp' work on memory, so a loop counter leaves its register to
-    // the values that need one once many are live
-    [[nodiscard]] auto foo_counter_in_memory() const -> bool override {
-        return registers().scratch_count() >= memory_counter_pressure_count_;
     }
 
     [[nodiscard]] auto make_register_operand(const std::string_view name,
@@ -2293,6 +2289,7 @@ class machine_x86_64 final : public machine {
             .max_padding_gaps_zeroed_one_by_one{
                 max_padding_gaps_zeroed_one_by_one_,
             },
+            .memory_counter_pressure_count{memory_counter_pressure_count_},
             .has_sd_card{true},
             .string_alignment{1},
             .is_stack_bounded{},

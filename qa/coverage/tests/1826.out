@@ -1,0 +1,4 @@
+
+1826.baz:6:23: divisor must not be zero
+dat d = r{true or 1 / 0 == 1, 2}
+                      ^

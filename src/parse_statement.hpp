@@ -118,8 +118,11 @@ inline auto parse_builtin(toc& tc, tokenizer& tz, const token& tk,
         reserved_names::find_builtin_function(tk.text()),
     };
 
-    // e.g. 'bool(5)', only the integer types convert
-    if (tm == term_kind::conversion and tc.types().get(tk.text()).is_bool()) {
+    // e.g. 'bool(5)' or 'void(5)', only the integer types convert;
+    // 'get_type_or_throw' rejects 'void'
+    if (tm == term_kind::conversion and
+        not tc.get_type_or_throw(tk).is_integer()) {
+
         throw compile_error{tk, "'bool' has no conversion, compare "
                                 "instead, e.g. 'x != 0'"};
     }
@@ -189,14 +192,11 @@ inline auto parse_keyword_statement(toc& tc, tokenizer& tz, const token tk)
 
     // rejected before its initializer or body, whose errors would hide this
     // one
-    if (tk.is_text("dat") or tk.is_text("func") or tk.is_text("type")) {
-        throw compile_error{
-            tk, std::format("{} can only be declared in global scope",
-                            in_quotes(tk.text()))};
-    }
+    if (tk.is_text("dat") or tk.is_text("func") or tk.is_text("type") or
+        tk.is_text("include")) {
 
-    if (tk.is_text("include")) {
-        throw compile_error{tk, "'include' can only be in global scope"};
+        throw compile_error{tk, std::format("{} can only be in global scope",
+                                            in_quotes(tk.text()))};
     }
 
     // e.g. a second 'else', or an 'else' after a statement that is not 'if'

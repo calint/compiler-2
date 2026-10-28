@@ -61,6 +61,9 @@ struct target_description {
     // above this count 'zero_padding' zeroes the whole instance, which is
     // then smaller than a zero per gap
     size_t max_padding_gaps_zeroed_one_by_one{};
+    // the live scratch values from which the counter of an array loop is
+    // kept in memory, none where it stays in a register
+    std::optional<size_t> memory_counter_pressure_count;
     // the sector functions need it, a sector is 'card_sector_size_bytes'
     bool has_sd_card{};
     // the alignment of a string constant, e.g. a word lets copies to aligned
@@ -297,7 +300,6 @@ class machine {
         // the indexes are those of the names of the backend, see
         // 'register_index_of'
         register_pool registers;
-        bool frame_base_reserved{};
         // the inlined calls being compiled and what the registers held
         register_trace trace;
         // the most scratch registers in use
@@ -404,7 +406,6 @@ class machine {
     // the image of the sd card on targets with an operating system
     std::string sd_card_file_name_;
 
-    bool variables_base_reserved_{};
     kept_version kept_version_{kept_version::smaller};
     // see 'target_options::reports_line'
     bool reports_line_{};
@@ -826,10 +827,6 @@ class machine {
     virtual auto exit(const token& src_loc_tk, const size_t indent,
                       const operand& exit_code) -> void = 0;
 
-    // whether the counter of an array loop is better kept in memory than in a
-    // register, decided when the loop starts
-    [[nodiscard]] virtual auto foo_counter_in_memory() const -> bool = 0;
-
     [[nodiscard]] virtual auto
     make_register_operand(const std::string_view name,
                           const type& value_type) const -> operand = 0;
@@ -1144,7 +1141,6 @@ class machine {
 
         if (code == discarded_code::body) {
             state_.registers = noinline_body_pool();
-            state_.frame_base_reserved = true;
         }
 
         std::ignore = target_assembler().capture(emit);
@@ -1261,6 +1257,14 @@ class machine {
                                .target{loop_label},
                                .branch_on_true{true},
                            });
+    }
+
+    // whether the counter of an array loop is better kept in memory than in a
+    // register, decided when the loop starts
+    [[nodiscard]] auto foo_counter_in_memory() const -> bool {
+        return target_.memory_counter_pressure_count and
+               state_.registers.scratch_count() >=
+                   *target_.memory_counter_pressure_count;
     }
 
     [[nodiscard]] auto frame_base_register() const -> std::string_view {
@@ -1646,16 +1650,23 @@ class machine {
         }
     }
 
-    [[nodiscard]] auto is_frame_base_reserved() const -> bool {
-        return state_.frame_base_reserved;
+    // the backend holds 'register_name' itself, e.g. the frame base while a
+    // noinline body is compiled
+    [[nodiscard]] auto
+    is_backend_register(const std::string_view register_name) const -> bool {
+
+        const size_t index{pool_index(register_name)};
+
+        return std::ranges::any_of(
+            state_.registers.allocations(),
+            [&](const register_pool::allocation& allocated) -> bool {
+                return allocated.index == index and
+                       allocated.holder == register_pool::holder_kind::backend;
+            });
     }
 
     [[nodiscard]] auto is_used(const std::string_view routine) const -> bool {
         return state_.used_routines.contains(routine);
-    }
-
-    [[nodiscard]] auto is_variables_base_reserved() const -> bool {
-        return variables_base_reserved_;
     }
 
     // marks 'handler' used for the failure at 'src_loc_tk'; true when the
@@ -1922,7 +1933,6 @@ class machine {
     auto assert_registers_free() const -> void {
         assert(state_.registers.is_empty());
         assert(state_.registers.unavailable_mask() == 0);
-        assert(not state_.frame_base_reserved);
     }
 
     // the arguments of a call of 'function' and its result, empty when it has
@@ -2266,32 +2276,22 @@ class machine {
     // the frame base is held while a 'noinline' body is compiled, which starts
     // and ends with no scratch register held
     auto release_frame_base() -> void {
-        assert(state_.frame_base_reserved);
         assert(state_.registers.scratch_count() == 0);
 
         release_named_register(token{}, 0, frame_base_register());
-
-        state_.frame_base_reserved = false;
     }
 
     auto release_variables_base() -> void {
-        assert(variables_base_reserved_);
-
         release_named_register(token{}, 0, variables_base_register());
-
-        variables_base_reserved_ = false;
     }
 
     auto reserve_frame_base() -> void {
-        assert(not state_.frame_base_reserved);
         assert(state_.registers.scratch_count() == 0);
 
         // a register the backend holds itself, which no source location asked
         // for
         push_allocation(token{}, 0, frame_base_register(),
                         register_pool::holder_kind::backend);
-
-        state_.frame_base_reserved = true;
 
         comment(token{}, 0, "allocate named register {}",
                 frame_base_register());
@@ -2301,15 +2301,11 @@ class machine {
 
     // held from 'start' to 'finish'
     auto reserve_variables_base() -> void {
-        assert(not variables_base_reserved_);
-
         comment(token{}, 0, "allocate named register {}",
                 variables_base_register());
 
         push_allocation(token{}, 0, variables_base_register(),
                         register_pool::holder_kind::backend);
-
-        variables_base_reserved_ = true;
     }
 
     // the scratch registers that can hold values beside the ones the backend

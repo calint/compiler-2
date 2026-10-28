@@ -1,0 +1,9 @@
+# a constant start of 'read' past the end of the array is an error, also with
+# a count known at run time
+
+func main() {
+    var a = i8[4]
+    var n = 1
+    var r = read(0, a, n, 5)
+    exit(0)
+}

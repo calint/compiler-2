@@ -1,0 +1,4 @@
+
+1832.baz:7:9: statement is not reached, the path before it does not continue
+        a = 2
+        ^

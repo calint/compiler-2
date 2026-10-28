@@ -1,0 +1,5 @@
+# 'void' has no conversion, also alone as a statement
+
+func main() {
+    void(1)
+}

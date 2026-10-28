@@ -747,6 +747,8 @@ class machine_rv32i : public machine {
             .max_padding_gaps_zeroed_one_by_one{
                 max_padding_gaps_zeroed_one_by_one_,
             },
+            // note: a load and store machine counts in a register
+            .memory_counter_pressure_count{},
             .has_sd_card{true},
             .string_alignment{word_size_bytes_},
             .is_stack_bounded{},
@@ -1148,11 +1150,6 @@ class machine_rv32i : public machine {
                               request);
 
         release_bulk(src_loc_tk, indent);
-    }
-
-    // a load and store machine counts in a register
-    [[nodiscard]] auto foo_counter_in_memory() const -> bool override {
-        return false;
     }
 
     [[nodiscard]] auto make_register_operand(const std::string_view name,
@@ -3344,11 +3341,13 @@ class machine_rv32i : public machine {
         const std::string& base{address.base_register()};
 
         const bool is_variables_base{
-            is_variables_base_reserved() and base == variables_base_register(),
+            is_backend_register(variables_base_register()) and
+                base == variables_base_register(),
         };
 
         const bool is_frame_base{
-            is_frame_base_reserved() and base == frame_base_register(),
+            is_backend_register(frame_base_register()) and
+                base == frame_base_register(),
         };
 
         // other bases such as loaded pointers or bulk registers may hold any

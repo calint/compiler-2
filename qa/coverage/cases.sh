@@ -5814,3 +5814,36 @@ SRC=1822 && COMPERR
 
 # 'true' followed by '(' is not a call
 SRC=1823 && COMPERR
+
+# a 'dat' checks the elements of a condition after the one that decides it
+SRC=1824 && COMPERR
+
+# a 'dat' checks the skipped elements of a condition in an array literal
+SRC=1825 && COMPERR
+
+# a 'dat' checks the skipped elements of a condition in a field
+SRC=1826 && COMPERR
+
+# a constant start of 'write' before the array with a count known at run time
+SRC=1827 && COMPERR
+
+# a constant start of 'read' past the array with a count known at run time
+SRC=1828 && COMPERR
+
+# a branch false at the parse reads no unset result
+SRC=1829 && COMPERR
+
+# a condition after a branch true at the parse reads no unset result
+SRC=1830 && COMPERR
+
+# a 'return' in a branch false at the parse checks the result
+SRC=1831 && COMPERR
+
+# a statement after an 'exit' in a branch false at the parse is not reached
+SRC=1832 && COMPERR
+
+# 'void' has no conversion, also alone as a statement
+SRC=1833 && COMPERR
+
+# an array literal is not an argument of an array parameter
+SRC=1834 && COMPERR

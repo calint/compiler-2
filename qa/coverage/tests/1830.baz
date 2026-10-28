@@ -1,0 +1,13 @@
+# a condition after a branch true at the parse reads no unset result
+
+func f() res {
+    if true {
+        res = 1
+    } else if res == 2 {
+        res = 3
+    }
+}
+
+func main() {
+    exit(f())
+}

@@ -323,45 +323,25 @@ class expr_any final : public statement {
 
     // the fold of a condition stops at the element that decides it, so the
     // elements after it are checked like skipped code, e.g. the 'a / 0 == 1'
-    // of 'true or a / 0 == 1'; compiled as a branch condition, which needs no
-    // register for its value
-    auto check_folded_condition(toc& tc, const size_t indent) const -> void {
-        const single_value* const single{std::get_if<single_value>(&form_)};
+    // of 'true or a / 0 == 1'; every condition of the value is, also in the
+    // elements of a list and in the fields of an instance literal
+    auto check_folded_conditions(toc& tc, const size_t indent) const -> void {
+        if (const single_value* const single{
+                std::get_if<single_value>(&form_),
+            }) {
 
-        if (single == nullptr) {
+            check_folded_conditions_of(tc, indent, single->value);
             return;
         }
 
-        const expr_bool* const condition{
-            std::get_if<expr_bool>(&single->value),
-        };
+        if (const element_list* const list{
+                std::get_if<element_list>(&form_),
+            }) {
 
-        if (condition == nullptr) {
-            return;
+            for (const expr_variant& element : list->elements) {
+                check_folded_conditions_of(tc, indent, element);
+            }
         }
-
-        tc.check_skipped([&] -> void {
-            // note: two targets as an 'if', the same one for both would store
-            //       the value
-
-            const std::string true_label{
-                tc.create_unique_label(tok(), "bool"),
-            };
-
-            const std::string false_label{toc::end_label(true_label)};
-
-            std::ignore = condition->compile(tc, indent,
-                                             {
-                                                 .if_false{false_label},
-                                                 .if_true{true_label},
-                                             },
-                                             {});
-
-            machine& x{tc.machine()};
-
-            x.label(indent, true_label);
-            x.label(indent, false_label);
-        });
     }
 
     // compiles all but the trailing added constant of an arithmetic
@@ -981,6 +961,55 @@ class expr_any final : public statement {
                           expr_arith::options::implied(list_start_precedence,
                                                        std::move(first),
                                                        nullptr)};
+    }
+
+    // compiled as a branch condition, which needs no register for its value
+    static auto check_folded_condition(toc& tc, const size_t indent,
+                                       const expr_bool& condition) -> void {
+
+        tc.check_skipped([&] -> void {
+            // note: two targets as an 'if', the same one for both would store
+            //       the value
+
+            const std::string true_label{
+                tc.create_unique_label(condition.tok(), "bool"),
+            };
+
+            const std::string false_label{toc::end_label(true_label)};
+
+            std::ignore = condition.compile(tc, indent,
+                                            {
+                                                .if_false{false_label},
+                                                .if_true{true_label},
+                                            },
+                                            {});
+
+            machine& x{tc.machine()};
+
+            x.label(indent, true_label);
+            x.label(indent, false_label);
+        });
+    }
+
+    static auto check_folded_conditions_of(toc& tc, const size_t indent,
+                                           const expr_variant& value) -> void {
+
+        if (const expr_bool* const condition{std::get_if<expr_bool>(&value)}) {
+            check_folded_condition(tc, indent, *condition);
+            return;
+        }
+
+        const expr_type* const instance{std::get_if<expr_type>(&value)};
+
+        if (instance == nullptr or not instance->is_literal()) {
+            return;
+        }
+
+        for (const std::unique_ptr<expr_any>& field :
+             instance->field_values()) {
+
+            field->check_folded_conditions(tc, indent);
+        }
     }
 
     [[nodiscard]] static auto parse_variant(toc& tc, tokenizer& tz,

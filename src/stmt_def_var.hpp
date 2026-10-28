@@ -376,7 +376,7 @@ class stmt_def_const final : public statement {
         // note: the compile of a 'var' checks the elements of a condition
         //       after the one that decides it, so does this
 
-        initializer_.check_folded_condition(tc, indent);
+        initializer_.check_folded_conditions(tc, indent);
 
         tc.add_const(name_tk_, indent, name_tk_.text(), constant_);
     }

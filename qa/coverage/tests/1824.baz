@@ -1,0 +1,9 @@
+# a 'dat' checks the elements of a condition after the one that decides it,
+# as a 'var'
+
+dat k = true or 1 / 0 == 1
+
+func main() {
+    if not k exit(1)
+    exit(0)
+}

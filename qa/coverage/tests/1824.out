@@ -1,0 +1,4 @@
+
+1824.baz:4:21: divisor must not be zero
+dat k = true or 1 / 0 == 1
+                    ^

@@ -212,4 +212,20 @@ class assignment_flow final {
         assigned_ = *breaks;
         is_reachable_ = true;
     }
+
+    // code that never runs holds the rules as if it ran from here, as in the
+    // compile ('toc::check_skipped'), e.g. a branch false at the parse; the
+    // flow is left as it was
+    auto trace_skipped(const auto& code) -> void {
+        const assigned_bytes entry{assigned_};
+        const bool was_reachable{is_reachable_};
+        const std::optional<assigned_bytes> breaks{at_breaks_};
+
+        is_reachable_ = true;
+        code.trace_assignment(*this);
+
+        assigned_ = entry;
+        is_reachable_ = was_reachable;
+        at_breaks_ = breaks;
+    }
 };

@@ -1,0 +1,13 @@
+# a branch false at the parse reads no unset result
+
+func f() res {
+    var a = 0
+    if false {
+        a = res
+    }
+    res = 1
+}
+
+func main() {
+    exit(f())
+}

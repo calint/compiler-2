@@ -1,0 +1,4 @@
+
+1830.baz:6:15: use of uninitialized variable 'res'
+    } else if res == 2 {
+              ^~~

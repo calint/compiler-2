@@ -1,0 +1,4 @@
+
+1825.baz:5:25: array 'a' must be indexed
+dat d = bool[1]{true or a == 1}
+                        ^
