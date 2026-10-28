@@ -56,6 +56,7 @@
 //                checks 'check_negate', 'check_multiply_result',
 //                'emit_checked_add_subtract'
 //   handlers     'emit_failure_handler', 'emit_line_failure',
+//                'emit_panic_message', 'emit_message_data',
 //                'emit_report_line_routine'
 //   calls        'emit_call', the sector and i/o routine calls
 //   target hooks 'emit_read_call', 'emit_write_call',
@@ -106,6 +107,7 @@ class machine_rv32i : public machine {
     // the line report of a failure writes the ten digits of a 32-bit line
     // number and a newline on the stack
     static constexpr int64_t line_digits_bytes_{16};
+    // note: 11 B rounded up to 'stack_alignment_'
     static constexpr size_t byte_size_bytes_{1};
     static constexpr size_t half_size_bytes_{2};
 
@@ -737,7 +739,7 @@ class machine_rv32i : public machine {
     // statics
     //
 
-    // see 'machine::target_description'
+    // see 'target_description'
     [[nodiscard]] static constexpr auto rv32i_target() -> target_description {
         return {
             .address_size_bytes{word_size_bytes_},
@@ -3340,10 +3342,8 @@ class machine_rv32i : public machine {
 
         const std::string& base{address.base_register()};
 
-        const bool is_variables_base{
-            is_backend_register(variables_base_register()) and
-                base == variables_base_register(),
-        };
+        // note: the variables base is held while code is emitted
+        const bool is_variables_base{base == variables_base_register()};
 
         const bool is_frame_base{
             is_backend_register(frame_base_register()) and

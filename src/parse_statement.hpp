@@ -53,21 +53,6 @@
     throw compile_error{call_tk, "return value is discarded"};
 }
 
-// a built-in is not generic, e.g. 'read<i8>(0, buf)'
-inline auto assert_builtin_without_type_args(const token& tk,
-                                             const tokenizer& tz) -> void {
-
-    if (reserved_names::find_builtin_function(tk.text()) == nullptr or
-        tz.peek_char_after_whitespace() != '<') {
-
-        return;
-    }
-
-    throw compile_error{
-        tk, std::format("built-in function {} takes no type arguments",
-                        in_quotes(tk.text()))};
-}
-
 // the type of the value of the built-in at 'tk', classified as 'tm', e.g. 'i8'
 // of 'i8(1)', none when 'tk' names no built-in with a value;
 // 'parse_builtin' makes a statement for each
@@ -112,11 +97,16 @@ inline auto parse_builtin(toc& tc, tokenizer& tz, const token& tk,
                           const builtin_place at)
     -> std::unique_ptr<statement> {
 
-    assert_builtin_without_type_args(tk, tz);
-
     const reserved_names::builtin_function* const fn{
         reserved_names::find_builtin_function(tk.text()),
     };
+
+    // a built-in is not generic, e.g. 'read<i8>(0, buf)'
+    if (fn != nullptr and tz.peek_char_after_whitespace() == '<') {
+        throw compile_error{
+            tk, std::format("built-in function {} takes no type arguments",
+                            in_quotes(tk.text()))};
+    }
 
     // e.g. 'bool(5)' or 'void(5)', only the integer types convert;
     // 'get_type_or_throw' rejects 'void'
@@ -182,7 +172,7 @@ inline auto parse_builtin(toc& tc, tokenizer& tz, const token& tk,
     return std::make_unique<stmt_builtin_convert>(tc, std::move(uops), tk, tz);
 }
 
-// a statement that starts with a keyword or a built-in, null for a name
+// a statement that starts with a keyword, null otherwise
 inline auto parse_keyword_statement(toc& tc, tokenizer& tz, const token tk)
     -> std::unique_ptr<statement> {
 
@@ -228,12 +218,7 @@ inline auto parse_keyword_statement(toc& tc, tokenizer& tz, const token tk)
         return std::make_unique<stmt_builtin_foo>(tc, tk, tz);
     }
 
-    // e.g. 'arrays_equal(a, b, 4)' or 'i8(x)' alone is rejected, its value is
-    // all it does
-    unary_ops no_uops;
-
-    return parse_builtin(tc, tz, tk, classify_term(tc, tk, tz), no_uops,
-                         builtin_place::statement);
+    return nullptr;
 }
 
 // e.g. 'show<name>(x)' where 'show' is not generic, says so instead of reading
@@ -253,17 +238,6 @@ inline auto assert_no_type_args_for_plain_func(const token& tk,
         tk, std::format("function {} is not generic, it takes no type "
                         "arguments",
                         in_quotes(tk.text()))};
-}
-
-// a call in an expression is a value, a function without a result has none
-inline auto value_call(const toc& tc, std::unique_ptr<stmt_call> call)
-    -> std::unique_ptr<statement> {
-
-    if (call->get_type().is_same(tc.builtins().void_type())) {
-        throw_no_value(call->tok());
-    }
-
-    return call;
 }
 
 // a call, or an identifier that is not the receiver of a method
@@ -366,14 +340,14 @@ inline auto parse_call_or_identifier(toc& tc, tokenizer& tz, const token& tk,
 // 'f(x)', 'point.at(1, 2)' or 'lst.add(x)', otherwise an assignment, e.g.
 // 'p1 = p2'
 // note: 'unary_ops' not allowed before destination identifier
-inline auto parse_name_statement(toc& tc, tokenizer& tz, const token tk)
+inline auto parse_name_statement(toc& tc, tokenizer& tz, const token tk,
+                                 const term_kind tm)
     -> std::unique_ptr<statement> {
 
     // no destination: no type argument is deduced, and a result is
     // discarded, rejected here like the result of a built-in
     call_or_identifier parsed{
-        parse_call_or_identifier(tc, tz, tk, classify_term(tc, tk, tz),
-                                 unary_ops{}, nullptr),
+        parse_call_or_identifier(tc, tz, tk, tm, unary_ops{}, nullptr),
     };
 
     if (std::unique_ptr<stmt_call>* const call{
@@ -460,7 +434,12 @@ inline auto parse_operand(toc& tc, tokenizer& tz, unary_ops uops,
             std::get_if<std::unique_ptr<stmt_call>>(&parsed),
         }) {
 
-        return value_call(tc, std::move(*call));
+        // a function without a result has no value
+        if ((*call)->get_type().is_same(tc.builtins().void_type())) {
+            throw_no_value((*call)->tok());
+        }
+
+        return std::move(*call);
     }
 
     return std::move(std::get<std::unique_ptr<stmt_identifier>>(parsed));
@@ -478,8 +457,21 @@ inline auto parse_statement(toc& tc, tokenizer& tz, const token tk)
         return built;
     }
 
+    const term_kind tm{classify_term(tc, tk, tz)};
+
+    // e.g. 'arrays_equal(a, b, 4)' or 'i8(x)' alone is rejected, its value is
+    // all it does
+    unary_ops no_uops;
+
+    if (std::unique_ptr<statement> builtin{
+            parse_builtin(tc, tz, tk, tm, no_uops, builtin_place::statement),
+        }) {
+
+        return builtin;
+    }
+
     // e.g. 'lst.add(1)'
-    return parse_name_statement(tc, tz, tk);
+    return parse_name_statement(tc, tz, tk, tm);
 }
 
 // a definition of the top level, 'tk' is its first token; only definitions

@@ -119,7 +119,8 @@ class stmt_builtin_io final : public statement {
                 tk,
                 array_indexes_,
                 io_function::min_arg_count(),
-                io.max_arg_count()} {
+                io.max_arg_count()},
+          at_{optional_positions_of(io_, args_.count())} {
 
         assert_call_in_func(tc, tok());
 
@@ -129,7 +130,6 @@ class stmt_builtin_io final : public statement {
             assert_target_has_sd_card(tc);
         }
 
-        at_ = optional_positions_of(io_, args_.count());
         assert_buffer_path();
 
         if (not io_.fills_buffer) {

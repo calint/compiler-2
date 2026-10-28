@@ -358,24 +358,24 @@ compile reaches it.
 
 The compile decides, the parse is only the first validation, so every rule of
 the compile holds in all code. Code that a compile skips is compiled for its
-checks in a dry run ('toc::check_skipped') where what it folds is no constant
-of a call: in 'main', in the initializer of a global and in the check of a
-body without its calls. That is a
-branch whose condition folds to false, the branches and the 'else' after one
-that always runs, the operands of 'and' and 'or' after the one that decides
-the list, the body of a 'foo' whose count folds to 0, and the code after a
-statement that leaves on every path, e.g.
-'if 1 == 2 { n = a }' with 'a' an array is rejected. Such code is judged as if
-it ran, with the registers held where it stands; a 'break' or 'return' in it does not end the paths of the code that
-runs ('scope_stack::reach_state'). The parse walk does the same for the
-branches of an 'if' that it knows never run ('assignment_flow::trace_skipped'):
-they are walked as if they ran from the 'if', so in them too a read of an unset
-result, a 'return' before it is set and a statement after a path that cannot
-continue are rejected. The variables of skipped code take no storage, so
-'--vars' does not hold there (8.3). In a compile with the constants of a call
-skipped code is not checked, a constant argument decides it: 'if b != 0 { res
-= a / b }' in 'ratio(10, 0)' guards the division, and the check of the body
-without its calls, where the guard does not fold, holds the rules in it.
+checks in a dry run ('toc::check_skipped') where what it folds is no constant of
+a call: in 'main', in the initializer of a global and in the check of a body
+without its calls. That is a branch whose condition folds to false, the branches
+and the 'else' after one that always runs, the operands of 'and' and 'or' after
+the one that decides the list, the body of a 'foo' whose count folds to 0, and
+the code after a statement that leaves on every path, e.g. 'if 1 == 2 { n = a }'
+with 'a' an array is rejected. Such code is judged as if it ran, with the
+registers held where it stands; a 'break' or 'return' in it does not end the
+paths of the code that runs ('scope_stack::reach_state'). The parse walk does
+the same for the branches of an 'if' that it knows never run
+('assignment_flow::trace_skipped'): they are walked as if they ran from the
+'if', so in them too a read of an unset result, a 'return' before it is set and
+a statement after a path that cannot continue are rejected. The variables of
+skipped code take no storage, so '--vars' does not hold there (8.3). In a
+compile with the constants of a call skipped code is not checked, a constant
+argument decides it: 'if b != 0 { res = a / b }' in 'ratio(10, 0)' guards the
+division, and the check of the body without its calls, where the guard does not
+fold, holds the rules in it.
 
 ### 1.6 Reports
 

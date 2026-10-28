@@ -1680,8 +1680,9 @@ class builtin_arguments final {
 // ('resolve_callee', a generic function through 'generic_call', and
 // 'read_open_paren'), the kind of the callee
 // ('assert_method_receiver', 'constructor_func'), then the arguments
-// ('parse_arguments', each checked by 'assert_argument_usable' and
-// 'assert_argument_writable'), then 'record_uses_of_call'
+// ('parse_arguments', each checked by 'assert_not_array_literal_argument',
+// 'assert_argument_usable' and 'assert_argument_writable'), then
+// 'record_uses_of_call'
 //
 // compiling, in 'compile': the checks made before the inlined and noinline
 // paths split ('assert_call_accepted'), then 'inline_call' or 'noinline_call'
@@ -1961,7 +1962,7 @@ class stmt_call final : public statement {
 
         // note: the parse rejected a discarded result
         //       ('parse_name_statement') and a call without one as a value
-        //       ('value_call')
+        //       ('parse_operand')
 
         assert(callee().has_result() != dst.is_empty());
 
@@ -2547,6 +2548,7 @@ class stmt_call final : public statement {
     // statics
     //
 
+    // an array parameter takes a whole array, a scalar parameter does not
     static auto assert_argument_usable(const toc& tc, const expr_any& arg,
                                        const stmt_def_func_param& param)
         -> void {
@@ -2578,7 +2580,6 @@ class stmt_call final : public statement {
         }
     }
 
-    // an array parameter takes a whole array, a scalar parameter does not
     // an array literal has no storage that an array parameter refers to, e.g.
     // '{1, 2}' or 'i8[]{1, 2}'; '{}' is reported where it is used
     static auto

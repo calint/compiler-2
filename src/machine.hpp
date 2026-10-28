@@ -1422,7 +1422,7 @@ class machine {
     auto start() -> void {
         start_output();
         emit_entry();
-        reserve_variables_base();
+        reserve_backend_register(variables_base_register());
         emit_variables_base_load();
 
         assembler& output{target_assembler()};
@@ -1740,9 +1740,7 @@ class machine {
     // the registers a 'noinline' call saves: the allocated ones but the
     // variables base, which the callee uses too
     [[nodiscard]] auto registers_saved_by_call() const -> std::vector<size_t> {
-        const std::optional<size_t> variables_base{
-            register_index_of(variables_base_register()),
-        };
+        const size_t variables_base{pool_index(variables_base_register())};
 
         std::vector<size_t> saved;
         for (const register_pool::allocation& allocated :
@@ -2050,7 +2048,7 @@ class machine {
     // releases the variables base that 'start' reserved and asserts that
     // every register is free
     auto finish_registers() -> void {
-        release_variables_base();
+        release_named_register(token{}, 0, variables_base_register());
         assert_registers_free();
     }
 
@@ -2281,31 +2279,22 @@ class machine {
         release_named_register(token{}, 0, frame_base_register());
     }
 
-    auto release_variables_base() -> void {
-        release_named_register(token{}, 0, variables_base_register());
+    // a register the backend holds itself, which no source location asked
+    // for, e.g. the variables base from 'start' to 'finish'
+    auto reserve_backend_register(const std::string_view register_name)
+        -> void {
+
+        comment(token{}, 0, "allocate named register {}", register_name);
+
+        push_allocation(token{}, 0, register_name,
+                        register_pool::holder_kind::backend);
     }
 
     auto reserve_frame_base() -> void {
         assert(state_.registers.scratch_count() == 0);
 
-        // a register the backend holds itself, which no source location asked
-        // for
-        push_allocation(token{}, 0, frame_base_register(),
-                        register_pool::holder_kind::backend);
-
-        comment(token{}, 0, "allocate named register {}",
-                frame_base_register());
-
+        reserve_backend_register(frame_base_register());
         emit_frame_entry();
-    }
-
-    // held from 'start' to 'finish'
-    auto reserve_variables_base() -> void {
-        comment(token{}, 0, "allocate named register {}",
-                variables_base_register());
-
-        push_allocation(token{}, 0, variables_base_register(),
-                        register_pool::holder_kind::backend);
     }
 
     // the scratch registers that can hold values beside the ones the backend

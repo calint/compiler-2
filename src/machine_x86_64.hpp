@@ -1278,11 +1278,11 @@ class machine_x86_64 final : public machine {
         const std::function_ref<void(const operand&)> load_source_address)
         -> void {
 
-        std::ignore = begin_bulk(src_loc_tk, indent);
+        const operand count{begin_bulk(src_loc_tk, indent)};
 
         load_source_address(qword_register("rsi"));
         lea(src_loc_tk, indent, qword_register("rdi"), dst);
-        mov(src_loc_tk, indent, qword_register("rcx"), immediate(size_bytes));
+        mov(src_loc_tk, indent, count, immediate(size_bytes));
 
         assembler_.instruction(indent, op::rep_movsb);
 
@@ -2279,7 +2279,7 @@ class machine_x86_64 final : public machine {
         return address;
     }
 
-    // see 'machine::target_description'
+    // see 'target_description'
     [[nodiscard]] static constexpr auto x86_64_target() -> target_description {
         return {
             .address_size_bytes{size_qword_},
