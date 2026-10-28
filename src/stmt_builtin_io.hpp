@@ -101,10 +101,10 @@ class stmt_builtin_io final : public statement {
     };
 
     // the entry of 'functions_' that the call names
-    io_function io_;
+    io_function io_{};
     builtin_arguments args_;
     // made once from the count of the arguments
-    optional_positions at_;
+    optional_positions at_{};
 
   public:
     stmt_builtin_io(toc& tc, const io_function& io, unary_ops uops,

@@ -165,7 +165,7 @@ struct generic_arg_tokens {
     [[nodiscard]] static auto parse(tokenizer& tz, const token& open_tk)
         -> generic_arg_tokens {
 
-        generic_arg_tokens args;
+        generic_arg_tokens args{};
         args.list_tks.emplace_back(open_tk);
 
         while (true) {
@@ -482,7 +482,7 @@ struct generic_func_info {
     // 'name.append'
     std::string report_name;
     // e.g. '<T type>()'
-    generic_signature signature;
+    generic_signature signature{};
     // for each type parameter
     std::vector<generic_deduction> deductions;
     // the instance of the generic type of a method, e.g. 'text<8>' for
@@ -523,7 +523,7 @@ struct generic_method_info {
     // where the definition continues after 'func', e.g. at 'text'
     token start_tk;
     // e.g. '()' of 'func text.print()'
-    generic_signature signature;
+    generic_signature signature{};
     // see 'definition_order'
     size_t definition{};
 };

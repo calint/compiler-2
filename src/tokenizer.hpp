@@ -629,7 +629,7 @@ class tokenizer final {
     }
 
     // skips a token, or the character of a delimiter, which has an empty token
-    // text; an empty string has an empty text too but is a token
+    // text
     // e.g. 'ab+c' skips 'ab', then '+', then 'c'
     auto skip_token() -> void {
         const token tk{next_token()};

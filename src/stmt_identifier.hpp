@@ -219,10 +219,10 @@ class stmt_identifier final : public statement {
     // the path's own and may be overwritten, the earlier ones are the caller's
     class path_address final {
         std::reference_wrapper<toc> tc_;
-        size_t indent_;
+        size_t indent_{};
         token src_loc_tk_;
         std::reference_wrapper<machine::held_registers> held_;
-        size_t owned_from_;
+        size_t owned_from_{};
         // where the caller prefers the address, none without a preference
         std::optional<operand> address_register_;
         // kept between the indexes of the path while it is not in the way
@@ -352,11 +352,11 @@ class stmt_identifier final : public statement {
 
     // bytes of the root variable accessed by this path, after a run-time index
     // the whole array
-    byte_range accessed_bytes_;
+    byte_range accessed_bytes_{};
 
     // the fields and indexes from the root variable to what this path names,
     // e.g. 'es[1].items[i]'
-    access_path access_path_;
+    access_path access_path_{};
 
     // the root is the result of the function being parsed, which the
     // definite assignment traces

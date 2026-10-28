@@ -218,7 +218,7 @@ class machine_x86_64 final : public machine {
 
   public:
     machine_x86_64(const builtin_type_set& builtins, const source_files& files,
-                   const target_options& options = {})
+                   const target_options& options)
         : machine{builtins, files, options, x86_64_target()} {}
 
     //
@@ -363,10 +363,13 @@ class machine_x86_64 final : public machine {
         }
 
         if (not action.target.empty()) {
-            branch_comparison(indent, action.operation,
-                              action.branch_on_true ? action.inverted
-                                                    : not action.inverted,
-                              action.target);
+            const bool inverted{
+                action.branch_on_true ? action.inverted : not action.inverted,
+            };
+
+            assembler_.jcc(indent,
+                           condition_for_comparison(action.operation, inverted),
+                           action.target);
         }
     }
 
@@ -1019,12 +1022,6 @@ class machine_x86_64 final : public machine {
     // class methods
     //
 
-    auto add(const token& src_loc_tk, const size_t indent, const operand& dst,
-             const operand& src) -> void {
-
-        emit_op(src_loc_tk, indent, op::add, dst, src);
-    }
-
     // adds 'index * scale' of 'value' to the register 'sum'
     auto add_scaled_index(const size_t indent, const std::string_view sum,
                           const operand& value) -> void {
@@ -1061,15 +1058,6 @@ class machine_x86_64 final : public machine {
         reserve_named_register(src_loc_tk, indent, "rsi");
         reserve_named_register(src_loc_tk, indent, "rdi");
         return alloc_named_register(src_loc_tk, indent, "rcx", default_type());
-    }
-
-    auto branch_comparison(const size_t indent,
-                           const comparison_operator comparison,
-                           const bool inverted, const std::string_view label)
-        -> void {
-
-        assembler_.jcc(indent, condition_for_comparison(comparison, inverted),
-                       label);
     }
 
     // jumps to the overflow failure handler when the instruction before set
@@ -1287,7 +1275,7 @@ class machine_x86_64 final : public machine {
                              builtins().i64));
         } else {
             mov(src_loc_tk, indent, reg_top_idx, range.checked);
-            add(src_loc_tk, indent, reg_top_idx, count);
+            emit_op(src_loc_tk, indent, op::add, reg_top_idx, count);
             branch_to_failure(src_loc_tk, indent, condition::o, bounds_failure);
         }
 
@@ -2248,7 +2236,6 @@ class machine_x86_64 final : public machine {
         return allow_end ? condition::g : condition::ge;
     }
 
-    // returns 0 if name is not a register
     // the row in 'register_names_' of a register of any size, none for a
     // name of no register
     [[nodiscard]] static auto register_row(const std::string_view name)

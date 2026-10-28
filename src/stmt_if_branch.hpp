@@ -20,7 +20,7 @@
 // the condition returns, where the next branch and the 'else' start, e.g.
 // not after 'if stop() == 1' with 'stop' an inlined 'exit'
 struct branch_condition {
-    condition_result known;
+    condition_result known{};
     bool returns{};
 };
 
@@ -30,7 +30,7 @@ class stmt_if_branch final : public statement {
     // the value of the condition known where the 'if' is written, e.g. from
     // literals and constants, 'unknown' when it depends on the run or on a
     // call
-    condition_result constant_at_parse_;
+    condition_result constant_at_parse_{};
     stmt_block code_;
 
   public:
@@ -111,6 +111,7 @@ class stmt_if_branch final : public statement {
         return constant_at_parse_;
     }
 
+  private:
     //
     // statics
     //

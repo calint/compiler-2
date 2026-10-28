@@ -129,7 +129,7 @@ class assembler {
     // versions being emitted by 'capture', innermost last
     std::vector<captured_lines> captures_;
     bool code_section_{true};
-    optimization_counts optimizations_;
+    optimization_counts optimizations_{};
     std::vector<body> bodies_;
 
   public:

@@ -88,7 +88,10 @@
   `-Wcovered-switch-default`).
 - Parameters shadowing members get an `_in` suffix (`-Wshadow-field`); no
   locals named like enclosing class fields (`-Wshadow`).
-- No `{}` on default-constructed class members and scalars.
+- Every member and variable is initialized with `{}` (`size_t count{};`,
+  `bool done{};`, `byte_range bytes{};`): scalars, bools, pointers, enums,
+  arrays and structs (aggregates); the only exception is a class type whose
+  default constructor initializes it, e.g. `std::string name;`.
 
 ## Code
 

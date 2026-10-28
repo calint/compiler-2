@@ -102,7 +102,7 @@ class body_uses final {
   public:
     // e.g. 'entities' and '.array[?].messages' of 'entities.array[e].messages'
     struct global_use {
-        storage_path storage;
+        storage_path storage{};
         bool is_written{};
     };
 
@@ -110,7 +110,7 @@ class body_uses final {
     struct binding_use {
         // empty for the result
         std::optional<size_t> param_index;
-        access_path path;
+        access_path path{};
         bool is_written{};
     };
 
@@ -241,7 +241,7 @@ struct const_info {
     token src_loc_tk; // the definition
     // typed when the initializer of a 'let' is or its type is not the
     // default type, e.g. 'let v = int(5)' or 'let b = true'
-    folded_value constant;
+    folded_value constant{};
 };
 
 // what a variable is declared by: 'var', 'dat' or the signature of a function,
@@ -677,7 +677,7 @@ class scope final {
 class type_table final {
     struct entry {
         token src_loc_tk;
-        const type* type_ptr;
+        const type* type_ptr{};
         // see 'definition_order'
         size_t definition{};
         // e.g. 'i8' or 'int', which have no place in the source
@@ -693,19 +693,13 @@ class type_table final {
     explicit type_table(const definition_order& order) : order_{order} {}
 
     auto add(const token& src_loc_tk, const type& tpe) -> void {
-        add_alias(src_loc_tk, tpe.name(), tpe);
-    }
-
-    // another name for a type, e.g. 'text' for 'list<i8, 8>'
-    auto add_alias(const token& src_loc_tk, const std::string_view name,
-                   const type& tpe) -> void {
-
-        entries_.put(std::string{name}, {
-                                            .src_loc_tk{src_loc_tk},
-                                            .type_ptr{&tpe},
-                                            .definition{order_.get().current()},
-                                            .is_builtin{},
-                                        });
+        entries_.put(std::string{tpe.name()},
+                     {
+                         .src_loc_tk{src_loc_tk},
+                         .type_ptr{&tpe},
+                         .definition{order_.get().current()},
+                         .is_builtin{},
+                     });
     }
 
     // a built-in type under 'name', e.g. 'i8', or 'int' for the default type
@@ -953,7 +947,7 @@ class data_table final {
     size_t total_size_bytes_{};
     // the alignment of the data section of the machine and of the variables
     // after the dats
-    size_t data_alignment_;
+    size_t data_alignment_{};
 
   public:
     explicit data_table(const size_t data_alignment)
@@ -1550,7 +1544,7 @@ class storage_layout final {
     std::reference_wrapper<const ::machine> machine_;
     std::reference_wrapper<scope_stack> scopes_;
     std::reference_wrapper<const data_table> data_;
-    size_t vars_capacity_bytes_;
+    size_t vars_capacity_bytes_{};
     // the most bytes of variables in use while one body is compiled: the
     // globals with 'main' or with one noinline body, its inlined calls
     // included; the frames of noinline calls stack at run time, which
@@ -1561,10 +1555,10 @@ class storage_layout final {
     // the peaks that a dry run or a version of 'toc::emit_most_efficient'
     // raises and 'restore_peaks' puts back
     struct peaks {
-        size_t max_body_vars_size_bytes;
+        size_t max_body_vars_size_bytes{};
         // the index of the scope, scopes added meanwhile may move the scopes
         std::optional<size_t> frame_scope_index;
-        size_t peak_frame_size_bytes;
+        size_t peak_frame_size_bytes{};
     };
 
     storage_layout(const ::machine& backend, scope_stack& scopes,
@@ -2537,7 +2531,8 @@ class variable_comments final {
 // the context of every node: the names, their storage, the machine and the
 // phase; the program is parsed first ('is_compiling_' false: the names are
 // declared without storage and without comments), then compiled
-// ('begin_compile'); the formatter sorts the methods by name, so by phase:
+// ('begin_compile'), after which every scope and its storage is released
+// ('assert_released'); the formatter sorts the methods by name, so by phase:
 //
 //   parse          'add_type', 'add_type_param', 'add_func',
 //                  'add_func_instance', 'add_generic_func',
@@ -2580,6 +2575,11 @@ class variable_comments final {
 // with the constant count ('dry_run_scope') and set to those of the kept
 // version by 'emit_most_efficient'
 class toc final {
+    // the most levels of blocks and expressions inside each other, the parsers
+    // recurse for each of them so the limit keeps the source from exhausting
+    // the stack
+    static constexpr size_t max_parse_nesting_{128};
+
     std::reference_wrapper<::machine> machine_;
     source_locations locations_;
     // before the tables, which refer to it
@@ -2595,7 +2595,7 @@ class toc final {
     ident_resolver resolver_;
     variable_comments var_comments_;
     storage_layout storage_;
-    check_options checks_;
+    check_options checks_{};
     // above zero inside 'dry_run': no noinline body is added and the storage
     // capacity is not checked there
     size_t dry_run_depth_{};
@@ -2613,15 +2613,15 @@ class toc final {
     // of the kept version by 'emit_most_efficient'
     struct compile_peaks {
         size_t max_scope_count{};
-        storage_layout::peaks storage;
+        storage_layout::peaks storage{};
     };
 
     // what a dry run and a version that is not kept put back: the peaks and
     // whether the code after is reached, which an error unwinding an inlined
     // body ends ('pop_scope')
     struct compile_state {
-        compile_peaks peaks;
-        scope_stack::reach_state reach;
+        compile_peaks peaks{};
+        scope_stack::reach_state reach{};
     };
 
     // what a dry run changes in 'toc' is put back when it ends, also when an
@@ -2630,8 +2630,8 @@ class toc final {
     // 'add_noinline_body'
     class dry_run_scope final {
         toc& tc_;
-        compile_state kept_state_;
-        size_t kept_string_constant_count_;
+        compile_state kept_state_{};
+        size_t kept_string_constant_count_{};
 
       public:
         explicit dry_run_scope(toc& tc)
@@ -2691,7 +2691,7 @@ class toc final {
     class scope_entry final {
         toc& tc_;
         // the scopes below this one, the scopes are left in stack order
-        size_t outer_scope_count_;
+        size_t outer_scope_count_{};
         std::optional<::machine::register_trace_scope> trace_frame_;
 
       public:
@@ -2727,11 +2727,11 @@ class toc final {
 
       public:
         parse_nesting_scope(toc& tc, const tokenizer& tz) : tc_{tc} {
-            if (tc_.parse_nesting_ >= max_parse_nesting) {
+            if (tc_.parse_nesting_ >= max_parse_nesting_) {
                 throw compile_error{
                     tz, std::format("nesting is too deep, the limit is {} "
                                     "levels",
-                                    max_parse_nesting)};
+                                    max_parse_nesting_)};
             }
 
             ++tc_.parse_nesting_;
@@ -2769,11 +2769,6 @@ class toc final {
         types_.add_builtin(reserved_names::default_type_name,
                            builtins_.default_type());
     }
-
-    // the most levels of blocks and expressions inside each other, the parsers
-    // recurse for each of them so the limit keeps the source from exhausting
-    // the stack
-    static constexpr size_t max_parse_nesting{128};
 
     auto add_binding(const param_binding& binding) -> void {
         assert(is_compiling_);
@@ -3143,11 +3138,11 @@ class toc final {
         const std::string_view call_path{scopes_.call_path()};
 
         if (call_path.empty()) {
-            return source_location_for_use_in_label(src_loc_tk);
+            return locations_.for_label(src_loc_tk);
         }
 
-        return std::format(
-            "{}.{}", source_location_for_use_in_label(src_loc_tk), call_path);
+        return std::format("{}.{}", locations_.for_label(src_loc_tk),
+                           call_path);
     }
 
     // code that the compile skips, e.g. a branch that folds to false or the
@@ -3655,22 +3650,6 @@ class toc final {
         return std::format("{}.end", label);
     }
 
-    // letters, digits and '_', not starting with a digit, written without
-    // quotes
-    [[nodiscard]] static auto is_identifier(const token& name_tk) -> bool {
-        const std::string_view text{name_tk.text()};
-
-        const auto is_letter = [](const char ch) -> bool {
-            return (ch >= 'a' and ch <= 'z') or (ch >= 'A' and ch <= 'Z') or
-                   ch == '_';
-        };
-
-        return not text.empty() and is_letter(text.front()) and
-               std::ranges::all_of(text, [&](const char ch) -> bool {
-                   return is_letter(ch) or (ch >= '0' and ch <= '9');
-               });
-    }
-
     // an error that ends a dry run is reported as an error of the source:
     // the registers the run starts with do not depend on the code around it,
     // so it is not one of a version there
@@ -3785,11 +3764,24 @@ class toc final {
         storage_.restore_peaks(peaks.storage);
     }
 
-    [[nodiscard]] auto
-    source_location_for_use_in_label(const token& src_loc_tk) const
-        -> std::string {
+    //
+    // statics
+    //
 
-        return locations_.for_label(src_loc_tk);
+    // letters, digits and '_', not starting with a digit, written without
+    // quotes
+    [[nodiscard]] static auto is_identifier(const token& name_tk) -> bool {
+        const std::string_view text{name_tk.text()};
+
+        const auto is_letter = [](const char ch) -> bool {
+            return (ch >= 'a' and ch <= 'z') or (ch >= 'A' and ch <= 'Z') or
+                   ch == '_';
+        };
+
+        return not text.empty() and is_letter(text.front()) and
+               std::ranges::all_of(text, [&](const char ch) -> bool {
+                   return is_letter(ch) or (ch >= '0' and ch <= '9');
+               });
     }
 };
 

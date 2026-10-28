@@ -1036,7 +1036,7 @@ class assembler_rv32i final : public assembler {
     [[nodiscard]] auto collect_symbols(const image_layout& image) const
         -> symbol_table {
 
-        symbol_table symbols;
+        symbol_table symbols{};
         for (size_t index{}; index < lines().size(); ++index) {
             const line& l{lines().at(index)};
 
@@ -1196,7 +1196,7 @@ class assembler_rv32i final : public assembler {
     // sections follow each other in the order text, rodata, data, bss from
     // address zero, like a linker script listing them in that order
     [[nodiscard]] auto layout_image() const -> image_layout {
-        image_layout image;
+        image_layout image{};
         image.positions.reserve(lines().size());
         image.alignments = {one_instruction_bytes, 1, 1, 1};
 

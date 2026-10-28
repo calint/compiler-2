@@ -242,7 +242,7 @@ struct generic_call {
                                      in_quotes(generic_name), name_tk.text())};
         }
 
-        deduction deduced;
+        deduction deduced{};
 
         for (const auto [param_tk, source] : std::views::zip(
                  generic.signature.type_param_tks, generic.deductions)) {
@@ -724,14 +724,6 @@ struct call_site {
         compile();
     }
 
-    [[nodiscard]] static auto is_widened_integer(const type& result_type,
-                                                 const type& dst_type) -> bool {
-
-        return result_type.is_builtin() and not result_type.is_bool() and
-               dst_type.is_builtin() and not dst_type.is_bool() and
-               result_type.size_bytes() < dst_type.size_bytes();
-    }
-
     // 'dst' has another type than the result, after 'assert_result_type' a
     // widening
     [[nodiscard]] static auto result_type_differs(const destination& dst,
@@ -778,9 +770,9 @@ class inline_call final {
         std::vector<param_binding> arguments;
     };
 
-    call_site call_;
+    call_site call_{};
     // one per argument
-    call_site::call_plan plan_;
+    call_site::call_plan plan_{};
 
   public:
     inline_call(call_site call, call_site::call_plan plan)
@@ -1010,7 +1002,7 @@ class inline_call final {
 
         assert(call_.func->has_result() != dst.is_empty());
 
-        call_bindings bindings;
+        call_bindings bindings{};
 
         // the result names the destination, so the widths must agree
         if (const std::optional<func_result>& result{call_.func->result()};
@@ -1241,7 +1233,7 @@ class inline_call final {
 class noinline_call final {
     // a slot of the callee frame and the address it holds
     struct addressed_slot {
-        frame_slot slot;
+        frame_slot slot{};
         operand address;
     };
 
@@ -1254,9 +1246,9 @@ class noinline_call final {
         operand address;
     };
 
-    call_site call_;
+    call_site call_{};
     // one per argument, a place is passed by its address
-    call_site::call_plan plan_;
+    call_site::call_plan plan_{};
 
   public:
     noinline_call(call_site call, call_site::call_plan plan)
@@ -1370,8 +1362,6 @@ class noinline_call final {
         // note: an argument of unknown length is in the check of a function
         //       without its calls, no body has its lengths
 
-        machine& x{tc.machine()};
-
         if (std::ranges::none_of(arguments, [](const noinline_arg& a) -> bool {
                 return a.info.is_length_unknown();
             })) {
@@ -1390,6 +1380,8 @@ class noinline_call final {
         };
 
         held.release();
+
+        machine& x{tc.machine()};
 
         // the address in a register is loaded after the registers are saved,
         // a register that holds a value of the caller is not lost
@@ -1747,7 +1739,7 @@ class stmt_call final : public statement {
         token tk;
         // e.g. "argument 1 'a'" or "the result destination 'x'"
         std::string text;
-        storage_path target;
+        storage_path target{};
         std::vector<call_effect> reached;
     };
 
@@ -1804,7 +1796,8 @@ class stmt_call final : public statement {
 
         assert_method_receiver(receiver);
 
-        add_receiver_argument(std::move(receiver));
+        // the receiver is the first argument
+        args_.push_back(path_argument(std::move(receiver)));
 
         parse_arguments(tc, tz, deducing_args);
     }
@@ -1912,11 +1905,6 @@ class stmt_call final : public statement {
     }
 
   private:
-    // the receiver is the first argument
-    auto add_receiver_argument(stmt_identifier receiver) -> void {
-        args_.push_back(path_argument(std::move(receiver)));
-    }
-
     // the type of each argument, one verdict for an inlined and a noinline
     // call: a name or a typed constant has the type of its parameter, its
     // storage or typed value is passed; a value that is not a place must fit
@@ -2168,8 +2156,7 @@ class stmt_call final : public statement {
         -> void {
 
         assert(not call_site::result_type_differs(dst, callee()) or
-               call_site::is_widened_integer(callee().result_type(),
-                                             dst.type_ref()));
+               is_widened_integer(callee().result_type(), dst.type_ref()));
     }
 
     // the receiver of a method is written before the name
@@ -2295,10 +2282,6 @@ class stmt_call final : public statement {
         return is_method() ? 1 : 0;
     }
 
-    // what the body reaches of 'target', the argument of the parameter at
-    // 'param_index' or the result (empty), by its record; a call of the
-    // function it is in, whose record the parse is still making, reaches it
-    // whole, written unless the parameter is read-only
     // the call is in the body of its callee, a recursion
     [[nodiscard]] auto is_call_in_own_body(const toc& tc) const -> bool {
         return tc.scopes().current_func_scope().is_name(callee().name());
@@ -2583,6 +2566,10 @@ class stmt_call final : public statement {
         }
     }
 
+    // what the body reaches of 'target', the argument of the parameter at
+    // 'param_index' or the result (empty), by its record; a call of the
+    // function it is in, whose record the parse is still making, reaches it
+    // whole, written unless the parameter is read-only
     auto visit_reach_of(const toc& tc, const std::optional<size_t> param_index,
                         const std::string_view name, const storage_path& target,
                         const call_effect_visitor visitor) const -> void {
@@ -2692,6 +2679,14 @@ class stmt_call final : public statement {
                            constructor_name_tk.text());
 
         return name;
+    }
+
+    [[nodiscard]] static auto is_widened_integer(const type& result_type,
+                                                 const type& dst_type) -> bool {
+
+        return result_type.is_builtin() and not result_type.is_bool() and
+               dst_type.is_builtin() and not dst_type.is_bool() and
+               result_type.size_bytes() < dst_type.size_bytes();
     }
 
     [[nodiscard]] static auto may_share(const reference& lhs,

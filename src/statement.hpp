@@ -33,7 +33,7 @@ class one_line_source final {
     enum class piece_kind : uint8_t { code, comment, literal };
 
     struct source_piece {
-        piece_kind kind;
+        piece_kind kind{};
         std::string_view text;
     };
 
@@ -243,11 +243,13 @@ class stmt_identifier;
 //                  'has_inlined_call' walk the operands, 'stmt_identifier'
 //                  adds its own read, 'stmt_call' and 'stmt_builtin_io' what
 //                  the call writes, 'stmt_call' its callee
-//   a value        'fold': 'expr_zero', 'expr_bool', 'stmt_identifier' and
-//                  the built-ins with a value, forwarded by 'expr_arith' and
-//                  'expr_any'; 'assert_not_narrowed': 'stmt_identifier',
-//                  'stmt_call' and the built-ins, forwarded by 'expr_arith'
-//                  and 'expr_any'; 'keeps_low_bits': 'stmt_identifier' and
+//   a value        'fold': 'expr_zero', 'expr_bool', 'stmt_identifier',
+//                  'stmt_builtin_array_length' and 'stmt_builtin_convert',
+//                  forwarded by 'expr_arith' and 'expr_any';
+//                  'assert_not_narrowed': 'stmt_identifier', 'stmt_call',
+//                  'stmt_builtin_array_length', 'stmt_builtin_convert' and
+//                  'stmt_builtin_io', forwarded by 'expr_arith' and
+//                  'expr_any'; 'keeps_low_bits': 'stmt_identifier' and
 //                  'stmt_builtin_convert', forwarded by 'expr_arith'
 //   a place        'operand_path': 'stmt_identifier', forwarded by
 //                  'expr_arith', 'expr_any' and 'expr_type' when they hold

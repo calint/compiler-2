@@ -101,7 +101,7 @@ class part_location final {
 
     // the path from the destination, as the aliasing check names storage
     [[nodiscard]] auto path() const -> access_path {
-        access_path result;
+        access_path result{};
 
         for (const part_step& step : steps_) {
             if (step.field != nullptr) {

@@ -134,7 +134,7 @@ class machine_rv32i : public machine {
     struct bulk_operation {
         // the two pointers then the count, in the order of allocation
         std::array<operand, 3> registers;
-        std::array<access_start, 2> starts;
+        std::array<access_start, 2> starts{};
         // a missing address would leave the word alignment unproven
         size_t address_count{};
 
@@ -151,8 +151,8 @@ class machine_rv32i : public machine {
     };
 
     struct address_offset_parts {
-        uint32_t upper;
-        int32_t low;
+        uint32_t upper{};
+        int32_t low{};
     };
 
     // what a call of '.Lbaz_multiply', '.Lbaz_multiply_checked' or
@@ -165,7 +165,7 @@ class machine_rv32i : public machine {
     // a run-time routine of 'call_arithmetic_helper', 'clobbers' are the
     // registers a call of it changes
     struct helper_spec {
-        helper_routine routine;
+        helper_routine routine{};
         std::string_view label;
         std::span<const std::string_view> clobbers;
     };
@@ -220,12 +220,12 @@ class machine_rv32i : public machine {
     // a multiplier as signed digits: a factor of 2^i is added or subtracted per
     // nonzero digit
     struct digit_sequence {
-        std::array<int, multiplier_digit_count_> digits;
+        std::array<int, multiplier_digit_count_> digits{};
         // the digits build the negated multiplier
-        bool negate;
+        bool negate{};
         // the highest and the lowest nonzero digit
-        size_t top;
-        size_t lowest;
+        size_t top{};
+        size_t lowest{};
     };
 
     // a store of constant bytes at 'offset' with 'size_bytes' of 1, 2 or 4
@@ -357,7 +357,7 @@ class machine_rv32i : public machine {
     struct compared_memory {
         operand left;
         operand right;
-        std::array<access_start, 2> starts;
+        std::array<access_start, 2> starts{};
     };
 
     // the pointer registers of a comparison with a run-time byte count
@@ -365,14 +365,14 @@ class machine_rv32i : public machine {
         operand left;
         operand right;
         operand count;
-        std::array<access_start, 2> starts;
+        std::array<access_start, 2> starts{};
     };
 
     // an error that unwinds an array operation ends it, so a version of code
     // that fails leaves no bulk registers behind, see 'emit_most_efficient'
     class bulk_depth_scope final {
         std::vector<bulk_operation>& operations_;
-        size_t depth_;
+        size_t depth_{};
 
       public:
         explicit bulk_depth_scope(std::vector<bulk_operation>& operations)
@@ -564,23 +564,22 @@ class machine_rv32i : public machine {
                           [[maybe_unused]] const operand& result)
         -> void override {
 
-        if (function == target_call::read or function == target_call::write) {
-            const operand call_register{
-                reserve_call_register(src_loc_tk, indent),
-            };
+        // the arguments are in the registers of 'registers_for_target_call',
+        // checked by 'call_target'; 'a7' selects the system call or receives
+        // the return address
+        const operand call_register{
+            alloc_named_register(src_loc_tk, indent, "a7", default_type()),
+        };
 
-            if (function == target_call::read) {
-                emit_read_call(indent);
-            } else {
-                emit_write_call(indent);
-            }
-
-            free_named_register(src_loc_tk, indent, call_register);
-
-            return;
+        if (function == target_call::read) {
+            emit_read_call(indent);
+        } else if (function == target_call::write) {
+            emit_write_call(indent);
+        } else {
+            call_sector_routine(indent, function);
         }
 
-        call_sector_routine(src_loc_tk, indent, function);
+        free_named_register(src_loc_tk, indent, call_register);
     }
 
     // unused routines contribute no code
@@ -1188,7 +1187,7 @@ class machine_rv32i : public machine {
 
         // variable factors use the shared run-time helper
         if (not constant.has_value() or is_checked_constant) {
-            const runtime_check no_division_check;
+            const runtime_check no_division_check{};
 
             call_arithmetic_helper(src_loc_tk, indent, product, factor,
                                    helper_result::product, no_division_check,
@@ -1219,9 +1218,6 @@ class machine_rv32i : public machine {
         validate_destination_storage(dst);
 
         const std::optional<int32_t> constant{immediate_value(count)};
-
-        // immediate shifts must be resolved here rather than by the assembler
-        assert(not count.is_immediate() or constant.has_value());
 
         const size_t bits{dst.type_ref().size_bits()};
 
@@ -1533,7 +1529,7 @@ class machine_rv32i : public machine {
     auto begin_bulk(const token& src_loc_tk, const size_t indent) -> operand {
         // argument-order allocation keeps pointer and count names easy to
         // follow
-        bulk_operation bulk;
+        bulk_operation bulk{};
         for (operand& reg : bulk.registers) {
             reg = alloc_scratch_register(src_loc_tk, indent, default_type());
         }
@@ -1722,12 +1718,8 @@ class machine_rv32i : public machine {
     }
 
     // the sector is in a0 where 'read' has the descriptor, there is no result
-    auto call_sector_routine(const token& src_loc_tk, const size_t indent,
-                             const target_call function) -> void {
-
-        const operand call_register{
-            reserve_call_register(src_loc_tk, indent),
-        };
+    auto call_sector_routine(const size_t indent, const target_call function)
+        -> void {
 
         const std::string_view label{
             function == target_call::sector_read ? sector_read_label_
@@ -1736,7 +1728,6 @@ class machine_rv32i : public machine {
 
         mark_used(label);
         call_io_routine(indent, label, sector_clobbered_);
-        free_named_register(src_loc_tk, indent, call_register);
     }
 
     // a distance from the source to the destination that is not zero and below
@@ -3781,15 +3772,6 @@ class machine_rv32i : public machine {
         bulk_operations_.pop_back();
     }
 
-    // the arguments are in the registers of 'registers_for_target_call',
-    // checked by 'call_target'
-    auto reserve_call_register(const token& src_loc_tk, const size_t indent)
-        -> operand {
-
-        // selects the system call or receives the return address
-        return alloc_named_register(src_loc_tk, indent, "a7", default_type());
-    }
-
     // the loop ends when its pointer reaches 'end', replacing a counter that
     // costs a decrement in every iteration, a size below 2 KiB takes one
     // 'addi' through 'address_of'
@@ -3827,11 +3809,7 @@ class machine_rv32i : public machine {
             return;
         }
 
-        // known counts are below the width of the value
         const bool is_left{operation == arithmetic_operator::shift_left};
-
-        // note: 'sra' and 'srai' are the right shift, no other op reaches here
-        assert(is_left or operation == arithmetic_operator::shift_right);
 
         assembler_.immediate_op(indent, is_left ? op::slli : op::srai,
                                 loaded.value.register_name(),
@@ -3856,9 +3834,6 @@ class machine_rv32i : public machine {
         }
 
         const bool is_left{operation == arithmetic_operator::shift_left};
-
-        // note: 'sra' and 'srai' are the right shift, no other op reaches here
-        assert(is_left or operation == arithmetic_operator::shift_right);
 
         assembler_.register_op(
             indent, is_left ? op::sll : op::sra, loaded.value.register_name(),
@@ -4969,11 +4944,16 @@ class machine_rv32i : public machine {
         return names;
     }
 
-    // a narrow register gets high bits from a wider, immediate or
-    // differently extended source
+    // a narrow register gets high bits from a wider or differently extended
+    // source
     [[nodiscard]] static auto register_needs_extension(const type& dst_type,
                                                        const operand& src)
         -> bool {
+
+        // note: the callers handled an immediate before, 'copy_value' as a
+        //       constant and 'comparison_operands' needs two memory operands
+
+        assert(not src.is_immediate());
 
         const size_t dst_size_bytes{dst_type.size_bytes()};
         const size_t src_size_bytes{src.type_ref().size_bytes()};
@@ -4983,7 +4963,7 @@ class machine_rv32i : public machine {
         };
 
         return dst_size_bytes < word_size_bytes_ and
-               (src.is_immediate() or src_size_bytes > dst_size_bytes or
+               (src_size_bytes > dst_size_bytes or
                 (extension_differs and src_size_bytes == dst_size_bytes));
     }
 

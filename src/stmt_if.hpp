@@ -85,9 +85,7 @@ class stmt_if final : public statement {
         const std::string if_label{tc.create_unique_label(tok(), "if")};
         const std::string label_after_if{toc::end_label(if_label)};
 
-        const std::string label_else_branch{
-            create_label_else_branch(has_else_code(), if_label, label_after_if),
-        };
+        const std::string label_else_branch{else_label(if_label)};
 
         toc::path_merge paths{tc};
         bool reaches_else{true};
@@ -99,8 +97,7 @@ class stmt_if final : public statement {
             paths.begin_path(is_start_reachable);
 
             const branch_condition condition{
-                compile_branch_at(tc, indent, i, if_label, label_else_branch,
-                                  label_after_if),
+                compile_branch_at(tc, indent, i, if_label),
             };
 
             is_start_reachable = condition.returns;
@@ -120,8 +117,7 @@ class stmt_if final : public statement {
             if (ends_chain(known)) {
                 reaches_else = false;
 
-                check_skipped_after(tc, indent, i, if_label, label_else_branch,
-                                    label_after_if);
+                check_skipped_after(tc, indent, i, if_label);
 
                 break;
             }
@@ -178,15 +174,11 @@ class stmt_if final : public statement {
     // 'toc::check_skipped'
     auto check_skipped_after(toc& tc, const size_t indent,
                              const size_t branch_index,
-                             const std::string_view if_label,
-                             const std::string_view label_else_branch,
-                             const std::string_view label_after_if) const
-        -> void {
+                             const std::string_view if_label) const -> void {
 
         tc.check_skipped([&] -> void {
             for (size_t i{branch_index + 1}; i < branches_.size(); ++i) {
-                std::ignore = compile_branch_at(
-                    tc, indent, i, if_label, label_else_branch, label_after_if);
+                std::ignore = compile_branch_at(tc, indent, i, if_label);
             }
 
             if (else_) {
@@ -196,11 +188,9 @@ class stmt_if final : public statement {
     }
 
     // the branch at 'branch_index', what it found of its condition
-    [[nodiscard]] auto
-    compile_branch_at(toc& tc, const size_t indent, const size_t branch_index,
-                      const std::string_view if_label,
-                      const std::string_view label_else_branch,
-                      const std::string_view label_after_if) const
+    [[nodiscard]] auto compile_branch_at(toc& tc, const size_t indent,
+                                         const size_t branch_index,
+                                         const std::string_view if_label) const
         -> branch_condition {
 
         const size_t branch_count{branches_.size()};
@@ -210,7 +200,7 @@ class stmt_if final : public statement {
 
         // a false condition continues at the next branch or the 'else'
         const std::string jmp_if_false{
-            is_last_branch ? std::string{label_else_branch}
+            is_last_branch ? else_label(if_label)
                            : branch_label(if_label, branch_index + 1),
         };
 
@@ -229,10 +219,21 @@ class stmt_if final : public statement {
 
             machine& x{tc.machine()};
 
-            x.branch(indent, label_after_if);
+            x.branch(indent, toc::end_label(if_label));
         }
 
         return condition;
+    }
+
+    // an empty 'else' continues after the 'if'
+    [[nodiscard]] auto else_label(const std::string_view if_label) const
+        -> std::string {
+
+        if (not has_else_code()) {
+            return toc::end_label(if_label);
+        }
+
+        return std::format("{}.else", if_label);
     }
 
     // an empty 'else' compiles as none
@@ -286,17 +287,6 @@ class stmt_if final : public statement {
         }
 
         return std::format("{}.{}", if_label, branch_index);
-    }
-
-    [[nodiscard]] static auto create_label_else_branch(
-        const bool has_else_code, const std::string_view if_label,
-        const std::string_view label_after_if) -> std::string {
-
-        if (not has_else_code) {
-            return std::string{label_after_if};
-        }
-
-        return std::format("{}.else", if_label);
     }
 
     [[nodiscard]] static auto ends_chain(const condition_result known) -> bool {

@@ -54,7 +54,7 @@ class bulk_operands final {
     class run_time_emitters final {
         const bulk_operands& operands_;
         toc& tc_;
-        size_t indent_;
+        size_t indent_{};
         const token& src_loc_tk_;
         // the run-time start of the first and of the second array
         std::array<std::optional<operand>, 2> starts_;

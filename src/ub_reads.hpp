@@ -39,7 +39,7 @@ struct call_effect {
     token call_tk;
     // e.g. 'gx', the global or the argument as written
     std::string_view name;
-    storage_path storage;
+    storage_path storage{};
     bool is_write{};
 };
 

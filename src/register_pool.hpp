@@ -165,7 +165,7 @@ class register_trace final {
 
     bool enabled_{};
     std::vector<frame> frames_;
-    peak_use peak_;
+    peak_use peak_{};
     std::map<std::string, callee_use> callees_;
     std::map<std::string, noinline_use> noinline_uses_;
 

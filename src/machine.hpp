@@ -81,7 +81,7 @@ struct target_description {
     std::span<const std::string_view> scratch_registers;
     // the registers of the arguments and the result of 'read', 'write', the
     // sector functions and 'exit'
-    target_call_names target_calls;
+    target_call_names target_calls{};
 };
 
 // what the front end emits through, and what every target shares: the
@@ -184,7 +184,7 @@ class machine {
     };
 
     struct output_statistics {
-        assembler::optimization_counts optimizations;
+        assembler::optimization_counts optimizations{};
         std::vector<assembler::function_summary> noinline_functions;
         size_t max_scratch_registers{};
         size_t instruction_count{};
@@ -309,7 +309,7 @@ class machine {
     };
 
     // saved before a version and put back after it, see 'version_scope'
-    version_state state_;
+    version_state state_{};
 
   public:
     // the registers allocated while it lives belong to the call it names in
@@ -349,8 +349,8 @@ class machine {
     class held_registers final {
         machine& machine_;
         token src_loc_tk_;
-        size_t indent_;
-        int uncaught_at_start_;
+        size_t indent_{};
+        int uncaught_at_start_{};
         std::vector<operand> registers_;
 
       public:
@@ -398,7 +398,7 @@ class machine {
     // copies: 'version_scope' drops those its version added
     std::vector<failure_location> failure_locations_;
 
-    target_description target_;
+    target_description target_{};
     source_locations locations_;
     std::reference_wrapper<const builtin_type_set> builtins_;
     assembler::jump_mode jump_mode_;
@@ -415,8 +415,8 @@ class machine {
     // ('emit_most_efficient'), discarded code is not ('emit_discarded')
     class version_scope final {
         machine& machine_;
-        version_state start_;
-        size_t failures_start_;
+        version_state start_{};
+        size_t failures_start_{};
 
       public:
         explicit version_scope(machine& backend)
@@ -449,7 +449,7 @@ class machine {
     // the lines of a compiled version with the state it ended in
     struct compiled_version {
         assembler::captured_lines lines;
-        version_state end_state;
+        version_state end_state{};
         std::vector<failure_location> failures;
     };
 
@@ -498,7 +498,7 @@ class machine {
         address_emitter dst;
         // an enabled check makes a copy where the destination starts inside
         // the source jump to the overlap failure handler
-        runtime_check overlap;
+        runtime_check overlap{};
     };
 
     // keeps the registers of its operands, and the base and index registers
@@ -509,8 +509,8 @@ class machine {
     // was allocated before the scope must not be freed within it
     class operation_scope final {
         machine& machine_;
-        uint32_t saved_mask_;
-        size_t saved_count_;
+        uint32_t saved_mask_{};
+        size_t saved_count_{};
 
       public:
         // protects nothing, only frees what is allocated while it lives
@@ -1577,55 +1577,6 @@ class machine {
     // class methods
     //
 
-    // the arguments of a call of 'function' and its result, empty when it has
-    // none, are in the registers 'registers_for_target_call' gives it, at the
-    // width of a register
-    auto assert_target_call_registers(const target_call function,
-                                      const std::span<const operand> arguments,
-                                      const operand& result) const -> void {
-
-        const target_call_registers registers{
-            registers_for_target_call(function),
-        };
-
-        assert(arguments.size() == registers.arguments.size());
-
-        for (const auto [arg, name] :
-             std::views::zip(arguments, registers.arguments)) {
-
-            assert(arg.is_register() and
-                   register_index_of(arg.register_name()) ==
-                       register_index_of(name) and
-                   arg.type_ref().size_bytes() == default_type().size_bytes());
-        }
-
-        assert(result.is_empty() == registers.result.empty());
-
-        assert(result.is_empty() or
-               (register_index_of(result.register_name()) ==
-                    register_index_of(registers.result) and
-                result.type_ref().size_bytes() == default_type().size_bytes()));
-    }
-
-    // a routine marked while another one is emitted is emitted only if a
-    // later step of 'emit_runtime' asks for it
-    auto assert_used_routines_emitted() const -> void {
-        for (const std::string& routine : state_.used_routines) {
-            // note: the code marks the handlers, they are emitted first and a
-            //       handler that reports lines is under the labels of its lines
-
-            const bool is_handler{
-                std::ranges::any_of(
-                    failure_handlers,
-                    [&](const failure_handler& handler) -> bool {
-                        return handler.label == routine;
-                    }),
-            };
-
-            assert(is_handler or target_assembler().defines_label(routine));
-        }
-    }
-
     [[nodiscard]] auto builtins() const -> const builtin_type_set& {
         return builtins_.get();
     }
@@ -1651,23 +1602,6 @@ class machine {
 
             comment(src_loc_tk, indent, "count {} lower bound already checked",
                     range.count->register_name());
-        }
-    }
-
-    // the handlers that the code branches to, see 'mark_used'; before
-    // 'emit_used_routines', a handler marks the routines it calls
-    auto emit_used_failure_handlers() -> void {
-        for (const failure_handler& handler : failure_handlers) {
-            if (not is_used(handler.label)) {
-                continue;
-            }
-
-            // note: only a bounded stack is checked, see 'is_stack_bounded'
-            assert(handler.label != stack_overflow_failure.label or
-                   is_stack_bounded());
-
-            comment({}, 0, handler.comment);
-            emit_failure_handler(handler, reports_line_ and handler.takes_line);
         }
     }
 
@@ -1714,24 +1648,6 @@ class machine {
 
     [[nodiscard]] auto is_variables_base_reserved() const -> bool {
         return variables_base_reserved_;
-    }
-
-    // loaded before the frame base is set, the address may be relative to the
-    // caller's; the receiver already in the register is passed as is
-    auto load_slot_address(const token& src_loc_tk, const size_t indent,
-                           const std::optional<operand>& slot_address) -> void {
-
-        if (not slot_address or
-            slot_address->is_address_in_register(slot_register())) {
-
-            return;
-        }
-
-        comment(src_loc_tk, indent, "address of the slot in a register");
-
-        address_of(src_loc_tk, indent,
-                   make_register_operand(slot_register(), default_type()),
-                   *slot_address);
     }
 
     // marks 'handler' used for the failure at 'src_loc_tk'; true when the
@@ -1781,29 +1697,6 @@ class machine {
         error.kind = compile_error::error_kind::out_of_registers;
 
         return error;
-    }
-
-    // the compare is at the default type, 'signed_max' its largest value
-    [[nodiscard]] auto plan_bounds_check(const bounds_check_options& options,
-                                         const bounds_range& range) const
-        -> bounds_plan {
-
-        const uint64_t signed_max{
-            (uint64_t{1} << (default_type().size_bits() - 1)) - 1,
-        };
-
-        const bool count_known{
-            range.count and state_.registers.is_lower_checked(
-                                register_mask(range.count->register_name())),
-        };
-
-        return {
-            .upper_covers_lower{
-                options.lower and options.upper and not range.count and
-                    range.array_count <= signed_max,
-            },
-            .count_known{count_known},
-        };
     }
 
     // keeps the register 'name' from being picked for scratch until the
@@ -1986,18 +1879,6 @@ class machine {
         return std::bit_cast<int64_t>(bits);
     }
 
-    // the register whose lower bound a check settles, a count alone is checked
-    // as the index of its own range
-    [[nodiscard]] static auto lower_checked_register(const bounds_range& range)
-        -> std::string_view {
-
-        if (not range.count) {
-            return range.checked.register_name();
-        }
-
-        return range.count->register_name();
-    }
-
     // e.g. 'panic: bounds'; the newline in front separates it from the output
     // of the program, which may not end with one
     [[nodiscard]] static auto panic_message(const std::string_view name)
@@ -2043,6 +1924,55 @@ class machine {
         assert(not state_.frame_base_reserved);
     }
 
+    // the arguments of a call of 'function' and its result, empty when it has
+    // none, are in the registers 'registers_for_target_call' gives it, at the
+    // width of a register
+    auto assert_target_call_registers(const target_call function,
+                                      const std::span<const operand> arguments,
+                                      const operand& result) const -> void {
+
+        const target_call_registers registers{
+            registers_for_target_call(function),
+        };
+
+        assert(arguments.size() == registers.arguments.size());
+
+        for (const auto [arg, name] :
+             std::views::zip(arguments, registers.arguments)) {
+
+            assert(arg.is_register() and
+                   register_index_of(arg.register_name()) ==
+                       register_index_of(name) and
+                   arg.type_ref().size_bytes() == default_type().size_bytes());
+        }
+
+        assert(result.is_empty() == registers.result.empty());
+
+        assert(result.is_empty() or
+               (register_index_of(result.register_name()) ==
+                    register_index_of(registers.result) and
+                result.type_ref().size_bytes() == default_type().size_bytes()));
+    }
+
+    // a routine marked while another one is emitted is emitted only if a
+    // later step of 'emit_runtime' asks for it
+    auto assert_used_routines_emitted() const -> void {
+        for (const std::string& routine : state_.used_routines) {
+            // note: the code marks the handlers, they are emitted first and a
+            //       handler that reports lines is under the labels of its lines
+
+            const bool is_handler{
+                std::ranges::any_of(
+                    failure_handlers,
+                    [&](const failure_handler& handler) -> bool {
+                        return handler.label == routine;
+                    }),
+            };
+
+            assert(is_handler or target_assembler().defines_label(routine));
+        }
+    }
+
     // the lines of 'emit' with the state they end in, compiled from the
     // current state, which is put back
     [[nodiscard]] auto compile_version(const std::function_ref<void()> emit)
@@ -2078,6 +2008,23 @@ class machine {
     // the call frame that allocations are made in
     [[nodiscard]] auto current_trace_frame() const -> size_t {
         return state_.trace.current_frame();
+    }
+
+    // the handlers that the code branches to, see 'mark_used'; before
+    // 'emit_used_routines', a handler marks the routines it calls
+    auto emit_used_failure_handlers() -> void {
+        for (const failure_handler& handler : failure_handlers) {
+            if (not is_used(handler.label)) {
+                continue;
+            }
+
+            // note: only a bounded stack is checked, see 'is_stack_bounded'
+            assert(handler.label != stack_overflow_failure.label or
+                   is_stack_bounded());
+
+            comment({}, 0, handler.comment);
+            emit_failure_handler(handler, reports_line_ and handler.takes_line);
+        }
     }
 
     // the optional jump optimization
@@ -2124,6 +2071,24 @@ class machine {
 
         return output.instruction_count_of(first->lines) <=
                output.instruction_count_of(second->lines);
+    }
+
+    // loaded before the frame base is set, the address may be relative to the
+    // caller's; the receiver already in the register is passed as is
+    auto load_slot_address(const token& src_loc_tk, const size_t indent,
+                           const std::optional<operand>& slot_address) -> void {
+
+        if (not slot_address or
+            slot_address->is_address_in_register(slot_register())) {
+
+            return;
+        }
+
+        comment(src_loc_tk, indent, "address of the slot in a register");
+
+        address_of(src_loc_tk, indent,
+                   make_register_operand(slot_register(), default_type()),
+                   *slot_address);
     }
 
     [[nodiscard]] auto location_text(const token& src_loc_tk) const
@@ -2187,6 +2152,29 @@ class machine {
         }
 
         return count;
+    }
+
+    // the compare is at the default type, 'signed_max' its largest value
+    [[nodiscard]] auto plan_bounds_check(const bounds_check_options& options,
+                                         const bounds_range& range) const
+        -> bounds_plan {
+
+        const uint64_t signed_max{
+            (uint64_t{1} << (default_type().size_bits() - 1)) - 1,
+        };
+
+        const bool count_known{
+            range.count and state_.registers.is_lower_checked(
+                                register_mask(range.count->register_name())),
+        };
+
+        return {
+            .upper_covers_lower{
+                options.lower and options.upper and not range.count and
+                    range.array_count <= signed_max,
+            },
+            .count_known{count_known},
+        };
     }
 
     // the index of 'register_name', which names a register
@@ -2419,5 +2407,17 @@ class machine {
         }
 
         return "inlined call levels";
+    }
+
+    // the register whose lower bound a check settles, a count alone is checked
+    // as the index of its own range
+    [[nodiscard]] static auto lower_checked_register(const bounds_range& range)
+        -> std::string_view {
+
+        if (not range.count) {
+            return range.checked.register_name();
+        }
+
+        return range.count->register_name();
     }
 };

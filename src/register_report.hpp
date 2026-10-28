@@ -52,10 +52,10 @@ class register_use_report final {
 
     std::string heading_;
     // the scratch registers that can be live, the bases held are not
-    size_t register_total_;
+    size_t register_total_{};
     // the scratch registers that a 'noinline' body starts with
-    size_t noinline_register_total_;
-    size_t named_count_;
+    size_t noinline_register_total_{};
+    size_t named_count_{};
     std::vector<frame_use> frames_;
 
   public:

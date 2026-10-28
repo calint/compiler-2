@@ -312,13 +312,13 @@ enum class operator_family : uint8_t {
 // a value unchanged, and whether its low bits depend on higher bits of an
 // operand, which a narrower width would lose
 struct binary_operator_traits {
-    arithmetic_operator op;
+    arithmetic_operator op{};
     std::string_view text;
-    operator_family family;
-    uint8_t precedence;
-    bool is_regroupable;
+    operator_family family{};
+    uint8_t precedence{};
+    bool is_regroupable{};
     std::optional<int64_t> identity;
-    bool reads_high_bits;
+    bool reads_high_bits{};
 };
 
 inline constexpr auto binary_operators{
@@ -446,7 +446,7 @@ inline constexpr uint8_t list_start_precedence{
 
 // the spelling of a prefix operator in the source
 struct arithmetic_spelling {
-    arithmetic_operator op;
+    arithmetic_operator op{};
     std::string_view text;
 };
 
@@ -508,10 +508,10 @@ inline constexpr auto unary_spellings{
 // the facts of a comparison operator: its spelling, the operator true when
 // it is false, and the one with the same result when the operands swap
 struct comparison_spelling {
-    comparison_operator op;
+    comparison_operator op{};
     std::string_view text;
-    comparison_operator negated;
-    comparison_operator mirrored;
+    comparison_operator negated{};
+    comparison_operator mirrored{};
 };
 
 inline constexpr auto comparison_spellings{

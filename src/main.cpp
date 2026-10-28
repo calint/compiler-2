@@ -51,6 +51,7 @@ constexpr size_t stack_alignment{16};
 constexpr size_t default_memory_size_bytes{0x800000};
 constexpr size_t memory_alignment{4096};
 constexpr std::string_view default_sd_card_file_name{"sdcard.img"};
+constexpr std::string_view default_src_file_name{"prog.baz"};
 
 // a target of '--target': its name, the backend it makes, whether it writes
 // a binary image beside the assembly and the options only some targets read,
@@ -60,10 +61,10 @@ struct target_name {
     std::unique_ptr<machine> (*make)(const builtin_type_set& builtins,
                                      const source_files& files,
                                      const machine::target_options& options);
-    bool writes_image;
-    bool reads_stack;
-    bool reads_memory;
-    bool reads_sd_card;
+    bool writes_image{};
+    bool reads_stack{};
+    bool reads_memory{};
+    bool reads_sd_card{};
 };
 
 // the backend 'machine_t' of a target
@@ -141,18 +142,18 @@ constexpr std::array<report_name, 1> report_names{
 };
 
 struct options {
-    const char* src_file_name{"prog.baz"};
-    bool src_file_given{};
+    // the default is 'default_src_file_name'
+    std::optional<std::string_view> src_file_name;
     // a row of 'target_names'; never null
     const target_name* target{&target_names.front()};
     size_t vars_size_bytes{default_vars_size_bytes};
     // the options only some targets read are empty until given
     std::optional<size_t> stack_size_bytes;
     std::optional<size_t> memory_size_bytes;
-    check_options checks;
+    check_options checks{};
     bool optimize_jumps{true};
     bool reproduce_source{};
-    report_options reports;
+    report_options reports{};
     machine::kept_version kept_version{machine::kept_version::smaller};
     // the default depends on the source and target
     std::optional<std::string_view> binary_file_name;
@@ -229,7 +230,7 @@ auto print_call_frames(const source_files& files,
 
 // a line of the source, 'begin' is the index of its first character
 struct source_line {
-    size_t begin;
+    size_t begin{};
     std::string_view text;
 };
 
@@ -258,7 +259,7 @@ auto main(const int argc, const char** const argv) -> int {
     // a counted view of a pointer is a span that the compiler accepts as safe
     const std::span<const char*> args{std::views::counted(argv, argc)};
 
-    options opts;
+    options opts{};
 
     if (const std::optional<int> exit_code{parse_options(args, opts)}) {
         return *exit_code;
@@ -296,7 +297,7 @@ namespace {
 struct target_option {
     std::string_view name;
     bool target_name::* reads;
-    bool given;
+    bool given{};
 };
 
 [[nodiscard]] auto check_target_reads(const options& opts) -> bool {
@@ -435,16 +436,15 @@ template <typename Name, size_t count>
         return false;
     }
 
-    if (opts.src_file_given) {
+    if (opts.src_file_name) {
         print_option_error(std::format("more than one source file: {} and {}",
-                                       in_quotes(opts.src_file_name),
+                                       in_quotes(*opts.src_file_name),
                                        in_quotes(arg)));
 
         return false;
     }
 
-    opts.src_file_name = argument;
-    opts.src_file_given = true;
+    opts.src_file_name = arg;
 
     return true;
 }
@@ -502,30 +502,30 @@ template <typename Name, size_t count>
     return store_parsed(parse_reports(value), opts.reports);
 }
 
+// 'option' is named in the error message
+[[nodiscard]] auto parse_file_name(const std::string_view text,
+                                   const std::string_view option)
+    -> std::optional<std::string_view> {
+
+    if (text.empty()) {
+        print_option_error(std::format("invalid {}: empty file name", option));
+        return std::nullopt;
+    }
+
+    return text;
+}
+
 [[nodiscard]] auto apply_bin(const std::string_view value, options& opts)
     -> bool {
 
-    if (value.empty()) {
-        print_option_error("invalid --bin: empty file name");
-        return false;
-    }
-
-    opts.binary_file_name = value;
-
-    return true;
+    return store_parsed(parse_file_name(value, "--bin"), opts.binary_file_name);
 }
 
 [[nodiscard]] auto apply_sdcard(const std::string_view value, options& opts)
     -> bool {
 
-    if (value.empty()) {
-        print_option_error("invalid --sdcard: empty file name");
-        return false;
-    }
-
-    opts.sd_card_file_name = value;
-
-    return true;
+    return store_parsed(parse_file_name(value, "--sdcard"),
+                        opts.sd_card_file_name);
 }
 
 [[nodiscard]] auto apply_versions(const std::string_view value, options& opts)
@@ -535,16 +535,17 @@ template <typename Name, size_t count>
         std::ranges::find(kept_version_names, value, &kept_version_name::text),
     };
 
-    if (found != kept_version_names.end()) {
-        opts.kept_version = found->kind;
-        return true;
+    if (found == kept_version_names.end()) {
+        print_option_error(
+            std::format("invalid --versions: {}, supported values are: {}",
+                        in_quotes(value), joined_texts(kept_version_names)));
+
+        return false;
     }
 
-    print_option_error(
-        std::format("invalid --versions: {}, supported values are: {}",
-                    in_quotes(value), joined_texts(kept_version_names)));
+    opts.kept_version = found->kind;
 
-    return false;
+    return true;
 }
 
 // same layout as the readme usage section which pastes this output
@@ -641,13 +642,17 @@ auto print_help(const char* const program_name) -> void {
     const builtin_type_set builtins;
 
     try {
-        files.add(opts.src_file_name,
-                  source_files::read_file(opts.src_file_name));
+        const std::string_view src_file_name{
+            opts.src_file_name.value_or(default_src_file_name),
+        };
+
+        files.add(std::string{src_file_name},
+                  source_files::read_file(src_file_name));
 
         const std::string binary{
             opts.binary_file_name
                 ? std::string{*opts.binary_file_name}
-                : default_binary_file_name(opts.src_file_name, *opts.target),
+                : default_binary_file_name(src_file_name, *opts.target),
         };
 
         // the backend checks the stack against the memory without knowing
@@ -826,7 +831,7 @@ auto check_reproduced_source(const program& prg, const source_files& files)
 [[nodiscard]] auto parse_reports(const std::string_view reports)
     -> std::optional<report_options> {
 
-    report_options parsed;
+    report_options parsed{};
 
     for (const auto part : reports | std::views::split(',')) {
         const std::string_view report{part};
@@ -857,7 +862,7 @@ auto check_reproduced_source(const program& prg, const source_files& files)
 struct check_name {
     std::string_view text;
     bool check_options::* member;
-    bool is_ub;
+    bool is_ub{};
 };
 
 constexpr std::array<check_name, 9> check_names{
@@ -903,7 +908,7 @@ static_assert([] -> bool {
 [[nodiscard]] auto parse_checks(const std::string_view checks)
     -> std::optional<check_options> {
 
-    check_options parsed;
+    check_options parsed{};
     std::vector<bool check_options::*> disabled;
 
     for (const auto part : checks | std::views::split(',')) {

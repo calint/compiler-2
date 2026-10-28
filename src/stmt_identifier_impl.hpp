@@ -360,12 +360,12 @@ inline auto stmt_identifier::path_address::add_index(const ident_elem& cur_elem,
         x.copy_value(index_tk, indent, *request.start_register, index_register);
     }
 
-    const size_t type_size{cur_info.type_ref().size_bytes()};
+    const size_t element_size_bytes{cur_info.type_ref().size_bytes()};
 
     // a constant too far for the displacement is added to the index, the
     // sum can still be an element, e.g. 'a[i - 9223372036854775806]'
     if (not fits_address_offset(address.displacement(), addend_elements,
-                                type_size)) {
+                                element_size_bytes)) {
 
         x.comment(index_tk, indent, "index constant {} is added",
                   addend_elements);
@@ -383,17 +383,18 @@ inline auto stmt_identifier::path_address::add_index(const ident_elem& cur_elem,
 
     // a scale the addressing mode cannot encode is applied to the index
     // register instead, leaving scale 1 in the operand
-    const bool is_encodable_scale{x.can_lower_index_scale(type_size)};
+    const bool is_encodable_scale{x.can_lower_index_scale(element_size_bytes)};
 
     if (not is_encodable_scale) {
-        x.scale_index(index_tk, indent, index_register, type_size);
+        x.scale_index(index_tk, indent, index_register, element_size_bytes);
     }
 
     return operand::mem(
         address.base_register(), index_register.register_name(),
-        is_encodable_scale ? type_size : 1,
-        add_address_offset(address.displacement(),
-                           scaled_address_offset(addend_elements, type_size)),
+        is_encodable_scale ? element_size_bytes : 1,
+        add_address_offset(
+            address.displacement(),
+            scaled_address_offset(addend_elements, element_size_bytes)),
         cur_info.type_ref());
 }
 

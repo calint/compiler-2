@@ -381,8 +381,7 @@ inline auto parse_name_statement(toc& tc, tokenizer& tz, const token tk)
     }
 
     // e.g. 'p1 = p2'
-    if (const std::optional<token> equals_tk{tz.is_next_char_token('=')};
-        equals_tk) {
+    if (const std::optional<token> equals_tk{tz.is_next_char_token('=')}) {
 
         stmt_identifier& dst{
             *std::get<std::unique_ptr<stmt_identifier>>(parsed),

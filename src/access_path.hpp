@@ -186,8 +186,8 @@ struct root_variable {
 // storage under the name of a root variable: the root variable and the path
 // to what is accessed, empty for the whole variable
 struct storage_path {
-    root_variable root;
-    access_path path;
+    root_variable root{};
+    access_path path{};
 
     // 'suffix' inside the element at a run-time index of the array this
     // names, e.g. the element 'e' of a 'foo'

@@ -49,7 +49,7 @@ enum class name_in_initializer : uint8_t { visible, hidden };
 // initializer is parsed once to learn them and again at them
 class initializer_declaration final {
     token name_tk_;
-    name_in_initializer name_visibility_;
+    name_in_initializer name_visibility_{};
     const type* type_{};
     // of unknown length only while the initializer that gives the length is
     // parsed
@@ -332,7 +332,7 @@ class stmt_def_const final : public statement {
     expr_any initializer_;
     // typed when the initializer is, e.g. 'let v = i8(5)' is checked by type
     // like a variable of 'i8'
-    folded_value constant_;
+    folded_value constant_{};
 
   public:
     // the constant is declared during the parse so later statements can name

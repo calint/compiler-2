@@ -86,7 +86,7 @@ class compile_error final : public std::exception {
     // a place the error was found through: an inlined call or the instance of
     // a generic definition
     struct call_frame {
-        source_span where;
+        source_span where{};
         std::string text;
         std::string reason;
 

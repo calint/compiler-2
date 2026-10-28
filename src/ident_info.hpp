@@ -318,21 +318,6 @@ class ident_info final {
         return *type_ptr_;
     }
 
-    // an empty info has no type
-    [[nodiscard]] auto validate_invariants() const -> bool {
-        const bool is_typed{type_ptr_ != nullptr};
-
-        if (is_register()) {
-            const ::operand& reg{std::get<register_part>(part_).reg};
-
-            return is_typed and reg.is_register() and
-                   not reg.register_name().empty() and
-                   reg.index_register().empty() and reg.displacement() == 0;
-        }
-
-        return is_typed and (is_const() or is_var());
-    }
-
     // the bytes of the value, e.g. the whole array, not an address
     [[nodiscard]] auto value_size_bytes(const token& src_loc_tk) const
         -> size_t {
@@ -383,6 +368,22 @@ class ident_info final {
         info.part_ = std::move(var);
         return info;
     }
+
+  private:
+    // an empty info has no type
+    [[nodiscard]] auto validate_invariants() const -> bool {
+        const bool is_typed{type_ptr_ != nullptr};
+
+        if (is_register()) {
+            const ::operand& reg{std::get<register_part>(part_).reg};
+
+            return is_typed and reg.is_register() and
+                   not reg.register_name().empty() and
+                   reg.index_register().empty() and reg.displacement() == 0;
+        }
+
+        return is_typed and (is_const() or is_var());
+    }
 };
 
 // where a value is used: the width it is computed at and whether its
@@ -424,7 +425,7 @@ class destination final {
     // of it that it names, both stepped with 'field' and 'element'
     struct stored_name {
         ident_info info;
-        storage_path storage;
+        storage_path storage{};
     };
 
     // none for a register or nowhere
@@ -440,8 +441,6 @@ class destination final {
     };
 
   public:
-    destination() = default;
-
     [[nodiscard]] auto array_len() const -> std::optional<size_t> {
         return shape().length();
     }

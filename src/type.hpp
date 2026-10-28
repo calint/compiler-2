@@ -280,58 +280,6 @@ class type final {
 
     [[nodiscard]] auto alignment() const -> size_t { return alignment_; }
 
-    // the bytes of a value without padding, adjacent fields are merged; stops
-    // at more than 'max_count' ranges, the last of which may then be
-    // incomplete, so the work does not grow with the size of an array
-    [[nodiscard]] auto data_ranges(const size_t max_count) const
-        -> std::vector<byte_range> {
-
-        std::vector<byte_range> ranges;
-
-        if (is_builtin()) {
-            append_range(ranges, 0, size_bytes_);
-            return ranges;
-        }
-
-        for (const type_field& f : fields_) {
-            if (ranges.size() > max_count) {
-                break;
-            }
-
-            const std::vector<byte_range> element_ranges{
-                f.type().data_ranges(max_count),
-            };
-
-            const bool is_unpadded{
-                element_ranges.size() == 1 and
-                    element_ranges.front().size_bytes == f.type().size_bytes_,
-            };
-
-            if (is_unpadded) {
-                append_range(ranges, f.offset, f.size_bytes);
-                continue;
-            }
-
-            // note: each padded element after the first adds a range, so the
-            //       loop ends within 'max_count' + 2 elements
-
-            for (size_t i{};
-                 i < f.element_count() and ranges.size() <= max_count; ++i) {
-
-                const size_t element_offset{
-                    f.offset + (i * f.type().size_bytes_),
-                };
-
-                for (const byte_range& r : element_ranges) {
-                    append_range(ranges, element_offset + r.offset,
-                                 r.size_bytes);
-                }
-            }
-        }
-
-        return ranges;
-    }
-
     [[nodiscard]] auto field(const token& src_loc_tk,
                              const std::string_view name) const
         -> const type_field& {
@@ -431,6 +379,58 @@ class type final {
     [[nodiscard]] auto size_bytes() const -> size_t { return size_bytes_; }
 
   private:
+    // the bytes of a value without padding, adjacent fields are merged; stops
+    // at more than 'max_count' ranges, the last of which may then be
+    // incomplete, so the work does not grow with the size of an array
+    [[nodiscard]] auto data_ranges(const size_t max_count) const
+        -> std::vector<byte_range> {
+
+        std::vector<byte_range> ranges;
+
+        if (is_builtin()) {
+            append_range(ranges, 0, size_bytes_);
+            return ranges;
+        }
+
+        for (const type_field& f : fields_) {
+            if (ranges.size() > max_count) {
+                break;
+            }
+
+            const std::vector<byte_range> element_ranges{
+                f.type().data_ranges(max_count),
+            };
+
+            const bool is_unpadded{
+                element_ranges.size() == 1 and
+                    element_ranges.front().size_bytes == f.type().size_bytes_,
+            };
+
+            if (is_unpadded) {
+                append_range(ranges, f.offset, f.size_bytes);
+                continue;
+            }
+
+            // note: each padded element after the first adds a range, so the
+            //       loop ends within 'max_count' + 2 elements
+
+            for (size_t i{};
+                 i < f.element_count() and ranges.size() <= max_count; ++i) {
+
+                const size_t element_offset{
+                    f.offset + (i * f.type().size_bytes_),
+                };
+
+                for (const byte_range& r : element_ranges) {
+                    append_range(ranges, element_offset + r.offset,
+                                 r.size_bytes);
+                }
+            }
+        }
+
+        return ranges;
+    }
+
     [[nodiscard]] auto field_index(const token& src_loc_tk,
                                    const std::string_view name) const
         -> size_t {

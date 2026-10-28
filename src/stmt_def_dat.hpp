@@ -91,7 +91,7 @@ class stmt_def_dat final : public statement {
     token name_tk_;
     token equals_tk_;
     expr_any initializer_;
-    elem root_elem_;
+    elem root_elem_{};
 
   public:
     stmt_def_dat(toc& tc, const token src_loc_tk, tokenizer& tz)
@@ -271,9 +271,9 @@ class stmt_def_dat final : public statement {
         }
 
         // zero out remaining fields and the padding after the last field
-        const size_t size_bytes{tp.size_bytes() - written_bytes};
+        const size_t remaining_bytes{tp.size_bytes() - written_bytes};
 
-        if (size_bytes == 0) {
+        if (remaining_bytes == 0) {
             return;
         }
 
@@ -282,8 +282,8 @@ class stmt_def_dat final : public statement {
                                                 : "remaining fields",
         };
 
-        x.comment(record.src_loc_tk, 0, "zero {}: {} B", what, size_bytes);
-        x.emit_zero_data(size_bytes);
+        x.comment(record.src_loc_tk, 0, "zero {}: {} B", what, remaining_bytes);
+        x.emit_zero_data(remaining_bytes);
     }
 
     // e.g. 'dat greeting = "hello"'

@@ -155,7 +155,7 @@ struct func_head {
     // name, e.g. 'func noinline()' reads 'noinline' as the name, which is
     // then rejected as a keyword
     [[nodiscard]] static auto read(const toc& tc, tokenizer& tz) -> func_head {
-        func_head head;
+        func_head head{};
         head.start_tk = tz.cur_position_token();
         head.name_tk = tz.next_token();
         head.open_paren_tk = tz.is_next_char_token('(');
@@ -404,7 +404,7 @@ struct frame_slot {
 // body; 'toc' keeps the address of the definition, so it is not
 // copied or moved
 class stmt_def_func final : public statement {
-    func_head head_;
+    func_head head_{};
     std::vector<stmt_def_func_param> params_;
     std::vector<token> param_delims_tk_;
     token close_paren_tk_;
@@ -837,14 +837,13 @@ class stmt_def_func final : public statement {
 
     // every statement is reached and every path through the body sets the
     // result, also the end, which returns like a 'return' statement
+    // note: without a result the type is 'void', of no bytes, which every
+    //       path sets
     auto assert_sets_result() const -> void {
-        if (not result_) {
-            assignment_flow flow{tok(), 0};
-            code_.trace_assignment(flow);
-            return;
-        }
-
-        assignment_flow flow{result_->name_tk, result_type().size_bytes()};
+        assignment_flow flow{
+            result_ ? result_->name_tk : tok(),
+            result_type().size_bytes(),
+        };
 
         code_.trace_assignment(flow);
         flow.assert_set_at_return();

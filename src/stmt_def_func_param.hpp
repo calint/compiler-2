@@ -149,7 +149,7 @@ class stmt_def_func_param final : public statement {
 
         // 'tz' is after the '('
         [[nodiscard]] static auto read(tokenizer& tz) -> syntax_list {
-            syntax_list list;
+            syntax_list list{};
 
             std::optional<token> close_paren_tk{tz.is_next_char_token(')')};
 

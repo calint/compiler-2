@@ -205,7 +205,7 @@ inline auto assert_generic_type(const toc& tc, const token& generic_tk,
 struct generic_type_use {
     token equals_tk;
     token name_tk;
-    generic_arg_tokens args;
+    generic_arg_tokens args{};
 
     //
     // statics
