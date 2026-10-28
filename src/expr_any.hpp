@@ -466,8 +466,8 @@ class expr_any final : public statement {
             return;
         }
 
-        expr_type::plan_remaining_elements(tok(), at, get_type(), count,
-                                           *array_count, plan);
+        plan_remaining_elements(tok(), at, get_type(), count, *array_count,
+                                plan);
     }
 
   private:
@@ -850,31 +850,8 @@ class expr_any final : public statement {
             return;
         }
 
-        const size_t remaining_size_bytes{*array_count - size_bytes};
-
-        if (remaining_size_bytes == 0) {
-            return;
-        }
-
-        plan.push_back({
-            .at{at},
-            .action{
-                zero_fill{
-                    .src_loc_tk{string_tk},
-                    .comment{
-                        std::format("zero remaining elements: {} B",
-                                    remaining_size_bytes),
-                    },
-                    .offset{size_bytes},
-                    .value_type{&get_type()},
-                    .size_bytes{remaining_size_bytes},
-                    .alignment{get_type().alignment()},
-                },
-            },
-            .covered{
-                {at.elements_path(size_bytes, *array_count)},
-            },
-        });
+        plan_remaining_elements(string_tk, at, get_type(), size_bytes,
+                                *array_count, plan);
     }
 
     // the element at 'index' when it is an 'expr_type', null otherwise
@@ -1056,6 +1033,48 @@ class expr_any final : public statement {
         }
 
         return value;
+    }
+
+    // unlisted elements are zero like unlisted fields, the first
+    // 'listed_count' of the array at 'at' are written
+    static auto
+    plan_remaining_elements(const token& src_loc_tk, const part_location& at,
+                            const type& element_type, const size_t listed_count,
+                            const size_t array_count, write_plan& plan)
+        -> void {
+
+        const size_t remaining_count{array_count - listed_count};
+
+        if (remaining_count == 0) {
+            return;
+        }
+
+        const size_t size_bytes{
+            multiply_storage_size(src_loc_tk, element_type.size_bytes(),
+                                  remaining_count),
+        };
+
+        plan.push_back({
+            .at{at},
+            .action{
+                zero_fill{
+                    .src_loc_tk{src_loc_tk},
+                    .comment{
+                        std::format("zero remaining elements: {} * {} B = "
+                                    "{} B",
+                                    remaining_count, element_type.size_bytes(),
+                                    size_bytes),
+                    },
+                    .offset{listed_count * element_type.size_bytes()},
+                    .value_type{&element_type},
+                    .size_bytes{size_bytes},
+                    .alignment{element_type.alignment()},
+                },
+            },
+            .covered{
+                {at.elements_path(listed_count, array_count)},
+            },
+        });
     }
 
     static auto read_element_delimiter(tokenizer& tz, const type& tp,
