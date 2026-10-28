@@ -389,8 +389,15 @@ class expr_bool_op final : public statement {
         }
 
         // a constant 'lhs' becomes an immediate 'rhs' instead of a scratch
-        // register copy, the width check then applies to the swapped sides
-        if (lhs.folded and not lhs.is_typed_constant()) {
+        // register copy: an untyped one fits the other side, a typed one when
+        // its value does, which then compares as it would at its own width
+        const bool is_mirrored{
+            lhs.folded and (not lhs.is_typed_constant() or
+                            constant_arith::fits_width(lhs.folded->value,
+                                                       rhs.node->get_type())),
+        };
+
+        if (is_mirrored) {
             machine::comparison_action mirrored_action{action};
             mirrored_action.operation = mirrored(cmp.op);
 
@@ -911,7 +918,7 @@ class expr_bool_op final : public statement {
     }
 
     // the comparison needs its left operand in a register; a constant left
-    // side that is not typed was mirrored onto the right
+    // side was mirrored onto the right unless it is typed and does not fit it
     [[nodiscard]] static auto left_operand(toc& tc, const size_t indent,
                                            const comparison_side& side,
                                            machine::held_registers& held)
@@ -929,7 +936,8 @@ class expr_bool_op final : public statement {
 
         const ident_info expr_info{make_scalar_ident_info(tc, *ident)};
 
-        // a typed constant is a value of its type in a register
+        // a typed constant is a value of its type in a register, e.g. the
+        // 'i16(300)' of 'i16(300) > b' with 'b' an 'i8'
         if (side.is_typed_constant()) {
             machine& x{tc.machine()};
 

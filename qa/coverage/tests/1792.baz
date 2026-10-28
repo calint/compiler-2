@@ -1,0 +1,43 @@
+# a typed constant on the left of a comparison, e.g. a constant argument of an
+# inlined call, is compared as an immediate on the right when it fits the
+# right side; the result is that of the left side's width, also where it does
+# not fit, and the same as a noinline call's
+
+func assert(err, ok bool) { if not ok exit(err) }
+
+func lt(a i16, b i8) res bool { res = a < b }
+
+func eq(a i16, b i8) res bool { res = a == b }
+
+func ge(a i16, b i8) res bool { res = a >= b }
+
+func noinline lt_noinline(a i16, b i8) res bool { res = a < b }
+
+func main() {
+    var x = i8(5)
+    var low = i8(-128)
+    var high = i8(127)
+
+    assert(1, lt(3, x))
+    assert(2, not lt(5, x))
+    assert(3, not lt(-128, low))
+    assert(4, eq(-128, low))
+    assert(5, not eq(127, low))
+    assert(6, ge(127, high))
+    assert(7, not ge(-1, x))
+
+    # 300 and -300 do not fit 'i8', the compare is at the width of 'i16'
+    assert(8, not lt(300, high))
+    assert(9, lt(-300, low))
+    assert(10, not eq(300, x))
+
+    assert(11, lt(3, x) == lt_noinline(3, x))
+    assert(12, lt(300, high) == lt_noinline(300, high))
+    assert(13, lt(-300, low) == lt_noinline(-300, low))
+
+    # a conversion is a typed constant too
+    assert(14, i16(3) < x)
+    assert(15, not (i16(300) < high))
+
+    exit(0)
+}

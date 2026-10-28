@@ -5713,3 +5713,7 @@ SRC=1790 && COMPERR
 # code that a compile skips takes no variable storage, a local there is not
 # held to '--vars'
 SRC=1791 && EXP=3 && RUN
+
+# a typed constant on the left of a comparison compares as an immediate on the
+# right when it fits, at the left side's width where it does not
+SRC=1792 && EXP=0 && RUN
