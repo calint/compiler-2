@@ -1,0 +1,10 @@
+# the operand of a bulk operation that is not an array is quoted as written,
+# indexes included, as for 'foo'
+
+type point { x i8, y i8 }
+
+func main() {
+    var ps = point[2]
+    var b = i8[4]
+    array_copy(ps[1].x, b, 1)
+}

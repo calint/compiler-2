@@ -1,0 +1,4 @@
+
+1796.baz:9:16: 'ps[1].x' is not an array
+    array_copy(ps[1].x, b, 1)
+               ^~

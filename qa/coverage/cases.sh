@@ -5729,3 +5729,6 @@ SRC=1794 && COMPERR
 # the body of a generic type is skipped to its '}': an open '[' takes the '}'
 # with it, the block reaches the end of the file
 SRC=1795 && COMPERR
+
+# the operand of a bulk operation that is not an array is quoted as written
+SRC=1796 && COMPERR

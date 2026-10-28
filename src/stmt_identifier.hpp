@@ -553,16 +553,13 @@ class stmt_identifier final : public statement {
     }
 
     // an array or an element of one, where a bulk operation starts
+    // note: 'parse_array_argument' rejected a method
     auto assert_array_or_element() const -> void {
-        assert_not_method();
-
-        if (shape_.is_array() or is_array_element()) {
+        if (is_array_element()) {
             return;
         }
 
-        throw compile_error{
-            first_token(),
-            std::format("{} is not an array", in_quotes(dotted_path()))};
+        assert_array();
     }
 
     // every index is a constant within its array, e.g. the '1' of
