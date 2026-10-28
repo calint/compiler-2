@@ -870,13 +870,6 @@ class assembler_rv32i final : public assembler {
                    });
     }
 
-    auto write_resolved(std::ostream& os) -> void {
-        assert(jumps_resolved_);
-
-        write_text(os);
-        clear();
-    }
-
     // 'binary' receives the sections as one image from address zero
     auto write_resolved(std::ostream& os, std::ostream& binary) -> void {
         assert(jumps_resolved_);

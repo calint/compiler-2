@@ -393,7 +393,6 @@ class machine_rv32i : public machine {
         ".Lbaz_decimal_places",
     };
 
-    // empty when no binary image is written
     std::string binary_file_name_;
     assembler_rv32i assembler_;
     std::vector<bulk_operation> bulk_operations_;
@@ -748,10 +747,9 @@ class machine_rv32i : public machine {
     }
 
   public:
-    // 'options.binary_file_name' receives the image of the resolved output,
-    // backend tests without complete programs leave it empty
+    // 'options.binary_file_name' receives the image of the resolved output
     machine_rv32i(const builtin_type_set& builtins, const source_files& files,
-                  const target_options& options = {})
+                  const target_options& options)
         : machine_rv32i{builtins, files, options, rv32i_target()} {}
 
     //
@@ -1381,12 +1379,10 @@ class machine_rv32i : public machine {
                                false);
     }
 
-    // a named binary image is written together with the assembly source
+    // the binary image is written together with the assembly source
     auto write_assembly(std::ostream& os) -> void override {
-        if (binary_file_name_.empty()) {
-            assembler_.write_resolved(os);
-            return;
-        }
+        // note: 'main' names the image of every rv32i target
+        assert(not binary_file_name_.empty());
 
         std::ofstream binary{binary_file_name_, std::ios::binary};
 
