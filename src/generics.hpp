@@ -396,15 +396,7 @@ struct generic_type_instance {
 
     // e.g. 'capacity' is 8
     [[nodiscard]] auto constants() const -> std::vector<generic_arg> {
-        std::vector<generic_arg> result;
-
-        for (const generic_arg& arg : args) {
-            if (not arg.is_type()) {
-                result.push_back(arg);
-            }
-        }
-
-        return result;
+        return args_of_kind(false);
     }
 
     // the name written in the source, e.g. 'text.print' for the method
@@ -417,10 +409,17 @@ struct generic_type_instance {
 
     // e.g. 'T' is 'i8'
     [[nodiscard]] auto type_args() const -> std::vector<generic_arg> {
+        return args_of_kind(true);
+    }
+
+  private:
+    [[nodiscard]] auto args_of_kind(const bool is_type) const
+        -> std::vector<generic_arg> {
+
         std::vector<generic_arg> result;
 
         for (const generic_arg& arg : args) {
-            if (arg.is_type()) {
+            if (arg.is_type() == is_type) {
                 result.push_back(arg);
             }
         }
