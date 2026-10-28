@@ -91,14 +91,21 @@ class stmt_if final : public statement {
 
         toc::path_merge paths{tc};
         bool reaches_else{true};
+        // a branch starts where the condition before it is false, the first
+        // at the 'if'
+        bool is_start_reachable{tc.is_reachable()};
 
         for (size_t i{}; i < branches_.size(); ++i) {
-            paths.begin_path();
+            paths.begin_path(is_start_reachable);
 
-            const condition_result known{
+            const branch_condition condition{
                 compile_branch_at(tc, indent, i, if_label, label_else_branch,
                                   label_after_if),
             };
+
+            is_start_reachable = condition.returns;
+
+            const condition_result known{condition.known};
 
             // note: the compile knows at least what the parse knew, the
             //       paths of the definite assignment follow the parse
@@ -124,7 +131,7 @@ class stmt_if final : public statement {
 
         // an empty 'else' is the path that skips every branch
         if (reaches_else) {
-            paths.begin_path();
+            paths.begin_path(is_start_reachable);
 
             // note: spelled out because clang-tidy does not see that
             //       'has_else_code' checks 'else_'
@@ -194,7 +201,7 @@ class stmt_if final : public statement {
                       const std::string_view if_label,
                       const std::string_view label_else_branch,
                       const std::string_view label_after_if) const
-        -> condition_result {
+        -> branch_condition {
 
         const size_t branch_count{branches_.size()};
 
@@ -208,7 +215,7 @@ class stmt_if final : public statement {
         };
 
         // a condition that is constant true ends the chain at this branch
-        const condition_result const_eval{
+        const branch_condition condition{
             if_branch.compile_branch(
                 tc, indent, branch_label(if_label, branch_index), jmp_if_false),
         };
@@ -217,13 +224,15 @@ class stmt_if final : public statement {
         // without a jump
         const bool falls_through{is_last_branch and not has_else_code()};
 
-        if (const_eval == condition_result::unknown and not falls_through) {
+        if (condition.known == condition_result::unknown and
+            not falls_through) {
+
             machine& x{tc.machine()};
 
             x.branch(indent, label_after_if);
         }
 
-        return const_eval;
+        return condition;
     }
 
     // an empty 'else' compiles as none

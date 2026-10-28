@@ -1,0 +1,19 @@
+# an inlined recursion that a condition which never returns ends is not
+# expanded past it
+func stop(m) res {
+    if m >= 3 exit(m)
+    res = 0
+}
+
+func r(m) res {
+    if stop(m) == 1 {
+        res = 1
+        return
+    }
+    res = r(m + 1)
+}
+
+func main() {
+    var x = r(0)
+    exit(x)
+}

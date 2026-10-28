@@ -1,0 +1,24 @@
+# the 'else' and the code after the 'if' start where the 'else if' condition
+# is false, which an inlined 'exit' in it never is
+func stop(m) res {
+    if m >= 3 exit(m)
+    res = 0
+}
+
+func g(k, x) {
+    var a = [4]
+    if x == 1 {
+        exit(2)
+    } else if stop(k) == 1 {
+        exit(3)
+    } else {
+        a[k] = 2
+    }
+    a[k] = 1
+}
+
+func main() {
+    var x = 0
+    g(5, x)
+    exit(1)
+}

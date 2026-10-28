@@ -2621,8 +2621,9 @@ class toc final {
     };
 
   public:
-    // the paths of an 'if' start at the 'if', of an 'and'/'or' list at an
-    // element that may end it; the end is reached when one path that runs
+    // the paths of an 'if' start where the condition before them is false,
+    // the first at the 'if', of an 'and'/'or' list at an element that may end
+    // it; the end is reached when one path that runs
     // reaches it; set when the merge ends, also when an error unwinds, like
     // 'assignment_flow::path_merge'
     class path_merge final {
@@ -2639,8 +2640,9 @@ class toc final {
 
         ~path_merge() { tc_.scopes_.set_reachable(is_reachable_); }
 
-        // a path starts at the 'if'
-        auto begin_path() -> void { tc_.scopes_.set_reachable(true); }
+        auto begin_path(const bool is_start_reachable) -> void {
+            tc_.scopes_.set_reachable(is_start_reachable);
+        }
 
         // the path that ran ends here
         auto join_path() -> void {

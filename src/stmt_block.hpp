@@ -76,6 +76,12 @@ class stmt_block final : public statement {
 
         const toc::scope_entry block{tc, scope::block()};
 
+        // e.g. the code of a branch whose condition never returns
+        if (not tc.is_reachable()) {
+            tc.check_skipped([&] -> void { compile_from(tc, indent, 0); });
+            return;
+        }
+
         compile_from(tc, indent, 0);
     }
 

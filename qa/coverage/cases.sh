@@ -5672,3 +5672,15 @@ SRC=1778 && EXP=27 && RUN
 # a method inlined in the main file and a function inlined at the same line
 # and column of an included file have labels of their own
 SRC=1779 && EXP=9 && RUN
+
+# a condition that never returns ends the path of the 'if'
+SRC=1780 && EXP=5 && RUN
+
+# the paths after an 'else if' condition that never returns are not reached
+SRC=1781 && EXP=5 && RUN
+
+# a 'foo' count that never returns ends the path
+SRC=1782 && EXP=5 && RUN
+
+# an inlined recursion ended by a condition that never returns
+SRC=1783 && EXP=3 && RUN

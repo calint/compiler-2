@@ -1,0 +1,19 @@
+# a condition that never returns ends the path: the code after the 'if' is
+# not reached, its constant index past the end is not checked
+func stop(m) res {
+    if m >= 3 exit(m)
+    res = 0
+}
+
+func g(k) {
+    var a = [4]
+    if stop(k) == 1 {
+        exit(2)
+    }
+    a[k] = 1
+}
+
+func main() {
+    g(5)
+    exit(1)
+}

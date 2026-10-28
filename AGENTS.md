@@ -177,7 +177,8 @@
 - Per phase, or for a step that changes behavior, also
   `qa/coverage/test-far-jumps.sh`, `test-far-jumps-no-scratch.sh`,
   `test-versions.sh`, `roome/qa/test.sh`, the asan build and the fuzzers in
-  parallel.
+  parallel. In a bug hunt round, a fix step runs these without the asan
+  build and the fuzzers; those run once when the round's fixes are done.
 - Run each check once per round; do not edit sources while a check runs. The
   two `test-coverage.sh` targets and `test-cli.sh` share `gen.s`: run them one
   after the other.

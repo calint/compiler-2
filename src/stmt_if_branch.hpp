@@ -16,6 +16,14 @@
 #include "tokenizer.hpp"
 #include "ub_assigned.hpp"
 
+// what a branch found of its condition: its value where known and whether
+// the condition returns, where the next branch and the 'else' start, e.g.
+// not after 'if stop() == 1' with 'stop' an inlined 'exit'
+struct branch_condition {
+    condition_result known;
+    bool returns{};
+};
+
 // one condition of an 'if' or 'else if' and the block it guards
 class stmt_if_branch final : public statement {
     expr_bool condition_;
@@ -59,7 +67,7 @@ class stmt_if_branch final : public statement {
     compile_branch(toc& tc, const size_t indent,
                    const std::string_view if_label,
                    const std::string_view jmp_to_if_false_label) const
-        -> condition_result {
+        -> branch_condition {
 
         const std::string jmp_to_if_true_label{
             std::format("{}.code", if_label),
@@ -78,6 +86,8 @@ class stmt_if_branch final : public statement {
                                {}),
         };
 
+        const bool returns{tc.is_reachable()};
+
         // note: code that never runs holds the compile rules too, see
         //       'toc::check_skipped'
 
@@ -85,14 +95,20 @@ class stmt_if_branch final : public statement {
             tc.check_skipped(
                 [&] -> void { code_.compile(tc, indent, destination{}); });
 
-            return const_eval;
+            return {
+                .known{const_eval},
+                .returns{returns},
+            };
         }
 
         // an 'or' condition branches here as soon as one operand is true
         x.label(indent, jmp_to_if_true_label);
         code_.compile(tc, indent, destination{});
 
-        return const_eval;
+        return {
+            .known{const_eval},
+            .returns{returns},
+        };
     }
 
     [[nodiscard]] auto constant_at_parse() const -> condition_result {

@@ -1,6 +1,37 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] hard: bug hunt round 13 (2026-10-28, user: loop until a round finds no
+    bugs; hunters A1 the run-time checks alone and in combination, A2 names
+    in the output, A3 each statement kind in each context; reports in the
+    session scratchpad bh13)
+    => done (2026-10-28): A2-1 and A3-1 fixed; A2-2 documented in README 8
+       item 4 (decided by the user); A1 found nothing in the corpus under 34
+       check lists and about 5500 generated programs against a reference
+       model
+[x] medium: bug hunt round 13 A2-1: a function named like a type and a
+    method of that type got the same label, e.g. 'h' for array lengths 10
+    and 15 and 'h.len' inlined at 10:15 both 'func.h.len.10.15'; nasm
+    rejected the listing, the rv32i assembler aborted
+    => done (2026-10-28): a path follows a name after '..', as type
+       arguments do; a plain and a generic function or method cannot share
+       a name ('name_with_lengths', the inlined call label); tests 1778,
+       1779; rejected: '$' as the separator (user: '..'), rejecting a
+       function named like a type (tests 1450, 1594 support it)
+[-] easy: bug hunt round 13 A2-2: a name of about 4085 characters gives an
+    x86_64 listing that nasm rejects (nasm truncates labels to 4095)
+    => discarded (2026-10-28, user): README 8 item 4 states it; rejected: a
+       name length limit (a label also holds type arguments and a call path),
+       a label length check in the backend (no source location)
+[x] medium: bug hunt round 13 A3-1: an inlined call that never returns in
+    an 'if' condition or a 'foo' count did not end the path, so an inlined
+    compile checked the code after it as reached and rejected what the
+    noinline compile accepts
+    => done (2026-10-28): a branch and the 'else' start where the condition
+       before them is false ('branch_condition', 'path_merge::begin_path'),
+       a 'foo' whose count never returns ends the path, a block entered
+       unreachable holds only the checks of skipped code ('stmt_block');
+       tests 1780-1783; listings of every other test unchanged
 [x] hard: bug hunt round 12 (2026-10-28, user: loop until a round finds no
     bugs; hunters Z1 shared storage, Z2 frames, storage and the stack at
     their limits, Z3 every compile error site; reports in the session

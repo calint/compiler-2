@@ -87,6 +87,9 @@ class stmt_builtin_foo final : public statement {
             compile_limit(tc, indent, array_info.element_count(), held),
         };
 
+        // e.g. not after 'foo a, stop() { }' with 'stop' an inlined 'exit'
+        const bool count_returns{tc.is_reachable()};
+
         const toc::scope_entry foo{
             tc, scope::loop(loop_label, loop_end::also_when_done,
                             toc::continue_label(loop_label))};
@@ -124,6 +127,10 @@ class stmt_builtin_foo final : public statement {
         x.label(indent, end_label);
 
         tc.join_loop();
+
+        if (not count_returns) {
+            tc.end_path();
+        }
     }
 
     auto trace_assignment(assignment_flow& flow) const -> void override {
