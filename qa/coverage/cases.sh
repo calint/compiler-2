@@ -5641,3 +5641,14 @@ SRC=1769 && EXP=14 && OPTS="--checks=noub" RUN
 
 # a constant start with a run-time count into an array parameter
 SRC=1770 && EXP=7 && OPTS="--checks=noub" RUN
+
+# a noinline call in skipped code checks the body with its array lengths
+SRC=1771 && COMPERR
+
+# a noinline call in a function that nothing calls checks the body with its
+# array lengths
+SRC=1772 && COMPERR
+
+# the bodies that only skipped code and the checks without calls ask for are
+# checked, not emitted; a length unknown there asks for none
+SRC=1773 && EXP=7 && RUN

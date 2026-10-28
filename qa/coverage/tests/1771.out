@@ -1,0 +1,7 @@
+
+1771.baz:4:13: index 5 is out of bounds for array 's' of size 4
+    res = s[5]
+            ^
+1771.baz:11:13: called from 'f(a)'
+        r = f(a)
+            ^

@@ -318,6 +318,7 @@ class program final {
             compile_main(tc_, tc_.get_main_or_throw());
             compile_noinline_functions(tc_);
             check_function_bodies(tc_);
+            check_noinline_bodies(tc_);
         }
 
         machine& x{tc_.machine()};
@@ -474,6 +475,35 @@ class program final {
         for (const stmt_def_func* const f : tc.funcs().defs()) {
             if (f != &func_main) {
                 f->check_body(tc, 0);
+            }
+        }
+    }
+
+    // a body that only skipped code or the check of a function without its
+    // calls asks for is checked with its array lengths, as an inlined call
+    // there is
+    static auto check_noinline_bodies(toc& tc) -> void {
+
+        // note: the calls in a body can request more bodies, so the count
+        //       is read on every pass
+
+        for (size_t i{}; i < tc.noinline_worklist().checked_body_count(); ++i) {
+
+            const noinline_body body{
+                tc.noinline_worklist().checked_body_at(i),
+            };
+
+            if (tc.noinline_worklist().is_emitted(body)) {
+                continue;
+            }
+
+            std::optional<compile_error> error{
+                body.func->check_noinline_body(tc, body.array_lengths),
+            };
+
+            if (error) {
+                error->add_call_frame(body.call_tk, body.call_source);
+                toc::throw_dry_run_error(std::move(*error));
             }
         }
     }

@@ -533,6 +533,25 @@ class stmt_def_func final : public statement {
         toc::throw_dry_run_error(std::move(*error));
     }
 
+    // the body of a noinline function for array lengths that only a dry run
+    // asked for, compiled as 'emit_noinline_body' does, nothing kept
+    [[nodiscard]] auto
+    check_noinline_body(toc& tc,
+                        const std::span<const size_t> array_lengths) const
+        -> std::optional<compile_error> {
+
+        assert(not is_inlined());
+        assert(array_lengths.size() == array_param_count());
+
+        return tc.dry_run(
+            [&] -> void {
+                const toc::scope_entry body{tc, frame_scope(tc, array_lengths)};
+
+                std::ignore = compile_in_frame(tc, 0, array_lengths);
+            },
+            machine::discarded_code::body);
+    }
+
     // in place or in a body of its own, the function is compiled
     auto compile_statements(toc& tc, const size_t indent) const -> void {
         code_.compile(tc, indent, destination{});

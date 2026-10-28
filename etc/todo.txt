@@ -6,21 +6,6 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
 --------------------------------------------------------------------------------
 1. clean up
 --------------------------------------------------------------------------------
-[ ] medium: bug hunt round 10 X3-1: a noinline call in skipped code or in a
-    function nothing calls adds no body for its array lengths
-    ('toc::add_noinline_body' returns in a dry run), so its body is never
-    checked with them: 'f(a)' of 'func noinline f(s i8[]) { ... s[5] }' on
-    an 'i8[4]' inside 'if 1 == 2' is accepted, inlined it is rejected (dead
-    code only, no undefined behavior; README 1.4 states the current rule)
-    => plan: in a dry run the request goes to a check-only list of
-       'noinline_worklist' (function, lengths, call token); after the
-       emitted bodies, each listed pair without an emitted body is compiled
-       under 'toc::dry_run' into 'machine::discarded_code::body' with the
-       call as its error frame; the output is unchanged; README 1.4 item 1
-       "adds a body to check only"; rejected: leave as is (verdict depends
-       on inline versus noinline)
-    => tests: the four reproducers of X3 (skipped and uncalled, inline and
-       noinline) give the same verdict
 [ ] medium: bug hunt round 10 X3-2: the check of a function
     ('stmt_def_func::check_body') compiles it as a noinline body, which
     holds the frame base ('rbx', 's1'), so an inlined function without

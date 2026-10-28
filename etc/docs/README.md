@@ -248,7 +248,8 @@ unwinds it:
 1. 'toc::dry_run_scope', for a dry run: the peaks ('toc::compile_peaks': the
    deepest scope count, the storage peak and the frame peak of the scope
    that holds the storage) and the string constants added; a noinline call
-   reached inside a dry run adds no body to compile ('toc::add_noinline_body')
+   reached inside a dry run adds a body to check only, not to emit
+   ('toc::add_noinline_body')
 2. 'toc::emit_most_efficient', for a version: the same peaks, each version
    starts from those before it and the kept one's remain, e.g. the frame size
    of a noinline body that '--checks=frame' checks; a string constant that
@@ -311,6 +312,13 @@ program does not depend on inlining.
    an error rejects it. An inlined result counts as taken from the call: it
    is the destination of the call, which the check reaches through an
    address, so it can need more registers.
+4. A noinline call in skipped code or in the check of a function without
+   its calls asks for a body that is checked with the lengths of its array
+   arguments and not emitted, as an inlined call there compiles its body
+   ('program::check_noinline_bodies'); an argument of unknown length asks
+   for none. So 'f(a)' in 'if 1 == 2 { ... }' is rejected for 's[5]' in
+   'f(s i8[])' on an 'i8[4]' inlined or noinline. Its errors have the
+   "called from" frame of the first such call.
 
 ### 1.5.1 Code that is not reached
 

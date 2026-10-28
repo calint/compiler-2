@@ -1,0 +1,25 @@
+# the bodies that skipped code and unchecked calls ask for are checked and
+# not emitted: an array parameter passed on has no length to check with, a
+# body that fits its arguments is accepted
+func noinline f(s i8[]) res {
+    res = s[3]
+}
+
+func noinline pass(s i8[]) res {
+    res = f(s)
+}
+
+func g() res {
+    var b = i8[8]
+    res = f(b)
+}
+
+func main() {
+    var a = i8[4]
+    a[3] = 7
+    var r = 0
+    if 1 == 2 {
+        r = pass(a) + g()
+    }
+    exit(r + f(a))
+}

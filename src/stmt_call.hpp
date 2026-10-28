@@ -1369,8 +1369,16 @@ class noinline_call {
 
         // a body is emitted for a function that is called, once for all calls
         // without array parameters
-        tc.add_noinline_body(*call_.func, array_lengths, call_.begin_tk,
-                             call_.source);
+        // note: an argument of unknown length is in the check of a function
+        //       without its calls, no body has its lengths
+
+        if (std::ranges::none_of(arguments, [](const noinline_arg& a) -> bool {
+                return a.info.is_length_unknown();
+            })) {
+
+            tc.add_noinline_body(*call_.func, array_lengths, call_.begin_tk,
+                                 call_.source);
+        }
 
         // start the callee frame after the caller's storage, not on the stack
         // pointer, the layout of README 4.1

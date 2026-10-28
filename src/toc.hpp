@@ -769,35 +769,54 @@ class type_table final {
 };
 
 // what a compile made: the bodies of the noinline functions to emit, a
-// worklist that grows while they compile
+// worklist that grows while they compile, and the bodies that only a dry run
+// asks for, checked and not emitted
 class noinline_worklist final {
     std::vector<noinline_body> noinline_bodies_;
+    std::vector<noinline_body> checked_bodies_;
 
   public:
+    // a body asked for by a call in a dry run is checked once per array
+    // lengths, unless it is emitted
+    auto add_checked_body(const stmt_def_func& func,
+                          std::vector<size_t> array_lengths,
+                          const token& call_tk, std::string call_source)
+        -> void {
+
+        add_once(checked_bodies_, func, std::move(array_lengths), call_tk,
+                 std::move(call_source));
+    }
+
     // a body is emitted once per array lengths
     auto add_noinline_body(const stmt_def_func& func,
                            std::vector<size_t> array_lengths,
                            const token& call_tk, std::string call_source)
         -> void {
 
-        const auto is_same_body = [&](const noinline_body& known) -> bool {
-            return known.func == &func and known.array_lengths == array_lengths;
-        };
+        add_once(noinline_bodies_, func, std::move(array_lengths), call_tk,
+                 std::move(call_source));
+    }
 
-        if (std::ranges::any_of(noinline_bodies_, is_same_body)) {
-            return;
-        }
+    // a copy, the list grows while the bodies are checked
+    [[nodiscard]] auto checked_body_at(const size_t index) const
+        -> noinline_body {
 
-        noinline_bodies_.push_back({
-            .func{&func},
-            .array_lengths{std::move(array_lengths)},
-            .call_tk{call_tk},
-            .call_source{std::move(call_source)},
-        });
+        return checked_bodies_.at(index);
+    }
+
+    [[nodiscard]] auto checked_body_count() const -> size_t {
+        return checked_bodies_.size();
+    }
+
+    [[nodiscard]] auto is_emitted(const noinline_body& body) const -> bool {
+        return std::ranges::any_of(
+            noinline_bodies_, [&](const noinline_body& known) -> bool {
+                return is_same_body(known, *body.func, body.array_lengths);
+            });
     }
 
     [[nodiscard]] auto is_empty() const -> bool {
-        return noinline_bodies_.empty();
+        return noinline_bodies_.empty() and checked_bodies_.empty();
     }
 
     // a copy, the list grows while the bodies compile
@@ -809,6 +828,40 @@ class noinline_worklist final {
 
     [[nodiscard]] auto noinline_body_count() const -> size_t {
         return noinline_bodies_.size();
+    }
+
+  private:
+    //
+    // statics
+    //
+
+    static auto add_once(std::vector<noinline_body>& bodies,
+                         const stmt_def_func& func,
+                         std::vector<size_t> array_lengths,
+                         const token& call_tk, std::string call_source)
+        -> void {
+
+        if (std::ranges::any_of(
+                bodies, [&](const noinline_body& known) -> bool {
+                    return is_same_body(known, func, array_lengths);
+                })) {
+
+            return;
+        }
+
+        bodies.push_back({
+            .func{&func},
+            .array_lengths{std::move(array_lengths)},
+            .call_tk{call_tk},
+            .call_source{std::move(call_source)},
+        });
+    }
+
+    [[nodiscard]] static auto
+    is_same_body(const noinline_body& known, const stmt_def_func& func,
+                 const std::vector<size_t>& array_lengths) -> bool {
+
+        return known.func == &func and known.array_lengths == array_lengths;
     }
 };
 
@@ -2543,8 +2596,8 @@ class toc final {
 
     // what a dry run changes in 'toc' is put back when it ends, also when an
     // error unwinds: the 'compile_state' and the string constants; while it
-    // lives a noinline body that a call asks for is not added, the call is
-    // compiled again for real
+    // lives a noinline body that a call asks for is only checked, see
+    // 'add_noinline_body'
     class dry_run_scope final {
         toc& tc_;
         compile_state kept_state_;
@@ -2824,7 +2877,7 @@ class toc final {
     }
 
     // a body is emitted once per array lengths, for a call that is
-    // compiled for real: a dry run leaves no trace
+    // compiled for real; a call in a dry run asks for a body to check
     auto add_noinline_body(const stmt_def_func& func,
                            std::vector<size_t> array_lengths,
                            const token& call_tk, std::string call_source)
@@ -2833,6 +2886,10 @@ class toc final {
         assert(is_compiling_);
 
         if (dry_run_depth_ != 0) {
+            noinline_worklist_.add_checked_body(func, std::move(array_lengths),
+                                                call_tk,
+                                                std::move(call_source));
+
             return;
         }
 
