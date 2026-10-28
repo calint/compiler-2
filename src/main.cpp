@@ -154,8 +154,8 @@ struct options {
     bool reproduce_source{};
     report_options reports;
     machine::kept_version kept_version{machine::kept_version::smaller};
-    // empty until given, the default depends on the source and target
-    std::string_view binary_file_name;
+    // the default depends on the source and target
+    std::optional<std::string_view> binary_file_name;
     // read and written by the sector functions on x86_64 and rv32i
     std::optional<std::string_view> sd_card_file_name;
 };
@@ -505,12 +505,12 @@ template <typename Name, size_t count>
 [[nodiscard]] auto apply_bin(const std::string_view value, options& opts)
     -> bool {
 
-    opts.binary_file_name = value;
-
-    if (opts.binary_file_name.empty()) {
+    if (value.empty()) {
         print_option_error("invalid --bin: empty file name");
         return false;
     }
+
+    opts.binary_file_name = value;
 
     return true;
 }
@@ -645,9 +645,9 @@ auto print_help(const char* const program_name) -> void {
                   source_files::read_file(opts.src_file_name));
 
         const std::string binary{
-            opts.binary_file_name.empty()
-                ? default_binary_file_name(opts.src_file_name, *opts.target)
-                : std::string{opts.binary_file_name},
+            opts.binary_file_name
+                ? std::string{*opts.binary_file_name}
+                : default_binary_file_name(opts.src_file_name, *opts.target),
         };
 
         // the backend checks the stack against the memory without knowing
