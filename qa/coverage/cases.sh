@@ -5709,3 +5709,7 @@ SRC=1789 && COMPERR
 # a type parameter of a function is checked as a name before its kind: a
 # quote in the name
 SRC=1790 && COMPERR
+
+# code that a compile skips takes no variable storage, a local there is not
+# held to '--vars'
+SRC=1791 && EXP=3 && RUN

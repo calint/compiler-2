@@ -367,7 +367,8 @@ the list, the body of a 'foo' whose count folds to 0, and the code after a
 statement that leaves on every path, e.g.
 'if 1 == 2 { n = a }' with 'a' an array is rejected. Such code is judged as if
 it ran, with the registers held where it stands; a 'break' or 'return' in it does not end the paths of the code that
-runs ('scope_stack::reach_state'). In a compile with the constants of a call
+runs ('scope_stack::reach_state'). Its variables take no storage, so
+'--vars' does not hold there (8.3). In a compile with the constants of a call
 skipped code is not checked, a constant argument decides it: 'if b != 0 { res
 = a / b }' in 'ratio(10, 0)' guards the division, and the check of the body
 without its calls, where the guard does not fold, holds the rules in it.
@@ -1912,6 +1913,11 @@ message, x86_64 and rv32i linux stop with a signal.
   (1.5); no result changes. Ending the path there needs the reach of each
   exit of a condition and every operand list to stop at the call (bug hunt
   round 14 B1-1, B1-2).
+- Code that a compile skips (1.5.1) is checked in a dry run, which emits
+  nothing, so its variables take no storage and are not held to '--vars':
+  in 'main', 'if 1 == 2 { var a = i8[300000] }' is accepted where the
+  declaration alone is rejected with '--vars=0x40000'; none of it runs, it
+  accepts no undefined behavior.
 - The x86_64 listing leaves the size of each jump to nasm. On rare listings
   nasm's default search ('-Ox') does not settle ("unable to find valid values
   for all labels"), e.g. a '--nopt' listing of 'fuzz-flow' seed 71;

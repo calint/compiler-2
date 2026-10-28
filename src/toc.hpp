@@ -3155,9 +3155,9 @@ class toc final {
     // checks where what it folds is no constant of a call: in 'main' and in
     // the body check of a function, and in the initializer of a global, which
     // takes nothing from a call either; there every compile rule holds in all
-    // code, the compile decides; in a body that takes from a call an error
-    // that depends on a call is dropped as in that check, any other rejects
-    // the program
+    // code but the capacity of '--vars', its locals take no storage; in a body
+    // that takes from a call an error that depends on a call is dropped as in
+    // that check, any other rejects the program
     auto check_skipped(const std::function_ref<void()> compile) -> void {
         assert(is_compiling_);
 

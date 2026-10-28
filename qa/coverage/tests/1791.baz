@@ -1,0 +1,10 @@
+# code that a compile skips takes no variable storage: a local there is not
+# held to '--vars' (README 8.3), the same declaration alone is rejected
+
+func main() {
+    if 1 == 2 {
+        var a = i8[300000]
+        a[0] = 1
+    }
+    exit(3)
+}
