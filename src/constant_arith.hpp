@@ -34,7 +34,6 @@ class constant_arith final {
         }
 
         if (family == operator_family::shift) {
-
             assert(rhs >= 0 and std::cmp_less(rhs, width_type.size_bits()));
 
             return shift_constant(lhs, op, static_cast<uint64_t>(rhs),

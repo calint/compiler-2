@@ -675,7 +675,6 @@ class expr_arith final : public statement {
             const arithmetic_operator o{spelled.op};
 
             if (traits_of(o).reads_high_bits) {
-
                 return false;
             }
 
@@ -1216,7 +1215,6 @@ class expr_arith final : public statement {
                                         const type& width_type) -> void {
 
         if (is_division(op)) {
-
             assert_divisor_not_zero(src_loc_tk, value);
         }
 
@@ -1367,8 +1365,9 @@ class expr_arith final : public statement {
     }
 
     // the first step writes the destination, a later step that reads it
-    // would read that; a plain first element is copied before anything
-    // writes, a constant first step reads nothing; a read under another name
+    // would read that; a name or literal first element is copied before
+    // anything writes and its unary ops apply in place after the copy, e.g.
+    // 'm = -m', a constant first step reads nothing; a read under another name
     // counts, e.g. 'p' of 'g = p * 2 + p' with 'p' bound to 'g'
     // note: the steps are those 'compile_steps' emits in place, e.g. 'n = -n
     //       + 1' leads with the constant, then reads 'n'
@@ -1379,9 +1378,9 @@ class expr_arith final : public statement {
 
         const step& first{steps.front()};
 
-        // a constant or a plain name or literal
+        // a constant, or a name or literal with or without unary ops
         const bool reads_before_writing{
-            first.value or first.element->bare_path() != nullptr,
+            first.value or first.element->operand_path() != nullptr,
         };
 
         if (not reads_before_writing and
@@ -1425,7 +1424,6 @@ class expr_arith final : public statement {
         }
 
         if (is_division(op)) {
-
             x.divide(src_loc_tk, indent, op, dst.operand(), value,
                      tc.checks().division_options());
 

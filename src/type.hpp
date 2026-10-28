@@ -197,7 +197,7 @@ struct type_field {
 
     [[nodiscard]] auto is_array() const -> bool { return shape.is_array(); }
 
-    [[nodiscard]] auto type() const -> const type& { return *type_ptr; }
+    [[nodiscard]] auto type_ref() const -> const type& { return *type_ptr; }
 };
 
 // a run of bytes at 'offset' within a value
@@ -398,12 +398,13 @@ class type final {
             }
 
             const std::vector<byte_range> element_ranges{
-                f.type().data_ranges(max_count),
+                f.type_ref().data_ranges(max_count),
             };
 
             const bool is_unpadded{
                 element_ranges.size() == 1 and
-                    element_ranges.front().size_bytes == f.type().size_bytes_,
+                    element_ranges.front().size_bytes ==
+                        f.type_ref().size_bytes_,
             };
 
             if (is_unpadded) {
@@ -418,7 +419,7 @@ class type final {
                  i < f.element_count() and ranges.size() <= max_count; ++i) {
 
                 const size_t element_offset{
-                    f.offset + (i * f.type().size_bytes_),
+                    f.offset + (i * f.type_ref().size_bytes_),
                 };
 
                 for (const byte_range& r : element_ranges) {

@@ -246,10 +246,9 @@ class stmt_identifier;
 //   a value        'fold': 'expr_zero', 'expr_bool', 'stmt_identifier',
 //                  'stmt_builtin_array_length' and 'stmt_builtin_convert',
 //                  forwarded by 'expr_arith' and 'expr_any';
-//                  'assert_not_narrowed': 'stmt_identifier', 'stmt_call',
-//                  'stmt_builtin_array_length', 'stmt_builtin_convert' and
-//                  'stmt_builtin_io', forwarded by 'expr_arith' and
-//                  'expr_any'; 'keeps_low_bits': 'stmt_identifier' and
+//                  'assert_not_narrowed': the default checks the own type,
+//                  'stmt_identifier' overrides it, forwarded by 'expr_arith'
+//                  and 'expr_any'; 'keeps_low_bits': 'stmt_identifier' and
 //                  'stmt_builtin_convert', forwarded by 'expr_arith'
 //   a place        'operand_path': 'stmt_identifier', forwarded by
 //                  'expr_arith', 'expr_any' and 'expr_type' when they hold
@@ -276,10 +275,20 @@ class statement {
     // virtual methods
     //
 
-    // throws if the value would silently lose bits when stored as 'dst_type'
-    virtual auto
-    assert_not_narrowed([[maybe_unused]] const toc& tc,
-                        [[maybe_unused]] const type& dst_type) const -> void {}
+    // throws if the value would silently lose bits when stored as 'dst_type';
+    // by default the value has the statement's own type, a value without a
+    // built-in type, e.g. an instance, is not narrowed
+    virtual auto assert_not_narrowed([[maybe_unused]] const toc& tc,
+                                     const type& dst_type) const -> void {
+
+        if (not dst_type.is_builtin() or not get_type().is_builtin() or
+            get_type().size_bytes() <= dst_type.size_bytes()) {
+
+            return;
+        }
+
+        throw_narrowed(tok(), trimmed_source(*this), get_type(), dst_type);
+    }
 
     // may run more than once, what it adds to 'toc' is the same each time or
     // put back, see the class comment of 'toc'
@@ -485,17 +494,6 @@ class statement {
     // note: only the empty block of 'stmt_block' has no token
     statement() = default;
 
-    // for statements whose value has the statement's own type
-    auto assert_own_type_not_narrowed(const type& dst_type) const -> void {
-        if (not dst_type.is_builtin() or not get_type().is_builtin() or
-            get_type().size_bytes() <= dst_type.size_bytes()) {
-
-            return;
-        }
-
-        throw_narrowed(tok(), trimmed_source(*this), get_type(), dst_type);
-    }
-
     //
     // statics
     //
@@ -516,24 +514,6 @@ class statement {
                         "'type str = {}<...>'",
                         in_quotes(std::format("{}<...>", type_tk->text())),
                         type_tk->text())};
-    }
-
-    // read-only-ness is fixed where the name is declared, so one check at
-    // parse suffices; 'action' completes "cannot ...", e.g. 'assign to'
-    static auto assert_not_read_only(const token& src_loc_tk,
-                                     const std::string_view action,
-                                     const std::string_view name,
-                                     const std::string_view root,
-                                     const ident_info& info) -> void {
-
-        if (not info.is_read_only()) {
-            return;
-        }
-
-        throw compile_error{src_loc_tk,
-                            std::format("cannot {} read-only {}{}", action,
-                                        in_quotes(name),
-                                        read_only_hint(root, info))};
     }
 
     // why the name 'root' cannot be written, e.g. ", 'x' is declared with

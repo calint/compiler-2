@@ -1,0 +1,7 @@
+# a name alone as a statement is reported at the name, also when the next
+# token is on a later line
+
+func main() {
+    var x = 1
+    x
+}

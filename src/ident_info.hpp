@@ -492,7 +492,7 @@ class destination final {
         assert(stored_);
 
         destination result{*this};
-        result.operand_ = operand_at(fld.offset, fld.type());
+        result.operand_ = operand_at(fld.offset, fld.type_ref());
         result.is_final_address_ = true;
         result.stored_->info = stored_->info.field(fld);
         result.stored_->storage.path.add_field(fld.offset);

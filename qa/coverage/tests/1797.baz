@@ -1,0 +1,8 @@
+# --checks=overflow: adding 1 to the maximum overflows, also where it is
+# emitted as an increment
+
+func main() {
+    var x = i32(2147483647)
+    x = x + 1
+    exit(0)
+}

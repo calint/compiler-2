@@ -893,7 +893,6 @@ class inline_call final {
         machine::held_registers held{x, call_.tk, indent + 1};
 
         for (param_binding& binding : bindings.arguments) {
-
             if (not is_indexed_reference(binding)) {
                 continue;
             }
@@ -1595,7 +1594,7 @@ inline auto assert_call_in_func(const toc& tc, const token& call_tk) -> void {
 // a path as an argument, e.g. the receiver of a method or the array of
 // 'array_length'; the whitespace before it belongs to its first token
 [[nodiscard]] inline auto path_argument(stmt_identifier path) -> expr_any {
-    const token pos_tk{path.first_token().start_position()};
+    const token pos_tk{path.tok().start_position()};
 
     return {pos_tk,
             expr_type{std::make_unique<stmt_identifier>(std::move(path))}};
@@ -1612,47 +1611,23 @@ class builtin_arguments final {
     token close_paren_tk_;
 
   public:
-    // the name of the built-in, 'name_tk', is read; a missing '(' is
-    // reported at it, the next token can be on a later line
+    // the name of the built-in, 'name_tk', is read; a missing '(' and a
+    // count outside 'min_count' to 'max_count' are reported at it, the next
+    // token can be on a later line
     builtin_arguments(toc& tc, tokenizer& tz, const token& name_tk,
-                      const std::span<const size_t> array_indexes)
+                      const std::span<const size_t> array_indexes,
+                      const size_t min_count, const size_t max_count)
         : open_paren_tk_{
               tz.expect_char_token_after(name_tk, '(',
                                          "expected '(' after function name"),
           } {
 
-        while (true) {
-            if (const std::optional<token> close_paren_tk{
-                    tz.is_next_char_token(')'),
-                }) {
+        read_arguments(tc, tz, array_indexes);
 
-                close_paren_tk_ = *close_paren_tk;
-                return;
-            }
-
-            assert_not_string_argument(tz);
-
-            if (std::ranges::contains(array_indexes, args_.size())) {
-                add_array_argument(
-                    stmt_identifier::parse_array_argument(tc, tz));
-            } else {
-                args_.emplace_back(tc, tz, tc.builtins().default_type(),
-                                   literal_typing::from_destination);
-            }
-
-            const std::optional<token> delim_tk{tz.is_next_char_token(',')};
-
-            if (delim_tk) {
-                tz.assert_no_trailing_delimiter(*delim_tk, ')', "a call");
-                delims_tk_.emplace_back(*delim_tk);
-                continue;
-            }
-
-            // e.g. 'write(1, text n)' lacks the ','
-            close_paren_tk_ = tz.expect_char_token(
-                ')', "expected ',' or ')' after the argument");
-
-            return;
+        if (args_.size() < min_count or args_.size() > max_count) {
+            throw compile_error{
+                name_tk,
+                argument_count_text(name_tk.text(), min_count, max_count)};
         }
     }
 
@@ -1691,6 +1666,45 @@ class builtin_arguments final {
         array.assert_array_or_element();
 
         args_.push_back(path_argument(std::move(array)));
+    }
+
+    // up to and including the ')'
+    auto read_arguments(toc& tc, tokenizer& tz,
+                        const std::span<const size_t> array_indexes) -> void {
+
+        while (true) {
+            if (const std::optional<token> close_paren_tk{
+                    tz.is_next_char_token(')'),
+                }) {
+
+                close_paren_tk_ = *close_paren_tk;
+                return;
+            }
+
+            assert_not_string_argument(tz);
+
+            if (std::ranges::contains(array_indexes, args_.size())) {
+                add_array_argument(
+                    stmt_identifier::parse_array_argument(tc, tz));
+            } else {
+                args_.emplace_back(tc, tz, tc.builtins().default_type(),
+                                   literal_typing::from_destination);
+            }
+
+            const std::optional<token> delim_tk{tz.is_next_char_token(',')};
+
+            if (delim_tk) {
+                tz.assert_no_trailing_delimiter(*delim_tk, ')', "a call");
+                delims_tk_.emplace_back(*delim_tk);
+                continue;
+            }
+
+            // e.g. 'write(1, text n)' lacks the ','
+            close_paren_tk_ = tz.expect_char_token(
+                ')', "expected ',' or ')' after the argument");
+
+            return;
+        }
     }
 };
 
@@ -1875,12 +1889,6 @@ class stmt_call final : public statement {
     }
 
     // reported at the call because an inlined result aliases the destination
-    auto assert_not_narrowed([[maybe_unused]] const toc& tc,
-                             const type& dst_type) const -> void override {
-
-        assert_own_type_not_narrowed(dst_type);
-    }
-
     [[nodiscard]] auto has_inlined_call() const -> bool override {
         return callee().is_inlined() or statement::has_inlined_call();
     }
@@ -1974,8 +1982,7 @@ class stmt_call final : public statement {
                 index, arg,
                 std::format("read-only {}",
                             in_quotes(written->ident->dotted_path())),
-                read_only_hint(written->ident->first_token().text(),
-                               written->info));
+                read_only_hint(written->ident->tok().text(), written->info));
         }
     }
 
@@ -2032,7 +2039,7 @@ class stmt_call final : public statement {
         // 'a.f()'
         if (receiver.is_array()) {
             throw compile_error{
-                receiver.first_token(),
+                receiver.tok(),
                 std::format("receiver of method {} cannot be an array",
                             in_quotes(func_name_))};
         }
@@ -2418,7 +2425,6 @@ class stmt_call final : public statement {
         });
 
         for (size_t i{}; i < args_.size(); ++i) {
-
             // a value or a constant is passed as a copy
             const std::optional<place> passed{as_place(tc, args_.at(i))};
 
@@ -2426,7 +2432,7 @@ class stmt_call final : public statement {
             //       call may be bound to a register
 
             if (passed and not callee().param(i).is_read_only() and
-                tc.scopes().names_result(passed->ident->first_token().text())) {
+                tc.scopes().names_result(passed->ident->tok().text())) {
 
                 tc.record_result_passed_as_mut();
             }
@@ -2547,7 +2553,6 @@ class stmt_call final : public statement {
         }
 
         for (size_t i{}; i < args_.size(); ++i) {
-
             // a value or a constant is passed as a copy
             const std::optional<place> passed{as_place(tc, args_.at(i))};
 

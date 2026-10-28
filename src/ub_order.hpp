@@ -84,7 +84,7 @@ inline auto assert_not_read_before(const toc& tc, const list_operand& earlier,
         }
 
         throw compile_error{
-            read.first_token(),
+            read.tok(),
             std::format("{} may be written by the call of {} in {}, use a "
                         "temporary variable",
                         in_quotes(read.path_text()), in_quotes(write.call_tk),

@@ -112,7 +112,6 @@ enum class term_kind : uint8_t {
     const std::string_view text{tk.text()};
 
     if (constant_parser::is_literal(tk)) {
-
         return term_kind::literal;
     }
 

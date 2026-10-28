@@ -110,7 +110,12 @@ class stmt_builtin_io final : public statement {
     stmt_builtin_io(toc& tc, const io_function& io, unary_ops uops,
                     const token tk, tokenizer& tz)
         : statement{tk, std::move(uops)}, io_{io},
-          args_{tc, tz, tk, array_indexes_} {
+          args_{tc,
+                tz,
+                tk,
+                array_indexes_,
+                io_function::min_arg_count(),
+                io.max_arg_count()} {
 
         assert_call_in_func(tc, tok());
 
@@ -120,7 +125,6 @@ class stmt_builtin_io final : public statement {
             assert_target_has_sd_card(tc);
         }
 
-        assert_argument_count();
         at_ = optional_positions_of(io_, args_.count());
         assert_buffer_path();
 
@@ -129,8 +133,7 @@ class stmt_builtin_io final : public statement {
         }
 
         // 'read' and 'sector_read' fill the buffer
-        buffer_path().record_write(tc, buffer_path().tok(), "read into",
-                                   make_ident_info(tc, buffer_path()));
+        buffer_path().record_write(tc, "read into");
     }
 
     //
@@ -200,12 +203,6 @@ class stmt_builtin_io final : public statement {
     }
 
     // the count has the default type, like the result of a call
-    auto assert_not_narrowed([[maybe_unused]] const toc& tc,
-                             const type& dst_type) const -> void override {
-
-        assert_own_type_not_narrowed(dst_type);
-    }
-
     // 'read' and 'sector_read' write their buffer, e.g. 'b' of 'read(0, b)'
     auto visit_call_effects(const toc& tc,
                             const call_effect_visitor visitor) const
@@ -285,18 +282,6 @@ class stmt_builtin_io final : public statement {
     }
 
   private:
-    auto assert_argument_count() const -> void {
-        const size_t min_count{io_function::min_arg_count()};
-        const size_t max_count{io_.max_arg_count()};
-
-        if (args_.count() >= min_count and args_.count() <= max_count) {
-            return;
-        }
-
-        throw compile_error{
-            tok(), argument_count_text(tok().text(), min_count, max_count)};
-    }
-
     // the buffer an array, of whole sectors for a sector function, and a
     // constant range in its bounds: every verdict that needs no code, made
     // before the arguments are compiled

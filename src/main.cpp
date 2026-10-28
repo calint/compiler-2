@@ -699,7 +699,6 @@ auto print_help(const char* const program_name) -> void {
 
         // the image would replace a source file, the parse read the includes
         if (opts.target->writes_image and is_source_file(binary, files)) {
-
             throw option_error{std::format("invalid --bin: {} is a source file",
                                            in_quotes(binary))};
         }

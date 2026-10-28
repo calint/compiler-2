@@ -1,4 +1,4 @@
 
-1187.baz:4:5: variable 'x' already declared at 3:5
+1187.baz:4:5: variable 'x' already defined at 3:5
 let x = 3
     ^

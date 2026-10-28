@@ -926,31 +926,16 @@ class expr_bool_op final : public statement {
 
         const expr_arith& expr{*side.node};
 
-        // a computed value, or the zero value '{}', which has no name;
-        // 'compile' folds a constant list into one copy
+        // a computed value, the zero value '{}', which has no name, or a
+        // constant, which 'compile' folds into one copy of its type, e.g. the
+        // 'i16(300)' of 'i16(300) > b' with 'b' an 'i8'
         const stmt_identifier* const ident{expr.operand_path()};
 
-        if (ident == nullptr) {
+        if (ident == nullptr or side.folded) {
             return compile_to_scratch(tc, indent, expr, held);
         }
 
         const ident_info expr_info{make_scalar_ident_info(tc, *ident)};
-
-        // a typed constant is a value of its type in a register, e.g. the
-        // 'i16(300)' of 'i16(300) > b' with 'b' an 'i8'
-        if (side.is_typed_constant()) {
-            machine& x{tc.machine()};
-
-            const operand reg{
-                x.alloc_scratch_register(expr.tok(), indent, expr.get_type()),
-            };
-
-            held.add(reg);
-
-            x.copy_value(expr.tok(), indent, reg, typed_constant(side));
-
-            return reg;
-        }
 
         assert(not expr_info.is_const());
 
@@ -1255,7 +1240,6 @@ class expr_bool final : public statement {
         const expr_arith* const arith{op->arithmetic()};
 
         if (arith == nullptr or arith->operand_path() == nullptr) {
-
             return std::nullopt;
         }
 

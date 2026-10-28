@@ -456,8 +456,8 @@ class stmt_identifier final : public statement {
             return;
         }
 
-        throw_narrowed(first_token(), statement::trimmed_source(*this),
-                       src_type, dst_type);
+        throw_narrowed(tok(), statement::trimmed_source(*this), src_type,
+                       dst_type);
     }
 
     // a typed constant is a value of its type, so it wraps at the width of
@@ -547,9 +547,8 @@ class stmt_identifier final : public statement {
         }
 
         throw compile_error{
-            first_token(),
-            std::format("{} is not an array",
-                        in_quotes(statement::trimmed_source(*this)))};
+            tok(), std::format("{} is not an array",
+                               in_quotes(statement::trimmed_source(*this)))};
     }
 
     // an array or an element of one, where a bulk operation starts
@@ -695,10 +694,6 @@ class stmt_identifier final : public statement {
         return dotted_path_;
     }
 
-    [[nodiscard]] auto first_token() const -> const token& {
-        return elems_.at(0).name_tk;
-    }
-
     // the operand of what 'info' resolves this statement to, a computed
     // address goes into 'held'
     [[nodiscard]] auto get_lea_operand(toc& tc, const size_t indent,
@@ -814,24 +809,29 @@ class stmt_identifier final : public statement {
 
     // this path is written by 'action', e.g. "assign to" or "read into":
     // a read-only name or a constant is rejected, the write is recorded in the
-    // uses of the function; 'src_loc_tk' is where an error points
-    auto record_write(toc& tc, const token& src_loc_tk,
-                      const std::string_view action,
-                      const ident_info& info) const -> void {
+    // uses of the function
+    auto record_write(toc& tc, const std::string_view action) const -> void {
+        const ident_info info{make_ident_info(tc, *this)};
 
-        assert_not_read_only(src_loc_tk, action, dotted_path_,
-                             first_token().text(), info);
+        // read-only-ness is fixed where the name is declared, so one check at
+        // parse suffices
+        if (info.is_read_only()) {
+            throw compile_error{
+                tok(), std::format("cannot {} read-only {}{}", action,
+                                   in_quotes(dotted_path_),
+                                   read_only_hint(tok().text(), info))};
+        }
 
         // note: a parameter that would name a constant argument is read-only
         //       or 'mut', which takes no constant, so this is the only check
 
         if (info.is_const()) {
-            throw compile_error{src_loc_tk,
+            throw compile_error{tok(),
                                 std::format("cannot assign to constant {}",
                                             in_quotes(dotted_path_))};
         }
 
-        tc.record_use(first_token().text(), access_path_, use_kind::write);
+        tc.record_use(tok().text(), access_path_, use_kind::write);
     }
 
     // what the path resolves to at its last name, an indexed last name as the
@@ -855,7 +855,7 @@ class stmt_identifier final : public statement {
     [[nodiscard]] auto storage(const toc& tc) const
         -> std::optional<storage_path> {
 
-        return tc.storage_of(first_token().text(), access_path_);
+        return tc.storage_of(tok().text(), access_path_);
     }
 
     // index expressions are read even when the path is written
@@ -942,10 +942,9 @@ class stmt_identifier final : public statement {
         const std::string source{statement::trimmed_source(*this)};
 
         throw compile_error{
-            first_token(),
-            std::format("constant {} does not fit {}, use '{}(...)'",
-                        in_quotes(source), in_quotes(dst_type.name()),
-                        dst_type.name())};
+            tok(), std::format("constant {} does not fit {}, use '{}(...)'",
+                               in_quotes(source), in_quotes(dst_type.name()),
+                               dst_type.name())};
     }
 
     // 'ps.x' does not mean 'ps[0].x'
@@ -969,9 +968,9 @@ class stmt_identifier final : public statement {
                           const token& src_loc_tk) const -> void {
 
         if (tz.peek_char_after_whitespace() == '[' and not prefix.is_array()) {
-
             throw compile_error{src_loc_tk,
-                                std::format("cannot index non-array {}",
+                                std::format("{} is not an array, it cannot be "
+                                            "indexed",
                                             in_quotes(dotted_path_))};
         }
     }
@@ -983,7 +982,7 @@ class stmt_identifier final : public statement {
         const toc& tc, const std::optional<token>& src_loc_tk,
         const std::function_ref<void(const prefix_step&)> visit) const -> void {
 
-        const token& root_tk{first_token()};
+        const token& root_tk{tok()};
 
         std::string path{root_tk.text()};
 
@@ -1032,7 +1031,7 @@ class stmt_identifier final : public statement {
 
     // an unknown element leaves the whole array as the accessed range and
     // adds a run-time index to the path
-    auto narrow_to_element(toc& tc, const expr_any& index_expr,
+    auto narrow_to_element(std::optional<int64_t> constant_index,
                            const ident_info& array_info, path_reach reach)
         -> void;
 
@@ -1088,12 +1087,6 @@ class stmt_identifier final : public statement {
         toc& tc, const size_t indent, const expr_any& index_expr,
         const operand& index_register, const array_shape& shape,
         const std::optional<size_t>& range_count) -> int64_t;
-
-    // empty when the index is computed at run time or is out of range
-    [[nodiscard]] static auto
-    in_range_constant_index(const toc& tc, const expr_any& index_expr,
-                            const ident_info& array_info)
-        -> std::optional<size_t>;
 
     // 'name_tk' after the path so far names a method of the path's type
     [[nodiscard]] static auto is_method_name(const toc& tc, tokenizer& tz,
@@ -1272,7 +1265,7 @@ inline auto statement::assert_result_not_read(const assignment_flow& flow) const
             return;
         }
 
-        throw_uninitialized(read.first_token(), read.first_token().text());
+        throw_uninitialized(read.tok(), read.tok().text());
     });
 }
 
@@ -1283,7 +1276,7 @@ inline auto statement::first_read_of(const std::string_view var) const
     const stmt_identifier* first{};
 
     visit_reads([&var, &first](const stmt_identifier& read) -> void {
-        if (first == nullptr and read.first_token().is_text(var)) {
+        if (first == nullptr and read.tok().is_text(var)) {
             first = &read;
         }
     });

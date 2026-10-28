@@ -5732,3 +5732,18 @@ SRC=1795 && COMPERR
 
 # the operand of a bulk operation that is not an array is quoted as written
 SRC=1796 && COMPERR
+
+# --checks=overflow: an increment at the maximum overflows
+SRC=1797 && EXP=249 && OPTS="--checks=overflow" RUN_ERR
+
+# --checks=overflow: a decrement at the minimum overflows
+SRC=1798 && EXP=249 && OPTS="--checks=overflow" RUN_ERR
+
+# --checks=overflow: increments and decrements up to the limits
+SRC=1799 && EXP=0 && OPTS="--checks=overflow" RUN
+
+# a first element with unary ops that reads the destination computes in place
+SRC=1800 && EXP=0 && OPTS="--checks=noub" RUN
+
+# a name alone as a statement is reported at the name
+SRC=1801 && COMPERR

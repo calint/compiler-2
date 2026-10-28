@@ -174,7 +174,6 @@ struct func_head {
 
         // e.g. 'func tokenizer.to<T type>()' or 'func text.to<T type>()'
         if (not head.open_paren_tk and tz.peek_char_after_whitespace() == '<') {
-
             head.type_param_tks = read_type_params(tz);
             head.open_paren_tk = tz.is_next_char_token('(');
         }

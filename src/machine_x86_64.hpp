@@ -238,18 +238,16 @@ class machine_x86_64 final : public machine {
             return;
         }
 
-        // 'inc' is a byte shorter than 'add' of 1; it keeps the carry flag,
-        // which nothing reads after an unchecked add
-        if (operation == arithmetic_operator::add and not check.enabled and
-            immediate_bits(src) == 1) {
+        const bool is_add{operation == arithmetic_operator::add};
 
-            emit_unary(src_loc_tk, indent, op::inc, dst);
-            return;
+        // 'inc' and 'dec' are a byte shorter than 'add' and 'sub' of 1 and set
+        // the overflow flag as they do, the check reads only that flag; they
+        // keep the carry flag, which nothing reads after them
+        if (immediate_bits(src) == 1) {
+            emit_unary(src_loc_tk, indent, is_add ? op::inc : op::dec, dst);
+        } else {
+            emit_op(src_loc_tk, indent, is_add ? op::add : op::sub, dst, src);
         }
-
-        emit_op(src_loc_tk, indent,
-                operation == arithmetic_operator::add ? op::add : op::sub, dst,
-                src);
 
         if (check.enabled) {
             branch_on_overflow(src_loc_tk, indent);
@@ -798,35 +796,6 @@ class machine_x86_64 final : public machine {
                 mov(src_loc_tk, indent,
                     memory_part(dst, part_size_bytes, offset), immediate(0));
             });
-    }
-
-    //
-    // statics
-    //
-
-    // see 'machine::target_description'
-    [[nodiscard]] static constexpr auto x86_64_target() -> target_description {
-        return {
-            .address_size_bytes{size_qword_},
-            .data_alignment{data_alignment_},
-            .max_storage_bytes{user_address_space_bytes_},
-            .has_indexed_addressing{true},
-            .max_padding_gaps_zeroed_one_by_one{
-                max_padding_gaps_zeroed_one_by_one_,
-            },
-            .has_sd_card{true},
-            .string_alignment{1},
-            .is_stack_bounded{},
-            .frame_base_register{"rbx"},
-            .variables_base_register{"rbp"},
-            .slot_register{"r11"},
-            .variables_base_past_vars_bytes{std::nullopt},
-            .scratch_registers{scratch_registers_},
-            .target_calls{
-                .arguments{"rdi", "rsi", "rdx"},
-                .result{"rax"},
-            },
-        };
     }
 
   protected:
@@ -2290,10 +2259,7 @@ class machine_x86_64 final : public machine {
         assert(not rhs.base_register().empty() or rhs.scale() > 1);
 
         return lhs.type_ref().size_bytes() == rhs.type_ref().size_bytes() and
-               lhs.base_register() == rhs.base_register() and
-               lhs.index_register() == rhs.index_register() and
-               lhs.displacement() == rhs.displacement() and
-               lhs.scale() == rhs.scale();
+               lhs.is_same_address(rhs);
     }
 
     [[nodiscard]] static auto sized_register_name(const std::string_view name,
@@ -2381,5 +2347,30 @@ class machine_x86_64 final : public machine {
         address.size_bytes = value.type_ref().size_bytes();
 
         return address;
+    }
+
+    // see 'machine::target_description'
+    [[nodiscard]] static constexpr auto x86_64_target() -> target_description {
+        return {
+            .address_size_bytes{size_qword_},
+            .data_alignment{data_alignment_},
+            .max_storage_bytes{user_address_space_bytes_},
+            .has_indexed_addressing{true},
+            .max_padding_gaps_zeroed_one_by_one{
+                max_padding_gaps_zeroed_one_by_one_,
+            },
+            .has_sd_card{true},
+            .string_alignment{1},
+            .is_stack_bounded{},
+            .frame_base_register{"rbx"},
+            .variables_base_register{"rbp"},
+            .slot_register{"r11"},
+            .variables_base_past_vars_bytes{std::nullopt},
+            .scratch_registers{scratch_registers_},
+            .target_calls{
+                .arguments{"rdi", "rsi", "rdx"},
+                .result{"rax"},
+            },
+        };
     }
 };

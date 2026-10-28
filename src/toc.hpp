@@ -2337,10 +2337,10 @@ class definition_checks final {
 
         const const_info& existing{scopes_.get().back().get_const(name)};
 
-        throw compile_error{
-            src_loc_tk,
-            std::format("constant {} already defined in this block at {}",
-                        in_quotes(name), where(existing.src_loc_tk))};
+        throw compile_error{src_loc_tk,
+                            std::format("constant {} already defined at {}",
+                                        in_quotes(name),
+                                        where(existing.src_loc_tk))};
     }
 
     // a parameter may hide a constant of the generic instance in the same
@@ -2356,7 +2356,7 @@ class definition_checks final {
         const var_info& decl_var{scopes_.get().back().get_var_const_ref(name)};
 
         throw compile_error{src_loc_tk,
-                            std::format("variable {} already declared at {}",
+                            std::format("variable {} already defined at {}",
                                         in_quotes(name),
                                         where(decl_var.src_loc_tk))};
     }
@@ -3050,7 +3050,6 @@ class toc final {
         assert_valid_name(name_tk);
 
         if (reserved_names::find_builtin_function(name_tk.text()) != nullptr) {
-
             throw compile_error{name_tk,
                                 std::format("{} is a built-in function",
                                             in_quotes(name_tk.text()))};

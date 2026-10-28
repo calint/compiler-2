@@ -93,12 +93,6 @@ class stmt_builtin_convert final : public statement {
     }
 
     // only the builtin's own type counts, its argument is narrowed on purpose
-    auto assert_not_narrowed([[maybe_unused]] const toc& tc,
-                             const type& dst_type) const -> void override {
-
-        assert_own_type_not_narrowed(dst_type);
-    }
-
     // a constant of the type, which wraps at the width of its use: the
     // argument folded like a list at W, where it wraps, narrowed to the type,
     // then the conversion's own unary ops apply at the width it is used at,

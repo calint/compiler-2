@@ -1,4 +1,4 @@
 
-0206.baz:5:13: cannot index non-array 'x'
+0206.baz:5:13: 'x' is not an array, it cannot be indexed
     var y = x[0]
             ^

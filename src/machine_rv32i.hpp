@@ -745,6 +745,36 @@ class machine_rv32i : public machine {
         return stack_bytes;
     }
 
+    //
+    // statics
+    //
+
+    // see 'machine::target_description'
+    [[nodiscard]] static constexpr auto rv32i_target() -> target_description {
+        return {
+            .address_size_bytes{word_size_bytes_},
+            .data_alignment{data_alignment_},
+            .max_storage_bytes{assembler_rv32i::address_space_bytes},
+            .has_indexed_addressing{false},
+            .max_padding_gaps_zeroed_one_by_one{
+                max_padding_gaps_zeroed_one_by_one_,
+            },
+            .has_sd_card{true},
+            .string_alignment{word_size_bytes_},
+            .is_stack_bounded{},
+            .frame_base_register{"s1"},
+            .variables_base_register{"s0"},
+            // the last of the saved registers, no built-in names it
+            .slot_register{"s11"},
+            .variables_base_past_vars_bytes{variables_base_past_vars_bytes_},
+            .scratch_registers{scratch_registers_},
+            .target_calls{
+                .arguments{"a0", "a1", "a2"},
+                .result{"a0"},
+            },
+        };
+    }
+
   public:
     // 'options.binary_file_name' receives the image of the resolved output
     machine_rv32i(const builtin_type_set& builtins, const source_files& files,
@@ -1029,7 +1059,9 @@ class machine_rv32i : public machine {
 
         // a copy onto itself, e.g. of a parameter to its argument, changes
         // nothing
-        if (same_memory(dst, src)) {
+        if (dst.is_same_address(src) and
+            dst.type_ref().is_same(src.type_ref())) {
+
             return;
         }
 
@@ -1397,32 +1429,6 @@ class machine_rv32i : public machine {
         };
 
         return helper_save_bytes + line_digits_bytes_;
-    }
-
-    // see 'machine::target_description'
-    [[nodiscard]] static constexpr auto rv32i_target() -> target_description {
-        return {
-            .address_size_bytes{word_size_bytes_},
-            .data_alignment{data_alignment_},
-            .max_storage_bytes{assembler_rv32i::address_space_bytes},
-            .has_indexed_addressing{false},
-            .max_padding_gaps_zeroed_one_by_one{
-                max_padding_gaps_zeroed_one_by_one_,
-            },
-            .has_sd_card{true},
-            .string_alignment{word_size_bytes_},
-            .is_stack_bounded{},
-            .frame_base_register{"s1"},
-            .variables_base_register{"s0"},
-            // the last of the saved registers, no built-in names it
-            .slot_register{"s11"},
-            .variables_base_past_vars_bytes{variables_base_past_vars_bytes_},
-            .scratch_registers{scratch_registers_},
-            .target_calls{
-                .arguments{"a0", "a1", "a2"},
-                .result{"a0"},
-            },
-        };
     }
 
   private:
@@ -4967,17 +4973,6 @@ class machine_rv32i : public machine {
                 (extension_differs and src_size_bytes == dst_size_bytes));
     }
 
-    [[nodiscard]] static auto same_memory(const operand& left,
-                                          const operand& right) -> bool {
-
-        return left.is_memory() and right.is_memory() and
-               left.type_ref().is_same(right.type_ref()) and
-               left.base_register() == right.base_register() and
-               left.index_register() == right.index_register() and
-               left.scale() == right.scale() and
-               left.displacement() == right.displacement();
-    }
-
     // the aligned stack area 'save_registers' allocates for 'count' registers
     [[nodiscard]] static auto saved_registers_size_bytes(const size_t count)
         -> size_t {
@@ -5001,7 +4996,6 @@ class machine_rv32i : public machine {
         }
 
         if (dst.base_register() != src.base_register()) {
-
             return false;
         }
 

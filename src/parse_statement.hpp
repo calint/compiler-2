@@ -288,7 +288,6 @@ inline auto parse_call_or_identifier(toc& tc, tokenizer& tz, const token& tk,
 
     // e.g. 'point{1, 2}' after 'var point = 1', the value hides the type
     if (tm == term_kind::value and tc.types().has(tk.text()) and next == '{') {
-
         throw compile_error{
             tk, std::format("{} names a value here, which hides the type "
                             "{}",
@@ -309,7 +308,6 @@ inline auto parse_call_or_identifier(toc& tc, tokenizer& tz, const token& tk,
 
     // e.g. 'point(5)'
     if (tm == term_kind::type_called) {
-
         throw compile_error{
             tk, std::format("{} is a type, not a function, an instance "
                             "is made with '{}{{...}}'",
@@ -380,20 +378,20 @@ inline auto parse_name_statement(toc& tc, tokenizer& tz, const token tk)
         return std::move(*call);
     }
 
+    stmt_identifier& dst{*std::get<std::unique_ptr<stmt_identifier>>(parsed)};
+
     // e.g. 'p1 = p2'
     if (const std::optional<token> equals_tk{tz.is_next_char_token('=')}) {
-
-        stmt_identifier& dst{
-            *std::get<std::unique_ptr<stmt_identifier>>(parsed),
-        };
-
         return std::make_unique<stmt_assign_var>(tc, tz, std::move(dst),
                                                  *equals_tk);
     }
 
+    // at the name, the next token can be on a later line
     throw compile_error{
-        tz, "unexpected character, expected '=' for assignment or '(' "
-            "for function call"};
+        dst.tok(),
+        std::format("expected '=' for assignment or '(' for function call "
+                    "after {}",
+                    in_quotes(statement::trimmed_source(dst)))};
 }
 
 // called from 'expr_arith', whose elements include it, e.g. a call

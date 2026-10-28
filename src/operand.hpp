@@ -146,6 +146,14 @@ class operand final {
         return kind_ == kind::reg;
     }
 
+    // both are memory at the same address, whatever their types
+    [[nodiscard]] auto is_same_address(const operand& other) const -> bool {
+        return is_memory() and other.is_memory() and
+               base_register_ == other.base_register_ and
+               index_register_ == other.index_register_ and
+               scale_ == other.scale_ and displacement_ == other.displacement_;
+    }
+
     [[nodiscard]] auto is_symbol() const -> bool {
         return kind_ == kind::symbol;
     }

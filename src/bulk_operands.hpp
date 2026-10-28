@@ -205,16 +205,14 @@ class bulk_operands final {
     bulk_operands(toc& tc, tokenizer& tz, const token& name_tk,
                   const std::string_view first_role,
                   const std::string_view second_role, const second_use use)
-        : args_{tc, tz, name_tk, array_indexes_}, first_role_{first_role},
-          second_role_{second_role},
-          is_second_written_{use == second_use::written} {
-
-        if (args_.count() != argument_count_) {
-            throw compile_error{name_tk, argument_count_text(name_tk.text(),
-                                                             argument_count_,
-                                                             argument_count_)};
-        }
-    }
+        : args_{tc,
+                tz,
+                name_tk,
+                array_indexes_,
+                argument_count_,
+                argument_count_},
+          first_role_{first_role}, second_role_{second_role},
+          is_second_written_{use == second_use::written} {}
 
     // the checks of the arguments in the order the statement reads: no
     // argument is written by a later one, the element types match, a constant

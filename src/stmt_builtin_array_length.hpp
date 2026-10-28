@@ -81,12 +81,6 @@ class stmt_builtin_array_length final : public statement {
         std::unreachable();
     }
 
-    auto assert_not_narrowed([[maybe_unused]] const toc& tc,
-                             const type& dst_type) const -> void override {
-
-        assert_own_type_not_narrowed(dst_type);
-    }
-
     // a narrower width stays unfolded, 'assert_not_narrowed' rejects it
     [[nodiscard]] auto fold(const toc& tc, const value_use& use) const
         -> std::optional<folded_value> override {

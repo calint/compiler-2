@@ -24,8 +24,16 @@ struct branch_condition {
     bool returns{};
 };
 
+// the 'else if' before a branch after the first
+struct else_if_tokens {
+    token else_tk;
+    token if_tk;
+};
+
 // one condition of an 'if' or 'else if' and the block it guards
 class stmt_if_branch final : public statement {
+    // none for the first branch, kept to reproduce the source
+    std::optional<else_if_tokens> lead_;
     expr_bool condition_;
     // the value of the condition known where the 'if' is written, e.g. from
     // literals and constants, 'unknown' when it depends on the run or on a
@@ -35,9 +43,10 @@ class stmt_if_branch final : public statement {
 
   public:
     // e.g. 'a == b {x = 1}' of 'if a == b {x = 1} else {y = 2}', the condition
-    // and the block that runs when it holds
-    stmt_if_branch(toc& tc, tokenizer& tz)
-        : statement{tz.next_whitespace_token()},
+    // and the block that runs when it holds; 'lead' was read before
+    stmt_if_branch(toc& tc, tokenizer& tz,
+                   const std::optional<else_if_tokens>& lead)
+        : statement{tz.next_whitespace_token()}, lead_{lead},
           condition_{parse_condition(tc, tz)},
           constant_at_parse_{constant_of(tc, condition_)}, code_{tc, tz} {}
 
@@ -46,6 +55,11 @@ class stmt_if_branch final : public statement {
     //
 
     auto source_to(std::ostream& os) const -> void override {
+        if (lead_) {
+            lead_->else_tk.source_to(os);
+            lead_->if_tk.source_to(os);
+        }
+
         statement::source_to(os);
         condition_.source_to(os);
         code_.source_to(os);

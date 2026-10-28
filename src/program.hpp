@@ -487,7 +487,6 @@ class program final {
         //       is read on every pass
 
         for (size_t i{}; i < tc.noinline_worklist().checked_body_count(); ++i) {
-
             const noinline_body body{
                 tc.noinline_worklist().checked_body_at(i),
             };

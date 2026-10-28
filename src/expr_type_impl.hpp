@@ -59,7 +59,6 @@ inline expr_type::expr_type(toc& tc, tokenizer& tz, const type& tp,
 
     // note: compared by type, a type parameter names the type of its argument
     if (is_typed_literal and not tc.get_type_or_throw(tok()).is_same(tp)) {
-
         throw_type_mismatch(tok(), tp.name(), tok().text());
     }
 
@@ -149,7 +148,7 @@ inline auto expr_type::parse_fields(toc& tc, tokenizer& tz, const type& tp)
         // the value is parsed as the type of the field, so a nested '{...}'
         // is another 'expr_type'
         list.exprs.emplace_back(std::make_unique<expr_any>(
-            tc, tz, tf.type(), literal_typing::from_destination, tf.shape));
+            tc, tz, tf.type_ref(), literal_typing::from_destination, tf.shape));
     }
 }
 
@@ -159,7 +158,7 @@ inline auto expr_type::operator=(expr_type&&) noexcept -> expr_type& = default;
 inline expr_type::~expr_type() = default;
 
 inline expr_type::expr_type(std::unique_ptr<stmt_identifier> receiver)
-    : statement{receiver->first_token()}, value_{std::move(receiver)} {
+    : statement{receiver->tok()}, value_{std::move(receiver)} {
 
     set_type(operand_path()->get_type());
 }

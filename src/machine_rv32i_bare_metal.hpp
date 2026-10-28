@@ -45,6 +45,20 @@ class machine_rv32i_bare_metal : public machine_rv32i {
     // the routine a program calls to exit, the target defines it
     static constexpr std::string_view exit_label_{".Lbaz_exit"};
 
+    //
+    // statics
+    //
+
+    // no operating system stops a stack overflow, see
+    // 'target_description::is_stack_bounded'
+    [[nodiscard]] static constexpr auto bare_metal_target()
+        -> target_description {
+
+        target_description target{rv32i_target()};
+        target.is_stack_bounded = true;
+        return target;
+    }
+
   public:
     // 'memory_size_bytes' is the memory of the target, e.g. fixed for the
     // qemu 'virt' machine
@@ -79,20 +93,6 @@ class machine_rv32i_bare_metal : public machine_rv32i {
 
         branch(indent, exit_label_);
         mark_used(exit_label_);
-    }
-
-    //
-    // statics
-    //
-
-    // no operating system stops a stack overflow, see
-    // 'target_description::is_stack_bounded'
-    [[nodiscard]] static constexpr auto bare_metal_target()
-        -> target_description {
-
-        target_description target{rv32i_target()};
-        target.is_stack_bounded = true;
-        return target;
     }
 
   protected:

@@ -31,7 +31,7 @@ class stmt_builtin_array_copy final : public statement {
 
         const stmt_identifier& dst{operands_.second()};
 
-        dst.record_write(tc, dst.tok(), "copy into", make_ident_info(tc, dst));
+        dst.record_write(tc, "copy into");
     }
 
     //
@@ -104,13 +104,13 @@ class stmt_builtin_array_copy final : public statement {
         x.comment(src.tok(), indent, statement::trimmed_source(src));
 
         const operand src_operand{
-            src.compile_lea(tc, indent, src.first_token(), held, range),
+            src.compile_lea(tc, indent, src.tok(), held, range),
         };
 
         x.comment(dst.tok(), indent, statement::trimmed_source(dst));
 
         const operand dst_operand{
-            dst.compile_lea(tc, indent, dst.first_token(), held, range),
+            dst.compile_lea(tc, indent, dst.tok(), held, range),
         };
 
         x.copy_block(

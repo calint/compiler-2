@@ -1,0 +1,29 @@
+# --checks=overflow: adding and subtracting 1 up to the limits of each width
+# is no overflow, in memory and in a register
+
+func assert(err, ok bool) { if not ok exit(err) }
+
+func noinline inc8(a i8) res i8 { res = a + 1 }
+func noinline dec8(a i8) res i8 { res = a - 1 }
+func noinline inc32(a i32) res i32 { res = a + 1 }
+func noinline dec32(a i32) res i32 { res = a - 1 }
+
+func main() {
+    var a = i8(126)
+    a = a + 1
+    assert(1, a == 127)
+    a = i8(-127)
+    a = a - 1
+    assert(2, a == -128)
+    var b = i32(2147483646)
+    b = b + 1
+    assert(3, b == 2147483647)
+    b = i32(-2147483647)
+    b = b - 1
+    assert(4, b == -2147483648)
+    assert(5, inc8(i8(126)) == 127)
+    assert(6, dec8(i8(-127)) == -128)
+    assert(7, inc32(i32(-1)) == 0)
+    assert(8, dec32(i32(0)) == -1)
+    exit(0)
+}

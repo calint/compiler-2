@@ -267,7 +267,7 @@ class stmt_def_dat final : public statement {
 
             written_bytes = f.offset + f.size_bytes;
 
-            compile_data_rec(tc, f.type(), e);
+            compile_data_rec(tc, f.type_ref(), e);
         }
 
         // zero out remaining fields and the padding after the last field
@@ -395,7 +395,7 @@ class stmt_def_dat final : public statement {
         for (const auto [f, field_value] :
              std::views::zip(flds, record.field_values())) {
 
-            fields.values.emplace_back(fold(tc, f.type(), *field_value));
+            fields.values.emplace_back(fold(tc, f.type_ref(), *field_value));
         }
 
         return {

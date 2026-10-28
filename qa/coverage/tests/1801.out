@@ -1,0 +1,4 @@
+
+1801.baz:6:5: expected '=' for assignment or '(' for function call after 'x'
+    x
+    ^

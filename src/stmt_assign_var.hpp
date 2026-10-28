@@ -97,7 +97,7 @@ class stmt_assign_var final : public statement {
             destination::of_name(
                 var_info,
                 {
-                    .root{std::string{stmt_ident_.first_token().text()}},
+                    .root{std::string{stmt_ident_.tok().text()}},
                     .address{address},
                     .is_final_address{is_final_address},
                     .storage{dst_storage},
@@ -203,14 +203,14 @@ class stmt_assign_var final : public statement {
                     not place.path.has_run_time_index()) {
 
                     throw compile_error{
-                        read.first_token(),
+                        read.tok(),
                         std::format("{} is read but has been overwritten in "
                                     "the same statement",
                                     in_quotes(read.path_text()))};
                 }
 
                 throw compile_error{
-                    read.first_token(),
+                    read.tok(),
                     std::format("{} may have been overwritten in the same "
                                 "statement",
                                 in_quotes(read.path_text()))};
@@ -244,7 +244,7 @@ class stmt_assign_var final : public statement {
 
         const ident_info dst_info{make_ident_info(tc, dst)};
 
-        dst.record_write(tc, dst.tok(), "assign to", dst_info);
+        dst.record_write(tc, "assign to");
 
         return {tc, tz, dst_info.type_ref(), literal_typing::from_destination,
                 dst.shape()};

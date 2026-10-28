@@ -19,12 +19,7 @@ class stmt_builtin_exit final : public statement {
 
   public:
     stmt_builtin_exit(toc& tc, const token tk, tokenizer& tz)
-        : statement{tk}, args_{tc, tz, tk, {}} {
-
-        if (args_.count() != 1) {
-            throw compile_error{tok(), argument_count_text(tok().text(), 1, 1)};
-        }
-    }
+        : statement{tk}, args_{tc, tz, tk, {}, 1, 1} {}
 
     //
     // overridden methods

@@ -87,7 +87,7 @@ inline stmt_identifier::stmt_identifier(toc& tc, token tk, tokenizer& tz,
         tk = field->name_tk;
         dotted_path_.push_back('.');
         dotted_path_ += tk.text();
-        prefix = step_field(prefix, first_token().text(), tk);
+        prefix = step_field(prefix, tok().text(), tk);
     }
 
     // note: a function name is rejected before a path is parsed
@@ -98,9 +98,9 @@ inline stmt_identifier::stmt_identifier(toc& tc, token tk, tokenizer& tz,
 
     resolve_accessed_bytes(tc);
 
-    tc.record_use(first_token().text(), access_path_, use_kind::read);
+    tc.record_use(tok().text(), access_path_, use_kind::read);
 
-    names_result_ = tc.scopes().names_result(first_token().text());
+    names_result_ = tc.scopes().names_result(tok().text());
 }
 
 inline auto stmt_identifier::path_source_to(std::ostream& os) const -> void {
@@ -193,38 +193,36 @@ inline auto stmt_identifier::constant_start_index(const toc& tc) const
     return elems_.back().index_expr().constant_value(tc);
 }
 
-inline auto stmt_identifier::narrow_to_element(toc& tc,
-                                               const expr_any& index_expr,
-                                               const ident_info& array_info,
-                                               const path_reach reach) -> void {
+inline auto
+stmt_identifier::narrow_to_element(const std::optional<int64_t> constant_index,
+                                   const ident_info& array_info,
+                                   const path_reach reach) -> void {
 
-    const std::optional<size_t> index{
-        in_range_constant_index(tc, index_expr, array_info),
-    };
+    const std::optional<size_t> array_len{array_info.array_len()};
 
-    const size_t element_size_bytes{array_info.type_ref().size_bytes()};
+    // note: 'assert_constant_index' rejected a negative index and one past the
+    //       end, the end itself starts the empty range of a zero count
 
-    if (not index) {
+    if (not constant_index or not array_len or
+        std::cmp_equal(*constant_index, *array_len)) {
+
         access_path_.add_run_time_index();
         return;
     }
 
-    const size_t element_offset{*index * element_size_bytes};
-
-    const std::optional<size_t> array_len{array_info.array_len()};
-
-    // note: an index in range has a known length
-    assert(array_len);
+    const size_t index{static_cast<size_t>(*constant_index)};
+    const size_t element_size_bytes{array_info.type_ref().size_bytes()};
+    const size_t element_offset{index * element_size_bytes};
 
     if (reach == path_reach::to_end) {
-        access_path_.add_index_range(*index, *array_len);
+        access_path_.add_index_range(index, *array_len);
     } else {
-        access_path_.add_fixed_index(*index);
+        access_path_.add_fixed_index(index);
     }
 
     // the last element keeps the padding after the array
     const bool is_to_end{
-        reach == path_reach::to_end or *array_len == *index + 1,
+        reach == path_reach::to_end or *array_len == index + 1,
     };
 
     narrow_accessed_bytes(
@@ -317,7 +315,7 @@ inline auto stmt_identifier::resolve_accessed_bytes(toc& tc) -> void {
                                   reach == path_reach::to_end);
         }
 
-        narrow_to_element(tc, elem.index_expr(), *step.info, reach);
+        narrow_to_element(constant_index, *step.info, reach);
     });
 }
 
@@ -481,21 +479,4 @@ inline auto stmt_identifier::path_address::indexed_element(
     }
 
     return add_index(cur_elem, cur_info, request, base);
-}
-
-inline auto stmt_identifier::in_range_constant_index(
-    const toc& tc, const expr_any& index_expr, const ident_info& array_info)
-    -> std::optional<size_t> {
-
-    const std::optional<int64_t> index{index_expr.constant_value(tc)};
-
-    const std::optional<size_t> array_len{array_info.array_len()};
-
-    if (not index or *index < 0 or not array_len or
-        std::cmp_greater_equal(*index, *array_len)) {
-
-        return std::nullopt;
-    }
-
-    return static_cast<size_t>(*index);
 }
