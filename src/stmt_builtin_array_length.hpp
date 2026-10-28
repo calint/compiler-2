@@ -5,7 +5,6 @@
 #include <cstdint>
 #include <optional>
 #include <ostream>
-#include <string_view>
 #include <utility>
 
 #include "compile_error.hpp"

@@ -414,7 +414,7 @@ class tokenizer final {
         return literal_tk;
     }
 
-    // the opening quote has been read, the text excludes both quotes
+    // the opening quote has been read, the text keeps both quotes
     [[nodiscard]] auto finish_string_token(const std::string_view ws_before,
                                            const size_t at_line,
                                            const size_t bgn_ix) -> token {
@@ -520,10 +520,6 @@ class tokenizer final {
     // the text up to the next delimiter, e.g. 'abc+d' gives 'abc', a delimiter
     // at the start gives an empty text
     [[nodiscard]] auto next_token_str() -> std::string_view {
-        if (is_eos()) {
-            return "";
-        }
-
         const size_t bgn_ix{char_ix_};
         const size_t delimiter{src_.find_first_of(delimiters_, char_ix_)};
 
@@ -557,10 +553,6 @@ class tokenizer final {
     // 'source_to' reproduces them with the surrounding tokens
     // e.g. '  # c\n  x' gives '  # c\n  '
     [[nodiscard]] auto next_whitespace() -> std::string_view {
-        if (is_eos()) {
-            return "";
-        }
-
         const size_t bgn_ix{char_ix_};
         while (not is_eos()) {
             const char ch{src_.at(char_ix_)};

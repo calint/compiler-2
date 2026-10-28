@@ -6,6 +6,7 @@
 #include <cstdint>
 #include <format>
 #include <functional>
+#include <limits>
 #include <memory>
 #include <optional>
 #include <ostream>
@@ -318,8 +319,9 @@ class arith_steps final {
 // same-precedence operations stay flat; higher-precedence operations become
 // nested lists
 //
-// note: a list is computed left to right in its destination, only a nested
-//       list needs a scratch register
+// note: a list is computed left to right in its destination; a nested list,
+//       a destination that a later element reads, or a measured shorter
+//       version uses a scratch register
 //
 class expr_arith final : public statement {
     using step = arith_steps::step;
@@ -872,6 +874,14 @@ class expr_arith final : public statement {
     auto compile_step(toc& tc, const size_t indent, const destination& dst,
                       const step& s) const -> void {
 
+        if (is_shift(s.op)) {
+            // note: a count wider than the value is rejected as narrowed also
+            //       in the argument of a conversion, which narrows the other
+            //       elements on purpose
+
+            s.element->assert_not_narrowed(tc, dst.type_ref());
+        }
+
         if (s.value) {
             emit_constant_step(tc, indent, dst, s);
             return;
@@ -914,18 +924,19 @@ class expr_arith final : public statement {
 
     // a step with a value: a constant element with a fixed role, a divisor or
     // a shift count, e.g. 'x / 3' or 'x << k', its value folded by
-    // 'make_steps'; or a regroupable constant, e.g. the '+ 8' the passes
-    // merged of 'a + 3 + 5', which may change nothing, e.g. 'b + 1 - 1'
+    // 'make_steps'; or a regroupable constant or a product of merged divisors,
+    // e.g. the '+ 8' the passes merged of 'a + 3 + 5', which may change
+    // nothing, e.g. 'b + 1 - 1'
     auto emit_constant_step(toc& tc, const size_t indent,
                             const destination& dst, const step& s) const
         -> void {
-
-        machine& x{tc.machine()};
 
         // note: 'compile_step' sends a step with a value
         assert(s.value);
 
         const int64_t step_value{*s.value};
+
+        machine& x{tc.machine()};
 
         if (arith_steps::has_fixed_role(s)) {
             const statement& element{*s.element};
@@ -939,13 +950,6 @@ class expr_arith final : public statement {
                           in_quotes(statement::trimmed_source(element)));
             } else {
                 x.comment(element.tok(), indent, "src: constant");
-            }
-
-            if (is_shift(s.op)) {
-                // note: a count wider than the value is rejected as narrowed
-                //       also in the argument of a conversion
-
-                element.assert_not_narrowed(tc, dst.type_ref());
             }
 
             assert_constant_operand(element.tok(), s.op, step_value,
@@ -1182,14 +1186,6 @@ class expr_arith final : public statement {
 
             compile_negated_operand(tc, indent, op, dst, src);
             return;
-        }
-
-        if (is_shift(op)) {
-            // note: a count wider than the value is rejected as narrowed also
-            //       in the argument of a conversion, which narrows the other
-            //       elements on purpose
-
-            src.assert_not_narrowed(tc, dst.type_ref());
         }
 
         emit_with_source(
@@ -1458,12 +1454,12 @@ class expr_arith final : public statement {
         const std::function_ref<void(const operand&, machine::factor_use)> emit)
         -> void {
 
-        machine& x{tc.machine()};
-
         const type& operand_type{dst.type_ref()};
 
         // note: a constant element is a constant step, its value folded by
         //       'make_steps', see 'emit_constant_step'
+
+        machine& x{tc.machine()};
 
         if (src.is_computed()) {
             assert(not src.fold(tc, tc.use_of(dst)));

@@ -131,7 +131,8 @@ class register_trace final {
     // a body compiled in place of its call, or one of its own
     enum class frame_kind : uint8_t { inlined, noinline_body };
 
-    // an inlined call, the first frame is the function being compiled
+    // a call level: the first is 'main' or the noinline body being compiled,
+    // the others the calls inlined in it
     struct frame {
         std::string name;
         token call_site_tk;

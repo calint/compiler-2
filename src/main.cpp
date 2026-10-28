@@ -211,10 +211,6 @@ auto check_reproduced_source(const program& prg, const source_files& files)
 [[nodiscard]] auto parse_reports(const std::string_view reports)
     -> std::optional<report_options>;
 
-// null for a name of no target
-[[nodiscard]] auto find_target(const std::string_view text)
-    -> const target_name*;
-
 [[nodiscard]] auto
 default_binary_file_name(const std::string_view src_file_name,
                          const target_name& target) -> std::string;
@@ -477,9 +473,11 @@ template <typename Name, size_t count>
 [[nodiscard]] auto apply_target(const std::string_view value, options& opts)
     -> bool {
 
-    const target_name* const found{find_target(value)};
+    const auto* const found{
+        std::ranges::find(target_names, value, &target_name::text),
+    };
 
-    if (found == nullptr) {
+    if (found == target_names.end()) {
         print_option_error(
             std::format("invalid --target: {}, supported targets are: {}",
                         in_quotes(value), joined_texts(target_names)));
@@ -533,11 +531,13 @@ template <typename Name, size_t count>
 [[nodiscard]] auto apply_versions(const std::string_view value, options& opts)
     -> bool {
 
-    for (const kept_version_name& name : kept_version_names) {
-        if (name.text == value) {
-            opts.kept_version = name.kind;
-            return true;
-        }
+    const auto* const found{
+        std::ranges::find(kept_version_names, value, &kept_version_name::text),
+    };
+
+    if (found != kept_version_names.end()) {
+        opts.kept_version = found->kind;
+        return true;
     }
 
     print_option_error(
@@ -916,8 +916,8 @@ static_assert([] -> bool {
         const bool is_disable{option.starts_with('-')};
 
         if (is_disable or option.starts_with('+')) {
-            // note: 1 because the sign is not part of the name
             option.remove_prefix(1);
+            // note: 1 because the sign is not part of the name
         }
 
         // the checks the option names, e.g. '-noub' disables every check
@@ -961,18 +961,6 @@ static_assert([] -> bool {
     }
 
     return parsed;
-}
-
-[[nodiscard]] auto find_target(const std::string_view text)
-    -> const target_name* {
-
-    for (const target_name& name : target_names) {
-        if (name.text == text) {
-            return &name;
-        }
-    }
-
-    return nullptr;
 }
 
 // keeps the directory so the image lands next to its source
@@ -1110,8 +1098,8 @@ auto print_source_error(const source_files& files,
 // replacement character, a control byte as its escape
 [[nodiscard]] auto display_columns(const std::string_view text) -> size_t {
     constexpr unsigned char first_non_ascii{0x80};
-    // note: 4 for the '\xNN' that 'printable_line' shows
     constexpr size_t escape_columns{4};
+    // note: 4 for the '\xNN' that 'printable_line' shows
 
     size_t columns{};
     bool after_non_ascii{};

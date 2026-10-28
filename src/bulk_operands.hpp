@@ -2,16 +2,15 @@
 
 #include <array>
 #include <cassert>
+#include <cstddef>
 #include <cstdint>
 #include <format>
 #include <functional>
 #include <optional>
 #include <ostream>
 #include <ranges>
-#include <span>
 #include <string_view>
 #include <utility>
-#include <vector>
 
 #include "compile_error.hpp"
 #include "expr_any.hpp"
@@ -34,7 +33,7 @@
 // types are resolved then
 class bulk_operands final {
     // the two arrays and the count
-    static constexpr size_t argument_count{3};
+    static constexpr size_t argument_count_{3};
     static constexpr std::array<size_t, 2> array_indexes_{0, 1};
 
     builtin_arguments args_;
@@ -216,10 +215,10 @@ class bulk_operands final {
           second_role_{second_role},
           is_second_written_{use == second_use::written} {
 
-        if (args_.count() != argument_count) {
+        if (args_.count() != argument_count_) {
             throw compile_error{name_tk, argument_count_text(name_tk.text(),
-                                                             argument_count,
-                                                             argument_count)};
+                                                             argument_count_,
+                                                             argument_count_)};
         }
     }
 

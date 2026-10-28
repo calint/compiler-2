@@ -4,6 +4,7 @@
 #include <cstddef>
 #include <format>
 #include <memory>
+#include <optional>
 #include <ostream>
 #include <print>
 #include <ranges>
@@ -29,7 +30,7 @@
 //
 //   'type_fields'            the braces, fields and delimiters of a body
 //   'comment_type_layout', 'assert_arg_count', 'assert_generic_type',
-//   'read_generic_args'     the free helpers of the two classes after them
+//   'read_generic_args'      the free helpers of the two classes after them
 //   'generic_type_use'       the generic type named after an '='
 //   'stmt_def_type'          a plain type, 'type point { x, y }'
 //   'stmt_def_type_generic'  a generic definition, kept as text

@@ -122,7 +122,8 @@ struct target_description {
 //                  'max_storage_bytes', 'has_sd_card', 'sector_size_bytes',
 //                  'foo_counter_in_memory', 'frame_base_register',
 //                  'variables_base_register', 'variables_base_past_vars_bytes'
-//   reports        'register_peak_report', 'separate_report', 'statistics';
+//   reports        'register_peak_report', 'register_trace_scope',
+//                  'separate_report', 'statistics';
 //                  the queries of the register report are private, for
 //                  'register_reporter'
 class machine {
@@ -2112,7 +2113,6 @@ class machine {
                                    });
     }
 
-    // a register of any size that names the stack pointer
     // of two versions, at least one available, the one to keep
     [[nodiscard]] auto keeps_first_version(const version_result& first,
                                            const version_result& second) const
@@ -2283,8 +2283,7 @@ class machine {
         assert(state_.frame_base_reserved);
         assert(state_.registers.scratch_count() == 0);
 
-        comment(token{}, 0, "free named register {}", frame_base_register());
-        pop_allocation(frame_base_register());
+        release_named_register(token{}, 0, frame_base_register());
 
         state_.frame_base_reserved = false;
     }

@@ -3,6 +3,7 @@
 #include <array>
 #include <bit>
 #include <cstddef>
+#include <cstdint>
 #include <string_view>
 
 #include "assembler_rv32i.hpp"

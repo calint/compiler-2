@@ -4,6 +4,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <format>
+#include <iterator>
 #include <optional>
 #include <ostream>
 #include <print>
@@ -411,8 +412,6 @@ class statement {
     [[nodiscard]] auto is_computed() const -> bool {
         return operand_path() == nullptr;
     }
-
-    // 'stmt_identifier.hpp'
 
     auto set_type(const type& tp) -> void { type_ = &tp; }
 

@@ -11,9 +11,9 @@
 #include <memory>
 #include <optional>
 #include <ostream>
-#include <string>
+#include <string_view>
 #include <utility>
-#include <vector>
+#include <variant>
 
 #include "access_path.hpp"
 #include "compile_error.hpp"
@@ -330,9 +330,9 @@ inline auto stmt_identifier::path_address::add_index(const ident_elem& cur_elem,
     toc& tc{tc_.get()};
     const size_t indent{indent_};
 
-    machine& x{tc.machine()};
-
     const token& index_tk{cur_elem.index_expr().tok()};
+
+    machine& x{tc.machine()};
 
     // a register kept by an earlier fold is reused since the fold already
     // consumed its value
@@ -441,7 +441,8 @@ inline auto stmt_identifier::compile_checked_index(
                                            shape.element_count()),
     };
 
-    check_array_bounds(tc, indent, index_expr.tok(), checked);
+    x.check_bounds(index_expr.tok(), indent, checked,
+                   tc.checks().bounds_options());
 
     return 0;
 }

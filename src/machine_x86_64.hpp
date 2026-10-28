@@ -40,12 +40,13 @@
 //   memory       'copy_block', 'store_bytes', 'zero' unrolled or with
 //                'rep', the bulk operations with 'rsi', 'rdi' and 'rcx'
 //   comparisons  'compare_and_branch', 'store_condition', 'memory_equal'
-//   checks       'check_bounds', 'check_divisor', 'check_shift_count',
+//   checks       'emit_bounds_check' with 'check_lower_bound' and
+//                'check_upper_bound', 'check_divisor', 'check_shift_count',
 //                'check_copy_overlap', 'check_frame_capacity', each jumps to
 //                its handler, all but the frame check with a stub per line
 //                for '--checks=line'
 //   handlers     'emit_failure_handler'
-//   calls        'call_function', the system calls 'io_syscall' and 'exit',
+//   calls        'emit_call', the system calls 'io_syscall' and 'exit',
 //                the sector routines 'emit_sector_routines'
 class machine_x86_64 final : public machine {
     using op = assembler_x86_64::op;
@@ -236,9 +237,7 @@ class machine_x86_64 final : public machine {
                operation == arithmetic_operator::subtract);
 
         // adding or subtracting 0 cannot overflow
-        if (check.enabled and src.is_immediate() and
-            immediate_bits(src) == std::optional<uint64_t>{0}) {
-
+        if (check.enabled and immediate_bits(src) == 0) {
             return;
         }
 
@@ -505,14 +504,6 @@ class machine_x86_64 final : public machine {
     [[nodiscard]] auto make_register_operand(const std::string_view name,
                                              const type& value_type) const
         -> operand override {
-
-        const size_t size_bytes{register_size_bytes(name)};
-
-        assert(size_bytes != 0);
-
-        if (size_bytes == value_type.size_bytes()) {
-            return operand::reg(name, value_type);
-        }
 
         return operand::reg(sized_register_name(name, value_type.size_bytes()),
                             value_type);
@@ -991,21 +982,7 @@ class machine_x86_64 final : public machine {
     [[nodiscard]] auto register_index_of(const std::string_view name) const
         -> std::optional<size_t> override {
 
-        if (register_size_bytes(name) == 0) {
-            return std::nullopt;
-        }
-
-        const std::string qword{sized_register_name(name, size_qword_)};
-
-        for (const auto [index, names] :
-             std::views::enumerate(register_names_)) {
-
-            if (names.qword == qword) {
-                return static_cast<size_t>(index);
-            }
-        }
-
-        std::unreachable();
+        return register_row(name);
     }
 
     auto restore_call_registers(const size_t indent,
@@ -2271,28 +2248,22 @@ class machine_x86_64 final : public machine {
     }
 
     // returns 0 if name is not a register
-    [[nodiscard]] static auto register_size_bytes(const std::string_view name)
-        -> size_t {
+    // the row in 'register_names_' of a register of any size, none for a
+    // name of no register
+    [[nodiscard]] static auto register_row(const std::string_view name)
+        -> std::optional<size_t> {
 
-        for (const register_names& names : register_names_) {
-            if (name == names.qword) {
-                return size_qword_;
-            }
+        for (const auto [index, names] :
+             std::views::enumerate(register_names_)) {
 
-            if (name == names.dword) {
-                return size_dword_;
-            }
+            if (name == names.qword or name == names.dword or
+                name == names.word or name == names.byte) {
 
-            if (name == names.word) {
-                return size_word_;
-            }
-
-            if (name == names.byte) {
-                return size_byte_;
+                return static_cast<size_t>(index);
             }
         }
 
-        return 0;
+        return std::nullopt;
     }
 
     [[nodiscard]] static auto register_sum(const std::string_view base,
@@ -2341,35 +2312,31 @@ class machine_x86_64 final : public machine {
                                                   const size_t size_bytes)
         -> std::string {
 
+        const std::optional<size_t> row{register_row(name)};
+
+        // note: every register name is in 'register_names_'
+        assert(row);
+
         // a register is allocated by its 64-bit name, an operand names the
         // part of its width
-        for (const register_names& names : register_names_) {
-            if (name != names.qword and name != names.dword and
-                name != names.word and name != names.byte) {
+        const register_names& names{register_names_.at(*row)};
 
-                continue;
-            }
+        switch (size_bytes) {
+        case size_qword_:
+            return std::string{names.qword};
 
-            switch (size_bytes) {
-            case size_qword_:
-                return std::string{names.qword};
+        case size_dword_:
+            return std::string{names.dword};
 
-            case size_dword_:
-                return std::string{names.dword};
+        case size_word_:
+            return std::string{names.word};
 
-            case size_word_:
-                return std::string{names.word};
+        case size_byte_:
+            return std::string{names.byte};
 
-            case size_byte_:
-                return std::string{names.byte};
-
-            default:
-                std::unreachable();
-            }
+        default:
+            std::unreachable();
         }
-
-        // every register name is in 'register_names_'
-        std::unreachable();
     }
 
     [[nodiscard]] static auto string_compare(const size_t size_bytes) -> op {

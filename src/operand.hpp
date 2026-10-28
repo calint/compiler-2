@@ -279,8 +279,9 @@ enum class arithmetic_operator : uint8_t {
     bit_xor,
     shift_left,
     shift_right,
-    // not taken by the methods: the op of the first element of a list that is
-    // neither added nor multiplied, copied with '=' ('expr_arith')
+    // not taken by the methods: the op of the first element of a list led by
+    // '/', '%' or a shift, or of a single element, copied with '='
+    // ('expr_arith')
     assign,
     negate,
     complement,

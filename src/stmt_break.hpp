@@ -34,8 +34,8 @@ class stmt_break final : public statement {
         // note: the parse rejected a 'break' outside a loop
         assert(loop);
 
-        x.branch(indent, toc::end_label(loop->label));
         tc.record_break();
+        x.branch(indent, toc::end_label(loop->label));
     }
 
     auto trace_assignment(assignment_flow& flow) const -> void override {

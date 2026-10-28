@@ -33,16 +33,17 @@ class machine_rv32i_bare_metal : public machine_rv32i {
         "a4",
         "a5",
     };
+    // the routines a program calls to read and write
+    static constexpr std::string_view read_label_{".Lbaz_read"};
+    static constexpr std::string_view write_label_{".Lbaz_write"};
 
     size_t stack_size_bytes_{};
     // the memory of the device, the image is loaded at its start
     size_t memory_size_bytes_{};
 
   protected:
-    // the routines a program calls, the target defines the exit one
+    // the routine a program calls to exit, the target defines it
     static constexpr std::string_view exit_label_{".Lbaz_exit"};
-    static constexpr std::string_view read_label_{".Lbaz_read"};
-    static constexpr std::string_view write_label_{".Lbaz_write"};
 
   public:
     // 'memory_size_bytes' is the memory of the target, e.g. fixed for the

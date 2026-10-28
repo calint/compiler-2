@@ -780,7 +780,7 @@ struct call_site {
 //      'compile_body_with_address_registers')
 //   3. 'compile_body': the body under labels unique to the call, with the
 //      bindings added
-class inline_call {
+class inline_call final {
     // what the body names by its result and its parameters
     struct call_bindings {
         std::optional<param_binding> result;
@@ -838,8 +838,6 @@ class inline_call {
     auto compile_body(toc& tc, const size_t indent,
                       const call_bindings& bindings) const -> void {
 
-        machine& x{tc.machine()};
-
         // the body is inlined at every call, so its labels are named by the
         // call
         const std::string new_call_path{tc.call_path_at(call_.tk)};
@@ -849,6 +847,8 @@ class inline_call {
         };
 
         const std::string ret_jmp_label{toc::end_label(call_label)};
+
+        machine& x{tc.machine()};
 
         call_.func->source_def_comment_to(x, indent);
 
@@ -1247,7 +1247,7 @@ class inline_call {
 //   3. the addresses are written to the callee frame ('populate_frame':
 //      'frame_slot_addresses', 'write_frame_slots' and the frame and stack
 //      checks) and the function is called
-class noinline_call {
+class noinline_call final {
     // a slot of the callee frame and the address it holds
     struct addressed_slot {
         frame_slot slot;
@@ -1359,8 +1359,6 @@ class noinline_call {
 
         assert_call(dst, *call_.func, arguments);
 
-        machine& x{tc.machine()};
-
         call_.zero_result_padding(tc, indent, dst);
 
         const std::vector<size_t> array_lengths{
@@ -1371,6 +1369,8 @@ class noinline_call {
         // without array parameters
         // note: an argument of unknown length is in the check of a function
         //       without its calls, no body has its lengths
+
+        machine& x{tc.machine()};
 
         if (std::ranges::none_of(arguments, [](const noinline_arg& a) -> bool {
                 return a.info.is_length_unknown();
@@ -1613,7 +1613,7 @@ inline auto assert_call_in_func(const toc& tc, const token& call_tk) -> void {
 // 'write(1, buf, 4)'; each is a value at the default type, those at
 // 'array_indexes' array paths ('stmt_identifier::parse_array_argument'), the
 // built-in checks their count and their kinds
-class builtin_arguments {
+class builtin_arguments final {
     token open_paren_tk_;
     std::vector<expr_any> args_;
     std::vector<token> delims_tk_;
@@ -1727,7 +1727,7 @@ class builtin_arguments {
 // compiling, in 'compile': the checks made before the inlined and noinline
 // paths split ('assert_call_accepted'), then 'inline_call' or 'noinline_call'
 // compiles the call
-class stmt_call : public statement {
+class stmt_call final : public statement {
     // e.g. the '.' in 'lst.add(x)', the receiver is the first argument;
     // none when the call is not a method call
     std::optional<token> method_dot_tk_;
@@ -2099,11 +2099,7 @@ class stmt_call : public statement {
     // parsed inside a body may name that body's function, e.g. 'gen<W>'
     // calling back 'W.run' that instantiates it (README 7.2)
     auto assert_callee_body_parsed(const toc& tc) const -> void {
-        const bool is_recursive{
-            tc.scopes().current_func_scope().is_name(callee().name()),
-        };
-
-        if (callee().is_body_parsed() or is_recursive) {
+        if (callee().is_body_parsed() or is_call_in_own_body(tc)) {
             return;
         }
 
@@ -2314,6 +2310,15 @@ class stmt_call : public statement {
     // the receiver is not counted as an argument
     [[nodiscard]] auto first_argument_index() const -> size_t {
         return is_method() ? 1 : 0;
+    }
+
+    // what the body reaches of 'target', the argument of the parameter at
+    // 'param_index' or the result (empty), by its record; a call of the
+    // function it is in, whose record the parse is still making, reaches it
+    // whole, written unless the parameter is read-only
+    // the call is in the body of its callee, a recursion
+    [[nodiscard]] auto is_call_in_own_body(const toc& tc) const -> bool {
+        return tc.scopes().current_func_scope().is_name(callee().name());
     }
 
     [[nodiscard]] auto is_constructor() const -> bool {
@@ -2601,19 +2606,11 @@ class stmt_call : public statement {
         }
     }
 
-    // what the body reaches of 'target', the argument of the parameter at
-    // 'param_index' or the result (empty), by its record; a call of the
-    // function it is in, whose record the parse is still making, reaches it
-    // whole, written unless the parameter is read-only
     auto visit_reach_of(const toc& tc, const std::optional<size_t> param_index,
                         const std::string_view name, const storage_path& target,
                         const call_effect_visitor visitor) const -> void {
 
-        const bool is_recursive{
-            tc.scopes().current_func_scope().is_name(callee().name()),
-        };
-
-        if (is_recursive) {
+        if (is_call_in_own_body(tc)) {
             visitor({
                 .call_tk{tok()},
                 .name{name},

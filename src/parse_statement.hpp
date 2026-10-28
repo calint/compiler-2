@@ -6,8 +6,11 @@
 // 'stmt_block' and 'expr_arith', which call them, are included by the
 // statements they make; 'program' keeps the files and their includes
 
+#include <cassert>
+#include <cstdint>
 #include <format>
 #include <memory>
+#include <optional>
 #include <utility>
 #include <variant>
 

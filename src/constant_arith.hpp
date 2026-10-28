@@ -9,7 +9,6 @@
 #include <cstddef>
 #include <cstdint>
 #include <limits>
-#include <optional>
 #include <utility>
 
 #include "operand.hpp"

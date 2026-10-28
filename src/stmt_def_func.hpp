@@ -3,8 +3,8 @@
 #include <algorithm>
 #include <cassert>
 #include <cstddef>
-#include <cstdint>
 #include <format>
+#include <functional>
 #include <memory>
 #include <optional>
 #include <ostream>
@@ -301,10 +301,6 @@ struct func_head {
         read_method_name(tc, tz, *dot_tk);
         open_paren_tk = tz.is_next_char_token('(');
     }
-
-    //
-    // statics
-    //
 };
 
 // the result 'name [type]' as written after the parameters, e.g. 'res i8';
@@ -920,10 +916,10 @@ class stmt_def_func final : public statement {
                      const std::span<const size_t> array_lengths) const
         -> size_t {
 
-        machine& x{tc.machine()};
-
         // the register is held while the body runs
         std::optional<operand> slot_register;
+
+        machine& x{tc.machine()};
 
         if (has_receiver_in_register()) {
             slot_register = x.alloc_named_register(
@@ -1032,15 +1028,15 @@ class stmt_def_func final : public statement {
 
         const func_result& result{*read_result};
 
-        // a name before the body is the result, 'self' names the value a
-        // constructor builds
-        if (tz.peek_char_after_whitespace() == '{' and not result.is_self()) {
-            tc.assert_valid_unqualified_name(result.name_tk);
-        }
-
+        // 'self' names the value a constructor builds, a name before the body
+        // is the result
         if (result.is_self()) {
             set_constructor_result(result.name_tk, result.type_tk);
             return;
+        }
+
+        if (tz.peek_char_after_whitespace() == '{') {
+            tc.assert_valid_unqualified_name(result.name_tk);
         }
 
         const type& tp{

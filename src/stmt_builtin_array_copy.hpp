@@ -2,7 +2,6 @@
 
 #include <cstddef>
 #include <cstdint>
-#include <functional>
 #include <optional>
 #include <ostream>
 
@@ -97,26 +96,22 @@ class stmt_builtin_array_copy final : public statement {
         machine::held_registers held{x, tok(), indent};
 
         // the walk checks a run-time start against the end less the count
+        const lea_request range{
+            .range_count{count},
+            .start_register{},
+            .address_register{},
+        };
+
         x.comment(src.tok(), indent, statement::trimmed_source(src));
 
         const operand src_operand{
-            src.compile_lea(tc, indent, src.first_token(), held,
-                            {
-                                .range_count{count},
-                                .start_register{},
-                                .address_register{},
-                            }),
+            src.compile_lea(tc, indent, src.first_token(), held, range),
         };
 
         x.comment(dst.tok(), indent, statement::trimmed_source(dst));
 
         const operand dst_operand{
-            dst.compile_lea(tc, indent, dst.first_token(), held,
-                            {
-                                .range_count{count},
-                                .start_register{},
-                                .address_register{},
-                            }),
+            dst.compile_lea(tc, indent, dst.first_token(), held, range),
         };
 
         x.copy_block(tok(), indent, dst_operand, src_operand,

@@ -1,7 +1,7 @@
 #pragma once
 
+#include <cassert>
 #include <cstddef>
-#include <functional>
 #include <ostream>
 #include <utility>
 

@@ -6,7 +6,6 @@
 #include <format>
 #include <optional>
 #include <ostream>
-#include <span>
 #include <string>
 #include <string_view>
 #include <utility>
@@ -580,10 +579,10 @@ class expr_bool_op final : public statement {
             cmp.op == comparison_operator::not_equal,
         };
 
-        machine& x{tc.machine()};
-
         // a stored result has the inversion applied, a branch applies it
         const bool is_stored{not action.destination.is_empty()};
+
+        machine& x{tc.machine()};
 
         const operand result{
             is_stored ? action.destination
@@ -813,10 +812,10 @@ class expr_bool_op final : public statement {
                                                  machine::held_registers& held)
         -> operand {
 
-        machine& x{tc.machine()};
-
         // the operand is computed at the width of its first element
         expr.assert_not_narrowed(tc, expr.get_type());
+
+        machine& x{tc.machine()};
 
         const operand reg{
             x.alloc_scratch_register(expr.tok(), indent, expr.get_type()),
@@ -1126,14 +1125,14 @@ class expr_bool final : public statement {
     auto compile(toc& tc, const size_t indent, const destination& dst) const
         -> void override {
 
-        machine& x{tc.machine()};
-
         // stored comparisons would change what later elements read; a
         // register that the list reads is the result of an inlined function
         if (not reaches_destination(tc, *this, dst)) {
             compile_value(tc, indent, dst.operand());
             return;
         }
+
+        machine& x{tc.machine()};
 
         const operand reg{
             x.alloc_scratch_register(tok(), indent, dst.type_ref()),

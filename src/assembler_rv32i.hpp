@@ -912,20 +912,6 @@ class assembler_rv32i final : public assembler {
                one_instruction_bytes;
     }
 
-    // directives and comments occupy no space, instructions are added
-    // as records except for jumps, which start as one instruction
-    [[nodiscard]] static auto line_size_bytes(const std::string_view text)
-        -> size_t {
-
-        const std::string_view code{code_part(text)};
-
-        if (code.empty() or is_sizeless_directive(code)) {
-            return 0;
-        }
-
-        return one_instruction_bytes;
-    }
-
     [[nodiscard]] static auto lower_part(const int64_t value) -> int32_t {
         constexpr int32_t low_range{4096};
 
@@ -990,10 +976,18 @@ class assembler_rv32i final : public assembler {
         return inverse(mnemonic);
     }
 
+    // directives and comments occupy no space, instructions are added
+    // as records except for jumps, which start as one instruction
     [[nodiscard]] auto text_code_size(const std::string_view text) const
         -> size_t override {
 
-        return line_size_bytes(text);
+        const std::string_view code{code_part(text)};
+
+        if (code.empty() or is_sizeless_directive(code)) {
+            return 0;
+        }
+
+        return one_instruction_bytes;
     }
 
     [[nodiscard]] auto unconditional_jump_mnemonic() const

@@ -6,7 +6,6 @@
 #include <charconv>
 #include <cstddef>
 #include <cstdint>
-#include <format>
 #include <memory>
 #include <optional>
 #include <ostream>

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstddef>
 #include <format>
 #include <optional>
 #include <span>
@@ -91,21 +92,6 @@ inline auto assert_not_read_before(const toc& tc, const list_operand& earlier,
     });
 }
 
-// each write of a call in 'operands'
-inline auto visit_call_writes(const toc& tc,
-                              const std::span<const list_operand> operands,
-                              const call_effect_visitor visitor) -> void {
-
-    for (const list_operand& operand : operands) {
-        operand.node->visit_call_effects(
-            tc, [&visitor](const call_effect& effect) -> void {
-                if (effect.is_write) {
-                    visitor(effect);
-                }
-            });
-    }
-}
-
 // evaluation is left to right, but the compile reads a name where it is
 // used, so a name that a later operand of the same list may write would read
 // the written value; such a list is rejected, e.g. the 'i' of 'f(arr[i],
@@ -121,8 +107,12 @@ assert_not_written_later(const toc& tc,
     const std::string writer{std::format("a later {}", operand)};
 
     for (size_t k{1}; k < operands.size(); ++k) {
-        visit_call_writes(
-            tc, operands.subspan(k, 1), [&](const call_effect& effect) -> void {
+        operands.at(k).node->visit_call_effects(
+            tc, [&](const call_effect& effect) -> void {
+                if (not effect.is_write) {
+                    return;
+                }
+
                 for (const list_operand& earlier : operands.first(k)) {
                     assert_not_read_before(tc, earlier, effect, writer);
                 }

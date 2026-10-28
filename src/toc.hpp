@@ -319,10 +319,10 @@ class scope final {
     lut<var_info> vars_;
 
     // a loop scope: a 'break' of it was compiled, so its end is reached;
-    // only 'toc::join_loop' reads it
+    // read by 'toc::join_loop' and 'scope_stack::reach_state_now'
     bool is_left_by_break_{};
     // a loop scope: a 'continue' of it was compiled, so its counter step is
-    // reached; only 'toc::join_loop' reads it
+    // reached; read by 'toc::join_loop' and 'scope_stack::reach_state_now'
     bool is_continued_{};
     // a loop scope: how its end is reached and where a 'continue' jumps,
     // e.g. the head of a 'loop' or the counter step of a 'foo'
@@ -820,10 +820,7 @@ class noinline_worklist final {
     }
 
     [[nodiscard]] auto is_emitted(const noinline_body& body) const -> bool {
-        return std::ranges::any_of(
-            noinline_bodies_, [&](const noinline_body& known) -> bool {
-                return is_same_body(known, *body.func, body.array_lengths);
-            });
+        return contains(noinline_bodies_, *body.func, body.array_lengths);
     }
 
     [[nodiscard]] auto is_empty() const -> bool {
@@ -852,11 +849,7 @@ class noinline_worklist final {
                          const token& call_tk, std::string call_source)
         -> void {
 
-        if (std::ranges::any_of(
-                bodies, [&](const noinline_body& known) -> bool {
-                    return is_same_body(known, func, array_lengths);
-                })) {
-
+        if (contains(bodies, func, array_lengths)) {
             return;
         }
 
@@ -868,11 +861,16 @@ class noinline_worklist final {
         });
     }
 
-    [[nodiscard]] static auto
-    is_same_body(const noinline_body& known, const stmt_def_func& func,
-                 const std::vector<size_t>& array_lengths) -> bool {
+    [[nodiscard]] static auto contains(const std::vector<noinline_body>& bodies,
+                                       const stmt_def_func& func,
+                                       const std::vector<size_t>& array_lengths)
+        -> bool {
 
-        return known.func == &func and known.array_lengths == array_lengths;
+        return std::ranges::any_of(
+            bodies, [&](const noinline_body& known) -> bool {
+                return known.func == &func and
+                       known.array_lengths == array_lengths;
+            });
     }
 };
 
@@ -1245,20 +1243,18 @@ class scope_stack final {
     // the innermost 'loop' or 'foo' of the function, the target of a 'break'
     // or a 'continue'
     [[nodiscard]] auto innermost_loop() const -> std::optional<loop_target> {
-        for (const scope& scp : scopes_ | std::views::reverse) {
-            if (scp.is_loop()) {
-                return loop_target{
-                    .label{scp.name()},
-                    .continue_label{scp.continue_label()},
-                };
-            }
+        const std::optional<size_t> index{innermost_loop_index()};
 
-            if (scp.is_func()) {
-                return std::nullopt;
-            }
+        if (not index) {
+            return std::nullopt;
         }
 
-        std::unreachable();
+        const scope& loop{scopes_.at(*index)};
+
+        return loop_target{
+            .label{loop.name()},
+            .continue_label{loop.continue_label()},
+        };
     }
 
     // only the scope of the globals is open
@@ -1385,14 +1381,7 @@ class scope_stack final {
             };
         }
 
-        std::optional<size_t> loop_index;
-
-        for (size_t i{scopes_.size()}; i > 0; --i) {
-            if (scopes_.at(i - 1).is_loop()) {
-                loop_index = i - 1;
-                break;
-            }
-        }
+        const std::optional<size_t> loop_index{innermost_loop_index()};
 
         return {
             .loop_index{loop_index},
@@ -1506,15 +1495,30 @@ class scope_stack final {
         std::unreachable();
     }
 
-    // note: the parse rejected a 'break' or a 'continue' outside a loop
-    [[nodiscard]] auto innermost_loop_ref() -> scope& {
-        for (scope& scp : scopes_ | std::views::reverse) {
+    // the index of the innermost 'loop' or 'foo' of the function
+    [[nodiscard]] auto innermost_loop_index() const -> std::optional<size_t> {
+        for (size_t i{scopes_.size()}; i > 0; --i) {
+            const scope& scp{scopes_.at(i - 1)};
+
             if (scp.is_loop()) {
-                return scp;
+                return i - 1;
+            }
+
+            if (scp.is_func()) {
+                return std::nullopt;
             }
         }
 
         std::unreachable();
+    }
+
+    [[nodiscard]] auto innermost_loop_ref() -> scope& {
+        const std::optional<size_t> index{innermost_loop_index()};
+
+        // note: the parse rejected a 'break' or a 'continue' outside a loop
+        assert(index);
+
+        return scopes_.at(*index);
     }
 
     [[nodiscard]] auto is_global_visible(const std::string_view name) const
@@ -2541,15 +2545,19 @@ class variable_comments final {
 //                  'mark_generic_func_instantiated', 'enter_type_params',
 //                  'exit_type_params', 'assert_generic_param_apart',
 //                  'assert_generic_param_free', 'assert_generic_params_free',
+//                  'assert_method_type_param_free',
 //                  'assert_valid_unqualified_name', 'begin_definition',
 //                  'current_definition', 'instance_visibility',
 //                  'constant_value_of', 'record_use',
-//                  'record_storage_use', 'parse_nesting_scope'
+//                  'record_storage_use', 'record_result_passed_as_mut',
+//                  'parse_nesting_scope'
 //   compile        'add_binding', 'add_bytes_constant', 'add_string_constant',
-//                  'add_noinline_body', 'dry_run', 'emit_most_efficient',
+//                  'add_noinline_body', 'dry_run', 'check_skipped',
+//                  'is_checking_without_call', 'emit_most_efficient',
 //                  'create_cmp_label', 'next_frame_address', the reachability
 //                  ('is_reachable', 'end_path', 'record_break',
-//                  'record_return', 'join_loop', 'path_merge')
+//                  'record_continue', 'record_return', 'join_loop',
+//                  'path_merge')
 //   both           'add_var' and 'add_const' (placed and commented only while
 //                  compiling), 'make_var_read_only', 'scope_entry',
 //                  'resolve_declared', 'get_func_or_throw',
@@ -2612,8 +2620,7 @@ class toc final {
     // body ends ('pop_scope')
     struct compile_state {
         compile_peaks peaks;
-        // none outside a function, e.g. the check of a body
-        std::optional<scope_stack::reach_state> reach;
+        scope_stack::reach_state reach;
     };
 
     // what a dry run changes in 'toc' is put back when it ends, also when an
@@ -3055,7 +3062,7 @@ class toc final {
 
         // a value would hide the type only in some places, e.g. 'i8(300)'
         // still converts after 'var i8 = 3'
-        if (is_builtin_type_name(name_tk.text())) {
+        if (types_.is_builtin(name_tk.text())) {
             throw compile_error{name_tk,
                                 std::format("{} is a built-in type",
                                             in_quotes(name_tk.text()))};
@@ -3323,7 +3330,12 @@ class toc final {
                                          const std::string_view name) const
         -> const stmt_def_func& {
 
-        return *get_func_info_or_throw(src_loc_tk, name).def;
+        if (not funcs_.has(name)) {
+            throw compile_error{src_loc_tk, std::format("function {} not found",
+                                                        in_quotes(name))};
+        }
+
+        return *funcs_.get(name).def;
     }
 
     // no token names a missing 'main'
@@ -3717,42 +3729,16 @@ class toc final {
         return &tp;
     }
 
-    // the locals of a dry run live in the callee's own frame
+    // a dry run emits nothing, its locals take no variable storage
     [[nodiscard]] auto checks_storage_capacity() const -> bool {
         return dry_run_depth_ == 0;
     }
 
     [[nodiscard]] auto compile_state_now() const -> compile_state {
-        if (not scopes_.is_in_func()) {
-            return {
-                .peaks{peaks_now()},
-                .reach{},
-            };
-        }
-
         return {
             .peaks{peaks_now()},
             .reach{scopes_.reach_state_now()},
         };
-    }
-
-    [[nodiscard]] auto get_func_info_or_throw(const token& src_loc_tk,
-                                              const std::string_view name) const
-        -> const func_info& {
-
-        if (not funcs_.has(name)) {
-            throw compile_error{src_loc_tk, std::format("function {} not found",
-                                                        in_quotes(name))};
-        }
-
-        return funcs_.get(name);
-    }
-
-    // a built-in type has no place in the source, e.g. 'i8' or 'int'
-    [[nodiscard]] auto is_builtin_type_name(const std::string_view name) const
-        -> bool {
-
-        return types_.is_builtin(name);
     }
 
     [[nodiscard]] auto peaks_now() const -> compile_peaks {
@@ -3790,10 +3776,7 @@ class toc final {
 
     auto restore_compile_state(const compile_state& state) -> void {
         restore_peaks(state.peaks);
-
-        if (state.reach) {
-            scopes_.restore_reach_state(*state.reach);
-        }
+        scopes_.restore_reach_state(state.reach);
     }
 
     auto restore_peaks(const compile_peaks& peaks) -> void {

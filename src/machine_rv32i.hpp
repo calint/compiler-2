@@ -822,7 +822,7 @@ class machine_rv32i : public machine {
     auto branch(const size_t indent, const std::string_view target)
         -> void override {
 
-        emit_jump(indent, op::j, {}, {}, target);
+        assembler_.resolved_jump(indent, target, far_jump_register());
     }
 
     [[nodiscard]] auto can_lower_index_scale(const size_t size_bytes) const
@@ -1171,10 +1171,7 @@ class machine_rv32i : public machine {
                                              const type& value_type) const
         -> operand override {
 
-        // note: the front end rejects 'i64' and an instance first, e.g.
-        //       "'i64' is not available on this target"
-
-        assert(is_scalar(value_type));
+        assert_scalar(value_type);
 
         const size_t index{register_index(name)};
 
@@ -2786,6 +2783,16 @@ class machine_rv32i : public machine {
         }
     }
 
+    // a conditional branch comparing 'first' and 'second'
+    auto emit_branch(const size_t indent, const op code,
+                     const std::string_view first,
+                     const std::string_view second,
+                     const std::string_view target) -> void {
+
+        assembler_.resolved_branch(indent, code, first, second, target,
+                                   far_jump_register());
+    }
+
     // a sum or difference computed by 'emit_binary_instruction' must fit the
     // width of the destination, the register holds the sign extended result
     //   32 bit add: the sum is below the first operand exactly when the
@@ -3030,8 +3037,8 @@ class machine_rv32i : public machine {
 
         // some callers request both a stored boolean and a branch
         if (not action.target.empty()) {
-            emit_jump(indent, action.branch_on_true ? op::bne : op::beq, result,
-                      "zero", action.target);
+            emit_branch(indent, action.branch_on_true ? op::bne : op::beq,
+                        result, "zero", action.target);
         }
     }
 
@@ -3053,9 +3060,9 @@ class machine_rv32i : public machine {
                 inverted != (operation == comparison_operator::not_equal),
             };
 
-            emit_jump(indent, branch_on_unequal ? op::bne : op::beq,
-                      left.register_name(), right.register_name(),
-                      action.target);
+            emit_branch(indent, branch_on_unequal ? op::bne : op::beq,
+                        left.register_name(), right.register_name(),
+                        action.target);
 
             return;
         }
@@ -3068,10 +3075,10 @@ class machine_rv32i : public machine {
                          operation == comparison_operator::less_equal),
         };
 
-        emit_jump(indent, branch_on_greater_equal ? op::bge : op::blt,
-                  swapped ? right.register_name() : left.register_name(),
-                  swapped ? left.register_name() : right.register_name(),
-                  action.target);
+        emit_branch(indent, branch_on_greater_equal ? op::bge : op::blt,
+                    swapped ? right.register_name() : left.register_name(),
+                    swapped ? left.register_name() : right.register_name(),
+                    action.target);
     }
 
     // divide and remainder share magnitude division and sign restoration
@@ -3140,20 +3147,6 @@ class machine_rv32i : public machine {
         }
 
         emit_divide_body();
-    }
-
-    // 'j' or a conditional branch comparing 'first' and 'second'
-    auto emit_jump(const size_t indent, const op code,
-                   const std::string_view first, const std::string_view second,
-                   const std::string_view target) -> void {
-
-        if (code == op::j) {
-            assembler_.resolved_jump(indent, target, far_jump_register());
-            return;
-        }
-
-        assembler_.resolved_branch(indent, code, first, second, target,
-                                   far_jump_register());
     }
 
     auto emit_less_than(const size_t indent,

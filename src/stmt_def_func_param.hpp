@@ -4,6 +4,7 @@
 #include <optional>
 #include <ostream>
 #include <string_view>
+#include <vector>
 
 #include "compile_error.hpp"
 #include "statement.hpp"

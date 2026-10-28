@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cassert>
 #include <cstddef>
 #include <cstdint>
 #include <format>
@@ -7,8 +8,9 @@
 #include <ostream>
 #include <ranges>
 #include <span>
-#include <string>
 #include <string_view>
+#include <utility>
+#include <variant>
 #include <vector>
 
 #include "compile_error.hpp"

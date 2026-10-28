@@ -6,7 +6,6 @@
 #include <format>
 #include <optional>
 #include <ostream>
-#include <string_view>
 #include <utility>
 
 #include "compile_error.hpp"
@@ -57,7 +56,6 @@ class stmt_builtin_convert final : public statement {
     argument_part argument_;
 
   public:
-    // where the argument is computed for a target at most as wide as the type
     stmt_builtin_convert(toc& tc, unary_ops uops, const token tk, tokenizer& tz)
         : statement{tk, std::move(uops)},
           argument_{parse_argument(tc, tz, tk)} {
@@ -396,9 +394,7 @@ class stmt_builtin_convert final : public statement {
                                              const token& type_tk)
         -> argument_part {
 
-        const std::optional<token> open_paren_tk{tz.is_next_char_token('(')};
-
-        assert(open_paren_tk);
+        const token open_paren_tk{tz.seen_char_token('(')};
 
         tz.assert_no_missing_argument(type_tk.text(), 1);
 
@@ -423,7 +419,7 @@ class stmt_builtin_convert final : public statement {
         };
 
         return {
-            .open_paren_tk{*open_paren_tk},
+            .open_paren_tk{open_paren_tk},
             .arg{std::move(arg)},
             .close_paren_tk{close_paren_tk},
         };

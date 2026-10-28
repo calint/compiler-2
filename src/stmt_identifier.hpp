@@ -1,5 +1,6 @@
 #pragma once
 
+#include <algorithm>
 #include <cassert>
 #include <cstddef>
 #include <cstdint>
@@ -353,7 +354,8 @@ class stmt_identifier final : public statement {
     // the whole array
     byte_range accessed_bytes_;
 
-    // the fields and indexes of this path
+    // the fields and indexes from the root variable to what this path names,
+    // e.g. 'es[1].items[i]'
     access_path access_path_;
 
     // the root is the result of the function being parsed, which the
@@ -513,12 +515,6 @@ class stmt_identifier final : public statement {
         return accessed_bytes_;
     }
 
-    // the fields and indexes from the root variable to what this path names,
-    // e.g. 'es[1].items[i]'
-    [[nodiscard]] auto accessed_path() const -> access_path {
-        return access_path_;
-    }
-
     // the emitter of the address of this statement for a bulk operation;
     // nothing is emitted here, the backend calls the returned emitter when it
     // needs the address: the emitter builds it with 'compile_address', which
@@ -544,7 +540,6 @@ class stmt_identifier final : public statement {
         };
     }
 
-    // an array or an element of one, where a bulk operation starts
     // a whole array, e.g. the 'a' of 'array_length(a)' or of 'foo a'
     auto assert_array() const -> void {
         if (shape_.is_array()) {
@@ -557,6 +552,7 @@ class stmt_identifier final : public statement {
                         in_quotes(statement::trimmed_source(*this)))};
     }
 
+    // an array or an element of one, where a bulk operation starts
     auto assert_array_or_element() const -> void {
         assert_not_method();
 
@@ -822,7 +818,7 @@ class stmt_identifier final : public statement {
                                             in_quotes(dotted_path_))};
         }
 
-        tc.record_use(first_token().text(), accessed_path(), use_kind::write);
+        tc.record_use(first_token().text(), access_path_, use_kind::write);
     }
 
     // what the path resolves to at its last name, an indexed last name as the
@@ -1069,15 +1065,6 @@ class stmt_identifier final : public statement {
                             std::format("method {} not found in type {}",
                                         in_quotes(name_tk.text()),
                                         in_quotes(prefix.type_ref().name()))};
-    }
-
-    static auto check_array_bounds(toc& tc, const size_t indent,
-                                   const token& src_loc_tk,
-                                   const machine::bounds_range& range) -> void {
-
-        machine& x{tc.machine()};
-
-        x.check_bounds(src_loc_tk, indent, range, tc.checks().bounds_options());
     }
 
     // the index goes into 'index_register', returns the constant a trailing

@@ -510,9 +510,9 @@ class program final {
 
     // the main function is compiled where the program starts
     static auto compile_main(toc& tc, const stmt_def_func& func_main) -> void {
-        machine& x{tc.machine()};
-
         const toc::scope_entry main{tc, scope::main_func()};
+
+        machine& x{tc.machine()};
 
         x.comment({}, 0, "");
 

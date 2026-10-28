@@ -2,10 +2,12 @@
 
 #include <algorithm>
 #include <array>
+#include <cassert>
 #include <cstddef>
 #include <cstdint>
 #include <format>
 #include <optional>
+#include <ostream>
 #include <span>
 #include <string>
 #include <string_view>
@@ -436,9 +438,9 @@ class stmt_builtin_io final : public statement {
                       const std::span<const std::string_view> registers,
                       const place& buffer) const -> std::vector<operand> {
 
-        machine& x{tc.machine()};
-
         const type& type_default{tc.builtins().default_type()};
+
+        machine& x{tc.machine()};
 
         std::vector<operand> args;
         args.reserve(registers.size());
@@ -490,9 +492,9 @@ class stmt_builtin_io final : public statement {
                                 const operand& buffer_reg,
                                 const place& buffer) const -> void {
 
-        machine& x{tc.machine()};
-
         const stmt_identifier& ident{*buffer.ident};
+
+        machine& x{tc.machine()};
 
         machine::held_registers held{x, tok(), indent};
 
@@ -538,9 +540,9 @@ class stmt_builtin_io final : public statement {
                                      const ident_info& buffer_info,
                                      const range_check check) const -> operand {
 
-        machine& x{tc.machine()};
-
         const statement& start_arg{args_.at(start_index)};
+
+        machine& x{tc.machine()};
 
         const operand start{
             x.alloc_scratch_register(start_arg.tok(), indent,

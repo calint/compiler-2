@@ -9,6 +9,7 @@
 #include <format>
 #include <fstream>
 #include <functional>
+#include <ios>
 #include <string>
 #include <string_view>
 #include <utility>
