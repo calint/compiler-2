@@ -124,7 +124,8 @@ func object.at(x, y, color i32) self {
 let yes = 1
 let no = 0
 let maybe = -1
-# constants can be declared in any scope and shadow outer declarations
+# constants can be declared in any scope and shadow outer declarations, not a
+# parameter or the result in the body of its function
 
 # non-inlined functions are called with the same type and aliasing rules as
 # inlined functions
@@ -223,7 +224,8 @@ func main() {
     var small = i8(100)
     small = i8(small + small)
     assert(small == -56)
-    # `i8(100)` gives the variable type `i8`, arithmetic wraps at its width
+    # `i8(100)` gives the variable type `i8`, the arithmetic of a conversion
+    # wraps at its width
 
     var wide = int(i16(small))
     assert(wide == -56)

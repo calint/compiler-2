@@ -724,8 +724,8 @@ type buffer<capacity> {
 
 type small = buffer<4>
 type large = buffer<16>
-# an alias names an instance, each list of arguments is one type, aliases are
-# top level
+# an alias names an instance and is a type of its own, two aliases with the
+# same arguments are two types; aliases are top level
 
 func mut buffer.add(v) {
     self.items[self.count] = i8(v)

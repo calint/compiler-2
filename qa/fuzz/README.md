@@ -59,18 +59,16 @@ an included file (`split_include` in `fuzzlib.py`).
   --checks=noub"` shrinks a program that makes the compiler print text,
   `--accepted-by="--target=x86_64"` keeps it valid.
 - delete the files of a finding to see it reported again.
-- a fixed finding is reduced and added as a case of `qa/coverage/cases.sh`,
-  its comment names the fuzzer, e.g. "(fuzz-effects)".
+- a fixed finding is reduced and added as a case of `qa/coverage/cases.sh`.
 
 ## Differences that are not defects
 
 - the default integer is 64 bits on x86_64 and 32 bits on rv32i, a program of
   default integers can overflow on one target only
 - the uart of rv32i-fpga takes every file descriptor in `write` and `read`
-- with `--checks=noub` a constant index offset is checked at run time instead of
-  rejected at compile time
 - register use differs between targets and between `--checks`, an expression
-  that needs too many registers is rejected with "reduce expression complexity"
+  that needs too many registers is rejected with "out of scratch registers,
+  simplify the expression"
 - programs are linked with `baz.ld`, which places `.bss.vars` after `.data`: a
   plain `ld` gives false failures of the frame check
 - a literal that does not fit inside `i32(...)` wraps, the arithmetic of an

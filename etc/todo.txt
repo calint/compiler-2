@@ -6,6 +6,15 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
 --------------------------------------------------------------------------------
 1. clean up
 --------------------------------------------------------------------------------
+[ ] easy: an inlined recursion that ends at a constant depth but runs out of
+    registers is reported as "recursion of inlined function 'r' cannot be
+    expanded at compile time, declare it 'noinline'" ('stmt_call.hpp', the
+    catch of 'out_of_registers' around 'inline_call', which assumes the
+    recursion does not end); e.g. 'r(ps i32[], p i32, i, n)' adding
+    'r(ps, ps[i + n], i, n - 1)' while 'n > 0', called as 'r(a, a[k], k, 7)':
+    rejected on x86_64 (13 scratch registers), accepted on rv32i; the
+    rejection is README 8 item 3, the message names the wrong cause (docs
+    review 2026-10-28, R4)
 [ ] medium: a chain of distinct inlined functions with deeply nested
     expressions overflows the compiler's stack (segfault on both targets,
     bug hunt round 6 S2): each limit holds alone, parse nesting 128 per body

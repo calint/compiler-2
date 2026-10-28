@@ -9,7 +9,8 @@ For a reviewer:
 2. the code: the reading order in 1.1, the choices in chapter 7
 3. build: './make.sh build' (clang++ with c++26), one translation unit
 4. test: 'qa/coverage/test-all.sh', see its header and AGENTS.md "Tests"
-   (needs nasm, ld, llvm-mc, ld.lld, qemu-riscv32 and qemu-system-riscv32)
+   (needs nasm, ld, llvm-mc, llvm-objcopy, ld.lld, llvm-profdata, llvm-cov,
+   qemu-riscv32 and qemu-system-riscv32)
 5. lint and format: 'qa/lint/clang-tidy.sh', 'qa/lint/check-all.sh' (the
    design rules), 'qa/lint/format-source.sh'
 6. fuzzing: 'qa/fuzz/fuzz-all.sh', see 'qa/fuzz/README.md'
@@ -34,7 +35,7 @@ nodes            statement.hpp, stmt_*.hpp, expr_*.hpp: a node parses
   |              and the checks) into 'machine'
   v
 machine.hpp      one virtual method per operation the front end needs,
-  |              e.g. 'add_subtract', 'copy_block', 'emit_bounds_check'; allocates
+  |              e.g. 'add_subtract', 'copy_block', 'shift'; allocates
   |              the registers ('register_pool')
   |              machine_x86_64.hpp, machine_rv32i.hpp with its targets
   |              machine_rv32i_linux.hpp and the bare-metal
@@ -107,7 +108,7 @@ header comments and class maps first.
                                a literal; the index steps of the walk are in
                                the _impl file
    stmt_builtin_*.hpp          skim: the built-ins, conversion, io, array
-                               copy and compare, exit, which
+                               copy, compare and length, exit, which
                                'parse_statement' dispatches
    ub_order.hpp                read: the order checks, why code may compute
                                an operand before one written earlier
@@ -235,8 +236,10 @@ the longer of two versions after both are measured:
 1. 'toc::dry_run' and 'machine::emit_discarded': the body of each function
    without its calls (1.5), and code that a compile skips ('toc::check_skipped',
    1.5.1): the code after a statement that leaves on every path, a branch whose
-   condition folds to false, the operands of 'and' and 'or' after the one that
-   decides and the body of a 'foo' whose count folds to 0
+   condition folds to false, the branches and the 'else' after one that always
+   runs, the operands of 'and' and 'or' after the one that decides and the body
+   of a 'foo' whose count folds to 0; and the noinline bodies that only such
+   code asks for (1.5 item 4)
 2. 'toc::emit_most_efficient' over 'machine::emit_most_efficient': two versions
    are compiled, each from the state before it, and the one with fewer
    instructions is kept with the state it ended in, e.g. with and without a
@@ -247,13 +250,15 @@ unwinds it:
 
 1. 'toc::dry_run_scope', for a dry run: the peaks ('toc::compile_peaks': the
    deepest scope count, the storage peak and the frame peak of the scope
-   that holds the storage) and the string constants added; a noinline call
+   that holds the storage), whether the code after is reached
+   ('scope_stack::reach_state') and the string constants added; a noinline call
    reached inside a dry run adds a body to check only, not to emit
    ('toc::add_noinline_body')
-2. 'toc::emit_most_efficient', for a version: the same peaks, each version
-   starts from those before it and the kept one's remain, e.g. the frame size
-   of a noinline body that '--checks=frame' checks; a string constant that
-   the dropped version added stays, unused, so the labels stay unique
+2. 'toc::emit_most_efficient', for a version: the same peaks and reach state,
+   each version starts from those before it and the kept one's remain, e.g.
+   the frame size of a noinline body that '--checks=frame' checks; a string
+   constant that the dropped version added stays, unused, so the labels stay
+   unique
 3. 'machine::version_scope', for a version and for the code of
    'machine::emit_discarded': the members of 'machine::version_state', e.g.
    the registers held and the routines marked used ('machine::mark_used')
@@ -354,7 +359,8 @@ compile reaches it.
 The compile decides, the parse is only the first validation, so every rule of
 the compile holds in all code. Code that a compile skips is compiled for its
 checks in a dry run ('toc::check_skipped') where what it folds is no constant
-of a call: in 'main' and in the check of a body without its calls. That is a
+of a call: in 'main', in the initializer of a global and in the check of a
+body without its calls. That is a
 branch whose condition folds to false, the branches and the 'else' after one
 that always runs, the operands of 'and' and 'or' after the one that decides
 the list, the body of a 'foo' whose count folds to 0, and the code after a
@@ -532,10 +538,12 @@ The front end holds registers, the backend names and picks them
    kind: 1.9.
 4. An inlined body compiles with the registers of its caller held, so a deep
    chain of inlined calls can run out where the same body as noinline does
-   not. A dry run (1.4) starts from the registers a noinline body starts with
-   ('machine::noinline_body_pool': the backend's own and the frame base), so
-   its verdict does not depend on the code around it; that is one register
-   fewer than 'main' has, which holds no frame base (1.5 item 3).
+   not. The check of a body without its calls (1.5) starts from the registers
+   a noinline body starts with ('machine::noinline_body_pool': the backend's
+   own and the frame base), so its verdict does not depend on the code around
+   it; skipped code keeps the registers held where it stands (1.5.1). A
+   noinline body has one register fewer than 'main', which holds no frame base
+   (1.5 item 3).
 
 ### 1.9 Errors
 
@@ -816,8 +824,10 @@ order. The examples use 'make' and 'same' from the start of 2.10 and a type
       same({}, t)             '{}' does not name a type
       same(s + 1, t)          an expression, not the whole argument
       same(s.get(), t)        a method call
-      same()                  the argument is missing
       ```
+
+   A missing argument is rejected: 'same()' gives "expected argument 1
+   ('a')".
 
 2. The destination, when the result is declared with it (2.10.1, item 2):
    the type the call is assigned to.
@@ -842,8 +852,8 @@ order. The examples use 'make' and 'same' from the start of 2.10 and a type
 
    Written, the same call is 'var m = make<name>(2)'.
 
-A generic method called without '(' and without '<' is rejected with "needs
-type arguments", since there is nothing to deduce from.
+A generic function or method called without '(' and without '<' is rejected
+with "needs type arguments", since there is nothing to deduce from.
 
 #### 2.10.3 Call: the instance
 
@@ -942,8 +952,9 @@ differently.
 
 An access is described by the path from its root variable: one step per
 field, constant index or run-time index. The root variable itself is not a
-step. A constant index is a range of indexes, one long for 'a[1]', from its
-start for the start of a bulk operand (3.6).
+step. A constant index is a range of indexes, one long for 'a[1]', longer
+for the elements a literal writes at once (3.7) and from its start for the
+start of a bulk operand (3.6).
 
 ```text
 step         holds
@@ -1024,7 +1035,8 @@ root variable of its own.
 
 A value is written part by part, in the order 'compile' writes it ('plan_writes'
 makes a 'write_plan'): a field list field by field, a braced array element by
-element, a call or a copy at once. Each part has its path from the destination.
+element (constant elements, a string and the zeroed rest at once), a call or a
+copy at once. Each part has its path from the destination.
 Each read of a part is resolved to its root variable ('toc::storage_of'), so
 the element 'e' of a 'foo' and the array it iterates reach the same variable:
 
@@ -1184,8 +1196,9 @@ where 'f' reads 'g'; 'f(a, a)' where 'f' writes 'p.x' and reads 'q.y' is
 accepted. A call of the function it is in reaches its arguments and its result
 whole, its record is not complete yet (3.9).
 
-A value without storage (a constant, 'point{1, 2}') is passed in a temporary
-of the call, which shares storage with nothing.
+A value without storage (a constant, '{1, 2}') shares storage with nothing: a
+noinline call passes it in a temporary of the call, an inlined call folds a
+constant.
 
 ## 5. Versions of the same code: compiled, measured, the shorter kept
 
@@ -1424,7 +1437,7 @@ size, so with '--checks=upper' the index is 'j + 1' in the register:
 
 A run-time index is checked in its register before it is scaled. With the
 count of a bulk operation, e.g. 'array_copy(a[i], b, n)', the check covers
-'i + n' ('lea_request::reg_count').
+'i + n' after the count ('lea_request::start_register', 7.14).
 
 ### 6.5 Addresses an inlined call computed
 
@@ -1638,7 +1651,8 @@ for the same reason three headers define members of an earlier class:
 'visit_call_effects', 'has_inlined_call', 'first_read_of',
 'assert_result_not_read') and 'statement::bare_path'. A forward
 declaration of a class used only by reference or pointer is the opaque-pointer
-pattern and is also allowed: 'stmt_def_dat' and 'stmt_def_func' in 'toc.hpp'.
+pattern and is also allowed, e.g. 'stmt_def_dat' and 'stmt_def_func' in
+'toc.hpp'.
 
 Rejected: a translation unit per header, each cycle between the node
 classes would need an interface of its own.
@@ -1816,7 +1830,7 @@ constants out of range, and the code the run-time checks.
 | narrowing | 'b = w' with 'b' an 'i8' and 'w' an 'i16' | rejected; a conversion such as 'i8(w)' wraps on purpose (1.7) | always | 0725, 0856, 0865, 1016, 1017, 1019, 1021, 1022 |
 | a constant out of range | 'a[9]' of 'a = i8[4]', 'x / 0', 'x << 70' | rejected ('assert_constant_index' for an index, 'fold' for the others, 1.7) | always | 0305, 0306, 0750-0752 |
 | a constant expression that overflows | '0x7fffffffffffffff + 1' | rejected ('fold'), else it wraps | 'overflow' | 0995, 1002, 1010 |
-| array index out of bounds | 'a[i]' | run time ('machine::check_bounds' from 'stmt_identifier::check_array_bounds', the start of an io built-in and the count of a 'foo') | 'upper', 'lower' | 0302, 0303, 0307-0309, 0626, 0627, 1355 |
+| array index out of bounds | 'a[i]' | run time ('machine::check_bounds' from 'stmt_identifier::check_array_bounds', the range of a bulk operation or an io built-in ('bulk_operands', 'stmt_builtin_io') and the count of a 'foo') | 'upper', 'lower' | 0302, 0303, 0307-0309, 0626, 0627, 1355 |
 | division by zero and 'MIN / -1' | 'a / b' | run time ('machine::divide' with 'check_options::division_options', from 'expr_arith::emit_operation'); a constant 'MIN / -1' is rejected ('fold'), the 64-bit one also without the check, it has no value | 'division' | 0965-0967, 1775-1777 |
 | shift count below zero or not below the width | 'a << n' | run time ('machine::shift' with 'check_options::shift_options', from 'expr_arith::emit_operation') | 'shift' | 0975-0977 |
 | signed overflow | 'a + b' | run time ('machine::add_subtract', 'multiply' and 'unary' with 'toc::overflow_options') | 'overflow' | 0988, 0989, 0994 |
@@ -1905,10 +1919,11 @@ outside 'src' included:
 - a target: a subclass of 'machine_rv32i_bare_metal' or 'machine_rv32i' with
   its 'target_description', and in 'main.cpp' its row in 'target_names'
   (name, backend, image, the options it reads) and the help
-  text; outside: 'qa/coverage/test-coverage.sh' and 'qa/coverage/test-all.sh'
-  (their lists of targets) and 'qa/fuzz/fuzz-options.py'
+  text; outside: 'run.sh', 'qa/coverage/test-coverage.sh',
+  'qa/coverage/test-all.sh' and 'qa/coverage/test-cli.sh' (their lists of
+  targets) and 'qa/fuzz/fuzz-options.py'
 - a check: a field of 'check_options' ('toc.hpp'), its name and help text in
   'main.cpp', a 'failure_handler' with its exit code in 'machine.hpp', the
   operation that takes the check in both backends, and the tables of chapter
-  8; outside: 'qa/fuzz/fuzzlib.py' (the exit codes of the panics) and
-  'qa/fuzz/fuzz-options.py' (the check names)
+  8; outside: 'qa/fuzz/fuzzlib.py' (the exit codes of the panics),
+  'qa/fuzz/fuzz-options.py' and 'qa/coverage/test-cli.sh' (the check names)
