@@ -6,23 +6,6 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
 --------------------------------------------------------------------------------
 1. clean up
 --------------------------------------------------------------------------------
-[ ] medium: bug hunt round 10 X1-1: a comparison side led by an untyped
-    constant is computed at the default type, so a program that writes all
-    its types depends on the target ('k i32': '1 << k < 0' is false on
-    x86_64, true on rv32i; '3 + k + k == 0' panics 'overflow' on rv32i only;
-    'k == 1 + k' is rejected on x86_64 only), against README 8 ("a program
-    that writes its types ... does not"); 'expr_arith' takes the type of its
-    first element, 'side_of' computes a side at it
-    => decide: 1. a comparison side takes the type of its first element
-       that is not an untyped constant (a side of constants only keeps the
-       default type, it folds), an initializer keeps the rule of test 0605
-       ('0 + small' is the default type: its variable is untyped, README 8
-       item 1); 2. the same for every list (changes 0605 and the type of
-       'var r = 3 + k', prototyped 2026-10-28: 0605 rejected); 3. README 8
-       item 1 names a comparison side led by a literal (keeps the trap)
-    => recommended 1; tests: the three reproducers of X1 on both targets,
-       'fuzz-exprs.py' writes a leading literal plain (now 'T(v)', why the
-       fuzzers missed it)
 [ ] medium: bug hunt round 10 X3-1: a noinline call in skipped code or in a
     function nothing calls adds no body for its array lengths
     ('toc::add_noinline_body' returns in a dry run), so its body is never

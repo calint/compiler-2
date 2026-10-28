@@ -1,6 +1,20 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[-] medium: bug hunt round 10 X1-1: a comparison side led by an untyped
+    constant is computed at the default type, so a program that writes all
+    its types depends on the target ('k i32': '1 << k < 0' is false on
+    x86_64, true on rv32i; '3 + k + k == 0' panics 'overflow' on rv32i only;
+    'k == 1 + k' is rejected on x86_64 only), against README 8 ("a program
+    that writes its types ... does not"); 'expr_arith' takes the type of its
+    first element, 'side_of' computes a side at it
+    => discarded (2026-10-28, user): the first element of an expression
+       decides its type (AGENTS.md), so a list led by a literal has the
+       default type and is the exception of README 8 item 1; README 1.7 and
+       8 say so with '1 << k' against 'i32(1) << k'; rejected: typing a list
+       by its first typed element (changed the type of 'var c = 0 + small',
+       test 0605), the same for comparison sides only (a flag through every
+       nested list of a side)
 [x] easy: bug hunt round 10 X2-2: 'gid(self)' and 'gid(self.x)' in a method
     were rejected with "cannot deduce 'T'": since round 9 W2-2
     'classify_term' took 'self' for a keyword before it looked up the

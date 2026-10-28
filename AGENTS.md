@@ -132,6 +132,9 @@
   rely on it. They walk a statement in evaluation order and check each read
   only against what was written before it. Code generation follows the same
   order, so the code that is checked is the code that is emitted.
+- The first element of an expression decides its type: '1 + k' has the
+  default type, 'k + 1' the type of 'k'; never type a list by a later
+  element.
 - A design task or a big change (several files or interfaces): propose the
   best design even if it changes interfaces, plan it in `etc/todo.txt` and
   wait for go-ahead. A plan: problem, chosen design, rejected alternatives
