@@ -785,8 +785,7 @@ class machine_rv32i : public machine {
         };
 
         // a distinct base or nonzero residual offset still needs an add
-        if (register_index(value.register_name()) !=
-                register_index(lowered.base_register()) or
+        if (value.register_name() != lowered.base_register() or
             lowered.displacement() != 0) {
 
             assembler_.addi(indent, value.register_name(),
@@ -1171,11 +1170,9 @@ class machine_rv32i : public machine {
 
         assert_scalar(value_type);
 
-        const size_t index{register_index(name)};
+        assert(is_register(name));
 
-        assert(index != register_names_.size());
-
-        return operand::reg(register_names_.at(index), value_type);
+        return operand::reg(name, value_type);
     }
 
     // every known size is compared from the address operands, small ones
@@ -2823,8 +2820,7 @@ class machine_rv32i : public machine {
         // the first operand is 'result -/+ second', one register is enough
         // when the second operand is in a register of its own or small
         const bool is_register_source{
-            src.is_register() and register_index(src.register_name()) !=
-                                      register_index(value.register_name()),
+            src.is_register() and src.register_name() != value.register_name(),
         };
 
         // note: above the minimum because an add negates the constant into an
@@ -3434,16 +3430,14 @@ class machine_rv32i : public machine {
             return false;
         }
 
-        const size_t base{register_index(address.base_register())};
+        const std::string& base{address.base_register()};
 
         const bool is_variables_base{
-            is_variables_base_reserved() and
-                base == register_index(variables_base_register()),
+            is_variables_base_reserved() and base == variables_base_register(),
         };
 
         const bool is_frame_base{
-            is_frame_base_reserved() and
-                base == register_index(frame_base_register()),
+            is_frame_base_reserved() and base == frame_base_register(),
         };
 
         // other bases such as loaded pointers or bulk registers may hold any
@@ -3463,8 +3457,7 @@ class machine_rv32i : public machine {
         for (const std::string_view name : clobbered) {
             // restoring a register destination would discard the result
             const bool is_destination{
-                dst.is_register() and
-                    register_index(dst.register_name()) == register_index(name),
+                dst.is_register() and dst.register_name() == name,
             };
 
             if ((live & register_mask(name)) != 0 and not is_destination) {
@@ -3562,8 +3555,8 @@ class machine_rv32i : public machine {
             return;
         }
 
-        if (src.is_register() and register_index(value.register_name()) ==
-                                      register_index(src.register_name())) {
+        if (src.is_register() and
+            value.register_name() == src.register_name()) {
 
             return;
         }
@@ -4588,22 +4581,22 @@ class machine_rv32i : public machine {
             return false;
         }
 
-        const size_t dst_index{register_index(dst.register_name())};
+        const std::string& dst_name{dst.register_name()};
 
         // zero discards writes, so it cannot hold the computed address
-        assert(dst_index != 0);
+        assert(dst_name != "zero");
 
-        const size_t base_index{register_index(address.base_register())};
+        const bool is_base{dst_name == address.base_register()};
 
         // if the destination is the base register, loading the offset would
         // erase the base value before the add
         if (address.index_register().empty()) {
-            return dst_index != base_index;
+            return not is_base;
         }
 
         // if the destination is the base register, shifting the index into it
         // would erase the base value before the add
-        if (dst_index == base_index and address.scale() != 1) {
+        if (is_base and address.scale() != 1) {
             return false;
         }
 
@@ -4757,7 +4750,7 @@ class machine_rv32i : public machine {
     }
 
     [[nodiscard]] static auto is_register(const std::string_view name) -> bool {
-        return register_index(name) != register_names_.size();
+        return assembler_rv32i::register_number(name).has_value();
     }
 
     [[nodiscard]] static auto is_scalar(const type& value_type) -> bool {
@@ -4989,13 +4982,6 @@ class machine_rv32i : public machine {
         };
     }
 
-    [[nodiscard]] static auto register_index(const std::string_view name)
-        -> size_t {
-
-        return assembler_rv32i::register_number(name).value_or(
-            register_names_.size());
-    }
-
     // the names of the register indexes 'indexes'
     [[nodiscard]] static auto
     register_names_of(const std::span<const size_t> indexes)
@@ -5032,17 +5018,10 @@ class machine_rv32i : public machine {
     [[nodiscard]] static auto same_memory(const operand& left,
                                           const operand& right) -> bool {
 
-        const auto same_register = [](const std::string_view first,
-                                      const std::string_view second) -> bool {
-            return first == second or
-                   (is_register(first) and
-                    register_index(first) == register_index(second));
-        };
-
         return left.is_memory() and right.is_memory() and
                left.type_ref().is_same(right.type_ref()) and
-               same_register(left.base_register(), right.base_register()) and
-               same_register(left.index_register(), right.index_register()) and
+               left.base_register() == right.base_register() and
+               left.index_register() == right.index_register() and
                left.scale() == right.scale() and
                left.displacement() == right.displacement();
     }
@@ -5069,8 +5048,7 @@ class machine_rv32i : public machine {
             return false;
         }
 
-        if (register_index(dst.base_register()) !=
-            register_index(src.base_register())) {
+        if (dst.base_register() != src.base_register()) {
 
             return false;
         }
