@@ -1,6 +1,28 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] hard: bug hunt round 10 (2026-10-28, user: loop until a round finds no
+    bugs; hunters X1 sizes and offsets at the encoding edges, X2 the diffs
+    of the last commits, X3 README and '--help' as the specification;
+    reports in the session scratchpad bh10)
+    => done (2026-10-28): X2-1, X2-2 (regressions of round 9) and X3-1
+       fixed; X1-1 and X3-2 documented in the README (decided by the user);
+       X1 found nothing else in about 15000 generated programs
+[-] medium: bug hunt round 10 X3-2: the check of a function
+    ('stmt_def_func::check_body') compiles it as a noinline body, which
+    holds the frame base ('rbx', 's1'), so an inlined function without
+    parameters whose only call is from 'main' is rejected with "out of
+    scratch registers" where the same body in 'main' compiles (x86_64 14
+    nested 'a + (a * ...' levels, rv32i 28); README 1.5 item 3 says the
+    check has at least as many free registers as any call; related to the
+    pending H-3 (decided for uncalled functions, this one is called)
+    => discarded (2026-10-28, user): rare (an expression that needs every
+       register of 'main'), no wrong result or undefined behavior, the same
+       class as H-3; README 1.5 item 3 and 1.8 item 4 corrected: the check
+       has the registers of a noinline body, one fewer than 'main';
+       rejected: checking such a function from the registers of 'main' (a
+       second check path in 'check_body', an inlined scope inside a 'main'
+       scope)
 [x] medium: bug hunt round 10 X3-1: a noinline call in skipped code or in a
     function nothing calls adds no body for its array lengths
     ('toc::add_noinline_body' returns in a dry run), so its body is never

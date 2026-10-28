@@ -307,11 +307,15 @@ program does not depend on inlining.
      ('stmt_call::check_arguments_alone'), so a recursion that only a
      constant argument ends does not end the check
 3. A function that takes nothing from a call, a noinline one without unsized
-   array parameters or an inlined one without parameters and result, has at
-   least as many free registers in the check as at any call, so there such
-   an error rejects it. An inlined result counts as taken from the call: it
-   is the destination of the call, which the check reaches through an
-   address, so it can need more registers.
+   array parameters or an inlined one without parameters and result, is
+   rejected by such an error. The check has the registers of a noinline body
+   (1.8), as many as any call of a noinline function and one fewer than
+   'main', which does not hold the frame base: an inlined function that
+   needs every register of 'main' is rejected also where its only call, from
+   'main', compiles (e.g. 14 nested 'a + (a * ...' levels on x86_64). An
+   inlined result counts as taken from the call: it is the destination of
+   the call, which the check reaches through an address, so it can need more
+   registers.
 4. A noinline call in skipped code or in the check of a function without
    its calls asks for a body that is checked with the lengths of its array
    arguments and not emitted, as an inlined call there compiles its body
@@ -520,7 +524,8 @@ The front end holds registers, the backend names and picks them
    chain of inlined calls can run out where the same body as noinline does
    not. A dry run (1.4) starts from the registers a noinline body starts with
    ('machine::noinline_body_pool': the backend's own and the frame base), so
-   its verdict does not depend on the code around it.
+   its verdict does not depend on the code around it; that is one register
+   fewer than 'main' has, which holds no frame base (1.5 item 3).
 
 ### 1.9 Errors
 
