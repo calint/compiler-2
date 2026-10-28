@@ -232,25 +232,6 @@ inline auto parse_keyword_statement(toc& tc, tokenizer& tz, const token tk)
     return nullptr;
 }
 
-// e.g. 'show<name>(x)' where 'show' is not generic, says so instead of reading
-// the '<' as an operator; a variable or a constant of that name is an operand
-// of '<'
-inline auto assert_no_type_args_for_plain_func(const token& tk,
-                                               const term_kind tm,
-                                               const tokenizer& tz) -> void {
-
-    if (tm != term_kind::function_name or
-        tz.peek_char_after_whitespace() != '<') {
-
-        return;
-    }
-
-    throw compile_error{
-        tk, std::format("function {} is not generic, it takes no type "
-                        "arguments",
-                        in_quotes(tk.text()))};
-}
-
 // a call, or an identifier that is not the receiver of a method
 using call_or_identifier =
     std::variant<std::unique_ptr<stmt_call>, std::unique_ptr<stmt_identifier>>;
@@ -311,7 +292,15 @@ inline auto parse_call_or_identifier(toc& tc, tokenizer& tz, const token& tk,
                                            expected_type);
     }
 
-    assert_no_type_args_for_plain_func(tk, tm, tz);
+    // e.g. 'show<name>(x)' where 'show' is not generic, says so instead of
+    // reading the '<' as an operator; a variable or a constant of that name is
+    // an operand of '<'
+    if (tm == term_kind::function_name and next == '<') {
+        throw compile_error{
+            tk, std::format("function {} is not generic, it takes no type "
+                            "arguments",
+                            in_quotes(tk.text()))};
+    }
 
     // e.g. 'point.at(1, 2)'
     if (tm == term_kind::constructor_call) {

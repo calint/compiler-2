@@ -86,7 +86,7 @@ class stmt_def_dat final : public statement {
         : statement{src_loc_tk}, name_tk_{read_name(tc, tz)},
           equals_tk_{initializer_declaration::read_equals(tz, "dat")},
           initializer_{parse_initializer(tc, tz, name_tk_)},
-          root_elem_{fold(tc, initializer_.get_type(), initializer_)} {
+          root_elem_{fold_data(tc, initializer_.get_type(), initializer_)} {
 
         set_type(initializer_.get_type());
 
@@ -139,7 +139,7 @@ class stmt_def_dat final : public statement {
         machine& x{tc.machine()};
 
         x.comment(name_tk_, 0, name_tk_.text());
-        compile_data_rec(tc, get_type(), root_elem_);
+        compile_data_rec(x, get_type(), root_elem_);
     }
 
   private:
@@ -175,10 +175,8 @@ class stmt_def_dat final : public statement {
         }
     }
 
-    static auto compile_data_rec(toc& tc, const type& tp, const elem& el)
+    static auto compile_data_rec(machine& x, const type& tp, const elem& el)
         -> void {
-
-        machine& x{tc.machine()};
 
         if (const elem::scalar* const value{
                 std::get_if<elem::scalar>(&el.form),
@@ -196,7 +194,7 @@ class stmt_def_dat final : public statement {
                 std::get_if<elem::fields>(&el.form),
             }) {
 
-            compile_data_record(tc, tp, *record);
+            compile_data_record(x, tp, *record);
             return;
         }
 
@@ -219,7 +217,7 @@ class stmt_def_dat final : public statement {
         } else {
             for (const auto [i, e] : std::views::enumerate(list.items)) {
                 x.comment(e.tok(), 0, "[{}]", i);
-                compile_data_record(tc, tp, std::get<elem::fields>(e.form));
+                compile_data_record(x, tp, std::get<elem::fields>(e.form));
             }
         }
 
@@ -227,10 +225,8 @@ class stmt_def_dat final : public statement {
                               list.array_count - list.items.size());
     }
 
-    static auto compile_data_record(toc& tc, const type& tp,
+    static auto compile_data_record(machine& x, const type& tp,
                                     const elem::fields& record) -> void {
-
-        machine& x{tc.machine()};
 
         // bytes of the instance emitted so far, fields in order then padding
         size_t written_bytes{};
@@ -246,7 +242,7 @@ class stmt_def_dat final : public statement {
 
             written_bytes = f.offset + f.size_bytes;
 
-            compile_data_rec(tc, f.type_ref(), e);
+            compile_data_rec(x, f.type_ref(), e);
         }
 
         // zero out remaining fields and the padding after the last field
@@ -295,11 +291,11 @@ class stmt_def_dat final : public statement {
     }
 
     // the constants of 'value' at the type 'tp', e.g. '{1, 2 * 3}' of 'point'
-    [[nodiscard]] static auto fold(const toc& tc, const type& tp,
-                                   const expr_any& value) -> elem {
+    [[nodiscard]] static auto fold_data(const toc& tc, const type& tp,
+                                        const expr_any& value) -> elem {
 
         if (not value.is_array()) {
-            return fold_element(tc, tp, value, 0);
+            return fold_data_element(tc, tp, value, 0);
         }
 
         // e.g. 'dat b = a' copies the array 'a' at run time
@@ -335,7 +331,7 @@ class stmt_def_dat final : public statement {
         };
 
         for (size_t i{}; i < value.element_count(); ++i) {
-            list.items.emplace_back(fold_element(tc, tp, value, i));
+            list.items.emplace_back(fold_data_element(tc, tp, value, i));
         }
 
         return {
@@ -343,9 +339,9 @@ class stmt_def_dat final : public statement {
         };
     }
 
-    [[nodiscard]] static auto fold_element(const toc& tc, const type& tp,
-                                           const expr_any& value,
-                                           const size_t index) -> elem {
+    [[nodiscard]] static auto fold_data_element(const toc& tc, const type& tp,
+                                                const expr_any& value,
+                                                const size_t index) -> elem {
 
         const statement& element{value.element(index)};
 
@@ -386,7 +382,8 @@ class stmt_def_dat final : public statement {
         for (const auto [f, field_value] :
              std::views::zip(flds, record.field_values())) {
 
-            fields.values.emplace_back(fold(tc, f.type_ref(), *field_value));
+            fields.values.emplace_back(
+                fold_data(tc, f.type_ref(), *field_value));
         }
 
         return {

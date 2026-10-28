@@ -1601,6 +1601,10 @@ class storage_layout final {
             assert_vars_capacity(src_loc_tk, var, allocated_size_bytes);
         }
 
+        assert_total_fits_target(
+            src_loc_tk, add_storage_size(src_loc_tk, dats_and_vars_size_bytes(),
+                                         allocated_size_bytes));
+
         in_storage& stored{std::get<in_storage>(var.placement)};
 
         const size_t offset_bytes{next_offset_bytes + padding_bytes};
@@ -1613,15 +1617,13 @@ class storage_layout final {
             stored.offset = address_offset(offset_bytes);
             stored.base_register = frame_scope.frame_base_register();
 
-            frame_scope.record_frame_size_bytes(add_storage_size(
-                src_loc_tk, next_offset_bytes, allocated_size_bytes));
+            // note: the frame is within the data and variables checked above
+
+            frame_scope.record_frame_size_bytes(
+                sum_storage_size(next_offset_bytes, allocated_size_bytes));
         } else {
             stored.offset = offset_from_variables_base(offset_bytes);
         }
-
-        assert_total_fits_target(
-            src_loc_tk, add_storage_size(src_loc_tk, dats_and_vars_size_bytes(),
-                                         allocated_size_bytes));
 
         scopes_.get().back().add_storage_bytes(allocated_size_bytes);
 
@@ -1634,7 +1636,7 @@ class storage_layout final {
         assert(used_vars_size_bytes() == 0);
     }
 
-    // the declaration that takes the data and variables past what the target
+    // the declaration that makes the data and variables reach what the target
     // addresses is the error, not the end of the build; checked before the
     // scope holds the bytes
     auto assert_total_fits_target(const token& src_loc_tk,
@@ -1718,7 +1720,7 @@ class storage_layout final {
         assert(used_vars_size_bytes() == 0);
 
         // note: 'toc::add_dat' checked the dats against the target
-        assert(dat.offset_bytes + var_storage_size_bytes(src_loc_tk, var) <=
+        assert(dat.offset_bytes + var_storage_size_bytes(src_loc_tk, var) <
                machine_.get().max_storage_bytes());
 
         std::get<in_storage>(var.placement).offset =

@@ -24,7 +24,6 @@
 #include "constant_arith.hpp"
 #include "machine.hpp"
 #include "operand.hpp"
-#include "register_pool.hpp"
 #include "token.hpp"
 #include "type.hpp"
 
@@ -995,19 +994,6 @@ class machine_x86_64 final : public machine {
     // class methods
     //
 
-    // adds 'index * scale' of 'value' to the register 'sum'
-    auto add_scaled_index(const size_t indent, const std::string_view sum,
-                          const operand& value) -> void {
-
-        // scratch index registers and encodable scales only
-        assert(value.index_register() != "rsp" and
-               can_lower_index_scale(value.scale()));
-
-        assembler_.instruction(
-            indent, op::lea, sum,
-            register_sum(sum, value.index_register(), value.scale()));
-    }
-
     [[nodiscard]] auto address_is_encodable(const operand& value) const
         -> bool {
 
@@ -1817,8 +1803,11 @@ class machine_x86_64 final : public machine {
                                    register_sum(value.base_register(), sum, 1));
         }
 
+        // note: 'address_is_encodable' asserted the index and its scale
         if (not value.index_register().empty()) {
-            add_scaled_index(indent, sum, value);
+            assembler_.instruction(
+                indent, op::lea, sum,
+                register_sum(sum, value.index_register(), value.scale()));
         }
 
         return operand::mem(address.register_name(), {}, 1, 0,

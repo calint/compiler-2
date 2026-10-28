@@ -29,8 +29,7 @@
 // reading order:
 //
 //   'type_fields'            the braces, fields and delimiters of a body
-//   'comment_type_layout', 'assert_arg_count', 'assert_generic_type',
-//   'read_generic_args'      the free helpers of the two classes after them
+//   'comment_type_layout'    the layout comment of a plain type and an alias
 //   'generic_type_use'       the generic type named after an '='
 //   'stmt_def_type'          a plain type, 'type point { x, y }'
 //   'stmt_def_type_generic'  a generic definition, kept as text
@@ -146,59 +145,6 @@ inline auto comment_type_layout(toc& tc, const size_t indent, const token& tk,
     x.comment({}, 0, "");
 }
 
-// a generic type is given one argument for each of its parameters
-inline auto assert_arg_count(const token& generic_tk,
-                             const generic_type_info& generic,
-                             const std::span<const token> arg_tks) -> void {
-
-    if (arg_tks.size() == generic.params.size()) {
-        return;
-    }
-
-    throw compile_error{generic_tk,
-                        std::format("generic type {} takes {}, got {}",
-                                    in_quotes(generic_tk.text()),
-                                    counted(generic.params.size(), "argument"),
-                                    arg_tks.size())};
-}
-
-// e.g. 'text' of 'type str = text<8>', 'user' is what must come after the
-// generic type
-inline auto assert_generic_type(const toc& tc, const token& generic_tk,
-                                const std::string_view user) -> void {
-
-    if (tc.types().has(generic_tk.text())) {
-        throw compile_error{generic_tk,
-                            std::format("{} is a type, not a generic type",
-                                        in_quotes(generic_tk.text()))};
-    }
-
-    if (not tc.generics().has_type(generic_tk.text())) {
-        throw compile_error{
-            generic_tk,
-            std::format("{} is not a generic type, a generic type is "
-                        "defined before {}",
-                        in_quotes(generic_tk.text()), user)};
-    }
-}
-
-// e.g. '<8>' after 'text'
-[[nodiscard]] inline auto read_generic_args(tokenizer& tz,
-                                            const token& generic_tk)
-    -> generic_arg_tokens {
-
-    const std::optional<token> open_tk{tz.is_next_char_token('<')};
-
-    if (not open_tk) {
-        throw compile_error{
-            generic_tk,
-            std::format("generic type {} needs arguments, e.g. '{}<...>'",
-                        in_quotes(generic_tk.text()), generic_tk.text())};
-    }
-
-    return generic_arg_tokens::parse(tz, *open_tk);
-}
-
 // the generic type a definition names after its '=', e.g. '= list<i8, size>'
 // of 'type text<size> = list<i8, size>' or '= text<8>' of 'type str =
 // text<8>'; 'user' is what must come after the generic type
@@ -238,6 +184,64 @@ struct generic_type_use {
             .name_tk{name_tk},
             .args{std::move(args)},
         };
+    }
+
+  private:
+    //
+    // statics
+    //
+
+    // a generic type is given one argument for each of its parameters
+    static auto assert_arg_count(const token& generic_tk,
+                                 const generic_type_info& generic,
+                                 const std::span<const token> arg_tks) -> void {
+
+        if (arg_tks.size() == generic.params.size()) {
+            return;
+        }
+
+        throw compile_error{
+            generic_tk, std::format("generic type {} takes {}, got {}",
+                                    in_quotes(generic_tk.text()),
+                                    counted(generic.params.size(), "argument"),
+                                    arg_tks.size())};
+    }
+
+    // e.g. 'text' of 'type str = text<8>', 'user' is what must come after the
+    // generic type
+    static auto assert_generic_type(const toc& tc, const token& generic_tk,
+                                    const std::string_view user) -> void {
+
+        if (tc.types().has(generic_tk.text())) {
+            throw compile_error{generic_tk,
+                                std::format("{} is a type, not a generic type",
+                                            in_quotes(generic_tk.text()))};
+        }
+
+        if (not tc.generics().has_type(generic_tk.text())) {
+            throw compile_error{
+                generic_tk,
+                std::format("{} is not a generic type, a generic type is "
+                            "defined before {}",
+                            in_quotes(generic_tk.text()), user)};
+        }
+    }
+
+    // e.g. '<8>' after 'text'
+    [[nodiscard]] static auto read_generic_args(tokenizer& tz,
+                                                const token& generic_tk)
+        -> generic_arg_tokens {
+
+        const std::optional<token> open_tk{tz.is_next_char_token('<')};
+
+        if (not open_tk) {
+            throw compile_error{
+                generic_tk,
+                std::format("generic type {} needs arguments, e.g. '{}<...>'",
+                            in_quotes(generic_tk.text()), generic_tk.text())};
+        }
+
+        return generic_arg_tokens::parse(tz, *open_tk);
     }
 };
 

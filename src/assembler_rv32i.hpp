@@ -190,7 +190,6 @@ class assembler_rv32i final : public assembler {
     static constexpr int64_t compressed_immediate_min_{-32};
     static constexpr int64_t compressed_immediate_max_{31};
     static constexpr int64_t shift_max_{31};
-    static constexpr int64_t upper_max_{0xfffff};
     static constexpr uint32_t upper_mask_{0xfffff};
     static constexpr uint32_t low_mask_{0xfff};
     static constexpr int64_t branch_min_{-4096};
@@ -1745,7 +1744,7 @@ class assembler_rv32i final : public assembler {
                 return value.symbol_part == immediate::part::high;
             }
 
-            return fits(value.number, 0, upper_max_);
+            return fits(value.number, 0, upper_mask_);
         }
 
         if (operands == form::load or operands == form::store) {

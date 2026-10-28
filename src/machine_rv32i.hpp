@@ -26,7 +26,6 @@
 #include "constant_arith.hpp"
 #include "machine.hpp"
 #include "operand.hpp"
-#include "register_pool.hpp"
 #include "token.hpp"
 #include "type.hpp"
 
@@ -846,8 +845,8 @@ class machine_rv32i : public machine {
     [[nodiscard]] auto can_lower_index_scale(const size_t size_bytes) const
         -> bool override {
 
-        return std::has_single_bit(size_bytes) and
-               size_bytes <= std::numeric_limits<uint32_t>::max();
+        // note: a type stays below the 4 GiB address space
+        return std::has_single_bit(size_bytes);
     }
 
     auto check_frame_capacity(const token& src_loc_tk, const size_t indent,
@@ -1222,11 +1221,8 @@ class machine_rv32i : public machine {
 
         // variable factors use the shared run-time helper
         if (not constant.has_value() or is_checked_constant) {
-            const runtime_check no_division_check{};
-
             call_arithmetic_helper(src_loc_tk, indent, product, factor,
-                                   helper_result::product, no_division_check,
-                                   check);
+                                   helper_result::product, check);
 
             return;
         }
@@ -1651,12 +1647,11 @@ class machine_rv32i : public machine {
         return bulk.starts;
     }
 
+    // 'check' is the overflow check of a product, else the division check
     auto call_arithmetic_helper(const token& src_loc_tk, const size_t indent,
                                 const operand& dst, const operand& source,
                                 const helper_result result_kind,
-                                const runtime_check& division_check,
-                                const runtime_check& overflow_check = {})
-        -> void {
+                                const runtime_check& check) -> void {
 
         // the first argument would overwrite a source in 'a0', which is
         // allocated last, when every other register is taken
@@ -1669,7 +1664,7 @@ class machine_rv32i : public machine {
         const uint32_t live{registers().unavailable_mask()};
 
         const helper_routine routine{
-            arithmetic_helper_routine(result_kind, overflow_check.enabled),
+            arithmetic_helper_routine(result_kind, check.enabled),
         };
 
         const helper_spec& spec{helper_spec_of(routine)};
@@ -1701,7 +1696,7 @@ class machine_rv32i : public machine {
 
         load_helper_arguments(src_loc_tk, indent, dst, source);
 
-        if (division_check.enabled) {
+        if (check.enabled and routine == helper_routine::divide) {
             check_divisor(src_loc_tk, indent, dst.type_ref().size_bytes());
         }
 

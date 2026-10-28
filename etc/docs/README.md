@@ -339,22 +339,21 @@ program does not depend on inlining.
 A statement after a path that cannot continue is rejected at the parse: after
 'return', 'break', 'continue', 'exit', an 'if' that leaves on every path or a
 'loop' without 'break' ('stmt_block::trace_assignment', on the conditions known
-where the code is written). The compile knows more, the conditions that
-constant arguments of an inlined call decide: a branch whose condition folds
-to false is not compiled, nor is the code after a statement that leaves on
-every path, e.g. after the 'return' of 'if n > 5 return' in an inlined
-'count(6)', which ends the expansion of a recursion with constant arguments,
-or after a 'loop' whose 'break' folds away. The compile says it in the words
-of the parse walk ('assignment_flow'): the function scope keeps whether the
-current statement is reached ('toc::is_reachable'), 'toc::end_path' and
-'toc::record_break' end a path, 'toc::path_merge' joins the branches of an
-'if' with the same chain rule as the parse, 'toc::join_loop' ends a loop by
-its 'loop_end' ('scope::is_left_by_break'; a 'foo' whose count folds above 0
-runs out only where its body or a 'continue' reaches the counter step,
-'loop_end::when_stepped'), an inlined call
-whose body reaches neither its end nor a 'return' leaves the code after the
-call unreached ('toc::pop_scope'), and the end of 'main' is emitted when the
-compile reaches it.
+where the code is written). The compile knows more, the conditions that constant
+arguments of an inlined call decide: a branch whose condition folds to false is
+not compiled, nor is the code after a statement that leaves on every path, e.g.
+after the 'return' of 'if n > 5 return' in an inlined 'count(6)', which ends the
+expansion of a recursion with constant arguments, or after a 'loop' whose
+'break' folds away. The compile says it in the words of the parse walk
+('assignment_flow'): the function scope keeps whether the current statement is
+reached ('toc::is_reachable'), 'toc::end_path' and 'toc::record_break' end a
+path, 'toc::path_merge' joins the branches of an 'if' with the same chain rule
+as the parse, 'toc::join_loop' ends a loop by its 'loop_end'
+('scope::is_left_by_break'; a 'foo' whose count folds above 0 runs out only
+where its body or a 'continue' reaches the counter step,
+'loop_end::when_stepped'), an inlined call whose body reaches neither its end
+nor a 'return' leaves the code after the call unreached ('toc::pop_scope'), and
+the end of 'main' is emitted when the compile reaches it.
 
 The compile decides, the parse is only the first validation, so every rule of
 the compile holds in all code. Code that a compile skips is compiled for its
@@ -368,14 +367,14 @@ with 'a' an array is rejected. Such code is judged as if it ran, with the
 registers held where it stands; a 'break' or 'return' in it does not end the
 paths of the code that runs ('scope_stack::reach_state'). The parse walk does
 the same for the branches of an 'if' that it knows never run
-('assignment_flow::path_merge::trace_skipped'): they are walked as if they ran from the
-'if', so in them too a read of an unset result, a 'return' before it is set and
-a statement after a path that cannot continue are rejected. The variables of
-skipped code take no storage, so '--vars' does not hold there (8.3). In a
-compile with the constants of a call skipped code is not checked, a constant
-argument decides it: 'if b != 0 { res = a / b }' in 'ratio(10, 0)' guards the
-division, and the check of the body without its calls, where the guard does not
-fold, holds the rules in it.
+('assignment_flow::path_merge::trace_skipped'): they are walked as if they ran
+from the 'if', so in them too a read of an unset result, a 'return' before it is
+set and a statement after a path that cannot continue are rejected. The
+variables of skipped code take no storage, so '--vars' does not hold there
+(8.3). In a compile with the constants of a call skipped code is not checked, a
+constant argument decides it: 'if b != 0 { res = a / b }' in 'ratio(10, 0)'
+guards the division, and the check of the body without its calls, where the
+guard does not fold, holds the rules in it.
 
 ### 1.6 Reports
 

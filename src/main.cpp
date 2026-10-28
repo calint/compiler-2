@@ -391,7 +391,7 @@ template <typename Name, size_t count>
 }
 
 auto parse_option(const char* const argument, options& opts) -> void {
-    constexpr std::array value_options{
+    constexpr std::array<value_option, 9> value_options{
         value_option{.name{"--vars="}, .apply{apply_vars}},
         value_option{.name{"--stack="}, .apply{apply_stack}},
         value_option{.name{"--memory="}, .apply{apply_memory}},

@@ -76,12 +76,6 @@ class stmt_block final : public statement {
 
         const toc::scope_entry block{tc, scope::block()};
 
-        // e.g. the code of a branch whose condition never returns
-        if (not tc.is_reachable()) {
-            tc.check_skipped([&] -> void { compile_from(tc, indent, 0); });
-            return;
-        }
-
         compile_from(tc, indent, 0);
     }
 
@@ -114,18 +108,14 @@ class stmt_block final : public statement {
         -> void {
 
         for (size_t i{first}; i < statements_.size(); ++i) {
+            // e.g. the code after a 'return', or of a branch whose condition
+            // never returns; 'check_skipped' compiles it as reached
+            if (not tc.is_reachable()) {
+                tc.check_skipped([&] -> void { compile_from(tc, indent, i); });
+                return;
+            }
+
             statements_.at(i)->compile(tc, indent + 1, destination{});
-
-            if (tc.is_reachable()) {
-                continue;
-            }
-
-            if (i + 1 < statements_.size()) {
-                tc.check_skipped(
-                    [&] -> void { compile_from(tc, indent, i + 1); });
-            }
-
-            return;
         }
     }
 

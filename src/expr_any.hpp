@@ -97,28 +97,27 @@ class expr_any final : public statement {
         token string_tk;
     };
 
+    // an element of an 'element_list' after the whitespace before it, read
+    // apart like that of a single value, a 'bool' operand the element unwraps
+    // would drop it
+    struct listed_element {
+        token ws_tk;
+        expr_variant value;
+
+        auto source_to(std::ostream& os) const -> void {
+            ws_tk.source_to(os);
+            as_statement(value).source_to(os);
+        }
+    };
+
     // e.g. 'i8[]{1, 2}' or '{{1, 2}, {3, 4}}'
     struct element_list {
         // none when the destination gives the type and the size
         std::optional<array_prefix> prefix;
         token open_brace_tk;
-        std::vector<expr_variant> elements;
-        // the whitespace before each element, read apart like that of a
-        // single value, a 'bool' operand the element unwraps would drop it
-        std::vector<token> elements_ws_tk;
+        std::vector<listed_element> elements;
         std::vector<token> delims_tk;
         token close_brace_tk;
-    };
-
-    // an element of an 'element_list' after the whitespace before it
-    struct spaced_element {
-        const token* ws_tk{};
-        const statement* value{};
-
-        auto source_to(std::ostream& os) const -> void {
-            ws_tk->source_to(os);
-            value->source_to(os);
-        }
     };
 
     // e.g. 'i8[4]', every element is zero
@@ -195,18 +194,7 @@ class expr_any final : public statement {
 
         list->open_brace_tk.source_to(os);
 
-        const auto elements{
-            std::views::iota(size_t{}, list->elements.size()) |
-                std::views::transform(
-                    [this, list](const size_t i) -> spaced_element {
-                        return {
-                            .ws_tk{&list->elements_ws_tk.at(i)},
-                            .value{&element(i)},
-                        };
-                    }),
-        };
-
-        source_delimited_to(os, elements, list->delims_tk);
+        source_delimited_to(os, list->elements, list->delims_tk);
 
         list->close_brace_tk.source_to(os);
     }
@@ -338,8 +326,8 @@ class expr_any final : public statement {
                 std::get_if<element_list>(&form_),
             }) {
 
-            for (const expr_variant& element : list->elements) {
-                check_folded_conditions_of(tc, indent, element);
+            for (const listed_element& element : list->elements) {
+                check_folded_conditions_of(tc, indent, element.value);
             }
         }
     }
@@ -394,7 +382,8 @@ class expr_any final : public statement {
             return as_statement(single->value);
         }
 
-        return as_statement(std::get<element_list>(form_).elements.at(index));
+        return as_statement(
+            std::get<element_list>(form_).elements.at(index).value);
     }
 
     // none for a string or a zero array
@@ -553,7 +542,9 @@ class expr_any final : public statement {
         std::string bytes;
         for (size_t index{}; index < list.elements.size(); ++index) {
             // a condition is compiled, not packed, e.g. '1 == 1'
-            if (std::holds_alternative<expr_bool>(list.elements.at(index))) {
+            if (std::holds_alternative<expr_bool>(
+                    list.elements.at(index).value)) {
+
                 return std::nullopt;
             }
 
@@ -672,11 +663,16 @@ class expr_any final : public statement {
 
             assert_room_for_element(tz, list);
 
-            list.elements_ws_tk.emplace_back(tz.next_whitespace_token());
+            // note: the whitespace is read first, the initializers run in
+            //       order
 
             // the array gives the type of its elements
-            list.elements.emplace_back(
-                parse_variant(tc, tz, tp, literal_typing::from_destination));
+            list.elements.push_back({
+                .ws_tk{tz.next_whitespace_token()},
+                .value{
+                    parse_variant(tc, tz, tp, literal_typing::from_destination),
+                },
+            });
 
             close_brace_tk = tz.is_next_char_token('}');
         }
@@ -761,7 +757,6 @@ class expr_any final : public statement {
             .prefix{std::move(prefix)},
             .open_brace_tk{*open_brace_tk},
             .elements{},
-            .elements_ws_tk{},
             .delims_tk{},
             .close_brace_tk{},
         };
@@ -893,7 +888,7 @@ class expr_any final : public statement {
         }
 
         return std::get_if<expr_type>(
-            &std::get<element_list>(form_).elements.at(index));
+            &std::get<element_list>(form_).elements.at(index).value);
     }
 
     //

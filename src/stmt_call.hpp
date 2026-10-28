@@ -2586,7 +2586,7 @@ class stmt_call final : public statement {
                                       const stmt_def_func_param& param)
         -> void {
 
-        if (not param.is_array()) {
+        if (not param.is_array() or is_zero_value(tz)) {
             return;
         }
 
@@ -2594,12 +2594,8 @@ class stmt_call final : public statement {
 
         std::optional<token> literal_tk{probe.is_next_char_token('{')};
 
-        if (literal_tk and probe.peek_char_after_whitespace() == '}') {
-            return;
-        }
-
         // a '[' starts an array literal of the default type
-        if (not literal_tk and is_default_array_literal(probe)) {
+        if (not literal_tk) {
             literal_tk = probe.is_next_char_token('[');
         }
 

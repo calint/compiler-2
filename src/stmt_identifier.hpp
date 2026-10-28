@@ -514,7 +514,7 @@ class stmt_identifier final : public statement {
     // nothing is emitted here, the backend calls the returned emitter when it
     // needs the address: the emitter builds it with 'compile_address', which
     // passes it to the backend's 'use' while the scratch registers that built
-    // it are still allocated and frees them afterwards. it refers to its
+    // it are still allocated and frees them afterwards; it refers to its
     // arguments, so it is only valid within the call that made it
     [[nodiscard]] auto address_emitter_of(toc& tc, const size_t indent,
                                           const token& src_loc_tk) const

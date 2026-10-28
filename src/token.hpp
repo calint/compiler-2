@@ -210,14 +210,6 @@ class token final {
         return position(file_index(), start_index(), at_line());
     }
 
-    // the text of a string literal between its quotes
-    [[nodiscard]] auto string_body() const -> std::string_view {
-        assert(is_string() and text_.size() >= 2);
-
-        return text_.substr(1, text_.size() - 2);
-        // note: 1 and -2 because the quotes are at both ends
-    }
-
     // the bytes of a string literal, its escapes decoded, e.g. '\n' is one
     // byte; a backslash before a line end is dropped with the line end, so
     // the string continues on the next line
@@ -374,6 +366,14 @@ class token final {
     }
 
   private:
+    // the text of a string literal between its quotes
+    [[nodiscard]] auto string_body() const -> std::string_view {
+        assert(is_string() and text_.size() >= 2);
+
+        return text_.substr(1, text_.size() - 2);
+        // note: 1 and -2 because the quotes are at both ends
+    }
+
     //
     // statics
     //
