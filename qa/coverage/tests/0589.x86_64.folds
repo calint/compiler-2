@@ -11,7 +11,7 @@
 === 22:     d = 3 + b - 2 # folds
     mov r15, qword [rbp + 8]
     mov qword [rbp + 16], r15
-    add qword [rbp + 16], 1
+    inc qword [rbp + 16]
 === 24:     d = b - 3 # folds
     mov r15, qword [rbp + 8]
     mov qword [rbp + 16], r15
@@ -72,12 +72,12 @@
     mov r15, qword [rbp + 8]
     mov qword [rbp + 16], r15
     xor qword [rbp + 16], 2
-    add qword [rbp + 16], 1
+    inc qword [rbp + 16]
 === 62:     d = b * 2 - 3 + one + 4 # folds
     mov r15, qword [rbp + 8]
     sal r15, 1
     add r15, qword [rbp]
-    add r15, 1
+    inc r15
     mov qword [rbp + 16], r15
 === 66:     d = 2 * b * 3 / one # folds
     mov r15, qword [rbp + 8]

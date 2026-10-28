@@ -238,6 +238,15 @@ class machine_x86_64 final : public machine {
             return;
         }
 
+        // 'inc' is a byte shorter than 'add' of 1; it keeps the carry flag,
+        // which nothing reads after an unchecked add
+        if (operation == arithmetic_operator::add and not check.enabled and
+            immediate_bits(src) == 1) {
+
+            emit_unary(src_loc_tk, indent, op::inc, dst);
+            return;
+        }
+
         emit_op(src_loc_tk, indent,
                 operation == arithmetic_operator::add ? op::add : op::sub, dst,
                 src);

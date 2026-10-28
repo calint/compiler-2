@@ -5,7 +5,7 @@
 === 21:     arr[3] = arr[2] + 1 # folds
     mov r15d, dword [rbp + 8]
     mov dword [rbp + 12], r15d
-    add dword [rbp + 12], 1
+    inc dword [rbp + 12]
 === 26:     shapes[1].pts[two].y = 7 # folds
     mov dword [rbp + 68], 7
 === 27:     shapes[1].id = 3 # folds
