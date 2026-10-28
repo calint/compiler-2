@@ -507,9 +507,8 @@ auto apply_versions(const std::string_view value, options& opts) -> void {
     opts.kept_version = found->kind;
 }
 
-// same layout as the readme usage section which pastes this output
-// the text of '--help', its format arguments are the program name and the
-// size defaults, see 'print_help'
+// the text of '--help', which the readme usage section pastes; the format
+// arguments are listed in 'print_help'
 constexpr std::string_view usage_format{
     R"(usage: {0} [options] [file]
 compiles file (default: prog.baz) to assembly on stdout, rv32i targets also

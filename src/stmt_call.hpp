@@ -587,7 +587,7 @@ struct call_site {
     }
 
     // the result is made in a temporary of the call, then copied into
-    // 'dst', which it widens into
+    // 'dst', widened when 'dst' is wider
     auto compile_through_result_temporary(
         toc& tc, const size_t indent, const destination& dst,
         const std::function_ref<void(const destination& result)> compile) const
@@ -1186,12 +1186,12 @@ class inline_call final {
 //
 //   1. 'compile' and 'compile_arguments_and_call': a result or an argument
 //      that is not a variable in memory goes through a temporary, the result
-//      is copied and the unary ops applied after the call; the arguments are
-//      compiled in their order, the address of a variable at its argument
+//      is copied after the call; the arguments are compiled in their order,
+//      the address of a variable at its argument
 //   2. 'compile_with_arguments': the arguments agree with the parameters,
 //      checked by 'stmt_call::assert_argument_types' before ('assert_call'
-//      asserts it); shared storage is checked at the call, the body is
-//      compiled once per array lengths ('stmt_def_func::emit_noinline_body')
+//      asserts it); the body is compiled once per array lengths
+//      ('stmt_def_func::emit_noinline_body')
 //   3. the addresses are written to the callee frame ('populate_frame':
 //      'frame_slot_addresses', 'write_frame_slots' and the frame and stack
 //      checks) and the function is called

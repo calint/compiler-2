@@ -1016,9 +1016,14 @@ class machine {
             return;
         }
 
-        // note: an index and a count are values of the default type
+        // note: an index and a count are values of the default type in
+        //       registers
+
         assert(range.checked.type_ref().size_bytes() ==
                default_type().size_bytes());
+
+        assert(range.checked.is_register() and
+               (not range.count or range.count->is_register()));
 
         const bounds_plan plan{plan_bounds_check(options, range)};
 
@@ -1767,13 +1772,6 @@ class machine {
                         register_pool::holder_kind::named);
     }
 
-    // see 'target_description::scratch_registers'
-    [[nodiscard]] auto scratch_registers() const
-        -> std::span<const std::string_view> {
-
-        return target_.scratch_registers;
-    }
-
     [[nodiscard]] auto sd_card_file_name() const -> std::string_view {
         return sd_card_file_name_;
     }
@@ -2331,6 +2329,13 @@ class machine {
         }
 
         return count;
+    }
+
+    // see 'target_description::scratch_registers'
+    [[nodiscard]] auto scratch_registers() const
+        -> std::span<const std::string_view> {
+
+        return target_.scratch_registers;
     }
 
     auto start_output() -> void {

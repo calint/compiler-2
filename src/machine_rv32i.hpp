@@ -49,7 +49,7 @@
 //   memory       'zero_known_size', 'copy_known_size', 'compare_known_size'
 //                for a known size, 'walk_runtime_count' for a run-time count
 //                (see the note before 'local_label')
-//   comparisons  'compare_and_branch', 'emit_comparison', 'compare_memory'
+//   comparisons  'compare_and_branch', 'emit_comparison'
 //   checks       'emit_bounds_check', 'check_divisor', 'check_fits_width',
 //                'check_shift_count', 'check_copy_overlap',
 //                'check_frame_capacity', 'check_stack_capacity', the overflow
@@ -108,9 +108,6 @@ class machine_rv32i : public machine {
     static constexpr int64_t line_digits_bytes_{16};
     static constexpr size_t byte_size_bytes_{1};
     static constexpr size_t half_size_bytes_{2};
-
-    static constexpr const decltype(assembler_rv32i::register_names)&
-        register_names_{assembler_rv32i::register_names};
 
     static constexpr std::array<std::string_view, 30> scratch_registers_{
         "t0", "t1", "t2", "t3", "t4", "t5", "t6", "s0",  "s1",  "s2",
@@ -535,17 +532,11 @@ class machine_rv32i : public machine {
 
         const std::string message{std::format("{}\n", panic_message(name))};
 
-        assembler_.li(1, "a0", stderr_descriptor);
-        assembler_.la(1, "a1", message_label);
-        assembler_.li(1, "a2", message.size());
-        emit_write_call(1);
+        emit_panic_message(message_label, message);
 
         exit(token{}, 1, operand::imm(handler.exit_code, default_type()));
 
-        assembler_.switch_section(section::rodata);
-        assembler_.label(0, message_label);
-        assembler_.string_data(message);
-        assembler_.switch_section(section::text);
+        emit_message_data(message_label, message);
     }
 
     // a 'noinline' body saves the return address below 'sp'
@@ -1184,8 +1175,24 @@ class machine_rv32i : public machine {
 
         request.lhs(std::nullopt, [&](const operand& left) -> void {
             request.rhs(std::nullopt, [&](const operand& right) -> void {
-                compare_memory(src_loc_tk, indent, size_bytes, left, right,
-                               request);
+                // compared sizes are limited by the variables that hold the
+                // data
+                assert(size_bytes <= std::numeric_limits<uint32_t>::max());
+
+                // unrolled accesses can follow where each address is within
+                // its word
+                const std::array<access_start, 2> starts{
+                    start_of(left, request.alignment),
+                    start_of(right, request.alignment),
+                };
+
+                compare_known_size(src_loc_tk, indent, size_bytes,
+                                   {
+                                       .left{left},
+                                       .right{right},
+                                       .starts{starts},
+                                   },
+                                   request);
             });
         });
     }
@@ -1439,7 +1446,7 @@ class machine_rv32i : public machine {
     [[nodiscard]] auto register_display_name(const size_t index) const
         -> std::string override {
 
-        return std::string{register_names_.at(index)};
+        return std::string{assembler_rv32i::register_names.at(index)};
     }
 
     //
@@ -1844,7 +1851,7 @@ class machine_rv32i : public machine {
         assembler_.slli(indent, extended, value, shift);
         assembler_.srai(indent, extended, extended, shift);
         assembler_.beq(indent, extended, value, fits.reference);
-        fail_on_overflow(src_loc_tk, indent);
+        branch_to_failure(src_loc_tk, indent, overflow_failure);
         assembler_.label(indent, fits.name);
     }
 
@@ -1876,7 +1883,7 @@ class machine_rv32i : public machine {
         comment(src_loc_tk, indent, "overflow check begin");
 
         assembler_.beqz(indent, "a1", fits.reference);
-        fail_on_overflow(src_loc_tk, indent);
+        branch_to_failure(src_loc_tk, indent, overflow_failure);
         assembler_.label(indent, fits.name);
 
         const size_t width{dst.type_ref().size_bytes()};
@@ -1914,7 +1921,7 @@ class machine_rv32i : public machine {
                        fits.reference);
 
         free_scratch_register(src_loc_tk, indent, minimum);
-        fail_on_overflow(src_loc_tk, indent);
+        branch_to_failure(src_loc_tk, indent, overflow_failure);
         assembler_.label(indent, fits.name);
         comment(src_loc_tk, indent, "overflow check end");
     }
@@ -2195,29 +2202,6 @@ class machine_rv32i : public machine {
         compare_parts(indent, registers, loop.tail_size_bytes,
                       std::span{&boundary, 1}, memory_at(left_pointer),
                       memory_at(right_pointer));
-    }
-
-    auto compare_memory(const token& src_loc_tk, const size_t indent,
-                        const size_t size_bytes, const operand& left,
-                        const operand& right, const equality_request& request)
-        -> void {
-
-        // compared sizes are limited by the variables that hold the data
-        assert(size_bytes <= std::numeric_limits<uint32_t>::max());
-
-        // unrolled accesses can follow where each address is within its word
-        const std::array<access_start, 2> starts{
-            start_of(left, request.alignment),
-            start_of(right, request.alignment),
-        };
-
-        compare_known_size(src_loc_tk, indent, size_bytes,
-                           {
-                               .left{left},
-                               .right{right},
-                               .starts{starts},
-                           },
-                           request);
     }
 
     auto compare_parts(const size_t indent, const compare_registers& registers,
@@ -2859,7 +2843,7 @@ class machine_rv32i : public machine {
                               value.register_name(), first.register_name(),
                               fits.reference);
 
-            fail_on_overflow(src_loc_tk, indent);
+            branch_to_failure(src_loc_tk, indent, overflow_failure);
             assembler_.label(indent, fits.name);
 
             return;
@@ -2881,7 +2865,7 @@ class machine_rv32i : public machine {
                           first.register_name(), fits.reference);
 
         assembler_.label(indent, failed.name);
-        fail_on_overflow(src_loc_tk, indent);
+        branch_to_failure(src_loc_tk, indent, overflow_failure);
         assembler_.label(indent, fits.name);
     }
 
@@ -3092,13 +3076,17 @@ class machine_rv32i : public machine {
 
         assembler_.mv(1, "s2", "a0");
         assembler_.li(1, "s3", exit_code);
-        assembler_.li(1, "a0", stderr_descriptor);
-        assembler_.la(1, "a1", message_label);
-        assembler_.li(1, "a2", message.size());
-        emit_write_call(1);
+        emit_panic_message(message_label, message);
 
         assembler_.j(1, report_line_label_);
         mark_used(report_line_label_);
+
+        emit_message_data(message_label, message);
+    }
+
+    // the text of a message in read-only data
+    auto emit_message_data(const std::string_view message_label,
+                           const std::string_view message) -> void {
 
         assembler_.switch_section(section::rodata);
         assembler_.label(0, message_label);
@@ -3167,6 +3155,17 @@ class machine_rv32i : public machine {
         assembler_.label(0, "5");
         assembler_.li(1, "a1", 1);
         assembler_.ret(1);
+    }
+
+    // writes 'message' at 'message_label' to stderr, shared by the failure
+    // handlers
+    auto emit_panic_message(const std::string_view message_label,
+                            const std::string_view message) -> void {
+
+        assembler_.li(1, "a0", stderr_descriptor);
+        assembler_.la(1, "a1", message_label);
+        assembler_.li(1, "a2", message.size());
+        emit_write_call(1);
     }
 
     // writes the line number of 's2' in decimal, then exits with the code in
@@ -3321,13 +3320,6 @@ class machine_rv32i : public machine {
         assembler_.immediate_op(indent, extend_shift_op(dst_type),
                                 value.register_name(), value.register_name(),
                                 shift);
-    }
-
-    // jumps to the overflow failure handler, the line is passed in 'a0'
-    auto fail_on_overflow(const token& src_loc_tk, const size_t indent)
-        -> void {
-
-        branch_to_failure(src_loc_tk, indent, overflow_failure);
     }
 
     // a jump grown beyond 1 MiB needs a register without a live value
@@ -4896,7 +4888,7 @@ class machine_rv32i : public machine {
         names.reserve(indexes.size());
 
         for (const size_t index : indexes) {
-            names.push_back(register_names_.at(index));
+            names.push_back(assembler_rv32i::register_names.at(index));
         }
 
         return names;

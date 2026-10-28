@@ -167,12 +167,6 @@ class token final {
 
     [[nodiscard]] auto file_index() const -> size_t { return file_ix_; }
 
-    // no location, e.g. a 'token{}' of something the compiler made; a token
-    // the source may leave out is a 'std::optional<token>'
-    [[nodiscard]] auto is_empty() const -> bool {
-        return ws_left_.empty() and text_.empty() and ws_right_.empty();
-    }
-
     // no word was read here: the source ends or a delimiter follows
     [[nodiscard]] auto is_none() const -> bool { return text_.empty(); }
 

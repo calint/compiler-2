@@ -186,8 +186,6 @@ class tokenizer final {
         return *tk;
     }
 
-    [[nodiscard]] auto file_index() const -> size_t { return file_ix_; }
-
     // a binary operator or a comparison follows, e.g. the '+' of 'x + 1'
     [[nodiscard]] auto is_binary_operator_next() const -> bool {
         const std::string_view text{peek_operator()};
