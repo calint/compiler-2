@@ -1,6 +1,43 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] hard: bug hunt round 12 (2026-10-28, user: loop until a round finds no
+    bugs; hunters Z1 shared storage, Z2 frames, storage and the stack at
+    their limits, Z3 every compile error site; reports in the session
+    scratchpad bh12)
+    => done (2026-10-28): Z3-1 to Z3-4 fixed; Z1-1 documented in the README
+       (decided by the user); Z2-1 added to the open x86_64 item of indexed
+       arguments in etc/todo.txt and to README 8 item 3; Z1 found nothing
+       else in about 13000 generated programs against a reference model, Z2
+       nothing else in about 1700 programs with a guard page after the
+       variables
+[-] medium: bug hunt round 12 Z1-1: 'res = f(res)' in an inlined function
+    whose result a call binds to a register is not checked for shared
+    storage there ('stmt_call::assert_no_shared_storage' finds no storage),
+    only in the check of the body without its calls, which ends early where
+    it runs out of scratch registers: accepted on x86_64, rejected on rv32i
+    (no wrong result, the call shares nothing)
+    => discarded (2026-10-28, user): README 8.3 states it; rejected: a name
+       bound to a register as storage ('as_place' and 'resolve_storage' feed
+       code generation too), the check at the parse (rejects indexes that an
+       inlined call folds to constants)
+[x] easy: bug hunt round 12 Z3-1: a constant minimum divided by -1 under the
+    division check was left to the run-time check, so a 'dat' reported it as
+    "is not a constant"; the 64-bit one without checks the same
+    => done (2026-10-28): rejected at compile time under the division check,
+       the 64-bit one always ("constant division of the minimum by -1
+       overflows the type"); 'fold_operation' and 'apply_division' lost
+       their empty results; tests 1775-1777, 0691 comment, README division
+       row and '--help'
+[x] easy: bug hunt round 12 Z3-2: an array as a condition was named as its
+    element type with the advice 'a != 0'
+    => done (2026-10-28): "array 'a' must be indexed"
+       ('expr_bool_op::assert_boolean_operands'), test 1774
+[x] easy: bug hunt round 12 Z3-3, Z3-4: two error sites no program reaches
+    ("generic method already defined", a function as a value in
+    'ident_resolver::resolve')
+    => done (2026-10-28): asserts with notes naming the checks that reject
+       first
 [x] hard: bug hunt round 11 (2026-10-28, user: loop until a round finds no
     bugs; hunters Y1 the fixes of round 10, Y2 mixed inline and noinline per
     function, Y3 the run-time checks at the edges of every type; reports in

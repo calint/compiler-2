@@ -1867,7 +1867,9 @@ message, x86_64 and rv32i linux stop with a signal.
   'etc/todo.txt'.
 - The check of a body without its calls ends at the first error that depends on
   a call other than an inlined recursion, e.g. running out of scratch registers,
-  so the code after it is not checked there (1.5).
+  so the code after it is not checked there (1.5): e.g. a later 'res = f(res)'
+  is then judged only at each call, where an inlined result held in a register
+  shares nothing, so it is accepted on x86_64 and rejected on rv32i.
 - A noinline call there with an array argument of unknown length is not
   checked with the lengths of its other array arguments, which an inlined
   call is: in a function nothing calls the verdict depends on inline versus
