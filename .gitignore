@@ -17,9 +17,11 @@ perf-report.txt
 # python caches of the lint scripts
 __pycache__/
 *.py[cod]
-# editor swap and backup files
+# editor swap and backup files, and the backups of 'patch'
 *.swp
 *.swo
 *~
+*.orig
+*.rej
 # the logs of the lint runs, written on every run
 /qa/lint/*.log

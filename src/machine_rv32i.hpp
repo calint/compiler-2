@@ -555,7 +555,8 @@ class machine_rv32i : public machine {
     }
 
     // 'read' and 'write' are system calls or routines of the target, see
-    // 'emit_read_call', the sector functions routines
+    // 'emit_read_call'; the sector functions are routines, see
+    // 'call_sector_routine'
     auto emit_target_call(const token& src_loc_tk, const size_t indent,
                           const target_call function,
                           [[maybe_unused]] const operand& result)
@@ -2771,8 +2772,8 @@ class machine_rv32i : public machine {
             src.is_register() and src.register_name() != value.register_name(),
         };
 
-        // note: above the minimum because an add negates the constant into an
-        //       'addi'
+        // note: above the minimum because one of the two 'addi' takes the
+        //       negated constant
 
         const bool is_small_constant{
             constant.has_value() and

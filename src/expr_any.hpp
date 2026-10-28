@@ -104,7 +104,7 @@ class expr_any final : public statement {
         token open_brace_tk;
         std::vector<expr_variant> elements;
         // the whitespace before each element, read apart like that of a
-        // single value, a 'bool' name the element unwraps would drop it
+        // single value, a 'bool' operand the element unwraps would drop it
         std::vector<token> elements_ws_tk;
         std::vector<token> delims_tk;
         token close_brace_tk;

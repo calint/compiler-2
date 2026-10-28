@@ -294,25 +294,12 @@ class scope final {
 
         // while the body is parsed: what its callers name too
         body_uses uses;
+
+        // a noinline body: the register its variables are placed from and the
+        // most bytes they took
+        std::string_view frame_base_register;
+        size_t peak_frame_size_bytes{};
     };
-
-    // a scope whose variables are placed from a base register of their own,
-    // the body of a noinline function
-    struct frame_part {
-        std::string_view base_register;
-        size_t peak_size_bytes{};
-    };
-
-    // optional name
-    std::string_view name_;
-
-    // the bytes of variable storage this scope uses
-    size_t allocated_storage_size_bytes_{};
-
-    lut<const_info> consts_;
-
-    // variables declared in this scope
-    lut<var_info> vars_;
 
     // what only a loop scope has
     struct loop_part {
@@ -328,9 +315,19 @@ class scope final {
         bool is_continued{};
     };
 
+    // optional name
+    std::string_view name_;
+
+    // the bytes of variable storage this scope uses
+    size_t allocated_storage_size_bytes_{};
+
+    lut<const_info> consts_;
+
+    // variables declared in this scope
+    lut<var_info> vars_;
+
     std::optional<loop_part> loop_;
     std::optional<function_part> func_;
-    std::optional<frame_part> frame_;
 
   public:
     auto add_binding(const param_binding& binding) -> void {
@@ -380,7 +377,9 @@ class scope final {
     }
 
     [[nodiscard]] auto frame_base_register() const -> std::string_view {
-        return frame().base_register;
+        assert(has_frame());
+
+        return func_part().frame_base_register;
     }
 
     [[nodiscard]] auto func_ret_label() const -> std::string_view {
@@ -413,7 +412,9 @@ class scope final {
         return consts_.has(name);
     }
 
-    [[nodiscard]] auto has_frame() const -> bool { return frame_.has_value(); }
+    [[nodiscard]] auto has_frame() const -> bool {
+        return func_ and func_->kind == func_kind::noinline;
+    }
 
     [[nodiscard]] auto has_var(const std::string_view name) const -> bool {
         return vars_.has(name);
@@ -512,13 +513,18 @@ class scope final {
     }
 
     [[nodiscard]] auto peak_frame_size_bytes() const -> size_t {
-        return frame().peak_size_bytes;
+        assert(has_frame());
+
+        return func_part().peak_frame_size_bytes;
     }
 
     auto record_frame_size_bytes(const size_t size_bytes) -> void {
-        frame_part& frm{frame()};
+        assert(has_frame());
 
-        frm.peak_size_bytes = std::max(frm.peak_size_bytes, size_bytes);
+        function_part& func{func_part()};
+
+        func.peak_frame_size_bytes =
+            std::max(func.peak_frame_size_bytes, size_bytes);
     }
 
     auto restore_continued(const bool is_continued) -> void {
@@ -534,7 +540,9 @@ class scope final {
     }
 
     auto restore_peak_frame_size_bytes(const size_t size_bytes) -> void {
-        frame().peak_size_bytes = size_bytes;
+        assert(has_frame());
+
+        func_part().peak_frame_size_bytes = size_bytes;
     }
 
     auto set_reachable(const bool is_reachable_in) -> void {
@@ -602,28 +610,13 @@ class scope final {
             function(name, func_kind::noinline, std::move(call_path), {}),
         };
 
-        scp.frame_ = frame_part{
-            .base_register{frame_base_register},
-            .peak_size_bytes{},
-        };
+        scp.func_part().frame_base_register = frame_base_register;
 
         return scp;
     }
 
   private:
     explicit scope(const std::string_view name) noexcept : name_{name} {}
-
-    [[nodiscard]] auto frame() -> frame_part& {
-        assert(frame_);
-
-        return *frame_;
-    }
-
-    [[nodiscard]] auto frame() const -> const frame_part& {
-        assert(frame_);
-
-        return *frame_;
-    }
 
     [[nodiscard]] auto func_part() -> function_part& {
         assert(func_);
@@ -672,6 +665,8 @@ class scope final {
             .result_name{},
             .param_names{},
             .uses{},
+            .frame_base_register{},
+            .peak_frame_size_bytes{},
         };
 
         return scp;
@@ -2687,7 +2682,7 @@ class toc final {
 
     // a scope of the scope stack while it lives, also when an error unwinds,
     // so a failed version or dry run leaves the scopes of its caller, e.g.
-    // 'const toc::scope_entry loop{tc, scope::loop(label)};'; a function scope
+    // 'const toc::scope_entry block{tc, scope::block()};'; a function scope
     // compiled is also a frame of the register trace, named by the function
     // and called at 'call_site_tk', so the two stacks agree
     class scope_entry final {
@@ -3498,7 +3493,7 @@ class toc final {
         assert(is_compiling_);
 
         scopes_.record_break();
-        scopes_.set_reachable(false);
+        end_path();
     }
 
     // a 'continue' jumps to the head of the innermost 'loop' or the counter

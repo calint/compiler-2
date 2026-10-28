@@ -84,11 +84,8 @@ inline auto assert_builtin_without_type_args(const token& tk,
     -> const type* {
 
     if (tm == term_kind::conversion) {
-        if (not is_integer_conversion(tc, tk, tm)) {
-            return nullptr;
-        }
-
-        return &tc.get_type_or_throw(tk);
+        const type& converted{tc.types().get(tk.text())};
+        return converted.is_integer() ? &converted : nullptr;
     }
 
     if (tm != term_kind::builtin_function) {

@@ -37,6 +37,7 @@
 //                            the file, it uses the others)
 //   'func_head'              'func [noinline] [mut] name[.method] [<T type>] ('
 //   'func_result'            the result 'name [type]' as written
+//   'frame_slot'             a slot of the frame of a noinline call
 //   'stmt_def_func'          a function, of the user code or an instance
 //   'func_instantiator'      records the generic definitions and makes their
 //                            instances, each a 'stmt_def_func'

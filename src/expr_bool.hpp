@@ -1098,15 +1098,13 @@ class expr_bool final : public statement {
         nots_.source_to(os);
         token::source_to(os, open_paren_tk_);
 
-        const size_t element_count{bools_.size()};
-        for (size_t i{}; i < element_count; ++i) {
-            as_statement(bools_.at(i)).source_to(os);
+        as_statement(bools_.front()).source_to(os);
 
-            if (i < element_count - 1) {
-                // note: -1 because there is one operator fewer than elements
+        for (const auto [o, e] :
+             std::views::zip(ops_, bools_ | std::views::drop(1))) {
 
-                ops_.at(i).tk.source_to(os);
-            }
+            o.tk.source_to(os);
+            as_statement(e).source_to(os);
         }
 
         token::source_to(os, close_paren_tk_);

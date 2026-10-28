@@ -514,20 +514,18 @@ class stmt_identifier final : public statement {
     // needs the address: the emitter builds it with 'compile_address', which
     // passes it to the backend's 'use' while the scratch registers that built
     // it are still allocated and frees them afterwards. it refers to its
-    // arguments, so it is only valid within the call that made it; 'range'
-    // is that of the range this path starts, empty for a whole value
+    // arguments, so it is only valid within the call that made it
     [[nodiscard]] auto address_emitter_of(toc& tc, const size_t indent,
-                                          const token& src_loc_tk,
-                                          const lea_request& range = {}) const
+                                          const token& src_loc_tk) const
         -> machine::address_emitter {
 
-        return [this, &tc, indent, &src_loc_tk,
-                range](const std::optional<operand>& address_register,
-                       const machine::address_use use) -> void {
+        return [this, &tc, indent,
+                &src_loc_tk](const std::optional<operand>& address_register,
+                             const machine::address_use use) -> void {
             compile_address(tc, indent, src_loc_tk,
                             {
-                                .range_count{range.range_count},
-                                .start_register{range.start_register},
+                                .range_count{},
+                                .start_register{},
                                 .address_register{address_register},
                             },
                             use);
@@ -565,20 +563,6 @@ class stmt_identifier final : public statement {
     // 'assert_constant_range'
     auto assert_count_in_bounds(const toc& tc, const token& count_tk,
                                 const int64_t count) const -> void;
-
-    // where only an array is expected, the path does not end at a method,
-    // e.g. 'array_length(a.m)'
-    auto assert_not_method() const -> void {
-        if (not method_) {
-            return;
-        }
-
-        throw compile_error{
-            method_->name_tk,
-            std::format("{} is a method, expected an array",
-                        in_quotes(std::format("{}.{}", dotted_path_,
-                                              method_->name_tk.text())))};
-    }
 
     // the address of this place from 'compile_lea': 'use' runs while the
     // scratch registers that build it are still allocated, then they are
@@ -720,11 +704,6 @@ class stmt_identifier final : public statement {
 
     [[nodiscard]] auto is_array_element() const -> bool {
         return not elems_.empty() and elems_.back().index.has_value();
-    }
-
-    // false when a run-time index leaves the element unknown
-    [[nodiscard]] auto is_exact_access() const -> bool {
-        return not access_path_.has_run_time_index();
     }
 
     [[nodiscard]] auto is_indexed() const -> bool {
@@ -970,6 +949,20 @@ class stmt_identifier final : public statement {
         }
     }
 
+    // where only an array is expected, the path does not end at a method,
+    // e.g. 'array_length(a.m)'
+    auto assert_not_method() const -> void {
+        if (not method_) {
+            return;
+        }
+
+        throw compile_error{
+            method_->name_tk,
+            std::format("{} is a method, expected an array",
+                        in_quotes(std::format("{}.{}", dotted_path_,
+                                              method_->name_tk.text())))};
+    }
+
     // walks the elements from the root: the root resolved, then each field
     // stepped, e.g. 'w', 'w.rooms' and 'w.rooms.items'; a resolve error is
     // located at 'src_loc_tk', at the name of the root when none
@@ -1008,6 +1001,11 @@ class stmt_identifier final : public statement {
                 .is_last{i == elems_.size() - 1},
             });
         }
+    }
+
+    // false when a run-time index leaves the element unknown
+    [[nodiscard]] auto is_exact_access() const -> bool {
+        return not access_path_.has_run_time_index();
     }
 
     // note: after a run-time index the range stays the whole array

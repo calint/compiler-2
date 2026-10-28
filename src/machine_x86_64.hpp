@@ -42,9 +42,10 @@
 //   comparisons  'compare_and_branch', 'store_condition', 'memory_equal'
 //   checks       'emit_bounds_check' with 'check_lower_bound' and
 //                'check_upper_bound', 'check_divisor', 'check_shift_count',
-//                'check_copy_overlap', 'check_frame_capacity', each jumps to
-//                its handler, all but the frame check with a stub per line
-//                for '--checks=line'
+//                'check_copy_overlap', 'check_frame_capacity', the overflow
+//                checks 'branch_on_overflow' and 'check_byte_product', each
+//                jumps to its handler, all but the frame check with a stub
+//                per line for '--checks=line'
 //   handlers     'emit_failure_handler'
 //   calls        'emit_call', the system calls 'io_syscall' and 'exit',
 //                the sector routines 'emit_sector_routines'
@@ -482,7 +483,9 @@ class machine_x86_64 final : public machine {
         // note: a zero count compares nothing and leaves the flags of 'test',
         //       ZF set, so it compares equal
 
-        test(src_loc_tk, indent, qword_register("rcx"), qword_register("rcx"));
+        emit_op(src_loc_tk, indent, op::test, qword_register("rcx"),
+                qword_register("rcx"));
+
         assembler_.instruction(indent, op::repe_cmpsb);
         release_bulk(src_loc_tk, indent);
 
@@ -500,7 +503,7 @@ class machine_x86_64 final : public machine {
         mov(src_loc_tk, indent, qword_register("rax"),
             immediate(syscall_exit_));
 
-        syscall(indent);
+        assembler_.instruction(indent, op::syscall);
     }
 
     // 'inc' and 'cmp' work on memory, so a loop counter leaves its register to
@@ -594,7 +597,7 @@ class machine_x86_64 final : public machine {
 
             mov(src_loc_tk, indent, left, product);
             mov(src_loc_tk, indent, right, factor);
-            imul(src_loc_tk, indent, left, right);
+            emit_op(src_loc_tk, indent, op::imul, left, right);
 
             if (check.enabled) {
                 check_byte_product(src_loc_tk, indent, left, right);
@@ -608,7 +611,7 @@ class machine_x86_64 final : public machine {
         }
 
         if (product.is_register()) {
-            imul(src_loc_tk, indent, product, factor);
+            emit_op(src_loc_tk, indent, op::imul, product, factor);
 
             if (check.enabled) {
                 branch_on_overflow(src_loc_tk, indent);
@@ -618,7 +621,7 @@ class machine_x86_64 final : public machine {
         }
 
         if (use == factor_use::may_overwrite) {
-            imul(src_loc_tk, indent, factor, product);
+            emit_op(src_loc_tk, indent, op::imul, factor, product);
 
             // the move keeps the flags
             mov(src_loc_tk, indent, product, factor);
@@ -637,7 +640,7 @@ class machine_x86_64 final : public machine {
         };
 
         mov(src_loc_tk, indent, reg, product);
-        imul(src_loc_tk, indent, reg, factor);
+        emit_op(src_loc_tk, indent, op::imul, reg, factor);
 
         if (check.enabled) {
             branch_on_overflow(src_loc_tk, indent);
@@ -759,13 +762,13 @@ class machine_x86_64 final : public machine {
                const runtime_check& check = {}) -> void override {
 
         if (operation == arithmetic_operator::complement) {
-            not_op(src_loc_tk, indent, dst);
+            emit_unary(src_loc_tk, indent, op::not_op, dst);
             return;
         }
 
         assert(operation == arithmetic_operator::negate);
 
-        neg(src_loc_tk, indent, dst);
+        emit_unary(src_loc_tk, indent, op::neg, dst);
 
         if (check.enabled) {
             branch_on_overflow(src_loc_tk, indent);
@@ -786,7 +789,7 @@ class machine_x86_64 final : public machine {
             reserve_named_register(src_loc_tk, indent, "rcx");
 
             const operand al{sized_register("rax", size_byte_)};
-            xor_op(src_loc_tk, indent, al, al);
+            emit_op(src_loc_tk, indent, op::xor_op, al, al);
 
             lea(src_loc_tk, indent, qword_register("rdi"), dst);
 
@@ -1649,7 +1652,7 @@ class machine_x86_64 final : public machine {
             }
 
             assembler_.instruction(indent, op::cqo);
-            idiv(src_loc_tk, indent, divisor);
+            emit_unary(src_loc_tk, indent, op::idiv, divisor);
 
             return;
         }
@@ -1665,7 +1668,7 @@ class machine_x86_64 final : public machine {
         }
 
         assembler_.instruction(indent, op::cqo);
-        idiv(src_loc_tk, indent, scratch_reg);
+        emit_unary(src_loc_tk, indent, op::idiv, scratch_reg);
         free_scratch_register(src_loc_tk, indent, scratch_reg);
     }
 
@@ -1735,21 +1738,9 @@ class machine_x86_64 final : public machine {
                                   src_loc_tk.at_line());
     }
 
-    auto idiv(const token& src_loc_tk, const size_t indent,
-              const operand& value) -> void {
-
-        emit_unary(src_loc_tk, indent, op::idiv, value);
-    }
-
     template <std::integral value_t>
     [[nodiscard]] auto immediate(const value_t value) const -> operand {
         return operand::imm(value, default_type());
-    }
-
-    auto imul(const token& src_loc_tk, const size_t indent,
-              const operand& dst_op, const operand& src_op) -> void {
-
-        emit_op(src_loc_tk, indent, op::imul, dst_op, src_op);
     }
 
     // 'syscall' changes 'rcx' and 'r11', the allocated ones are saved
@@ -1763,8 +1754,9 @@ class machine_x86_64 final : public machine {
 
         mov(src_loc_tk, indent, dst, immediate(syscall_number));
 
-        with_saved_registers(indent, clobbered,
-                             [&] -> void { syscall(indent); });
+        with_saved_registers(indent, clobbered, [&] -> void {
+            assembler_.instruction(indent, op::syscall);
+        });
     }
 
     auto lea(const token& src_loc_tk, const size_t indent, const operand& dst,
@@ -1878,7 +1870,7 @@ class machine_x86_64 final : public machine {
             // 'xor' is the shorter idiom, a memory product has no
             // 'xor m, m' form
             if (product.is_register()) {
-                xor_op(src_loc_tk, indent, product, product);
+                emit_op(src_loc_tk, indent, op::xor_op, product, product);
             } else {
                 mov(src_loc_tk, indent, product, immediate(0));
             }
@@ -1891,7 +1883,7 @@ class machine_x86_64 final : public machine {
         }
 
         if (factor_info.kind == factor_kind::minus_one) {
-            neg(src_loc_tk, indent, product);
+            emit_unary(src_loc_tk, indent, op::neg, product);
 
             if (check.enabled) {
                 branch_on_overflow(src_loc_tk, indent);
@@ -1909,18 +1901,6 @@ class machine_x86_64 final : public machine {
                 immediate(factor_info.shift));
 
         return true;
-    }
-
-    auto neg(const token& src_loc_tk, const size_t indent, const operand& value)
-        -> void {
-
-        emit_unary(src_loc_tk, indent, op::neg, value);
-    }
-
-    auto not_op(const token& src_loc_tk, const size_t indent,
-                const operand& value) -> void {
-
-        emit_unary(src_loc_tk, indent, op::not_op, value);
     }
 
     auto pop(const size_t indent, const operand& dst) -> void {
@@ -2011,21 +1991,11 @@ class machine_x86_64 final : public machine {
             immediate(value));
     }
 
-    auto syscall(const size_t indent) -> void {
-        assembler_.instruction(indent, op::syscall);
-    }
-
-    auto test(const token& src_loc_tk, const size_t indent, const operand& dst,
-              const operand& src) -> void {
-
-        emit_op(src_loc_tk, indent, op::test, dst, src);
-    }
-
     // a negative value is out of bounds, an empty operand has none to test
     auto test_sign(const token& src_loc_tk, const size_t indent,
                    const operand& value) -> void {
 
-        test(src_loc_tk, indent, value, value);
+        emit_op(src_loc_tk, indent, op::test, value, value);
         branch_to_failure(src_loc_tk, indent, condition::s, bounds_failure);
     }
 
@@ -2047,12 +2017,6 @@ class machine_x86_64 final : public machine {
         const operand lowered_src{lower_address(src_loc_tk, indent, src)};
 
         emit(lowered_dst, lowered_src);
-    }
-
-    auto xor_op(const token& src_loc_tk, const size_t indent,
-                const operand& dst, const operand& src) -> void {
-
-        emit_op(src_loc_tk, indent, op::xor_op, dst, src);
     }
 
     //

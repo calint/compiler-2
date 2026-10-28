@@ -241,7 +241,7 @@ class assembler {
     // machine instructions, so pseudo instructions count as the ones they
     // expand to, valid once jumps are resolved (on rv32i 'resolve_jumps')
     [[nodiscard]] auto instruction_count() const -> size_t {
-        return instructions_in(code_size());
+        return instructions_in(code_size_of(lines_));
     }
 
     // the size of captured lines in machine instructions
@@ -393,11 +393,6 @@ class assembler {
             .removed{},
             .record{},
         });
-    }
-
-    // in the target's unit, removed lines have no size
-    [[nodiscard]] auto code_size() const -> size_t {
-        return code_size_of(lines_);
     }
 
     [[nodiscard]] auto is_capturing() const -> bool {

@@ -464,6 +464,7 @@ class register_reporter final {
         return text.starts_with(prefix) ? text.substr(prefix.size()) : text;
     }
 
+    // breaks a line that is too long at spaces, the parts keep its indentation
     [[nodiscard]] static auto wrapped(const std::string& line,
                                       const size_t width)
         -> std::vector<std::string> {
@@ -509,8 +510,6 @@ class register_reporter final {
         return parts;
     }
 
-    // breaks a line that is too long at spaces, the parts keep its indentation
-    // each line wrapped to 'width'
     [[nodiscard]] static auto
     wrapped_lines(const std::vector<std::string>& lines, const size_t width)
         -> std::vector<std::string> {

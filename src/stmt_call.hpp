@@ -48,7 +48,8 @@
 //   'noinline_call'   passes addresses to the body that is emitted once
 //   'constructor_call_tag'
 //                     selects the constructor of 'point.at(1, 2)'
-//   free checks       'assert_not_string_argument', 'assert_call_in_func'
+//   free functions    'assert_not_string_argument', 'assert_call_in_func',
+//                     'path_argument'
 //   'builtin_arguments'
 //                     the arguments of a built-in that parses like a call,
 //                     e.g. 'exit(0)'
@@ -469,10 +470,10 @@ struct call_site {
     //   instance temporary  'point{1, 2}'   a temporary        a temporary
     //   place               'p', 'a[i]'     the name, or the   its address
     //                                       computed address
-    //   computed            'x + 1', '-a[i]' a constant or a   a temporary
-    //                                       register
-    //   named value         '3', 'k', '-x'  a constant, the    a temporary
-    //                                       name of its
+    //   computed            'x + 1',        a constant or a    a temporary
+    //                       '-a[i]', '3',   register
+    //                       'k'
+    //   named value         '-x'            the name of its    a temporary
     //                                       register or a
     //                                       register
     struct argument_form {
@@ -482,8 +483,8 @@ struct call_site {
         // computed into a register unless it folds
         struct computed {};
 
-        // a name that is no place: a constant, a name bound to a register, or
-        // a name with unary operators, e.g. '-x'
+        // a name that is no place and no constant: a name bound to a register,
+        // or a name with unary operators, e.g. '-x'
         struct named_value {
             const stmt_identifier* ident{};
             ident_info info;
@@ -687,8 +688,9 @@ struct call_site {
 
         ident_info info{make_ident_info(tc, *ident)};
 
-        // e.g. '-a[i]'
-        if (ident->has_computed_address(info)) {
+        // e.g. '-a[i]', or a constant, which the callee's own constants would
+        // shadow and which must fold, e.g. '~1'
+        if (ident->has_computed_address(info) or info.is_const()) {
             return {
                 .kind{argument_form::computed{}},
             };
@@ -1113,7 +1115,7 @@ class inline_call final {
         return param_binding::make_name(param.name(), info, ident.path_text());
     }
 
-    // a constant, a name bound to a register or a name with unary operators
+    // a name bound to a register or a name with unary operators
     [[nodiscard]] static auto
     bind_named_value(toc& tc, const size_t indent, const expr_any& arg,
                      const call_site::argument_form::named_value& value,
@@ -1122,21 +1124,6 @@ class inline_call final {
 
         const stmt_identifier& ident{*value.ident};
         const ident_info& arg_info{value.info};
-
-        // a name is resolved in the callee where its own constants would
-        // shadow the caller's, and the bound constant must be a plain integer,
-        // e.g. '~1' is not
-        if (arg_info.is_const()) {
-            const std::optional<folded_value> folded{
-                arg.fold(tc, tc.use_at(param.get_type())),
-            };
-
-            // note: a constant name or literal folds
-            assert(folded);
-
-            return param_binding::make_constant(param.name(), param.get_type(),
-                                                folded->value);
-        }
 
         if (ident.get_unary_ops().is_empty()) {
             return bind_name(param, ident, arg_info);
@@ -2653,8 +2640,7 @@ class stmt_call final : public statement {
     [[nodiscard]] static auto is_widened_integer(const type& result_type,
                                                  const type& dst_type) -> bool {
 
-        return result_type.is_builtin() and not result_type.is_bool() and
-               dst_type.is_builtin() and not dst_type.is_bool() and
+        return result_type.is_integer() and dst_type.is_integer() and
                result_type.size_bytes() < dst_type.size_bytes();
     }
 
