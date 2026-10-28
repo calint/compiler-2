@@ -1,0 +1,15 @@
+# a function named like a type and a method of that type have labels of
+# their own: 'h' for array lengths 10 and 15 and 'h.len' inlined at 10:15
+type h { x }
+func h.len() res { res = self.x }
+func noinline h(a i8[], b i8[]) res {
+    res = array_length(a) + array_length(b)
+}
+func main() {
+    var v = h{2}
+    var r = v.len()
+    var a = i8[10]
+    var b = i8[15]
+    r = r + h(a, b)
+    exit(r)
+}

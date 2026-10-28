@@ -401,8 +401,8 @@ bool.L.C.end   the end of a condition stored as a value
 loop.L.C       a 'loop', '.end'
 foo.L.C        a 'foo', '.continue', '.end'
 init.L.C       the read-only bytes of a constant '{...}', 'str.L.C' of a string
-func.NAME.L.C  a body inlined by the call at L:C, '.end'
-func.NAME      a noinline body, 'func.NAME.len.4' for array lengths,
+func.NAME..L.C a body inlined by the call at L:C, '.end'
+func.NAME      a noinline body, 'func.NAME..len.4' for array lengths,
                'size.func.NAME' its frame size; 'f<i8>' is 'f..i8'
 baz_NAME       a failure handler, and a routine of the x86_64 runtime,
                e.g. 'baz_bounds_panic'
@@ -414,7 +414,10 @@ baz_NAME       a failure handler, and a routine of the x86_64 runtime,
 E.g. 'if.7.5.36.13' is the 'if' at 7:5 in a body inlined by the call at
 36:13. Inside a noinline body for array lengths every label ends in the
 lengths, e.g. 'loop.14.5.len.3'. A location in an included file is 'fN.L.C',
-N the index of the file.
+N the index of the file. A path follows a name after '..', as type arguments
+do; a plain and a generic function or method cannot share a name, so the
+function 'h' for array lengths ('func.h..len.4') and the method 'h.len'
+inlined at 4:1 ('func.h.len..4.1') have labels of their own.
 
 The comment lines say what was compiled and how:
 
@@ -1779,7 +1782,9 @@ What depends on the target is listed here, nothing else does:
    targets and the operating system on x86_64 and rv32i (8.1); on rv32i
    linux the linker places the program, so code, data and variables that
    fit in 4 GiB from address 0 can still fail the link, e.g.
-   '--vars=0xffff0000' with 'ld.lld', which starts it at about 0x11000
+   '--vars=0xffff0000' with 'ld.lld', which starts it at about 0x11000; on
+   x86_64 nasm truncates a label to 4095 characters, so a name of about 4000
+   characters gives a listing that nasm rejects
 
 So whether a program is accepted can depend on the target through 1 to 4,
 and its result through 1 and 4; under 'noub' the result of an accepted

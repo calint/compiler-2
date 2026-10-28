@@ -487,7 +487,7 @@ class stmt_def_func final : public statement {
     }
 
     // 'func' is a keyword so no user name or internal label starts with 'func.'
-    // e.g. 'func.sum.len.4.8' for array lengths 4 and 8
+    // e.g. 'func.sum..len.4.8' for array lengths 4 and 8
     [[nodiscard]] auto
     body_label(const std::span<const size_t> array_lengths = {}) const
         -> std::string {
@@ -962,7 +962,7 @@ class stmt_def_func final : public statement {
                                     x.frame_base_register());
     }
 
-    // e.g. 'sum.len.4.8' for array lengths 4 and 8, 'sum' without lengths
+    // e.g. 'sum..len.4.8' for array lengths 4 and 8, 'sum' without lengths
     [[nodiscard]] auto
     name_with_lengths(const std::span<const size_t> array_lengths) const
         -> std::string {
@@ -971,7 +971,7 @@ class stmt_def_func final : public statement {
             return label_name(name());
         }
 
-        return std::format("{}.{}", label_name(name()),
+        return std::format("{}..{}", label_name(name()),
                            array_lengths_path(array_lengths));
     }
 
@@ -1153,7 +1153,11 @@ class stmt_def_func final : public statement {
 
     // a label has no '<', '>' or ',', e.g. 'tokenizer.to<name>' is
     // 'tokenizer.to..name'; a name has no '..', so 'f<a,b>' ('f..a.b') and
-    // the method instance 'f.a<b>' ('f.a..b') differ
+    // the method instance 'f.a<b>' ('f.a..b') differ; a path follows a name
+    // after '..' too, which a generic name and a plain name of the same
+    // function or method cannot both take, so the function 'h' for array
+    // lengths ('h..len.4') and the method 'h.len' inlined at 4:1
+    // ('h.len..4.1') differ
     [[nodiscard]] static auto label_name(const std::string_view name)
         -> std::string {
 

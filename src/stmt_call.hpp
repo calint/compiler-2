@@ -845,7 +845,7 @@ class inline_call {
         const std::string new_call_path{tc.call_path_at(call_.tk)};
 
         const std::string call_label{
-            std::format("{}.{}", call_.func->body_label(), new_call_path),
+            std::format("{}..{}", call_.func->body_label(), new_call_path),
         };
 
         const std::string ret_jmp_label{toc::end_label(call_label)};

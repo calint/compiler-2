@@ -1,0 +1,16 @@
+type g {
+    x,
+}
+
+func g.f1() res {
+    res = self.x + 1
+}
+
+func g(a) res {
+    res = a + 2
+}
+
+# the call 'g(a)' is inlined at 'f1.15.11'
+func noinline h(a) res {
+    res = g(a)
+}

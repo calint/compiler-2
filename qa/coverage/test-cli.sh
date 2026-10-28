@@ -495,7 +495,7 @@ CLI_NOINLINE_REPORT() {
         [[ ! -s err ]]
         grep -Eq '^[;#] +sum: 2 bodies, 3 calls, [0-9]+ instructions$' gen.s
         grep -Eq '^[;#] +length_of: 2 bodies, 2 calls, [0-9]+ instructions, no reuse$' gen.s
-        [[ $(grep -Ec '^[[:space:]]*call func\.sum\.' gen.s) -eq 3 ]]
+        [[ $(grep -Ec '^[[:space:]]*call func\.sum\.\.' gen.s) -eq 3 ]]
         # the report comes before the optimization counts
         [[ $(grep -n 'noinline functions:' gen.s | cut -d: -f1) -lt $(grep -n 'removed jumps to next code' gen.s | cut -d: -f1) ]]
     done

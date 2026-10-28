@@ -1,0 +1,17 @@
+# the method 'g.f1' inlined at 15:11 of the main file and the function 'g'
+# inlined at 15:11 of an included file have labels of their own
+include "include/labels.baz"
+
+func main() {
+    var v = g{5}
+    var a = 1
+    var r = 0
+    r = h(a)
+    if r != 3 {
+        exit(1)
+    }
+    r = 0
+    r = r + 0
+    r = v.f1()
+    exit(r + 3)
+}

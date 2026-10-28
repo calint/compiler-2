@@ -5664,3 +5664,11 @@ SRC=1776 && OPTS="--checks=noub" COMPERR
 
 # the 64-bit minimum divided by -1 is rejected also without checks
 SRC=1777 && COMPERR
+
+# a function named like a type and a method of that type have labels of
+# their own
+SRC=1778 && EXP=27 && RUN
+
+# a method inlined in the main file and a function inlined at the same line
+# and column of an included file have labels of their own
+SRC=1779 && EXP=9 && RUN

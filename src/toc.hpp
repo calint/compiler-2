@@ -3087,8 +3087,8 @@ class toc final {
     //   foo.L.C        a 'foo', '.continue' ('continue_label'), '.end'
     //   init.L.C       the read-only bytes of a constant '{...}', 'str.L.C' of
     //                  a string ('add_read_only_constant')
-    //   func.NAME.L.C  a body inlined by the call at L:C, '.end'
-    //   func.NAME      a noinline body, 'func.NAME.len.4' for array lengths,
+    //   func.NAME..L.C a body inlined by the call at L:C, '.end'
+    //   func.NAME      a noinline body, 'func.NAME..len.4' for array lengths,
     //                  'size.func.NAME' its frame size; 'f<i8>' is 'f..i8'
     //                  ('stmt_def_func::body_label', 'label_name')
     //   baz_NAME       a failure handler on both targets and a routine of
