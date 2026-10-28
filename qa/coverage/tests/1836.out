@@ -1,0 +1,4 @@
+
+1836.baz:3:5: data and variables of 140737488355328 B reach the 140737488355328 B that the target addresses
+dat a = i8[140737488355328]
+    ^

@@ -53,6 +53,22 @@
     throw compile_error{call_tk, "return value is discarded"};
 }
 
+// the integer type of a conversion, e.g. 'i8' of 'i8(x)'; 'bool' and 'void'
+// have none, 'get_type_or_throw' rejects 'void' and a type wider than the
+// target
+[[nodiscard]] inline auto conversion_type(const toc& tc, const token& tk)
+    -> const type& {
+
+    const type& converted{tc.get_type_or_throw(tk)};
+
+    if (not converted.is_integer()) {
+        throw compile_error{tk, "'bool' has no conversion, compare "
+                                "instead, e.g. 'x != 0'"};
+    }
+
+    return converted;
+}
+
 // the type of the value of the built-in at 'tk', classified as 'tm', e.g. 'i8'
 // of 'i8(1)', none when 'tk' names no built-in with a value;
 // 'parse_builtin' makes a statement for each
@@ -61,8 +77,7 @@
     -> const type* {
 
     if (tm == term_kind::conversion) {
-        const type& converted{tc.types().get(tk.text())};
-        return converted.is_integer() ? &converted : nullptr;
+        return &conversion_type(tc, tk);
     }
 
     if (tm != term_kind::builtin_function) {
@@ -108,13 +123,9 @@ inline auto parse_builtin(toc& tc, tokenizer& tz, const token& tk,
                             in_quotes(tk.text()))};
     }
 
-    // e.g. 'bool(5)' or 'void(5)', only the integer types convert;
-    // 'get_type_or_throw' rejects 'void'
-    if (tm == term_kind::conversion and
-        not tc.get_type_or_throw(tk).is_integer()) {
-
-        throw compile_error{tk, "'bool' has no conversion, compare "
-                                "instead, e.g. 'x != 0'"};
+    // e.g. 'bool(5)' or 'void(5)', only the integer types convert
+    if (tm == term_kind::conversion) {
+        std::ignore = conversion_type(tc, tk);
     }
 
     if (fn == nullptr and tm != term_kind::conversion) {

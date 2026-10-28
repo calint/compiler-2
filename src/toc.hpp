@@ -1642,13 +1642,16 @@ class storage_layout final {
 
         const size_t max_bytes{machine_.get().max_storage_bytes()};
 
-        if (total_bytes <= max_bytes) {
+        // note: below, the code needs room too and a type stays below the
+        //       end of the address space
+
+        if (total_bytes < max_bytes) {
             return;
         }
 
         throw compile_error{
             src_loc_tk,
-            std::format("data and variables of {} B exceed the {} B that the "
+            std::format("data and variables of {} B reach the {} B that the "
                         "target addresses",
                         total_bytes, max_bytes)};
     }
@@ -2813,7 +2816,7 @@ class toc final {
         if (first_global_var_tk_) {
             throw compile_error{
                 dat_tk,
-                std::format("'dat' can only be declared before the first "
+                std::format("'dat' must be before the first "
                             "variable, {} at {}",
                             in_quotes(first_global_var_tk_->text()),
                             locations_.for_message(*first_global_var_tk_))};
@@ -3193,8 +3196,7 @@ class toc final {
 
         if (const std::optional<int64_t> value{
                 constant_parser::parse_constant(tk, tk.text()),
-            };
-            value) {
+            }) {
 
             return folded_value::untyped(*value);
         }

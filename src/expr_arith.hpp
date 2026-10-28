@@ -1561,8 +1561,7 @@ class expr_arith final : public statement {
         // the unary ops apply to the whole sub-expression
         if (const std::optional<token> open_paren_tk{
                 tz.is_next_char_token('('),
-            };
-            open_paren_tk) {
+            }) {
 
             std::unique_ptr<statement> enclosed{
                 std::make_unique<expr_arith>(

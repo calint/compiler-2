@@ -1,0 +1,10 @@
+# an array literal of the default type is not an argument of an array
+# parameter
+
+func f(s[]) {
+    exit(s[0])
+}
+
+func main() {
+    f([3]{1, 2, 3})
+}

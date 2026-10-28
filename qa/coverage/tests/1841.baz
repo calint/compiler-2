@@ -1,0 +1,5 @@
+# a character literal is a constant, it has no field
+
+func main() {
+    var y = 'a'.x
+}

@@ -1,0 +1,8 @@
+# 'void' is not a type of a value, also where the argument deduces a type
+
+func f<T type>(x T) {
+}
+
+func main() {
+    f(void(1))
+}

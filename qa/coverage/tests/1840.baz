@@ -1,0 +1,9 @@
+# a type wider than the target is reported at the conversion, also where
+# the argument deduces a type
+
+func f<T type>(x T) {
+}
+
+func main() {
+    f(i64(1))
+}

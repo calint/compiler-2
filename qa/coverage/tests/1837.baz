@@ -1,0 +1,16 @@
+# the error of a branch that runs is reported before that of a later branch
+# that never runs, in source order
+
+func f(c bool) res {
+    var a = 0
+    if c {
+        a = res
+    } else if false {
+        a = res + 1
+    }
+    res = 1
+}
+
+func main() {
+    exit(f(true))
+}

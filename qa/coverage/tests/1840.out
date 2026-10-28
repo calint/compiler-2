@@ -1,0 +1,4 @@
+
+1840.baz:8:7: 'i64' is not available on this target, use 'i32' or 'int'
+    f(i64(1))
+      ^~~

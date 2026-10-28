@@ -1,0 +1,4 @@
+
+1839.baz:7:7: 'void' is not a type of a value
+    f(void(1))
+      ^~~~

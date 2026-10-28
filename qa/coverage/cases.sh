@@ -5847,3 +5847,27 @@ SRC=1833 && COMPERR
 
 # an array literal is not an argument of an array parameter
 SRC=1834 && COMPERR
+
+# data of the whole rv32i address space is rejected where it is declared
+if [[ $MACHINE != x86_64 ]]; then SRC=1835 && COMPERR; fi
+
+# data of the whole x86_64 address space is rejected where it is declared
+if [[ $MACHINE == x86_64 ]]; then SRC=1836 && COMPERR; fi
+
+# an error in a branch that runs is reported before one in a later skipped branch
+SRC=1837 && COMPERR
+
+# 'bool' has no conversion, also where the argument deduces a type
+SRC=1838 && COMPERR
+
+# 'void' is not a type of a value, also where the argument deduces a type
+SRC=1839 && COMPERR
+
+# a type wider than rv32i is reported at the conversion of a deducing argument
+if [[ $MACHINE != x86_64 ]]; then SRC=1840 && COMPERR; fi
+
+# a character literal is a constant, it has no field
+SRC=1841 && COMPERR
+
+# an array literal of the default type is not an argument of an array parameter
+SRC=1842 && COMPERR

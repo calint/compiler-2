@@ -131,36 +131,30 @@ class stmt_if final : public statement {
     // the paths that the conditions known where the 'if' is written leave,
     // e.g. 'if 1 == 1 { res = 2 }' sets 'res' on every path
     auto trace_assignment(assignment_flow& flow) const -> void override {
+        assignment_flow::path_merge paths{flow};
+
         // the branches that never run hold the rules too, their conditions
-        // and bodies, e.g. 'if false { a = res }'; traced from the 'if'
+        // and bodies, e.g. 'if false { a = res }'
         bool is_chain_ended{};
 
         for (const stmt_if_branch& branch : branches_) {
             const condition_result known{branch.constant_at_parse()};
 
             if (is_chain_ended or not runs(known)) {
-                flow.trace_skipped(branch);
+                paths.trace_skipped(branch);
+            } else {
+                paths.trace(branch);
             }
 
             is_chain_ended = is_chain_ended or ends_chain(known);
         }
 
-        if (is_chain_ended and else_) {
-            flow.trace_skipped(else_->code);
-        }
-
-        assignment_flow::path_merge paths{flow};
-
-        for (const stmt_if_branch& branch : branches_) {
-            const condition_result known{branch.constant_at_parse()};
-
-            if (runs(known)) {
-                paths.trace(branch);
+        if (is_chain_ended) {
+            if (else_) {
+                paths.trace_skipped(else_->code);
             }
 
-            if (ends_chain(known)) {
-                return;
-            }
+            return;
         }
 
         // an empty 'else' is the path that skips every branch

@@ -167,8 +167,7 @@ class stmt_block final : public statement {
             // a '{' starts a subblock, e.g. '{ { a = 1 } b = 2 }'
             if (const std::optional<token> open_brace_tk{
                     tz.is_next_char_token('{'),
-                };
-                open_brace_tk) {
+                }) {
 
                 tz.put_back_token(*open_brace_tk);
                 statements_.emplace_back(std::make_unique<stmt_block>(tc, tz));

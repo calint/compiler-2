@@ -1,0 +1,8 @@
+# 'bool' has no conversion, also where the argument deduces a type
+
+func f<T type>(x T) {
+}
+
+func main() {
+    f(bool(1))
+}

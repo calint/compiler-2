@@ -1007,8 +1007,7 @@ class inline_call final {
         call_bindings bindings{};
 
         // the result names the destination, so the widths must agree
-        if (const std::optional<func_result>& result{call_.func->result()};
-            result) {
+        if (const std::optional<func_result>& result{call_.func->result()}) {
 
             assert(dst.type_ref().is_same(call_.func->result_type()));
 
@@ -2581,7 +2580,7 @@ class stmt_call final : public statement {
     }
 
     // an array literal has no storage that an array parameter refers to, e.g.
-    // '{1, 2}' or 'i8[]{1, 2}'; '{}' is reported where it is used
+    // '{1, 2}', '[2]{1, 2}' or 'i8[]{1, 2}'; '{}' is reported where it is used
     static auto
     assert_not_array_literal_argument(const toc& tc, const tokenizer& tz,
                                       const stmt_def_func_param& param)
@@ -2597,6 +2596,11 @@ class stmt_call final : public statement {
 
         if (literal_tk and probe.peek_char_after_whitespace() == '}') {
             return;
+        }
+
+        // a '[' starts an array literal of the default type
+        if (not literal_tk and is_default_array_literal(probe)) {
+            literal_tk = probe.is_next_char_token('[');
         }
 
         if (not literal_tk) {

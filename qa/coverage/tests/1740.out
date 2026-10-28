@@ -1,4 +1,4 @@
 
-1740.baz:4:1: 'dat' can only be declared before the first variable, 'k' at 3:5
+1740.baz:4:1: 'dat' must be before the first variable, 'k' at 3:5
 dat d = "ab"
 ^~~

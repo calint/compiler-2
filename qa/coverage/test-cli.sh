@@ -381,8 +381,8 @@ CLI_ADDRESS_RANGE() {
         [[ $exit_code -eq 1 ]]
         [[ ! -s gen.s && ! -e gen-rv32i.bin ]]
         grep -Fq "code, data and variables use" err
-        # data of the whole range, its address from the variables base is
-        # past the range and wraps
+        # data of the whole range leaves no room, it is rejected where it is
+        # declared, before its address from the variables base would wrap
         printf 'dat d = i8[0x100000000]\nfunc main() {\n    d[1] = 1\n}\n' \
             >gen-range.baz
         set +e
@@ -390,7 +390,7 @@ CLI_ADDRESS_RANGE() {
         exit_code=$?
         set -e
         [[ $exit_code -eq 1 ]]
-        grep -Fq "code, data and variables use" err
+        grep -Fq "data and variables of 4294967296 B reach the 4294967296 B" err
     done
     rm -f gen-range.baz gen-rv32i.bin
     echo ok

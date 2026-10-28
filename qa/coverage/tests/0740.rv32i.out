@@ -1,4 +1,4 @@
 
-0740.baz:4:5: data and variables of 4611686018427387904 B exceed the 4294967296 B that the target addresses
+0740.baz:4:5: data and variables of 4611686018427387904 B reach the 4294967296 B that the target addresses
 dat a = i8[4611686018427387904]{}
     ^

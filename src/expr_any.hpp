@@ -799,8 +799,7 @@ class expr_any final : public statement {
 
         if (std::optional<std::string> bytes{
                 constant_bytes(tc, list, get_type()),
-            };
-            bytes) {
+            }) {
 
             plan.push_back({
                 .at{at},
@@ -1026,8 +1025,7 @@ class expr_any final : public statement {
         // e.g. 'n = {}' is 'n = 0' and 'b = {}' is 'b = false'
         if (const std::optional<token> open_brace_tk{
                 tz.is_next_char_token('{'),
-            };
-            open_brace_tk) {
+            }) {
 
             const token close_brace_tk{
                 tz.expect_char_token(

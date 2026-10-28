@@ -368,7 +368,7 @@ with 'a' an array is rejected. Such code is judged as if it ran, with the
 registers held where it stands; a 'break' or 'return' in it does not end the
 paths of the code that runs ('scope_stack::reach_state'). The parse walk does
 the same for the branches of an 'if' that it knows never run
-('assignment_flow::trace_skipped'): they are walked as if they ran from the
+('assignment_flow::path_merge::trace_skipped'): they are walked as if they ran from the
 'if', so in them too a read of an unset result, a 'return' before it is set and
 a statement after a path that cannot continue are rejected. The variables of
 skipped code take no storage, so '--vars' does not hold there (8.3). In a

@@ -1,0 +1,10 @@
+# data of the whole address space leaves no room, the type stays below it
+
+dat a = i8[140737488355328]
+
+func main() {
+    if a == a {
+        exit(1)
+    }
+    exit(0)
+}

@@ -1,0 +1,4 @@
+
+1838.baz:7:7: 'bool' has no conversion, compare instead, e.g. 'x != 0'
+    f(bool(1))
+      ^~~~

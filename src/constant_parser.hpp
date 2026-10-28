@@ -27,21 +27,6 @@ class constant_parser final {
     // statics
     //
 
-    [[nodiscard]] static auto is_bool_literal(const std::string_view str)
-        -> bool {
-
-        return str == reserved_names::true_value or
-               str == reserved_names::false_value;
-    }
-
-    // the tokenizer keeps the quotes in the text of a character literal
-    [[nodiscard]] static auto is_character_literal(const std::string_view str)
-        -> bool {
-
-        return str.size() >= 2 and str.starts_with('\'') and
-               str.ends_with('\'');
-    }
-
     // e.g. '12', ''a'' or 'true'; a number may still be malformed, e.g. '12x'
     [[nodiscard]] static auto is_literal(const token& tk) -> bool {
         return tk.is_number() or is_character_literal(tk.text()) or
@@ -181,5 +166,20 @@ class constant_parser final {
 
         return str.starts_with("0x") or str.starts_with("0X") or
                str.starts_with("0b") or str.starts_with("0B");
+    }
+
+    [[nodiscard]] static auto is_bool_literal(const std::string_view str)
+        -> bool {
+
+        return str == reserved_names::true_value or
+               str == reserved_names::false_value;
+    }
+
+    // the tokenizer keeps the quotes in the text of a character literal
+    [[nodiscard]] static auto is_character_literal(const std::string_view str)
+        -> bool {
+
+        return str.size() >= 2 and str.starts_with('\'') and
+               str.ends_with('\'');
     }
 };

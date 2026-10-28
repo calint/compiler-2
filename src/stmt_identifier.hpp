@@ -1167,16 +1167,10 @@ class stmt_identifier final : public statement {
                 prefix.type_ref().field(name_tk, name_tk.text()));
         }
 
-        // e.g. '1.x' or 'true.x'
-        if (constant_parser::is_bool_literal(root) or starts_number(root)) {
-            throw compile_error{
-                name_tk,
-                std::format("{} is a constant, it has no field {}",
-                            in_quotes(root), in_quotes(name_tk.text()))};
-        }
-
+        // e.g. '1.x', ''a'.x' or 'k.x' of 'let k = 3'
         throw compile_error{
-            name_tk, std::format("constant {} has no fields", in_quotes(root))};
+            name_tk, std::format("{} is a constant, it has no field {}",
+                                 in_quotes(root), in_quotes(name_tk.text()))};
     }
 };
 

@@ -1,0 +1,4 @@
+
+1837.baz:7:13: use of uninitialized variable 'res'
+        a = res
+            ^~~

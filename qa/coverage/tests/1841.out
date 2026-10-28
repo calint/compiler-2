@@ -1,0 +1,4 @@
+
+1841.baz:4:17: 'a' is a constant, it has no field 'x'
+    var y = 'a'.x
+                ^

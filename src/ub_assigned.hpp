@@ -135,6 +135,18 @@ class assignment_flow final {
             merged_.intersect(entry_);
             is_reachable_ = true;
         }
+
+        // a path that never runs holds the rules as if it ran from the start,
+        // as in the compile ('toc::check_skipped'), e.g. a branch false at the
+        // parse; it leaves the merge and the breaks as they were
+        auto trace_skipped(const auto& path) -> void {
+            const std::optional<assigned_bytes> breaks{flow_.at_breaks_};
+
+            flow_.assigned_ = entry_;
+            flow_.is_reachable_ = true;
+            path.trace_assignment(flow_);
+            flow_.at_breaks_ = breaks;
+        }
     };
 
     assignment_flow(const token& src_loc_tk, const size_t size_bytes)
@@ -211,21 +223,5 @@ class assignment_flow final {
 
         assigned_ = *breaks;
         is_reachable_ = true;
-    }
-
-    // code that never runs holds the rules as if it ran from here, as in the
-    // compile ('toc::check_skipped'), e.g. a branch false at the parse; the
-    // flow is left as it was
-    auto trace_skipped(const auto& code) -> void {
-        const assigned_bytes entry{assigned_};
-        const bool was_reachable{is_reachable_};
-        const std::optional<assigned_bytes> breaks{at_breaks_};
-
-        is_reachable_ = true;
-        code.trace_assignment(*this);
-
-        assigned_ = entry;
-        is_reachable_ = was_reachable;
-        at_breaks_ = breaks;
     }
 };
