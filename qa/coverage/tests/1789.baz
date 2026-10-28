@@ -1,0 +1,8 @@
+# a type parameter of a function is a name: a keyword is not one, also
+# without the kind 'type'
+
+func f<if>() {
+}
+
+func main() {
+}

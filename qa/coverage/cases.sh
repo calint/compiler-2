@@ -5701,3 +5701,11 @@ SRC=1787 && EXP=7 && RUN
 # the methods of an alias's levels are made in the order they are defined:
 # a method does not see one of another level defined after it
 SRC=1788 && COMPERR
+
+# a type parameter of a function is checked as a name before its kind: a
+# keyword
+SRC=1789 && COMPERR
+
+# a type parameter of a function is checked as a name before its kind: a
+# quote in the name
+SRC=1790 && COMPERR

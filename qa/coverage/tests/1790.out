@@ -1,0 +1,4 @@
+
+1790.baz:4:8: 'a"b' is not a valid name, a name starts with a letter or '_' and has only letters, digits and '_'
+func f<a"b>() {
+       ^~~

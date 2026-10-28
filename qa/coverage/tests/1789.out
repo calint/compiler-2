@@ -1,0 +1,4 @@
+
+1789.baz:4:8: 'if' is a keyword
+func f<if>() {
+       ^~

@@ -1,0 +1,8 @@
+# a type parameter of a function is a name: a quote is not part of one, also
+# without the kind 'type'
+
+func f<a"b>() {
+}
+
+func main() {
+}

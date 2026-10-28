@@ -203,6 +203,9 @@ struct func_head {
         std::vector<token> param_tks;
 
         for (const generic_param& param : generic_param::parse(tz)) {
+            // the name first, the kind is suggested with it
+            toc::assert_valid_name(param.name_tk);
+
             if (not param.is_type) {
                 throw compile_error{
                     param.name_tk,
