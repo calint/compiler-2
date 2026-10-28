@@ -342,7 +342,7 @@ class machine_rv32i : public machine {
         operand src;
         operand dst;
         operand count;
-        std::function<void(size_t)> access;
+        std::function_ref<void(size_t)> access;
     };
 
     // the registers a comparison loads both sides into
@@ -2276,7 +2276,7 @@ class machine_rv32i : public machine {
         const operand left_at{memory_at(left)};
         const operand right_at{memory_at(right)};
 
-        const std::function<void(size_t)> access{
+        const auto access{
             [&](const size_t width) -> void {
                 compare_access(indent, registers, width, left_at, right_at);
             },
@@ -2559,7 +2559,7 @@ class machine_rv32i : public machine {
         const operand from{memory_at(src)};
         const operand to{memory_at(dst)};
 
-        const std::function<void(size_t)> access{
+        const auto access{
             [&](const size_t width) -> void {
                 copy_access(indent, value, width, from, to);
             },

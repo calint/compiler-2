@@ -400,7 +400,7 @@ class machine {
     target_description target_{};
     source_locations locations_;
     std::reference_wrapper<const builtin_type_set> builtins_;
-    assembler::jump_mode jump_mode_;
+    assembler::jump_mode jump_mode_{};
     // the image of the sd card on targets with an operating system
     std::string sd_card_file_name_;
 
@@ -632,6 +632,15 @@ class machine {
 
     virtual ~machine() = default;
 
+    // the unit of the shifts that take a byte out of a value
+    static constexpr size_t bits_per_byte{
+        std::numeric_limits<unsigned char>::digits,
+    };
+
+    // the start of the label of a noinline body, the report drops it
+    static constexpr std::string_view body_label_prefix{"func."};
+
+  protected:
     // a failed check prints its message, the 'panic: ...' of its handler, to
     // this descriptor and exits with the code of its handler
     static constexpr int stderr_descriptor{2};
@@ -639,19 +648,11 @@ class machine {
     // the sector size of the sd card of every target that has one
     static constexpr size_t card_sector_size_bytes{512};
 
-    // the unit of the shifts that take a byte out of a value
-    static constexpr size_t bits_per_byte{
-        std::numeric_limits<unsigned char>::digits,
-    };
-
     // the labels of the sections of the program's data and variables
     static constexpr std::string_view data_label{"dat"};
     static constexpr std::string_view data_end_label{"dat.end"};
     static constexpr std::string_view variables_label{"vars"};
     static constexpr std::string_view variables_end_label{"vars.end"};
-
-    // the start of the label of a noinline body, the report drops it
-    static constexpr std::string_view body_label_prefix{"func."};
 
     // the handlers of the failed checks, a check site passes its entry, so
     // the label, the name and whether it takes the line come together
@@ -737,6 +738,7 @@ class machine {
         return std::ranges::adjacent_find(codes) == codes.end();
     }());
 
+  public:
     //
     // virtual methods
     //

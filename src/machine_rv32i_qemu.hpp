@@ -6,6 +6,7 @@
 #include <utility>
 
 #include "assembler_rv32i.hpp"
+#include "compile_error.hpp"
 #include "machine_rv32i_bare_metal.hpp"
 
 // runs the flat image without an operating system on the qemu 'virt' machine,

@@ -688,13 +688,16 @@ struct call_site {
 
         // e.g. '-a[i]', '-x', or a constant, which the callee's own constants
         // would shadow and which must fold, e.g. '~k'
-        if (ident->has_computed_address(info) or info.is_const() or
-            not ident->get_unary_ops().is_empty()) {
-
+        if (info.is_const() or not ident->get_unary_ops().is_empty()) {
             return {
                 .kind{argument_form::computed{}},
             };
         }
+
+        // note: 'as_place' took a variable, so what is left is a name bound to
+        //       a register
+
+        assert(info.is_register());
 
         return {
             .kind{

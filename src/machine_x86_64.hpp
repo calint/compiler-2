@@ -838,11 +838,6 @@ class machine_x86_64 final : public machine {
         if (options.upper) {
             comment(src_loc_tk, indent, "upper bound");
 
-            // the end of a range is 'start + count', neither is negative
-            // here but the sum can pass the signed maximum and then looks
-            // negative to a signed compare, the unsigned compare sees it large
-            // e.g. 'array_copy(x[0x7fffffffffffffff], y[0], 1)' on 'i8[4]'
-            // ends at 0x8000000000000000, signed it is below 4 and passes
             check_upper_bound(src_loc_tk, indent, range, options.lower);
         }
     }
@@ -1220,8 +1215,7 @@ class machine_x86_64 final : public machine {
     }
 
     // branches to the failure handler when the range passes the array count, a
-    // range 'index + count' may end at it; a signed end that passes the signed
-    // maximum is out of bounds, the unsigned compare sees it large
+    // range 'index + count' may end at it
     auto check_upper_bound(const token& src_loc_tk, const size_t indent,
                            const bounds_range& range, const bool lower_checked)
         -> void {
@@ -1250,12 +1244,19 @@ class machine_x86_64 final : public machine {
         assert(count.type_ref().size_bytes() == size_qword_ and
                range.checked.type_ref().size_bytes() == size_qword_);
 
+        // the end of a range is 'start + count'; after the lower checks
+        // neither is negative, the sum can pass the signed maximum and then
+        // looks negative to a signed compare, the unsigned compare sees it
+        // large, e.g. 'array_copy(x[0x7fffffffffffffff], y[0], 1)' on 'i8[4]'
+        // ends at 0x8000000000000000, signed it is below 4 and passes
         if (lower_checked) {
             lea(src_loc_tk, indent, reg_top_idx,
                 operand::mem(count.register_name(),
                              range.checked.register_name(), 1, 0,
                              builtins().i64));
         } else {
+            // an end that does not fit 64 bits fails, a negative end is left
+            // to the lower check
             mov(src_loc_tk, indent, reg_top_idx, range.checked);
             emit_op(src_loc_tk, indent, op::add, reg_top_idx, count);
             branch_to_failure(src_loc_tk, indent, condition::o, bounds_failure);
@@ -2128,10 +2129,10 @@ class machine_x86_64 final : public machine {
     // the unsigned upper comparison also fails a negative value when the lower
     // bound is covered by it
     [[nodiscard]] static auto out_of_bounds_condition(const bool allow_end,
-                                                      const bool is_unsigned)
+                                                      const bool lower_checked)
         -> condition {
 
-        if (is_unsigned) {
+        if (lower_checked) {
             return allow_end ? condition::a : condition::ae;
         }
 

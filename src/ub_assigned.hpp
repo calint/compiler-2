@@ -186,7 +186,17 @@ class assignment_flow final {
 
         const assigned_bytes entry{assigned_};
 
-        const std::optional<assigned_bytes> breaks{trace_loop_body(body)};
+        // every iteration starts with at least the coverage at the loop, the
+        // breaks of the body are its own
+        std::optional<assigned_bytes> outer_breaks{
+            std::exchange(at_breaks_, std::nullopt),
+        };
+
+        body.trace_assignment(*this);
+
+        const std::optional<assigned_bytes> breaks{
+            std::exchange(at_breaks_, std::move(outer_breaks)),
+        };
 
         if (end == loop_end::also_when_done) {
             assigned_ = entry;
@@ -201,20 +211,5 @@ class assignment_flow final {
 
         assigned_ = *breaks;
         is_reachable_ = true;
-    }
-
-  private:
-    // every iteration starts with at least the coverage at the loop, the
-    // breaks of the body are its own; returns the coverage common to them
-    [[nodiscard]] auto trace_loop_body(const auto& body)
-        -> std::optional<assigned_bytes> {
-
-        std::optional<assigned_bytes> outer_breaks{
-            std::exchange(at_breaks_, std::nullopt),
-        };
-
-        body.trace_assignment(*this);
-
-        return std::exchange(at_breaks_, std::move(outer_breaks));
     }
 };

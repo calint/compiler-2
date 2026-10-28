@@ -68,14 +68,6 @@ inline auto assert_builtin_without_type_args(const token& tk,
                         in_quotes(tk.text()))};
 }
 
-// e.g. 'i8(x)'; 'bool' has no conversion
-[[nodiscard]] inline auto is_integer_conversion(const toc& tc, const token& tk,
-                                                const term_kind tm) -> bool {
-
-    return tm == term_kind::conversion and
-           tc.types().get(tk.text()).is_integer();
-}
-
 // the type of the value of the built-in at 'tk', classified as 'tm', e.g. 'i8'
 // of 'i8(1)', none when 'tk' names no built-in with a value;
 // 'parse_builtin' makes a statement for each
@@ -126,7 +118,13 @@ inline auto parse_builtin(toc& tc, tokenizer& tz, const token& tk,
         reserved_names::find_builtin_function(tk.text()),
     };
 
-    if (fn == nullptr and not is_integer_conversion(tc, tk, tm)) {
+    // e.g. 'bool(5)', only the integer types convert
+    if (tm == term_kind::conversion and tc.types().get(tk.text()).is_bool()) {
+        throw compile_error{tk, "'bool' has no conversion, compare "
+                                "instead, e.g. 'x != 0'"};
+    }
+
+    if (fn == nullptr and tm != term_kind::conversion) {
         return nullptr;
     }
 
@@ -313,11 +311,8 @@ inline auto parse_call_or_identifier(toc& tc, tokenizer& tz, const token& tk,
                                             in_quotes(tk.text()))};
     }
 
-    // e.g. 'bool(5)', only the integer types convert
-    if (tm == term_kind::conversion and tc.types().get(tk.text()).is_bool()) {
-        throw compile_error{tk, "'bool' has no conversion, compare "
-                                "instead, e.g. 'x != 0'"};
-    }
+    // note: 'parse_builtin' made the conversions
+    assert(tm != term_kind::conversion);
 
     // e.g. 'point(5)'
     if (tm == term_kind::type_called) {

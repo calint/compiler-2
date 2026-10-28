@@ -60,7 +60,7 @@ struct target_name {
     std::string_view text;
     std::unique_ptr<machine> (*make)(const builtin_type_set& builtins,
                                      const source_files& files,
-                                     const machine::target_options& options);
+                                     const machine::target_options& options){};
     bool writes_image{};
     bool reads_stack{};
     bool reads_memory{};
@@ -115,7 +115,7 @@ constexpr std::array<target_name, 4> target_names{
 };
 
 struct kept_version_name {
-    machine::kept_version kind;
+    machine::kept_version kind{};
     std::string_view text;
 };
 
@@ -133,7 +133,7 @@ struct report_options {
 
 struct report_name {
     std::string_view text;
-    bool report_options::* member;
+    bool report_options::* member{};
 };
 
 // the names of '--report', in the order of the usage text
@@ -164,7 +164,7 @@ struct options {
 // an option with a value, e.g. '--vars=0x40000'
 struct value_option {
     std::string_view name;
-    void (*apply)(std::string_view value, options& opts);
+    void (*apply)(std::string_view value, options& opts){};
 };
 
 // the exit code when the program should stop instead of compiling
@@ -291,7 +291,7 @@ namespace {
 // an option of the target rows, e.g. '--stack' and 'reads_stack'
 struct target_option {
     std::string_view name;
-    bool target_name::* reads;
+    bool target_name::* reads{};
     bool given{};
 };
 
@@ -790,7 +790,7 @@ auto check_reproduced_source(const program& prg, const source_files& files)
 // one named check, 'is_ub' tells that 'noub' includes it
 struct check_name {
     std::string_view text;
-    bool check_options::* member;
+    bool check_options::* member{};
     bool is_ub{};
 };
 

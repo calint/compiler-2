@@ -3636,9 +3636,10 @@ class toc final {
         return std::format("{}.end", label);
     }
 
-    // an error that ends a dry run is reported as an error of the source:
-    // the registers the run starts with do not depend on the code around it,
-    // so it is not one of a version there
+    // an error that ends a dry run is reported as an error of the source: the
+    // check of a body starts from the registers of a noinline body, and
+    // skipped code is never inside a version, an inlined body skips no code,
+    // see 'check_skipped'
     [[noreturn]] static auto throw_dry_run_error(compile_error error) -> void {
         error.kind = compile_error::error_kind::source;
         throw error;

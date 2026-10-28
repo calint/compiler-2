@@ -1413,29 +1413,25 @@ class assembler_rv32i final : public assembler {
 
             const line& l{lines().at(index)};
 
+            const record* const structured{record_of(l)};
+
             const data_values* const data{
-                std::get_if<data_values>(record_of(l)),
+                std::get_if<data_values>(structured),
             };
 
+            const zero_fill* const fill{std::get_if<zero_fill>(structured)};
+
+            // zero fills such as the zero elements of a 'dat' can be large
             if (data != nullptr) {
                 write_data(os, *data);
-                written = address + data_size_bytes(*data);
-                continue;
-            }
-
-            // zero fills such as the variables area can be large
-            if (const zero_fill* const fill{
-                    std::get_if<zero_fill>(record_of(l)),
-                }) {
-
+            } else if (fill != nullptr) {
                 write_zeros(os, fill->size_bytes);
-                written = address + fill->size_bytes;
-                continue;
+            } else {
+                write_code(os, l, index, static_cast<int64_t>(address),
+                           symbols);
             }
 
-            write_code(os, l, index, static_cast<int64_t>(address), symbols);
-
-            written = address + l.code_size;
+            written = address + image_size_bytes(l);
         }
 
         // a trailing alignment still belongs to the section

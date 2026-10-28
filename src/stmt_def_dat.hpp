@@ -168,9 +168,6 @@ class stmt_def_dat final : public statement {
         if (not values.empty()) {
             x.emit_data_array(tp.size_bytes(), values);
         }
-
-        compile_zero_elements(x, list.src_loc_tk, tp,
-                              list.array_count - values.size());
     }
 
     static auto compile_data_rec(toc& tc, const type& tp, const elem& el)
@@ -214,12 +211,11 @@ class stmt_def_dat final : public statement {
 
         if (tp.is_builtin()) {
             compile_data_elements(x, tp, list);
-            return;
-        }
-
-        for (const auto [i, e] : std::views::enumerate(list.items)) {
-            x.comment(e.tok(), 0, "[{}]", i);
-            compile_data_record(tc, tp, std::get<elem::fields>(e.form));
+        } else {
+            for (const auto [i, e] : std::views::enumerate(list.items)) {
+                x.comment(e.tok(), 0, "[{}]", i);
+                compile_data_record(tc, tp, std::get<elem::fields>(e.form));
+            }
         }
 
         compile_zero_elements(x, list.src_loc_tk, tp,

@@ -306,60 +306,6 @@ class token final {
     // statics
     //
 
-    // 'escape' is the text after the backslash, e.g. "n" or "x41"
-    // shared by string data and character literals so both accept the same
-    // escapes
-    [[nodiscard]] static auto decode_escape(const std::string_view escape)
-        -> std::optional<char> {
-
-        if (escape.starts_with('x')) {
-            return decode_hex_escape(escape.substr(1));
-            // note: 1 because the digits follow the 'x'
-        }
-
-        if (escape.size() != 1) {
-            return std::nullopt;
-        }
-
-        switch (escape.at(0)) {
-        case '0':
-            return '\0';
-
-        case 'a':
-            return '\a';
-
-        case 'b':
-            return '\b';
-
-        case 't':
-            return '\t';
-
-        case 'n':
-            return '\n';
-
-        case 'v':
-            return '\v';
-
-        case 'f':
-            return '\f';
-
-        case 'r':
-            return '\r';
-
-        case 'e':
-            return '\x1b';
-
-        case '\\':
-        case '\'':
-        case '"':
-        case '`':
-            return escape.at(0);
-
-        default:
-            return std::nullopt;
-        }
-    }
-
     // the escape whose backslash is at 'backslash_index' of 'text': a line
     // continuation, a backslash before a line end, or a character escape,
     // decoded unless unsupported; 'size' counts the characters after the
@@ -438,6 +384,60 @@ class token final {
     // statics
     //
 
+    // 'escape' is the text after the backslash, e.g. "n" or "x41"
+    // shared by string data and character literals so both accept the same
+    // escapes
+    [[nodiscard]] static auto decode_escape(const std::string_view escape)
+        -> std::optional<char> {
+
+        if (escape.starts_with('x')) {
+            return decode_hex_escape(escape.substr(1));
+            // note: 1 because the digits follow the 'x'
+        }
+
+        if (escape.size() != 1) {
+            return std::nullopt;
+        }
+
+        switch (escape.at(0)) {
+        case '0':
+            return '\0';
+
+        case 'a':
+            return '\a';
+
+        case 'b':
+            return '\b';
+
+        case 't':
+            return '\t';
+
+        case 'n':
+            return '\n';
+
+        case 'v':
+            return '\v';
+
+        case 'f':
+            return '\f';
+
+        case 'r':
+            return '\r';
+
+        case 'e':
+            return '\x1b';
+
+        case '\\':
+        case '\'':
+        case '"':
+        case '`':
+            return escape.at(0);
+
+        default:
+            return std::nullopt;
+        }
+    }
+
     [[nodiscard]] static auto decode_hex_escape(const std::string_view digits)
         -> std::optional<char> {
 
@@ -464,7 +464,7 @@ class token final {
 // spells, e.g. the '<<' of 'a << 2'
 template <class Op> struct spelled_operator {
     token tk;
-    Op op;
+    Op op{};
 };
 
 // what joins the comparisons of a condition
