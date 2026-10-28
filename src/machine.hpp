@@ -1935,22 +1935,6 @@ class machine {
         return std::format("{}_file_{}", handler_label, file_ix);
     }
 
-    // unrolled accesses take the widest parts first so each narrower width
-    // covers at most one remaining part
-    static auto for_each_part(
-        const size_t size_bytes, const size_t widest_size_bytes,
-        const std::function_ref<void(size_t part_size_bytes, size_t offset)>
-            emit_part) -> void {
-
-        size_t offset{};
-        for (size_t w{widest_size_bytes}; w != 0; w /= 2) {
-            while (size_bytes - offset >= w) {
-                emit_part(w, offset);
-                offset += w;
-            }
-        }
-    }
-
     // the two's complement bits of an immediate, empty for an operand that is
     // not one
     [[nodiscard]] static auto immediate_bits(const operand& value)

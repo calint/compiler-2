@@ -2175,6 +2175,22 @@ class machine_x86_64 final : public machine {
         return condition::ge;
     }
 
+    // unrolled accesses take the widest parts first so each narrower width
+    // covers at most one remaining part
+    static auto for_each_part(
+        const size_t size_bytes, const size_t widest_size_bytes,
+        const std::function_ref<void(size_t part_size_bytes, size_t offset)>
+            emit_part) -> void {
+
+        size_t offset{};
+        for (size_t w{widest_size_bytes}; w != 0; w /= 2) {
+            while (size_bytes - offset >= w) {
+                emit_part(w, offset);
+                offset += w;
+            }
+        }
+    }
+
     // a location in the main file has no file index, so the label stays the
     // same for a program of one file
     [[nodiscard]] static auto line_failure_label(const std::string_view name,
