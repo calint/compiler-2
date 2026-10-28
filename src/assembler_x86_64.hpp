@@ -63,9 +63,8 @@ class assembler_x86_64 final : public assembler {
         cmpsq,
     };
 
-    // suffixes of 'jcc' and 'setcc', 'nz' is spelled apart from 'ne' to keep
-    // the handler text
-    enum class condition : uint8_t { e, ne, l, le, g, ge, a, b, s, nz, ae, o };
+    // suffixes of 'jcc' and 'setcc'
+    enum class condition : uint8_t { e, ne, l, le, g, ge, a, b, s, ae, o };
 
     // 'variables' is the uninitialized section after the data
     enum class section : uint8_t { text, rodata, data, bss, variables };
@@ -444,7 +443,7 @@ class assembler_x86_64 final : public assembler {
     inverse_branch_mnemonic(const std::string_view mnemonic) const
         -> std::string_view override {
 
-        constexpr std::array<mnemonic_pair, 8> pairs{
+        constexpr std::array<mnemonic_pair, 7> pairs{
             {
                 {"je", "jne"},
                 {"jg", "jle"},
@@ -453,7 +452,6 @@ class assembler_x86_64 final : public assembler {
                 {"ja", "jbe"},
                 {"jb", "jae"},
                 {"js", "jns"},
-                {"jnz", "jz"},
             },
         };
 
@@ -547,7 +545,6 @@ class assembler_x86_64 final : public assembler {
                 "a",
                 "b",
                 "s",
-                "nz",
                 "ae",
                 "o",
             }),

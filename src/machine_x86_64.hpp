@@ -1526,7 +1526,7 @@ class machine_x86_64 final : public machine {
 
         assembler_.instruction(1, op::dec, "rdi");
         assembler_.instruction(1, op::test, "rax", "rax");
-        assembler_.jcc(1, condition::nz, ".convert_loop");
+        assembler_.jcc(1, condition::ne, ".convert_loop");
         assembler_.instruction(1, op::inc, "rdi");
         assembler_.comment(1, "print line number to stderr");
         assembler_.instruction(1, op::mov, "rax", syscall_write_);
