@@ -452,8 +452,8 @@ func functions() {
 
     var y = x + low_byte(w)
     assert(y == 0x38)
-    # a narrower result widens as an operand like a variable, assigned alone
-    # it must have the type of the destination: 'y = low_byte(w)' is an error
+    # a narrower result widens like a variable, also assigned alone:
+    # 'y = low_byte(w)'
 
     var arr = i32[]{9, 8}
     assert(first(arr) == 9)

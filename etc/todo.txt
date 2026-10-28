@@ -134,17 +134,18 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
     keeps the address and the index of each argument in two registers until
     the call is made, e.g. 'res = sum(v[i], v[i], v[i], v[i], v[i], v[i])' in
     a noinline 'g(v [], i)': 13 of 13 registers; the callee may be inlined
-    or noinline; an inlined caller, also with a parameter bound to 'rows[j]',
-    is accepted (an inlined binding keeps a computed address in one
-    register); probes in the session scratchpad 'regs'; the frame check
+    or noinline; an inlined caller runs out too: 'main' calling an inlined
+    'sum(a item, ..., g item)' with seven arguments 'w[i].items[j]' is
+    rejected on x86_64 and accepted on rv32i (bug hunt round 16 D2); probes
+    in the session scratchpad 'regs'; the frame check
     ('machine::check_frame_capacity') takes two more registers while the
     addresses are held, so 13 indexed arguments of a noinline call in 'main'
     are accepted without checks and rejected with '--checks=frame' (bug hunt
     round 12 Z2-1)
     => fix: keep an argument's address in one register once it is computed
        (fold the base and the index), as rv32i does; in the shared code that
-       keeps a call argument's address, so only noinline bodies change;
-       compare every listing to confirm
+       keeps a call argument's address, so the listings of inlined and
+       noinline callers change; compare every listing
     => older idea: write each frame slot as soon as its address is computed
        (covers a noinline callee only); caution: an argument with a call in
        its index, e.g. 'v[g(1)]', builds the frame of 'g' at the same next

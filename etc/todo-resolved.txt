@@ -1,6 +1,22 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] hard: bug hunt round 16 (2026-10-28, user: loop until a round finds no
+    bugs; hunters D1 conversions and mixed widths, D2 addresses, D3 generic
+    functions and the round 15 change; reports in the session scratchpad
+    bh16)
+    => done (2026-10-28): no bugs, the loop ends; D1 found nothing in about
+       38000 generated programs against a model of the conversion rules, D2
+       nothing in about 14000 programs against a model of memory, D3
+       nothing in about 600 generated programs and 250 probes; D1-1 a stale
+       tutorial comment fixed; D2 widened the open x86_64 todo item on
+       indexed arguments to inlined callers
+[-] easy: bug hunt round 16 D3-1, D3-2: an unknown name followed by type
+    arguments, 'p.nope<i8>(1)', is reported as a field or an identifier not
+    found, since it parses as a comparison; the clash of a generic method of
+    an alias with one of a level calls the first a method
+    => discarded (2026-10-28): messages only; the first needs a lookahead
+       for one case, the second is wording
 [x] hard: bug hunt round 15 (2026-10-28, user: loop until a round finds no
     bugs; hunters C1 loops, C2 the library of roome and string literals, C3
     generic code against its hand-written instance; reports in the session
