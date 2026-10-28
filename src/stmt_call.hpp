@@ -1924,73 +1924,6 @@ class stmt_call final : public statement {
         }
     }
 
-    //
-    // class methods
-    //
-
-    // the value arguments of a call that is not expanded, compiled at the type
-    // of their parameter for their checks; a place, an array and an instance
-    // are checked where they are parsed and by 'assert_call_accepted'
-    auto check_arguments_alone(toc& tc, const size_t indent) const -> void {
-        machine& x{tc.machine()};
-
-        for (const auto [arg, param] :
-             std::views::zip(args_, callee().params())) {
-
-            const type& param_type{param.get_type()};
-
-            if (not param.is_read_only() or param.is_array() or
-                not param_type.is_builtin()) {
-
-                continue;
-            }
-
-            const operand reg{
-                x.alloc_scratch_register(tok(), indent, param_type),
-            };
-
-            arg.compile(tc, indent, destination::of_register(reg));
-
-            x.free_scratch_register(tok(), indent, reg);
-        }
-    }
-
-    // the call without its operators, inlined or noinline
-    auto compile_call(toc& tc, const size_t indent, const destination& dst,
-                      const call_site& call, const bool is_recursion) const
-        -> void {
-
-        if (not callee().is_inlined()) {
-            noinline_call{
-                call,
-                call.argument_plan(tc),
-            }
-                .compile(tc, indent, dst);
-
-            return;
-        }
-
-        call_limits::assert_inline_nesting(tc, call.tk, callee());
-
-        // a recursion that does not end with constant arguments runs out of
-        // registers before it reaches the nesting limit, the advice is the same
-        try {
-            inline_call{
-                call,
-                call.argument_plan(tc),
-            }
-                .compile(tc, indent, dst);
-        } catch (const compile_error& e) {
-            if (not is_recursion or
-                e.kind != compile_error::error_kind::out_of_registers) {
-
-                throw;
-            }
-
-            throw call_limits::recursion_error(call.tk, callee());
-        }
-    }
-
   private:
     // the receiver is the first argument
     auto add_receiver_argument(stmt_identifier receiver) -> void {
@@ -2259,6 +2192,69 @@ class stmt_call final : public statement {
 
     // note: set at the parse before the arguments are parsed
     [[nodiscard]] auto callee() const -> const stmt_def_func& { return *func_; }
+
+    // the value arguments of a call that is not expanded, compiled at the type
+    // of their parameter for their checks; a place, an array and an instance
+    // are checked where they are parsed and by 'assert_call_accepted'
+    auto check_arguments_alone(toc& tc, const size_t indent) const -> void {
+        machine& x{tc.machine()};
+
+        for (const auto [arg, param] :
+             std::views::zip(args_, callee().params())) {
+
+            const type& param_type{param.get_type()};
+
+            if (not param.is_read_only() or param.is_array() or
+                not param_type.is_builtin()) {
+
+                continue;
+            }
+
+            const operand reg{
+                x.alloc_scratch_register(tok(), indent, param_type),
+            };
+
+            arg.compile(tc, indent, destination::of_register(reg));
+
+            x.free_scratch_register(tok(), indent, reg);
+        }
+    }
+
+    // the call without its operators, inlined or noinline
+    auto compile_call(toc& tc, const size_t indent, const destination& dst,
+                      const call_site& call, const bool is_recursion) const
+        -> void {
+
+        if (not callee().is_inlined()) {
+            noinline_call{
+                call,
+                call.argument_plan(tc),
+            }
+                .compile(tc, indent, dst);
+
+            return;
+        }
+
+        call_limits::assert_inline_nesting(tc, call.tk, callee());
+
+        // a recursion that does not end with constant arguments runs out of
+        // registers before it reaches the nesting limit, the advice is the same
+        try {
+            inline_call{
+                call,
+                call.argument_plan(tc),
+            }
+                .compile(tc, indent, dst);
+        } catch (const compile_error& e) {
+            if (not is_recursion or
+                e.kind != compile_error::error_kind::out_of_registers) {
+
+                throw;
+            }
+
+            throw call_limits::recursion_error(call.tk, callee());
+        }
+    }
 
     // the type names the constructor after the '.', e.g. 'at' of
     // 'point.at(1, 2)', a method of the type is not one

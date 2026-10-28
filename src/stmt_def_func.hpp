@@ -182,45 +182,6 @@ struct func_head {
         return head;
     }
 
-    // the name after the '.' of a method, e.g. 'print' of 'func text.print()'
-    [[nodiscard]] static auto read_method_name_token(tokenizer& tz) -> token {
-        const token name_tk{tz.next_token()};
-
-        if (not name_tk.is_word()) {
-            throw compile_error{tz.position_of(name_tk),
-                                "expected a method name after '.'"};
-        }
-
-        toc::assert_valid_name(name_tk);
-
-        return name_tk;
-    }
-
-    // e.g. '<T type, U type>', a generic function has type parameters only
-    [[nodiscard]] static auto read_type_params(tokenizer& tz)
-        -> std::vector<token> {
-
-        std::vector<token> param_tks;
-
-        for (const generic_param& param : generic_param::parse(tz)) {
-            // the name first, the kind is suggested with it
-            toc::assert_valid_name(param.name_tk);
-
-            if (not param.is_type) {
-                throw compile_error{
-                    param.name_tk,
-                    std::format("generic parameter {} of a function must "
-                                "have the kind 'type', e.g. '{} type'",
-                                in_quotes(param.name_tk.text()),
-                                param.name_tk.text())};
-            }
-
-            param_tks.emplace_back(param.name_tk);
-        }
-
-        return param_tks;
-    }
-
   private:
     // 'name_tk' is the receiver: a type, whose method gets an implicit first
     // parameter 'self' and whose constructor builds a 'self', or a generic
@@ -303,6 +264,49 @@ struct func_head {
 
         read_method_name(tc, tz, *dot_tk);
         open_paren_tk = tz.is_next_char_token('(');
+    }
+
+    //
+    // statics
+    //
+
+    // the name after the '.' of a method, e.g. 'print' of 'func text.print()'
+    [[nodiscard]] static auto read_method_name_token(tokenizer& tz) -> token {
+        const token name_tk{tz.next_token()};
+
+        if (not name_tk.is_word()) {
+            throw compile_error{tz.position_of(name_tk),
+                                "expected a method name after '.'"};
+        }
+
+        toc::assert_valid_name(name_tk);
+
+        return name_tk;
+    }
+
+    // e.g. '<T type, U type>', a generic function has type parameters only
+    [[nodiscard]] static auto read_type_params(tokenizer& tz)
+        -> std::vector<token> {
+
+        std::vector<token> param_tks;
+
+        for (const generic_param& param : generic_param::parse(tz)) {
+            // the name first, the kind is suggested with it
+            toc::assert_valid_name(param.name_tk);
+
+            if (not param.is_type) {
+                throw compile_error{
+                    param.name_tk,
+                    std::format("generic parameter {} of a function must "
+                                "have the kind 'type', e.g. '{} type'",
+                                in_quotes(param.name_tk.text()),
+                                param.name_tk.text())};
+            }
+
+            param_tks.emplace_back(param.name_tk);
+        }
+
+        return param_tks;
     }
 };
 
@@ -617,19 +621,8 @@ class stmt_def_func final : public statement {
         return slots;
     }
 
-    // the receiver of a method has its address in the slot register of the
-    // backend, not in a frame slot
-    [[nodiscard]] auto has_receiver_in_register() const -> bool {
-        return has_self_param();
-    }
-
     [[nodiscard]] auto has_result() const -> bool {
         return result_.has_value();
-    }
-
-    // a method of a type, a constructor builds its 'self' instead
-    [[nodiscard]] auto has_self_param() const -> bool {
-        return head_.method and not is_constructor();
     }
 
     [[nodiscard]] auto is_body_parsed() const -> bool {
@@ -689,43 +682,6 @@ class stmt_def_func final : public statement {
     }
 
     [[nodiscard]] auto uses() const -> const body_uses& { return body_uses_; }
-
-    //
-    // statics
-    //
-
-    // a parsed body names its result and parameters in place, a compiled
-    // noinline body reaches each through the address in its frame slot, the
-    // receiver through the address in the slot register
-    [[nodiscard]] static auto placement_of(const var_access& access,
-                                           const frame_slot& slot)
-        -> var_placement {
-
-        const through_frame* const frame{std::get_if<through_frame>(&access)};
-
-        if (frame == nullptr) {
-            return in_storage{
-                .offset{},
-                .base_register{},
-                .holds_address{},
-            };
-        }
-
-        if (slot.is_in_register) {
-            // note: 'compile_in_frame' holds the slot register for a receiver
-            //       in a register
-
-            assert(frame->slot_register);
-
-            return at_address_register{*frame->slot_register};
-        }
-
-        return in_storage{
-            .offset{},
-            .base_register{},
-            .holds_address{true},
-        };
-    }
 
   private:
     // the frames of what made the instance, see 'func_instance::trace'
@@ -961,6 +917,17 @@ class stmt_def_func final : public statement {
                                     x.frame_base_register());
     }
 
+    // the receiver of a method has its address in the slot register of the
+    // backend, not in a frame slot
+    [[nodiscard]] auto has_receiver_in_register() const -> bool {
+        return has_self_param();
+    }
+
+    // a method of a type, a constructor builds its 'self' instead
+    [[nodiscard]] auto has_self_param() const -> bool {
+        return head_.method and not is_constructor();
+    }
+
     // e.g. 'sum..len.4.8' for array lengths 4 and 8, 'sum' without lengths
     [[nodiscard]] auto
     name_with_lengths(const std::span<const size_t> array_lengths) const
@@ -1173,6 +1140,39 @@ class stmt_def_func final : public statement {
         }
 
         return label;
+    }
+
+    // a parsed body names its result and parameters in place, a compiled
+    // noinline body reaches each through the address in its frame slot, the
+    // receiver through the address in the slot register
+    [[nodiscard]] static auto placement_of(const var_access& access,
+                                           const frame_slot& slot)
+        -> var_placement {
+
+        const through_frame* const frame{std::get_if<through_frame>(&access)};
+
+        if (frame == nullptr) {
+            return in_storage{
+                .offset{},
+                .base_register{},
+                .holds_address{},
+            };
+        }
+
+        if (slot.is_in_register) {
+            // note: 'compile_in_frame' holds the slot register for a receiver
+            //       in a register
+
+            assert(frame->slot_register);
+
+            return at_address_register{*frame->slot_register};
+        }
+
+        return in_storage{
+            .offset{},
+            .base_register{},
+            .holds_address{true},
+        };
     }
 };
 
