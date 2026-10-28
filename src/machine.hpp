@@ -1033,6 +1033,10 @@ class machine {
 
         emit_bounds_check(src_loc_tk, indent, range, options, plan);
 
+        if (options.lower) {
+            mark_lower_checked(range);
+        }
+
         comment(src_loc_tk, indent, "bounds check end");
     }
 
@@ -1737,13 +1741,6 @@ class machine {
         return true;
     }
 
-    // a passed lower bounds check leaves the checked register non-negative
-    // until it is allocated again
-    auto mark_lower_checked(const bounds_range& range) -> void {
-        state_.registers.mark_lower_checked(
-            register_mask(lower_checked_register(range)));
-    }
-
     // the routine is emitted after the code; the use is version state, so a
     // version that is not kept and discarded code use nothing
     auto mark_used(const std::string_view routine) -> void {
@@ -2144,6 +2141,13 @@ class machine {
         }
 
         return locations_.for_message(src_loc_tk);
+    }
+
+    // a passed lower bounds check leaves the checked register non-negative
+    // until it is allocated again
+    auto mark_lower_checked(const bounds_range& range) -> void {
+        state_.registers.mark_lower_checked(
+            register_mask(lower_checked_register(range)));
     }
 
     // the backend's own registers, e.g. the variables base, and the frame

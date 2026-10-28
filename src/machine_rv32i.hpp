@@ -1900,8 +1900,6 @@ class machine_rv32i : public machine {
                                plan.count_known ? std::nullopt : range.count,
                                is_last);
         }
-
-        mark_lower_checked(range);
     }
 
     // after the checked multiply helper: the flag is in 'a1', the product in

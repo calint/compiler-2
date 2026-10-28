@@ -1239,8 +1239,6 @@ class machine_x86_64 final : public machine {
                 test_sign(src_loc_tk, indent, *range.count);
             }
         }
-
-        mark_lower_checked(range);
     }
 
     // a count in 'rcx' below zero or not below the width jumps to the failure
