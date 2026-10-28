@@ -42,7 +42,6 @@
 //   'stmt_call'       parses the call, prints its source and hands it to one
 //                     of the compilers (last in the file, it uses the others)
 //   'generic_call'    the instance of a generic function that the call names
-//   'noinline_arg'    what a noinline call passes for an argument
 //   'call_limits'     how deep the compile of calls nests
 //   'call_site'       what compiling the call needs of it
 //   'inline_call'     compiles the body of the function in place
@@ -62,7 +61,8 @@
 //                                ('argument_plan')
 //   'param_binding'              inlined: what the parameter stands for
 //                                ('inline_call::make_bindings')
-//   'noinline_arg'               noinline: the variable passed, or the
+//   'noinline_call::noinline_arg'
+//                                noinline: the variable passed, or the
 //                                temporary that holds the value
 //                                ('compile_arguments_and_call',
 //                                'call_site::make_argument_temporary')
@@ -396,15 +396,6 @@ struct generic_call {
 
         return type_args;
     }
-};
-
-// what a noinline call passes for an argument: the variable it names or a
-// temporary of the current block that holds its value
-struct noinline_arg {
-    ident_info info;
-    // computed at the argument's position in the list, in a register held
-    // until the frame is written when the variable has a run-time index
-    operand address;
 };
 
 // the limits on how deep the compile of calls nests, each a recursion of the
@@ -1251,6 +1242,15 @@ class noinline_call final {
     // a slot of the callee frame and the address it holds
     struct addressed_slot {
         frame_slot slot;
+        operand address;
+    };
+
+    // what the call passes for an argument: the variable it names or a
+    // temporary of the current block that holds its value
+    struct noinline_arg {
+        ident_info info;
+        // computed at the argument's position in the list, in a register held
+        // until the frame is written when the variable has a run-time index
         operand address;
     };
 
