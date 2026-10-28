@@ -5632,3 +5632,12 @@ SRC=1766 && COMPERR
 # a constant index past the end in an argument is reported as out of bounds
 # before the check of shared storage
 SRC=1767 && COMPERR
+
+# 'self' deduces the type argument of a generic call
+SRC=1768 && EXP=10 && RUN
+
+# a constant count with a run-time start into an array parameter
+SRC=1769 && EXP=14 && OPTS="--checks=noub" RUN
+
+# a constant start with a run-time count into an array parameter
+SRC=1770 && EXP=7 && OPTS="--checks=noub" RUN

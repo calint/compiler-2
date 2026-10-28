@@ -1,0 +1,19 @@
+# a constant count with a run-time start into an array parameter: the body is
+# also checked without its calls, where the length is unknown
+func g(x mut i8[], k) {
+    array_copy(x[k], x[0], 1)
+}
+
+func same(x i8[], y i8[], k) res bool {
+    res = arrays_equal(x[k], y, 2)
+}
+
+func main() {
+    var a = i8[]{5, 6, 7, 8}
+    var b = i8[]{7, 8}
+    g(a, 2)
+    if not same(a, b, 2) {
+        exit(1)
+    }
+    exit(a[2] + a[0])
+}

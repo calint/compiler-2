@@ -1086,7 +1086,7 @@ class stmt_identifier final : public statement {
     // in the register
     [[nodiscard]] static auto compile_checked_index(
         toc& tc, const size_t indent, const expr_any& index_expr,
-        const operand& index_register, const size_t array_length,
+        const operand& index_register, const array_shape& shape,
         const std::optional<size_t>& range_count) -> int64_t;
 
     // empty when the index is computed at run time or is out of range

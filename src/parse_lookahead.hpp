@@ -120,11 +120,6 @@ enum class term_kind : uint8_t {
         return term_kind::builtin_function;
     }
 
-    // a keyword before '(' is not a call, e.g. 'not (a == 2)'
-    if (std::ranges::contains(reserved_names::keywords, text)) {
-        return term_kind::keyword;
-    }
-
     const char next{tz.peek_char_after_whitespace()};
 
     if (tc.types().has(text) and tc.types().get(text).is_builtin()) {
@@ -142,6 +137,14 @@ enum class term_kind : uint8_t {
     // e.g. 'let point = 3' makes 'point' in 'point + 1' the constant, not the
     // type
     const bool is_hidden{tc.scopes().lookup(text).is_value()};
+
+    // a keyword before '(' is not a call, e.g. 'not (a == 2)'
+    // note: 'self' is the one keyword that names a value
+    if (not is_hidden and
+        std::ranges::contains(reserved_names::keywords, text)) {
+
+        return term_kind::keyword;
+    }
 
     // note: a call 'f()' still calls a hidden function, a hidden 'f<'
     //       starts a comparison

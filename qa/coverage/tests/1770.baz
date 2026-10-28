@@ -1,0 +1,12 @@
+# a constant start with a run-time count into an array parameter: the body is
+# also checked without its calls, where the length is unknown
+func g(x i8[], y mut i8[], n) {
+    array_copy(x[2], y, n)
+}
+
+func main() {
+    var a = i8[]{1, 2, 3, 4}
+    var b = i8[4]
+    g(a, b, 2)
+    exit(b[0] + b[1])
+}

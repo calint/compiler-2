@@ -6,6 +6,52 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
 --------------------------------------------------------------------------------
 1. clean up
 --------------------------------------------------------------------------------
+[ ] medium: bug hunt round 10 X1-1: a comparison side led by an untyped
+    constant is computed at the default type, so a program that writes all
+    its types depends on the target ('k i32': '1 << k < 0' is false on
+    x86_64, true on rv32i; '3 + k + k == 0' panics 'overflow' on rv32i only;
+    'k == 1 + k' is rejected on x86_64 only), against README 8 ("a program
+    that writes its types ... does not"); 'expr_arith' takes the type of its
+    first element, 'side_of' computes a side at it
+    => decide: 1. a comparison side takes the type of its first element
+       that is not an untyped constant (a side of constants only keeps the
+       default type, it folds), an initializer keeps the rule of test 0605
+       ('0 + small' is the default type: its variable is untyped, README 8
+       item 1); 2. the same for every list (changes 0605 and the type of
+       'var r = 3 + k', prototyped 2026-10-28: 0605 rejected); 3. README 8
+       item 1 names a comparison side led by a literal (keeps the trap)
+    => recommended 1; tests: the three reproducers of X1 on both targets,
+       'fuzz-exprs.py' writes a leading literal plain (now 'T(v)', why the
+       fuzzers missed it)
+[ ] medium: bug hunt round 10 X3-1: a noinline call in skipped code or in a
+    function nothing calls adds no body for its array lengths
+    ('toc::add_noinline_body' returns in a dry run), so its body is never
+    checked with them: 'f(a)' of 'func noinline f(s i8[]) { ... s[5] }' on
+    an 'i8[4]' inside 'if 1 == 2' is accepted, inlined it is rejected (dead
+    code only, no undefined behavior; README 1.4 states the current rule)
+    => plan: in a dry run the request goes to a check-only list of
+       'noinline_worklist' (function, lengths, call token); after the
+       emitted bodies, each listed pair without an emitted body is compiled
+       under 'toc::dry_run' into 'machine::discarded_code::body' with the
+       call as its error frame; the output is unchanged; README 1.4 item 1
+       "adds a body to check only"; rejected: leave as is (verdict depends
+       on inline versus noinline)
+    => tests: the four reproducers of X3 (skipped and uncalled, inline and
+       noinline) give the same verdict
+[ ] medium: bug hunt round 10 X3-2: the check of a function
+    ('stmt_def_func::check_body') compiles it as a noinline body, which
+    holds the frame base ('rbx', 's1'), so an inlined function without
+    parameters whose only call is from 'main' is rejected with "out of
+    scratch registers" where the same body in 'main' compiles (x86_64 14
+    nested 'a + (a * ...' levels, rv32i 28); README 1.5 item 3 says the
+    check has at least as many free registers as any call; related to the
+    pending H-3 (decided for uncalled functions, this one is called)
+    => decide: 1. the check of an inlined function starts from the
+       registers of 'main' (no frame base) and addresses its locals as an
+       inlined body (removes the exception); 2. README 1.5 item 3 and 1.8
+       item 4 say the check has the registers of a noinline body, one fewer
+       than 'main'
+    => recommended 1; tests: the X3 reproducers on both targets
 [ ] medium: a chain of distinct inlined functions with deeply nested
     expressions overflows the compiler's stack (segfault on both targets,
     bug hunt round 6 S2): each limit holds alone, parse nesting 128 per body

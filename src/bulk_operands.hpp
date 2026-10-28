@@ -161,9 +161,16 @@ class bulk_operands final {
                 return;
             }
 
-            const size_t array_count{
-                array.resolve_path(tc_).element_count(),
-            };
+            const array_shape shape{array.resolve_path(tc_).shape()};
+
+            // note: an unknown length is the check of a function without its
+            //       calls, its code is discarded
+
+            if (shape.is_length_unknown()) {
+                return;
+            }
+
+            const size_t array_count{shape.element_count()};
 
             machine& x{tc_.machine()};
 

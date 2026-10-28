@@ -1,0 +1,18 @@
+# 'self' names a value in a method, so it deduces the type argument of a
+# generic call as a variable does
+type point { x i16, y i16 }
+
+func gid<T type>(v T) res T {
+    res = v
+}
+
+func point.sum() res {
+    var q = gid(self)
+    var z = gid(self.x)
+    res = q.x + q.y + z
+}
+
+func main() {
+    var p = point{3, 4}
+    exit(p.sum())
+}

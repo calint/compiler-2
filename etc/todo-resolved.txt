@@ -1,6 +1,23 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: bug hunt round 10 X2-2: 'gid(self)' and 'gid(self.x)' in a method
+    were rejected with "cannot deduce 'T'": since round 9 W2-2
+    'classify_term' took 'self' for a keyword before it looked up the
+    scope, so the deduction did not see a value
+    => done (2026-10-28): a keyword is classified after the scope lookup,
+       only when no value of its name is in scope ('self' is the one that
+       names a value); test 1768 (rejected at HEAD), 1765 kept
+[x] easy: bug hunt round 10 X2-1: 'array_copy' and 'arrays_equal' on an array
+    parameter aborted the compiler (since round 9 W1-1): in the check of a
+    body without its calls the length is unknown, and the asserts of
+    'compile_checked_index' (a constant count with a run-time start) and
+    'run_time_emitters::check_range' (a constant start with a run-time count)
+    assumed a known length
+    => done (2026-10-28): 'compile_checked_index' takes the 'array_shape',
+       an unknown length checks the index alone; 'check_range' checks no
+       range for an unknown length; both codes are discarded; tests 1769,
+       1770 (abort at HEAD)
 [x] easy: bug hunt round 9 W3-1: a constant index past the end of an array
     of known length was recorded as a run-time index by 'narrow_to_element',
     so the checks before the compile's bounds check reported another error
