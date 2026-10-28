@@ -479,20 +479,7 @@ class machine_x86_64 final : public machine {
         syscall(indent);
     }
 
-    auto foo_advance_iteration(const token& src_loc_tk, const size_t indent,
-                               const operand& iterator, const operand& counter,
-                               const size_t element_size_bytes,
-                               const operand& limit,
-                               const std::string_view loop_label)
-        -> void override {
-
-        add(src_loc_tk, indent, iterator, immediate(element_size_bytes));
-        inc(src_loc_tk, indent, counter);
-        cmp(src_loc_tk, indent, counter, limit);
-        assembler_.jcc(indent, condition::ne, loop_label);
-    }
-
-    // 'inc' and 'cmp' work on memory, so a loop counter leaves its register to
+    // 'add' and 'cmp' work on memory, so a loop counter leaves its register to
     // the values that need one once many are live
     [[nodiscard]] auto foo_counter_in_memory() const -> bool override {
         return registers().scratch_count() >= memory_counter_pressure_count_;
@@ -1792,12 +1779,6 @@ class machine_x86_64 final : public machine {
               const operand& dst_op, const operand& src_op) -> void {
 
         emit_op(src_loc_tk, indent, op::imul, dst_op, src_op);
-    }
-
-    auto inc(const token& src_loc_tk, const size_t indent, const operand& dst)
-        -> void {
-
-        emit_unary(src_loc_tk, indent, op::inc, dst);
     }
 
     // 'syscall' changes 'rcx' and 'r11', the allocated ones are saved

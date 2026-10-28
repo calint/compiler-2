@@ -825,14 +825,6 @@ class machine {
     virtual auto exit(const token& src_loc_tk, const size_t indent,
                       const operand& exit_code) -> void = 0;
 
-    // 'limit' is the constant array size or a register holding a count,
-    // 'counter' is a register or a memory operand
-    virtual auto
-    foo_advance_iteration(const token& src_loc_tk, const size_t indent,
-                          const operand& iterator, const operand& counter,
-                          const size_t element_size_bytes, const operand& limit,
-                          const std::string_view loop_label) -> void = 0;
-
     // whether the counter of an array loop is better kept in memory than in a
     // register, decided when the loop starts
     [[nodiscard]] virtual auto foo_counter_in_memory() const -> bool = 0;
@@ -1248,6 +1240,35 @@ class machine {
         finish_registers();
         finish_output();
         finish_target();
+    }
+
+    // 'limit' is the constant array size or a register holding a count,
+    // 'counter' is a register or a memory operand
+    auto foo_advance_iteration(const token& src_loc_tk, const size_t indent,
+                               const operand& iterator, const operand& counter,
+                               const size_t element_size_bytes,
+                               const operand& limit,
+                               const std::string_view loop_label) -> void {
+
+        // note: element sizes are limited by the variables that hold the arrays
+        assert(element_size_bytes <= max_storage_bytes());
+
+        const operation_scope scope{*this, iterator, counter};
+
+        add_subtract(src_loc_tk, indent, arithmetic_operator::add, iterator,
+                     operand::imm(element_size_bytes, default_type()));
+
+        add_subtract(src_loc_tk, indent, arithmetic_operator::add, counter,
+                     operand::imm(1, default_type()));
+
+        compare_and_branch(src_loc_tk, indent, counter, limit,
+                           {
+                               .operation{comparison_operator::not_equal},
+                               .inverted{},
+                               .destination{},
+                               .target{loop_label},
+                               .branch_on_true{true},
+                           });
     }
 
     [[nodiscard]] auto frame_base_register() const -> std::string_view {

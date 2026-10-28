@@ -1131,34 +1131,6 @@ class machine_rv32i : public machine {
         release_bulk(src_loc_tk, indent);
     }
 
-    auto foo_advance_iteration(const token& src_loc_tk, const size_t indent,
-                               const operand& iterator, const operand& counter,
-                               const size_t element_size_bytes,
-                               const operand& limit,
-                               const std::string_view loop_label)
-        -> void override {
-
-        // element sizes are limited by the variables that hold the arrays
-        assert(element_size_bytes <= std::numeric_limits<uint32_t>::max());
-
-        const operation_scope scope{*this, iterator, counter};
-
-        add_subtract(src_loc_tk, indent, arithmetic_operator::add, iterator,
-                     operand::imm(element_size_bytes, default_type()));
-
-        add_subtract(src_loc_tk, indent, arithmetic_operator::add, counter,
-                     operand::imm(1, default_type()));
-
-        emit_comparison(src_loc_tk, indent, counter, limit,
-                        {
-                            .operation{comparison_operator::not_equal},
-                            .inverted{},
-                            .destination{},
-                            .target{loop_label},
-                            .branch_on_true{true},
-                        });
-    }
-
     // a load and store machine counts in a register
     [[nodiscard]] auto foo_counter_in_memory() const -> bool override {
         return false;
