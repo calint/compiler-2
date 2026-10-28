@@ -1,4 +1,4 @@
 
-0180.baz:5:13: expected '(' followed by an identifier
+0180.baz:5:13: expected '(' after function name
     var n = array_length x
             ^~~~~~~~~~~~

@@ -148,10 +148,9 @@ class report_renderer final {
                 .name{f.function},
                 .value{
                     std::format(
-                        "{} {}, {} {}, {} instructions{}", f.body_count,
-                        f.body_count == 1 ? "body" : "bodies", f.call_count,
-                        f.call_count == 1 ? "call" : "calls",
-                        f.instruction_count,
+                        "{} {}, {}, {} instructions{}", f.body_count,
+                        f.body_count == 1 ? "body" : "bodies",
+                        counted(f.call_count, "call"), f.instruction_count,
                         f.call_count <= f.body_count ? ", no reuse" : ""),
                 },
             });

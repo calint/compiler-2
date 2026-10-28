@@ -759,8 +759,9 @@ auto check_reproduced_source(const program& prg, const source_files& files)
         std::ofstream diff_file{"diff.baz"};
         diff_file << reproduced_source.view();
 
-        throw std::logic_error{std::format(
-            "generated source differs. diff {} diff.baz", files.name(file_ix))};
+        throw std::logic_error{
+            std::format("generated source differs, see 'diff {} diff.baz'",
+                        files.name(file_ix))};
     }
 }
 

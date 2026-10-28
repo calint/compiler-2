@@ -160,6 +160,23 @@ class tokenizer final {
         return *tk;
     }
 
+    // the token of the character 'ch' when it is next, otherwise an error at
+    // 'src_loc_tk', e.g. the name before a missing '(', since the next token
+    // can be on a later line
+    [[nodiscard]] auto expect_char_token_after(const token& src_loc_tk,
+                                               const char ch,
+                                               const std::string_view message)
+        -> token {
+
+        const std::optional<token> tk{is_next_char_token(ch)};
+
+        if (not tk) {
+            throw compile_error{src_loc_tk, std::string{message}};
+        }
+
+        return *tk;
+    }
+
     [[nodiscard]] auto file_index() const -> size_t { return file_ix_; }
 
     // a binary operator or a comparison follows, e.g. the '+' of 'x + 1'

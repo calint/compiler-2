@@ -97,7 +97,7 @@ class constant_parser final {
             throw compile_error{
                 src_loc_tk,
                 std::format("character literal {} must contain one character",
-                            str)};
+                            in_quotes(str))};
         }
 
         const std::optional<char> decoded{token::escape_at(body, 0).decoded};

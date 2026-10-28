@@ -1624,7 +1624,10 @@ class builtin_arguments final {
     // reported at it, the next token can be on a later line
     builtin_arguments(toc& tc, tokenizer& tz, const token& name_tk,
                       const std::span<const size_t> array_indexes)
-        : open_paren_tk_{read_open_paren(tz, name_tk)} {
+        : open_paren_tk_{
+              tz.expect_char_token_after(name_tk, '(',
+                                         "expected '(' after function name"),
+          } {
 
         while (true) {
             if (const std::optional<token> close_paren_tk{
@@ -1696,22 +1699,6 @@ class builtin_arguments final {
         array.assert_array_or_element();
 
         args_.push_back(path_argument(std::move(array)));
-    }
-
-    //
-    // statics
-    //
-
-    [[nodiscard]] static auto read_open_paren(tokenizer& tz,
-                                              const token& name_tk) -> token {
-
-        const std::optional<token> open_paren_tk{tz.is_next_char_token('(')};
-
-        if (not open_paren_tk) {
-            throw compile_error{name_tk, "expected '(' after function name"};
-        }
-
-        return *open_paren_tk;
     }
 };
 
@@ -2428,16 +2415,10 @@ class stmt_call final : public statement {
         assert_call_in_func(tc, tok());
         assert_callee_body_parsed(tc);
 
-        const std::optional<token> open_paren_tk{tz.is_next_char_token('(')};
-
         set_type(callee().result_type());
 
-        if (not open_paren_tk) {
-            throw compile_error{name_tk,
-                                std::format("expected '(' after {}", what)};
-        }
-
-        open_paren_tk_ = *open_paren_tk;
+        open_paren_tk_ = tz.expect_char_token_after(
+            name_tk, '(', std::format("expected '(' after {}", what));
     }
 
     // what the callee reaches of the caller is the caller's use too, see
