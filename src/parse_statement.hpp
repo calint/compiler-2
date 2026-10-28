@@ -288,9 +288,7 @@ inline auto parse_call_or_identifier(toc& tc, tokenizer& tz, const token& tk,
     // e.g. the 'i8' of 'i8 + 1' or of 'i8 = 1', the 'point' of '1 + point'
     // or of 'point{1, 2}' that starts a statement, or the 'i8[]' of
     // 'x + i8[]{1}'
-    if (is_bare_type(tm) or tm == term_kind::array_literal or
-        tm == term_kind::record_literal) {
-
+    if (names_type(tm)) {
         throw compile_error{
             tk, std::format("{} is a type, not a value", in_quotes(tk.text()))};
     }
@@ -305,9 +303,9 @@ inline auto parse_call_or_identifier(toc& tc, tokenizer& tz, const token& tk,
                             in_quotes(tk.text()), in_quotes(tk.text()))};
     }
 
-    // e.g. '1 (2)', a number is not called
-    if (tk.is_number() and next == '(') {
-        throw compile_error{tk, std::format("{} is a number, not a function",
+    // e.g. '1 (2)' or 'true(1)', a literal is not called
+    if (tm == term_kind::literal and next == '(') {
+        throw compile_error{tk, std::format("{} is a constant, not a function",
                                             in_quotes(tk.text()))};
     }
 
@@ -341,7 +339,10 @@ inline auto parse_call_or_identifier(toc& tc, tokenizer& tz, const token& tk,
     if (tm == term_kind::function_name and
         not tc.generics().has_func(tk.text())) {
 
-        throw_function_as_value(tk, tk.text());
+        throw compile_error{
+            tk, std::format("{} is a function, not a value, a call ends with "
+                            "'()'",
+                            in_quotes(tk.text()))};
     }
 
     // e.g. 'x', 'p.x', 'a[i]' or the literal '0x80'

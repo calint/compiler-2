@@ -1,0 +1,4 @@
+
+1821.baz:5:23: use of uninitialized variable 'res'
+    let b = false and res == 1
+                      ^~~

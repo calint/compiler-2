@@ -1,4 +1,5 @@
-# data arrays whose sizes together exceed the signed 64-bit range
+# data arrays whose sizes together exceed the signed 64-bit range, the first
+# is past the memory the target addresses
 
 dat a = i8[4611686018427387904]{}
 dat b = i8[4611686018427387904]{}

@@ -1,0 +1,13 @@
+# a constant 'bool' argument of an inlined call checks the elements after the
+# one that decides it, as a noinline call does
+
+func f(b bool) {
+    if b {
+        exit(1)
+    }
+}
+
+func main() {
+    var a = 1
+    f(true or a / 0 == 1)
+}

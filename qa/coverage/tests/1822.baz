@@ -1,0 +1,13 @@
+# a condition that is false at the parse reads no unset result in the elements
+# after the one that decides it
+
+func f() res {
+    if false and res == 1 {
+        exit(3)
+    }
+    res = 2
+}
+
+func main() {
+    exit(f())
+}

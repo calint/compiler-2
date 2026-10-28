@@ -1634,6 +1634,25 @@ class storage_layout final {
         assert(used_vars_size_bytes() == 0);
     }
 
+    // the declaration that takes the data and variables past what the target
+    // addresses is the error, not the end of the build; checked before the
+    // scope holds the bytes
+    auto assert_total_fits_target(const token& src_loc_tk,
+                                  const size_t total_bytes) const -> void {
+
+        const size_t max_bytes{machine_.get().max_storage_bytes()};
+
+        if (total_bytes <= max_bytes) {
+            return;
+        }
+
+        throw compile_error{
+            src_loc_tk,
+            std::format("data and variables of {} B exceed the {} B that the "
+                        "target addresses",
+                        total_bytes, max_bytes)};
+    }
+
     [[nodiscard]] auto max_body_vars_size_bytes() const -> size_t {
         return max_body_vars_size_bytes_;
     }
@@ -1695,13 +1714,12 @@ class storage_layout final {
         // note: a 'dat' comes before any 'var', so no variable is placed yet
         assert(used_vars_size_bytes() == 0);
 
+        // note: 'toc::add_dat' checked the dats against the target
+        assert(dat.offset_bytes + var_storage_size_bytes(src_loc_tk, var) <=
+               machine_.get().max_storage_bytes());
+
         std::get<in_storage>(var.placement).offset =
             offset_from_variables_base(dat.offset_bytes);
-
-        assert_total_fits_target(
-            src_loc_tk,
-            add_storage_size(src_loc_tk, dat.offset_bytes,
-                             var_storage_size_bytes(src_loc_tk, var)));
     }
 
     auto restore_peaks(const peaks& saved) -> void {
@@ -1740,25 +1758,6 @@ class storage_layout final {
     }
 
   private:
-    // the declaration that takes the data and variables past what the target
-    // addresses is the error, not the end of the build; checked before the
-    // scope holds the bytes
-    auto assert_total_fits_target(const token& src_loc_tk,
-                                  const size_t total_bytes) const -> void {
-
-        const size_t max_bytes{machine_.get().max_storage_bytes()};
-
-        if (total_bytes <= max_bytes) {
-            return;
-        }
-
-        throw compile_error{
-            src_loc_tk,
-            std::format("data and variables of {} B exceed the {} B that the "
-                        "target addresses",
-                        total_bytes, max_bytes)};
-    }
-
     auto assert_vars_capacity(const token& src_loc_tk, const var_info& var,
                               const size_t allocated_size_bytes) const -> void {
 
@@ -2829,6 +2828,11 @@ class toc final {
                                .alignment{storage_.var_storage_alignment(var)},
                                .size_bytes{size_bytes},
                            });
+
+        // before it is placed, whose offsets assume a size the target
+        // addresses
+        storage_.assert_total_fits_target(var.src_loc_tk,
+                                          data_.total_size_bytes());
 
         add_var(var.src_loc_tk, 0, var, var_kind::dat);
     }

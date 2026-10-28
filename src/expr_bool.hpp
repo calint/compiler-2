@@ -775,7 +775,9 @@ class expr_bool_op final : public statement {
                             *lhs_len, *rhs_len)};
         }
 
-        return multiply_storage_size(lhs.tok(), element_size_bytes, *lhs_len);
+        // note: the size of the array was accepted where it is declared
+
+        return product_storage_size(element_size_bytes, *lhs_len);
     }
 
     // compares the bytes of two user type instances or of two whole arrays,

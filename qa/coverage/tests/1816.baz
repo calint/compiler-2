@@ -1,0 +1,21 @@
+# a constant 'let' in nested loops that hold every scratch register is
+# accepted like a 'var'
+
+func main() {
+    var a = i32[2]
+    foo a, a[0] + 1 {
+        foo a, a[0] + 1 {
+            foo a, a[0] + 1 {
+                foo a, a[0] + 1 {
+                    foo a, a[0] + 1 {
+                        foo a, a[0] + 1 {
+                            let k = 3
+                            a[0] = k
+                        }
+                    }
+                }
+            }
+        }
+    }
+    exit(a[0])
+}

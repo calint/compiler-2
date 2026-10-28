@@ -86,10 +86,13 @@ enum class term_kind : uint8_t {
     unknown,
 };
 
-// a user or built-in type that is not converted, called or made an instance
-// of by a constructor
-[[nodiscard]] inline auto is_bare_type(const term_kind kind) -> bool {
-    return kind == term_kind::builtin_type or kind == term_kind::record_type;
+// a type where a value or an array is expected: a user or built-in type that
+// is not converted, called or made an instance of by a constructor, or the
+// start of an array or instance literal
+[[nodiscard]] inline auto names_type(const term_kind kind) -> bool {
+    return kind == term_kind::builtin_type or kind == term_kind::record_type or
+           kind == term_kind::array_literal or
+           kind == term_kind::record_literal;
 }
 
 // what 'tk', with 'tz' after it, denotes where a value or a statement starts;

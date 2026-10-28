@@ -1,0 +1,4 @@
+
+1822.baz:5:18: use of uninitialized variable 'res'
+    if false and res == 1 {
+                 ^~~

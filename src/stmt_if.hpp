@@ -131,6 +131,21 @@ class stmt_if final : public statement {
     // the paths that the conditions known where the 'if' is written leave,
     // e.g. 'if 1 == 1 { res = 2 }' sets 'res' on every path
     auto trace_assignment(assignment_flow& flow) const -> void override {
+        // a condition false at the parse holds the rule too, its elements
+        // after the one that decides it included, e.g. the 'res == 1' of
+        // 'false and res == 1'; read before any branch runs
+        for (const stmt_if_branch& branch : branches_) {
+            const condition_result known{branch.constant_at_parse()};
+
+            if (not runs(known)) {
+                branch.condition().assert_result_not_read(flow);
+            }
+
+            if (ends_chain(known)) {
+                break;
+            }
+        }
+
         assignment_flow::path_merge paths{flow};
 
         for (const stmt_if_branch& branch : branches_) {

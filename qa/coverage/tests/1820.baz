@@ -1,0 +1,8 @@
+# a 'dat' past the memory the target addresses is an error before it is
+# placed
+
+dat a = i8[9223372036854775790]
+
+func main() {
+    exit(1)
+}

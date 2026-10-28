@@ -1,0 +1,4 @@
+# 'true' followed by '(' is not a call, as a number
+func main() {
+    var x = true(1)
+}

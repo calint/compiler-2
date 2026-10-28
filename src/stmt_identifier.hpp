@@ -865,9 +865,7 @@ class stmt_identifier final : public statement {
                 tk, std::format("{} is not an array", in_quotes(tk.text()))};
         }
 
-        if (is_bare_type(tm) or tm == term_kind::array_literal or
-            tm == term_kind::record_literal) {
-
+        if (names_type(tm)) {
             throw compile_error{tk, std::format("{} is a type, not an array",
                                                 in_quotes(tk.text()))};
         }

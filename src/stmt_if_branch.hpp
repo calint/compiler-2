@@ -121,6 +121,10 @@ class stmt_if_branch final : public statement {
         return condition;
     }
 
+    [[nodiscard]] auto condition() const -> const expr_bool& {
+        return condition_;
+    }
+
     [[nodiscard]] auto constant_at_parse() const -> condition_result {
         return constant_at_parse_;
     }

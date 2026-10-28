@@ -1,0 +1,4 @@
+
+1819.baz:4:5: data and variables of 9223372036854775790 B exceed the 4294967296 B that the target addresses
+dat a = i8[9223372036854775790]
+    ^

@@ -4515,8 +4515,8 @@ class machine_rv32i : public machine {
         }
 
         throw unlocated_error{std::format(
-            "code, data and variables of {} B exceed the {} B that the target "
-            "addresses",
+            "code, data and variables use {} B, which exceeds the {} B that "
+            "the target addresses",
             memory_end_address, assembler_rv32i::address_space_bytes)};
     }
 

@@ -286,8 +286,7 @@ class stmt_def_dat final : public statement {
         x.comment(src_loc_tk, 0, "pad {} {} of size {}", count,
                   in_quotes(tp.name()), tp.size_bytes());
 
-        x.emit_zero_data(
-            multiply_storage_size(src_loc_tk, tp.size_bytes(), count));
+        x.emit_zero_data(product_storage_size(tp.size_bytes(), count));
     }
 
     // the constants of 'value' at the type 'tp', e.g. '{1, 2 * 3}' of 'point'

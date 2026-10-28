@@ -321,6 +321,49 @@ class expr_any final : public statement {
         return *record;
     }
 
+    // the fold of a condition stops at the element that decides it, so the
+    // elements after it are checked like skipped code, e.g. the 'a / 0 == 1'
+    // of 'true or a / 0 == 1'; compiled as a branch condition, which needs no
+    // register for its value
+    auto check_folded_condition(toc& tc, const size_t indent) const -> void {
+        const single_value* const single{std::get_if<single_value>(&form_)};
+
+        if (single == nullptr) {
+            return;
+        }
+
+        const expr_bool* const condition{
+            std::get_if<expr_bool>(&single->value),
+        };
+
+        if (condition == nullptr) {
+            return;
+        }
+
+        tc.check_skipped([&] -> void {
+            // note: two targets as an 'if', the same one for both would store
+            //       the value
+
+            const std::string true_label{
+                tc.create_unique_label(tok(), "bool"),
+            };
+
+            const std::string false_label{toc::end_label(true_label)};
+
+            std::ignore = condition->compile(tc, indent,
+                                             {
+                                                 .if_false{false_label},
+                                                 .if_true{true_label},
+                                             },
+                                             {});
+
+            machine& x{tc.machine()};
+
+            x.label(indent, true_label);
+            x.label(indent, false_label);
+        });
+    }
+
     // compiles all but the trailing added constant of an arithmetic
     // expression and returns the constant, e.g. 'ix + 1' compiles 'ix' and
     // returns 1, empty when nothing was compiled
@@ -1049,8 +1092,7 @@ class expr_any final : public statement {
         }
 
         const size_t size_bytes{
-            multiply_storage_size(src_loc_tk, element_type.size_bytes(),
-                                  remaining_count),
+            product_storage_size(element_type.size_bytes(), remaining_count),
         };
 
         plan.push_back({

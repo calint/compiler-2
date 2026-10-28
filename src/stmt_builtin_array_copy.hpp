@@ -113,9 +113,8 @@ class stmt_builtin_array_copy final : public statement {
             dst.compile_lea(tc, indent, dst.tok(), held, range),
         };
 
-        x.copy_block(
-            tok(), indent, dst_operand, src_operand,
-            multiply_storage_size(tok(), element_type.size_bytes(), count),
-            element_type.alignment());
+        x.copy_block(tok(), indent, dst_operand, src_operand,
+                     product_storage_size(element_type.size_bytes(), count),
+                     element_type.alignment());
     }
 };

@@ -174,6 +174,8 @@ struct value_option {
 // the option functions throw 'option_error'
 auto check_target_reads(const options& opts) -> void;
 
+auto check_default_stack_fits(const options& opts) -> void;
+
 auto parse_option(const char* const argument, options& opts) -> void;
 
 // the appliers of the options with a value store the value in 'opts'
@@ -280,12 +282,28 @@ namespace {
 
         // note: after the loop because '--target' may follow the options
         check_target_reads(opts);
+        check_default_stack_fits(opts);
     } catch (const option_error& e) {
         print_option_error(e.what());
         return 1;
     }
 
     return std::nullopt;
+}
+
+// the backend checks the stack against the memory without knowing which was
+// given, a default stack that does not fit is the memory's error
+auto check_default_stack_fits(const options& opts) -> void {
+    if (not opts.memory_size_bytes or opts.stack_size_bytes or
+        *opts.memory_size_bytes >= default_stack_size_bytes) {
+
+        return;
+    }
+
+    throw option_error{
+        std::format("invalid --memory: {} B is smaller than the default stack "
+                    "of {} B, give a smaller --stack",
+                    *opts.memory_size_bytes, default_stack_size_bytes)};
 }
 
 // an option of the target rows, e.g. '--stack' and 'reads_stack'
@@ -595,17 +613,6 @@ auto print_help(const char* const program_name) -> void {
                 ? std::string{*opts.binary_file_name}
                 : default_binary_file_name(src_file_name, *opts.target),
         };
-
-        // the backend checks the stack against the memory without knowing
-        // which was given, a default stack that does not fit is the memory's
-        if (opts.memory_size_bytes and not opts.stack_size_bytes and
-            *opts.memory_size_bytes < default_stack_size_bytes) {
-
-            throw option_error{
-                std::format("invalid --memory: {} B is smaller than the "
-                            "default stack of {} B, give a smaller --stack",
-                            *opts.memory_size_bytes, default_stack_size_bytes)};
-        }
 
         const machine::target_options target_opts{
             .jumps{

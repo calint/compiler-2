@@ -1093,6 +1093,9 @@ class inline_call final {
         };
 
         if (folded) {
+            // note: as a noinline call, which compiles every argument
+            arg.check_folded_condition(tc, indent);
+
             return param_binding::make_constant(param.name(), param.get_type(),
                                                 folded->value);
         }

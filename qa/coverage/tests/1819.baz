@@ -1,0 +1,9 @@
+# a 'dat' past the memory the target addresses is an error, also when a later
+# 'dat' would pass the storage limit
+
+dat a = i8[9223372036854775790]
+dat b = i64[1]
+
+func main() {
+    exit(1)
+}

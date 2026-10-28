@@ -373,23 +373,19 @@ class stmt_def_const final : public statement {
         assert(folded_value::value_of(initializer_.fold_checked(
                    tc, tc.use_at(get_type()))) == constant_.value);
 
-        // the fold stops at the element that decides an 'and' or 'or' list,
-        // the compile of a 'var' checks the elements after it, so does this
-        tc.check_skipped([&] -> void {
-            const operand reg{
-                x.alloc_scratch_register(tok(), indent, get_type()),
-            };
+        // note: the compile of a 'var' checks the elements of a condition
+        //       after the one that decides it, so does this
 
-            initializer_.compile(tc, indent, destination::of_register(reg));
-            x.free_scratch_register(tok(), indent, reg);
-        });
+        initializer_.check_folded_condition(tc, indent);
 
         tc.add_const(name_tk_, indent, name_tk_.text(), constant_);
     }
 
-    // a constant reads and writes nothing at run time
-    auto trace_assignment([[maybe_unused]] assignment_flow& flow) const
-        -> void override {}
+    // a constant reads and writes nothing at run time, the elements of a
+    // condition after the one that decides it hold the rule like a 'var'
+    auto trace_assignment(assignment_flow& flow) const -> void override {
+        initializer_.assert_result_not_read(flow);
+    }
 };
 
 // e.g. 'var x = i32(0)', the initializer gives the type; a 'let' that does not

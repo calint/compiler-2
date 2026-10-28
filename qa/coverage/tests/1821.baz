@@ -1,0 +1,11 @@
+# a constant 'let' reads no unset result in the elements after the one that
+# decides it, as a 'var'
+
+func f() res {
+    let b = false and res == 1
+    res = 2
+}
+
+func main() {
+    exit(f())
+}

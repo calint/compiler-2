@@ -1,0 +1,4 @@
+
+1823.baz:3:13: 'true' is a constant, not a function
+    var x = true(1)
+            ^~~~

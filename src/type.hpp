@@ -70,6 +70,16 @@ inline constexpr size_t max_size_bytes{
     return size_bytes * count;
 }
 
+// the product of a size and a count that an accepted size bounds, e.g. some
+// elements of an array whose size was accepted
+[[nodiscard]] inline auto product_storage_size(const size_t size_bytes,
+                                               const size_t count) -> size_t {
+
+    assert(count == 0 or size_bytes <= storage_limits::max_size_bytes / count);
+
+    return size_bytes * count;
+}
+
 // the sum of sizes that 'add_storage_size' or 'multiply_storage_size' already
 // accepted, in a place with no source location
 [[nodiscard]] inline auto sum_storage_size(const size_t base,

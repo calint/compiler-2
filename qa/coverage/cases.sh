@@ -2379,9 +2379,9 @@ SRC=0738 && COMPERR
 # instance fields whose sizes together exceed the signed 64-bit range
 SRC=0739 && COMPERR
 
-# data arrays whose sizes together exceed the signed 64-bit range, rv32i
-# rejects the first one as beyond its address range
-if [[ $MACHINE == x86_64 ]]; then SRC=0740 && COMPERR; fi
+# data arrays whose sizes together exceed the signed 64-bit range, the first
+# is past the memory the target addresses
+SRC=0740 && COMPERR
 
 # x86: a constant count at the signed 64-bit maximum is past the end of the
 # array
@@ -5790,3 +5790,27 @@ SRC=1814 && COMPERR
 
 # an instance literal at the start of a statement is not a value
 SRC=1815 && COMPERR
+
+# a constant 'let' in nested loops that hold every scratch register
+SRC=1816 && EXP=3 && RUN
+
+# a constant 'bool' argument of an inlined call checks its skipped elements
+SRC=1817 && COMPERR
+
+# a constant 'bool' argument of a noinline call checks its skipped elements
+SRC=1818 && COMPERR
+
+# a 'dat' past the memory the target addresses, then one past the storage limit
+SRC=1819 && COMPERR
+
+# a 'dat' past the memory the target addresses before it is placed
+SRC=1820 && COMPERR
+
+# a constant 'let' reads no unset result in its skipped elements
+SRC=1821 && COMPERR
+
+# a condition false at the parse reads no unset result in its skipped elements
+SRC=1822 && COMPERR
+
+# 'true' followed by '(' is not a call
+SRC=1823 && COMPERR

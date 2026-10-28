@@ -380,7 +380,7 @@ CLI_ADDRESS_RANGE() {
         set -e
         [[ $exit_code -eq 1 ]]
         [[ ! -s gen.s && ! -e gen-rv32i.bin ]]
-        grep -Fq "code, data and variables of" err
+        grep -Fq "code, data and variables use" err
         # data of the whole range, its address from the variables base is
         # past the range and wraps
         printf 'dat d = i8[0x100000000]\nfunc main() {\n    d[1] = 1\n}\n' \
@@ -390,7 +390,7 @@ CLI_ADDRESS_RANGE() {
         exit_code=$?
         set -e
         [[ $exit_code -eq 1 ]]
-        grep -Fq "code, data and variables of" err
+        grep -Fq "code, data and variables use" err
     done
     rm -f gen-range.baz gen-rv32i.bin
     echo ok
@@ -430,6 +430,9 @@ CLI_FPGA_MEMORY() {
     set -e
     [[ $exit_code -eq 1 ]]
     grep -Fq "error: invalid --memory: 4096 B is smaller than the default stack of 65536 B, give a smaller --stack" err
+    # it is an option error, reported before the source is read
+    "$BIN" --target=rv32i-fpga --memory=0x1000 missing.baz >gen.s 2>err || true
+    grep -Fq "error: invalid --memory: 4096 B is smaller than the default stack" err
     # a stack larger than the memory is rejected before a stack check of a
     # 'noinline' call is generated with it
     set +e
