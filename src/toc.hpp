@@ -1566,10 +1566,11 @@ class storage_layout final {
         : machine_{backend}, scopes_{scopes}, data_{data},
           vars_capacity_bytes_{vars_capacity_bytes} {
 
-        // the option is wrong, not the source
-        if (vars_capacity_bytes > backend.max_storage_bytes()) {
+        // the option is wrong, not the source; the variables stay below the
+        // end of the address space like the data and variables in all
+        if (vars_capacity_bytes >= backend.max_storage_bytes()) {
             throw option_error{std::format(
-                "invalid --vars: {} B exceeds the {} B that the target "
+                "invalid --vars: {} B reaches the {} B that the target "
                 "addresses",
                 vars_capacity_bytes, backend.max_storage_bytes())};
         }
@@ -2552,7 +2553,7 @@ class variable_comments final {
 //                  'resolve_declared', 'get_func_or_throw',
 //                  'get_main_or_throw', 'get_type_or_throw', 'is_func',
 //                  'use_of', 'use_at', 'overflow_options', 'checks_overflow',
-//                  'source_of', 'storage_of', 'call_path_at' and
+//                  'source_of', 'storage_of', 'call_path_at', 'where' and
 //                  'create_unique_label' (a loop scope of the parse has a
 //                  label)
 //   tables         'builtins', 'checks', 'data',
@@ -3604,6 +3605,11 @@ class toc final {
         };
     }
 
+    // where 'src_loc_tk' is, for a message, e.g. '4:9'
+    [[nodiscard]] auto where(const token& src_loc_tk) const -> std::string {
+        return locations_.for_message(src_loc_tk);
+    }
+
     //
     // statics
     //
@@ -3810,6 +3816,11 @@ class toc final {
                                            const std::string_view param_name,
                                            const token& arg_tk) -> const type& {
 
+    if (arg_tk.is_string()) {
+        throw_generic_arg_mismatch(arg_tk, generic_name, param_name, "type",
+                                   "a string");
+    }
+
     if (tc.constant_value_of(arg_tk)) {
         throw_generic_arg_mismatch(
             arg_tk, generic_name, param_name, "type",
@@ -3824,6 +3835,11 @@ class toc final {
                                             const std::string_view generic_name,
                                             const std::string_view param_name,
                                             const token& arg_tk) -> int64_t {
+
+    if (arg_tk.is_string()) {
+        throw_generic_arg_mismatch(arg_tk, generic_name, param_name, "constant",
+                                   "a string");
+    }
 
     const std::optional<folded_value> constant{tc.constant_value_of(arg_tk)};
 
@@ -3859,12 +3875,6 @@ resolve_generic_args(const toc& tc, const std::string_view generic_name,
 
     for (const auto [param, arg_tk] : std::views::zip(params, arg_tks)) {
         const std::string_view name{param.name_tk.text()};
-
-        if (arg_tk.is_string()) {
-            throw_generic_arg_mismatch(arg_tk, generic_name, name,
-                                       param.is_type ? "type" : "constant",
-                                       "a string");
-        }
 
         if (param.is_type) {
             args.push_back({

@@ -860,16 +860,10 @@ class machine_rv32i : public machine {
 
         const operation_scope scope{*this, frame_address, frame_size_bytes};
 
-        // 'overflow' is where a frame outside of 'vars' and one too large for
-        // it end up, 'fits' is after the jump to the handler
-        constexpr local_label overflow{
+        // 'fits' is after the jump to the handler
+        constexpr local_label fits{
             .name{"1"},
             .reference{"1f"},
-        };
-
-        constexpr local_label fits{
-            .name{"2"},
-            .reference{"2f"},
         };
 
         comment(src_loc_tk, indent, "frame capacity check begin");
@@ -888,20 +882,11 @@ class machine_rv32i : public machine {
 
         address_of(src_loc_tk, indent, start, frame_address);
 
-        // note: the start cannot wrap around the address space: from 's0' it
-        //       follows the variables, which fit in 'vars' when compiled, and
-        //       from 's1' it follows the caller's frame, which passed this
-        //       check
-
-        assembler_.la(indent, remaining.register_name(), variables_label);
-
-        assembler_.bltu(indent, start.register_name(),
-                        remaining.register_name(), overflow.reference);
+        // note: the start is within 'vars': from 's0' it follows the variables,
+        //       which fit in 'vars' when compiled, and from 's1' it follows the
+        //       caller's frame, which passed this check
 
         assembler_.la(indent, remaining.register_name(), variables_end_label);
-
-        assembler_.bltu(indent, remaining.register_name(),
-                        start.register_name(), overflow.reference);
 
         assembler_.sub(indent, remaining.register_name(),
                        remaining.register_name(), start.register_name());
@@ -918,8 +903,6 @@ class machine_rv32i : public machine {
 
         assembler_.bgeu(indent, remaining.register_name(),
                         start.register_name(), fits.reference);
-
-        assembler_.label(indent, overflow.name);
 
         branch_to_failure(src_loc_tk, indent, frame_overflow_failure);
 
@@ -4496,12 +4479,15 @@ class machine_rv32i : public machine {
 
     // the code and data of the image cannot be addressed beyond 32 bits
     static auto check_address_range(const size_t memory_end_address) -> void {
-        if (memory_end_address <= assembler_rv32i::address_space_bytes) {
+        // note: an end of the address space would wrap to 0, e.g. 'vars.end'
+        //       that the frame check compares with
+
+        if (memory_end_address < assembler_rv32i::address_space_bytes) {
             return;
         }
 
         throw unlocated_error{std::format(
-            "code, data and variables use {} B, which exceeds the {} B that "
+            "code, data and variables use {} B, which reaches the {} B that "
             "the target addresses",
             memory_end_address, assembler_rv32i::address_space_bytes)};
     }

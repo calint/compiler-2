@@ -1,0 +1,7 @@
+# a keyword as a field name is reported where it is read, before an error
+# in a later field
+
+type p {true, y qq}
+
+func main() {
+}

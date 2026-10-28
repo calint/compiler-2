@@ -1,4 +1,4 @@
 
-1433.baz:9:16: expected a type name, got a string
+1433.baz:9:16: generic parameter 'T' of 'id' needs a type, got a string
     var y = id<"i8">(x)
                ^~~~

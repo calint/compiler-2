@@ -1,0 +1,6 @@
+# type arguments after a type that is not generic
+
+type h {a i8<2>}
+
+func main() {
+}

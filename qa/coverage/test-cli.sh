@@ -532,8 +532,12 @@ CLI_VARS_RANGE() {
     local exit_code=$?
     set -e
     [[ $exit_code -eq 1 ]]
-    grep -Fq "invalid --vars: 4294967312 B exceeds the 4294967296 B that the target addresses" err
+    grep -Fq "invalid --vars: 4294967312 B reaches the 4294967296 B that the target addresses" err
     grep -Fq "use --help for usage information" err
+    # the variables stay below the end, so the whole address space is too
+    # large too
+    "$BIN" --vars=0x100000000 --target=rv32i 0426.baz >gen.s 2>err || true
+    grep -Fq "invalid --vars: 4294967296 B reaches the 4294967296 B that the target addresses" err
     echo ok
 }
 
@@ -729,7 +733,8 @@ CLI --vars=16junk 1 --help
 CLI --vars=18446744073709551616 1 --help
 # more than the target addresses
 CLI --vars=0x8000000000000000 1 0426.baz
-CLI --vars=0x800000000000 0 0426.baz
+CLI --vars=0x800000000000 1 0426.baz
+CLI --vars=0x7ffffffffff0 0 0426.baz
 CLI --stack=65536 0 --help
 CLI --stack=0x10000 0 --help
 CLI --stack= 1 --help

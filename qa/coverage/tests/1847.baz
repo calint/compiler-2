@@ -1,0 +1,6 @@
+# a token that cannot start an array where an array is expected
+
+func main() {
+    var a = i8[2]
+    a = )
+}

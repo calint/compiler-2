@@ -1,0 +1,4 @@
+
+1845.baz:3:11: 'i8' is a type, not a generic type
+type h {a i8<2>}
+          ^~

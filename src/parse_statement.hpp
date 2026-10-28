@@ -124,11 +124,11 @@ inline auto parse_builtin(toc& tc, tokenizer& tz, const token& tk,
     }
 
     // e.g. 'bool(5)' or 'void(5)', only the integer types convert
-    if (tm == term_kind::conversion) {
-        std::ignore = conversion_type(tc, tk);
-    }
+    const type* const converted{
+        tm == term_kind::conversion ? &conversion_type(tc, tk) : nullptr,
+    };
 
-    if (fn == nullptr and tm != term_kind::conversion) {
+    if (fn == nullptr and converted == nullptr) {
         return nullptr;
     }
 
@@ -178,9 +178,10 @@ inline auto parse_builtin(toc& tc, tokenizer& tz, const token& tk,
     // note: every built-in of 'reserved_names::builtin_functions' has a
     //       branch above, what is left is an integer conversion
 
-    assert(fn == nullptr);
+    assert(fn == nullptr and converted != nullptr);
 
-    return std::make_unique<stmt_builtin_convert>(tc, std::move(uops), tk, tz);
+    return std::make_unique<stmt_builtin_convert>(tc, std::move(uops), tk,
+                                                  *converted, tz);
 }
 
 // a statement that starts with a keyword, null otherwise

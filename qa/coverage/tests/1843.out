@@ -1,0 +1,4 @@
+
+1843.baz:4:9: 'true' is a keyword
+type p {true, y qq}
+        ^~~~

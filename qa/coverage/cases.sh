@@ -5871,3 +5871,18 @@ SRC=1841 && COMPERR
 
 # an array literal of the default type is not an argument of an array parameter
 SRC=1842 && COMPERR
+
+# a keyword as a field name is reported before an error in a later field
+SRC=1843 && COMPERR
+
+# a field declared twice is reported before an error in a later field
+SRC=1844 && COMPERR
+
+# type arguments after a type that is not generic
+SRC=1845 && COMPERR
+
+# a string type argument of a generic function names its parameter
+SRC=1846 && COMPERR
+
+# a token that cannot start an array where an array is expected
+SRC=1847 && COMPERR

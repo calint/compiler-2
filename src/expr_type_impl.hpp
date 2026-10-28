@@ -100,6 +100,11 @@ inline expr_type::expr_type(toc& tc, tokenizer& tz, const type& tp,
                             in_quotes(tp.name()))};
     }
 
+    // e.g. the ')' of 'a = )', 'expr_any' reads the '{' of an array
+    if (is_array_destination_) {
+        throw compile_error{tz, "expected an array"};
+    }
+
     parse_fields(tc, tz, tp);
 }
 
@@ -115,7 +120,7 @@ inline auto expr_type::parse_fields(toc& tc, tokenizer& tz, const type& tp)
 
     const std::span<const type_field> flds{tp.fields()};
 
-    while (not at_closing_brace(tz)) {
+    while (not read_close_brace(tz)) {
         // each field adds one expression, e.g. the 'x' and the 'y' of '{x, y}'
         const size_t index{list.exprs.size()};
 
@@ -131,7 +136,7 @@ inline auto expr_type::parse_fields(toc& tc, tokenizer& tz, const type& tp)
             }
 
             // a trailing ',' lets each field end its line the same way
-            if (at_closing_brace(tz)) {
+            if (read_close_brace(tz)) {
                 list.delims_tk.emplace_back(*delimiter_tk);
                 break;
             }
@@ -148,7 +153,7 @@ inline auto expr_type::parse_fields(toc& tc, tokenizer& tz, const type& tp)
             read_field_delimiter(tz, tp, tf);
 
             // a trailing ',' lets each field end its line the same way
-            if (at_closing_brace(tz)) {
+            if (read_close_brace(tz)) {
                 break;
             }
         }

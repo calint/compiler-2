@@ -1,0 +1,7 @@
+# a field declared twice is reported where it is read, before an error in a
+# later field
+
+type p {x, x, y qq}
+
+func main() {
+}

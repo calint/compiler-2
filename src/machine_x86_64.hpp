@@ -328,24 +328,14 @@ class machine_x86_64 final : public machine {
 
         lea(src_loc_tk, indent, start, frame_address);
 
-        assembler_.instruction(
-            indent, op::lea, to_argument(remaining),
-            assembler_x86_64::memory::of_symbol(variables_label));
-
-        cmp(src_loc_tk, indent, start, remaining);
-
-        branch_to_failure(src_loc_tk, indent, condition::b,
-                          frame_overflow_failure);
+        // note: the start is within 'vars': from 'rbp' it follows the
+        //       variables, which fit in 'vars' when compiled, and from 'rbx' it
+        //       follows the caller's frame, which passed this check
 
         // an absolute address reaches beyond the 2 GiB of 'rip' relative ones
         assembler_.instruction(indent, op::mov, to_argument(remaining),
                                assembler_x86_64::immediate::of_qword_expression(
                                    variables_end_label));
-
-        cmp(src_loc_tk, indent, start, remaining);
-
-        branch_to_failure(src_loc_tk, indent, condition::a,
-                          frame_overflow_failure);
 
         emit_op(src_loc_tk, indent, op::sub, remaining, start);
 

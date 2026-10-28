@@ -1,0 +1,4 @@
+
+1846.baz:8:7: generic parameter 'T' of 'f' needs a type, got a string
+    f<"a">(1)
+      ^~~

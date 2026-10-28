@@ -1,0 +1,4 @@
+
+1847.baz:5:9: expected an array
+    a = )
+        ^

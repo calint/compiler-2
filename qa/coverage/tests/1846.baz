@@ -1,0 +1,9 @@
+# a string type argument of a generic function names its parameter, as for a
+# generic type
+
+func f<T type>(x T) {
+}
+
+func main() {
+    f<"a">(1)
+}

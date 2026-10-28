@@ -1,0 +1,4 @@
+
+1844.baz:4:12: field 'x' already defined at 4:9
+type p {x, x, y qq}
+           ^

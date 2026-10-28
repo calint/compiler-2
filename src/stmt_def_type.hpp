@@ -1,5 +1,6 @@
 #pragma once
 
+#include <algorithm>
 #include <cassert>
 #include <cstddef>
 #include <format>
@@ -50,17 +51,9 @@ class type_fields final {
     auto add_to(type& tp, const token& name_tk) const -> void {
         tp.set_name(name_tk.text());
 
+        // note: 'parse' checked the names
+
         for (const stmt_def_type_field& fld : fields_) {
-            toc::assert_valid_name(fld.tok());
-
-            if (tp.has_field(fld.name())) {
-                throw compile_error{
-                    fld.tok(),
-                    std::format("field {} is declared twice in type {}",
-                                in_quotes(fld.name()),
-                                in_quotes(name_tk.text()))};
-            }
-
             tp.add_field(fld.tok(), fld.name(), fld.get_type(),
                          fld.array_count());
         }
@@ -76,7 +69,22 @@ class type_fields final {
         while (true) {
             // a field starts with its name
             // e.g. 'items point[4]'
-            fields_.emplace_back(tc, tz.next_token(), tz);
+            const token field_tk{tz.next_token()};
+
+            // checked where it is read, before the errors of later fields
+            const auto existing{
+                std::ranges::find(fields_, field_tk.text(),
+                                  &stmt_def_type_field::name),
+            };
+
+            if (existing != fields_.end()) {
+                throw compile_error{
+                    field_tk, std::format("field {} already defined at {}",
+                                          in_quotes(field_tk.text()),
+                                          tc.where(existing->tok()))};
+            }
+
+            fields_.emplace_back(tc, field_tk, tz);
 
             if (is_next_close_brace(tz)) {
                 break;

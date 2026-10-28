@@ -321,20 +321,6 @@ class expr_type final : public statement {
 
     auto assert_copy_source_shape(const toc& tc) const -> void;
 
-    // the '}' that ends the fields, when it is the next character, e.g. the '}'
-    // of '{x, y}'
-    [[nodiscard]] auto at_closing_brace(tokenizer& tz) -> bool {
-        const std::optional<token> close_brace_tk{tz.is_next_char_token('}')};
-
-        if (not close_brace_tk) {
-            return false;
-        }
-
-        std::get<field_list>(value_).close_brace_tk = *close_brace_tk;
-
-        return true;
-    }
-
     // the call whose result is the value, null for a literal or a copy
     [[nodiscard]] auto call_source() const -> const stmt_call* {
         const std::unique_ptr<stmt_call>* const call{
@@ -382,6 +368,20 @@ class expr_type final : public statement {
             },
             .covered{std::move(covered)},
         });
+    }
+
+    // the '}' that ends the fields, when it is the next character, e.g. the '}'
+    // of '{x, y}'
+    [[nodiscard]] auto read_close_brace(tokenizer& tz) -> bool {
+        const std::optional<token> close_brace_tk{tz.is_next_char_token('}')};
+
+        if (not close_brace_tk) {
+            return false;
+        }
+
+        std::get<field_list>(value_).close_brace_tk = *close_brace_tk;
+
+        return true;
     }
 
     // the ',' before the value of the field 'next', e.g. the ',' of '{x, y}'

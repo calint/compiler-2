@@ -35,6 +35,9 @@ class stmt_def_type_field final : public statement {
             throw compile_error{tk, "expected a field name"};
         }
 
+        // note: checked where it is read, before the errors of later fields
+        toc::assert_valid_name(tk);
+
         // e.g. 'tags[4]' and the 'x' of '{x, y}' have the default type
         if (tz.peek_char_after_whitespace() != '[') {
             const token type_tk{tz.next_token()};
@@ -46,10 +49,16 @@ class stmt_def_type_field final : public statement {
             }
         }
 
-        assert_no_type_arguments(tz, type_tk_);
-
+        // note: a generic or unknown name is rejected here, before its '<'
         set_type(type_tk_ ? tc.get_type_or_throw(*type_tk_)
                           : tc.builtins().default_type());
+
+        // e.g. the '<' of 'i8<2>', only a generic type takes arguments
+        if (type_tk_ and tz.peek_char_after_whitespace() == '<') {
+            throw compile_error{*type_tk_,
+                                std::format("{} is a type, not a generic type",
+                                            in_quotes(type_tk_->text()))};
+        }
 
         const std::optional<token> open_bracket_tk{tz.is_next_char_token('[')};
 
