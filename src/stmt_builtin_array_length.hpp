@@ -11,6 +11,7 @@
 #include "ident_info.hpp"
 #include "operand.hpp"
 #include "statement.hpp"
+#include "stmt_call.hpp"
 #include "stmt_identifier.hpp"
 #include "token.hpp"
 #include "ub_reads.hpp"
@@ -19,22 +20,22 @@
 // 'array_length(a)' is the length of the array 'a' in the default type, a
 // constant whenever the length is known, see 'fold'
 class stmt_builtin_array_length final : public statement {
-    token open_paren_tk_;
-    stmt_identifier stmt_ident_;
-    token close_paren_tk_;
+    // the one argument is an array
+    static constexpr std::array<size_t, 1> array_indexes_{0};
+
+    builtin_arguments args_;
 
   public:
     stmt_builtin_array_length(toc& tc, unary_ops uops, const token src_loc_tk,
                               tokenizer& tz)
         : statement{src_loc_tk, std::move(uops)},
-          open_paren_tk_{
-              tz.expect_char_token_after(src_loc_tk, '(',
-                                         "expected '(' after function name"),
-          },
-          stmt_ident_{parse_argument(tc, tz, src_loc_tk)},
-          close_paren_tk_{
-              tz.expect_char_token(')', "expected ')' after the argument"),
-          } {
+          args_{tc, tz, src_loc_tk, array_indexes_, 1, 1} {
+
+        array().assert_array();
+
+        // the length is folded, so an index would be neither computed nor
+        // checked at run time
+        array().assert_constant_indexes(tc, tok().text());
 
         set_type(tc.builtins().default_type());
     }
@@ -45,9 +46,7 @@ class stmt_builtin_array_length final : public statement {
 
     auto source_to(std::ostream& os) const -> void override {
         statement::source_to(os);
-        open_paren_tk_.source_to(os);
-        stmt_ident_.source_to(os);
-        close_paren_tk_.source_to(os);
+        args_.source_to(os);
     }
 
     auto compile(toc& tc, const size_t indent, const destination& dst) const
@@ -63,7 +62,7 @@ class stmt_builtin_array_length final : public statement {
 
         assert(dst.type_ref().is_same(tc.builtins().default_type()));
 
-        const ident_info src_info{make_ident_info(tc, stmt_ident_)};
+        const ident_info src_info{make_ident_info(tc, array())};
 
         // note: the parse rejected an argument that is not an array
         assert(src_info.is_var() and src_info.is_array());
@@ -89,7 +88,7 @@ class stmt_builtin_array_length final : public statement {
             return std::nullopt;
         }
 
-        const ident_info src_info{make_ident_info(tc, stmt_ident_)};
+        const ident_info src_info{make_ident_info(tc, array())};
 
         // note: the parse rejected an argument that is not an array
         assert(src_info.is_var() and src_info.is_array());
@@ -115,30 +114,13 @@ class stmt_builtin_array_length final : public statement {
     // read, only its indexes are
     auto visit_operands(const operand_visitor visitor) const -> void override {
         visitor({
-            .node{&stmt_ident_},
-            .written_place{&stmt_ident_},
+            .node{&args_.at(0)},
+            .written_place{&array()},
         });
     }
 
   private:
-    //
-    // statics
-    //
-
-    [[nodiscard]] static auto parse_argument(toc& tc, tokenizer& tz,
-                                             const token& name_tk)
-        -> stmt_identifier {
-
-        tz.assert_no_missing_argument(name_tk.text(), 1);
-
-        stmt_identifier array{stmt_identifier::parse_whole_array(tc, tz)};
-
-        // the length is folded, so an index would be neither computed nor
-        // checked at run time
-        array.assert_constant_indexes(tc, name_tk.text());
-
-        tz.assert_no_surplus_argument(name_tk.text(), 1);
-
-        return array;
+    [[nodiscard]] auto array() const -> const stmt_identifier& {
+        return *args_.at(0).bare_path();
     }
 };

@@ -1,0 +1,4 @@
+
+1808.baz:4:11: 'mut' is a keyword
+func f(a, mut b i8) {
+          ^~~

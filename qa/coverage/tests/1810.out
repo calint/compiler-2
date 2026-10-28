@@ -1,0 +1,4 @@
+
+1810.baz:4:9: '"abc"' is not an array
+    foo "abc" {}
+        ^~~~~

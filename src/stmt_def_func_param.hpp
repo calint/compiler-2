@@ -59,6 +59,10 @@ class stmt_def_func_param final : public statement {
                                     "expected a parameter name"};
             }
 
+            // where it is read, also in a generic definition that no instance
+            // parses, e.g. the 'mut' of 'func f(a, mut b i8)'
+            toc::assert_valid_name(name_tk);
+
             const std::optional<token> mut_tk{read_mut(tz)};
 
             const std::optional<token> type_tk{

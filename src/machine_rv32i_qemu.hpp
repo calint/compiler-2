@@ -33,12 +33,14 @@ class machine_rv32i_qemu final : public machine_rv32i_bare_metal {
     machine_rv32i_qemu(const builtin_type_set& builtins,
                        const source_files& files, const target_options& options)
         : machine_rv32i_bare_metal{builtins, files, options, ram_size_bytes_,
-                                   qemu_target()} {}
+                                   false} {}
 
   protected:
     //
     // overridden methods
     //
+
+    // note: the machine has no sd card, so the sector functions are rejected
 
     // note: 'has_sd_card' is false, so the sector functions are rejected
     auto emit_sector_routines([[maybe_unused]] const bool read_used,
@@ -115,16 +117,5 @@ class machine_rv32i_qemu final : public machine_rv32i_bare_metal {
         assembler_rv32i& a{assembler()};
 
         a.lui(1, "a3", uart_upper_);
-    }
-
-    //
-    // statics
-    //
-
-    // the machine has no sd card, so the sector functions are rejected
-    [[nodiscard]] static constexpr auto qemu_target() -> target_description {
-        target_description target{bare_metal_target()};
-        target.has_sd_card = false;
-        return target;
     }
 };

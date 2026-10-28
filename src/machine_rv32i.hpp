@@ -89,9 +89,9 @@ class machine_rv32i : public machine {
 
     static constexpr size_t max_padding_gaps_zeroed_one_by_one_{8};
 
-    // what a sector routine may change besides 'a0', free at the call, see
-    // 'call_io_routine'
-    static constexpr std::array<std::string_view, 4> sector_clobbered_{
+    // what an i/o or sector routine may change besides 'a0', free at the call,
+    // see 'call_io_routine'
+    static constexpr std::array<std::string_view, 4> io_routine_clobbered_{
         "a3",
         "a4",
         "a5",
@@ -669,7 +669,7 @@ class machine_rv32i : public machine {
     // the routines that the calls of 'sector_read' and 'sector_write' jump
     // to, each only when it is used; a routine takes the sector in 'a0', the
     // address in 'a1' and the size in 'a2', returns through 'a7' and changes
-    // only 'a0' and 'sector_clobbered_'
+    // only 'a0' and 'io_routine_clobbered_'
     virtual auto emit_sector_routines(const bool read_used,
                                       const bool write_used) -> void = 0;
 
@@ -692,15 +692,14 @@ class machine_rv32i : public machine {
     [[nodiscard]] auto assembler() -> assembler_rv32i& { return assembler_; }
 
     // i/o routines replacing system calls return through 'a7' and change only
-    // 'clobbered' besides 'a0', which are free at the call, so like a system
-    // call it saves nothing
-    auto call_io_routine(const size_t indent, const std::string_view label,
-                         const std::span<const std::string_view> clobbered)
+    // 'io_routine_clobbered_' besides 'a0', which are free at the call, so
+    // like a system call it saves nothing
+    auto call_io_routine(const size_t indent, const std::string_view label)
         -> void {
 
         // the clobbered registers follow 'a1' and 'a2', which the call needs,
         // in the allocation order, so they are free whenever the call is made
-        assert(std::ranges::none_of(clobbered,
+        assert(std::ranges::none_of(io_routine_clobbered_,
                                     [&](const std::string_view name) -> bool {
                                         return is_register_allocated(name);
                                     }));
@@ -1361,8 +1360,11 @@ class machine_rv32i : public machine {
             assembler_.sub(indent, loaded.value.register_name(), "zero",
                            loaded.value.register_name());
 
+            // note: a checked negation is not of the minimum, the negated
+            //       value of an extended register is extended
+
             store_operation_result(indent, dst, loaded.address, loaded.value,
-                                   true);
+                                   not check.enabled);
 
             return;
         }
@@ -1579,9 +1581,13 @@ class machine_rv32i : public machine {
                                     loaded.value, constant);
         }
 
+        // note: a checked narrow result passed 'check_fits_width', so the
+        //       register already holds it extended
+
         store_operation_result(
             indent, dst, loaded.address, loaded.value,
-            needs_normalize(instruction, dst, src, constant));
+            not check.enabled and
+                needs_normalize(instruction, dst, src, constant));
     }
 
     // passing checks branch to 'bounds_pass_' and failing ones to
@@ -1731,7 +1737,7 @@ class machine_rv32i : public machine {
         };
 
         mark_used(label);
-        call_io_routine(indent, label, sector_clobbered_);
+        call_io_routine(indent, label);
     }
 
     // a distance from the source to the destination that is not zero and below
@@ -1819,10 +1825,12 @@ class machine_rv32i : public machine {
     }
 
     // the register holds a sign extended result of a narrow operation, which
-    // fits when sign extending its low bits gives it back
+    // fits when sign extending its low bits gives it back; 'extended' is a
+    // register the check may change
     auto check_fits_width(const token& src_loc_tk, const size_t indent,
-                          const operand& value, const size_t width_bytes)
-        -> void {
+                          const std::string_view value,
+                          const size_t width_bytes,
+                          const std::string_view extended) -> void {
 
         constexpr local_label fits{
             .name{"2"},
@@ -1833,20 +1841,9 @@ class machine_rv32i : public machine {
             register_bits_ - (width_bytes * bits_per_byte),
         };
 
-        const operand extended{
-            alloc_scratch_register(src_loc_tk, indent, default_type()),
-        };
-
-        assembler_.slli(indent, extended.register_name(), value.register_name(),
-                        shift);
-
-        assembler_.srai(indent, extended.register_name(),
-                        extended.register_name(), shift);
-
-        assembler_.beq(indent, extended.register_name(), value.register_name(),
-                       fits.reference);
-
-        free_scratch_register(src_loc_tk, indent, extended);
+        assembler_.slli(indent, extended, value, shift);
+        assembler_.srai(indent, extended, extended, shift);
+        assembler_.beq(indent, extended, value, fits.reference);
         fail_on_overflow(src_loc_tk, indent);
         assembler_.label(indent, fits.name);
     }
@@ -1876,12 +1873,6 @@ class machine_rv32i : public machine {
             .reference{"2f"},
         };
 
-        // the product of a narrow width also fits the width
-        constexpr local_label fits_width{
-            .name{"1"},
-            .reference{"1f"},
-        };
-
         comment(src_loc_tk, indent, "overflow check begin");
 
         assembler_.beqz(indent, "a1", fits.reference);
@@ -1890,14 +1881,9 @@ class machine_rv32i : public machine {
 
         const size_t width{dst.type_ref().size_bytes()};
 
+        // the product of a narrow width also fits the width, 'a1' is free
         if (width < word_size_bytes_) {
-            const size_t shift{register_bits_ - (width * bits_per_byte)};
-
-            assembler_.slli(indent, "a1", "a0", shift);
-            assembler_.srai(indent, "a1", "a1", shift);
-            assembler_.beq(indent, "a1", "a0", fits_width.reference);
-            fail_on_overflow(src_loc_tk, indent);
-            assembler_.label(indent, fits_width.name);
+            check_fits_width(src_loc_tk, indent, "a0", width, "a1");
         }
 
         comment(src_loc_tk, indent, "overflow check end");
@@ -2759,7 +2745,14 @@ class machine_rv32i : public machine {
             emit_binary_instruction(src_loc_tk, indent, instruction, src, value,
                                     constant);
 
-            check_fits_width(src_loc_tk, indent, value, width_bytes);
+            const operand extended{
+                alloc_scratch_register(src_loc_tk, indent, default_type()),
+            };
+
+            check_fits_width(src_loc_tk, indent, value.register_name(),
+                             width_bytes, extended.register_name());
+
+            free_scratch_register(src_loc_tk, indent, extended);
 
             comment(src_loc_tk, indent, "overflow check end");
 
@@ -3996,8 +3989,10 @@ class machine_rv32i : public machine {
             return top;
         }
 
-        // the sign and carry bits form the high word of the widened sum, which
-        // decides ends outside the 32-bit range
+        // the sign and carry bits form the high word of the widened sum; an
+        // end that is not its sign extension does not fit 32 bits and fails,
+        // as the overflow check of x86_64 does, a negative end that fits is
+        // left to the lower check
         const operand high{
             alloc_scratch_register(src_loc_tk, indent, default_type()),
         };
@@ -4016,8 +4011,12 @@ class machine_rv32i : public machine {
         assembler_.add(indent, high.register_name(), high.register_name(),
                        limit.register_name());
 
-        assembler_.bltz(indent, high.register_name(), bounds_pass_.reference);
-        assembler_.bgtz(indent, high.register_name(), bounds_fail_.reference);
+        assembler_.srai(indent, limit.register_name(), top, sign_shift_);
+
+        assembler_.bne(indent, high.register_name(), limit.register_name(),
+                       bounds_fail_.reference);
+
+        assembler_.bltz(indent, top, bounds_pass_.reference);
 
         return top;
     }

@@ -38,7 +38,7 @@ class machine_rv32i_fpga final : public machine_rv32i_bare_metal {
     machine_rv32i_fpga(const builtin_type_set& builtins,
                        const source_files& files, const target_options& options)
         : machine_rv32i_bare_metal{builtins, files, options,
-                                   options.memory_size_bytes} {
+                                   options.memory_size_bytes, true} {
 
         // note: the '--memory' option accepts only a multiple of what a
         //       'lui' loads, the end of memory

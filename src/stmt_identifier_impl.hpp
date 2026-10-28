@@ -46,14 +46,10 @@ inline stmt_identifier::stmt_identifier(toc& tc, token tk, tokenizer& tz,
                                         const path_reach reach)
     : statement{tk}, dotted_path_{tk.text()}, reach_{reach} {
 
-    // e.g. '"abc"' in 'array_copy("abc", b, 3)'
-    if (tk.is_string()) {
-        throw compile_error{tk, "expected an identifier"};
-    }
+    // note: the callers read a name, a string or no token was rejected
+    //       before, e.g. by 'parse_array_argument'
 
-    if (tk.is_none()) {
-        throw compile_error{tz, "expected an identifier"};
-    }
+    assert(tk.is_word());
 
     // the path read so far, resolved at its last name
     ident_info prefix{tc.resolve_declared(tk, tk.text())};

@@ -1,0 +1,4 @@
+
+1809.baz:4:16: 'if' is a keyword
+func f<T type>(if T) {
+               ^~

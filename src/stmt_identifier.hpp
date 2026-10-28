@@ -853,6 +853,17 @@ class stmt_identifier final : public statement {
         const token tk{tz.next_token()};
         const term_kind tm{classify_term(tc, tk, tz)};
 
+        // e.g. the ',' of 'array_copy(, b, 1)'
+        if (tm == term_kind::none) {
+            throw compile_error{tz, "expected an array"};
+        }
+
+        // e.g. the '"abc"' of 'array_length("abc")'
+        if (tm == term_kind::string) {
+            throw compile_error{
+                tk, std::format("{} is not an array", in_quotes(tk))};
+        }
+
         if (is_bare_type(tm) or tm == term_kind::array_literal or
             tm == term_kind::record_literal) {
 
@@ -887,8 +898,7 @@ class stmt_identifier final : public statement {
         return array;
     }
 
-    // the whole array of 'array_length' or 'foo', e.g. not the 'a[1]' of
-    // 'foo a[1]'
+    // the whole array of 'foo', e.g. not the 'a[1]' of 'foo a[1]'
     [[nodiscard]] static auto parse_whole_array(toc& tc, tokenizer& tz)
         -> stmt_identifier {
 

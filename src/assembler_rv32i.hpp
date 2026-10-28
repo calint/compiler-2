@@ -365,22 +365,6 @@ class assembler_rv32i final : public assembler {
                    });
     }
 
-    auto repeated_data(const size_t element_size_bytes, const size_t count,
-                       const int64_t value) -> void override {
-
-        add_text(std::format(".rept {}", count));
-
-        add_record(
-            std::format("{} {}", data_directive(element_size_bytes), value), 0,
-            data_values{
-                .element_size_bytes{element_size_bytes},
-                .values{value},
-                .repeat_count{count},
-            });
-
-        add_text(".endr");
-    }
-
     auto reserve(const size_t size_bytes) -> void override {
         zero_data(size_bytes);
     }

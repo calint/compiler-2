@@ -1,0 +1,5 @@
+# a string where a built-in takes an array is not an array
+
+func main() {
+    foo "abc" {}
+}

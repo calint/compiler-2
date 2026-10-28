@@ -229,16 +229,6 @@ class assembler_x86_64 final : public assembler {
         add_directive(std::format("{} equ {}", name, value));
     }
 
-    auto repeated_data(const size_t element_size_bytes, const size_t count,
-                       const int64_t value) -> void override {
-
-        for_each_chunk(count, [&](const size_t chunk) -> void {
-            add_directive(std::format("times {} {} {}", chunk,
-                                      data_directive(element_size_bytes),
-                                      value));
-        });
-    }
-
     auto reserve(const size_t size_bytes) -> void override {
         for_each_chunk(size_bytes, [&](const size_t chunk) -> void {
             add_directive(std::format("resb {}", chunk));
@@ -275,10 +265,9 @@ class assembler_x86_64 final : public assembler {
     }
 
     auto zero_data(const size_t size_bytes) -> void override {
-        // note: an element is one byte, so the count is the size
-        const size_t count{size_bytes};
-
-        repeated_data(size_byte, count, 0);
+        for_each_chunk(size_bytes, [&](const size_t chunk) -> void {
+            add_directive(std::format("times {} db 0", chunk));
+        });
     }
 
     //

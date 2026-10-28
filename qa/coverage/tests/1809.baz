@@ -1,0 +1,8 @@
+# a parameter name of a generic function is checked where it is read, also
+# when nothing calls it
+
+func f<T type>(if T) {
+}
+
+func main() {
+}

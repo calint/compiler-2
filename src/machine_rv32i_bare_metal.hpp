@@ -20,19 +20,6 @@ class machine_rv32i_bare_metal : public machine_rv32i {
     static constexpr int carriage_return_{'\r'};
     // ctrl-d
     static constexpr int end_of_transmission_{0x04};
-    // after 'a1' and 'a2' in the allocation order, so they are free at the
-    // call, see 'call_io_routine'
-    static constexpr std::array<std::string_view, 4> read_clobbered_{
-        "a3",
-        "a4",
-        "a5",
-        "a6",
-    };
-    static constexpr std::array<std::string_view, 3> write_clobbered_{
-        "a3",
-        "a4",
-        "a5",
-    };
     // the routines a program calls to read and write
     static constexpr std::string_view read_label_{".Lbaz_read"};
     static constexpr std::string_view write_label_{".Lbaz_write"};
@@ -51,29 +38,27 @@ class machine_rv32i_bare_metal : public machine_rv32i {
 
     // no operating system stops a stack overflow, see
     // 'target_description::is_stack_bounded'
-    [[nodiscard]] static constexpr auto bare_metal_target()
-        -> target_description {
+    [[nodiscard]] static constexpr auto
+    bare_metal_target(const bool has_sd_card) -> target_description {
 
         target_description target{rv32i_target()};
         target.is_stack_bounded = true;
+        target.has_sd_card = has_sd_card;
         return target;
     }
 
   public:
     // 'memory_size_bytes' is the memory of the target, e.g. fixed for the
     // qemu 'virt' machine
-    machine_rv32i_bare_metal(
-        const builtin_type_set& builtins, const source_files& files,
-        const target_options& options, const size_t memory_size_bytes,
-        const target_description& target = bare_metal_target())
-        : machine_rv32i{builtins, files, options, target},
+    machine_rv32i_bare_metal(const builtin_type_set& builtins,
+                             const source_files& files,
+                             const target_options& options,
+                             const size_t memory_size_bytes,
+                             const bool has_sd_card)
+        : machine_rv32i{builtins, files, options,
+                        bare_metal_target(has_sd_card)},
           stack_size_bytes_{options.stack_size_bytes},
           memory_size_bytes_{memory_size_bytes} {
-
-        // note: no operating system stops a stack overflow, the table must
-        //       say so, see 'bare_metal_target'
-
-        assert(target.is_stack_bounded);
 
         // note: the options are checked before the source is parsed, so an
         //       error in the source does not hide them
@@ -129,7 +114,7 @@ class machine_rv32i_bare_metal : public machine_rv32i {
     }
 
     auto emit_read_call(const size_t indent) -> void override {
-        call_io_routine(indent, read_label_, read_clobbered_);
+        call_io_routine(indent, read_label_);
         mark_used(read_label_);
     }
 
@@ -161,7 +146,7 @@ class machine_rv32i_bare_metal : public machine_rv32i {
     }
 
     auto emit_write_call(const size_t indent) -> void override {
-        call_io_routine(indent, write_label_, write_clobbered_);
+        call_io_routine(indent, write_label_);
         mark_used(write_label_);
     }
 

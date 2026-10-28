@@ -93,8 +93,9 @@ class machine_rv32i_linux final : public machine_rv32i {
         constexpr int64_t count_offset{4};
         constexpr int64_t size_low_offset{8};
         constexpr int64_t size_high_offset{12};
-        // the arguments and the system call are kept while the file is opened
-        constexpr std::array<std::string_view, 4> saved{"a0", "a1", "a2", "a5"};
+        // the arguments are kept while the file is opened, 'a5' with the
+        // system call is not written there and an 'ecall' changes only 'a0'
+        constexpr std::array<std::string_view, 3> saved{"a0", "a1", "a2"};
         // the file name ends with a zero byte for the system call
         constexpr std::array<int64_t, 1> name_end{0};
         // the byte offset of a sector is split into two words

@@ -96,8 +96,8 @@ struct target_description {
 //                  'begin_data', 'reserve_variables', 'finish',
 //                  'write_assembly'
 //   data           'data_alignment', 'define_constant', 'emit_data',
-//                  'emit_data_array', 'emit_repeated_data',
-//                  'emit_string_data', 'emit_zero_data', 'zero_padding'
+//                  'emit_data_array', 'emit_string_data', 'emit_zero_data',
+//                  'zero_padding'
 //   registers      'alloc_scratch_register', 'free_scratch_register',
 //                  'held_registers' (what a front-end step holds),
 //                  'free_named_register(s)', 'slot_register', 'register_view',
@@ -1119,14 +1119,6 @@ class machine {
         target_assembler().define_constant(name, static_cast<int64_t>(value));
     }
 
-    auto emit_data(const size_t element_size_bytes, const int64_t value)
-        -> void {
-
-        const std::array<int64_t, 1> values{value};
-
-        emit_data_array(element_size_bytes, values);
-    }
-
     // the elements on one line, e.g. '.word 1, 2, 3'
     auto emit_data_array(const size_t element_size_bytes,
                          const std::span<const int64_t> values) -> void {
@@ -1185,12 +1177,6 @@ class machine {
         output.append(std::move(kept.lines));
 
         return keeps_first;
-    }
-
-    auto emit_repeated_data(const size_t element_size_bytes, const size_t count,
-                            const int64_t value) -> void {
-
-        target_assembler().repeated_data(element_size_bytes, count, value);
     }
 
     // the code after the program: the handlers its checks branch to, then the

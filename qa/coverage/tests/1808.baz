@@ -1,0 +1,8 @@
+# a parameter name is checked where it is read, a keyword in a later
+# parameter is reported as one
+
+func f(a, mut b i8) {
+}
+
+func main() {
+}

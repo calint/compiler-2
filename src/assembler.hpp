@@ -168,10 +168,6 @@ class assembler {
     virtual auto define_constant(const std::string_view name,
                                  const int64_t value) -> void = 0;
 
-    virtual auto repeated_data(const size_t element_size_bytes,
-                               const size_t count, const int64_t value)
-        -> void = 0;
-
     // space in the variables section, whose content is not stored
     virtual auto reserve(const size_t size_bytes) -> void = 0;
 

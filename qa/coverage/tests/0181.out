@@ -1,4 +1,4 @@
 
-0181.baz:6:1: expected ')' after the argument
+0181.baz:6:1: expected ',' or ')' after the argument
 }
 ^

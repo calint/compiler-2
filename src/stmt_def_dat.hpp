@@ -183,8 +183,9 @@ class stmt_def_dat final : public statement {
 
         // the elements not listed are zero, as in a 'var'
         if (list.array_count != values.size()) {
-            x.emit_repeated_data(tp.size_bytes(),
-                                 list.array_count - values.size(), 0);
+            x.emit_zero_data(
+                multiply_storage_size(list.src_loc_tk, tp.size_bytes(),
+                                      list.array_count - values.size()));
         }
     }
 
@@ -198,7 +199,10 @@ class stmt_def_dat final : public statement {
             }) {
 
             x.comment(value->src_loc_tk, 0, "{}", tp.name());
-            x.emit_data(tp.size_bytes(), value->value);
+
+            x.emit_data_array(tp.size_bytes(),
+                              std::array<int64_t, 1>{value->value});
+
             return;
         }
 
@@ -297,8 +301,8 @@ class stmt_def_dat final : public statement {
         if (size_bytes < str.array_count) {
             x.comment(str.string_tk, 0, "zero remaining array");
 
-            x.emit_repeated_data(tp.size_bytes(), str.array_count - size_bytes,
-                                 0);
+            x.emit_zero_data(multiply_storage_size(
+                str.string_tk, tp.size_bytes(), str.array_count - size_bytes));
         }
     }
 

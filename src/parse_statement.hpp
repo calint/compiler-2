@@ -281,6 +281,12 @@ inline auto parse_call_or_identifier(toc& tc, tokenizer& tz, const token& tk,
                                      const type* const expected_type)
     -> call_or_identifier {
 
+    // e.g. the 'loop' of 'x = loop(1)' or a 'mut' that starts a statement
+    if (tm == term_kind::keyword) {
+        throw compile_error{
+            tk, std::format("unexpected keyword {}", in_quotes(tk))};
+    }
+
     const char next{tz.peek_char_after_whitespace()};
 
     // e.g. 'point{1, 2}' after 'var point = 1', the value hides the type

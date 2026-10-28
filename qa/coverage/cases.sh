@@ -5760,3 +5760,18 @@ SRC=1804 && EXP=249 && OPTS="--checks=overflow" RUN_ERR
 
 # a 'bool' result passed to the call that writes it shares storage
 SRC=1805 && COMPERR
+
+# --checks=upper: a range end below the minimum fails on every target
+SRC=1806 && EXP=255 && OPTS="--checks=upper" RUN_ERR
+
+# a keyword where a value is expected
+SRC=1807 && COMPERR
+
+# a keyword as a later parameter name is reported where it is read
+SRC=1808 && COMPERR
+
+# a keyword as a parameter name of a generic function nothing calls
+SRC=1809 && COMPERR
+
+# a string where a built-in takes an array
+SRC=1810 && COMPERR
