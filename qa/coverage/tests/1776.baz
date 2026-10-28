@@ -1,0 +1,7 @@
+# a 'dat' holds constants, its minimum divided by -1 is rejected under the
+# division check, also the remainder
+dat g = i8[2]{1, i8(-128) % -1}
+
+func main() {
+    exit(g[0])
+}

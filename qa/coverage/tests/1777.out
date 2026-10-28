@@ -1,0 +1,4 @@
+
+1777.baz:4:43: constant division of the minimum by -1 overflows the type
+    var x = (-9223372036854775807 - 1) / -1
+                                          ^

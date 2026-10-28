@@ -21,13 +21,12 @@ class constant_arith final {
     // statics
     //
 
-    // empty when the 64-bit minimum is divided by -1, which traps on x86_64;
-    // the caller rejects a zero divisor and a shift count outside the width,
-    // which the targets treat differently at run time
+    // the caller rejects a zero divisor, the 64-bit minimum divided by -1 and
+    // a shift count outside the width, which the targets treat differently at
+    // run time
     [[nodiscard]] static auto
     apply_operation(const int64_t lhs, const arithmetic_operator op,
-                    const int64_t rhs, const type& width_type)
-        -> std::optional<int64_t> {
+                    const int64_t rhs, const type& width_type) -> int64_t {
 
         const operator_family family{traits_of(op).family};
 
@@ -191,19 +190,14 @@ class constant_arith final {
     // statics
     //
 
-    // empty when the 64-bit minimum is divided by -1, which traps on x86_64;
     // a narrower minimum is divided in a wider register and wraps, e.g.
     // -128 / -1 of an 'i8' is -128
     [[nodiscard]] static auto
     apply_division(const int64_t lhs, const arithmetic_operator op,
-                   const int64_t rhs, const type& width_type)
-        -> std::optional<int64_t> {
+                   const int64_t rhs, const type& width_type) -> int64_t {
 
         assert(rhs != 0);
-
-        if (rhs == -1 and lhs == std::numeric_limits<int64_t>::min()) {
-            return std::nullopt;
-        }
+        assert(rhs != -1 or lhs != std::numeric_limits<int64_t>::min());
 
         if (op == arithmetic_operator::divide) {
             return wrap_to_width(lhs / rhs, width_type);

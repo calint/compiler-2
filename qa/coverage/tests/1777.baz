@@ -1,0 +1,6 @@
+# the 64-bit minimum divided by -1 has no value, rejected also without the
+# division check
+func main() {
+    var x = (-9223372036854775807 - 1) / -1
+    exit(x)
+}

@@ -1770,7 +1770,9 @@ What depends on the target is listed here, nothing else does:
    on x86_64 and true on rv32i, 'i32(1) << k < 0' is true on both
 2. the types a target has: 'i64' is rejected on rv32i
 3. the number of scratch registers: an expression that runs out of them on one
-   target can be accepted on another (7.11)
+   target can be accepted on another (7.11), and the run-time checks take
+   some, e.g. the 'frame' check of a noinline call with many indexed
+   arguments
 4. the limits of a target: '--vars' and the memory it addresses, which a
    type stays below, e.g. a field 'i8[0x100000000]' is rejected on rv32i,
    and a deep noinline recursion, which 'stack' stops on the bare-metal
@@ -1807,7 +1809,7 @@ constants out of range, and the code the run-time checks.
 | a constant out of range | 'a[9]' of 'a = i8[4]', 'x / 0', 'x << 70' | rejected ('assert_constant_index' for an index, 'fold' for the others, 1.7) | always | 0305, 0306, 0750-0752 |
 | a constant expression that overflows | '0x7fffffffffffffff + 1' | rejected ('fold'), else it wraps | 'overflow' | 0995, 1002, 1010 |
 | array index out of bounds | 'a[i]' | run time ('machine::check_bounds' from 'stmt_identifier::check_array_bounds', the start of an io built-in and the count of a 'foo') | 'upper', 'lower' | 0302, 0303, 0307-0309, 0626, 0627, 1355 |
-| division by zero and 'MIN / -1' | 'a / b' | run time ('machine::divide' with 'check_options::division_options', from 'expr_arith::emit_operation') | 'division' | 0965-0967 |
+| division by zero and 'MIN / -1' | 'a / b' | run time ('machine::divide' with 'check_options::division_options', from 'expr_arith::emit_operation'); a constant 'MIN / -1' is rejected ('fold'), the 64-bit one also without the check, it has no value | 'division' | 0965-0967, 1775-1777 |
 | shift count below zero or not below the width | 'a << n' | run time ('machine::shift' with 'check_options::shift_options', from 'expr_arith::emit_operation') | 'shift' | 0975-0977 |
 | signed overflow | 'a + b' | run time ('machine::add_subtract', 'multiply' and 'unary' with 'toc::overflow_options') | 'overflow' | 0988, 0989, 0994 |
 | 'array_copy' whose destination starts inside the source | 'array_copy(a, a[1], 3)' | run time ('machine::copy_elements' with the overlap check of 'stmt_builtin_array_copy') | 'overlap' | 0981-0983 |

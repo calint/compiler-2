@@ -1,0 +1,5 @@
+# under the division check a constant minimum divided by -1 is rejected
+func main() {
+    var x = i8(-128) / -1
+    exit(x)
+}

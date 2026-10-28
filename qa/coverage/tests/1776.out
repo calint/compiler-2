@@ -1,0 +1,4 @@
+
+1776.baz:3:30: constant division of the minimum by -1 overflows the type
+dat g = i8[2]{1, i8(-128) % -1}
+                             ^

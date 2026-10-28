@@ -629,14 +629,10 @@ class expr_arith final : public statement {
             return std::nullopt;
         }
 
-        std::optional<int64_t> value{first->value};
+        int64_t value{first->value};
 
         for (const auto [o, e] :
              std::views::zip(ops_, exprs_ | std::views::drop(1))) {
-
-            if (not value) {
-                return std::nullopt;
-            }
 
             const std::optional<int64_t> rhs{
                 folded_value::value_of(e->fold(tc, use)),
@@ -647,21 +643,17 @@ class expr_arith final : public statement {
             }
 
             if (use.checks_overflow and constant_arith::overflows_width(
-                                            *value, o.op, *rhs, width_type)) {
+                                            value, o.op, *rhs, width_type)) {
 
                 throw compile_error{e->tok(),
                                     "constant expression overflows the type"};
             }
 
-            value = fold_operation(tc, *value, o.op, *e, *rhs, width_type);
-        }
-
-        if (not value) {
-            return std::nullopt;
+            value = fold_operation(tc, value, o.op, *e, *rhs, width_type);
         }
 
         const int64_t result{
-            list_uops_.evaluate_at(*value, width_type, use.checks_overflow),
+            list_uops_.evaluate_at(value, width_type, use.checks_overflow),
         };
 
         return folded_value{
@@ -1516,20 +1508,26 @@ class expr_arith final : public statement {
                                         : machine::factor_use::read_only);
     }
 
-    // rejects a constant divisor or shift count like 'compile'; none for a
-    // quotient that the division check reports at run time
+    // rejects a constant divisor or shift count like 'compile', and the
+    // minimum divided by -1 where the division check is on or where it has
+    // no value: the 64-bit one traps on x86_64
     [[nodiscard]] static auto
     fold_operation(const toc& tc, const int64_t lhs,
                    const arithmetic_operator op, const statement& rhs_element,
-                   const int64_t rhs, const type& width_type)
-        -> std::optional<int64_t> {
+                   const int64_t rhs, const type& width_type) -> int64_t {
 
         assert_constant_operand(rhs_element.tok(), op, rhs, width_type);
 
-        if (is_division(op) and tc.checks().division and
+        const bool is_rejected{
+            tc.checks().division or lhs == std::numeric_limits<int64_t>::min(),
+        };
+
+        if (is_division(op) and is_rejected and
             constant_arith::division_overflows(lhs, rhs, width_type)) {
 
-            return std::nullopt;
+            throw compile_error{rhs_element.tok(),
+                                "constant division of the minimum by -1 "
+                                "overflows the type"};
         }
 
         return constant_arith::apply_operation(lhs, op, rhs, width_type);

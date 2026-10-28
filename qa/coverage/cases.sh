@@ -2227,7 +2227,7 @@ SRC=0689 && COMPERR
 SRC=0690 && COMPERR
 
 # a constant quotient that wraps folds to the wrapped value unless the
-# division check reports it at run time, a constant zero divisor is rejected
+# division check is on, then it is rejected like a constant zero divisor
 SRC=0691 && EXP=7 && RUN
 
 # a function name has no fields
@@ -5655,3 +5655,12 @@ SRC=1773 && EXP=7 && RUN
 
 # an array is not a condition
 SRC=1774 && COMPERR
+
+# under the division check a constant minimum divided by -1 is rejected
+SRC=1775 && OPTS="--checks=division" COMPERR
+
+# the minimum divided by -1 in a 'dat' is rejected under the division check
+SRC=1776 && OPTS="--checks=noub" COMPERR
+
+# the 64-bit minimum divided by -1 is rejected also without checks
+SRC=1777 && COMPERR

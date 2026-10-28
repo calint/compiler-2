@@ -1,5 +1,5 @@
 # a constant quotient that wraps folds to the wrapped value unless the
-# division check reports it at run time, a constant zero divisor is rejected
+# division check is on, then it is rejected like a constant zero divisor
 
 func main() {
     var zero = 0
