@@ -1,6 +1,32 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] hard: bug hunt round 14 (2026-10-28, user: loop until a round finds no
+    bugs; hunters B1 the fixes of rounds 12 and 13, B2 evaluation order made
+    visible, B3 folding against no folding; reports in the session
+    scratchpad bh14)
+    => done (2026-10-28): B1-3 fixed; B1-1 and B1-2 documented in README
+       8.3 (decided by the user); B2 found nothing in about 31000 generated
+       programs against a left-to-right reference, B3 nothing in about 30000
+       program pairs with constants and the same values read at run time
+[x] medium: bug hunt round 14 B1-3: a 'foo' whose count is a constant above
+    0 and whose body never returns did not end the path, so an inlined
+    compile checked the code after it as reached and rejected what the
+    noinline compile accepts
+    => done (2026-10-28): such a 'foo' runs out only where its body or a
+       'continue' reaches the counter step ('loop_end::when_stepped',
+       'toc::record_continue'); tests 1784-1786; listings of every other
+       test unchanged
+[-] medium: bug hunt round 14 B1-1, B1-2: an inlined call that never
+    returns on one exit of an 'and' or 'or' condition, or inside a longer
+    expression ('stop(k) + a[k]'), does not end the path of the code that
+    runs only after it returns; an inlined compile may reject what the
+    noinline compile accepts, no result changes
+    => discarded (2026-10-28, user): README 8.3 states it; rejected: the
+       reach of each exit of a condition through nested and inverted lists
+       and every operand list stopping at the call (too complicated for
+       what it gains); dropping the never-returning-call rule (user: keep
+       it)
 [x] hard: bug hunt round 13 (2026-10-28, user: loop until a round finds no
     bugs; hunters A1 the run-time checks alone and in combination, A2 names
     in the output, A3 each statement kind in each context; reports in the

@@ -5684,3 +5684,12 @@ SRC=1782 && EXP=5 && RUN
 
 # an inlined recursion ended by a condition that never returns
 SRC=1783 && EXP=3 && RUN
+
+# a 'foo' whose constant count runs a body that never returns ends the path
+SRC=1784 && EXP=5 && RUN
+
+# a 'continue' in skipped code does not reach the counter step of a 'foo'
+SRC=1785 && EXP=5 && RUN
+
+# a 'continue' reaches the counter step of a 'foo' whose body never returns
+SRC=1786 && EXP=7 && RUN

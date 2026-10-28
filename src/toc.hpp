@@ -321,6 +321,9 @@ class scope final {
     // a loop scope: a 'break' of it was compiled, so its end is reached;
     // only 'toc::join_loop' reads it
     bool is_left_by_break_{};
+    // a loop scope: a 'continue' of it was compiled, so its counter step is
+    // reached; only 'toc::join_loop' reads it
+    bool is_continued_{};
     // a loop scope: how its end is reached and where a 'continue' jumps,
     // e.g. the head of a 'loop' or the counter step of a 'foo'
     loop_end loop_end_{loop_end::at_break};
@@ -429,6 +432,8 @@ class scope final {
         return kind_ != scope_kind::noinline_func;
     }
 
+    [[nodiscard]] auto is_continued() const -> bool { return is_continued_; }
+
     // the end of the body of an inlined call is reached, by its last
     // statement or by a 'return'
     [[nodiscard]] auto is_end_reached() const -> bool {
@@ -487,6 +492,8 @@ class scope final {
         vars_.get_ref(name).read_only_why = cause;
     }
 
+    auto mark_continued() -> void { is_continued_ = true; }
+
     auto mark_left_by_break() -> void { is_left_by_break_ = true; }
 
     auto mark_left_by_return() -> void { func_part().is_left_by_return = true; }
@@ -521,6 +528,10 @@ class scope final {
         frame_part& frm{frame()};
 
         frm.peak_size_bytes = std::max(frm.peak_size_bytes, size_bytes);
+    }
+
+    auto restore_continued(const bool is_continued) -> void {
+        is_continued_ = is_continued;
     }
 
     auto restore_left_by_break(const bool is_left) -> void {
@@ -1143,9 +1154,11 @@ class scope_stack final {
     // code compiled only for its checks, see 'toc::check_skipped': a 'break'
     // or a 'return' there must not end the paths of the code that runs
     struct reach_state {
-        // the innermost loop, the one a 'break' of skipped code marks
+        // the innermost loop, the one a 'break' or a 'continue' of skipped
+        // code marks
         std::optional<size_t> loop_index;
         bool is_left_by_break{};
+        bool is_continued{};
         bool is_reachable{};
         bool is_left_by_return{};
     };
@@ -1366,6 +1379,7 @@ class scope_stack final {
             return {
                 .loop_index{},
                 .is_left_by_break{},
+                .is_continued{},
                 .is_reachable{true},
                 .is_left_by_return{},
             };
@@ -1385,6 +1399,9 @@ class scope_stack final {
             .is_left_by_break{
                 loop_index and scopes_.at(*loop_index).is_left_by_break(),
             },
+            .is_continued{
+                loop_index and scopes_.at(*loop_index).is_continued(),
+            },
             .is_reachable{current_func_scope().is_reachable()},
             .is_left_by_return{current_func_scope().is_left_by_return()},
         };
@@ -1392,16 +1409,11 @@ class scope_stack final {
 
     // a 'break' of the innermost 'loop' or 'foo' is compiled, see
     // 'scope::is_left_by_break'
-    auto record_break() -> void {
-        for (scope& scp : scopes_ | std::views::reverse) {
-            if (scp.is_loop()) {
-                scp.mark_left_by_break();
-                return;
-            }
-        }
+    auto record_break() -> void { innermost_loop_ref().mark_left_by_break(); }
 
-        std::unreachable();
-    }
+    // a 'continue' of the innermost 'loop' or 'foo' is compiled, see
+    // 'scope::is_continued'
+    auto record_continue() -> void { innermost_loop_ref().mark_continued(); }
 
     // a variable, data or constant of the root scope
     auto record_global(const std::string_view name) -> void {
@@ -1456,8 +1468,10 @@ class scope_stack final {
         }
 
         if (state.loop_index) {
-            scopes_.at(*state.loop_index)
-                .restore_left_by_break(state.is_left_by_break);
+            scope& loop{scopes_.at(*state.loop_index)};
+
+            loop.restore_left_by_break(state.is_left_by_break);
+            loop.restore_continued(state.is_continued);
         }
 
         func_scope().set_reachable(state.is_reachable);
@@ -1486,6 +1500,17 @@ class scope_stack final {
         for (size_t i{scopes_.size()}; i > 0; --i) {
             if (scopes_.at(i - 1).is_func()) {
                 return i - 1;
+            }
+        }
+
+        std::unreachable();
+    }
+
+    // note: the parse rejected a 'break' or a 'continue' outside a loop
+    [[nodiscard]] auto innermost_loop_ref() -> scope& {
+        for (scope& scp : scopes_ | std::views::reverse) {
+            if (scp.is_loop()) {
+                return scp;
             }
         }
 
@@ -3267,7 +3292,7 @@ class toc final {
         restore_compile_state(keeps_first ? first_end : second_end);
     }
 
-    // 'continue' and 'exit' leave the code after them unreached
+    // e.g. 'exit' leaves the code after it unreached
     auto end_path() -> void {
         assert(is_compiling_);
 
@@ -3397,9 +3422,9 @@ class toc final {
         return scopes_.current_func_scope().is_reachable();
     }
 
-    // the end of a loop is reached by a compiled 'break' or, for one that
-    // also ends when it runs out, always; called as the last step inside the
-    // loop's scope
+    // the end of a loop is reached by a compiled 'break' or as its
+    // 'loop_end' says; called as the last step inside the loop's scope, where
+    // the end of its body is the current statement
     auto join_loop() -> void {
         assert(is_compiling_);
 
@@ -3407,9 +3432,16 @@ class toc final {
 
         assert(loop.is_loop());
 
-        scopes_.set_reachable(loop.loop_end_kind() ==
-                                  loop_end::also_when_done or
-                              loop.is_left_by_break());
+        const loop_end end{loop.loop_end_kind()};
+
+        const bool is_step_reached{is_reachable() or loop.is_continued()};
+
+        const bool runs_out{
+            end == loop_end::also_when_done or
+                (end == loop_end::when_stepped and is_step_reached),
+        };
+
+        scopes_.set_reachable(runs_out or loop.is_left_by_break());
     }
 
     [[nodiscard]] auto layout() const -> const storage_layout& {
@@ -3460,6 +3492,16 @@ class toc final {
 
         scopes_.record_break();
         scopes_.set_reachable(false);
+    }
+
+    // a 'continue' jumps to the head of the innermost 'loop' or the counter
+    // step of a 'foo' and leaves the code after it unreached, see
+    // 'loop_end::when_stepped'
+    auto record_continue() -> void {
+        assert(is_compiling_);
+
+        scopes_.record_continue();
+        end_path();
     }
 
     // see 'body_uses::is_result_passed_as_mut'

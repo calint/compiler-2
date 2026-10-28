@@ -1,0 +1,22 @@
+# a 'continue' reaches the counter step of a 'foo' whose body never returns
+func stop(m) res {
+    if m >= 3 exit(m)
+    res = 0
+}
+
+func g(k, x) res {
+    var a = [4]
+    foo a, 2 {
+        if x == 1 {
+            continue
+        }
+        var t = stop(k)
+    }
+    res = 7
+}
+
+func main() {
+    var x = 1
+    var r = g(5, x)
+    exit(r)
+}

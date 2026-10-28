@@ -90,8 +90,15 @@ class stmt_builtin_foo final : public statement {
         // e.g. not after 'foo a, stop() { }' with 'stop' an inlined 'exit'
         const bool count_returns{tc.is_reachable()};
 
+        // a constant count above 0 runs the body, so the loop runs out only
+        // where the body reaches its counter step, e.g. not after
+        // 'foo a, 2 { stop() }'
+        const bool runs_body{limit.is_immediate() and limit.immediate() != 0};
+
         const toc::scope_entry foo{
-            tc, scope::loop(loop_label, loop_end::also_when_done,
+            tc, scope::loop(loop_label,
+                            runs_body ? loop_end::when_stepped
+                                      : loop_end::also_when_done,
                             toc::continue_label(loop_label))};
 
         const operand counter{

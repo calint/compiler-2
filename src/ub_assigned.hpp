@@ -11,9 +11,11 @@
 #include "token.hpp"
 #include "type.hpp"
 
-// how the end of a loop is reached: only at a 'break', e.g. 'loop', or also
-// when it runs out, e.g. 'foo'
-enum class loop_end : uint8_t { at_break, also_when_done };
+// how the end of a loop is reached: only at a 'break', e.g. 'loop', also
+// when it runs out, e.g. 'foo', or, known only to the compile, at a 'break'
+// or where its counter step is reached, e.g. a 'foo' whose count is a
+// constant above 0, so it runs its body
+enum class loop_end : uint8_t { at_break, also_when_done, when_stepped };
 
 // definite assignment: which bytes of a variable are set before they are read
 // and before a function returns
@@ -179,6 +181,8 @@ class assignment_flow final {
     // to its breaks after it, without a 'break' only 'return' or 'exit'
     // leave it
     auto trace_loop(const auto& body, const loop_end end) -> void {
+        assert(end != loop_end::when_stepped);
+
         const assigned_bytes entry{assigned_};
 
         const std::optional<assigned_bytes> breaks{trace_loop_body(body)};

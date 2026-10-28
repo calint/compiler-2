@@ -344,7 +344,9 @@ of the parse walk ('assignment_flow'): the function scope keeps whether the
 current statement is reached ('toc::is_reachable'), 'toc::end_path' and
 'toc::record_break' end a path, 'toc::path_merge' joins the branches of an
 'if' with the same chain rule as the parse, 'toc::join_loop' ends a loop by
-its 'loop_end' ('scope::is_left_by_break'), an inlined call
+its 'loop_end' ('scope::is_left_by_break'; a 'foo' whose count folds above 0
+runs out only where its body or a 'continue' reaches the counter step,
+'loop_end::when_stepped'), an inlined call
 whose body reaches neither its end nor a 'return' leaves the code after the
 call unreached ('toc::pop_scope'), and the end of 'main' is emitted when the
 compile reaches it.
@@ -1879,6 +1881,16 @@ message, x86_64 and rv32i linux stop with a signal.
   checked with the lengths of its other array arguments, which an inlined
   call is: in a function nothing calls the verdict depends on inline versus
   noinline (1.5 item 4).
+- An inlined call that never returns ends the path where it is a whole
+  statement, an 'if' condition, a 'foo' count or the body of a 'foo' that
+  runs, but not inside a longer expression ('stop(k) + a[k]', an argument,
+  an index then the value) or on one exit of an 'and' or 'or'
+  ('if x == 1 and stop(k) == 1 { a[k] = 1 }', whose code runs only after
+  'stop' returns): the code after it is compiled as reached, so a constant
+  argument may make an inlined call reject what a noinline one accepts
+  (1.5); no result changes. Ending the path there needs the reach of each
+  exit of a condition and every operand list to stop at the call (bug hunt
+  round 14 B1-1, B1-2).
 - The x86_64 listing leaves the size of each jump to nasm. On rare listings
   nasm's default search ('-Ox') does not settle ("unable to find valid values
   for all labels"), e.g. a '--nopt' listing of 'fuzz-flow' seed 71;

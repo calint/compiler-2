@@ -36,7 +36,7 @@ class stmt_continue final : public statement {
         // note: the parse rejected a 'continue' outside a loop
         assert(loop);
 
-        tc.end_path();
+        tc.record_continue();
 
         // e.g. the head of a 'loop', the counter step of a 'foo'
         x.branch(indent, loop->continue_label);
