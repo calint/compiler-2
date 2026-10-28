@@ -47,12 +47,6 @@ class bulk_operands final {
     // what the operation does to the second array
     enum class second_use : uint8_t { read, written };
 
-    // what 'toc' resolved the two arrays to
-    struct arrays_info {
-        ident_info first;
-        ident_info second;
-    };
-
     // the address of each array and the run-time count, for the element
     // operations of the machine, which emit them in the order of the
     // arguments; the range of each start is checked after the count, a
@@ -224,15 +218,15 @@ class bulk_operands final {
 
     // the checks of the arguments in the order the statement reads: no
     // argument is written by a later one, the element types match, a constant
-    // count is in bounds
-    [[nodiscard]] auto check(toc& tc) const -> arrays_info {
+    // count is in bounds; returns the element type of both arrays
+    [[nodiscard]] auto check(toc& tc) const -> const type& {
         assert_not_written_later(tc);
 
-        arrays_info arrays{resolve_arrays(tc)};
+        const type& element_type{resolve_element_type(tc)};
 
         assert_constant_count_in_bounds(tc);
 
-        return arrays;
+        return element_type;
     }
 
     [[nodiscard]] auto count() const -> const expr_any& { return args_.at(2); }
@@ -285,21 +279,19 @@ class bulk_operands final {
     }
 
     // the elements are compared or copied as a whole, so their types match
-    [[nodiscard]] auto resolve_arrays(toc& tc) const -> arrays_info {
-        arrays_info info{
-            .first{make_ident_info(tc, first())},
-            .second{make_ident_info(tc, second())},
-        };
+    [[nodiscard]] auto resolve_element_type(toc& tc) const -> const type& {
+        const ident_info first_info{make_ident_info(tc, first())};
+        const ident_info second_info{make_ident_info(tc, second())};
 
-        if (not info.first.type_ref().is_same(info.second.type_ref())) {
+        if (not first_info.type_ref().is_same(second_info.type_ref())) {
             throw compile_error{
                 second().tok(),
                 std::format("{} type {} does not match {} type {}", first_role_,
-                            in_quotes(info.first.type_ref().name()),
+                            in_quotes(first_info.type_ref().name()),
                             second_role_,
-                            in_quotes(info.second.type_ref().name()))};
+                            in_quotes(second_info.type_ref().name()))};
         }
 
-        return info;
+        return first_info.type_ref();
     }
 };

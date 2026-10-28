@@ -49,14 +49,13 @@ class stmt_builtin_arrays_equal final : public statement {
 
         x.comment(tok(), indent, statement::trimmed_source(*this));
 
-        const bulk_operands::arrays_info arrays{operands_.check(tc)};
+        const type& element_type{operands_.check(tc)};
 
         bulk_operands::run_time_emitters emit{operands_, tc, indent, tok()};
 
-        x.equal_elements(tok(), indent, arrays.first.type_ref().size_bytes(),
-                         emit.count(),
+        x.equal_elements(tok(), indent, element_type.size_bytes(), emit.count(),
                          {
-                             .alignment{arrays.first.type_ref().alignment()},
+                             .alignment{element_type.alignment()},
                              .lhs{emit.first()},
                              .rhs{emit.second()},
                              .dst{dst.operand()},

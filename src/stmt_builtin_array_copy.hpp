@@ -51,7 +51,7 @@ class stmt_builtin_array_copy final : public statement {
 
         x.comment(tok(), indent, statement::trimmed_source(*this));
 
-        const bulk_operands::arrays_info arrays{operands_.check(tc)};
+        const type& element_type{operands_.check(tc)};
 
         const std::optional<int64_t> count{
             operands_.count().constant_value(tc),
@@ -59,7 +59,7 @@ class stmt_builtin_array_copy final : public statement {
 
         // the overlap check compares the addresses of the loop at run time
         if (count and not tc.checks().overlap) {
-            compile_constant_count(tc, indent, arrays,
+            compile_constant_count(tc, indent, element_type,
                                    static_cast<size_t>(*count));
 
             return;
@@ -67,10 +67,9 @@ class stmt_builtin_array_copy final : public statement {
 
         bulk_operands::run_time_emitters emit{operands_, tc, indent, tok()};
 
-        x.copy_elements(tok(), indent, arrays.first.type_ref().size_bytes(),
-                        emit.count(),
+        x.copy_elements(tok(), indent, element_type.size_bytes(), emit.count(),
                         {
-                            .alignment{arrays.first.type_ref().alignment()},
+                            .alignment{element_type.alignment()},
                             .src{emit.first()},
                             .dst{emit.second()},
                             .overlap{tc.checks().overlap_options()},
@@ -85,7 +84,7 @@ class stmt_builtin_array_copy final : public statement {
     // the size is known so the copy is unrolled when small and the width
     // follows the alignment of both addresses
     auto compile_constant_count(toc& tc, const size_t indent,
-                                const bulk_operands::arrays_info& arrays,
+                                const type& element_type,
                                 const size_t count) const -> void {
 
         const stmt_identifier& src{operands_.first()};
@@ -114,9 +113,9 @@ class stmt_builtin_array_copy final : public statement {
             dst.compile_lea(tc, indent, dst.first_token(), held, range),
         };
 
-        x.copy_block(tok(), indent, dst_operand, src_operand,
-                     multiply_storage_size(
-                         tok(), arrays.first.type_ref().size_bytes(), count),
-                     arrays.first.type_ref().alignment());
+        x.copy_block(
+            tok(), indent, dst_operand, src_operand,
+            multiply_storage_size(tok(), element_type.size_bytes(), count),
+            element_type.alignment());
     }
 };
