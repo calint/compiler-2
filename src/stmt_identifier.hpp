@@ -585,8 +585,9 @@ class stmt_identifier final : public statement {
 
         throw compile_error{
             method_->name_tk,
-            std::format("'{}.{}' is a method, expected an array", dotted_path_,
-                        method_->name_tk.text())};
+            std::format("{} is a method, expected an array",
+                        in_quotes(std::format("{}.{}", dotted_path_,
+                                              method_->name_tk.text())))};
     }
 
     // the address of this place from 'compile_lea': 'use' runs while the

@@ -509,9 +509,11 @@ class statement {
         }
 
         throw compile_error{
-            *type_tk, std::format("'{}<...>' is not a type, name an instance "
-                                  "first, e.g. 'type str = {}<...>'",
-                                  type_tk->text(), type_tk->text())};
+            *type_tk,
+            std::format("{} is not a type, name an instance first, e.g. "
+                        "'type str = {}<...>'",
+                        in_quotes(std::format("{}<...>", type_tk->text())),
+                        type_tk->text())};
     }
 
     // read-only-ness is fixed where the name is declared, so one check at
