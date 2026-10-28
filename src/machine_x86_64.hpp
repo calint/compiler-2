@@ -1102,16 +1102,16 @@ class machine_x86_64 final : public machine {
 
         switch (size_bytes) {
         case size_qword_:
-            return builtin_type_i64();
+            return builtins().i64;
 
         case size_dword_:
-            return builtin_type_i32();
+            return builtins().i32;
 
         case size_word_:
-            return builtin_type_i16();
+            return builtins().i16;
 
         case size_byte_:
-            return builtin_type_i8();
+            return builtins().i8;
 
         default:
             std::unreachable();
@@ -1148,7 +1148,7 @@ class machine_x86_64 final : public machine {
                             const operand& left, const operand& right) -> void {
 
         const operand low_byte{
-            make_register_operand(left.register_name(), builtin_type_i8()),
+            make_register_operand(left.register_name(), builtins().i8),
         };
 
         mov(src_loc_tk, indent, right, low_byte);
@@ -1291,7 +1291,7 @@ class machine_x86_64 final : public machine {
             lea(src_loc_tk, indent, reg_top_idx,
                 operand::mem(count.register_name(),
                              range.checked.register_name(), 1, 0,
-                             builtin_type_i64()));
+                             builtins().i64));
         } else {
             mov(src_loc_tk, indent, reg_top_idx, range.checked);
             add(src_loc_tk, indent, reg_top_idx, count);
@@ -1357,7 +1357,7 @@ class machine_x86_64 final : public machine {
         }
 
         const operand reg{
-            alloc_scratch_register(src_loc_tk, indent, builtin_type_i64()),
+            alloc_scratch_register(src_loc_tk, indent, builtins().i64),
         };
 
         emit(indent, op::mov, reg, src_op);
@@ -1895,7 +1895,7 @@ class machine_x86_64 final : public machine {
         }
 
         const operand address{
-            alloc_scratch_register(src_loc_tk, indent, builtin_type_i64()),
+            alloc_scratch_register(src_loc_tk, indent, builtins().i64),
         };
 
         const std::string_view sum{address.register_name()};
@@ -2015,7 +2015,7 @@ class machine_x86_64 final : public machine {
     [[nodiscard]] auto qword_register(const std::string_view name) const
         -> operand {
 
-        return make_register_operand(name, builtin_type_i64());
+        return make_register_operand(name, builtins().i64);
     }
 
     auto release_bulk(const token& src_loc_tk, const size_t indent) -> void {

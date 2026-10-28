@@ -1605,20 +1605,8 @@ class machine {
         }
     }
 
-    [[nodiscard]] auto builtin_type_i16() const -> const type& {
-        return builtins_.get().i16;
-    }
-
-    [[nodiscard]] auto builtin_type_i32() const -> const type& {
-        return builtins_.get().i32;
-    }
-
-    [[nodiscard]] auto builtin_type_i64() const -> const type& {
-        return builtins_.get().i64;
-    }
-
-    [[nodiscard]] auto builtin_type_i8() const -> const type& {
-        return builtins_.get().i8;
+    [[nodiscard]] auto builtins() const -> const builtin_type_set& {
+        return builtins_.get();
     }
 
     // the comments of a lower bound check, which the upper comparison or an
