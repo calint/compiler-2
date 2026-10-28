@@ -211,12 +211,9 @@ class machine_x86_64 final : public machine {
     // scratch values live from which an array loop counts in memory
     static constexpr size_t memory_counter_pressure_count_{6};
 
-    // numbers the labels after the parts of a memory compare
-    size_t equal_label_count_{};
-    // numbers the labels of the checks of divisions
-    size_t division_label_count_{};
-    // numbers the labels of the checks of copy overlaps
-    size_t overlap_label_count_{};
+    // numbers the local labels of a memory compare, a division check and a
+    // copy overlap check, each kind with its own prefix
+    size_t local_label_count_{};
     assembler_x86_64 assembler_;
 
   public:
@@ -538,7 +535,7 @@ class machine_x86_64 final : public machine {
         std::string end_label;
 
         if (compares.size() > 1) {
-            end_label = std::format(".Lbaz_equal.{}", equal_label_count_++);
+            end_label = std::format(".Lbaz_equal.{}", local_label_count_++);
         }
 
         for (const auto [i, compare] : std::views::enumerate(compares)) {
@@ -1167,7 +1164,7 @@ class machine_x86_64 final : public machine {
         comment(src_loc_tk, indent, "overlap check begin");
 
         const std::string passed{
-            std::format(".Lbaz_overlap.{}", overlap_label_count_++),
+            std::format(".Lbaz_overlap.{}", local_label_count_++),
         };
 
         const operand distance{
@@ -1202,7 +1199,7 @@ class machine_x86_64 final : public machine {
         };
 
         const std::string not_minimum{
-            std::format(".Lbaz_division.{}", division_label_count_++),
+            std::format(".Lbaz_division.{}", local_label_count_++),
         };
 
         comment(src_loc_tk, indent, "division check begin");
