@@ -277,6 +277,11 @@ class Program:
         if not self.lenient and "overflow" in result.panics and \
                 e[0] == "bin" and e[1] in ("+", "-", "*") and self.is_const(e):
             raise Reject("constant expression " + self.text(e))
+        # a constant minimum divided by -1 is rejected under the division
+        # check, a constant zero divisor already in 'static_expr'
+        if not self.lenient and "division" in result.panics and \
+                e[0] == "bin" and e[1] in ("/", "%") and self.is_const(e):
+            raise Reject("constant division " + self.text(e))
         return result
 
     def binary(self, op, a, b):
@@ -372,6 +377,8 @@ class Program:
                     not self.lenient:
                 if self.value(e[3], {}).value == 0:
                     raise Reject("constant zero divisor")
+                if self.is_const(e):
+                    self.value(e, {})
         if e[0] == "neg" and self.is_const(e) and not self.lenient:
             self.value(e, {})
         if e[0] == "bin" and e[1] in "+-*" and self.is_const(e) and \

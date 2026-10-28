@@ -65,7 +65,8 @@ an included file (`split_include` in `fuzzlib.py`).
 
 - the default integer is 64 bits on x86_64 and 32 bits on rv32i, a program of
   default integers can overflow on one target only
-- the uart of rv32i-fpga takes every file descriptor in `write` and `read`
+- the uart of rv32i-qemu and rv32i-fpga takes every file descriptor in `write`
+  and `read`
 - register use differs between targets and between `--checks`, an expression
   that needs too many registers is rejected with "out of scratch registers,
   simplify the expression"
@@ -73,6 +74,9 @@ an included file (`split_include` in `fuzzlib.py`).
   plain `ld` gives false failures of the frame check
 - a literal that does not fit inside `i32(...)` wraps, the arithmetic of an
   explicit conversion wraps
-- `read` on the uart of rv32i-fpga returns one line, on a file as many bytes as
-  fit; each read at the end of the input takes one end of transmission byte
+- `read` on the uart of rv32i-qemu and rv32i-fpga returns one line, on a file
+  as many bytes as fit; each read at the end of the input takes one end of
+  transmission byte; a carriage return reads as a newline
+- a sector past the end of the card panics `sd card` on x86_64 and rv32i,
+  rv32i-fpga does not detect it; rv32i-qemu has no sd card
 - a very long expression compiles in more than linear time

@@ -1802,9 +1802,15 @@ What depends on the target is listed here, nothing else does:
    '--vars=0xffff0000' with 'ld.lld', which starts it at about 0x11000; on
    x86_64 nasm truncates a label to 4095 characters, so a name of about 4000
    characters gives a listing that nasm rejects
+5. the devices of the bare-metal targets: 'rv32i-qemu' has no sd card, so
+   'sector_read' and 'sector_write' are rejected there; 'rv32i-fpga' does not
+   detect a sector past the end of the card, which panics 'sd card' on x86_64
+   and rv32i; the uart of 'rv32i-qemu' and 'rv32i-fpga' takes every file
+   descriptor, a 'read' returns at most one line, a carriage return reads as a
+   newline, and an end of transmission byte ends a read, also inside the input
 
-So whether a program is accepted can depend on the target through 1 to 4,
-and its result through 1 and 4; under 'noub' the result of an accepted
+So whether a program is accepted can depend on the target through 1 to 5,
+and its result through 1, 4 and 5; under 'noub' the result of an accepted
 program that writes its types and stays within the limits does not.
 
 The bytes that 'read' and 'sector_read' put into a buffer are assumed to be
