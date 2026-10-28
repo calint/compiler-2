@@ -1,4 +1,4 @@
 
-1425.baz:6:9: not in a loop
+1425.baz:6:9: 'continue' is not in a loop
         continue
         ^~~~~~~~

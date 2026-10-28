@@ -1,4 +1,4 @@
 
-1610.baz:7:14: 'o.i.y' is read but has been overwritten in the same statement
+1610.baz:7:14: 'o.i.y' is read but has been overwritten in the same statement, use a temporary variable
     o = {{}, o.i.y}
              ^

@@ -1,4 +1,4 @@
 
-0810.baz:6:13: cannot resolve identifier 'T'
+0810.baz:6:13: 'T' not found
     var y = T
             ^

@@ -1,4 +1,4 @@
 
-1135.baz:4:10: cannot resolve identifier '©'
+1135.baz:4:10: '©' not found
     exit(©)
          ^

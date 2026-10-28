@@ -90,22 +90,31 @@ class tokenizer final {
         throw compile_error{*this, argument_count_text(name, count, count)};
     }
 
-    // a ',' where the last argument of a built-in of a fixed count ends is a
-    // surplus one, e.g. 'array_length(a, 1)', or a trailing ','
+    // a ',' where the last of 'count' arguments ends is a surplus one, e.g.
+    // 'array_length(a, 1)', or a trailing ','; without parameters anything
+    // but ')' is, e.g. 'f(1)' of 'func f()'
     auto assert_no_surplus_argument(const std::string_view name,
                                     const size_t count) const -> void {
 
-        if (peek_char_after_whitespace() != ',') {
+        const char next{peek_char_after_whitespace()};
+
+        if (next == ')' or (count != 0 and next != ',')) {
             return;
         }
 
-        tokenizer probe{*this};
+        // e.g. 'f(1, 2,)' has no surplus argument, the ',' of 'f(,)' follows
+        // no argument
+        if (count != 0) {
+            tokenizer probe{*this};
 
-        const std::optional<token> delimiter_tk{probe.is_next_char_token(',')};
+            const std::optional<token> delimiter_tk{
+                probe.is_next_char_token(','),
+            };
 
-        assert(delimiter_tk);
+            assert(delimiter_tk);
 
-        probe.assert_no_trailing_delimiter(*delimiter_tk, ')', "a call");
+            probe.assert_no_trailing_delimiter(*delimiter_tk, ')', "a call");
+        }
 
         throw compile_error{*this, argument_count_text(name, count, count)};
     }

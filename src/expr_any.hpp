@@ -934,10 +934,10 @@ class expr_any final : public statement {
                                             std::unique_ptr<statement> first)
         -> expr_variant {
 
-        return expr_arith{
-            tc, tz,
-            expr_arith::options::implied(expr_arith::initial_precedence,
-                                         std::move(first), nullptr)};
+        return expr_arith{tc, tz,
+                          expr_arith::options::implied(list_start_precedence,
+                                                       std::move(first),
+                                                       nullptr)};
     }
 
     [[nodiscard]] static auto parse_variant(toc& tc, tokenizer& tz,
@@ -1082,8 +1082,7 @@ class expr_any final : public statement {
 
         const token delimiter_tk{
             tz.expect_char_token(
-                ',', std::format("expected ',' followed by initializer "
-                                 "for type {}",
+                ',', std::format("expected ',' followed by a value of type {}",
                                  in_quotes(tp.name()))),
         };
 

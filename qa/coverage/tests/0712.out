@@ -1,4 +1,4 @@
 
-0712.baz:8:17: 'p' is read but has been overwritten in the same statement
+0712.baz:8:17: 'p' is read but has been overwritten in the same statement, use a temporary variable
     p = {2, sum(p)}
                 ^

@@ -1,5 +1,5 @@
 
-0785.baz:9:16: cannot resolve identifier 'nothing'
+0785.baz:9:16: 'nothing' not found
     self.len = nothing
                ^~~~~~~
 0785.baz:12:6: instantiated by

@@ -5747,3 +5747,13 @@ SRC=1800 && EXP=0 && OPTS="--checks=noub" RUN
 
 # a name alone as a statement is reported at the name
 SRC=1801 && COMPERR
+
+# a value of a type with all its fields and no closing '}'
+SRC=1802 && COMPERR
+
+# --checks=overflow: 32 bit add and subtract with large constants and memory
+# operands up to the limits
+SRC=1803 && EXP=0 && OPTS="--checks=overflow" RUN
+
+# --checks=overflow: a 32 bit add of a large constant past the maximum
+SRC=1804 && EXP=249 && OPTS="--checks=overflow" RUN_ERR

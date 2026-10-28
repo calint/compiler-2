@@ -62,7 +62,7 @@ class machine_rv32i_qemu final : public machine_rv32i_bare_metal {
     // overridden methods
     //
 
-    // ends qemu with the exit code a0 as its status
+    // ends qemu with the exit code 'a0' as its status
     auto emit_exit_routine() -> void override {
         assembler_rv32i& a{assembler()};
 

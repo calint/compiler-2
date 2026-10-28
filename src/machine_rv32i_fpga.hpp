@@ -118,7 +118,7 @@ class machine_rv32i_fpga final : public machine_rv32i_bare_metal {
     // overridden methods
     //
 
-    // the emulator exits at 'ebreak' with a0 as its status, the loop halts
+    // the emulator exits at 'ebreak' with 'a0' as its status, the loop halts
     // hardware that continues
     auto emit_exit_routine() -> void override {
         assembler_rv32i& a{assembler()};

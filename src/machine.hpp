@@ -897,24 +897,24 @@ class machine {
                                               const size_t indent,
                                               const type& type_ref) -> operand {
 
-        for (const std::string_view register_name : scratch_registers()) {
-            if (state_.registers.is_unavailable(register_mask(register_name))) {
-                continue;
-            }
+        const std::optional<std::string_view> register_name{
+            first_unused_scratch_register(),
+        };
 
-            comment(src_loc_tk, indent, "allocate scratch register -> {}",
-                    register_name);
-
-            push_allocation(src_loc_tk, indent, register_name,
-                            register_pool::holder_kind::scratch);
-
-            state_.max_scratch_regs = std::max(
-                state_.max_scratch_regs, state_.registers.scratch_count());
-
-            return allocated_operand(register_name, type_ref);
+        if (not register_name) {
+            throw out_of_registers_error(src_loc_tk);
         }
 
-        throw out_of_registers_error(src_loc_tk);
+        comment(src_loc_tk, indent, "allocate scratch register -> {}",
+                *register_name);
+
+        push_allocation(src_loc_tk, indent, *register_name,
+                        register_pool::holder_kind::scratch);
+
+        state_.max_scratch_regs =
+            std::max(state_.max_scratch_regs, state_.registers.scratch_count());
+
+        return allocated_operand(*register_name, type_ref);
     }
 
     // starts the data section, after the code and every routine it uses
@@ -1627,6 +1627,22 @@ class machine {
 
         return std::format("{} at {}:", panic_message(name),
                            locations_.file_name(file_ix));
+    }
+
+    // the first register in the scratch order of the backend that is free,
+    // none when all are held
+    [[nodiscard]] auto first_unused_scratch_register() const
+        -> std::optional<std::string_view> {
+
+        for (const std::string_view register_name : scratch_registers()) {
+            if (not state_.registers.is_unavailable(
+                    register_mask(register_name))) {
+
+                return register_name;
+            }
+        }
+
+        return std::nullopt;
     }
 
     auto free_scratch_registers(const token& src_loc_tk, const size_t indent,

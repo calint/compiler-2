@@ -1,5 +1,5 @@
 
-1519.baz:3:11: cannot resolve identifier 'limit'
+1519.baz:3:11: 'limit' not found
     res = limit
           ^~~~~
 1519.baz:9:10: instantiated by 'get<i8>'

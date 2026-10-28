@@ -205,14 +205,15 @@ class stmt_assign_var final : public statement {
                     throw compile_error{
                         read.tok(),
                         std::format("{} is read but has been overwritten in "
-                                    "the same statement",
+                                    "the same statement, use a temporary "
+                                    "variable",
                                     in_quotes(read.path_text()))};
                 }
 
                 throw compile_error{
                     read.tok(),
                     std::format("{} may have been overwritten in the same "
-                                "statement",
+                                "statement, use a temporary variable",
                                 in_quotes(read.path_text()))};
             }
         });

@@ -65,6 +65,10 @@ class stmt_builtin_io final : public statement {
     };
 
   private:
+    // where the range of the buffer is checked: a constant count with a
+    // constant start was checked at compile time, e.g. 'write(1, a, 2, 1)'
+    enum class range_check : uint8_t { run_time, compile_time };
+
     static constexpr std::array<io_function, 4> functions_{
         io_function{
             .name{"read"},

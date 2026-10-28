@@ -1,0 +1,9 @@
+# a value of a type with all its fields but no closing '}' is not one with too
+# many fields
+
+type point {x, y}
+
+func main() {
+    var p = point{1, 2
+    var q = 3
+}

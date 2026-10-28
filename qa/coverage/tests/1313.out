@@ -1,4 +1,4 @@
 
-1313.baz:12:21: 'l.a.x' is read but has been overwritten in the same statement
+1313.baz:12:21: 'l.a.x' is read but has been overwritten in the same statement, use a temporary variable
     l = {{5, 6}, mk(l.a.x + 0)}
                     ^

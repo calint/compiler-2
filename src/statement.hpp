@@ -510,10 +510,9 @@ class statement {
 
         throw compile_error{
             *type_tk,
-            std::format("{} is not a type, name an instance first, e.g. "
-                        "'type str = {}<...>'",
+            std::format("{} is not a type, {}",
                         in_quotes(std::format("{}<...>", type_tk->text())),
-                        type_tk->text())};
+                        instance_hint(type_tk->text()))};
     }
 
     // why the name 'root' cannot be written, e.g. ", 'x' is declared with

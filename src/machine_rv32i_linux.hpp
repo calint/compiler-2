@@ -117,7 +117,7 @@ class machine_rv32i_linux final : public machine_rv32i {
             a.li(1, "a5", syscall_pwrite_);
         }
 
-        // a5 holds the system call, a6 the return address
+        // 'a5' holds the system call, 'a6' the return address
         a.label(0, sector_transfer_label_);
         a.mv(1, "a6", "a7");
         a.la(1, "a3", sd_card_label_);
@@ -135,7 +135,7 @@ class machine_rv32i_linux final : public machine_rv32i {
         a.bltz(1, "a0", sd_card_failure.label);
         a.la(1, "a3", sd_card_label_);
         a.sw(1, "a0", 0, "a3");
-        // 'llseek' writes the size of the file at a3
+        // 'llseek' writes the size of the file at 'a3'
         a.li(1, "a1", 0);
         a.li(1, "a2", 0);
         a.addi(1, "a3", "a3", size_low_offset);
@@ -160,7 +160,8 @@ class machine_rv32i_linux final : public machine_rv32i {
         a.label(0, "2");
         a.lw(1, "a4", count_offset, "a3");
         a.bgeu(1, "a0", "a4", sd_card_failure.label);
-        // a0 the descriptor, a3 and a4 the low and high word of the offset
+        // 'a0' the descriptor, 'a3' and 'a4' the low and high word of the
+        // offset
         a.lw(1, "a7", 0, "a3");
         a.slli(1, "a3", "a0", sector_shift);
         a.srli(1, "a4", "a0", high_shift);

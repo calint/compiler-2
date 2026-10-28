@@ -1,4 +1,4 @@
 
-0353.baz:4:5: cannot resolve identifier 'object'
+0353.baz:4:5: 'object' not found
     object.method()
     ^~~~~~

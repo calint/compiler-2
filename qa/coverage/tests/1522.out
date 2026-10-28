@@ -1,5 +1,5 @@
 
-1522.baz:3:11: cannot resolve identifier 'inner'
+1522.baz:3:11: 'inner' not found
     res = inner<T>(x)
           ^~~~~
 1522.baz:11:10: instantiated by 'outer<i32>'

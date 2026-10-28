@@ -1,4 +1,4 @@
 
-1535.baz:4:15: cannot resolve identifier '\x0c'
+1535.baz:4:15: '\x0c' not found
     var a = 1 \x0c+ q
               ^~~~

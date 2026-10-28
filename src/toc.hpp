@@ -1172,7 +1172,8 @@ class scope_stack final {
     // e.g. the 'break' of 'if 1 == 2 { break }'
     auto assert_in_loop(const token& src_loc_tk) const -> void {
         if (not innermost_loop()) {
-            throw compile_error{src_loc_tk, "not in a loop"};
+            throw compile_error{src_loc_tk, std::format("{} is not in a loop",
+                                                        in_quotes(src_loc_tk))};
         }
     }
 
@@ -1955,17 +1956,12 @@ class ident_resolver final {
         if (generics_.get().has_type(ident)) {
             throw compile_error{
                 src_loc_tk,
-                std::format("generic type {} is not a value, name an "
-                            "instance first, e.g. 'type str = {}<...>'",
-                            in_quotes(ident), ident)};
+                std::format("generic type {} is not a value, {}",
+                            in_quotes(ident), instance_hint(ident))};
         }
 
         if (generics_.get().has_func(ident)) {
-            throw compile_error{
-                src_loc_tk,
-                std::format("generic function {} needs type arguments, "
-                            "e.g. '{}<...>'",
-                            in_quotes(ident), ident)};
+            throw_generic_function_without_arguments(src_loc_tk, ident, ident);
         }
 
         // note: a function used as a value is rejected where it is parsed
@@ -1980,9 +1976,8 @@ class ident_resolver final {
                 std::format("cannot parse constant {}", in_quotes(ident))};
         }
 
-        throw compile_error{
-            src_loc_tk,
-            std::format("cannot resolve identifier {}", in_quotes(ident))};
+        throw compile_error{src_loc_tk,
+                            std::format("{} not found", in_quotes(ident))};
     }
 
     // what 'name' names with 'path' inside it, as a root variable and the
@@ -3362,10 +3357,8 @@ class toc final {
         if (not types_.has(name)) {
             if (generics_.has_type(name)) {
                 throw compile_error{
-                    type_tk,
-                    std::format("generic type {} is not a type, name an "
-                                "instance first, e.g. 'type str = {}<...>'",
-                                in_quotes(name), name)};
+                    type_tk, std::format("generic type {} is not a type, {}",
+                                         in_quotes(name), instance_hint(name))};
             }
 
             throw compile_error{

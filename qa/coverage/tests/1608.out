@@ -1,4 +1,4 @@
 
-1608.baz:6:15: 'q.a[3]' is read but has been overwritten in the same statement
+1608.baz:6:15: 'q.a[3]' is read but has been overwritten in the same statement, use a temporary variable
     q = {{1}, q.a[3]}
               ^

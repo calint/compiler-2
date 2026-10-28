@@ -1,4 +1,4 @@
 
-1403.baz:9:23: 'e.x' may have been overwritten in the same statement
+1403.baz:9:23: 'e.x' may have been overwritten in the same statement, use a temporary variable
         ps[1] = {e.y, e.x}
                       ^

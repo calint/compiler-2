@@ -33,7 +33,7 @@
 // a path of names, fields and indexes, or a literal; the types and functions
 // below in reading order:
 //
-//   'assert_constant_index', 'constant_range', 'range_check',
+//   'assert_constant_index', 'constant_range',
 //   'assert_constant_range'  the constant checks of an index and a range
 //   'stmt_identifier'        the path node; its members that use 'expr_any'
 //                            are in 'stmt_identifier_impl.hpp'
@@ -96,10 +96,6 @@ struct constant_range {
     // the path of the array, e.g. 'a.b' of 'a.b[1]'
     std::string_view array_name;
 };
-
-// where the range of a bulk operation is checked: a constant count with a
-// constant start was checked at compile time, e.g. 'array_copy(a[1], b, 2)'
-enum class range_check : uint8_t { run_time, compile_time };
 
 // a constant range is known to be negative or to pass the end of the array,
 // e.g. 5 in 'array_copy(a, b, 5)' of 'a = i8[4]'; a run-time one is left to
@@ -959,8 +955,7 @@ class stmt_identifier final : public statement {
             return;
         }
 
-        throw compile_error{src_loc_tk, std::format("array {} must be indexed",
-                                                    in_quotes(dotted_path_))};
+        throw_unindexed_array(src_loc_tk, dotted_path_);
     }
 
     // the '[' of an element needs an array
@@ -1202,9 +1197,7 @@ inline auto assert_not_whole_array(const stmt_identifier& ident,
         return;
     }
 
-    throw compile_error{ident.tok(),
-                        std::format("array {} must be indexed",
-                                    in_quotes(ident.dotted_path()))};
+    throw_unindexed_array(ident.tok(), ident.dotted_path());
 }
 
 // a whole array is not read as its first element

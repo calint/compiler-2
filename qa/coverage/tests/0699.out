@@ -1,4 +1,4 @@
 
-0699.baz:4:13: cannot resolve identifier '$'
+0699.baz:4:13: '$' not found
     let t = $
             ^

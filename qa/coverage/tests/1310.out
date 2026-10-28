@@ -1,4 +1,4 @@
 
-1310.baz:5:16: 'a[0]' is read but has been overwritten in the same statement
+1310.baz:5:16: 'a[0]' is read but has been overwritten in the same statement, use a temporary variable
     a = {a[1], a[0]}
                ^

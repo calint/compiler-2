@@ -236,10 +236,8 @@ struct generic_call {
         tokenizer scan{tz};
 
         if (not scan.is_next_char_token('(')) {
-            throw compile_error{
-                name_tk, std::format("generic function {} needs type "
-                                     "arguments, e.g. '{}<...>'",
-                                     in_quotes(generic_name), name_tk.text())};
+            throw_generic_function_without_arguments(name_tk, generic_name,
+                                                     name_tk.text());
         }
 
         deduction deduced{};
@@ -2098,36 +2096,6 @@ class stmt_call final : public statement {
         }
     }
 
-    // a ',' after the last parameter, or any argument of a function without
-    // parameters, is one argument too many, e.g. 'f(1, 2)' of 'func f(x)'
-    auto assert_no_surplus_argument(tokenizer& tz,
-                                    const size_t param_count) const -> void {
-
-        const char next{tz.peek_char_after_whitespace()};
-
-        if (next == ')' or (param_count != 0 and next != ',')) {
-            return;
-        }
-
-        // e.g. 'f(1, 2,)' has no surplus argument, the ',' of 'f(,)' follows
-        // no argument
-        if (param_count != 0) {
-            tokenizer probe{tz};
-
-            const std::optional<token> delimiter_tk{
-                probe.is_next_char_token(','),
-            };
-
-            if (delimiter_tk) {
-                probe.assert_no_trailing_delimiter(*delimiter_tk, ')',
-                                                   "a call");
-            }
-        }
-
-        throw compile_error{
-            tz, argument_count_text(func_name_, param_count, param_count)};
-    }
-
     // what the callee writes through the result or an argument may be a
     // global it uses, or what it writes to the global may be what it reaches
     // through them, e.g. 'g = add_g()' where 'add_g' sets 'res' and reads 'g'
@@ -2367,7 +2335,8 @@ class stmt_call final : public statement {
                                            : literal_typing::from_destination);
         }
 
-        assert_no_surplus_argument(tz, params.size() - first_argument_index());
+        tz.assert_no_surplus_argument(func_name_,
+                                      params.size() - first_argument_index());
 
         // e.g. 'f(a, b' lacks it
         close_paren_tk_ =

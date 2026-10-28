@@ -1,4 +1,4 @@
 
-1611.baz:6:17: 'ps[0].y' is read but has been overwritten in the same statement
+1611.baz:6:17: 'ps[0].y' is read but has been overwritten in the same statement, use a temporary variable
     ps = {{1}, {ps[0].y}}
                 ^~

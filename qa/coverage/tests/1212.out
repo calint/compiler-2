@@ -1,4 +1,4 @@
 
-1212.baz:4:5: not in a loop
+1212.baz:4:5: 'break' is not in a loop
     break
     ^~~~~

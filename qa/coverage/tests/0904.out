@@ -1,4 +1,4 @@
 
-include/bad.baz:2:5: cannot resolve identifier 'x'
+include/bad.baz:2:5: 'x' not found
     x = 1
     ^

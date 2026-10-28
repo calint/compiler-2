@@ -231,6 +231,35 @@ class compile_error final : public std::exception {
                        min_count, conjunction, max_count);
 }
 
+// an array where an element is needed, e.g. the 'a' of 'a + 1'
+[[noreturn]] inline auto throw_unindexed_array(const token& src_loc_tk,
+                                               const std::string_view name)
+    -> void {
+
+    throw compile_error{
+        src_loc_tk, std::format("array {} must be indexed", in_quotes(name))};
+}
+
+// a generic function without its type arguments where they cannot be
+// deduced; 'written' is the name as the source writes it
+[[noreturn]] inline auto throw_generic_function_without_arguments(
+    const token& src_loc_tk, const std::string_view name,
+    const std::string_view written) -> void {
+
+    throw compile_error{
+        src_loc_tk,
+        std::format("generic function {} needs type arguments, e.g. '{}<...>'",
+                    in_quotes(name), written)};
+}
+
+// the end of a message about a generic type used where an instance is needed
+[[nodiscard]] inline auto instance_hint(const std::string_view name)
+    -> std::string {
+
+    return std::format("name an instance first, e.g. 'type str = {}<...>'",
+                       name);
+}
+
 // a function name where a value is needed, e.g. the 'f' of 'x = f + 1'
 [[noreturn]] inline auto throw_function_as_value(const token& src_loc_tk,
                                                  const std::string_view name)

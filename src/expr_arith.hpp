@@ -374,7 +374,7 @@ class expr_arith final : public statement {
         // enclosed
         std::optional<token> open_paren_tk;
 
-        uint8_t first_op_precedence{initial_precedence};
+        uint8_t first_op_precedence{list_start_precedence};
 
         // an element the caller has already parsed, e.g. the 'b' of 'b * c' in
         // 'a + b * c'
@@ -395,7 +395,7 @@ class expr_arith final : public statement {
             return {
                 .uops{std::move(uops_in)},
                 .open_paren_tk{open_paren_tk_in},
-                .first_op_precedence{initial_precedence},
+                .first_op_precedence{list_start_precedence},
                 .first_expression{},
                 .destination_type{destination_type_in},
             };
@@ -424,7 +424,7 @@ class expr_arith final : public statement {
             return {
                 .uops{},
                 .open_paren_tk{},
-                .first_op_precedence{initial_precedence},
+                .first_op_precedence{list_start_precedence},
                 .first_expression{},
                 .destination_type{destination_type_in},
             };
@@ -441,7 +441,7 @@ class expr_arith final : public statement {
                         : tz.next_token_position()},
           list_uops_{std::move(opts.uops)}, open_paren_tk_{opts.open_paren_tk},
           is_implied_subexpression_{
-              opts.first_op_precedence != initial_precedence,
+              opts.first_op_precedence != list_start_precedence,
           },
           destination_type_{opts.destination_type} {
 
@@ -518,9 +518,6 @@ class expr_arith final : public statement {
             exprs_.emplace_back(parse_element(tc, tz, destination_type_).node);
         }
     }
-
-    // higher than the highest precedence
-    static constexpr uint8_t initial_precedence{list_start_precedence};
 
     //
     // overridden methods

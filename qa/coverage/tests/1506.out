@@ -1,4 +1,4 @@
 
-1506.baz:4:10: cannot resolve identifier 'nope'
+1506.baz:4:10: 'nope' not found
     show(nope)
          ^~~~

@@ -866,8 +866,8 @@ class machine_x86_64 final : public machine {
     }
 
     // the handler of a check: without the line it prints 'panic: NAME'; with
-    // it, one stub per failure location sets rbp to the line and enters the
-    // entry of its file, which prints 'panic: NAME at FILE:', sets rbx to the
+    // it, one stub per failure location sets 'rbp' to the line and enters the
+    // entry of its file, which prints 'panic: NAME at FILE:', sets 'rbx' to the
     // exit code and enters the shared line report
     auto emit_failure_handler(const failure_handler& handler,
                               const bool with_line) -> void override {
@@ -884,7 +884,7 @@ class machine_x86_64 final : public machine {
 
             assembler_.label(0, handler_label);
             emit_panic_message(message_label);
-            emit_failure_exit(handler.exit_code);
+            exit(token{}, 1, immediate(handler.exit_code));
 
             emit_message_data(message_label,
                               std::format("{}\n", panic_message(name)));
@@ -1051,8 +1051,8 @@ class machine_x86_64 final : public machine {
         branch_to_failure(src_loc_tk, indent, condition::o, overflow_failure);
     }
 
-    // a reported line goes through the stub of its line, which sets rbp for
-    // the handler, so a passing check keeps rbp and loads nothing
+    // a reported line goes through the stub of its line, which sets 'rbp' for
+    // the handler, so a passing check keeps 'rbp' and loads nothing
     auto branch_to_failure(const token& src_loc_tk, const size_t indent,
                            const condition failed,
                            const failure_handler& handler) -> void {
@@ -1299,15 +1299,6 @@ class machine_x86_64 final : public machine {
 
         assembler_.instruction(indent, code, to_argument(dst),
                                to_argument(src));
-    }
-
-    auto emit_failure_exit(const int exit_code) -> void {
-        assembler_.comment(1,
-                           std::format("exit with error code {}", exit_code));
-
-        assembler_.instruction(1, op::mov, "rax", syscall_exit_);
-        assembler_.instruction(1, op::mov, "rdi", exit_code);
-        assembler_.instruction(1, op::syscall);
     }
 
     // an immediate that does not fit the instruction goes through a register

@@ -122,8 +122,16 @@ inline auto expr_type::parse_fields(toc& tc, tokenizer& tz, const type& tp)
         if (index == flds.size()) {
             const std::optional<token> delimiter_tk{tz.is_next_char_token(',')};
 
+            // e.g. '{x, y' without its '}'
+            if (not delimiter_tk) {
+                throw compile_error{
+                    tz,
+                    std::format("expected '}}' to close the value of type {}",
+                                in_quotes(tp.name()))};
+            }
+
             // a trailing ',' lets each field end its line the same way
-            if (delimiter_tk and at_closing_brace(tz)) {
+            if (at_closing_brace(tz)) {
                 list.delims_tk.emplace_back(*delimiter_tk);
                 break;
             }

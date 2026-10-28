@@ -1,0 +1,4 @@
+
+1802.baz:8:5: expected '}' to close the value of type 'point'
+    var q = 3
+    ^

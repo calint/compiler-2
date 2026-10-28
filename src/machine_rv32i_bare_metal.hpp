@@ -182,23 +182,23 @@ class machine_rv32i_bare_metal : public machine_rv32i {
     // virtual methods
     //
 
-    // '.Lbaz_exit' ends the program with the exit code in a0
+    // '.Lbaz_exit' ends the program with the exit code in 'a0'
     virtual auto emit_exit_routine() -> void = 0;
 
-    // waits for a byte and loads it into a4, may change only a4
+    // waits for a byte and loads it into 'a4', may change only 'a4'
     // note: the read routine uses the labels '1', '3' and '4' around it, an
     //       override may use '2'
     virtual auto emit_receive_byte() -> void = 0;
 
     virtual auto emit_stack_setup() -> void = 0;
 
-    // waits until the uart is ready and sends the byte at a5, may change
-    // only a4
+    // waits until the uart is ready and sends the byte at 'a5', may change
+    // only 'a4'
     // note: the write routine uses the labels '1' and '3' around it, an
     //       override may use '2'
     virtual auto emit_transmit_byte() -> void = 0;
 
-    // prepares a3 for 'emit_receive_byte' and 'emit_transmit_byte'
+    // prepares 'a3' for 'emit_receive_byte' and 'emit_transmit_byte'
     virtual auto emit_uart_setup() -> void = 0;
 
     //
@@ -223,7 +223,7 @@ class machine_rv32i_bare_metal : public machine_rv32i {
         }
     }
 
-    // reads until a newline or the count is reached, a0 receives the count
+    // reads until a newline or the count is reached, 'a0' receives the count
     // and ctrl-d ends the read without being stored like at a terminal
     auto emit_read_routine() -> void {
         assembler_rv32i& a{assembler()};
@@ -252,14 +252,14 @@ class machine_rv32i_bare_metal : public machine_rv32i {
         a.jr(1, "a7");
     }
 
-    // writes the count of bytes, a0 receives the count
+    // writes the count of bytes, 'a0' receives the count
     auto emit_write_routine() -> void {
         assembler_rv32i& a{assembler()};
 
         a.label(0, write_label_);
         emit_uart_setup();
         a.mv(1, "a5", "a1");
-        // the descriptor is not needed so a0 holds the end
+        // the descriptor is not needed so 'a0' holds the end
         a.add(1, "a0", "a1", "a2");
         // the end test sits at the bottom, one branch per byte, the guard
         // handles a count of zero

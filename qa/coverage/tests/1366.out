@@ -1,4 +1,4 @@
 
-1366.baz:8:17: 'ps[i].x' may have been overwritten in the same statement
+1366.baz:8:17: 'ps[i].x' may have been overwritten in the same statement, use a temporary variable
     ps[0] = {1, ps[i].x}
                 ^~

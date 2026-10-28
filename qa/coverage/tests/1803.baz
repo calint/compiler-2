@@ -1,0 +1,25 @@
+# --checks=overflow: a 32 bit add or subtract with a constant past the
+# immediate range or with a second operand in memory, up to the limits
+
+func assert(err, ok bool) { if not ok exit(err) }
+
+func main() {
+    var a = i32(2147483647 - 5000)
+    a = a + 5000
+    assert(1, a == 2147483647)
+    a = i32(-2147483648 + 5000)
+    a = a - 5000
+    assert(2, a == -2147483648)
+    var b = i32(-5000)
+    var c = i32(2147483647 - 5000)
+    c = c - b
+    assert(3, c == 2147483647)
+    var d = i32(1000)
+    var e = i32(-2147483648 + 1000)
+    e = e - d
+    assert(4, e == -2147483648)
+    var f = i32(-100000)
+    f = f + -100000
+    assert(5, f == -200000)
+    exit(0)
+}
