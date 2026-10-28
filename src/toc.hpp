@@ -1938,10 +1938,10 @@ class ident_resolver final {
                             in_quotes(ident), ident)};
         }
 
-        // e.g. the 'f' of 'x = f + 1'
-        if (funcs_.get().has(ident)) {
-            throw_function_as_value(src_loc_tk, ident);
-        }
+        // note: a function used as a value is rejected where it is parsed
+        //       ('parse_call_or_identifier')
+
+        assert(not funcs_.get().has(ident));
 
         // a broken number, e.g. '0x' or '12_000'
         if (starts_number(ident)) {
@@ -2407,11 +2407,15 @@ class definition_checks final {
         const bool is_generic{not generic_method.empty()};
         const bool is_existing_generic{not existing_generic_method.empty()};
 
+        // note: a second definition of the same generic method is rejected
+        //       where it is parsed ('assert_generic_method_not_defined')
+
+        assert(not(is_generic and is_existing_generic) or
+               generic_method != existing_generic_method);
+
         // e.g. 'text.print' and 'list.print' for
         // 'type text<size> = list<i8, size>'
-        if (is_generic and is_existing_generic and
-            generic_method != existing_generic_method) {
-
+        if (is_generic and is_existing_generic) {
             throw compile_error{
                 src_loc_tk,
                 std::format("generic method {} clashes with the generic "
@@ -2419,13 +2423,6 @@ class definition_checks final {
                             in_quotes(generic_method),
                             in_quotes(existing_generic_method),
                             where(existing_tk))};
-        }
-
-        if (is_generic and is_existing_generic) {
-            throw compile_error{
-                src_loc_tk,
-                std::format("generic method {} already defined at {}",
-                            in_quotes(generic_method), where(existing_tk))};
         }
 
         if (is_generic) {
