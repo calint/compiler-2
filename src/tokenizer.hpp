@@ -317,33 +317,15 @@ class tokenizer final {
     auto skip_argument() -> void { skip_to_unnested(",)"); }
 
     // skips the braced block that starts at the next '{', strings and
-    // character literals may contain braces
-    // e.g. '{ a = { 1 } b = 2 }', the depth counts the braces that are open
+    // character literals may contain brackets
+    // e.g. '{ a = { 1 } b = 2 }', a closer without an opener ends it early
     auto skip_braced_block() -> void {
         // note: every caller has seen the '{'
         std::ignore = seen_char_token('{');
 
-        size_t depth{1};
+        skip_to_unnested("}");
 
-        while (true) {
-            if (is_next_char_token('{')) {
-                ++depth;
-                continue;
-            }
-
-            if (not is_next_char_token('}')) {
-                if (is_eos()) {
-                    throw compile_error{*this, "expected '}' to close block"};
-                }
-
-                skip_token();
-                continue;
-            }
-
-            if (--depth == 0) {
-                return;
-            }
-        }
+        std::ignore = expect_char_token('}', "expected '}' to close block");
     }
 
     // skips the next braced block and returns the source text from the end of

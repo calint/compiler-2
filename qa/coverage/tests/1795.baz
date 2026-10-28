@@ -1,0 +1,9 @@
+# the body of a generic type is skipped to its closing '}' without being
+# parsed; a bracket that is not closed takes the '}' with it
+
+type l<n> {
+    x i8[n
+}
+
+func main() {
+}

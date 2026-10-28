@@ -5717,3 +5717,15 @@ SRC=1791 && EXP=3 && RUN
 # a typed constant on the left of a comparison compares as an immediate on the
 # right when it fits, at the left side's width where it does not
 SRC=1792 && EXP=0 && RUN
+
+# the body of a generic type is skipped to its '}': a closer without an opener
+# ends the skip early
+SRC=1793 && COMPERR
+
+# the body of a generic function is skipped to its '}': a closer without an
+# opener ends the skip early
+SRC=1794 && COMPERR
+
+# the body of a generic type is skipped to its '}': an open '[' takes the '}'
+# with it, the block reaches the end of the file
+SRC=1795 && COMPERR

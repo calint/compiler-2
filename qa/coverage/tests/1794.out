@@ -1,0 +1,4 @@
+
+1794.baz:5:12: expected '}' to close block
+    res = a)
+           ^
