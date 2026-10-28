@@ -1,6 +1,15 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] hard: bug hunt round 17 (2026-10-28, user: one more round for good
+    measure; hunters E1 regressions against the compiler before round 1
+    (da442005), E2 the generators of earlier rounds rerun and crossed, E3
+    mutability; reports in the session scratchpad bh17)
+    => done (2026-10-28): no bugs; E1 traced every difference in 1785 tests,
+       8096 generated programs and roome to a recorded fix or a decided
+       class, E2 found nothing in about 25000 programs (the only differences
+       are the decided x86_64 scratch register rejections), E3 nothing in
+       about 1900 programs and 110 probes writing read-only storage
 [x] hard: bug hunt round 16 (2026-10-28, user: loop until a round finds no
     bugs; hunters D1 conversions and mixed widths, D2 addresses, D3 generic
     functions and the round 15 change; reports in the session scratchpad

@@ -3,7 +3,6 @@
 ## Permissions
 
 - **No asking:** build, test, lint, format and scratch-compile commands.
-- **Ask first:** `rm -rf`, `git push`, `git reset --hard`, `git clean`, `sudo`.
 - **Scratch files:** only under `/tmp` (or the session scratchpad if given).
 
 ## This file
@@ -56,8 +55,7 @@
 - Lowercase, no trailing punctuation, code names in single quotes.
 - One short line, only what code cannot show; class and pass header comments
   may be longer.
-- Say why, never narrate the next line (`// get the loop label`,
-  `// add aliases`); a data member may say what it holds.
+- A data member may say what it holds.
 - The formatter writes the section banners (`// statics`, `// class methods`),
   keep them.
 - Markers: `todo:` for work left; `note:` for a remark or annotation that the
@@ -82,7 +80,6 @@
 
 ### Inserted code
 
-- Never insert locals before case labels in a switch.
 - Visitor-only references stay inside the lambda.
 
 ### Warnings and clang-tidy
@@ -100,14 +97,11 @@
 - Early returns, flat paths: `if`/`else` over two `if`s; no nested if/else
   inside an else.
 - Split nested calls into named steps.
-- Plain lookup loops when ranges read worse.
 - Code user input cannot reach is dead: `assert`, remove or
   `std::unreachable()`. Reachable code gets a test.
 
 ## Design
 
-- Goal: a reviewer understands the design without strain and judges it well
-  done.
 - Standing goal, never finished: every program the compiler accepts is free
   of undefined behavior. Each case is either rejected at compile time or
   checked at run time (under `--checks=noub`). A result never depends on the
@@ -135,25 +129,7 @@
 - The first element of an expression decides its type: '1 + k' has the
   default type, 'k + 1' the type of 'k'; never type a list by a later
   element.
-- A design task or a big change (several files or interfaces): propose the
-  best design even if it changes interfaces, plan it in `etc/todo.txt` and
-  wait for go-ahead. A plan: problem, chosen design, rejected alternatives
-  (one line each with the reason), invariants, tests.
-- Follow existing patterns; a new pattern needs a reason in the plan.
 - New class or pass: a header comment with its role and invariants.
-- Carry invariants in types and names over comments and asserts when cheap.
-- Update all callers; no compatibility shims or leftover old paths.
-- Mechanical moves and behavior changes in separate steps, so each diff reads
-  on its own; a mechanical step preserves behavior. Ask before changing
-  optimization, allocation or functionality.
-- Design problems outside the topic: add to `etc/todo.txt`, do not fix in
-  passing.
-- A refactor earns its place only if it removes a concept, exception,
-  special case or code path; fixes a bug or makes a guarantee easier to
-  check; or carries an invariant in a type or name instead of a comment.
-  Moves, renames for taste and idiom swaps do not. A review round that
-  finds none of these ends the refactor loop; a change that would undo an
-  earlier round's change also counts as none.
 
 ## Baz code
 
@@ -203,7 +179,7 @@
   legend, newest first (`[x]` with a `=> done (date): ...` note).
 - Done means: built, focused tests run, linter clean (clang-tidy and
   `qa/lint/check-all.sh`), formatter applied.
-- Never commit unless told; the message is always `.` (no body, no trailer).
+- Commit message: always `.` (no body, no trailer).
 - After each step, review round or fix phase, pause for the user to commit,
   then continue.
 - When the agents of a round are done, remove their temporary worktrees and
@@ -216,5 +192,3 @@
   path recreate old files on save).
 - `make.sh` (without `build`) and `roome/run.sh` read input: after `make.sh`
   type return; after `roome/run.sh` type "go home".
-- Large sources, e.g. `src/machine_rv32i.hpp` (5.7k lines), `src/toc.hpp`:
-  grep or read line ranges, never the whole file.
