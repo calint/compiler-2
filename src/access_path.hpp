@@ -4,7 +4,6 @@
 #include <cassert>
 #include <cstddef>
 #include <cstdint>
-#include <span>
 #include <string>
 #include <vector>
 
@@ -105,28 +104,17 @@ struct access_path {
             });
     }
 
-    // false only when the bytes cannot be the same
-    [[nodiscard]] auto overlaps(const access_path& other) const -> bool {
-        return not are_disjoint(steps, other.steps);
-    }
-
-    //
-    // statics
-    //
-
-    // the paths select different fields or different constant elements of the
-    // same object, whatever their run-time indexes are, e.g. 'es[i].items' and
+    // false only when the bytes cannot be the same: the paths select
+    // different fields or different constant elements of the same object,
+    // whatever their run-time indexes are, e.g. 'es[i].items' and
     // 'es[1].other'. the steps of both start at the same root variable so they
     // line up until a field or a constant index differs
-    [[nodiscard]] static auto are_disjoint(const std::span<const path_step> lhs,
-                                           const std::span<const path_step> rhs)
-        -> bool {
-
-        const size_t common_count{std::min(lhs.size(), rhs.size())};
+    [[nodiscard]] auto overlaps(const access_path& other) const -> bool {
+        const size_t common_count{std::min(steps.size(), other.steps.size())};
 
         for (size_t i{}; i < common_count; ++i) {
-            const path_step& lhs_step{lhs.at(i)};
-            const path_step& rhs_step{rhs.at(i)};
+            const path_step& lhs_step{steps.at(i)};
+            const path_step& rhs_step{other.steps.at(i)};
 
             // note: an index follows a field, so steps at the same position
             //       are both fields or both indexes
@@ -146,7 +134,7 @@ struct access_path {
 
             if (lhs_step.kind == path_step::kind_type::field) {
                 if (lhs_step.number != rhs_step.number) {
-                    return true;
+                    return false;
                 }
 
                 continue;
@@ -156,12 +144,16 @@ struct access_path {
             if (lhs_step.range_end <= rhs_step.number or
                 rhs_step.range_end <= lhs_step.number) {
 
-                return true;
+                return false;
             }
         }
 
-        return false;
+        return true;
     }
+
+    //
+    // statics
+    //
 
     // the empty path
     [[nodiscard]] static auto whole_variable() -> access_path { return {}; }

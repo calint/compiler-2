@@ -440,8 +440,7 @@ inline auto stmt_identifier::compile_checked_index(
                                            shape.element_count()),
     };
 
-    x.check_bounds(index_expr.tok(), indent, checked,
-                   tc.checks().bounds_options());
+    x.check_bounds(index_expr.tok(), indent, checked, checks);
 
     return 0;
 }

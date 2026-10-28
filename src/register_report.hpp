@@ -227,11 +227,11 @@ class register_reporter final {
                 .text(),
         };
 
-        for (const std::string& line : split_lines(text)) {
-            for (const std::string& part : wrapped(line, max_detail_width)) {
-                error.detail += error.detail.empty() ? "" : "\n";
-                error.detail += part;
-            }
+        for (const std::string& part :
+             wrapped_lines(split_lines(text), max_detail_width)) {
+
+            error.detail += error.detail.empty() ? "" : "\n";
+            error.detail += part;
         }
 
         return error;
@@ -242,16 +242,7 @@ class register_reporter final {
     [[nodiscard]] auto peak_report() const -> std::vector<std::string> {
         // room for the comment marker and a space of the assembly output
         constexpr size_t max_line_width{78};
-
-        std::vector<std::string> lines;
-
-        for (const std::string& line : register_peak_lines()) {
-            for (std::string& part : wrapped(line, max_line_width)) {
-                lines.push_back(std::move(part));
-            }
-        }
-
-        return lines;
+        return wrapped_lines(register_peak_lines(), max_line_width);
     }
 
   private:
@@ -473,7 +464,6 @@ class register_reporter final {
         return text.starts_with(prefix) ? text.substr(prefix.size()) : text;
     }
 
-    // breaks a line that is too long at spaces, the parts keep its indentation
     [[nodiscard]] static auto wrapped(const std::string& line,
                                       const size_t width)
         -> std::vector<std::string> {
@@ -515,6 +505,23 @@ class register_reporter final {
         }
 
         parts.push_back(std::move(rest));
+
+        return parts;
+    }
+
+    // breaks a line that is too long at spaces, the parts keep its indentation
+    // each line wrapped to 'width'
+    [[nodiscard]] static auto
+    wrapped_lines(const std::vector<std::string>& lines, const size_t width)
+        -> std::vector<std::string> {
+
+        std::vector<std::string> parts;
+
+        for (const std::string& line : lines) {
+            for (std::string& part : wrapped(line, width)) {
+                parts.push_back(std::move(part));
+            }
+        }
 
         return parts;
     }

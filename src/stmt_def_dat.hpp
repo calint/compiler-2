@@ -312,12 +312,11 @@ class stmt_def_dat final : public statement {
 
         // e.g. 'dat b = a' copies the array 'a' at run time
         if (value.is_whole_array_copy()) {
-            const ident_info source{make_ident_info(tc, *value.operand_path())};
+            // note: the parse rejected a source that is not an array
+            //       ('expr_type::parse_copy_source'), a dat folds right after
+            //       its parse with the same names
 
-            // e.g. the 'e' of 't{e, 1}' for an array field, 'e' not an array
-            if (not source.is_array()) {
-                throw compile_error{value.tok(), "source must be an array"};
-            }
+            assert(make_ident_info(tc, *value.operand_path()).is_array());
 
             throw_not_constant(value);
         }

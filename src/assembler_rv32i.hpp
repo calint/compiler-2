@@ -2071,7 +2071,9 @@ class assembler_rv32i final : public assembler {
 
         // addresses are 32 bit, so the distance wraps around the address space
         // note: the address space fits a signed distance
-        constexpr auto space_bytes{static_cast<int64_t>(address_space_bytes)};
+        constexpr int64_t space_bytes{
+            static_cast<int64_t>(address_space_bytes),
+        };
 
         assert(distance > -space_bytes and distance < space_bytes);
 

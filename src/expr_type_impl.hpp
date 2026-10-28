@@ -390,7 +390,7 @@ inline auto expr_type::compile_identifier_copy(toc& tc, const size_t indent,
 
     const ident_info src_info{make_ident_info(tc, ident)};
 
-    // 'expr_type' validates the source type before entering here
+    // note: 'expr_type' validates the source type before entering here
     assert(dst_type.is_same(src_info.type_ref()));
 
     // note: 'plan_writes' checked the shape, the plan of every value is made

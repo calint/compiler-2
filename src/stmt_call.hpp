@@ -1888,7 +1888,6 @@ class stmt_call final : public statement {
                                 tc.overflow_options(dst));
     }
 
-    // reported at the call because an inlined result aliases the destination
     [[nodiscard]] auto has_inlined_call() const -> bool override {
         return callee().is_inlined() or statement::has_inlined_call();
     }
@@ -2292,10 +2291,6 @@ class stmt_call final : public statement {
     // the call is in the body of its callee, a recursion
     [[nodiscard]] auto is_call_in_own_body(const toc& tc) const -> bool {
         return tc.scopes().current_func_scope().is_name(callee().name());
-    }
-
-    [[nodiscard]] auto is_constructor() const -> bool {
-        return constructor_.has_value();
     }
 
     [[nodiscard]] auto is_method() const -> bool {

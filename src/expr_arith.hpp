@@ -71,6 +71,14 @@ class arith_steps final {
         return *identity;
     }
 
+    // '+' or '-'
+    [[nodiscard]] static auto is_additive(const arithmetic_operator op)
+        -> bool {
+
+        return op == arithmetic_operator::add or
+               op == arithmetic_operator::subtract;
+    }
+
     [[nodiscard]] static auto is_merged(const step& s) -> bool {
         return s.element == nullptr;
     }
@@ -114,13 +122,6 @@ class arith_steps final {
     [[nodiscard]] static auto is_same_run_op(const arithmetic_operator a,
                                              const arithmetic_operator b)
         -> bool {
-
-        const auto is_additive{
-            [](const arithmetic_operator op) -> bool {
-                return op == arithmetic_operator::add or
-                       op == arithmetic_operator::subtract;
-            },
-        };
 
         return a == b or (is_additive(a) and is_additive(b));
     }
@@ -575,7 +576,7 @@ class expr_arith final : public statement {
         // inlined function
         // e.g. 'r = a + r * 2' would copy 'a' into 'r' before 'r * 2' reads it
         if (destination_is_clobbered_before_read(tc, dst, steps)) {
-            compile_through_scratch(tc, indent, dst);
+            compile_through_scratch(tc, indent, dst, steps);
             return;
         }
 
@@ -599,7 +600,7 @@ class expr_arith final : public statement {
         tc.emit_most_efficient(
             tok(), indent,
             [&] -> void { compile_steps(tc, indent, dst, steps); },
-            [&] -> void { compile_through_scratch(tc, indent, dst); });
+            [&] -> void { compile_through_scratch(tc, indent, dst, steps); });
     }
 
     // each element is computed at the width of the destination
@@ -902,9 +903,12 @@ class expr_arith final : public statement {
                            tc.overflow_options(dst));
     }
 
-    // the destination keeps its value until the whole expression is computed
+    // the destination keeps its value until the whole expression is computed;
+    // the steps planned for 'dst' are those of a register of its type
     auto compile_through_scratch(toc& tc, const size_t indent,
-                                 const destination& dst) const -> void {
+                                 const destination& dst,
+                                 const std::span<const step> steps) const
+        -> void {
 
         machine& x{tc.machine()};
 
@@ -914,7 +918,7 @@ class expr_arith final : public statement {
 
         const destination reg_dst{dst.in_register(reg)};
 
-        compile_steps(tc, indent, reg_dst, plan_steps(tc, reg_dst));
+        compile_steps(tc, indent, reg_dst, steps);
 
         x.copy_value(tok(), indent, dst.operand(), reg);
 
@@ -1175,12 +1179,7 @@ class expr_arith final : public statement {
         // note: the rewrite hides an overflow of the negation, the check
         //       computes it
 
-        const bool is_add_sub{
-            op == arithmetic_operator::add or
-                op == arithmetic_operator::subtract,
-        };
-
-        if (is_add_sub and not tc.checks_overflow(dst) and
+        if (arith_steps::is_additive(op) and not tc.checks_overflow(dst) and
             is_negated_operand(tc, src)) {
 
             compile_negated_operand(tc, indent, op, dst, src);
@@ -1407,9 +1406,7 @@ class expr_arith final : public statement {
 
         machine& x{tc.machine()};
 
-        if (op == arithmetic_operator::add or
-            op == arithmetic_operator::subtract) {
-
+        if (arith_steps::is_additive(op)) {
             x.add_subtract(src_loc_tk, indent, op, dst.operand(), value,
                            tc.overflow_options(dst));
 

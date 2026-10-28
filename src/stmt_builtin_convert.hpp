@@ -92,7 +92,6 @@ class stmt_builtin_convert final : public statement {
         compile_argument(tc, indent, dst, get_unary_ops());
     }
 
-    // only the builtin's own type counts, its argument is narrowed on purpose
     // a constant of the type, which wraps at the width of its use: the
     // argument folded like a list at W, where it wraps, narrowed to the type,
     // then the conversion's own unary ops apply at the width it is used at,

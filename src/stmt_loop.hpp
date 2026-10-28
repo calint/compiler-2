@@ -40,7 +40,9 @@ class stmt_loop final : public statement {
 
         {
             const toc::scope_entry loop{
-                tc, scope::loop(label, loop_end::at_break, label)};
+                tc,
+                scope::loop(label, loop_end::at_break, label),
+            };
 
             code_.compile(tc, indent, destination{});
 
@@ -70,7 +72,9 @@ class stmt_loop final : public statement {
         const std::string label{tc.create_unique_label(loop_tk, "loop")};
 
         const toc::scope_entry loop{
-            tc, scope::loop(label, loop_end::at_break, label)};
+            tc,
+            scope::loop(label, loop_end::at_break, label),
+        };
 
         return {tc, tz};
     }

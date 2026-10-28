@@ -11,7 +11,6 @@
 #include <string_view>
 
 #include "constant_parser.hpp"
-
 #include "toc.hpp"
 #include "token.hpp"
 #include "tokenizer.hpp"

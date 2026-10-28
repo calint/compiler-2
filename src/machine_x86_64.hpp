@@ -233,10 +233,10 @@ class machine_x86_64 final : public machine {
         assert(operation == arithmetic_operator::add or
                operation == arithmetic_operator::subtract);
 
-        // adding or subtracting 0 cannot overflow
-        if (check.enabled and immediate_bits(src) == 0) {
-            return;
-        }
+        // note: the front end folds away an add or subtract of 0, as rv32i
+        //       asserts in 'assert_folded'
+
+        assert(immediate_bits(src) != 0);
 
         const bool is_add{operation == arithmetic_operator::add};
 
@@ -254,11 +254,25 @@ class machine_x86_64 final : public machine {
         }
     }
 
+    // 'lea' writes only registers so a memory destination takes the address
+    // through a scratch register
     auto address_of(const token& src_loc_tk, const size_t indent,
                     const operand& dst, const operand& address)
         -> void override {
 
-        lea_into(src_loc_tk, indent, dst, address);
+        if (dst.is_register()) {
+            lea(src_loc_tk, indent, dst, address);
+            return;
+        }
+
+        const operand reg{
+            alloc_scratch_register(src_loc_tk, indent, default_type()),
+        };
+
+        lea(src_loc_tk, indent, reg, address);
+        mov(src_loc_tk, indent, dst, reg);
+
+        free_scratch_register(src_loc_tk, indent, reg);
     }
 
     auto bitwise(const token& src_loc_tk, const size_t indent,
@@ -489,7 +503,7 @@ class machine_x86_64 final : public machine {
         syscall(indent);
     }
 
-    // 'add' and 'cmp' work on memory, so a loop counter leaves its register to
+    // 'inc' and 'cmp' work on memory, so a loop counter leaves its register to
     // the values that need one once many are live
     [[nodiscard]] auto foo_counter_in_memory() const -> bool override {
         return registers().scratch_count() >= memory_counter_pressure_count_;
@@ -1748,21 +1762,18 @@ class machine_x86_64 final : public machine {
     }
 
     // 'syscall' changes 'rcx' and 'r11', the allocated ones are saved
-    auto invoke_syscall(const size_t indent) -> void {
+    auto io_syscall(const token& src_loc_tk, const size_t indent,
+                    const operand& dst, const int syscall_number) -> void {
+
         static constexpr std::array<std::string_view, 2> clobbered{
             "rcx",
             "r11",
         };
 
+        mov(src_loc_tk, indent, dst, immediate(syscall_number));
+
         with_saved_registers(indent, clobbered,
                              [&] -> void { syscall(indent); });
-    }
-
-    auto io_syscall(const token& src_loc_tk, const size_t indent,
-                    const operand& dst, const int syscall_number) -> void {
-
-        mov(src_loc_tk, indent, dst, immediate(syscall_number));
-        invoke_syscall(indent);
     }
 
     auto lea(const token& src_loc_tk, const size_t indent, const operand& dst,
@@ -1776,26 +1787,6 @@ class machine_x86_64 final : public machine {
                                        to_argument(lowered_dst),
                                        to_address(lowered_address));
                                });
-    }
-
-    // 'lea' writes only registers so a memory destination takes the address
-    // through a scratch register
-    auto lea_into(const token& src_loc_tk, const size_t indent,
-                  const operand& dst, const operand& address) -> void {
-
-        if (dst.is_register()) {
-            lea(src_loc_tk, indent, dst, address);
-            return;
-        }
-
-        const operand reg{
-            alloc_scratch_register(src_loc_tk, indent, default_type()),
-        };
-
-        lea(src_loc_tk, indent, reg, address);
-        mov(src_loc_tk, indent, dst, reg);
-
-        free_scratch_register(src_loc_tk, indent, reg);
     }
 
     auto load_bulk_addresses(const token& src_loc_tk, const size_t indent,
@@ -2005,16 +1996,7 @@ class machine_x86_64 final : public machine {
                                       const size_t size_bytes) const
         -> operand {
 
-        assert(reg.is_register());
-
-        if (reg.type_ref().size_bytes() == size_bytes) {
-            return reg;
-        }
-
-        operand result{sized_register(reg.register_name(), size_bytes)};
-        result.set_allocation_register(reg.allocation_register());
-
-        return result;
+        return register_view(reg, builtin_type_for_size_bytes(size_bytes));
     }
 
     // 'setcc' writes one byte

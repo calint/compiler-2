@@ -5,7 +5,6 @@
 #include <format>
 #include <optional>
 #include <ostream>
-#include <ranges>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -21,7 +20,6 @@
 // whose condition holds runs; a branch that is constant true ends the chain
 // and one that is constant false is not compiled
 class stmt_if final : public statement {
-    // e.g. 'else if' of 'else if c == d {y = 2}'
     // e.g. 'else {z = 3}'
     struct else_part {
         token else_tk;

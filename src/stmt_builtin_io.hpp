@@ -202,7 +202,6 @@ class stmt_builtin_io final : public statement {
         x.free_named_registers(tok(), indent, args);
     }
 
-    // the count has the default type, like the result of a call
     // 'read' and 'sector_read' write their buffer, e.g. 'b' of 'read(0, b)'
     auto visit_call_effects(const toc& tc,
                             const call_effect_visitor visitor) const

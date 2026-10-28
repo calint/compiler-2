@@ -251,18 +251,14 @@ enum class var_kind : uint8_t { var, dat, param, result };
 // a block, a loop or a function being compiled; the static functions make
 // each kind, e.g. 'scope::block()'
 class scope final {
-    // a function scope is 'main_func', 'inlined_func' or 'noinline_func', see
-    // the statics that make them
-    enum class scope_kind : uint8_t {
-        block,
-        loop,
-        main_func,
-        inlined_func,
-        noinline_func,
-    };
+    // a function scope is made by 'main_func', 'inlined_func' or
+    // 'noinline_func'
+    enum class func_kind : uint8_t { main, inlined, noinline };
 
     // what only a function scope has
     struct function_part {
+        func_kind kind{};
+
         // a unique path of source locations of the inlined call
         std::string call_path;
 
@@ -318,18 +314,21 @@ class scope final {
     // variables declared in this scope
     lut<var_info> vars_;
 
-    // a loop scope: a 'break' of it was compiled, so its end is reached;
-    // read by 'toc::join_loop' and 'scope_stack::reach_state_now'
-    bool is_left_by_break_{};
-    // a loop scope: a 'continue' of it was compiled, so its counter step is
-    // reached; read by 'toc::join_loop' and 'scope_stack::reach_state_now'
-    bool is_continued_{};
-    // a loop scope: how its end is reached and where a 'continue' jumps,
-    // e.g. the head of a 'loop' or the counter step of a 'foo'
-    loop_end loop_end_{loop_end::at_break};
-    std::string continue_label_;
+    // what only a loop scope has
+    struct loop_part {
+        // how its end is reached and where a 'continue' jumps, e.g. the head
+        // of a 'loop' or the counter step of a 'foo'
+        loop_end end{loop_end::at_break};
+        std::string continue_label;
+        // a 'break' of it was compiled, so its end is reached; read by
+        // 'toc::join_loop' and 'scope_stack::reach_state_now'
+        bool is_left_by_break{};
+        // a 'continue' of it was compiled, so its counter step is reached;
+        // read by 'toc::join_loop' and 'scope_stack::reach_state_now'
+        bool is_continued{};
+    };
 
-    scope_kind kind_{scope_kind::block};
+    std::optional<loop_part> loop_;
     std::optional<function_part> func_;
     std::optional<frame_part> frame_;
 
@@ -377,9 +376,7 @@ class scope final {
     }
 
     [[nodiscard]] auto continue_label() const -> std::string_view {
-        assert(is_loop());
-
-        return continue_label_;
+        return loop().continue_label;
     }
 
     [[nodiscard]] auto frame_base_register() const -> std::string_view {
@@ -423,16 +420,16 @@ class scope final {
     }
 
     [[nodiscard]] auto is_block() const -> bool {
-        return kind_ == scope_kind::block;
+        return not func_ and not loop_;
     }
 
     [[nodiscard]] auto is_compiled_in_place() const -> bool {
-        assert(is_func());
-
-        return kind_ != scope_kind::noinline_func;
+        return func_part().kind != func_kind::noinline;
     }
 
-    [[nodiscard]] auto is_continued() const -> bool { return is_continued_; }
+    [[nodiscard]] auto is_continued() const -> bool {
+        return loop().is_continued;
+    }
 
     // the end of the body of an inlined call is reached, by its last
     // statement or by a 'return'
@@ -445,23 +442,21 @@ class scope final {
     // only a call inlined; 'main' is compiled in place too but is not one
     // ('is_compiled_in_place')
     [[nodiscard]] auto is_inlined_func() const -> bool {
-        return kind_ == scope_kind::inlined_func;
+        return func_ and func_->kind == func_kind::inlined;
     }
 
     [[nodiscard]] auto is_left_by_break() const -> bool {
-        return is_left_by_break_;
+        return loop().is_left_by_break;
     }
 
     [[nodiscard]] auto is_left_by_return() const -> bool {
         return func_part().is_left_by_return;
     }
 
-    [[nodiscard]] auto is_loop() const -> bool {
-        return kind_ == scope_kind::loop;
-    }
+    [[nodiscard]] auto is_loop() const -> bool { return loop_.has_value(); }
 
     [[nodiscard]] auto is_main() const -> bool {
-        return kind_ == scope_kind::main_func;
+        return func_ and func_->kind == func_kind::main;
     }
 
     [[nodiscard]] auto is_name(const std::string_view name) const -> bool {
@@ -480,11 +475,7 @@ class scope final {
         return func_part().is_without_call;
     }
 
-    [[nodiscard]] auto loop_end_kind() const -> loop_end {
-        assert(is_loop());
-
-        return loop_end_;
-    }
+    [[nodiscard]] auto loop_end_kind() const -> loop_end { return loop().end; }
 
     auto make_var_read_only(const std::string_view name,
                             const read_only_cause cause) -> void {
@@ -492,9 +483,9 @@ class scope final {
         vars_.get_ref(name).read_only_why = cause;
     }
 
-    auto mark_continued() -> void { is_continued_ = true; }
+    auto mark_continued() -> void { loop().is_continued = true; }
 
-    auto mark_left_by_break() -> void { is_left_by_break_ = true; }
+    auto mark_left_by_break() -> void { loop().is_left_by_break = true; }
 
     auto mark_left_by_return() -> void { func_part().is_left_by_return = true; }
 
@@ -531,11 +522,11 @@ class scope final {
     }
 
     auto restore_continued(const bool is_continued) -> void {
-        is_continued_ = is_continued;
+        loop().is_continued = is_continued;
     }
 
     auto restore_left_by_break(const bool is_left) -> void {
-        is_left_by_break_ = is_left;
+        loop().is_left_by_break = is_left;
     }
 
     auto restore_left_by_return(const bool is_left) -> void {
@@ -558,9 +549,7 @@ class scope final {
     // statics
     //
 
-    [[nodiscard]] static auto block() -> scope {
-        return {"", scope_kind::block};
-    }
+    [[nodiscard]] static auto block() -> scope { return scope{""}; }
 
     // a function compiled in place, 'call_path' keeps its labels unique and
     // 'return' jumps to 'return_label'
@@ -568,7 +557,7 @@ class scope final {
                                            std::string call_path,
                                            std::string return_label) -> scope {
 
-        return function(name, scope_kind::inlined_func, std::move(call_path),
+        return function(name, func_kind::inlined, std::move(call_path),
                         std::move(return_label));
     }
 
@@ -578,16 +567,22 @@ class scope final {
                                    const loop_end end,
                                    std::string continue_label) -> scope {
 
-        scope scp{name, scope_kind::loop};
-        scp.loop_end_ = end;
-        scp.continue_label_ = std::move(continue_label);
+        scope scp{name};
+
+        scp.loop_ = loop_part{
+            .end{end},
+            .continue_label{std::move(continue_label)},
+            .is_left_by_break{},
+            .is_continued{},
+        };
+
         return scp;
     }
 
     // 'main' is compiled in place, 'return' exits the program
     [[nodiscard]] static auto main_func() -> scope {
         scope scp{
-            function(reserved_names::main, scope_kind::main_func, {}, {}),
+            function(reserved_names::main, func_kind::main, {}, {}),
         };
 
         scp.mark_without_call(false);
@@ -604,7 +599,7 @@ class scope final {
         assert(not frame_base_register.empty());
 
         scope scp{
-            function(name, scope_kind::noinline_func, std::move(call_path), {}),
+            function(name, func_kind::noinline, std::move(call_path), {}),
         };
 
         scp.frame_ = frame_part{
@@ -616,8 +611,7 @@ class scope final {
     }
 
   private:
-    scope(const std::string_view name, const scope_kind kind) noexcept
-        : name_{name}, kind_{kind} {}
+    explicit scope(const std::string_view name) noexcept : name_{name} {}
 
     [[nodiscard]] auto frame() -> frame_part& {
         assert(frame_);
@@ -643,18 +637,31 @@ class scope final {
         return *func_;
     }
 
+    [[nodiscard]] auto loop() -> loop_part& {
+        assert(loop_);
+
+        return *loop_;
+    }
+
+    [[nodiscard]] auto loop() const -> const loop_part& {
+        assert(loop_);
+
+        return *loop_;
+    }
+
     //
     // statics
     //
 
     [[nodiscard]] static auto function(const std::string_view name,
-                                       const scope_kind kind,
+                                       const func_kind kind,
                                        std::string call_path,
                                        std::string return_label) -> scope {
 
-        scope scp{name, kind};
+        scope scp{name};
 
         scp.func_ = function_part{
+            .kind{kind},
             .call_path{std::move(call_path)},
             .ret_label{std::move(return_label)},
             .bindings{},
@@ -2656,8 +2663,8 @@ class toc final {
   public:
     // the paths of an 'if' start where the condition before them is false,
     // the first at the 'if', of an 'and'/'or' list at an element that may end
-    // it; the end is reached when one path that runs
-    // reaches it; set when the merge ends, also when an error unwinds, like
+    // it; the end is reached when one path that runs reaches it; set when the
+    // merge ends, also when an error unwinds, like
     // 'assignment_flow::path_merge'
     class path_merge final {
         toc& tc_;
@@ -3166,15 +3173,15 @@ class toc final {
                 scopes_.current_func_scope().takes_from_call(),
         };
 
-        const scope_stack::reach_state reach{scopes_.reach_state_now()};
-
-        scopes_.set_reachable(true);
-
+        // the dry run puts back the reach of the code after it
         std::optional<compile_error> error{
-            dry_run(compile, machine::discarded_code::here),
+            dry_run(
+                [&] -> void {
+                    scopes_.set_reachable(true);
+                    compile();
+                },
+                machine::discarded_code::here),
         };
-
-        scopes_.restore_reach_state(reach);
 
         if (error and not(takes_from_call and error->depends_on_call())) {
             throw_dry_run_error(std::move(*error));
@@ -3414,11 +3421,11 @@ class toc final {
 
     // the code after the current statement of the function being compiled
     // runs on some path, the words of 'assignment_flow': 'end_path',
-    // 'record_break', 'path_merge', 'join_loop'; a block stops
-    // compiling at an unreached statement, e.g. after the 'return' of
-    // 'if n == 0 return' in an inlined call with the constant argument 0;
-    // outside a function, in the initializer of a global, every path
-    // continues, it makes no call
+    // 'record_break', 'path_merge', and 'join_loop' for its 'trace_loop'; a
+    // block stops compiling at an unreached statement, e.g. after the
+    // 'return' of 'if n == 0 return' in an inlined call with the constant
+    // argument 0; outside a function, in the initializer of a global, every
+    // path continues, it makes no call
     [[nodiscard]] auto is_reachable() const -> bool {
         assert(is_compiling_);
 

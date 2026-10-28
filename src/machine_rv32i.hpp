@@ -50,14 +50,14 @@
 //                for a known size, 'walk_runtime_count' for a run-time count
 //                (see the note before 'local_label')
 //   comparisons  'compare_and_branch', 'emit_comparison', 'compare_memory'
-//   checks       'check_bounds', 'check_divisor', 'check_fits_width',
+//   checks       'emit_bounds_check', 'check_divisor', 'check_fits_width',
 //                'check_shift_count', 'check_copy_overlap',
 //                'check_frame_capacity', 'check_stack_capacity', the overflow
 //                checks 'check_negate', 'check_multiply_result',
 //                'emit_checked_add_subtract'
 //   handlers     'emit_failure_handler', 'emit_line_failure',
 //                'emit_report_line_routine'
-//   calls        'call_function', the sector and i/o routine calls
+//   calls        'emit_call', the sector and i/o routine calls
 //   target hooks 'emit_read_call', 'emit_write_call',
 //                'emit_stack_limit_load', 'emit_divide_by_zero_trap',
 //                'emit_sector_routines', 'check_memory_end', and the machine
@@ -506,8 +506,6 @@ class machine_rv32i : public machine {
     auto emit_failure_handler(const failure_handler& handler,
                               const bool with_line) -> void override {
 
-        constexpr std::array<int64_t, 1> newline{'\n'};
-
         const std::string_view name{handler.name};
         const std::string_view handler_label{handler.label};
 
@@ -534,12 +532,11 @@ class machine_rv32i : public machine {
 
         assembler_.label(0, handler_label);
 
-        const std::string message{panic_message(name)};
+        const std::string message{std::format("{}\n", panic_message(name))};
 
         assembler_.li(1, "a0", stderr_descriptor);
         assembler_.la(1, "a1", message_label);
-        // the newline follows the message text
-        assembler_.li(1, "a2", message.size() + 1);
+        assembler_.li(1, "a2", message.size());
         emit_write_call(1);
 
         exit(token{}, 1, operand::imm(handler.exit_code, default_type()));
@@ -547,7 +544,6 @@ class machine_rv32i : public machine {
         assembler_.switch_section(section::rodata);
         assembler_.label(0, message_label);
         assembler_.string_data(message);
-        assembler_.data(1, newline);
         assembler_.switch_section(section::text);
     }
 
@@ -4480,8 +4476,7 @@ class machine_rv32i : public machine {
     // folding removes the operations that keep the destination, an operation
     // of a location with itself is a valid one that an aliased result reaches
     static auto
-    assert_folded([[maybe_unused]] const op instruction,
-                  [[maybe_unused]] const operand& dst,
+    assert_folded([[maybe_unused]] const op instruction, const operand& dst,
                   [[maybe_unused]] const std::optional<int32_t> constant)
         -> void {
 

@@ -43,12 +43,12 @@ class stmt_assign_var final : public statement {
     // the initializer of a declaration, parsed before the variable was
     // declared; a new variable is writable, so the read-only check of an
     // assignment does not apply
-    stmt_assign_var(const toc& tc, stmt_identifier ident, const token equals_tk,
+    stmt_assign_var(stmt_identifier ident, const token equals_tk,
                     expr_any value)
         : statement{ident.tok()}, stmt_ident_{std::move(ident)},
           expr_{std::move(value)}, equals_tk_{equals_tk} {
 
-        set_type(make_ident_info(tc, stmt_ident_).type_ref());
+        set_type(stmt_ident_.get_type());
     }
 
     //
@@ -242,11 +242,9 @@ class stmt_assign_var final : public statement {
                                           const stmt_identifier& dst)
         -> expr_any {
 
-        const ident_info dst_info{make_ident_info(tc, dst)};
-
         dst.record_write(tc, "assign to");
 
-        return {tc, tz, dst_info.type_ref(), literal_typing::from_destination,
+        return {tc, tz, dst.get_type(), literal_typing::from_destination,
                 dst.shape()};
     }
 };

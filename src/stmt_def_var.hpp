@@ -134,14 +134,10 @@ class initializer_declaration final {
                                           const std::string_view keyword)
         -> token {
 
-        const token equals_tk{
-            tz.expect_char_token(
-                '=', std::format("expected '=' followed by an initializer, "
-                                 "e.g. '{} x = i32(0)'",
-                                 keyword)),
-        };
-
-        return equals_tk;
+        return tz.expect_char_token(
+            '=', std::format("expected '=' followed by an initializer, e.g. "
+                             "'{} x = i32(0)'",
+                             keyword));
     }
 
   private:
@@ -473,7 +469,6 @@ class stmt_def_var final : public statement {
                    var_kind::var);
 
         return {
-            tc,
             stmt_identifier{tc, name_tk, at_name},
             equals_tk,
             std::move(value),

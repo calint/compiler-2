@@ -17,10 +17,10 @@
 // instruction or the calling convention, scratch ones are picked by the
 // machine, and the backend holds some for itself (the variables base, the
 // frame base of a noinline body), which are named too; all are freed in the
-// reverse order of allocation. a register is
-// 'unavailable' while it is allocated and while an operation protects the
-// registers of its operands. the machine names the registers, the pool counts
-// them by their index in the names of the machine and by masks of 1 << index
+// reverse order of allocation. a register is 'unavailable' while it is
+// allocated and while an operation protects the registers of its operands.
+// the machine names the registers, the pool counts them by their index in the
+// names of the machine and by masks of 1 << index
 class register_pool final {
   public:
     // who holds a register: picked by the machine, fixed by an instruction or

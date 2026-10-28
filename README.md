@@ -138,7 +138,8 @@ checks:
   line     report line number on failed bounds, division, shift, overlap or
            overflow check
   frame    runtime non-inlined function frame capacity
-  division runtime division by zero and 'MIN / -1'
+  division runtime division by zero and 'MIN / -1', a constant 'MIN / -1' is
+           rejected at compile time
   shift    runtime shift count below zero or not below the width of the type
   overlap  runtime 'array_copy' whose destination starts inside the source
   stack    runtime stack capacity at non-inlined calls on rv32i-qemu and

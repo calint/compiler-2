@@ -388,8 +388,6 @@ class stmt_identifier final : public statement {
     // a path of names, fields and indexes from 'tk', which is read
     stmt_identifier(toc& tc, token tk, tokenizer& tz);
 
-    stmt_identifier(toc& tc, token tk, tokenizer& tz, path_reach reach);
-
     // note: 'expr_any' is incomplete here, the special members are defined in
     //       'stmt_identifier_impl.hpp', where a 'unique_ptr' of it is complete
 
@@ -927,6 +925,8 @@ class stmt_identifier final : public statement {
     }
 
   private:
+    stmt_identifier(toc& tc, token tk, tokenizer& tz, path_reach reach);
+
     // only signed types exist so a constant must fit the signed range
     auto assert_constant_fits(const ident_info& info,
                               const type& dst_type) const -> void {

@@ -19,7 +19,7 @@
 class type;
 
 [[nodiscard]] inline auto address_offset(const size_t size_bytes) -> int64_t {
-    // storage sizes are limited to the signed 64-bit range
+    // note: storage sizes are limited to the signed 64-bit range
     assert(std::in_range<int64_t>(size_bytes));
 
     return static_cast<int64_t>(size_bytes);
@@ -54,7 +54,7 @@ class type;
 
     const int64_t size{address_offset(size_bytes)};
 
-    // constant indices are bounds checked against the storage size
+    // note: constant indexes are bounds checked against the storage size
     assert(size == 0 or (count <= std::numeric_limits<int64_t>::max() / size and
                          count >= std::numeric_limits<int64_t>::min() / size));
 
