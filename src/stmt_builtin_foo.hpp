@@ -80,7 +80,7 @@ class stmt_builtin_foo final : public statement {
 
         x.comment(ident_.tok(), indent, "initialize iterator e");
 
-        load_array_address(tc, indent, array_info, reg_iter);
+        ident_.load_address(tc, indent, tok(), array_info, reg_iter);
 
         const operand limit{
             compile_limit(tc, indent, array_info.element_count(), held),
@@ -296,32 +296,6 @@ class stmt_builtin_foo final : public statement {
                        in_value_register{reg_counter});
 
         return reg_counter;
-    }
-
-    // an indexed or forwarded array needs its address computed
-    auto load_array_address(toc& tc, const size_t indent,
-                            const ident_info& array_info,
-                            const operand& reg_iter) const -> void {
-
-        machine& x{tc.machine()};
-
-        if (not ident_.has_computed_address(array_info)) {
-            x.address_of(tok(), indent, reg_iter, array_info.operand());
-            return;
-        }
-
-        machine::held_registers held{x, tok(), indent};
-
-        const operand op{
-            ident_.compile_lea(tc, indent, tok(), held,
-                               {
-                                   .range_count{},
-                                   .start_register{},
-                                   .address_register{},
-                               }),
-        };
-
-        x.address_of(tok(), indent, reg_iter, op);
     }
 
     // the element and the counter are declared during the parse so the block

@@ -755,6 +755,21 @@ class stmt_identifier final : public statement {
         return elems_.back().name_tk;
     }
 
+    // 'reg' receives the address of what 'info' resolves this statement to;
+    // 'src_loc_tk' is the statement that asks for it, e.g. a 'foo'
+    auto load_address(toc& tc, const size_t indent, const token& src_loc_tk,
+                      const ident_info& info, const operand& reg) const
+        -> void {
+
+        machine& x{tc.machine()};
+
+        machine::held_registers held{x, src_loc_tk, indent};
+
+        const operand address{get_lea_operand(tc, indent, info, held)};
+
+        x.address_of(src_loc_tk, indent, reg, address);
+    }
+
     // this path may reach bytes of 'target', e.g. 'p.x' with 'p' bound to
     // 'ps[i]' reaches the field 'x' of any element of 'ps'; a constant or a
     // value in a register reaches none

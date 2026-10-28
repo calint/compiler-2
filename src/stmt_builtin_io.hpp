@@ -456,7 +456,8 @@ class stmt_builtin_io final : public statement {
 
         args_.at(0).compile(tc, indent, destination::of_register(descriptor));
 
-        compile_buffer_address(tc, indent, buffer_reg, buffer);
+        // the range is checked after the count
+        buffer.ident->load_address(tc, indent, tok(), buffer.info, buffer_reg);
 
         const ident_info& buffer_info{buffer.info};
 
@@ -484,30 +485,6 @@ class stmt_builtin_io final : public statement {
                          element_size_bytes);
 
         return args;
-    }
-
-    // the buffer register receives the address of the array, the range is
-    // checked after the count
-    auto compile_buffer_address(toc& tc, const size_t indent,
-                                const operand& buffer_reg,
-                                const place& buffer) const -> void {
-
-        const stmt_identifier& ident{*buffer.ident};
-
-        machine& x{tc.machine()};
-
-        machine::held_registers held{x, tok(), indent};
-
-        const operand buffer_lea{
-            ident.compile_lea(tc, indent, ident.tok(), held,
-                              {
-                                  .range_count{},
-                                  .start_register{},
-                                  .address_register{},
-                              }),
-        };
-
-        x.address_of(tok(), indent, buffer_reg, buffer_lea);
     }
 
     // without a count the whole array is transferred, a sector function
