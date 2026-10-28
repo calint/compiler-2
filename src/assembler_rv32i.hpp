@@ -217,7 +217,11 @@ class assembler_rv32i final : public assembler {
     struct data_values {
         size_t element_size_bytes{};
         std::vector<int64_t> values;
-        size_t repeat_count{};
+    };
+
+    // 'size_bytes' of zeros, e.g. the variables
+    struct zero_fill {
+        size_t size_bytes{};
     };
 
     struct alignment {
@@ -234,7 +238,7 @@ class assembler_rv32i final : public assembler {
     };
 
     using record = std::variant<instruction, jump_registers, data_values,
-                                alignment, section_start, constant>;
+                                zero_fill, alignment, section_start, constant>;
 
     static constexpr size_t section_count_{
         std::to_underlying(section::bss) + 1,
@@ -351,7 +355,6 @@ class assembler_rv32i final : public assembler {
                    data_values{
                        .element_size_bytes{element_size_bytes},
                        .values{values.begin(), values.end()},
-                       .repeat_count{1},
                    });
     }
 
@@ -380,16 +383,13 @@ class assembler_rv32i final : public assembler {
                    data_values{
                        .element_size_bytes{1},
                        .values{std::move(values)},
-                       .repeat_count{1},
                    });
     }
 
     auto zero_data(const size_t size_bytes) -> void override {
         add_record(std::format(".zero {}", size_bytes), 0,
-                   data_values{
-                       .element_size_bytes{1},
-                       .values{0},
-                       .repeat_count{size_bytes},
+                   zero_fill{
+                       .size_bytes{size_bytes},
                    });
     }
 
@@ -1000,14 +1000,10 @@ class assembler_rv32i final : public assembler {
                 continue;
             }
 
-            const line& l{lines().at(index)};
-
-            const data_values* const data{
-                std::get_if<data_values>(record_of(l)),
-            };
+            [[maybe_unused]] const line& l{lines().at(index)};
 
             assert(l.code_size == 0 and
-                   (data == nullptr or is_zero_fill(*data)));
+                   std::get_if<data_values>(record_of(l)) == nullptr);
         }
     }
 
@@ -1168,6 +1164,10 @@ class assembler_rv32i final : public assembler {
     }
 
     [[nodiscard]] auto image_size_bytes(const line& l) const -> size_t {
+        if (const zero_fill* const fill{std::get_if<zero_fill>(record_of(l))}) {
+            return fill->size_bytes;
+        }
+
         const data_values* const data{std::get_if<data_values>(record_of(l))};
 
         if (data == nullptr) {
@@ -1423,6 +1423,16 @@ class assembler_rv32i final : public assembler {
                 continue;
             }
 
+            // zero fills such as the variables area can be large
+            if (const zero_fill* const fill{
+                    std::get_if<zero_fill>(record_of(l)),
+                }) {
+
+                write_zeros(os, fill->size_bytes);
+                written = address + fill->size_bytes;
+                continue;
+            }
+
             write_code(os, l, index, static_cast<int64_t>(address), symbols);
 
             written = address + l.code_size;
@@ -1537,7 +1547,7 @@ class assembler_rv32i final : public assembler {
     [[nodiscard]] static auto data_size_bytes(const data_values& data)
         -> size_t {
 
-        return data.element_size_bytes * data.values.size() * data.repeat_count;
+        return data.element_size_bytes * data.values.size();
     }
 
     [[nodiscard]] static auto encode_branch(const uint32_t encoding,
@@ -1967,11 +1977,6 @@ class assembler_rv32i final : public assembler {
         return name == ".option" or name == ".globl";
     }
 
-    [[nodiscard]] static auto is_zero_fill(const data_values& data) -> bool {
-        return std::ranges::all_of(
-            data.values, [](const int64_t v) -> bool { return v == 0; });
-    }
-
     // the sequence 'li' expands to
     [[nodiscard]] static auto load_immediate(const uint8_t rd,
                                              const int64_t value)
@@ -2146,17 +2151,9 @@ class assembler_rv32i final : public assembler {
     }
 
     static auto write_data(std::ostream& os, const data_values& data) -> void {
-        // zero fills such as the variables area can be large
-        if (is_zero_fill(data)) {
-            write_zeros(os, data_size_bytes(data));
-            return;
-        }
-
-        for (size_t repeat{}; repeat < data.repeat_count; ++repeat) {
-            for (const int64_t value : data.values) {
-                write_value(os, static_cast<uint64_t>(value),
-                            data.element_size_bytes);
-            }
+        for (const int64_t value : data.values) {
+            write_value(os, static_cast<uint64_t>(value),
+                        data.element_size_bytes);
         }
     }
 

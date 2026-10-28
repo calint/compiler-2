@@ -614,7 +614,7 @@ class expr_arith final : public statement {
     [[nodiscard]] auto fold(const toc& tc, const value_use& use) const
         -> std::optional<folded_value> override {
 
-        // e.g. 'k' or 'i8(1)'
+        // e.g. 'k' or '-k'
         if (not is_computed()) {
             return exprs_.front()->fold(tc, use);
         }

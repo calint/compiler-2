@@ -843,11 +843,7 @@ class machine_x86_64 final : public machine {
             // negative to a signed compare, the unsigned compare sees it large
             // e.g. 'array_copy(x[0x7fffffffffffffff], y[0], 1)' on 'i8[4]'
             // ends at 0x8000000000000000, signed it is below 4 and passes
-            const bool is_unsigned_compare{
-                plan.upper_covers_lower or (options.lower and range.count),
-            };
-
-            check_upper_bound(src_loc_tk, indent, range, is_unsigned_compare);
+            check_upper_bound(src_loc_tk, indent, range, options.lower);
         }
     }
 
@@ -1227,11 +1223,11 @@ class machine_x86_64 final : public machine {
     // range 'index + count' may end at it; a signed end that passes the signed
     // maximum is out of bounds, the unsigned compare sees it large
     auto check_upper_bound(const token& src_loc_tk, const size_t indent,
-                           const bounds_range& range,
-                           const bool is_unsigned_compare) -> void {
+                           const bounds_range& range, const bool lower_checked)
+        -> void {
 
         const condition out_of_bounds{
-            out_of_bounds_condition(range.allow_end, is_unsigned_compare),
+            out_of_bounds_condition(range.allow_end, lower_checked),
         };
 
         if (not range.count) {
@@ -1254,7 +1250,7 @@ class machine_x86_64 final : public machine {
         assert(count.type_ref().size_bytes() == size_qword_ and
                range.checked.type_ref().size_bytes() == size_qword_);
 
-        if (is_unsigned_compare) {
+        if (lower_checked) {
             lea(src_loc_tk, indent, reg_top_idx,
                 operand::mem(count.register_name(),
                              range.checked.register_name(), 1, 0,
@@ -1467,7 +1463,8 @@ class machine_x86_64 final : public machine {
                 std::format("num_buffer + {}", newline_offset)));
 
         assembler_.instruction(
-            1, op::mov, assembler_x86_64::memory::of_base("rdi", 1), newline);
+            1, op::mov, assembler_x86_64::memory::of_base("rdi", size_byte_),
+            newline);
 
         assembler_.instruction(1, op::dec, "rdi");
         assembler_.instruction(1, op::mov, "rcx", decimal_base);
@@ -1798,8 +1795,7 @@ class machine_x86_64 final : public machine {
         load_bulk_addresses(src_loc_tk, indent, to_rsi, to_rdi);
         emit_count(count);
 
-        scale_index(src_loc_tk, indent, qword_register("rcx"),
-                    element_size_bytes);
+        scale_index(src_loc_tk, indent, count, element_size_bytes);
     }
 
     // the register it allocates is freed by the 'operation_scope' of the
@@ -1991,7 +1987,7 @@ class machine_x86_64 final : public machine {
             immediate(value));
     }
 
-    // a negative value is out of bounds, an empty operand has none to test
+    // a negative value is out of bounds
     auto test_sign(const token& src_loc_tk, const size_t indent,
                    const operand& value) -> void {
 

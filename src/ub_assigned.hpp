@@ -12,14 +12,14 @@
 #include "token.hpp"
 #include "type.hpp"
 
+// definite assignment: which bytes of a variable are set before they are read
+// and before a function returns
+
 // how the end of a loop is reached: only at a 'break', e.g. 'loop', also
 // when it runs out, e.g. 'foo', or, known only to the compile, at a 'break'
 // or where its counter step is reached, e.g. a 'foo' whose count is a
 // constant above 0, so it runs its body
 enum class loop_end : uint8_t { at_break, also_when_done, when_stepped };
-
-// definite assignment: which bytes of a variable are set before they are read
-// and before a function returns
 
 // the bytes of a variable that are definitely assigned, one flag per byte
 class assigned_bytes final {

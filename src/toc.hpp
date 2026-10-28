@@ -484,12 +484,6 @@ class scope final {
         vars_.get_ref(name).read_only_why = cause;
     }
 
-    auto mark_continued() -> void { loop().is_continued = true; }
-
-    auto mark_left_by_break() -> void { loop().is_left_by_break = true; }
-
-    auto mark_left_by_return() -> void { func_part().is_left_by_return = true; }
-
     auto mark_without_call(const bool takes_from_call_in) -> void {
         func_part().is_without_call = true;
         func_part().takes_from_call = takes_from_call_in;
@@ -527,22 +521,22 @@ class scope final {
             std::max(func.peak_frame_size_bytes, size_bytes);
     }
 
-    auto restore_continued(const bool is_continued) -> void {
-        loop().is_continued = is_continued;
-    }
-
-    auto restore_left_by_break(const bool is_left) -> void {
-        loop().is_left_by_break = is_left;
-    }
-
-    auto restore_left_by_return(const bool is_left) -> void {
-        func_part().is_left_by_return = is_left;
-    }
-
     auto restore_peak_frame_size_bytes(const size_t size_bytes) -> void {
         assert(has_frame());
 
         func_part().peak_frame_size_bytes = size_bytes;
+    }
+
+    auto set_continued(const bool is_continued_in) -> void {
+        loop().is_continued = is_continued_in;
+    }
+
+    auto set_left_by_break(const bool is_left) -> void {
+        loop().is_left_by_break = is_left;
+    }
+
+    auto set_left_by_return(const bool is_left) -> void {
+        func_part().is_left_by_return = is_left;
     }
 
     auto set_reachable(const bool is_reachable_in) -> void {
@@ -1395,11 +1389,13 @@ class scope_stack final {
 
     // a 'break' of the innermost 'loop' or 'foo' is compiled, see
     // 'scope::is_left_by_break'
-    auto record_break() -> void { innermost_loop_ref().mark_left_by_break(); }
+    auto record_break() -> void {
+        innermost_loop_ref().set_left_by_break(true);
+    }
 
     // a 'continue' of the innermost 'loop' or 'foo' is compiled, see
     // 'scope::is_continued'
-    auto record_continue() -> void { innermost_loop_ref().mark_continued(); }
+    auto record_continue() -> void { innermost_loop_ref().set_continued(true); }
 
     // a variable, data or constant of the root scope
     auto record_global(const std::string_view name) -> void {
@@ -1414,7 +1410,7 @@ class scope_stack final {
 
     // a 'return' of the innermost function is compiled, see
     // 'scope::is_end_reached'
-    auto record_return() -> void { func_scope().mark_left_by_return(); }
+    auto record_return() -> void { func_scope().set_left_by_return(true); }
 
     // records 'storage' when its root is a global, a parameter or the result
     // of the body being parsed, see 'body_uses'; a local of the body is not
@@ -1456,12 +1452,12 @@ class scope_stack final {
         if (state.loop_index) {
             scope& loop{scopes_.at(*state.loop_index)};
 
-            loop.restore_left_by_break(state.is_left_by_break);
-            loop.restore_continued(state.is_continued);
+            loop.set_left_by_break(state.is_left_by_break);
+            loop.set_continued(state.is_continued);
         }
 
         func_scope().set_reachable(state.is_reachable);
-        func_scope().restore_left_by_return(state.is_left_by_return);
+        func_scope().set_left_by_return(state.is_left_by_return);
     }
 
     auto set_max_scope_count(const size_t count) -> void {
@@ -1680,7 +1676,7 @@ class storage_layout final {
             find_storage_location().scope_index,
         };
 
-        const peaks saved{
+        return {
             .max_body_vars_size_bytes{max_body_vars_size_bytes_},
             .frame_scope_index{scope_index},
             .peak_frame_size_bytes{
@@ -1688,8 +1684,6 @@ class storage_layout final {
                             : 0,
             },
         };
-
-        return saved;
     }
 
     // the storage of the dat 'var' is where the data table placed it, before
@@ -1984,6 +1978,15 @@ class ident_resolver final {
 
         const name_meaning meaning{scopes_.get().lookup(name)};
 
+        // the storage when the name has its own
+        storage_path named{
+            .root{
+                .name{std::string{name}},
+                .scope_index{meaning.scope_index},
+            },
+            .path{path},
+        };
+
         // note: a binding is a root of its own, storage it shares with the
         //       caller is rejected at the call, see
         //       'stmt_call::assert_no_shared_storage'
@@ -1997,13 +2000,7 @@ class ident_resolver final {
                 return std::nullopt;
             }
 
-            return storage_path{
-                .root{
-                    .name{std::string{name}},
-                    .scope_index{meaning.scope_index},
-                },
-                .path{path},
-            };
+            return named;
         }
 
         if (not meaning.is_variable()) {
@@ -2026,13 +2023,7 @@ class ident_resolver final {
             return std::nullopt;
         }
 
-        return storage_path{
-            .root{
-                .name{std::string{name}},
-                .scope_index{meaning.scope_index},
-            },
-            .path{path},
-        };
+        return named;
     }
 
   private:

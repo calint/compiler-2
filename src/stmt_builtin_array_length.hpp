@@ -1,5 +1,6 @@
 #pragma once
 
+#include <array>
 #include <cassert>
 #include <cstddef>
 #include <cstdint>
@@ -7,9 +8,7 @@
 #include <ostream>
 #include <utility>
 
-#include "compile_error.hpp"
 #include "ident_info.hpp"
-#include "operand.hpp"
 #include "statement.hpp"
 #include "stmt_call.hpp"
 #include "stmt_identifier.hpp"
@@ -67,17 +66,14 @@ class stmt_builtin_array_length final : public statement {
         // note: the parse rejected an argument that is not an array
         assert(src_info.is_var() and src_info.is_array());
 
-        // unknown in a function checked without a call, whose code is
-        // discarded, e.g. the left side of 'array_length(a) * i', which an
-        // operation with a run-time right side compiles without folding
-        if (src_info.is_length_unknown()) {
-            return;
-        }
+        // note: the destination has the default type, so a known length
+        //       folds and the list copies it itself; the length is unknown
+        //       only in a function checked without a call, whose code is
+        //       discarded, e.g. the left side of 'array_length(a) * i', which
+        //       an operation with a run-time right side compiles without
+        //       folding
 
-        // note: the destination has the default type, so the length folds
-        //       and the list copies it itself
-
-        std::unreachable();
+        assert(src_info.is_length_unknown());
     }
 
     // a narrower width stays unfolded, 'assert_not_narrowed' rejects it

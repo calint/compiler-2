@@ -40,8 +40,6 @@ class machine_rv32i_qemu final : public machine_rv32i_bare_metal {
     // overridden methods
     //
 
-    // note: the machine has no sd card, so the sector functions are rejected
-
     // note: 'has_sd_card' is false, so the sector functions are rejected
     auto emit_sector_routines([[maybe_unused]] const bool read_used,
                               [[maybe_unused]] const bool write_used)

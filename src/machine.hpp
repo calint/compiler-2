@@ -95,9 +95,8 @@ struct target_description {
 //                  body, 'emit_runtime', 'emit_string_constants',
 //                  'begin_data', 'reserve_variables', 'finish',
 //                  'write_assembly'
-//   data           'data_alignment', 'define_constant', 'emit_data',
-//                  'emit_data_array', 'emit_string_data', 'emit_zero_data',
-//                  'zero_padding'
+//   data           'data_alignment', 'define_constant', 'emit_data_array',
+//                  'emit_string_data', 'emit_zero_data', 'zero_padding'
 //   registers      'alloc_scratch_register', 'free_scratch_register',
 //                  'held_registers' (what a front-end step holds),
 //                  'free_named_register(s)', 'slot_register', 'register_view',

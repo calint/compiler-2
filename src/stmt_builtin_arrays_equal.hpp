@@ -6,7 +6,6 @@
 #include <utility>
 
 #include "bulk_operands.hpp"
-#include "compile_error.hpp"
 #include "statement.hpp"
 #include "toc.hpp"
 #include "token.hpp"

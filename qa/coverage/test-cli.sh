@@ -658,6 +658,21 @@ CLI_OPTION_MESSAGES() {
     # each names what it lists
     "$BIN" --checks=x 0015.baz >/dev/null 2>err || true
     grep -Fq "supported checks are: " err
+    grep -Fq ", noub, each with a '+' or '-' prefix" err
+    "$BIN" --target=x 0015.baz >/dev/null 2>err || true
+    grep -Fq "', supported targets are: x86_64, rv32i" err
+    "$BIN" --report=x 0015.baz >/dev/null 2>err || true
+    grep -Fq "', supported reports are: registers" err
+    "$BIN" --versions=x 0015.baz >/dev/null 2>err || true
+    grep -Fq "', supported values are: smaller, first, last" err
+    "$BIN" --vars=17 0015.baz >/dev/null 2>err || true
+    grep -Fq "error: invalid --vars: '17' is not a multiple of 16" err
+    "$BIN" --bin= 0015.baz >/dev/null 2>err || true
+    grep -Fq "error: invalid --bin: empty file name" err
+    "$BIN" -x 0015.baz >/dev/null 2>err || true
+    grep -Fq "error: unknown option: '-x'" err
+    "$BIN" 0015.baz 0426.baz >/dev/null 2>err || true
+    grep -Fq "error: more than one source file: '0015.baz' and '0426.baz'" err
     echo ok
 }
 

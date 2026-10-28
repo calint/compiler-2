@@ -1,5 +1,6 @@
 #pragma once
 
+#include <array>
 #include <cassert>
 #include <cstddef>
 #include <cstdint>
@@ -61,19 +62,6 @@ class stmt_def_dat final : public statement {
 
         // note: a scalar until the definition folds its initializer
         std::variant<scalar, string, elements, fields> form{scalar{}};
-
-        // the size of an array form, empty for a scalar or an instance
-        [[nodiscard]] auto array_count() const -> std::optional<size_t> {
-            if (const string* const str{std::get_if<string>(&form)}) {
-                return str->array_count;
-            }
-
-            if (const elements* const list{std::get_if<elements>(&form)}) {
-                return list->array_count;
-            }
-
-            return std::nullopt;
-        }
 
         [[nodiscard]] auto tok() const -> const token& {
             return std::visit(
@@ -151,10 +139,10 @@ class stmt_def_dat final : public statement {
 
   private:
     [[nodiscard]] auto make_var_info() const -> var_info {
-        const std::optional<size_t> array_count{root_elem_.array_count()};
-
         const array_shape shape{
-            array_count ? array_shape::array(array_count) : array_shape{},
+            initializer_.is_array()
+                ? array_shape::array(initializer_.array_count())
+                : array_shape{},
         };
 
         return initializer_declaration::make_var_info(name_tk_, get_type(),

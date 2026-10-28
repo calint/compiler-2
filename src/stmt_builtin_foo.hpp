@@ -7,7 +7,6 @@
 #include <string>
 #include <string_view>
 
-#include "compile_error.hpp"
 #include "expr_any.hpp"
 #include "ident_info.hpp"
 #include "statement.hpp"

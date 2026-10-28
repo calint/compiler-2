@@ -755,10 +755,11 @@ struct call_site {
 // the steps:
 //
 //   1. 'compile': a result narrower than the operand it widens into is
-//      computed in a register and widened ('compile_widened'), an instance
-//      literal or a call result argument is made in a temporary
+//      computed in a register and widened ('compile_widened'), a block holds
+//      the temporaries of the call
 //   2. 'compile_with_bindings': the bindings of the result and the arguments
-//      ('make_bindings'), an indexed argument may get its address in a
+//      ('make_bindings'), an instance literal or a call result argument is
+//      made in a temporary, an indexed argument may get its address in a
 //      register ('compile_with_address_choice',
 //      'compile_body_with_address_registers')
 //   3. 'compile_body': the body under labels unique to the call, with the
@@ -781,9 +782,7 @@ class inline_call final {
         assert(plan_.arguments.size() == call_.args.size());
     }
 
-    // an instance literal or a call result is made in a variable of the
-    // parameter's type that the body reaches through the binding of its
-    // parameter
+    // a block holds the temporaries of the call
     auto compile(toc& tc, const size_t indent, const destination& dst) const
         -> void {
 
@@ -850,15 +849,16 @@ class inline_call final {
             call_.func->add_constants(tc, indent + 1);
 
             const auto add_binding{
-                [&](const param_binding& e) -> void {
-                    const ident_info& bound{e.info};
+                [&](const param_binding& binding) -> void {
+                    const ident_info& bound{binding.info};
 
-                    x.comment_binding(call_.tk, indent + 1, e.from, e.text,
+                    x.comment_binding(call_.tk, indent + 1, binding.from,
+                                      binding.text,
                                       bound.is_address_by_call()
                                           ? std::optional{bound.operand()}
                                           : std::nullopt);
 
-                    tc.add_binding(e);
+                    tc.add_binding(binding);
                 },
             };
 
@@ -866,8 +866,8 @@ class inline_call final {
                 add_binding(*bindings.result);
             }
 
-            for (const param_binding& e : bindings.arguments) {
-                add_binding(e);
+            for (const param_binding& binding : bindings.arguments) {
+                add_binding(binding);
             }
 
             // the result reaches the destination through the binding of 'res',
@@ -1059,7 +1059,7 @@ class inline_call final {
 
             // an indexed argument keeps its computed address
             if (ident.has_computed_address(arg_place->info)) {
-                return bind_reference(tc, indent, arg, ident, param, held);
+                return bind_reference(tc, indent, arg, *arg_place, param, held);
             }
 
             return bind_name(param, ident, arg_place->info);
@@ -1141,14 +1141,12 @@ class inline_call final {
 
     // an indexed argument keeps its computed address, e.g.
     // '[rbp + r14 * 4 + 205]', '[r15 + r14]' or simply '[r15]'
-    [[nodiscard]] static auto bind_reference(toc& tc, const size_t indent,
-                                             const expr_any& arg,
-                                             const stmt_identifier& ident,
-                                             const stmt_def_func_param& param,
-                                             machine::held_registers& held)
-        -> param_binding {
+    [[nodiscard]] static auto
+    bind_reference(toc& tc, const size_t indent, const expr_any& arg,
+                   const place& arg_place, const stmt_def_func_param& param,
+                   machine::held_registers& held) -> param_binding {
 
-        const ident_info arg_info{make_ident_info(tc, ident)};
+        const stmt_identifier& ident{*arg_place.ident};
 
         // note: the address registers stay allocated until the inlined body is
         //       compiled
@@ -1162,8 +1160,8 @@ class inline_call final {
                               }),
         };
 
-        return param_binding::make_name(param.name(), arg_info.at_address(lea),
-                                        ident.path_text());
+        return param_binding::make_name(
+            param.name(), arg_place.info.at_address(lea), ident.path_text());
     }
 
     // the result name of the function refers to the destination

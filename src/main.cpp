@@ -164,32 +164,28 @@ struct options {
 // an option with a value, e.g. '--vars=0x40000'
 struct value_option {
     std::string_view name;
-    bool (*apply)(std::string_view value, options& opts);
+    void (*apply)(std::string_view value, options& opts);
 };
 
 // the exit code when the program should stop instead of compiling
 [[nodiscard]] auto parse_options(const std::span<const char*> args,
                                  options& opts) -> std::optional<int>;
 
-// false after printing the error
-[[nodiscard]] auto check_target_reads(const options& opts) -> bool;
+// the option functions throw 'option_error'
+auto check_target_reads(const options& opts) -> void;
 
-// false after printing the error
-[[nodiscard]] auto parse_option(const char* const argument, options& opts)
-    -> bool;
+auto parse_option(const char* const argument, options& opts) -> void;
 
-// the appliers of the options with a value store the value in 'opts', false
-// after printing the error
-[[nodiscard]] auto apply_vars(std::string_view value, options& opts) -> bool;
-[[nodiscard]] auto apply_stack(std::string_view value, options& opts) -> bool;
-[[nodiscard]] auto apply_memory(std::string_view value, options& opts) -> bool;
-[[nodiscard]] auto apply_target(std::string_view value, options& opts) -> bool;
-[[nodiscard]] auto apply_checks(std::string_view value, options& opts) -> bool;
-[[nodiscard]] auto apply_report(std::string_view value, options& opts) -> bool;
-[[nodiscard]] auto apply_bin(std::string_view value, options& opts) -> bool;
-[[nodiscard]] auto apply_sdcard(std::string_view value, options& opts) -> bool;
-[[nodiscard]] auto apply_versions(std::string_view value, options& opts)
-    -> bool;
+// the appliers of the options with a value store the value in 'opts'
+auto apply_vars(std::string_view value, options& opts) -> void;
+auto apply_stack(std::string_view value, options& opts) -> void;
+auto apply_memory(std::string_view value, options& opts) -> void;
+auto apply_target(std::string_view value, options& opts) -> void;
+auto apply_checks(std::string_view value, options& opts) -> void;
+auto apply_report(std::string_view value, options& opts) -> void;
+auto apply_bin(std::string_view value, options& opts) -> void;
+auto apply_sdcard(std::string_view value, options& opts) -> void;
+auto apply_versions(std::string_view value, options& opts) -> void;
 
 auto print_help(const char* const program_name) -> void;
 
@@ -203,14 +199,12 @@ auto check_reproduced_source(const program& prg, const source_files& files)
 
 [[nodiscard]] auto parse_size_bytes(const std::string_view text,
                                     const std::string_view option,
-                                    const size_t alignment)
-    -> std::optional<size_t>;
+                                    const size_t alignment) -> size_t;
 
-[[nodiscard]] auto parse_checks(const std::string_view checks)
-    -> std::optional<check_options>;
+[[nodiscard]] auto parse_checks(const std::string_view checks) -> check_options;
 
 [[nodiscard]] auto parse_reports(const std::string_view reports)
-    -> std::optional<report_options>;
+    -> report_options;
 
 [[nodiscard]] auto
 default_binary_file_name(const std::string_view src_file_name,
@@ -272,21 +266,22 @@ namespace {
 [[nodiscard]] auto parse_options(const std::span<const char*> args,
                                  options& opts) -> std::optional<int> {
 
-    for (const char* const argument : args | std::views::drop(1)) {
-        const std::string_view arg{argument};
+    try {
+        for (const char* const argument : args | std::views::drop(1)) {
+            const std::string_view arg{argument};
 
-        if (arg == "--help" or arg == "-h") {
-            print_help(args.at(0));
-            return 0;
+            if (arg == "--help" or arg == "-h") {
+                print_help(args.at(0));
+                return 0;
+            }
+
+            parse_option(argument, opts);
         }
 
-        if (not parse_option(argument, opts)) {
-            return 1;
-        }
-    }
-
-    // note: after the loop because '--target' may follow the options
-    if (not check_target_reads(opts)) {
+        // note: after the loop because '--target' may follow the options
+        check_target_reads(opts);
+    } catch (const option_error& e) {
+        print_option_error(e.what());
         return 1;
     }
 
@@ -300,7 +295,7 @@ struct target_option {
     bool given{};
 };
 
-[[nodiscard]] auto check_target_reads(const options& opts) -> bool {
+auto check_target_reads(const options& opts) -> void {
     const std::array<target_option, 3> target_options{
         target_option{
             .name{"--stack"},
@@ -340,15 +335,11 @@ struct target_option {
             readers += name.text;
         }
 
-        print_option_error(
+        throw option_error{
             std::format("invalid {}: target {} does not read it, the targets "
                         "that do are: {}",
-                        option.name, in_quotes(chosen.text), readers));
-
-        return false;
+                        option.name, in_quotes(chosen.text), readers)};
     }
-
-    return true;
 }
 
 // e.g. '0x40000' of '--vars=0x40000'
@@ -361,20 +352,6 @@ struct target_option {
     }
 
     return arg.substr(name.size());
-}
-
-// a failed parse has printed its error
-template <typename T, typename Destination>
-[[nodiscard]] auto store_parsed(const std::optional<T>& parsed,
-                                Destination& destination) -> bool {
-
-    if (not parsed) {
-        return false;
-    }
-
-    destination = *parsed;
-
-    return true;
 }
 
 // the 'text' of each row of a table joined by ', ', e.g. 'upper, lower, line'
@@ -395,9 +372,7 @@ template <typename Name, size_t count>
     return texts;
 }
 
-[[nodiscard]] auto parse_option(const char* const argument, options& opts)
-    -> bool {
-
+auto parse_option(const char* const argument, options& opts) -> void {
     constexpr std::array value_options{
         value_option{.name{"--vars="}, .apply{apply_vars}},
         value_option{.name{"--stack="}, .apply{apply_stack}},
@@ -417,135 +392,101 @@ template <typename Name, size_t count>
                 option_value(arg, option.name),
             }) {
 
-            return option.apply(*value, opts);
+            option.apply(*value, opts);
+            return;
         }
     }
 
     if (arg == "--nopt") {
         opts.optimize_jumps = false;
-        return true;
+        return;
     }
 
     if (arg == "--reproduce-source") {
         opts.reproduce_source = true;
-        return true;
+        return;
     }
 
     if (arg.starts_with('-')) {
-        print_option_error(std::format("unknown option: {}", in_quotes(arg)));
-        return false;
+        throw option_error{std::format("unknown option: {}", in_quotes(arg))};
     }
 
     if (opts.src_file_name) {
-        print_option_error(std::format("more than one source file: {} and {}",
+        throw option_error{std::format("more than one source file: {} and {}",
                                        in_quotes(*opts.src_file_name),
-                                       in_quotes(arg)));
-
-        return false;
+                                       in_quotes(arg))};
     }
 
     opts.src_file_name = arg;
-
-    return true;
 }
 
-[[nodiscard]] auto apply_vars(const std::string_view value, options& opts)
-    -> bool {
-
-    return store_parsed(parse_size_bytes(value, "--vars", vars_alignment),
-                        opts.vars_size_bytes);
+auto apply_vars(const std::string_view value, options& opts) -> void {
+    opts.vars_size_bytes = parse_size_bytes(value, "--vars", vars_alignment);
 }
 
-[[nodiscard]] auto apply_stack(const std::string_view value, options& opts)
-    -> bool {
-
-    return store_parsed(parse_size_bytes(value, "--stack", stack_alignment),
-                        opts.stack_size_bytes);
+auto apply_stack(const std::string_view value, options& opts) -> void {
+    opts.stack_size_bytes = parse_size_bytes(value, "--stack", stack_alignment);
 }
 
-[[nodiscard]] auto apply_memory(const std::string_view value, options& opts)
-    -> bool {
-
-    return store_parsed(parse_size_bytes(value, "--memory", memory_alignment),
-                        opts.memory_size_bytes);
+auto apply_memory(const std::string_view value, options& opts) -> void {
+    opts.memory_size_bytes =
+        parse_size_bytes(value, "--memory", memory_alignment);
 }
 
-[[nodiscard]] auto apply_target(const std::string_view value, options& opts)
-    -> bool {
-
+auto apply_target(const std::string_view value, options& opts) -> void {
     const auto* const found{
         std::ranges::find(target_names, value, &target_name::text),
     };
 
     if (found == target_names.end()) {
-        print_option_error(
+        throw option_error{
             std::format("invalid --target: {}, supported targets are: {}",
-                        in_quotes(value), joined_texts(target_names)));
-
-        return false;
+                        in_quotes(value), joined_texts(target_names))};
     }
 
     opts.target = found;
-
-    return true;
 }
 
-[[nodiscard]] auto apply_checks(const std::string_view value, options& opts)
-    -> bool {
-
-    return store_parsed(parse_checks(value), opts.checks);
+auto apply_checks(const std::string_view value, options& opts) -> void {
+    opts.checks = parse_checks(value);
 }
 
-[[nodiscard]] auto apply_report(const std::string_view value, options& opts)
-    -> bool {
-
-    return store_parsed(parse_reports(value), opts.reports);
+auto apply_report(const std::string_view value, options& opts) -> void {
+    opts.reports = parse_reports(value);
 }
 
 // 'option' is named in the error message
 [[nodiscard]] auto parse_file_name(const std::string_view text,
                                    const std::string_view option)
-    -> std::optional<std::string_view> {
+    -> std::string_view {
 
     if (text.empty()) {
-        print_option_error(std::format("invalid {}: empty file name", option));
-        return std::nullopt;
+        throw option_error{std::format("invalid {}: empty file name", option)};
     }
 
     return text;
 }
 
-[[nodiscard]] auto apply_bin(const std::string_view value, options& opts)
-    -> bool {
-
-    return store_parsed(parse_file_name(value, "--bin"), opts.binary_file_name);
+auto apply_bin(const std::string_view value, options& opts) -> void {
+    opts.binary_file_name = parse_file_name(value, "--bin");
 }
 
-[[nodiscard]] auto apply_sdcard(const std::string_view value, options& opts)
-    -> bool {
-
-    return store_parsed(parse_file_name(value, "--sdcard"),
-                        opts.sd_card_file_name);
+auto apply_sdcard(const std::string_view value, options& opts) -> void {
+    opts.sd_card_file_name = parse_file_name(value, "--sdcard");
 }
 
-[[nodiscard]] auto apply_versions(const std::string_view value, options& opts)
-    -> bool {
-
+auto apply_versions(const std::string_view value, options& opts) -> void {
     const auto* const found{
         std::ranges::find(kept_version_names, value, &kept_version_name::text),
     };
 
     if (found == kept_version_names.end()) {
-        print_option_error(
+        throw option_error{
             std::format("invalid --versions: {}, supported values are: {}",
-                        in_quotes(value), joined_texts(kept_version_names)));
-
-        return false;
+                        in_quotes(value), joined_texts(kept_version_names))};
     }
 
     opts.kept_version = found->kind;
-
-    return true;
 }
 
 // same layout as the readme usage section which pastes this output
@@ -772,8 +713,7 @@ auto check_reproduced_source(const program& prg, const source_files& files)
 // decimal or 0x hexadecimal, 'option' is named in the error messages
 [[nodiscard]] auto parse_size_bytes(const std::string_view text,
                                     const std::string_view option,
-                                    const size_t alignment)
-    -> std::optional<size_t> {
+                                    const size_t alignment) -> size_t {
 
     constexpr int decimal_base{10};
     constexpr int hex_base{16};
@@ -795,31 +735,23 @@ auto check_reproduced_source(const program& prg, const source_files& files)
     };
 
     if (parsed.ec == std::errc::result_out_of_range) {
-        print_option_error(std::format("invalid {}: {} is out of range", option,
-                                       in_quotes(text)));
-
-        return std::nullopt;
+        throw option_error{std::format("invalid {}: {} is out of range", option,
+                                       in_quotes(text))};
     }
 
     if (parsed.ec != std::errc{} or parsed.ptr != digits_end) {
-        print_option_error(std::format("invalid {}: {} is not a number", option,
-                                       in_quotes(text)));
-
-        return std::nullopt;
+        throw option_error{std::format("invalid {}: {} is not a number", option,
+                                       in_quotes(text))};
     }
 
     if (parsed_size_bytes == 0) {
-        print_option_error(
-            std::format("invalid {}: {} is zero", option, in_quotes(text)));
-
-        return std::nullopt;
+        throw option_error{
+            std::format("invalid {}: {} is zero", option, in_quotes(text))};
     }
 
     if (parsed_size_bytes % alignment != 0) {
-        print_option_error(std::format("invalid {}: {} is not a multiple of {}",
-                                       option, in_quotes(text), alignment));
-
-        return std::nullopt;
+        throw option_error{std::format("invalid {}: {} is not a multiple of {}",
+                                       option, in_quotes(text), alignment)};
     }
 
     return parsed_size_bytes;
@@ -828,7 +760,7 @@ auto check_reproduced_source(const program& prg, const source_files& files)
 // each '--report' replaces the earlier ones, empty parts are ignored like
 // those of '--checks', so '--report=' turns the reports off
 [[nodiscard]] auto parse_reports(const std::string_view reports)
-    -> std::optional<report_options> {
+    -> report_options {
 
     report_options parsed{};
 
@@ -844,11 +776,9 @@ auto check_reproduced_source(const program& prg, const source_files& files)
         };
 
         if (found == report_names.end()) {
-            print_option_error(
+            throw option_error{
                 std::format("invalid --report: {}, supported reports are: {}",
-                            in_quotes(report), joined_texts(report_names)));
-
-            return std::nullopt;
+                            in_quotes(report), joined_texts(report_names))};
         }
 
         parsed.*found->member = true;
@@ -905,7 +835,7 @@ static_assert([] -> bool {
 // and '+name' enable a check, '-name' disables it after all enables, so the
 // order in the list does not matter
 [[nodiscard]] auto parse_checks(const std::string_view checks)
-    -> std::optional<check_options> {
+    -> check_options {
 
     check_options parsed{};
     std::vector<bool check_options::*> disabled;
@@ -941,12 +871,10 @@ static_assert([] -> bool {
             };
 
             if (found == check_names.end()) {
-                print_option_error(std::format(
+                throw option_error{std::format(
                     "invalid --checks: {}, supported checks are: {}, "
                     "noub, each with a '+' or '-' prefix",
-                    in_quotes(written), joined_texts(check_names)));
-
-                return std::nullopt;
+                    in_quotes(written), joined_texts(check_names))};
             }
 
             members.push_back(found->member);

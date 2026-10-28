@@ -134,26 +134,26 @@ inline auto stmt_identifier::visit_index_reads(const read_visitor reader) const
 inline auto stmt_identifier::assert_constant_indexes(
     const toc& tc, const std::string_view what) const -> void {
 
-    for_each_prefix(tc, tok(), [&](const prefix_step& step) -> void {
-        if (not step.elem->index) {
-            return;
+    // note: the parse checked a constant index against its array
+    //       ('resolve_accessed_bytes')
+
+    for (const ident_elem& e : elems_) {
+        if (not e.index) {
+            continue;
         }
 
-        const expr_any& index{step.elem->index_expr()};
+        const expr_any& index{e.index_expr()};
 
-        const std::optional<int64_t> constant_index{index.constant_value(tc)};
-
-        if (not constant_index) {
-            throw compile_error{
-                index.tok(),
-                std::format("an index in the argument of {} must be a "
-                            "constant, every element has the same length",
-                            in_quotes(what))};
+        if (index.constant_value(tc)) {
+            continue;
         }
 
-        assert_constant_index(*step.info, index.tok(), step.path,
-                              *constant_index, false);
-    });
+        throw compile_error{
+            index.tok(),
+            std::format("an index in the argument of {} must be a "
+                        "constant, every element has the same length",
+                        in_quotes(what))};
+    }
 }
 
 inline auto stmt_identifier::assert_count_in_bounds(const toc& tc,
