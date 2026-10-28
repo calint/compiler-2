@@ -1,6 +1,23 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] hard: bug hunt round 11 (2026-10-28, user: loop until a round finds no
+    bugs; hunters Y1 the fixes of round 10, Y2 mixed inline and noinline per
+    function, Y3 the run-time checks at the edges of every type; reports in
+    the session scratchpad bh11)
+    => done (2026-10-28): Y1-1 documented in the README (decided by the
+       user); Y2 found nothing (each function noinline alone and random
+       subsets over the tests, roome and 40000 generated builds), Y3
+       nothing (about 80000 generated runs against a reference model)
+[-] medium: bug hunt round 11 Y1-1: a noinline call with an array argument
+    of unknown length asks for no body, also for its other array arguments,
+    so 'f(ps, b)' in an uncalled 'g(ps i8[])' with 'b' an 'i8[4]' does not
+    check 't[5]' of 'func noinline f(s i8[], t i8[])', which an inlined 'f'
+    rejects (dead code only, no undefined behavior)
+    => discarded (2026-10-28, user): README 1.5 item 4 and 8.3 state it;
+       rejected: a check-only request with an optional length per array
+       parameter (a third kind of check beside 'check_body' and
+       'check_noinline_body', two kinds of lengths in 'noinline_worklist')
 [x] hard: bug hunt round 10 (2026-10-28, user: loop until a round finds no
     bugs; hunters X1 sizes and offsets at the encoding edges, X2 the diffs
     of the last commits, X3 README and '--help' as the specification;

@@ -319,10 +319,15 @@ program does not depend on inlining.
 4. A noinline call in skipped code or in the check of a function without
    its calls asks for a body that is checked with the lengths of its array
    arguments and not emitted, as an inlined call there compiles its body
-   ('program::check_noinline_bodies'); an argument of unknown length asks
-   for none. So 'f(a)' in 'if 1 == 2 { ... }' is rejected for 's[5]' in
-   'f(s i8[])' on an 'i8[4]' inlined or noinline. Its errors have the
-   "called from" frame of the first such call.
+   ('program::check_noinline_bodies'). So 'f(a)' in 'if 1 == 2 { ... }' is
+   rejected for 's[5]' in 'f(s i8[])' on an 'i8[4]' inlined or noinline. Its
+   errors have the "called from" frame of the first such call. A call with
+   an array argument of unknown length asks for none, also for its other
+   array arguments: 'f(ps, b)' in a function 'g(ps i8[])' that nothing
+   calls, with 'b' an 'i8[4]', does not check 't[5]' of 'f(s i8[], t i8[])'
+   with length 4, which an inlined 'f' rejects; the verdict of such code
+   depends on inline versus noinline, a call of 'g' with a known length
+   checks it.
 
 ### 1.5.1 Code that is not reached
 
@@ -1861,6 +1866,10 @@ message, x86_64 and rv32i linux stop with a signal.
 - The check of a body without its calls ends at the first error that depends on
   a call other than an inlined recursion, e.g. running out of scratch registers,
   so the code after it is not checked there (1.5).
+- A noinline call there with an array argument of unknown length is not
+  checked with the lengths of its other array arguments, which an inlined
+  call is: in a function nothing calls the verdict depends on inline versus
+  noinline (1.5 item 4).
 - The x86_64 listing leaves the size of each jump to nasm. On rare listings
   nasm's default search ('-Ox') does not settle ("unable to find valid values
   for all labels"), e.g. a '--nopt' listing of 'fuzz-flow' seed 71;

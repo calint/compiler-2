@@ -205,6 +205,8 @@
 - Never commit unless told; the message is always `.` (no body, no trailer).
 - After each step, review round or fix phase, pause for the user to commit,
   then continue.
+- When the agents of a round are done, remove their temporary worktrees and
+  branches (after checking they hold no commits).
 - Shell scripts `cd` to their own directory and use relative paths.
 
 ## Tools
