@@ -122,10 +122,7 @@ class stmt_builtin_array_length final : public statement {
     // the length is known at compile time so the value of an array is not
     // read, only its indexes are
     auto visit_operands(const operand_visitor visitor) const -> void override {
-        visitor({
-            .node{&args_.at(0)},
-            .written_place{&array()},
-        });
+        args_.visit_operands(visitor, 0);
     }
 
   private:

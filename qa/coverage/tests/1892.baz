@@ -1,0 +1,10 @@
+# a constant index whose element ends past the 64-bit offset range is out of
+# bounds of an unsized array parameter of any size, also in a function checked
+# without its calls; x86_64 only, rv32i rejects the constant itself
+
+func f(a i32[]) res {
+    res = a[9223372036854775807]
+}
+
+func main() {
+}

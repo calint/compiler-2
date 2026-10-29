@@ -1177,8 +1177,8 @@ class stmt_def_func final : public statement {
 //
 // the steps:
 //
-//   1. a definition: 'define_func' records a generic function with how a call
-//      deduces its types ('deductions') from its 'generic_signature',
+//   1. a definition: 'define_func' records a generic function with its
+//      'generic_signature', which tells a call how to deduce its types,
 //      'define_method' records a method and makes it for the instances of the
 //      type made so far
 //   2. an alias: 'instantiate_methods' makes each method for the new instance
@@ -1229,7 +1229,6 @@ class func_instantiator final {
                                 .start_tk{head.start_tk},
                                 .report_name{std::move(report_name)},
                                 .signature{signature},
-                                .deductions{deductions(signature)},
                                 .receiver{std::move(receiver)},
                                 .definition{definition},
                                 .is_type_member{head.is_type_member()},
@@ -1356,49 +1355,6 @@ class func_instantiator final {
 
         tc.add_func_instance(std::make_shared<stmt_def_func>(
             tc, func_tk, head, tz, std::move(instance)));
-    }
-
-    [[nodiscard]] static auto deduction_of(const std::string_view param_name,
-                                           const generic_signature& signature)
-        -> generic_deduction {
-
-        const auto it{
-            std::ranges::find(signature.params, param_name,
-                              &generic_signature_param::type_name),
-        };
-
-        std::optional<size_t> param_index;
-        std::string param_name_text;
-
-        if (it != signature.params.end()) {
-            param_index = static_cast<size_t>(it - signature.params.begin());
-            param_name_text = it->name_tk.text();
-        }
-
-        return {
-            .param_index{param_index},
-            .param_name{std::move(param_name_text)},
-            .is_result{
-                signature.result_type_tk and
-                    signature.result_type_tk->is_text(param_name),
-            },
-        };
-    }
-
-    // how a call can tell each type parameter: the first parameter declared
-    // with exactly its type, e.g. 's T' in 'func text.append<T type>(s T)',
-    // and the result, e.g. 'res T'
-    [[nodiscard]] static auto deductions(const generic_signature& signature)
-        -> std::vector<generic_deduction> {
-
-        std::vector<generic_deduction> result;
-        result.reserve(signature.type_param_tks.size());
-
-        for (const token& param_tk : signature.type_param_tks) {
-            result.push_back(deduction_of(param_tk.text(), signature));
-        }
-
-        return result;
     }
 
     // an error in the method is in the generic code, the frames name the bases

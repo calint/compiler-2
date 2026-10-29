@@ -148,11 +148,9 @@ class stmt_builtin_io final : public statement {
     auto compile(toc& tc, const size_t indent, const destination& dst) const
         -> void override {
 
-        const std::vector<list_operand> operands{operands_of(*this)};
-
         // e.g. the 'i' of 'read(0, a[i], f())' with 'f' writing 'i'; the 'b'
         // of 'read(0, b, n)' is written
-        assert_not_written_later(tc, operands, "argument");
+        assert_not_written_later(tc, *this, "argument");
 
         const place buffer{assert_buffer(tc)};
 
@@ -229,14 +227,9 @@ class stmt_builtin_io final : public statement {
     // the arguments in their order, the buffer that 'read' and
     // 'sector_read' fill is written
     auto visit_operands(const operand_visitor visitor) const -> void override {
-        for (size_t i{}; i < args_.count(); ++i) {
-            const bool is_written{i == buffer_index_ and io_.fills_buffer};
-
-            visitor({
-                .node{&args_.at(i)},
-                .written_place{is_written ? &buffer_path() : nullptr},
-            });
-        }
+        args_.visit_operands(visitor, io_.fills_buffer
+                                          ? std::optional{buffer_index_}
+                                          : std::nullopt);
     }
 
     //
@@ -451,11 +444,11 @@ class stmt_builtin_io final : public statement {
 
         const ident_info& buffer_info{buffer.info};
 
-        compile_count(tc, indent, count, buffer_info);
-
         const std::optional<int64_t> known_count{
             constant_count(tc, buffer_info),
         };
+
+        compile_count(tc, indent, count, known_count);
 
         if (at_.start) {
             move_to_start(tc, indent, buffer_reg, count, known_count,
@@ -475,9 +468,9 @@ class stmt_builtin_io final : public statement {
     }
 
     // without a count the whole array is transferred, a sector function
-    // transfers the elements of one sector
+    // transfers the elements of one sector, see 'constant_count'
     auto compile_count(toc& tc, const size_t indent, const operand& count,
-                       const ident_info& buffer_info) const -> void {
+                       const std::optional<int64_t> known_count) const -> void {
 
         if (at_.count) {
             args_.at(*at_.count)
@@ -486,15 +479,14 @@ class stmt_builtin_io final : public statement {
             return;
         }
 
-        const size_t element_count{
-            io_.is_sector ? sector_element_count(tc, buffer_info)
-                          : buffer_info.element_count(),
-        };
-
         machine& x{tc.machine()};
 
+        // note: an unknown length is the check of a function without its
+        //       calls, its code is discarded
+
         x.copy_value(tok(), indent, count,
-                     operand::imm(element_count, tc.builtins().default_type()));
+                     operand::imm(known_count.value_or(discarded_array_len),
+                                  tc.builtins().default_type()));
     }
 
     // the count argument, else the elements of the array or of one sector,

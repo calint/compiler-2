@@ -1349,15 +1349,11 @@ class machine_rv32i : public machine {
 
         std::ofstream binary{binary_file_name_, std::ios::binary};
 
-        if (not binary) {
-            throw unlocated_error{std::format("cannot write file {}",
-                                              in_quotes(binary_file_name_))};
+        // the file did not open, or e.g. a full disk left the image incomplete
+        if (binary) {
+            assembler_.write_resolved(os, binary);
+            binary.close();
         }
-
-        assembler_.write_resolved(os, binary);
-
-        // e.g. a full disk, the image is incomplete
-        binary.close();
 
         if (not binary) {
             throw unlocated_error{std::format("cannot write file {}",
@@ -1936,10 +1932,8 @@ class machine_rv32i : public machine {
         }
 
         comment(src_loc_tk, indent,
-                "{} {}: {}, widest aligned access at each "
-                "offset",
-                verb, describe_parts(size_bytes, starts),
-                describe_starts(starts));
+                "{} {}: {}, widest aligned access at each offset", verb,
+                describe_parts(size_bytes, starts), describe_starts(starts));
     }
 
     // names the parts of a known-size loop
@@ -2279,14 +2273,6 @@ class machine_rv32i : public machine {
         const token& src_loc_tk, const size_t indent, const operand& lhs,
         const operand& rhs) -> std::array<operand, 2> {
 
-        const address_offset_parts lhs_parts{
-            split_address_offset(lhs.displacement()),
-        };
-
-        const address_offset_parts rhs_parts{
-            split_address_offset(rhs.displacement()),
-        };
-
         const operand left{
             alloc_scratch_register(src_loc_tk, indent, lhs.type_ref()),
         };
@@ -2298,16 +2284,10 @@ class machine_rv32i : public machine {
         comment(src_loc_tk, indent, "operands share base {}",
                 left.register_name());
 
-        assembler_.lui(indent, left.register_name(), lhs_parts.upper);
+        const operand left_at{lower_address(src_loc_tk, indent, lhs, left)};
 
-        assembler_.add(indent, left.register_name(), left.register_name(),
-                       lhs.base_register());
-
-        assembler_.load(indent, load_op(rhs.type_ref()), right.register_name(),
-                        rhs_parts.low, left.register_name());
-
-        assembler_.load(indent, load_op(lhs.type_ref()), left.register_name(),
-                        lhs_parts.low, left.register_name());
+        load_into(src_loc_tk, indent, right, rebased(rhs, left_at));
+        load_into(src_loc_tk, indent, left, left_at);
 
         return {left, right};
     }
@@ -2498,14 +2478,6 @@ class machine_rv32i : public machine {
                                   const operand& dst, const operand& src)
         -> void {
 
-        const address_offset_parts src_parts{
-            split_address_offset(src.displacement()),
-        };
-
-        const address_offset_parts dst_parts{
-            split_address_offset(dst.displacement()),
-        };
-
         const operand base{
             alloc_scratch_register(src_loc_tk, indent, default_type()),
         };
@@ -2517,17 +2489,10 @@ class machine_rv32i : public machine {
         comment(src_loc_tk, indent, "source and destination share base {}",
                 base.register_name());
 
-        assembler_.lui(indent, base.register_name(), src_parts.upper);
+        const operand src_at{lower_address(src_loc_tk, indent, src, base)};
 
-        assembler_.add(indent, base.register_name(), base.register_name(),
-                       src.base_register());
-
-        assembler_.load(indent, load_op(src.type_ref()), value.register_name(),
-                        src_parts.low, base.register_name());
-
-        assembler_.store(indent, store_op(dst.type_ref().size_bytes()),
-                         value.register_name(), dst_parts.low,
-                         base.register_name());
+        load_into(src_loc_tk, indent, value, src_at);
+        store_low_bits(src_loc_tk, indent, rebased(dst, src_at), value);
     }
 
     auto emit_arithmetic_helpers() -> void {
@@ -2653,26 +2618,6 @@ class machine_rv32i : public machine {
                                    const std::optional<int32_t> constant)
         -> void {
 
-        comment(src_loc_tk, indent, "overflow check begin");
-
-        if (width_bytes < word_size_bytes_) {
-            emit_binary_instruction(src_loc_tk, indent, instruction, src, value,
-                                    constant);
-
-            const operand extended{
-                alloc_scratch_register(src_loc_tk, indent, default_type()),
-            };
-
-            check_fits_width(src_loc_tk, indent, value.register_name(),
-                             width_bytes, extended.register_name());
-
-            free_scratch_register(src_loc_tk, indent, extended);
-
-            comment(src_loc_tk, indent, "overflow check end");
-
-            return;
-        }
-
         // the first operand is 'result -/+ second', one register is enough
         // when the second operand is in a register of its own or small
         const bool is_register_source{
@@ -2688,29 +2633,39 @@ class machine_rv32i : public machine {
                 *constant <= assembler_rv32i::immediate_max,
         };
 
-        if (is_register_source or is_small_constant) {
+        comment(src_loc_tk, indent, "overflow check begin");
+
+        if (width_bytes < word_size_bytes_) {
+            emit_binary_instruction(src_loc_tk, indent, instruction, src, value,
+                                    constant);
+
+            const operand extended{
+                alloc_scratch_register(src_loc_tk, indent, default_type()),
+            };
+
+            check_fits_width(src_loc_tk, indent, value.register_name(),
+                             width_bytes, extended.register_name());
+
+            free_scratch_register(src_loc_tk, indent, extended);
+        } else if (is_register_source or is_small_constant) {
             emit_checked_with_one_register(src_loc_tk, indent, instruction, src,
                                            value, constant);
-
-            comment(src_loc_tk, indent, "overflow check end");
-
-            return;
-        }
-
-        // a memory source, a constant past the immediate or the value's own
-        // register gets a register of its own
-        const operand second{
-            alloc_scratch_register(src_loc_tk, indent, default_type()),
-        };
-
-        if (constant.has_value()) {
-            assembler_.li(indent, second.register_name(), *constant);
         } else {
-            copy_value(src_loc_tk, indent, second, src);
-        }
+            // a memory source, a constant past the immediate or the value's
+            // own register gets a register of its own
+            const operand second{
+                alloc_scratch_register(src_loc_tk, indent, default_type()),
+            };
 
-        emit_checked_with_one_register(src_loc_tk, indent, instruction, second,
-                                       value, constant);
+            if (constant.has_value()) {
+                assembler_.li(indent, second.register_name(), *constant);
+            } else {
+                copy_value(src_loc_tk, indent, second, src);
+            }
+
+            emit_checked_with_one_register(src_loc_tk, indent, instruction,
+                                           second, value, constant);
+        }
 
         comment(src_loc_tk, indent, "overflow check end");
     }
@@ -4777,6 +4732,16 @@ class machine_rv32i : public machine {
             .head_size_bytes{},
             .width{1},
         };
+    }
+
+    // 'address' from the register of 'lowered', which holds the upper part
+    // of their shared base, see 'shares_address_base'
+    [[nodiscard]] static auto rebased(const operand& address,
+                                      const operand& lowered) -> operand {
+
+        return operand::mem(lowered.base_register(), {}, 1,
+                            split_address_offset(address.displacement()).low,
+                            address.type_ref());
     }
 
     // the names of the register indexes 'indexes'

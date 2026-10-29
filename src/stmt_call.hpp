@@ -15,7 +15,6 @@
 #include <string_view>
 #include <tuple>
 #include <utility>
-#include <variant>
 #include <vector>
 
 #include "compile_error.hpp"
@@ -56,10 +55,10 @@
 //
 // an argument, from the parse to the body:
 //
-//   'call_site::argument_form'   what the argument is ('argument_form_of')
-//   'call_site::argument_forms'  the forms of one compile; whether an
-//                                argument goes through a temporary is the
-//                                rule of 'inline_call' or 'noinline_call'
+//   'call_site::argument_places' the place each argument names, none for a
+//                                value; whether an argument goes through a
+//                                temporary is the rule of 'inline_call' or
+//                                'noinline_call'
 //   'param_binding'              inlined: what the parameter stands for
 //                                ('inline_call::make_bindings')
 //   'noinline_call::noinline_arg'
@@ -67,9 +66,8 @@
 //                                temporary that holds the value
 //                                ('compile_arguments_and_call',
 //                                'call_site::make_argument_temporary')
-//   'noinline_call::addressed_slot'
-//                                the address written to the frame slot
-//                                ('frame_slot_addresses')
+//   frame slot                   the address written to it
+//                                ('noinline_call::slot_address_of')
 //
 // the formatter sorts the functions of a class by name, so the comment above
 // each class lists them in the order they run
@@ -243,14 +241,18 @@ struct generic_call {
 
         deduction deduced{};
 
-        for (const auto [param_tk, source] : std::views::zip(
-                 generic.signature.type_param_tks, generic.deductions)) {
+        for (const token& param_tk : generic.signature.type_param_tks) {
+            const generic_deduction source{
+                generic.signature.deduction(param_tk.text()),
+            };
 
             const type* arg_type{};
 
             if (source.param_index) {
-                assert_argument_present(scan, *source.param_index,
-                                        source.param_name);
+                assert_argument_present(
+                    scan, *source.param_index,
+                    generic.signature.params.at(*source.param_index)
+                        .name_tk.text());
 
                 arg_type = argument_type(tc, scan, *source.param_index);
 
@@ -473,32 +475,6 @@ class call_limits final {
 
 // what compiling a call needs of it, 'stmt_call' makes it for each compile
 struct call_site {
-    // how an argument reaches its parameter, decided at each compile because
-    // the bindings of the current scope decide it:
-    //
-    //   form                example         inlined body gets  noinline body
-    //   instance temporary  'point{1, 2}'   a temporary        a temporary
-    //   place               'p', 'a[i]'     the name, or the   its address
-    //                                       computed address
-    //   computed            'x + 1',        a constant, a      a temporary
-    //                       '-a[i]', '-x',  register, or the
-    //                       '3', 'k', 'x'   register 'x' is
-    //                       bound to a      bound to
-    //                       register
-    struct argument_form {
-        // an instance literal or a call result of a user type
-        struct instance_temporary {};
-
-        // a value without storage
-        struct computed {};
-
-        std::variant<instance_temporary, place, computed> kind;
-
-        [[nodiscard]] auto is_place() const -> bool {
-            return std::holds_alternative<place>(kind);
-        }
-    };
-
     // the name of a function or method, the type of a constructor call; the
     // code and the errors of the call are located at it
     token tk;
@@ -542,23 +518,36 @@ struct call_site {
             tc.storage_of(name, access_path::whole_variable()));
     }
 
-    // the form of each argument, an array is only passed by name
-    [[nodiscard]] auto argument_forms(const toc& tc) const
-        -> std::vector<argument_form> {
+    // the place each argument names, decided at each compile because the
+    // bindings of the current scope decide it; none for a value without
+    // storage:
+    //
+    //   argument        example         inlined body gets  noinline body
+    //   place           'p', 'a[i]'     the name, or the   its address
+    //                                   computed address
+    //   instance        'point{1, 2}',  a temporary        a temporary
+    //                   'mk(1, 2)'
+    //   value           'x + 1',        a constant, a      a temporary
+    //                   '-a[i]', '-x',  register, or the
+    //                   '3', 'k', 'x'   register 'x' is
+    //                   bound to a      bound to
+    //                   register
+    [[nodiscard]] auto argument_places(const toc& tc) const
+        -> std::vector<std::optional<place>> {
 
-        std::vector<argument_form> forms;
-        forms.reserve(args.size());
+        std::vector<std::optional<place>> places;
+        places.reserve(args.size());
 
         for (const auto [arg, param] : std::views::zip(args, func->params())) {
-            argument_form form{argument_form_of(tc, arg, param)};
+            std::optional<place> arg_place{as_place(tc, arg)};
 
             // note: an array argument is a place, see 'assert_argument_usable'
-            assert(not param.is_array() or form.is_place());
+            assert(not param.is_array() or arg_place);
 
-            forms.push_back(std::move(form));
+            places.push_back(std::move(arg_place));
         }
 
-        return forms;
+        return places;
     }
 
     // the result is made in a temporary of the call, then copied into
@@ -631,33 +620,6 @@ struct call_site {
     // statics
     //
 
-    // see 'argument_form'
-    [[nodiscard]] static auto argument_form_of(const toc& tc,
-                                               const expr_any& arg,
-                                               const stmt_def_func_param& param)
-        -> argument_form {
-
-        // e.g. 'point{1, 2}' or 'mk(1, 2)'
-        if (not param.get_type().is_builtin() and
-            arg.operand_path() == nullptr) {
-
-            return {
-                .kind{argument_form::instance_temporary{}},
-            };
-        }
-
-        if (std::optional<place> arg_place{as_place(tc, arg)}) {
-            return {
-                .kind{std::move(*arg_place)},
-            };
-        }
-
-        // e.g. 'x + 1', '-x', '{}', a constant or a name bound to a register
-        return {
-            .kind{argument_form::computed{}},
-        };
-    }
-
     // a block holds the temporaries of a call and frees them after it
     // note: a block is a scope, which counts toward the nesting limit and the
     //       'max scopes in use' report, so a call without temporaries enters
@@ -724,21 +686,20 @@ class inline_call final {
     };
 
     call_site call_{};
-    // one per argument
-    std::vector<call_site::argument_form> forms_;
+    // one per argument, see 'call_site::argument_places'
+    std::vector<std::optional<place>> places_;
 
   public:
-    inline_call(call_site call, std::vector<call_site::argument_form> forms)
-        : call_{std::move(call)}, forms_{std::move(forms)} {
+    inline_call(call_site call, std::vector<std::optional<place>> places)
+        : call_{std::move(call)}, places_{std::move(places)} {
 
-        assert(forms_.size() == call_.args.size());
+        assert(call_.func->is_inlined());
+        assert(places_.size() == call_.args.size());
     }
 
     // a block holds the temporaries of the call
     auto compile(toc& tc, const size_t indent, const destination& dst) const
         -> void {
-
-        assert(call_.func->is_inlined());
 
         if (call_.func->has_result() and
             call_site::result_type_differs(dst, *call_.func)) {
@@ -755,9 +716,7 @@ class inline_call final {
         };
 
         call_site::in_temporaries_block(
-            tc,
-            std::ranges::any_of(forms_, is_temporary) or has_result_temporary,
-            [&] -> void {
+            tc, has_argument_temporary() or has_result_temporary, [&] -> void {
                 if (not has_result_temporary) {
                     compile_with_bindings(tc, indent, dst);
                     return;
@@ -944,6 +903,14 @@ class inline_call final {
         compile_with_address_choice(tc, indent, bindings);
     }
 
+    [[nodiscard]] auto has_argument_temporary() const -> bool {
+        return std::ranges::any_of(std::views::iota(size_t{}, places_.size()),
+                                   [this](const size_t i) -> bool {
+                                       return is_temporary(
+                                           places_.at(i), call_.func->param(i));
+                                   });
+    }
+
     // the bindings of the result and of the arguments of the inlined body
     [[nodiscard]] auto make_bindings(toc& tc, const size_t indent,
                                      const destination& dst,
@@ -965,15 +932,15 @@ class inline_call final {
             bindings.result = bind_result(dst, *result);
         }
 
-        for (const auto [i, arg, param, planned] :
+        for (const auto [i, arg, param, arg_place] :
              std::views::zip(std::views::iota(size_t{}), call_.args,
-                             call_.func->params(), forms_)) {
+                             call_.func->params(), places_)) {
 
             // note: a temporary is made here, in the order of the arguments,
             //       and named per call, so each level of an inlined recursion
             //       binds its own
 
-            if (is_temporary(planned)) {
+            if (is_temporary(arg_place, param)) {
                 const destination temporary{
                     call_.make_argument_temporary(tc, indent, i),
                 };
@@ -986,7 +953,7 @@ class inline_call final {
             }
 
             bindings.arguments.push_back(
-                bind_argument(tc, indent, arg, param, planned, held));
+                bind_argument(tc, indent, arg, param, arg_place, held));
         }
 
         return bindings;
@@ -996,23 +963,22 @@ class inline_call final {
     // statics
     //
 
-    // the inlined body reaches an argument by the binding its form gives, see
-    // 'call_site::argument_form'; an instance temporary is reached through
-    // the temporary of the call
+    // the inlined body reaches a place or a value of a built-in type by
+    // the binding it gives, see 'call_site::argument_places'
     [[nodiscard]] static auto
     bind_argument(toc& tc, const size_t indent, const expr_any& arg,
                   const stmt_def_func_param& param,
-                  const call_site::argument_form& argument,
+                  const std::optional<place>& arg_place,
                   machine::held_registers& held) -> param_binding {
 
         // note: 'stmt_call::assert_argument_types' checked the type
 
-        if (const place* const arg_place{std::get_if<place>(&argument.kind)}) {
+        if (arg_place) {
             const stmt_identifier& ident{*arg_place->ident};
 
             // an indexed argument keeps its computed address
             if (ident.has_computed_address(arg_place->info)) {
-                return bind_reference(tc, indent, arg, *arg_place, param, held);
+                return bind_reference(tc, indent, *arg_place, param, held);
             }
 
             return bind_name(param, ident, arg_place->info);
@@ -1074,10 +1040,11 @@ class inline_call final {
 
     // an indexed argument keeps its computed address, e.g.
     // '[rbp + r14 * 4 + 205]', '[r15 + r14]' or simply '[r15]'
-    [[nodiscard]] static auto
-    bind_reference(toc& tc, const size_t indent, const expr_any& arg,
-                   const place& arg_place, const stmt_def_func_param& param,
-                   machine::held_registers& held) -> param_binding {
+    [[nodiscard]] static auto bind_reference(toc& tc, const size_t indent,
+                                             const place& arg_place,
+                                             const stmt_def_func_param& param,
+                                             machine::held_registers& held)
+        -> param_binding {
 
         const stmt_identifier& ident{*arg_place.ident};
 
@@ -1085,12 +1052,7 @@ class inline_call final {
         //       compiled
 
         const operand lea{
-            ident.compile_lea(tc, indent, arg.tok(), held,
-                              {
-                                  .range_count{},
-                                  .start_register{},
-                                  .address_register{},
-                              }),
+            ident.compile_lea(tc, indent, held, {}),
         };
 
         return param_binding::make_name(
@@ -1129,11 +1091,11 @@ class inline_call final {
 
     // an instance literal or a call result, e.g. 'point{1, 2}', is made in
     // a temporary of the call that the body names
-    [[nodiscard]] static auto is_temporary(const call_site::argument_form& form)
-        -> bool {
+    [[nodiscard]] static auto
+    is_temporary(const std::optional<place>& arg_place,
+                 const stmt_def_func_param& param) -> bool {
 
-        return std::holds_alternative<
-            call_site::argument_form::instance_temporary>(form.kind);
+        return not arg_place and not param.get_type().is_builtin();
     }
 };
 
@@ -1151,16 +1113,10 @@ class inline_call final {
 //      checked by 'stmt_call::assert_argument_types' before ('assert_call'
 //      asserts it); the body is compiled once per array lengths
 //      ('stmt_def_func::emit_noinline_body')
-//   3. the addresses are written to the callee frame ('populate_frame':
-//      'frame_slot_addresses', 'write_frame_slots' and the frame and stack
-//      checks) and the function is called
+//   3. the addresses are written to the callee frame ('populate_frame': the
+//      frame and stack checks and 'write_frame_slots') and the function is
+//      called, an address in a register too ('register_address')
 class noinline_call final {
-    // a slot of the callee frame and the address it holds
-    struct addressed_slot {
-        frame_slot slot{};
-        operand address;
-    };
-
     // what the call passes for an argument: the variable it names or a
     // temporary of the current block that holds its value
     struct noinline_arg {
@@ -1173,14 +1129,14 @@ class noinline_call final {
     call_site call_{};
     // one per argument, a place is passed by its address, any other in a
     // temporary
-    std::vector<call_site::argument_form> forms_;
+    std::vector<std::optional<place>> places_;
 
   public:
-    noinline_call(call_site call, std::vector<call_site::argument_form> forms)
-        : call_{std::move(call)}, forms_{std::move(forms)} {
+    noinline_call(call_site call, std::vector<std::optional<place>> places)
+        : call_{std::move(call)}, places_{std::move(places)} {
 
         assert(not call_.func->is_inlined());
-        assert(forms_.size() == call_.args.size());
+        assert(places_.size() == call_.args.size());
     }
 
     // the callee reaches the result and the arguments through their addresses,
@@ -1192,8 +1148,10 @@ class noinline_call final {
 
         const bool has_temporaries{
             has_result_temporary(dst, *call_.func) or
-                not std::ranges::all_of(forms_,
-                                        &call_site::argument_form::is_place),
+                std::ranges::any_of(places_,
+                                    [](const std::optional<place>& p) -> bool {
+                                        return not p;
+                                    }),
         };
 
         call_site::in_temporaries_block(tc, has_temporaries, [&] -> void {
@@ -1229,13 +1187,11 @@ class noinline_call final {
 
         std::vector<noinline_arg> arguments;
 
-        for (const auto [i, planned] :
-             std::views::zip(std::views::iota(size_t{}), forms_)) {
-
-            const place* const arg_place{std::get_if<place>(&planned.kind)};
+        for (const auto [i, arg_place] :
+             std::views::zip(std::views::iota(size_t{}), places_)) {
 
             // e.g. a literal or an expression
-            if (arg_place == nullptr) {
+            if (not arg_place) {
                 const destination temporary{
                     call_.make_argument_temporary(tc, indent, i),
                 };
@@ -1302,10 +1258,8 @@ class noinline_call final {
         // pointer, the layout of README 4.1
         const operand frame_address{tc.next_frame_address()};
 
-        const std::vector<addressed_slot> slots{
-            populate_frame(tc, indent, dst, arguments, frame_address,
-                           array_lengths),
-        };
+        populate_frame(tc, indent, dst, arguments, frame_address,
+                       array_lengths);
 
         held.release();
 
@@ -1314,43 +1268,17 @@ class noinline_call final {
         // the address in a register is loaded after the registers are saved,
         // a register that holds a value of the caller is not lost
         x.call_function(call_.tk, indent, call_.func->body_label(array_lengths),
-                        frame_address, register_address(slots));
-    }
-
-    // the address each slot of the callee holds: the destination for the
-    // result, the argument for a parameter
-    [[nodiscard]] auto
-    frame_slot_addresses(const destination& dst,
-                         const std::span<const noinline_arg> arguments) const
-        -> std::vector<addressed_slot> {
-
-        std::vector<addressed_slot> slots;
-
-        for (const frame_slot& slot : call_.func->frame_slots()) {
-            const operand address{slot_address_of(dst, slot, arguments)};
-
-            slots.push_back({
-                .slot{slot},
-                .address{address},
-            });
-        }
-
-        return slots;
+                        frame_address, register_address(dst, arguments));
     }
 
     // the slots of the callee frame at 'frame_address' get the addresses of
     // the result and the arguments, the registers that hold them stay
     // allocated until the frame is populated
-    [[nodiscard]] auto
-    populate_frame(toc& tc, const size_t indent, const destination& dst,
-                   const std::span<const noinline_arg> arguments,
-                   const operand& frame_address,
-                   const std::span<const size_t> array_lengths) const
-        -> std::vector<addressed_slot> {
-
-        std::vector<addressed_slot> slots{
-            frame_slot_addresses(dst, arguments),
-        };
+    auto populate_frame(toc& tc, const size_t indent, const destination& dst,
+                        const std::span<const noinline_arg> arguments,
+                        const operand& frame_address,
+                        const std::span<const size_t> array_lengths) const
+        -> void {
 
         machine& x{tc.machine()};
 
@@ -1368,27 +1296,42 @@ class noinline_call final {
             x.check_stack_capacity(call_.tk, indent);
         }
 
-        write_frame_slots(x, indent, frame_address, slots);
+        write_frame_slots(x, indent, frame_address, dst, arguments);
+    }
 
-        return slots;
+    // the address the callee finds in a register, none when no slot is in it
+    [[nodiscard]] auto
+    register_address(const destination& dst,
+                     const std::span<const noinline_arg> arguments) const
+        -> std::optional<operand> {
+
+        for (const frame_slot& slot : call_.func->frame_slots()) {
+            if (slot.is_in_register) {
+                return slot_address_of(dst, slot, arguments);
+            }
+        }
+
+        return std::nullopt;
     }
 
     // each slot holds an address, not the value stored at that address
     auto write_frame_slots(machine& x, const size_t indent,
-                           const operand& frame_address,
-                           const std::span<const addressed_slot> slots) const
+                           const operand& frame_address, const destination& dst,
+                           const std::span<const noinline_arg> arguments) const
         -> void {
 
         operand slot_address{frame_address};
 
-        for (const addressed_slot& addressed : slots) {
+        for (const frame_slot& slot : call_.func->frame_slots()) {
             // the callee finds it in a register, it has no slot
-            if (addressed.slot.is_in_register) {
+            if (slot.is_in_register) {
                 continue;
             }
 
-            comment_frame_slot(x, indent, addressed.slot);
-            x.address_of(call_.tk, indent, slot_address, addressed.address);
+            comment_frame_slot(x, indent, slot);
+
+            x.address_of(call_.tk, indent, slot_address,
+                         slot_address_of(dst, slot, arguments));
 
             slot_address.increment_offset(
                 address_offset(x.address_size_bytes()));
@@ -1471,20 +1414,7 @@ class noinline_call final {
                 call_site::result_type_differs(dst, func));
     }
 
-    // the address the callee finds in a register, none when no slot is in it
-    [[nodiscard]] static auto
-    register_address(const std::span<const addressed_slot> slots)
-        -> std::optional<operand> {
-
-        for (const addressed_slot& addressed : slots) {
-            if (addressed.slot.is_in_register) {
-                return addressed.address;
-            }
-        }
-
-        return std::nullopt;
-    }
-
+    // the destination for the result, the argument for a parameter
     [[nodiscard]] static auto
     slot_address_of(const destination& dst, const frame_slot& slot,
                     const std::span<const noinline_arg> arguments) -> operand {
@@ -1579,12 +1509,20 @@ class builtin_arguments final {
         close_paren_tk_.source_to(os);
     }
 
-    // the arguments in their order
-    auto visit_operands(const operand_visitor visitor) const -> void {
-        for (const expr_any& e : args_) {
+    // the arguments in their order; of the array at 'written_index' only
+    // the indexes are read, e.g. the buffer of 'read'
+    auto visit_operands(const operand_visitor visitor,
+                        const std::optional<size_t> written_index) const
+        -> void {
+
+        for (const auto [i, e] : std::views::enumerate(args_)) {
+            const bool is_written{
+                written_index and std::cmp_equal(i, *written_index),
+            };
+
             visitor({
                 .node{&e},
-                .written_place{},
+                .written_place{is_written ? e.bare_path() : nullptr},
             });
         }
     }
@@ -1951,7 +1889,7 @@ class stmt_call final : public statement {
 
         assert_argument_types(tc);
         // e.g. the 'i' of 'f(arr[i], h(i))' with 'h' writing 'i'
-        assert_not_written_later(tc, operands_of(*this), "argument");
+        assert_not_written_later(tc, *this, "argument");
     }
 
     // a function is called after its body or from inside it, so the record of
@@ -2124,7 +2062,7 @@ class stmt_call final : public statement {
         if (not callee().is_inlined()) {
             noinline_call{
                 call,
-                call.argument_forms(tc),
+                call.argument_places(tc),
             }
                 .compile(tc, indent, dst);
 
@@ -2138,7 +2076,7 @@ class stmt_call final : public statement {
         try {
             inline_call{
                 call,
-                call.argument_forms(tc),
+                call.argument_places(tc),
             }
                 .compile(tc, indent, dst);
         } catch (const compile_error& e) {

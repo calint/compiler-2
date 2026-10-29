@@ -357,8 +357,6 @@ class generic_trace final {
                                             "instantiated by"),
           } {}
 
-    generic_trace() = default;
-
     auto add_to(compile_error& e) const -> void {
         e.call_frames.append_range(frames_);
     }
@@ -454,8 +452,6 @@ struct generic_deduction {
     // the first parameter declared with exactly that type, e.g. 's T' in
     // 'func text.append<T type>(s T)', not an array
     std::optional<size_t> param_index;
-    // the name of that parameter, e.g. 's', for a missing argument
-    std::string param_name;
     // the result is declared with exactly that type, e.g. 'res T', the
     // destination of the call tells it
     bool is_result{};
@@ -481,6 +477,30 @@ struct generic_signature {
     // none for the default type
     std::optional<token> result_type_tk;
 
+    // how a call tells the type parameter 'type_param': the first parameter
+    // declared with exactly its type and the result, e.g. 's T' and 'res T'
+    [[nodiscard]] auto deduction(const std::string_view type_param) const
+        -> generic_deduction {
+
+        const auto it{
+            std::ranges::find(params, type_param,
+                              &generic_signature_param::type_name),
+        };
+
+        return {
+            .param_index{
+                it == params.end()
+                    ? std::nullopt
+                    : std::optional{
+                          static_cast<size_t>(it - params.begin()),
+                      },
+            },
+            .is_result{
+                result_type_tk and result_type_tk->is_text(type_param),
+            },
+        };
+    }
+
     // the result 'self' builds an instance of the receiver type
     [[nodiscard]] auto is_constructor() const -> bool {
         return result_name_tk and result_name_tk->is_text(reserved_names::self);
@@ -504,8 +524,6 @@ struct generic_func_info {
     std::string report_name;
     // e.g. '<T type>()'
     generic_signature signature{};
-    // for each type parameter
-    std::vector<generic_deduction> deductions;
     // the instance of the generic type of a method, e.g. 'text<8>' for
     // 'str.append'
     std::optional<generic_type_instance> receiver;
@@ -593,20 +611,6 @@ class generic_registry final {
         -> const generic_func_info& {
 
         return funcs_.get_const_ref(name);
-    }
-
-    [[nodiscard]] auto get_methods(const std::string_view type_name) const
-        -> std::vector<generic_method_info> {
-
-        std::vector<generic_method_info> methods;
-
-        for (const generic_method_info& method : methods_) {
-            if (method.type_tk.text() == type_name) {
-                methods.push_back(method);
-            }
-        }
-
-        return methods;
     }
 
     [[nodiscard]] auto get_type(const std::string_view name) const

@@ -380,7 +380,7 @@ class expr_bool_op final : public statement {
         }
 
         // e.g. the 'i' of 'i == h(i)' with 'h' writing 'i'
-        assert_not_written_later(tc, operands_of(*this), "operand");
+        assert_not_written_later(tc, *this, "operand");
 
         if (not cmp.is_memory) {
             assert_sides_fit(lhs, rhs, cmp.op);

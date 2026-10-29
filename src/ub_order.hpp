@@ -31,9 +31,10 @@
 //   'assert_not_written_later'
 //                  the operands of a list read nothing a call in a later
 //                  operand writes; the list order, in which the arguments and
-//                  operands are compiled, of a node ('operands_of'): a call, a
-//                  comparison and the bulk and io built-ins; an arithmetic list
-//                  reads each operand at its place, a later write misses it
+//                  operands are compiled, of a node ('visit_operands'): a call,
+//                  a comparison and the bulk and io built-ins; an arithmetic
+//                  list reads each operand at its place, a later write misses
+//                  it
 //
 // the definite assignment ('ub_assigned.hpp') walks the statements in the same
 // order by name, it runs before 'toc' resolves the names; the aliasing of the
@@ -42,7 +43,7 @@
 
 // 'st' reads 'dst', or a call in it reads or writes it; a register has no
 // storage and is reached under its own name, storage by the bytes a read
-// reaches under any name, e.g. the 'p' of 'g = p + 1' with 'p' bound to 'g',
+// reaches under any name, e.g. the 'e' of 'a[0] = 7 - e' in a 'foo a',
 // but not the 'p.y' of 'p.x = p.y + 1', and by the storage the body of a call
 // reaches, e.g. 'gw()' writing 'gx' in 'gx = k + gw()'
 [[nodiscard]] inline auto reaches_destination(const toc& tc,
@@ -52,7 +53,7 @@
     const std::optional<storage_path> dst_storage{dst.storage()};
 
     if (not dst_storage) {
-        return st.first_read_of(dst.root_name()) != nullptr;
+        return st.first_read_of(dst.text()) != nullptr;
     }
 
     bool is_read{};
@@ -96,14 +97,18 @@ inline auto assert_not_read_before(const toc& tc, const list_operand& earlier,
 // evaluation is left to right, but the compile reads a name where it is
 // used, so a name that a later operand of the same list may write would read
 // the written value; such a list is rejected, e.g. the 'i' of 'f(arr[i],
-// h(i))' or of 'i == h(i)' with 'h' writing 'i'; 'operand' names an operand
-// of the list in the message, e.g. "argument"
+// h(i))' or of 'i == h(i)' with 'h' writing 'i'; 'node' lists its operands by
+// 'visit_operands', a 'statement' or a part of one, e.g. 'bulk_operands';
+// 'operand' names an operand of the list in the message, e.g. "argument"
 // note: a call among the earlier operands has run before the later ones,
 //       only the names those read are checked
-inline auto
-assert_not_written_later(const toc& tc,
-                         const std::span<const list_operand> operands,
-                         const std::string_view operand) -> void {
+inline auto assert_not_written_later(const toc& tc, const auto& node,
+                                     const std::string_view operand) -> void {
+
+    std::vector<list_operand> operands;
+
+    node.visit_operands(
+        [&operands](const list_operand& o) -> void { operands.push_back(o); });
 
     const std::string writer{std::format("a later {}", operand)};
 
@@ -114,22 +119,11 @@ assert_not_written_later(const toc& tc,
                     return;
                 }
 
-                for (const list_operand& earlier : operands.first(k)) {
+                for (const list_operand& earlier :
+                     std::span{operands}.first(k)) {
+
                     assert_not_read_before(tc, earlier, effect, writer);
                 }
             });
     }
-}
-
-// the operands of 'node' in its 'visit_operands' order; a 'statement' or a
-// part of one that lists operands the same way, e.g. 'bulk_operands'
-[[nodiscard]] inline auto operands_of(const auto& node)
-    -> std::vector<list_operand> {
-
-    std::vector<list_operand> operands;
-
-    node.visit_operands(
-        [&operands](const list_operand& o) -> void { operands.push_back(o); });
-
-    return operands;
 }

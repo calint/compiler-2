@@ -219,7 +219,8 @@ class bulk_operands final {
     // argument is written by a later one, the element types match, a constant
     // count is in bounds; returns the element type of both arrays
     [[nodiscard]] auto check(toc& tc) const -> const type& {
-        assert_not_written_later(tc);
+        // e.g. the 'a' of 'array_copy(a, b, f())' with 'f' writing 'a'
+        assert_not_written_later(tc, *this, "argument");
 
         const type& element_type{resolve_element_type(tc)};
 
@@ -243,20 +244,8 @@ class bulk_operands final {
     // the arrays and the count in their order, the second array written by
     // a copy
     auto visit_operands(const operand_visitor visitor) const -> void {
-        visitor({
-            .node{&args_.at(0)},
-            .written_place{},
-        });
-
-        visitor({
-            .node{&args_.at(1)},
-            .written_place{is_second_written_ ? &second() : nullptr},
-        });
-
-        visitor({
-            .node{&count()},
-            .written_place{},
-        });
+        args_.visit_operands(visitor, is_second_written_ ? std::optional{1UZ}
+                                                         : std::nullopt);
     }
 
   private:
@@ -270,11 +259,6 @@ class bulk_operands final {
 
         first().assert_count_in_bounds(tc, count().tok(), *constant_count);
         second().assert_count_in_bounds(tc, count().tok(), *constant_count);
-    }
-
-    // e.g. the 'a' of 'array_copy(a, b, f())' with 'f' writing 'a'
-    auto assert_not_written_later(const toc& tc) const -> void {
-        ::assert_not_written_later(tc, operands_of(*this), "argument");
     }
 
     // the elements are compared or copied as a whole, so their types match

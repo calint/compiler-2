@@ -2159,10 +2159,10 @@ class definition_checks final {
     assert_generic_method_not_defined(const generic_method_info& method) const
         -> void {
 
-        for (const generic_method_info& known :
-             generics_.get().get_methods(method.type_tk.text())) {
+        for (const generic_method_info& known : generics_.get().methods()) {
+            if (known.type_tk.text() == method.type_tk.text() and
+                known.method_name_tk.text() == method.method_name_tk.text()) {
 
-            if (known.method_name_tk.text() == method.method_name_tk.text()) {
                 throw compile_error{
                     method.method_name_tk,
                     std::format(

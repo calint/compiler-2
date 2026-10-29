@@ -172,7 +172,7 @@ class assembler_x86_64 final : public assembler {
     //
 
     auto align(const size_t size_bytes) -> void override {
-        add_directive(std::format("align {}", size_bytes));
+        add_text(std::format("align {}", size_bytes));
     }
 
     auto begin_data_section() -> void override {
@@ -209,29 +209,18 @@ class assembler_x86_64 final : public assembler {
     auto data(const size_t element_size_bytes,
               const std::span<const int64_t> values) -> void override {
 
-        std::string text{
-            std::format("{} ", data_directive(element_size_bytes)),
-        };
-
-        std::string_view separator;
-        for (const int64_t value : values) {
-            text += std::format("{}{}", separator, value);
-
-            separator = ", ";
-        }
-
-        add_directive(std::move(text));
+        add_text(data_text(data_directive(element_size_bytes), values));
     }
 
     auto define_constant(const std::string_view name, const int64_t value)
         -> void override {
 
-        add_directive(std::format("{} equ {}", name, value));
+        add_text(std::format("{} equ {}", name, value));
     }
 
     auto reserve(const size_t size_bytes) -> void override {
         for_each_chunk(size_bytes, [&](const size_t chunk) -> void {
-            add_directive(std::format("resb {}", chunk));
+            add_text(std::format("resb {}", chunk));
         });
     }
 
@@ -261,12 +250,12 @@ class assembler_x86_64 final : public assembler {
             text += std::format("\\x{:02x}", static_cast<unsigned char>(c));
         }
 
-        add_directive(std::format("db `{}`", text));
+        add_text(std::format("db `{}`", text));
     }
 
     auto zero_data(const size_t size_bytes) -> void override {
         for_each_chunk(size_bytes, [&](const size_t chunk) -> void {
-            add_directive(std::format("times {} db 0", chunk));
+            add_text(std::format("times {} db 0", chunk));
         });
     }
 
@@ -274,23 +263,23 @@ class assembler_x86_64 final : public assembler {
     // class methods
     //
 
-    auto bits64() -> void { add_directive("bits 64"); }
+    auto bits64() -> void { add_text("bits 64"); }
 
     auto call(const size_t indent, const std::string_view target) -> void {
-        add_text(std::format("{}call {}", indentation(indent), target));
+        add_instruction(std::format("{}call {}", indentation(indent), target));
         mark_call(target);
     }
 
-    auto default_rel() -> void { add_directive("default rel"); }
+    auto default_rel() -> void { add_text("default rel"); }
 
     auto global(const std::string_view name) -> void {
-        add_directive(std::format("global {}", name));
+        add_text(std::format("global {}", name));
     }
 
     auto instruction(const size_t indent, const op code) -> void {
         assert(info(code).operand_count == 0);
 
-        add_text(indentation(indent) + std::string{info(code).mnemonic});
+        add_instruction(indentation(indent) + std::string{info(code).mnemonic});
     }
 
     auto instruction(const size_t indent, const op code, const argument& value)
@@ -298,8 +287,8 @@ class assembler_x86_64 final : public assembler {
 
         assert(info(code).operand_count == 1);
 
-        add_text(std::format("{}{} {}", indentation(indent),
-                             info(code).mnemonic, argument_text(value)));
+        add_instruction(std::format("{}{} {}", indentation(indent),
+                                    info(code).mnemonic, argument_text(value)));
     }
 
     auto instruction(const size_t indent, const op code, const argument& dst,
@@ -307,9 +296,9 @@ class assembler_x86_64 final : public assembler {
 
         assert(info(code).operand_count == 2);
 
-        add_text(std::format("{}{} {}, {}", indentation(indent),
-                             info(code).mnemonic, argument_text(dst),
-                             argument_text(src)));
+        add_instruction(std::format("{}{} {}, {}", indentation(indent),
+                                    info(code).mnemonic, argument_text(dst),
+                                    argument_text(src)));
     }
 
     auto jcc(const size_t indent, const condition cc,
@@ -330,19 +319,19 @@ class assembler_x86_64 final : public assembler {
     auto setcc(const size_t indent, const condition cc, const argument& dst)
         -> void {
 
-        add_text(std::format("{}set{} {}", indentation(indent),
-                             condition_suffix(cc), argument_text(dst)));
+        add_instruction(std::format("{}set{} {}", indentation(indent),
+                                    condition_suffix(cc), argument_text(dst)));
     }
 
     // sizes only count in code, so code must be in the text section
     auto switch_section(const section which) -> void {
         set_code_section(which == section::text);
 
-        add_directive(std::string{section_directive(which)});
+        add_text(std::string{section_directive(which)});
     }
 
     // writes the lines as they are, nasm resolves the jump distances
-    auto write(std::ostream& os) -> void {
+    auto write(std::ostream& os) const -> void {
         assert(not is_capturing());
 
         for (const line& l : lines()) {
@@ -350,8 +339,6 @@ class assembler_x86_64 final : public assembler {
                 std::println(os, "{}", l.text);
             }
         }
-
-        lines().clear();
     }
 
     //
@@ -415,11 +402,7 @@ class assembler_x86_64 final : public assembler {
     }
 
     // every instruction counts as one
-    [[nodiscard]] auto instructions_in(const size_t code_size) const
-        -> size_t override {
-
-        return code_size;
-    }
+    [[nodiscard]] auto instruction_size() const -> size_t override { return 1; }
 
     [[nodiscard]] auto
     inverse_branch_mnemonic(const std::string_view mnemonic) const
@@ -440,14 +423,6 @@ class assembler_x86_64 final : public assembler {
         return paired_mnemonic(pairs, mnemonic);
     }
 
-    // every instruction counts as one
-    [[nodiscard]] auto text_code_size(const std::string_view text) const
-        -> size_t override {
-
-        // note: the directives are added with size 0 by 'add_directive'
-        return code_before(text, comment_marker_).empty() ? 0 : 1;
-    }
-
     [[nodiscard]] auto unconditional_jump_mnemonic() const
         -> std::string_view override {
 
@@ -458,9 +433,8 @@ class assembler_x86_64 final : public assembler {
     // class methods
     //
 
-    // a directive emits no instruction, e.g. 'align 16' or 'x equ 3'
-    auto add_directive(std::string text) -> void {
-        add_record_line(std::move(text), 0, std::nullopt);
+    auto add_instruction(std::string text) -> void {
+        add_line(std::move(text), instruction_size());
     }
 
     //
@@ -619,26 +593,6 @@ class assembler_x86_64 final : public assembler {
         static_assert(infos.size() == op_count_);
 
         return infos.at(std::to_underlying(code));
-    }
-
-    // the escape of a line end or a tab, which reads better than its hex
-    // escape
-    [[nodiscard]] static auto named_escape(const char ch)
-        -> std::optional<std::string_view> {
-
-        switch (ch) {
-        case '\n':
-            return "\\n";
-
-        case '\r':
-            return "\\r";
-
-        case '\t':
-            return "\\t";
-
-        default:
-            return std::nullopt;
-        }
     }
 
     [[nodiscard]] static auto section_directive(const section which)

@@ -1336,7 +1336,7 @@ class expr_arith final : public statement {
     // would read that; a name or literal first element is copied before
     // anything writes and its unary ops apply in place after the copy, e.g.
     // 'm = -m', a constant first step reads nothing; a read under another name
-    // counts, e.g. 'p' of 'g = p * 2 + p' with 'p' bound to 'g'
+    // counts, e.g. the 'e' of 'a[0] = e * 2 + e' in a 'foo a'
     // note: the steps are those 'compile_steps' emits in place, e.g. 'n = -n
     //       + 1' leads with the constant, then reads 'n'
     [[nodiscard]] static auto

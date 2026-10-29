@@ -1,0 +1,4 @@
+
+1892.baz:6:13: index 9223372036854775807 is out of bounds for array 'a' of any size
+    res = a[9223372036854775807]
+            ^

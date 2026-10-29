@@ -390,9 +390,8 @@ class stmt_def_const final : public statement {
 // e.g. 'var x = i32(0)', the initializer gives the type; a 'let' that does not
 // fold is a 'var' that is read-only once initialized
 class stmt_def_var final : public statement {
-    token name_tk_;
-    array_shape shape_;
-    token equals_tk_;
+    // added to 'toc' at the parse and again at the compile
+    var_info declared_;
     stmt_assign_var assign_var_;
 
   public:
@@ -401,26 +400,29 @@ class stmt_def_var final : public statement {
     stmt_def_var(toc& tc, const token tk, const token name_tk,
                  tokenizer at_name, const token equals_tk,
                  const initializer_declaration& declaration, expr_any value)
-        : statement{tk}, name_tk_{name_tk}, shape_{declaration.shape()},
-          equals_tk_{equals_tk},
+        : statement{tk},
+          declared_{
+              initializer_declaration::make_var_info(
+                  name_tk, declaration.type_ref(), declaration.shape()),
+          },
           assign_var_{
-              declare_and_assign(tc, name_tk, at_name, equals_tk, declaration,
+              declare_and_assign(tc, declared_, at_name, equals_tk,
                                  std::move(value)),
           } {
 
         set_type(declaration.type_ref());
 
         // the newly defined variable is not yet assigned in its initialization
-        if (const stmt_identifier* const read{first_read_of(name_tk_.text())}) {
+        if (const stmt_identifier* const read{first_read_of(declared_.name)}) {
             throw compile_error{read->tok(),
                                 std::format("use of uninitialized variable {}",
-                                            in_quotes(name_tk_.text()))};
+                                            in_quotes(declared_.name))};
         }
 
         // marked after the initializer, which writes the variable; statements
         // parsed from here on cannot assign it
         if (tk.is_text("let")) {
-            tc.make_var_read_only(name_tk_.text(), read_only_cause::let);
+            tc.make_var_read_only(declared_.name, read_only_cause::let);
         }
     }
 
@@ -430,9 +432,7 @@ class stmt_def_var final : public statement {
 
     auto source_to(std::ostream& os) const -> void override {
         statement::source_to(os);
-        name_tk_.source_to(os);
-        equals_tk_.source_to(os);
-        assign_var_.expression().source_to(os);
+        assign_var_.source_to(os);
     }
 
     auto compile(toc& tc, const size_t indent,
@@ -443,7 +443,7 @@ class stmt_def_var final : public statement {
 
         x.comment(tok(), indent, statement::trimmed_source(*this));
 
-        tc.add_var(name_tk_, indent, make_var_info(), var_kind::var);
+        tc.add_var(declared_.src_loc_tk, indent, declared_, var_kind::var);
 
         // the assignment names its destination itself
         assign_var_.compile(tc, indent, destination{});
@@ -454,11 +454,6 @@ class stmt_def_var final : public statement {
     }
 
   private:
-    [[nodiscard]] auto make_var_info() const -> var_info {
-        return initializer_declaration::make_var_info(name_tk_, get_type(),
-                                                      shape_);
-    }
-
     //
     // statics
     //
@@ -466,18 +461,14 @@ class stmt_def_var final : public statement {
     // the variable is declared during the parse so later statements can name
     // it, its initializer names it as the destination
     [[nodiscard]] static auto
-    declare_and_assign(toc& tc, const token& name_tk, tokenizer at_name,
-                       const token& equals_tk,
-                       const initializer_declaration& declaration,
-                       expr_any value) -> stmt_assign_var {
+    declare_and_assign(toc& tc, const var_info& var, tokenizer at_name,
+                       const token& equals_tk, expr_any value)
+        -> stmt_assign_var {
 
-        tc.add_var(name_tk, 0,
-                   initializer_declaration::make_var_info(
-                       name_tk, declaration.type_ref(), declaration.shape()),
-                   var_kind::var);
+        tc.add_var(var.src_loc_tk, 0, var, var_kind::var);
 
         return {
-            stmt_identifier{tc, name_tk, at_name},
+            stmt_identifier{tc, var.src_loc_tk, at_name},
             equals_tk,
             std::move(value),
         };

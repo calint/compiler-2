@@ -340,14 +340,7 @@ class assembler_rv32i final : public assembler {
     auto data(const size_t element_size_bytes,
               const std::span<const int64_t> values) -> void override {
 
-        std::string text{data_directive(element_size_bytes)};
-        std::string_view separator{" "};
-        for (const int64_t value : values) {
-            text += std::format("{}{}", separator, value);
-            separator = ", ";
-        }
-
-        add_record(std::move(text), 0,
+        add_record(data_text(data_directive(element_size_bytes), values), 0,
                    data_values{
                        .element_size_bytes{element_size_bytes},
                        .values{values.begin(), values.end()},
@@ -857,12 +850,11 @@ class assembler_rv32i final : public assembler {
     }
 
     // 'binary' receives the sections as one image from address zero
-    auto write_resolved(std::ostream& os, std::ostream& binary) -> void {
+    auto write_resolved(std::ostream& os, std::ostream& binary) const -> void {
         assert(jumps_resolved_);
 
         write_text(os);
         write_image(binary);
-        clear();
     }
 
     auto xor_op(const size_t indent, const std::string_view rd,
@@ -942,10 +934,8 @@ class assembler_rv32i final : public assembler {
     }
 
     // pseudo instructions count as the ones they expand to
-    [[nodiscard]] auto instructions_in(const size_t code_size) const
-        -> size_t override {
-
-        return code_size / one_instruction_bytes;
+    [[nodiscard]] auto instruction_size() const -> size_t override {
+        return one_instruction_bytes;
     }
 
     [[nodiscard]] auto
@@ -953,20 +943,6 @@ class assembler_rv32i final : public assembler {
         -> std::string_view override {
 
         return inverse(mnemonic);
-    }
-
-    // directives and comments occupy no space, instructions are added
-    // as records except for jumps, which start as one instruction
-    [[nodiscard]] auto text_code_size(const std::string_view text) const
-        -> size_t override {
-
-        const std::string_view code{code_part(text)};
-
-        if (code.empty() or is_sizeless_directive(code)) {
-            return 0;
-        }
-
-        return one_instruction_bytes;
     }
 
     [[nodiscard]] auto unconditional_jump_mnemonic() const
@@ -992,7 +968,7 @@ class assembler_rv32i final : public assembler {
         -> void {
 
         const size_t index{store_record(std::move(structured))};
-        add_record_line(std::move(text), code_size, index);
+        add_line(std::move(text), code_size, index);
     }
 
     // bss is not part of the image, so it may only reserve zero bytes
@@ -1007,12 +983,6 @@ class assembler_rv32i final : public assembler {
             assert(l.code_size == 0 and
                    std::get_if<data_values>(record_of(l)) == nullptr);
         }
-    }
-
-    auto clear() -> void {
-        lines().clear();
-        records_.clear();
-        jumps_resolved_ = false;
     }
 
     [[nodiscard]] auto collect_symbols(const image_layout& image) const
@@ -1040,7 +1010,7 @@ class assembler_rv32i final : public assembler {
                     position.offset),
             };
 
-            if (is_local_label(l.label)) {
+            if (is_numeric(l.label)) {
                 symbols.local_labels[l.label].emplace_back(index, address);
                 continue;
             }
@@ -1184,7 +1154,7 @@ class assembler_rv32i final : public assembler {
     [[nodiscard]] auto layout_image() const -> image_layout {
         image_layout image{};
         image.positions.reserve(lines().size());
-        image.alignments = {one_instruction_bytes, 1, 1, 1};
+        image.alignments.fill(1);
 
         section current{section::text};
         for (const line& l : lines()) {
@@ -1465,38 +1435,26 @@ class assembler_rv32i final : public assembler {
         -> std::string {
 
         std::string encoded;
-        for (const char character : bytes) {
-            const unsigned char byte{static_cast<unsigned char>(character)};
-            switch (byte) {
-            case '\n':
-                encoded += "\\n";
-                break;
-
-            case '\r':
-                encoded += "\\r";
-                break;
-
-            case '\t':
-                encoded += "\\t";
-                break;
-
-            case '"':
-            case '\\':
+        for (const char c : bytes) {
+            if (c == '\\' or c == '"') {
                 encoded += '\\';
-                encoded += character;
-                break;
-
-            default:
-                if (byte >= ' ' and byte <= '~') {
-                    encoded += character;
-                    break;
-                }
-
-                encoded +=
-                    std::format("\\{:03o}", static_cast<unsigned int>(byte));
-
-                break;
+                encoded += c;
+                continue;
             }
+
+            if (const std::optional<std::string_view> named{named_escape(c)}) {
+                encoded += *named;
+                continue;
+            }
+
+            if (c >= ' ' and c <= '~') {
+                encoded += c;
+                continue;
+            }
+
+            encoded += std::format(
+                "\\{:03o}",
+                static_cast<unsigned int>(static_cast<unsigned char>(c)));
         }
 
         return encoded;
@@ -1513,12 +1471,6 @@ class assembler_rv32i final : public assembler {
         }
 
         return encode_branch(details.encoding, first, second, offset);
-    }
-
-    [[nodiscard]] static auto code_part(const std::string_view text)
-        -> std::string_view {
-
-        return code_before(text, comment_marker_);
     }
 
     [[nodiscard]] static auto data_directive(const size_t element_size_bytes)
@@ -1940,21 +1892,6 @@ class assembler_rv32i final : public assembler {
         };
 
         return paired_mnemonic(pairs, mnemonic);
-    }
-
-    [[nodiscard]] static auto is_local_label(const std::string_view name)
-        -> bool {
-
-        return not name.empty() and is_numeric(name);
-    }
-
-    // directives that emit bytes would make offsets wrong, so only these are
-    // expected in code
-    [[nodiscard]] static auto is_sizeless_directive(const std::string_view code)
-        -> bool {
-
-        const std::string_view name{code.substr(0, code.find_first_of(" \t"))};
-        return name == ".option" or name == ".globl";
     }
 
     // the sequence 'li' expands to

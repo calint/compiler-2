@@ -408,9 +408,6 @@ struct value_use {
 
 class destination final {
     ::operand operand_;
-    // the root as written, e.g. 'ps' of 'ps[i].x', the register of a register
-    // destination
-    std::string root_name_;
     // the destination as written, for the comments and the diagnostics, e.g.
     // 'w.ps[0]'; a temporary has its name, a register its register
     std::string text_;
@@ -433,7 +430,6 @@ class destination final {
 
     // what a resolved name adds when it is the destination of an assignment
     struct name_parts {
-        std::string root;
         ::operand address;
         bool is_final_address{};
         std::optional<storage_path> storage;
@@ -540,10 +536,6 @@ class destination final {
         return result;
     }
 
-    [[nodiscard]] auto root_name() const -> const std::string& {
-        return root_name_;
-    }
-
     // an unsized one gets its length from the argument
     [[nodiscard]] auto shape() const -> array_shape {
         return stored_ ? stored_->info.shape() : array_shape{};
@@ -584,7 +576,6 @@ class destination final {
         -> destination {
 
         return of_name(info, {
-                                 .root{std::string{name}},
                                  .address{info.operand()},
                                  .is_final_address{info.is_address_by_call()},
                                  .storage{std::move(storage)},
@@ -602,7 +593,6 @@ class destination final {
 
         destination result;
         result.operand_ = std::move(parts.address);
-        result.root_name_ = std::move(parts.root);
         result.text_ = std::move(parts.text);
 
         result.is_final_address_ = parts.is_final_address;
@@ -623,7 +613,6 @@ class destination final {
 
         destination result;
         result.operand_ = reg;
-        result.root_name_ = reg.register_name();
         result.text_ = reg.register_name();
 
         return result;

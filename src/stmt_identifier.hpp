@@ -6,6 +6,7 @@
 #include <cstdint>
 #include <format>
 #include <functional>
+#include <limits>
 #include <memory>
 #include <optional>
 #include <ostream>
@@ -49,8 +50,9 @@
 //
 
 // a constant index out of bounds is always a bug; an unsized array parameter
-// without a length rejects only a negative index; 'allow_end' accepts the end,
-// where a range of a zero count starts
+// without a length rejects a negative index and one whose element ends past
+// the signed 64-bit range; 'allow_end' accepts the end, where a range
+// of a zero count starts
 inline auto assert_constant_index(const ident_info& array_info,
                                   const token& index_tk,
                                   const std::string_view array_name,
@@ -59,13 +61,27 @@ inline auto assert_constant_index(const ident_info& array_info,
 
     const std::optional<size_t> array_len{array_info.array_len()};
 
-    if (not array_len and index >= 0) {
-        return;
+    if (not array_len and index < 0) {
+        throw compile_error{index_tk,
+                            std::format("index {} is negative", index)};
+    }
+
+    // note: no storage reaches past the signed 64-bit range of an address
+    //       offset, so an element that ends past it is out of bounds of
+    //       every array
+
+    if (not array_len and
+        std::cmp_greater_equal(index, std::numeric_limits<int64_t>::max() /
+                                          array_info.type_ref().size_bytes())) {
+
+        throw compile_error{
+            index_tk, std::format("index {} is out of bounds for array {} of "
+                                  "any size",
+                                  index, in_quotes(array_name))};
     }
 
     if (not array_len) {
-        throw compile_error{index_tk,
-                            std::format("index {} is negative", index)};
+        return;
     }
 
     const bool is_past_end{
@@ -580,7 +596,7 @@ class stmt_identifier final : public statement {
 
         machine::held_registers held{x, src_loc_tk, indent};
 
-        const operand address{compile_lea(tc, indent, tok(), held, request)};
+        const operand address{compile_lea(tc, indent, held, request)};
 
         use(address);
     }
@@ -588,25 +604,20 @@ class stmt_identifier final : public statement {
     // the memory operand of this identifier, e.g. 'rbp + 4 * r15 + 248',
     // 'held' receives the scratch registers of the indexing and
     // 'machine' says which scalings an operand can have
-    [[nodiscard]] auto
-    compile_lea(toc& tc, const size_t indent, const token& src_loc_tk,
-                machine::held_registers& held, const lea_request& request) const
+    [[nodiscard]] auto compile_lea(toc& tc, const size_t indent,
+                                   machine::held_registers& held,
+                                   const lea_request& request) const
         -> operand {
 
-        path_address builder{tc, indent, src_loc_tk, held,
-                             request.address_register};
+        path_address builder{tc, indent, tok(), held, request.address_register};
 
         // only the last element starts a range
-        const lea_request inner_request{
-            .range_count{},
-            .start_register{},
-            .address_register{},
-        };
+        const lea_request inner_request{};
 
         operand address;
         const type* value_type{};
 
-        for_each_prefix(tc, src_loc_tk, [&](const prefix_step& step) -> void {
+        for_each_prefix(tc, [&](const prefix_step& step) -> void {
             const ident_info& cur_info{*step.info};
 
             if (step.fld == nullptr) {
@@ -684,12 +695,7 @@ class stmt_identifier final : public statement {
             return info.operand();
         }
 
-        return compile_lea(tc, indent, tok(), held,
-                           {
-                               .range_count{},
-                               .start_register{},
-                               .address_register{},
-                           });
+        return compile_lea(tc, indent, held, {});
     }
 
     // the address of what 'info' resolves this statement to is computed into
@@ -737,8 +743,8 @@ class stmt_identifier final : public statement {
         x.address_of(src_loc_tk, indent, reg, address);
     }
 
-    // this path may reach bytes of 'target', e.g. 'p.x' with 'p' bound to
-    // 'ps[i]' reaches the field 'x' of any element of 'ps'; a constant or a
+    // this path may reach bytes of 'target', e.g. 'e.x' in a 'foo ps' reaches
+    // the field 'x' of any element of 'ps'; a constant or a
     // value in a register reaches none
     [[nodiscard]] auto may_reach(const toc& tc,
                                  const storage_path& target) const -> bool {
@@ -813,7 +819,7 @@ class stmt_identifier final : public statement {
     [[nodiscard]] auto resolve_path(const toc& tc) const -> ident_info {
         ident_info last;
 
-        for_each_prefix(tc, tok(), [&](const prefix_step& step) -> void {
+        for_each_prefix(tc, [&](const prefix_step& step) -> void {
             if (step.is_last) {
                 last = *step.info;
             }
@@ -975,10 +981,9 @@ class stmt_identifier final : public statement {
     }
 
     // walks the elements from the root: the root resolved, then each field
-    // stepped, e.g. 'w', 'w.rooms' and 'w.rooms.items'; a resolve error is
-    // located at 'src_loc_tk'
+    // stepped, e.g. 'w', 'w.rooms' and 'w.rooms.items'
     auto for_each_prefix(
-        const toc& tc, const token& src_loc_tk,
+        const toc& tc,
         const std::function_ref<void(const prefix_step&)> visit) const -> void {
 
         const token& root_tk{tok()};
@@ -986,7 +991,7 @@ class stmt_identifier final : public statement {
         std::string path{root_tk.text()};
 
         ident_info info{
-            tc.resolve_declared(src_loc_tk, root_tk.text()),
+            tc.resolve_declared(root_tk, root_tk.text()),
         };
 
         for (size_t i{}; i < elems_.size(); ++i) {

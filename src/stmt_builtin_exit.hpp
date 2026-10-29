@@ -60,6 +60,6 @@ class stmt_builtin_exit final : public statement {
     }
 
     auto visit_operands(const operand_visitor visitor) const -> void override {
-        args_.visit_operands(visitor);
+        args_.visit_operands(visitor, std::nullopt);
     }
 };

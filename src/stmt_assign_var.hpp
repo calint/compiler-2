@@ -75,34 +75,32 @@ class stmt_assign_var final : public statement {
             stmt_ident_.storage(tc),
         };
 
-        const ident_info var_info{make_ident_info(tc, stmt_ident_)};
+        const ident_info dst_info{make_ident_info(tc, stmt_ident_)};
 
-        assert_parts_not_clobbered(tc, dst_storage, var_info.array_len());
+        assert_parts_not_clobbered(tc, dst_storage, dst_info.array_len());
 
         // note: the parse rejected a constant destination
-        assert(not var_info.is_const());
+        assert(not dst_info.is_const());
 
         machine::held_registers held{x, tok(), indent};
 
         const operand address{
-            stmt_ident_.get_lea_operand(tc, indent, var_info, held),
+            stmt_ident_.get_lea_operand(tc, indent, dst_info, held),
         };
 
         // the destination is written at the address computed here
         const bool is_final_address{
-            stmt_ident_.has_computed_address(var_info),
+            stmt_ident_.has_computed_address(dst_info),
         };
 
         const destination var_dst{
-            destination::of_name(
-                var_info,
-                {
-                    .root{std::string{stmt_ident_.tok().text()}},
-                    .address{address},
-                    .is_final_address{is_final_address},
-                    .storage{dst_storage},
-                    .text{stmt_ident_.path_text()},
-                }),
+            destination::of_name(dst_info,
+                                 {
+                                     .address{address},
+                                     .is_final_address{is_final_address},
+                                     .storage{dst_storage},
+                                     .text{stmt_ident_.path_text()},
+                                 }),
         };
 
         expr_.compile(tc, indent, var_dst);
@@ -127,12 +125,6 @@ class stmt_assign_var final : public statement {
             .written_place{},
         });
     }
-
-    //
-    // class methods
-    //
-
-    [[nodiscard]] auto expression() const -> const expr_any& { return expr_; }
 
   private:
     // the value is written part by part, so a part must not read what is

@@ -261,7 +261,7 @@ inline auto stmt_identifier::resolve_accessed_bytes(toc& tc,
                                                     const path_reach reach)
     -> void {
 
-    for_each_prefix(tc, tok(), [&](const prefix_step& step) -> void {
+    for_each_prefix(tc, [&](const prefix_step& step) -> void {
         const ident_elem& elem{*step.elem};
 
         if (step.fld == nullptr) {

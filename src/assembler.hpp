@@ -326,8 +326,6 @@ class assembler {
                   const std::string_view target, const std::string_view scratch,
                   const std::optional<size_t> record = std::nullopt) -> void {
 
-        const size_t code_size{text_code_size(text)};
-
         current_lines().push_back({
             .text{std::move(text)},
             .label{},
@@ -340,16 +338,16 @@ class assembler {
                     .scratch{std::string{scratch}},
                 }),
             },
-            .code_size{code_size},
+            .code_size{instruction_size()},
             .entry{},
             .removed{},
             .record{record},
         });
     }
 
-    // a line whose size and structured form the target already knows
-    auto add_record_line(std::string text, const size_t code_size,
-                         const std::optional<size_t> record) -> void {
+    // 'record' is the index of the target's structured form of the line
+    auto add_line(std::string text, const size_t code_size,
+                  const std::optional<size_t> record = std::nullopt) -> void {
 
         current_lines().push_back({
             .text{std::move(text)},
@@ -363,20 +361,8 @@ class assembler {
         });
     }
 
-    auto add_text(std::string text) -> void {
-        const size_t code_size{code_section_ ? text_code_size(text) : 0};
-
-        current_lines().push_back({
-            .text{std::move(text)},
-            .label{},
-            .call_target{},
-            .jump{},
-            .code_size{code_size},
-            .entry{},
-            .removed{},
-            .record{},
-        });
-    }
+    // a line that emits no code, e.g. a comment or a directive
+    auto add_text(std::string text) -> void { add_line(std::move(text), 0); }
 
     [[nodiscard]] auto is_capturing() const -> bool {
         return not captures_.empty();
@@ -421,12 +407,19 @@ class assembler {
     // statics
     //
 
-    // the text before 'comment_marker' without surrounding whitespace
-    [[nodiscard]] static auto code_before(const std::string_view text,
-                                          const std::string_view comment_marker)
-        -> std::string_view {
+    // e.g. '.word 1, 2'
+    [[nodiscard]] static auto data_text(const std::string_view directive,
+                                        const std::span<const int64_t> values)
+        -> std::string {
 
-        return trim(text.substr(0, text.find(comment_marker)));
+        std::string text{directive};
+        std::string_view separator{" "};
+        for (const int64_t value : values) {
+            text += std::format("{}{}", separator, value);
+            separator = ", ";
+        }
+
+        return text;
     }
 
     // the spaces before an instruction or a label, four for each level
@@ -446,6 +439,26 @@ class assembler {
         -> std::string_view {
 
         return text.substr(0, text.find_first_not_of(" \t"));
+    }
+
+    // the escape of a line end or a tab, which reads better than a numeric
+    // escape
+    [[nodiscard]] static auto named_escape(const char ch)
+        -> std::optional<std::string_view> {
+
+        switch (ch) {
+        case '\n':
+            return "\\n";
+
+        case '\r':
+            return "\\r";
+
+        case '\t':
+            return "\\t";
+
+        default:
+            return std::nullopt;
+        }
     }
 
     // the other mnemonic of the pair holding 'mnemonic'
@@ -476,19 +489,13 @@ class assembler {
     [[nodiscard]] virtual auto format_jump(const jump_info& jump) const
         -> std::string = 0;
 
-    // the code size in instructions
-    [[nodiscard]] virtual auto instructions_in(size_t code_size) const
-        -> size_t = 0;
+    // the code size of one instruction in the target's unit
+    [[nodiscard]] virtual auto instruction_size() const -> size_t = 0;
 
     // the branch taken exactly when 'mnemonic' is not taken
     [[nodiscard]] virtual auto
     inverse_branch_mnemonic(std::string_view mnemonic) const
         -> std::string_view = 0;
-
-    // zero for comments and directives that emit no code, a label is added
-    // apart
-    [[nodiscard]] virtual auto text_code_size(std::string_view text) const
-        -> size_t = 0;
 
     // every other jump is a conditional branch
     [[nodiscard]] virtual auto unconditional_jump_mnemonic() const
@@ -545,6 +552,10 @@ class assembler {
 
         // the code ends, e.g. with the jump of a loop that never ends
         return std::nullopt;
+    }
+
+    [[nodiscard]] auto instructions_in(const size_t code_size) const -> size_t {
+        return code_size / instruction_size();
     }
 
     // every branch the optimizer sees has an inverse; the branch takes the
@@ -775,17 +786,5 @@ class assembler {
             .call_count{},
             .instruction_count{},
         });
-    }
-
-    [[nodiscard]] static auto trim(const std::string_view text)
-        -> std::string_view {
-
-        const size_t first{text.find_first_not_of(" \t\r")};
-
-        if (first == std::string_view::npos) {
-            return {};
-        }
-
-        return text.substr(first, text.find_last_not_of(" \t\r") - first + 1);
     }
 };

@@ -112,13 +112,13 @@ class stmt_builtin_array_copy final : public statement {
         x.comment(src.tok(), indent, statement::trimmed_source(src));
 
         const operand src_operand{
-            src.compile_lea(tc, indent, src.tok(), held, range),
+            src.compile_lea(tc, indent, held, range),
         };
 
         x.comment(dst.tok(), indent, statement::trimmed_source(dst));
 
         const operand dst_operand{
-            dst.compile_lea(tc, indent, dst.tok(), held, range),
+            dst.compile_lea(tc, indent, held, range),
         };
 
         x.copy_block(tok(), indent, dst_operand, src_operand,
