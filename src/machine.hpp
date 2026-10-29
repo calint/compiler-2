@@ -214,8 +214,9 @@ class machine {
     };
 
     // what a bounds check compares with 'array_count' elements: an index, a
-    // count alone, or a range 'start + count'; a count and a range may end at
-    // the end of the array, an index may not
+    // range 'start + count', or one value of a range whose other part is
+    // constant; a range and its value may end at the end of the array, an
+    // index may not
     struct bounds_range {
         // the index, the count alone or the start of the range
         operand checked;
@@ -227,18 +228,6 @@ class machine {
         //
         // statics
         //
-
-        [[nodiscard]] static auto count_alone(const operand& count,
-                                              const size_t array_count)
-            -> bounds_range {
-
-            return {
-                .checked{count},
-                .count{},
-                .array_count{array_count},
-                .allow_end{true},
-            };
-        }
 
         [[nodiscard]] static auto index(const operand& index,
                                         const size_t array_count)
@@ -265,17 +254,15 @@ class machine {
             };
         }
 
-        // a start checked against the end less a constant count:
-        // 'last_start' is the end of the array less the elements the count
-        // has at least
-        [[nodiscard]] static auto range_start(const operand& start,
-                                              const size_t last_start)
-            -> bounds_range {
+        // a count or a start that may reach 'limit', the array count less
+        // the constant other part of its range, e.g. a count alone
+        [[nodiscard]] static auto up_to(const operand& value,
+                                        const size_t limit) -> bounds_range {
 
             return {
-                .checked{start},
+                .checked{value},
                 .count{},
-                .array_count{last_start},
+                .array_count{limit},
                 .allow_end{true},
             };
         }

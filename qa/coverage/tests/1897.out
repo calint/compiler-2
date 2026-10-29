@@ -1,0 +1,4 @@
+
+1897.baz:3:6: 'i8' is a built-in type
+func i8(.x) {}
+     ^~

@@ -165,13 +165,7 @@ class tokenizer final {
                                          const std::string_view message)
         -> token {
 
-        const std::optional<token> tk{is_next_char_token(ch)};
-
-        if (not tk) {
-            throw compile_error{*this, std::string{message}};
-        }
-
-        return *tk;
+        return expect_char_token_after(next_token_position(), ch, message);
     }
 
     // the token of the character 'ch' when it is next, otherwise an error at

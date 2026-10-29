@@ -245,14 +245,28 @@ class expr_bool_op final : public statement {
             joined_by == connective::logical_or ? "or" : "and",
         };
 
-        return compile_element(tc, indent, comment_label(list_op, inverted),
-                               {
-                                   .operation{operation()},
-                                   .inverted{inverted != is_negated()},
-                                   .destination{dst},
-                                   .target{target},
-                                   .branch_on_true{branch_on_true},
-                               });
+        // inverted by the list and by the element's own 'not's
+        const machine::comparison_action action{
+            .operation{operation()},
+            .inverted{inverted != is_negated()},
+            .destination{dst},
+            .target{target},
+            .branch_on_true{branch_on_true},
+        };
+
+        machine& x{tc.machine()};
+
+        x.comment(tok(), indent,
+                  statement::trimmed_source(*this, "?",
+                                            comment_label(list_op, inverted)));
+
+        x.label(indent, tc.create_cmp_label(tok()));
+
+        if (not comparison_) {
+            return compile_shorthand(tc, indent, action);
+        }
+
+        return compile_comparison(tc, indent, *comparison_, action);
     }
 
     // the value 'compile' would find without emitting code, empty when
@@ -331,8 +345,8 @@ class expr_bool_op final : public statement {
         };
 
         if (equality) {
-            assert_instance_stored(tc, lhs_);
-            assert_instance_stored(tc, cmp.rhs);
+            assert_instance_stored(lhs_);
+            assert_instance_stored(cmp.rhs);
         }
 
         if (not is_memory) {
@@ -438,27 +452,6 @@ class expr_bool_op final : public statement {
         }
 
         return known_result(value);
-    }
-
-    // 'action' says where it branches, nowhere for an empty target, and
-    // whether the comparison is inverted, by the list and by the element's
-    // own 'not's
-    [[nodiscard]] auto
-    compile_element(toc& tc, const size_t indent, const std::string_view label,
-                    const machine::comparison_action& action) const
-        -> condition_result {
-
-        machine& x{tc.machine()};
-
-        x.comment(tok(), indent, statement::trimmed_source(*this, "?", label));
-
-        x.label(indent, tc.create_cmp_label(tok()));
-
-        if (not comparison_) {
-            return compile_shorthand(tc, indent, action);
-        }
-
-        return compile_comparison(tc, indent, *comparison_, action);
     }
 
     // the operand alone, compared with 0
@@ -639,12 +632,8 @@ class expr_bool_op final : public statement {
     // an operator would compare a user type instance as its first field only
     // e.g. the 'mk()' of 'p == mk()', an instance is compared as memory,
     // which only a variable has
-    static auto assert_instance_stored(const toc& tc, const expr_arith& side)
-        -> void {
-
-        if (side.get_type().is_builtin() or side.operand_path() != nullptr or
-            is_memory_operand(tc, side)) {
-
+    static auto assert_instance_stored(const expr_arith& side) -> void {
+        if (side.get_type().is_builtin() or side.operand_path() != nullptr) {
             return;
         }
 

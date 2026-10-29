@@ -595,8 +595,8 @@ struct call_site {
         return temporary_name(tk, "call-arg", index);
     }
 
-    // the result of a noinline call whose destination is not memory or has
-    // another type, see 'noinline_call::has_result_temporary'
+    // the result of a call made in a temporary, see
+    // 'compile_through_result_temporary'
     [[nodiscard]] auto temporary_result_name() const -> std::string {
         return temporary_name(tk, "call-result", 0);
     }
@@ -690,11 +690,10 @@ class inline_call final {
     std::vector<std::optional<place>> places_;
 
   public:
-    inline_call(call_site call, std::vector<std::optional<place>> places)
-        : call_{std::move(call)}, places_{std::move(places)} {
+    inline_call(const toc& tc, call_site call)
+        : call_{std::move(call)}, places_{call_.argument_places(tc)} {
 
         assert(call_.func->is_inlined());
-        assert(places_.size() == call_.args.size());
     }
 
     // a block holds the temporaries of the call
@@ -1132,11 +1131,10 @@ class noinline_call final {
     std::vector<std::optional<place>> places_;
 
   public:
-    noinline_call(call_site call, std::vector<std::optional<place>> places)
-        : call_{std::move(call)}, places_{std::move(places)} {
+    noinline_call(const toc& tc, call_site call)
+        : call_{std::move(call)}, places_{call_.argument_places(tc)} {
 
         assert(not call_.func->is_inlined());
-        assert(places_.size() == call_.args.size());
     }
 
     // the callee reaches the result and the arguments through their addresses,
@@ -2053,12 +2051,7 @@ class stmt_call final : public statement {
         -> void {
 
         if (not callee().is_inlined()) {
-            noinline_call{
-                call,
-                call.argument_places(tc),
-            }
-                .compile(tc, indent, dst);
-
+            noinline_call{tc, call}.compile(tc, indent, dst);
             return;
         }
 
@@ -2067,11 +2060,7 @@ class stmt_call final : public statement {
         // a recursion that does not end with constant arguments runs out of
         // registers before it reaches the nesting limit, the advice is the same
         try {
-            inline_call{
-                call,
-                call.argument_places(tc),
-            }
-                .compile(tc, indent, dst);
+            inline_call{tc, call}.compile(tc, indent, dst);
         } catch (const compile_error& e) {
             if (not is_recursion or
                 e.kind != compile_error::error_kind::out_of_registers) {

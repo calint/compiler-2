@@ -45,8 +45,7 @@
 //                   error use it for a call level
 //   tables          'type_table', 'noinline_worklist' (the noinline bodies to
 //                   emit or only to check), 'function_table'
-//   'data_table'    the dats ('dat_extent' as declared, 'placed_dat' as
-//                   placed) and the read-only constants
+//   'data_table'    the dats ('placed_dat') and the read-only constants
 //   options         'check_options', 'usage_statistics'
 //   'scope_stack'   the scopes from the globals to the innermost scope and
 //                   'lookup', the one rule of what a name means
@@ -891,13 +890,6 @@ class function_table final {
     }
 };
 
-// what the data of a 'dat' takes, from its declaration
-struct dat_extent {
-    token name_tk;
-    size_t alignment{};
-    size_t size_bytes{};
-};
-
 // a 'dat' at its place in the data section: 'padding_bytes' of zeros after the
 // dat before it align it at 'offset_bytes' from the start of the section
 struct placed_dat {
@@ -942,21 +934,22 @@ class data_table final {
     }
 
     // the size errors are located at the name of the dat
-    auto add_dat(const stmt_def_dat& dat, const dat_extent& extent) -> void {
+    auto add_dat(const stmt_def_dat& dat, const token& name_tk,
+                 const size_t alignment, const size_t size_bytes) -> void {
+
         const size_t padding_bytes{
-            alignment_padding_bytes(total_size_bytes_, extent.alignment),
+            alignment_padding_bytes(total_size_bytes_, alignment),
         };
 
         const size_t offset_bytes{
             sum_storage_size(total_size_bytes_, padding_bytes),
         };
 
-        total_size_bytes_ =
-            add_storage_size(extent.name_tk, offset_bytes, extent.size_bytes);
+        total_size_bytes_ = add_storage_size(name_tk, offset_bytes, size_bytes);
 
         dats_.push_back({
             .def{&dat},
-            .name{extent.name_tk.text()},
+            .name{name_tk.text()},
             .padding_bytes{padding_bytes},
             .offset_bytes{offset_bytes},
         });
@@ -2098,8 +2091,7 @@ class ident_resolver final {
                 std::get_if<at_address_register>(&placement),
             }) {
 
-            return operand::mem(pointed->reg.register_name(), "", 1, 0,
-                                value_type);
+            return operand::mem(pointed->reg, value_type);
         }
 
         // note: a variable in a value register has no memory, 'resolve_var'
@@ -2111,7 +2103,7 @@ class ident_resolver final {
             stored.base_register.empty() ? base_register : stored.base_register,
         };
 
-        return operand::mem(memory_base, "", 1, stored.offset, value_type);
+        return operand::mem(memory_base, {}, 1, stored.offset, value_type);
     }
 };
 
@@ -2412,8 +2404,8 @@ class definition_checks final {
     }
 
   private:
-    // the message tells a built-in, an instance of a generic method and a
-    // function written in the source apart
+    // the message tells an instance of a generic method and a function
+    // written in the source apart
     [[noreturn]] auto throw_function_defined(
         const token& src_loc_tk, const std::string_view name,
         const std::string_view generic_method, const token& existing_tk,
@@ -2817,11 +2809,8 @@ class toc final {
             storage_.var_storage_size_bytes(var.src_loc_tk, var),
         };
 
-        data_.add_dat(dat, {
-                               .name_tk{var.src_loc_tk},
-                               .alignment{storage_.var_storage_alignment(var)},
-                               .size_bytes{size_bytes},
-                           });
+        data_.add_dat(dat, var.src_loc_tk, storage_.var_storage_alignment(var),
+                      size_bytes);
 
         // the dats reach no further than the target addresses, 'place_dat'
         // asserts it at the compile

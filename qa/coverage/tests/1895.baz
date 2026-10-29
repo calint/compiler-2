@@ -1,0 +1,9 @@
+# a constructor of a generic type does not take 'mut', also without an
+# instance
+
+type box<n> {x}
+
+func mut box.mk() self {}
+
+func main() {
+}

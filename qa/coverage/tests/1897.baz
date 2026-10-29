@@ -1,0 +1,6 @@
+# a built-in type as a function name is reported whatever follows the '('
+
+func i8(.x) {}
+
+func main() {
+}

@@ -423,8 +423,8 @@ inline auto stmt_identifier::compile_checked_index(
 
     const machine::bounds_range checked{
         range_count and array_len
-            ? machine::bounds_range::range_start(index_register,
-                                                 *array_len - *range_count)
+            ? machine::bounds_range::up_to(index_register,
+                                           *array_len - *range_count)
             : machine::bounds_range::index(index_register,
                                            shape.element_count()),
     };

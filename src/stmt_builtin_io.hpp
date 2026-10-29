@@ -455,7 +455,7 @@ class stmt_builtin_io final : public statement {
                           buffer_info);
         } else if (at_.count and not known_count) {
             x.check_bounds(args_.at(*at_.count).tok(), indent,
-                           machine::bounds_range::count_alone(
+                           machine::bounds_range::up_to(
                                count, buffer_info.element_count()),
                            tc.checks().bounds_options());
         }
@@ -552,7 +552,7 @@ class stmt_builtin_io final : public statement {
 
             if (not known_count) {
                 x.check_bounds(start_arg.tok(), indent,
-                               machine::bounds_range::count_alone(
+                               machine::bounds_range::up_to(
                                    count, element_count - start_count),
                                tc.checks().bounds_options());
             }
@@ -634,7 +634,7 @@ class stmt_builtin_io final : public statement {
         assert(*known_count >= 0 and
                std::cmp_less_equal(*known_count, element_count));
 
-        return machine::bounds_range::range_start(
+        return machine::bounds_range::up_to(
             start, element_count - static_cast<size_t>(*known_count));
     }
 

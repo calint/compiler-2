@@ -37,10 +37,7 @@ class expr_zero final : public statement {
 
     auto source_to(std::ostream& os) const -> void override {
         statement::source_to(os);
-
-        if (close_brace_tk_) {
-            close_brace_tk_->source_to(os);
-        }
+        token::source_to(os, close_brace_tk_);
     }
 
     [[nodiscard]] auto fold([[maybe_unused]] const toc& tc,

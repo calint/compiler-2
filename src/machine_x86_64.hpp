@@ -1896,17 +1896,6 @@ class machine_x86_64 final : public machine {
         release_named_register(src_loc_tk, indent, "rsi");
     }
 
-    auto setcc(const token& src_loc_tk, const size_t indent, const condition cc,
-               const operand& value) -> void {
-
-        with_lowered_addresses(
-            src_loc_tk, indent, value, operand{},
-            [&](const operand& lowered,
-                [[maybe_unused]] const operand& empty) -> void {
-                assembler_.setcc(indent, cc, to_argument(lowered));
-            });
-    }
-
     // a register as its part of the width, a memory operand as an access
     // of the width
     [[nodiscard]] auto sized_operand(const operand& value,
@@ -1972,7 +1961,14 @@ class machine_x86_64 final : public machine {
     auto store_condition(const token& src_loc_tk, const size_t indent,
                          const condition cc, const operand& dst) -> void {
 
-        setcc(src_loc_tk, indent, cc, sized_operand(dst, size_byte_));
+        const operand byte{sized_operand(dst, size_byte_)};
+
+        with_lowered_addresses(
+            src_loc_tk, indent, byte, operand{},
+            [&](const operand& lowered,
+                [[maybe_unused]] const operand& empty) -> void {
+                assembler_.setcc(indent, cc, to_argument(lowered));
+            });
     }
 
     // a negative value is out of bounds
@@ -2149,10 +2145,10 @@ class machine_x86_64 final : public machine {
                    lhs.register_name() == rhs.register_name();
         }
 
-        assert(not lhs.is_immediate());
+        assert(lhs.is_memory());
 
-        if (not lhs.is_memory() or not rhs.is_memory()) {
-            return lhs.is_empty() and rhs.is_empty();
+        if (not rhs.is_memory()) {
+            return false;
         }
 
         // note: an index without a base has a scale above 1, with a scale of 1

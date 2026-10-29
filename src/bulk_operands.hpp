@@ -189,7 +189,7 @@ class bulk_operands final {
 
             x.check_bounds(
                 array.tok(), indent_,
-                machine::bounds_range::count_alone(
+                machine::bounds_range::up_to(
                     count_register,
                     array_count - static_cast<size_t>(*constant_start)),
                 tc_.checks().bounds_options());

@@ -87,6 +87,37 @@ struct func_head {
     // none until it is read, e.g. after 'list.add' of 'func list.add('
     std::optional<token> open_paren_tk;
 
+    // a constructor builds an instance of its receiver type, e.g. 'func
+    // point.at(x, y) self'; one spelling, the type is named before the '.'
+    auto assert_constructor_result(const token& self_tk,
+                                   const std::optional<token>& type_tk) const
+        -> void {
+
+        if (not is_type_member()) {
+            throw compile_error{
+                self_tk, "result 'self' requires a constructor 'type.name'"};
+        }
+
+        if (type_tk) {
+            throw compile_error{
+                *type_tk, "result 'self' has the type of the constructor"};
+        }
+    }
+
+    // e.g. 'func mut point.move(dx)', a constructor writes its 'self' anyway
+    auto assert_mut_has_receiver(const bool is_constructor) const -> void {
+        if (not mut_tk or (is_type_member() and not is_constructor)) {
+            return;
+        }
+
+        if (is_constructor) {
+            throw compile_error{
+                *mut_tk, "a constructor builds 'self', 'mut' is not needed"};
+        }
+
+        throw compile_error{*mut_tk, "'mut' requires a method 'type.name'"};
+    }
+
     // e.g. 'func f<T type> {' has no '(' after its name; reported at the
     // name, the next token can be on a later line
     auto assert_open_paren() const -> void {
@@ -96,17 +127,6 @@ struct func_head {
 
         throw compile_error{method ? method->name_tk : name_tk,
                             "expected '(' after function name"};
-    }
-
-    // a constructor builds an instance of its receiver type, e.g. 'func
-    // point.at(x, y) self'
-    auto assert_receiver_for_self(const token& self_tk) const -> void {
-        if (is_type_member()) {
-            return;
-        }
-
-        throw compile_error{self_tk,
-                            "result 'self' requires a constructor 'type.name'"};
     }
 
     // kept as text, its instances are the functions
@@ -149,7 +169,7 @@ struct func_head {
 
         // a receiver names a type, e.g. 'point' of 'func point.at()', which
         // 'read_method_name' checks
-        if (tz.peek_char_after_whitespace() == '.') {
+        if (not head.open_paren_tk and tz.peek_char_after_whitespace() == '.') {
             toc::assert_valid_name(head.name_tk);
         } else {
             tc.assert_valid_unqualified_name(head.name_tk);
@@ -174,31 +194,21 @@ struct func_head {
     auto read_method_name(const toc& tc, tokenizer& tz, const token& dot_tk)
         -> void {
 
-        // e.g. the 'text' of 'func text.print()'; in an instance 'text' names
-        // a type
-        if (tc.generics().has_type(name_tk.text()) and
-            not tc.types().has(name_tk.text())) {
+        // null for the 'text' of 'func text.print()'; in an instance 'text'
+        // names a type
+        const type* receiver_tp{};
 
-            const token read_name_tk{read_method_name_token(tz)};
+        if (not tc.generics().has_type(name_tk.text()) or
+            tc.types().has(name_tk.text())) {
 
-            method = method_part{
-                .dot_tk{dot_tk},
-                .name_tk{read_name_tk},
-                .receiver_tp{},
-            };
+            receiver_tp = &tc.get_type_or_throw(name_tk);
 
-            name = method_name_of(name_tk.text(), read_name_tk.text());
-
-            return;
-        }
-
-        const type& receiver_tp{tc.get_type_or_throw(name_tk)};
-
-        if (receiver_tp.is_builtin()) {
-            throw compile_error{
-                name_tk, std::format("methods on built-in type {} are not "
-                                     "supported",
-                                     in_quotes(receiver_tp.name()))};
+            if (receiver_tp->is_builtin()) {
+                throw compile_error{
+                    name_tk, std::format("methods on built-in type {} are not "
+                                         "supported",
+                                         in_quotes(receiver_tp->name()))};
+            }
         }
 
         const token read_name_tk{read_method_name_token(tz)};
@@ -206,10 +216,12 @@ struct func_head {
         method = method_part{
             .dot_tk{dot_tk},
             .name_tk{read_name_tk},
-            .receiver_tp{&receiver_tp},
+            .receiver_tp{receiver_tp},
         };
 
-        name = method_name_of(receiver_tp.name(), read_name_tk.text());
+        name = method_name_of(receiver_tp != nullptr ? receiver_tp->name()
+                                                     : name_tk.text(),
+                              read_name_tk.text());
     }
 
     // 'noinline' and 'mut' before the name; a word followed by '(' is read as
@@ -782,22 +794,6 @@ class stmt_def_func final : public statement {
         }
     }
 
-    // e.g. 'func mut point.move(dx)', a constructor writes its 'self' anyway
-    auto assert_mut_has_receiver() const -> void {
-        if (not head_.mut_tk or has_self_param()) {
-            return;
-        }
-
-        if (is_constructor()) {
-            throw compile_error{
-                *head_.mut_tk,
-                "a constructor builds 'self', 'mut' is not needed"};
-        }
-
-        throw compile_error{*head_.mut_tk,
-                            "'mut' requires a method 'type.name'"};
-    }
-
     // the result is declared before the parameters, slot 0 is the result,
     // so the duplicate is found here at the result
     auto assert_result_not_named_like_param() const -> void {
@@ -890,14 +886,7 @@ class stmt_def_func final : public statement {
     [[nodiscard]] auto constructor_result_type(const func_result& result) const
         -> const type& {
 
-        head_.assert_receiver_for_self(result.name_tk);
-
-        // one spelling, the type is already named before the '.'
-        if (result.type_tk) {
-            throw compile_error{
-                *result.type_tk,
-                "result 'self' has the type of the constructor"};
-        }
+        head_.assert_constructor_result(result.name_tk, result.type_tk);
 
         assert(head_.receiver_type() != nullptr);
 
@@ -1009,7 +998,7 @@ class stmt_def_func final : public statement {
 
         assert_result_not_named_like_param();
 
-        assert_mut_has_receiver();
+        head_.assert_mut_has_receiver(is_constructor());
 
         // known only after the result: a constructor builds 'self' instead
         if (has_self_param()) {
@@ -1503,7 +1492,8 @@ class stmt_def_func_generic final : public statement {
 
         assert(signature.result_name_tk);
 
-        head.assert_receiver_for_self(*signature.result_name_tk);
+        head.assert_constructor_result(*signature.result_name_tk,
+                                       signature.result_type_tk);
 
         // a constructor is called as 'point.at(...)', there is no place for
         // type arguments
@@ -1556,6 +1546,7 @@ class stmt_def_func_generic final : public statement {
         }
 
         assert_generic_signature(tc, head, signature);
+        head.assert_mut_has_receiver(signature.is_constructor());
 
         const token open_brace_tk{
             tz.expect_char_token('{', "expected '{' to begin block"),

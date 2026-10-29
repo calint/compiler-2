@@ -1,0 +1,9 @@
+# 'self' of a constructor of a generic type has no type, also without an
+# instance
+
+type box<n> {x}
+
+func box.mk() self i8 {}
+
+func main() {
+}

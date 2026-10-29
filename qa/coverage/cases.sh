@@ -6030,3 +6030,15 @@ if [[ $MACHINE == x86_64 ]]; then SRC=1892 && COMPERR; fi
 
 # an overflowing inner negation is located at its '-'
 SRC=1893 && OPTS="--checks=overflow" COMPERR
+
+# 'mut' without a method in a generic function never instantiated
+SRC=1894 && COMPERR
+
+# 'mut' on a constructor of a generic type never instantiated
+SRC=1895 && COMPERR
+
+# a type after 'self' of a constructor of a generic type never instantiated
+SRC=1896 && COMPERR
+
+# a built-in type as a function name followed by '(.'
+SRC=1897 && COMPERR

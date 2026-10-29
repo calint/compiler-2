@@ -1,0 +1,4 @@
+
+1894.baz:3:6: 'mut' requires a method 'type.name'
+func mut f<T type>() {}
+     ^~~

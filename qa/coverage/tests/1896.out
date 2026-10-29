@@ -1,0 +1,4 @@
+
+1896.baz:6:20: result 'self' has the type of the constructor
+func box.mk() self i8 {}
+                   ^~

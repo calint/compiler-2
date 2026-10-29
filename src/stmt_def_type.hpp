@@ -564,24 +564,16 @@ class type_instantiator final {
 class stmt_def_type_alias final : public statement {
     token name_tk_;
     type type_;
-    // the tokens of 'type str = text<127>' after the name
-    std::vector<token> alias_tks_;
+    // e.g. '= text<127>' of 'type str = text<127>'
+    generic_type_use generic_;
 
   public:
     stmt_def_type_alias(toc& tc, const token tk, const token name_tk,
                         tokenizer& tz)
-        : statement{tk}, name_tk_{name_tk} {
+        : statement{tk}, name_tk_{name_tk},
+          generic_{generic_type_use::parse(tc, tz, "the alias that names it")} {
 
-        const generic_type_use generic{
-            generic_type_use::parse(tc, tz, "the alias that names it"),
-        };
-
-        // kept for 'source_to'
-        alias_tks_.emplace_back(generic.equals_tk);
-        alias_tks_.emplace_back(generic.name_tk);
-        alias_tks_.append_range(generic.args.list_tks);
-
-        type_instantiator::instantiate(tc, name_tk_, generic, type_);
+        type_instantiator::instantiate(tc, name_tk_, generic_, type_);
     }
 
     // 'toc' keeps the address of the type
@@ -599,8 +591,10 @@ class stmt_def_type_alias final : public statement {
     auto source_to(std::ostream& os) const -> void override {
         statement::source_to(os);
         name_tk_.source_to(os);
+        generic_.equals_tk.source_to(os);
+        generic_.name_tk.source_to(os);
 
-        for (const token& t : alias_tks_) {
+        for (const token& t : generic_.args.list_tks) {
             t.source_to(os);
         }
     }

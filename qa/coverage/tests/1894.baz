@@ -1,0 +1,6 @@
+# 'mut' needs a method, also in a generic function that is never instantiated
+
+func mut f<T type>() {}
+
+func main() {
+}

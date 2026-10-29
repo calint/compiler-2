@@ -1,6 +1,22 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] hard: design review series 2, round 22 (2026-10-29, user: rounds until
+    no more improvements, applying the recommended ones; 7 reviewers A-G:
+    'toc', 'stmt_call', 'machine', 'machine_x86_64', 'expr_bool'/'expr_any',
+    'stmt_def_func'/'generics', the front end and type definitions; "nothing
+    found" a valid result)
+    => done (2026-10-29): F1 a generic definition checks 'mut' without a
+       method, 'mut' on a constructor and a type after 'self' without an
+       instance (1894, 1895, 1896), like the other head rules (4.5.2); F2
+       'func i8(.x)' reports the built-in type (1897); behavior-preserving,
+       listings verified equal: 'dat_extent' gone, 'memory_at' operands as
+       elsewhere; the calls compute their argument places; one 'up_to' bounds
+       range ('count_alone', 'range_start' gone); x86_64 'setcc' inlined,
+       'same_operand' dead path an assert; 'compile_element' inlined, a
+       redundant 'is_memory_operand' term gone; 'read_method_name' once; the
+       alias holds its 'generic_type_use', 'expect_char_token' through
+       '_after', 'token::source_to' in 'expr_zero'; comments
 [x] hard: design review series 2, round 21 (2026-10-29, user: a new design
     round; 7 reviewers A-G: arithmetic and operands, 'machine_rv32i', the
     identifiers and no-UB checks, the built-ins and 'assembler', the driver
