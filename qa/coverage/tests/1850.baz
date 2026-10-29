@@ -1,0 +1,10 @@
+# type arguments after a type that is not generic, as a result type
+
+type pt {x i8}
+
+func f() res pt<i8> {
+    res = {}
+}
+
+func main() {
+}

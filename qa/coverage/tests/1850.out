@@ -1,0 +1,4 @@
+
+1850.baz:5:14: 'pt' is a type, not a generic type
+func f() res pt<i8> {
+             ^~

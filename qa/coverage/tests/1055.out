@@ -1,4 +1,4 @@
 
-1055.baz:5:13: function does not return a value
+1055.baz:5:13: function has no result
     var n = sector_read(0, bytes)
             ^~~~~~~~~~~

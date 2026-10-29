@@ -1,4 +1,4 @@
 
-1439.baz:6:5: return value is discarded
+1439.baz:6:5: the result of the call is discarded
     arrays_equal(a, b, 4)
     ^~~~~~~~~~~~

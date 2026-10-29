@@ -1,4 +1,4 @@
 
-0415.baz:4:15: return value is discarded
+0415.baz:4:15: the result of the call is discarded
 func main() { target() }
               ^~~~~~

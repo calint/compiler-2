@@ -245,9 +245,10 @@ inline auto expr_type::assert_call_type(const type& tp) const -> void {
         return;
     }
 
-    throw compile_error{tok(), std::format("expected return type {}, got {}",
-                                           in_quotes(tp.name()),
-                                           in_quotes(result_type.name()))};
+    throw compile_error{tok(),
+                        std::format("expected type {}, got a result of type {}",
+                                    in_quotes(tp.name()),
+                                    in_quotes(result_type.name()))};
 }
 
 inline auto expr_type::source_to(std::ostream& os) const -> void {

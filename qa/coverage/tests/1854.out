@@ -1,0 +1,4 @@
+
+1854.baz:10:16: constructor 'pt.at' is not generic, it takes no type arguments
+    var p = pt.at<i8>(1)
+               ^~

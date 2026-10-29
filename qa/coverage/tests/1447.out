@@ -1,4 +1,4 @@
 
-1447.baz:2:10: function may return without setting its return value
+1447.baz:2:10: function may return without setting its result 'res'
 func f() res {
          ^~~

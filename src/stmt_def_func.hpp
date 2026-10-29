@@ -341,6 +341,10 @@ struct func_result {
 
         const token type_tk{tz.next_token()};
 
+        if (type_tk.is_word()) {
+            statement::assert_no_type_arguments(tc, tz, type_tk);
+        }
+
         // a word or a string before the '{' of the body is meant as the
         // type, else a missing '{' is reported by the body, e.g. 'func f()
         // res number {'
@@ -973,7 +977,7 @@ class stmt_def_func final : public statement {
     // e.g. 'a i32, b i32' up to the closing parenthesis
     auto parse_params(toc& tc, tokenizer& tz) -> void {
         stmt_def_func_param::syntax_list list{
-            stmt_def_func_param::syntax_list::read(tz),
+            stmt_def_func_param::syntax_list::read(tc, tz),
         };
 
         for (const stmt_def_func_param::syntax& param : list.params) {
@@ -1621,7 +1625,7 @@ class stmt_def_func_generic final : public statement {
         };
 
         const stmt_def_func_param::syntax_list list{
-            stmt_def_func_param::syntax_list::read(tz),
+            stmt_def_func_param::syntax_list::read(tc, tz),
         };
 
         for (const stmt_def_func_param::syntax& param : list.params) {

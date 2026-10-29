@@ -4,6 +4,7 @@
 #include <cassert>
 #include <cstddef>
 #include <cstdint>
+#include <format>
 #include <optional>
 #include <utility>
 #include <vector>
@@ -21,49 +22,95 @@
 // constant above 0, so it runs its body
 enum class loop_end : uint8_t { at_break, also_when_done, when_stepped };
 
-// the bytes of a variable that are definitely assigned, one flag per byte
+// the bytes of a variable that are definitely assigned, as byte ranges so
+// that the cost follows the assignments, not the size of the variable
 class assigned_bytes final {
-    std::vector<bool> is_assigned_;
+    size_t size_bytes_{};
+    // sorted by offset, none empty, overlapping or adjacent
+    std::vector<byte_range> ranges_;
 
   public:
-    // note: parentheses, braces would make a list of one flag
     explicit assigned_bytes(const size_t size_bytes)
-        : is_assigned_(size_bytes, false) {}
+        : size_bytes_{size_bytes} {}
 
     auto add(const byte_range assigned) -> void {
-        for (size_t i{}; i < assigned.size_bytes; ++i) {
-            is_assigned_.at(assigned.offset + i) = true;
+        assert(assigned.offset + assigned.size_bytes <= size_bytes_);
+
+        if (assigned.size_bytes == 0) {
+            return;
         }
+
+        std::vector<byte_range> result{};
+        byte_range joined{assigned};
+
+        for (const byte_range& range : ranges_) {
+            if (range_end(range) < joined.offset) {
+                result.push_back(range);
+                continue;
+            }
+
+            if (range_end(joined) < range.offset) {
+                result.push_back(joined);
+                joined = range;
+                continue;
+            }
+
+            const size_t first{std::min(range.offset, joined.offset)};
+            const size_t end{std::max(range_end(range), range_end(joined))};
+
+            joined = {
+                .offset{first},
+                .size_bytes{end - first},
+            };
+        }
+
+        result.push_back(joined);
+        ranges_ = std::move(result);
     }
 
     [[nodiscard]] auto covers(const byte_range accessed) const -> bool {
-        for (size_t i{}; i < accessed.size_bytes; ++i) {
-            if (not is_assigned_.at(accessed.offset + i)) {
-                return false;
-            }
+        if (accessed.size_bytes == 0) {
+            return true;
         }
 
-        return true;
+        return std::ranges::any_of(
+            ranges_, [&accessed](const byte_range& range) -> bool {
+                return range.offset <= accessed.offset and
+                       range_end(accessed) <= range_end(range);
+            });
     }
 
     // keeps only the bytes assigned on both paths
     auto intersect(const assigned_bytes& other) -> void {
-        assert(is_assigned_.size() == other.is_assigned_.size());
+        assert(size_bytes_ == other.size_bytes_);
 
-        for (size_t i{}; i < is_assigned_.size(); ++i) {
-            is_assigned_.at(i) =
-                is_assigned_.at(i) and other.is_assigned_.at(i);
+        std::vector<byte_range> result{};
+
+        for (const byte_range& lhs : ranges_) {
+            for (const byte_range& rhs : other.ranges_) {
+                const size_t first{std::max(lhs.offset, rhs.offset)};
+                const size_t end{std::min(range_end(lhs), range_end(rhs))};
+
+                if (first < end) {
+                    result.push_back({
+                        .offset{first},
+                        .size_bytes{end - first},
+                    });
+                }
+            }
         }
+
+        ranges_ = std::move(result);
     }
 
     [[nodiscard]] auto is_full() const -> bool {
-        return std::ranges::all_of(
-            is_assigned_, [](const bool is_set) -> bool { return is_set; });
+        return covers({
+            .offset{},
+            .size_bytes{size_bytes_},
+        });
     }
 
-    [[nodiscard]] auto size_bytes() const -> size_t {
-        return is_assigned_.size();
-    }
+    [[nodiscard]] auto size_bytes() const -> size_t { return size_bytes_; }
 
     //
     // statics
@@ -71,8 +118,22 @@ class assigned_bytes final {
 
     [[nodiscard]] static auto full(const size_t size_bytes) -> assigned_bytes {
         assigned_bytes coverage{size_bytes};
-        coverage.is_assigned_.flip();
+
+        coverage.add({
+            .offset{},
+            .size_bytes{size_bytes},
+        });
+
         return coverage;
+    }
+
+  private:
+    //
+    // statics
+    //
+
+    [[nodiscard]] static auto range_end(const byte_range& range) -> size_t {
+        return range.offset + range.size_bytes;
     }
 };
 
@@ -84,8 +145,8 @@ class assigned_bytes final {
 // 'trace_loop' traces a body by its 'loop_end', 'path_merge' joins the paths
 // of an 'if'
 class assignment_flow final {
-    // the declaration of the result, reported when a 'return' may leave it
-    // unset
+    // the name of the result as declared, e.g. 'res', reported when a 'return'
+    // may leave it unset
     token src_loc_tk_;
 
     // bytes assigned on every path reaching the current statement
@@ -159,7 +220,8 @@ class assignment_flow final {
 
         throw compile_error{
             src_loc_tk_,
-            "function may return without setting its return value"};
+            std::format("function may return without setting its result {}",
+                        in_quotes(src_loc_tk_.text()))};
     }
 
     // the result is assigned these bytes

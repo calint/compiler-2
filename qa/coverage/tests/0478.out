@@ -1,4 +1,4 @@
 
-0478.baz:3:19: function may return without setting its return value
+0478.baz:3:19: function may return without setting its result 'res'
 func make_pair(i) res pair {
                   ^~~

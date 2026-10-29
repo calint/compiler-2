@@ -1,4 +1,4 @@
 
-0472.baz:3:13: function may return without setting its return value
+0472.baz:3:13: function may return without setting its result 'res'
 func half() res point {
             ^~~

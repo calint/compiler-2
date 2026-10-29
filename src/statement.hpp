@@ -434,6 +434,29 @@ class statement {
     // statics
     //
 
+    // e.g. 'box<i8>' as the type of a field, a parameter or a result: only a
+    // generic type takes arguments, and there an alias names its instance
+    static auto assert_no_type_arguments(const toc& tc, tokenizer& tz,
+                                         const std::optional<token>& type_tk)
+        -> void {
+
+        if (not type_tk or tz.peek_char_after_whitespace() != '<') {
+            return;
+        }
+
+        if (tc.types().has(type_tk->text())) {
+            throw compile_error{*type_tk,
+                                std::format("{} is a type, not a generic type",
+                                            in_quotes(type_tk->text()))};
+        }
+
+        throw compile_error{
+            *type_tk,
+            std::format("{} is not a type, {}",
+                        in_quotes(std::format("{}<...>", type_tk->text())),
+                        instance_hint(type_tk->text()))};
+    }
+
     // 'items' with the delimiter tokens between them, e.g. 'x, y' of
     // 'f(x, y)'; a delimiter after the last item is the caller's
     template <std::ranges::forward_range Items>
@@ -497,23 +520,6 @@ class statement {
     //
     // statics
     //
-
-    // e.g. 'box<i8>' as the type of a field or a parameter, an alias names
-    // an instance, a type argument list never follows a type name there
-    static auto assert_no_type_arguments(tokenizer& tz,
-                                         const std::optional<token>& type_tk)
-        -> void {
-
-        if (not type_tk or tz.peek_char_after_whitespace() != '<') {
-            return;
-        }
-
-        throw compile_error{
-            *type_tk,
-            std::format("{} is not a type, {}",
-                        in_quotes(std::format("{}<...>", type_tk->text())),
-                        instance_hint(type_tk->text()))};
-    }
 
     // why the name 'root' cannot be written, e.g. ", 'x' is declared with
     // 'let'"

@@ -1,0 +1,11 @@
+# type arguments after a constructor, which is never generic
+
+type pt {x i8}
+
+func pt.at(v i8) self {
+    self = {v}
+}
+
+func main() {
+    var p = pt.at<i8>(1)
+}

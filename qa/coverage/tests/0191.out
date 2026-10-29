@@ -1,4 +1,4 @@
 
-0191.baz:4:23: function does not return a value
+0191.baz:4:23: function has no result
 func main() { var x = f() }
                       ^

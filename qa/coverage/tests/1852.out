@@ -1,0 +1,4 @@
+
+1852.baz:6:5: 'x' is a value, not a function
+    x(1)
+    ^

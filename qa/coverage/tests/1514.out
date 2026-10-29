@@ -1,5 +1,5 @@
 
-1514.baz:4:17: function may return without setting its return value
+1514.baz:4:17: function may return without setting its result 'res'
 func list.get() res T {
                 ^~~
 1514.baz:7:6: instantiated by

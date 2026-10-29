@@ -5886,3 +5886,26 @@ SRC=1846 && COMPERR
 
 # a token that cannot start an array where an array is expected
 SRC=1847 && COMPERR
+
+# a result of 1 TiB, its definite assignment is traced by byte ranges
+if [[ $MACHINE == x86_64 ]]; then SRC=1848 && EXP=0 && RUN; fi
+
+# type arguments after a type that is not generic, as a parameter type
+SRC=1849 && COMPERR
+
+# type arguments after a type that is not generic, as a result type
+SRC=1850 && COMPERR
+
+# a generic type as a result type names an instance first
+SRC=1851 && COMPERR
+
+# a value called as a function is reported as a value, not as a missing
+# function
+SRC=1852 && COMPERR
+
+# a trailing comma in a generic call is reported before the argument that
+# would tell the type
+SRC=1853 && COMPERR
+
+# type arguments after a constructor, which is never generic
+SRC=1854 && COMPERR

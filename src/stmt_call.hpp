@@ -286,9 +286,14 @@ struct generic_call {
         for (size_t i{}; i < index; ++i) {
             tz.skip_argument();
 
-            if (not tz.is_next_char_token(',')) {
+            const std::optional<token> delimiter_tk{tz.is_next_char_token(',')};
+
+            if (not delimiter_tk) {
                 return false;
             }
+
+            // e.g. 'f(1,)', reported before the argument it lacks
+            tz.assert_no_trailing_delimiter(*delimiter_tk, ')', "a call");
         }
 
         return true;
@@ -1795,6 +1800,16 @@ class stmt_call final : public statement {
 
         // note: 'func_instantiator::define_func' rejects a generic constructor
         assert(not tc.generics().has_func(func_name_));
+
+        // e.g. 'point.at<i8>(1, 2)', the '<' is not an operator after a
+        // constructor name
+        if (tz.peek_char_after_whitespace() == '<') {
+            throw compile_error{
+                constructor_->name_tk,
+                std::format("constructor {} is not generic, it takes no type "
+                            "arguments",
+                            in_quotes(func_name_))};
+        }
 
         read_open_paren(tc, tz, constructor_->name_tk, "constructor name");
 

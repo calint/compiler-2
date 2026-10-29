@@ -1,0 +1,9 @@
+# type arguments after a type that is not generic, as a parameter type
+
+type pt {x i8}
+
+func f(a pt<i8>) {
+}
+
+func main() {
+}

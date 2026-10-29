@@ -1,4 +1,4 @@
 
-0461.baz:2:14: function may return without setting its return value
+0461.baz:2:14: function may return without setting its result 'res'
 func pick(i) res {
              ^~~

@@ -1,4 +1,4 @@
 
-1315.baz:6:9: function does not return a value
+1315.baz:6:9: function has no result
     p = exit(1)
         ^~~~

@@ -1,0 +1,10 @@
+# a result of 1 TiB, its definite assignment is traced by byte ranges
+
+type huge {a i8[1099511627776]}
+
+func f() res huge {
+    res = {}
+}
+
+func main() {
+}

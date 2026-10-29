@@ -1,5 +1,5 @@
 
-1513.baz:3:21: function may return without setting its return value
+1513.baz:3:21: function may return without setting its result 'res'
 func make<T type>() res T {
                     ^~~
 1513.baz:7:13: instantiated by 'make<i8>'

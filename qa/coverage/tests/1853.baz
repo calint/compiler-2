@@ -1,0 +1,9 @@
+# a trailing comma in a generic call is reported before the argument that
+# would tell the type
+
+func show<T type>(a i8, b T) {
+}
+
+func main() {
+    show(1,)
+}

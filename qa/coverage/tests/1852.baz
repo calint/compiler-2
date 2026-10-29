@@ -1,0 +1,7 @@
+# a value called as a function is reported as a value, not as a missing
+# function
+
+func main() {
+    var x = 1
+    x(1)
+}

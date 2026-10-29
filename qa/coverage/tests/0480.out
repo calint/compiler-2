@@ -1,4 +1,4 @@
 
-0480.baz:2:26: function may return without setting its return value
+0480.baz:2:26: function may return without setting its result 'res'
 func first(values i32[]) res {
                          ^~~

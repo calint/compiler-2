@@ -1,0 +1,10 @@
+# a generic type as a result type names an instance first
+
+type box<T> {x T}
+
+func f() res box<i8> {
+    res = {}
+}
+
+func main() {
+}

@@ -1,7 +1,6 @@
 #pragma once
 
 #include <cstddef>
-#include <format>
 #include <optional>
 #include <ostream>
 #include <string_view>
@@ -54,12 +53,7 @@ class stmt_def_type_field final : public statement {
         set_type(type_tk_ ? tc.get_type_or_throw(*type_tk_)
                           : tc.builtins().default_type());
 
-        // e.g. the '<' of 'i8<2>', only a generic type takes arguments
-        if (type_tk_ and tz.peek_char_after_whitespace() == '<') {
-            throw compile_error{*type_tk_,
-                                std::format("{} is a type, not a generic type",
-                                            in_quotes(type_tk_->text()))};
-        }
+        assert_no_type_arguments(tc, tz, type_tk_);
 
         const std::optional<token> open_bracket_tk{tz.is_next_char_token('[')};
 

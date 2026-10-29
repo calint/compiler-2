@@ -3323,12 +3323,19 @@ class toc final {
                                          const std::string_view name) const
         -> const stmt_def_func& {
 
-        if (not funcs_.has(name)) {
-            throw compile_error{src_loc_tk, std::format("function {} not found",
-                                                        in_quotes(name))};
+        if (funcs_.has(name)) {
+            return *funcs_.get(name).def;
         }
 
-        return *funcs_.get(name).def;
+        // e.g. 'x(1)' after 'var x = 1', a call still calls a hidden function
+        if (scopes_.lookup(name).is_value()) {
+            throw compile_error{
+                src_loc_tk,
+                std::format("{} is a value, not a function", in_quotes(name))};
+        }
+
+        throw compile_error{
+            src_loc_tk, std::format("function {} not found", in_quotes(name))};
     }
 
     // no token names a missing 'main'

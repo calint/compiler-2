@@ -1801,13 +1801,15 @@ What depends on the target is listed here, nothing else does:
    'arrays_equal' needs the 'rdi' that 'exit' holds
 4. the limits of a target: '--vars' and the memory it addresses, which a
    type stays below, e.g. a field 'i8[0x100000000]' is rejected on rv32i,
-   and a deep noinline recursion, which 'stack' stops on the bare-metal
-   targets and the operating system on x86_64 and rv32i (8.1); on rv32i
-   linux the linker places the program, so code, data and variables that
-   fit in 4 GiB from address 0 can still fail the link, e.g.
-   '--vars=0xffff0000' with 'ld.lld', which starts it at about 0x11000; on
-   x86_64 nasm truncates a label to 4095 characters, so a name of about 4000
-   characters gives a listing that nasm rejects
+   the depth of noinline calls that fits in '--vars' before 'frame' stops
+   it, since a frame holds an address for each parameter and the result,
+   8 B on x86_64 and 4 B on rv32i, and a deep noinline recursion, which
+   'stack' stops on the bare-metal targets and the operating system on
+   x86_64 and rv32i (8.1); on rv32i linux the linker places the program, so
+   code, data and variables that fit in 4 GiB from address 0 can still fail
+   the link, e.g. '--vars=0xffff0000' with 'ld.lld', which starts it at
+   about 0x11000; on x86_64 nasm truncates a label to 4095 characters, so a
+   name of about 4000 characters gives a listing that nasm rejects
 5. the devices of the bare-metal targets: 'rv32i-qemu' has no sd card, so
    'sector_read' and 'sector_write' are rejected there; 'rv32i-fpga' does not
    detect a sector past the end of the card, which panics 'sd card' on x86_64

@@ -1,0 +1,4 @@
+
+1853.baz:8:11: a trailing ',' is not allowed in a call
+    show(1,)
+          ^

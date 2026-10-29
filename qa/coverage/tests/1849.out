@@ -1,0 +1,4 @@
+
+1849.baz:5:10: 'pt' is a type, not a generic type
+func f(a pt<i8>) {
+         ^~

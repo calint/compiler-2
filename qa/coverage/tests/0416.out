@@ -1,4 +1,4 @@
 
-0416.baz:4:28: function does not return a value
+0416.baz:4:28: function has no result
 func main() { var result = target() }
                            ^~~~~~
