@@ -57,9 +57,9 @@
 // an argument, from the parse to the body:
 //
 //   'call_site::argument_form'   what the argument is ('argument_form_of')
-//   'call_site::call_plan'       the forms of one compile and whether an
-//                                argument goes through a temporary
-//                                ('argument_plan')
+//   'call_site::argument_forms'  the forms of one compile; whether an
+//                                argument goes through a temporary is the
+//                                rule of 'inline_call' or 'noinline_call'
 //   'param_binding'              inlined: what the parameter stands for
 //                                ('inline_call::make_bindings')
 //   'noinline_call::noinline_arg'
@@ -499,34 +499,6 @@ struct call_site {
         }
     };
 
-    // the arguments of one compile of the call, for the body of its callee
-    struct call_plan {
-        std::vector<argument_form> arguments;
-        bool is_inlined{};
-
-        [[nodiscard]] auto has_temporaries() const -> bool {
-            return std::ranges::any_of(
-                arguments, [this](const argument_form& form) -> bool {
-                    return is_temporary(form);
-                });
-        }
-
-        // reached through the temporary of the call named by
-        // 'temporary_argument_name': in an inlined body an instance literal
-        // or a call result, e.g. 'point{1, 2}'; in a noinline body a value
-        // without storage, e.g. a literal or an expression
-        [[nodiscard]] auto is_temporary(const argument_form& form) const
-            -> bool {
-
-            if (is_inlined) {
-                return std::holds_alternative<
-                    argument_form::instance_temporary>(form.kind);
-            }
-
-            return not form.is_place();
-        }
-    };
-
     // the name of a function or method, the type of a constructor call; the
     // code and the errors of the call are located at it
     token tk;
@@ -571,13 +543,11 @@ struct call_site {
     }
 
     // the form of each argument, an array is only passed by name
-    [[nodiscard]] auto argument_plan(const toc& tc) const -> call_plan {
-        call_plan plan{
-            .arguments{},
-            .is_inlined{func->is_inlined()},
-        };
+    [[nodiscard]] auto argument_forms(const toc& tc) const
+        -> std::vector<argument_form> {
 
-        plan.arguments.reserve(args.size());
+        std::vector<argument_form> forms;
+        forms.reserve(args.size());
 
         for (const auto [arg, param] : std::views::zip(args, func->params())) {
             argument_form form{argument_form_of(tc, arg, param)};
@@ -585,10 +555,10 @@ struct call_site {
             // note: an array argument is a place, see 'assert_argument_usable'
             assert(not param.is_array() or form.is_place());
 
-            plan.arguments.push_back(std::move(form));
+            forms.push_back(std::move(form));
         }
 
-        return plan;
+        return forms;
     }
 
     // the result is made in a temporary of the call, then copied into
@@ -755,13 +725,13 @@ class inline_call final {
 
     call_site call_{};
     // one per argument
-    call_site::call_plan plan_{};
+    std::vector<call_site::argument_form> forms_;
 
   public:
-    inline_call(call_site call, call_site::call_plan plan)
-        : call_{std::move(call)}, plan_{std::move(plan)} {
+    inline_call(call_site call, std::vector<call_site::argument_form> forms)
+        : call_{std::move(call)}, forms_{std::move(forms)} {
 
-        assert(plan_.arguments.size() == call_.args.size());
+        assert(forms_.size() == call_.args.size());
     }
 
     // a block holds the temporaries of the call
@@ -785,7 +755,9 @@ class inline_call final {
         };
 
         call_site::in_temporaries_block(
-            tc, plan_.has_temporaries() or has_result_temporary, [&] -> void {
+            tc,
+            std::ranges::any_of(forms_, is_temporary) or has_result_temporary,
+            [&] -> void {
                 if (not has_result_temporary) {
                     compile_with_bindings(tc, indent, dst);
                     return;
@@ -995,13 +967,13 @@ class inline_call final {
 
         for (const auto [i, arg, param, planned] :
              std::views::zip(std::views::iota(size_t{}), call_.args,
-                             call_.func->params(), plan_.arguments)) {
+                             call_.func->params(), forms_)) {
 
             // note: a temporary is made here, in the order of the arguments,
             //       and named per call, so each level of an inlined recursion
             //       binds its own
 
-            if (plan_.is_temporary(planned)) {
+            if (is_temporary(planned)) {
                 const destination temporary{
                     call_.make_argument_temporary(tc, indent, i),
                 };
@@ -1154,6 +1126,15 @@ class inline_call final {
         return bound.is_address_by_call() and bound.operand().is_memory() and
                not bound.operand().index_register().empty();
     }
+
+    // an instance literal or a call result, e.g. 'point{1, 2}', is made in
+    // a temporary of the call that the body names
+    [[nodiscard]] static auto is_temporary(const call_site::argument_form& form)
+        -> bool {
+
+        return std::holds_alternative<
+            call_site::argument_form::instance_temporary>(form.kind);
+    }
 };
 
 // compiles a call of a 'noinline' function: its body is emitted once for all
@@ -1190,15 +1171,16 @@ class noinline_call final {
     };
 
     call_site call_{};
-    // one per argument, a place is passed by its address
-    call_site::call_plan plan_{};
+    // one per argument, a place is passed by its address, any other in a
+    // temporary
+    std::vector<call_site::argument_form> forms_;
 
   public:
-    noinline_call(call_site call, call_site::call_plan plan)
-        : call_{std::move(call)}, plan_{std::move(plan)} {
+    noinline_call(call_site call, std::vector<call_site::argument_form> forms)
+        : call_{std::move(call)}, forms_{std::move(forms)} {
 
         assert(not call_.func->is_inlined());
-        assert(plan_.arguments.size() == call_.args.size());
+        assert(forms_.size() == call_.args.size());
     }
 
     // the callee reaches the result and the arguments through their addresses,
@@ -1209,7 +1191,9 @@ class noinline_call final {
         -> void {
 
         const bool has_temporaries{
-            has_result_temporary(dst, *call_.func) or plan_.has_temporaries(),
+            has_result_temporary(dst, *call_.func) or
+                not std::ranges::all_of(forms_,
+                                        &call_site::argument_form::is_place),
         };
 
         call_site::in_temporaries_block(tc, has_temporaries, [&] -> void {
@@ -1246,9 +1230,12 @@ class noinline_call final {
         std::vector<noinline_arg> arguments;
 
         for (const auto [i, planned] :
-             std::views::zip(std::views::iota(size_t{}), plan_.arguments)) {
+             std::views::zip(std::views::iota(size_t{}), forms_)) {
 
-            if (plan_.is_temporary(planned)) {
+            const place* const arg_place{std::get_if<place>(&planned.kind)};
+
+            // e.g. a literal or an expression
+            if (arg_place == nullptr) {
                 const destination temporary{
                     call_.make_argument_temporary(tc, indent, i),
                 };
@@ -1261,15 +1248,13 @@ class noinline_call final {
                 continue;
             }
 
-            const place& arg_place{std::get<place>(planned.kind)};
-
             const operand address{
-                arg_place.ident->get_lea_operand(tc, indent, arg_place.info,
-                                                 held),
+                arg_place->ident->get_lea_operand(tc, indent, arg_place->info,
+                                                  held),
             };
 
             arguments.push_back({
-                .info{arg_place.info},
+                .info{arg_place->info},
                 .address{address},
             });
         }
@@ -2139,7 +2124,7 @@ class stmt_call final : public statement {
         if (not callee().is_inlined()) {
             noinline_call{
                 call,
-                call.argument_plan(tc),
+                call.argument_forms(tc),
             }
                 .compile(tc, indent, dst);
 
@@ -2153,7 +2138,7 @@ class stmt_call final : public statement {
         try {
             inline_call{
                 call,
-                call.argument_plan(tc),
+                call.argument_forms(tc),
             }
                 .compile(tc, indent, dst);
         } catch (const compile_error& e) {

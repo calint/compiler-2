@@ -2070,7 +2070,7 @@ class machine {
             return "-";
         }
 
-        return locations_.for_message(src_loc_tk);
+        return locations_.for_listing(src_loc_tk);
     }
 
     // a passed lower bounds check leaves the checked register non-negative
@@ -2206,7 +2206,14 @@ class machine {
 
         assert(allocated.holder != register_pool::holder_kind::backend);
 
-        const std::string holder_location{location_text(allocated.src_loc_tk)};
+        // note: a message names the file as the error header does, the
+        //       register report as the listing does ('location_text')
+
+        const std::string holder_location{
+            allocated.src_loc_tk.at_line() == 0
+                ? "-"
+                : locations_.for_message(allocated.src_loc_tk),
+        };
 
         if (allocated.holder == register_pool::holder_kind::scratch) {
             compile_error error{

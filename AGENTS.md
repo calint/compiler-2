@@ -106,8 +106,9 @@
 ## Design
 
 - Standing goal, never finished: every program the compiler accepts is free
-  of undefined behavior. Each case is either rejected at compile time or
-  checked at run time (under `--checks=noub`). A result never depends on the
+  of undefined behavior when compiled with `--checks=noub` (by default the
+  run-time checks are off, README 8.2). Each case is either rejected at
+  compile time or checked at run time. A result never depends on the
   target, on inline versus noinline, or on optimization; whether a program is
   accepted may depend on what an inlined call folds from its constant
   arguments (README 1.5). The exceptions are listed in README chapter 8,

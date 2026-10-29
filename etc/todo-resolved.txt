@@ -1,6 +1,27 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] medium: decide: remove the inlined flag of
+    'stmt_call::call_site::call_plan' (design review series 2, round 16 C2)
+    => done (2026-10-29, user): 'call_plan' gone, each call compiler tests
+       the argument forms itself ('call_site::argument_forms'), -15 lines,
+       listings equal; re-opens decision B.1 of 2026-10-26
+[x] easy: decide: README 1 and AGENTS.md state the no-UB goal
+    unconditionally, but it holds only under '--checks=noub' (README 8.2)
+    => done (2026-10-29, user): AGENTS.md and README 8 say the goal holds
+       when compiled with '--checks=noub'; README 1 does not state the goal
+[-] medium: decide: a 'bool' filled by 'read' or 'sector_read' can hold a
+    byte other than 0 or 1 (README 8)
+    => kept (2026-10-29, user): the README keeps it as the one unchecked
+       class; normalizing would add a check to every 'read' into a 'bool'
+[x] easy: the '--report=registers' lines named files as given on the
+    command line, the listing comments relative to the main file (design
+    review series 2, round 13 A1, then dropped for mixing with the error
+    header)
+    => done (2026-10-29, user): the register report, in the listing and under
+       an error, names files as the listing comments do ('for_listing'); an
+       error message keeps names as given, like its header; test-cli checks
+       the report from three spellings of the main file
 [x] hard: design review series 2, round 18 (2026-10-29, user: another design
     review next to the round 17 bug hunt; 7 reviewers A-G, each reading one of
     the largest files whole: the front end, 'toc', 'stmt_def_func',

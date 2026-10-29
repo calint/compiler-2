@@ -1784,9 +1784,10 @@ Cost: a run-time start is held in a register while the count is computed.
 ## 8. Undefined behavior: what is rejected and what is checked
 
 The goal is that every program the compiler accepts is free of undefined
-behavior: each case below is either rejected at compile time or, with its
-'--checks' option, checked at run time, so a result does not depend on the
-target, on whether a call is inlined or on which version of code is kept.
+behavior when compiled with '--checks=noub': each case below is either
+rejected at compile time or, with its '--checks' option, checked at run time,
+so a result does not depend on the target, on whether a call is inlined or on
+which version of code is kept.
 
 The exceptions, all listed in this chapter:
 

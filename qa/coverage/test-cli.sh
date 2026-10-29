@@ -337,6 +337,9 @@ CLI_COMMENT_LOCATIONS() {
         "$BIN" "$main" >gen.s 2>err
         grep -Fq "[gen-abs-lib.baz:2:5] res = 3" gen.s
         grep -Fq "[gen-abs-main.baz:4:5] exit(three())" gen.s
+        # the register report names the files the same way
+        "$BIN" --report=registers "$main" >gen.s 2>err
+        grep -Fq "rdi gen-abs-main.baz:4:5 (named)" gen.s
     done
     # the panic message names the file the same way
     printf 'func main() {\n    var a = i8[2]\n    var i = 3\n    a[i] = 1\n}\n' \

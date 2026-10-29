@@ -172,6 +172,20 @@ class source_locations final {
                            text(src_loc_tk, '.'));
     }
 
+    // like 'for_message', with the file named as in the listing comments,
+    // e.g. in the register report
+    [[nodiscard]] auto for_listing(const token& src_loc_tk) const
+        -> std::string {
+
+        if (files_.get().count() == 1) {
+            return text(src_loc_tk, ':');
+        }
+
+        return std::format("{}:{}",
+                           printable(relative_name(src_loc_tk.file_index())),
+                           text(src_loc_tk, ':'));
+    }
+
     // a source location for a message, with the file name when the program
     // has more than one file
     [[nodiscard]] auto for_message(const token& src_loc_tk) const
