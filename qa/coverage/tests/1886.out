@@ -1,0 +1,4 @@
+
+1886.baz:5:20: unexpected '=='
+    var c = x == 1 == true
+                   ^

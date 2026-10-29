@@ -248,10 +248,10 @@ the longer of two versions after both are measured:
 What dropped code changed is put back by its owner, also when an error
 unwinds it:
 
-1. 'toc::dry_run_scope', for a dry run: the peaks ('toc::compile_peaks': the
+1. 'toc::dry_run_scope', for a dry run: the 'toc::compile_state' (the
    deepest scope count, the storage peak and the frame peak of the scope
-   that holds the storage), whether the code after is reached
-   ('scope_stack::reach_state') and the string constants added; a noinline call
+   that holds the storage, and whether the code after is reached,
+   'scope_stack::reach_state') and the string constants added; a noinline call
    reached inside a dry run adds a body to check only, not to emit
    ('toc::add_noinline_body')
 2. 'toc::emit_most_efficient', for a version: the same peaks and reach state,

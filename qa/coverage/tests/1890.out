@@ -1,0 +1,4 @@
+
+1890.baz:12:9: store the result of 'mk' in a variable before reading a field or calling a method of it
+        .y
+        ^

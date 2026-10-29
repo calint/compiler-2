@@ -39,7 +39,7 @@ class stmt_return final : public statement {
             return;
         }
 
-        if (not func_scp.is_compiled_in_place()) {
+        if (func_scp.has_frame()) {
             x.return_function(indent);
             return;
         }

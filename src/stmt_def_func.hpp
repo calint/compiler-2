@@ -524,7 +524,7 @@ class stmt_def_func final : public statement {
         std::optional<compile_error> error{
             tc.dry_run(
                 [&] -> void {
-                    scope body_scope{frame_scope(tc, {})};
+                    scope body_scope{frame_scope({})};
 
                     body_scope.mark_without_call(takes_from_call);
 
@@ -555,7 +555,7 @@ class stmt_def_func final : public statement {
 
         return tc.dry_run(
             [&] -> void {
-                const toc::scope_entry body{tc, frame_scope(tc, array_lengths)};
+                const toc::scope_entry body{tc, frame_scope(array_lengths)};
 
                 std::ignore = compile_in_frame(tc, 0, array_lengths);
             },
@@ -577,7 +577,7 @@ class stmt_def_func final : public statement {
         assert(not is_inlined());
         assert(array_lengths.size() == array_param_count());
 
-        const toc::scope_entry body{tc, frame_scope(tc, array_lengths)};
+        const toc::scope_entry body{tc, frame_scope(array_lengths)};
 
         machine& x{tc.machine()};
 
@@ -911,16 +911,31 @@ class stmt_def_func final : public statement {
         return frame_size_bytes;
     }
 
+    // e.g. 'func point.at(x, y) self' builds a 'point'
+    // 'result' is the 'self' of a constructor
+    [[nodiscard]] auto constructor_result_type(const func_result& result) const
+        -> const type& {
+
+        head_.assert_receiver_for_self(result.name_tk);
+
+        // one spelling, the type is already named before the '.'
+        if (result.type_tk) {
+            throw compile_error{
+                *result.type_tk,
+                "result 'self' has the type of the constructor"};
+        }
+
+        assert(head_.receiver_type() != nullptr);
+
+        return *head_.receiver_type();
+    }
+
     // the scope of the body in a frame of its own, entered before the frame
     // base and the slot register are taken
     [[nodiscard]] auto
-    frame_scope(toc& tc, const std::span<const size_t> array_lengths) const
-        -> scope {
+    frame_scope(const std::span<const size_t> array_lengths) const -> scope {
 
-        const machine& x{tc.machine()};
-
-        return scope::noinline_func(name(), body_call_path(array_lengths),
-                                    x.frame_base_register());
+        return scope::noinline_func(name(), body_call_path(array_lengths));
     }
 
     // the receiver of a method has its address in the slot register of the
@@ -950,13 +965,10 @@ class stmt_def_func final : public statement {
     // the function scope is established before the body is parsed, its
     // variables are registered without emitting output
     auto parse_body(toc& tc, tokenizer& tz) -> void {
-        const machine& x{tc.machine()};
-
         const toc::scope_entry body{
             tc,
-            is_inlined()
-                ? scope::inlined_func(name(), {}, {})
-                : scope::noinline_func(name(), {}, x.frame_base_register()),
+            is_inlined() ? scope::inlined_func(name(), {}, {})
+                         : scope::noinline_func(name(), {}),
         };
 
         add_constants(tc, 0);
@@ -993,35 +1005,26 @@ class stmt_def_func final : public statement {
 
     // the result 'name [type]', without one the type is 'void'
     auto parse_result(toc& tc, tokenizer& tz) -> void {
-        const std::optional<func_result> read_result{
-            func_result::read(tc, tz),
-        };
+        result_ = func_result::read(tc, tz);
 
-        if (not read_result) {
+        if (not result_) {
             set_type(tc.builtins().void_type());
             return;
         }
 
-        const func_result& result{*read_result};
-
         // 'self' names the value a constructor builds, a name before the body
         // is the result
-        if (result.is_self()) {
-            set_constructor_result(result.name_tk, result.type_tk);
+        if (result_->is_self()) {
+            set_type(constructor_result_type(*result_));
             return;
         }
 
         if (tz.peek_char_after_whitespace() == '{') {
-            tc.assert_valid_unqualified_name(result.name_tk);
+            tc.assert_valid_unqualified_name(result_->name_tk);
         }
 
-        const type& tp{
-            result.type_tk ? tc.get_type_or_throw(*result.type_tk)
-                           : tc.builtins().default_type(),
-        };
-
-        result_ = result;
-        set_type(tp);
+        set_type(result_->type_tk ? tc.get_type_or_throw(*result_->type_tk)
+                                  : tc.builtins().default_type());
     }
 
     // '(parameters) [result]', then the calls after it know the function
@@ -1052,30 +1055,6 @@ class stmt_def_func final : public statement {
 
         tc.add_func(head_.name_tk, std::string{name()}, *this, generic_method,
                     is_ordered);
-    }
-
-    // e.g. 'func point.at(x, y) self' builds a 'point'
-    auto set_constructor_result(const token& self_tk,
-                                const std::optional<token>& type_tk) -> void {
-
-        head_.assert_receiver_for_self(self_tk);
-
-        // one spelling, the type is already named before the '.'
-        if (type_tk) {
-            throw compile_error{
-                *type_tk, "result 'self' has the type of the constructor"};
-        }
-
-        assert(head_.receiver_type() != nullptr);
-
-        const type& tp{*head_.receiver_type()};
-
-        result_ = func_result{
-            .name_tk{self_tk},
-            .type_tk{std::nullopt},
-        };
-
-        set_type(tp);
     }
 
     // the definition after its first token, without the body

@@ -503,6 +503,11 @@ class expr_any final : public statement {
             return;
         }
 
+        // e.g. the ')' of '[2]{1, 2, )', the element reports what is missing
+        if (not starts_value(tz)) {
+            return;
+        }
+
         throw compile_error{tz, too_many_elements(*array_count_)};
     }
 
@@ -940,12 +945,8 @@ class expr_any final : public statement {
     [[nodiscard]] static auto as_statement(const expr_variant& value)
         -> const statement& {
 
-        const statement* const e{
-            value.visit(
-                [](const statement& v) -> const statement* { return &v; }),
-        };
-
-        return *e;
+        return value.visit(
+            [](const auto& item) -> const statement& { return item; });
     }
 
     // a number destination takes a number: not a 'bool', 'int(b)' converts

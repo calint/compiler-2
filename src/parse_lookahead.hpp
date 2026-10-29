@@ -35,6 +35,15 @@
     return connective_of(next_tk).has_value();
 }
 
+// a value can start at the next character, not a closer, a ',' or the end of
+// the source, e.g. not at the ')' of '[2]{1, 2, )'
+[[nodiscard]] inline auto starts_value(const tokenizer& tz) -> bool {
+    const char next{tz.peek_char_after_whitespace()};
+
+    return next != ',' and next != ')' and next != ']' and next != '}' and
+           next != '\0';
+}
+
 // '{}' follows, the zero value of a typed destination
 [[nodiscard]] inline auto is_zero_value(const tokenizer& tz) -> bool {
     tokenizer probe{tz};

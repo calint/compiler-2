@@ -155,8 +155,8 @@ class initializer_declaration final {
         });
 
         if (element_type == nullptr) {
-            trial_parse(tc, tz, [this, &tc, &tz] -> void {
-                deduce_from_initializer(tc, tz);
+            trial_parse(tc, tz, [this, &tc](tokenizer& probe) -> void {
+                deduce_from_initializer(tc, probe);
             });
 
             return;
@@ -167,9 +167,9 @@ class initializer_declaration final {
 
         std::optional<token> bracket_tk;
 
-        trial_parse(tc, tz, [this, &tc, &tz, &bracket_tk] -> void {
+        trial_parse(tc, tz, [this, &tc, &bracket_tk](tokenizer& probe) -> void {
             // an unsized array, the initializer gives the count
-            const expr_any initializer{tc, tz, type_ref(),
+            const expr_any initializer{tc, probe, type_ref(),
                                        literal_typing::written, shape_};
 
             // later statements read the size while parsing, e.g. 'var b = a'
@@ -258,14 +258,13 @@ class initializer_declaration final {
     // a value cannot be parsed at its type before the type is known, so the
     // initializer is parsed once to learn the type or size and that tree is
     // dropped
-    auto trial_parse(toc& tc, tokenizer& tz,
-                     const std::function_ref<void()> parse) const -> void {
+    auto trial_parse(toc& tc, const tokenizer& tz,
+                     const std::function_ref<void(tokenizer&)> parse) const
+        -> void {
 
-        const token start_tk{tz.cur_position_token()};
+        tokenizer probe{tz};
 
-        with_placeholder(tc, parse);
-
-        tz.rewind_to_position(start_tk);
+        with_placeholder(tc, [&parse, &probe] -> void { parse(probe); });
     }
 
     // the variable is in scope while its initializer is parsed, so a read of

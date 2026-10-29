@@ -1,0 +1,13 @@
+# a generic parameter named like a function defined after it is rejected at the
+# end of the parse
+
+type w<T type> {
+    a T
+}
+
+func T(x) res {
+    res = x
+}
+
+func main() {
+}

@@ -1,0 +1,13 @@
+# a generic parameter named like a function is rejected, a call such as 'T(5)'
+# would convert for one instance and call the function for another
+
+func T(x) res {
+    res = x + 1
+}
+
+func f<T type>(a T) res {
+    res = T(5)
+}
+
+func main() {
+}

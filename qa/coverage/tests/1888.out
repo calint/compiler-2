@@ -1,0 +1,4 @@
+
+1888.baz:3:11: type 'p' cannot contain itself
+type p {x p}
+          ^

@@ -48,9 +48,10 @@ class bulk_operands final {
     enum class second_use : uint8_t { read, written };
 
     // the address of each array and the run-time count, for the element
-    // operations of the machine, which emit them in the order of the
-    // arguments; the range of each start is checked after the count, a
-    // run-time start is held in a register from its address to its check
+    // operations of the machine and for 'memory_equal', which emit them in the
+    // order of the arguments; a start is checked after a run-time count, with
+    // its address for a constant one; a run-time start is held in a register
+    // from its address to its check
     class run_time_emitters final {
         const bulk_operands& operands_;
         toc& tc_;

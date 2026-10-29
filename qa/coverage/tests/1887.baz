@@ -1,0 +1,5 @@
+# a character that cannot start a name is not looked up as one
+
+func main() {
+    var x = $
+}

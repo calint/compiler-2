@@ -1,0 +1,4 @@
+
+1884.baz:5:25: expected a constant, a name or a call
+    var a = i8[2]{1, 2, )
+                        ^

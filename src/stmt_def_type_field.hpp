@@ -28,7 +28,9 @@ class stmt_def_type_field final : public statement {
     std::optional<array_part> array_;
 
   public:
-    stmt_def_type_field(toc& tc, const token tk, tokenizer& tz)
+    // 'type_name_tk' names the type the field is in
+    stmt_def_type_field(toc& tc, const token tk, tokenizer& tz,
+                        const token& type_name_tk)
         : statement{tk} {
 
         if (not tk.is_word()) {
@@ -50,6 +52,13 @@ class stmt_def_type_field final : public statement {
         }
 
         assert_no_type_arguments(tc, tz, type_tk_);
+
+        // e.g. the 'p' of 'type p {x p}', the type is defined after its fields
+        if (type_tk_ and type_tk_->text() == type_name_tk.text()) {
+            throw compile_error{*type_tk_,
+                                std::format("type {} cannot contain itself",
+                                            in_quotes(type_name_tk.text()))};
+        }
 
         set_type(type_tk_ ? tc.get_type_or_throw(*type_tk_)
                           : tc.builtins().default_type());

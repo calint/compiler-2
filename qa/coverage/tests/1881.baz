@@ -1,0 +1,8 @@
+# an array length that does not fit the default type is rejected where it is
+# folded, like the 'n' of a 'foo' over the array; rv32i only, x86_64 holds it
+
+func main() {
+    var pad = i8[0x80000000]
+    var c = array_length(pad)
+    exit(i32(c))
+}

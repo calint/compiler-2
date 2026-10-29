@@ -440,7 +440,10 @@ class statement {
                                          const std::optional<token>& type_tk)
         -> void {
 
-        if (not type_tk or tz.peek_char_after_whitespace() != '<') {
+        // e.g. the empty type of 'x<T>', where the '<' ends the parameter
+        if (not type_tk or type_tk->is_none() or
+            tz.peek_char_after_whitespace() != '<') {
+
             return;
         }
 

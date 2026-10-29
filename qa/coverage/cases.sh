@@ -5989,3 +5989,38 @@ SRC=1877 && COMPERR
 # a result destination sharing storage with a global the constructor uses is
 # reported at the constructor name
 SRC=1878 && COMPERR
+
+# a generic parameter named like a function is rejected, in both orders
+SRC=1879 && COMPERR
+SRC=1880 && COMPERR
+
+# an array length that does not fit the default type is rejected on rv32i
+if [[ $MACHINE != x86_64 ]]; then SRC=1881 && OPTS="--vars=0x80001000" COMPERR; fi
+
+# a bool literal as a constant generic argument is a bool constant
+SRC=1882 && COMPERR
+
+# a ',' or a closer after a full list is not a value too many
+SRC=1883 && COMPERR
+SRC=1884 && COMPERR
+
+# an array as a generic type argument
+SRC=1885 && COMPERR
+
+# a second comparison is reported with its whole operator
+SRC=1886 && COMPERR
+
+# a character that cannot start a name is not looked up
+SRC=1887 && COMPERR
+
+# a type cannot contain itself
+SRC=1888 && COMPERR
+
+# a '<' right after a parameter name
+SRC=1889 && COMPERR
+
+# a field of a call result on the next line
+SRC=1890 && COMPERR
+
+# a generic parameter named like a generic function is rejected
+SRC=1891 && COMPERR

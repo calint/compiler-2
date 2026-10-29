@@ -1,0 +1,4 @@
+
+1889.baz:3:9: expected ',' or ')' after parameter 'x'
+func f(x<T>) {
+        ^

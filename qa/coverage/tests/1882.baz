@@ -1,0 +1,8 @@
+# 'true' as a constant generic argument is a bool constant, not a number
+
+type w<c> {
+    a i8[c]
+}
+type s = w<true>
+func main() {
+}

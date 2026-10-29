@@ -1,0 +1,6 @@
+# a second comparison is reported with its whole operator
+
+func main() {
+    var x = 1
+    var c = x == 1 == true
+}

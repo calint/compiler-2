@@ -1,0 +1,4 @@
+
+1883.baz:7:20: expected '}' to close the value of type 'p'
+    var a = p{1, 2,,}
+                   ^

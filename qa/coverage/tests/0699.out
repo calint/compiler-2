@@ -1,4 +1,4 @@
 
-0699.baz:4:13: '$' not found
+0699.baz:4:13: '$' is not a valid name, a name starts with a letter or '_' and has only letters, digits and '_'
     let t = $
             ^

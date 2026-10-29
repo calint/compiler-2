@@ -295,9 +295,7 @@ class scope final {
         // while the body is parsed: what its callers name too
         body_uses uses;
 
-        // a noinline body: the register its variables are placed from and the
-        // most bytes they took
-        std::string_view frame_base_register;
+        // a noinline body: the most bytes its variables took
         size_t peak_frame_size_bytes{};
     };
 
@@ -376,12 +374,6 @@ class scope final {
         return loop().continue_label;
     }
 
-    [[nodiscard]] auto frame_base_register() const -> std::string_view {
-        assert(has_frame());
-
-        return func_part().frame_base_register;
-    }
-
     [[nodiscard]] auto func_ret_label() const -> std::string_view {
         return func_part().ret_label;
     }
@@ -424,10 +416,6 @@ class scope final {
         return not func_ and not loop_;
     }
 
-    [[nodiscard]] auto is_compiled_in_place() const -> bool {
-        return func_part().kind != func_kind::noinline;
-    }
-
     [[nodiscard]] auto is_continued() const -> bool {
         return loop().is_continued;
     }
@@ -441,7 +429,6 @@ class scope final {
     [[nodiscard]] auto is_func() const -> bool { return func_.has_value(); }
 
     // only a call inlined; 'main' is compiled in place too but is not one
-    // ('is_compiled_in_place')
     [[nodiscard]] auto is_inlined_func() const -> bool {
         return func_ and func_->kind == func_kind::inlined;
     }
@@ -593,20 +580,11 @@ class scope final {
     }
 
     // a function with a body of its own, its variables are placed in its
-    // frame from 'frame_base_register'
-    [[nodiscard]] static auto
-    noinline_func(const std::string_view name, std::string call_path,
-                  const std::string_view frame_base_register) -> scope {
+    // frame, see 'machine::frame_base_register'
+    [[nodiscard]] static auto noinline_func(const std::string_view name,
+                                            std::string call_path) -> scope {
 
-        assert(not frame_base_register.empty());
-
-        scope scp{
-            function(name, func_kind::noinline, std::move(call_path), {}),
-        };
-
-        scp.func_part().frame_base_register = frame_base_register;
-
-        return scp;
+        return function(name, func_kind::noinline, std::move(call_path), {});
     }
 
   private:
@@ -659,7 +637,6 @@ class scope final {
             .result_name{},
             .param_names{},
             .uses{},
-            .frame_base_register{},
             .peak_frame_size_bytes{},
         };
 
@@ -676,8 +653,6 @@ class type_table final {
         const type* type_ptr{};
         // see 'definition_order'
         size_t definition{};
-        // e.g. 'i8' or 'int', which have no place in the source
-        bool is_builtin{};
     };
 
     lut<entry> entries_;
@@ -694,7 +669,6 @@ class type_table final {
                          .src_loc_tk{src_loc_tk},
                          .type_ptr{&tpe},
                          .definition{order_.get().current()},
-                         .is_builtin{},
                      });
     }
 
@@ -704,7 +678,6 @@ class type_table final {
                                             .src_loc_tk{},
                                             .type_ptr{&tpe},
                                             .definition{},
-                                            .is_builtin{true},
                                         });
     }
 
@@ -718,7 +691,6 @@ class type_table final {
                                                   .src_loc_tk{src_loc_tk},
                                                   .type_ptr{&tpe},
                                                   .definition{},
-                                                  .is_builtin{},
                                               });
     }
 
@@ -746,7 +718,8 @@ class type_table final {
 
     // a built-in type name, also one a type parameter does not hide
     [[nodiscard]] auto is_builtin(const std::string_view name) const -> bool {
-        return entries_.has(name) and entries_.get_const_ref(name).is_builtin;
+        return entries_.has(name) and
+               entries_.get_const_ref(name).type_ptr->is_builtin();
     }
 
     [[nodiscard]] auto src_loc_tk_of(const std::string_view name) const
@@ -1213,7 +1186,7 @@ class scope_stack final {
                 continue;
             }
 
-            if (not scp.is_compiled_in_place()) {
+            if (scp.has_frame()) {
                 break;
             }
 
@@ -1608,7 +1581,7 @@ class storage_layout final {
             };
 
             stored.offset = address_offset(offset_bytes);
-            stored.base_register = frame_scope.frame_base_register();
+            stored.base_register = machine_.get().frame_base_register();
 
             // note: the frame is within the data and variables checked above
 
@@ -1668,9 +1641,9 @@ class storage_layout final {
         };
 
         if (location.scope_index) {
-            return operand::mem(
-                scope_at(*location.scope_index).frame_base_register(), {}, 1,
-                address_offset(aligned_offset_bytes), address_type);
+            return operand::mem(machine_.get().frame_base_register(), {}, 1,
+                                address_offset(aligned_offset_bytes),
+                                address_type);
         }
 
         return operand::mem(machine_.get().variables_base_register(), {}, 1,
@@ -1963,6 +1936,11 @@ class ident_resolver final {
                 std::format("cannot parse constant {}", in_quotes(ident))};
         }
 
+        // e.g. the '$' of 'var x = $', which no definition can name
+        if (not is_identifier(ident)) {
+            throw compile_error{src_loc_tk, invalid_name_message(ident)};
+        }
+
         throw compile_error{src_loc_tk,
                             std::format("{} not found", in_quotes(ident))};
     }
@@ -2215,6 +2193,33 @@ class definition_checks final {
 
     // a generic parameter of a definition cannot be the name of a generic
     // type; an instance names the generic type itself, e.g. 'text' names 'str'
+    // a function of that name would give a call two meanings, e.g. 'T(5)' a
+    // conversion when 'T' is 'i8' and a call when it is a record
+    auto assert_generic_param_not_function(const token& src_loc_tk,
+                                           const std::string_view name) const
+        -> void {
+
+        if (funcs_.get().exists(name)) {
+            throw compile_error{
+                src_loc_tk,
+                std::format("generic parameter {} hides the function {} "
+                            "defined at {}, use another name",
+                            in_quotes(name), in_quotes(name),
+                            where(funcs_.get().get(name).src_loc_tk))};
+        }
+
+        if (not generics_.get().exists_func(name)) {
+            return;
+        }
+
+        throw compile_error{
+            src_loc_tk,
+            std::format("generic parameter {} hides the generic function {} "
+                        "defined at {}, use another name",
+                        in_quotes(name), in_quotes(name),
+                        where(generics_.get().get_func(name).src_loc_tk))};
+    }
+
     auto assert_generic_param_not_generic_type(
         const token& src_loc_tk, const std::string_view name) const -> void {
 
@@ -2556,7 +2561,7 @@ class variable_comments final {
 // compile adds here is the same each time: a constant is kept once by its
 // bytes ('add_read_only_constant'), a noinline body once
 // ('add_noinline_body'), the scopes and their variables are popped
-// ('scope_entry'); the peaks ('compile_peaks') are put back by a dry run
+// ('scope_entry'); the peaks ('compile_state') are put back by a dry run
 // with the constant count ('dry_run_scope') and set to those of the kept
 // version by 'emit_most_efficient'
 class toc final {
@@ -2594,18 +2599,12 @@ class toc final {
     // of them, see 'parse_nesting_scope'
     size_t parse_nesting_{};
 
-    // the peaks that compiling raises, put back by a dry run and set to those
-    // of the kept version by 'emit_most_efficient'
-    struct compile_peaks {
+    // what a dry run and a version that is not kept put back: the peaks that
+    // compiling raises and whether the code after is reached, which an error
+    // unwinding an inlined body ends ('pop_scope')
+    struct compile_state {
         size_t max_scope_count{};
         storage_layout::peaks storage{};
-    };
-
-    // what a dry run and a version that is not kept put back: the peaks and
-    // whether the code after is reached, which an error unwinding an inlined
-    // body ends ('pop_scope')
-    struct compile_state {
-        compile_peaks peaks{};
         scope_stack::reach_state reach{};
     };
 
@@ -2686,9 +2685,8 @@ class toc final {
             if (tc.is_compiling_ and scp.is_func()) {
                 trace_frame_.emplace(
                     tc.machine(), call_site_tk, std::string{scp.name()},
-                    scp.is_compiled_in_place()
-                        ? ::machine::frame_kind::inlined
-                        : ::machine::frame_kind::noinline_body);
+                    scp.has_frame() ? ::machine::frame_kind::noinline_body
+                                    : ::machine::frame_kind::inlined);
             }
 
             tc_.scopes_.push(std::move(scp));
@@ -3003,6 +3001,8 @@ class toc final {
 
         definitions_.assert_generic_param_not_generic_type(name_tk,
                                                            name_tk.text());
+
+        definitions_.assert_generic_param_not_function(name_tk, name_tk.text());
     }
 
     // the parse is over: a type or a global value defined after a generic
@@ -3620,13 +3620,8 @@ class toc final {
             throw compile_error{name_tk, "expected a name"};
         }
 
-        if (not is_identifier(name_tk)) {
-            throw compile_error{
-                name_tk,
-                std::format("{} is not a valid name, a name starts with a "
-                            "letter or '_' and has only letters, digits and "
-                            "'_'",
-                            in_quotes(name_tk.text()))};
+        if (not is_identifier(name_tk.text())) {
+            throw compile_error{name_tk, invalid_name_message(name_tk.text())};
         }
 
         if (std::ranges::contains(reserved_names::keywords, name_tk.text())) {
@@ -3717,15 +3712,9 @@ class toc final {
 
     [[nodiscard]] auto compile_state_now() const -> compile_state {
         return {
-            .peaks{peaks_now()},
-            .reach{scopes_.reach_state_now()},
-        };
-    }
-
-    [[nodiscard]] auto peaks_now() const -> compile_peaks {
-        return {
             .max_scope_count{scopes_.max_scope_count()},
             .storage{storage_.peaks_now()},
+            .reach{scopes_.reach_state_now()},
         };
     }
 
@@ -3756,13 +3745,9 @@ class toc final {
     }
 
     auto restore_compile_state(const compile_state& state) -> void {
-        restore_peaks(state.peaks);
+        scopes_.set_max_scope_count(state.max_scope_count);
+        storage_.restore_peaks(state.storage);
         scopes_.restore_reach_state(state.reach);
-    }
-
-    auto restore_peaks(const compile_peaks& peaks) -> void {
-        scopes_.set_max_scope_count(peaks.max_scope_count);
-        storage_.restore_peaks(peaks.storage);
     }
 
     //
@@ -3771,19 +3756,6 @@ class toc final {
 
     // letters, digits and '_', not starting with a digit, written without
     // quotes
-    [[nodiscard]] static auto is_identifier(const token& name_tk) -> bool {
-        const std::string_view text{name_tk.text()};
-
-        const auto is_letter = [](const char ch) -> bool {
-            return (ch >= 'a' and ch <= 'z') or (ch >= 'A' and ch <= 'Z') or
-                   ch == '_';
-        };
-
-        return not text.empty() and is_letter(text.front()) and
-               std::ranges::all_of(text, [&](const char ch) -> bool {
-                   return is_letter(ch) or (ch >= '0' and ch <= '9');
-               });
-    }
 };
 
 //
@@ -3811,6 +3783,12 @@ class toc final {
 }
 
 // e.g. 'i8' of 'list<i8, 8>' for 'T'
+// 'true' or 'false'
+[[nodiscard]] inline auto is_bool_literal(const token& tk) -> bool {
+    return tk.is_text(reserved_names::true_value) or
+           tk.is_text(reserved_names::false_value);
+}
+
 [[nodiscard]] inline auto resolve_type_arg(const toc& tc,
                                            const std::string_view generic_name,
                                            const std::string_view param_name,
@@ -3821,7 +3799,7 @@ class toc final {
                                    "a string");
     }
 
-    if (tc.constant_value_of(arg_tk)) {
+    if (tc.constant_value_of(arg_tk) or is_bool_literal(arg_tk)) {
         throw_generic_arg_mismatch(
             arg_tk, generic_name, param_name, "type",
             std::format("the constant {}", in_quotes(arg_tk.text())));
@@ -3839,6 +3817,13 @@ class toc final {
     if (arg_tk.is_string()) {
         throw_generic_arg_mismatch(arg_tk, generic_name, param_name, "constant",
                                    "a string");
+    }
+
+    // e.g. 'true', no number
+    if (is_bool_literal(arg_tk)) {
+        throw_generic_arg_mismatch(
+            arg_tk, generic_name, param_name, "number",
+            std::format("the 'bool' constant {}", in_quotes(arg_tk.text())));
     }
 
     const std::optional<folded_value> constant{tc.constant_value_of(arg_tk)};

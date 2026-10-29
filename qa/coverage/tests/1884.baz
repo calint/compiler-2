@@ -1,0 +1,6 @@
+# a ')' after the last element with no value is a missing value, not an
+# element too many
+
+func main() {
+    var a = i8[2]{1, 2, )
+}

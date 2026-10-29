@@ -1,0 +1,7 @@
+# a '<' right after a parameter name ends the parameter, it has no type
+
+func f(x<T>) {
+}
+
+func main() {
+}

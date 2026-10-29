@@ -750,9 +750,9 @@ func fill<T type>(b mut T) {
     }
 }
 
-type pair<first type, second type> {
-    a first,
-    b second,
+type pair<A type, B type> {
+    a A,
+    b B,
 }
 type small_large = pair<small, large>
 # a parameter can also be a type, here the types of the fields

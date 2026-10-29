@@ -849,7 +849,7 @@ class stmt_identifier final : public statement {
 
         // e.g. the '-' of 'array_length(-a)'
         if (tz.is_unary_operator_next()) {
-            throw compile_error{tz.next_token_position(),
+            throw compile_error{tz,
                                 "a unary operator makes a value, not an array"};
         }
 

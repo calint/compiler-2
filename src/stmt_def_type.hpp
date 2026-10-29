@@ -48,23 +48,11 @@ class type_fields final {
     token close_brace_tk_;
 
   public:
-    auto add_to(type& tp, const token& name_tk) const -> void {
-        tp.set_name(name_tk.text());
-
-        // note: 'parse' checked the names
-
-        for (const stmt_def_type_field& fld : fields_) {
-            tp.add_field(fld.tok(), fld.name(), fld.get_type(),
-                         fld.array_count());
-        }
-    }
-
-    // e.g. 'x, y }' after the '{' of 'type point { x, y }', 'name_tk' names
-    // the type in the errors
-    auto parse(toc& tc, tokenizer& tz, const token& open_brace_tk,
-               const token& name_tk) -> void {
-
-        open_brace_tk_ = open_brace_tk;
+    // e.g. '{ x, y }' of 'type point { x, y }', 'name_tk' names the type in
+    // the errors
+    // note: the callers dispatch on the '{'
+    type_fields(toc& tc, tokenizer& tz, const token& name_tk)
+        : open_brace_tk_{tz.seen_char_token('{')} {
 
         while (true) {
             // a field starts with its name
@@ -84,7 +72,7 @@ class type_fields final {
                                           tc.where(existing->tok()))};
             }
 
-            fields_.emplace_back(tc, field_tk, tz);
+            fields_.emplace_back(tc, field_tk, tz, name_tk);
 
             if (is_next_close_brace(tz)) {
                 break;
@@ -104,6 +92,17 @@ class type_fields final {
             if (is_next_close_brace(tz)) {
                 break;
             }
+        }
+    }
+
+    auto add_to(type& tp, const token& name_tk) const -> void {
+        tp.set_name(name_tk.text());
+
+        // note: the constructor checked the names
+
+        for (const stmt_def_type_field& fld : fields_) {
+            tp.add_field(fld.tok(), fld.name(), fld.get_type(),
+                         fld.array_count());
         }
     }
 
@@ -262,13 +261,7 @@ class stmt_def_type final : public statement {
 
   public:
     stmt_def_type(toc& tc, const token tk, const token name_tk, tokenizer& tz)
-        : statement{tk}, name_tk_{name_tk} {
-
-        // e.g. the '{' of 'type point { x, y }'
-        // note: the definition is dispatched on the '{'
-        const token open_brace_tk{tz.seen_char_token('{')};
-
-        fields_.parse(tc, tz, open_brace_tk, name_tk_);
+        : statement{tk}, name_tk_{name_tk}, fields_{tc, tz, name_tk_} {
 
         fields_.add_to(type_, name_tk_);
 
@@ -539,14 +532,8 @@ class type_instantiator final {
         generic_reparse reparse{tc, generic.definition, *generic.fields_tk};
         reparse.scope().add_args(instance.args);
 
-        tokenizer& generic_tz{reparse.tz()};
-
-        // note: 'define_generic' checked the '{' of a generic without a base
-        const token open_brace_tk{generic_tz.seen_char_token('{')};
-
         // only read to fill 'type_', not printed by 'source_to'
-        type_fields fields;
-        fields.parse(tc, generic_tz, open_brace_tk, alias_tk);
+        const type_fields fields{tc, reparse.tz(), alias_tk};
         fields.add_to(tp, alias_tk);
     }
 

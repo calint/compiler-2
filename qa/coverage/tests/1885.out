@@ -1,0 +1,4 @@
+
+1885.baz:7:15: a generic argument is one name or constant, not an array
+type b = buf<4[2]>
+              ^

@@ -1,4 +1,4 @@
 
-1535.baz:4:15: '\x0c' not found
+1535.baz:4:15: '\x0c' is not a valid name, a name starts with a letter or '_' and has only letters, digits and '_'
     var a = 1 \x0c+ q
               ^~~~

@@ -2313,7 +2313,7 @@ class stmt_call final : public statement {
 
         // e.g. the '.' of 'mk().y' or 'mk().sum()', a result has no storage
         // to read a field of or to call a method on
-        if (tz.peek_char() == '.') {
+        if (tz.peek_char_after_whitespace() == '.') {
             throw compile_error{
                 tz, std::format("store the result of {} in a variable before "
                                 "reading a field or calling a method of it",

@@ -1,0 +1,9 @@
+# an array as an argument of a generic type is rejected, an argument is one
+# name or constant
+
+type buf<cap> {
+    a i8[cap]
+}
+type b = buf<4[2]>
+func main() {
+}

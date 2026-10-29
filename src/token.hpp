@@ -128,6 +128,19 @@ static_assert(std::ranges::all_of(builtin_functions,
     return not text.empty() and text.front() >= '0' and text.front() <= '9';
 }
 
+// letters, digits and '_', not starting with a digit
+[[nodiscard]] inline auto is_identifier(const std::string_view text) -> bool {
+    const auto is_letter = [](const char ch) -> bool {
+        return (ch >= 'a' and ch <= 'z') or (ch >= 'A' and ch <= 'Z') or
+               ch == '_';
+    };
+
+    return not text.empty() and is_letter(text.front()) and
+           std::ranges::all_of(text, [&](const char ch) -> bool {
+               return is_letter(ch) or (ch >= '0' and ch <= '9');
+           });
+}
+
 // a word of the source with the whitespace and comments around it and its
 // place (file, indexes, line), kept by the node that parsed it, so the source
 // is written back from the tokens ('source_to') and an error points at one

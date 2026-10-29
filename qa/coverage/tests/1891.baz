@@ -1,0 +1,12 @@
+# a generic parameter named like a generic function is rejected
+
+func first<T type>(x T) res T {
+    res = x
+}
+
+type pair<first type> {
+    a first
+}
+
+func main() {
+}

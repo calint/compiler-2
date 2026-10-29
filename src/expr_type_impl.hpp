@@ -166,6 +166,14 @@ inline auto expr_type::parse_fields(toc& tc, tokenizer& tz) -> void {
                 break;
             }
 
+            // e.g. the second ',' of '{x, y,,}', no value is too much there
+            if (not starts_value(tz)) {
+                throw compile_error{
+                    tz,
+                    std::format("expected '}}' to close the value of type {}",
+                                in_quotes(tp.name()))};
+            }
+
             // the error is at the field that is too much
             // e.g. the 'z' of '{x, y, z}' for a type with two fields
             throw compile_error{tz, std::format("too many fields for type {}",
@@ -414,9 +422,10 @@ inline auto expr_type::assert_copy_source_shape(const toc& tc) const -> void {
         return;
     }
 
-    if (is_array_destination_) {
-        throw compile_error{tok(), "expected an array"};
-    }
+    // note: the parse rejected an instance copied into an array
+    //       ('parse_copy_source')
+
+    assert(not is_array_destination_);
 
     throw_unindexed_array(tok(), ident->dotted_path());
 }

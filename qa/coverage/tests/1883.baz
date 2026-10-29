@@ -1,0 +1,8 @@
+# a ',' after the last field with no value is a missing '}', not a field too
+# many
+
+type p {x, y}
+
+func main() {
+    var a = p{1, 2,,}
+}

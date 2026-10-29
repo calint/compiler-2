@@ -1,4 +1,4 @@
 
-1508.baz:3:13: 'a\x01b' not found
+1508.baz:3:13: 'a\x01b' is not a valid name, a name starts with a letter or '_' and has only letters, digits and '_'
     var x = a\x01b
             ^~~~~~

@@ -142,11 +142,16 @@ class tokenizer final {
             return;
         }
 
-        const char delimiter{peek_char()};
+        // e.g. the second '==' of 'x == 1 == true', an operator is quoted
+        // whole
+        const std::string_view op{operator_at_cursor()};
 
-        throw compile_error{
-            *this, std::format("unexpected {}",
-                               in_quotes(std::string_view{&delimiter, 1}))};
+        const std::string_view delimiter{
+            op.empty() ? std::string_view{&src_.at(char_ix_), 1} : op,
+        };
+
+        throw compile_error{*this,
+                            std::format("unexpected {}", in_quotes(delimiter))};
     }
 
     // a marker at the cursor, without text or whitespace
@@ -293,15 +298,6 @@ class tokenizer final {
         assert(is_token_text_at_source(tk));
 
         move_back(char_ix_ - tk.source_begin_index());
-    }
-
-    auto rewind_to_position(const token& pos_tk) -> void {
-        const size_t new_pos{pos_tk.start_index()};
-
-        assert(new_pos <= char_ix_);
-
-        const size_t char_count{char_ix_ - new_pos};
-        move_back(char_count);
     }
 
     // the token of 'ch' that the caller saw next, e.g. by

@@ -202,6 +202,13 @@ struct generic_arg_tokens {
                     tz.is_next_char_token('['),
                 }) {
 
+                // e.g. the '[' of 'buf<4[2]>', a field 'x T[n]' makes one
+                if (takes_constants) {
+                    throw compile_error{*bracket_tk,
+                                        "a generic argument is one name or "
+                                        "constant, not an array"};
+                }
+
                 throw compile_error{*bracket_tk,
                                     "a type argument is a type name, not an "
                                     "array, an array parameter is written "

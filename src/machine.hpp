@@ -38,7 +38,7 @@ struct runtime_check {
 };
 
 // the registers of the calls the target provides, see
-// 'registers_for_target_call'
+// 'target_call_registers'
 struct target_call_names {
     // the descriptor or sector, the address and the count or size; 'exit'
     // takes the first
@@ -104,7 +104,7 @@ struct target_description {
 //                  'held_registers' (what a front-end step holds),
 //                  'free_named_register(s)', 'slot_register', 'register_view',
 //                  'alloc_named_register', 'make_register_operand',
-//                  'registers_for_target_call'
+//                  'target_call_registers'
 //   operations     'add_subtract', 'multiply', 'divide', 'shift', 'bitwise',
 //                  'unary', 'zero', 'copy_value', 'store_bytes',
 //                  'address_of', 'scale_index', 'store_boolean',
@@ -286,14 +286,6 @@ class machine {
         std::string bytes;
     };
 
-    struct target_call_registers {
-        // argument register names in parameter order
-        std::span<const std::string_view> arguments;
-
-        // result register name, empty for the sector functions
-        std::string_view result;
-    };
-
   private:
     // what compiling a version of code changes in the machine
     struct version_state {
@@ -388,7 +380,7 @@ class machine {
     };
 
   private:
-    // a failure that reports its line, see 'mark_used'
+    // a failure that reports its line, see 'mark_failure'
     struct failure_location {
         std::string_view routine;
         size_t file_ix{};
@@ -987,7 +979,7 @@ class machine {
 
     // a call of 'read', 'write', 'sector_read' or 'sector_write' with its
     // arguments and its result in the registers of
-    // 'registers_for_target_call', 'result' empty for a sector function; a
+    // 'target_call_registers', 'result' empty for a sector function; a
     // sector is an unsigned 32 bit number, the size of a sector transfer is
     // 'sector_size_bytes', a sector past the end of the card panics where the
     // target can tell
@@ -1342,28 +1334,6 @@ class machine {
         return result;
     }
 
-    // the registers of the arguments and the result of a call of 'function'
-    [[nodiscard]] auto
-    registers_for_target_call(const target_call function) const
-        -> target_call_registers {
-
-        const target_call_names& names{target_.target_calls};
-
-        if (function == target_call::sector_read or
-            function == target_call::sector_write) {
-
-            return {
-                .arguments{names.arguments},
-                .result{},
-            };
-        }
-
-        return {
-            .arguments{names.arguments},
-            .result{names.result},
-        };
-    }
-
     // ends the data at 'dat.end', then the variables from 'vars' to
     // 'vars.end'
     auto reserve_variables(const size_t alignment, const size_t size_bytes)
@@ -1446,6 +1416,13 @@ class machine {
 
         copy_value(src_loc_tk, indent, dst,
                    operand::imm(value ? 1 : 0, default_type()));
+    }
+
+    // the registers of the arguments and the result of 'call_target'
+    [[nodiscard]] auto target_call_registers() const
+        -> const target_call_names& {
+
+        return target_.target_calls;
     }
 
     [[nodiscard]] auto variables_base_past_vars_bytes() const
@@ -1675,7 +1652,13 @@ class machine {
             return false;
         }
 
-        mark_used(handler.label, src_loc_tk);
+        mark_used(handler.label);
+
+        failure_locations_.push_back({
+            .routine{handler.label},
+            .file_ix{src_loc_tk.file_index()},
+            .line{src_loc_tk.at_line()},
+        });
 
         return true;
     }
@@ -1684,20 +1667,6 @@ class machine {
     // version that is not kept and discarded code use nothing
     auto mark_used(const std::string_view routine) -> void {
         state_.used_routines.emplace(routine);
-    }
-
-    // the failure at 'src_loc_tk' is reported by the handler of 'routine',
-    // which names its file and line, see 'mark_used'
-    auto mark_used(const std::string_view routine, const token& src_loc_tk)
-        -> void {
-
-        mark_used(routine);
-
-        failure_locations_.push_back({
-            .routine{routine},
-            .file_ix{src_loc_tk.file_index()},
-            .line{src_loc_tk.at_line()},
-        });
     }
 
     [[nodiscard]] auto out_of_registers_error(const token& src_loc_tk) const
@@ -1928,16 +1897,14 @@ class machine {
         assert(state_.registers.unavailable_mask() == 0);
     }
 
-    // the arguments of a call of 'function' and its result, empty when it has
-    // none, are in the registers 'registers_for_target_call' gives it, at the
-    // width of a register
+    // the arguments of a call of 'function' and its result, empty for a
+    // sector function, are in the registers 'target_call_registers' gives,
+    // at the width of a register
     auto assert_target_call_registers(const target_call function,
                                       const std::span<const operand> arguments,
                                       const operand& result) const -> void {
 
-        const target_call_registers registers{
-            registers_for_target_call(function),
-        };
+        const target_call_names& registers{target_.target_calls};
 
         assert(arguments.size() == registers.arguments.size());
 
@@ -1950,7 +1917,8 @@ class machine {
                    arg.type_ref().size_bytes() == default_type().size_bytes());
         }
 
-        assert(result.is_empty() == registers.result.empty());
+        assert(result.is_empty() == (function == target_call::sector_read or
+                                     function == target_call::sector_write));
 
         assert(result.is_empty() or
                (register_index_of(result.register_name()) ==

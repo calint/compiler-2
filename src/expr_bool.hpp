@@ -860,19 +860,20 @@ class expr_bool_op final : public statement {
     }
 
     // a side that folded as an immediate: a typed constant at its own type,
-    // e.g. 'i16(300) + 1', an untyped one at 'untyped_type', the type of the
-    // constant name or the default type for a list
+    // e.g. 'i16(300) + 1' or -128 for '-i8(-128)', an untyped one at
+    // 'untyped_type', the type of the constant name or the default type for a
+    // list
     [[nodiscard]] static auto immediate_of(const comparison_side& side,
                                            const type& untyped_type)
         -> operand {
 
         assert(side.folded);
 
-        if (side.folded->is_typed()) {
-            return typed_constant(side);
-        }
+        const type& value_type{
+            side.folded->is_typed() ? *side.folded->own_type : untyped_type,
+        };
 
-        return operand::imm(side.folded->value, untyped_type);
+        return operand::imm(side.folded->value, value_type);
     }
 
     // a 'bool' is 0 or 1 so it needs no comparison with 0; inversion and
@@ -1040,15 +1041,6 @@ class expr_bool_op final : public statement {
         }
 
         return left_operand(tc, indent, condition, held);
-    }
-
-    // the value at the width of its type, e.g. -128 for '-i8(-128)'
-    [[nodiscard]] static auto typed_constant(const comparison_side& side)
-        -> operand {
-
-        assert(side.folded and side.folded->is_typed());
-
-        return operand::imm(side.folded->value, *side.folded->own_type);
     }
 };
 
@@ -1223,13 +1215,7 @@ class expr_bool final : public statement {
 
         expr_bool_op* const op{std::get_if<expr_bool_op>(&bools_.front())};
 
-        if (op == nullptr) {
-            return std::nullopt;
-        }
-
-        const expr_arith* const arith{op->arithmetic()};
-
-        if (arith == nullptr) {
+        if (op == nullptr or op->arithmetic() == nullptr) {
             return std::nullopt;
         }
 
@@ -1336,16 +1322,13 @@ class expr_bool final : public statement {
 
         const bool is_or{is_or_list() != inverted};
 
-        if (std::holds_alternative<expr_bool>(bools_.at(expr_index))) {
-            const expr_bool& nested_expr{
-                std::get<expr_bool>(bools_.at(expr_index)),
-            };
+        if (const expr_bool* const nested_expr{
+                std::get_if<expr_bool>(&bools_.at(expr_index)),
+            }) {
 
             const std::string next_label{
-                bools_.at(expr_index + 1)
-                    .visit([&tc](const auto& next) -> std::string {
-                        return tc.create_cmp_label(next.tok());
-                    }),
+                tc.create_cmp_label(
+                    as_statement(bools_.at(expr_index + 1)).tok()),
             };
 
             // an 'or' continues when false and an 'and' continues when true
@@ -1358,8 +1341,8 @@ class expr_bool final : public statement {
                 },
             };
 
-            return nested_expr.compile_with_label(tc, indent, nested_targets,
-                                                  inverted, dst);
+            return nested_expr->compile_with_label(tc, indent, nested_targets,
+                                                   inverted, dst);
         }
 
         const expr_bool_op& expr{std::get<expr_bool_op>(bools_.at(expr_index))};
@@ -1386,12 +1369,13 @@ class expr_bool final : public statement {
             is_stored_only ? std::string_view{} : targets.if_true,
         };
 
-        if (std::holds_alternative<expr_bool>(bools_.back())) {
-            const expr_bool& nested_expr{std::get<expr_bool>(bools_.back())};
+        if (const expr_bool* const nested_expr{
+                std::get_if<expr_bool>(&bools_.back()),
+            }) {
 
             const condition_result const_eval{
-                nested_expr.compile_with_label(tc, indent, targets, inverted,
-                                               dst),
+                nested_expr->compile_with_label(tc, indent, targets, inverted,
+                                                dst),
             };
 
             // the nested list already emitted its final branch

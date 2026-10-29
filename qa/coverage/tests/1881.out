@@ -1,0 +1,4 @@
+
+1881.baz:6:13: constant 'array_length(pad)' does not fit 'i32', use 'i32(...)'
+    var c = array_length(pad)
+            ^~~~~~~~~~~~

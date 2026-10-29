@@ -160,9 +160,7 @@ class stmt_builtin_io final : public statement {
 
         x.comment(tok(), indent, statement::trimmed_source(*this));
 
-        const machine::target_call_registers registers{
-            x.registers_for_target_call(io_.function),
-        };
+        const target_call_names& registers{x.target_call_registers()};
 
         const std::vector<operand> args{
             compile_arguments(tc, indent, registers.arguments, buffer),

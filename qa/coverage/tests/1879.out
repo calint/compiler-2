@@ -1,0 +1,4 @@
+
+1879.baz:8:8: generic parameter 'T' hides the function 'T' defined at 4:6, use another name
+func f<T type>(a T) res {
+       ^

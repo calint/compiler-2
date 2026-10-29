@@ -4,10 +4,13 @@
 #include <cassert>
 #include <cstddef>
 #include <cstdint>
+#include <format>
 #include <optional>
 #include <ostream>
 #include <utility>
 
+#include "compile_error.hpp"
+#include "constant_arith.hpp"
 #include "ident_info.hpp"
 #include "statement.hpp"
 #include "stmt_call.hpp"
@@ -97,6 +100,16 @@ class stmt_builtin_array_length final : public statement {
         }
 
         const int64_t length{static_cast<int64_t>(*array_len)};
+
+        // e.g. 'i8[0x80000000]' on rv32i, an array size is not limited to the
+        // default type, like the 'n' of a 'foo' over it
+        if (not constant_arith::fits_width(length, get_type())) {
+            throw compile_error{
+                tok(),
+                std::format("constant {} does not fit {}, use '{}(...)'",
+                            in_quotes(statement::trimmed_source(*this)),
+                            in_quotes(get_type().name()), get_type().name())};
+        }
 
         // typed, so a comparison gets the verdict of the length computed at
         // run time, e.g. in a function checked without a call

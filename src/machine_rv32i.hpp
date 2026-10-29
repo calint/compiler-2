@@ -543,7 +543,7 @@ class machine_rv32i : public machine {
                           [[maybe_unused]] const operand& result)
         -> void override {
 
-        // the arguments are in the registers of 'registers_for_target_call',
+        // the arguments are in the registers of 'target_call_registers',
         // checked by 'call_target'; 'a7' selects the system call or receives
         // the return address
         const operand call_register{

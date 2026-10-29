@@ -1,6 +1,44 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] hard: design review series 2, round 18 (2026-10-29, user: another design
+    review next to the round 17 bug hunt; 7 reviewers A-G, each reading one of
+    the largest files whole: the front end, 'toc', 'stmt_def_func',
+    'expr_any'/'expr_bool', 'machine_x86_64', 'machine', 'statement' and
+    'stmt_def_type'; a finding that re-opens a decision needs a measured gain)
+    => done (2026-10-29): behavior-preserving, listings verified equal: the
+       tokenizer backtracks only by copying ('rewind_to_position' gone),
+       'loaded_paths_' a local of the parse, the frame base register read from
+       the machine, 'compile_peaks' flattened into 'compile_state',
+       'is_compiled_in_place' and the 'is_builtin' flag gone, a function's
+       result assigned directly, small 'expr_bool'/'expr_any' cleanups, one
+       x86_64 "through a scratch register" step, 'push'/'pop' wrappers gone,
+       one accessor of the target call registers, a single-use 'mark_used'
+       overload inlined, 'type_fields' parses in its constructor; A2 a field
+       read of a call result on the next line got "unexpected '.'" (1890);
+       dropped: C2 the always-0 indent of 'check_body' (weak)
+[x] hard: bug hunt series 2, round 17 (2026-10-29, user: one more round, run
+    as a bug hunt only; hunters A crash fuzzing with the asan build, B an own
+    differential generator, C the changes of rounds 15 and 16, D generics and
+    methods, E x86_64 at its limits, F rv32i code and images on all targets, G
+    every compile error site)
+    => done (2026-10-29): D1 a generic parameter named like a function gave
+       a call two meanings ('T(5)' converted for 'i8' and called the function
+       for a record), now rejected in both definition orders (1879, 1880,
+       1891), the tutorial's 'pair<first type, second type>' renamed to
+       'pair<A type, B type>'; F1
+       'array_length' of an 'i8[0x80000000]' wrapped to -2^31 on rv32i, now
+       "does not fit" like the 'n' of a 'foo' (1881); messages: 'true'/'false'
+       as a generic argument (1882), no value after a ',' is not one too many
+       (1883, 1884), an array as a generic type argument (1885), "unexpected
+       '=='" (1886), an invalid name is not "not found" (1887), a type that
+       contains itself (1888), a '<' after a parameter name (1889); the
+       unreachable "expected an array" of 'assert_copy_source_shape' is an
+       assert; A, B, C, E found no bug in about 300000 mutated compiles,
+       190000 differential runs and 30000 mixed-width programs; dropped: G5
+       an unknown name before '<' in a type position (needs the type
+       parameters while the head is parsed), A2 a character literal as a
+       type (the message shows it as written)
 [x] hard: design review series 2, round 16 (2026-10-29, user: another round; 7
     reviewers A-G on the round 15 changes, B the README 8.1 table of undefined
     behavior end to end, C, D, F the reviewability of 'stmt_call',

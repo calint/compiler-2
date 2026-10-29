@@ -251,7 +251,6 @@ class program final {
     std::reference_wrapper<source_files> files_;
     std::vector<std::unique_ptr<statement>> statements_;
     std::vector<file_statements> file_statements_;
-    std::set<std::filesystem::path> loaded_paths_;
     toc tc_; // table of contents
 
   public:
@@ -265,9 +264,7 @@ class program final {
         {
             const toc::scope_entry root{tc_, scope::block()};
 
-            loaded_paths_.insert(identity_path(files.name(0)));
-
-            parse_files(0);
+            parse_files();
 
             tc_.assert_generic_params_free();
         }
@@ -406,9 +403,14 @@ class program final {
     // file without more includes parses its definitions and is closed; the
     // files are a stack, not nested calls, so an include is no level of the
     // nesting limit
-    auto parse_files(const size_t main_file_ix) -> void {
+    auto parse_files() -> void {
+        // the identities of the loaded files, the main file first
+        std::set<std::filesystem::path> loaded_paths{
+            identity_path(files_.get().name(0)),
+        };
+
         std::vector<open_file> open_files;
-        open_files.push_back(opened_file(main_file_ix));
+        open_files.push_back(opened_file(0));
 
         while (not open_files.empty()) {
             open_file& file{open_files.back()};
@@ -420,7 +422,9 @@ class program final {
                 continue;
             }
 
-            const std::optional<size_t> loaded_ix{parse_include(file, tk)};
+            const std::optional<size_t> loaded_ix{
+                parse_include(file, tk, loaded_paths),
+            };
 
             if (loaded_ix) {
                 open_files.push_back(opened_file(*loaded_ix));
@@ -431,7 +435,9 @@ class program final {
     // a file is loaded once, a later 'include' of it, also from a file it
     // includes, changes nothing; the loaded file, none when it was loaded
     // before
-    [[nodiscard]] auto parse_include(open_file& file, const token& include_tk)
+    [[nodiscard]] auto
+    parse_include(open_file& file, const token& include_tk,
+                  std::set<std::filesystem::path>& loaded_paths)
         -> std::optional<size_t> {
 
         std::unique_ptr<stmt_include> include{
@@ -450,7 +456,7 @@ class program final {
 
         file.parsed.emplace_back(std::move(include));
 
-        const bool is_new{loaded_paths_.insert(identity_path(path)).second};
+        const bool is_new{loaded_paths.insert(identity_path(path)).second};
 
         if (not is_new) {
             return std::nullopt;

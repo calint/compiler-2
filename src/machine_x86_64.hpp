@@ -972,7 +972,8 @@ class machine_x86_64 final : public machine {
         -> void override {
 
         for (const size_t index : saved | std::views::reverse) {
-            pop(indent, qword_register(register_names_.at(index).qword));
+            assembler_.instruction(indent, op::pop,
+                                   register_names_.at(index).qword);
         }
     }
 
@@ -981,7 +982,8 @@ class machine_x86_64 final : public machine {
         -> void override {
 
         for (const size_t index : saved) {
-            push(indent, qword_register(register_names_.at(index).qword));
+            assembler_.instruction(indent, op::push,
+                                   register_names_.at(index).qword);
         }
     }
 
@@ -1101,11 +1103,7 @@ class machine_x86_64 final : public machine {
     auto check_byte_product(const token& src_loc_tk, const size_t indent,
                             const operand& left, const operand& right) -> void {
 
-        const operand low_byte{
-            make_register_operand(left.register_name(), builtins().i8),
-        };
-
-        mov(src_loc_tk, indent, right, low_byte);
+        mov(src_loc_tk, indent, right, sized_register(left, size_byte_));
         cmp(src_loc_tk, indent, right, left);
 
         branch_to_failure(src_loc_tk, indent, condition::ne, overflow_failure);
@@ -1338,22 +1336,13 @@ class machine_x86_64 final : public machine {
                                   const op code, const operand& dst_op,
                                   const operand& src_op) -> void {
 
-        const size_t dst_size_bytes{dst_op.type_ref().size_bytes()};
-        const size_t src_size_bytes{src_op.type_ref().size_bytes()};
-
         const operand reg{
-            alloc_scratch_register(src_loc_tk, indent,
-                                   builtin_type_for_size_bytes(dst_size_bytes)),
+            alloc_scratch_register(
+                src_loc_tk, indent,
+                builtin_type_for_size_bytes(dst_op.type_ref().size_bytes())),
         };
 
-        if (dst_size_bytes > src_size_bytes) {
-            emit(indent, op::movsx, reg, src_op);
-        } else if (dst_size_bytes < src_size_bytes) {
-            emit(indent, op::mov, reg, sized_memory(src_op, dst_size_bytes));
-        } else {
-            emit(indent, op::mov, reg, src_op);
-        }
-
+        mov(src_loc_tk, indent, reg, src_op);
         emit(indent, code, dst_op, reg);
 
         free_scratch_register(src_loc_tk, indent, reg);
@@ -1715,18 +1704,7 @@ class machine_x86_64 final : public machine {
             return;
         }
 
-        // the scratch register must match 'dst' so the op has equal-size
-        // operands
-        const operand reg_sx{
-            alloc_scratch_register(src_loc_tk, indent,
-                                   builtin_type_for_size_bytes(dst_size_bytes)),
-        };
-
-        emit(indent, op::movsx, reg_sx, src_op);
-
-        emit(indent, code, dst_op, reg_sx);
-
-        free_scratch_register(src_loc_tk, indent, reg_sx);
+        emit_memory_to_memory_op(src_loc_tk, indent, code, dst_op, src_op);
     }
 
     // the handler to jump to, or with the line the stub of the line
@@ -1906,20 +1884,6 @@ class machine_x86_64 final : public machine {
                 immediate(factor_info.shift));
 
         return true;
-    }
-
-    auto pop(const size_t indent, const operand& dst) -> void {
-        assert(dst.is_register() and
-               dst.type_ref().size_bytes() == size_qword_);
-
-        assembler_.instruction(indent, op::pop, to_argument(dst));
-    }
-
-    auto push(const size_t indent, const operand& src) -> void {
-        assert(src.is_register() and
-               src.type_ref().size_bytes() == size_qword_);
-
-        assembler_.instruction(indent, op::push, to_argument(src));
     }
 
     // e.g. the fixed registers of 'rep movsb' and syscalls

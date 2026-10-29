@@ -1,0 +1,13 @@
+# a field read of a call result on the next line gets the same message as on
+# one line
+
+type p {x, y}
+
+func mk() res p {
+    res = {1, 2}
+}
+
+func main() {
+    var a = mk()
+        .y
+}

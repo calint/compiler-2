@@ -199,6 +199,15 @@ class compile_error final : public std::exception {
     return std::format("'{}'", source);
 }
 
+// a word that cannot be a name, e.g. '$x'
+[[nodiscard]] inline auto invalid_name_message(const std::string_view name)
+    -> std::string {
+
+    return std::format("{} is not a valid name, a name starts with a letter "
+                       "or '_' and has only letters, digits and '_'",
+                       in_quotes(name));
+}
+
 // a count with its noun for a message, e.g. '1 argument' or '2 arguments'
 [[nodiscard]] inline auto counted(const size_t count,
                                   const std::string_view noun) -> std::string {
