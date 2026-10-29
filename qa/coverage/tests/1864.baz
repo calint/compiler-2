@@ -1,0 +1,12 @@
+# type arguments after the 'self' result of a constructor are reported as
+# such, 'self' is not a keyword there
+
+type box<n> {x i8[n]}
+
+type point {x, y}
+
+func point.at(a) self box<3> {
+}
+
+func main() {
+}

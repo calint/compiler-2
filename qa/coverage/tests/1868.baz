@@ -1,0 +1,9 @@
+# a comparison after an instance is a condition, like after a number
+
+type point {x, y}
+
+func main() {
+    var p = point{1, 2}
+    var q = point{1, 2}
+    q = p == p
+}

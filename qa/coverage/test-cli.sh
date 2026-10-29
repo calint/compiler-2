@@ -326,14 +326,24 @@ CLI_COMMENT_LOCATIONS() {
         grep -Fq '[0906.baz:4:5] exit(three())' gen.s
         grep -Fq '[include/cycle.baz:4:5] res = 3' gen.s
     done
-    # a file included by its absolute path has no relative name, it keeps
-    # the path as written
+    # a file included by its absolute path and a main file named with a
+    # directory or an absolute path give the same names
     printf 'func three() res {\n    res = 3\n}\n' >gen-abs-lib.baz
     printf 'include "%s/gen-abs-lib.baz"\n\nfunc main() {\n    exit(three())\n}\n' \
         "$PWD" >gen-abs-main.baz
-    "$BIN" gen-abs-main.baz >gen.s 2>err
-    grep -Fq "[$PWD/gen-abs-lib.baz:2:5] res = 3" gen.s
-    rm -f gen-abs-lib.baz gen-abs-main.baz
+    local main
+    for main in gen-abs-main.baz ../tests/gen-abs-main.baz \
+        "$PWD/gen-abs-main.baz"; do
+        "$BIN" "$main" >gen.s 2>err
+        grep -Fq "[gen-abs-lib.baz:2:5] res = 3" gen.s
+        grep -Fq "[gen-abs-main.baz:4:5] exit(three())" gen.s
+    done
+    # the panic message names the file the same way
+    printf 'func main() {\n    var a = i8[2]\n    var i = 3\n    a[i] = 1\n}\n' \
+        >gen-abs-panic.baz
+    "$BIN" --checks=upper,line "$PWD/gen-abs-panic.baz" >gen.s 2>err
+    grep -Fq 'panic: bounds at gen-abs-panic.baz:' gen.s
+    rm -f gen-abs-lib.baz gen-abs-main.baz gen-abs-panic.baz
     echo ok
 }
 

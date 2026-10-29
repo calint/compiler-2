@@ -1,0 +1,4 @@
+
+1866.baz:11:15: function 'point.set' has no result
+    var x = p.set(1)
+              ^~~

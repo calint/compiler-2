@@ -341,8 +341,10 @@ struct func_result {
 
         const token type_tk{tz.next_token()};
 
+        // 'self' is the result of a constructor
         const bool is_keyword{
-            std::ranges::contains(reserved_names::keywords, name_tk.text()),
+            not name_tk.is_text(reserved_names::self) and
+                std::ranges::contains(reserved_names::keywords, name_tk.text()),
         };
 
         // a keyword is not a result name, e.g. the 'func' of 'func g<T

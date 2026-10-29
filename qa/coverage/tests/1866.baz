@@ -1,0 +1,12 @@
+# a method without a result as a value is named with its type
+
+type point {x, y}
+
+func mut point.set(a) {
+    self.x = a
+}
+
+func main() {
+    var p = point{1, 2}
+    var x = p.set(1)
+}

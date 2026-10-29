@@ -1,0 +1,9 @@
+# a constructor without a body is reported at what follows its result, like a
+# function without a body
+
+type point {x, y}
+
+func point.at(a) self
+
+func main() {
+}

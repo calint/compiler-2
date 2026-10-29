@@ -1,0 +1,6 @@
+# an include of an empty file name
+
+include ""
+
+func main() {
+}

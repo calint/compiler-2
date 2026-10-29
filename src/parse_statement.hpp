@@ -11,6 +11,7 @@
 #include <format>
 #include <memory>
 #include <optional>
+#include <string_view>
 #include <utility>
 #include <variant>
 
@@ -44,15 +45,20 @@
 
 // a call of a function without a result where a value is needed, e.g. 'x =
 // array_copy(a, b, 1)'
-[[noreturn]] inline auto throw_no_value(const token& call_tk) -> void {
-    throw compile_error{call_tk, std::format("function {} has no result",
-                                             in_quotes(call_tk.text()))};
+[[noreturn]] inline auto throw_no_value(const token& call_tk,
+                                        const std::string_view name) -> void {
+
+    throw compile_error{
+        call_tk, std::format("function {} has no result", in_quotes(name))};
 }
 
 // a call with a result as a statement of its own, e.g. 'f(x)'
-[[noreturn]] inline auto throw_discarded_result(const token& call_tk) -> void {
-    throw compile_error{call_tk, std::format("the result of {} is discarded",
-                                             in_quotes(call_tk.text()))};
+[[noreturn]] inline auto throw_discarded_result(const token& call_tk,
+                                                const std::string_view name)
+    -> void {
+
+    throw compile_error{
+        call_tk, std::format("the result of {} is discarded", in_quotes(name))};
 }
 
 // the integer type of a conversion, e.g. 'i8' of 'i8(x)'; 'bool' and 'void'
@@ -121,7 +127,8 @@ inline auto parse_builtin(toc& tc, tokenizer& tz, const token& tk,
     // a built-in is not generic, e.g. 'read<i8>(0, buf)'
     if (fn != nullptr and tz.peek_char_after_whitespace() == '<') {
         throw compile_error{
-            tk, std::format("built-in function {} takes no type arguments",
+            tk, std::format("built-in function {} is not generic, it takes no "
+                            "type arguments",
                             in_quotes(tk.text()))};
     }
 
@@ -142,13 +149,13 @@ inline auto parse_builtin(toc& tc, tokenizer& tz, const token& tk,
     if (at == builtin_place::value and
         use == reserved_names::builtin_use::statement) {
 
-        throw_no_value(tk);
+        throw_no_value(tk, tk.text());
     }
 
     if (at == builtin_place::statement and
         use == reserved_names::builtin_use::value) {
 
-        throw_discarded_result(tk);
+        throw_discarded_result(tk, tk.text());
     }
 
     if (const stmt_builtin_io::io_function* const io{
@@ -358,7 +365,7 @@ inline auto parse_name_statement(toc& tc, tokenizer& tz, const token tk,
         }) {
 
         if (not(*call)->get_type().is_same(tc.builtins().void_type())) {
-            throw_discarded_result((*call)->tok());
+            throw_discarded_result((*call)->tok(), (*call)->callee_name());
         }
 
         return std::move(*call);
@@ -439,7 +446,7 @@ inline auto parse_operand(toc& tc, tokenizer& tz, unary_ops uops,
 
         // a function without a result has no value
         if ((*call)->get_type().is_same(tc.builtins().void_type())) {
-            throw_no_value((*call)->tok());
+            throw_no_value((*call)->tok(), (*call)->callee_name());
         }
 
         return std::move(*call);

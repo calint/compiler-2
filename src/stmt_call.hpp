@@ -422,8 +422,13 @@ class call_limits final {
     static auto assert_inline_nesting(toc& tc, const token& call_tk,
                                       const stmt_def_func& func) -> void {
 
+        // e.g. a recursion that a constant argument ends too late or never
         if (tc.scopes().inlined_nesting(func.name()) >= max_inlined_nesting) {
-            throw recursion_error(call_tk, func);
+            throw inlining_limit_error(
+                call_tk,
+                std::format("recursion of inlined function {} is nested "
+                            "deeper than {} calls, declare it 'noinline'",
+                            in_quotes(func.name()), max_inlined_nesting));
         }
 
         if (tc.scopes().count() < max_scope_count) {
@@ -437,7 +442,7 @@ class call_limits final {
                         max_scope_count));
     }
 
-    // an inlined recursion that constant arguments do not end
+    // an inlined recursion that runs out of registers
     [[nodiscard]] static auto recursion_error(const token& call_tk,
                                               const stmt_def_func& func)
         -> compile_error {
@@ -1892,6 +1897,15 @@ class stmt_call final : public statement {
                 .written_place{},
             });
         }
+    }
+
+    //
+    // class methods
+    //
+
+    // e.g. 'point.at' of 'point.at(1, 2)' or 'list.add' of 'lst.add(x)'
+    [[nodiscard]] auto callee_name() const -> std::string_view {
+        return func_name_;
     }
 
   private:

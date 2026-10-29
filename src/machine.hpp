@@ -1622,7 +1622,7 @@ class machine {
         -> std::string {
 
         return std::format("{} at {}:", panic_message(name),
-                           locations_.file_name(file_ix));
+                           locations_.relative_name(file_ix));
     }
 
     // the first register in the scratch order of the backend that is free,

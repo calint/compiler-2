@@ -1,4 +1,4 @@
 
-0604.baz:14:5: the result of 'point' is discarded
+0604.baz:14:5: the result of 'point.at' is discarded
     point.at(1, 2)
     ^~~~~

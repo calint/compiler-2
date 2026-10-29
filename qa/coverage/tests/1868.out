@@ -1,0 +1,4 @@
+
+1868.baz:8:11: a comparison makes a condition, which is not an operand here, store it in a 'bool' first
+    q = p == p
+          ^

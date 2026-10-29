@@ -889,11 +889,12 @@ class machine_rv32i : public machine {
         assembler_.bgeu(indent, last_start.register_name(),
                         start.register_name(), fits.reference);
 
+        // note: freed before the jump, a far one needs a scratch register
+        free_scratch_register(src_loc_tk, indent, last_start);
+        free_scratch_register(src_loc_tk, indent, start);
         branch_to_failure(src_loc_tk, indent, frame_overflow_failure);
 
         assembler_.label(indent, fits.name);
-        free_scratch_register(src_loc_tk, indent, last_start);
-        free_scratch_register(src_loc_tk, indent, start);
         comment(src_loc_tk, indent, "frame capacity check end");
     }
 
@@ -937,11 +938,12 @@ class machine_rv32i : public machine {
         assembler_.bgeu(indent, lowest.register_name(), limit.register_name(),
                         fits.reference);
 
+        // note: freed before the jump, a far one needs a scratch register
+        free_scratch_register(src_loc_tk, indent, lowest);
+        free_scratch_register(src_loc_tk, indent, limit);
         branch_to_failure(src_loc_tk, indent, stack_overflow_failure);
 
         assembler_.label(indent, fits.name);
-        free_scratch_register(src_loc_tk, indent, lowest);
-        free_scratch_register(src_loc_tk, indent, limit);
         comment(src_loc_tk, indent, "stack capacity check end");
     }
 

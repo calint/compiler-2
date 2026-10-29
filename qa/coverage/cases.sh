@@ -5940,3 +5940,18 @@ SRC=1862 && COMPERR
 
 # the mark under a token that holds a tab reaches the end of the token
 SRC=1863 && COMPERR
+
+# type arguments after the 'self' result of a constructor
+SRC=1864 && COMPERR
+
+# a constructor without a body is reported at what follows its result
+SRC=1865 && COMPERR
+
+# a method without a result as a value is named with its type
+SRC=1866 && COMPERR
+
+# an include of an empty file name
+SRC=1867 && COMPERR
+
+# a comparison after an instance is a condition, like after a number
+SRC=1868 && COMPERR

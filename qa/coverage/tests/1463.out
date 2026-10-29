@@ -1,4 +1,4 @@
 
-1463.baz:3:5: built-in function 'exit' takes no type arguments
+1463.baz:3:5: built-in function 'exit' is not generic, it takes no type arguments
     exit<i8>(0)
     ^~~~

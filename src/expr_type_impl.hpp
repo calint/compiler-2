@@ -19,6 +19,7 @@
 #include "compile_error.hpp"
 #include "decouple.hpp"
 #include "expr_any.hpp"
+#include "expr_arith.hpp"
 #include "expr_type.hpp"
 #include "ident_info.hpp"
 #include "operand.hpp"
@@ -102,11 +103,14 @@ inline expr_type::expr_type(toc& tc, tokenizer& tz, const type& tp,
     assert_value_ends(tz);
 }
 
-// e.g. the '+' of 'p + 1', like 'n = p + 1' with a number destination
+// e.g. the '+' of 'p + 1'; a comparison, 'and' or 'or' gets the message of a
+// number destination
 inline auto expr_type::assert_value_ends(const tokenizer& tz) const -> void {
     if (not continues_expression(tz)) {
         return;
     }
+
+    expr_arith::assert_no_condition_next(tz);
 
     throw compile_error{tok(), not_a_number()};
 }

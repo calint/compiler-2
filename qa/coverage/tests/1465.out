@@ -1,4 +1,4 @@
 
-1465.baz:9:13: built-in function 'arrays_equal' takes no type arguments
+1465.baz:9:13: built-in function 'arrays_equal' is not generic, it takes no type arguments
     o.pos = arrays_equal<i8>(a, a, 4)
             ^~~~~~~~~~~~

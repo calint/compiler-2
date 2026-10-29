@@ -32,6 +32,10 @@ class stmt_include final : public statement {
         // escapes are decoded like in any other string, e.g. '\x20'
         file_name_ = path_tk_.string_bytes();
 
+        if (file_name_.empty()) {
+            throw compile_error{path_tk_, "the file name is empty"};
+        }
+
         // e.g. a NUL would end the path early and a line end split the
         // messages that name the file
         if (std::ranges::any_of(file_name_, is_control_char)) {

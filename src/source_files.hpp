@@ -144,38 +144,12 @@ class source_locations final {
   public:
     explicit source_locations(const source_files& files) : files_{files} {}
 
-    // e.g. 'include/x.baz', as the messages of the compiler name it
-    [[nodiscard]] auto file_name(const size_t file_ix) const
-        -> std::string_view {
-
-        return files_.get().name(file_ix);
-    }
-
-    // the file is named relative to the directory of the main file, so the
-    // text does not depend on where the compiler was run from
     [[nodiscard]] auto for_comment(const token& src_loc_tk) const
         -> std::string {
 
-        const std::filesystem::path main_dir{
-            std::filesystem::path{files_.get().name(0)}.parent_path(),
-        };
-
-        const std::filesystem::path src_path{
-            files_.get().name(src_loc_tk.file_index()),
-        };
-
-        const std::filesystem::path relative{
-            src_path.lexically_relative(main_dir),
-        };
-
-        // none from a relative 'main_dir' to an absolute path, e.g. an
-        // include of '/lib/a.baz', the path is shown as written
-        const std::filesystem::path shown{
-            relative.empty() ? src_path : relative,
-        };
-
         // note: a line end in a file name would end the comment
-        return std::format("{}:{}", printable(shown.string()),
+        return std::format("{}:{}",
+                           printable(relative_name(src_loc_tk.file_index())),
                            text(src_loc_tk, ':'));
     }
 
@@ -215,6 +189,23 @@ class source_locations final {
             text(src_loc_tk, ':'));
     }
 
+    // the file relative to the directory of the main file, e.g.
+    // 'include/x.baz', so the text does not depend on where the compiler was
+    // run from or how the main file was named
+    [[nodiscard]] auto relative_name(const size_t file_ix) const
+        -> std::string {
+
+        const std::filesystem::path main_dir{
+            absolute_path(files_.get().name(0)).parent_path(),
+        };
+
+        const std::filesystem::path src_path{
+            absolute_path(files_.get().name(file_ix)),
+        };
+
+        return src_path.lexically_relative(main_dir).string();
+    }
+
     [[nodiscard]] auto source_of(const token& src_loc_tk) const
         -> std::string_view {
 
@@ -234,5 +225,17 @@ class source_locations final {
 
         return std::format("{}{}{}", src_loc_tk.at_line(), separator,
                            column(src_loc_tk));
+    }
+
+    //
+    // statics
+    //
+
+    // e.g. '/w/include/x.baz' of 'lib/../include/x.baz' run from '/w'
+    [[nodiscard]] static auto absolute_path(const std::string_view name)
+        -> std::filesystem::path {
+
+        return std::filesystem::absolute(std::filesystem::path{name})
+            .lexically_normal();
     }
 };
