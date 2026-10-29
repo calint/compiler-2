@@ -1,0 +1,15 @@
+# a copy between two variables has no overlap check, they cannot overlap; a
+# constant count copies without the loop; within one variable the check stays
+
+dat d = i8[]{5, 6, 7}
+
+func main() {
+    let c = i8[]{1, 2, 3}
+    var a = i8[4]
+    var b = i8[4]
+    var n = 2
+    array_copy(c, a, 2)
+    array_copy(d, b, n)
+    array_copy(a, b, 3)
+    array_copy(a[0], a[1], n)
+}

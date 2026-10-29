@@ -103,14 +103,23 @@ inline expr_type::expr_type(toc& tc, tokenizer& tz, const type& tp,
     assert_value_ends(tz);
 }
 
-// e.g. the '+' of 'p + 1'; a comparison, 'and' or 'or' gets the message of a
-// number destination
+// e.g. the '+' of 'p + 1'; an equality gets the message of a number
+// destination, it makes a condition
 inline auto expr_type::assert_value_ends(const tokenizer& tz) const -> void {
     if (not continues_expression(tz)) {
         return;
     }
 
-    expr_arith::assert_no_condition_next(tz);
+    const std::optional<comparison_operator> op{
+        comparison_of(tz.peek_operator()),
+    };
+
+    // note: instances and arrays compare only by '==' and '!='
+    if (op == comparison_operator::equal or
+        op == comparison_operator::not_equal) {
+
+        expr_arith::assert_no_condition_next(tz);
+    }
 
     throw compile_error{tok(), not_a_number()};
 }

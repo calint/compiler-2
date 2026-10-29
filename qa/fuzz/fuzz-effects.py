@@ -5,8 +5,8 @@
 #
 # evaluation is left to right. a statement is rejected when a name that an
 # operand reads may be written by a call in a later operand of the same list:
-# the arguments of a call, a list of '+' and '-' and the sides of a
-# comparison; a value written in parts is rejected when a part reads, or a
+# the arguments of a call and the sides of a comparison; a list of '+' and '-'
+# reads each operand at its place, before a later call writes it; a value written in parts is rejected when a part reads, or a
 # call in it reads or writes, a part written before it; an assignment whose
 # value is one call is rejected when the call uses the destination. the model
 # applies the same rules and runs an accepted program left to right; each
@@ -156,11 +156,12 @@ def alias_call(node, dst):
     return any_overlap(names, written)
 
 
-def check_list(operands):
+def check_list(operands, ordered=True):
     # the rejection of a list as the compiler finds it: the order of its
-    # operands ('assert_not_written_later') first, then each operand in turn
-    if any(any_overlap(reads(operands[j]), writes(operands[k]))
-           for k in range(1, len(operands)) for j in range(k)):
+    # operands ('assert_not_written_later') first, unless an arithmetic list
+    # reads each at its place, then each operand in turn
+    if ordered and any(any_overlap(reads(operands[j]), writes(operands[k]))
+                       for k in range(1, len(operands)) for j in range(k)):
         return "order"
     for operand in operands:
         if operand[0] == "call":
@@ -296,7 +297,7 @@ class Generator:
         operands, text, value = self.sum()
         name = self.fresh()
         return Statement([f"var {name} = {text}"], name, value,
-                         check_list(operands))
+                         check_list(operands, ordered=False))
 
     def call(self):
         call = ("call", "f2", [self.operand(2), self.operand(2)])
@@ -321,7 +322,7 @@ class Generator:
         # call whose body uses the destination shares storage with its result
         operands, text, value = self.sum()
         dst = self.rnd.choice(["g0", "g1"])
-        rejection = check_list(operands)
+        rejection = check_list(operands, ordered=False)
         if len(operands) == 1 and operands[0][0] == "call":
             # note: one operand is the value itself, no '& 1023'
             rejection = check_call(operands[0], dst)

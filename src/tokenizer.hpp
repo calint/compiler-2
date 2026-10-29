@@ -345,9 +345,15 @@ class tokenizer final {
     // e.g. '{ a = { 1 } b = 2 }', a closer without an opener ends it early
     auto skip_braced_block() -> void {
         // note: every caller has seen the '{'
-        std::ignore = seen_char_token('{');
+        const token open_brace_tk{seen_char_token('{')};
 
         skip_to_unnested("}");
+
+        // reported at the '{' since the end of the source shows no line, like
+        // a block that is parsed
+        if (is_eos()) {
+            throw compile_error{open_brace_tk, "'{' is not closed"};
+        }
 
         std::ignore = expect_char_token('}', "expected '}' to close block");
     }

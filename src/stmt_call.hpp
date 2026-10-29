@@ -1903,6 +1903,11 @@ class stmt_call final : public statement {
     // note: set at the parse before the arguments are parsed
     [[nodiscard]] auto callee() const -> const stmt_def_func& { return *func_; }
 
+    // e.g. 'at' of 'point.at(1, 2)', 'tok()' is the type there
+    [[nodiscard]] auto callee_name_token() const -> const token& {
+        return constructor_ ? constructor_->name_tk : tok();
+    }
+
   private:
     // the type of each argument, one verdict for an inlined and a noinline
     // call: a name or a typed constant has the type of its parameter, its

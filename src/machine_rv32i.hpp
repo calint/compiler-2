@@ -392,6 +392,10 @@ class machine_rv32i : public machine {
         ".Lbaz_decimal_places",
     };
 
+    // the scratch of a far jump to a failure handler: the handler reads only
+    // 'a0' and 'sp' and does not return, so the register is dead there
+    static constexpr std::string_view failure_jump_register_{"t0"};
+
     std::string binary_file_name_;
     assembler_rv32i assembler_;
     std::vector<bulk_operation> bulk_operations_;
@@ -889,7 +893,6 @@ class machine_rv32i : public machine {
         assembler_.bgeu(indent, last_start.register_name(),
                         start.register_name(), fits.reference);
 
-        // note: freed before the jump, a far one needs a scratch register
         free_scratch_register(src_loc_tk, indent, last_start);
         free_scratch_register(src_loc_tk, indent, start);
         branch_to_failure(src_loc_tk, indent, frame_overflow_failure);
@@ -938,7 +941,6 @@ class machine_rv32i : public machine {
         assembler_.bgeu(indent, lowest.register_name(), limit.register_name(),
                         fits.reference);
 
-        // note: freed before the jump, a far one needs a scratch register
         free_scratch_register(src_loc_tk, indent, lowest);
         free_scratch_register(src_loc_tk, indent, limit);
         branch_to_failure(src_loc_tk, indent, stack_overflow_failure);
@@ -1222,17 +1224,15 @@ class machine_rv32i : public machine {
 
         const size_t bits{dst.type_ref().size_bits()};
 
-        // note: the front end rejects a constant count outside the width
+        // note: the front end rejects a constant count outside the width and
+        //       drops a count of 0
+
         assert(not constant.has_value() or
-               (*constant >= 0 and std::cmp_less(*constant, bits)));
+               (*constant > 0 and std::cmp_less(*constant, bits)));
 
         const uint32_t shift_count{
             static_cast<uint32_t>(constant.value_or(0)),
         };
-
-        if (constant.has_value() and shift_count == 0) {
-            return;
-        }
 
         const operation_scope scope{*this, dst, count};
 
@@ -1593,19 +1593,20 @@ class machine_rv32i : public machine {
                            const failure_handler& handler) -> void {
 
         if (not mark_failure(handler, src_loc_tk)) {
-            branch(indent, handler.label);
+            assembler_.resolved_jump(indent, handler.label,
+                                     failure_jump_register_);
+
             return;
         }
-
-        // a far jump to the entry must not take 'a0' for its scratch
-        const operation_scope scope{*this};
-        protect_register("a0");
 
         comment(src_loc_tk, indent, "source line");
         assembler_.li(indent, "a0", src_loc_tk.at_line());
 
-        branch(indent,
-               failure_entry_label(handler.label, src_loc_tk.file_index()));
+        const std::string entry_label{
+            failure_entry_label(handler.label, src_loc_tk.file_index()),
+        };
+
+        assembler_.resolved_jump(indent, entry_label, failure_jump_register_);
     }
 
     // a missing address would leave the loop width unproven

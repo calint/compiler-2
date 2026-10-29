@@ -556,8 +556,6 @@ class expr_arith final : public statement {
             return;
         }
 
-        assert_elements_not_written_later(tc);
-
         // the steps compiled in place, which the clobber check reads
         const std::vector<step> steps{plan_steps(tc, dst)};
 
@@ -720,17 +718,15 @@ class expr_arith final : public statement {
     //   'ix + 1'  =>  compiles 'ix', returns 1
     //   'ix - 2'  =>  compiles 'ix', returns -2
     // only an index asks, into a fresh register of the default type, so of
-    // what 'compile' does it needs the order check and the plan: a constant
-    // index folds before, the register is no storage that an element could
-    // read, and an index has no unary ops of its own
+    // what 'compile' does it needs the plan: a constant index folds before,
+    // the register is no storage that an element could read, and an index
+    // has no unary ops of its own
     [[nodiscard]] auto
     compile_without_trailing_addend(toc& tc, const size_t indent,
                                     const destination& dst) const
         -> std::optional<int64_t> {
 
         assert(list_uops_.is_empty());
-
-        assert_elements_not_written_later(tc);
 
         const std::vector<step> steps{plan_steps(tc, dst)};
 
@@ -801,11 +797,6 @@ class expr_arith final : public statement {
     }
 
   private:
-    // e.g. the 'gx' of 'gx + g()' with 'g' writing 'gx'
-    auto assert_elements_not_written_later(const toc& tc) const -> void {
-        assert_not_written_later(tc, operands_of(*this), "operand");
-    }
-
     // parentheses group an operation, around one plain element they mean
     // nothing, e.g. '(x)' is 'x' and '-(x)' is '-x'
     auto assert_parentheses_group() const -> void {
@@ -954,6 +945,17 @@ class expr_arith final : public statement {
 
             assert_constant_operand(element.tok(), s.op, step_value,
                                     dst.type_ref());
+
+            // like an identity of a regroupable step, e.g. 'x / 1' or 'x >> 0'
+            const bool changes_nothing{
+                (s.op == arithmetic_operator::divide and step_value == 1) or
+                    (is_shift(s.op) and step_value == 0),
+            };
+
+            if (changes_nothing) {
+                x.comment(element.tok(), indent, "changes nothing");
+                return;
+            }
 
             emit_operation(tc, indent, element.tok(), s.op, dst,
                            constant_operand(dst, step_value),
@@ -1418,8 +1420,17 @@ class expr_arith final : public statement {
         }
 
         if (is_division(op)) {
+            // note: a constant divisor of 0 is rejected at compile time, so
+            //       only -1 can fail, with the minimum as the dividend
+
+            const bool can_fail{
+                not value.is_immediate() or value.immediate() == -1,
+            };
+
             x.divide(src_loc_tk, indent, op, dst.operand(), value,
-                     tc.checks().division_options());
+                     {
+                         .enabled{tc.checks().division and can_fail},
+                     });
 
             return;
         }

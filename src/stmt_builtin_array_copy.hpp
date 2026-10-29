@@ -57,8 +57,14 @@ class stmt_builtin_array_copy final : public statement {
             operands_.count().constant_value(tc),
         };
 
-        // the overlap check compares the addresses of the loop at run time
-        if (count and not tc.checks().overlap) {
+        // the overlap check compares the addresses of the loop at run time;
+        // only one variable can overlap itself, the parse rejects names that
+        // may share storage, e.g. a 'mut' parameter and an argument
+        const bool checks_overlap{
+            tc.checks().overlap and may_overlap(tc),
+        };
+
+        if (count and not checks_overlap) {
             compile_constant_count(tc, indent, element_type,
                                    static_cast<size_t>(*count));
 
@@ -72,7 +78,9 @@ class stmt_builtin_array_copy final : public statement {
                             .alignment{element_type.alignment()},
                             .src{emit.first()},
                             .dst{emit.second()},
-                            .overlap{tc.checks().overlap_options()},
+                            .overlap{
+                                .enabled{checks_overlap},
+                            },
                         });
     }
 
@@ -116,5 +124,16 @@ class stmt_builtin_array_copy final : public statement {
         x.copy_block(tok(), indent, dst_operand, src_operand,
                      product_storage_size(element_type.size_bytes(), count),
                      element_type.alignment());
+    }
+
+    // the two arrays are in the same variable, e.g. 'array_copy(a[0], a[1], n)'
+    [[nodiscard]] auto may_overlap(const toc& tc) const -> bool {
+        const std::optional<storage_path> src{operands_.first().storage(tc)};
+        const std::optional<storage_path> dst{operands_.second().storage(tc)};
+
+        // note: both are arrays of variables, a constant is not written
+        assert(src and dst);
+
+        return src->root.is_same(dst->root);
     }
 };

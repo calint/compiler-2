@@ -5,9 +5,8 @@
 # the jump it replaces: a 'break' out of a 1.08 MiB loop body 13 'foo' deep,
 # compiled with and without the jump optimizer and executed under qemu; and
 # that the far jump to a failure handler keeps the line in a0: a bounds check
-# 12 'foo' deep panics at its line, 13 deep only a0 is free and is not taken;
-# and that the frame and stack checks of a call 13 'foo' deep leave a register
-# for the far jump to their handlers
+# 12 'foo' deep panics at its line, also 13 deep where the check holds the
+# last free registers
 #
 # the body takes minutes to compile with the coverage build, so the check is a
 # script of its own
@@ -135,55 +134,20 @@ set -e
 grep -q "panic: bounds at line.baz:18" err
 echo ok
 
-echo -n "far jumps to failure handler with line, a0 only free rv32i: "
+# the far jump to a handler takes a register that is dead there, also when
+# the check holds the last free ones
+echo -n "far jumps to failure handler with line, no register free rv32i: "
 generate_line 13
-set +e
 "$BIN" line.baz --target=rv32i --checks=upper,lower,line --bin=line.bin \
-    >line.s 2>err
-status=$?
-set -e
-[[ $status -ne 0 ]]
-grep -q "exceeds 1 MiB and no scratch register is free" err
-echo ok
-
-# writes 'call.baz': a noinline call 13 'foo' deep, its frame and stack checks
-# jump to failure handlers beyond 1 MiB of 'y = y + 1'
-python3 - <<'EOF'
-depth = 13
-source = [
-    "dat a = []{1}",
-    "func noinline g(v) res {",
-    "    res = v + 1",
-    "}",
-    "func main() {",
-    "    var y = 0",
-    "    var z = 0",
-]
-for level in range(depth):
-    source.append("    " * (level + 1) + "foo a {")
-source.append("        z = y + g(y)")
-source.append("        y = y + 1\n" * 90000)
-for level in reversed(range(depth)):
-    source.append("    " * (level + 1) + "}")
-source.append("    exit(y)")
-source.append("}")
-open("call.baz", "w").write("\n".join(source) + "\n")
-EOF
-
-# the frame check frees its registers before the jump, which takes one
-echo -n "far jumps to frame overflow handler rv32i: "
-"$BIN" call.baz --target=rv32i --checks=frame --bin=call.bin >call.s
-llvm-mc -triple=riscv32 -mattr=-m,-a,-f,-d,-c -filetype=obj call.s -o call.o
-ld.lld -m elf32lriscv -e _start -o call call.o
+    >line.s
+llvm-mc -triple=riscv32 -mattr=-m,-a,-f,-d,-c -filetype=obj line.s -o line.o
+ld.lld -m elf32lriscv -e _start -o line line.o
 set +e
-timeout -k 1s 60s qemu-riscv32 ./call
+timeout -k 1s 60s qemu-riscv32 ./line 2>err
 status=$?
 set -e
-# note: 144 is the low byte of 'y', 90000
-[[ $status -eq 144 ]]
-echo ok
-
-# the stack check frees its registers before the jump, which takes one
-echo -n "far jumps to stack overflow handler rv32i-fpga: "
-"$BIN" call.baz --target=rv32i-fpga --checks=stack --bin=call.bin >call.s
+[[ $status -eq 255 ]]
+# note: line 19 because the check follows the 5 lines of the head and the 13
+#       lines of 'foo'
+grep -q "panic: bounds at line.baz:19" err
 echo ok

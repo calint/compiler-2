@@ -1,0 +1,17 @@
+# a divisor of 1 and a shift count of 0 change nothing, also when folded from
+# a constant or an inlined argument
+
+func sh(x, n) res {
+    res = x >> n
+}
+
+func main() {
+    var d = 7
+    let k = 0
+    d = d / 1
+    d = d >> 0
+    d = d << k
+    d = d << (k + 0)
+    var e = sh(d, 0)
+    exit(e)
+}

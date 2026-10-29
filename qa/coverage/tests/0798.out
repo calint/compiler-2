@@ -1,2 +1,4 @@
 
-0798.baz:4:0: expected '}' to close block
+0798.baz:3:18: '{' is not closed
+func f<T type>() {
+                 ^

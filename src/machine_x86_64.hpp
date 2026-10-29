@@ -572,8 +572,14 @@ class machine_x86_64 final : public machine {
         }
 
         if (product.type_ref().size_bytes() == size_byte_) {
+            // a register product holds the wide product in place, its low
+            // byte is the result
+            const bool is_in_place{product.is_register()};
+
             const operand left{
-                alloc_scratch_register(src_loc_tk, indent, default_type()),
+                is_in_place ? register_view(product, default_type())
+                            : alloc_scratch_register(src_loc_tk, indent,
+                                                     default_type()),
             };
 
             const operand right{
@@ -588,8 +594,13 @@ class machine_x86_64 final : public machine {
                 check_byte_product(src_loc_tk, indent, left, right);
             }
 
-            mov(src_loc_tk, indent, product, left);
             free_scratch_register(src_loc_tk, indent, right);
+
+            if (is_in_place) {
+                return;
+            }
+
+            mov(src_loc_tk, indent, product, left);
             free_scratch_register(src_loc_tk, indent, left);
 
             return;
@@ -653,8 +664,10 @@ class machine_x86_64 final : public machine {
 
         if (count.is_immediate()) {
             // note: the front end rejects a constant count outside the width
+            //       and drops a count of 0
+
             assert(
-                count.immediate() >= 0 and
+                count.immediate() > 0 and
                 std::cmp_less(count.immediate(), dst.type_ref().size_bits()));
 
             emit_op(src_loc_tk, indent, code, dst, count);

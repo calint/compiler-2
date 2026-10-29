@@ -1,8 +1,8 @@
 
-1126.baz:5:5: register rsi is always used by the operation at 13:5 and is needed here too, compute the operand that needs it with 'let' before that operation
-    array_copy(source, destination, 1)
+1126.baz:6:5: register rsi is always used by the operation at 14:5 and is needed here too, compute the operand that needs it with 'let' before that operation
+    array_copy(destination, destination, 1)
     ^~~~~~~~~~
-1126.baz:13:37: called from 'nested(source, destination)'
+1126.baz:14:37: called from 'nested(source, destination)'
     array_copy(source, destination, nested(source, destination))
                                     ^~~~~~
 
@@ -10,10 +10,10 @@ register use at the failure: 3 of 14 registers live, 3 named by instructions
 
   held  frame, registers (allocated at)
      3  main
-          rsi 13:5 (named)
-          rdi 13:5 (named)
-          rcx 13:5 (named)
-     0  nested called at 13:37
+          rsi 14:5 (named)
+          rdi 14:5 (named)
+          rcx 14:5 (named)
+     0  nested called at 14:37
 
 these frames are not noinline, making one noinline starts its body with all 13
 registers free and saves the registers held above it around the call:

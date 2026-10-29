@@ -3598,8 +3598,9 @@ if [[ $MACHINE == x86_64 ]]; then SRC=1124 && COMPERR; fi
 # registers that the outer call holds
 SRC=1125 && COMPERR
 
-# a count from a call that copies arrays, with the overlap check the copy is a
-# loop at run time; x86: the inner copy needs 'rsi', which the outer copy holds
+# a count from a call that copies within an array, with the overlap check the
+# copy is a loop at run time; x86: the inner copy needs 'rsi', which the outer
+# copy holds
 if [[ $MACHINE == x86_64 ]]; then
     SRC=1126 && OPTS="--checks=noub" COMPERR
 else
@@ -5182,9 +5183,9 @@ SRC=1637 && COMPERR
 SRC=1638 && COMPERR
 SRC=1639 && COMPERR
 
-# an operand of arithmetic that a call in a later operand may write is
-# rejected, also the destination named again
-SRC=1640 && COMPERR
+# an operand of arithmetic that a call in a later operand writes is read
+# before the call, also the destination named again
+SRC=1640 && EXP=1 && RUN
 
 # an array of 'arrays_equal' or the source of 'array_copy' that the call of the
 # count may write is rejected
@@ -5393,10 +5394,11 @@ SRC=1699 && COMPERR
 
 # a result of an inlined call that its body passes to a 'mut' parameter has
 # storage, also when the destination is a register: the write of a noinline
-# callee is kept, and the order check sees it like that of a variable
+# callee is kept, and a read before a later call sees it like that of a
+# variable
 SRC=1700 && EXP=11 && RUN
 SRC=1701 && EXP=12 && RUN
-SRC=1702 && COMPERR
+SRC=1702 && EXP=2 && RUN
 
 # an inlined call makes the temporaries of its arguments in argument order,
 # like a noinline one: a call in an earlier argument runs first
@@ -5955,3 +5957,12 @@ SRC=1867 && COMPERR
 
 # a comparison after an instance is a condition, like after a number
 SRC=1868 && COMPERR
+
+# an ordering comparison after an instance: an instance is not a number
+SRC=1869 && COMPERR
+
+# a divisor of 1 and a shift count of 0 change nothing
+SRC=1870 && EXP=7 && RUN
+
+# a copy between two variables has no overlap check, within one it stays
+SRC=1871 && EXP=251 && OPTS="--checks=noub" RUN_ERR

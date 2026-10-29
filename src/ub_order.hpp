@@ -32,7 +32,8 @@
 //                  the operands of a list read nothing a call in a later
 //                  operand writes; the list order, in which the arguments and
 //                  operands are compiled, of a node ('operands_of'): a call, a
-//                  list, a comparison and the bulk and io built-ins
+//                  comparison and the bulk and io built-ins; an arithmetic list
+//                  reads each operand at its place, a later write misses it
 //
 // the definite assignment ('ub_assigned.hpp') walks the statements in the same
 // order by name, it runs before 'toc' resolves the names; the aliasing of the
