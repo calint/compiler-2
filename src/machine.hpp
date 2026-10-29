@@ -42,7 +42,7 @@ struct runtime_check {
 struct target_call_names {
     // the descriptor or sector, the address and the count or size; 'exit'
     // takes the first
-    std::array<std::string_view, 3> arguments;
+    std::array<std::string_view, 3> arguments{};
     // the count that 'read' and 'write' return
     std::string_view result;
 };
@@ -463,8 +463,6 @@ class machine {
     };
 
     using version_result = std::expected<compiled_version, unavailable_version>;
-
-    using jump_mode = assembler::jump_mode;
 
   protected:
     // the lines of the failures in each file, with '--checks=line'
@@ -2040,7 +2038,7 @@ class machine {
     auto finish_output() -> void {
         assembler& output{target_assembler()};
 
-        if (jump_mode_ == jump_mode::optimized) {
+        if (jump_mode_ == assembler::jump_mode::optimized) {
             output.optimize_jumps();
         }
     }

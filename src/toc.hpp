@@ -1576,9 +1576,9 @@ class storage_layout final {
         }
     }
 
-    // places 'var' in the innermost storage that has room, its storage is
-    // set and the innermost scope holds the bytes it takes with the alignment
-    // padding
+    // places 'var' after the storage in use of the nearest scope with a
+    // frame, else after the variables; its storage is set and the innermost
+    // scope holds the bytes it takes with the alignment padding
     auto allocate_var(const token& src_loc_tk, var_info& var,
                       const bool checks_capacity) -> void {
 

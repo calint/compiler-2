@@ -35,10 +35,10 @@
 //
 //   'report_entry', 'report_section', 'report_renderer'
 //                            the '--report' text
-//   'program'                parses the source, compiles 'main', the
-//                            noinline bodies it reaches, checks every
-//                            function without its calls ('check_body'),
-//                            writes the output
+//   'program'                parses the source, compiles the globals,
+//                            'main', the noinline bodies it reaches, checks
+//                            every function without its calls
+//                            ('check_body'), writes the output
 //
 
 // a line of a report section, e.g. 'removed unreachable jumps: 0', without a
@@ -226,8 +226,8 @@ class report_renderer final {
 
 // the whole program: the constructor parses the main file and the files it
 // includes into 'statements_', an included file before the file that
-// includes it; 'build' compiles from the parsed statements, 'main' first, see
-// 'etc/docs/README.md' section 1.2
+// includes it; 'build' compiles from the parsed statements, the globals then
+// 'main', see 'etc/docs/README.md' section 1.2
 class program final {
     // the statements of one file, in 'statements_'
     struct file_statements {

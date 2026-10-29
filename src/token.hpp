@@ -131,7 +131,7 @@ static_assert(std::ranges::all_of(builtin_functions,
 // a word of the source with the whitespace and comments around it and its
 // place (file, indexes, line), kept by the node that parsed it, so the source
 // is written back from the tokens ('source_to') and an error points at one
-// (README 7.2); an empty token has no place, e.g. one the compiler made
+// (README 7.2); a default token ('token{}', line 0) has no place
 class token final {
     size_t file_ix_{};          // index of the source file of the token
     std::string_view ws_left_;  // whitespace left of token text

@@ -234,10 +234,9 @@ inline auto emit_write_plan(toc& tc, const size_t indent,
 //       implemented in 'expr_type_impl.hpp', those headers include this one
 //       through 'expr_any.hpp', so their definitions are incomplete here
 
-// a value of a user type or an array: a list of fields or elements '{...}',
-// the type name alone as its zero value, a copy of a name or a call; also
-// the source of a whole array copy, which only a name can be,
-// 'is_array_destination_' selects that role
+// a value of a user type: a list of fields '{...}', the type name alone as its
+// zero value, a copy of a name or a call; also the source of a whole array
+// copy, which only a name can be, 'is_array_destination_' selects that role
 class expr_type final : public statement {
     // the fields of a literal, e.g. '{1, 2}' of 'point{1, 2}', none for the
     // type name alone, e.g. 'point'

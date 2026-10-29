@@ -132,7 +132,7 @@ class machine_rv32i : public machine {
     // alignment is given at the end
     struct bulk_operation {
         // the two pointers then the count, in the order of allocation
-        std::array<operand, 3> registers;
+        std::array<operand, 3> registers{};
         std::array<access_start, 2> starts{};
         // a missing address would leave the word alignment unproven
         size_t address_count{};
@@ -858,9 +858,6 @@ class machine_rv32i : public machine {
         assert(frame_address.index_register().empty());
         assert(frame_size_bytes.is_symbol());
 
-        const operation_scope scope{*this, frame_address, frame_size_bytes};
-
-        // 'fits' is after the jump to the handler
         constexpr local_label fits{
             .name{"1"},
             .reference{"1f"},
@@ -890,6 +887,9 @@ class machine_rv32i : public machine {
 
         assembler_.sub(indent, remaining.register_name(),
                        remaining.register_name(), start.register_name());
+
+        // note: the value of 'start' is no longer needed, its register is
+        //       reused
 
         assembler_.lui(indent, start.register_name(),
                        assembler_rv32i::immediate::of_symbol(
@@ -4780,21 +4780,16 @@ class machine_rv32i : public machine {
 
         const type& dst_type{dst.type_ref()};
 
-        // bitwise results stay in range when the source representation does
-        if (not constant.has_value()) {
-            return src.type_ref().size_bytes() > dst_type.size_bytes() or
-                   src.type_ref().is_bool() != dst_type.is_bool();
+        // note: 'narrowed_immediate' extends a constant like the register, so
+        //       a bitwise result with it stays extended
+
+        if (constant.has_value()) {
+            return false;
         }
 
-        // a constant is narrowed to the width of a destination, a bool
-        // destination has no constant operand
-        assert(not dst_type.is_bool());
-
-        const int64_t limit{
-            static_cast<int64_t>(uint64_t{1} << (dst_type.size_bits() - 1)),
-        };
-
-        return *constant < -limit or *constant >= limit;
+        // bitwise results stay in range when the source representation does
+        return src.type_ref().size_bytes() > dst_type.size_bytes() or
+               src.type_ref().is_bool() != dst_type.is_bool();
     }
 
     [[nodiscard]] static auto offset_by(const operand& address,

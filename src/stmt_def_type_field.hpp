@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstddef>
+#include <format>
 #include <optional>
 #include <ostream>
 #include <string_view>
@@ -112,8 +113,6 @@ class stmt_def_type_field final : public statement {
 
         return array_->size.array_size();
     }
-
-    [[nodiscard]] auto is_array() const -> bool { return array_.has_value(); }
 
     [[nodiscard]] auto name() const -> std::string_view { return tok().text(); }
 };

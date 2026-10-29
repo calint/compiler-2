@@ -621,10 +621,11 @@ class expr_bool_op final : public statement {
 
     // 'constant' is compared at the width of 'typed', e.g. 1000 with an 'i8'
     static auto assert_constant_fits(const expr_arith& typed,
-                                     const type& typed_type,
                                      const comparison_side& constant) -> void {
 
         assert(constant.folded);
+
+        const type& typed_type{typed.get_type()};
 
         const int64_t value{constant.folded->value};
 
@@ -714,12 +715,12 @@ class expr_bool_op final : public statement {
         }
 
         if (is_rhs_untyped) {
-            assert_constant_fits(*lhs.node, lhs.node->get_type(), rhs);
+            assert_constant_fits(*lhs.node, rhs);
             return;
         }
 
         if (is_lhs_untyped) {
-            assert_constant_fits(*rhs.node, rhs.node->get_type(), lhs);
+            assert_constant_fits(*rhs.node, lhs);
             return;
         }
 
@@ -730,7 +731,7 @@ class expr_bool_op final : public statement {
             return;
         }
 
-        throw_rhs_wider(*lhs.node, *rhs.node, op, lhs_type, rhs_type);
+        throw_rhs_wider(*lhs.node, *rhs.node, op);
     }
 
     // the bytes that both sides hold, they hold the same type and, as arrays,
@@ -1012,9 +1013,11 @@ class expr_bool_op final : public statement {
 
     [[noreturn]] static auto throw_rhs_wider(const expr_arith& lhs,
                                              const expr_arith& rhs,
-                                             const comparison_operator op,
-                                             const type& lhs_type,
-                                             const type& rhs_type) -> void {
+                                             const comparison_operator op)
+        -> void {
+
+        const type& lhs_type{lhs.get_type()};
+        const type& rhs_type{rhs.get_type()};
 
         throw compile_error{
             rhs.tok(), std::format("{} of type {} is wider than {} of type {}, "
