@@ -339,9 +339,9 @@ class machine_x86_64 final : public machine {
                 "{} - {} - {}", variables_end_label, frame_size_bytes.symbol(),
                 frame_address.displacement())));
 
-        // note: signed, the highest base is negative when the frame is larger
-        //       than 'vars'; addresses and sizes stay below 2^47, so nothing
-        //       wraps
+        // note: signed, the highest base is negative when the frame size and
+        //       the displacement pass the address of 'vars.end'; addresses and
+        //       sizes stay below 2^47, so nothing wraps
 
         assembler_.instruction(indent, op::cmp, to_argument(last_base),
                                frame_address.base_register());
@@ -851,8 +851,6 @@ class machine_x86_64 final : public machine {
     auto emit_failure_handler(const failure_handler& handler,
                               const bool with_line) -> void override {
 
-        const failure_lines lines_by_file{failure_lines_of(handler.label)};
-
         const std::string_view name{handler.name};
         const std::string_view handler_label{handler.label};
 
@@ -870,6 +868,8 @@ class machine_x86_64 final : public machine {
 
             return;
         }
+
+        const failure_lines lines_by_file{failure_lines_of(handler.label)};
 
         for (const auto& [file_ix, lines] : lines_by_file) {
             for (const size_t line : lines) {

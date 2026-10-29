@@ -152,8 +152,8 @@ class constant_arith final {
     }
 
     // the most negative value of a signed integer of 'size_bits', e.g. -128 for
-    // 8, which has no positive counterpart; setting all bits above the sign bit
-    // of the width gives it
+    // 8, which has no positive counterpart; the sign bit of the width and all
+    // bits above it set give it
     [[nodiscard]] static auto signed_minimum(const size_t size_bits)
         -> int64_t {
 

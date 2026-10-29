@@ -880,7 +880,7 @@ class machine_rv32i : public machine {
         address_of(src_loc_tk, indent, start, frame_address);
 
         // the highest start at which the frame fits, compared unsigned since
-        // the room can be near 4 GiB
+        // an address can be 2 GiB or more
         // note: a frame fits in '--vars' when compiled, so the end of 'vars'
         //       less the frame size does not wrap
         assembler_.la(indent, last_start.register_name(), variables_end_label,
@@ -4464,8 +4464,7 @@ class machine_rv32i : public machine {
 
     // the code and data of the image cannot be addressed beyond 32 bits
     static auto check_address_range(const size_t memory_end_address) -> void {
-        // note: an end of the address space would wrap to 0, e.g. 'vars.end'
-        //       that the frame check compares with
+        // note: an end of the address space would wrap to 0
 
         if (memory_end_address < assembler_rv32i::address_space_bytes) {
             return;

@@ -413,7 +413,9 @@ class stmt_def_var final : public statement {
 
         // the newly defined variable is not yet assigned in its initialization
         if (const stmt_identifier* const read{first_read_of(name_tk_.text())}) {
-            throw_uninitialized(read->tok(), name_tk_.text());
+            throw compile_error{read->tok(),
+                                std::format("use of uninitialized variable {}",
+                                            in_quotes(name_tk_.text()))};
         }
 
         // marked after the initializer, which writes the variable; statements

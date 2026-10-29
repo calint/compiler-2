@@ -154,7 +154,7 @@ class stmt_builtin_foo final : public statement {
     // declares the names only); 'n' is a constant when the size is known,
     // else a read-only variable that is never read at run time, see
     // 'ident_info::is_length_unknown'
-    auto add_loop_names(toc& tc, const size_t indent, const token& src_loc_tk,
+    auto add_loop_names(toc& tc, const size_t indent,
                         const ident_info& array_info,
                         const var_placement& element,
                         const var_placement& counter) const -> void {
@@ -163,6 +163,8 @@ class stmt_builtin_foo final : public statement {
         // over, found before this 'foo' adds its own 'e' so that a name that is
         // the 'e' of an outer 'foo' is that one
         const std::optional<storage_path> array{ident_.storage(tc)};
+
+        const token& src_loc_tk{ident_.tok()};
 
         tc.add_var(
             src_loc_tk, indent,
@@ -277,7 +279,7 @@ class stmt_builtin_foo final : public statement {
         const bool counter_in_memory{x.foo_counter_in_memory()};
 
         if (counter_in_memory) {
-            add_loop_names(tc, indent, ident_.tok(), array_info,
+            add_loop_names(tc, indent, array_info,
                            at_address_register{reg_iter}, var_placement{});
 
             return tc.resolve_declared(tok(), "i").operand();
@@ -290,8 +292,7 @@ class stmt_builtin_foo final : public statement {
 
         held.add(reg_counter);
 
-        add_loop_names(tc, indent, ident_.tok(), array_info,
-                       at_address_register{reg_iter},
+        add_loop_names(tc, indent, array_info, at_address_register{reg_iter},
                        in_value_register{reg_counter});
 
         return reg_counter;
@@ -308,8 +309,7 @@ class stmt_builtin_foo final : public statement {
                                    scope::loop(label, loop_end::also_when_done,
                                                toc::continue_label(label))};
 
-        add_loop_names(tc, 0, tok(), array_info, var_placement{},
-                       var_placement{});
+        add_loop_names(tc, 0, array_info, var_placement{}, var_placement{});
 
         return {tc, tz};
     }

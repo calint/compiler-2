@@ -347,19 +347,6 @@ class assembler {
         });
     }
 
-    auto add_label(std::string name, std::string text) -> void {
-        current_lines().push_back({
-            .text{std::move(text)},
-            .label{std::move(name)},
-            .call_target{},
-            .jump{},
-            .code_size{},
-            .entry{code_section_},
-            .removed{},
-            .record{},
-        });
-    }
-
     // a line whose size and structured form the target already knows
     auto add_record_line(std::string text, const size_t code_size,
                          const std::optional<size_t> record) -> void {
@@ -510,6 +497,19 @@ class assembler {
     //
     // class methods
     //
+
+    auto add_label(std::string name, std::string text) -> void {
+        current_lines().push_back({
+            .text{std::move(text)},
+            .label{std::move(name)},
+            .call_target{},
+            .jump{},
+            .code_size{},
+            .entry{code_section_},
+            .removed{},
+            .record{},
+        });
+    }
 
     [[nodiscard]] auto current_lines() -> std::vector<line>& {
         if (captures_.empty()) {

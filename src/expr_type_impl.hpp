@@ -69,14 +69,14 @@ inline expr_type::expr_type(toc& tc, tokenizer& tz, const type& tp,
 
     // e.g. 'var p = point', no fields are listed
     if (is_bare) {
-        assert_value_ends(tz, tp);
+        assert_value_ends(tz);
         return;
     }
 
     // e.g. 'p = pt', the token is empty at '{x, y}'
     if (not tok().is_none() and not is_typed_literal) {
-        parse_copy_source(tc, tz, tp, tm);
-        assert_value_ends(tz, tp);
+        parse_copy_source(tc, tz, tm);
+        assert_value_ends(tz);
         return;
     }
 
@@ -85,13 +85,12 @@ inline expr_type::expr_type(toc& tc, tokenizer& tz, const type& tp,
         throw compile_error{
             tz, std::format("a value in parentheses is a number, not {} of "
                             "{}",
-                            is_array_destination_ ? "an array" : "an instance",
-                            in_quotes(tp.name()))};
+                            value_kind(), in_quotes(tp.name()))};
     }
 
     // e.g. the '-' of 'q = -p'
     if (tz.is_unary_operator_next()) {
-        throw compile_error{tz, not_a_number(tp)};
+        throw compile_error{tz, not_a_number()};
     }
 
     // e.g. the ')' of 'a = )', 'expr_any' reads the '{' of an array
@@ -99,25 +98,22 @@ inline expr_type::expr_type(toc& tc, tokenizer& tz, const type& tp,
         throw compile_error{tz, "expected an array"};
     }
 
-    parse_fields(tc, tz, tp);
-    assert_value_ends(tz, tp);
+    parse_fields(tc, tz);
+    assert_value_ends(tz);
 }
 
-// e.g. the '+' of 'p + 1', 'point + 1', 'f() + 1' or 'point{1, 2} + 1', like
-// 'n = p + 1' with a number destination
-inline auto expr_type::assert_value_ends(const tokenizer& tz,
-                                         const type& tp) const -> void {
-
+// e.g. the '+' of 'p + 1', like 'n = p + 1' with a number destination
+inline auto expr_type::assert_value_ends(const tokenizer& tz) const -> void {
     if (not continues_expression(tz)) {
         return;
     }
 
-    throw compile_error{tok(), not_a_number(tp)};
+    throw compile_error{tok(), not_a_number()};
 }
 
 // the fields of 'tp' in braces, e.g. '{x, y}' of 'obj.pos = {x, y}'
-inline auto expr_type::parse_fields(toc& tc, tokenizer& tz, const type& tp)
-    -> void {
+inline auto expr_type::parse_fields(toc& tc, tokenizer& tz) -> void {
+    const type& tp{get_type()};
 
     field_list& list{std::get<field_list>(value_)};
 
@@ -157,7 +153,7 @@ inline auto expr_type::parse_fields(toc& tc, tokenizer& tz, const type& tp)
         const type_field& tf{flds.at(index)};
 
         if (index > 0) {
-            read_field_delimiter(tz, tp, tf);
+            read_field_delimiter(tz, tf);
 
             // a trailing ',' lets each field end its line the same way
             if (read_close_brace(tz)) {
@@ -185,8 +181,10 @@ inline expr_type::expr_type(std::unique_ptr<stmt_identifier> receiver)
 
 // e.g. 'obj.pos = p', 'obj.pos = f()', 'o.pos = lst.first()' or
 // 'o.pos = point.at(1, 2)'
-inline auto expr_type::parse_copy_source(toc& tc, tokenizer& tz, const type& tp,
+inline auto expr_type::parse_copy_source(toc& tc, tokenizer& tz,
                                          const term_kind tm) -> void {
+
+    const type& tp{get_type()};
 
     unary_ops no_uops;
 
@@ -212,7 +210,7 @@ inline auto expr_type::parse_copy_source(toc& tc, tokenizer& tz, const type& tp,
 
         value_ = std::move(*call);
 
-        assert_call_type(tp);
+        assert_call_type();
 
         return;
     }
@@ -239,7 +237,9 @@ inline auto expr_type::parse_copy_source(toc& tc, tokenizer& tz, const type& tp,
     }
 }
 
-inline auto expr_type::assert_call_type(const type& tp) const -> void {
+inline auto expr_type::assert_call_type() const -> void {
+    const type& tp{get_type()};
+
     // a function returns one value, not an array
     if (is_array_destination_) {
         throw compile_error{tok(),

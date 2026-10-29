@@ -316,11 +316,11 @@ class expr_type final : public statement {
                      write_plan& plan) const -> void;
 
   private:
-    auto assert_call_type(const type& tp) const -> void;
+    auto assert_call_type() const -> void;
 
     auto assert_copy_source_shape(const toc& tc) const -> void;
 
-    auto assert_value_ends(const tokenizer& tz, const type& tp) const -> void;
+    auto assert_value_ends(const tokenizer& tz) const -> void;
 
     // the call whose result is the value, null for a literal or a copy
     [[nodiscard]] auto call_source() const -> const stmt_call* {
@@ -335,18 +335,16 @@ class expr_type final : public statement {
                                  const destination& dst) const -> void;
 
     // e.g. "an instance of 'point' is not a number"
-    [[nodiscard]] auto not_a_number(const type& tp) const -> std::string {
-        return std::format("{} of {} is not a number",
-                           is_array_destination_ ? "an array" : "an instance",
-                           in_quotes(tp.name()));
+    [[nodiscard]] auto not_a_number() const -> std::string {
+        return std::format("{} of {} is not a number", value_kind(),
+                           in_quotes(get_type().name()));
     }
 
     // creates the 'stmt_call' or 'stmt_identifier'
-    auto parse_copy_source(toc& tc, tokenizer& tz, const type& tp,
-                           const term_kind tm) -> void;
+    auto parse_copy_source(toc& tc, tokenizer& tz, const term_kind tm) -> void;
 
     // creates an 'expr_any' for each field
-    auto parse_fields(toc& tc, tokenizer& tz, const type& tp) -> void;
+    auto parse_fields(toc& tc, tokenizer& tz) -> void;
 
     // padding is zeroed too so that instances compare equal byte by byte,
     // 'offset' bytes into the instance at 'at'; 'covered' are the unlisted
@@ -394,16 +392,19 @@ class expr_type final : public statement {
 
     // the ',' before the value of the field 'next', e.g. the ',' of '{x, y}'
     // before the value of 'y'
-    auto read_field_delimiter(tokenizer& tz, const type& tp,
-                              const type_field& next) -> void {
-
+    auto read_field_delimiter(tokenizer& tz, const type_field& next) -> void {
         const token delimiter_tk{
             tz.expect_char_token(
                 ',', std::format("expected ',' followed by a value for field "
                                  "{} in type {}",
-                                 in_quotes(next.name), in_quotes(tp.name()))),
+                                 in_quotes(next.name),
+                                 in_quotes(get_type().name()))),
         };
 
         std::get<field_list>(value_).delims_tk.emplace_back(delimiter_tk);
+    }
+
+    [[nodiscard]] auto value_kind() const -> std::string_view {
+        return is_array_destination_ ? "an array" : "an instance";
     }
 };

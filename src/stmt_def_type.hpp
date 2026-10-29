@@ -155,7 +155,7 @@ inline auto comment_type_layout(toc& tc, const size_t indent, const token& tk,
 
 // the generic type a definition names after its '=', e.g. '= list<i8, size>'
 // of 'type text<size> = list<i8, size>' or '= text<8>' of 'type str =
-// text<8>'; 'user' is what must come after the generic type
+// text<8>'
 struct generic_type_use {
     token equals_tk;
     token name_tk;
@@ -165,6 +165,7 @@ struct generic_type_use {
     // statics
     //
 
+    // 'user' is what must come after the generic type
     // note: the callers dispatch on the '='
     [[nodiscard]] static auto parse(const toc& tc, tokenizer& tz,
                                     const std::string_view user)

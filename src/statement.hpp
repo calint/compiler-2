@@ -575,13 +575,4 @@ class statement {
                         in_quotes(source), in_quotes(src_type.name()),
                         in_quotes(dst_type.name()), dst_type.name())};
     }
-
-    [[noreturn]] static auto throw_uninitialized(const token& src_loc_tk,
-                                                 const std::string_view var)
-        -> void {
-
-        throw compile_error{
-            src_loc_tk,
-            std::format("use of uninitialized variable {}", in_quotes(var))};
-    }
 };

@@ -539,6 +539,8 @@ class machine {
         ~operation_scope() {
             register_pool& pool{machine_.state_.registers};
 
+            assert(pool.allocations().size() >= saved_count_);
+
             while (pool.allocations().size() > saved_count_) {
                 // implicit releases need the allocation context for a balanced
                 // trace
