@@ -1,4 +1,4 @@
 
-0685.baz:3:13: '{' is not closed
-func main() {
-            ^
+0685.baz:4:0: expected '}' to close block
+    if true
+           ^

@@ -41,6 +41,21 @@ class machine_rv32i_qemu final : public machine_rv32i_bare_metal {
     // overridden methods
     //
 
+    // ends qemu with the exit code 'a0' as its status
+    auto emit_exit_routine() -> void override {
+        assembler_rv32i& a{assembler()};
+
+        a.label(0, exit_label_);
+        a.slli(1, "a0", "a0", finisher_code_shift_);
+        a.li(1, "t0", finisher_pass_);
+        a.or_op(1, "a0", "a0", "t0");
+        a.lui(1, "t0", test_finisher_upper_);
+        a.sw(1, "a0", 0, "t0");
+        // qemu shuts down after the store completes
+        a.label(0, "1");
+        a.j(1, "1b");
+    }
+
     // note: 'has_sd_card' is false, so the sector functions are rejected
     auto emit_sector_routines([[maybe_unused]] const bool read_used,
                               [[maybe_unused]] const bool write_used)
@@ -62,21 +77,6 @@ class machine_rv32i_qemu final : public machine_rv32i_bare_metal {
     //
     // overridden methods
     //
-
-    // ends qemu with the exit code 'a0' as its status
-    auto emit_exit_routine() -> void override {
-        assembler_rv32i& a{assembler()};
-
-        a.label(0, exit_label_);
-        a.slli(1, "a0", "a0", finisher_code_shift_);
-        a.li(1, "t0", finisher_pass_);
-        a.or_op(1, "a0", "a0", "t0");
-        a.lui(1, "t0", test_finisher_upper_);
-        a.sw(1, "a0", 0, "t0");
-        // qemu shuts down after the store completes
-        a.label(0, "1");
-        a.j(1, "1b");
-    }
 
     auto emit_receive_byte() -> void override {
         assembler_rv32i& a{assembler()};

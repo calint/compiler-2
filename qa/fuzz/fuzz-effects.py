@@ -5,9 +5,11 @@
 #
 # evaluation is left to right. a statement is rejected when a name that an
 # operand reads may be written by a call in a later operand of the same list:
-# the arguments of a call and the sides of a comparison; a list of '+' and '-'
-# reads each operand at its place, before a later call writes it; a value written in parts is rejected when a part reads, or a
-# call in it reads or writes, a part written before it; an assignment whose
+# the arguments of a call and the sides of a comparison; an arithmetic list,
+# nested groups included, reads each operand at its place, before a later call
+# writes it; the index of a destination is computed before the value; a value
+# written in parts is rejected when a part reads, or a call in it reads or
+# writes, a part written before it; an assignment whose
 # value is one call is rejected when the call uses the destination. the model
 # applies the same rules and runs an accepted program left to right; each
 # program is built with every function inlined and again with every function
@@ -28,6 +30,9 @@ import tempfile
 import fuzzlib as fl
 
 MASK = 1023
+OPS = {"+": lambda a, b: a + b, "-": lambda a, b: a - b,
+       "&": lambda a, b: a & b, "|": lambda a, b: a | b,
+       "^": lambda a, b: a ^ b}
 
 # '{word}' is empty or 'noinline ', every function is inlined or none is
 FUNCTIONS = '''\
@@ -117,6 +122,11 @@ def reads(node):
         if node[1] == "la[l1 & 3]":
             result.add("l1")
         return result
+    if node[0] == "group":
+        result = set()
+        for a in node[1]:
+            result |= reads(a)
+        return result
     result = set()
     for a in node[2]:
         result |= reads(a)
@@ -125,6 +135,11 @@ def reads(node):
 
 def writes(node):
     # what the calls in a node write: the globals and a 'mut' argument
+    if node[0] == "group":
+        result = set()
+        for a in node[1]:
+            result |= writes(a)
+        return result
     if node[0] != "call":
         return set()
     result = set(USES[node[1]][1])
@@ -137,6 +152,11 @@ def writes(node):
 
 def effects(node):
     # what the calls in a node read or write
+    if node[0] == "group":
+        result = set()
+        for a in node[1]:
+            result |= effects(a)
+        return result
     if node[0] != "call":
         return set()
     result = USES[node[1]][0] | writes(node)
@@ -151,7 +171,7 @@ def alias_call(node, dst):
     # global its body writes
     used, written = USES[node[1]]
     names = {key_of(arg[1]) for arg in node[2] if arg[0] == "name"}
-    if dst and (dst in used | written or dst in names):
+    if dst and (any_overlap({dst}, used | written | names)):
         return True
     return any_overlap(names, written)
 
@@ -164,6 +184,10 @@ def check_list(operands, ordered=True):
                        for k in range(1, len(operands)) for j in range(k)):
         return "order"
     for operand in operands:
+        if operand[0] == "group":
+            rejection = check_list(operand[1], ordered=False)
+            if rejection:
+                return rejection
         if operand[0] == "call":
             rejection = check_call(operand, None)
             if rejection:
@@ -179,6 +203,9 @@ def check_call(node, dst):
 
 
 def show(node):
+    if node[0] == "group":
+        return "(" + show(node[1][0]) + "".join(
+            f" {o} {show(x)}" for o, x in zip(node[2], node[1][1:])) + ")"
     if node[0] == "lit":
         return str(node[1])
     if node[0] == "name":
@@ -212,6 +239,11 @@ class Machine:
             return node[1]
         if node[0] == "name":
             return self.get(node[1])
+        if node[0] == "group":
+            total = self.eval(node[1][0])
+            for o, x in zip(node[2], node[1][1:]):
+                total = OPS[o](total, self.eval(x))
+            return total
         name, args = node[1], node[2]
         if name == "wm":
             # note: the place is passed, its element chosen before the call
@@ -273,6 +305,14 @@ class Generator:
                                    self.operand(depth - 1)])
         return ("call", name, [])
 
+    def group_or_operand(self):
+        rnd = self.rnd
+        if rnd.random() < 0.3:
+            items = [self.operand(2) for _ in range(rnd.randint(2, 3))]
+            family = rnd.choice([["+", "-"], ["&"], ["|"], ["^"]])
+            return ("group", items, [rnd.choice(family) for _ in items[1:]])
+        return self.operand(2)
+
     def statement(self):
         kind = self.rnd.choice(["list", "global_", "compare", "parts",
                                 "call"])
@@ -280,8 +320,9 @@ class Generator:
 
     def sum(self):
         rnd = self.rnd
-        operands = [self.operand(2) for _ in range(rnd.randint(1, 4))]
-        signs = [rnd.choice(["+", "-"]) for _ in operands[1:]]
+        operands = [self.group_or_operand() for _ in range(rnd.randint(1, 4))]
+        family = rnd.choice([["+", "-"], ["&"], ["|"], ["^"]])
+        signs = [rnd.choice(family) for _ in operands[1:]]
         text = show(operands[0]) + "".join(
             f" {s} {show(o)}" for s, o in zip(signs, operands[1:]))
 
@@ -289,7 +330,7 @@ class Generator:
             total = m.eval(operands[0])
             for s, o in zip(signs, operands[1:]):
                 v = m.eval(o)
-                total = total + v if s == "+" else total - v
+                total = OPS[s](total, v)
             return total
         return operands, text, value
 
@@ -321,29 +362,31 @@ class Generator:
         # a destination that a call in the value writes is written last; one
         # call whose body uses the destination shares storage with its result
         operands, text, value = self.sum()
-        dst = self.rnd.choice(["g0", "g1"])
+        dst = self.rnd.choice(["g0", "g1", "la[l1 & 3]", "la[2]", "l1"])
         rejection = check_list(operands, ordered=False)
+        mask = MASK
+
+        def place(m):
+            # the destination's index is computed before the value
+            if dst == "la[l1 & 3]":
+                return f"la[{m.v['l1'] & 3}]"
+            return dst
+
+        def run(m):
+            at = place(m)
+            m.put(at, value(m) & mask)
+            return (m.la[0] + m.la[1] * 3 + m.la[2] * 5 + m.la[3] * 7
+                    + m.v["l1"])
         if len(operands) == 1 and operands[0][0] == "call":
             # note: one operand is the value itself, no '& 1023'
-            rejection = check_call(operands[0], dst)
+            rejection = check_call(operands[0], key_of(dst))
             line = f"{dst} = {text}"
-
-            def run(m):
-                m.v[dst] = value(m)
-                return m.v[dst]
+            mask = -1
         elif len(operands) == 1:
             line = f"{dst} = {text} & 1023"
-
-            def run(m):
-                m.v[dst] = value(m) & MASK
-                return m.v[dst]
         else:
             line = f"{dst} = ({text}) & 1023"
-
-            def run(m):
-                m.v[dst] = value(m) & MASK
-                return m.v[dst]
-        return Statement([line], dst, run, rejection)
+        return Statement([line], "la[0] + la[1] * 3 + la[2] * 5 + la[3] * 7 + l1", run, rejection)
 
     def parts(self):
         # rule A first: a part reads, or a call in it reads or writes, no part
@@ -404,8 +447,6 @@ def judge(work, source, expected):
     found = []
     for target in fl.TARGETS:
         got = fl.build_and_run(work, source, target, ("--checks=noub",))
-        if fl.known_crash(str(got)):
-            continue
         if expected[0] == "reject":
             if got[0] == "compile" and REJECTIONS[expected[1]] in got[1]:
                 continue

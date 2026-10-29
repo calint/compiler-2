@@ -7,9 +7,8 @@
 # literals, in assignments, 'if' and bounded loops. each program is evaluated
 # exactly in python. the program must end with the modeled exit code, or with
 # the modeled kind of panic, or be rejected by the compiler when the model
-# finds a constant expression that is undefined. when the evaluation order of
-# the operands of an operation decides which of two panics comes first, either
-# is accepted
+# finds a constant expression that is undefined. the operands are evaluated
+# left to right, the first panic ends the program
 #
 # with FUZZ_SPELLING=1 a program is built twice from one template whose
 # leaves are typed values: once with each leaf spelled as a constant
@@ -258,9 +257,11 @@ class Program:
             return Value(wrap(e[1], self.wrapped(e[2], env)))
         if k == "bin":
             a = self.value(e[2], env)
+            if a.value is None:
+                return a
             b = self.value(e[3], env)
-            if a.value is None or b.value is None:
-                return Value(None, a.panics | b.panics)
+            if b.value is None:
+                return b
             return self.constant_check(e, self.binary(e[1], a.value, b.value))
         raise ValueError(k)
 
@@ -320,9 +321,11 @@ class Program:
         k = c[0]
         if k == "cmp":
             a = self.value(c[2], env)
+            if a.value is None:
+                return None, a.panics
             b = self.value(c[3], env)
-            if a.value is None or b.value is None:
-                return None, a.panics | b.panics
+            if b.value is None:
+                return None, b.panics
             x, y, op = a.value, b.value, c[1]
             return (x == y if op == "==" else x != y if op == "!=" else
                     x < y if op == "<" else x <= y if op == "<=" else
@@ -559,9 +562,6 @@ def fuzz_spelling(args):
             for options in SPELLING_OPTIONS:
                 constant = run_target(work, constant_source, target, options)
                 variable = run_target(work, variable_source, target, options)
-                if fl.known_crash(str(constant[1:])) or \
-                        fl.known_crash(str(variable[1:])):
-                    continue
                 kind = constant[0] if constant[0] in ("exit", "panic") \
                     else "compile"
                 c = spelling_outcome(constant)
@@ -605,8 +605,6 @@ def fuzz_one(args):
     try:
         for target in program.targets:
             got = run_target(work, source, target, ["--checks=" + CHECKS])
-            if fl.known_crash(str(got[1])):
-                continue
             if not matches(expected, got) and not (
                     alternative and expected[0] == "compile"
                     and constant_overflow(expected)

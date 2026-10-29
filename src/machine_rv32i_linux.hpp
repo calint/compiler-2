@@ -34,22 +34,6 @@ class machine_rv32i_linux final : public machine_rv32i {
   public:
     using machine_rv32i::machine_rv32i;
 
-    //
-    // overridden methods
-    //
-
-    auto exit(const token& src_loc_tk, const size_t indent,
-              const operand& exit_code) -> void override {
-
-        copy_value(src_loc_tk, indent, operand::reg("a0", default_type()),
-                   exit_code);
-
-        assembler_rv32i& a{assembler()};
-
-        a.li(indent, "a7", syscall_exit_);
-        a.ecall(indent);
-    }
-
   protected:
     //
     // overridden methods
@@ -67,6 +51,15 @@ class machine_rv32i_linux final : public machine_rv32i {
         a.label(0, "1");
         a.ebreak(1);
         a.j(1, "1b");
+    }
+
+    // the system call ends the program with the exit code in 'a0'
+    auto emit_exit_routine() -> void override {
+        assembler_rv32i& a{assembler()};
+
+        a.label(0, exit_label_);
+        a.li(1, "a7", syscall_exit_);
+        a.ecall(1);
     }
 
     auto emit_read_call(const size_t indent) -> void override {

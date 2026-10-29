@@ -461,11 +461,9 @@ class stmt_builtin_io final : public statement {
 
         const range_check check{range_check_of(tc, buffer_info)};
 
-        operand start;
-
         if (at_.start) {
-            start = compile_start(tc, indent, *at_.start, count, buffer_info,
-                                  check);
+            move_to_start(tc, indent, *at_.start, buffer_reg, count,
+                          buffer_info, check);
         } else if (at_.count and check == range_check::run_time) {
             x.check_bounds(args_.at(*at_.count).tok(), indent,
                            machine::bounds_range::count_alone(
@@ -473,12 +471,9 @@ class stmt_builtin_io final : public statement {
                            tc.checks().bounds_options());
         }
 
-        const operand element_size_bytes{
-            operand::imm(buffer_info.type_ref().size_bytes(), type_default),
-        };
-
-        convert_to_bytes(tc, indent, buffer_reg, count, start,
-                         element_size_bytes);
+        // the count becomes the byte count
+        x.scale_index(tok(), indent, count,
+                      buffer_info.type_ref().size_bytes());
 
         return args;
     }
@@ -506,36 +501,6 @@ class stmt_builtin_io final : public statement {
                      operand::imm(element_count, tc.builtins().default_type()));
     }
 
-    // the start register stays allocated for the caller
-    [[nodiscard]] auto compile_start(toc& tc, const size_t indent,
-                                     const size_t start_index,
-                                     const operand& count,
-                                     const ident_info& buffer_info,
-                                     const range_check check) const -> operand {
-
-        const statement& start_arg{args_.at(start_index)};
-
-        machine& x{tc.machine()};
-
-        const operand start{
-            x.alloc_scratch_register(start_arg.tok(), indent,
-                                     tc.builtins().default_type()),
-        };
-
-        start_arg.compile(tc, indent, destination::of_register(start));
-
-        if (check == range_check::compile_time) {
-            return start;
-        }
-
-        x.check_bounds(start_arg.tok(), indent,
-                       machine::bounds_range::range(
-                           start, count, buffer_info.element_count()),
-                       tc.checks().bounds_options());
-
-        return start;
-    }
-
     // the count argument, else the elements of the array or of one sector,
     // empty when the count is computed at run time or the array length is
     // not known
@@ -560,26 +525,74 @@ class stmt_builtin_io final : public statement {
         return static_cast<int64_t>(*array_len);
     }
 
-    // the start moves the buffer address and the count becomes the byte count
-    auto convert_to_bytes(toc& tc, const size_t indent,
-                          const operand& buffer_reg, const operand& count,
-                          const operand& start,
-                          const operand& element_size_bytes) const -> void {
+    // the buffer address moves to the start; a constant start in an array of
+    // known length is checked at compile time and moves it by a constant, a
+    // run-time count is then checked against the elements after the start
+    auto move_to_start(toc& tc, const size_t indent, const size_t start_index,
+                       const operand& buffer_reg, const operand& count,
+                       const ident_info& buffer_info,
+                       const range_check check) const -> void {
+
+        const statement& start_arg{args_.at(start_index)};
+        const size_t element_count{buffer_info.element_count()};
+        const size_t element_size_bytes{buffer_info.type_ref().size_bytes()};
+        const type& type_default{tc.builtins().default_type()};
+
+        const std::optional<int64_t> constant_start{
+            args_.constant(tc, start_index),
+        };
 
         machine& x{tc.machine()};
 
-        if (at_.start) {
-            x.multiply(tok(), indent, start, element_size_bytes,
-                       machine::factor_use::read_only);
+        // note: an unsized array parameter has no length in a function that
+        //       is never called, see 'ident_info::is_length_unknown'
 
-            x.add_subtract(tok(), indent, arithmetic_operator::add, buffer_reg,
-                           start);
+        if (constant_start and buffer_info.array_len()) {
+            // note: a constant start is at most the length, rejected at
+            //       compile time otherwise
 
-            x.free_scratch_register(tok(), indent, start);
+            assert(*constant_start >= 0 and
+                   std::cmp_less_equal(*constant_start, element_count));
+
+            const size_t start_count{static_cast<size_t>(*constant_start)};
+
+            if (check == range_check::run_time) {
+                x.check_bounds(start_arg.tok(), indent,
+                               machine::bounds_range::count_alone(
+                                   count, element_count - start_count),
+                               tc.checks().bounds_options());
+            }
+
+            const size_t offset_bytes{start_count * element_size_bytes};
+
+            if (offset_bytes != 0) {
+                x.add_subtract(tok(), indent, arithmetic_operator::add,
+                               buffer_reg,
+                               operand::imm(offset_bytes, type_default));
+            }
+
+            return;
         }
 
-        x.multiply(tok(), indent, count, element_size_bytes,
-                   machine::factor_use::read_only);
+        const operand start{
+            x.alloc_scratch_register(start_arg.tok(), indent, type_default),
+        };
+
+        start_arg.compile(tc, indent, destination::of_register(start));
+
+        if (check == range_check::run_time) {
+            x.check_bounds(
+                start_arg.tok(), indent,
+                machine::bounds_range::range(start, count, element_count),
+                tc.checks().bounds_options());
+        }
+
+        x.scale_index(tok(), indent, start, element_size_bytes);
+
+        x.add_subtract(tok(), indent, arithmetic_operator::add, buffer_reg,
+                       start);
+
+        x.free_scratch_register(tok(), indent, start);
     }
 
     // see 'range_check', a sector function has the constant count of a sector

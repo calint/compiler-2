@@ -1,0 +1,4 @@
+
+1872.baz:11:19: 'point.gen' is a method, call it on a value of type 'point'
+    var z = point.gen(1)
+                  ^~~

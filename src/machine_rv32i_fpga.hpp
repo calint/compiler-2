@@ -60,6 +60,17 @@ class machine_rv32i_fpga final : public machine_rv32i_bare_metal {
     // overridden methods
     //
 
+    // the emulator exits at 'ebreak' with 'a0' as its status, the loop halts
+    // hardware that continues
+    auto emit_exit_routine() -> void override {
+        assembler_rv32i& a{assembler()};
+
+        a.label(0, exit_label_);
+        a.label(0, "1");
+        a.ebreak(1);
+        a.j(1, "1b");
+    }
+
     // the card has a buffer of one sector: a read fills it from the sector,
     // a write sends it to the sector, the bytes pass one at a time through
     // the next byte address; its index wraps, so every transfer moves the
@@ -117,17 +128,6 @@ class machine_rv32i_fpga final : public machine_rv32i_bare_metal {
     //
     // overridden methods
     //
-
-    // the emulator exits at 'ebreak' with 'a0' as its status, the loop halts
-    // hardware that continues
-    auto emit_exit_routine() -> void override {
-        assembler_rv32i& a{assembler()};
-
-        a.label(0, exit_label_);
-        a.label(0, "1");
-        a.ebreak(1);
-        a.j(1, "1b");
-    }
 
     auto emit_receive_byte() -> void override {
         assembler_rv32i& a{assembler()};

@@ -246,11 +246,18 @@ class tokenizer final {
         return {file_ix_, ws_before, bgn_ix, txt, end_ix, ws_after, at_line};
     }
 
-    // the position of the next token, past the whitespace and comments
+    // the position of the next token, past the whitespace and comments; at
+    // the end of the source the line end of the last line, which an error
+    // can show
     [[nodiscard]] auto next_token_position() const -> token {
         tokenizer probe{*this};
 
         std::ignore = probe.next_whitespace();
+
+        if (probe.is_eos() and src_.ends_with('\n')) {
+            return token::position(file_ix_, src_.size() - 1,
+                                   probe.at_line_ - 1);
+        }
 
         return probe.cur_position_token();
     }
@@ -345,15 +352,9 @@ class tokenizer final {
     // e.g. '{ a = { 1 } b = 2 }', a closer without an opener ends it early
     auto skip_braced_block() -> void {
         // note: every caller has seen the '{'
-        const token open_brace_tk{seen_char_token('{')};
+        std::ignore = seen_char_token('{');
 
         skip_to_unnested("}");
-
-        // reported at the '{' since the end of the source shows no line, like
-        // a block that is parsed
-        if (is_eos()) {
-            throw compile_error{open_brace_tk, "'{' is not closed"};
-        }
 
         std::ignore = expect_char_token('}', "expected '}' to close block");
     }

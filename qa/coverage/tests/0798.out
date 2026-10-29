@@ -1,4 +1,4 @@
 
-0798.baz:3:18: '{' is not closed
+0798.baz:3:0: expected '}' to close block
 func f<T type>() {
-                 ^
+                  ^

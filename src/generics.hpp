@@ -144,7 +144,8 @@ struct generic_param {
         if (not kind_tk.is_text("type")) {
             throw compile_error{
                 kind_tk,
-                std::format("expected 'type' after generic parameter {}",
+                std::format("expected 'type', ',' or '>' after generic "
+                            "parameter {}",
                             in_quotes(name_tk.text()))};
         }
 

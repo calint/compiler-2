@@ -6,7 +6,8 @@
 # compiled with and without the jump optimizer and executed under qemu; and
 # that the far jump to a failure handler keeps the line in a0: a bounds check
 # 12 'foo' deep panics at its line, also 13 deep where the check holds the
-# last free registers
+# last free registers; and an 'exit' 14 'foo' deep reaches the shared exit
+# routine on every rv32i target
 #
 # the body takes minutes to compile with the coverage build, so the check is a
 # script of its own
@@ -150,4 +151,38 @@ set -e
 # note: line 19 because the check follows the 5 lines of the head and the 13
 #       lines of 'foo'
 grep -q "panic: bounds at line.baz:19" err
+echo ok
+
+# writes 'exit.baz': an 'exit' 14 'foo' deep, where no register is free, and
+# 1.08 MiB of code before the exit routine
+python3 - <<'EOF'
+depth = 14
+source = ["dat a = []{1, 2}", "func main() {", "    var x = 100"]
+for level in range(depth):
+    source.append("    " * (level + 1) + "foo a {")
+source.append("        x = x + i")
+source.append("        if x == 0 { exit(3) }")
+for level in reversed(range(depth)):
+    source.append("    " * (level + 1) + "}")
+source.append("    x = x + 1\n" * 90000)
+source.append("    exit(7)")
+source.append("}")
+open("exit.baz", "w").write("\n".join(source) + "\n")
+EOF
+
+# the far jump to the shared exit routine takes a register that is dead there
+for target in rv32i rv32i-qemu rv32i-fpga; do
+    echo -n "far jump to exit routine $target: "
+    "$BIN" exit.baz --target=$target --bin=exit.bin >exit.s
+    echo ok
+done
+echo -n "far jump to exit routine rv32i run: "
+"$BIN" exit.baz --target=rv32i --bin=exit.bin >exit.s
+llvm-mc -triple=riscv32 -mattr=-m,-a,-f,-d,-c -filetype=obj exit.s -o exit.o
+ld.lld -m elf32lriscv -e _start -o exit exit.o
+set +e
+timeout -k 1s 60s qemu-riscv32 ./exit
+status=$?
+set -e
+[[ $status -eq 7 ]]
 echo ok

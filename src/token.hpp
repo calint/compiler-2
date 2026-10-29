@@ -442,8 +442,11 @@ class token final {
         unsigned int decoded{};
         const char* const end{std::to_address(digits.end())};
 
+        constexpr int hex_base{16};
+
         const std::from_chars_result parsed{
-            std::from_chars(std::to_address(digits.begin()), end, decoded, 16),
+            std::from_chars(std::to_address(digits.begin()), end, decoded,
+                            hex_base),
         };
 
         if (parsed.ec != std::errc{} or parsed.ptr != end) {

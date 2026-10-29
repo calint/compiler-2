@@ -392,9 +392,10 @@ class machine_rv32i : public machine {
         ".Lbaz_decimal_places",
     };
 
-    // the scratch of a far jump to a failure handler: the handler reads only
-    // 'a0' and 'sp' and does not return, so the register is dead there
-    static constexpr std::string_view failure_jump_register_{"t0"};
+    // the scratch of a far jump to code that does not return, a failure
+    // handler or the exit routine: it reads only 'a0' and 'sp', so the
+    // register is dead there
+    static constexpr std::string_view no_return_jump_register_{"t0"};
 
     std::string binary_file_name_;
     assembler_rv32i assembler_;
@@ -412,6 +413,8 @@ class machine_rv32i : public machine {
     static constexpr size_t register_bits_{
         std::numeric_limits<uint32_t>::digits,
     };
+    // the routine a program calls to exit, the target defines it
+    static constexpr std::string_view exit_label_{".Lbaz_exit"};
     // the sector routines, see 'emit_sector_routines'
     static constexpr std::string_view sector_read_label_{".Lbaz_sector_read"};
     static constexpr std::string_view sector_write_label_{
@@ -590,6 +593,13 @@ class machine_rv32i : public machine {
         if (is_read_used or is_write_used) {
             emit_sector_routines(is_read_used, is_write_used);
         }
+
+        // note: last, the routines before may use 'exit', e.g. the division
+        //       by zero
+
+        if (is_used(exit_label_)) {
+            emit_exit_routine();
+        }
     }
 
     auto emit_variables_base_load() -> void override {
@@ -656,6 +666,9 @@ class machine_rv32i : public machine {
 
     // the divide helper found a zero divisor without '--checks=division'
     virtual auto emit_divide_by_zero_trap() -> void = 0;
+
+    // '.Lbaz_exit' ends the program with the exit code in 'a0'
+    virtual auto emit_exit_routine() -> void = 0;
 
     // 'a0' is the descriptor and receives the byte count, 'a1' is the address,
     // 'a2' the count and 'a7' is reserved; an override may change the registers
@@ -1125,6 +1138,20 @@ class machine_rv32i : public machine {
         release_bulk(src_loc_tk, indent);
     }
 
+    // every known size is compared from the address operands, small ones
+    // unrolled and larger ones in a loop, both addresses stay in their
+    // registers until it has compared
+    // the exit routine is shared, a jump to it is one instruction
+    auto exit(const token& src_loc_tk, const size_t indent,
+              const operand& exit_code) -> void override {
+
+        copy_value(src_loc_tk, indent, operand::reg("a0", default_type()),
+                   exit_code);
+
+        assembler_.resolved_jump(indent, exit_label_, no_return_jump_register_);
+        mark_used(exit_label_);
+    }
+
     [[nodiscard]] auto make_register_operand(const std::string_view name,
                                              const type& value_type) const
         -> operand override {
@@ -1136,9 +1163,6 @@ class machine_rv32i : public machine {
         return operand::reg(name, value_type);
     }
 
-    // every known size is compared from the address operands, small ones
-    // unrolled and larger ones in a loop, both addresses stay in their
-    // registers until it has compared
     auto memory_equal(const token& src_loc_tk, const size_t indent,
                       const size_t size_bytes, const equality_request& request)
         -> void override {
@@ -1594,7 +1618,7 @@ class machine_rv32i : public machine {
 
         if (not mark_failure(handler, src_loc_tk)) {
             assembler_.resolved_jump(indent, handler.label,
-                                     failure_jump_register_);
+                                     no_return_jump_register_);
 
             return;
         }
@@ -1606,7 +1630,7 @@ class machine_rv32i : public machine {
             failure_entry_label(handler.label, src_loc_tk.file_index()),
         };
 
-        assembler_.resolved_jump(indent, entry_label, failure_jump_register_);
+        assembler_.resolved_jump(indent, entry_label, no_return_jump_register_);
     }
 
     // a missing address would leave the loop width unproven

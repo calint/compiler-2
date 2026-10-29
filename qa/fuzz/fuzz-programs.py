@@ -436,8 +436,6 @@ def fuzz_one(args):
         if c.timed_out:
             found.append(("compiler-hang", "timeout", ""))
             return source, found, stats
-        if c.returncode and fl.known_crash(c.stderr):
-            return source, found, stats
         if c.returncode:
             sanitizer = any(t in c.stderr for t in fl.SANITIZER_TEXT)
             if c.returncode in fl.SANITIZER_EXIT or c.returncode < 0 or sanitizer:
@@ -465,9 +463,7 @@ def fuzz_one(args):
         if x86.kind == "signal":
             found.append(("ub-signal", x86.detail, str(x86)))
         c2, rv = fl.run_fpga(compiler, path, base, work)
-        if c2.returncode and fl.known_crash(c2.stderr):
-            pass
-        elif c2.returncode:
+        if c2.returncode:
             sanitizer = any(t in c2.stderr for t in fl.SANITIZER_TEXT)
             kindname = "compiler-crash" if sanitizer or c2.returncode in fl.SANITIZER_EXIT else "gen-reject"
             if kindname == "gen-reject" and "simplify the expression" in c2.stderr:

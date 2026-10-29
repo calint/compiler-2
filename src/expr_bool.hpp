@@ -544,10 +544,12 @@ class expr_bool_op final : public statement {
 
         machine::held_registers held{x, tok(), indent};
 
-        // a plain 'bool' already holds 0 or 1, a copy is shorter than
-        // evaluating the shorthand as '!= 0'
+        // a plain or computed 'bool' already holds 0 or 1, a copy is shorter
+        // than evaluating the shorthand as '!= 0'
         if (is_bool_copy(lhs, action)) {
-            const operand src{left_operand(tc, indent, condition, held)};
+            const operand src{
+                truth_test_operand(tc, indent, condition, action, held),
+            };
 
             x.copy_value(tok(), indent, action.destination, src);
 
@@ -882,8 +884,9 @@ class expr_bool_op final : public statement {
         return operand::imm(side.folded->value, untyped_type);
     }
 
-    // a stored 'bool' is 0 or 1 so a plain one needs no comparison with 0,
-    // inversion and branches keep the comparison which is shorter on x86
+    // a 'bool' is 0 or 1 so a plain or computed one needs no comparison with
+    // 0, e.g. the result of a call; inversion and branches keep the
+    // comparison which is shorter on x86
     [[nodiscard]] static auto
     is_bool_copy(const expr_arith& lhs,
                  const machine::comparison_action& action) -> bool {
@@ -894,8 +897,8 @@ class expr_bool_op final : public statement {
                 action.destination.type_ref().is_bool()));
 
         // note: a value that is not computed has a path ('is_computed')
-        return not lhs.is_computed() and
-               lhs.operand_path()->get_unary_ops().is_empty() and
+        return (lhs.is_computed() or
+                lhs.operand_path()->get_unary_ops().is_empty()) and
                lhs.get_type().is_bool() and not action.inverted and
                action.target.empty();
     }

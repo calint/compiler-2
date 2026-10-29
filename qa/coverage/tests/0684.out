@@ -1,2 +1,4 @@
 
-0684.baz:9:0: expected a method name after '.'
+0684.baz:8:0: expected a method name after '.'
+func point.
+           ^

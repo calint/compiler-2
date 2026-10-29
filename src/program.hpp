@@ -147,11 +147,12 @@ class report_renderer final {
             section.entries.push_back({
                 .name{f.function},
                 .value{
-                    std::format(
-                        "{} {}, {}, {} instructions{}", f.body_count,
-                        f.body_count == 1 ? "body" : "bodies",
-                        counted(f.call_count, "call"), f.instruction_count,
-                        f.call_count <= f.body_count ? ", no reuse" : ""),
+                    std::format("{} {}, {}, {}{}", f.body_count,
+                                f.body_count == 1 ? "body" : "bodies",
+                                counted(f.call_count, "call"),
+                                counted(f.instruction_count, "instruction"),
+                                f.call_count <= f.body_count ? ", no reuse"
+                                                             : ""),
                 },
             });
         }

@@ -118,18 +118,18 @@ class constant_parser final {
             return parse_character(src_loc_tk, str);
         }
 
-        constexpr int base_decimal{10};
-        constexpr int base_hex{16};
-        constexpr int base_binary{2};
+        constexpr int decimal_base{10};
+        constexpr int hex_base{16};
+        constexpr int binary_base{2};
 
-        int base{base_decimal};
+        int base{decimal_base};
         std::string_view digits{str};
 
         if (has_base_prefix(str)) {
             const bool is_hex{str.at(1) == 'x' or str.at(1) == 'X'};
             // note: 1 is the letter after the '0' of the prefix
 
-            base = is_hex ? base_hex : base_binary;
+            base = is_hex ? hex_base : binary_base;
             digits.remove_prefix(2);
             // note: 2 for the '0x' or '0b' prefix
         }

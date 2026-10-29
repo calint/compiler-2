@@ -1,2 +1,4 @@
 
 0442.baz:3:0: expected '{' to begin block
+func main()
+           ^

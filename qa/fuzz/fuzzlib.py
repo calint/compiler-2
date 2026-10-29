@@ -109,14 +109,6 @@ def group(text):
     return text
 
 
-# crashes that are reported and known, the fuzzers skip them to find others
-KNOWN_CRASHES = ("assert_folded", "checked_number")
-
-
-def known_crash(text):
-    return any(k in text for k in KNOWN_CRASHES)
-
-
 class Result:
     def __init__(self, returncode, stdout, stderr, timed_out=False):
         self.returncode = returncode
@@ -465,7 +457,7 @@ def judge(work, source, expected, stdin=b"", targets=TARGETS,
     for target in targets:
         for options in option_lists:
             got = build_and_run(work, source, target, options, stdin)
-            if known_crash(str(got)) or got == expected:
+            if got == expected:
                 continue
             key = f"{target} {' '.join(options)} {got[0]}"
             if got[0] == "compile":

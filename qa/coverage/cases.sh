@@ -5966,3 +5966,6 @@ SRC=1870 && EXP=7 && RUN
 
 # a copy between two variables has no overlap check, within one it stays
 SRC=1871 && EXP=251 && OPTS="--checks=noub" RUN_ERR
+
+# a generic function of a type called like a constructor is a method
+SRC=1872 && COMPERR

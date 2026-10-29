@@ -1,6 +1,5 @@
 #pragma once
 
-#include <cassert>
 #include <cstddef>
 #include <cstdint>
 #include <memory>
@@ -167,15 +166,11 @@ class stmt_block final : public statement {
 
             const token tk{tz.next_token()};
 
-            // the source ended before the '}', reported at the '{' since the
-            // end of the source shows no line
+            // the source ended before the '}'
             if (tk.is_none()) {
                 tz.assert_not_at_delimiter();
 
-                // note: 'parse_statements' runs only for a block with braces
-                assert(open_brace_tk_);
-
-                throw compile_error{*open_brace_tk_, "'{' is not closed"};
+                throw compile_error{tz, "expected '}' to close block"};
             }
 
             statements_.emplace_back(parse_statement(tc, tz, tk));

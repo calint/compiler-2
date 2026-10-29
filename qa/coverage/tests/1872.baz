@@ -1,0 +1,12 @@
+# a generic function of a type called like a constructor is a method, a
+# constructor is never generic
+
+type point {x, y}
+
+func point.gen<T type>(v T) res T {
+    res = v
+}
+
+func main() {
+    var z = point.gen(1)
+}

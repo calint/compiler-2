@@ -1,4 +1,4 @@
 
-1795.baz:4:11: '{' is not closed
-type l<n> {
-          ^
+1795.baz:9:0: expected '}' to close block
+}
+ ^

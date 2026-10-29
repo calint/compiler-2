@@ -1056,7 +1056,8 @@ auto print_source_error(const source_files& files,
 auto print_source_line(const std::string_view src, const size_t start_index,
                        const size_t end_index) -> void {
 
-    if (start_index >= src.size()) {
+    // note: the end of a source without a final line end is on its last line
+    if (start_index > src.size()) {
         return;
     }
 
@@ -1069,7 +1070,7 @@ auto print_source_line(const std::string_view src, const size_t start_index,
         // note: 1 for the carriage return of a crlf line end
     }
 
-    // an error at the end of a file has no line to show
+    // e.g. an error after an empty last line
     if (line.empty()) {
         return;
     }

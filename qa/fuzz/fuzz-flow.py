@@ -220,10 +220,7 @@ class Generator:
             return ("assign", rnd.choice(writable), self.expr(names, 2, False))
         if r < 0.32:
             if in_function:
-                # note: a function leaves the checksum alone, the order in
-                #       which the calls of an expression run is not defined
-                return ("res", ("bin", "^", ("var", "res"),
-                                self.expr(names, 2, False)))
+                return ("observe", self.expr(names, 2, False))
             return ("observe", self.expr(names, 2))
         if r < 0.36 and in_function:
             return ("res", self.expr(names, 2, False))
@@ -322,8 +319,9 @@ class Generator:
         if kind == "assign":
             scope.set(s[1], self.eval(s[2], scope))
         elif kind == "observe":
+            h = scope.get("h")
             v = self.eval(s[1], scope)
-            scope.set("h", ((scope.get("h") ^ v) * 31) & 0xffff)
+            scope.set("h", ((h ^ v) * 31) & 0xffff)
         elif kind == "res":
             scope.set("res", self.eval(s[1], scope))
         elif kind in ("var", "let", "callvar"):

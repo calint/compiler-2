@@ -28,9 +28,6 @@ class machine_rv32i_bare_metal : public machine_rv32i {
     size_t memory_size_bytes_{};
 
   protected:
-    // the routine a program calls to exit, the target defines it
-    static constexpr std::string_view exit_label_{".Lbaz_exit"};
-
     //
     // statics
     //
@@ -63,20 +60,6 @@ class machine_rv32i_bare_metal : public machine_rv32i {
         //       error in the source does not hide them
 
         check_stack_size();
-    }
-
-    //
-    // overridden methods
-    //
-
-    auto exit(const token& src_loc_tk, const size_t indent,
-              const operand& exit_code) -> void override {
-
-        copy_value(src_loc_tk, indent, operand::reg("a0", default_type()),
-                   exit_code);
-
-        branch(indent, exit_label_);
-        mark_used(exit_label_);
     }
 
   protected:
@@ -127,13 +110,9 @@ class machine_rv32i_bare_metal : public machine_rv32i {
     }
 
     // only the routines the program calls are emitted; the shared routines
-    // come first, they may use 'exit', e.g. the division by zero
+    // come first
     auto emit_used_routines() -> void override {
         machine_rv32i::emit_used_routines();
-
-        if (is_used(exit_label_)) {
-            emit_exit_routine();
-        }
 
         if (is_used(read_label_)) {
             emit_read_routine();
@@ -165,9 +144,6 @@ class machine_rv32i_bare_metal : public machine_rv32i {
     //
     // virtual methods
     //
-
-    // '.Lbaz_exit' ends the program with the exit code in 'a0'
-    virtual auto emit_exit_routine() -> void = 0;
 
     // waits for a byte and loads it into 'a4', may change only 'a4'
     // note: the read routine uses the labels '1', '3' and '4' around it, an

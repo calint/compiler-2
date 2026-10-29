@@ -410,7 +410,9 @@ class Generator:
                 dst = src
             tmp = self.name("a")
             self.emit(f"var {tmp} = {name}")
-            self.emit(f"array_copy({name}[{src}], {tmp}[{dst}], {n})")
+            same_root = rnd.random() < 0.7
+            source = tmp if same_root else name
+            self.emit(f"array_copy({source}[{src}], {tmp}[{dst}], {n})")
             result = list(value)
             result[dst:dst + n] = value[src:src + n]
             self.emit(f"if arrays_equal({tmp}[{dst}], {name}[{src}], {n}) "

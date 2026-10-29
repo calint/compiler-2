@@ -434,6 +434,30 @@ def rule_shift_count(rnd, c):
         p.add("}")
 
 
+def rule_constant_count(rnd, c):
+    # a constant count past the end of an array, at the line of the mistake
+    builtin = rnd.choice(["array_copy", "arrays_equal"])
+    for p, n in ((c.bad, 5), (c.good, 4)):
+        p.add("func main() {")
+        p.add("    var a = i8[4]")
+        p.add("    var b = i8[4]")
+        if builtin == "array_copy":
+            p.add(f"    array_copy(a, b, {n})", p is c.bad)
+        else:
+            p.add(f"    var e = arrays_equal(a, b, {n})", p is c.bad)
+        p.add("    exit(0)")
+        p.add("}")
+
+
+def rule_zero_divisor(rnd, c):
+    for p, d in ((c.bad, 0), (c.good, 1)):
+        p.add("func main() {")
+        p.add("    var s = 7")
+        p.add(f"    var t = s / {d}", p is c.bad)
+        p.add("    exit(0)")
+        p.add("}")
+
+
 def rule_constant_overflow(rnd, c):
     for p, v in ((c.bad, 100), (c.good, 27)):
         p.add("func main() {")
@@ -486,6 +510,7 @@ RULES = [
     (rule_repeated_name, ()), (rule_break_outside, ()), (rule_and_or, ()),
     (rule_unknown_method, ()),
     (rule_unknown_field, ()), (rule_shift_count, ("--checks=shift",)),
+    (rule_shift_count, ()), (rule_constant_count, ()), (rule_zero_divisor, ()),
     (rule_constant_overflow, ("--checks=overflow",)),
     (rule_array_sizes, ()), (rule_unknown_type, ()),
     (rule_wrong_record_field_count, ()), (rule_integer_condition, ()),
@@ -505,7 +530,7 @@ def fuzz_one(args):
     seed, index = args
     rnd = random.Random(seed * 1000003 + index)
     rule, options = RULES[index % len(RULES)]
-    case = Case(rule.__name__, options)
+    case = Case(" ".join([rule.__name__, *options]), options)
     rule(rnd, case)
     # note: the mistake of a 'break' is only one outside of a loop
     for p in (case.bad, case.good):
@@ -524,7 +549,7 @@ def fuzz_one(args):
             if r.timed_out:
                 found.append(("reject-crash", f"{case.name} hang", ""))
                 continue
-            if r.signal or fl.known_crash(r.stderr) or any(
+            if r.signal or any(
                     t in r.stderr for t in fl.SANITIZER_TEXT):
                 found.append(("reject-crash", f"{case.name} {target}",
                               r.stderr[:400]))

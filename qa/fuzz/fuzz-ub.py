@@ -37,6 +37,7 @@ import fuzzlib as fl
 
 from fuzzlib import BITS, fits, limits, trunc_div, wrap
 CHECKS = os.environ.get("FUZZ_CHECKS", "noub")
+INT = ["i64"]
 
 
 class Panic(Exception):
@@ -839,7 +840,8 @@ class Indexes:
         b = env[e[2]] if isinstance(e[2], str) else e[2]
         if not fits(t, b):
             raise Rejected("literal")
-        return apply(t, e[0], a, b)
+        # an index or a count is computed at the default type, at least 'i32'
+        return apply(INT[0] if BITS[t] < BITS[INT[0]] else t, e[0], a, b)
 
     def evaluate(self):
         env = {n: v for n, (_, v) in {**self.index_vars,
@@ -864,10 +866,15 @@ class Indexes:
                     else:
                         total += x[i][s[2]] if tri else x[i]
                 elif k == "copy":
-                    si = self.value_of(s[2], env)
-                    di = self.value_of(s[3], env)
-                    n = self.value_of(s[4], env)
                     to = x if s[1] == 1 else y
+                    # each start is checked at its address, left to right
+                    si = self.value_of(s[2], env)
+                    if not 0 <= si <= len(x):
+                        raise Panic("bounds")
+                    di = self.value_of(s[3], env)
+                    if not 0 <= di <= len(to):
+                        raise Panic("bounds")
+                    n = self.value_of(s[4], env)
                     # a start at the end with a count of zero touches nothing
                     in_range = (n >= 0 and 0 <= si and 0 <= di
                                 and si + n <= len(x) and di + n <= len(to))
@@ -895,9 +902,6 @@ class Indexes:
                     elif n < 0 or n > len(x):
                         raise Panic("bounds")
             except Panic as p:
-                # the order of the checks of the arguments is not defined
-                if p.kinds[0] == "overflow":
-                    raise Panic("overflow", "bounds", "overlap")
                 raise
         return total & 127
 
@@ -1377,6 +1381,12 @@ def main():
             counts[0 if expected[0] == "exit" else
                    1 if expected[0] == "panic" else 2] += 1
             for target in program.targets:
+                if program.name == "indexes":
+                    INT[0] = "i64" if target == "x86_64" else "i32"
+                    try:
+                        expected = ("exit", program.evaluate())
+                    except Panic as p:
+                        expected = ("panic", p.kinds)
                 got = compile_run(work, source, target)
                 if getattr(program, "lenient", False) and got[0] == "compile":
                     counts[2] += 1

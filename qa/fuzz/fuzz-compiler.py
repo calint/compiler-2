@@ -252,8 +252,6 @@ def classify_compile(c, source):
     if c.timed_out:
         return ("compiler-hang", "timeout")
     text = c.stderr
-    if fl.known_crash(text):
-        return None
     sanitizer = any(t in text for t in fl.SANITIZER_TEXT)
     if c.returncode in fl.SANITIZER_EXIT or c.returncode < 0 or sanitizer:
         return ("compiler-crash", fl.signature(text) if sanitizer

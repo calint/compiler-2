@@ -533,7 +533,8 @@ struct call_site {
         }
     };
 
-    // the function name, the code and the errors of the call are located at it
+    // the name of a function or method, the type of a constructor call; the
+    // code and the errors of the call are located at it
     token tk;
     // the receiver of a method is written before the name
     token begin_tk;
@@ -1744,7 +1745,7 @@ class stmt_call final : public statement {
             resolve_callee(tc, tz, tk.text(), expected_type),
         };
 
-        read_open_paren(tc, tz, tok(), "function name");
+        read_open_paren(tc, tz, "function name");
 
         // note: a call of 'main' can only be in 'main' or after it, in a
         //       function that nothing calls, since names are defined before use
@@ -1782,7 +1783,7 @@ class stmt_call final : public statement {
             resolve_callee(tc, tz, name, expected_type),
         };
 
-        read_open_paren(tc, tz, tok(), "method name");
+        read_open_paren(tc, tz, "method name");
 
         assert_method_receiver(receiver);
 
@@ -1809,13 +1810,13 @@ class stmt_call final : public statement {
         // constructor name
         if (tz.peek_char_after_whitespace() == '<') {
             throw compile_error{
-                constructor_->name_tk,
+                callee_name_token(),
                 std::format("constructor {} is not generic, it takes no type "
                             "arguments",
                             in_quotes(callee().name()))};
         }
 
-        read_open_paren(tc, tz, constructor_->name_tk, "constructor name");
+        read_open_paren(tc, tz, "constructor name");
 
         parse_arguments(tc, tz, {});
     }
@@ -2015,9 +2016,10 @@ class stmt_call final : public statement {
         }
 
         throw compile_error{
-            tok(), std::format("{} is called before its body ends, two "
-                               "functions cannot call each other",
-                               in_quotes(callee().name()))};
+            callee_name_token(),
+            std::format("{} is called before its body ends, two "
+                        "functions cannot call each other",
+                        in_quotes(callee().name()))};
     }
 
     // the function is a method and the receiver is a value
@@ -2227,18 +2229,22 @@ class stmt_call final : public statement {
                                      in_quotes(name_tk.text()))};
         }
 
-        const stmt_def_func& func{
-            tc.get_func_or_throw(name_tk, name),
+        // note: a constructor is not generic, a generic function of the type
+        //       is a method ('stmt_def_func_generic::assert_generic_signature')
+
+        const bool names_method{
+            tc.generics().has_func(name) or
+                not tc.get_func_or_throw(name_tk, name).is_constructor(),
         };
 
-        if (not func.is_constructor()) {
+        if (names_method) {
             throw compile_error{
                 name_tk,
                 std::format("{} is a method, call it on a value of type {}",
                             in_quotes(name), in_quotes(tok().text()))};
         }
 
-        return func;
+        return tc.get_func_or_throw(name_tk, name);
     }
 
     [[nodiscard]] auto describe_argument(const size_t index) const
@@ -2362,9 +2368,9 @@ class stmt_call final : public statement {
 
     // a call is in a function; the type is the result type of the callee,
     // resolved before, so an unknown callee is reported before a missing '(';
-    // that error is at 'name_tk', the next token can be on a later line, and
+    // that error is at the name, the next token can be on a later line, and
     // 'what' names the callee
-    auto read_open_paren(const toc& tc, tokenizer& tz, const token& name_tk,
+    auto read_open_paren(const toc& tc, tokenizer& tz,
                          const std::string_view what) -> void {
 
         assert_call_in_func(tc, tok());
@@ -2373,7 +2379,8 @@ class stmt_call final : public statement {
         set_type(callee().result_type());
 
         open_paren_tk_ = tz.expect_char_token_after(
-            name_tk, '(', std::format("expected '(' after {}", what));
+            callee_name_token(), '(',
+            std::format("expected '(' after {}", what));
     }
 
     // what the callee reaches of the caller is the caller's use too, see

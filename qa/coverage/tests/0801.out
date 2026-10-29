@@ -1,4 +1,4 @@
 
-0801.baz:3:10: expected 'type' after generic parameter 'T'
+0801.baz:3:10: expected 'type', ',' or '>' after generic parameter 'T'
 func f<T int>() {}
          ^~~

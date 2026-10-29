@@ -357,7 +357,15 @@ class machine_x86_64 final : public machine {
                             const operand& lhs, const operand& rhs,
                             const comparison_action& action) -> void override {
 
-        cmp(src_loc_tk, indent, lhs, rhs);
+        // note: 'test' of a register with itself sets the flags of a compare
+        //       with 0 and is shorter
+
+        if (lhs.is_register() and rhs.is_immediate() and rhs.immediate() == 0) {
+
+            emit_op(src_loc_tk, indent, op::test, lhs, lhs);
+        } else {
+            cmp(src_loc_tk, indent, lhs, rhs);
+        }
 
         if (not action.destination.is_empty()) {
             store_condition(
