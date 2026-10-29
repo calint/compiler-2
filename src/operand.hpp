@@ -409,7 +409,7 @@ inline constexpr auto binary_operators{
             .family{operator_family::shift},
             .precedence{6},
             .is_regroupable{},
-            .identity{},
+            .identity{0},
             .reads_high_bits{},
         },
         {
@@ -418,7 +418,7 @@ inline constexpr auto binary_operators{
             .family{operator_family::shift},
             .precedence{6},
             .is_regroupable{},
-            .identity{},
+            .identity{0},
             .reads_high_bits{true},
         },
     }),

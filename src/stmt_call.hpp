@@ -1763,8 +1763,8 @@ class stmt_call final : public statement {
           method_dot_tk_{receiver.method_dot_token()} {
 
         const std::string name{
-            std::format("{}.{}", receiver.get_type().name(),
-                        receiver.method_name_token().text()),
+            method_name_of(receiver.get_type().name(),
+                           receiver.method_name_token().text()),
         };
 
         // e.g. 'p.get<i8>()' where 'get' is not generic, the '<' is not an
@@ -2675,15 +2675,15 @@ class stmt_call final : public statement {
                               const token& constructor_name_tk) -> std::string {
 
         std::string name{
-            std::format("{}.{}", type_tk.text(), constructor_name_tk.text()),
+            method_name_of(type_tk.text(), constructor_name_tk.text()),
         };
 
         if (tc.is_func(name) or not tc.types().has(type_tk.text())) {
             return name;
         }
 
-        name = std::format("{}.{}", tc.get_type_or_throw(type_tk).name(),
-                           constructor_name_tk.text());
+        name = method_name_of(tc.get_type_or_throw(type_tk).name(),
+                              constructor_name_tk.text());
 
         return name;
     }

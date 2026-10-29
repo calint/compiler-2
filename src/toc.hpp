@@ -1051,10 +1051,6 @@ struct check_options {
         };
     }
 
-    [[nodiscard]] auto division_options() const -> machine::runtime_check {
-        return runtime(division);
-    }
-
     // either bound
     [[nodiscard]] auto is_bounds() const -> bool {
         return bounds_upper or bounds_lower;
@@ -1062,10 +1058,6 @@ struct check_options {
 
     [[nodiscard]] auto overflow_options() const -> machine::runtime_check {
         return runtime(overflow);
-    }
-
-    [[nodiscard]] auto overlap_options() const -> machine::runtime_check {
-        return runtime(overlap);
     }
 
     [[nodiscard]] auto shift_options() const -> machine::runtime_check {

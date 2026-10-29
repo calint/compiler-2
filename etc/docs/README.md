@@ -926,7 +926,11 @@ Evaluation is left to right: the operands of a list, the arguments of a
 call, the parts of a statement and the parts a literal writes. Code
 generation follows the same order, so the checks walk a statement in that
 order and check each read only against what was written before it; the code
-that is checked is the code that is emitted.
+that is checked is the code that is emitted. A name in an argument, a side of
+a comparison or a bulk or io argument is read where it is used, after the
+later operands, so a call in a later operand that may write it is rejected
+('assert_not_written_later'); an arithmetic list reads each operand at its
+place.
 
 Each node states its operands in evaluation order in its 'visit_operands', and
 the walks of the checks follow from it; its 'compile' emits them in that order,
@@ -1587,9 +1591,10 @@ Rejected: substituting arguments in a parsed tree, every node class would
 need a copy, and the parser could not tell 'T{' or 'T.at' apart without
 knowing what 'T' names.
 
-Cost: an error in a generic definition shows at its first instance; the
-generic functions nothing instantiates are listed in the report after the
-code.
+Cost: an error in a generic definition shows at its first instance, except
+what the tokenizer reads at the definition: strings, character literals and
+the closing '}'; the generic functions nothing instantiates are listed in the
+report after the code.
 
 ### 7.5 Calls are inlined, parameters are bound to arguments
 
@@ -1847,7 +1852,7 @@ constants out of range, and the code the run-time checks.
 | a constant out of range | 'a[9]' of 'a = i8[4]', 'x / 0', 'x << 70' | rejected ('assert_constant_index' for an index, 'fold' for the others, 1.7) | always | 0305, 0306, 0750-0752 |
 | a constant expression that overflows | '0x7fffffffffffffff + 1' | rejected ('fold'), else it wraps | 'overflow' | 0995, 1002, 1010 |
 | array index out of bounds | 'a[i]' | run time ('machine::check_bounds' from 'stmt_identifier::compile_checked_index', the range of a bulk operation or an io built-in ('bulk_operands', 'stmt_builtin_io') and the count of a 'foo') | 'upper', 'lower' | 0302, 0303, 0307-0309, 0626, 0627, 1355 |
-| division by zero and 'MIN / -1' | 'a / b' | run time ('machine::divide' with 'check_options::division_options', from 'expr_arith::emit_operation'); a constant 'MIN / -1' is rejected ('fold'), the 64-bit one also without the check, it has no value | 'division' | 0965-0967, 1775-1777 |
+| division by zero and 'MIN / -1' | 'a / b' | run time ('machine::divide' from 'expr_arith::emit_operation', not for a constant divisor other than -1); a constant 'MIN / -1' is rejected ('fold'), the 64-bit one also without the check, it has no value | 'division' | 0965-0967, 1775-1777 |
 | shift count below zero or not below the width | 'a << n' | run time ('machine::shift' with 'check_options::shift_options', from 'expr_arith::emit_operation') | 'shift' | 0975-0977 |
 | signed overflow | 'a + b' | run time ('machine::add_subtract', 'multiply' and 'unary' with 'toc::overflow_options') | 'overflow' | 0988, 0989, 0994 |
 | 'array_copy' whose destination starts inside the source | 'array_copy(a, a[1], 3)' | run time ('machine::copy_elements' with the overlap check of 'stmt_builtin_array_copy') | 'overlap' | 0981-0983 |

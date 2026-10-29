@@ -946,13 +946,8 @@ class expr_arith final : public statement {
             assert_constant_operand(element.tok(), s.op, step_value,
                                     dst.type_ref());
 
-            // like an identity of a regroupable step, e.g. 'x / 1' or 'x >> 0'
-            const bool changes_nothing{
-                (s.op == arithmetic_operator::divide and step_value == 1) or
-                    (is_shift(s.op) and step_value == 0),
-            };
-
-            if (changes_nothing) {
+            // e.g. 'x / 1' or 'x >> 0'
+            if (traits_of(s.op).identity == step_value) {
                 x.comment(element.tok(), indent, "changes nothing");
                 return;
             }
@@ -964,13 +959,7 @@ class expr_arith final : public statement {
             return;
         }
 
-        // subtracting zero changes nothing like adding it
-        const arithmetic_operator identity_op{
-            s.op == arithmetic_operator::subtract ? arithmetic_operator::add
-                                                  : s.op,
-        };
-
-        if (step_value == arith_steps::identity_of(identity_op)) {
+        if (step_value == arith_steps::identity_of(s.op)) {
             x.comment(tok(), indent,
                       "src: folded constant {} is {} and changes nothing",
                       in_quotes(s.folded_source), step_value);
