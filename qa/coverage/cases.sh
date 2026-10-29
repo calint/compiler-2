@@ -5976,3 +5976,16 @@ SRC=1873 && COMPERR
 # an error at the end of the source after blank lines is shown on its last
 # line with text
 SRC=1874 && COMPERR
+
+# a string assigned to an instance is rejected
+SRC=1875 && COMPERR
+
+# a generic function takes only types, no hint about constants
+SRC=1876 && COMPERR
+
+# an inlined recursion of a constructor is reported at the constructor name
+SRC=1877 && COMPERR
+
+# a result destination sharing storage with a global the constructor uses is
+# reported at the constructor name
+SRC=1878 && COMPERR

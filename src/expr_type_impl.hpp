@@ -74,6 +74,15 @@ inline expr_type::expr_type(toc& tc, tokenizer& tz, const type& tp,
         return;
     }
 
+    // e.g. 'q = "a"' for an instance 'q'
+    if (tok().is_string()) {
+        throw compile_error{
+            tok(),
+            std::format("a string fills only an array of {}, not {} of {}",
+                        in_quotes(tc.builtins().i8().name()), value_kind(),
+                        in_quotes(tp.name()))};
+    }
+
     // e.g. 'p = pt', the token is empty at '{x, y}'
     if (not tok().is_none() and not is_typed_literal) {
         parse_copy_source(tc, tz, tm);

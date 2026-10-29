@@ -138,7 +138,6 @@ class machine {
     enum class target_call : uint8_t {
         read,
         write,
-        exit,
         sector_read,
         sector_write,
     };
@@ -265,8 +264,9 @@ class machine {
             };
         }
 
-        // a start checked before its count is computed: 'last_start' is the
-        // end of the array less the elements the count has at least
+        // a start checked against the end less a constant count:
+        // 'last_start' is the end of the array less the elements the count
+        // has at least
         [[nodiscard]] static auto range_start(const operand& start,
                                               const size_t last_start)
             -> bounds_range {
@@ -290,7 +290,7 @@ class machine {
         // argument register names in parameter order
         std::span<const std::string_view> arguments;
 
-        // result register name, empty for 'exit' and the sector functions
+        // result register name, empty for the sector functions
         std::string_view result;
     };
 
@@ -486,9 +486,6 @@ class machine {
         address_emitter rhs;
         operand dst;
         bool inverted{};
-        // the count of 'equal_elements' is a constant above 0, so no zero
-        // count is compared
-        bool is_count_positive{};
     };
 
     // the addresses of a copy of elements, 'alignment' is the alignment known
@@ -999,9 +996,6 @@ class machine {
                      const std::span<const operand> args, const operand& result)
         -> void {
 
-        // note: 'exit' is reached through 'exit', which takes any operand
-        assert(function != target_call::exit);
-
         assert_target_call_registers(function, args, result);
         emit_target_call(src_loc_tk, indent, function, result);
     }
@@ -1224,6 +1218,11 @@ class machine {
         target_assembler().end_body();
     }
 
+    // the register 'exit' takes its code in when the code is computed
+    [[nodiscard]] auto exit_code_register() const -> std::string_view {
+        return target_.target_calls.arguments.front();
+    }
+
     // releases the variables base, optimizes the jumps and asserts that the
     // registers are balanced, then the target's last steps; called once at
     // the end of the compile pass
@@ -1349,13 +1348,6 @@ class machine {
         -> target_call_registers {
 
         const target_call_names& names{target_.target_calls};
-
-        if (function == target_call::exit) {
-            return {
-                .arguments{std::span{names.arguments}.first(1)},
-                .result{},
-            };
-        }
 
         if (function == target_call::sector_read or
             function == target_call::sector_write) {

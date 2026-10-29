@@ -1,0 +1,10 @@
+# a string assigned to an instance is rejected, a string fills only an array
+# of 'i8'
+
+type s {a i8}
+
+var g = s
+
+func main() {
+    g = "a"
+}

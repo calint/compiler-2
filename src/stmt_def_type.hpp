@@ -250,7 +250,7 @@ struct generic_type_use {
                             in_quotes(generic_tk.text()), generic_tk.text())};
         }
 
-        return generic_arg_tokens::parse(tz, *open_tk);
+        return generic_arg_tokens::parse(tz, *open_tk, true);
     }
 };
 

@@ -38,15 +38,8 @@ class stmt_builtin_exit final : public statement {
 
         x.comment(tok(), indent, statement::trimmed_source(*this));
 
-        const machine::target_call_registers registers{
-            x.registers_for_target_call(machine::target_call::exit),
-        };
-
-        // note: the exit code is the only argument
-        assert(registers.arguments.size() == 1);
-
         const operand exit_code{
-            x.alloc_named_register(tok(), indent, registers.arguments.front(),
+            x.alloc_named_register(tok(), indent, x.exit_code_register(),
                                    tc.builtins().default_type()),
         };
 

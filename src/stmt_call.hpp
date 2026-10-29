@@ -128,7 +128,7 @@ struct generic_call {
             deducing_args = std::move(deduced.argument_indexes);
         } else {
             const generic_arg_tokens args{
-                generic_arg_tokens::parse(tz, *open_tk),
+                generic_arg_tokens::parse(tz, *open_tk, false),
             };
 
             type_args =
@@ -480,25 +480,19 @@ struct call_site {
     //   instance temporary  'point{1, 2}'   a temporary        a temporary
     //   place               'p', 'a[i]'     the name, or the   its address
     //                                       computed address
-    //   computed            'x + 1',        a constant or a    a temporary
-    //                       '-a[i]', '-x',  register
-    //                       '3', 'k'
-    //   named value         'x' bound to    the name of its    a temporary
-    //                       a register      register
+    //   computed            'x + 1',        a constant, a      a temporary
+    //                       '-a[i]', '-x',  register, or the
+    //                       '3', 'k', 'x'   register 'x' is
+    //                       bound to a      bound to
+    //                       register
     struct argument_form {
         // an instance literal or a call result of a user type
         struct instance_temporary {};
 
-        // computed into a register unless it folds
+        // a value without storage
         struct computed {};
 
-        // a name bound to a register, it is no place and no constant
-        struct named_value {
-            const stmt_identifier* ident{};
-            ident_info info;
-        };
-
-        std::variant<instance_temporary, place, computed, named_value> kind;
+        std::variant<instance_temporary, place, computed> kind;
 
         [[nodiscard]] auto is_place() const -> bool {
             return std::holds_alternative<place>(kind);
@@ -673,10 +667,10 @@ struct call_site {
                                                const stmt_def_func_param& param)
         -> argument_form {
 
-        const stmt_identifier* const ident{arg.operand_path()};
-
         // e.g. 'point{1, 2}' or 'mk(1, 2)'
-        if (not param.get_type().is_builtin() and ident == nullptr) {
+        if (not param.get_type().is_builtin() and
+            arg.operand_path() == nullptr) {
+
             return {
                 .kind{argument_form::instance_temporary{}},
             };
@@ -688,35 +682,9 @@ struct call_site {
             };
         }
 
-        // a computed value, or the zero value '{}', which has no name
-        if (ident == nullptr) {
-            return {
-                .kind{argument_form::computed{}},
-            };
-        }
-
-        ident_info info{make_ident_info(tc, *ident)};
-
-        // e.g. '-a[i]', '-x', or a constant, which the callee's own constants
-        // would shadow and which must fold, e.g. '~k'
-        if (info.is_const() or not ident->get_unary_ops().is_empty()) {
-            return {
-                .kind{argument_form::computed{}},
-            };
-        }
-
-        // note: 'as_place' took a variable, so what is left is a name bound to
-        //       a register
-
-        assert(info.is_register());
-
+        // e.g. 'x + 1', '-x', '{}', a constant or a name bound to a register
         return {
-            .kind{
-                argument_form::named_value{
-                    .ident{ident},
-                    .info{std::move(info)},
-                },
-            },
+            .kind{argument_form::computed{}},
         };
     }
 
@@ -1078,17 +1046,17 @@ class inline_call final {
             return bind_name(param, ident, arg_place->info);
         }
 
-        if (std::holds_alternative<call_site::argument_form::computed>(
-                argument.kind)) {
+        // e.g. 'x' bound to a register of the caller; a constant, which the
+        // callee's own constants would shadow, is folded
+        if (const stmt_identifier* const ident{arg.bare_path()}) {
+            const ident_info info{make_ident_info(tc, *ident)};
 
-            return bind_expression(tc, indent, arg, param, held);
+            if (info.is_register()) {
+                return bind_name(param, *ident, info);
+            }
         }
 
-        const call_site::argument_form::named_value& named{
-            std::get<call_site::argument_form::named_value>(argument.kind),
-        };
-
-        return bind_name(param, *named.ident, named.info);
+        return bind_expression(tc, indent, arg, param, held);
     }
 
     // a constant lets the inlined body be decided at compile time
@@ -2051,7 +2019,7 @@ class stmt_call final : public statement {
         // none for a destination without storage, e.g. a register
         if (dst.storage()) {
             references.push_back(make_reference(
-                tc, std::nullopt, tok(),
+                tc, std::nullopt, callee_name_token(),
                 std::format("the result destination {}", in_quotes(dst.text())),
                 *dst.storage()));
         }
@@ -2178,7 +2146,7 @@ class stmt_call final : public statement {
             return;
         }
 
-        call_limits::assert_inline_nesting(tc, call.tk, callee());
+        call_limits::assert_inline_nesting(tc, callee_name_token(), callee());
 
         // a recursion that does not end with constant arguments runs out of
         // registers before it reaches the nesting limit, the advice is the same
@@ -2195,7 +2163,7 @@ class stmt_call final : public statement {
                 throw;
             }
 
-            throw call_limits::recursion_error(call.tk, callee());
+            throw call_limits::recursion_error(callee_name_token(), callee());
         }
     }
 

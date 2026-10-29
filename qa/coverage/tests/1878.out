@@ -1,0 +1,4 @@
+
+1878.baz:14:15: the result destination 'g' may share storage with the global 'g' that 'point.at' uses, use a temporary variable for one of them
+    g = point.at(1, 2)
+              ^~

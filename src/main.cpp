@@ -1011,10 +1011,10 @@ auto print_source_error(const source_files& files,
     const size_t last{src.find_last_not_of(" \t\r\n")};
     const size_t end{last == std::string_view::npos ? 0 : last + 1};
 
-    // note: +1 because the lines start at 1
     const size_t line{
         static_cast<size_t>(std::ranges::count(src.substr(0, end), '\n')) + 1,
     };
+    // note: +1 because the lines start at 1
 
     return {
         .file_ix{where.file_ix},

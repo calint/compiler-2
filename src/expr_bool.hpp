@@ -807,7 +807,6 @@ class expr_bool_op final : public statement {
                            .rhs{rhs.address_emitter_of(tc, indent, src_loc_tk)},
                            .dst{dst},
                            .inverted{inverted},
-                           .is_count_positive{},
                        });
     }
 
@@ -816,17 +815,15 @@ class expr_bool_op final : public statement {
                                                  machine::held_registers& held)
         -> operand {
 
-        // the operand is computed at the width of its first element
-        expr.assert_not_narrowed(tc, expr.get_type());
-
         machine& x{tc.machine()};
 
+        // the operand is computed at the width of its first element
         const operand reg{
             x.alloc_scratch_register(expr.tok(), indent, expr.get_type()),
         };
 
         held.add(reg);
-        expr.compile(tc, indent + 1, destination::of_register(reg));
+        expr.compile_checked(tc, indent + 1, destination::of_register(reg));
 
         return reg;
     }

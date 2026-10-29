@@ -1,0 +1,7 @@
+
+1877.baz:9:22: recursion of inlined function 'point.at' cannot be expanded at compile time, declare it 'noinline'
+        self = point.at(x - 1, y)
+                     ^~
+1877.baz:15:13: called from 'point.at(n, 2)'
+    var p = point.at(n, 2)
+            ^~~~~

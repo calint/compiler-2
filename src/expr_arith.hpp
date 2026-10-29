@@ -330,7 +330,6 @@ class expr_arith final : public statement {
     std::vector<std::unique_ptr<statement>> exprs_; // expression list
     // the operators between the elements
     std::vector<spelled_operator<arithmetic_operator>> ops_;
-    unary_ops list_uops_; // of the whole list, e.g. '~(a + b)'
     // of '(a + b)', none when not enclosed
     std::optional<token> open_paren_tk_;
     std::optional<token> close_paren_tk_;
@@ -351,17 +350,10 @@ class expr_arith final : public statement {
     // elements, or a zero value, e.g. '{}', which is never enclosed
     bool is_first_enclosed_{};
 
-    // the first element has no unary op of its own, before it or before its
-    // '(', e.g. 'x', 'f(x)' or '(a + b)', not '-x' or '-(a + b)'; false for a
-    // first element given by the caller, see 'is_first_enclosed_'
-    bool is_first_plain_{};
-
     // an element of the list, 'is_enclosed' for a '(...)' list
     struct parsed_element {
         std::unique_ptr<statement> node;
         bool is_enclosed{};
-        // the element has unary ops, e.g. '-a' or '-(a + b)'
-        bool has_unary_ops{};
     };
 
   public:
@@ -438,8 +430,9 @@ class expr_arith final : public statement {
     expr_arith(toc& tc, tokenizer& tz, options opts)
         : statement{opts.first_expression
                         ? opts.first_expression->tok().start_position()
-                        : tz.next_token_position()},
-          list_uops_{std::move(opts.uops)}, open_paren_tk_{opts.open_paren_tk},
+                        : tz.next_token_position(),
+                    std::move(opts.uops)},
+          open_paren_tk_{opts.open_paren_tk},
           is_implied_subexpression_{
               opts.first_op_precedence != list_start_precedence,
           },
@@ -455,7 +448,6 @@ class expr_arith final : public statement {
         } else {
             parsed_element first{parse_element(tc, tz, destination_type_)};
             is_first_enclosed_ = first.is_enclosed;
-            is_first_plain_ = not first.has_unary_ops;
             exprs_.emplace_back(std::move(first.node));
         }
 
@@ -524,12 +516,12 @@ class expr_arith final : public statement {
     //
 
     auto source_to(std::ostream& os) const -> void override {
-        list_uops_.source_to(os);
+        get_unary_ops().source_to(os);
 
         token::source_to(os, open_paren_tk_);
 
         // note: an empty position, the first element prints the whitespace
-        statement::source_to(os);
+        tok().source_to(os);
         exprs_.at(0)->source_to(os);
         for (const auto [o, e] :
              std::views::zip(ops_, exprs_ | std::views::drop(1))) {
@@ -651,7 +643,7 @@ class expr_arith final : public statement {
         }
 
         const int64_t result{
-            list_uops_.evaluate_at(value, width_type, use.checks_overflow),
+            get_unary_ops().evaluate_at(value, width_type, use.checks_overflow),
         };
 
         return folded_value{
@@ -693,7 +685,7 @@ class expr_arith final : public statement {
     // unary ops of the list apply to a computed value, e.g. the '-(-a)' of
     // '-(-(-a))'; '-(x)' is rejected, see 'assert_parentheses_group'
     [[nodiscard]] auto operand_path() const -> const stmt_identifier* override {
-        if (exprs_.size() != 1 or not list_uops_.is_empty()) {
+        if (exprs_.size() != 1 or not get_unary_ops().is_empty()) {
             return nullptr;
         }
 
@@ -726,7 +718,7 @@ class expr_arith final : public statement {
                                     const destination& dst) const
         -> std::optional<int64_t> {
 
-        assert(list_uops_.is_empty());
+        assert(get_unary_ops().is_empty());
 
         const std::vector<step> steps{plan_steps(tc, dst)};
 
@@ -749,7 +741,8 @@ class expr_arith final : public statement {
     // one element without a unary op of its own, which parentheses would not
     // group, e.g. 'x', 'f(x)' or '(a + b)', not '-x' or '-(a + b)'
     [[nodiscard]] auto is_one_plain_element() const -> bool {
-        return exprs_.size() == 1 and is_first_plain_;
+        return exprs_.size() == 1 and
+               exprs_.front()->get_unary_ops().is_empty();
     }
 
     // e.g. 'flag', 'p', 'f(x)' or '-i32(x)', a parenthesized list is
@@ -887,8 +880,8 @@ class expr_arith final : public statement {
         machine& x{tc.machine()};
 
         // the unary ops of the list apply to its result, e.g. '-(a + b)'
-        list_uops_.compile(x, indent, tok(), dst.operand(),
-                           tc.overflow_options(dst));
+        get_unary_ops().compile(x, indent, tok(), dst.operand(),
+                                tc.overflow_options(dst));
     }
 
     // the destination keeps its value until the whole expression is computed;
@@ -1037,7 +1030,7 @@ class expr_arith final : public statement {
             return true;
         }
 
-        return list_uops_.is_empty() and
+        return get_unary_ops().is_empty() and
                e.operand_path()->get_unary_ops().is_empty();
     }
 
@@ -1137,7 +1130,7 @@ class expr_arith final : public statement {
     // the elements are operands of the operators of the list or of its unary
     // ops, e.g. '-(a + b)'
     auto validate_arithmetic_operands() const -> void {
-        if (ops_.empty() and list_uops_.is_empty()) {
+        if (ops_.empty() and get_unary_ops().is_empty()) {
             return;
         }
 
@@ -1159,11 +1152,6 @@ class expr_arith final : public statement {
         x.comment(src.tok(), indent,
                   statement::trimmed_source(src, dst.text(), source_text(op)));
 
-        if (op == arithmetic_operator::assign) {
-            asm_op_mov(tc, indent, dst, src);
-            return;
-        }
-
         // note: the rewrite hides an overflow of the negation, the check
         //       computes it
 
@@ -1179,19 +1167,6 @@ class expr_arith final : public statement {
             [&](const operand& value, const machine::factor_use use) -> void {
                 emit_operation(tc, indent, src.tok(), op, dst, value, use);
             });
-    }
-
-    // 'compile_first_element' copies identifiers itself
-    static auto asm_op_mov(toc& tc, const size_t indent, const destination& dst,
-                           const statement& src) -> void {
-
-        assert(src.is_computed());
-
-        machine& x{tc.machine()};
-
-        x.comment(src.tok(), indent, "= expression");
-
-        src.compile(tc, indent, dst);
     }
 
     // a constant divisor is not zero and a constant shift count is inside the
@@ -1289,17 +1264,23 @@ class expr_arith final : public statement {
                      constant_operand(dst, value));
     }
 
-    // an identifier copies itself, anything else is assigned with '='
+    // an identifier copies itself, anything else is computed into 'dst'
     static auto compile_first_element(toc& tc, const size_t indent,
                                       const destination& dst,
                                       const statement& first) -> void {
 
-        if (first.operand_path() != nullptr) {
-            first.compile(tc, indent, dst);
-            return;
+        if (first.operand_path() == nullptr) {
+            machine& x{tc.machine()};
+
+            x.comment(first.tok(), indent,
+                      statement::trimmed_source(
+                          first, dst.text(),
+                          source_text(arithmetic_operator::assign)));
+
+            x.comment(first.tok(), indent, "= expression");
         }
 
-        asm_op(tc, indent, arithmetic_operator::assign, dst, first);
+        first.compile(tc, indent, dst);
     }
 
     // 'a + -b' is 'a - b' and 'a - -b' is 'a + b'
@@ -1573,7 +1554,6 @@ class expr_arith final : public statement {
             return {
                 .node{std::move(enclosed)},
                 .is_enclosed{true},
-                .has_unary_ops{has_unary_ops},
             };
         }
 
@@ -1589,7 +1569,6 @@ class expr_arith final : public statement {
         return {
             .node{std::move(element)},
             .is_enclosed{},
-            .has_unary_ops{has_unary_ops},
         };
     }
 };

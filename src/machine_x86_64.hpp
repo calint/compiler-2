@@ -477,10 +477,8 @@ class machine_x86_64 final : public machine {
         // note: a zero count compares nothing and leaves the flags of 'test',
         //       ZF set, so it compares equal
 
-        if (not request.is_count_positive) {
-            emit_op(src_loc_tk, indent, op::test, qword_register("rcx"),
-                    qword_register("rcx"));
-        }
+        emit_op(src_loc_tk, indent, op::test, qword_register("rcx"),
+                qword_register("rcx"));
 
         assembler_.instruction(indent, op::repe_cmpsb);
         release_bulk(src_loc_tk, indent);
@@ -875,13 +873,13 @@ class machine_x86_64 final : public machine {
 
         if (not with_line) {
             const std::string message_label{std::format("msg_{}", label_name)};
+            const std::string message{std::format("{}\n", panic_message(name))};
 
             assembler_.label(0, handler_label);
-            emit_panic_message(message_label);
+            emit_panic_message(message_label, message);
             exit(token{}, 1, immediate(handler.exit_code));
 
-            emit_message_data(message_label,
-                              std::format("{}\n", panic_message(name)));
+            emit_message_data(message_label, message);
 
             return;
         }
@@ -903,8 +901,10 @@ class machine_x86_64 final : public machine {
                 std::format("msg_{}_file_{}", label_name, file_ix),
             };
 
+            const std::string message{failure_message(name, file_ix)};
+
             assembler_.label(0, failure_entry_label(handler_label, file_ix));
-            emit_panic_message(message_label);
+            emit_panic_message(message_label, message);
             assembler_.instruction(1, op::mov, "rbx", handler.exit_code);
             assembler_.jmp(1, report_line_label_);
             mark_used(report_line_label_);
@@ -912,7 +912,7 @@ class machine_x86_64 final : public machine {
             // note: a backslash or a control byte of a path is written as an
             //       escape of a nasm string
 
-            emit_message_data(message_label, failure_message(name, file_ix));
+            emit_message_data(message_label, message);
         }
     }
 
@@ -947,7 +947,9 @@ class machine_x86_64 final : public machine {
             emit_sector_routines(is_read_used, is_write_used);
         }
 
-        // note: after the failure handlers, which use 'exit'
+        // note: after the routines that use 'exit', e.g. the report of a line
+        //       and the sd card handler of the sector routines
+
         if (is_used(exit_label_)) {
             emit_exit_routine();
         }
@@ -1304,7 +1306,6 @@ class machine_x86_64 final : public machine {
                                to_argument(src));
     }
 
-    // prints the line number in 'rbp' and exits with the code in 'rbx'
     // ends the program with the exit code in 'rdi'
     auto emit_exit_routine() -> void {
         assembler_.label(0, exit_label_);
@@ -1358,17 +1359,13 @@ class machine_x86_64 final : public machine {
         free_scratch_register(src_loc_tk, indent, reg);
     }
 
-    // the text of a message in read-only data with its length
+    // the text of a message in read-only data
     auto emit_message_data(const std::string_view message_label,
                            const std::string_view bytes) -> void {
 
         assembler_.switch_section(section::rodata);
         assembler_.label(0, message_label);
         assembler_.string_data(bytes);
-
-        assembler_.define_length(std::format("{}_len", message_label),
-                                 message_label);
-
         assembler_.switch_section(section::text);
     }
 
@@ -1438,7 +1435,9 @@ class machine_x86_64 final : public machine {
     }
 
     // shared by the failure handlers, which run after all allocations
-    auto emit_panic_message(const std::string_view message_label) -> void {
+    auto emit_panic_message(const std::string_view message_label,
+                            const std::string_view message) -> void {
+
         assembler_.comment(1, "print message to stderr");
         assembler_.instruction(1, op::mov, "rax", syscall_write_);
         assembler_.instruction(1, op::mov, "rdi", stderr_descriptor);
@@ -1447,13 +1446,12 @@ class machine_x86_64 final : public machine {
             1, op::lea, "rsi",
             assembler_x86_64::memory::of_symbol(message_label));
 
-        assembler_.instruction(1, op::mov, "rdx",
-                               assembler_x86_64::immediate::of_expression(
-                                   std::format("{}_len", message_label)));
+        assembler_.instruction(1, op::mov, "rdx", message.size());
 
         assembler_.instruction(1, op::syscall);
     }
 
+    // prints the line number in 'rbp' and exits with the code in 'rbx'
     auto emit_report_line_routine() -> void {
         assembler_.label(0, report_line_label_);
 
@@ -1507,10 +1505,7 @@ class machine_x86_64 final : public machine {
         assembler_.instruction(1, op::sub, "rdx", "rdi");
         assembler_.instruction(1, op::mov, "rdi", stderr_descriptor);
         assembler_.instruction(1, op::syscall);
-        assembler_.comment(1, "exit with the error code in 'rbx'");
-        assembler_.instruction(1, op::mov, "rax", syscall_exit_);
-        assembler_.instruction(1, op::mov, "rdi", "rbx");
-        assembler_.instruction(1, op::syscall);
+        exit(token{}, 1, qword_register("rbx"));
         assembler_.switch_section(section::bss);
         assembler_.label(0, "num_buffer");
         assembler_.reserve(number_buffer_size_bytes);

@@ -1,0 +1,10 @@
+# a generic function takes only types, a '-' is not an argument and no hint
+# about constants is given
+
+func id<T type>(x T) res T {
+    res = x
+}
+
+func main() {
+    var a = id<-1>(1)
+}

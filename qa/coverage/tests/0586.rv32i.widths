@@ -1,7 +1,6 @@
 45: array_copy(a, b, n): 4-byte accesses
 46: assert(3, arrays_equal(a, b, n)): 4-byte accesses
 49: assert(4, not arrays_equal(a, b, n)): 4-byte accesses
-50: assert(5, arrays_equal(a, b, 4)): 4-byte accesses
 52: array_copy(a, c, n): 1-byte accesses
 53: assert(6, arrays_equal(a, c, n)): 1-byte accesses
 56: assert(7, not arrays_equal(a, c, n)): 1-byte accesses

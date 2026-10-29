@@ -1,0 +1,15 @@
+# a result destination that shares storage with a global the constructor uses
+# is reported at the constructor name
+
+type point {x, y}
+
+var g = point{1, 2}
+
+func point.at(x, y) self {
+    self.x = g.x + x
+    self.y = y
+}
+
+func main() {
+    g = point.at(1, 2)
+}

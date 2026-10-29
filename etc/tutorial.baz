@@ -433,8 +433,8 @@ func ratio(a, b) res {
 }
 # a constant argument folds a condition and a branch that is always false is
 # not compiled: 'ratio(10, 0)' has no division by zero, the 'if' guards it;
-# that branch is still parsed, so a name, a type or a 'break' outside a loop
-# in it is an error
+# that branch is still checked as if it ran (README 1.5.1), so any error in
+# it is reported
 
 func functions() {
     var x = 3

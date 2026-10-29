@@ -137,6 +137,15 @@ class machine_rv32i : public machine {
         // a missing address would leave the word alignment unproven
         size_t address_count{};
 
+        // a missing address would leave the loop width unproven
+        [[nodiscard]] auto checked_starts() const
+            -> const std::array<access_start, 2>& {
+
+            assert(address_count == starts.size());
+
+            return starts;
+        }
+
         [[nodiscard]] auto count() const -> const operand& {
             return registers.back();
         }
@@ -359,32 +368,6 @@ class machine_rv32i : public machine {
         std::array<access_start, 2> starts{};
     };
 
-    // the pointer registers of a comparison with a run-time byte count
-    struct compared_range {
-        operand left;
-        operand right;
-        operand count;
-        std::array<access_start, 2> starts{};
-    };
-
-    // an error that unwinds an array operation ends it, so a version of code
-    // that fails leaves no bulk registers behind, see 'emit_most_efficient'
-    class bulk_depth_scope final {
-        std::vector<bulk_operation>& operations_;
-        size_t depth_{};
-
-      public:
-        explicit bulk_depth_scope(std::vector<bulk_operation>& operations)
-            : operations_{operations}, depth_{operations.size()} {}
-
-        bulk_depth_scope(const bulk_depth_scope&) = delete;
-        bulk_depth_scope(bulk_depth_scope&&) = delete;
-        auto operator=(const bulk_depth_scope&) -> bulk_depth_scope& = delete;
-        auto operator=(bulk_depth_scope&&) -> bulk_depth_scope& = delete;
-
-        ~bulk_depth_scope() { operations_.resize(depth_); }
-    };
-
     // the shared tail of the handlers that report a line, and its powers of
     // ten
     static constexpr std::string_view report_line_label_{".Lbaz_report_line"};
@@ -399,7 +382,6 @@ class machine_rv32i : public machine {
 
     std::string binary_file_name_;
     assembler_rv32i assembler_;
-    std::vector<bulk_operation> bulk_operations_;
 
   protected:
     // a target that differs from 'rv32i_target' passes its own table
@@ -612,8 +594,6 @@ class machine_rv32i : public machine {
     }
 
     auto finish_target() -> void override {
-        assert(bulk_operations_.empty());
-
         // the report counts after resolving because grown jumps take more
         // instructions, a failing build writes nothing
         assembler_.resolve_jumps();
@@ -1000,17 +980,13 @@ class machine_rv32i : public machine {
                        const std::function_ref<void(const operand&)> emit_count,
                        const copy_request& request) -> void override {
 
-        const bulk_depth_scope bulk_depth{bulk_operations_};
-
-        const operand count{
+        bulk_operation bulk{
             begin_array_operation(src_loc_tk, indent, "source", "destination"),
         };
 
-        load_bulk_addresses(src_loc_tk, indent, request.src, request.dst);
+        load_bulk_addresses(src_loc_tk, indent, bulk, request.src, request.dst);
 
-        emit_count(count);
-
-        const bulk_operation& bulk{bulk_operations_.back()};
+        emit_count(bulk.count());
 
         comment(src_loc_tk, indent, "{}: elements to bytes ({} bytes/element)",
                 bulk.count().register_name(), element_size_bytes);
@@ -1022,10 +998,9 @@ class machine_rv32i : public machine {
                                bulk.pointer(1), bulk.count());
         }
 
-        copy_runtime_count(src_loc_tk, indent, bulk.pointer(0), bulk.pointer(1),
-                           bulk.count(), bulk_starts(), request.alignment);
+        copy_runtime_count(src_loc_tk, indent, bulk, request.alignment);
 
-        release_bulk(src_loc_tk, indent);
+        release_bulk(src_loc_tk, indent, bulk);
     }
 
     auto copy_value(const token& src_loc_tk, const size_t indent,
@@ -1106,17 +1081,14 @@ class machine_rv32i : public machine {
                    const std::function_ref<void(const operand&)> emit_count,
                    const equality_request& request) -> void override {
 
-        const bulk_depth_scope bulk_depth{bulk_operations_};
-
-        const operand count{
+        bulk_operation bulk{
             begin_array_operation(src_loc_tk, indent, "lhs", "rhs"),
         };
 
-        load_bulk_addresses(src_loc_tk, indent, request.lhs, request.rhs);
+        load_bulk_addresses(src_loc_tk, indent, bulk, request.lhs, request.rhs);
 
-        emit_count(count);
+        emit_count(bulk.count());
 
-        const bulk_operation& bulk{bulk_operations_.back()};
         {
             // scaling the count must not pick the result registers
             const operation_scope scope{*this, request.dst};
@@ -1128,16 +1100,9 @@ class machine_rv32i : public machine {
             scale_index(src_loc_tk, indent, bulk.count(), element_size_bytes);
         }
 
-        compare_runtime_count(src_loc_tk, indent,
-                              {
-                                  .left{bulk.pointer(0)},
-                                  .right{bulk.pointer(1)},
-                                  .count{bulk.count()},
-                                  .starts{bulk_starts()},
-                              },
-                              request);
+        compare_runtime_count(src_loc_tk, indent, bulk, request);
 
-        release_bulk(src_loc_tk, indent);
+        release_bulk(src_loc_tk, indent, bulk);
     }
 
     // the exit routine is shared, an exit is a jump to it
@@ -1287,9 +1252,12 @@ class machine_rv32i : public machine {
 
         const operation_scope scope{*this, dst};
 
-        const size_t width{bulk_width(access_alignment(dst, alignment))};
-
         const access_start dst_start{start_of(dst, alignment)};
+
+        // the widest access the start of 'dst' allows
+        const size_t width{
+            aligned_width_at(word_size_bytes_, 0, std::span{&dst_start, 1}),
+        };
 
         const std::vector<byte_part> parts{split_bytes(bytes, dst_start)};
 
@@ -1444,26 +1412,6 @@ class machine_rv32i : public machine {
     // class methods
     //
 
-    // a direct offset from a word aligned base can prove more alignment than
-    // the type does
-    [[nodiscard]] auto access_alignment(const operand& address,
-                                        const size_t alignment) const
-        -> size_t {
-
-        if (not is_word_based(address)) {
-            return alignment;
-        }
-
-        // the lowest set bit of the displacement, capped at a word; the low
-        // bits of a negative displacement give the same alignment
-        const size_t displacement_alignment{
-            offset_alignment(static_cast<size_t>(address.displacement()),
-                             word_size_bytes_),
-        };
-
-        return std::max(alignment, displacement_alignment);
-    }
-
     // the destination holds the computed address when that keeps its inputs
     [[nodiscard]] auto address_result_register(const token& src_loc_tk,
                                                const size_t indent,
@@ -1516,21 +1464,22 @@ class machine_rv32i : public machine {
     // pointers name them in the comment, e.g. 'source' and 'destination'
     auto begin_array_operation(const token& src_loc_tk, const size_t indent,
                                const std::string_view first_role,
-                               const std::string_view second_role) -> operand {
+                               const std::string_view second_role)
+        -> bulk_operation {
 
-        const operand count{begin_bulk(src_loc_tk, indent)};
-
-        const bulk_operation& bulk{bulk_operations_.back()};
+        const bulk_operation bulk{begin_bulk(src_loc_tk, indent)};
 
         comment(src_loc_tk, indent, "{}: {}, {}: {}, {}: count",
                 bulk.pointer(0).register_name(), first_role,
                 bulk.pointer(1).register_name(), second_role,
-                count.register_name());
+                bulk.count().register_name());
 
-        return count;
+        return bulk;
     }
 
-    auto begin_bulk(const token& src_loc_tk, const size_t indent) -> operand {
+    auto begin_bulk(const token& src_loc_tk, const size_t indent)
+        -> bulk_operation {
+
         // argument-order allocation keeps pointer and count names easy to
         // follow
         bulk_operation bulk{};
@@ -1538,9 +1487,7 @@ class machine_rv32i : public machine {
             reg = alloc_scratch_register(src_loc_tk, indent, default_type());
         }
 
-        bulk_operations_.push_back(bulk);
-
-        return bulk.count();
+        return bulk;
     }
 
     auto binary_operation(const token& src_loc_tk, const size_t indent,
@@ -1633,15 +1580,6 @@ class machine_rv32i : public machine {
         };
 
         assembler_.resolved_jump(indent, entry_label, no_return_jump_register_);
-    }
-
-    // a missing address would leave the loop width unproven
-    [[nodiscard]] auto bulk_starts() const -> std::array<access_start, 2> {
-        const bulk_operation& bulk{bulk_operations_.back()};
-
-        assert(bulk.address_count == bulk.starts.size());
-
-        return bulk.starts;
     }
 
     // 'check' is the overflow check of a product, else the division check
@@ -2210,12 +2148,12 @@ class machine_rv32i : public machine {
     // run-time count: the addresses are pointer registers and 'count' is a
     // byte count, the result is as for 'compare_known_size'
     auto compare_runtime_count(const token& src_loc_tk, const size_t indent,
-                               const compared_range& range,
+                               const bulk_operation& bulk,
                                const equality_request& request) -> void {
 
-        const operand& left{range.left};
-        const operand& right{range.right};
-        const operand& count{range.count};
+        const operand& left{bulk.pointer(0)};
+        const operand& right{bulk.pointer(1)};
+        const operand& count{bulk.count()};
         const operand& result{request.dst};
 
         const operation_scope operand_scope{*this, right, left};
@@ -2228,7 +2166,7 @@ class machine_rv32i : public machine {
             alloc_compare_registers(src_loc_tk, indent, result, in_use),
         };
 
-        compare_runtime_walk(src_loc_tk, indent, range, request.alignment,
+        compare_runtime_walk(src_loc_tk, indent, bulk, request.alignment,
                              registers);
 
         write_compare_result(src_loc_tk, indent, result, registers,
@@ -2237,14 +2175,13 @@ class machine_rv32i : public machine {
 
     // the walk's own registers are freed before the result is written
     auto compare_runtime_walk(const token& src_loc_tk, const size_t indent,
-                              const compared_range& range,
+                              const bulk_operation& bulk,
                               const size_t alignment,
                               const compare_registers& registers) -> void {
 
-        const operand& left{range.left};
-        const operand& right{range.right};
-        const operand& count{range.count};
-        const std::array<access_start, 2>& starts{range.starts};
+        const operand& left{bulk.pointer(0)};
+        const operand& right{bulk.pointer(1)};
+        const operand& count{bulk.count()};
 
         const operation_scope walk_scope{*this};
 
@@ -2267,7 +2204,7 @@ class machine_rv32i : public machine {
                 .count{count},
                 .access{access},
             },
-            starts, alignment);
+            bulk.checked_starts(), alignment);
     }
 
     // 'source' in a register of the comparison width
@@ -2520,10 +2457,12 @@ class machine_rv32i : public machine {
     // run-time count: the addresses are pointer registers and 'count' is a
     // byte count
     auto copy_runtime_count(const token& src_loc_tk, const size_t indent,
-                            const operand& src, const operand& dst,
-                            const operand& count,
-                            const std::array<access_start, 2>& starts,
-                            const size_t alignment) -> void {
+                            const bulk_operation& bulk, const size_t alignment)
+        -> void {
+
+        const operand& src{bulk.pointer(0)};
+        const operand& dst{bulk.pointer(1)};
+        const operand& count{bulk.count()};
 
         const operation_scope scope{*this, dst, src};
 
@@ -2550,7 +2489,7 @@ class machine_rv32i : public machine {
                 .count{count},
                 .access{access},
             },
-            starts, alignment);
+            bulk.checked_starts(), alignment);
     }
 
     // both addresses are 'base + upper + low', so one 'lui' and 'add' serve
@@ -3374,9 +3313,8 @@ class machine_rv32i : public machine {
     // address; the pointers advance together so both starts decide the width
     // of the loop
     auto load_bulk_address(const token& src_loc_tk, const size_t indent,
-                           const size_t slot, const operand& address) -> void {
-
-        bulk_operation& bulk{bulk_operations_.back()};
+                           bulk_operation& bulk, const size_t slot,
+                           const operand& address) -> void {
 
         bulk.starts.at(slot) = start_of(address, 1);
         ++bulk.address_count;
@@ -3386,18 +3324,16 @@ class machine_rv32i : public machine {
 
     // borrowed pointers avoid a temporary address and final move for indexing
     auto load_bulk_addresses(const token& src_loc_tk, const size_t indent,
-                             const address_emitter& first,
+                             bulk_operation& bulk, const address_emitter& first,
                              const address_emitter& second) -> void {
 
-        first(bulk_operations_.back().pointer(0),
-              [&](const operand& address) -> void {
-                  load_bulk_address(src_loc_tk, indent, 0, address);
-              });
+        first(bulk.pointer(0), [&](const operand& address) -> void {
+            load_bulk_address(src_loc_tk, indent, bulk, 0, address);
+        });
 
-        second(bulk_operations_.back().pointer(1),
-               [&](const operand& address) -> void {
-                   load_bulk_address(src_loc_tk, indent, 1, address);
-               });
+        second(bulk.pointer(1), [&](const operand& address) -> void {
+            load_bulk_address(src_loc_tk, indent, bulk, 1, address);
+        });
     }
 
     [[nodiscard]] auto load_destination(const token& src_loc_tk,
@@ -3507,14 +3443,23 @@ class machine_rv32i : public machine {
             address_result_register(src_loc_tk, indent, address, dst),
         };
 
-        // unit scale: combine the base and index without multiplication
+        const std::string& base{address.base_register()};
+        const std::string& index{address.index_register()};
+        const std::string& result_name{result.register_name()};
+
+        // unit scale: one add combines the register inputs, even when the
+        // result aliases either
         if (address.scale() == 1) {
-            return lower_address_unscaled_index(src_loc_tk, indent, address,
-                                                result);
+            assembler_.add(indent, result_name, base, index);
+        } else {
+            // scaled index: form the product before adding the base
+            assembler_.slli(indent, result_name, index,
+                            std::countr_zero(address.scale()));
+
+            assembler_.add(indent, result_name, result_name, base);
         }
 
-        // scaled index: form the product before adding the base and offset
-        return lower_address_scaled_index(src_loc_tk, indent, address, result);
+        return lower_address_offset(src_loc_tk, indent, address, result);
     }
 
     [[nodiscard]] auto lower_address_offset(const token& src_loc_tk,
@@ -3546,38 +3491,6 @@ class machine_rv32i : public machine {
         free_scratch_register(src_loc_tk, indent, displacement);
 
         return operand::mem(result_name, {}, 1, parts.low, address.type_ref());
-    }
-
-    [[nodiscard]] auto
-    lower_address_scaled_index(const token& src_loc_tk, const size_t indent,
-                               const operand& address, const operand& result)
-        -> operand {
-
-        const std::string& base{address.base_register()};
-        const std::string& result_name{result.register_name()};
-
-        assembler_.slli(indent, result_name, address.index_register(),
-                        std::countr_zero(address.scale()));
-
-        // the preserved base can now be added to the scaled index
-        assembler_.add(indent, result_name, result_name, base);
-
-        return lower_address_offset(src_loc_tk, indent, address, result);
-    }
-
-    [[nodiscard]] auto
-    lower_address_unscaled_index(const token& src_loc_tk, const size_t indent,
-                                 const operand& address, const operand& result)
-        -> operand {
-
-        const std::string& base{address.base_register()};
-        const std::string& index{address.index_register()};
-        const std::string& result_name{result.register_name()};
-
-        // one add combines register inputs, even when result aliases either
-        assembler_.add(indent, result_name, base, index);
-
-        return lower_address_offset(src_loc_tk, indent, address, result);
     }
 
     [[nodiscard]] auto
@@ -3701,11 +3614,10 @@ class machine_rv32i : public machine {
         return kept;
     }
 
-    auto release_bulk(const token& src_loc_tk, const size_t indent) -> void {
-        free_scratch_registers(src_loc_tk, indent,
-                               bulk_operations_.back().registers);
+    auto release_bulk(const token& src_loc_tk, const size_t indent,
+                      const bulk_operation& bulk) -> void {
 
-        bulk_operations_.pop_back();
+        free_scratch_registers(src_loc_tk, indent, bulk.registers);
     }
 
     // the loop ends when its pointer reaches 'end', replacing a counter that

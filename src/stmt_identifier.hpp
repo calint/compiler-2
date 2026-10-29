@@ -833,7 +833,9 @@ class stmt_identifier final : public statement {
     }
 
     // index expressions are read even when the path is written
-    auto visit_index_reads(const read_visitor reader) const -> void;
+    auto visit_index_reads(const read_visitor reader) const -> void {
+        statement::visit_reads(reader);
+    }
 
     //
     // statics

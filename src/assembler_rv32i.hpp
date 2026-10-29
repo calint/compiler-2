@@ -1730,7 +1730,9 @@ class assembler_rv32i final : public assembler {
         const bool symbolic{not value.symbol.empty()};
         const form operands{info(ins.code).operands};
 
-        if (operands == form::immediate) {
+        if (operands == form::immediate or operands == form::load or
+            operands == form::store) {
+
             return not symbolic and
                    fits(value.number, immediate_min, immediate_max);
         }
@@ -1741,11 +1743,6 @@ class assembler_rv32i final : public assembler {
 
         if (operands == form::upper) {
             return not symbolic and fits(value.number, 0, upper_mask_);
-        }
-
-        if (operands == form::load or operands == form::store) {
-            return not symbolic and
-                   fits(value.number, immediate_min, immediate_max);
         }
 
         if (operands == form::load_immediate) {

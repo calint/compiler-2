@@ -1111,13 +1111,13 @@ a read is inside what has been assigned:
 type point {x, y}
 
 var x = x + 1                  the variable is not set while its value is
-                               computed: bytes 0..4 are read, none are
+                               computed: its bytes are read, none are
                                assigned => "use of uninitialized variable"
 
 func point.at(x) self {        a constructor must assign every field: it
-    self.x = x                 assigns bytes 0..4, bytes 4..8 are not
-}                              assigned => "function may return without
-                               setting its return value"
+    self.x = x                 assigns the bytes of 'x', not those of 'y'
+}                              => "function may return without setting
+                               its result 'self'"
 
 func make() res point {        the same for the result of a function
     res.x = 1
@@ -1310,8 +1310,8 @@ What a failed version entered must be left when its error unwinds:
 1. 'assembler::capture' drops the lines it captured
 2. the 'toc::scope_entry' of each scope an inlined body entered pops it and
    its storage, back to the scopes of the caller
-3. the rv32i bulk registers of an array copy or comparison are left
-   ('machine_rv32i::bulk_depth_scope')
+3. the rv32i state of an array copy or comparison is a local of the call
+   ('machine_rv32i::bulk_operation'), which the unwinding drops
 
 The registers that 'machine::operation_scope' holds and the frames of the
 register trace that 'machine::register_trace_scope' holds are left by their
@@ -1788,6 +1788,15 @@ behavior: each case below is either rejected at compile time or, with its
 '--checks' option, checked at run time, so a result does not depend on the
 target, on whether a call is inlined or on which version of code is kept.
 
+The exceptions, all listed in this chapter:
+
+1. the goal holds under 'noub'; by default the run-time checks are off (8.2)
+2. the bytes that 'read' and 'sector_read' put into a buffer are not checked
+   against their type (below)
+3. the target: items 1 to 5 below
+4. whether a program is accepted may depend on inlining (1.5, 8.3); its
+   result does not
+
 What depends on the target is listed here, nothing else does:
 
 1. the default type, the width of a register (1.7, 7.12): its arithmetic, a
@@ -1843,16 +1852,16 @@ constants out of range, and the code the run-time checks.
 
 | class | example | how | option | tests |
 |---|---|---|---|---|
-| uninitialized read | 'var x = x' | rejected (definite assignment, 'ub_assigned.hpp', 3.10) | always | 0099, 1301-1303 |
+| uninitialized read | 'var x = x', 'res' read before it is set | rejected ('stmt_def_var' for a declaration; definite assignment of the result, 'ub_assigned.hpp', 3.10) | always | 0099, 0100, 0463, 0464, 1301-1303 |
 | an argument sharing bytes with another argument that the call writes | 'f(a, a)' with 'f' writing 'p.x' and reading 'q.x' | rejected ('stmt_call::assert_no_shared_storage', 3.7) | always | 0525, 0642, 0676 |
 | a result or a global sharing storage with an argument | 'p = f(p)' with 'f' writing its result before it reads 'p', 'f(g)' with 'f' using the global 'g' | rejected ('stmt_call::assert_no_shared_storage', 3.7, 4.2) | always | 0522-0524, 0526, 0527, 0941 |
 | a value written in parts reading a part written before it | 'p = {p.y, p.x}', 'q = {{1}, q.a[3]}', 'g = {7, gx()}' | rejected ('stmt_assign_var', the 'write_plan' of 'expr_type.hpp', 3.7) | always | 1608-1612, 1634, 1635, 1644 |
 | evaluation order | 'f(arr[i], h(i))', 'i == h(i)' with 'h' writing 'i' | evaluation is left to right; an argument, a side of a comparison or a bulk or io argument that a call in a later one may write is rejected ('assert_not_written_later'), an arithmetic list reads each operand at its place; a destination that the value reads, also through a call, is written last ('reaches_destination'), 3.1 | always | 1636-1639, 1641, 1642, 1676; accepted: 1630-1633, 1640, 1643, 1678, 1702 |
 | narrowing | 'b = w' with 'b' an 'i8' and 'w' an 'i16' | rejected; a conversion such as 'i8(w)' wraps on purpose (1.7) | always | 0725, 0856, 0865, 1016, 1017, 1019, 1021, 1022 |
-| a constant out of range | 'a[9]' of 'a = i8[4]', 'x / 0', 'x << 70' | rejected ('assert_constant_index' for an index, 'fold' for the others, 1.7) | always | 0305, 0306, 0750-0752 |
+| a constant out of range | 'a[9]' of 'a = i8[4]', 'x / 0', 'x << 70' | rejected ('assert_constant_index' for an index, 'fold' for the others, 1.7) | always | 0305, 0306, 0750-0752, 1118, 1119 |
 | a constant expression that overflows | '0x7fffffffffffffff + 1' | rejected ('fold'), else it wraps | 'overflow' | 0995, 1002, 1010 |
 | array index out of bounds | 'a[i]' | run time ('machine::check_bounds' from 'stmt_identifier::compile_checked_index', the range of a bulk operation or an io built-in ('bulk_operands', 'stmt_builtin_io') and the count of a 'foo') | 'upper', 'lower' | 0302, 0303, 0307-0309, 0626, 0627, 1355 |
-| division by zero and 'MIN / -1' | 'a / b' | run time ('machine::divide' from 'expr_arith::emit_operation', not for a constant divisor other than -1); a constant 'MIN / -1' is rejected ('fold'), the 64-bit one also without the check, it has no value | 'division' | 0965-0967, 1775-1777 |
+| division by zero and 'MIN / -1' | 'a / b' | run time ('machine::divide' from 'expr_arith::emit_operation', not for a constant divisor other than -1); a constant 'MIN / -1' is rejected ('fold'), the 64-bit one also without the check, it has no value | 'division' | 0965-0968, 1775-1777 |
 | shift count below zero or not below the width | 'a << n' | run time ('machine::shift' with 'check_options::shift_options', from 'expr_arith::emit_operation') | 'shift' | 0975-0977 |
 | signed overflow | 'a + b' | run time ('machine::add_subtract', 'multiply' and 'unary' with 'toc::overflow_options') | 'overflow' | 0988, 0989, 0994 |
 | 'array_copy' whose destination starts inside the source | 'array_copy(a, a[1], 3)' | run time ('machine::copy_elements' with the overlap check of 'stmt_builtin_array_copy') | 'overlap' | 0981-0983 |

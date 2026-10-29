@@ -380,7 +380,7 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
        constant step needs a flag "bytes unknown" next to 'is_exact_access'
 [ ] hard: UB detection: accept partial results when the caller's destination is
     already initialized (call-site coverage summary); a body that sets only
-    'res.pos.y' is "may return without setting its return value"
+    'res.pos.y' is "may return without setting its result 'res'"
 --------------------------------------------------------------------------------
 4. deep future
 --------------------------------------------------------------------------------

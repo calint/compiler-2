@@ -125,12 +125,6 @@ inline auto stmt_identifier::visit_operands(const operand_visitor visitor) const
     }
 }
 
-inline auto stmt_identifier::visit_index_reads(const read_visitor reader) const
-    -> void {
-
-    statement::visit_reads(reader);
-}
-
 inline auto stmt_identifier::assert_constant_indexes(
     const toc& tc, const std::string_view what) const -> void {
 

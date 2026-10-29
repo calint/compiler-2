@@ -1,0 +1,4 @@
+
+1876.baz:9:16: expected a generic argument
+    var a = id<-1>(1)
+               ^

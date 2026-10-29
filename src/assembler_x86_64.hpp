@@ -283,13 +283,6 @@ class assembler_x86_64 final : public assembler {
 
     auto default_rel() -> void { add_directive("default rel"); }
 
-    // the bytes from label 'start' to this line
-    auto define_length(const std::string_view name,
-                       const std::string_view start) -> void {
-
-        add_directive(std::format("{} equ $ - {}", name, start));
-    }
-
     auto global(const std::string_view name) -> void {
         add_directive(std::format("global {}", name));
     }

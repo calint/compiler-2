@@ -163,8 +163,10 @@ struct generic_arg_tokens {
     // statics
     //
 
-    // 'open_tk' is the '<' that has been read
-    [[nodiscard]] static auto parse(tokenizer& tz, const token& open_tk)
+    // 'open_tk' is the '<' that has been read; a generic type takes
+    // constants, a generic function only types
+    [[nodiscard]] static auto parse(tokenizer& tz, const token& open_tk,
+                                    const bool takes_constants)
         -> generic_arg_tokens {
 
         generic_arg_tokens args{};
@@ -174,7 +176,9 @@ struct generic_arg_tokens {
             const token arg_tk{tz.next_token()};
 
             // e.g. the '-' of 'b<-3>', an argument is one token
-            if (arg_tk.is_none() and tz.peek_char_after_whitespace() == '-') {
+            if (arg_tk.is_none() and takes_constants and
+                tz.peek_char_after_whitespace() == '-') {
+
                 throw compile_error{tz, "expected a generic argument, name a "
                                         "negative constant with 'let'"};
             }

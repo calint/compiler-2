@@ -11,6 +11,7 @@
 #include "statement.hpp"
 #include "toc.hpp"
 #include "token.hpp"
+#include "type.hpp"
 #include "ub_reads.hpp"
 #include "unary_ops.hpp"
 
@@ -58,6 +59,23 @@ class stmt_builtin_arrays_equal final : public statement {
 
         bulk_operands::run_time_emitters emit{operands_, tc, indent, tok()};
 
+        // a known size is compared like two instances; a count of 0 stays a
+        // run-time walk, which compares nothing
+        if (count and *count > 0) {
+            x.memory_equal(tok(), indent,
+                           product_storage_size(element_type.size_bytes(),
+                                                static_cast<size_t>(*count)),
+                           {
+                               .alignment{element_type.alignment()},
+                               .lhs{emit.first()},
+                               .rhs{emit.second()},
+                               .dst{dst.operand()},
+                               .inverted{},
+                           });
+
+            return;
+        }
+
         x.equal_elements(tok(), indent, element_type.size_bytes(), emit.count(),
                          {
                              .alignment{element_type.alignment()},
@@ -65,7 +83,6 @@ class stmt_builtin_arrays_equal final : public statement {
                              .rhs{emit.second()},
                              .dst{dst.operand()},
                              .inverted{},
-                             .is_count_positive{count and *count > 0},
                          });
     }
 
