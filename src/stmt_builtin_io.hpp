@@ -322,7 +322,7 @@ class stmt_builtin_io final : public statement {
         const std::optional<int64_t> count{constant_count(tc, buffer_info)};
 
         const std::optional<int64_t> start{
-            at_.start ? args_.constant(tc, *at_.start) : int64_t{},
+            at_.start ? args_.at(*at_.start).constant_value(tc) : int64_t{},
         };
 
         // a constant start alone, e.g. the -1 of 'write(1, a, n, -1)'; a count
@@ -497,7 +497,7 @@ class stmt_builtin_io final : public statement {
         -> std::optional<int64_t> {
 
         if (at_.count) {
-            return args_.constant(tc, *at_.count);
+            return args_.at(*at_.count).constant_value(tc);
         }
 
         if (io_.is_sector) {
@@ -527,13 +527,13 @@ class stmt_builtin_io final : public statement {
         assert(at_.start);
 
         const size_t start_index{*at_.start};
-        const statement& start_arg{args_.at(start_index)};
+        const expr_any& start_arg{args_.at(start_index)};
         const size_t element_count{buffer_info.element_count()};
         const size_t element_size_bytes{buffer_info.type_ref().size_bytes()};
         const type& type_default{tc.builtins().default_type()};
 
         const std::optional<int64_t> constant_start{
-            args_.constant(tc, start_index),
+            start_arg.constant_value(tc),
         };
 
         machine& x{tc.machine()};

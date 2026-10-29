@@ -6027,3 +6027,6 @@ SRC=1891 && COMPERR
 
 # a constant index past the 64-bit offset range of an unsized array
 if [[ $MACHINE == x86_64 ]]; then SRC=1892 && COMPERR; fi
+
+# an overflowing inner negation is located at its '-'
+SRC=1893 && OPTS="--checks=overflow" COMPERR

@@ -1,11 +1,9 @@
 #pragma once
 
-#include <algorithm>
 #include <cstddef>
 #include <filesystem>
 #include <format>
 #include <functional>
-#include <iterator>
 #include <memory>
 #include <optional>
 #include <ostream>
@@ -226,15 +224,14 @@ class report_renderer final {
 };
 
 // the whole program: the constructor parses the main file and the files it
-// includes into 'statements_', an included file before the file that
+// includes into 'parsed_files_', an included file before the file that
 // includes it; 'build' compiles from the parsed statements, the globals then
 // 'main', see 'etc/docs/README.md' section 1.2
 class program final {
-    // the statements of one file, in 'statements_'
-    struct file_statements {
+    // the statements of one file: its includes, then its definitions
+    struct parsed_file {
         size_t file_ix{};
-        size_t begin{};
-        size_t end{};
+        std::vector<std::unique_ptr<statement>> statements;
         // the end of the file, its whitespace holds the comments and blank
         // lines after the last statement
         token end_tk;
@@ -249,8 +246,7 @@ class program final {
     };
 
     std::reference_wrapper<source_files> files_;
-    std::vector<std::unique_ptr<statement>> statements_;
-    std::vector<file_statements> file_statements_;
+    std::vector<parsed_file> parsed_files_;
     toc tc_; // table of contents
 
   public:
@@ -290,13 +286,13 @@ class program final {
 
     // writes the source of the statements parsed from a file
     auto source_to(const size_t file_ix, std::ostream& os) const -> void {
-        for (const file_statements& parsed : file_statements_) {
+        for (const parsed_file& parsed : parsed_files_) {
             if (parsed.file_ix != file_ix) {
                 continue;
             }
 
-            for (size_t i{parsed.begin}; i < parsed.end; ++i) {
-                statements_.at(i)->source_to(os);
+            for (const std::unique_ptr<statement>& s : parsed.statements) {
+                s->source_to(os);
             }
 
             parsed.end_tk.source_to(os);
@@ -308,8 +304,10 @@ class program final {
         {
             const toc::scope_entry root{tc_, scope::block()};
 
-            for (const std::unique_ptr<statement>& s : statements_) {
-                s->compile(tc_, 0, destination{});
+            for (const parsed_file& parsed : parsed_files_) {
+                for (const std::unique_ptr<statement>& s : parsed.statements) {
+                    s->compile(tc_, 0, destination{});
+                }
             }
 
             compile_main(tc_, tc_.get_main_or_throw());
@@ -385,14 +383,9 @@ class program final {
             tk = file.tz.next_token();
         }
 
-        const size_t begin{statements_.size()};
-
-        std::ranges::move(file.parsed, std::back_inserter(statements_));
-
-        file_statements_.push_back({
+        parsed_files_.push_back({
             .file_ix{file.file_ix},
-            .begin{begin},
-            .end{statements_.size()},
+            .statements{std::move(file.parsed)},
             .end_tk{tk},
         });
     }

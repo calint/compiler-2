@@ -704,7 +704,8 @@ class stmt_identifier final : public statement {
     [[nodiscard]] auto has_computed_address(const ident_info& info) const
         -> bool {
 
-        return is_indexed() or info.is_address_computed();
+        return is_indexed() or info.holds_address() or
+               info.is_address_by_call();
     }
 
     [[nodiscard]] auto is_array() const -> bool { return shape_.is_array(); }

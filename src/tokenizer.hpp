@@ -78,8 +78,8 @@ class tokenizer final {
         assert(char_ix_ <= src_.size());
     }
 
-    // the arguments of a built-in of a fixed count, e.g. 'array_length(a)':
-    // a ')' where an argument starts is a missing one, e.g. 'int()'
+    // the argument of a conversion: a ')' where an argument starts is a
+    // missing one, e.g. 'int()'
     auto assert_no_missing_argument(const std::string_view name,
                                     const size_t count) const -> void {
 
@@ -91,7 +91,7 @@ class tokenizer final {
     }
 
     // a ',' where the last of 'count' arguments ends is a surplus one, e.g.
-    // 'array_length(a, 1)', or a trailing ','; without parameters anything
+    // 'i8(1, 2)', or a trailing ','; without parameters anything
     // but ')' is, e.g. 'f(1)' of 'func f()'
     auto assert_no_surplus_argument(const std::string_view name,
                                     const size_t count) const -> void {

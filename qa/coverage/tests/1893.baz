@@ -1,0 +1,9 @@
+# the overflow of a negation inside other unary operators is located at that
+# negation, not at the outermost operator
+
+func main() {
+    let k = i8(-128)
+    var y = i8(0)
+    y = ~-k
+    exit(y)
+}

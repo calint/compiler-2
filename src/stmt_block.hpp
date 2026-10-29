@@ -10,6 +10,8 @@
 #include "compile_error.hpp"
 #include "decouple.hpp"
 #include "ident_info.hpp"
+#include "statement.hpp"
+#include "toc.hpp"
 #include "token.hpp"
 #include "tokenizer.hpp"
 #include "ub_assigned.hpp"
@@ -155,11 +157,7 @@ class stmt_block final : public statement {
             }
 
             // a '{' starts a subblock, e.g. '{ { a = 1 } b = 2 }'
-            if (const std::optional<token> open_brace_tk{
-                    tz.is_next_char_token('{'),
-                }) {
-
-                tz.put_back_token(*open_brace_tk);
+            if (tz.peek_char_after_whitespace() == '{') {
                 statements_.emplace_back(std::make_unique<stmt_block>(tc, tz));
                 continue;
             }

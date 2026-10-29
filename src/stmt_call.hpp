@@ -502,7 +502,7 @@ struct call_site {
     auto add_temporary(toc& tc, const size_t indent, const std::string& name,
                        const type& tpe) const -> destination {
 
-        tc.add_var(tk, indent,
+        tc.add_var(indent,
                    {
                        .name{name},
                        .type_ptr{&tpe},
@@ -1492,13 +1492,6 @@ class builtin_arguments final {
 
     [[nodiscard]] auto at(const size_t index) const -> const expr_any& {
         return args_.at(index);
-    }
-
-    // e.g. '5' or 'n - 1' of a constant 'n', empty when computed at run time
-    [[nodiscard]] auto constant(const toc& tc, const size_t index) const
-        -> std::optional<int64_t> {
-
-        return args_.at(index).constant_value(tc);
     }
 
     [[nodiscard]] auto count() const -> size_t { return args_.size(); }

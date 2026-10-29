@@ -273,21 +273,15 @@ inline auto stmt_identifier::resolve_accessed_bytes(toc& tc,
             // field assigns the whole instance
             access_path_.add_field(field_offset);
 
-            const size_t extent_bytes{
-                step.parent_type->field_extent_bytes(elem.name_tk,
-                                                     elem.name_tk.text()),
-            };
-
             // the last field keeps the padding after the instance that
             // holds it, like the last element
-            const bool is_last_field{
-                field_offset + extent_bytes == step.parent_type->size_bytes(),
+            const size_t field_end{
+                step.parent_type
+                    ->next_field_offset(elem.name_tk, elem.name_tk.text())
+                    .value_or(accessed_bytes_.size_bytes),
             };
 
-            narrow_accessed_bytes(
-                field_offset, is_last_field
-                                  ? accessed_bytes_.size_bytes - field_offset
-                                  : extent_bytes);
+            narrow_accessed_bytes(field_offset, field_end - field_offset);
         }
 
         if (not elem.index) {

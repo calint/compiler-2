@@ -49,7 +49,7 @@ class unary_ops final {
 
     // the ops applied to a constant used at 'width', not wrapped to it; with
     // the overflow check a negation of the minimum of 'width' is an error at
-    // the ops
+    // that negation
     [[nodiscard]] auto evaluate_at(const int64_t value, const type& width,
                                    const bool checks_overflow) const
         -> int64_t {
@@ -82,7 +82,7 @@ class unary_ops final {
   private:
     // the ops applied to 'value', the innermost first; a negation of
     // 'overflow_minimum', the most negative value of the width, which has no
-    // positive counterpart, is an error at the ops
+    // positive counterpart, is an error at that negation
     [[nodiscard]] auto
     evaluate(int64_t value, const std::optional<int64_t> overflow_minimum) const
         -> int64_t {
@@ -96,7 +96,7 @@ class unary_ops final {
             }
 
             if (overflow_minimum and value == *overflow_minimum) {
-                throw compile_error{ops_.front().tk,
+                throw compile_error{o.tk,
                                     "constant expression overflows the type"};
             }
 

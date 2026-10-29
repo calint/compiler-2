@@ -3,7 +3,6 @@
 #include <cstddef>
 #include <format>
 #include <string_view>
-#include <utility>
 
 #include "assembler_rv32i.hpp"
 #include "compile_error.hpp"
@@ -54,14 +53,6 @@ class machine_rv32i_qemu final : public machine_rv32i_bare_metal {
         // qemu shuts down after the store completes
         a.label(0, "1");
         a.j(1, "1b");
-    }
-
-    // note: 'has_sd_card' is false, so the sector functions are rejected
-    auto emit_sector_routines([[maybe_unused]] const bool read_used,
-                              [[maybe_unused]] const bool write_used)
-        -> void override {
-
-        std::unreachable();
     }
 
     // the stack follows the variables, see 'emit_stack_setup'

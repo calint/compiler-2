@@ -79,11 +79,11 @@ class machine_rv32i_linux final : public machine_rv32i {
         constexpr int current_directory{-100};
         constexpr int read_write{2};
         constexpr int seek_end{2};
-        // the descriptor, the sector count and the 64 bit size of the file
-        constexpr std::array<int64_t, 4> sd_card_words{-1, 0, 0, 0};
-        constexpr int64_t count_offset{4};
-        constexpr int64_t size_low_offset{8};
-        constexpr int64_t size_high_offset{12};
+        // the 64 bit size of the file, the descriptor and the sector count
+        constexpr std::array<int64_t, 4> sd_card_words{0, 0, -1, 0};
+        constexpr int64_t size_high_offset{4};
+        constexpr int64_t descriptor_offset{8};
+        constexpr int64_t count_offset{12};
         // the arguments are kept while the file is opened, 'a5' with the
         // system call is not written there and an 'ecall' changes only 'a0'
         constexpr std::array<std::string_view, 3> saved{"a0", "a1", "a2"};
@@ -113,10 +113,10 @@ class machine_rv32i_linux final : public machine_rv32i {
         a.label(0, sector_transfer_label_);
         a.mv(1, "a6", "a7");
         a.la(1, "a3", sd_card_label_);
-        a.lw(1, "a4", 0, "a3");
+        a.lw(1, "a4", descriptor_offset, "a3");
         a.bgez(1, "a4", "2f");
 
-        const size_t stack_bytes{save_registers(1, saved)};
+        save_registers(1, saved);
 
         a.li(1, "a0", current_directory);
         a.la(1, "a1", sd_card_name_label_);
@@ -126,17 +126,15 @@ class machine_rv32i_linux final : public machine_rv32i {
         a.ecall(1);
         a.bltz(1, "a0", sd_card_failure.label);
         a.la(1, "a3", sd_card_label_);
-        a.sw(1, "a0", 0, "a3");
+        a.sw(1, "a0", descriptor_offset, "a3");
         // 'llseek' writes the size of the file at 'a3'
         a.li(1, "a1", 0);
         a.li(1, "a2", 0);
-        a.addi(1, "a3", "a3", size_low_offset);
         a.li(1, "a4", seek_end);
         a.li(1, "a7", syscall_llseek_);
         a.ecall(1);
         a.bnez(1, "a0", sd_card_failure.label);
-        a.la(1, "a3", sd_card_label_);
-        a.lw(1, "a4", size_low_offset, "a3");
+        a.lw(1, "a4", 0, "a3");
         a.lw(1, "a0", size_high_offset, "a3");
         a.srli(1, "a4", "a4", sector_shift);
         a.slli(1, "a1", "a0", high_shift);
@@ -148,13 +146,13 @@ class machine_rv32i_linux final : public machine_rv32i {
         a.li(1, "a4", -1);
         a.label(0, "1");
         a.sw(1, "a4", count_offset, "a3");
-        restore_saved_registers(1, saved, stack_bytes);
+        restore_saved_registers(1, saved);
         a.label(0, "2");
         a.lw(1, "a4", count_offset, "a3");
         a.bgeu(1, "a0", "a4", sd_card_failure.label);
         // 'a0' the descriptor, 'a3' and 'a4' the low and high word of the
         // offset
-        a.lw(1, "a7", 0, "a3");
+        a.lw(1, "a7", descriptor_offset, "a3");
         a.slli(1, "a3", "a0", sector_shift);
         a.srli(1, "a4", "a0", high_shift);
         a.mv(1, "a0", "a7");

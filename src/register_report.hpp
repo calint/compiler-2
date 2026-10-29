@@ -23,19 +23,7 @@
 
 // the registers each frame holds, as the text of the report of the use of
 // registers: who holds what and what a 'noinline' frame would give
-class register_use_report final {
-  public:
-    // a frame and the registers it holds, each as 'name location'
-    struct frame_use {
-        // the name of the function
-        std::string callee;
-
-        // the function and where it was called
-        std::string label;
-
-        std::vector<std::string> registers;
-    };
-
+struct register_use_report final {
   private:
     // a frame that the registers held above it make worth making 'noinline'
     struct candidate {
@@ -50,21 +38,25 @@ class register_use_report final {
     static constexpr size_t held_width_{held_heading_.size() + 2};
     // note: +2 because the heading is indented by two
 
-    std::string heading_;
-    // the scratch registers that can be live, the bases held are not
-    size_t register_total_{};
-    // the scratch registers that a 'noinline' body starts with
-    size_t noinline_register_total_{};
-    size_t named_count_{};
-    std::vector<frame_use> frames_;
-
   public:
-    register_use_report(std::string heading, const size_t register_total,
-                        const size_t noinline_register_total,
-                        const size_t named_count, std::vector<frame_use> frames)
-        : heading_{std::move(heading)}, register_total_{register_total},
-          noinline_register_total_{noinline_register_total},
-          named_count_{named_count}, frames_{std::move(frames)} {}
+    // a frame and the registers it holds, each as 'name location'
+    struct frame_use {
+        // the name of the function
+        std::string callee;
+
+        // the function and where it was called
+        std::string label;
+
+        std::vector<std::string> registers;
+    };
+
+    std::string heading;
+    // the scratch registers that can be live, the bases held are not
+    size_t register_total{};
+    // the scratch registers that a 'noinline' body starts with
+    size_t noinline_register_total{};
+    size_t named_count{};
+    std::vector<frame_use> frames;
 
     [[nodiscard]] auto text() const -> std::string {
         return heading_text() + frames_text() + noinline_text();
@@ -78,7 +70,7 @@ class register_use_report final {
         size_t saved{};
         size_t inside{live_count()};
 
-        for (const frame_use& use : frames_) {
+        for (const frame_use& use : frames) {
             if (saved > 0) {
                 found.push_back({
                     .name{use.callee},
@@ -111,7 +103,7 @@ class register_use_report final {
                 "starts its body with all {} registers free and "
                 "saves the registers held above it around the "
                 "call:\n\n  {}  {}  candidate frame",
-                noinline_register_total_, inside_heading, saved_heading),
+                noinline_register_total, inside_heading, saved_heading),
         };
 
         for (const candidate& entry : found) {
@@ -130,7 +122,7 @@ class register_use_report final {
 
         std::string text;
 
-        for (const frame_use& use : frames_) {
+        for (const frame_use& use : frames) {
             text += std::format(
                 "\n{}  {}", right_aligned(use.registers.size(), held_width_),
                 use.label);
@@ -146,21 +138,21 @@ class register_use_report final {
 
     [[nodiscard]] auto heading_text() const -> std::string {
         const std::string named_note{
-            named_count_ == 0
+            named_count == 0
                 ? std::string{}
-                : std::format(", {} named by instructions", named_count_),
+                : std::format(", {} named by instructions", named_count),
         };
 
         return std::format("{}: {} of {} registers live{}\n\n{}  frame, "
                            "registers (allocated at)",
-                           heading_, live_count(), register_total_, named_note,
+                           heading, live_count(), register_total, named_note,
                            right_aligned(held_heading_, held_width_));
     }
 
     [[nodiscard]] auto live_count() const -> size_t {
         size_t live{};
 
-        for (const frame_use& use : frames_) {
+        for (const frame_use& use : frames) {
             live += use.registers.size();
         }
 
@@ -168,7 +160,7 @@ class register_use_report final {
     }
 
     [[nodiscard]] auto noinline_text() const -> std::string {
-        if (frames_.size() < 2) {
+        if (frames.size() < 2) {
             return {};
         }
 
@@ -332,11 +324,11 @@ class register_reporter final {
         const machine& backend{machine_.get()};
 
         return {
-            std::string{heading},
-            backend.scratch_register_count(allocations),
-            backend.noinline_body_register_count(),
-            named,
-            std::move(uses),
+            .heading{heading},
+            .register_total{backend.scratch_register_count(allocations)},
+            .noinline_register_total{backend.noinline_body_register_count()},
+            .named_count{named},
+            .frames{std::move(uses)},
         };
     }
 

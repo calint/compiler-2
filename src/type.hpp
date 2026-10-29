@@ -295,20 +295,6 @@ class type final {
         return fields_.at(field_index(src_loc_tk, name));
     }
 
-    // the field and the padding after it up to the next field or the end
-    [[nodiscard]] auto
-    field_extent_bytes(const token& src_loc_tk,
-                       const std::string_view field_name) const -> size_t {
-
-        const size_t i{field_index(src_loc_tk, field_name)};
-
-        const size_t next_offset{
-            i + 1 < fields_.size() ? fields_.at(i + 1).offset : size_bytes_,
-        };
-
-        return next_offset - fields_.at(i).offset;
-    }
-
     [[nodiscard]] auto fields() const -> std::span<const type_field> {
         return fields_;
     }
@@ -347,6 +333,22 @@ class type final {
     }
 
     [[nodiscard]] auto name() const -> const std::string& { return name_; }
+
+    // where the padding after the field ends: at the next field, none for
+    // the last field
+    [[nodiscard]] auto
+    next_field_offset(const token& src_loc_tk,
+                      const std::string_view field_name) const
+        -> std::optional<size_t> {
+
+        const size_t i{field_index(src_loc_tk, field_name)};
+
+        if (i + 1 == fields_.size()) {
+            return std::nullopt;
+        }
+
+        return fields_.at(i + 1).offset;
+    }
 
     // the bytes that no field covers, between the data ranges and after the
     // last one; the first of them when there are more than 'max_count'

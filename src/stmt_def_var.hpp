@@ -279,7 +279,7 @@ class initializer_declaration final {
 
         const toc::scope_entry block{tc, scope::block()};
 
-        tc.add_var(name_tk_, 0, make_var_info(name_tk_, type_ref(), shape_),
+        tc.add_var(0, make_var_info(name_tk_, type_ref(), shape_),
                    var_kind::var);
 
         parse();
@@ -443,7 +443,7 @@ class stmt_def_var final : public statement {
 
         x.comment(tok(), indent, statement::trimmed_source(*this));
 
-        tc.add_var(declared_.src_loc_tk, indent, declared_, var_kind::var);
+        tc.add_var(indent, declared_, var_kind::var);
 
         // the assignment names its destination itself
         assign_var_.compile(tc, indent, destination{});
@@ -465,7 +465,7 @@ class stmt_def_var final : public statement {
                        const token& equals_tk, expr_any value)
         -> stmt_assign_var {
 
-        tc.add_var(var.src_loc_tk, 0, var, var_kind::var);
+        tc.add_var(0, var, var_kind::var);
 
         return {
             stmt_identifier{tc, var.src_loc_tk, at_name},

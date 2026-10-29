@@ -713,7 +713,7 @@ class stmt_def_func final : public statement {
                 // note: a slot without a parameter is the result
                 assert(result_);
 
-                tc.add_var(result_->name_tk, indent,
+                tc.add_var(indent,
                            {
                                .name{result_->name_tk.text()},
                                .type_ptr{&result_type()},
@@ -735,7 +735,7 @@ class stmt_def_func final : public statement {
                     : std::nullopt,
             };
 
-            tc.add_var(param.tok(), indent,
+            tc.add_var(indent,
                        {
                            .name{param.name()},
                            .type_ptr{&param.get_type()},

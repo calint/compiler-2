@@ -509,7 +509,7 @@ auto apply_versions(const std::string_view value, options& opts) -> void {
 // arguments are listed in 'print_help'
 constexpr std::string_view usage_format{
     R"(usage: {0} [options] [file]
-compiles file (default: prog.baz) to assembly on stdout, rv32i targets also
+compiles file (default: {9}) to assembly on stdout, rv32i targets also
 write a binary image
 
 options:
@@ -588,7 +588,7 @@ auto print_help(const char* const program_name) -> void {
                default_vars_size_bytes, stack_alignment,
                default_stack_size_bytes, memory_alignment,
                default_memory_size_bytes, machine_rv32i::leaf_stack_bytes(),
-               default_sd_card_file_name);
+               default_sd_card_file_name, default_src_file_name);
 }
 
 [[nodiscard]] auto compile_file(const options& opts) -> int {

@@ -119,7 +119,7 @@ class stmt_builtin_foo final : public statement {
             return;
         }
 
-        skip_empty_loop(x, tc, indent, limit, end_label);
+        skip_empty_loop(tc, indent, limit, end_label);
 
         x.label(indent, loop_label);
         code_.compile(tc, indent, destination{});
@@ -167,7 +167,7 @@ class stmt_builtin_foo final : public statement {
         const token& src_loc_tk{ident_.tok()};
 
         tc.add_var(
-            src_loc_tk, indent,
+            indent,
             {
                 .name{"e"},
                 .type_ptr{&array_info.type_ref()},
@@ -182,7 +182,7 @@ class stmt_builtin_foo final : public statement {
             },
             var_kind::var);
 
-        tc.add_var(src_loc_tk, indent,
+        tc.add_var(indent,
                    {
                        .name{"i"},
                        .type_ptr{&tc.builtins().default_type()},
@@ -198,7 +198,7 @@ class stmt_builtin_foo final : public statement {
 
         // note: a constant 0 would fold, e.g. 'let m = n' would keep it
         if (not array_len) {
-            tc.add_var(src_loc_tk, indent,
+            tc.add_var(indent,
                        {
                            .name{"n"},
                            .type_ptr{&tc.builtins().default_type()},
@@ -315,8 +315,7 @@ class stmt_builtin_foo final : public statement {
     }
 
     // the loop is tested at the end, so a count of zero or less skips it
-    auto skip_empty_loop(machine& x, const toc& tc, const size_t indent,
-                         const operand& limit,
+    auto skip_empty_loop(toc& tc, const size_t indent, const operand& limit,
                          const std::string_view end_label) const -> void {
 
         if (not count_) {
@@ -329,6 +328,8 @@ class stmt_builtin_foo final : public statement {
         if (limit.is_immediate()) {
             return;
         }
+
+        machine& x{tc.machine()};
 
         x.compare_and_branch(count_->count.tok(), indent, limit,
                              operand::imm(0, tc.builtins().default_type()),

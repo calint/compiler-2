@@ -1,6 +1,26 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] hard: design review series 2, round 21 (2026-10-29, user: a new design
+    round; 7 reviewers A-G: arithmetic and operands, 'machine_rv32i', the
+    identifiers and no-UB checks, the built-ins and 'assembler', the driver
+    and reports, the statements and types, the assemblers and rv32i targets)
+    => done (2026-10-29): A2 an overflowing negation inside other unary
+       operators is reported at that '-', not at the outermost operator
+       (1893); A3 the "a comparison makes a condition" caret spans the
+       operator (1317, 1868); G4 the rv32i linux sd card words hold the size
+       first, 3 instructions fewer in the sector routine; behavior-preserving,
+       listings verified equal: parse state of 'expr_arith' as constructor
+       locals, 'is_computed' throughout; rv32i 'restore_saved_registers'
+       computes its size, 'address_offset_parts' and 'emit_comparison' gone;
+       'next_field_offset' for the last field, 'is_address_computed' inlined;
+       'builtin_arguments::constant' gone, dead 'removed' tests, 'toc&' for
+       'skip_empty_loop'; one statement container per file in 'program',
+       'register_use_report' an aggregate, the default source name in the
+       usage; 'toc::add_var' without its token, 'stmt_block' peeks for '{'
+       and includes what it uses; an unreachable default for
+       'emit_sector_routines' (as G.5), 'call_io_routine' marks its routine,
+       'immediate::of_symbol' inlined; comments and includes
 [x] hard: design review series 2, round 20 (2026-10-29, user: a new design
     round; 7 reviewers A-G: the tokenizer and source files, 'toc', calls and
     function definitions, the expressions, the x86_64 backend, the register

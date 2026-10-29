@@ -334,16 +334,6 @@ class expr_arith final : public statement {
     std::optional<token> open_paren_tk_;
     std::optional<token> close_paren_tk_;
 
-    // true when this list was created because of a higher-precedence operation,
-    // which starts it at the precedence of its operator
-    //   1 + 2 * 3 + 4  => 1 + [2 * 3] + 4
-    bool is_implied_subexpression_{};
-
-    // the type of the destination, which a generic call deduces its result
-    // from, e.g. 'make<i8>' of 'x = make()' for an 'i8' 'x'; null when not
-    // known
-    const type* destination_type_{};
-
     // the first element is an enclosed list, e.g. the '(a + b)' of
     // '(a + b) * c'; a first element given by the caller keeps it false: the
     // element before a higher-precedence operator, which makes two or more
@@ -372,7 +362,9 @@ class expr_arith final : public statement {
         // 'a + b * c'
         std::unique_ptr<statement> first_expression;
 
-        // see 'destination_type_'
+        // the type of the destination, which a generic call deduces its
+        // result from, e.g. 'make<i8>' of 'x = make()' for an 'i8' 'x'; null
+        // when not known
         const type* destination_type{};
 
         //
@@ -393,8 +385,9 @@ class expr_arith final : public statement {
             };
         }
 
-        // a list of an operation of a higher precedence that starts with an
-        // element already read, e.g. the 'b * c' of 'a + b * c'
+        // a list that starts with an element already read: of an operation
+        // of a higher precedence, e.g. the 'b * c' of 'a + b * c', or at
+        // 'list_start_precedence' a zero value, e.g. '{}'
         [[nodiscard]] static auto implied(const uint8_t precedence,
                                           std::unique_ptr<statement> first,
                                           const type* const destination_type_in)
@@ -432,21 +425,20 @@ class expr_arith final : public statement {
                         ? opts.first_expression->tok().start_position()
                         : tz.next_token_position(),
                     std::move(opts.uops)},
-          open_paren_tk_{opts.open_paren_tk},
-          is_implied_subexpression_{
-              opts.first_op_precedence != list_start_precedence,
-          },
-          destination_type_{opts.destination_type} {
+          open_paren_tk_{opts.open_paren_tk} {
 
         const toc::parse_nesting_scope nesting{tc, tz};
 
-        // a recursive call might have supplied the first element it already
-        // parsed
+        // the caller might have parsed the first element: the element before a
+        // higher-precedence operator or a zero value
         // e.g. the 'b' of 'b * c' in 'a + b * c'
         if (opts.first_expression) {
             exprs_.emplace_back(std::move(opts.first_expression));
         } else {
-            parsed_element first{parse_element(tc, tz, destination_type_)};
+            parsed_element first{
+                parse_element(tc, tz, opts.destination_type),
+            };
+
             is_first_enclosed_ = first.is_enclosed;
             exprs_.emplace_back(std::move(first.node));
         }
@@ -457,7 +449,12 @@ class expr_arith final : public statement {
 
         // a sub-expression starts at the precedence of the operator that
         // opened it
+        //   1 + 2 * 3 + 4  => 1 + [2 * 3] + 4
         uint8_t precedence{opts.first_op_precedence};
+
+        const bool is_implied_subexpression{
+            precedence != list_start_precedence,
+        };
 
         while (true) {
             // a sub-expression is closed by its ')'
@@ -487,13 +484,16 @@ class expr_arith final : public statement {
             // follows, so parse that as a sub-expression
             // e.g. the '*' of 'a + b * c' groups 'b * c'
             if (next_precedence > precedence) {
-                open_implied_subexpression(tc, tz, next_precedence);
+                open_implied_subexpression(tc, tz, next_precedence,
+                                           opts.destination_type);
+
                 continue;
             }
 
-            // a lower precedence returns to the parent list
-            // e.g. the '-' of 'a + b * c - d' ends 'b * c'
-            if (is_end_of_implied_subexpression(precedence, next_precedence)) {
+            // a lower precedence returns to the parent list, else the rest
+            // would join the sub-expression
+            // e.g. the '-' of 'a + b * c - d' ends 'b * c', not 'b * c - d'
+            if (is_implied_subexpression and next_precedence < precedence) {
                 end_list(tz);
                 return;
             }
@@ -507,7 +507,8 @@ class expr_arith final : public statement {
                 .op{*next_op},
             });
 
-            exprs_.emplace_back(parse_element(tc, tz, destination_type_).node);
+            exprs_.emplace_back(
+                parse_element(tc, tz, opts.destination_type).node);
         }
     }
 
@@ -522,7 +523,7 @@ class expr_arith final : public statement {
 
         // note: an empty position, the first element prints the whitespace
         tok().source_to(os);
-        exprs_.at(0)->source_to(os);
+        exprs_.front()->source_to(os);
         for (const auto [o, e] :
              std::views::zip(ops_, exprs_ | std::views::drop(1))) {
 
@@ -770,15 +771,14 @@ class expr_arith final : public statement {
     // a comparison, 'and' or 'or' after a number, e.g. the '>' of 'int(a > 2)'
     // or the 'and' of '(t and f) == f'
     static auto assert_no_condition_next(const tokenizer& tz) -> void {
-        if (comparison_of(tz.peek_operator())) {
-            tokenizer probe{tz};
+        tokenizer probe{tz};
 
-            throw compile_error{probe.next_token(),
+        if (comparison_of(tz.peek_operator())) {
+            throw compile_error{probe.seen_operator(),
                                 "a comparison makes a condition, which is not "
                                 "an operand here, store it in a 'bool' first"};
         }
 
-        tokenizer probe{tz};
         const token next_tk{probe.next_token()};
 
         if (connective_of(next_tk)) {
@@ -811,7 +811,7 @@ class expr_arith final : public statement {
 
         compile_first_step(tc, indent, dst, steps.front());
 
-        for (const step& s : std::span{steps}.subspan(1)) {
+        for (const step& s : steps.subspan(1)) {
             // note: 1 because the first step is compiled above
 
             compile_step(tc, indent, dst, s);
@@ -1026,7 +1026,7 @@ class expr_arith final : public statement {
 
         const statement& e{*exprs_.front()};
 
-        if (e.operand_path() == nullptr) {
+        if (e.is_computed()) {
             return true;
         }
 
@@ -1037,16 +1037,6 @@ class expr_arith final : public statement {
     // e.g. '(a + b)' vs 'a + b'
     [[nodiscard]] auto is_enclosed() const -> bool {
         return open_paren_tk_.has_value();
-    }
-
-    // a sub-expression ends when the operator has a lower precedence than its
-    // own list
-    //   want:  a - b * c + 3  ->  [a] - [b * c] + [3]
-    //   if not returning then becomes: a - [b * c + 3]
-    [[nodiscard]] auto is_end_of_implied_subexpression(
-        const uint8_t precedence, const uint8_t next_precedence) const -> bool {
-
-        return is_implied_subexpression_ and next_precedence < precedence;
     }
 
     // pass 0: one step per element with the constant value of the element
@@ -1084,7 +1074,9 @@ class expr_arith final : public statement {
     // operator with the higher precedence
     //   a + b * c  ->  [a] + [b * c]
     auto open_implied_subexpression(toc& tc, tokenizer& tz,
-                                    const uint8_t next_precedence) -> void {
+                                    const uint8_t next_precedence,
+                                    const type* const destination_type)
+        -> void {
 
         // note: the operator is read by the sub-expression before its second
         //       element
@@ -1097,7 +1089,7 @@ class expr_arith final : public statement {
         exprs_.emplace_back(std::make_unique<expr_arith>(
             tc, tz,
             options::implied(next_precedence, std::move(last_elem_in_list),
-                             destination_type_)));
+                             destination_type)));
     }
 
     // the passes in order, the steps are ready to compile
@@ -1269,7 +1261,7 @@ class expr_arith final : public statement {
                                       const destination& dst,
                                       const statement& first) -> void {
 
-        if (first.operand_path() == nullptr) {
+        if (first.is_computed()) {
             machine& x{tc.machine()};
 
             x.comment(first.tok(), indent,
@@ -1348,7 +1340,7 @@ class expr_arith final : public statement {
 
         // a constant, or a name or literal with or without unary ops
         const bool reads_before_writing{
-            first.value or first.element->operand_path() != nullptr,
+            first.value or not first.element->is_computed(),
         };
 
         if (not reads_before_writing and

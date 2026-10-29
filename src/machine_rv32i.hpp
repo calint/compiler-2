@@ -48,7 +48,7 @@
 //   memory       'zero_known_size', 'copy_known_size', 'compare_known_size'
 //                for a known size, 'walk_runtime_count' for a run-time count
 //                (see the note before 'local_label')
-//   comparisons  'compare_and_branch', 'emit_comparison'
+//   comparisons  'compare_and_branch', 'emit_comparison_branch'
 //   checks       'emit_bounds_check', 'check_divisor', 'check_fits_width',
 //                'check_shift_count', 'check_copy_overlap',
 //                'check_frame_capacity', 'check_stack_capacity', the overflow
@@ -156,11 +156,6 @@ class machine_rv32i : public machine {
 
             return registers.at(slot);
         }
-    };
-
-    struct address_offset_parts {
-        uint32_t upper{};
-        int32_t low{};
     };
 
     // what a call of '.Lbaz_multiply', '.Lbaz_multiply_checked' or
@@ -614,17 +609,14 @@ class machine_rv32i : public machine {
                                 const std::span<const size_t> saved)
         -> void override {
 
-        const std::vector<std::string_view> names{register_names_of(saved)};
-
-        restore_saved_registers(indent, names,
-                                saved_registers_size_bytes(names.size()));
+        restore_saved_registers(indent, register_names_of(saved));
     }
 
     auto save_call_registers(const size_t indent,
                              const std::span<const size_t> saved)
         -> void override {
 
-        std::ignore = save_registers(indent, register_names_of(saved));
+        save_registers(indent, register_names_of(saved));
     }
 
     [[nodiscard]] auto target_assembler() -> ::assembler& override {
@@ -658,9 +650,14 @@ class machine_rv32i : public machine {
     // the routines that the calls of 'sector_read' and 'sector_write' jump
     // to, each only when it is used; a routine takes the sector in 'a0', the
     // address in 'a1' and the size in 'a2', returns through 'a7' and changes
-    // only 'a0' and 'io_routine_clobbered_'
-    virtual auto emit_sector_routines(const bool read_used,
-                                      const bool write_used) -> void = 0;
+    // only 'a0' and 'io_routine_clobbered_'; only a target that
+    // 'has_sd_card' is asked
+    virtual auto emit_sector_routines([[maybe_unused]] const bool read_used,
+                                      [[maybe_unused]] const bool write_used)
+        -> void {
+
+        std::unreachable();
+    }
 
     // loads the lowest address the stack may reach into the register 'reg',
     // only a target that 'is_stack_bounded' is asked
@@ -694,11 +691,15 @@ class machine_rv32i : public machine {
                                     }));
 
         assembler_.call(indent, label, "a7");
+        mark_used(label);
     }
 
+    // 'saved' as given to 'save_registers'
     auto restore_saved_registers(const size_t indent,
-                                 const std::span<const std::string_view> saved,
-                                 const size_t stack_bytes) -> void {
+                                 const std::span<const std::string_view> saved)
+        -> void {
+
+        const size_t stack_bytes{saved_registers_size_bytes(saved.size())};
 
         for (const auto [index, name] : std::views::enumerate(saved)) {
             assembler_.lw(indent, name,
@@ -710,11 +711,9 @@ class machine_rv32i : public machine {
         }
     }
 
-    // an aligned stack area is allocated only when a register is saved, the
-    // returned size lets 'restore_saved_registers' free it
+    // an aligned stack area is allocated only when a register is saved
     auto save_registers(const size_t indent,
-                        const std::span<const std::string_view> saved)
-        -> size_t {
+                        const std::span<const std::string_view> saved) -> void {
 
         const size_t stack_bytes{saved_registers_size_bytes(saved.size())};
 
@@ -727,8 +726,6 @@ class machine_rv32i : public machine {
             assembler_.sw(indent, name,
                           static_cast<size_t>(index) * word_size_bytes_, "sp");
         }
-
-        return stack_bytes;
     }
 
     //
@@ -944,11 +941,76 @@ class machine_rv32i : public machine {
         comment(src_loc_tk, indent, "stack capacity check end");
     }
 
+    // the operation scopes end on return, before the caller frees its registers
     auto compare_and_branch(const token& src_loc_tk, const size_t indent,
                             const operand& lhs, const operand& rhs,
                             const comparison_action& action) -> void override {
 
-        emit_comparison(src_loc_tk, indent, lhs, rhs, action);
+        const operation_scope destination_scope{*this, action.destination};
+
+        const operation_scope scope{*this, lhs, rhs};
+
+        assert_scalar(lhs.type_ref());
+        assert_scalar(rhs.type_ref());
+
+        const comparison_operator operation{action.operation};
+
+        const std::optional<int32_t> constant{
+            narrowed_immediate(rhs, lhs.type_ref()),
+        };
+
+        // x > c and x <= c use the signed threshold c + 1
+        const bool inclusive_threshold{swaps_operands(operation)};
+
+        const int64_t threshold{
+            int64_t{constant.value_or(0)} + (inclusive_threshold ? 1 : 0),
+        };
+
+        // a branch compares registers, a boolean result can use an immediate
+        const bool use_immediate{
+            not action.destination.is_empty() and constant.has_value() and
+                threshold >= assembler_rv32i::immediate_min and
+                threshold <= assembler_rv32i::immediate_max,
+        };
+
+        const std::optional<int64_t> immediate{
+            use_immediate ? std::optional<int64_t>{threshold} : std::nullopt,
+        };
+
+        const std::array<operand, 2> sides{
+            comparison_operands(src_loc_tk, indent, lhs, rhs, use_immediate,
+                                action.destination),
+        };
+
+        const operand& left{sides.at(0)};
+        const operand& right{sides.at(1)};
+
+        // branch-only comparisons do not need a materialized boolean
+        if (action.destination.is_empty()) {
+            emit_comparison_branch(indent, operation, left, right, action);
+            return;
+        }
+
+        const operand value{
+            comparison_result_register(src_loc_tk, indent, action.destination,
+                                       lhs, rhs, left, right),
+        };
+
+        const std::string_view result{value.register_name()};
+
+        emit_boolean_result(indent, operation, result, left, right, immediate,
+                            action.inverted);
+
+        // memory results require a store, register results are in place
+        if (action.destination.is_memory()) {
+            copy_value(src_loc_tk, indent, action.destination, value);
+        }
+
+        // some callers request both a stored boolean and a branch
+        if (not action.target.empty()) {
+            emit_branch(indent, action.branch_on_true ? op::bne : op::beq,
+                        result, "zero", action.target);
+        }
     }
 
     auto copy_block(const token& src_loc_tk, const size_t indent,
@@ -1623,7 +1685,7 @@ class machine_rv32i : public machine {
         assert(not source.uses_register("sp"));
 
         // save caller values before argument setup overwrites 'a0' or 'a1'
-        const size_t stack_bytes{save_registers(indent, saved)};
+        save_registers(indent, saved);
 
         load_helper_arguments(src_loc_tk, indent, dst, source);
 
@@ -1645,7 +1707,7 @@ class machine_rv32i : public machine {
         // the destination is not restored so it can retain the result
         if (dst.is_register()) {
             copy_value(src_loc_tk, indent, dst, result);
-            restore_saved_registers(indent, saved, stack_bytes);
+            restore_saved_registers(indent, saved);
             return;
         }
 
@@ -1653,7 +1715,7 @@ class machine_rv32i : public machine {
             preserved_helper_result(src_loc_tk, indent, result, saved),
         };
 
-        restore_saved_registers(indent, saved, stack_bytes);
+        restore_saved_registers(indent, saved);
 
         // memory destinations need their original address registers back
         copy_value(src_loc_tk, indent, dst, kept);
@@ -1668,7 +1730,6 @@ class machine_rv32i : public machine {
                                                  : sector_write_label_,
         };
 
-        mark_used(label);
         call_io_routine(indent, label);
     }
 
@@ -2754,78 +2815,6 @@ class machine_rv32i : public machine {
         assembler_.label(indent, fits.name);
     }
 
-    // the operation scopes end on return, before the caller frees its registers
-    auto emit_comparison(const token& src_loc_tk, const size_t indent,
-                         const operand& lhs, const operand& rhs,
-                         const comparison_action& action) -> void {
-
-        const operation_scope destination_scope{*this, action.destination};
-
-        const operation_scope scope{*this, lhs, rhs};
-
-        assert_scalar(lhs.type_ref());
-        assert_scalar(rhs.type_ref());
-
-        const comparison_operator operation{action.operation};
-
-        const std::optional<int32_t> constant{
-            narrowed_immediate(rhs, lhs.type_ref()),
-        };
-
-        // x > c and x <= c use the signed threshold c + 1
-        const bool inclusive_threshold{swaps_operands(operation)};
-
-        const int64_t threshold{
-            int64_t{constant.value_or(0)} + (inclusive_threshold ? 1 : 0),
-        };
-
-        // a branch compares registers, a boolean result can use an immediate
-        const bool use_immediate{
-            not action.destination.is_empty() and constant.has_value() and
-                threshold >= assembler_rv32i::immediate_min and
-                threshold <= assembler_rv32i::immediate_max,
-        };
-
-        const std::optional<int64_t> immediate{
-            use_immediate ? std::optional<int64_t>{threshold} : std::nullopt,
-        };
-
-        const std::array<operand, 2> sides{
-            comparison_operands(src_loc_tk, indent, lhs, rhs, use_immediate,
-                                action.destination),
-        };
-
-        const operand& left{sides.at(0)};
-        const operand& right{sides.at(1)};
-
-        // branch-only comparisons do not need a materialized boolean
-        if (action.destination.is_empty()) {
-            emit_comparison_branch(indent, operation, left, right, action);
-            return;
-        }
-
-        const operand value{
-            comparison_result_register(src_loc_tk, indent, action.destination,
-                                       lhs, rhs, left, right),
-        };
-
-        const std::string_view result{value.register_name()};
-
-        emit_boolean_result(indent, operation, result, left, right, immediate,
-                            action.inverted);
-
-        // memory results require a store, register results are in place
-        if (action.destination.is_memory()) {
-            copy_value(src_loc_tk, indent, action.destination, value);
-        }
-
-        // some callers request both a stored boolean and a branch
-        if (not action.target.empty()) {
-            emit_branch(indent, action.branch_on_true ? op::bne : op::beq,
-                        result, "zero", action.target);
-        }
-    }
-
     auto emit_comparison_branch(const size_t indent,
                                 const comparison_operator operation,
                                 const operand& left, const operand& right,
@@ -2867,9 +2856,6 @@ class machine_rv32i : public machine {
 
     // divide and remainder share magnitude division and sign restoration
     auto emit_divide_body() -> void {
-        // one quotient bit per step
-        constexpr int divide_steps{32};
-
         assembler_.beqz(1, "a1", "5f");
         assembler_.srai(1, "a4", "a0", sign_shift_);
         assembler_.srai(1, "a3", "a1", sign_shift_);
@@ -2879,7 +2865,8 @@ class machine_rv32i : public machine {
         assembler_.sub(1, "a1", "a1", "a3");
         assembler_.xor_op(1, "a3", "a3", "a4");
         assembler_.li(1, "a2", 0);
-        assembler_.li(1, "a5", divide_steps);
+        assembler_.li(1, "a5", register_bits_);
+        // note: one quotient bit per step
         assembler_.label(0, "1");
         assembler_.srli(1, "a6", "a0", sign_shift_);
         assembler_.slli(1, "a2", "a2", 1);
@@ -3426,26 +3413,26 @@ class machine_rv32i : public machine {
 
         const std::string& result_name{result.register_name()};
 
-        const address_offset_parts parts{split_address_offset(offset)};
+        const uint32_t upper{assembler_rv32i::upper_part(offset)};
+        const int32_t low{assembler_rv32i::lower_part(offset)};
 
         // no upper part: the memory instruction handles the entire offset
-        if (parts.upper == 0) {
-            return operand::mem(result_name, {}, 1, parts.low,
-                                address.type_ref());
+        if (upper == 0) {
+            return operand::mem(result_name, {}, 1, low, address.type_ref());
         }
 
         const operand displacement{
             alloc_scratch_register(src_loc_tk, indent, default_type()),
         };
 
-        assembler_.lui(indent, displacement.register_name(), parts.upper);
+        assembler_.lui(indent, displacement.register_name(), upper);
 
         assembler_.add(indent, result_name, result_name,
                        displacement.register_name());
 
         free_scratch_register(src_loc_tk, indent, displacement);
 
-        return operand::mem(result_name, {}, 1, parts.low, address.type_ref());
+        return operand::mem(result_name, {}, 1, low, address.type_ref());
     }
 
     [[nodiscard]] auto
@@ -3456,11 +3443,12 @@ class machine_rv32i : public machine {
         const std::string& base{address.base_register()};
         const int64_t offset{address.displacement()};
 
-        const address_offset_parts parts{split_address_offset(offset)};
+        const uint32_t upper{assembler_rv32i::upper_part(offset)};
+        const int32_t low{assembler_rv32i::lower_part(offset)};
 
         // no upper part: the memory instruction handles the entire offset
-        if (parts.upper == 0) {
-            return operand::mem(base, {}, 1, parts.low, address.type_ref());
+        if (upper == 0) {
+            return operand::mem(base, {}, 1, low, address.type_ref());
         }
 
         const operand result{
@@ -3470,11 +3458,11 @@ class machine_rv32i : public machine {
         const std::string& result_name{result.register_name()};
 
         // only the upper part; the memory instruction adds the low
-        assembler_.lui(indent, result_name, parts.upper);
+        assembler_.lui(indent, result_name, upper);
 
         assembler_.add(indent, result_name, result_name, base);
 
-        return operand::mem(result_name, {}, 1, parts.low, address.type_ref());
+        return operand::mem(result_name, {}, 1, low, address.type_ref());
     }
 
     // what an access through the register 'pointer' reads or writes
@@ -3927,11 +3915,11 @@ class machine_rv32i : public machine {
                             const std::array<access_start, 2>& starts,
                             const size_t alignment) -> void {
 
-        // the run-time count may be smaller than any head
         const std::array<access_start, 2> typed{
             typed_starts(starts, alignment),
         };
 
+        // the run-time count may be smaller than any head
         const loop_start start{
             plan_loop_start(typed, std::numeric_limits<size_t>::max()),
         };
@@ -4740,7 +4728,7 @@ class machine_rv32i : public machine {
                                       const operand& lowered) -> operand {
 
         return operand::mem(lowered.base_register(), {}, 1,
-                            split_address_offset(address.displacement()).low,
+                            assembler_rv32i::lower_part(address.displacement()),
                             address.type_ref());
     }
 
@@ -4809,23 +4797,12 @@ class machine_rv32i : public machine {
         }
 
         const uint32_t src_upper{
-            split_address_offset(src.displacement()).upper,
+            assembler_rv32i::upper_part(src.displacement()),
         };
 
         // without an upper part the access needs no base register of its own
         return src_upper != 0 and
-               src_upper == split_address_offset(dst.displacement()).upper;
-    }
-
-    [[nodiscard]] static auto split_address_offset(const int64_t offset)
-        -> address_offset_parts {
-
-        // the signed low 12 bits stay in the memory operand, the upper part
-        // is loaded with lui
-        return {
-            .upper{assembler_rv32i::upper_part(offset)},
-            .low{assembler_rv32i::lower_part(offset)},
-        };
+               src_upper == assembler_rv32i::upper_part(dst.displacement());
     }
 
     // the widest aligned parts like the unrolled 'copy_block'
@@ -4920,8 +4897,8 @@ class machine_rv32i : public machine {
                address.scale() <= std::numeric_limits<uint32_t>::max());
 
         // note: any displacement is valid, addresses wrap at 32 bits and
-        //       'split_address_offset' keeps its low 32 bits, e.g. the
-        //       addend of 'a[i + K]' may pass the address range
+        //       'upper_part' and 'lower_part' keep its low 32 bits, e.g.
+        //       the addend of 'a[i + K]' may pass the address range
     }
 
     // the result is written in place

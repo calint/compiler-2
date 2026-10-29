@@ -97,7 +97,6 @@ class machine_rv32i_bare_metal : public machine_rv32i {
 
     auto emit_read_call(const size_t indent) -> void override {
         call_io_routine(indent, read_label_);
-        mark_used(read_label_);
     }
 
     // no operating system sets up a stack
@@ -124,7 +123,6 @@ class machine_rv32i_bare_metal : public machine_rv32i {
 
     auto emit_write_call(const size_t indent) -> void override {
         call_io_routine(indent, write_label_);
-        mark_used(write_label_);
     }
 
     //

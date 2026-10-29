@@ -264,7 +264,7 @@ class assembler {
 
         std::unordered_map<std::string_view, size_t> calls;
         for (const line& l : lines_) {
-            if (not l.removed and not l.call_target.empty()) {
+            if (not l.call_target.empty()) {
                 ++calls[l.call_target];
             }
         }
@@ -577,7 +577,7 @@ class assembler {
 
         std::unordered_set<std::string_view> named;
         for (const line& l : lines_) {
-            if (l.removed or l.jump or not l.label.empty()) {
+            if (l.jump or not l.label.empty()) {
                 continue;
             }
 

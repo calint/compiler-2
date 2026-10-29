@@ -117,7 +117,7 @@ class stmt_def_dat final : public statement {
 
         x.comment(tok(), indent, statement::trimmed_source(*this));
 
-        tc.add_var(name_tk_, indent, make_var_info(), var_kind::dat);
+        tc.add_var(indent, make_var_info(), var_kind::dat);
 
         // note: the compile of a 'var' checks the elements of a condition
         //       after the one that decides it, so does this

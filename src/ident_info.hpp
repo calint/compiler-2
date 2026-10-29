@@ -255,12 +255,6 @@ class ident_info final {
         return var != nullptr and var->is_address_by_call;
     }
 
-    // the root holds an address, or is an argument whose address an inlined
-    // call computed at run time
-    [[nodiscard]] auto is_address_computed() const -> bool {
-        return holds_address() or is_address_by_call();
-    }
-
     [[nodiscard]] auto is_array() const -> bool { return shape().is_array(); }
 
     [[nodiscard]] auto is_const() const -> bool {

@@ -2828,7 +2828,7 @@ class toc final {
         storage_.assert_total_fits_target(var.src_loc_tk,
                                           data_.total_size_bytes());
 
-        add_var(var.src_loc_tk, 0, var, var_kind::dat);
+        add_var(0, var, var_kind::dat);
     }
 
     // see 'definition_order'
@@ -2941,8 +2941,10 @@ class toc final {
         types_.add_param(src_loc_tk, name, tpe);
     }
 
-    auto add_var(const token& src_loc_tk, const size_t indent, var_info var,
-                 const var_kind kind) -> void {
+    auto add_var(const size_t indent, var_info var, const var_kind kind)
+        -> void {
+
+        const token src_loc_tk{var.src_loc_tk};
 
         if (kind == var_kind::param or kind == var_kind::result) {
             definitions_.assert_not_declared_in_scope(src_loc_tk, var.name);

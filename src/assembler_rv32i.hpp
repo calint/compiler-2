@@ -102,18 +102,6 @@ class assembler_rv32i final : public assembler {
         // a symbol subtracted from 'symbol', e.g. a frame size from 'vars.end'
         std::string subtracted;
 
-        //
-        // statics
-        //
-
-        [[nodiscard]] static auto of_symbol(const std::string_view name)
-            -> immediate {
-
-            immediate result;
-            result.symbol = name;
-            return result;
-        }
-
       private:
         //
         // statics
@@ -584,7 +572,8 @@ class assembler_rv32i final : public assembler {
             const std::string_view symbol,
             const std::string_view subtracted = {}) -> void {
 
-        immediate address{immediate::of_symbol(symbol)};
+        immediate address;
+        address.symbol = symbol;
         address.subtracted = subtracted;
 
         add_instruction(indent, {
