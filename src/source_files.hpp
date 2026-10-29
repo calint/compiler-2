@@ -172,7 +172,7 @@ class source_locations final {
                            text(src_loc_tk, '.'));
     }
 
-    // like 'for_message', with the file named as in the listing comments,
+    // like 'for_comment', without the file name for a program of one file,
     // e.g. in the register report
     [[nodiscard]] auto for_listing(const token& src_loc_tk) const
         -> std::string {
@@ -181,9 +181,7 @@ class source_locations final {
             return text(src_loc_tk, ':');
         }
 
-        return std::format("{}:{}",
-                           printable(relative_name(src_loc_tk.file_index())),
-                           text(src_loc_tk, ':'));
+        return for_comment(src_loc_tk);
     }
 
     // a source location for a message, with the file name when the program

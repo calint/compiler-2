@@ -4,7 +4,6 @@
 #include <cassert>
 #include <cstddef>
 #include <format>
-#include <functional>
 #include <memory>
 #include <optional>
 #include <ostream>
@@ -59,21 +58,15 @@
 // e.g. 'text' names 'str' and 'func text.print()' is the function 'str.print'
 struct func_head {
   private:
-    // what 'name_tk' names before the '.' of a method: a type
-    struct receiver_of_type {
-        std::reference_wrapper<const type> tp;
-    };
-
-    // e.g. 'text' of 'func text.print()', each instance of 'text' reads the
-    // head again from 'start_tk', where 'text' names a type
-    struct receiver_of_generic_type {};
-
     // the '.' and the name of a method, e.g. '.add' of 'func list.add(x)',
-    // and what 'name_tk' names before it
+    // and the type 'name_tk' names before it
     struct method_part {
         token dot_tk;
         token name_tk;
-        std::variant<receiver_of_type, receiver_of_generic_type> receiver;
+        // null for a generic type, e.g. 'text' of 'func text.print()', each
+        // instance of 'text' reads the head again from 'start_tk', where
+        // 'text' names a type
+        const type* receiver_tp{};
     };
 
   public:
@@ -123,8 +116,7 @@ struct func_head {
 
     // e.g. 'func text.print()' of the generic type 'text'
     [[nodiscard]] auto is_generic_type_method() const -> bool {
-        return method and std::holds_alternative<receiver_of_generic_type>(
-                              method->receiver);
+        return method and method->receiver_tp == nullptr;
     }
 
     // reached through its type wherever it is defined, e.g. 'list.add' or
@@ -135,15 +127,7 @@ struct func_head {
 
     // the type of 'name_tk' of a method of a type, null otherwise
     [[nodiscard]] auto receiver_type() const -> const type* {
-        if (not method) {
-            return nullptr;
-        }
-
-        const receiver_of_type* const of_type{
-            std::get_if<receiver_of_type>(&method->receiver),
-        };
-
-        return of_type == nullptr ? nullptr : &of_type->tp.get();
+        return method ? method->receiver_tp : nullptr;
     }
 
     //
@@ -200,7 +184,7 @@ struct func_head {
             method = method_part{
                 .dot_tk{dot_tk},
                 .name_tk{read_name_tk},
-                .receiver{receiver_of_generic_type{}},
+                .receiver_tp{},
             };
 
             name = method_name_of(name_tk.text(), read_name_tk.text());
@@ -222,11 +206,7 @@ struct func_head {
         method = method_part{
             .dot_tk{dot_tk},
             .name_tk{read_name_tk},
-            .receiver{
-                receiver_of_type{
-                    .tp{receiver_tp},
-                },
-            },
+            .receiver_tp{&receiver_tp},
         };
 
         name = method_name_of(receiver_tp.name(), read_name_tk.text());
@@ -651,12 +631,6 @@ class stmt_def_func final : public statement {
         return instance_ ? instance_->name : head_.name;
     }
 
-    [[nodiscard]] auto param(const size_t ix) const
-        -> const stmt_def_func_param& {
-
-        return params_.at(ix);
-    }
-
     [[nodiscard]] auto params() const -> std::span<const stmt_def_func_param> {
         return params_;
     }
@@ -674,7 +648,7 @@ class stmt_def_func final : public statement {
         std::stringstream ss;
         source_signature_to(ss);
 
-        const std::string signature{statement::trimmed_source(ss.view())};
+        const std::string signature{one_line_source::of(ss.view())};
 
         // the signature of a generic definition names its parameters, the
         // instance names the arguments, e.g. 'pt.put<i16>'
@@ -712,9 +686,9 @@ class stmt_def_func final : public statement {
 
         assert(head_.receiver_type() != nullptr);
 
-        params_.insert(params_.begin(),
-                       stmt_def_func_param{self_tk, *head_.receiver_type(),
-                                           not head_.mut_tk});
+        params_.insert(
+            params_.begin(),
+            stmt_def_func_param{self_tk, *head_.receiver_type(), head_.mut_tk});
     }
 
     // the result and the parameters in the order of 'frame_slots', placed by
@@ -1029,8 +1003,6 @@ class stmt_def_func final : public statement {
 
     // '(parameters) [result]', then the calls after it know the function
     auto parse_signature(toc& tc, tokenizer& tz) -> void {
-        head_.assert_open_paren();
-
         parse_params(tc, tz);
 
         parse_result(tc, tz);
@@ -1204,9 +1176,6 @@ class func_instantiator final {
                             std::optional<generic_type_instance> receiver,
                             const size_t definition) -> void {
 
-        // note: the definition checked the type parameters and that it is no
-        //       constructor, see 'assert_generic_signature'
-
         // e.g. 'text.append' for the instance 'str.append' of 'text'
         std::string report_name{head.name};
 
@@ -1219,6 +1188,9 @@ class func_instantiator final {
 
         // note: the definition checked that the '(' follows
         assert(head.open_paren_tk);
+
+        // note: the definition checked the type parameters and that it is no
+        //       constructor, see 'assert_generic_signature'
 
         assert(not signature.is_constructor());
 
@@ -1459,8 +1431,6 @@ class stmt_def_func_generic final : public statement {
         //       definition makes the instances of the types already defined,
         //       e.g. 'str.print'
 
-        head.assert_open_paren();
-
         const generic_signature signature{read_signature(tc, head, tz)};
 
         if (head.is_generic_type_method()) {
@@ -1609,6 +1579,8 @@ inline auto make_stmt_def_func(toc& tc, const token tk, tokenizer& tz)
         throw compile_error{head.type_param_tks.front(),
                             "'main' cannot have type parameters"};
     }
+
+    head.assert_open_paren();
 
     // e.g. 'func text.print()' or 'func tokenizer.to<T type>()'
     if (head.is_generic()) {

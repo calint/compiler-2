@@ -150,7 +150,6 @@ class token final {
     std::string_view ws_left_;  // whitespace left of token text
     size_t start_ix_{};         // token text start index in source
     std::string_view text_;     // token text
-    size_t end_ix_{};           // token text end index in source
     std::string_view ws_right_; // whitespace right of token text
     size_t at_line_{};          // line number in the source
 
@@ -166,17 +165,17 @@ class token final {
   public:
     token(const size_t file_ix, const std::string_view ws_left,
           const size_t start_ix, const std::string_view name,
-          const size_t end_ix, const std::string_view ws_right,
-          const size_t at_line)
+          const std::string_view ws_right, const size_t at_line)
         : file_ix_{file_ix}, ws_left_{ws_left}, start_ix_{start_ix},
-          text_{name}, end_ix_{end_ix}, ws_right_{ws_right}, at_line_{at_line} {
-    }
+          text_{name}, ws_right_{ws_right}, at_line_{at_line} {}
 
     token() = default;
 
     [[nodiscard]] auto at_line() const -> size_t { return at_line_; }
 
-    [[nodiscard]] auto end_index() const -> size_t { return end_ix_; }
+    [[nodiscard]] auto end_index() const -> size_t {
+        return start_ix_ + text_.size();
+    }
 
     [[nodiscard]] auto file_index() const -> size_t { return file_ix_; }
 
@@ -208,7 +207,7 @@ class token final {
     }
 
     [[nodiscard]] auto source_end_index() const -> size_t {
-        return end_ix_ + ws_right_.length();
+        return end_index() + ws_right_.length();
     }
 
     auto source_to(std::ostream& os) const -> void {
@@ -256,10 +255,6 @@ class token final {
         }
 
         return bytes;
-    }
-
-    [[nodiscard]] auto string_size_bytes() const -> size_t {
-        return string_bytes().size();
     }
 
     [[nodiscard]] auto text() const -> std::string_view { return text_; }
@@ -375,7 +370,7 @@ class token final {
                                         const size_t index, const size_t line)
         -> token {
 
-        return {file_ix, "", index, text, index, "", line};
+        return {file_ix, "", index, text, "", line};
     }
 
   private:

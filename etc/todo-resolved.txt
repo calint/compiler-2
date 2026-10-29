@@ -1,6 +1,25 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] hard: design review series 2, round 20 (2026-10-29, user: a new design
+    round; 7 reviewers A-G: the tokenizer and source files, 'toc', calls and
+    function definitions, the expressions, the x86_64 backend, the register
+    allocation, the statements and type definitions)
+    => done (2026-10-29): A1 the token end index derived (re-opens A11 of
+       round 2), the "unsupported escape" caret now spans the escape (7 outs);
+       behavior-preserving, listings verified equal: 'for_listing' is
+       'for_comment', 'string_size_bytes' and the public 'peek_char' gone;
+       'scope_stack::lookup' states its per-scope rule once; the receiver of
+       a definition a type pointer (re-opens B.2 of 2026-10-25), 'param(ix)'
+       gone, one open-paren assert, 'is_read_only_' derived; 'expr_any' array
+       copy a 'single_value' whose destination is an array (re-opens C.1 of
+       2026-10-23 in part), one "expected '}'" throw, 'expr_zero::own_type_'
+       derived; x86_64 'sized_operand', 'store_bytes' split loop,
+       'failure_label' and 'register_row' folded; the noinline body pool names
+       the variables and frame bases (re-opens E1 of round 8, its reason
+       gone); 'read_declared_type' for fields and parameters; comments and
+       includes; dropped: F2 the noinline-call 'saved' count without the frame
+       base (report churn for little), A5 and A6 (low)
 [x] hard: design review series 2, round 19 (2026-10-29, user: a new design
     round; 7 reviewers A-G on the files the last rounds read least: generics
     and the phases, the no-UB check files, 'stmt_call' after 'call_plan', the

@@ -17,8 +17,6 @@
 class expr_zero final : public statement {
     // none for the bare type
     std::optional<token> close_brace_tk_;
-    // null for '{}'
-    const type* own_type_{};
 
   public:
     expr_zero(const type& tp, const token open_brace_tk,
@@ -29,9 +27,7 @@ class expr_zero final : public statement {
     }
 
     // e.g. the 'i8' of 'var x = i8'
-    expr_zero(const type& tp, const token type_tk)
-        : statement{type_tk}, own_type_{&tp} {
-
+    expr_zero(const type& tp, const token type_tk) : statement{type_tk} {
         set_type(tp);
     }
 
@@ -53,7 +49,7 @@ class expr_zero final : public statement {
 
         return folded_value{
             .value{},
-            .own_type{own_type_},
+            .own_type{close_brace_tk_ ? nullptr : &get_type()},
         };
     }
 

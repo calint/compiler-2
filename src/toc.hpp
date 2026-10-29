@@ -1250,56 +1250,23 @@ class scope_stack final {
         for (const size_t index : std::views::iota(size_t{1}, scopes_.size()) |
                                       std::views::reverse) {
 
-            const scope& scp{scopes_.at(index)};
+            const name_meaning meaning{meaning_in(index, name)};
 
-            if (scp.has_var(name)) {
-                return {
-                    .what{name_meaning::kind::variable},
-                    .scope_index{index},
-                };
+            if (meaning.is_value()) {
+                return meaning;
             }
 
-            if (scp.is_func() and scp.has_binding(name)) {
-                return {
-                    .what{name_meaning::kind::binding},
-                    .scope_index{index},
-                };
-            }
-
-            if (scp.has_const(name)) {
-                return {
-                    .what{name_meaning::kind::constant},
-                    .scope_index{index},
-                };
-            }
-
-            if (scp.is_func()) {
+            if (scopes_.at(index).is_func()) {
                 break;
             }
         }
-
-        const scope& root{scopes_.front()};
 
         // e.g. a global defined after the generic whose instance is parsed
         if (not is_global_visible(name)) {
             return {};
         }
 
-        if (root.has_var(name)) {
-            return {
-                .what{name_meaning::kind::variable},
-                .scope_index{},
-            };
-        }
-
-        if (root.has_const(name)) {
-            return {
-                .what{name_meaning::kind::constant},
-                .scope_index{},
-            };
-        }
-
-        return {};
+        return meaning_in(0, name);
     }
 
     [[nodiscard]] auto max_scope_count() const -> size_t {
@@ -1488,6 +1455,38 @@ class scope_stack final {
 
         return it == global_definitions_.end() or
                order_.get().is_visible(it->second);
+    }
+
+    // what 'name' means in the scope 'index' alone, none when it does not
+    // declare it
+    [[nodiscard]] auto meaning_in(const size_t index,
+                                  const std::string_view name) const
+        -> name_meaning {
+
+        const scope& scp{scopes_.at(index)};
+
+        if (scp.has_var(name)) {
+            return {
+                .what{name_meaning::kind::variable},
+                .scope_index{index},
+            };
+        }
+
+        if (scp.is_func() and scp.has_binding(name)) {
+            return {
+                .what{name_meaning::kind::binding},
+                .scope_index{index},
+            };
+        }
+
+        if (scp.has_const(name)) {
+            return {
+                .what{name_meaning::kind::constant},
+                .scope_index{index},
+            };
+        }
+
+        return {};
     }
 
     auto track_scope_count() -> void {
@@ -3749,13 +3748,6 @@ class toc final {
         storage_.restore_peaks(state.storage);
         scopes_.restore_reach_state(state.reach);
     }
-
-    //
-    // statics
-    //
-
-    // letters, digits and '_', not starting with a digit, written without
-    // quotes
 };
 
 //
@@ -3782,13 +3774,13 @@ class toc final {
                                     in_quotes(generic_name), expected, got)};
 }
 
-// e.g. 'i8' of 'list<i8, 8>' for 'T'
 // 'true' or 'false'
 [[nodiscard]] inline auto is_bool_literal(const token& tk) -> bool {
     return tk.is_text(reserved_names::true_value) or
            tk.is_text(reserved_names::false_value);
 }
 
+// e.g. 'i8' of 'list<i8, 8>' for 'T'
 [[nodiscard]] inline auto resolve_type_arg(const toc& tc,
                                            const std::string_view generic_name,
                                            const std::string_view param_name,

@@ -577,7 +577,7 @@ struct call_site {
 
         const destination temporary{
             add_temporary(tc, indent, temporary_argument_name(index),
-                          func->param(index).get_type()),
+                          func->params().at(index).get_type()),
         };
 
         args.at(index).compile(tc, indent, temporary);
@@ -904,11 +904,11 @@ class inline_call final {
     }
 
     [[nodiscard]] auto has_argument_temporary() const -> bool {
-        return std::ranges::any_of(std::views::iota(size_t{}, places_.size()),
-                                   [this](const size_t i) -> bool {
-                                       return is_temporary(
-                                           places_.at(i), call_.func->param(i));
-                                   });
+        return std::ranges::any_of(
+            std::views::iota(size_t{}, places_.size()),
+            [this](const size_t i) -> bool {
+                return is_temporary(places_.at(i), call_.func->params().at(i));
+            });
     }
 
     // the bindings of the result and of the arguments of the inlined body
@@ -1834,7 +1834,7 @@ class stmt_call final : public statement {
         -> void {
 
         // a parameter without 'mut' takes any argument
-        if (callee().param(index).is_read_only()) {
+        if (callee().params().at(index).is_read_only()) {
             return;
         }
 
@@ -2288,7 +2288,7 @@ class stmt_call final : public statement {
             // note: a 'mut' argument needs storage, the result of an inlined
             //       call may be bound to a register
 
-            if (passed and not callee().param(i).is_read_only() and
+            if (passed and not callee().params().at(i).is_read_only() and
                 tc.scopes().names_result(passed->ident->tok().text())) {
 
                 tc.record_result_passed_as_mut();
@@ -2443,7 +2443,7 @@ class stmt_call final : public statement {
                 .storage{target},
                 .is_write{
                     not param_index or
-                        not callee().param(*param_index).is_read_only(),
+                        not callee().params().at(*param_index).is_read_only(),
                 },
             });
 

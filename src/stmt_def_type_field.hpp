@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstddef>
+#include <format>
 #include <optional>
 #include <ostream>
 #include <string_view>
@@ -40,18 +41,7 @@ class stmt_def_type_field final : public statement {
         // note: checked where it is read, before the errors of later fields
         toc::assert_valid_name(tk);
 
-        // e.g. 'tags[4]' and the 'x' of '{x, y}' have the default type
-        if (tz.peek_char_after_whitespace() != '[') {
-            const token type_tk{tz.next_token()};
-
-            if (type_tk.is_none()) {
-                tz.put_back_token(type_tk);
-            } else {
-                type_tk_ = type_tk;
-            }
-        }
-
-        assert_no_type_arguments(tc, tz, type_tk_);
+        type_tk_ = read_declared_type(tc, tz);
 
         // e.g. the 'p' of 'type p {x p}', the type is defined after its fields
         if (type_tk_ and type_tk_->text() == type_name_tk.text()) {

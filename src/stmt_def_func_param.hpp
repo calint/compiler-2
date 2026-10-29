@@ -26,10 +26,6 @@ class stmt_def_func_param final : public statement {
     // none when not an array
     std::optional<bracket_tokens> brackets_;
 
-    // not declared 'mut', so the body cannot write it and arguments sharing
-    // storage are not a hazard
-    bool is_read_only_{};
-
   public:
     // the tokens of a parameter 'name [mut] [type][[]]', before the type is
     // resolved
@@ -64,13 +60,7 @@ class stmt_def_func_param final : public statement {
 
             const std::optional<token> mut_tk{read_mut(tz)};
 
-            const std::optional<token> type_tk{
-                is_end_of_type(tz.peek_char_after_whitespace())
-                    ? std::nullopt
-                    : std::optional<token>{tz.next_token()},
-            };
-
-            assert_no_type_arguments(tc, tz, type_tk);
+            const std::optional<token> type_tk{read_declared_type(tc, tz)};
 
             return {
                 .name_tk{name_tk},
@@ -84,10 +74,6 @@ class stmt_def_func_param final : public statement {
         //
         // statics
         //
-
-        [[nodiscard]] static auto is_end_of_type(const char next) -> bool {
-            return next == ',' or next == ')' or next == '[';
-        }
 
         // 'type_tk' names the element type in the message
         [[nodiscard]] static auto
@@ -123,10 +109,6 @@ class stmt_def_func_param final : public statement {
         // 'mut' after the name allows the body to write the parameter
         [[nodiscard]] static auto read_mut(tokenizer& tz)
             -> std::optional<token> {
-
-            if (is_end_of_type(tz.peek_char_after_whitespace())) {
-                return std::nullopt;
-            }
 
             const token tk{tz.next_token()};
 
@@ -197,8 +179,7 @@ class stmt_def_func_param final : public statement {
 
     stmt_def_func_param(const toc& tc, const syntax& tokens)
         : statement{tokens.name_tk}, mut_tk_{tokens.mut_tk},
-          type_tk_{tokens.type_tk}, brackets_{tokens.brackets},
-          is_read_only_{not tokens.mut_tk} {
+          type_tk_{tokens.type_tk}, brackets_{tokens.brackets} {
 
         tc.assert_valid_unqualified_name(tok());
 
@@ -206,9 +187,11 @@ class stmt_def_func_param final : public statement {
                           : tc.builtins().default_type());
     }
 
-    // the implicit 'self' ('stmt_def_func::add_self_param')
-    stmt_def_func_param(const token tk, const type& tp, const bool is_read_only)
-        : statement{tk}, is_read_only_{is_read_only} {
+    // the implicit 'self' ('stmt_def_func::add_self_param'), 'mut_tk' that of
+    // the head, e.g. 'func mut point.move(dx)'
+    stmt_def_func_param(const token tk, const type& tp,
+                        const std::optional<token>& mut_tk)
+        : statement{tk}, mut_tk_{mut_tk} {
 
         set_type(tp);
     }
@@ -236,7 +219,9 @@ class stmt_def_func_param final : public statement {
         return brackets_.has_value();
     }
 
-    [[nodiscard]] auto is_read_only() const -> bool { return is_read_only_; }
+    // not declared 'mut', so the body cannot write it and arguments sharing
+    // storage are not a hazard
+    [[nodiscard]] auto is_read_only() const -> bool { return not mut_tk_; }
 
     [[nodiscard]] auto name() const -> std::string_view { return tok().text(); }
 };

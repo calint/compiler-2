@@ -91,7 +91,7 @@ inline expr_type::expr_type(toc& tc, tokenizer& tz, const type& tp,
     }
 
     // e.g. the '(' of 'q = (p)', parentheses group numbers
-    if (tz.peek_char() == '(') {
+    if (tz.is_peek_char('(')) {
         throw compile_error{
             tz, std::format("a value in parentheses is a number, not {} of "
                             "{}",
@@ -152,22 +152,15 @@ inline auto expr_type::parse_fields(toc& tc, tokenizer& tz) -> void {
         if (index == flds.size()) {
             const std::optional<token> delimiter_tk{tz.is_next_char_token(',')};
 
-            // e.g. '{x, y' without its '}'
-            if (not delimiter_tk) {
-                throw compile_error{
-                    tz,
-                    std::format("expected '}}' to close the value of type {}",
-                                in_quotes(tp.name()))};
-            }
-
             // a trailing ',' lets each field end its line the same way
-            if (read_close_brace(tz)) {
+            if (delimiter_tk and read_close_brace(tz)) {
                 list.delims_tk.emplace_back(*delimiter_tk);
                 break;
             }
 
-            // e.g. the second ',' of '{x, y,,}', no value is too much there
-            if (not starts_value(tz)) {
+            // e.g. '{x, y' without its '}' or the second ',' of '{x, y,,}',
+            // no value is too much there
+            if (not delimiter_tk or not starts_value(tz)) {
                 throw compile_error{
                     tz,
                     std::format("expected '}}' to close the value of type {}",

@@ -87,7 +87,8 @@ class expr_any final : public statement {
         }
     };
 
-    // e.g. 'x + 1', 'a < b' or 'point{1, 2}'
+    // e.g. 'x + 1', 'a < b' or 'point{1, 2}'; where the destination is an
+    // array, the array copied whole as bytes, e.g. the 'a' of 'var b = a'
     struct single_value {
         expr_variant value;
     };
@@ -125,13 +126,8 @@ class expr_any final : public statement {
         array_prefix prefix;
     };
 
-    // e.g. the 'a' of 'var b = a', copied whole as bytes
-    struct whole_array_copy {
-        expr_type source;
-    };
-
-    using form_variant = std::variant<single_value, string_array, element_list,
-                                      zero_array, whole_array_copy>;
+    using form_variant =
+        std::variant<single_value, string_array, element_list, zero_array>;
 
     // what the destination gives, e.g. an array parameter 's[]' is an array
     // of unknown length, its argument gives the length when it is compiled
@@ -234,14 +230,7 @@ class expr_any final : public statement {
 
     // a single value or the copy of an array, e.g. the 'a' of 'var b = a'
     [[nodiscard]] auto operand_path() const -> const stmt_identifier* override {
-        if (const whole_array_copy* const copy{
-                std::get_if<whole_array_copy>(&form_),
-            }) {
-
-            return copy->source.operand_path();
-        }
-
-        if (is_array()) {
+        if (not std::holds_alternative<single_value>(form_)) {
             return nullptr;
         }
 
@@ -364,26 +353,7 @@ class expr_any final : public statement {
     // the value of a single value, an element of a list or the source of a
     // copy
     [[nodiscard]] auto element(const size_t index) const -> const statement& {
-        if (const whole_array_copy* const copy{
-                std::get_if<whole_array_copy>(&form_),
-            }) {
-
-            assert(index == 0);
-
-            return copy->source;
-        }
-
-        if (const single_value* const single{
-                std::get_if<single_value>(&form_),
-            }) {
-
-            assert(index == 0);
-
-            return as_statement(single->value);
-        }
-
-        return as_statement(
-            std::get<element_list>(form_).elements.at(index).value);
+        return as_statement(value_at(index));
     }
 
     // none for a string or a zero array
@@ -411,7 +381,7 @@ class expr_any final : public statement {
     }
 
     [[nodiscard]] auto is_array() const -> bool {
-        return not std::holds_alternative<single_value>(form_);
+        return destination_.is_array();
     }
 
     [[nodiscard]] auto is_string() const -> bool {
@@ -419,7 +389,7 @@ class expr_any final : public statement {
     }
 
     [[nodiscard]] auto is_whole_array_copy() const -> bool {
-        return std::holds_alternative<whole_array_copy>(form_);
+        return is_array() and std::holds_alternative<single_value>(form_);
     }
 
     // e.g. the '[' of 'i8[]{}', none without an array prefix
@@ -445,15 +415,15 @@ class expr_any final : public statement {
             destination_.is_length_unknown() ? unsized_count : array_count_,
         };
 
-        // the source's shape is checked by its plan, then the lengths
-        if (is_whole_array_copy()) {
+        // the source's shape of an array copy is checked by its plan, then
+        // the lengths
+        if (std::holds_alternative<single_value>(form_)) {
             plan_element(tc, 0, at, plan);
-            assert_whole_array_copy_fits(tc, array_count);
-            return;
-        }
 
-        if (not is_array()) {
-            plan_element(tc, 0, at, plan);
+            if (is_array()) {
+                assert_whole_array_copy_fits(tc, array_count);
+            }
+
             return;
         }
 
@@ -745,13 +715,15 @@ class expr_any final : public statement {
             // 'expr_type' copies the whole array as bytes, 'expr_arith' would
             // read a single scalar
             // e.g. 'var b = a' copies the array 'a'
-            return whole_array_copy{
-                .source{
-                    tc,
-                    tz,
-                    tp,
-                    expr_type::destination_kind::whole_array,
-                    typing,
+            return single_value{
+                .value{
+                    expr_type{
+                        tc,
+                        tz,
+                        tp,
+                        expr_type::destination_kind::whole_array,
+                        typing,
+                    },
                 },
             };
         }
@@ -919,22 +891,23 @@ class expr_any final : public statement {
 
     // the element at 'index' when it is an 'expr_type', null otherwise
     [[nodiscard]] auto record_at(const size_t index) const -> const expr_type* {
-        if (const whole_array_copy* const copy{
-                std::get_if<whole_array_copy>(&form_),
-            }) {
+        return std::get_if<expr_type>(&value_at(index));
+    }
 
-            return &copy->source;
-        }
+    // the value of a single value or of an element of a list
+    [[nodiscard]] auto value_at(const size_t index) const
+        -> const expr_variant& {
 
         if (const single_value* const single{
                 std::get_if<single_value>(&form_),
             }) {
 
-            return std::get_if<expr_type>(&single->value);
+            assert(index == 0);
+
+            return single->value;
         }
 
-        return std::get_if<expr_type>(
-            &std::get<element_list>(form_).elements.at(index).value);
+        return std::get<element_list>(form_).elements.at(index).value;
     }
 
     //
@@ -1160,7 +1133,7 @@ class expr_any final : public statement {
                        const type& element_type,
                        const std::optional<size_t> array_count) -> size_t {
 
-        const size_t size_bytes{string_tk.string_size_bytes()};
+        const size_t size_bytes{string_tk.string_bytes().size()};
 
         if (not element_type.is_same(string_element_type)) {
             throw compile_error{

@@ -98,8 +98,8 @@ class constant_parser final {
             // note: +1 because the backslash follows the opening quote
 
             const token escape_tk{
-                token::position(src_loc_tk.file_index(), backslash_index,
-                                src_loc_tk.at_line()),
+                token::synthetic(src_loc_tk.file_index(), body, backslash_index,
+                                 src_loc_tk.at_line()),
             };
 
             throw compile_error{escape_tk, std::format("unsupported escape {}",

@@ -305,7 +305,7 @@ class stmt_def_type_generic final : public statement {
                           tokenizer& tz)
         : statement{tk}, name_tk_{name_tk} {
 
-        define_generic(tc, tk, tz);
+        define_generic(tc, tz);
     }
 
     //
@@ -325,7 +325,7 @@ class stmt_def_type_generic final : public statement {
   private:
     // the fields and the methods are those of the base, the arguments of the
     // base are resolved when an alias names this type
-    auto define_based_generic(toc& tc, const token& type_tk, tokenizer& tz,
+    auto define_based_generic(toc& tc, tokenizer& tz,
                               std::vector<generic_param> params) -> void {
 
         // e.g. '= list<i8, size>'
@@ -344,12 +344,12 @@ class stmt_def_type_generic final : public statement {
                             });
 
         // e.g. 'text<size> = list<i8, size>'
-        generic_text_ = tz.text_after(type_tk);
+        generic_text_ = tz.text_after(tok());
     }
 
     // the text after 'type' is kept for 'source_to' and for the aliases, errors
     // in it are found when an alias parses it
-    auto define_generic(toc& tc, const token& type_tk, tokenizer& tz) -> void {
+    auto define_generic(toc& tc, tokenizer& tz) -> void {
         // e.g. 'capacity' of '<capacity>'
         std::vector<generic_param> params{generic_param::parse(tz)};
 
@@ -359,7 +359,7 @@ class stmt_def_type_generic final : public statement {
 
         // e.g. 'type text<size> = list<i8, size>'
         if (tz.peek_char_after_whitespace() == '=') {
-            define_based_generic(tc, type_tk, tz, std::move(params));
+            define_based_generic(tc, tz, std::move(params));
             return;
         }
 
@@ -380,7 +380,7 @@ class stmt_def_type_generic final : public statement {
                             });
 
         // e.g. 'text<capacity> { items i8[capacity] }'
-        generic_text_ = tz.skip_braced_block_after(type_tk);
+        generic_text_ = tz.skip_braced_block_after(tok());
     }
 };
 

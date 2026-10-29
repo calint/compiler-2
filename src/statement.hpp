@@ -437,36 +437,49 @@ class statement {
     // e.g. 'box<i8>' as the type of a field, a parameter or a result: only a
     // generic type takes arguments, and there an alias names its instance
     static auto assert_no_type_arguments(const toc& tc, tokenizer& tz,
-                                         const std::optional<token>& type_tk)
-        -> void {
+                                         const token& type_tk) -> void {
 
-        // e.g. the empty type of 'x<T>', where the '<' ends the parameter
-        if (not type_tk or type_tk->is_none() or
-            tz.peek_char_after_whitespace() != '<') {
-
+        if (tz.peek_char_after_whitespace() != '<') {
             return;
         }
 
-        if (tc.types().has(type_tk->text())) {
-            throw compile_error{*type_tk,
+        if (tc.types().has(type_tk.text())) {
+            throw compile_error{type_tk,
                                 std::format("{} is a type, not a generic type",
-                                            in_quotes(type_tk->text()))};
+                                            in_quotes(type_tk.text()))};
         }
 
         // e.g. an unknown name or the type parameter 'T' of 'x T<3>'
-        if (not tc.generics().has_type(type_tk->text())) {
+        if (not tc.generics().has_type(type_tk.text())) {
             throw compile_error{
-                *type_tk,
+                type_tk,
                 std::format("{} is not a generic type, it takes no type "
                             "arguments",
-                            in_quotes(type_tk->text()))};
+                            in_quotes(type_tk.text()))};
         }
 
         throw compile_error{
-            *type_tk,
+            type_tk,
             std::format("{} is not a type, {}",
-                        in_quotes(std::format("{}<...>", type_tk->text())),
-                        instance_hint(type_tk->text()))};
+                        in_quotes(std::format("{}<...>", type_tk.text())),
+                        instance_hint(type_tk.text()))};
+    }
+
+    // the type after the name of a field or a parameter, none for the default
+    // type, e.g. the 'x' of '{x, y}' or 'a[4]'
+    [[nodiscard]] static auto read_declared_type(const toc& tc, tokenizer& tz)
+        -> std::optional<token> {
+
+        const token type_tk{tz.next_token()};
+
+        if (type_tk.is_none()) {
+            tz.put_back_token(type_tk);
+            return std::nullopt;
+        }
+
+        assert_no_type_arguments(tc, tz, type_tk);
+
+        return type_tk;
     }
 
     // 'items' with the delimiter tokens between them, e.g. 'x, y' of
@@ -493,14 +506,6 @@ class statement {
         if (std::ssize(delims) == std::ranges::distance(items)) {
             delims.back().source_to(os);
         }
-    }
-
-    // one-line, whitespace-collapsed rendering of source text, suitable for
-    // an assembler comment
-    [[nodiscard]] static auto trimmed_source(const std::string_view text)
-        -> std::string {
-
-        return one_line_source::of(text);
     }
 
     // one-line, whitespace-collapsed rendering of 'st's source, suitable for

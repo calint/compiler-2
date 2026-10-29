@@ -1,4 +1,4 @@
 
 0733.baz:3:11: unsupported escape '\q'
 dat s = "a\qb"
-          ^
+          ^~

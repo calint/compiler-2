@@ -264,7 +264,7 @@ class stmt_def_dat final : public statement {
                                     const elem::string& str) -> void {
 
         x.emit_string_data(str.src_loc_tk.string_bytes());
-        const size_t size_bytes{str.src_loc_tk.string_size_bytes()};
+        const size_t size_bytes{str.src_loc_tk.string_bytes().size()};
 
         // note: the parse rejected a string longer than its array
         assert(size_bytes <= str.array_count);

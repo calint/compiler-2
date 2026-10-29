@@ -775,7 +775,7 @@ class stmt_identifier final : public statement {
     [[nodiscard]] auto path_text() const -> std::string {
         std::stringstream ss;
         path_source_to(ss);
-        return statement::trimmed_source(ss.view());
+        return one_line_source::of(ss.view());
     }
 
     // a run-time index does not prove which element is written

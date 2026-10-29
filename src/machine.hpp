@@ -123,7 +123,8 @@ struct target_description {
 //                  'is_stack_bounded',
 //                  'max_storage_bytes', 'has_sd_card', 'sector_size_bytes',
 //                  'foo_counter_in_memory', 'frame_base_register',
-//                  'variables_base_register', 'variables_base_past_vars_bytes'
+//                  'variables_base_register', 'variables_base_past_vars_bytes',
+//                  'exit_code_register'
 //   reports        'register_peak_report', 'register_trace_scope',
 //                  'separate_report', 'statistics';
 //                  the queries of the register report are private, for
@@ -1647,12 +1648,11 @@ class machine {
     [[nodiscard]] auto mark_failure(const failure_handler& handler,
                                     const token& src_loc_tk) -> bool {
 
+        mark_used(handler.label);
+
         if (not reports_line_ or not handler.takes_line) {
-            mark_used(handler.label);
             return false;
         }
-
-        mark_used(handler.label);
 
         failure_locations_.push_back({
             .routine{handler.label},
@@ -1977,11 +1977,6 @@ class machine {
         }
     }
 
-    // the call frame that allocations are made in
-    [[nodiscard]] auto current_trace_frame() const -> size_t {
-        return state_.trace.current_frame();
-    }
-
     // the handlers that the code branches to, see 'mark_used'; before
     // 'emit_used_routines', a handler marks the routines it calls
     auto emit_used_failure_handlers() -> void {
@@ -2080,32 +2075,22 @@ class machine {
             register_mask(lower_checked_register(range)));
     }
 
-    // the backend's own registers, e.g. the variables base, and the frame
-    // base that a 'noinline' body holds from its start
+    // the registers the backend holds itself in a 'noinline' body: the
+    // variables base and the frame base
     [[nodiscard]] auto noinline_body_pool() const -> register_pool {
         register_pool pool;
 
-        for (const register_pool::allocation& allocated :
-             state_.registers.allocations()) {
+        for (const std::string_view name :
+             {variables_base_register(), frame_base_register()}) {
 
-            if (allocated.holder == register_pool::holder_kind::backend) {
-                pool.push(allocated);
-            }
+            pool.push({
+                .index{pool_index(name)},
+                .src_loc_tk{},
+                .indent{},
+                .holder{register_pool::holder_kind::backend},
+                .frame{},
+            });
         }
-
-        const size_t frame_base_index{pool_index(frame_base_register())};
-
-        if (pool.is_unavailable(uint32_t{1} << frame_base_index)) {
-            return pool;
-        }
-
-        pool.push({
-            .index{frame_base_index},
-            .src_loc_tk{},
-            .indent{},
-            .holder{register_pool::holder_kind::backend},
-            .frame{current_trace_frame()},
-        });
 
         return pool;
     }
@@ -2113,17 +2098,7 @@ class machine {
     // a 'noinline' body holds the variables base and the frame base from its
     // start
     [[nodiscard]] auto noinline_body_register_count() const -> size_t {
-        size_t count{};
-
-        for (const std::string_view name : scratch_registers()) {
-            if (name != variables_base_register() and
-                name != frame_base_register()) {
-
-                ++count;
-            }
-        }
-
-        return count;
+        return scratch_register_count(noinline_body_pool().allocations());
     }
 
     // the compare is at the default type, 'signed_max' its largest value
@@ -2176,7 +2151,7 @@ class machine {
             .src_loc_tk{src_loc_tk},
             .indent{indent},
             .holder{holder},
-            .frame{current_trace_frame()},
+            .frame{state_.trace.current_frame()},
         });
 
         state_.trace.record_allocation(state_.registers);

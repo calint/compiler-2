@@ -405,7 +405,7 @@ class machine_x86_64 final : public machine {
         for_each_part(
             size_bytes, size_qword_,
             [&](const size_t part_size_bytes, const size_t offset) -> void {
-                const operand reg{sized_register(tmp, part_size_bytes)};
+                const operand reg{sized_operand(tmp, part_size_bytes)};
 
                 mov(src_loc_tk, indent, reg,
                     memory_part(src, part_size_bytes, offset));
@@ -732,28 +732,25 @@ class machine_x86_64 final : public machine {
                 if (part_size_bytes == size_qword_ and
                     not std::in_range<int32_t>(value)) {
 
-                    const size_t high_offset{offset + size_dword_};
+                    for (const size_t half_offset :
+                         {offset, offset + size_dword_}) {
 
-                    const int64_t low{
-                        little_endian_value(bytes.substr(offset, size_dword_)),
-                    };
+                        const int64_t half{
+                            little_endian_value(
+                                bytes.substr(half_offset, size_dword_)),
+                        };
 
-                    const int64_t high{
-                        little_endian_value(
-                            bytes.substr(high_offset, size_dword_)),
-                    };
-
-                    store_immediate_part(src_loc_tk, indent, dst, size_dword_,
-                                         offset, low);
-
-                    store_immediate_part(src_loc_tk, indent, dst, size_dword_,
-                                         high_offset, high);
+                        mov(src_loc_tk, indent,
+                            memory_part(dst, size_dword_, half_offset),
+                            immediate(half));
+                    }
 
                     return;
                 }
 
-                store_immediate_part(src_loc_tk, indent, dst, part_size_bytes,
-                                     offset, value);
+                mov(src_loc_tk, indent,
+                    memory_part(dst, part_size_bytes, offset),
+                    immediate(value));
             });
     }
 
@@ -964,7 +961,17 @@ class machine_x86_64 final : public machine {
     [[nodiscard]] auto register_index_of(const std::string_view name) const
         -> std::optional<size_t> override {
 
-        return register_row(name);
+        for (const auto [index, names] :
+             std::views::enumerate(register_names_)) {
+
+            if (name == names.qword or name == names.dword or
+                name == names.word or name == names.byte) {
+
+                return static_cast<size_t>(index);
+            }
+        }
+
+        return std::nullopt;
     }
 
     auto restore_call_registers(const size_t indent,
@@ -1049,7 +1056,15 @@ class machine_x86_64 final : public machine {
                            const condition failed,
                            const failure_handler& handler) -> void {
 
-        assembler_.jcc(indent, failed, failure_label(handler, src_loc_tk));
+        if (not mark_failure(handler, src_loc_tk)) {
+            assembler_.jcc(indent, failed, handler.label);
+            return;
+        }
+
+        assembler_.jcc(indent, failed,
+                       line_failure_label(handler.symbol(),
+                                          src_loc_tk.file_index(),
+                                          src_loc_tk.at_line()));
     }
 
     // the built-in integer type of 'size_bytes'
@@ -1103,7 +1118,7 @@ class machine_x86_64 final : public machine {
     auto check_byte_product(const token& src_loc_tk, const size_t indent,
                             const operand& left, const operand& right) -> void {
 
-        mov(src_loc_tk, indent, right, sized_register(left, size_byte_));
+        mov(src_loc_tk, indent, right, sized_operand(left, size_byte_));
         cmp(src_loc_tk, indent, right, left);
 
         branch_to_failure(src_loc_tk, indent, condition::ne, overflow_failure);
@@ -1364,16 +1379,10 @@ class machine_x86_64 final : public machine {
                            const operand& dst_op, const operand& src_op)
         -> void {
 
-        const size_t dst_size_bytes{dst_op.type_ref().size_bytes()};
+        assert(dst_op.is_register() or src_op.is_register());
 
-        if (src_op.is_register()) {
-            emit(indent, code, dst_op, sized_register(src_op, dst_size_bytes));
-            return;
-        }
-
-        assert(dst_op.is_register() and src_op.is_memory());
-
-        emit(indent, code, dst_op, sized_memory(src_op, dst_size_bytes));
+        emit(indent, code, dst_op,
+             sized_operand(src_op, dst_op.type_ref().size_bytes()));
     }
 
     // matches the widths of the operands with scratch registers and sign
@@ -1685,7 +1694,7 @@ class machine_x86_64 final : public machine {
         // 'movsx' needs a register destination, so the source register is
         // extended in place, its low bits keep the value
         if (code == op::mov and dst_op.is_memory()) {
-            const operand wide{sized_register(src_op, dst_size_bytes)};
+            const operand wide{sized_operand(src_op, dst_size_bytes)};
 
             emit(indent, op::movsx, wide, src_op);
             emit(indent, op::mov, dst_op, wide);
@@ -1705,18 +1714,6 @@ class machine_x86_64 final : public machine {
         }
 
         emit_memory_to_memory_op(src_loc_tk, indent, code, dst_op, src_op);
-    }
-
-    // the handler to jump to, or with the line the stub of the line
-    [[nodiscard]] auto failure_label(const failure_handler& handler,
-                                     const token& src_loc_tk) -> std::string {
-
-        if (not mark_failure(handler, src_loc_tk)) {
-            return std::string{handler.label};
-        }
-
-        return line_failure_label(handler.symbol(), src_loc_tk.file_index(),
-                                  src_loc_tk.at_line());
     }
 
     template <std::integral value_t>
@@ -1820,7 +1817,7 @@ class machine_x86_64 final : public machine {
                                    const size_t part_size_bytes,
                                    const size_t offset) const -> operand {
 
-        operand part{sized_memory(address, part_size_bytes)};
+        operand part{sized_operand(address, part_size_bytes)};
         part.increment_offset(address_offset(offset));
         return part;
     }
@@ -1910,18 +1907,26 @@ class machine_x86_64 final : public machine {
             });
     }
 
-    [[nodiscard]] auto sized_memory(const operand& value,
-                                    const size_t size_bytes) const -> operand {
+    // a register as its part of the width, a memory operand as an access
+    // of the width
+    [[nodiscard]] auto sized_operand(const operand& value,
+                                     const size_t size_bytes) const -> operand {
+
+        const type& sized_type{builtin_type_for_size_bytes(size_bytes)};
+
+        if (value.is_register()) {
+            return register_view(value, sized_type);
+        }
 
         assert(value.is_memory());
 
-        if (not value.type_ref().is_builtin() or
-            value.type_ref().size_bytes() != size_bytes) {
+        if (value.type_ref().is_builtin() and
+            value.type_ref().size_bytes() == size_bytes) {
 
-            return operand::mem(value, builtin_type_for_size_bytes(size_bytes));
+            return value;
         }
 
-        return value;
+        return operand::mem(value, sized_type);
     }
 
     [[nodiscard]] auto sized_register(const std::string_view name,
@@ -1932,32 +1937,42 @@ class machine_x86_64 final : public machine {
                                      builtin_type_for_size_bytes(size_bytes));
     }
 
-    [[nodiscard]] auto sized_register(const operand& reg,
-                                      const size_t size_bytes) const
-        -> operand {
+    [[nodiscard]] auto sized_register_name(const std::string_view name,
+                                           const size_t size_bytes) const
+        -> std::string {
 
-        return register_view(reg, builtin_type_for_size_bytes(size_bytes));
+        const std::optional<size_t> row{register_index_of(name)};
+
+        // note: every register name is in 'register_names_'
+        assert(row);
+
+        // a register is allocated by its 64-bit name, an operand names the
+        // part of its width
+        const register_names& names{register_names_.at(*row)};
+
+        switch (size_bytes) {
+        case size_qword_:
+            return std::string{names.qword};
+
+        case size_dword_:
+            return std::string{names.dword};
+
+        case size_word_:
+            return std::string{names.word};
+
+        case size_byte_:
+            return std::string{names.byte};
+
+        default:
+            std::unreachable();
+        }
     }
 
     // 'setcc' writes one byte
     auto store_condition(const token& src_loc_tk, const size_t indent,
                          const condition cc, const operand& dst) -> void {
 
-        if (dst.is_register()) {
-            setcc(src_loc_tk, indent, cc, sized_register(dst, size_byte_));
-            return;
-        }
-
-        setcc(src_loc_tk, indent, cc, sized_memory(dst, size_byte_));
-    }
-
-    auto store_immediate_part(const token& src_loc_tk, const size_t indent,
-                              const operand& dst, const size_t part_size_bytes,
-                              const size_t offset, const int64_t value)
-        -> void {
-
-        mov(src_loc_tk, indent, memory_part(dst, part_size_bytes, offset),
-            immediate(value));
+        setcc(src_loc_tk, indent, cc, sized_operand(dst, size_byte_));
     }
 
     // a negative value is out of bounds
@@ -2111,24 +2126,6 @@ class machine_x86_64 final : public machine {
         return allow_end ? condition::g : condition::ge;
     }
 
-    // the row in 'register_names_' of a register of any size, none for a
-    // name of no register
-    [[nodiscard]] static auto register_row(const std::string_view name)
-        -> std::optional<size_t> {
-
-        for (const auto [index, names] :
-             std::views::enumerate(register_names_)) {
-
-            if (name == names.qword or name == names.dword or
-                name == names.word or name == names.byte) {
-
-                return static_cast<size_t>(index);
-            }
-        }
-
-        return std::nullopt;
-    }
-
     [[nodiscard]] static auto register_sum(const std::string_view base,
                                            const std::string_view index,
                                            const uint64_t scale)
@@ -2166,37 +2163,6 @@ class machine_x86_64 final : public machine {
 
         return lhs.type_ref().size_bytes() == rhs.type_ref().size_bytes() and
                lhs.is_same_address(rhs);
-    }
-
-    [[nodiscard]] static auto sized_register_name(const std::string_view name,
-                                                  const size_t size_bytes)
-        -> std::string {
-
-        const std::optional<size_t> row{register_row(name)};
-
-        // note: every register name is in 'register_names_'
-        assert(row);
-
-        // a register is allocated by its 64-bit name, an operand names the
-        // part of its width
-        const register_names& names{register_names_.at(*row)};
-
-        switch (size_bytes) {
-        case size_qword_:
-            return std::string{names.qword};
-
-        case size_dword_:
-            return std::string{names.dword};
-
-        case size_word_:
-            return std::string{names.word};
-
-        case size_byte_:
-            return std::string{names.byte};
-
-        default:
-            std::unreachable();
-        }
     }
 
     [[nodiscard]] static auto string_compare(const size_t size_bytes) -> op {

@@ -1,4 +1,4 @@
 
 0742.baz:5:3: unsupported escape '\q'
 cd\qe"
-  ^
+  ^~

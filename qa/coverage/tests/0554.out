@@ -1,4 +1,4 @@
 
 0554.baz:4:15: unsupported escape '\q'
     var s = "a\qb"
-              ^
+              ^~

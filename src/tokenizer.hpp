@@ -213,11 +213,9 @@ class tokenizer final {
         const size_t bgn_ix{char_ix_};
         const std::string_view txt{src_.substr(char_ix_, 1)};
         ++char_ix_;
-        const size_t end_ix{char_ix_};
         const std::string_view ws_after{next_trailing_whitespace()};
 
-        return token{file_ix_, ws_before, bgn_ix, txt,
-                     end_ix,   ws_after,  at_line};
+        return token{file_ix_, ws_before, bgn_ix, txt, ws_after, at_line};
     }
 
     [[nodiscard]] auto is_peek_char(const char ch) const -> bool {
@@ -245,10 +243,9 @@ class tokenizer final {
         }
 
         const std::string_view txt{next_token_str()};
-        const size_t end_ix{char_ix_};
         const std::string_view ws_after{next_trailing_whitespace()};
 
-        return {file_ix_, ws_before, bgn_ix, txt, end_ix, ws_after, at_line};
+        return {file_ix_, ws_before, bgn_ix, txt, ws_after, at_line};
     }
 
     // the position of the next token, past the whitespace and comments
@@ -264,11 +261,7 @@ class tokenizer final {
     // 'statement')
     [[nodiscard]] auto next_whitespace_token() -> token {
         const std::string_view ws_before{next_whitespace()};
-        return {file_ix_, ws_before, char_ix_, "", char_ix_, "", at_line_};
-    }
-
-    [[nodiscard]] auto peek_char() const -> char {
-        return is_eos() ? '\0' : src_.at(char_ix_);
+        return {file_ix_, ws_before, char_ix_, "", "", at_line_};
     }
 
     // the character after the whitespace, comments and newlines included,
@@ -323,7 +316,7 @@ class tokenizer final {
         const size_t bgn_ix{char_ix_};
         char_ix_ += text.size();
 
-        return token{file_ix_, ws_before, bgn_ix, text, char_ix_, "", at_line};
+        return token{file_ix_, ws_before, bgn_ix, text, "", at_line};
     }
 
     // skips an argument of a call, up to the ',' or ')' that ends it
@@ -399,7 +392,8 @@ class tokenizer final {
 
         const token literal_tk{
             file_ix_, ws_before, bgn_ix, src_.substr(bgn_ix, end_ix - bgn_ix),
-            end_ix,   ws_after,  at_line};
+            ws_after, at_line,
+        };
 
         // checked where it is read like a string, also in a generic body that
         // no instance parses
@@ -452,8 +446,8 @@ class tokenizer final {
         const std::string_view ws_after{next_trailing_whitespace()};
 
         const token string_tk{
-            file_ix_, ws_before, bgn_ix,  src_.substr(bgn_ix, end_ix - bgn_ix),
-            end_ix,   ws_after,  at_line,
+            file_ix_, ws_before, bgn_ix, src_.substr(bgn_ix, end_ix - bgn_ix),
+            ws_after, at_line,
         };
 
         if (const std::optional<token> escape_tk{
@@ -585,6 +579,10 @@ class tokenizer final {
         }
 
         return {};
+    }
+
+    [[nodiscard]] auto peek_char() const -> char {
+        return is_eos() ? '\0' : src_.at(char_ix_);
     }
 
     // reads a character the caller has no use for
