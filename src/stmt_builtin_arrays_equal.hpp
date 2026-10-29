@@ -2,6 +2,8 @@
 
 #include <cassert>
 #include <cstddef>
+#include <cstdint>
+#include <optional>
 #include <ostream>
 #include <utility>
 
@@ -50,6 +52,10 @@ class stmt_builtin_arrays_equal final : public statement {
 
         const type& element_type{operands_.check(tc)};
 
+        const std::optional<int64_t> count{
+            operands_.count().constant_value(tc),
+        };
+
         bulk_operands::run_time_emitters emit{operands_, tc, indent, tok()};
 
         x.equal_elements(tok(), indent, element_type.size_bytes(), emit.count(),
@@ -59,6 +65,7 @@ class stmt_builtin_arrays_equal final : public statement {
                              .rhs{emit.second()},
                              .dst{dst.operand()},
                              .inverted{},
+                             .is_count_positive{count and *count > 0},
                          });
     }
 

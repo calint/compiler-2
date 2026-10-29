@@ -486,6 +486,9 @@ class machine {
         address_emitter rhs;
         operand dst;
         bool inverted{};
+        // the count of 'equal_elements' is a constant above 0, so no zero
+        // count is compared
+        bool is_count_positive{};
     };
 
     // the addresses of a copy of elements, 'alignment' is the alignment known

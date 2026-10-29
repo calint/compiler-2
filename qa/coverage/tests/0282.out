@@ -1,2 +1,4 @@
 
-0282.baz:4:0: expected a constant, a name or a call
+0282.baz:3:0: expected a constant, a name or a call
+let missing =
+             ^

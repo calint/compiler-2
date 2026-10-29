@@ -65,10 +65,6 @@ class stmt_builtin_io final : public statement {
     };
 
   private:
-    // where the range of the buffer is checked: a constant count with a
-    // constant start was checked at compile time, e.g. 'write(1, a, 2, 1)'
-    enum class range_check : uint8_t { run_time, compile_time };
-
     static constexpr std::array<io_function, 4> functions_{
         io_function{
             .name{"read"},
@@ -459,12 +455,14 @@ class stmt_builtin_io final : public statement {
 
         compile_count(tc, indent, count, buffer_info);
 
-        const range_check check{range_check_of(tc, buffer_info)};
+        const std::optional<int64_t> known_count{
+            constant_count(tc, buffer_info),
+        };
 
         if (at_.start) {
-            move_to_start(tc, indent, *at_.start, buffer_reg, count,
-                          buffer_info, check);
-        } else if (at_.count and check == range_check::run_time) {
+            move_to_start(tc, indent, buffer_reg, count, known_count,
+                          buffer_info);
+        } else if (at_.count and not known_count) {
             x.check_bounds(args_.at(*at_.count).tok(), indent,
                            machine::bounds_range::count_alone(
                                count, buffer_info.element_count()),
@@ -527,12 +525,18 @@ class stmt_builtin_io final : public statement {
 
     // the buffer address moves to the start; a constant start in an array of
     // known length is checked at compile time and moves it by a constant, a
-    // run-time count is then checked against the elements after the start
-    auto move_to_start(toc& tc, const size_t indent, const size_t start_index,
-                       const operand& buffer_reg, const operand& count,
-                       const ident_info& buffer_info,
-                       const range_check check) const -> void {
+    // run-time count is then checked against the elements after the start; a
+    // run-time start is checked against the last start a constant count
+    // leaves, e.g. 'write(1, a, 2, s)'
+    auto move_to_start(toc& tc, const size_t indent, const operand& buffer_reg,
+                       const operand& count,
+                       const std::optional<int64_t> known_count,
+                       const ident_info& buffer_info) const -> void {
 
+        // note: only a call with a start asks
+        assert(at_.start);
+
+        const size_t start_index{*at_.start};
         const statement& start_arg{args_.at(start_index)};
         const size_t element_count{buffer_info.element_count()};
         const size_t element_size_bytes{buffer_info.type_ref().size_bytes()};
@@ -556,7 +560,7 @@ class stmt_builtin_io final : public statement {
 
             const size_t start_count{static_cast<size_t>(*constant_start)};
 
-            if (check == range_check::run_time) {
+            if (not known_count) {
                 x.check_bounds(start_arg.tok(), indent,
                                machine::bounds_range::count_alone(
                                    count, element_count - start_count),
@@ -580,12 +584,9 @@ class stmt_builtin_io final : public statement {
 
         start_arg.compile(tc, indent, destination::of_register(start));
 
-        if (check == range_check::run_time) {
-            x.check_bounds(
-                start_arg.tok(), indent,
-                machine::bounds_range::range(start, count, element_count),
-                tc.checks().bounds_options());
-        }
+        x.check_bounds(start_arg.tok(), indent,
+                       range_of_start(start, count, known_count, buffer_info),
+                       tc.checks().bounds_options());
 
         x.scale_index(tok(), indent, start, element_size_bytes);
 
@@ -593,22 +594,6 @@ class stmt_builtin_io final : public statement {
                        start);
 
         x.free_scratch_register(tok(), indent, start);
-    }
-
-    // see 'range_check', a sector function has the constant count of a sector
-    [[nodiscard]] auto range_check_of(toc& tc,
-                                      const ident_info& buffer_info) const
-        -> range_check {
-
-        if (not constant_count(tc, buffer_info)) {
-            return range_check::run_time;
-        }
-
-        if (at_.start and not args_.constant(tc, *at_.start)) {
-            return range_check::run_time;
-        }
-
-        return range_check::compile_time;
     }
 
     // the call with all its arguments
@@ -640,6 +625,27 @@ class stmt_builtin_io final : public statement {
             .count{has_count ? std::optional{buffer_index_ + 1} : std::nullopt},
             .start{has_start ? std::optional{arg_count - 1} : std::nullopt},
         };
+    }
+
+    // a constant count in an array of known length leaves a last start, else
+    // the start and the count are checked together
+    [[nodiscard]] static auto
+    range_of_start(const operand& start, const operand& count,
+                   const std::optional<int64_t> known_count,
+                   const ident_info& buffer_info) -> machine::bounds_range {
+
+        const size_t element_count{buffer_info.element_count()};
+
+        if (not known_count or not buffer_info.array_len()) {
+            return machine::bounds_range::range(start, count, element_count);
+        }
+
+        // note: a constant count past the end is rejected at compile time
+        assert(*known_count >= 0 and
+               std::cmp_less_equal(*known_count, element_count));
+
+        return machine::bounds_range::range_start(
+            start, element_count - static_cast<size_t>(*known_count));
     }
 
     [[nodiscard]] static auto

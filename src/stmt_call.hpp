@@ -1799,7 +1799,7 @@ class stmt_call final : public statement {
               const token type_tk, tokenizer& tz)
         : statement{type_tk, std::move(uops)},
           constructor_{read_constructor_tokens(tz)},
-          func_{&constructor_func(tc, tz)} {
+          func_{&constructor_func(tc)} {
 
         // e.g. 'point.at<i8>(1, 2)', the '<' is not an operator after a
         // constructor name
@@ -2201,8 +2201,7 @@ class stmt_call final : public statement {
 
     // the type names the constructor after the '.', e.g. 'at' of
     // 'point.at(1, 2)', a method of the type is not one
-    [[nodiscard]] auto constructor_func(const toc& tc,
-                                        const tokenizer& tz) const
+    [[nodiscard]] auto constructor_func(const toc& tc) const
         -> const stmt_def_func& {
 
         // note: only a constructor call asks
@@ -2211,7 +2210,7 @@ class stmt_call final : public statement {
         const token& name_tk{constructor_->name_tk};
 
         if (not name_tk.is_word()) {
-            throw compile_error{tz.position_of(name_tk),
+            throw compile_error{name_tk,
                                 "expected a constructor name after '.'"};
         }
 
@@ -2368,7 +2367,7 @@ class stmt_call final : public statement {
     auto read_open_paren(const toc& tc, tokenizer& tz,
                          const std::string_view what) -> void {
 
-        assert_call_in_func(tc, tok());
+        assert_call_in_func(tc, callee_name_token());
         assert_callee_body_parsed(tc);
 
         set_type(callee().result_type());

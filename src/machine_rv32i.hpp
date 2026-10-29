@@ -821,12 +821,14 @@ class machine_rv32i : public machine {
             lower_address(src_loc_tk, indent, address, value),
         };
 
-        // a distinct base or nonzero residual offset still needs an add
-        if (value.register_name() != lowered.base_register() or
-            lowered.displacement() != 0) {
-
+        // a nonzero residual offset still needs an add, a distinct base a
+        // copy
+        if (lowered.displacement() != 0) {
             assembler_.addi(indent, value.register_name(),
                             lowered.base_register(), lowered.displacement());
+        } else if (value.register_name() != lowered.base_register()) {
+            assembler_.mv(indent, value.register_name(),
+                          lowered.base_register());
         }
 
         if (dst.is_memory()) {

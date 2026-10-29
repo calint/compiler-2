@@ -1,0 +1,4 @@
+
+1873.baz:5:14: expected a generic argument, name a negative constant with 'let'
+type s = box<-3>
+             ^

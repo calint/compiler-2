@@ -807,6 +807,7 @@ class expr_bool_op final : public statement {
                            .rhs{rhs.address_emitter_of(tc, indent, src_loc_tk)},
                            .dst{dst},
                            .inverted{inverted},
+                           .is_count_positive{},
                        });
     }
 

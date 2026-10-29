@@ -1,0 +1,7 @@
+# an error at the end of the source after blank lines is shown on the last
+# line that has text
+
+func main() {
+    if
+
+

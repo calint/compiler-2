@@ -5969,3 +5969,10 @@ SRC=1871 && EXP=251 && OPTS="--checks=noub" RUN_ERR
 
 # a generic function of a type called like a constructor is a method
 SRC=1872 && COMPERR
+
+# a generic argument is one token, a negative constant is named with 'let'
+SRC=1873 && COMPERR
+
+# an error at the end of the source after blank lines is shown on its last
+# line with text
+SRC=1874 && COMPERR

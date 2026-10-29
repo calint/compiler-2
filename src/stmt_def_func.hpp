@@ -275,8 +275,7 @@ struct func_head {
         const token name_tk{tz.next_token()};
 
         if (not name_tk.is_word()) {
-            throw compile_error{tz.position_of(name_tk),
-                                "expected a method name after '.'"};
+            throw compile_error{name_tk, "expected a method name after '.'"};
         }
 
         toc::assert_valid_name(name_tk);

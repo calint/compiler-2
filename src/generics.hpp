@@ -109,7 +109,7 @@ struct generic_param {
         const token name_tk{tz.next_token()};
 
         if (not name_tk.is_word()) {
-            throw compile_error{tz.position_of(name_tk),
+            throw compile_error{name_tk,
                                 "expected a name for the generic parameter"};
         }
 
@@ -172,6 +172,12 @@ struct generic_arg_tokens {
 
         while (true) {
             const token arg_tk{tz.next_token()};
+
+            // e.g. the '-' of 'b<-3>', an argument is one token
+            if (arg_tk.is_none() and tz.peek_char_after_whitespace() == '-') {
+                throw compile_error{tz, "expected a generic argument, name a "
+                                        "negative constant with 'let'"};
+            }
 
             if (arg_tk.is_none()) {
                 throw compile_error{tz, "expected a generic argument"};

@@ -357,15 +357,7 @@ class machine_x86_64 final : public machine {
                             const operand& lhs, const operand& rhs,
                             const comparison_action& action) -> void override {
 
-        // note: 'test' of a register with itself sets the flags of a compare
-        //       with 0 and is shorter
-
-        if (lhs.is_register() and rhs.is_immediate() and rhs.immediate() == 0) {
-
-            emit_op(src_loc_tk, indent, op::test, lhs, lhs);
-        } else {
-            cmp(src_loc_tk, indent, lhs, rhs);
-        }
+        cmp(src_loc_tk, indent, lhs, rhs);
 
         if (not action.destination.is_empty()) {
             store_condition(
@@ -482,8 +474,10 @@ class machine_x86_64 final : public machine {
         // note: a zero count compares nothing and leaves the flags of 'test',
         //       ZF set, so it compares equal
 
-        emit_op(src_loc_tk, indent, op::test, qword_register("rcx"),
-                qword_register("rcx"));
+        if (not request.is_count_positive) {
+            emit_op(src_loc_tk, indent, op::test, qword_register("rcx"),
+                    qword_register("rcx"));
+        }
 
         assembler_.instruction(indent, op::repe_cmpsb);
         release_bulk(src_loc_tk, indent);
@@ -1262,8 +1256,17 @@ class machine_x86_64 final : public machine {
         branch_to_failure(src_loc_tk, indent, out_of_bounds, bounds_failure);
     }
 
+    // 'test' of a register with itself sets the flags of a compare with 0 and
+    // is shorter
     auto cmp(const token& src_loc_tk, const size_t indent,
              const operand& dst_op, const operand& src_op) -> void {
+
+        if (dst_op.is_register() and src_op.is_immediate() and
+            src_op.immediate() == 0) {
+
+            emit_op(src_loc_tk, indent, op::test, dst_op, dst_op);
+            return;
+        }
 
         emit_op(src_loc_tk, indent, op::cmp, dst_op, src_op);
     }

@@ -231,6 +231,9 @@ auto print_source_error(const source_files& files,
                         const std::optional<source_span>& where,
                         std::string_view message) -> void;
 
+[[nodiscard]] auto located_in_text(std::string_view src,
+                                   const source_span& where) -> source_span;
+
 auto print_source_line(std::string_view src, size_t start_index,
                        size_t end_index) -> void;
 
@@ -987,12 +990,38 @@ auto print_source_error(const source_files& files,
     }
 
     const source_locations locations{files};
+    const std::string_view src{files.text(where->file_ix)};
+    const source_span shown{located_in_text(src, *where)};
 
-    std::println(stderr, "\n{}: {}", locations.for_error(*where),
+    std::println(stderr, "\n{}: {}", locations.for_error(shown),
                  printable(message));
 
-    print_source_line(files.text(where->file_ix), where->start_index,
-                      where->end_index);
+    print_source_line(src, shown.start_index, shown.end_index);
+}
+
+// an error at the end of the source is shown after its last character that
+// is not whitespace, e.g. after the last token of an unclosed block
+[[nodiscard]] auto located_in_text(const std::string_view src,
+                                   const source_span& where) -> source_span {
+
+    if (where.start_index != src.size()) {
+        return where;
+    }
+
+    const size_t last{src.find_last_not_of(" \t\r\n")};
+    const size_t end{last == std::string_view::npos ? 0 : last + 1};
+
+    // note: +1 because the lines start at 1
+    const size_t line{
+        static_cast<size_t>(std::ranges::count(src.substr(0, end), '\n')) + 1,
+    };
+
+    return {
+        .file_ix{where.file_ix},
+        .line{line},
+        .start_index{end},
+        .end_index{end},
+    };
 }
 
 // the bytes after the first one of a multi-byte UTF-8 character
@@ -1056,10 +1085,7 @@ auto print_source_error(const source_files& files,
 auto print_source_line(const std::string_view src, const size_t start_index,
                        const size_t end_index) -> void {
 
-    // note: the end of a source without a final line end is on its last line
-    if (start_index > src.size()) {
-        return;
-    }
+    assert(start_index <= src.size());
 
     const source_line located{line_at(src, start_index)};
     const size_t line_bgn{located.begin};
@@ -1070,10 +1096,10 @@ auto print_source_line(const std::string_view src, const size_t start_index,
         // note: 1 for the carriage return of a crlf line end
     }
 
-    // e.g. an error after an empty last line
-    if (line.empty()) {
-        return;
-    }
+    // note: an error at the end of the source is placed after its last
+    //       character, 'located_in_text'
+
+    assert(not line.empty());
 
     const std::string padding{
         aligned_fill(src.substr(line_bgn, start_index - line_bgn), ' '),

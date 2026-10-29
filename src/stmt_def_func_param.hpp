@@ -55,8 +55,7 @@ class stmt_def_func_param final : public statement {
             const token name_tk{tz.next_token()};
 
             if (not name_tk.is_word()) {
-                throw compile_error{tz.position_of(name_tk),
-                                    "expected a parameter name"};
+                throw compile_error{name_tk, "expected a parameter name"};
             }
 
             // where it is read, also in a generic definition that no instance

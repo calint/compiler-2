@@ -246,18 +246,11 @@ class tokenizer final {
         return {file_ix_, ws_before, bgn_ix, txt, end_ix, ws_after, at_line};
     }
 
-    // the position of the next token, past the whitespace and comments; at
-    // the end of the source the line end of the last line, which an error
-    // can show
+    // the position of the next token, past the whitespace and comments
     [[nodiscard]] auto next_token_position() const -> token {
         tokenizer probe{*this};
 
         std::ignore = probe.next_whitespace();
-
-        if (probe.is_eos() and src_.ends_with('\n')) {
-            return token::position(file_ix_, src_.size() - 1,
-                                   probe.at_line_ - 1);
-        }
 
         return probe.cur_position_token();
     }
@@ -291,12 +284,6 @@ class tokenizer final {
         std::ignore = probe.next_whitespace();
 
         return probe.operator_at_cursor();
-    }
-
-    // where an error about 'tk', the token just read, points: at 'tk', or
-    // where the next token starts when there was none
-    [[nodiscard]] auto position_of(const token& tk) const -> token {
-        return tk.is_none() ? next_token_position() : tk;
     }
 
     // only the last read token can be put back, otherwise the rewind lands
