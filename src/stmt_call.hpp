@@ -1711,7 +1711,6 @@ class stmt_call final : public statement {
     std::optional<constructor_tokens> constructor_;
     // e.g. '<', 'name' and '>' in 'tz.to<name>()'
     std::vector<token> generic_tks_;
-    std::string func_name_;
     // the callee, resolved at the parse; 'toc' keeps it at this address
     const stmt_def_func* func_{};
     token open_paren_tk_;
@@ -1739,10 +1738,10 @@ class stmt_call final : public statement {
     // parameter that is the result, e.g. 'x.f = tz.to()'
     stmt_call(toc& tc, unary_ops uops, const token tk, tokenizer& tz,
               const type* const expected_type)
-        : statement{tk, std::move(uops)}, func_name_{tk.text()} {
+        : statement{tk, std::move(uops)} {
 
         const std::vector<size_t> deducing_args{
-            resolve_callee(tc, tz, expected_type),
+            resolve_callee(tc, tz, tk.text(), expected_type),
         };
 
         read_open_paren(tc, tz, tok(), "function name");
@@ -1750,7 +1749,7 @@ class stmt_call final : public statement {
         // note: a call of 'main' can only be in 'main' or after it, in a
         //       function that nothing calls, since names are defined before use
 
-        if (func_name_ == reserved_names::main) {
+        if (callee().name() == reserved_names::main) {
             throw compile_error{tok(), "'main' cannot be called"};
         }
 
@@ -1761,25 +1760,26 @@ class stmt_call final : public statement {
     stmt_call(toc& tc, unary_ops uops, stmt_identifier receiver, tokenizer& tz,
               const type* const expected_type)
         : statement{receiver.method_name_token(), std::move(uops)},
-          method_dot_tk_{receiver.method_dot_token()},
-          func_name_{
-              std::format("{}.{}", receiver.get_type().name(),
-                          receiver.method_name_token().text()),
-          } {
+          method_dot_tk_{receiver.method_dot_token()} {
+
+        const std::string name{
+            std::format("{}.{}", receiver.get_type().name(),
+                        receiver.method_name_token().text()),
+        };
 
         // e.g. 'p.get<i8>()' where 'get' is not generic, the '<' is not an
         // operator after a method name
-        if (not tc.generics().has_func(func_name_) and
+        if (not tc.generics().has_func(name) and
             tz.peek_char_after_whitespace() == '<') {
 
             throw compile_error{
                 tok(), std::format("method {} is not generic, it takes no "
                                    "type arguments",
-                                   in_quotes(func_name_))};
+                                   in_quotes(name))};
         }
 
         const std::vector<size_t> deducing_args{
-            resolve_callee(tc, tz, expected_type),
+            resolve_callee(tc, tz, name, expected_type),
         };
 
         read_open_paren(tc, tz, tok(), "method name");
@@ -1798,15 +1798,12 @@ class stmt_call final : public statement {
               const token type_tk, tokenizer& tz)
         : statement{type_tk, std::move(uops)},
           constructor_{read_constructor_tokens(tz)},
-          func_name_{
-              constructor_function_name(tc, type_tk, constructor_->name_tk),
-          },
           func_{&constructor_func(tc, tz)} {
 
         // note: 'stmt_def_func_generic::assert_generic_signature' rejects a
         //       generic constructor
 
-        assert(not tc.generics().has_func(func_name_));
+        assert(not tc.generics().has_func(callee().name()));
 
         // e.g. 'point.at<i8>(1, 2)', the '<' is not an operator after a
         // constructor name
@@ -1815,7 +1812,7 @@ class stmt_call final : public statement {
                 constructor_->name_tk,
                 std::format("constructor {} is not generic, it takes no type "
                             "arguments",
-                            in_quotes(func_name_))};
+                            in_quotes(callee().name()))};
         }
 
         read_open_paren(tc, tz, constructor_->name_tk, "constructor name");
@@ -1903,10 +1900,8 @@ class stmt_call final : public statement {
     // class methods
     //
 
-    // e.g. 'point.at' of 'point.at(1, 2)' or 'list.add' of 'lst.add(x)'
-    [[nodiscard]] auto callee_name() const -> std::string_view {
-        return func_name_;
-    }
+    // note: set at the parse before the arguments are parsed
+    [[nodiscard]] auto callee() const -> const stmt_def_func& { return *func_; }
 
   private:
     // the type of each argument, one verdict for an inlined and a noinline
@@ -2028,7 +2023,8 @@ class stmt_call final : public statement {
             throw compile_error{tok(),
                                 std::format("{} is a constructor, call it as "
                                             "'{}(...)'",
-                                            in_quotes(func_name_), func_name_)};
+                                            in_quotes(callee().name()),
+                                            callee().name())};
         }
 
         // only an element of an array can be the receiver, 'a[1].f()' but not
@@ -2037,7 +2033,7 @@ class stmt_call final : public statement {
             throw compile_error{
                 receiver.tok(),
                 std::format("receiver of method {} cannot be an array",
-                            in_quotes(func_name_))};
+                            in_quotes(callee().name()))};
         }
     }
 
@@ -2115,7 +2111,8 @@ class stmt_call final : public statement {
                     std::format("{} may share storage with the global "
                                 "{} that {} uses, {}",
                                 ref.text, in_quotes(global.storage.root.name),
-                                in_quotes(func_name_), use_temporary_fix_)};
+                                in_quotes(callee().name()),
+                                use_temporary_fix_)};
             }
         }
     }
@@ -2136,9 +2133,6 @@ class stmt_call final : public statement {
     [[nodiscard]] auto call_begin_token() const -> const token& {
         return is_method() ? args_.at(0).tok() : tok();
     }
-
-    // note: set at the parse before the arguments are parsed
-    [[nodiscard]] auto callee() const -> const stmt_def_func& { return *func_; }
 
     // the value arguments of a call that is not expanded, compiled at the type
     // of their parameter for their checks; a place, an array and an instance
@@ -2219,7 +2213,9 @@ class stmt_call final : public statement {
                                 "expected a constructor name after '.'"};
         }
 
-        if (not tc.is_func(func_name_)) {
+        const std::string name{constructor_function_name(tc, tok(), name_tk)};
+
+        if (not tc.is_func(name)) {
             throw compile_error{
                 name_tk, std::format("type {} has no constructor {}",
                                      in_quotes(type_description(tc, tok())),
@@ -2227,14 +2223,14 @@ class stmt_call final : public statement {
         }
 
         const stmt_def_func& func{
-            tc.get_func_or_throw(name_tk, func_name_),
+            tc.get_func_or_throw(name_tk, name),
         };
 
         if (not func.is_constructor()) {
             throw compile_error{
                 name_tk,
                 std::format("{} is a method, call it on a value of type {}",
-                            in_quotes(func_name_), in_quotes(tok().text()))};
+                            in_quotes(name), in_quotes(tok().text()))};
         }
 
         return func;
@@ -2335,7 +2331,7 @@ class stmt_call final : public statement {
                                            : literal_typing::from_destination);
         }
 
-        tz.assert_no_surplus_argument(func_name_,
+        tz.assert_no_surplus_argument(callee().name(),
                                       params.size() - first_argument_index());
 
         // e.g. 'f(a, b' lacks it
@@ -2348,7 +2344,7 @@ class stmt_call final : public statement {
             throw compile_error{
                 tz, std::format("store the result of {} in a variable before "
                                 "reading a field or calling a method of it",
-                                in_quotes(func_name_))};
+                                in_quotes(callee().name()))};
         }
 
         for (size_t i{}; i < args_.size(); ++i) {
@@ -2404,26 +2400,26 @@ class stmt_call final : public statement {
     }
 
     // the name is read, a generic function has its type arguments before the
-    // '(', e.g. 'convert<i8>(x)', and 'func_name_' becomes the name of its
-    // instance; then the callee is resolved, an unknown one is an error here;
-    // returns 'generic_call::deducing_args'
+    // '(', e.g. 'convert<i8>(x)', and the callee is the instance they name;
+    // an unknown callee is an error here; returns
+    // 'generic_call::deducing_args'
     [[nodiscard]] auto resolve_callee(toc& tc, tokenizer& tz,
+                                      const std::string_view name,
                                       const type* const expected_type)
         -> std::vector<size_t> {
 
-        if (not tc.generics().has_func(func_name_)) {
-            func_ = &tc.get_func_or_throw(tok(), func_name_);
+        if (not tc.generics().has_func(name)) {
+            func_ = &tc.get_func_or_throw(tok(), name);
             return {};
         }
 
         generic_call generic{
-            generic_call::parse(tc, tz, tok(), func_name_, expected_type),
+            generic_call::parse(tc, tz, tok(), name, expected_type),
         };
 
-        func_name_ = std::move(generic.func_name);
         generic_tks_ = std::move(generic.generic_tks);
 
-        func_ = &tc.get_func_or_throw(tok(), func_name_);
+        func_ = &tc.get_func_or_throw(tok(), generic.func_name);
 
         return std::move(generic.deducing_args);
     }
@@ -2488,7 +2484,7 @@ class stmt_call final : public statement {
             throw compile_error{
                 arg.tok(),
                 std::format("{} cannot be the receiver of 'mut' method {}{}",
-                            what, in_quotes(func_name_), hint)};
+                            what, in_quotes(callee().name()), hint)};
         }
 
         throw compile_error{

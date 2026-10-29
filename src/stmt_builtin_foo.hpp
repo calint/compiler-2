@@ -150,7 +150,7 @@ class stmt_builtin_foo final : public statement {
 
   private:
     // 'e' is the element, 'i' the counter and 'n' the array size, declared
-    // at the 'foo' and placed as 'element' and 'counter' say (the parse
+    // at the array and placed as 'element' and 'counter' say (the parse
     // declares the names only); 'n' is a constant when the size is known,
     // else a read-only variable that is never read at run time, see
     // 'ident_info::is_length_unknown'
@@ -171,7 +171,7 @@ class stmt_builtin_foo final : public statement {
             {
                 .name{"e"},
                 .type_ptr{&array_info.type_ref()},
-                .src_loc_tk{tok()},
+                .src_loc_tk{src_loc_tk},
                 .shape{},
                 .read_only_why{
                     array_info.is_read_only() ? read_only_cause::foo_element
@@ -186,7 +186,7 @@ class stmt_builtin_foo final : public statement {
                    {
                        .name{"i"},
                        .type_ptr{&tc.builtins().default_type()},
-                       .src_loc_tk{tok()},
+                       .src_loc_tk{src_loc_tk},
                        .shape{},
                        .read_only_why{read_only_cause::foo_counter},
                        .placement{counter},
@@ -202,7 +202,7 @@ class stmt_builtin_foo final : public statement {
                        {
                            .name{"n"},
                            .type_ptr{&tc.builtins().default_type()},
-                           .src_loc_tk{tok()},
+                           .src_loc_tk{src_loc_tk},
                            .shape{},
                            .read_only_why{read_only_cause::foo_length},
                            .placement{},

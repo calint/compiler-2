@@ -172,6 +172,7 @@ class stmt_block final : public statement {
             if (tk.is_none()) {
                 tz.assert_not_at_delimiter();
 
+                // note: 'parse_statements' runs only for a block with braces
                 assert(open_brace_tk_);
 
                 throw compile_error{*open_brace_tk_, "'{' is not closed"};

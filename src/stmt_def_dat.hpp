@@ -234,7 +234,7 @@ class stmt_def_dat final : public statement {
             const size_t padding_bytes{f.offset - written_bytes};
 
             if (padding_bytes != 0) {
-                x.comment(e.tok(), 0, "padding {} B", padding_bytes);
+                x.comment(e.tok(), 0, "zero padding: {} B", padding_bytes);
                 x.emit_zero_data(padding_bytes);
             }
 
@@ -282,10 +282,12 @@ class stmt_def_dat final : public statement {
             return;
         }
 
-        x.comment(src_loc_tk, 0, "pad {} {} of size {}", count,
-                  in_quotes(tp.name()), tp.size_bytes());
+        const size_t size_bytes{product_storage_size(tp.size_bytes(), count)};
 
-        x.emit_zero_data(product_storage_size(tp.size_bytes(), count));
+        x.comment(src_loc_tk, 0, "zero remaining elements: {} * {} B = {} B",
+                  count, tp.size_bytes(), size_bytes);
+
+        x.emit_zero_data(size_bytes);
     }
 
     // the constants of 'value' at the type 'tp', e.g. '{1, 2 * 3}' of 'point'

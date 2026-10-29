@@ -365,7 +365,7 @@ inline auto parse_name_statement(toc& tc, tokenizer& tz, const token tk,
         }) {
 
         if (not(*call)->get_type().is_same(tc.builtins().void_type())) {
-            throw_discarded_result((*call)->tok(), (*call)->callee_name());
+            throw_discarded_result((*call)->tok(), (*call)->callee().name());
         }
 
         return std::move(*call);
@@ -446,7 +446,7 @@ inline auto parse_operand(toc& tc, tokenizer& tz, unary_ops uops,
 
         // a function without a result has no value
         if ((*call)->get_type().is_same(tc.builtins().void_type())) {
-            throw_no_value((*call)->tok(), (*call)->callee_name());
+            throw_no_value((*call)->tok(), (*call)->callee().name());
         }
 
         return std::move(*call);
