@@ -804,7 +804,7 @@ class expr_arith final : public statement {
             return;
         }
 
-        // note: the ')' closed the list, see 'is_closed'
+        // note: the ')' closed the list, see 'read_close_paren'
         assert(open_paren_tk_);
 
         throw_parentheses_group_nothing(

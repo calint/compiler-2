@@ -58,10 +58,10 @@
 //                'emit_panic_message', 'emit_message_data',
 //                'emit_report_line_routine'
 //   calls        'emit_call', the sector and i/o routine calls
-//   target hooks 'emit_read_call', 'emit_write_call',
+//   target hooks 'emit_read_call', 'emit_write_call', 'emit_exit_routine',
 //                'emit_stack_limit_load', 'emit_divide_by_zero_trap',
 //                'emit_sector_routines', 'check_memory_end', and the machine
-//                virtuals 'exit', 'emit_target_setup' and 'emit_used_routines';
+//                virtuals 'emit_target_setup' and 'emit_used_routines';
 //                the protected section is what the targets build on
 //   output       'write_assembly' writes the text and the image
 class machine_rv32i : public machine {
@@ -594,8 +594,8 @@ class machine_rv32i : public machine {
             emit_sector_routines(is_read_used, is_write_used);
         }
 
-        // note: last, the routines before may use 'exit', e.g. the division
-        //       by zero
+        // note: after the routines that may use 'exit', e.g. the division by
+        //       zero
 
         if (is_used(exit_label_)) {
             emit_exit_routine();
@@ -1138,10 +1138,7 @@ class machine_rv32i : public machine {
         release_bulk(src_loc_tk, indent);
     }
 
-    // every known size is compared from the address operands, small ones
-    // unrolled and larger ones in a loop, both addresses stay in their
-    // registers until it has compared
-    // the exit routine is shared, a jump to it is one instruction
+    // the exit routine is shared, an exit is a jump to it
     auto exit(const token& src_loc_tk, const size_t indent,
               const operand& exit_code) -> void override {
 
@@ -1163,6 +1160,9 @@ class machine_rv32i : public machine {
         return operand::reg(name, value_type);
     }
 
+    // every known size is compared from the address operands, small ones
+    // unrolled and larger ones in a loop, both addresses stay in their
+    // registers until it has compared
     auto memory_equal(const token& src_loc_tk, const size_t indent,
                       const size_t size_bytes, const equality_request& request)
         -> void override {

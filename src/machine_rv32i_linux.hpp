@@ -8,8 +8,6 @@
 
 #include "assembler_rv32i.hpp"
 #include "machine_rv32i.hpp"
-#include "operand.hpp"
-#include "token.hpp"
 
 // the rv32i target on linux in qemu user mode: system calls read, write, exit
 // and transfer the sectors of the image file, the operating system stops a

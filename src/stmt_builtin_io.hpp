@@ -544,8 +544,8 @@ class stmt_builtin_io final : public statement {
 
         machine& x{tc.machine()};
 
-        // note: an unsized array parameter has no length in a function that
-        //       is never called, see 'ident_info::is_length_unknown'
+        // note: an unsized array parameter has no length in the check of a
+        //       function without its calls, see 'ident_info::is_length_unknown'
 
         if (constant_start and buffer_info.array_len()) {
             // note: a constant start is at most the length, rejected at

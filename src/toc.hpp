@@ -44,7 +44,7 @@
 //                   ('scope_entry', 'register_trace') and 'call_frame' of an
 //                   error use it for a call level
 //   tables          'type_table', 'noinline_worklist' (the noinline bodies to
-//                   emit), 'function_table'
+//                   emit or only to check), 'function_table'
 //   'data_table'    the dats ('dat_extent' as declared, 'placed_dat' as
 //                   placed) and the read-only constants
 //   options         'check_options', 'usage_statistics'
@@ -970,11 +970,13 @@ class data_table final {
 
     // the size errors are located at the name of the dat
     auto add_dat(const stmt_def_dat& dat, const dat_extent& extent) -> void {
-        const size_t offset_bytes{
-            align_storage_size(total_size_bytes_, extent.alignment),
+        const size_t padding_bytes{
+            alignment_padding_bytes(total_size_bytes_, extent.alignment),
         };
 
-        const size_t padding_bytes{offset_bytes - total_size_bytes_};
+        const size_t offset_bytes{
+            sum_storage_size(total_size_bytes_, padding_bytes),
+        };
 
         total_size_bytes_ =
             add_storage_size(extent.name_tk, offset_bytes, extent.size_bytes);
@@ -999,8 +1001,7 @@ class data_table final {
 
     // the padding after the dats that aligns the variables
     [[nodiscard]] auto dat_var_padding_bytes() const -> size_t {
-        return align_storage_size(total_size_bytes_, data_alignment_) -
-               total_size_bytes_;
+        return alignment_padding_bytes(total_size_bytes_, data_alignment_);
     }
 
     [[nodiscard]] auto dats() const -> std::span<const placed_dat> {
@@ -1582,8 +1583,7 @@ class storage_layout final {
         const size_t next_offset_bytes{location.next_offset_bytes};
 
         const size_t padding_bytes{
-            align_storage_size(next_offset_bytes, var_alignment) -
-                next_offset_bytes,
+            alignment_padding_bytes(next_offset_bytes, var_alignment),
         };
 
         const size_t allocated_size_bytes{
@@ -2024,6 +2024,30 @@ class ident_resolver final {
         return named;
     }
 
+    // the storage of a variable as it is placed
+    [[nodiscard]] auto resolve_var(const var_info& var) const -> ident_info {
+        if (const in_value_register* const in_register{
+                std::get_if<in_value_register>(&var.placement),
+            }) {
+
+            return ident_info::make_register(in_register->reg);
+        }
+
+        return ident_info::make_var(
+            *var.type_ptr,
+            {
+                .operand{
+                    memory_at(var.placement,
+                              machine_.get().variables_base_register(),
+                              var.type_ptr->first_builtin()),
+                },
+                .is_address_by_call{},
+                .shape{var.shape},
+                .holds_address{holds_address(var.placement)},
+                .read_only_why{var.read_only_why},
+            });
+    }
+
   private:
     // a number, 'true' or 'false', else empty: the caller reports an unknown
     // name with its own wording
@@ -2081,29 +2105,6 @@ class ident_resolver final {
 
         // the argument was resolved where the call is made
         return scp.get_binding(ident).info;
-    }
-
-    [[nodiscard]] auto resolve_var(const var_info& var) const -> ident_info {
-        if (const in_value_register* const in_register{
-                std::get_if<in_value_register>(&var.placement),
-            }) {
-
-            return ident_info::make_register(in_register->reg);
-        }
-
-        return ident_info::make_var(
-            *var.type_ptr,
-            {
-                .operand{
-                    memory_at(var.placement,
-                              machine_.get().variables_base_register(),
-                              var.type_ptr->first_builtin()),
-                },
-                .is_address_by_call{},
-                .shape{var.shape},
-                .holds_address{holds_address(var.placement)},
-                .read_only_why{var.read_only_why},
-            });
     }
 
     //
@@ -2476,9 +2477,7 @@ class variable_comments final {
     auto comment(const token& src_loc_tk, const size_t indent,
                  const var_info& var) const -> void {
 
-        const ident_info name_info{
-            resolver_.get().resolve(src_loc_tk, var.name),
-        };
+        const ident_info name_info{resolver_.get().resolve_var(var)};
 
         std::string text{
             std::format("{}: {}", var.name, name_info.type_ref().name()),
@@ -2582,8 +2581,8 @@ class toc final {
     variable_comments var_comments_;
     storage_layout storage_;
     check_options checks_{};
-    // above zero inside 'dry_run': no noinline body is added and the storage
-    // capacity is not checked there
+    // above zero inside 'dry_run': a noinline body a call asks for is only
+    // checked ('add_noinline_body') and the storage capacity is not checked
     size_t dry_run_depth_{};
     // false while the program is parsed: the names are declared without
     // storage and without comments
@@ -2827,8 +2826,8 @@ class toc final {
                                .size_bytes{size_bytes},
                            });
 
-        // before it is placed, whose offsets assume a size the target
-        // addresses
+        // the dats reach no further than the target addresses, 'place_dat'
+        // asserts it at the compile
         storage_.assert_total_fits_target(var.src_loc_tk,
                                           data_.total_size_bytes());
 

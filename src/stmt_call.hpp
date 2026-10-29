@@ -1801,11 +1801,6 @@ class stmt_call final : public statement {
           constructor_{read_constructor_tokens(tz)},
           func_{&constructor_func(tc, tz)} {
 
-        // note: 'stmt_def_func_generic::assert_generic_signature' rejects a
-        //       generic constructor
-
-        assert(not tc.generics().has_func(callee().name()));
-
         // e.g. 'point.at<i8>(1, 2)', the '<' is not an operator after a
         // constructor name
         if (tz.peek_char_after_whitespace() == '<') {

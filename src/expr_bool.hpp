@@ -476,7 +476,7 @@ class expr_bool_op final : public statement {
 
         // note: the parse rejected an instance ('assert_boolean_operands')
 
-        assert(lhs_.get_type().is_builtin());
+        assert(lhs_.get_type().is_bool());
 
         resolve_cmp_shorthand(tc, indent, condition, action);
 
@@ -538,29 +538,22 @@ class expr_bool_op final : public statement {
                                const machine::comparison_action& action) const
         -> void {
 
-        const expr_arith& lhs{*condition.node};
-
         machine& x{tc.machine()};
 
         machine::held_registers held{x, tok(), indent};
 
-        // a plain or computed 'bool' already holds 0 or 1, a copy is shorter
-        // than evaluating the shorthand as '!= 0'
-        if (is_bool_copy(lhs, action)) {
-            const operand src{
-                truth_test_operand(tc, indent, condition, action, held),
-            };
-
-            x.copy_value(tok(), indent, action.destination, src);
-
-            return;
-        }
-
-        const operand dst{
+        const operand value{
             truth_test_operand(tc, indent, condition, action, held),
         };
 
-        x.compare_and_branch(tok(), indent, dst,
+        // a 'bool' already holds 0 or 1, a copy is shorter than evaluating the
+        // shorthand as '!= 0'
+        if (is_bool_copy(action)) {
+            x.copy_value(tok(), indent, action.destination, value);
+            return;
+        }
+
+        x.compare_and_branch(tok(), indent, value,
                              operand::imm(0, tc.builtins().default_type()),
                              action);
     }
@@ -884,23 +877,19 @@ class expr_bool_op final : public statement {
         return operand::imm(side.folded->value, untyped_type);
     }
 
-    // a 'bool' is 0 or 1 so a plain or computed one needs no comparison with
-    // 0, e.g. the result of a call; inversion and branches keep the
-    // comparison which is shorter on x86
+    // a 'bool' is 0 or 1 so it needs no comparison with 0; inversion and
+    // branches keep the comparison which is shorter on x86
+    // note: a shorthand is a 'bool' ('assert_boolean_operands'), which takes
+    //       no unary op ('expr_arith::assert_number')
     [[nodiscard]] static auto
-    is_bool_copy(const expr_arith& lhs,
-                 const machine::comparison_action& action) -> bool {
+    is_bool_copy(const machine::comparison_action& action) -> bool {
 
         // note: a shorthand without a branch target stores into a 'bool'
         assert(not action.target.empty() or
                (not action.destination.is_empty() and
                 action.destination.type_ref().is_bool()));
 
-        // note: a value that is not computed has a path ('is_computed')
-        return (lhs.is_computed() or
-                lhs.operand_path()->get_unary_ops().is_empty()) and
-               lhs.get_type().is_bool() and not action.inverted and
-               action.target.empty();
+        return not action.inverted and action.target.empty();
     }
 
     [[nodiscard]] static auto is_equality(const comparison_operator op)
@@ -1034,8 +1023,8 @@ class expr_bool_op final : public statement {
                                    statement::trimmed_source(lhs))};
     }
 
-    // the value compared with 0, matching types avoid narrowing before the
-    // in-place truth test
+    // the value compared with 0, a computed one in the register of the
+    // destination
     [[nodiscard]] static auto
     truth_test_operand(toc& tc, const size_t indent,
                        const comparison_side& condition,
@@ -1044,8 +1033,7 @@ class expr_bool_op final : public statement {
 
         const expr_arith& lhs{*condition.node};
 
-        if (lhs.is_computed() and action.destination.is_register() and
-            lhs.get_type().is_same(action.destination.type_ref())) {
+        if (lhs.is_computed() and action.destination.is_register()) {
 
             lhs.compile_checked(tc, indent + 1,
                                 destination::of_register(action.destination));

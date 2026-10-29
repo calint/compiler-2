@@ -109,8 +109,7 @@ class machine_rv32i_bare_metal : public machine_rv32i {
         a.add_separator_newline();
     }
 
-    // only the routines the program calls are emitted; the shared routines
-    // come first
+    // only the routines the program calls are emitted
     auto emit_used_routines() -> void override {
         machine_rv32i::emit_used_routines();
 
