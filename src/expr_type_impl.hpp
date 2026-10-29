@@ -69,17 +69,14 @@ inline expr_type::expr_type(toc& tc, tokenizer& tz, const type& tp,
 
     // e.g. 'var p = point', no fields are listed
     if (is_bare) {
-        // e.g. the '+' of 'point + 1', like 'p + 1' of a variable 'p'
-        if (continues_expression(tz)) {
-            throw_not_a_number(tok(), tok().text());
-        }
-
+        assert_value_ends(tz, tp);
         return;
     }
 
     // e.g. 'p = pt', the token is empty at '{x, y}'
     if (not tok().is_none() and not is_typed_literal) {
         parse_copy_source(tc, tz, tp, tm);
+        assert_value_ends(tz, tp);
         return;
     }
 
@@ -94,10 +91,7 @@ inline expr_type::expr_type(toc& tc, tokenizer& tz, const type& tp,
 
     // e.g. the '-' of 'q = -p'
     if (tz.is_unary_operator_next()) {
-        throw compile_error{
-            tz, std::format("{} of {} is not a number",
-                            is_array_destination_ ? "an array" : "an instance",
-                            in_quotes(tp.name()))};
+        throw compile_error{tz, not_a_number(tp)};
     }
 
     // e.g. the ')' of 'a = )', 'expr_any' reads the '{' of an array
@@ -106,6 +100,19 @@ inline expr_type::expr_type(toc& tc, tokenizer& tz, const type& tp,
     }
 
     parse_fields(tc, tz, tp);
+    assert_value_ends(tz, tp);
+}
+
+// e.g. the '+' of 'p + 1', 'point + 1', 'f() + 1' or 'point{1, 2} + 1', like
+// 'n = p + 1' with a number destination
+inline auto expr_type::assert_value_ends(const tokenizer& tz,
+                                         const type& tp) const -> void {
+
+    if (not continues_expression(tz)) {
+        return;
+    }
+
+    throw compile_error{tok(), not_a_number(tp)};
 }
 
 // the fields of 'tp' in braces, e.g. '{x, y}' of 'obj.pos = {x, y}'
@@ -245,10 +252,7 @@ inline auto expr_type::assert_call_type(const type& tp) const -> void {
         return;
     }
 
-    throw compile_error{tok(),
-                        std::format("expected type {}, got a result of type {}",
-                                    in_quotes(tp.name()),
-                                    in_quotes(result_type.name()))};
+    throw_type_mismatch(tok(), tp.name(), result_type.name());
 }
 
 inline auto expr_type::source_to(std::ostream& os) const -> void {

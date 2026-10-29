@@ -1,4 +1,4 @@
 
-0190.baz:4:15: the result of the call is discarded
+0190.baz:4:15: the result of 'f' is discarded
 func main() { f() }
               ^

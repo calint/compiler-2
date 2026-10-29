@@ -1,0 +1,4 @@
+
+1858.baz:4:10: 'foo' is not a generic type, it takes no type arguments
+func f(x foo<3>) {
+         ^~~

@@ -1,0 +1,15 @@
+# a frame check whose displacement does not fit 32 bits: 3 GB of variables
+# before a noinline call, the callee frame does not fit, panics
+
+func noinline f(x) res {
+    var b = i8[1400000000]
+    b[1399999999] = 7
+    res = x + b[1399999999]
+}
+func main() {
+    var a = i8[3000000000]
+    var r = 0
+    var q = 2
+    r = f(q)
+    exit(r)
+}

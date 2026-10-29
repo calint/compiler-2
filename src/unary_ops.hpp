@@ -50,19 +50,20 @@ class unary_ops final {
     // the ops applied to a constant used at 'width', not wrapped to it; with
     // the overflow check a negation of the minimum of 'width' is an error at
     // the ops
-    [[nodiscard]] auto evaluate_at(const int64_t v, const type& width,
+    [[nodiscard]] auto evaluate_at(const int64_t value, const type& width,
                                    const bool checks_overflow) const
         -> int64_t {
 
         if (not checks_overflow) {
-            return evaluate(v, std::nullopt);
+            return evaluate(value, std::nullopt);
         }
 
-        return evaluate(v, constant_arith::signed_minimum(width.size_bits()));
+        return evaluate(value,
+                        constant_arith::signed_minimum(width.size_bits()));
     }
 
-    [[nodiscard]] auto evaluate_constant(const int64_t v) const -> int64_t {
-        return evaluate(v, std::nullopt);
+    [[nodiscard]] auto evaluate_constant(const int64_t value) const -> int64_t {
+        return evaluate(value, std::nullopt);
     }
 
     [[nodiscard]] auto is_empty() const -> bool { return ops_.empty(); }
@@ -79,31 +80,31 @@ class unary_ops final {
     }
 
   private:
-    // the ops applied to 'v', the innermost first; a negation of
+    // the ops applied to 'value', the innermost first; a negation of
     // 'overflow_minimum', the most negative value of the width, which has no
     // positive counterpart, is an error at the ops
     [[nodiscard]] auto
-    evaluate(int64_t v, const std::optional<int64_t> overflow_minimum) const
+    evaluate(int64_t value, const std::optional<int64_t> overflow_minimum) const
         -> int64_t {
 
         for (const spelled_operator<arithmetic_operator>& o :
              ops_ | std::views::reverse) {
 
             if (o.op == arithmetic_operator::complement) {
-                v = static_cast<int64_t>(~static_cast<uint64_t>(v));
+                value = static_cast<int64_t>(~static_cast<uint64_t>(value));
                 continue;
             }
 
-            if (overflow_minimum and v == *overflow_minimum) {
+            if (overflow_minimum and value == *overflow_minimum) {
                 throw compile_error{ops_.front().tk,
                                     "constant expression overflows the type"};
             }
 
             // unsigned negation wraps like the run-time instruction, a
             // minimum wider than 'overflow_minimum' is negated too
-            v = static_cast<int64_t>(-static_cast<uint64_t>(v));
+            value = static_cast<int64_t>(-static_cast<uint64_t>(value));
         }
 
-        return v;
+        return value;
     }
 };

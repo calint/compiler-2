@@ -315,6 +315,8 @@ class machine_x86_64 final : public machine {
 
         assert(frame_address.is_memory());
         assert(frame_address.index_register().empty());
+        // note: the frame follows the storage in use from the base
+        assert(frame_address.displacement() >= 0);
         assert(frame_size_bytes.is_symbol());
 
         comment(src_loc_tk, indent, "frame capacity check begin");
@@ -323,32 +325,31 @@ class machine_x86_64 final : public machine {
                 "callee storage starts after the caller's storage ({})",
                 address_text(frame_address));
 
-        const operand room{
+        const operand last_base{
             alloc_scratch_register(src_loc_tk, indent, default_type()),
         };
 
-        // the room for frames from the base register: the end of 'vars' less
-        // the frame size, the frame fits when its displacement is not beyond;
-        // an absolute address reaches beyond the 2 GiB of 'rip' relative ones
+        // the highest base at which the frame fits: the end of 'vars' less
+        // the frame size and the displacement, all in the 64-bit immediate,
+        // since 'cmp' takes only 32 bits; an absolute address reaches beyond
+        // the 2 GiB of 'rip' relative ones
         assembler_.instruction(
-            indent, op::mov, to_argument(room),
+            indent, op::mov, to_argument(last_base),
             assembler_x86_64::immediate::of_qword_expression(std::format(
-                "{} - {}", variables_end_label, frame_size_bytes.symbol())));
+                "{} - {} - {}", variables_end_label, frame_size_bytes.symbol(),
+                frame_address.displacement())));
 
-        assembler_.instruction(indent, op::sub, to_argument(room),
+        // note: signed, the highest base is negative when the frame is larger
+        //       than 'vars'; addresses and sizes stay below 2^47, so nothing
+        //       wraps
+
+        assembler_.instruction(indent, op::cmp, to_argument(last_base),
                                frame_address.base_register());
-
-        // note: signed, the room is negative when the frame is larger than
-        //       what is left after the base; addresses and sizes stay below
-        //       2^47, so nothing wraps
-
-        assembler_.instruction(indent, op::cmp, to_argument(room),
-                               frame_address.displacement());
 
         branch_to_failure(src_loc_tk, indent, condition::l,
                           frame_overflow_failure);
 
-        free_scratch_register(src_loc_tk, indent, room);
+        free_scratch_register(src_loc_tk, indent, last_base);
         comment(src_loc_tk, indent, "frame capacity check end");
     }
 

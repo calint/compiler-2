@@ -1,4 +1,4 @@
 
-0597.baz:11:14: use of uninitialized variable 'self'
+0597.baz:11:14: result 'self' is read before it is set
     self.y = self.y + x
              ^~~~

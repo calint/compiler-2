@@ -294,11 +294,11 @@ class tokenizer final {
 
     // only the last read token can be put back, otherwise the rewind lands
     // at an unrelated position
-    auto put_back_token(const token& t) -> void {
-        assert(t.source_end_index() == char_ix_);
-        assert(is_token_text_at_source(t));
+    auto put_back_token(const token& tk) -> void {
+        assert(tk.source_end_index() == char_ix_);
+        assert(is_token_text_at_source(tk));
 
-        move_back(char_ix_ - t.source_begin_index());
+        move_back(char_ix_ - tk.source_begin_index());
     }
 
     auto rewind_to_position(const token& pos_tk) -> void {
@@ -493,9 +493,9 @@ class tokenizer final {
         return true;
     }
 
-    [[nodiscard]] auto is_token_text_at_source(const token& t) const -> bool {
-        return src_.substr(t.start_index(), t.end_index() - t.start_index()) ==
-               t.text();
+    [[nodiscard]] auto is_token_text_at_source(const token& tk) const -> bool {
+        return src_.substr(tk.start_index(),
+                           tk.end_index() - tk.start_index()) == tk.text();
     }
 
     auto move_back(size_t nchars) -> void {

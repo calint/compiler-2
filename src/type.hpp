@@ -215,10 +215,8 @@ struct byte_range {
     size_t offset{};
     size_t size_bytes{};
 
-    [[nodiscard]] auto overlaps(const byte_range& other) const -> bool {
-        return offset < other.offset + other.size_bytes and
-               other.offset < offset + size_bytes;
-    }
+    // the offset after the last byte
+    [[nodiscard]] auto end() const -> size_t { return offset + size_bytes; }
 };
 
 // bytes of an instance that no field covers, from its start, e.g. the 3 B at
@@ -367,7 +365,7 @@ class type final {
 
         for (const byte_range& r : ranges) {
             append_gap(gaps, covered_bytes, r.offset, alignment_);
-            covered_bytes = r.offset + r.size_bytes;
+            covered_bytes = r.end();
         }
 
         // the last range of a stopped search may be incomplete
@@ -491,8 +489,7 @@ class type final {
         // note: a field or an array is never empty
         assert(size_bytes != 0);
 
-        if (not ranges.empty() and
-            ranges.back().offset + ranges.back().size_bytes == offset) {
+        if (not ranges.empty() and ranges.back().end() == offset) {
 
             ranges.back().size_bytes += size_bytes;
             return;

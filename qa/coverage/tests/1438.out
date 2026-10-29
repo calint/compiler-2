@@ -1,4 +1,4 @@
 
-1438.baz:6:13: function has no result
+1438.baz:6:13: function 'array_copy' has no result
     var n = array_copy(a, b, 2)
             ^~~~~~~~~~

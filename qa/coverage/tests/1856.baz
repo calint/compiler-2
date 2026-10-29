@@ -1,0 +1,10 @@
+# a function without a body before a generic function is reported as the
+# missing body, not as type arguments of a result type
+
+func f()
+
+func g<T type>(x T) {
+}
+
+func main() {
+}

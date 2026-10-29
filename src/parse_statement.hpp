@@ -45,12 +45,14 @@
 // a call of a function without a result where a value is needed, e.g. 'x =
 // array_copy(a, b, 1)'
 [[noreturn]] inline auto throw_no_value(const token& call_tk) -> void {
-    throw compile_error{call_tk, "function has no result"};
+    throw compile_error{call_tk, std::format("function {} has no result",
+                                             in_quotes(call_tk.text()))};
 }
 
 // a call with a result as a statement of its own, e.g. 'f(x)'
 [[noreturn]] inline auto throw_discarded_result(const token& call_tk) -> void {
-    throw compile_error{call_tk, "the result of the call is discarded"};
+    throw compile_error{call_tk, std::format("the result of {} is discarded",
+                                             in_quotes(call_tk.text()))};
 }
 
 // the integer type of a conversion, e.g. 'i8' of 'i8(x)'; 'bool' and 'void'

@@ -1,0 +1,4 @@
+
+1857.baz:6:1: expected '{' to begin block
+type box<n> {x i8[n]}
+^

@@ -1,4 +1,4 @@
 
-0541.baz:4:13: character literal '' must contain one character
+0541.baz:4:13: character literal '' must contain one byte, e.g. 'a' or '\xe9'
     var c = ''
             ^~

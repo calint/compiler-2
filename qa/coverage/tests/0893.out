@@ -1,4 +1,4 @@
 
-0893.baz:7:13: function has no result
+0893.baz:7:13: function 'check' has no result
     if 1 == check(true) {
             ^~~~~

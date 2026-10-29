@@ -1,0 +1,9 @@
+# a function without a body before a generic type is reported as the missing
+# body, not as type arguments of a result type
+
+func f()
+
+type box<n> {x i8[n]}
+
+func main() {
+}

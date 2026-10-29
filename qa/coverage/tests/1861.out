@@ -1,0 +1,4 @@
+
+1861.baz:14:9: an instance of 'left' is not a number
+    l = mk() + 1
+        ^~

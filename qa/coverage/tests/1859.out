@@ -1,0 +1,4 @@
+
+1859.baz:4:18: 'T' is not a generic type, it takes no type arguments
+func f<T type>(x T<3>) {
+                 ^

@@ -1,0 +1,4 @@
+
+1862.baz:14:9: an array of 'i8' is not a number
+    b = a + 1
+        ^

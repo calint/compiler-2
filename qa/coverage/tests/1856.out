@@ -1,0 +1,4 @@
+
+1856.baz:6:1: expected '{' to begin block
+func g<T type>(x T) {
+^

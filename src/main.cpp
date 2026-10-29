@@ -193,7 +193,7 @@ auto print_help(const char* const program_name) -> void;
 
 [[nodiscard]] auto compile_file(const options& opts) -> int;
 
-auto print_compiler_error(const source_files& files, const compile_error& e)
+auto print_compiler_error(const source_files& files, const compile_error& error)
     -> void;
 
 auto check_reproduced_source(const program& prg, const source_files& files)
@@ -224,14 +224,6 @@ auto print_call_frames(const source_files& files,
                        std::span<const compile_error::call_frame> frames)
     -> void;
 
-// a line of the source, 'begin' is the index of its first character
-struct source_line {
-    size_t begin{};
-    std::string_view text;
-};
-
-[[nodiscard]] auto line_at(std::string_view src, size_t index) -> source_line;
-
 [[nodiscard]] auto trimmed_line_at(std::string_view src, size_t index)
     -> std::string_view;
 
@@ -249,6 +241,9 @@ auto print_source_line(std::string_view src, size_t start_index,
 [[nodiscard]] auto printable_line(std::string_view line) -> std::string;
 
 [[nodiscard]] auto display_columns(std::string_view text) -> size_t;
+
+[[nodiscard]] auto aligned_fill(std::string_view text, char fill)
+    -> std::string;
 } // namespace
 
 auto main(const int argc, const char** const argv) -> int {
@@ -682,15 +677,15 @@ auto print_help(const char* const program_name) -> void {
 
 // the message of the error at its source line, the inlined calls and generic
 // instances it was found through and what else is known about it
-auto print_compiler_error(const source_files& files, const compile_error& e)
+auto print_compiler_error(const source_files& files, const compile_error& error)
     -> void {
 
-    print_source_error(files, e.where, e.msg);
+    print_source_error(files, error.where, error.msg);
 
-    print_call_frames(files, e.call_frames);
+    print_call_frames(files, error.call_frames);
 
-    if (not e.detail.empty()) {
-        std::println(stderr, "\n{}", e.detail);
+    if (not error.detail.empty()) {
+        std::println(stderr, "\n{}", error.detail);
     }
 }
 
@@ -962,28 +957,6 @@ auto print_call_frames(const source_files& files,
     }
 }
 
-// the line of the character at 'index' without its line end, the character can
-// be the line end itself
-[[nodiscard]] auto line_at(const std::string_view src, const size_t index)
-    -> source_line {
-
-    const size_t before_index{
-        index == 0 ? std::string_view::npos : src.rfind('\n', index - 1),
-    };
-
-    const size_t begin{
-        before_index == std::string_view::npos ? 0 : before_index + 1,
-    };
-    // note: +1 because the line starts after the line end
-
-    const size_t end{std::min(src.find('\n', index), src.size())};
-
-    return {
-        .begin{begin},
-        .text{src.substr(begin, end - begin)},
-    };
-}
-
 // the line of the character at 'index' without its surrounding whitespace
 [[nodiscard]] auto trimmed_line_at(const std::string_view src,
                                    const size_t index) -> std::string_view {
@@ -1101,33 +1074,45 @@ auto print_source_line(const std::string_view src, const size_t start_index,
         return;
     }
 
-    // a tab stays a tab so that the mark lines up
-    std::string padding;
-    std::string_view rest{src.substr(line_bgn, start_index - line_bgn)};
-
-    for (size_t tab{rest.find('\t')}; tab != std::string_view::npos;
-         tab = rest.find('\t')) {
-
-        padding.append(display_columns(rest.substr(0, tab)), ' ');
-        padding += '\t';
-        rest.remove_prefix(tab + 1);
-    }
-
-    padding.append(display_columns(rest), ' ');
+    const std::string padding{
+        aligned_fill(src.substr(line_bgn, start_index - line_bgn), ' '),
+    };
 
     const size_t mark_end{std::min(end_index, line_bgn + line.size())};
 
-    const size_t marked_count{
+    std::string mark{
         mark_end > start_index
-            ? display_columns(src.substr(start_index, mark_end - start_index))
-            : 0,
+            ? aligned_fill(src.substr(start_index, mark_end - start_index), '~')
+            : "",
     };
 
     // a position without a token still has the caret
-    const size_t mark_size{std::max(marked_count, size_t{1})};
+    if (mark.empty()) {
+        mark = "^";
+    } else {
+        mark.front() = '^';
+    }
 
-    std::println(stderr, "{}\n{}^{}", printable_line(line), padding,
-                 std::string(mark_size - 1, '~'));
-    // note: -1 because the caret already marks the first character
+    std::println(stderr, "{}\n{}{}", printable_line(line), padding, mark);
+}
+
+// 'fill' under each column of 'text' as a terminal shows it, a tab stays a
+// tab so that what follows lines up
+[[nodiscard]] auto aligned_fill(std::string_view text, const char fill)
+    -> std::string {
+
+    std::string result;
+
+    for (size_t tab{text.find('\t')}; tab != std::string_view::npos;
+         tab = text.find('\t')) {
+
+        result.append(display_columns(text.substr(0, tab)), fill);
+        result += '\t';
+        text.remove_prefix(tab + 1);
+    }
+
+    result.append(display_columns(text), fill);
+
+    return result;
 }
 } // namespace

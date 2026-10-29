@@ -1284,7 +1284,9 @@ inline auto statement::assert_result_not_read(const assignment_flow& flow) const
             return;
         }
 
-        throw_uninitialized(read.tok(), read.tok().text());
+        throw compile_error{read.tok(),
+                            std::format("result {} is read before it is set",
+                                        in_quotes(read.tok().text()))};
     });
 }
 

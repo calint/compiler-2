@@ -1,4 +1,4 @@
 
-1672.baz:10:9: the result of the call is discarded
+1672.baz:10:9: the result of 'f' is discarded
         f()
         ^

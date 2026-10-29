@@ -1,4 +1,4 @@
 
-0416.baz:4:28: function has no result
+0416.baz:4:28: function 'target' has no result
 func main() { var result = target() }
                            ^~~~~~

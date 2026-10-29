@@ -1,4 +1,4 @@
 
-0624.baz:10:5: the result of the call is discarded
+0624.baz:10:5: the result of 'two' is discarded
     two()
     ^~~

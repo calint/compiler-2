@@ -1,4 +1,4 @@
 
-1440.baz:5:5: the result of the call is discarded
+1440.baz:5:5: the result of 'array_length' is discarded
     array_length(a)
     ^~~~~~~~~~~~

@@ -1,4 +1,4 @@
 
-1441.baz:5:5: the result of the call is discarded
+1441.baz:5:5: the result of 'i8' is discarded
     i8(x)
     ^~

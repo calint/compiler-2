@@ -34,7 +34,7 @@ class assigned_bytes final {
         : size_bytes_{size_bytes} {}
 
     auto add(const byte_range assigned) -> void {
-        assert(assigned.offset + assigned.size_bytes <= size_bytes_);
+        assert(assigned.end() <= size_bytes_);
 
         if (assigned.size_bytes == 0) {
             return;
@@ -44,19 +44,19 @@ class assigned_bytes final {
         byte_range joined{assigned};
 
         for (const byte_range& range : ranges_) {
-            if (range_end(range) < joined.offset) {
+            if (range.end() < joined.offset) {
                 result.push_back(range);
                 continue;
             }
 
-            if (range_end(joined) < range.offset) {
+            if (joined.end() < range.offset) {
                 result.push_back(joined);
                 joined = range;
                 continue;
             }
 
             const size_t first{std::min(range.offset, joined.offset)};
-            const size_t end{std::max(range_end(range), range_end(joined))};
+            const size_t end{std::max(range.end(), joined.end())};
 
             joined = {
                 .offset{first},
@@ -76,7 +76,7 @@ class assigned_bytes final {
         return std::ranges::any_of(
             ranges_, [&accessed](const byte_range& range) -> bool {
                 return range.offset <= accessed.offset and
-                       range_end(accessed) <= range_end(range);
+                       accessed.end() <= range.end();
             });
     }
 
@@ -89,7 +89,7 @@ class assigned_bytes final {
         for (const byte_range& lhs : ranges_) {
             for (const byte_range& rhs : other.ranges_) {
                 const size_t first{std::max(lhs.offset, rhs.offset)};
-                const size_t end{std::min(range_end(lhs), range_end(rhs))};
+                const size_t end{std::min(lhs.end(), rhs.end())};
 
                 if (first < end) {
                     result.push_back({
@@ -125,15 +125,6 @@ class assigned_bytes final {
         });
 
         return coverage;
-    }
-
-  private:
-    //
-    // statics
-    //
-
-    [[nodiscard]] static auto range_end(const byte_range& range) -> size_t {
-        return range.offset + range.size_bytes;
     }
 };
 

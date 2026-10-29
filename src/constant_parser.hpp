@@ -81,7 +81,8 @@ class constant_parser final {
         if (not is_one_escape) {
             throw compile_error{
                 src_loc_tk,
-                std::format("character literal {} must contain one character",
+                std::format("character literal {} must contain one byte, e.g. "
+                            "'a' or '\\xe9'",
                             in_quotes(str))};
         }
 

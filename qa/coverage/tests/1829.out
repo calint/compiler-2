@@ -1,4 +1,4 @@
 
-1829.baz:6:13: use of uninitialized variable 'res'
+1829.baz:6:13: result 'res' is read before it is set
         a = res
             ^~~

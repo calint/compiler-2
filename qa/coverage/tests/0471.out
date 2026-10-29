@@ -1,4 +1,4 @@
 
-0471.baz:4:12: use of uninitialized variable 'res'
+0471.baz:4:12: result 'res' is read before it is set
     res = {res.y, 0}
            ^~~

@@ -1,4 +1,4 @@
 
-0463.baz:3:25: use of uninitialized variable 'res'
+0463.baz:3:25: result 'res' is read before it is set
     if i == 3 { var y = res }
                         ^~~

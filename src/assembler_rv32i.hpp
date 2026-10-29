@@ -87,10 +87,9 @@ class assembler_rv32i final : public assembler {
 
     enum class section : uint8_t { text, rodata, data, bss };
 
+  private:
     // a number, or a symbol resolved once addresses are known
     struct immediate {
-        enum class part : uint8_t { whole, high, low };
-
         // numbers of any integer type keep call sites free of casts
         template <std::integral integral_t>
         explicit(false) immediate(const integral_t value)
@@ -100,19 +99,18 @@ class assembler_rv32i final : public assembler {
 
         int64_t number{};
         std::string symbol;
-        part symbol_part{};
+        // a symbol subtracted from 'symbol', e.g. a frame size from 'vars.end'
+        std::string subtracted;
 
         //
         // statics
         //
 
-        [[nodiscard]] static auto
-        of_symbol(const std::string_view name,
-                  const part symbol_part = part::whole) -> immediate {
+        [[nodiscard]] static auto of_symbol(const std::string_view name)
+            -> immediate {
 
             immediate result;
             result.symbol = name;
-            result.symbol_part = symbol_part;
             return result;
         }
 
@@ -131,7 +129,6 @@ class assembler_rv32i final : public assembler {
         }
     };
 
-  private:
     // starts the comment of a line, the text before it is code
     static constexpr std::string_view comment_marker_{"#"};
 
@@ -588,15 +585,21 @@ class assembler_rv32i final : public assembler {
                                 });
     }
 
+    // the address 'symbol' less the value of the symbol 'subtracted', when
+    // one is given
     auto la(const size_t indent, const std::string_view rd,
-            const std::string_view symbol) -> void {
+            const std::string_view symbol,
+            const std::string_view subtracted = {}) -> void {
+
+        immediate address{immediate::of_symbol(symbol)};
+        address.subtracted = subtracted;
 
         add_instruction(indent, {
                                     .code{op::la},
                                     .rd{number_of(rd)},
                                     .rs1{},
                                     .rs2{},
-                                    .value{immediate::of_symbol(symbol)},
+                                    .value{std::move(address)},
                                     .target{},
                                 });
     }
@@ -1728,11 +1731,8 @@ class assembler_rv32i final : public assembler {
         const form operands{info(ins.code).operands};
 
         if (operands == form::immediate) {
-            if (symbolic) {
-                return value.symbol_part == immediate::part::low;
-            }
-
-            return fits(value.number, immediate_min, immediate_max);
+            return not symbolic and
+                   fits(value.number, immediate_min, immediate_max);
         }
 
         if (operands == form::shift) {
@@ -1740,11 +1740,7 @@ class assembler_rv32i final : public assembler {
         }
 
         if (operands == form::upper) {
-            if (symbolic) {
-                return value.symbol_part == immediate::part::high;
-            }
-
-            return fits(value.number, 0, upper_mask_);
+            return not symbolic and fits(value.number, 0, upper_mask_);
         }
 
         if (operands == form::load or operands == form::store) {
@@ -1759,7 +1755,7 @@ class assembler_rv32i final : public assembler {
         }
 
         if (operands == form::load_address) {
-            return symbolic and value.symbol_part == immediate::part::whole;
+            return symbolic;
         }
 
         // the remaining forms have no immediate
@@ -1773,12 +1769,8 @@ class assembler_rv32i final : public assembler {
             return std::format("{}", value.number);
         }
 
-        if (value.symbol_part == immediate::part::high) {
-            return std::format("%hi({})", value.symbol);
-        }
-
-        if (value.symbol_part == immediate::part::low) {
-            return std::format("%lo({})", value.symbol);
+        if (not value.subtracted.empty()) {
+            return std::format("{} - {}", value.symbol, value.subtracted);
         }
 
         return value.symbol;
@@ -1795,15 +1787,11 @@ class assembler_rv32i final : public assembler {
 
         const int64_t resolved{symbol_value(symbols, value.symbol, line_index)};
 
-        if (value.symbol_part == immediate::part::high) {
-            return upper_part(resolved);
+        if (value.subtracted.empty()) {
+            return resolved;
         }
 
-        if (value.symbol_part == immediate::part::low) {
-            return lower_part(resolved);
-        }
-
-        return resolved;
+        return resolved - symbol_value(symbols, value.subtracted, line_index);
     }
 
     // the table is inside a function because 'op_info' default member

@@ -1,0 +1,15 @@
+# an operator after a copied array: an array is not a number
+
+type left {value}
+
+func mk() res left {
+    res = {}
+}
+
+func main() {
+    var ll = left{}
+    var l = left{}
+    var a = i8[2]
+    var b = i8[2]
+    b = a + 1
+}

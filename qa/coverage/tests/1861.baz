@@ -1,0 +1,15 @@
+# an operator after a call result instance: an instance is not a number
+
+type left {value}
+
+func mk() res left {
+    res = {}
+}
+
+func main() {
+    var ll = left{}
+    var l = left{}
+    var a = i8[2]
+    var b = i8[2]
+    l = mk() + 1
+}

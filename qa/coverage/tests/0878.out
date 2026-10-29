@@ -1,4 +1,4 @@
 
-0878.baz:5:9: function has no result
+0878.baz:5:9: function 'exit' has no result
     x = exit(1)
         ^~~~

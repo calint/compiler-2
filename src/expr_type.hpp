@@ -320,6 +320,8 @@ class expr_type final : public statement {
 
     auto assert_copy_source_shape(const toc& tc) const -> void;
 
+    auto assert_value_ends(const tokenizer& tz, const type& tp) const -> void;
+
     // the call whose result is the value, null for a literal or a copy
     [[nodiscard]] auto call_source() const -> const stmt_call* {
         const std::unique_ptr<stmt_call>* const call{
@@ -331,6 +333,13 @@ class expr_type final : public statement {
 
     auto compile_identifier_copy(toc& tc, const size_t indent,
                                  const destination& dst) const -> void;
+
+    // e.g. "an instance of 'point' is not a number"
+    [[nodiscard]] auto not_a_number(const type& tp) const -> std::string {
+        return std::format("{} of {} is not a number",
+                           is_array_destination_ ? "an array" : "an instance",
+                           in_quotes(tp.name()));
+    }
 
     // creates the 'stmt_call' or 'stmt_identifier'
     auto parse_copy_source(toc& tc, tokenizer& tz, const type& tp,

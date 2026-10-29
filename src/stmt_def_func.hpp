@@ -341,7 +341,13 @@ struct func_result {
 
         const token type_tk{tz.next_token()};
 
-        if (type_tk.is_word()) {
+        const bool is_keyword{
+            std::ranges::contains(reserved_names::keywords, name_tk.text()),
+        };
+
+        // a keyword is not a result name, e.g. the 'func' of 'func g<T
+        // type>()' after a function that lacks its body
+        if (type_tk.is_word() and not is_keyword) {
             statement::assert_no_type_arguments(tc, tz, type_tk);
         }
 
@@ -361,10 +367,6 @@ struct func_result {
             // a keyword without a '{' after it starts what follows a function
             // that lacks its body, e.g. the 'func' of the next definition;
             // before a '{' it is reported as a keyword
-            const bool is_keyword{
-                std::ranges::contains(reserved_names::keywords, name_tk.text()),
-            };
-
             if (is_keyword and tz.peek_char_after_whitespace() != '{') {
                 tz.put_back_token(name_tk);
                 return std::nullopt;

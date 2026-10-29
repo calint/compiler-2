@@ -1,4 +1,4 @@
 
-1708.baz:9:27: use of uninitialized variable 'res'
+1708.baz:9:27: result 'res' is read before it is set
     var eq = arrays_equal(res.a[1], b, 3)
                           ^~~

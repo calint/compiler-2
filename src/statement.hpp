@@ -450,6 +450,15 @@ class statement {
                                             in_quotes(type_tk->text()))};
         }
 
+        // e.g. an unknown name or the type parameter 'T' of 'x T<3>'
+        if (not tc.generics().has_type(type_tk->text())) {
+            throw compile_error{
+                *type_tk,
+                std::format("{} is not a generic type, it takes no type "
+                            "arguments",
+                            in_quotes(type_tk->text()))};
+        }
+
         throw compile_error{
             *type_tk,
             std::format("{} is not a type, {}",

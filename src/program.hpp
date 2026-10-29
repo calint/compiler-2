@@ -163,26 +163,26 @@ class report_renderer final {
     optimization_report(const machine::output_statistics& stats)
         -> report_section {
 
-        const assembler::optimization_counts& o{stats.optimizations};
+        const assembler::optimization_counts& counts{stats.optimizations};
 
         return {
             .title{},
             .entries{
                 {
                     .name{"removed jumps to next code"},
-                    .value{std::format("{}", o.jumps_to_next)},
+                    .value{std::format("{}", counts.jumps_to_next)},
                 },
                 {
                     .name{"removed unreachable jumps"},
-                    .value{std::format("{}", o.unreachable_jumps)},
+                    .value{std::format("{}", counts.unreachable_jumps)},
                 },
                 {
                     .name{"removed same target branches"},
-                    .value{std::format("{}", o.same_target_branches)},
+                    .value{std::format("{}", counts.same_target_branches)},
                 },
                 {
                     .name{"inverted branches over jumps"},
-                    .value{std::format("{}", o.inverted_branches)},
+                    .value{std::format("{}", counts.inverted_branches)},
                 },
             },
         };

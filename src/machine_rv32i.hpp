@@ -873,41 +873,26 @@ class machine_rv32i : public machine {
             alloc_scratch_register(src_loc_tk, indent, default_type()),
         };
 
-        const operand remaining{
+        const operand last_start{
             alloc_scratch_register(src_loc_tk, indent, default_type()),
         };
 
         address_of(src_loc_tk, indent, start, frame_address);
 
-        // note: the start is within 'vars': from 's0' it follows the variables,
-        //       which fit in 'vars' when compiled, and from 's1' it follows the
-        //       caller's frame, which passed this check
+        // the highest start at which the frame fits, compared unsigned since
+        // the room can be near 4 GiB
+        // note: a frame fits in '--vars' when compiled, so the end of 'vars'
+        //       less the frame size does not wrap
+        assembler_.la(indent, last_start.register_name(), variables_end_label,
+                      frame_size_bytes.symbol());
 
-        assembler_.la(indent, remaining.register_name(), variables_end_label);
-
-        assembler_.sub(indent, remaining.register_name(),
-                       remaining.register_name(), start.register_name());
-
-        // note: the value of 'start' is no longer needed, its register is
-        //       reused
-
-        assembler_.lui(indent, start.register_name(),
-                       assembler_rv32i::immediate::of_symbol(
-                           frame_size_bytes.symbol(),
-                           assembler_rv32i::immediate::part::high));
-
-        assembler_.addi(indent, start.register_name(), start.register_name(),
-                        assembler_rv32i::immediate::of_symbol(
-                            frame_size_bytes.symbol(),
-                            assembler_rv32i::immediate::part::low));
-
-        assembler_.bgeu(indent, remaining.register_name(),
+        assembler_.bgeu(indent, last_start.register_name(),
                         start.register_name(), fits.reference);
 
         branch_to_failure(src_loc_tk, indent, frame_overflow_failure);
 
         assembler_.label(indent, fits.name);
-        free_scratch_register(src_loc_tk, indent, remaining);
+        free_scratch_register(src_loc_tk, indent, last_start);
         free_scratch_register(src_loc_tk, indent, start);
         comment(src_loc_tk, indent, "frame capacity check end");
     }

@@ -2,6 +2,7 @@
 
 // the source files of a program and where a token is in them
 
+#include <algorithm>
 #include <array>
 #include <cstddef>
 #include <deque>
@@ -17,6 +18,34 @@
 #include "compile_error.hpp"
 #include "token.hpp"
 
+// a line of the source, 'begin' is the index of its first character
+struct source_line {
+    size_t begin{};
+    std::string_view text;
+};
+
+// the line of the character at 'index' without its line end, the character can
+// be the line end itself
+[[nodiscard]] inline auto line_at(const std::string_view src,
+                                  const size_t index) -> source_line {
+
+    const size_t before_index{
+        index == 0 ? std::string_view::npos : src.rfind('\n', index - 1),
+    };
+
+    const size_t begin{
+        before_index == std::string_view::npos ? 0 : before_index + 1,
+    };
+    // note: +1 because the line starts after the line end
+
+    const size_t end{std::min(src.find('\n', index), src.size())};
+
+    return {
+        .begin{begin},
+        .text{src.substr(begin, end - begin)},
+    };
+}
+
 // the column is 1-based, 0 when the index is at a line end or past the source
 [[nodiscard]] inline auto
 column_for_char_index(const size_t char_index_in_source,
@@ -28,17 +57,8 @@ column_for_char_index(const size_t char_index_in_source,
         return 0;
     }
 
-    const size_t line_end_before{
-        char_index_in_source == 0 ? std::string_view::npos
-                                  : src.rfind('\n', char_index_in_source - 1),
-    };
-
-    if (line_end_before == std::string_view::npos) {
-        return char_index_in_source + 1;
-        // note: +1 because the columns start at 1
-    }
-
-    return char_index_in_source - line_end_before;
+    return char_index_in_source - line_at(src, char_index_in_source).begin + 1;
+    // note: +1 because the columns start at 1
 }
 
 // the source files of a program, the first is the main file; the text stays
@@ -148,8 +168,14 @@ class source_locations final {
             src_path.lexically_relative(main_dir),
         };
 
+        // none from a relative 'main_dir' to an absolute path, e.g. an
+        // include of '/lib/a.baz', the path is shown as written
+        const std::filesystem::path shown{
+            relative.empty() ? src_path : relative,
+        };
+
         // note: a line end in a file name would end the comment
-        return std::format("{}:{}", printable(relative.string()),
+        return std::format("{}:{}", printable(shown.string()),
                            text(src_loc_tk, ':'));
     }
 

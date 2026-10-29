@@ -1,4 +1,4 @@
 
-1822.baz:5:18: use of uninitialized variable 'res'
+1822.baz:5:18: result 'res' is read before it is set
     if false and res == 1 {
                  ^~~

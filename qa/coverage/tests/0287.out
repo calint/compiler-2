@@ -1,4 +1,4 @@
 
-0287.baz:13:10: expected type 'left', got a result of type 'right'
+0287.baz:13:10: expected type 'left', got 'right'
     take(make())
          ^~~~

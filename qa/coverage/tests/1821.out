@@ -1,4 +1,4 @@
 
-1821.baz:5:23: use of uninitialized variable 'res'
+1821.baz:5:23: result 'res' is read before it is set
     let b = false and res == 1
                       ^~~

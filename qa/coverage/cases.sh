@@ -5909,3 +5909,34 @@ SRC=1853 && COMPERR
 
 # type arguments after a constructor, which is never generic
 SRC=1854 && COMPERR
+
+# a frame check whose displacement does not fit 32 bits panics, not truncated
+if [[ $MACHINE == x86_64 ]]; then SRC=1855 && EXP=254 && OPTS="--vars=0x100000000 --checks=noub" RUN_ERR; fi
+
+# a function without a body before a generic function is reported as the
+# missing body, not as type arguments of a result type
+SRC=1856 && COMPERR
+
+# a function without a body before a generic type is reported as the missing
+# body, not as type arguments of a result type
+SRC=1857 && COMPERR
+
+# type arguments after an unknown name as a parameter type: not a generic
+# type, no hint to name an instance
+SRC=1858 && COMPERR
+
+# type arguments after a type parameter: not a generic type, no hint to name
+# an instance
+SRC=1859 && COMPERR
+
+# an operator after a copied instance: an instance is not a number
+SRC=1860 && COMPERR
+
+# an operator after a call result instance: an instance is not a number
+SRC=1861 && COMPERR
+
+# an operator after a copied array: an array is not a number
+SRC=1862 && COMPERR
+
+# the mark under a token that holds a tab reaches the end of the token
+SRC=1863 && COMPERR

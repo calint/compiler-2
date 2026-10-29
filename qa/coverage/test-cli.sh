@@ -326,6 +326,14 @@ CLI_COMMENT_LOCATIONS() {
         grep -Fq '[0906.baz:4:5] exit(three())' gen.s
         grep -Fq '[include/cycle.baz:4:5] res = 3' gen.s
     done
+    # a file included by its absolute path has no relative name, it keeps
+    # the path as written
+    printf 'func three() res {\n    res = 3\n}\n' >gen-abs-lib.baz
+    printf 'include "%s/gen-abs-lib.baz"\n\nfunc main() {\n    exit(three())\n}\n' \
+        "$PWD" >gen-abs-main.baz
+    "$BIN" gen-abs-main.baz >gen.s 2>err
+    grep -Fq "[$PWD/gen-abs-lib.baz:2:5] res = 3" gen.s
+    rm -f gen-abs-lib.baz gen-abs-main.baz
     echo ok
 }
 
