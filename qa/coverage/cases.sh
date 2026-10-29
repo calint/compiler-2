@@ -6042,3 +6042,6 @@ SRC=1896 && COMPERR
 
 # a built-in type as a function name followed by '(.'
 SRC=1897 && COMPERR
+
+# a built-in type followed by '.'
+SRC=1898 && COMPERR

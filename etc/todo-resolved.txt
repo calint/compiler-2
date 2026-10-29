@@ -1,6 +1,33 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] hard: design review series 2, round 24 (2026-10-29, user: rounds until
+    no more improvements; a second pass over the files of round 22; the
+    loop ends here: one reviewer found nothing, the others mostly comments)
+    => done (2026-10-29): G1 a built-in type followed by '.' is reported
+       like a user type without that constructor, "type 'i8' has no
+       constructor 'x'", in place of five messages by context (1898); C1 the
+       sd card failure handler gets its listing comment like the others;
+       behavior-preserving, listings verified equal: 'begin_data' and
+       'reserve_variables' read the machine's own alignment, the memory
+       compare tested once, '<ranges>' where it is used; comments: the
+       'builtin_arguments' count, 'mut' arguments skipped by
+       'check_arguments_alone', the 'receiver' of 'add_instance', the stranded
+       comment of 'assert_generic_param_not_generic_type', 'builtin_type' of
+       the lookahead, why a condition in an array literal is compiled
+[x] hard: design review series 2, round 23 (2026-10-29, user: rounds until
+    no more improvements; 7 reviewers A-G on the files round 22 did not
+    read, split as in round 21)
+    => done (2026-10-29): D1 an 'array_length' that does not fit the default
+       type no longer hints a conversion, which folds its argument too (1881);
+       behavior-preserving, listings verified equal: rv32i jump growth measures
+       the image layout it encodes ('line_offsets', the 'align' assert and
+       'assembler::is_code_section' gone; 11% slower on the 181k-line far-jump
+       program); 'is_single_operand' one expression, 'root_range' and
+       'is_register_allocated' inlined, a stale '_in' suffix; wrong comments:
+       a zero divisor, 'multiply', the zero loop's 3 instructions,
+       'shares_address_base', a constant-false branch is compiled but not
+       emitted, 'b.x' of a 'bool', the report after the code, register errors
 [x] hard: design review series 2, round 22 (2026-10-29, user: rounds until
     no more improvements, applying the recommended ones; 7 reviewers A-G:
     'toc', 'stmt_call', 'machine', 'machine_x86_64', 'expr_bool'/'expr_any',

@@ -275,7 +275,7 @@ class operand final {
 };
 
 // what the methods 'add_subtract', 'bitwise', 'divide', 'shift' and
-// 'unary' take, each one a part of it
+// 'unary' take, each one a part of it; 'multiply' takes none
 enum class arithmetic_operator : uint8_t {
     add,
     subtract,

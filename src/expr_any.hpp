@@ -7,7 +7,6 @@
 #include <memory>
 #include <optional>
 #include <ostream>
-#include <ranges>
 #include <string>
 #include <utility>
 #include <variant>
@@ -515,7 +514,9 @@ class expr_any final : public statement {
 
         std::string bytes;
         for (size_t index{}; index < list.elements.size(); ++index) {
-            // a condition is compiled, not packed, e.g. '1 == 1'
+            // a condition is compiled, not packed, so the elements after the
+            // one that decides it are checked, e.g. the 'a / 0 == 1' of
+            // 'true or a / 0 == 1'
             if (std::holds_alternative<expr_bool>(
                     list.elements.at(index).value)) {
 

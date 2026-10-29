@@ -6,6 +6,7 @@
 #include <format>
 #include <optional>
 #include <ostream>
+#include <ranges>
 #include <string>
 #include <string_view>
 #include <utility>
@@ -396,9 +397,12 @@ class expr_bool_op final : public statement {
         // e.g. the 'i' of 'i == h(i)' with 'h' writing 'i'
         assert_not_written_later(tc, *this, "operand");
 
-        if (not cmp.is_memory) {
-            assert_sides_fit(lhs, rhs, cmp.op);
+        if (cmp.is_memory) {
+            resolve_memory_cmp(tc, indent, cmp, action);
+            return condition_result::unknown;
         }
+
+        assert_sides_fit(lhs, rhs, cmp.op);
 
         // a constant 'lhs' becomes an immediate 'rhs' instead of a scratch
         // register copy: an untyped one fits the other side, a typed one when
@@ -409,25 +413,18 @@ class expr_bool_op final : public statement {
                                                        rhs.node->get_type())),
         };
 
-        if (is_mirrored) {
-            machine::comparison_action mirrored_action{action};
-            mirrored_action.operation = mirrored(cmp.op);
-
-            const comparison_side& mirrored_lhs{rhs};
-            const comparison_side& mirrored_rhs{lhs};
-
-            resolve_cmp(tc, indent, mirrored_lhs, mirrored_rhs,
-                        mirrored_action);
-
-            return condition_result::unknown;
-        }
-
-        if (not cmp.is_memory) {
+        if (not is_mirrored) {
             resolve_cmp(tc, indent, lhs, rhs, action);
             return condition_result::unknown;
         }
 
-        resolve_memory_cmp(tc, indent, cmp, action);
+        machine::comparison_action mirrored_action{action};
+        mirrored_action.operation = mirrored(cmp.op);
+
+        const comparison_side& mirrored_lhs{rhs};
+        const comparison_side& mirrored_rhs{lhs};
+
+        resolve_cmp(tc, indent, mirrored_lhs, mirrored_rhs, mirrored_action);
 
         return condition_result::unknown;
     }

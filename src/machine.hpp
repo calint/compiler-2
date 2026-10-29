@@ -896,12 +896,12 @@ class machine {
     }
 
     // starts the data section, after the code and every routine it uses
-    auto begin_data(const size_t alignment) -> void {
+    auto begin_data() -> void {
         assembler& output{target_assembler()};
 
         output.add_separator_newline();
         output.begin_data_section();
-        output.align(alignment);
+        output.align(target_.data_alignment);
         output.label(0, data_label);
     }
 
@@ -1324,15 +1324,13 @@ class machine {
 
     // ends the data at 'dat.end', then the variables from 'vars' to
     // 'vars.end'
-    auto reserve_variables(const size_t alignment, const size_t size_bytes)
-        -> void {
-
+    auto reserve_variables(const size_t size_bytes) -> void {
         assembler& output{target_assembler()};
 
         output.label(0, data_end_label);
         output.add_separator_newline();
         output.begin_variables_section();
-        output.align(alignment);
+        output.align(target_.data_alignment);
         output.label(0, variables_label);
         output.reserve(size_bytes);
         output.label(0, variables_end_label);

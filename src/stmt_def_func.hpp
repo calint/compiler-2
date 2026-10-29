@@ -1290,7 +1290,8 @@ class func_instantiator final {
     // the instance of the definition at 'func_tk' read with 'head'; a method
     // of a generic type keeps the method it instantiates and the constants of
     // 'receiver', e.g. 'str.append<i8>' keeps 'text.append' and those of
-    // 'text<8>'; 'receiver' null for a generic function of no type
+    // 'text<8>'; 'receiver' null for a generic function that is not a method
+    // of a generic type
     static auto add_instance(toc& tc, const token& func_tk,
                              const func_head& head, tokenizer& tz,
                              std::string name, const generic_trace& trace,

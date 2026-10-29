@@ -452,7 +452,7 @@ class type final {
             }
         }
 
-        // e.g. the 'x' of 'true.x', like 'constant 'c' has no fields'
+        // e.g. the 'x' of 'b.x' with 'b' a 'bool'
         if (is_builtin()) {
             throw compile_error{src_loc_tk, std::format("type {} has no fields",
                                                         in_quotes(name_))};
@@ -492,7 +492,6 @@ class type final {
         assert(size_bytes != 0);
 
         if (not ranges.empty() and ranges.back().end() == offset) {
-
             ranges.back().size_bytes += size_bytes;
             return;
         }

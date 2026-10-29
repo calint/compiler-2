@@ -1026,7 +1026,7 @@ class stmt_identifier final : public statement {
     }
 
     // note: after a run-time index the range stays the whole array
-    auto narrow_accessed_bytes(const size_t offset, const size_t size_bytes_in)
+    auto narrow_accessed_bytes(const size_t offset, const size_t size_bytes)
         -> void {
 
         if (not is_exact_access()) {
@@ -1035,7 +1035,7 @@ class stmt_identifier final : public statement {
 
         accessed_bytes_ = {
             .offset{accessed_bytes_.offset + offset},
-            .size_bytes{size_bytes_in},
+            .size_bytes{size_bytes},
         };
     }
 
@@ -1061,14 +1061,6 @@ class stmt_identifier final : public statement {
         }
 
         shape_ = info.shape();
-    }
-
-    // the variable keeps the offset and covers its whole storage
-    [[nodiscard]] auto root_range(const ident_info& info) const -> byte_range {
-        return {
-            .offset{},
-            .size_bytes{info.value_size_bytes(tok())},
-        };
     }
 
     //

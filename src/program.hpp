@@ -32,7 +32,7 @@
 // the compile of a program, the types below in reading order:
 //
 //   'report_entry', 'report_section', 'report_renderer'
-//                            the '--report' text
+//                            the report after the code
 //   'program'                parses the source, compiles the globals,
 //                            'main', the noinline bodies it reaches, checks
 //                            every function without its calls
@@ -327,8 +327,7 @@ class program final {
     auto emit_data_section() -> void {
         machine& x{tc_.machine()};
 
-        const size_t alignment{x.data_alignment()};
-        x.begin_data(alignment);
+        x.begin_data();
 
         // the zero padding places each dat at the offset the data table gave it
         for (const placed_dat& dat : tc_.data().dats()) {
@@ -340,7 +339,7 @@ class program final {
             dat.def->compile_data(tc_);
         }
 
-        x.reserve_variables(alignment, tc_.layout().vars_capacity_bytes());
+        x.reserve_variables(tc_.layout().vars_capacity_bytes());
     }
 
     // the index of the file in 'files_'

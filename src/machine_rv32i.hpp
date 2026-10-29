@@ -77,7 +77,7 @@ class machine_rv32i : public machine {
 
     static constexpr size_t data_alignment_{16};
     static constexpr size_t copy_unroll_threshold_bytes_{16};
-    // stores run faster than the loop's 4 instructions per word, the cap only
+    // stores run faster than the loop's 3 instructions per word, the cap only
     // bounds the code size
     static constexpr size_t zero_unroll_threshold_parts_{16};
 
@@ -685,10 +685,10 @@ class machine_rv32i : public machine {
 
         // the clobbered registers follow 'a1' and 'a2', which the call needs,
         // in the allocation order, so they are free whenever the call is made
-        assert(std::ranges::none_of(io_routine_clobbered_,
-                                    [&](const std::string_view name) -> bool {
-                                        return is_register_allocated(name);
-                                    }));
+        assert(std::ranges::none_of(
+            io_routine_clobbered_, [&](const std::string_view name) -> bool {
+                return registers().is_unavailable(register_mask(name));
+            }));
 
         assembler_.call(indent, label, "a7");
         mark_used(label);
@@ -3199,12 +3199,6 @@ class machine_rv32i : public machine {
         return first_unused_scratch_register().value_or(std::string_view{});
     }
 
-    [[nodiscard]] auto is_register_allocated(const std::string_view name) const
-        -> bool {
-
-        return registers().is_unavailable(register_mask(name));
-    }
-
     // variables and frames start word aligned so a direct offset from their
     // base has a known position within a word
     [[nodiscard]] auto is_word_based(const operand& address) const -> bool {
@@ -4777,8 +4771,8 @@ class machine_rv32i : public machine {
         return align_storage_size(count * word_size_bytes_, stack_alignment_);
     }
 
-    // a memory copy between two addresses of one base register without index
-    // whose offsets differ only in the low 12 bits
+    // two memory operands of one base register without index whose offsets
+    // differ only in the low 12 bits
     [[nodiscard]] static auto shares_address_base(const operand& dst,
                                                   const operand& src) -> bool {
 

@@ -265,7 +265,11 @@ inline auto stmt_identifier::resolve_accessed_bytes(toc& tc,
         const ident_elem& elem{*step.elem};
 
         if (step.fld == nullptr) {
-            accessed_bytes_ = root_range(*step.info);
+            // the root variable covers its whole storage
+            accessed_bytes_ = {
+                .offset{},
+                .size_bytes{step.info->value_size_bytes(tok())},
+            };
         } else {
             const size_t field_offset{step.fld->offset};
 

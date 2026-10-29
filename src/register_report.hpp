@@ -1,7 +1,7 @@
 #pragma once
 
 // the texts of the report of the use of registers, after the code with
-// '--report=registers' and in the error of registers that ran out
+// '--report=registers' and in an error about registers, e.g. that they ran out
 
 #include <algorithm>
 #include <cassert>

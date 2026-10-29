@@ -1,0 +1,6 @@
+# a built-in type followed by '.' is reported like a user type without that
+# constructor, wherever it stands
+
+func main() {
+    var y = i8.x
+}

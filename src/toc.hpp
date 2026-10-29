@@ -2182,8 +2182,6 @@ class definition_checks final {
                         in_quotes(param_tk.text()), what, where(name_tk))};
     }
 
-    // a generic parameter of a definition cannot be the name of a generic
-    // type; an instance names the generic type itself, e.g. 'text' names 'str'
     // a function of that name would give a call two meanings, e.g. 'T(5)' a
     // conversion when 'T' is 'i8' and a call when it is a record
     auto assert_generic_param_not_function(const token& src_loc_tk,
@@ -2211,6 +2209,8 @@ class definition_checks final {
                         where(generics_.get().get_func(name).src_loc_tk))};
     }
 
+    // a generic parameter of a definition cannot be the name of a generic
+    // type; an instance names the generic type itself, e.g. 'text' names 'str'
     auto assert_generic_param_not_generic_type(
         const token& src_loc_tk, const std::string_view name) const -> void {
 

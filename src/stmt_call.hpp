@@ -1459,8 +1459,8 @@ inline auto assert_call_in_func(const toc& tc, const token& call_tk) -> void {
 
 // the arguments of a built-in that parses like a call, e.g. '(1, buf, 4)' of
 // 'write(1, buf, 4)'; each is a value at the default type, those at
-// 'array_indexes' array paths ('stmt_identifier::parse_array_argument'), the
-// built-in checks their count and their kinds
+// 'array_indexes' array paths ('stmt_identifier::parse_array_argument'); the
+// built-in gives the count they may have and checks their kinds
 class builtin_arguments final {
     token open_paren_tk_;
     std::vector<expr_any> args_;
@@ -2019,8 +2019,8 @@ class stmt_call final : public statement {
     }
 
     // the value arguments of a call that is not expanded, compiled at the type
-    // of their parameter for their checks; a place, an array and an instance
-    // are checked where they are parsed and by 'assert_call_accepted'
+    // of their parameter for their checks; a 'mut' argument, an array and an
+    // instance are checked where they are parsed and by 'assert_call_accepted'
     auto check_arguments_alone(toc& tc, const size_t indent) const -> void {
         machine& x{tc.machine()};
 

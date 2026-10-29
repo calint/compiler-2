@@ -1,0 +1,4 @@
+
+1898.baz:5:16: type 'i8' has no constructor 'x'
+    var y = i8.x
+               ^

@@ -18,7 +18,7 @@
 
 // 'if', 'else if' and 'else': the branches are tried in order and the first
 // whose condition holds runs; a branch that is constant true ends the chain
-// and one that is constant false is not compiled
+// and one that is constant false is not emitted
 class stmt_if final : public statement {
     // e.g. 'else {z = 3}'
     struct else_part {

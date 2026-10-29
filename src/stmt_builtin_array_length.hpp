@@ -102,13 +102,13 @@ class stmt_builtin_array_length final : public statement {
         const int64_t length{static_cast<int64_t>(*array_len)};
 
         // e.g. 'i8[0x80000000]' on rv32i, an array size is not limited to the
-        // default type, like the 'n' of a 'foo' over it
+        // default type, like the 'n' of a 'foo' over it; no hint, a conversion
+        // folds its argument here too
         if (not constant_arith::fits_width(length, get_type())) {
             throw compile_error{
-                tok(),
-                std::format("constant {} does not fit {}, use '{}(...)'",
-                            in_quotes(statement::trimmed_source(*this)),
-                            in_quotes(get_type().name()), get_type().name())};
+                tok(), std::format("constant {} does not fit {}",
+                                   in_quotes(statement::trimmed_source(*this)),
+                                   in_quotes(get_type().name()))};
         }
 
         // typed, so a comparison gets the verdict of the length computed at

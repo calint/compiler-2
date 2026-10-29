@@ -66,14 +66,13 @@ enum class term_kind : uint8_t {
     // a built-in type followed by '(', e.g. 'i8(x)', only the integer types
     // convert
     conversion,
-    // a built-in type that is not converted or the element type of an array
-    // literal, e.g. the 'i8' of 'var x = i8'
+    // a built-in type alone, e.g. the 'i8' of 'var x = i8'
     builtin_type,
     // a type followed by '[', e.g. 'i8[]{1, 2}'
     array_literal,
     // a user type followed by '{', e.g. 'point{1, 2}'
     record_literal,
-    // a user type followed by '.', e.g. 'point.at(1, 2)'
+    // a type followed by '.', e.g. 'point.at(1, 2)'
     constructor_call,
     // a user type alone, e.g. the 'point' of 'var p = point'
     record_type,
@@ -139,6 +138,11 @@ enum class term_kind : uint8_t {
 
         if (next == '[') {
             return term_kind::array_literal;
+        }
+
+        // e.g. 'i8.at', reported like a missing constructor of a user type
+        if (next == '.') {
+            return term_kind::constructor_call;
         }
 
         return term_kind::builtin_type;

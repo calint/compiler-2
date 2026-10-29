@@ -265,7 +265,8 @@ class arith_steps final {
         }
     }
 
-    // a divisor of 0 or -1 is left to run time where it traps or wraps
+    // a divisor of 0 stays to be rejected at its step, one of -1 is left to
+    // run time where it traps or wraps
     [[nodiscard]] static auto mergeable_divisor(const step& s)
         -> std::optional<int64_t> {
 
@@ -749,11 +750,7 @@ class expr_arith final : public statement {
     // e.g. 'flag', 'p', 'f(x)' or '-i32(x)', a parenthesized list is
     // arithmetic of its own
     [[nodiscard]] auto is_single_operand() const -> bool {
-        if (exprs_.size() != 1) {
-            return false;
-        }
-
-        return not is_first_enclosed_;
+        return exprs_.size() == 1 and not is_first_enclosed_;
     }
 
     // the element of a list that 'is_single_operand', e.g. the 'f(x)' of

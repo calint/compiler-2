@@ -284,9 +284,6 @@ class assembler_rv32i final : public assembler {
     //
 
     auto align(const size_t size_bytes) -> void override {
-        // note: 'grow_out_of_reach' measures the code without padding
-        assert(not is_code_section());
-
         add_record(std::format(".balign {}", size_bytes), 0,
                    alignment{
                        .size_bytes{size_bytes},
@@ -1099,7 +1096,7 @@ class assembler_rv32i final : public assembler {
     [[nodiscard]] auto grow_out_of_reach(
         const std::unordered_map<std::string_view, size_t>& labels) -> bool {
 
-        const std::vector<size_t> offsets{line_offsets()};
+        const image_layout image{layout_image()};
         bool grown{};
         for (size_t index{}; index < lines().size(); ++index) {
             line& l{lines().at(index)};
@@ -1113,7 +1110,9 @@ class assembler_rv32i final : public assembler {
 
             assert(target != labels.end());
 
-            if (reaches(l, offsets.at(index), offsets.at(target->second))) {
+            if (reaches(l, image.positions.at(index).offset,
+                        image.positions.at(target->second).offset)) {
+
                 continue;
             }
 
@@ -1194,18 +1193,6 @@ class assembler_rv32i final : public assembler {
                      image.alignments.at(bss));
 
         return image;
-    }
-
-    [[nodiscard]] auto line_offsets() const -> std::vector<size_t> {
-        std::vector<size_t> offsets;
-        offsets.reserve(lines().size());
-        size_t offset{};
-        for (const line& l : lines()) {
-            offsets.push_back(offset);
-            offset += l.code_size;
-        }
-
-        return offsets;
     }
 
     // the form a jump has grown to follows from its size

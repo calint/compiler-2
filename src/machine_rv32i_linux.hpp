@@ -161,6 +161,7 @@ class machine_rv32i_linux final : public machine_rv32i {
         a.bne(1, "a0", "a2", sd_card_failure.label);
         a.jr(1, "a6");
 
+        comment({}, 0, sd_card_failure.comment);
         emit_failure_handler(sd_card_failure, false);
 
         a.switch_section(section::data);

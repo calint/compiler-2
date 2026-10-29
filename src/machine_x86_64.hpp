@@ -1618,6 +1618,8 @@ class machine_x86_64 final : public machine {
         assembler_.jcc(1, condition::ne, sd_card_failure.label);
         assembler_.instruction(1, op::ret);
 
+        comment({}, 0, sd_card_failure.comment);
+
         // the stack is not unwound because the program exits
         emit_failure_handler(sd_card_failure, false);
 
