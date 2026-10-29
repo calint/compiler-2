@@ -6,6 +6,17 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
 --------------------------------------------------------------------------------
 1. clean up
 --------------------------------------------------------------------------------
+[ ] medium: decide: remove the inlined flag of
+    'stmt_call::call_site::call_plan' (design review series 2, round 16 C2):
+    each call compiler tests the argument forms itself, about -16 lines,
+    listings verified equal; re-opens decision B.1 of 2026-10-26 (design
+    review round 23, D2-4 4.1 kept)
+[ ] easy: decide: README 1 and AGENTS.md state the no-UB goal
+    unconditionally, but it holds only under '--checks=noub' (README 8.2);
+    say so where the goal is stated
+[ ] medium: decide: a 'bool' filled by 'read' or 'sector_read' can hold a
+    byte other than 0 or 1 (README 8): either 'read' into a 'bool' normalizes
+    it, or the README keeps it as the one unchecked class
 [ ] easy: an inlined recursion that ends at a constant depth but runs out of
     registers is reported as "recursion of inlined function 'r' cannot be
     expanded at compile time, declare it 'noinline'" ('stmt_call.hpp', the

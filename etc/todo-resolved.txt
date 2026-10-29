@@ -1,6 +1,215 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] hard: design review series 2, round 16 (2026-10-29, user: another round; 7
+    reviewers A-G on the round 15 changes, B the README 8.1 table of undefined
+    behavior end to end, C, D, F the reviewability of 'stmt_call',
+    'expr_arith'/'stmt_identifier' and 'machine_rv32i', E the 'machine'
+    interface, G the docs and the tutorial; brief in the session scratchpad
+    dr16)
+    => done (2026-10-29): A1 a string assigned to an instance aborted on an
+       assert, now an error (1875); behavior-preserving changes:
+       'bulk_depth_scope', 'compared_range', 'access_alignment',
+       'define_length', 'named_value' and 'target_call::exit' gone, panic
+       message lengths as immediates, 'exit_code_register', 'arrays_equal' with
+       a constant count through 'memory_equal', expr_arith and rv32i simplified
+       (listings verified equal); messages A2 (1876), C3 (1877, 1878); README
+       3.10, 8.1 rows and test lists, a chapter 8 summary of the exceptions; C2
+       (removing the inlined flag of 'call_plan') left open for the user
+       (etc/todo.txt); committed in 53694340
+[x] hard: design review series 2, round 15 (2026-10-29, user: another round; 7
+    reviewers A-G on the round 14 changes, B and G reading their files whole, C
+    the noinline protocol end to end; brief in the session scratchpad dr15)
+    => done (2026-10-29): one-file changes: rv32i and toc comments, linux
+       includes, 'alignment_padding_bytes', 'resolve_var', a redundant assert,
+       the 'bool' shorthand path; fixes: A1 the round 14 end-of-source location
+       was incomplete, now after the last character that is not whitespace
+       (0282, 1874), A2, A3 ('position_of' gone), G1 ('range_of_start',
+       'range_check' enum gone), E1, E3, C2, F5, B5 (1873); then by the user's
+       decision A4 columns always 1-based (9 error outs) and E2 the x86_64 exit
+       through a shared 'baz_exit' (test-cli jump count of 0437); dropped by the
+       user: E4 the immediate minimum of a checked narrow division (rare), G3
+       one helper for the constant-start count check of io and bulk (small,
+       stable duplicate), F6 'la vars + n' for far rv32i addresses (a second
+       address form for 1.4% of roome); committed in 28f4c31e, 714182b1,
+       c7891846
+[x] hard: design review series 2, round 14 (2026-10-29, user: another round; 7
+    reviewers A-G on the round 13 changes, A docs against the front end, C the
+    modes of 'stmt_call', D dead code, E and F code size rules, G the fuzzers
+    against the current rules; brief in the session scratchpad dr14)
+    => done (2026-10-29): one-file changes: shift identity 0 in the operator
+       table, 'division_options'/'overlap_options' gone, 'method_name_of',
+       README 3.1 and 7.4; fixes: C1 a generic method called like a constructor
+       reported as not found (1872), F1 the bare-metal exit could not jump far,
+       now one shared exit with 't0' ('no_return_jump_register_') on every
+       target (F2), A2 errors at the end of the source shown at the last line
+       end, the special cases of rounds 12 and 13 removed (7 outs), E1 and E4 a
+       constant 'read'/'write' start as an immediate (roome -172 x86_64
+       instructions), E2 a computed 'bool' copied without '!= 0', E5 'test r,
+       r', A1, A3 (0801), A5, C2, G1-G7 fuzzer models updated ('KNOWN_CRASHES'
+       gone); dropped: the order check of a computed comparison side (safe,
+       narrowing adds code); committed in eaeea4a5, de2c4f0f
+[x] hard: design review series 2, round 13 (2026-10-29, user: another round; 7
+    reviewers A-G on the round 12 changes, error locations, aliasing, inline
+    against noinline, evaluation order, x86_64 check parity, rv32i check
+    registers over jumps; brief in the session scratchpad dr13)
+    => done (2026-10-29): one-file changes: 'func_name_' gone ('callee()'
+       public), 'dat' listing comments like 'var'; fixes: F1 rv32i failure jumps
+       take 't0' for the far form, D1 the round 12 D1 message only after
+       '=='/'!=' (1869), E1 no division check for a constant divisor other than
+       -1, E2 '/ 1' and '>> 0' emit nothing (1870), E3 'array_copy' checks
+       overlap only within one root (1871, 1126 rewritten), E4 x86_64 i8
+       multiply in place, A2 '{' not closed in a skipped generic body (0798,
+       1795), A3 (0604); by the user's decision D2 an arithmetic list no longer
+       rejects a read that a later call writes (1640, 1702; README 8.1; reverses
+       4.10.2; fuzz-effects model updated); dropped: B1 (weak), A1 report
+       locations relative to the main file (would mix with the error header);
+       committed in 3a0a4b28, 709301b0
+[x] hard: design review series 2, round 12 (2026-10-29, user: another round; 7
+    reviewers A-G on the round 11 changes and files read less before
+    ('constant_parser', 'parse_lookahead', 'register_pool', 'constant_arith',
+    'register_report', bare-metal rv32i, 'convert', 'foo'); brief in the session
+    scratchpad dr12)
+    => done (2026-10-29): one-file changes: frame check comments, 'add_label'
+       private, 'value_kind', 'throw_uninitialized' inlined and others (listings
+       equal); fixes: C1 'self' read as a keyword in 'func_result::read', a
+       round 11 regression (1864, 1865), F1 the rv32i frame and stack checks
+       held two registers over a far jump, A1/A2 listing comments and panic
+       messages name files relative ('relative_name'; reverses round 11 A1), A3
+       (0604, 1866), A4 (1867), A5 (0685), A6 (1463-1465), D1 (1868), G2 (1567),
+       C3 (1541, 1575); dropped: G5 trailing commas (the formatter packs them),
+       C4 inlining 'has_receiver_in_register' (the name documents the protocol),
+       freeing the check registers before their jumps (not taken); committed in
+       bb1ef623, 7c83a7ba
+[x] hard: design review series 2, round 11 (2026-10-29, user: another round; 7
+    reviewers A-G on the round 10 changes, lexing, include and options,
+    generics, inline against noinline, folding against run time, versions, the
+    rv32i frame check, loops and 'dat'; brief in the session scratchpad dr11)
+    => done (2026-10-29): one-file changes: 'string_tk' rename, README 8 item 5,
+       a todo item; fixes: E1 the x86_64 frame check truncated displacements of
+       2^31 and more in a 'cmp' imm32, a round 10 regression (1855), C1 the
+       type-arguments check ran before the keyword exit of 'func_result::read'
+       (1856, 1857), A1 listing comments of an absolute include had an empty
+       name, F1 rv32i frame check as one 'la' (-25 lines), G1 (1858, 1859), D1
+       'assert_value_ends' after every form (1860-1862), A4 (1863), B1, B2, D2,
+       A2, A3, A5, A6 messages and helpers (36 outs); dropped: C3 a comment
+       restating a name, B3 an assert guarding a cross-file invariant (kept);
+       committed in 4c61436d, e3247405
+[x] hard: design review series 2, round 10 (2026-10-29, user: another round; 7
+    reviewers A-G on program flow, the order checks against the emitted code,
+    methods and constructors, instance copies and compares, the jump optimizer,
+    the rv32i encoder against llvm-mc, io per target; brief in the session
+    scratchpad dr10)
+    => done (2026-10-29): one-file changes: 'needs_normalize',
+       'plan_remaining_elements', 'jump_mode', comments; fixes: B1 a result of 1
+       TiB crashed the compiler, 'assigned_bytes' as sorted byte ranges (1848;
+       reverses B.4 U3), E1 the x86_64 frame check with one register, E2 its
+       assert and listing comment as rv32i, E4 README 8 item 4, G1 one
+       type-arguments check for a field, a parameter and a result (1849-1851),
+       A1 (1852), C1 (1853), C2 (1854), A2/C3 'result' wording (42 outs);
+       nothing dropped; committed in 63c4b1cb, d3d73f5c
+[x] hard: design review series 2, round 9 (2026-10-28, user: another round; 7
+    reviewers A-G, D, E, F and G on areas read less before ('access_path',
+    'bulk_operands', literal plans, limits near the address space, generics and
+    aliases in statements); brief in the session scratchpad dr9)
+    => done (2026-10-28): one-file changes: 'fold_data', 'listed_element',
+       'add_scaled_index' inlined, stale includes and others; fixes: E1 the
+       frame check without its dead branches (both backends), B2 '--vars' and
+       the rv32i image end strict, G1 field names checked where read (1843,
+       1844), A4 'already defined at' for fields, G6 (1845), A1 (1846), D2
+       (1847), D3, A3; '--checks=noub' listings x86_64 21199 to 19644, rv32i
+       28491 to 27558 instructions; dropped: G3 (-Wnrvo), F4 inlining
+       'begin_bulk' (decided naming), a location for a generic parameter
+       declared twice (no locations in 'generics.hpp'); committed in 47e03951,
+       78762fe3
+[x] hard: design review series 2, round 8 (2026-10-28, user: another round; same
+    7 reviewers A-G; brief in the session scratchpad dr8)
+    => done (2026-10-28): one-file changes: 'reserve_backend_register',
+       'pool_index', a statement start classified once and others; fixes: F1 an
+       array of exactly the address space aborted rv32i, the target total now
+       strict (1835, 1836), B1/C1 one walk over the 'if' branches (1837), A1
+       'conversion_type' for deduction (1838-1840), A2 one constant-field
+       message (1841), A6, C3 (1842), C4 'if (init; x)' redundancies; dropped:
+       E1 'noinline_body_register_count' from the pool (also rounds 5 and 6), B3
+       removing 'add_type' (pairs with 'add_const'); committed in 0f18769c,
+       f3f97034
+[x] hard: design review series 2, round 7 (2026-10-28, user: another round; same
+    7 reviewers A-G; brief in the session scratchpad dr7)
+    => done (2026-10-28): one-file changes: 'token::is_empty' and 'file_index'
+       gone, rv32i helpers inlined, 'scratch_registers()' private and others;
+       fixes: G1/D1 'check_folded_conditions' walks list elements and literal
+       fields, 'dat' calls it (1824-1826), G2 a constant io start checked alone
+       (1827, 1828), B1 'if' branches that never run traced as if they ran
+       (README 1.5.1; 1829-1832), A3 (1833), A5, D2 (1834), E1, E2; dropped: C2
+       (clang-tidy conflict), E3 in part (formatter order), F4 the linux sector
+       jump to the next instruction (a condition in two backends for one
+       instruction); committed in 3b67090b, 0823f36c
+[x] hard: design review series 2, round 6 (2026-10-28, user: another round; same
+    7 reviewers A-G; brief in the session scratchpad dr6)
+    => done (2026-10-28): one-file changes: 'bool(x)' error in 'parse_builtin',
+       '{}' on pointers and enums, 'decode_escape' private and others; fixes:
+       G1+D1 the skipped elements of a folded condition checked as a branch
+       condition ('check_folded_condition'; 1816-1818), B1 a 'dat' over the
+       target aborted, now checked in 'toc::add_dat' (1819, 1820, 0740), B2
+       unset 'res' reads in a constant 'let' and an 'if' false at the parse
+       (1821, 1822), A1 (1823, 1547), A4, A5, A6, G3, F5; dropped: A9 quoting
+       text holding a quote (second function), A10 lambdas in the option table,
+       E3 skipping a covered sign test (adds code); committed in 06f99347,
+       96bbd37f
+[x] hard: design review series 2, round 5 (2026-10-28, user: another round; same
+    7 reviewers A-G; brief in the session scratchpad dr5)
+    => done (2026-10-28): one-file changes (15 files, -96 lines): rv32i zero
+       fills as records, 'scope' setters, 'option_error', 'bind_named_value'
+       gone and others; fixes: D1 a constant 'let' skipped the checks of
+       'and'/'or' elements after the deciding one (1811-1813), A2 (1814, 1815),
+       A3-A6, C1, G2, G4, G7, G8, F3, E6 (README example corrected); dropped: B4
+       (rename churn), C4 one helper for the passed-by-reference loops (no
+       gain), G9 (two users), D2 a nested list computed in place (a new marker
+       for two lines); committed in 2c43065d, bc0ddd59
+[x] hard: design review series 2, round 4 (2026-10-28, user: another round; same
+    7 reviewers A-G; brief in the session scratchpad dr4)
+    => done (2026-10-28): one-file changes: frame members in 'function_part',
+       x86_64 one-line wrappers removed, 'code_size' gone, stray '.orig' files
+       removed and '*.orig' ignored and others; fixes: E1 (1806), A1 (1807), C2
+       (1808, 1809), A2 (1810), F1-F5, G1, G3, E4; rv32i-fpga images -1484
+       bytes, x86_64 -3; dropped: D1 '{}' off aggregate members (AGENTS.md keeps
+       them), D2 a scratch register for 'b = not b' (code for a pattern no
+       program has); committed in 3aceae4f, 147ad49b
+[x] hard: design review series 2, round 3 (2026-10-28, user: another round; same
+    7 reviewers A-G; brief in the session scratchpad dr3)
+    => done (2026-10-28): one-file changes (23 files, -31 lines): 'scope' with
+       'loop_part' and 'func_kind', 'wrapped_lines', README usage, dead checks
+       as asserts and others; fixes: A1 (1802), F1 (1803, 1804), A2, A4, A5, B7,
+       D4, E5, F2, F5, F6, G3; then by the user's decision D1 a single 'bool'
+       operand released like other types (1805, 1553 uses a temporary; x86_64
+       -276, rv32i -218 instructions, roome 16124 to 16116); dropped: B6 (the
+       'note:' rule), a helper for one message (one file, part of a ternary);
+       committed in 2e19f952, 45fc52db, b5641b66
+[x] hard: design review series 2, round 2 (2026-10-28, user: another round; same
+    7 reviewers A-G; brief in the session scratchpad dr2)
+    => done (2026-10-28): one-file changes (16 files, -50 lines): 'type_ref',
+       'record_write', x86_64 'inc'/'dec' for any +/- 1, target tables private
+       and others; B5 became an AGENTS.md rule, every member and variable
+       initialized with '{}' (45 scalar and 58 struct members and locals);
+       fixes: B1, G1, G3-G5, G8, F5-F7, C6, E1, D1, D2, A1, A3, A4, G2
+       (1797-1801); dropped: A7 the report width as a constant (format needs the
+       literal), D3 'fold_element' (two callers), A11 (escapes already marked
+       alike), F4 (a 7-parameter helper), A9 (cosmetic); committed in dfb05435,
+       3a7b9d95
+[x] hard: design review series 2, round 1 (2026-10-28, user: a final design
+    review with the review-code skill; 7 reviewers A-G over all of src: A front
+    end, B toc, types and checks, C calls, functions and flow, D expressions and
+    operands, E machine and x86_64, F rv32i, G statements and built-ins)
+    => done (2026-10-28): one-file changes (45 files, -124 lines; listings
+       equal); the report items 3.1-3.5 one commit each: 'read_type_params'
+       checks the name first (1789, 1790), one register-table lookup, rv32i
+       register names compared, 'emit_branch', 'machine::builtins()', include
+       cleanup and others; x86_64 'inc' for an unchecked '+ 1' (tests -734
+       bytes, roome 16219 to 16140); dropped: a 'backend' local (used twice),
+       the tokenizer operator-table comment, rv32i 'address_count' (guards a
+       protocol), 'compile_at_type' (the name explains it), 'joined_texts' over
+       a view (needs a forwarding reference), skipped code not held to '--vars'
+       (README 8.3); committed in 920e51ba up to c23eec26
 [x] hard: bug hunt round 18 (2026-10-28, user: another comprehensive
     bug hunt; hunters F1 every fuzzer with new seeds for about 85 minutes,
     F2 the bare-metal targets against rv32i and x86_64, F3 code size at the
