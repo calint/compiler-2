@@ -1,4 +1,4 @@
 
-0268.baz:4:0: expected ',' followed by a value of type 'p'
+0268.baz:4:21: expected ',' followed by a value of type 'p'
 dat x = p[2]{{1},{2}
                     ^

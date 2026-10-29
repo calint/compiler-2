@@ -136,13 +136,13 @@ CLI_JUMP_OPTIMIZATIONS() {
     [[ "$optimized" == *$'je if.10.5.end\nif.10.5.code:'* ]]
     [[ "$raw" == *$'jne cmp.5.31\njmp if.5.5.code\ncmp.5.31:'* ]]
     [[ "$optimized" == *$'je if.5.5.code\ncmp.5.31:'* ]]
-    [[ "$optimized" == *';   removed jumps to next code: 2'* ]]
+    [[ "$optimized" == *';   removed jumps to next code: 3'* ]]
     [[ "$optimized" == *'; inverted branches over jumps: 1'* ]]
     [[ "$raw" == *';   removed jumps to next code: 0'* ]]
     local raw_count optimized_count
     raw_count=$(grep -Ec '^[[:space:]]*j[a-z]+ ' gen.s)
     optimized_count=$(grep -Ec '^[[:space:]]*j[a-z]+ ' out)
-    [[ $((raw_count - optimized_count)) -eq 3 ]]
+    [[ $((raw_count - optimized_count)) -eq 4 ]]
     # identical exit status checks that branch removal preserves the result
     local temp_dir assembly
     temp_dir=$(mktemp -d /tmp/baz-jump-cli.XXXXXX)

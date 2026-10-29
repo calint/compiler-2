@@ -380,8 +380,7 @@ class tokenizer final {
         -> token {
 
         while (true) {
-            // points at the opening quote since the end of the line is
-            // reported as column 0
+            // points at the opening quote, where the literal starts
             if (is_eos() or is_peek_char('\n')) {
                 throw compile_error{token::position(file_ix_, bgn_ix, at_line),
                                     "unterminated character literal"};

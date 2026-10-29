@@ -1,4 +1,4 @@
 
-0685.baz:4:0: expected '}' to close block
+0685.baz:4:12: expected '}' to close block
     if true
            ^

@@ -4,6 +4,7 @@
 
 #include <algorithm>
 #include <array>
+#include <cassert>
 #include <cstddef>
 #include <deque>
 #include <filesystem>
@@ -46,16 +47,12 @@ struct source_line {
     };
 }
 
-// the column is 1-based, 0 when the index is at a line end or past the source
+// the column is 1-based, at a line end the one after its last character
 [[nodiscard]] inline auto
 column_for_char_index(const size_t char_index_in_source,
                       const std::string_view src) -> size_t {
 
-    if (char_index_in_source >= src.size() or
-        src.at(char_index_in_source) == '\n') {
-
-        return 0;
-    }
+    assert(char_index_in_source <= src.size());
 
     return char_index_in_source - line_at(src, char_index_in_source).begin + 1;
     // note: +1 because the columns start at 1

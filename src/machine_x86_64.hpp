@@ -46,8 +46,9 @@
 //                jumps to its handler, all but the frame check with a stub
 //                per line for '--checks=line'
 //   handlers     'emit_failure_handler'
-//   calls        'emit_call', the system calls 'io_syscall' and 'exit',
-//                the sector routines 'emit_sector_routines'
+//   calls        'emit_call', the system call 'io_syscall', the shared exit
+//                routine 'emit_exit_routine', the sector routines
+//                'emit_sector_routines'
 class machine_x86_64 final : public machine {
     using op = assembler_x86_64::op;
 
@@ -91,6 +92,8 @@ class machine_x86_64 final : public machine {
     static constexpr std::string_view sector_write_label_{"baz_sector_write"};
     // the routine that the handlers with a line jump to
     static constexpr std::string_view report_line_label_{"baz_report_line"};
+    // the routine an exit jumps to with the exit code in 'rdi'
+    static constexpr std::string_view exit_label_{"baz_exit"};
 
     struct register_names {
         std::string_view qword;
@@ -488,15 +491,14 @@ class machine_x86_64 final : public machine {
                         request.dst);
     }
 
+    // the exit routine is shared, an exit is a jump to it
     auto exit(const token& src_loc_tk, const size_t indent,
               const operand& exit_code) -> void override {
 
         copy_value(src_loc_tk, indent, qword_register("rdi"), exit_code);
 
-        mov(src_loc_tk, indent, qword_register("rax"),
-            immediate(syscall_exit_));
-
-        assembler_.instruction(indent, op::syscall);
+        assembler_.jmp(indent, exit_label_);
+        mark_used(exit_label_);
     }
 
     [[nodiscard]] auto make_register_operand(const std::string_view name,
@@ -944,6 +946,11 @@ class machine_x86_64 final : public machine {
         if (is_read_used or is_write_used) {
             emit_sector_routines(is_read_used, is_write_used);
         }
+
+        // note: after the failure handlers, which use 'exit'
+        if (is_used(exit_label_)) {
+            emit_exit_routine();
+        }
     }
 
     auto emit_variables_base_load() -> void override {
@@ -1297,6 +1304,14 @@ class machine_x86_64 final : public machine {
                                to_argument(src));
     }
 
+    // prints the line number in 'rbp' and exits with the code in 'rbx'
+    // ends the program with the exit code in 'rdi'
+    auto emit_exit_routine() -> void {
+        assembler_.label(0, exit_label_);
+        assembler_.instruction(1, op::mov, "rax", syscall_exit_);
+        assembler_.instruction(1, op::syscall);
+    }
+
     // an immediate that does not fit the instruction goes through a register
     auto emit_immediate_op(const token& src_loc_tk, const size_t indent,
                            const op code, const operand& dst_op,
@@ -1439,7 +1454,6 @@ class machine_x86_64 final : public machine {
         assembler_.instruction(1, op::syscall);
     }
 
-    // prints the line number in 'rbp' and exits with the code in 'rbx'
     auto emit_report_line_routine() -> void {
         assembler_.label(0, report_line_label_);
 

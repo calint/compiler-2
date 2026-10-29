@@ -3,24 +3,26 @@
 <     jmp loop.10.5
 70d67
 <     jmp if.16.5.code
-92,93c89
+91,92c88
 <     jne cmp.19.27
 <     jmp if.19.5.code
 ---
 >     je if.19.5.code
-104d99
+103d98
 <     jmp if.19.5.code
-136,137c131,132
+118d112
+<     jmp baz_exit
+136,137c130,131
 < ;   removed jumps to next code: 0
 < ;    removed unreachable jumps: 0
 ---
-> ;   removed jumps to next code: 3
+> ;   removed jumps to next code: 4
 > ;    removed unreachable jumps: 1
-139c134
+139c133
 < ; inverted branches over jumps: 0
 ---
 > ; inverted branches over jumps: 1
-145c140
-< ;                 instructions: 35
+145c139
+< ;                 instructions: 34
 ---
-> ;                 instructions: 30
+> ;                 instructions: 28
