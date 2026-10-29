@@ -1367,7 +1367,7 @@ class machine {
         };
     }
 
-    // ends the data at 'dat.end', then the zeroed variables from 'vars' to
+    // ends the data at 'dat.end', then the variables from 'vars' to
     // 'vars.end'
     auto reserve_variables(const size_t alignment, const size_t size_bytes)
         -> void {

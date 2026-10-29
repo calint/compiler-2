@@ -147,10 +147,10 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
     'sum(a item, ..., g item)' with seven arguments 'w[i].items[j]' is
     rejected on x86_64 and accepted on rv32i (bug hunt round 16 D2); probes
     in the session scratchpad 'regs'; the frame check
-    ('machine::check_frame_capacity') takes two more registers while the
+    ('machine::check_frame_capacity') took two more registers while the
     addresses are held, so 13 indexed arguments of a noinline call in 'main'
-    are accepted without checks and rejected with '--checks=frame' (bug hunt
-    round 12 Z2-1)
+    were rejected with '--checks=frame' (bug hunt round 12 Z2-1); since
+    design review round 10 it takes one on x86_64, which accepts them
     => fix: keep an argument's address in one register once it is computed
        (fold the base and the index), as rv32i does; in the shared code that
        keeps a call argument's address, so the listings of inlined and

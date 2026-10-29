@@ -157,6 +157,22 @@ I no longer know the source line by line, like the back of my hand. I feel more
 like a project director with coding experience, guiding the AI toward a
 finished product.
 
+The craft of hand-coding every character might still be viable in smaller
+projects, where there is a no-AI policy. But if AI crafts the code in the same
+style and structure as I would, or better, then why all the typing?
+
+It might be a liberation, or a huge trap: ending up with an unfamiliar code
+base, totally dependent on AI. I now view the AI as an employee who is really
+good when given guidance.
+
+The practical work of maintaining the project is where I had my first
+experience with AI: generating tests. The project has gone from about 60 tests
+to more than 1500. That alone is a huge improvement, and it is managed entirely
+by AI. The fuzzers and the utility scripts were generated in seconds: boring
+things that are not part of the exuberance of completing a feature. It started
+as an assistant and is now driving the project, just like a capable, promising
+employee.
+
 ### Conclusion
 
 AI is a faithful and worthy partner in developing and maintaining a project.

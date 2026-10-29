@@ -1798,7 +1798,9 @@ class stmt_call final : public statement {
           },
           func_{&constructor_func(tc, tz)} {
 
-        // note: 'func_instantiator::define_func' rejects a generic constructor
+        // note: 'stmt_def_func_generic::assert_generic_signature' rejects a
+        //       generic constructor
+
         assert(not tc.generics().has_func(func_name_));
 
         // e.g. 'point.at<i8>(1, 2)', the '<' is not an operator after a

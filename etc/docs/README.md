@@ -1815,7 +1815,9 @@ What depends on the target is listed here, nothing else does:
    detect a sector past the end of the card, which panics 'sd card' on x86_64
    and rv32i; the uart of 'rv32i-qemu' and 'rv32i-fpga' takes every file
    descriptor, a 'read' returns at most one line, a carriage return reads as a
-   newline, and an end of transmission byte ends a read, also inside the input
+   newline, and an end of transmission byte ends a read, also inside the
+   input; code, data, variables and '--stack' fit in the memory of the
+   device, 128 MiB on 'rv32i-qemu' and '--memory' on 'rv32i-fpga'
 
 So whether a program is accepted can depend on the target through 1 to 5,
 and its result through 1, 4 and 5; under 'noub' the result of an accepted

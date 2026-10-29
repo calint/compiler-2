@@ -3031,6 +3031,8 @@ class toc final {
                                   const std::string_view generic_type) const
         -> void {
 
+        assert(not is_compiling_);
+
         definitions_.assert_generic_param_not_receiver_param(
             name_tk, name_tk.text(), generic_type);
     }

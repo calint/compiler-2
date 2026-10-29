@@ -41,9 +41,10 @@ class stmt_def_dat final : public statement {
             int64_t value{};
         };
 
-        // an 'i8' array filled with the bytes of a string, the rest zero
+        // an 'i8' array filled with the bytes of a string, the rest zero;
+        // 'src_loc_tk' is the string literal
         struct string {
-            token string_tk;
+            token src_loc_tk;
             size_t array_count{};
         };
 
@@ -65,13 +66,7 @@ class stmt_def_dat final : public statement {
 
         [[nodiscard]] auto tok() const -> const token& {
             return std::visit(
-                [](const auto& f) -> const token& {
-                    if constexpr (requires { f.string_tk; }) {
-                        return f.string_tk;
-                    } else {
-                        return f.src_loc_tk;
-                    }
-                },
+                [](const auto& f) -> const token& { return f.src_loc_tk; },
                 form);
         }
     };
@@ -203,8 +198,11 @@ class stmt_def_dat final : public statement {
                 std::get_if<elem::string>(&el.form),
             }) {
 
-            x.comment(str->string_tk, 0, "{}[{}]", tp.name(), str->array_count);
+            x.comment(str->src_loc_tk, 0, "{}[{}]", tp.name(),
+                      str->array_count);
+
             compile_data_string(x, tp, *str);
+
             return;
         }
 
@@ -265,13 +263,13 @@ class stmt_def_dat final : public statement {
     static auto compile_data_string(machine& x, const type& tp,
                                     const elem::string& str) -> void {
 
-        x.emit_string_data(str.string_tk.string_bytes());
-        const size_t size_bytes{str.string_tk.string_size_bytes()};
+        x.emit_string_data(str.src_loc_tk.string_bytes());
+        const size_t size_bytes{str.src_loc_tk.string_size_bytes()};
 
         // note: the parse rejected a string longer than its array
         assert(size_bytes <= str.array_count);
 
-        compile_zero_elements(x, str.string_tk, tp,
+        compile_zero_elements(x, str.src_loc_tk, tp,
                               str.array_count - size_bytes);
     }
 
@@ -317,7 +315,7 @@ class stmt_def_dat final : public statement {
             return {
                 .form{
                     elem::string{
-                        .string_tk{value.array_token()},
+                        .src_loc_tk{value.array_token()},
                         .array_count{*value.array_count()},
                     },
                 },

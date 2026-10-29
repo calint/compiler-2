@@ -662,7 +662,7 @@ class expr_arith final : public statement {
         };
     }
 
-    // '/', '%' and '>>' read the high bits of their operands. narrowed, a
+    // '/', '%' and '>>' read the high bits of their operands; narrowed, a
     // '<<' by a count not below the narrower width is defined only at the
     // wider one; widened, a '<<' count has the narrower type, so where it is
     // defined it is below that width
@@ -714,11 +714,6 @@ class expr_arith final : public statement {
     //
     // class methods
     //
-
-    // e.g. the 'gx' of 'gx + g()' with 'g' writing 'gx'
-    auto assert_elements_not_written_later(const toc& tc) const -> void {
-        assert_not_written_later(tc, operands_of(*this), "operand");
-    }
 
     // compiles the list without its trailing added constant and returns that
     // constant, empty when the list is compiled whole by 'compile'
@@ -806,6 +801,11 @@ class expr_arith final : public statement {
     }
 
   private:
+    // e.g. the 'gx' of 'gx + g()' with 'g' writing 'gx'
+    auto assert_elements_not_written_later(const toc& tc) const -> void {
+        assert_not_written_later(tc, operands_of(*this), "operand");
+    }
+
     // parentheses group an operation, around one plain element they mean
     // nothing, e.g. '(x)' is 'x' and '-(x)' is '-x'
     auto assert_parentheses_group() const -> void {

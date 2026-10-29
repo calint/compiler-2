@@ -11,7 +11,7 @@
 
 // '{}' where a built-in is expected is its zero value, 0 or 'false', as '{}'
 // is the zero value of an instance or an array, e.g. 'n = {}' and 'res = {}'
-// of 'func zero<T type>() res T' for any 'T'; it resolves like the literal.
+// of 'func zero<T type>() res T' for any 'T'; it resolves like the literal;
 // the bare type is the zero value of that type, e.g. the 'i8' of
 // 'var x = i8', and keeps its type like a typed constant
 class expr_zero final : public statement {
