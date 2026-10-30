@@ -1,0 +1,4 @@
+
+2035.baz:5:13: an instance of 'point' is not a number
+    var p = point{1, 2} + 1
+            ^~~~~

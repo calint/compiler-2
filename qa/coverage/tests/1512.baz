@@ -1,5 +1,5 @@
-# a type name alone followed by an operator is a type, not a value, as in an
-# assignment
+# a type name alone followed by an arithmetic operator that starts a 'var' is
+# an instance that is not a number, as in an assignment
 type point {x, y}
 func main() {
     var p = point{1, 2}

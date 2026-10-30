@@ -1,0 +1,7 @@
+# an instance literal followed by an arithmetic operator for a 'bool' is an
+# instance, not a 'bool'
+type point {x i32, y i32}
+func main() {
+    var b = true
+    b = point{1, 2} + 1
+}

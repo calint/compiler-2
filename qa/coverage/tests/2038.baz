@@ -1,0 +1,7 @@
+# an instance literal with no values whose type the destination gives is
+# written as the zero value '{}'
+type point {x i32, y i32}
+type line {a point, b point}
+func main() {
+    var l = line{{1, 2}, point{}}
+}

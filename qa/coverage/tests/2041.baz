@@ -1,0 +1,12 @@
+# a constructor name after '.' that is a keyword is reported as where a
+# constructor is defined
+
+type point {x, y}
+
+func point.at(x) res point {
+    res = {x, 0}
+}
+
+func main() {
+    var p = point.var(2)
+}

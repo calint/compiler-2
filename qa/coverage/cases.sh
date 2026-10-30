@@ -4795,8 +4795,8 @@ SRC=1508 && COMPERR
 # a failed check in an included file names that file
 SRC=1509 && EXP=255 && RUN_ERR
 
-# a parenthesized 'and' is not an operand, a bare type name with an operator is
-# a type
+# a parenthesized 'and' is not an operand, a bare type name with an arithmetic
+# operator is not a number
 SRC=1510 && COMPERR
 SRC=1511 && COMPERR
 SRC=1512 && COMPERR
@@ -6449,5 +6449,39 @@ SRC=2030 && COMPERR
 # a stray closer after a space in a skipped generic body
 SRC=2031 && COMPERR
 
-# an unclosed bracket in a skipped generic body
+# a mismatched closer in a skipped generic function body
 SRC=2032 && COMPERR
+
+# a field name after '.' that is not a valid name
+SRC=2033 && COMPERR
+
+# a method name after '.' that is a keyword
+SRC=2034 && COMPERR
+
+# an instance literal and an arithmetic operator that start a 'var'
+SRC=2035 && COMPERR
+
+# an array literal and an arithmetic operator that start a 'dat'
+SRC=2036 && COMPERR
+
+# an instance literal and an arithmetic operator for a 'bool'
+SRC=2037 && COMPERR
+
+# an instance literal without values whose type the destination gives
+SRC=2038 && COMPERR
+
+# an array literal without values whose type the destination gives
+SRC=2039 && COMPERR
+
+# x86: a function name that makes a row of the register report longer than
+# the line stays on the row
+if [[ $MACHINE == x86_64 ]]; then SRC=2040 && COMPERR; fi
+
+# a constructor name after '.' that is a keyword
+SRC=2041 && COMPERR
+
+# a constructor name after '.' that is not a valid name
+SRC=2042 && COMPERR
+
+# a parameter of 'main' written in its body
+SRC=2043 && COMPERR

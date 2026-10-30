@@ -1,6 +1,25 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] hard: design review series 2, round 46 (2026-10-30, user: continue
+    the rounds until no more findings; 7 reviewers A-G, the groups rotated
+    again)
+    => done (2026-10-30): bugs: G1 the signature of 'main' is checked
+       before its body, 'func main(x) { x = 1 }' is rejected for the
+       parameter; its result after the body, a result name may be the first
+       word of a body without '{' (0440 kept, 2043); C1 a row of the
+       register report stays on its line for a name of 45 to 74 characters,
+       the wrap breaks only between words (2040); A2 a typed '{}' whose type
+       the destination gives says "write '{}'" (2038, 2039); messages: A1 a
+       literal or a type with an arithmetic operator that starts a 'var',
+       'let' or 'dat' is "... is not a number" as after '=' (third change of
+       1512 and 1916: rounds 32 F1, 37 F1, now as after '=' since round 45;
+       2035-2037); B1 an invalid name or a keyword after '.' is reported as
+       one, not as a missing field or method (2033, 2034); F1 the same for a
+       constructor name (2041, 2042); tests: 2032 duplicated 1795, now a
+       mismatched closer in a skipped generic function body; AGENTS.md (user):
+       the zero value where the destination gives the type is '{}', not
+       'res = T', which the compiler rejects; two reviewers found nothing
 [x] hard: design review series 2, round 45 (2026-10-30, user: continue
     the rounds until no more findings; 7 reviewers A-G, the groups rotated
     again)

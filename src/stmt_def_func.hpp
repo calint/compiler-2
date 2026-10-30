@@ -807,7 +807,17 @@ class stmt_def_func final : public statement {
             std::ranges::count_if(params_, &stmt_def_func_param::is_array));
     }
 
-    // no caller gives 'main' arguments or takes its result
+    // checked after the body, a result name may be the first word of a body
+    // without its '{', e.g. the 'exit' of 'func main() exit(0)'
+    auto assert_main_has_no_result() const -> void {
+        if (name() == reserved_names::main and result_) {
+            throw compile_error{result_->name_tk,
+                                "'main' cannot have a result"};
+        }
+    }
+
+    // no caller gives 'main' arguments or calls it out of line, the result
+    // is 'assert_main_has_no_result'
     auto assert_main_signature() const -> void {
         if (name() != reserved_names::main) {
             return;
@@ -821,11 +831,6 @@ class stmt_def_func final : public statement {
         if (not params().empty()) {
             throw compile_error{params().front().tok(),
                                 "'main' cannot have parameters"};
-        }
-
-        if (result_) {
-            throw compile_error{result_->name_tk,
-                                "'main' cannot have a result"};
         }
     }
 
@@ -960,9 +965,9 @@ class stmt_def_func final : public statement {
 
         code_ = {tc, tz, block_braces::required};
 
-        // checked here so that the error of an instance gets its frames, a
-        // signature that 'main' cannot have first
-        assert_main_signature();
+        assert_main_has_no_result();
+
+        // checked here so that the error of an instance gets its frames
         assert_sets_result();
 
         body_uses_ = tc.scopes().current_func_scope().body_uses_of_func();
@@ -1015,6 +1020,10 @@ class stmt_def_func final : public statement {
         }
 
         head_.assert_mut_has_receiver(is_constructor());
+
+        // before the body, e.g. 'func main(x) { x = 1 }' is rejected for its
+        // parameter, not for the write to it
+        assert_main_signature();
 
         // known only after the result: a constructor builds 'self' instead
         if (has_self_param()) {

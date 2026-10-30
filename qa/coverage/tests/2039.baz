@@ -1,0 +1,6 @@
+# an array literal with no values whose type the destination gives is written
+# as the zero value '{}'
+type row {a i8[2]}
+func main() {
+    var r = row{i8[2]{}}
+}

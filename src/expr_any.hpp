@@ -1083,7 +1083,7 @@ class expr_any final : public statement {
         // comparison rejects, e.g. 'b = point{1, 2} == p'
         const term_kind tm{classify_term(tc, tk, tz)};
 
-        if (is_whole_record(tm, tz) or
+        if (is_record_value(tm, tz) or
             (tm == term_kind::record_literal and not tp.is_bool())) {
 
             throw_type_mismatch(tk, tp.name(), tc.get_type_or_throw(tk).name());
@@ -1098,7 +1098,7 @@ class expr_any final : public statement {
         };
 
         if (is_array_literal and
-            (not tp.is_bool() or is_whole_array_literal(tz))) {
+            (not tp.is_bool() or is_array_literal_value(tz))) {
 
             throw_array_literal_mismatch(tc, tk, tp);
         }

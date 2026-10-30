@@ -1,0 +1,6 @@
+# the signature of 'main' is checked before its body, a write to a parameter
+# is not reported as a write to a parameter that is not 'mut'
+
+func main(x) {
+    x = 1
+}

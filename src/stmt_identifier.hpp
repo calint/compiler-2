@@ -1186,6 +1186,12 @@ class stmt_identifier final : public statement {
             throw compile_error{next_tk, "expected a field name after '.'"};
         }
 
+        // e.g. the '$' of 'p.$', which names no field or method; a constant
+        // has no field of any name ('step_field')
+        if (not prefix.is_const()) {
+            toc::assert_valid_name(next_tk);
+        }
+
         // e.g. the '.add' of 'lst.add(1)'
         if (is_method_name(tc, tz, prefix, next_tk)) {
             return method_tokens{

@@ -440,6 +440,28 @@ class register_reporter final {
         return ordered;
     }
 
+    // the last space at or before 'width' that is between two words, none
+    // when there is none; the spaces of a gap separate the columns of a row
+    // of a table, e.g. those before a candidate frame
+    [[nodiscard]] static auto last_word_space(const std::string& text,
+                                              const size_t width) -> size_t {
+
+        assert(width < text.size());
+
+        for (size_t i{width}; i > 0; --i) {
+            const bool is_between_words{
+                text.at(i) == ' ' and text.at(i - 1) != ' ' and
+                    i + 1 < text.size() and text.at(i + 1) != ' ',
+            };
+
+            if (is_between_words) {
+                return i;
+            }
+        }
+
+        return std::string::npos;
+    }
+
     [[nodiscard]] static auto split_lines(const std::string_view text)
         -> std::vector<std::string> {
 
@@ -452,7 +474,8 @@ class register_reporter final {
         return lines;
     }
 
-    // breaks a line that is too long at spaces, the parts keep its indentation
+    // breaks a line that is too long at the spaces between its words, the
+    // parts keep its indentation
     [[nodiscard]] static auto wrapped(const std::string& line,
                                       const size_t width)
         -> std::vector<std::string> {
@@ -465,10 +488,12 @@ class register_reporter final {
         std::string rest{line};
 
         while (rest.size() > width) {
-            const size_t space{rest.rfind(' ', width)};
+            const size_t space{last_word_space(rest, width)};
 
-            // note: a word longer than the width is left as it is
-            if (space == std::string::npos or space <= indentation.size()) {
+            // note: a word longer than the width is left as it is, as are
+            //       the columns of a table
+
+            if (space == std::string::npos) {
                 break;
             }
 
@@ -482,9 +507,7 @@ class register_reporter final {
                 break;
             }
 
-            // the spaces before the break are dropped with it
-            parts.push_back(
-                rest.substr(0, rest.find_last_not_of(' ', space) + 1));
+            parts.push_back(rest.substr(0, space));
 
             std::string next{indentation};
             next += rest.substr(space + 1);

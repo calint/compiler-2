@@ -1,10 +1,8 @@
-# the body of a generic type is skipped to its closing '}' without being
-# parsed; a closer that does not close the last open bracket ends the skip
-# and is reported where it is, as in a body that is parsed
+# a closer that does not close the last open bracket in the body of a generic
+# function without an instance is reported at it, as in a parsed body
 
-type l<n> {
-    x i8[n
+func g<T type>(a T) res T {
+    res = (a + 1]
 }
 
-func main() {
-}
+func main() {}

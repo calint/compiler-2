@@ -137,8 +137,9 @@
 
 ## Baz code
 
-- Tests and examples omit the `{}` of a default-initialized type or array:
-  `var s = str`, `var a = i8[4]`, `res = T`.
+- Tests and examples omit the `{}` of a default-initialized type or array
+  in a declaration: `var s = str`, `var a = i8[4]`; where the destination
+  gives the type, the zero value is `{}`: `res = {}`.
 
 ## Tests
 

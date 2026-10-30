@@ -1,0 +1,4 @@
+
+2042.baz:11:19: '1' is not a valid name, a name starts with a letter or '_' and has only letters, digits and '_'
+    var p = point.1(2)
+                  ^

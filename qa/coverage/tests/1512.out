@@ -1,4 +1,4 @@
 
-1512.baz:6:13: 'point' is a type, not a value
+1512.baz:6:13: an instance of 'point' is not a number
     var x = point + 1
             ^~~~~

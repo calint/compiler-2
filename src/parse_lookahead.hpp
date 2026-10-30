@@ -25,10 +25,10 @@
     return tz.peek_char_after_whitespace() == '[';
 }
 
-// a binary operator or a connective follows, which would continue the
-// expression, e.g. the '+' of 'x + 1' or the 'and' of 'b and c'
-[[nodiscard]] inline auto continues_expression(const tokenizer& tz) -> bool {
-    if (tz.is_binary_operator_next()) {
+// a comparison or a connective follows, which makes a condition, e.g. the
+// '==' of 'p == q' or the 'and' of 'b and c'
+[[nodiscard]] inline auto continues_condition(const tokenizer& tz) -> bool {
+    if (comparison_of(tz.peek_operator())) {
         return true;
     }
 
@@ -36,6 +36,12 @@
     const token next_tk{probe.next_token()};
 
     return connective_of(next_tk).has_value();
+}
+
+// a binary operator or a connective follows, which would continue the
+// expression, e.g. the '+' of 'x + 1' or the 'and' of 'b and c'
+[[nodiscard]] inline auto continues_expression(const tokenizer& tz) -> bool {
+    return tz.is_binary_operator_next() or continues_condition(tz);
 }
 
 // a value can start at the next character, not a closer, a ',' or the end of
@@ -296,10 +302,10 @@ enum class term_kind : uint8_t {
            not continues_expression(tz);
 }
 
-// an array literal that no operator continues, e.g. 'i8[2]{1, 2}' or '[2]',
-// not '[2]{1, 2} == a'; 'tz' is at its '['
+// an array literal that is not an operand of a condition, e.g. 'i8[2]{1, 2}'
+// or '[2] + 1', not '[2]{1, 2} == a'; 'tz' is at its '['
 // note: a literal that does not end is parsed as a whole, which reports it
-[[nodiscard]] inline auto is_whole_array_literal(const tokenizer& tz) -> bool {
+[[nodiscard]] inline auto is_array_literal_value(const tokenizer& tz) -> bool {
     tokenizer after_literal{tz};
 
     if (not after_literal.skip_enclosed('[', ']')) {
@@ -312,17 +318,17 @@ enum class term_kind : uint8_t {
         return true;
     }
 
-    return not continues_expression(after_literal);
+    return not continues_condition(after_literal);
 }
 
-// a user type alone or an instance literal that no operator continues, e.g.
-// 'point' or 'point{1, 2}', not 'point{1, 2} == p'
+// a user type alone or an instance literal that is not an operand of a
+// condition, e.g. 'point' or 'point{1, 2} + 1', not 'point{1, 2} == p'
 // note: a literal that does not end is parsed as a whole, which reports it
-[[nodiscard]] inline auto is_whole_record(const term_kind tm,
+[[nodiscard]] inline auto is_record_value(const term_kind tm,
                                           const tokenizer& tz) -> bool {
 
     if (tm == term_kind::record_type) {
-        return not continues_expression(tz);
+        return not continues_condition(tz);
     }
 
     if (tm != term_kind::record_literal) {
@@ -335,5 +341,5 @@ enum class term_kind : uint8_t {
         return true;
     }
 
-    return not continues_expression(after_literal);
+    return not continues_condition(after_literal);
 }

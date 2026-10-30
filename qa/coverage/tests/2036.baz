@@ -1,0 +1,4 @@
+# an array literal followed by an arithmetic operator that starts a 'dat' is
+# an array that is not a number, as after '='
+dat d = i8[2]{1, 2} - 1
+func main() {}

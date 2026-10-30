@@ -1,0 +1,9 @@
+# a method call named like a keyword is reported as a keyword, as at its
+# definition
+
+type point {x, y}
+
+func main() {
+    var p = point
+    p.var()
+}

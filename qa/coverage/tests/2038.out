@@ -1,0 +1,4 @@
+
+2038.baz:6:26: the destination gives the type 'point', write '{}'
+    var l = line{{1, 2}, point{}}
+                         ^~~~~

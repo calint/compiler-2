@@ -2197,6 +2197,10 @@ class stmt_call final : public statement {
                                 "expected a constructor name after '.'"};
         }
 
+        // e.g. the '1' of 'point.1(2)' or the 'var' of 'point.var(2)', as
+        // where a constructor is defined
+        toc::assert_valid_name(name_tk);
+
         // note: the parse took 'tok()' as a type ('classify_term'), the type
         //       a type parameter is bound to names the constructor, e.g.
         //       'point.at' for 'T.at' where 'T' is 'point'

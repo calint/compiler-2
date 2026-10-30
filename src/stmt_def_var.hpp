@@ -207,10 +207,10 @@ class initializer_declaration final {
                                 is_zero_value(tz) ? "'{}'" : "'{...}'")};
         }
 
-        // an instance literal that an operator continues is an operand, e.g.
-        // 'var b = point{1, 2} == p'
+        // an instance literal that a comparison or a connective continues is
+        // an operand, e.g. 'var b = point{1, 2} == p'
         if (const term_kind tm{classify_term(tc, tk, tz)};
-            is_whole_record(tm, tz)) {
+            is_record_value(tm, tz)) {
 
             set_type(tc.get_type_or_throw(tk));
             return;
@@ -305,8 +305,8 @@ class initializer_declaration final {
 
     // the element type of a string or of an array literal, e.g. 'i8' of
     // '"hi"', 'point' of 'point[]{{1, 2}}' or the default type of '[]{1, 2}',
-    // null when the initializer is neither or an operator continues the
-    // literal, e.g. 'var b = [2]{1, 2} == a'
+    // null when the initializer is neither or a comparison or a connective
+    // continues the literal, e.g. 'var b = [2]{1, 2} == a'
     [[nodiscard]] static auto literal_element_type(const toc& tc, tokenizer& tz)
         -> const type* {
 
@@ -319,7 +319,7 @@ class initializer_declaration final {
         }
 
         if (is_default_array_literal(tz)) {
-            return is_whole_array_literal(tz) ? &tc.builtins().default_type()
+            return is_array_literal_value(tz) ? &tc.builtins().default_type()
                                               : nullptr;
         }
 
@@ -327,7 +327,7 @@ class initializer_declaration final {
 
         const bool is_literal{
             classify_term(tc, tk, tz) == term_kind::array_literal and
-                is_whole_array_literal(tz),
+                is_array_literal_value(tz),
         };
 
         tz.put_back_token(tk);

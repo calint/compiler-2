@@ -1,0 +1,4 @@
+
+2039.baz:5:17: the destination gives the type 'i8[]', write '{}'
+    var r = row{i8[2]{}}
+                ^~

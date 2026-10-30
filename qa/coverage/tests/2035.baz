@@ -1,0 +1,6 @@
+# an instance literal followed by an arithmetic operator that starts a 'var'
+# is an instance that is not a number, as after '='
+type point {x i32, y i32}
+func main() {
+    var p = point{1, 2} + 1
+}

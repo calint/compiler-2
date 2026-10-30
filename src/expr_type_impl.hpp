@@ -174,7 +174,9 @@ expr_type::throw_known_literal_type(const tokenizer& tz, const token& type_tk,
         assert_value_ends(after_literal, type_tk, kind, tp);
     }
 
-    throw_known_type(type_tk, type_name, has_values ? "{...}" : "{}");
+    const bool is_zero{not has_values or is_zero_value(tz)};
+
+    throw_known_type(type_tk, type_name, is_zero ? "{}" : "{...}");
 }
 
 // the fields of 'tp' in braces, e.g. '{x, y}' of 'obj.pos = {x, y}'

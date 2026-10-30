@@ -1,0 +1,4 @@
+
+2034.baz:8:7: 'var' is a keyword
+    p.var()
+      ^~~

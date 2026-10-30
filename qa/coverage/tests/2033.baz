@@ -1,0 +1,9 @@
+# a field that is not a valid name is reported as one, not as not found,
+# like a variable
+
+type point {x, y}
+
+func main() {
+    var p = point
+    var v = p.1
+}

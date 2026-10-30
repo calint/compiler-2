@@ -1,0 +1,4 @@
+
+2041.baz:11:19: 'var' is a keyword
+    var p = point.var(2)
+                  ^~~

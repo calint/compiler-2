@@ -1,4 +1,4 @@
 
-2032.baz:7:1: unexpected '}'
-}
-^
+2032.baz:5:17: unexpected ']'
+    res = (a + 1]
+                ^

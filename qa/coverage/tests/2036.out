@@ -1,0 +1,4 @@
+
+2036.baz:3:9: an array of 'i8' is not a number
+dat d = i8[2]{1, 2} - 1
+        ^~

@@ -1,5 +1,6 @@
-# an array literal followed by an operator is an operand, as in an
-# assignment: the message is at the literal, not "unexpected '+'"
+# an array literal followed by an arithmetic operator that starts a 'var' is
+# an array that is not a number, as in an assignment: the message is at the
+# literal, not "unexpected '+'"
 
 func main() {
     var a = i8[2]{1, 2} + 1
