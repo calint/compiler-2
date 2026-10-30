@@ -1,6 +1,19 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] hard: bug hunt series 2, round 20 (2026-10-30, user: bug hunts in a
+    loop until a round finds none, then one more; 3 hunters: K1 io built-ins
+    and the options, K2 register pressure, frames and the stack, K3 the
+    compiler against mutated tests)
+    => done (2026-10-30): bug: K2-1 the compile time doubled per level of
+       noinline calls nested in a value stored to memory, e.g. 'var r =
+       g(g(g(a) + 1) + 1) + 1' (14 levels 1.9 s, 20 levels minutes): both
+       measured versions compiled the call with its arguments; such a list
+       is compiled in place when it holds any call, not only an inlined one
+       ('has_inlined_call' is 'has_call', 'stmt_call' answers true; README
+       5.2; 2055); x86_64 listings unchanged, rv32i 20 lines shorter; 1679
+       and its 'test-cli.sh' check now show no temporary in either version
+       mode; K1 and K3 found nothing (about 1.7 million mutated compiles)
 [x] hard: bug hunt series 2, round 19 (2026-10-30, user: bug hunts in a
     loop until a round finds none, then one more; 3 hunters: J1 composite
     data, J2 control flow and the jump optimizer, J3 integer edges folded

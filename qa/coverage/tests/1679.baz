@@ -1,5 +1,5 @@
-# the version that a call's value keeps sets the peaks of the footer: the
-# scratch version takes a temporary that the kept one does not
+# a call in a value stored to memory compiles in place, without the
+# temporary that a version through a scratch register would take
 
 func noinline one() res {
     res = 1

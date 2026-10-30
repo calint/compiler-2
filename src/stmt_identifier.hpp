@@ -42,7 +42,7 @@
 //   'make_scalar_ident_info', 'as_place'
 //                            what a value names when it is a place
 //   'statement::visit_call_effects', 'visit_operand_reads',
-//   'statement::has_inlined_call', 'statement::visit_reads',
+//   'statement::has_call', 'statement::visit_reads',
 //   'statement::assert_result_not_read', 'statement::reads_name',
 //   'statement::bare_path'
 //                            the operand walks of 'statement', defined here
@@ -1318,14 +1318,14 @@ inline auto visit_operand_reads(const list_operand& operand,
     operand.node->visit_reads(reader);
 }
 
-inline auto statement::has_inlined_call() const -> bool {
-    bool has_call{};
+inline auto statement::has_call() const -> bool {
+    bool found{};
 
-    visit_operands([&has_call](const list_operand& operand) -> void {
-        has_call = has_call or operand.node->has_inlined_call();
+    visit_operands([&found](const list_operand& operand) -> void {
+        found = found or operand.node->has_call();
     });
 
-    return has_call;
+    return found;
 }
 
 inline auto statement::visit_reads(const read_visitor reader) const -> void {

@@ -1862,9 +1862,7 @@ class stmt_call final : public statement {
                                 tc.overflow_options(dst));
     }
 
-    [[nodiscard]] auto has_inlined_call() const -> bool override {
-        return callee().is_inlined() or statement::has_inlined_call();
-    }
+    [[nodiscard]] auto has_call() const -> bool override { return true; }
 
     // the calls in the arguments run first, then the body
     auto visit_call_effects(const toc& tc,

@@ -1,0 +1,12 @@
+# an expression stored to memory with noinline calls nested 20 deep compiles
+# in place, measuring its versions doubled the compile time per level
+
+func noinline g(x i32) res i32 {
+    res = x + 1
+}
+
+func main() {
+    var a = i32(1)
+    var r = g(g(g(g(g(g(g(g(g(g(g(g(g(g(g(g(g(g(g(g(a) + 1) + 1) + 1) + 1) + 1) + 1) + 1) + 1) + 1) + 1) + 1) + 1) + 1) + 1) + 1) + 1) + 1) + 1) + 1) + 1
+    exit(r)
+}

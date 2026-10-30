@@ -5322,8 +5322,8 @@ SRC=1677 && EXP=3 && RUN
 # index writes 'i' before the value reads it
 SRC=1678 && EXP=6 && RUN
 
-# the version that a call's value keeps sets the peaks of the footer: the
-# scratch version takes a temporary that the kept one does not
+# a call in a value stored to memory compiles in place, without the
+# temporary that a version through a scratch register would take
 SRC=1679 && EXP=3 && RUN
 
 # a 'bool' call result is not a number, at the parse, so also in a
@@ -6518,3 +6518,6 @@ SRC=2053 && EXP=6 && RUN
 
 # a 'foo' over an array whose last index does not fit its counter is rejected
 if [[ $MACHINE != x86_64 ]]; then SRC=2054 && OPTS="--vars=0x80001000" COMPERR; fi
+
+# nested noinline calls in an expression stored to memory compile in linear time
+SRC=2055 && EXP=41 && RUN

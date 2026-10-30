@@ -243,7 +243,7 @@ class stmt_identifier;
 //                  'trace_assignment' checks its reads with
 //                  'assert_result_not_read', a leaf says it has none;
 //                  'visit_reads', 'visit_call_effects' and
-//                  'has_inlined_call' walk the operands, 'stmt_identifier'
+//                  'has_call' walk the operands, 'stmt_identifier'
 //                  adds its own read, 'stmt_call' and 'stmt_builtin_io' what
 //                  the call writes, 'stmt_call' its callee
 //   a value        'fold': 'expr_zero', 'expr_bool', 'stmt_identifier',
@@ -314,9 +314,9 @@ class statement {
         return std::nullopt;
     }
 
-    // a call of an inlined function in this node or its operands, whose body
-    // every compile of the node compiles again ('stmt_identifier.hpp')
-    [[nodiscard]] virtual auto has_inlined_call() const -> bool;
+    // a call in this node or its operands, which every compile of the node
+    // compiles again with its arguments ('stmt_identifier.hpp')
+    [[nodiscard]] virtual auto has_call() const -> bool;
 
     // true when computing at the width that 'change' gives keeps the low bits
     [[nodiscard]] virtual auto

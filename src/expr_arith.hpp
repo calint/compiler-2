@@ -575,11 +575,12 @@ class expr_arith final : public statement {
             return;
         }
 
-        // note: each version would compile the body of an inlined call again,
-        //       so nested calls would double the compile time per level; in
-        //       place holds no register across the call
+        // note: each version would compile a call again, the body of an
+        //       inlined one and the arguments of a noinline one, so nested
+        //       calls would double the compile time per level; in place
+        //       holds no register across the call
 
-        if (has_inlined_call()) {
+        if (has_call()) {
             compile_steps(tc, indent, dst, steps);
             return;
         }
