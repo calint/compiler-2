@@ -390,11 +390,6 @@ class statement {
         compile(tc, indent, dst);
     }
 
-    // the first read of 'var', in evaluation order, null when none reads it
-    // ('stmt_identifier.hpp')
-    [[nodiscard]] auto first_read_of(std::string_view var) const
-        -> const stmt_identifier*;
-
     // the fold of a value that must fit where it is used, checked as its
     // compile is, so a folded value is rejected where a computed one is
     // note: the check follows the fold, which keeps the low bits of an
@@ -426,6 +421,9 @@ class statement {
     [[nodiscard]] auto is_computed() const -> bool {
         return operand_path() == nullptr;
     }
+
+    // a path rooted at the name 'var' is read ('stmt_identifier.hpp')
+    [[nodiscard]] auto reads_name(std::string_view var) const -> bool;
 
     auto set_type(const type& tp) -> void { type_ = &tp; }
 

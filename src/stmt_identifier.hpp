@@ -43,7 +43,7 @@
 //                            what a value names when it is a place
 //   'statement::visit_call_effects', 'visit_operand_reads',
 //   'statement::has_inlined_call', 'statement::visit_reads',
-//   'statement::assert_result_not_read', 'statement::first_read_of',
+//   'statement::assert_result_not_read', 'statement::reads_name',
 //   'statement::bare_path'
 //                            the operand walks of 'statement', defined here
 //                            because they need 'stmt_identifier'
@@ -581,6 +581,31 @@ class stmt_identifier final : public statement {
     auto assert_count_in_bounds(const toc& tc, const token& count_tk,
                                 const int64_t count) const -> void;
 
+    // where only an array is expected, the path does not end at a method or
+    // its call, e.g. 'array_length(a.m)' or 'foo a.m() {}'
+    auto assert_not_method(const toc& tc, const tokenizer& tz) const -> void {
+        if (not method_) {
+            return;
+        }
+
+        const std::string method_path{
+            std::format("{}.{}", dotted_path_, method_->name_tk.text()),
+        };
+
+        const std::string method_name{
+            method_name_of(resolve_path(tc).type_ref().name(),
+                           method_->name_tk.text()),
+        };
+
+        if (is_call_next(tc, tz, method_name)) {
+            throw_call_not_array(method_->name_tk, method_path);
+        }
+
+        throw compile_error{method_->name_tk,
+                            std::format("{} is a method, not an array",
+                                        in_quotes(method_path))};
+    }
+
     // the address of this place from 'compile_lea': 'use' runs while the
     // scratch registers that build it are still allocated, then they are
     // freed
@@ -848,6 +873,33 @@ class stmt_identifier final : public statement {
     // statics
     //
 
+    // a term that starts no array where an array is expected, after an array
+    // literal was reported: a type, a call or a function, e.g. the 'point' of
+    // 'point{1, 2}' or the 'f' of 'f(1)'
+    static auto assert_not_type_or_call(const token& tk, const term_kind tm)
+        -> void {
+
+        // e.g. the 'point' of 'point{1, 2}', 'point(5)' or 'point.at(1, 2)'
+        if (names_type(tm) or tm == term_kind::type_called or
+            tm == term_kind::constructor_call) {
+
+            throw compile_error{tk, std::format("{} is a type, not an array",
+                                                in_quotes(tk.text()))};
+        }
+
+        if (tm == term_kind::call or tm == term_kind::generic_call or
+            tm == term_kind::conversion or tm == term_kind::builtin_function) {
+
+            throw_call_not_array(tk, tk.text());
+        }
+
+        if (tm == term_kind::function_name) {
+            throw compile_error{tk, std::format("{} is a function, not an "
+                                                "array",
+                                                in_quotes(tk.text()))};
+        }
+    }
+
     // the array of a built-in, e.g. the 'a' of 'array_length(a)' or of
     // 'foo a', is an array or an element of one, not a value made of it; a
     // call, a type or a function has none
@@ -892,25 +944,7 @@ class stmt_identifier final : public statement {
             throw compile_error{tk, std::string{literal_text}};
         }
 
-        // e.g. the 'point' of 'point{1, 2}', 'point(5)' or 'point.at(1, 2)'
-        if (names_type(tm) or tm == term_kind::type_called or
-            tm == term_kind::constructor_call) {
-
-            throw compile_error{tk, std::format("{} is a type, not an array",
-                                                in_quotes(tk.text()))};
-        }
-
-        if (tm == term_kind::call or tm == term_kind::generic_call or
-            tm == term_kind::conversion or tm == term_kind::builtin_function) {
-
-            throw_call_not_array(tk, tk.text());
-        }
-
-        if (tm == term_kind::function_name) {
-            throw compile_error{tk, std::format("{} is a function, not an "
-                                                "array",
-                                                in_quotes(tk.text()))};
-        }
+        assert_not_type_or_call(tk, tm);
 
         // note: the operand of a bulk operation reaches from the element it
         //       names on
@@ -984,31 +1018,6 @@ class stmt_identifier final : public statement {
         if (tz.peek_char_after_whitespace() == '[' and not prefix.is_array()) {
             throw_not_indexable(src_loc_tk, dotted_path_);
         }
-    }
-
-    // where only an array is expected, the path does not end at a method or
-    // its call, e.g. 'array_length(a.m)' or 'foo a.m() {}'
-    auto assert_not_method(const toc& tc, const tokenizer& tz) const -> void {
-        if (not method_) {
-            return;
-        }
-
-        const std::string method_path{
-            std::format("{}.{}", dotted_path_, method_->name_tk.text()),
-        };
-
-        const std::string method_name{
-            method_name_of(resolve_path(tc).type_ref().name(),
-                           method_->name_tk.text()),
-        };
-
-        if (is_call_next(tc, tz, method_name)) {
-            throw_call_not_array(method_->name_tk, method_path);
-        }
-
-        throw compile_error{method_->name_tk,
-                            std::format("{} is a method, not an array",
-                                        in_quotes(method_path))};
     }
 
     // walks the elements from the root: the root resolved, then each field
@@ -1338,18 +1347,14 @@ inline auto statement::assert_result_not_read(const assignment_flow& flow) const
 }
 
 // a path such as 'p.y' reads its root variable
-inline auto statement::first_read_of(const std::string_view var) const
-    -> const stmt_identifier* {
+inline auto statement::reads_name(const std::string_view var) const -> bool {
+    bool is_read{};
 
-    const stmt_identifier* first{};
-
-    visit_reads([&var, &first](const stmt_identifier& read) -> void {
-        if (first == nullptr and read.tok().is_text(var)) {
-            first = &read;
-        }
+    visit_reads([&var, &is_read](const stmt_identifier& read) -> void {
+        is_read = is_read or read.tok().is_text(var);
     });
 
-    return first;
+    return is_read;
 }
 
 inline auto statement::bare_path() const -> const stmt_identifier* {

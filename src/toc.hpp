@@ -756,6 +756,11 @@ class type_table final {
                entries_.get_const_ref(name).type_ptr->is_builtin();
     }
 
+    // a type parameter of the innermost instance being parsed
+    [[nodiscard]] auto is_param(const std::string_view name) const -> bool {
+        return not params_.empty() and params_.back().has(name);
+    }
+
     [[nodiscard]] auto src_loc_tk_of(const std::string_view name) const
         -> const token& {
 
@@ -769,10 +774,6 @@ class type_table final {
         }
 
         return entries_.get_const_ref(name);
-    }
-
-    [[nodiscard]] auto is_param(const std::string_view name) const -> bool {
-        return not params_.empty() and params_.back().has(name);
     }
 };
 
@@ -3092,12 +3093,13 @@ class toc final {
                                             in_quotes(name_tk.text()))};
         }
 
-        // e.g. 'U' bound to 'i8'
-        if (const type* const builtin{builtin_scalar_named(name_tk)}) {
-            throw compile_error{name_tk,
-                                std::format("{} names the built-in type {}",
-                                            in_quotes(name_tk.text()),
-                                            in_quotes(builtin->name()))};
+        // a value would hide a type parameter only in some places, e.g.
+        // 'U(v)' still converts; rejected whatever the argument, so that no
+        // instance decides it
+        if (const type* const bound{type_param_named(name_tk)}) {
+            throw compile_error{name_tk, std::format("{} names the type {}",
+                                                     in_quotes(name_tk.text()),
+                                                     in_quotes(bound->name()))};
         }
     }
 
@@ -3758,24 +3760,6 @@ class toc final {
                         in_quotes(tpe.name()), tpe.size_bytes(), max_bytes)};
     }
 
-    // the built-in integer or 'bool' type that 'tk' names, also through a
-    // type parameter, e.g. 'U' bound to 'i8'; null for any other token
-    [[nodiscard]] auto builtin_scalar_named(const token& tk) const
-        -> const type* {
-
-        if (not tk.is_word() or not types_.has(tk.text())) {
-            return nullptr;
-        }
-
-        const type& tp{types_.get(tk.text())};
-
-        if (not tp.is_bool() and not tp.is_integer()) {
-            return nullptr;
-        }
-
-        return &tp;
-    }
-
     // a dry run emits nothing, its locals take no variable storage
     [[nodiscard]] auto checks_storage_capacity() const -> bool {
         return dry_run_depth_ == 0;
@@ -3819,6 +3803,19 @@ class toc final {
         scopes_.set_max_scope_count(state.max_scope_count);
         storage_.restore_peaks(state.storage);
         scopes_.restore_reach_state(state.reach);
+    }
+
+    // the type a type parameter of the instance being parsed is bound to,
+    // e.g. 'U' bound to 'i8'; null for any other name, also for the generic
+    // type of a method, which names its instance like a type name does
+    [[nodiscard]] auto type_param_named(const token& tk) const -> const type* {
+        const std::string_view name{tk.text()};
+
+        if (not types_.is_param(name) or generics_.exists_type(name)) {
+            return nullptr;
+        }
+
+        return &types_.get(name);
     }
 };
 

@@ -1,0 +1,10 @@
+# 'not' where an instance goes makes a condition, as a unary operator makes
+# a number
+
+type point {x i8, y i8}
+
+func main() {
+    var b = true
+    var p = point
+    p = not b
+}

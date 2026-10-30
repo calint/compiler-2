@@ -1,0 +1,8 @@
+# 'not' where an array goes makes a condition, as a unary operator makes a
+# number
+
+func main() {
+    var b = true
+    var a = i8[2]
+    a = not b
+}

@@ -1,0 +1,4 @@
+
+2009.baz:15:9: a call of 'p.get' is not an array
+    f(p.get())
+        ^~~

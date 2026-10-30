@@ -67,17 +67,14 @@ class initializer_declaration final {
         assert(not shape_.is_length_unknown());
     }
 
-    // the folded 'value', read with the name in scope like its parse, so
-    // 'let k = k + 1' reads the uninitialized 'k', not a constant of an outer
-    // block
-    [[nodiscard]] auto fold(toc& tc, const expr_any& value) const
+    // 'value' does not read the defined name, its parse rejected that
+    // ('scope::initializer')
+    [[nodiscard]] auto fold(const toc& tc, const expr_any& value) const
         -> std::optional<folded_value> {
 
-        std::optional<folded_value> constant;
-
-        with_placeholder(tc, [&] -> void {
-            constant = value.fold_checked(tc, tc.use_at(type_ref()));
-        });
+        std::optional<folded_value> constant{
+            value.fold_checked(tc, tc.use_at(type_ref())),
+        };
 
         // note: untyped only at the default type, e.g. 'let k = 5' fits any
         //       integer where it is used; 'let b = true' is a 'bool'

@@ -1,0 +1,4 @@
+
+2006.baz:7:9: 'not' makes a condition, not an array of 'i8'
+    a = not b
+        ^~~

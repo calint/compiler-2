@@ -1,0 +1,16 @@
+# a method call where a function takes an array, its result of another type
+# than the elements
+
+type point {x, y}
+
+func point.get() res bool {
+    res = self.x == 0
+}
+
+func f(s i8[]) {
+}
+
+func main() {
+    var p = point{}
+    f(p.get())
+}

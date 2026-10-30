@@ -4928,7 +4928,7 @@ SRC=1557 && EXP=14 && RUN
 # accepted like in 'array_copy' and 'write'
 SRC=1558 && EXP=5 && RUN
 
-# a variable is not named like a type parameter bound to a built-in type,
+# a variable is not named like a type parameter, here bound to a built-in type,
 # which it would hide only in some places, e.g. 'U(v)' still converts
 SRC=1559 && COMPERR
 
@@ -6367,3 +6367,18 @@ SRC=2003 && COMPERR
 
 # a missing ',' before an argument a built-in needs
 SRC=2004 && COMPERR
+
+# 'not' where an instance goes
+SRC=2005 && COMPERR
+
+# 'not' where an array goes
+SRC=2006 && COMPERR
+
+# a variable named like a type parameter bound to a user type
+SRC=2007 && COMPERR
+
+# a call where a function takes an array
+SRC=2008 && COMPERR
+
+# a method call where a function takes an array
+SRC=2009 && COMPERR

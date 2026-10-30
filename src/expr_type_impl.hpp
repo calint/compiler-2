@@ -105,6 +105,13 @@ inline expr_type::expr_type(toc& tc, tokenizer& tz, const type& tp,
                         in_quotes(tp.name()))};
     }
 
+    // e.g. the 'not' of 'q = not b', as a unary operator below
+    if (tok().is_text("not")) {
+        throw compile_error{tok(),
+                            std::format("'not' makes a condition, not {} of {}",
+                                        value_kind(), in_quotes(tp.name()))};
+    }
+
     // e.g. 'p = pt', the token is empty at '{x, y}'
     if (not tok().is_none() and not is_typed_literal) {
         parse_copy_source(tc, tz, tm);

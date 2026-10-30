@@ -1,0 +1,12 @@
+# a variable is not named like a type parameter bound to a user type either,
+# so the argument does not decide whether the definition is accepted
+type point { x i8 }
+
+func f<U type>(v U) {
+    var U = 2
+}
+
+func main() {
+    var p = point{1}
+    f(p)
+}

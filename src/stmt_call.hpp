@@ -2592,8 +2592,8 @@ class stmt_call final : public statement {
     // before the parse reads it as a value of the element type, which would
     // report its kind, e.g. 'p' of a 'point' for 's i8[]': an array literal,
     // which has no storage that the parameter refers to, e.g. '{1, 2}',
-    // '[2]{1, 2}' or 'i8[]{1, 2}', a type and a whole name; '{}' and an
-    // expression are reported where they are used
+    // '[2]{1, 2}' or 'i8[]{1, 2}', a type, a call and a whole name; '{}' and
+    // an expression are reported where they are used
     static auto assert_array_argument_start(toc& tc, const tokenizer& tz,
                                             const stmt_def_func_param& param)
         -> void {
@@ -2622,14 +2622,10 @@ class stmt_call final : public statement {
                 return;
             }
 
-            // e.g. 'i8' or 'point{1, 2}', as for the array of a built-in
-            if (names_type(tm) and tm != term_kind::array_literal) {
-                throw compile_error{tk,
-                                    std::format("{} is a type, not an array",
-                                                in_quotes(tk.text()))};
-            }
-
+            // e.g. 'i8', 'point{1, 2}' or 'mk()', as for the array of a
+            // built-in
             if (tm != term_kind::array_literal) {
+                stmt_identifier::assert_not_type_or_call(tk, tm);
                 return;
             }
 
@@ -2651,9 +2647,10 @@ class stmt_call final : public statement {
 
         const stmt_identifier ident{tc, tk, probe};
 
-        if (ident.is_array() or ident.is_method_receiver() or
-            continues_expression(probe)) {
+        // e.g. 'p.get()', as for the array of a built-in
+        ident.assert_not_method(tc, probe);
 
+        if (ident.is_array() or continues_expression(probe)) {
             return;
         }
 

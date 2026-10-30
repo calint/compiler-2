@@ -1,0 +1,4 @@
+
+2008.baz:14:7: a call of 'mk' is not an array
+    f(mk())
+      ^~

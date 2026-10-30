@@ -1,0 +1,4 @@
+
+2005.baz:9:9: 'not' makes a condition, not an instance of 'point'
+    p = not b
+        ^~~

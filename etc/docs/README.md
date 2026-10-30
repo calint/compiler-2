@@ -195,8 +195,9 @@ the context of the definition. Every question about a name asks this lookup:
 the resolver ('ident_resolver'), the aliasing check, and the lookaheads of the
 parser, where a variable, a parameter or a constant hides a type or a generic
 function of its name, e.g. after 'let point = 3' the 'point' of 'point + 1' is
-the constant; a built-in type, e.g. 'i8', names no value. A name followed by
-'(' is a call, no value is called. The same
+the constant; a built-in type, e.g. 'i8', names no value, and neither does a
+type parameter, whatever its argument. A name followed by '(' is a call, no
+value is called. The same
 statement can resolve to another variable, register or constant each time it
 is compiled.
 
@@ -1660,7 +1661,7 @@ for the same reason three headers define members of an earlier class:
 'tokenizer.hpp' the 'compile_error' of a tokenizer, 'register_report.hpp'
 'machine::register_error' and 'machine::register_peak_report', and
 'stmt_identifier.hpp' the operand walks of 'statement' ('visit_reads',
-'visit_call_effects', 'has_inlined_call', 'first_read_of',
+'visit_call_effects', 'has_inlined_call', 'reads_name',
 'assert_result_not_read') and 'statement::bare_path'. A forward
 declaration of a class used only by reference or pointer is the opaque-pointer
 pattern and is also allowed, e.g. 'stmt_def_dat' and 'stmt_def_func' in

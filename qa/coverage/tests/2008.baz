@@ -1,0 +1,15 @@
+# a call where a function takes an array, its result of another type than
+# the elements
+
+type point {x, y}
+
+func mk() res point {
+    res = {}
+}
+
+func f(s i8[]) {
+}
+
+func main() {
+    f(mk())
+}

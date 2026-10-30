@@ -1,0 +1,7 @@
+
+2007.baz:6:9: 'U' names the type 'point'
+    var U = 2
+        ^
+2007.baz:11:5: instantiated by 'f<point>'
+    f(p)
+    ^
