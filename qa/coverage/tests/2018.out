@@ -1,0 +1,4 @@
+
+2018.baz:4:13: unexpected '=='
+    exit(0) == 1
+            ^

@@ -1,0 +1,4 @@
+
+2011.baz:12:13: receiver of method 'point.put' cannot be an array
+    var r = a.put(q)
+            ^

@@ -199,6 +199,14 @@ class initializer_declaration final {
         // 'expr_arith' cannot parse the '{' of an instance literal
         const token tk{tz.next_token()};
 
+        // e.g. 'var p = {1, 2}', a destination gives the type of '{...}'
+        if (tk.is_none() and tz.is_peek_char('{')) {
+            throw compile_error{
+                tk, std::format("the type of {} is not known, write it before "
+                                "the '{{'",
+                                is_zero_value(tz) ? "'{}'" : "'{...}'")};
+        }
+
         // an instance literal that an operator continues is an operand, e.g.
         // 'var b = point{1, 2} == p'
         if (const term_kind tm{classify_term(tc, tk, tz)};

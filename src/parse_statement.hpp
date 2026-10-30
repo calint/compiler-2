@@ -42,15 +42,6 @@
 #include "tokenizer.hpp"
 #include "unary_ops.hpp"
 
-// a call of a function without a result where a value is needed, e.g. 'x =
-// array_copy(a, b, 1)'
-[[noreturn]] inline auto throw_no_value(const token& call_tk,
-                                        const std::string_view name) -> void {
-
-    throw compile_error{
-        call_tk, std::format("function {} has no result", in_quotes(name))};
-}
-
 // a call with a result as a statement of its own, e.g. 'f(x)'
 [[noreturn]] inline auto throw_discarded_result(const token& call_tk,
                                                 const std::string_view name)

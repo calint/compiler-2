@@ -1,0 +1,6 @@
+# a definition names the type of a '{...}' or '{}' initializer, e.g.
+# 'point{1, 2}' or 'i8[]{1, 2}'; only a destination of known type gives it
+
+func main() {
+    var p = {1, 2}
+}

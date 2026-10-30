@@ -1,0 +1,4 @@
+
+2013.baz:4:13: the type of '{}' is not known, write it before the '{'
+    let k = {}
+            ^

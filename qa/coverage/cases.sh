@@ -6382,3 +6382,30 @@ SRC=2008 && COMPERR
 
 # a method call where a function takes an array
 SRC=2009 && COMPERR
+
+# an array receiver of a generic method whose type cannot be deduced
+SRC=2010 && COMPERR
+
+# an array receiver of a generic method whose instance has an error
+SRC=2011 && COMPERR
+
+# a 'var' initializer that starts with '{...}'
+SRC=2012 && COMPERR
+
+# a 'let' initializer that is '{}'
+SRC=2013 && COMPERR
+
+# a 'foo' name like a type parameter bound to a built-in
+SRC=2014 && COMPERR
+
+# a 'foo' name like a type parameter of the generic type of a method
+SRC=2015 && COMPERR
+
+# a field read of the call of a function without a result
+SRC=2016 && COMPERR
+
+# a method call on the call of a method without a result
+SRC=2017 && COMPERR
+
+# an operator after a statement
+SRC=2018 && COMPERR

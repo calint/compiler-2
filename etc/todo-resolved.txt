@@ -1,6 +1,22 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] hard: design review series 2, round 43 (2026-10-30, user: continue
+    the rounds until no more findings; 7 reviewers A-G, the groups rotated
+    again)
+    => done (2026-10-30): bug: C1 a 'foo' declares no 'e', 'i' or 'n' named
+       like a type parameter, it depended on the argument (completes round
+       42 B1, 'toc::assert_loop_names_free', 2014, 2015); messages: A1 an
+       array receiver of a generic method is reported before the deduction
+       and the instance, naming the method (2010, 2011); B1 a 'var', 'let'
+       or 'dat' initializer that starts with '{' is "the type of '{...}' is
+       not known, write it before the '{'" (0607 0630, 2012, 2013); F1 a field
+       read or a method call on the call of a function without a result is
+       "function 'g' has no result" ('throw_no_value' in compile_error.hpp,
+       2016, 2017); comments: D1 'zero_padding' in the operations group of
+       'machine', F2 the io order-check example, G1 the quoted-operator
+       example of 'assert_not_at_delimiter' (2018); one reviewer found
+       nothing
 [x] hard: design review series 2, round 42 (2026-10-30, user: continue
     the rounds until no more findings; 7 reviewers A-G, the groups rotated
     again)

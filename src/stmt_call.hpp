@@ -1673,10 +1673,10 @@ class builtin_arguments final {
 
 // a call of a function, a method or a constructor
 //
-// parsing, in the constructors: the callee and its '('
+// parsing, in the constructors: the kind of the callee
+// ('assert_method_receiver', 'constructor_func'), the callee and its '('
 // ('resolve_callee', a generic function through 'generic_call', and
-// 'read_open_paren'), the kind of the callee
-// ('assert_method_receiver', 'constructor_func'), then the arguments
+// 'read_open_paren'), then the arguments
 // ('parse_arguments', each checked by 'assert_array_argument_start',
 // 'assert_argument_usable' and 'assert_argument_writable'), then
 // 'record_uses_of_call'
@@ -1766,13 +1766,16 @@ class stmt_call final : public statement {
                                    in_quotes(name))};
         }
 
+        // the receiver is written first, it is checked before the instance
+        // is made and the deduction reads the arguments
+        assert_call_in_func(tc, tok());
+        assert_method_receiver(tc, receiver, name);
+
         const std::vector<size_t> deducing_args{
             resolve_callee(tc, tz, name, expected_type),
         };
 
         read_open_paren(tc, tz, "method name");
-
-        assert_method_receiver(receiver);
 
         // the receiver is the first argument
         args_.push_back(path_argument(std::move(receiver)));
@@ -2004,16 +2007,18 @@ class stmt_call final : public statement {
                         in_quotes(callee().name()))};
     }
 
-    // the function is a method and the receiver is a value
-    auto assert_method_receiver(const stmt_identifier& receiver) const -> void {
+    // the function 'name' is a method and the receiver is a value
+    auto assert_method_receiver(const toc& tc, const stmt_identifier& receiver,
+                                const std::string_view name) const -> void {
 
-        // a constructor has no receiver, it builds its value
-        if (callee().is_constructor()) {
-            throw compile_error{tok(),
-                                std::format("{} is a constructor, call it as "
-                                            "'{}(...)'",
-                                            in_quotes(callee().name()),
-                                            callee().name())};
+        // a constructor has no receiver, it builds its value; a generic
+        // function of a type is a method
+        if (not tc.generics().has_func(name) and
+            tc.get_func_or_throw(tok(), name).is_constructor()) {
+
+            throw compile_error{
+                tok(), std::format("{} is a constructor, call it as '{}(...)'",
+                                   in_quotes(name), name)};
         }
 
         // only an element of an array can be the receiver, 'a[1].f()' but not
@@ -2022,7 +2027,7 @@ class stmt_call final : public statement {
             throw compile_error{
                 receiver.tok(),
                 std::format("receiver of method {} cannot be an array",
-                            in_quotes(callee().name()))};
+                            in_quotes(name))};
         }
     }
 
@@ -2330,6 +2335,11 @@ class stmt_call final : public statement {
         // e.g. the '.' of 'mk().y' or 'mk().sum()', a result has no storage
         // to read a field of or to call a method on
         if (tz.peek_char_after_whitespace() == '.') {
+            // e.g. 'g().y' of a 'g' without a result, as 'x = g()'
+            if (not callee().has_result()) {
+                throw_no_value(callee_name_token(), callee().name());
+            }
+
             throw compile_error{
                 tz, std::format("store the result of {} in a variable before "
                                 "reading a field or calling a method of it",

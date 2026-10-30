@@ -1,0 +1,12 @@
+# an array receiver of a generic method whose type cannot be deduced is
+# reported before the deduction
+type point {x, y}
+
+func point.put<U type>(u U) res {
+    res = 1
+}
+
+func main() {
+    var a = point[2]
+    var r = a.put(1)
+}

@@ -1,0 +1,5 @@
+# an operator after a statement is quoted whole
+
+func main() {
+    exit(0) == 1
+}

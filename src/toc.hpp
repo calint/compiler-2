@@ -2565,10 +2565,10 @@ class variable_comments final {
 //                  'mark_generic_func_instantiated', 'enter_type_params',
 //                  'exit_type_params', 'assert_generic_param_apart',
 //                  'assert_generic_param_free', 'assert_generic_params_free',
-//                  'assert_method_type_param_free', 'assert_type_name_free',
-//                  'assert_valid_unqualified_name', 'begin_definition',
-//                  'current_definition', 'instance_visibility',
-//                  'constant_value_of', 'record_use',
+//                  'assert_loop_names_free', 'assert_method_type_param_free',
+//                  'assert_type_name_free', 'assert_valid_unqualified_name',
+//                  'begin_definition', 'current_definition',
+//                  'instance_visibility', 'constant_value_of', 'record_use',
 //                  'record_storage_use', 'record_result_passed_as_mut',
 //                  'parse_nesting_scope', 'make_var_read_only',
 //                  'get_func_or_throw', 'get_type_or_throw', 'is_func',
@@ -3046,6 +3046,22 @@ class toc final {
         }
     }
 
+    // the names a 'foo' declares are no type parameter either, see
+    // 'assert_valid_unqualified_name'
+    auto assert_loop_names_free(const token& foo_tk) const -> void {
+        assert(not is_compiling_);
+
+        for (const std::string_view name : {"e", "i", "n"}) {
+            if (const type* const bound{type_param_named(name)}) {
+                throw compile_error{
+                    foo_tk,
+                    std::format("'foo' declares {}, which names the "
+                                "type {}",
+                                in_quotes(name), in_quotes(bound->name()))};
+            }
+        }
+    }
+
     // a type parameter of a method of the generic type 'generic_type'
     auto
     assert_method_type_param_free(const token& name_tk,
@@ -3096,7 +3112,7 @@ class toc final {
         // a value would hide a type parameter only in some places, e.g.
         // 'U(v)' still converts; rejected whatever the argument, so that no
         // instance decides it
-        if (const type* const bound{type_param_named(name_tk)}) {
+        if (const type* const bound{type_param_named(name_tk.text())}) {
             throw compile_error{name_tk, std::format("{} names the type {}",
                                                      in_quotes(name_tk.text()),
                                                      in_quotes(bound->name()))};
@@ -3808,8 +3824,8 @@ class toc final {
     // the type a type parameter of the instance being parsed is bound to,
     // e.g. 'U' bound to 'i8'; null for any other name, also for the generic
     // type of a method, which names its instance like a type name does
-    [[nodiscard]] auto type_param_named(const token& tk) const -> const type* {
-        const std::string_view name{tk.text()};
+    [[nodiscard]] auto type_param_named(const std::string_view name) const
+        -> const type* {
 
         if (not types_.is_param(name) or generics_.exists_type(name)) {
             return nullptr;

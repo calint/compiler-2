@@ -1,0 +1,22 @@
+# a 'foo' declares no 'e' named like a type parameter of the generic type of
+# a method, here bound to a user type, so the argument does not decide
+# whether the method is accepted
+type point { x i8 }
+
+type box<e type> {
+    v e
+}
+
+type pbox = box<point>
+
+func box.f() {
+    var a = i8[2]
+    foo a {
+        a[i] = 1
+    }
+}
+
+func main() {
+    var b = pbox
+    b.f()
+}

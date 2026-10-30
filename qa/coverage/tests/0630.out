@@ -1,4 +1,4 @@
 
-0630.baz:5:9: expected a constant, a name or a call
+0630.baz:5:9: the type of '{...}' is not known, write it before the '{'
 dat p = { 1, 2 }
         ^

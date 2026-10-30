@@ -1,0 +1,15 @@
+# a 'foo' declares no 'e', 'i' or 'n' named like a type parameter, here bound
+# to a built-in type, which it would hide only in some places, e.g. 'i(v)'
+# still converts
+func f<i type>(v i) res i {
+    var a = i8[2]
+    res = v
+    foo a {
+        res = i(v)
+    }
+}
+
+func main() {
+    var r = f(i8(1))
+    exit(int(r))
+}

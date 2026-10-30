@@ -99,15 +99,15 @@ struct target_description {
 //                  'begin_data', 'reserve_variables', 'finish',
 //                  'write_assembly'
 //   data           'data_alignment', 'define_constant', 'emit_data_array',
-//                  'emit_string_data', 'emit_zero_data', 'zero_padding'
+//                  'emit_string_data', 'emit_zero_data'
 //   registers      'alloc_scratch_register', 'free_scratch_register',
 //                  'held_registers' (what a front-end step holds),
 //                  'free_named_register(s)', 'slot_register', 'register_view',
 //                  'alloc_named_register', 'make_register_operand',
 //                  'target_call_registers'
 //   operations     'add_subtract', 'multiply', 'divide', 'shift', 'bitwise',
-//                  'unary', 'zero', 'copy_value', 'store_bytes',
-//                  'address_of', 'scale_index', 'store_boolean',
+//                  'unary', 'zero', 'zero_padding', 'copy_value',
+//                  'store_bytes', 'address_of', 'scale_index', 'store_boolean',
 //                  'foo_advance_iteration'; bulk by a constant size
 //                  'copy_block', 'memory_equal', by a run-time count
 //                  'copy_elements', 'equal_elements'

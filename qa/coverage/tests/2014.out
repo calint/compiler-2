@@ -1,0 +1,7 @@
+
+2014.baz:7:5: 'foo' declares 'i', which names the type 'i8'
+    foo a {
+    ^~~
+2014.baz:13:13: instantiated by 'f<i8>'
+    var r = f(i8(1))
+            ^

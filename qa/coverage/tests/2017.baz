@@ -1,0 +1,13 @@
+# a method call on the call of a method without a result is reported as a
+# call without a value
+
+type pt {x}
+
+func mut pt.clear() {
+    self.x = 0
+}
+
+func main() {
+    var p = pt{}
+    p.clear().clear()
+}

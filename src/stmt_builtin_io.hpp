@@ -137,8 +137,8 @@ class stmt_builtin_io final : public statement {
     auto compile(toc& tc, const size_t indent, const destination& dst) const
         -> void override {
 
-        // e.g. the 'i' of 'read(0, a[i], f())' with 'f' writing 'i'; the 'b'
-        // of 'read(0, b, n)' is written
+        // e.g. the 'i' of 'read(0, bs[i].b, f())' with 'f' writing 'i'; the
+        // 'b' of 'read(0, b, n)' is written
         assert_not_written_later(tc, *this, "argument");
 
         const place buffer{assert_buffer(tc)};

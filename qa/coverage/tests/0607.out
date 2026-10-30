@@ -1,4 +1,4 @@
 
-0607.baz:5:13: expected a constant, a name or a call
+0607.baz:5:13: the type of '{...}' is not known, write it before the '{'
     var p = {1, 2}
             ^

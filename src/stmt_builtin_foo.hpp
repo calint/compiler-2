@@ -305,6 +305,8 @@ class stmt_builtin_foo final : public statement {
     [[nodiscard]] auto parse_code(toc& tc, tokenizer& tz) const -> stmt_block {
         const ident_info array_info{make_ident_info(tc, ident_)};
 
+        tc.assert_loop_names_free(tok());
+
         const toc::scope_entry foo{
             tc,
             scope::loop({}, loop_end::also_when_done, {}),

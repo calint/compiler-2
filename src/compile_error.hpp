@@ -260,6 +260,15 @@ inline constexpr std::string_view missing_close_paren_text{
                                                 in_quotes(callee))};
 }
 
+// a call of a function without a result where a value is needed, e.g. 'x =
+// array_copy(a, b, 1)'
+[[noreturn]] inline auto throw_no_value(const token& call_tk,
+                                        const std::string_view name) -> void {
+
+    throw compile_error{
+        call_tk, std::format("function {} has no result", in_quotes(name))};
+}
+
 // a generic function without its type arguments where they cannot be
 // deduced; 'written' is the name as the source writes it
 [[noreturn]] inline auto throw_generic_function_without_arguments(

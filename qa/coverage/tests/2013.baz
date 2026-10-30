@@ -1,0 +1,6 @@
+# a 'let' named by '{}' alone has no type to take its zero value from
+
+func main() {
+    let k = {}
+    exit(k)
+}

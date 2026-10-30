@@ -135,8 +135,7 @@ class tokenizer final {
             return;
         }
 
-        // e.g. the second '==' of 'x == 1 == true', an operator is quoted
-        // whole
+        // e.g. the '==' of 'exit(0) == 1', an operator is quoted whole
         const std::string_view op{operator_at_cursor()};
 
         const std::string_view delimiter{

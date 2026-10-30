@@ -1,0 +1,9 @@
+# a field read of the call of a function without a result is reported as a
+# call without a value, as where it is assigned
+
+func g() {
+}
+
+func main() {
+    var x = g().y
+}
