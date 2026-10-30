@@ -958,7 +958,7 @@ class stmt_identifier final : public statement {
     }
 
     // the '[' of an element needs an array
-    auto assert_indexable(const ident_info& prefix, tokenizer& tz,
+    auto assert_indexable(const ident_info& prefix, const tokenizer& tz,
                           const token& src_loc_tk) const -> void {
 
         if (tz.peek_char_after_whitespace() == '[' and not prefix.is_array()) {
@@ -1079,7 +1079,8 @@ class stmt_identifier final : public statement {
 
     // without a method 'T.m' a following '(' would otherwise be reported as a
     // missing field
-    static auto assert_not_method_call(const ident_info& prefix, tokenizer& tz,
+    static auto assert_not_method_call(const ident_info& prefix,
+                                       const tokenizer& tz,
                                        const token& name_tk) -> void {
 
         if (tz.peek_char_after_whitespace() != '(') {
@@ -1113,7 +1114,7 @@ class stmt_identifier final : public statement {
     }
 
     // 'name_tk' after the path so far names a method of the path's type
-    [[nodiscard]] static auto is_method_name(const toc& tc, tokenizer& tz,
+    [[nodiscard]] static auto is_method_name(const toc& tc, const tokenizer& tz,
                                              const ident_info& prefix,
                                              const token& name_tk) -> bool {
 

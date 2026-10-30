@@ -1,0 +1,4 @@
+
+1966.baz:9:7: '1' is not an array, parameter 'ps' takes one
+    f(1)
+      ^

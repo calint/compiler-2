@@ -1,8 +1,8 @@
 #pragma once
 
 // the members of 'expr_type' that use 'expr_any', 'stmt_identifier' and
-// 'stmt_call', whose headers include 'expr_type.hpp' through 'expr_any.hpp',
-// see 'decouple.hpp'
+// 'stmt_call'; the headers of 'expr_any' and 'stmt_call' include
+// 'expr_type.hpp', see 'decouple.hpp'
 
 #include <cassert>
 #include <cstddef>
@@ -51,11 +51,12 @@ inline expr_type::expr_type(toc& tc, tokenizer& tz, const type& tp,
     // destination
     const bool is_typed_literal{tm == term_kind::record_literal or is_bare};
 
-    // an array is copied from an array, a value of its element type is not one
+    // an array is copied from an array, a value of its element type is not
+    // one; a type parameter names the type of its argument
     if (is_array_destination_ and is_typed_literal) {
         throw compile_error{
             tok(), std::format("expected an array, got an instance of {}",
-                               in_quotes(tok().text()))};
+                               in_quotes(tc.get_type_or_throw(tok()).name()))};
     }
 
     // e.g. 'p = i8' is the zero value of 'i8', as 'p = x' of an 'i8' 'x'
@@ -86,7 +87,7 @@ inline expr_type::expr_type(toc& tc, tokenizer& tz, const type& tp,
 
     // e.g. 'point{1, 2}' for a field of type 'point' is '{1, 2}'
     if (is_typed_literal and typing == literal_typing::from_destination) {
-        throw_known_type(tok(), tok().text(), is_bare ? "{}" : "{...}");
+        throw_known_type(tok(), tp.name(), is_bare ? "{}" : "{...}");
     }
 
     // e.g. 'var p = point', no fields are listed

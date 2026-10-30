@@ -1,6 +1,20 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] hard: design review series 2, round 38 (2026-10-30, user: continue
+    the rounds until no more findings; 7 reviewers A-G, the groups rotated
+    again)
+    => done (2026-10-30): messages: C1 a value that is not an array, of any
+       kind, for an array parameter is "'p' is not an array, parameter 's'
+       takes one", a type "'i8' is a type, not an array"; the hints "use
+       'i8(...)'" and "write '{}'" that led to the next error are gone
+       (1964-1967); B1 a bare type and an instance of a type parameter name
+       the type they are bound to, as arrays and mismatches do (1968-1970;
+       1604 names 'i64'/'i32' for 'int', 1604.rv32i.out); code: C2 three
+       read-only tokenizer parameters 'const'; comment: B2 the include
+       reason of expr_type and decouple; dropped: A1 a keyword as a result
+       type ("type 'mut' not found" is true and at the keyword, +8 lines for
+       wording); four reviewers found nothing
 [x] hard: design review series 2, round 37 (2026-10-30, user: continue
     the rounds until no more findings; 7 reviewers A-G, the groups rotated
     again)

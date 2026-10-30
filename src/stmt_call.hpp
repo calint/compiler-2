@@ -1669,7 +1669,7 @@ class builtin_arguments final {
 // ('resolve_callee', a generic function through 'generic_call', and
 // 'read_open_paren'), the kind of the callee
 // ('assert_method_receiver', 'constructor_func'), then the arguments
-// ('parse_arguments', each checked by 'assert_not_array_literal_argument',
+// ('parse_arguments', each checked by 'assert_array_argument_start',
 // 'assert_argument_usable' and 'assert_argument_writable'), then
 // 'record_uses_of_call'
 //
@@ -2302,7 +2302,7 @@ class stmt_call final : public statement {
             }
 
             assert_not_string_argument(tz);
-            assert_not_array_literal_argument(tc, tz, params.at(i));
+            assert_array_argument_start(tc, tz, params.at(i));
 
             const bool is_deducing{
                 std::ranges::contains(deducing_args, arg_index),
@@ -2569,12 +2569,7 @@ class stmt_call final : public statement {
             // an element would give the parameter the whole array's
             // length, pass the array and a start index instead
             if (not is_array_arg) {
-                throw compile_error{
-                    arg.tok(),
-                    std::format("{} is not an array, parameter {} takes "
-                                "one",
-                                in_quotes(trimmed_source(arg)),
-                                in_quotes(param.name()))};
+                throw_not_array_argument(arg.tok(), trimmed_source(arg), param);
             }
 
             return;
@@ -2586,11 +2581,14 @@ class stmt_call final : public statement {
         }
     }
 
-    // an array literal has no storage that an array parameter refers to, e.g.
-    // '{1, 2}', '[2]{1, 2}' or 'i8[]{1, 2}'; '{}' is reported where it is used
-    static auto
-    assert_not_array_literal_argument(const toc& tc, const tokenizer& tz,
-                                      const stmt_def_func_param& param)
+    // an argument of an array parameter that is not an array is reported
+    // before the parse reads it as a value of the element type, which would
+    // report its kind, e.g. 'p' of a 'point' for 's i8[]': an array literal,
+    // which has no storage that the parameter refers to, e.g. '{1, 2}',
+    // '[2]{1, 2}' or 'i8[]{1, 2}', a type and a whole name; '{}' and an
+    // expression are reported where they are used
+    static auto assert_array_argument_start(toc& tc, const tokenizer& tz,
+                                            const stmt_def_func_param& param)
         -> void {
 
         if (not param.is_array() or is_zero_value(tz)) {
@@ -2608,8 +2606,21 @@ class stmt_call final : public statement {
 
         if (not literal_tk) {
             const token tk{probe.next_token()};
+            const term_kind tm{classify_term(tc, tk, probe)};
 
-            if (classify_term(tc, tk, probe) != term_kind::array_literal) {
+            if (tm == term_kind::value or tm == term_kind::literal) {
+                assert_array_name(tc, tk, probe, param);
+                return;
+            }
+
+            // e.g. 'i8' or 'point{1, 2}', as for the array of a built-in
+            if (names_type(tm) and tm != term_kind::array_literal) {
+                throw compile_error{tk,
+                                    std::format("{} is a type, not an array",
+                                                in_quotes(tk.text()))};
+            }
+
+            if (tm != term_kind::array_literal) {
                 return;
             }
 
@@ -2621,6 +2632,23 @@ class stmt_call final : public statement {
             std::format("an array literal is not an argument, parameter {} "
                         "takes an array",
                         in_quotes(param.name()))};
+    }
+
+    // a path that no operator continues, 'tk' is its first token and 'probe'
+    // is after it
+    // note: read from the copy, the call parses it again
+    static auto assert_array_name(toc& tc, const token& tk, tokenizer probe,
+                                  const stmt_def_func_param& param) -> void {
+
+        const stmt_identifier ident{tc, tk, probe};
+
+        if (ident.is_array() or ident.is_method_receiver() or
+            continues_expression(probe)) {
+
+            return;
+        }
+
+        throw_not_array_argument(tk.start_position(), ident.path_text(), param);
     }
 
     // an argument that reaches a part of an earlier one or of the result that
@@ -2688,6 +2716,17 @@ class stmt_call final : public statement {
         }
 
         return std::format(" (both name {})", in_quotes(name));
+    }
+
+    [[noreturn]] static auto
+    throw_not_array_argument(const token& src_loc_tk,
+                             const std::string_view source,
+                             const stmt_def_func_param& param) -> void {
+
+        throw compile_error{
+            src_loc_tk,
+            std::format("{} is not an array, parameter {} takes one",
+                        in_quotes(source), in_quotes(param.name()))};
     }
 
     [[noreturn]] static auto

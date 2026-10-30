@@ -1,0 +1,11 @@
+# a name that is not an array is reported as not an array also when it is not
+# a value of the element type, e.g. an instance for an array of 'i8'
+
+type point {x, y}
+
+func f(s i8[]) {}
+
+func main() {
+    var p = point
+    f(p)
+}

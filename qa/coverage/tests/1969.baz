@@ -1,0 +1,12 @@
+# a typed literal of a type parameter for an array names the type it is bound
+# to
+type point {x i32, y i32}
+type seg {a point[2], b point}
+
+func f<T type>() {
+    var s = seg{T{1, 2}}
+}
+
+func main() {
+    f<point>()
+}

@@ -6244,3 +6244,24 @@ SRC=1962 && COMPERR
 
 # an instance of a generic type as a type argument of a call
 SRC=1963 && COMPERR
+
+# an instance for an array parameter of 'i8'
+SRC=1964 && COMPERR
+
+# a 'bool' for an array parameter of 'i8'
+SRC=1965 && COMPERR
+
+# a number for an array parameter of instances
+SRC=1966 && COMPERR
+
+# a type for an array parameter
+SRC=1967 && COMPERR
+
+# a type parameter bound to a user type where the destination gives the type
+SRC=1968 && COMPERR
+
+# an instance of a type parameter for an array field
+SRC=1969 && COMPERR
+
+# a type parameter bound to a built-in where the destination gives the type
+SRC=1970 && COMPERR

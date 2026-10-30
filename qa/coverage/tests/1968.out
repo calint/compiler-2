@@ -1,0 +1,7 @@
+
+1968.baz:7:17: the destination gives the type 'point', write '{}'
+    var s = seg{T}
+                ^
+1968.baz:11:5: instantiated by 'f<point>'
+    f<point>()
+    ^

@@ -1,0 +1,4 @@
+
+1604.baz:3:16: the destination gives the type 'i32', write '{}'
+    var a = i8[int]
+               ^~~

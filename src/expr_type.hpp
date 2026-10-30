@@ -278,8 +278,8 @@ inline auto emit_write_plan(toc& tc, const size_t indent,
 }
 
 // note: members that use 'expr_any', 'stmt_identifier' or 'stmt_call' are
-//       implemented in 'expr_type_impl.hpp', those headers include this one
-//       through 'expr_any.hpp', so their definitions are incomplete here
+//       implemented in 'expr_type_impl.hpp', which includes their headers;
+//       'expr_any.hpp' and 'stmt_call.hpp' include this one
 
 // a value of a user type: a list of fields '{...}', the type name alone as its
 // zero value, a copy of a name or a call; also the source of a whole array

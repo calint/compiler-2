@@ -1,0 +1,4 @@
+
+1964.baz:10:7: 'p' is not an array, parameter 's' takes one
+    f(p)
+      ^

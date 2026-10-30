@@ -1,0 +1,12 @@
+# a typed literal of a type parameter where the destination gives the type
+# names the type it is bound to
+type point {x i32, y i32}
+type seg {a point, b point}
+
+func f<T type>() {
+    var s = seg{T}
+}
+
+func main() {
+    f<point>()
+}

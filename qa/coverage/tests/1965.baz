@@ -1,0 +1,9 @@
+# a 'bool' that is not an array is reported as not an array, not as a value
+# to convert to the element type
+
+func f(s i8[]) {}
+
+func main() {
+    var b = true
+    f(b)
+}

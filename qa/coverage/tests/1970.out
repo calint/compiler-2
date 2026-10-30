@@ -1,0 +1,7 @@
+
+1970.baz:6:17: the destination gives the type 'i8', write '{}'
+    var s = seg{T}
+                ^
+1970.baz:10:5: instantiated by 'f<i8>'
+    f<i8>()
+    ^

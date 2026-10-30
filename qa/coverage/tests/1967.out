@@ -1,0 +1,4 @@
+
+1967.baz:6:7: 'i8' is a type, not an array
+    f(i8)
+      ^~

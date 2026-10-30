@@ -1,0 +1,4 @@
+
+1965.baz:8:7: 'b' is not an array, parameter 's' takes one
+    f(b)
+      ^

@@ -1,0 +1,7 @@
+# a type is not an array argument, as for the array of a built-in
+
+func f(s i8[]) {}
+
+func main() {
+    f(i8)
+}

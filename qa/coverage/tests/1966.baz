@@ -1,0 +1,10 @@
+# a number that is not an array is reported as not an array for an array of
+# instances
+
+type point {x, y}
+
+func f(ps point[]) {}
+
+func main() {
+    f(1)
+}

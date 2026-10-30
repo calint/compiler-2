@@ -1071,7 +1071,7 @@ class expr_any final : public statement {
                     throw_type_mismatch(tk, tp.name(), named_type.name());
                 }
 
-                throw_known_type(tk, tk.text(), "{}");
+                throw_known_type(tk, tp.name(), "{}");
             }
 
             return builtin_value(
