@@ -133,10 +133,15 @@ class initializer_declaration final {
                                           const std::string_view keyword)
         -> token {
 
-        return tz.expect_char_token(
-            '=', std::format("expected '=' followed by an initializer, e.g. "
-                             "'{} x = i32(0)'",
-                             keyword));
+        // e.g. 'var x == 1', a comparison is not the '=' of an initializer
+        if (not tz.is_lone_equals_next()) {
+            throw compile_error{
+                tz, std::format("expected '=' followed by an initializer, "
+                                "e.g. '{} x = i32(0)'",
+                                keyword)};
+        }
+
+        return tz.seen_char_token('=');
     }
 
   private:
@@ -164,24 +169,26 @@ class initializer_declaration final {
         shape_ = array_shape::array(std::nullopt);
         set_type(*element_type);
 
-        std::optional<token> bracket_tk;
+        std::optional<token> size_tk;
 
-        trial_parse(tc, tz, [this, &tc, &bracket_tk](tokenizer& probe) -> void {
+        trial_parse(tc, tz, [this, &tc, &size_tk](tokenizer& probe) -> void {
             // an unsized array, the initializer gives the count
             const expr_any initializer{tc, probe, type_ref(),
                                        literal_typing::written, shape_};
 
             // later statements read the size while parsing, e.g. 'var b = a'
             shape_ = array_shape::array(initializer.array_count());
-            bracket_tk = initializer.open_bracket_token();
+            size_tk = initializer.size_token();
         });
 
         if (shape_.length().value_or(0) == 0) {
-            // e.g. the '[' of 'var a = i8[]{}'
-            // note: an empty string is rejected by 'string_array_count'
-            assert(bracket_tk);
+            // e.g. the '[' of 'var a = i8[]{}' or the '""' of 'var s = ""'
+            assert(size_tk);
 
-            throw compile_error{*bracket_tk, "an empty array needs a size"};
+            throw compile_error{
+                *size_tk,
+                std::format("an empty {} needs a size",
+                            size_tk->is_string() ? "string" : "array")};
         }
     }
 

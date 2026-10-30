@@ -184,12 +184,12 @@ struct generic_call {
     // element, or the value it makes names its type: 'point{1, 2}',
     // 'point.at(1, 2)' or 'mk(1, 2)', otherwise null; an argument that no
     // operator continues is whole, e.g. 'a' of 'f(a 2)', the parse of the
-    // call reports what follows it. 'tz' is after the '(' and is a copy, the
-    // caller does not move
-    [[nodiscard]] static auto argument_type(toc& tc, tokenizer tz,
+    // call reports what follows it. 'tz' is after the '(', it ends after the
+    // argument when the argument tells its type
+    [[nodiscard]] static auto argument_type(toc& tc, tokenizer& tz,
                                             const size_t index) -> const type* {
 
-        if (not skip_to_argument(tz, index)) {
+        if (skip_to_argument(tz, index) != index) {
             return nullptr;
         }
 
@@ -244,6 +244,54 @@ struct generic_call {
 
         std::ignore = expr_bool{tc, tz.next_whitespace_token(), tz};
 
+        assert_delimiter_after(tz, params, index);
+    }
+
+    // the arguments up to the one at 'index' are there, reported as in a
+    // call without type parameters: the first missing one, e.g. 'b' of 'f(1)'
+    // for 'func f<T type>(a, b, x T)', or a token after the argument where
+    // the list ends, e.g. the '2' of 'f(1 2)'. 'tz' is after the '('
+    static auto assert_argument_present(
+        toc& tc, const tokenizer& tz,
+        const std::span<const generic_signature_param> params,
+        const size_t index) -> void {
+
+        // e.g. 'f()'
+        if (tz.peek_char_after_whitespace() == ')') {
+            throw compile_error{
+                tz, missing_argument_text(1, params.front().name_tk.text())};
+        }
+
+        tokenizer scan{tz};
+
+        const size_t last{skip_to_argument(scan, index)};
+
+        if (last == index) {
+            return;
+        }
+
+        tokenizer after_last{tz};
+
+        // e.g. 'p' of 'f(p)' or 'point{1, 2}', else parsed like a 'var'
+        // initializer
+        if (argument_type(tc, after_last, last) != nullptr) {
+            assert_delimiter_after(after_last, params, last);
+        } else {
+            assert_argument_parses(tc, tz, params, last);
+        }
+
+        throw compile_error{
+            scan, missing_argument_text(last + 2,
+                                        params.at(last + 1).name_tk.text())};
+    }
+
+    // 'tz' is after the argument at 'index', a ',' or the ')' follows, e.g.
+    // not the '2' of 'f(1 2)'
+    static auto assert_delimiter_after(
+        const tokenizer& tz,
+        const std::span<const generic_signature_param> params,
+        const size_t index) -> void {
+
         const char delimiter{tz.peek_char_after_whitespace()};
 
         if (delimiter == ',' or delimiter == ')') {
@@ -259,22 +307,6 @@ struct generic_call {
         throw compile_error{
             tz, missing_delimiter_text(next_index + 1,
                                        params.at(next_index).name_tk.text())};
-    }
-
-    // e.g. 'f(1)' of 'func f<T type>(a, x T)' lacks the argument that would
-    // tell 'T', which is the error; 'tz' is after the '(' and is a copy
-    static auto assert_argument_present(tokenizer tz, const size_t index,
-                                        const std::string_view param_name)
-        -> void {
-
-        std::ignore = skip_to_argument(tz, index);
-
-        // a malformed list is reported by the parse of the arguments
-        if (tz.peek_char_after_whitespace() != ')') {
-            return;
-        }
-
-        throw compile_error{tz, missing_argument_text(index + 1, param_name)};
     }
 
     // the type arguments of 'f(x)' for 'func f<T type>(s T)': a type parameter
@@ -307,12 +339,12 @@ struct generic_call {
             const type* arg_type{};
 
             if (source.param_index) {
-                assert_argument_present(
-                    scan, *source.param_index,
-                    generic.signature.params.at(*source.param_index)
-                        .name_tk.text());
+                assert_argument_present(tc, scan, generic.signature.params,
+                                        *source.param_index);
 
-                arg_type = argument_type(tc, scan, *source.param_index);
+                tokenizer arg_tz{scan};
+
+                arg_type = argument_type(tc, arg_tz, *source.param_index);
 
                 if (arg_type != nullptr) {
                     deduced.argument_indexes.push_back(*source.param_index);
@@ -345,10 +377,11 @@ struct generic_call {
         return deduced;
     }
 
-    // moves 'tz' from after the '(' to the argument at 'index', false when the
-    // list ends before it
+    // moves 'tz' from after the '(' to the argument at 'index' and returns
+    // 'index'; when the list ends before it, 'tz' is after the argument where
+    // it ends and that argument's index is returned
     [[nodiscard]] static auto skip_to_argument(tokenizer& tz,
-                                               const size_t index) -> bool {
+                                               const size_t index) -> size_t {
 
         for (size_t i{}; i < index; ++i) {
             tz.skip_argument();
@@ -356,14 +389,14 @@ struct generic_call {
             const std::optional<token> delimiter_tk{tz.is_next_char_token(',')};
 
             if (not delimiter_tk) {
-                return false;
+                return i;
             }
 
             // e.g. 'f(1,)', reported before the argument it lacks
             tz.assert_no_trailing_delimiter(*delimiter_tk, ')', "a call");
         }
 
-        return true;
+        return index;
     }
 
     // the type of an instance literal, a constructor call or a call of a
@@ -1524,19 +1557,22 @@ class builtin_arguments final {
 
   public:
     // the name of the built-in, 'name_tk', is read and 'parse_builtin' saw
-    // the '('; a count outside 'min_count' to 'max_count' is reported at the
-    // name, the next token can be on a later line
+    // the '('; a count below 'min_count' is reported at the name, the next
+    // token can be on a later line, a ',' after 'max_count' arguments where
+    // it stands, as for a call of a function
     builtin_arguments(toc& tc, tokenizer& tz, const token& name_tk,
                       const std::span<const size_t> array_indexes,
                       const size_t min_count, const size_t max_count)
         : open_paren_tk_{tz.seen_char_token('(')} {
 
-        read_arguments(tc, tz, array_indexes, max_count);
+        const std::string count_text{
+            argument_count_text(name_tk.text(), min_count, max_count),
+        };
 
-        if (args_.size() < min_count or args_.size() > max_count) {
-            throw compile_error{
-                name_tk,
-                argument_count_text(name_tk.text(), min_count, max_count)};
+        read_arguments(tc, tz, array_indexes, max_count, count_text);
+
+        if (args_.size() < min_count) {
+            throw compile_error{name_tk, count_text};
         }
     }
 
@@ -1579,10 +1615,12 @@ class builtin_arguments final {
     }
 
     // up to and including the ')', which follows the argument numbered
-    // 'max_count'
+    // 'max_count' at the latest; a surplus argument is not parsed, e.g. the
+    // 'zz' of 'exit(1, zz)'
     auto read_arguments(toc& tc, tokenizer& tz,
                         const std::span<const size_t> array_indexes,
-                        const size_t max_count) -> void {
+                        const size_t max_count,
+                        const std::string_view count_text) -> void {
 
         while (true) {
             if (const std::optional<token> close_paren_tk{
@@ -1607,6 +1645,11 @@ class builtin_arguments final {
 
             if (delim_tk) {
                 tz.assert_no_trailing_delimiter(*delim_tk, ')', "a call");
+
+                if (args_.size() == max_count) {
+                    throw compile_error{*delim_tk, std::string{count_text}};
+                }
+
                 delims_tk_.emplace_back(*delim_tk);
                 continue;
             }

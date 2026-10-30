@@ -1,0 +1,4 @@
+
+1931.baz:3:21: 'exit' is a built-in function
+func make<T type>() exit {
+                    ^~~~

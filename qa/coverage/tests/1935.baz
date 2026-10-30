@@ -1,0 +1,5 @@
+# a surplus argument of a built-in is reported as the count at its ',',
+# before it is parsed, like that of a function
+func main() {
+    exit(0, zz)
+}

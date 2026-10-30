@@ -1,6 +1,23 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] hard: design review series 2, round 34 (2026-10-30, user: continue
+    design review rounds and fix the recommended until there are no more
+    issues; 7 reviewers A-G, the groups rotated again)
+    => done (2026-10-30): bugs: E1 an empty string assigned to an unsized
+       'mut' array parameter is accepted and zeroes it (the empty-string
+       rule only where a declaration takes its size, 'size_token', 1936);
+       C2 the result name and C3 the parameter names of a generic function
+       are checked where read, also without an instance (1931, 1932);
+       messages: C1 a generic call that ends before the deducing argument
+       names the first missing one or the missing ',' like a plain call
+       (1929, 1930); G1 a '==' after the name of a 'var', 'let', 'dat' or
+       type is not read as its '=' ('tokenizer::is_lone_equals_next', 1933,
+       1934); F1 a surplus built-in argument is reported as the count at its
+       ',' before it is parsed, like a function (0693 1684 1687, 1935;
+       reopens round 4 B.4); code: A1 rv32i 'emit_stack_setup' gone, qemu
+       and fpga override 'emit_target_setup'; comment: B1 typed 'let'
+       constants in 'folded_value'; one reviewer found nothing
 [x] hard: design review series 2, round 33 (2026-10-30, user: continue
     reviewing and fix the recommended until no more issues are found; 7
     reviewers A-G, the groups rotated again)

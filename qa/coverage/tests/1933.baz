@@ -1,0 +1,5 @@
+# a comparison after the name of a definition is not read as its '='
+
+func main() {
+    var n == 2
+}

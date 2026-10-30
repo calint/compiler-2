@@ -55,13 +55,27 @@ class machine_rv32i_qemu final : public machine_rv32i_bare_metal {
         a.j(1, "1b");
     }
 
-    // the stack follows the variables, see 'emit_stack_setup'
+    // the stack follows the variables, see 'emit_target_setup'
     auto emit_stack_limit_load(const size_t indent, const std::string_view reg)
         -> void override {
 
         assembler_rv32i& a{assembler()};
 
         a.la(indent, reg, variables_end_label_);
+    }
+
+    // no operating system sets up a stack, it follows the variables
+    auto emit_target_setup() -> void override {
+        assembler_rv32i& a{assembler()};
+
+        a.comment(0, std::format("load stack pointer to {} + {} B",
+                                 in_quotes(variables_end_label_),
+                                 stack_size_bytes()));
+
+        a.la(0, "sp", variables_end_label_);
+        a.li(0, "t0", stack_size_bytes());
+        a.add(0, "sp", "sp", "t0");
+        a.add_separator_newline();
     }
 
   private:
@@ -77,19 +91,6 @@ class machine_rv32i_qemu final : public machine_rv32i_bare_metal {
         a.andi(1, "a4", "a4", line_status_data_ready_);
         a.beqz(1, "a4", "2b");
         a.lbu(1, "a4", 0, "a3");
-    }
-
-    // the stack follows the variables
-    auto emit_stack_setup() -> void override {
-        assembler_rv32i& a{assembler()};
-
-        a.comment(0, std::format("load stack pointer to {} + {} B",
-                                 in_quotes(variables_end_label_),
-                                 stack_size_bytes()));
-
-        a.la(0, "sp", variables_end_label_);
-        a.li(0, "t0", stack_size_bytes());
-        a.add(0, "sp", "sp", "t0");
     }
 
     auto emit_transmit_byte() -> void override {

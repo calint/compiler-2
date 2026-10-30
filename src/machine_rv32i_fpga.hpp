@@ -124,6 +124,21 @@ class machine_rv32i_fpga final : public machine_rv32i_bare_metal {
         a.li(indent, reg, memory_size_bytes() - stack_size_bytes());
     }
 
+    // no operating system sets up a stack, it grows down from the end of
+    // memory
+    auto emit_target_setup() -> void override {
+        assembler_rv32i& a{assembler()};
+
+        // 'std::format' has no digit separators so the halves are printed
+        // apart
+        a.comment(0, std::format("load stack pointer to {:#x}:{:04x}",
+                                 memory_size_bytes() >> half_bits_,
+                                 memory_size_bytes() & half_mask_));
+
+        a.lui(0, "sp", memory_size_bytes() >> assembler_rv32i::lui_shift);
+        a.add_separator_newline();
+    }
+
   private:
     //
     // overridden methods
@@ -135,19 +150,6 @@ class machine_rv32i_fpga final : public machine_rv32i_bare_metal {
         a.label(0, "2");
         a.lw(1, "a4", uart_in_offset_, "zero");
         a.beq(1, "a4", "a3", "2b");
-    }
-
-    // the stack grows down from the end of memory
-    auto emit_stack_setup() -> void override {
-        assembler_rv32i& a{assembler()};
-
-        // 'std::format' has no digit separators so the halves are printed
-        // apart
-        a.comment(0, std::format("load stack pointer to {:#x}:{:04x}",
-                                 memory_size_bytes() >> half_bits_,
-                                 memory_size_bytes() & half_mask_));
-
-        a.lui(0, "sp", memory_size_bytes() >> assembler_rv32i::lui_shift);
     }
 
     auto emit_transmit_byte() -> void override {

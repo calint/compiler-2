@@ -1,0 +1,6 @@
+# a comparison after the name of a type is not read as its '='
+
+type box<T type> { x T }
+type b == box<i8>
+
+func main() {}

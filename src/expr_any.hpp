@@ -396,17 +396,6 @@ class expr_any final : public statement {
         return is_array() and std::holds_alternative<single_value>(form_);
     }
 
-    // e.g. the '[' of 'i8[]{}', none without an array prefix
-    [[nodiscard]] auto open_bracket_token() const -> std::optional<token> {
-        const array_prefix* const prefix{array_prefix_of()};
-
-        if (prefix == nullptr) {
-            return std::nullopt;
-        }
-
-        return prefix->open_bracket_tk;
-    }
-
     // appends the steps that write the value at 'at'; 'unsized_count' is the
     // size of an unsized destination, e.g. a parameter 's[]', empty when it
     // is not known, then the elements after the literal are not written
@@ -453,6 +442,22 @@ class expr_any final : public statement {
         }
 
         plan_remaining_elements(tok(), at, count, *array_count, plan);
+    }
+
+    // where a literal written without a size gives one, e.g. the '[' of
+    // 'i8[]{}' or the string '""'; none for another form
+    [[nodiscard]] auto size_token() const -> std::optional<token> {
+        if (const string_array* const str{std::get_if<string_array>(&form_)}) {
+            return str->string_tk;
+        }
+
+        const array_prefix* const prefix{array_prefix_of()};
+
+        if (prefix == nullptr) {
+            return std::nullopt;
+        }
+
+        return prefix->open_bracket_tk;
     }
 
   private:
@@ -1141,12 +1146,10 @@ class expr_any final : public statement {
                                        in_quotes(element_type.name()))};
         }
 
-        if (not array_count) {
-            // arrays of zero length are not allowed
-            if (size_bytes == 0) {
-                throw compile_error{string_tk, "an empty string needs a size"};
-            }
+        // note: an empty string that would give a declaration its size is
+        //       rejected there, e.g. 'var s = ""' ('initializer_declaration')
 
+        if (not array_count) {
             return size_bytes;
         }
 

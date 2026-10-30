@@ -1,0 +1,6 @@
+# the result name of a generic function is checked where it is read, also
+# without an instance
+func make<T type>() exit {
+}
+
+func main() {}

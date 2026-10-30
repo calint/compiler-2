@@ -196,6 +196,12 @@ class tokenizer final {
         return binary_operator_of(text) or comparison_of(text);
     }
 
+    // a '=' follows that does not start a '==', e.g. the '=' of 'x = 1' but
+    // not of 'x == 1'
+    [[nodiscard]] auto is_lone_equals_next() const -> bool {
+        return peek_char_after_whitespace() == '=' and peek_operator() != "==";
+    }
+
     // the token of 'ch' with the whitespace around it when 'ch' is next, the
     // cursor stays when not
     [[nodiscard]] auto is_next_char_token(const char ch)

@@ -1,0 +1,9 @@
+# a generic call that ends before the argument that deduces a type names the
+# first missing argument, as a call without type parameters does
+func pick<T type>(a, b, v T) res T {
+    res = v
+}
+
+func main() {
+    var x = pick(1)
+}

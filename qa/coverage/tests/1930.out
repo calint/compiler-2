@@ -1,0 +1,4 @@
+
+1930.baz:9:20: expected ',' before argument 2 ('v')
+    var x = pick(y 1)
+                   ^

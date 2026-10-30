@@ -1,0 +1,4 @@
+
+1933.baz:4:11: expected '=' followed by an initializer, e.g. 'var x = i32(0)'
+    var n == 2
+          ^

@@ -1,0 +1,10 @@
+# a token after an argument before the one that deduces a type is reported
+# as a missing ',', as in a call without type parameters
+func pick<T type>(a, v T) res T {
+    res = v
+}
+
+func main() {
+    var y = 2
+    var x = pick(y 1)
+}

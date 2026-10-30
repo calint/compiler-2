@@ -1,0 +1,4 @@
+
+1934.baz:4:8: expected '{' to begin declaration of type
+type b == box<i8>
+       ^

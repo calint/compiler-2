@@ -99,15 +99,6 @@ class machine_rv32i_bare_metal : public machine_rv32i {
         call_io_routine(indent, read_label_);
     }
 
-    // no operating system sets up a stack
-    auto emit_target_setup() -> void override {
-        emit_stack_setup();
-
-        assembler_rv32i& a{assembler()};
-
-        a.add_separator_newline();
-    }
-
     // only the routines the program calls are emitted
     auto emit_used_routines() -> void override {
         machine_rv32i::emit_used_routines();
@@ -146,8 +137,6 @@ class machine_rv32i_bare_metal : public machine_rv32i {
     // note: the read routine uses the labels '1', '3' and '4' around it, an
     //       override may use '2'
     virtual auto emit_receive_byte() -> void = 0;
-
-    virtual auto emit_stack_setup() -> void = 0;
 
     // waits until the uart is ready and sends the byte at 'a5', may change
     // only 'a4'

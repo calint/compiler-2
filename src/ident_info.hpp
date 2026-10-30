@@ -35,7 +35,8 @@ enum class read_only_cause : uint8_t {
 
 // a value known at compile time; typed: it has the rules of a variable of
 // 'own_type', e.g. a folded conversion or a constant argument of an inlined
-// call; untyped: a literal or a 'let' name, checked by its value
+// call, and a 'let' name of either; untyped: a literal or a 'let' name of
+// one, checked by its value
 struct folded_value {
     int64_t value{};
     // null when untyped
@@ -326,7 +327,7 @@ class ident_info final {
                                          const folded_value& constant)
         -> ident_info {
 
-        // note: a typed constant has the type of its parameter
+        // note: a typed constant has its own type, e.g. that of its parameter
         assert(not constant.is_typed() or constant.own_type == &tp);
 
         ident_info info;

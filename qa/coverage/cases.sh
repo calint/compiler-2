@@ -6136,3 +6136,28 @@ SRC=1927 && COMPERR
 
 # an i/o call in a global initializer
 SRC=1928 && COMPERR
+
+# a generic call that ends before the deducing argument names the first
+# missing one
+SRC=1929 && COMPERR
+
+# a generic call with a stray token after an earlier argument
+SRC=1930 && COMPERR
+
+# the result name of a generic function without an instance
+SRC=1931 && COMPERR
+
+# a parameter name of a generic function without an instance
+SRC=1932 && COMPERR
+
+# a '==' after the name of a 'var'
+SRC=1933 && COMPERR
+
+# a '==' after the name of a type
+SRC=1934 && COMPERR
+
+# a surplus argument of a built-in
+SRC=1935 && COMPERR
+
+# an empty string assigned to an unsized array parameter
+SRC=1936 && EXP=7 && RUN

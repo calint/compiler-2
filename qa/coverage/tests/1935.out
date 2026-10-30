@@ -1,0 +1,4 @@
+
+1935.baz:4:11: 'exit' takes 1 argument
+    exit(0, zz)
+          ^

@@ -360,7 +360,11 @@ struct func_result {
                 tz.peek_char_after_whitespace() == '{',
         };
 
-        if (not tc.types().has(type_tk.text()) and not is_type_before_body) {
+        const bool has_type{
+            tc.types().has(type_tk.text()) or is_type_before_body,
+        };
+
+        if (not has_type) {
             tz.put_back_token(type_tk);
 
             // a keyword without a '{' after it starts what follows a function
@@ -370,16 +374,20 @@ struct func_result {
                 tz.put_back_token(name_tk);
                 return std::nullopt;
             }
+        }
 
-            return func_result{
-                .name_tk{name_tk},
-                .type_tk{std::nullopt},
-            };
+        // where it is read, also in a generic definition that no instance
+        // parses, e.g. the '5' of 'func f<T type>() 5 {'; without the '{'
+        // the body reports it missing first
+        if (not name_tk.is_text(reserved_names::self) and
+            tz.peek_char_after_whitespace() == '{') {
+
+            tc.assert_valid_unqualified_name(name_tk);
         }
 
         return func_result{
             .name_tk{name_tk},
-            .type_tk{type_tk},
+            .type_tk{has_type ? std::optional{type_tk} : std::nullopt},
         };
     }
 };
@@ -981,15 +989,10 @@ class stmt_def_func final : public statement {
             return;
         }
 
-        // 'self' names the value a constructor builds, a name before the body
-        // is the result
+        // 'self' names the value a constructor builds
         if (result_->is_self()) {
             set_type(constructor_result_type(*result_));
             return;
-        }
-
-        if (tz.peek_char_after_whitespace() == '{') {
-            tc.assert_valid_unqualified_name(result_->name_tk);
         }
 
         set_type(result_->type_tk ? tc.get_type_or_throw(*result_->type_tk)

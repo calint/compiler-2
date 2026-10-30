@@ -10,7 +10,6 @@
 #include <cstdint>
 #include <format>
 #include <memory>
-#include <optional>
 #include <string_view>
 #include <utility>
 #include <variant>
@@ -336,13 +335,11 @@ inline auto parse_name_statement(toc& tc, tokenizer& tz, const token tk,
     stmt_identifier& dst{*std::get<std::unique_ptr<stmt_identifier>>(parsed)};
 
     // e.g. 'p1 = p2', not the comparison 'x == 1'
-    const std::optional<token> equals_tk{
-        tz.peek_operator() == "==" ? std::nullopt : tz.is_next_char_token('='),
-    };
+    if (tz.is_lone_equals_next()) {
+        const token equals_tk{tz.seen_char_token('=')};
 
-    if (equals_tk) {
         return std::make_unique<stmt_assign_var>(tc, tz, std::move(dst),
-                                                 *equals_tk);
+                                                 equals_tk);
     }
 
     // at the name, the next token can be on a later line

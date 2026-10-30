@@ -56,7 +56,7 @@ class stmt_def_func_param final : public statement {
 
             // where it is read, also in a generic definition that no instance
             // parses, e.g. the 'mut' of 'func f(a, mut b i8)'
-            toc::assert_valid_name(name_tk);
+            tc.assert_valid_unqualified_name(name_tk);
 
             const std::optional<token> mut_tk{read_mut(tz)};
 
@@ -180,8 +180,6 @@ class stmt_def_func_param final : public statement {
     stmt_def_func_param(const toc& tc, const syntax& tokens)
         : statement{tokens.name_tk}, mut_tk_{tokens.mut_tk},
           type_tk_{tokens.type_tk}, brackets_{tokens.brackets} {
-
-        tc.assert_valid_unqualified_name(tok());
 
         set_type(type_tk_ ? tc.get_type_or_throw(*type_tk_)
                           : tc.builtins().default_type());

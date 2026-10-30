@@ -1,0 +1,4 @@
+
+1929.baz:8:19: expected argument 2 ('b')
+    var x = pick(1)
+                  ^

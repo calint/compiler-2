@@ -365,7 +365,7 @@ class stmt_def_type_generic final : public statement {
         }
 
         // e.g. 'type text<size> = list<i8, size>'
-        if (tz.peek_char_after_whitespace() == '=') {
+        if (tz.is_lone_equals_next()) {
             define_based_generic(tc, tz, std::move(params));
             return;
         }
@@ -639,7 +639,7 @@ inline auto make_stmt_def_type(toc& tc, const token tk, tokenizer& tz)
     }
 
     // e.g. 'type str = text<127>'
-    if (next == '=') {
+    if (tz.is_lone_equals_next()) {
         return std::make_unique<stmt_def_type_alias>(tc, tk, name_tk, tz);
     }
 
