@@ -1,4 +1,4 @@
 
-1858.baz:4:10: 'foo' is not a generic type, it takes no type arguments
-func f(x foo<3>) {
-         ^~~
+1858.baz:4:10: 'zz' is not a generic type, it takes no type arguments
+func f(x zz<3>) {
+         ^~

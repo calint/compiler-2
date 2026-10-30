@@ -1,4 +1,5 @@
-# a second comparison is reported with its whole operator
+# a comparison followed by another is reported at the first, its condition
+# is not an operand
 
 func main() {
     var x = 1

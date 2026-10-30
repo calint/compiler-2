@@ -771,9 +771,7 @@ class expr_arith final : public statement {
         tokenizer probe{tz};
 
         if (comparison_of(tz.peek_operator())) {
-            throw compile_error{probe.seen_operator(),
-                                "a comparison makes a condition, which is not "
-                                "an operand here, store it in a 'bool' first"};
+            throw_comparison_as_operand(probe.seen_operator());
         }
 
         const token next_tk{probe.next_token()};
@@ -784,6 +782,16 @@ class expr_arith final : public statement {
                                      "operand here, store it in a 'bool' first",
                                      in_quotes(next_tk.text()))};
         }
+    }
+
+    // the condition of the comparison at 'op_tk' taken as an operand, e.g.
+    // the '>' of 'int(a > 2)' or the first '<' of 'x < 1 < 2'
+    [[noreturn]] static auto throw_comparison_as_operand(const token& op_tk)
+        -> void {
+
+        throw compile_error{op_tk, "a comparison makes a condition, which is "
+                                   "not an operand here, store it in a 'bool' "
+                                   "first"};
     }
 
   private:
@@ -983,8 +991,9 @@ class expr_arith final : public statement {
 
     // what follows the list is not read
     auto end_list(tokenizer& tz) const -> void {
-        // e.g. the '==' of '(x == 1) == b' or of 'x = 1 + (x < 1)', which
-        // takes the condition for an arithmetic operand
+        // e.g. the first '==' of '(x == 1) == b' or the '<' of
+        // 'x = 1 + (x < 1)', which takes the condition for an arithmetic
+        // operand
         if (is_enclosed()) {
             assert_no_condition_next(tz);
 

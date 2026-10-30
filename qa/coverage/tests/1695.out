@@ -1,4 +1,4 @@
 
-1695.baz:5:13: function 'exit' has no result
+1695.baz:5:13: expected '(' after function name
     var y = exit + 0
             ^~~~

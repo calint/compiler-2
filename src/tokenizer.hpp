@@ -91,14 +91,19 @@ class tokenizer final {
     }
 
     // a ',' where the last of 'count' arguments ends is a surplus one, e.g.
-    // 'i8(1, 2)', or a trailing ','; without parameters anything
-    // but ')' is, e.g. 'f(1)' of 'func f()'
+    // 'i8(1, 2)', or a trailing ','; without parameters anything but a
+    // closer or the end is, e.g. 'f(1)' of 'func f()'; a missing ')' is the
+    // caller's, e.g. 'f(' before a '}'
     auto assert_no_surplus_argument(const std::string_view name,
                                     const size_t count) const -> void {
 
         const char next{peek_char_after_whitespace()};
 
-        if (next == ')' or (count != 0 and next != ',')) {
+        if (next == ')' or next == ']' or next == '}' or next == '\0') {
+            return;
+        }
+
+        if (count != 0 and next != ',') {
             return;
         }
 

@@ -1,0 +1,4 @@
+
+1907.baz:5:1: expected ',' or ')' after parameter 'a'
+func main() {}
+^

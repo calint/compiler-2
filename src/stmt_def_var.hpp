@@ -17,7 +17,6 @@
 #include "expr_bool.hpp"
 #include "ident_info.hpp"
 #include "machine.hpp"
-#include "operand.hpp"
 #include "parse_lookahead.hpp"
 #include "stmt_assign_var.hpp"
 #include "stmt_identifier.hpp"

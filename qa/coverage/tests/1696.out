@@ -1,4 +1,4 @@
 
-1696.baz:6:13: function 'array_copy' has no result
+1696.baz:6:13: expected '(' after function name
     var x = array_copy
             ^~~~~~~~~~

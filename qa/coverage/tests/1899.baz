@@ -1,0 +1,11 @@
+# a type parameter named like its generic type is rejected at the definition,
+# also when the type has a method and an alias makes an instance
+
+type list<list type> { a list }
+
+func list.f() {}
+
+type s = list<i8>
+
+func main() {
+}

@@ -1,4 +1,4 @@
 
-1415.baz:5:9: an array of 'i32' is not a number
+1415.baz:5:9: a unary operator makes a number, not an array of 'i32'
     a = -a
         ^

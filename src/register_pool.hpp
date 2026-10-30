@@ -262,7 +262,8 @@ class register_trace final {
   private:
     // what the frame being compiled holds itself
     auto record_own_use(const register_pool& pool) -> void {
-        // the registers a backend allocates before the first frame are nobody's
+        // the registers allocated before the first frame, the variables base
+        // and those of the global initializers, are no callee's
         if (frames_.empty()) {
             return;
         }

@@ -1945,7 +1945,8 @@ class assembler_rv32i final : public assembler {
         return *number;
     }
 
-    // 'auipc' and 'second' reach 'distance' from the 'auipc'
+    // 'auipc' and the instruction of 'second_encoding' reach 'distance' from
+    // the 'auipc'
     [[nodiscard]] static auto pc_relative(const uint32_t second_encoding,
                                           const uint8_t rd, const uint8_t base,
                                           const int64_t distance)

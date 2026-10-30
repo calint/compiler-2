@@ -339,7 +339,7 @@ class machine_x86_64 final : public machine {
         assembler_.instruction(
             indent, op::mov, to_argument(last_base),
             assembler_x86_64::immediate::of_qword_expression(std::format(
-                "{} - {} - {}", variables_end_label, frame_size_bytes.symbol(),
+                "{} - {} - {}", variables_end_label_, frame_size_bytes.symbol(),
                 frame_address.displacement())));
 
         // note: signed, the highest base is negative when the frame size and
@@ -350,7 +350,7 @@ class machine_x86_64 final : public machine {
                                frame_address.base_register());
 
         branch_to_failure(src_loc_tk, indent, condition::l,
-                          frame_overflow_failure);
+                          frame_overflow_failure_);
 
         free_scratch_register(src_loc_tk, indent, last_base);
         comment(src_loc_tk, indent, "frame capacity check end");
@@ -953,8 +953,9 @@ class machine_x86_64 final : public machine {
     }
 
     auto emit_variables_base_load() -> void override {
-        assembler_.instruction(0, op::lea, variables_base_register(),
-                               assembler_x86_64::memory::of_symbol(data_label));
+        assembler_.instruction(
+            0, op::lea, variables_base_register(),
+            assembler_x86_64::memory::of_symbol(data_label_));
     }
 
     // the index in 'register_names_' of a register of any size
@@ -1047,7 +1048,7 @@ class machine_x86_64 final : public machine {
     auto branch_on_overflow(const token& src_loc_tk, const size_t indent)
         -> void {
 
-        branch_to_failure(src_loc_tk, indent, condition::o, overflow_failure);
+        branch_to_failure(src_loc_tk, indent, condition::o, overflow_failure_);
     }
 
     // a reported line goes through the stub of its line, which sets 'rbp' for
@@ -1121,7 +1122,7 @@ class machine_x86_64 final : public machine {
         mov(src_loc_tk, indent, right, sized_operand(left, size_byte_));
         cmp(src_loc_tk, indent, right, left);
 
-        branch_to_failure(src_loc_tk, indent, condition::ne, overflow_failure);
+        branch_to_failure(src_loc_tk, indent, condition::ne, overflow_failure_);
     }
 
     // the source in 'rsi', the destination in 'rdi' and the byte count in
@@ -1151,7 +1152,7 @@ class machine_x86_64 final : public machine {
         comment(src_loc_tk, indent, "destination starts inside the source");
 
         cmp(src_loc_tk, indent, distance, qword_register("rcx"));
-        branch_to_failure(src_loc_tk, indent, condition::b, overlap_failure);
+        branch_to_failure(src_loc_tk, indent, condition::b, overlap_failure_);
         assembler_.label(indent, passed);
         free_scratch_register(src_loc_tk, indent, distance);
 
@@ -1177,7 +1178,7 @@ class machine_x86_64 final : public machine {
         comment(src_loc_tk, indent, "zero divisor");
 
         cmp(src_loc_tk, indent, divisor, immediate(0));
-        branch_to_failure(src_loc_tk, indent, condition::e, division_failure);
+        branch_to_failure(src_loc_tk, indent, condition::e, division_failure_);
 
         comment(src_loc_tk, indent, "minimum divided by -1 overflows");
 
@@ -1185,7 +1186,7 @@ class machine_x86_64 final : public machine {
         assembler_.jcc(indent, condition::ne, not_minimum);
         mov(src_loc_tk, indent, qword_register("rdx"), immediate(minimum));
         cmp(src_loc_tk, indent, qword_register("rax"), qword_register("rdx"));
-        branch_to_failure(src_loc_tk, indent, condition::e, division_failure);
+        branch_to_failure(src_loc_tk, indent, condition::e, division_failure_);
         assembler_.label(indent, not_minimum);
 
         comment(src_loc_tk, indent, "division check end");
@@ -1218,7 +1219,7 @@ class machine_x86_64 final : public machine {
         cmp(src_loc_tk, indent, sized_register("rcx", dst_type.size_bytes()),
             immediate(static_cast<int64_t>(dst_type.size_bits())));
 
-        branch_to_failure(src_loc_tk, indent, condition::ae, shift_failure);
+        branch_to_failure(src_loc_tk, indent, condition::ae, shift_failure_);
 
         comment(src_loc_tk, indent, "shift check end");
     }
@@ -1238,7 +1239,7 @@ class machine_x86_64 final : public machine {
                 immediate(range.array_count));
 
             branch_to_failure(src_loc_tk, indent, out_of_bounds,
-                              bounds_failure);
+                              bounds_failure_);
 
             return;
         }
@@ -1256,8 +1257,9 @@ class machine_x86_64 final : public machine {
         // the end of a range is 'start + count'; after the lower checks
         // neither is negative, the sum can pass the signed maximum and then
         // looks negative to a signed compare, the unsigned compare sees it
-        // large, e.g. 'array_copy(x[0x7fffffffffffffff], y[0], 1)' on 'i8[4]'
-        // ends at 0x8000000000000000, signed it is below 4 and passes
+        // large, e.g. 'array_copy(x[i], y, n)' on 'i8[4]' with 'i' 1 and 'n'
+        // 0x7fffffffffffffff ends at 0x8000000000000000, signed it is below 4
+        // and passes
         if (lower_checked) {
             lea(src_loc_tk, indent, reg_top_idx,
                 operand::mem(count.register_name(),
@@ -1268,14 +1270,16 @@ class machine_x86_64 final : public machine {
             // to the lower check
             mov(src_loc_tk, indent, reg_top_idx, range.checked);
             emit_op(src_loc_tk, indent, op::add, reg_top_idx, count);
-            branch_to_failure(src_loc_tk, indent, condition::o, bounds_failure);
+
+            branch_to_failure(src_loc_tk, indent, condition::o,
+                              bounds_failure_);
         }
 
         cmp(src_loc_tk, indent, reg_top_idx, immediate(range.array_count));
 
         free_scratch_register(src_loc_tk, indent, reg_top_idx);
 
-        branch_to_failure(src_loc_tk, indent, out_of_bounds, bounds_failure);
+        branch_to_failure(src_loc_tk, indent, out_of_bounds, bounds_failure_);
     }
 
     // 'test' of a register with itself sets the flags of a compare with 0 and
@@ -1438,7 +1442,7 @@ class machine_x86_64 final : public machine {
 
         assembler_.comment(1, "print message to stderr");
         assembler_.instruction(1, op::mov, "rax", syscall_write_);
-        assembler_.instruction(1, op::mov, "rdi", stderr_descriptor);
+        assembler_.instruction(1, op::mov, "rdi", stderr_descriptor_);
 
         assembler_.instruction(
             1, op::lea, "rsi",
@@ -1501,7 +1505,7 @@ class machine_x86_64 final : public machine {
                 std::format("num_buffer + {}", number_buffer_size_bytes)));
 
         assembler_.instruction(1, op::sub, "rdx", "rdi");
-        assembler_.instruction(1, op::mov, "rdi", stderr_descriptor);
+        assembler_.instruction(1, op::mov, "rdi", stderr_descriptor_);
         assembler_.instruction(1, op::syscall);
         exit(token{}, 1, qword_register("rbx"));
         assembler_.switch_section(section::bss);
@@ -1519,7 +1523,7 @@ class machine_x86_64 final : public machine {
         // 'O_RDWR' and 'SEEK_END' of linux
         constexpr int read_write{2};
         constexpr int seek_end{2};
-        constexpr int sector_shift{std::countr_zero(card_sector_size_bytes)};
+        constexpr int sector_shift{std::countr_zero(card_sector_size_bytes_)};
 
         // the descriptor is -1 until the file is opened
         constexpr std::array<int64_t, 1> not_opened{-1};
@@ -1575,7 +1579,7 @@ class machine_x86_64 final : public machine {
         assembler_.instruction(1, op::syscall);
         // a negative result is '-errno', the open failed
         assembler_.instruction(1, op::test, "rax", "rax");
-        assembler_.jcc(1, condition::s, sd_card_failure.label);
+        assembler_.jcc(1, condition::s, sd_card_failure_.label);
         // keep the descriptor for later transfers
         assembler_.instruction(1, op::mov, descriptor, "rax");
         assembler_.comment(1, "the size of the file in sectors");
@@ -1587,7 +1591,7 @@ class machine_x86_64 final : public machine {
         assembler_.instruction(1, op::syscall);
         // a negative result is '-errno', the seek failed
         assembler_.instruction(1, op::test, "rax", "rax");
-        assembler_.jcc(1, condition::s, sd_card_failure.label);
+        assembler_.jcc(1, condition::s, sd_card_failure_.label);
         // bytes to whole sectors, a partial last sector is not counted
         assembler_.instruction(1, op::sar, "rax", sector_shift);
         assembler_.instruction(1, op::mov, sector_count, "rax");
@@ -1600,10 +1604,10 @@ class machine_x86_64 final : public machine {
         // zero extending 'edi' differs from 'rdi' when the upper half is set
         assembler_.instruction(1, op::mov, "eax", "edi");
         assembler_.instruction(1, op::cmp, "rax", "rdi");
-        assembler_.jcc(1, condition::ne, sd_card_failure.label);
+        assembler_.jcc(1, condition::ne, sd_card_failure_.label);
         // a sector at or past the end of the file panics
         assembler_.instruction(1, op::cmp, "rdi", sector_count);
-        assembler_.jcc(1, condition::ae, sd_card_failure.label);
+        assembler_.jcc(1, condition::ae, sd_card_failure_.label);
         // the byte offset, the fourth system call argument, goes in 'r10'
         assembler_.instruction(1, op::mov, "r10", "rdi");
         assembler_.instruction(1, op::sal, "r10", sector_shift);
@@ -1615,13 +1619,13 @@ class machine_x86_64 final : public machine {
         assembler_.instruction(1, op::syscall);
         // anything but the full size, an error or a short transfer, panics
         assembler_.instruction(1, op::cmp, "rax", "rdx");
-        assembler_.jcc(1, condition::ne, sd_card_failure.label);
+        assembler_.jcc(1, condition::ne, sd_card_failure_.label);
         assembler_.instruction(1, op::ret);
 
-        comment({}, 0, sd_card_failure.comment);
+        comment({}, 0, sd_card_failure_.comment);
 
         // the stack is not unwound because the program exits
-        emit_failure_handler(sd_card_failure, false);
+        emit_failure_handler(sd_card_failure_, false);
 
         assembler_.switch_section(section::rodata);
         assembler_.comment(0, "the file name ends with a zero byte");
@@ -1798,10 +1802,8 @@ class machine_x86_64 final : public machine {
         const std::string_view sum{address.register_name()};
         assembler_.instruction(indent, op::mov, sum, value.displacement());
 
-        if (not value.base_register().empty()) {
-            assembler_.instruction(indent, op::lea, sum,
-                                   register_sum(value.base_register(), sum, 1));
-        }
+        assembler_.instruction(indent, op::lea, sum,
+                               register_sum(value.base_register(), sum, 1));
 
         // note: 'address_is_encodable' asserted the index and its scale
         if (not value.index_register().empty()) {
@@ -1978,7 +1980,7 @@ class machine_x86_64 final : public machine {
                    const operand& value) -> void {
 
         emit_op(src_loc_tk, indent, op::test, value, value);
-        branch_to_failure(src_loc_tk, indent, condition::s, bounds_failure);
+        branch_to_failure(src_loc_tk, indent, condition::s, bounds_failure_);
     }
 
     auto with_lowered_addresses(
@@ -2152,12 +2154,6 @@ class machine_x86_64 final : public machine {
         if (not rhs.is_memory()) {
             return false;
         }
-
-        // note: an index without a base has a scale above 1, with a scale of 1
-        //       it would be the base, e.g. '[r15 * 1]' is the address '[r15]'
-
-        assert(not lhs.base_register().empty() or lhs.scale() > 1);
-        assert(not rhs.base_register().empty() or rhs.scale() > 1);
 
         return lhs.type_ref().size_bytes() == rhs.type_ref().size_bytes() and
                lhs.is_same_address(rhs);

@@ -90,7 +90,7 @@ class machine_rv32i_linux final : public machine_rv32i {
         // the file name ends with a zero byte for the system call
         constexpr std::array<int64_t, 1> name_end{0};
         // the byte offset of a sector is split into two words
-        constexpr int sector_shift{std::countr_zero(card_sector_size_bytes)};
+        constexpr int sector_shift{std::countr_zero(card_sector_size_bytes_)};
 
         constexpr int high_shift{
             static_cast<int>(register_bits_) - sector_shift,
@@ -124,7 +124,7 @@ class machine_rv32i_linux final : public machine_rv32i {
         a.li(1, "a3", 0);
         a.li(1, "a7", syscall_openat_);
         a.ecall(1);
-        a.bltz(1, "a0", sd_card_failure.label);
+        a.bltz(1, "a0", sd_card_failure_.label);
         a.la(1, "a3", sd_card_label_);
         a.sw(1, "a0", descriptor_offset, "a3");
         // 'llseek' writes the size of the file at 'a3'
@@ -133,13 +133,13 @@ class machine_rv32i_linux final : public machine_rv32i {
         a.li(1, "a4", seek_end);
         a.li(1, "a7", syscall_llseek_);
         a.ecall(1);
-        a.bnez(1, "a0", sd_card_failure.label);
+        a.bnez(1, "a0", sd_card_failure_.label);
         a.lw(1, "a4", 0, "a3");
         a.lw(1, "a0", size_high_offset, "a3");
         a.srli(1, "a4", "a4", sector_shift);
         a.slli(1, "a1", "a0", high_shift);
         a.or_op(1, "a4", "a4", "a1");
-        // an image of 2 TB or more has more sectors than a sector number
+        // an image of 2 TiB or more has more sectors than a sector number
         // reaches
         a.srli(1, "a0", "a0", sector_shift);
         a.beqz(1, "a0", "1f");
@@ -149,7 +149,7 @@ class machine_rv32i_linux final : public machine_rv32i {
         restore_saved_registers(1, saved);
         a.label(0, "2");
         a.lw(1, "a4", count_offset, "a3");
-        a.bgeu(1, "a0", "a4", sd_card_failure.label);
+        a.bgeu(1, "a0", "a4", sd_card_failure_.label);
         // 'a0' the descriptor, 'a3' and 'a4' the low and high word of the
         // offset
         a.lw(1, "a7", descriptor_offset, "a3");
@@ -158,11 +158,11 @@ class machine_rv32i_linux final : public machine_rv32i {
         a.mv(1, "a0", "a7");
         a.mv(1, "a7", "a5");
         a.ecall(1);
-        a.bne(1, "a0", "a2", sd_card_failure.label);
+        a.bne(1, "a0", "a2", sd_card_failure_.label);
         a.jr(1, "a6");
 
-        comment({}, 0, sd_card_failure.comment);
-        emit_failure_handler(sd_card_failure, false);
+        comment({}, 0, sd_card_failure_.comment);
+        emit_failure_handler(sd_card_failure_, false);
 
         a.switch_section(section::data);
         a.align(word_size_bytes_);

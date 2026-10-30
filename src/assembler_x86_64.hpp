@@ -69,8 +69,8 @@ class assembler_x86_64 final : public assembler {
     // 'variables' is the uninitialized section after the data
     enum class section : uint8_t { text, rodata, data, bss, variables };
 
-    // '[symbol + base + index * scale + displacement]', zero 'size_bytes'
-    // leaves the width to the other operand
+    // '[symbol + displacement]' or '[base + index * scale + displacement]',
+    // zero 'size_bytes' leaves the width to the other operand
     struct memory {
         std::string_view symbol;
         std::string_view base;
@@ -349,22 +349,16 @@ class assembler_x86_64 final : public assembler {
     [[nodiscard]] static auto address_text(const memory& address)
         -> std::string {
 
+        // a symbol is addressed relative to 'rip', without registers, any
+        // other address from a base register
+        assert(address.symbol.empty() != address.base.empty());
+        assert(address.symbol.empty() or address.index.empty());
+
         std::string memory_text{address.symbol};
-
-        // a symbol is addressed relative to 'rip', without registers
-        assert(address.symbol.empty() or
-               (address.base.empty() and address.index.empty()));
-
-        if (not address.base.empty()) {
-            memory_text += address.base;
-        }
+        memory_text += address.base;
 
         if (not address.index.empty()) {
-            if (not memory_text.empty()) {
-                memory_text += " + ";
-            }
-
-            memory_text += address.index;
+            memory_text += std::format(" + {}", address.index);
 
             if (address.scale > 1) {
                 memory_text += std::format(" * {}", address.scale);
@@ -375,9 +369,7 @@ class assembler_x86_64 final : public assembler {
             return memory_text;
         }
 
-        if (not memory_text.empty()) {
-            memory_text += address.displacement > 0 ? " + " : " - ";
-        }
+        memory_text += address.displacement > 0 ? " + " : " - ";
 
         const uint64_t magnitude{
             address.displacement < 0
@@ -473,15 +465,12 @@ class assembler_x86_64 final : public assembler {
     [[nodiscard]] static auto comment_start(const size_t indent)
         -> std::string {
 
-        std::string text{comment_marker_};
-
-        if (indent != 0) {
-            text += "   ";
+        if (indent == 0) {
+            return std::string{comment_marker_};
         }
 
-        for (size_t i{1}; i < indent; ++i) {
-            text += "    ";
-        }
+        std::string text{indentation(indent)};
+        text.replace(0, comment_marker_.size(), comment_marker_);
 
         return text;
     }

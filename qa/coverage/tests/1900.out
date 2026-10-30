@@ -1,0 +1,4 @@
+
+1900.baz:6:11: generic parameter 'text' is also the name of the generic type at 6:6, use another name
+type text<text type> = box<text>
+          ^~~~

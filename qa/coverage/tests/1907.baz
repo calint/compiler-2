@@ -1,0 +1,5 @@
+# a parameter list without its ')' is reported at the next keyword
+
+func f(a
+
+func main() {}

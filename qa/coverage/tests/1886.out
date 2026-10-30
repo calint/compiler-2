@@ -1,4 +1,4 @@
 
-1886.baz:5:20: unexpected '=='
+1886.baz:6:15: a comparison makes a condition, which is not an operand here, store it in a 'bool' first
     var c = x == 1 == true
-                   ^
+              ^~

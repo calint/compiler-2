@@ -1,5 +1,6 @@
 #pragma once
 
+#include <algorithm>
 #include <cassert>
 #include <cstddef>
 #include <cstdint>
@@ -466,13 +467,16 @@ class statement {
     }
 
     // the type after the name of a field or a parameter, none for the default
-    // type, e.g. the 'x' of '{x, y}' or 'a[4]'
+    // type, e.g. the 'x' of '{x, y}' or 'a[4]'; a keyword names no type, e.g.
+    // the 'func' of a definition after a '(' or '{' that is not closed
     [[nodiscard]] static auto read_declared_type(const toc& tc, tokenizer& tz)
         -> std::optional<token> {
 
         const token type_tk{tz.next_token()};
 
-        if (type_tk.is_none()) {
+        if (type_tk.is_none() or
+            std::ranges::contains(reserved_names::keywords, type_tk.text())) {
+
             tz.put_back_token(type_tk);
             return std::nullopt;
         }

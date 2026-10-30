@@ -3,7 +3,6 @@
 #include <algorithm>
 #include <cassert>
 #include <cstddef>
-#include <cstdint>
 #include <format>
 #include <functional>
 #include <memory>
@@ -18,7 +17,6 @@
 #include <vector>
 
 #include "compile_error.hpp"
-#include "decouple.hpp"
 #include "expr_any.hpp"
 #include "generics.hpp"
 #include "ident_info.hpp"
@@ -152,8 +150,10 @@ struct generic_call {
 
     // the type of the argument at 'index' when it is a variable, a field or an
     // element, or the value it makes names its type: 'point{1, 2}',
-    // 'point.at(1, 2)' or 'mk(1, 2)', otherwise null. 'tz' is after the '(' and
-    // is a copy, the caller does not move
+    // 'point.at(1, 2)' or 'mk(1, 2)', otherwise null; an argument that no
+    // operator continues is whole, e.g. 'a' of 'f(a 2)', the parse of the
+    // call reports what follows it. 'tz' is after the '(' and is a copy, the
+    // caller does not move
     [[nodiscard]] static auto argument_type(toc& tc, tokenizer tz,
                                             const size_t index) -> const type* {
 
@@ -193,9 +193,7 @@ struct generic_call {
 
         const stmt_identifier ident{tc, tk, tz};
 
-        const char next{tz.peek_char_after_whitespace()};
-
-        if (ident.is_method_receiver() or (next != ',' and next != ')')) {
+        if (ident.is_method_receiver() or continues_expression(tz)) {
             return nullptr;
         }
 
@@ -312,8 +310,7 @@ struct generic_call {
         -> const type* {
 
         const auto is_whole_argument = [&] -> bool {
-            const char next{tz.peek_char_after_whitespace()};
-            return next == ',' or next == ')';
+            return not continues_expression(tz);
         };
 
         // e.g. 'point{1, 2}'
@@ -1468,16 +1465,13 @@ class builtin_arguments final {
     token close_paren_tk_;
 
   public:
-    // the name of the built-in, 'name_tk', is read; a missing '(' and a
-    // count outside 'min_count' to 'max_count' are reported at it, the next
-    // token can be on a later line
+    // the name of the built-in, 'name_tk', is read and 'parse_builtin' saw
+    // the '('; a count outside 'min_count' to 'max_count' is reported at the
+    // name, the next token can be on a later line
     builtin_arguments(toc& tc, tokenizer& tz, const token& name_tk,
                       const std::span<const size_t> array_indexes,
                       const size_t min_count, const size_t max_count)
-        : open_paren_tk_{
-              tz.expect_char_token_after(name_tk, '(',
-                                         "expected '(' after function name"),
-          } {
+        : open_paren_tk_{tz.seen_char_token('(')} {
 
         read_arguments(tc, tz, array_indexes);
 

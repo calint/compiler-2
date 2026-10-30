@@ -98,9 +98,11 @@ inline expr_type::expr_type(toc& tc, tokenizer& tz, const type& tp,
                             value_kind(), in_quotes(tp.name()))};
     }
 
-    // e.g. the '-' of 'q = -p'
+    // e.g. the '-' of 'q = -p' or of 'q = -1'
     if (tz.is_unary_operator_next()) {
-        throw compile_error{tz, not_a_number()};
+        throw compile_error{
+            tz, std::format("a unary operator makes a number, not {} of {}",
+                            value_kind(), in_quotes(tp.name()))};
     }
 
     // e.g. the ')' of 'a = )', 'expr_any' reads the '{' of an array
@@ -130,7 +132,9 @@ inline auto expr_type::assert_value_ends(const tokenizer& tz) const -> void {
         expr_arith::assert_no_condition_next(tz);
     }
 
-    throw compile_error{tok(), not_a_number()};
+    throw compile_error{tok(),
+                        std::format("{} of {} is not a number", value_kind(),
+                                    in_quotes(get_type().name()))};
 }
 
 // the fields of 'tp' in braces, e.g. '{x, y}' of 'obj.pos = {x, y}'
@@ -196,8 +200,8 @@ inline expr_type::expr_type(expr_type&&) noexcept = default;
 inline auto expr_type::operator=(expr_type&&) noexcept -> expr_type& = default;
 inline expr_type::~expr_type() = default;
 
-inline expr_type::expr_type(std::unique_ptr<stmt_identifier> receiver)
-    : statement{receiver->tok()}, value_{std::move(receiver)} {
+inline expr_type::expr_type(std::unique_ptr<stmt_identifier> path)
+    : statement{path->tok()}, value_{std::move(path)} {
 
     set_type(operand_path()->get_type());
 }

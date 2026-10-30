@@ -1,0 +1,4 @@
+
+1904.baz:9:9: expected ')' after the arguments
+    f(a 2)
+        ^

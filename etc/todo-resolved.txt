@@ -1,6 +1,89 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] hard: design review series 2, round 30 (2026-10-29, user: design rounds
+    until nothing more to fix; 7 reviewers A-G, the groups rotated again,
+    asked to try malformed programs against the messages)
+    => done (2026-10-29): one mistake, one message: C1 a chained comparison
+       'x < 1 < 2' is reported at the first comparison, "a comparison makes a
+       condition ..." (1886, 1905; reopens the round 18 wording of 1886, it
+       had five messages by context); A1 an element indexed again says
+       "'a[0]' is not an array, it cannot be indexed" (1908, four messages
+       before, one wrong); A2 a built-in name without '(' says "expected '('
+       after function name" wherever it stands (1695, 1696, 1909); B1 a
+       generic call with a stray token after an argument reports the
+       delimiter, not "cannot deduce" (1904); D1 a field or parameter list
+       left open does not read the next keyword as a type, as K3.4 of
+       2026-10-27 for results (1906, 1907; 1858 uses 'zz', 'foo' is a
+       keyword); behavior-preserving: the protected constants of 'machine'
+       end with '_' (AGENTS.md); comments: the rv32i 'zero' destination
+       note, the frames of 'register_pool', 'destination::is_named_'
+[x] hard: design review series 2, round 29 (2026-10-29, user: design rounds
+    until nothing more to fix; 7 reviewers A-G, the groups rotated again,
+    asked also for source names that collide with names the compiler makes:
+    none found)
+    => done (2026-10-29): A1 a whole array of instances or 'bool' in a
+       comparison says "array 'ps' must be indexed" like a number array, not
+       that the instance is not a number (1902); B1 'f(' before a '}' or the
+       end of the source, for a function without parameters, says "expected
+       ')' after the arguments", not "'f' takes 0 arguments" (1903);
+       comments: the maker of the 'if' labels in the 'toc' label table; a
+       stray blank line; open: A3 arrays in arithmetic, see etc/todo.txt;
+       four reviewers found nothing
+[x] hard: design review series 2, round 28 (2026-10-29, user: design rounds
+    until nothing more to fix; 7 reviewers A-G, the groups rotated again)
+    => done (2026-10-29): E1 a variable named like a scratch register ('rax',
+       't1') counted as a read of a scratch destination of that name, which
+       took an extra scratch register and could reject a deep list with "out
+       of scratch registers" (1901, x86_64): only a named destination is
+       reached by name ('destination::is_named', refines E.3 of 2026-10-24);
+       behavior-preserving, listings verified equal: the parse gives loop
+       scopes no labels, so 'create_unique_label' and 'call_path_at' are
+       compile only (reopens the D.4 grouping of 2026-10-26, its reason gone),
+       'expr_type::not_a_number' inlined into its last caller; includes:
+       'operand.hpp' gone from 'stmt_def_var', '<utility>' in 'stmt_if';
+       comment: 'generic_reparse' in the 'toc' class list; dropped: C2
+       'is_stored_value' inlined (the name states the condition)
+[x] hard: design review series 2, round 27 (2026-10-29, user: design rounds
+    until nothing more to fix; 7 reviewers A-G, the groups rotated again)
+    => done (2026-10-29): A1 a type parameter named like its generic type is
+       rejected at the definition, "is also the name of the generic type", as
+       for generic functions, not later through an instance (1899, 1900); E1 a
+       unary operator before the value of an instance or array says "a unary
+       operator makes a number, not ..." (1415), not that the instance is not
+       a number; behavior-preserving, listings verified equal:
+       'builtin_value_type' and 'conversion_type' in 'parse_lookahead' (the
+       cycle 'decouple.hpp' broke for them is gone), rv32i
+       'validate_destination_storage' inlined into 'validate_operands',
+       '<optional>' not '<cassert>' in 'stmt_builtin_exit'; comments: 'tp' of
+       'parse_root_fields', 'second_encoding' of 'pc_relative'; dropped: B2 the
+       empty-source assert of 'copy_value' moved first (an empty source stops
+       at 'type_ref' already)
+[x] hard: design review series 2, round 26 (2026-10-29, user: design rounds
+    until nothing more to fix; 7 reviewers A-G, the groups of round 25
+    rotated)
+    => done (2026-10-29): no bug found, two reviewers found nothing;
+       behavior-preserving, listings verified equal: an instance operand has
+       its own type ('type::first_builtin' gone, reopens part of B.1 of
+       2026-10-26); the 'toc' phase map lists nine one-phase methods in their
+       phase, each asserting it (as D.4 of 2026-10-26); rv32i 'divide',
+       'multiply' and 'shift' through 'validate_operands'; a dead unary-op test
+       in 'assert_not_record' gone; the path parameter of 'expr_type' named
+       'path'; comments: 'shares_address_base', the x86_64 memory forms, the
+       field padding
+[x] hard: design review series 2, round 25 (2026-10-29, user: design rounds
+    until nothing more to fix; 7 reviewers A-G covering every source file in
+    new groups; wrong comments count as findings)
+    => done (2026-10-29): no bug found, two reviewers found nothing;
+       behavior-preserving, listings verified equal: a memory operand always
+       has a base register ('operand::mem' asserts it, the x86_64 paths for
+       none gone), a dead 'zero' destination test in rv32i
+       'comparison_operand' an assert, x86_64 'comment_start' through
+       'indentation'; includes: '<cassert>' in 'stmt_builtin_array_copy',
+       '<cstdint>' gone from 'stmt_call'; wrong comments: the
+       'check_upper_bound' example, the order of 'finish', 'narrowed_immediate'
+       callers, 2 TiB of sectors, the operator of the 'end_list' example, the
+       uses of the path constructor of 'expr_type'
 [x] hard: design review series 2, round 24 (2026-10-29, user: rounds until
     no more improvements; a second pass over the files of round 22; the
     loop ends here: one reviewer found nothing, the others mostly comments)

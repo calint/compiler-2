@@ -41,11 +41,12 @@
 // arguments of a call is not an order: 'stmt_call::assert_no_shared_storage';
 // every check by the undefined behavior it rules out: README 8.1
 
-// 'st' reads 'dst', or a call in it reads or writes it; a register has no
-// storage and is reached under its own name, storage by the bytes a read
-// reaches under any name, e.g. the 'e' of 'a[0] = 7 - e' in a 'foo a',
-// but not the 'p.y' of 'p.x = p.y + 1', and by the storage the body of a call
-// reaches, e.g. 'gw()' writing 'gx' in 'gx = k + gw()'
+// 'st' reads 'dst', or a call in it reads or writes it; a name in a register
+// has no storage and is reached under its own name, a register the compiler
+// allocated under none; storage by the bytes a read reaches under any name,
+// e.g. the 'e' of 'a[0] = 7 - e' in a 'foo a', but not the 'p.y' of
+// 'p.x = p.y + 1', and by the storage the body of a call reaches, e.g. 'gw()'
+// writing 'gx' in 'gx = k + gw()'
 [[nodiscard]] inline auto reaches_destination(const toc& tc,
                                               const statement& st,
                                               const destination& dst) -> bool {
@@ -53,7 +54,7 @@
     const std::optional<storage_path> dst_storage{dst.storage()};
 
     if (not dst_storage) {
-        return st.first_read_of(dst.text()) != nullptr;
+        return dst.is_named() and st.first_read_of(dst.text()) != nullptr;
     }
 
     bool is_read{};

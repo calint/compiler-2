@@ -1,0 +1,4 @@
+
+1909.baz:6:5: expected '(' after function name
+    array_length a
+    ^~~~~~~~~~~~

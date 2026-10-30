@@ -61,53 +61,6 @@
         call_tk, std::format("the result of {} is discarded", in_quotes(name))};
 }
 
-// the integer type of a conversion, e.g. 'i8' of 'i8(x)'; 'bool' and 'void'
-// have none, 'get_type_or_throw' rejects 'void' and a type wider than the
-// target
-[[nodiscard]] inline auto conversion_type(const toc& tc, const token& tk)
-    -> const type& {
-
-    const type& converted{tc.get_type_or_throw(tk)};
-
-    if (not converted.is_integer()) {
-        throw compile_error{tk, "'bool' has no conversion, compare "
-                                "instead, e.g. 'x != 0'"};
-    }
-
-    return converted;
-}
-
-// the type of the value of the built-in at 'tk', classified as 'tm', e.g. 'i8'
-// of 'i8(1)', none when 'tk' names no built-in with a value;
-// 'parse_builtin' makes a statement for each
-[[nodiscard]] inline auto builtin_value_type(const toc& tc, const token& tk,
-                                             const term_kind tm)
-    -> const type* {
-
-    if (tm == term_kind::conversion) {
-        return &conversion_type(tc, tk);
-    }
-
-    if (tm != term_kind::builtin_function) {
-        return nullptr;
-    }
-
-    const reserved_names::builtin_value value{
-        reserved_names::find_builtin_function(tk.text())->value,
-    };
-
-    // e.g. the count of 'read(0, buf, 4)'
-    if (value == reserved_names::builtin_value::count) {
-        return &tc.builtins().default_type();
-    }
-
-    if (value == reserved_names::builtin_value::boolean) {
-        return &tc.builtins().boolean();
-    }
-
-    return nullptr;
-}
-
 // where a call of a built-in is parsed: in a value, or alone as a statement
 enum class builtin_place : uint8_t { value, statement };
 
@@ -124,12 +77,21 @@ inline auto parse_builtin(toc& tc, tokenizer& tz, const token& tk,
         reserved_names::find_builtin_function(tk.text()),
     };
 
+    const char next{tz.peek_char_after_whitespace()};
+
     // a built-in is not generic, e.g. 'read<i8>(0, buf)'
-    if (fn != nullptr and tz.peek_char_after_whitespace() == '<') {
+    if (fn != nullptr and next == '<') {
         throw compile_error{
             tk, std::format("built-in function {} is not generic, it takes no "
                             "type arguments",
                             in_quotes(tk.text()))};
+    }
+
+    // checked before where it may stand, e.g. a lone 'exit' or the
+    // 'array_length a' of a value; at the name, the next token can be on a
+    // later line
+    if (fn != nullptr and next != '(') {
+        throw compile_error{tk, "expected '(' after function name"};
     }
 
     // e.g. 'bool(5)' or 'void(5)', only the integer types convert

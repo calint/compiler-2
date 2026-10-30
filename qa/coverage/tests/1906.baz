@@ -1,0 +1,5 @@
+# a field list without its '}' does not read the next keyword as a type
+
+type p { x
+
+func main() {}

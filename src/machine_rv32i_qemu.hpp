@@ -61,7 +61,7 @@ class machine_rv32i_qemu final : public machine_rv32i_bare_metal {
 
         assembler_rv32i& a{assembler()};
 
-        a.la(indent, reg, variables_end_label);
+        a.la(indent, reg, variables_end_label_);
     }
 
   private:
@@ -84,10 +84,10 @@ class machine_rv32i_qemu final : public machine_rv32i_bare_metal {
         assembler_rv32i& a{assembler()};
 
         a.comment(0, std::format("load stack pointer to {} + {} B",
-                                 in_quotes(variables_end_label),
+                                 in_quotes(variables_end_label_),
                                  stack_size_bytes()));
 
-        a.la(0, "sp", variables_end_label);
+        a.la(0, "sp", variables_end_label_);
         a.li(0, "t0", stack_size_bytes());
         a.add(0, "sp", "sp", "t0");
     }

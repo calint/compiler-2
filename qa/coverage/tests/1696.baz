@@ -1,5 +1,5 @@
-# a built-in without a value is rejected as the initializer of a variable
-# also without '('
+# a built-in without '(' is rejected as a missing '(' in the initializer of
+# a variable
 
 func main() {
     var a = i8[4]

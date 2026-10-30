@@ -1,0 +1,10 @@
+# a generic call whose argument is followed by a token that does not continue
+# it deduces the type from the argument, the parse reports the missing ')'
+# like that of a plain call, not that the type cannot be deduced
+
+func f<T type>(x T) {}
+
+func main() {
+    var a = i8(1)
+    f(a 2)
+}

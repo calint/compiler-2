@@ -1,7 +1,7 @@
 #pragma once
 
-#include <cassert>
 #include <cstddef>
+#include <optional>
 #include <ostream>
 
 #include "ident_info.hpp"

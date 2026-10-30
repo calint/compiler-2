@@ -462,7 +462,7 @@ class machine_rv32i : public machine {
 
         assembler_.label(indent, bounds_fail_.name);
 
-        branch_to_failure(src_loc_tk, indent, bounds_failure);
+        branch_to_failure(src_loc_tk, indent, bounds_failure_);
 
         assembler_.label(indent, bounds_pass_.name);
     }
@@ -582,7 +582,7 @@ class machine_rv32i : public machine {
     auto emit_variables_base_load() -> void override {
         const std::string_view base{variables_base_register()};
 
-        assembler_.la(0, base, variables_label);
+        assembler_.la(0, base, variables_label_);
 
         assembler_.addi(0, base, base,
                         static_cast<int64_t>(variables_base_past_vars_bytes_));
@@ -879,7 +879,7 @@ class machine_rv32i : public machine {
         // an address can be 2 GiB or more
         // note: a frame fits in '--vars' when compiled, so the end of 'vars'
         //       less the frame size does not wrap
-        assembler_.la(indent, last_start.register_name(), variables_end_label,
+        assembler_.la(indent, last_start.register_name(), variables_end_label_,
                       frame_size_bytes.symbol());
 
         assembler_.bgeu(indent, last_start.register_name(),
@@ -887,7 +887,7 @@ class machine_rv32i : public machine {
 
         free_scratch_register(src_loc_tk, indent, last_start);
         free_scratch_register(src_loc_tk, indent, start);
-        branch_to_failure(src_loc_tk, indent, frame_overflow_failure);
+        branch_to_failure(src_loc_tk, indent, frame_overflow_failure_);
 
         assembler_.label(indent, fits.name);
         comment(src_loc_tk, indent, "frame capacity check end");
@@ -935,7 +935,7 @@ class machine_rv32i : public machine {
 
         free_scratch_register(src_loc_tk, indent, lowest);
         free_scratch_register(src_loc_tk, indent, limit);
-        branch_to_failure(src_loc_tk, indent, stack_overflow_failure);
+        branch_to_failure(src_loc_tk, indent, stack_overflow_failure_);
 
         assembler_.label(indent, fits.name);
         comment(src_loc_tk, indent, "stack capacity check end");
@@ -1125,10 +1125,7 @@ class machine_rv32i : public machine {
         assert(operation == arithmetic_operator::divide or
                operation == arithmetic_operator::remainder);
 
-        assert_scalar(dst.type_ref());
-        assert_scalar(divisor.type_ref());
-
-        assert(dst.is_register() or dst.is_memory());
+        validate_operands(dst, divisor);
 
         call_arithmetic_helper(src_loc_tk, indent, dst, divisor,
                                operation == arithmetic_operator::remainder
@@ -1225,15 +1222,9 @@ class machine_rv32i : public machine {
                   [[maybe_unused]] const factor_use use,
                   const runtime_check& check = {}) -> void override {
 
-        assert_scalar(product.type_ref());
-        assert_scalar(factor.type_ref());
-        validate_destination_storage(product);
-
         // validate memory operands even when a constant eliminates the
         // operation
-        if (factor.is_memory()) {
-            validate_address(factor);
-        }
+        validate_operands(product, factor);
 
         const std::optional<int32_t> constant{immediate_value(factor)};
 
@@ -1269,9 +1260,7 @@ class machine_rv32i : public machine {
         assert(operation == arithmetic_operator::shift_left or
                operation == arithmetic_operator::shift_right);
 
-        assert_scalar(dst.type_ref());
-        assert_scalar(count.type_ref());
-        validate_destination_storage(dst);
+        validate_operands(dst, count);
 
         const std::optional<int32_t> constant{immediate_value(count)};
 
@@ -1767,7 +1756,7 @@ class machine_rv32i : public machine {
 
         comment(src_loc_tk, indent, "failed: report and exit");
 
-        branch_to_failure(src_loc_tk, indent, overlap_failure);
+        branch_to_failure(src_loc_tk, indent, overlap_failure_);
 
         assembler_.label(indent, passed.name);
 
@@ -1810,7 +1799,7 @@ class machine_rv32i : public machine {
 
         comment(src_loc_tk, indent, "failed: report and exit");
 
-        branch_to_failure(src_loc_tk, indent, division_failure);
+        branch_to_failure(src_loc_tk, indent, division_failure_);
 
         assembler_.label(indent, pass.name);
 
@@ -1837,7 +1826,7 @@ class machine_rv32i : public machine {
         assembler_.slli(indent, extended, value, shift);
         assembler_.srai(indent, extended, extended, shift);
         assembler_.beq(indent, extended, value, fits.reference);
-        branch_to_failure(src_loc_tk, indent, overflow_failure);
+        branch_to_failure(src_loc_tk, indent, overflow_failure_);
         assembler_.label(indent, fits.name);
     }
 
@@ -1869,7 +1858,7 @@ class machine_rv32i : public machine {
         comment(src_loc_tk, indent, "overflow check begin");
 
         assembler_.beqz(indent, "a1", fits.reference);
-        branch_to_failure(src_loc_tk, indent, overflow_failure);
+        branch_to_failure(src_loc_tk, indent, overflow_failure_);
         assembler_.label(indent, fits.name);
 
         const size_t width{dst.type_ref().size_bytes()};
@@ -1907,7 +1896,7 @@ class machine_rv32i : public machine {
                        fits.reference);
 
         free_scratch_register(src_loc_tk, indent, minimum);
-        branch_to_failure(src_loc_tk, indent, overflow_failure);
+        branch_to_failure(src_loc_tk, indent, overflow_failure_);
         assembler_.label(indent, fits.name);
         comment(src_loc_tk, indent, "overflow check end");
     }
@@ -1938,7 +1927,7 @@ class machine_rv32i : public machine {
 
         comment(src_loc_tk, indent, "failed: report and exit");
 
-        branch_to_failure(src_loc_tk, indent, shift_failure);
+        branch_to_failure(src_loc_tk, indent, shift_failure_);
 
         assembler_.label(indent, pass.name);
 
@@ -2278,11 +2267,13 @@ class machine_rv32i : public machine {
             return operand::reg("zero", width_type);
         }
 
+        // note: a destination register is allocated, never 'zero'
+        assert(not dst.is_register() or dst.register_name() != "zero");
+
         // the output can hold an input unless doing so destroys the other
         // value or an address still needed to load it
         const bool reuse_destination{
-            dst.is_register() and dst.register_name() != "zero" and
-                not other.uses_register(dst.register_name()),
+            dst.is_register() and not other.uses_register(dst.register_name()),
         };
 
         // preserve the comparison width rather than narrowing to bool
@@ -2789,7 +2780,7 @@ class machine_rv32i : public machine {
                               value.register_name(), first.register_name(),
                               fits.reference);
 
-            branch_to_failure(src_loc_tk, indent, overflow_failure);
+            branch_to_failure(src_loc_tk, indent, overflow_failure_);
             assembler_.label(indent, fits.name);
 
             return;
@@ -2811,7 +2802,7 @@ class machine_rv32i : public machine {
                           first.register_name(), fits.reference);
 
         assembler_.label(indent, failed.name);
-        branch_to_failure(src_loc_tk, indent, overflow_failure);
+        branch_to_failure(src_loc_tk, indent, overflow_failure_);
         assembler_.label(indent, fits.name);
     }
 
@@ -3034,7 +3025,7 @@ class machine_rv32i : public machine {
     auto emit_panic_message(const std::string_view message_label,
                             const std::string_view message) -> void {
 
-        assembler_.li(1, "a0", stderr_descriptor);
+        assembler_.li(1, "a0", stderr_descriptor_);
         assembler_.la(1, "a1", message_label);
         assembler_.li(1, "a2", message.size());
         emit_write_call(1);
@@ -3079,7 +3070,7 @@ class machine_rv32i : public machine {
         assembler_.sb(1, "t2", 0, "a1");
         assembler_.addi(1, "a2", "a2", 1);
         assembler_.mv(1, "a1", "sp");
-        assembler_.li(1, "a0", stderr_descriptor);
+        assembler_.li(1, "a0", stderr_descriptor_);
         emit_write_call(1);
 
         exit(token{}, 1, make_register_operand("s3", default_type()));
@@ -4615,7 +4606,8 @@ class machine_rv32i : public machine {
         return std::bit_cast<int32_t>(value);
     }
 
-    // comparisons convert the right operand to the left operand's width
+    // a constant 'value' as a register of 'width_type' holds it, e.g. the
+    // right side of a comparison at the width of the left side
     [[nodiscard]] static auto narrowed_immediate(const operand& value,
                                                  const type& width_type)
         -> std::optional<int32_t> {
@@ -4772,7 +4764,7 @@ class machine_rv32i : public machine {
     }
 
     // two memory operands of one base register without index whose offsets
-    // differ only in the low 12 bits
+    // have the same nonzero 'upper_part'
     [[nodiscard]] static auto shares_address_base(const operand& dst,
                                                   const operand& src) -> bool {
 
@@ -4895,22 +4887,19 @@ class machine_rv32i : public machine {
         //       the addend of 'a[i + K]' may pass the address range
     }
 
-    // the result is written in place
-    static auto validate_destination_storage(const operand& dst) -> void {
-        assert(dst.is_register() or dst.is_memory());
-
-        if (dst.is_memory()) {
-            validate_address(dst);
-        }
-    }
-
-    // scalar operands in a register or an address of the target
+    // scalar operands in a register or an address of the target, the result
+    // is written in place
     static auto validate_operands(const operand& dst, const operand& src)
         -> void {
 
         assert_scalar(dst.type_ref());
         assert_scalar(src.type_ref());
-        validate_destination_storage(dst);
+
+        assert(dst.is_register() or dst.is_memory());
+
+        if (dst.is_memory()) {
+            validate_address(dst);
+        }
 
         if (src.is_memory()) {
             validate_address(src);

@@ -235,8 +235,7 @@ class ident_info final {
         ident_info result{*this};
         var_part& var{std::get<var_part>(result.part_)};
 
-        var.operand =
-            ::operand::mem(var.operand, fld.type_ptr->first_builtin());
+        var.operand = ::operand::mem(var.operand, fld.type_ref());
 
         var.operand.increment_offset(address_offset(fld.offset));
         var.shape = fld.shape;
@@ -411,6 +410,10 @@ class destination final {
     // its arithmetic wraps on purpose, see 'as_wrapping'; otherwise the
     // overflow check is as '--checks' asks
     bool wraps_{};
+    // a name, of the source or a call temporary, e.g. the result of an
+    // inlined call bound to a register; a register the compiler allocated has
+    // none
+    bool is_named_{};
 
     // what a name in storage resolved to and the root variable and the path
     // of it that it names, both stepped with 'field' and 'element'
@@ -514,6 +517,8 @@ class destination final {
         return shape().is_length_unknown();
     }
 
+    [[nodiscard]] auto is_named() const -> bool { return is_named_; }
+
     [[nodiscard]] auto is_register() const -> bool {
         return not stored_ and operand_.is_register();
     }
@@ -590,6 +595,7 @@ class destination final {
         result.text_ = std::move(parts.text);
 
         result.is_final_address_ = parts.is_final_address;
+        result.is_named_ = true;
 
         if (parts.storage) {
             result.stored_ = {

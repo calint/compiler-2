@@ -16,7 +16,7 @@ class stmt_loop final : public statement {
 
   public:
     stmt_loop(toc& tc, const token src_loc_tk, tokenizer& tz)
-        : statement{src_loc_tk}, code_{parse_code(tc, tz, src_loc_tk)} {}
+        : statement{src_loc_tk}, code_{parse_code(tc, tz)} {}
 
     //
     // overridden methods
@@ -65,15 +65,11 @@ class stmt_loop final : public statement {
     //
 
     // the block parses in the scope of the loop, where 'break' and
-    // 'continue' find it
-    [[nodiscard]] static auto parse_code(toc& tc, tokenizer& tz,
-                                         const token& loop_tk) -> stmt_block {
-
-        const std::string label{tc.create_unique_label(loop_tk, "loop")};
-
+    // 'continue' find it; the labels are made at the compile
+    [[nodiscard]] static auto parse_code(toc& tc, tokenizer& tz) -> stmt_block {
         const toc::scope_entry loop{
             tc,
-            scope::loop(label, loop_end::at_break, label),
+            scope::loop({}, loop_end::at_break, {}),
         };
 
         return {tc, tz};

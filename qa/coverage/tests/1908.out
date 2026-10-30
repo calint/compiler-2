@@ -1,0 +1,4 @@
+
+1908.baz:6:8: 'a[0]' is not an array, it cannot be indexed
+    if a[0][1] == 1 {
+       ^

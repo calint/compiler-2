@@ -1,0 +1,8 @@
+# a call of a function without parameters whose ')' is missing is reported
+# as a missing ')', not as a surplus argument
+
+func f() {}
+
+func main() {
+    f(
+}

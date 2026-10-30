@@ -1,0 +1,4 @@
+
+1899.baz:4:11: generic parameter 'list' is also the name of the generic type at 4:6, use another name
+type list<list type> { a list }
+          ^~~~

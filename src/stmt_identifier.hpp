@@ -960,10 +960,7 @@ class stmt_identifier final : public statement {
                           const token& src_loc_tk) const -> void {
 
         if (tz.peek_char_after_whitespace() == '[' and not prefix.is_array()) {
-            throw compile_error{src_loc_tk,
-                                std::format("{} is not an array, it cannot be "
-                                            "indexed",
-                                            in_quotes(dotted_path_))};
+            throw_not_indexable(src_loc_tk, dotted_path_);
         }
     }
 
@@ -1170,6 +1167,16 @@ class stmt_identifier final : public statement {
         throw compile_error{
             name_tk, std::format("{} is a constant, it has no field {}",
                                  in_quotes(root), in_quotes(name_tk.text()))};
+    }
+
+    // a '[' after 'path', which is not an array
+    [[noreturn]] static auto throw_not_indexable(const token& src_loc_tk,
+                                                 const std::string_view path)
+        -> void {
+
+        throw compile_error{
+            src_loc_tk, std::format("{} is not an array, it cannot be indexed",
+                                    in_quotes(path))};
     }
 };
 

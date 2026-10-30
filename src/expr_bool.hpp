@@ -200,13 +200,9 @@ class expr_bool_op final : public statement {
             return;
         }
 
+        assert_not_array(lhs_);
+
         const type& lhs_type{lhs_.get_type()};
-
-        if (const stmt_identifier* const path{lhs_.operand_path()};
-            path != nullptr and path->is_array()) {
-
-            throw_unindexed_array(path->tok(), path->dotted_path());
-        }
 
         if (lhs_type.is_bool()) {
             return;
@@ -506,6 +502,11 @@ class expr_bool_op final : public statement {
 
         cmp.is_memory = classify_operands(tc, cmp);
 
+        // e.g. the first '<' of 'x < 1 < 2', comparisons do not chain
+        if (comparison_of(tz.peek_operator())) {
+            expr_arith::throw_comparison_as_operand(op_tk);
+        }
+
         return cmp;
     }
 
@@ -655,8 +656,22 @@ class expr_bool_op final : public statement {
         }
     }
 
+    // a whole array is compared only as memory, with an array by '==' or
+    // '!=', e.g. not the 'ps' of 'if ps', 'ps < q' or 'ps == 1'
+    static auto assert_not_array(const expr_arith& side) -> void {
+        const stmt_identifier* const path{side.operand_path()};
+
+        if (path == nullptr or not path->is_array()) {
+            return;
+        }
+
+        throw_unindexed_array(path->tok(), path->dotted_path());
+    }
+
     static auto assert_not_record(const expr_arith& side,
                                   const bool is_equality) -> void {
+
+        assert_not_array(side);
 
         if (side.get_type().is_builtin()) {
             return;
@@ -664,14 +679,10 @@ class expr_bool_op final : public statement {
 
         const std::string_view type_name{side.get_type().name()};
 
-        // e.g. the '-' of '-p == p' applies to a number
-        const stmt_identifier* const ident{side.operand_path()};
+        // note: a unary op on an instance is rejected where it is parsed, e.g.
+        //       the '-' of '-p == p' ('expr_arith::assert_number')
 
-        const bool has_unary_ops{
-            ident != nullptr and not ident->get_unary_ops().is_empty(),
-        };
-
-        if (is_equality and not has_unary_ops) {
+        if (is_equality) {
             throw compile_error{
                 side.tok(),
                 std::format("an instance of {} is compared only with an "
@@ -1019,7 +1030,6 @@ class expr_bool_op final : public statement {
         const expr_arith& lhs{*condition.node};
 
         if (lhs.is_computed() and action.destination.is_register()) {
-
             lhs.compile_checked(tc, indent + 1,
                                 destination::of_register(action.destination));
 

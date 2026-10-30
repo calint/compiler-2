@@ -255,6 +255,11 @@ inline auto stmt_identifier::parse_element(toc& tc, tokenizer& tz,
             },
         },
     });
+
+    // e.g. the second '[' of 'a[1][2]', an element is not an array
+    if (tz.peek_char_after_whitespace() == '[') {
+        throw_not_indexable(tk, path_text());
+    }
 }
 
 inline auto stmt_identifier::resolve_accessed_bytes(toc& tc,
@@ -273,12 +278,11 @@ inline auto stmt_identifier::resolve_accessed_bytes(toc& tc,
         } else {
             const size_t field_offset{step.fld->offset};
 
-            // a field covers its trailing padding so that assigning every
-            // field assigns the whole instance
             access_path_.add_field(field_offset);
 
-            // the last field keeps the padding after the instance that
-            // holds it, like the last element
+            // a field covers its trailing padding so that assigning every
+            // field assigns the whole instance; the last field keeps the
+            // padding after the instance that holds it, like the last element
             const size_t field_end{
                 step.parent_type
                     ->next_field_offset(elem.name_tk, elem.name_tk.text())

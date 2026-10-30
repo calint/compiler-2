@@ -224,7 +224,7 @@ class operand final {
         -> operand {
 
         assert(std::has_single_bit(index_scale));
-        assert(not base.empty() or not index.empty() or offset != 0);
+        assert(not base.empty());
 
         operand result;
         result.kind_ = kind::memory;

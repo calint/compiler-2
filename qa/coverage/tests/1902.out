@@ -1,0 +1,4 @@
+
+1902.baz:9:8: array 'ps' must be indexed
+    if ps < q {
+       ^~

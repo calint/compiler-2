@@ -1,7 +1,7 @@
 # type arguments after an unknown name as a parameter type: not a generic
 # type, no hint to name an instance
 
-func f(x foo<3>) {
+func f(x zz<3>) {
 }
 
 func main() {

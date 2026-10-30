@@ -61,7 +61,8 @@
 //                   'tc.scopes().current_func_scope()', except a query asked
 //                   at every step, e.g. 'is_reachable'
 //   generics        'resolve_generic_args' and 'generic_scope', the names of
-//                   the parameters of a generic instance
+//                   the parameters of a generic instance; 'generic_reparse',
+//                   the definition parsed again for an instance
 //
 
 class stmt_def_dat;
@@ -2009,7 +2010,7 @@ class ident_resolver final {
                 .operand{
                     memory_at(var.placement,
                               machine_.get().variables_base_register(),
-                              var.type_ptr->first_builtin()),
+                              *var.type_ptr),
                 },
                 .is_address_by_call{},
                 .shape{var.shape},
@@ -2527,22 +2528,21 @@ class variable_comments final {
 //                  'current_definition', 'instance_visibility',
 //                  'constant_value_of', 'record_use',
 //                  'record_storage_use', 'record_result_passed_as_mut',
-//                  'parse_nesting_scope'
+//                  'parse_nesting_scope', 'make_var_read_only',
+//                  'get_func_or_throw', 'get_type_or_throw', 'is_func',
+//                  'source_of', 'where'
 //   compile        'add_binding', 'add_bytes_constant', 'add_string_constant',
 //                  'add_noinline_body', 'dry_run', 'check_skipped',
 //                  'is_checking_without_call', 'emit_most_efficient',
-//                  'create_cmp_label', 'next_frame_address', the reachability
+//                  'create_cmp_label', 'create_unique_label',
+//                  'call_path_at', 'next_frame_address', 'use_of',
+//                  'overflow_options', 'checks_overflow', the reachability
 //                  ('is_reachable', 'end_path', 'record_break',
 //                  'record_continue', 'record_return', 'join_loop',
 //                  'path_merge')
 //   both           'add_var' and 'add_const' (placed and commented only while
-//                  compiling), 'make_var_read_only', 'scope_entry',
-//                  'resolve_declared', 'get_func_or_throw',
-//                  'get_main_or_throw', 'get_type_or_throw', 'is_func',
-//                  'use_of', 'use_at', 'overflow_options', 'checks_overflow',
-//                  'source_of', 'storage_of', 'call_path_at', 'where' and
-//                  'create_unique_label' (a loop scope of the parse has a
-//                  label)
+//                  compiling), 'scope_entry', 'resolve_declared',
+//                  'get_main_or_throw', 'use_at' and 'storage_of'
 //   tables         'builtins', 'checks', 'data',
 //                  'funcs', 'generics', 'layout', 'machine',
 //                  'noinline_worklist', 'scopes', 'types', 'usage'
@@ -3090,8 +3090,8 @@ class toc final {
     // around it, which keeps labels unique per call, e.g. '12.5.30.9' for
     // 12:5 in a body inlined by the call at 30:9; the labels of a listing:
     //
-    //   if.L.C         an 'if' at line L, column C; '.N' its branch N,
-    //                  '.code', '.else', '.end' ('stmt_if::branch_label')
+    //   if.L.C         an 'if' at line L, column C; '.N' its branch N
+    //                  ('stmt_if::branch_label'), '.code', '.else', '.end'
     //   cmp.L.C        a condition ('create_cmp_label')
     //   bool.L.C.end   the end of a condition stored as a value
     //   loop.L.C       a 'loop', '.end' ('end_label')
@@ -3115,6 +3115,8 @@ class toc final {
     // included file is 'fN.L.C' ('source_locations::for_label')
     [[nodiscard]] auto call_path_at(const token& src_loc_tk) const
         -> std::string {
+
+        assert(is_compiling_);
 
         const std::string_view call_path{scopes_.call_path()};
 
@@ -3171,6 +3173,8 @@ class toc final {
     // whether the arithmetic of a value that 'dst' receives is checked for
     // overflow
     [[nodiscard]] auto checks_overflow(const destination& dst) const -> bool {
+        assert(is_compiling_);
+
         return overflow_options(dst).enabled;
     }
 
@@ -3202,6 +3206,8 @@ class toc final {
     [[nodiscard]] auto create_unique_label(const token& src_loc_tk,
                                            const std::string_view prefix) const
         -> std::string {
+
+        assert(is_compiling_);
 
         return std::format("{}.{}", prefix, call_path_at(src_loc_tk));
     }
@@ -3306,6 +3312,8 @@ class toc final {
                                          const std::string_view name) const
         -> const stmt_def_func& {
 
+        assert(not is_compiling_);
+
         if (funcs_.has(name)) {
             return *funcs_.get(name).def;
         }
@@ -3332,6 +3340,8 @@ class toc final {
 
     [[nodiscard]] auto get_type_or_throw(const token& type_tk) const
         -> const type& {
+
+        assert(not is_compiling_);
 
         // e.g. the '"i8"' of 'func f() res "i8" {'
         if (type_tk.is_string()) {
@@ -3395,6 +3405,8 @@ class toc final {
     }
 
     [[nodiscard]] auto is_func(const std::string_view name) const -> bool {
+        assert(not is_compiling_);
+
         return funcs_.has(name) or generics_.has_func(name);
     }
 
@@ -3448,6 +3460,8 @@ class toc final {
     auto make_var_read_only(const std::string_view name,
                             const read_only_cause cause) -> void {
 
+        assert(not is_compiling_);
+
         scopes_.back().make_var_read_only(name, cause);
     }
 
@@ -3470,6 +3484,8 @@ class toc final {
 
     [[nodiscard]] auto overflow_options(const destination& dst) const
         -> machine::runtime_check {
+
+        assert(is_compiling_);
 
         if (dst.wraps()) {
             return {};
@@ -3556,6 +3572,8 @@ class toc final {
     [[nodiscard]] auto source_of(const token& src_loc_tk) const
         -> std::string_view {
 
+        assert(not is_compiling_);
+
         return locations_.source_of(src_loc_tk);
     }
 
@@ -3589,6 +3607,8 @@ class toc final {
     }
 
     [[nodiscard]] auto use_of(const destination& dst) const -> value_use {
+        assert(is_compiling_);
+
         return {
             .width{&dst.type_ref()},
             .checks_overflow{checks_overflow(dst)},
@@ -3597,6 +3617,8 @@ class toc final {
 
     // where 'src_loc_tk' is, for a message, e.g. '4:9'
     [[nodiscard]] auto where(const token& src_loc_tk) const -> std::string {
+        assert(not is_compiling_);
+
         return locations_.for_message(src_loc_tk);
     }
 

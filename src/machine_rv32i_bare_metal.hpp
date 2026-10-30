@@ -92,7 +92,7 @@ class machine_rv32i_bare_metal : public machine_rv32i {
     // the division panic
     auto emit_divide_by_zero_trap() -> void override {
         exit(token{}, 1,
-             operand::imm(division_failure.exit_code, default_type()));
+             operand::imm(division_failure_.exit_code, default_type()));
     }
 
     auto emit_read_call(const size_t indent) -> void override {

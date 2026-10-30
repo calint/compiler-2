@@ -299,18 +299,6 @@ class type final {
         return fields_;
     }
 
-    // the type a memory operand of this type is read as: the first built-in
-    // field of an instance, which starts at its address
-    [[nodiscard]] auto first_builtin() const -> const type& {
-        const type* tp{this};
-
-        while (not tp->is_builtin()) {
-            tp = tp->fields().front().type_ptr;
-        }
-
-        return *tp;
-    }
-
     [[nodiscard]] auto has_field(const std::string_view name) const -> bool {
         return std::ranges::contains(fields_, name, &type_field::name);
     }

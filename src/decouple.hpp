@@ -7,10 +7,7 @@
 //     ('stmt_block', 'expr_arith') are included by those classes
 //   - 'expr_type' holds the classes below, whose headers include
 //     'expr_type.hpp' through 'expr_any.hpp'
-//   - 'stmt_call' deduces a type argument from the value of a built-in, whose
-//     statement headers include 'stmt_call.hpp'
 
-#include <cstdint>
 #include <memory>
 
 #include "token.hpp"
@@ -18,7 +15,6 @@
 class toc;
 class tokenizer;
 class statement;
-enum class term_kind : uint8_t;
 class stmt_identifier;
 class stmt_call;
 class expr_any;
@@ -35,6 +31,3 @@ class unary_ops;
 // a statement of a block, 'tk' its first token
 [[nodiscard]] auto parse_statement(toc& tc, tokenizer& tz, const token tk)
     -> std::unique_ptr<statement>;
-
-[[nodiscard]] auto builtin_value_type(const toc& tc, const token& tk,
-                                      const term_kind tm) -> const type*;

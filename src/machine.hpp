@@ -64,7 +64,7 @@ struct target_description {
     // the live scratch values from which the counter of an array loop is
     // kept in memory, none where it stays in a register
     std::optional<size_t> memory_counter_pressure_count;
-    // the sector functions need it, a sector is 'card_sector_size_bytes'
+    // the sector functions need it, a sector is 'card_sector_size_bytes_'
     bool has_sd_card{};
     // the alignment of a string constant, e.g. a word lets copies to aligned
     // destinations use words
@@ -624,62 +624,62 @@ class machine {
   protected:
     // a failed check prints its message, the 'panic: ...' of its handler, to
     // this descriptor and exits with the code of its handler
-    static constexpr int stderr_descriptor{2};
+    static constexpr int stderr_descriptor_{2};
 
     // the sector size of the sd card of every target that has one
-    static constexpr size_t card_sector_size_bytes{512};
+    static constexpr size_t card_sector_size_bytes_{512};
 
     // the labels of the sections of the program's data and variables
-    static constexpr std::string_view data_label{"dat"};
-    static constexpr std::string_view data_end_label{"dat.end"};
-    static constexpr std::string_view variables_label{"vars"};
-    static constexpr std::string_view variables_end_label{"vars.end"};
+    static constexpr std::string_view data_label_{"dat"};
+    static constexpr std::string_view data_end_label_{"dat.end"};
+    static constexpr std::string_view variables_label_{"vars"};
+    static constexpr std::string_view variables_end_label_{"vars.end"};
 
     // the handlers of the failed checks, a check site passes its entry, so
     // the label, the name and whether it takes the line come together
-    static constexpr failure_handler bounds_failure{
+    static constexpr failure_handler bounds_failure_{
         .label{"baz_bounds_panic"},
         .name{"bounds"},
         .comment{"bounds failure handler (--checks=upper or --checks=lower)"},
         .takes_line{true},
         .exit_code{255},
     };
-    static constexpr failure_handler division_failure{
+    static constexpr failure_handler division_failure_{
         .label{"baz_division_panic"},
         .name{"division"},
         .comment{"division failure handler (--checks=division)"},
         .takes_line{true},
         .exit_code{253},
     };
-    static constexpr failure_handler frame_overflow_failure{
+    static constexpr failure_handler frame_overflow_failure_{
         .label{"baz_frame_overflow"},
         .name{"frame overflow"},
         .comment{"frame overflow handler (--checks=frame)"},
         .takes_line{false},
         .exit_code{254},
     };
-    static constexpr failure_handler overflow_failure{
+    static constexpr failure_handler overflow_failure_{
         .label{"baz_overflow_panic"},
         .name{"overflow"},
         .comment{"overflow failure handler (--checks=overflow)"},
         .takes_line{true},
         .exit_code{249},
     };
-    static constexpr failure_handler overlap_failure{
+    static constexpr failure_handler overlap_failure_{
         .label{"baz_overlap_panic"},
         .name{"overlap"},
         .comment{"overlap failure handler (--checks=overlap)"},
         .takes_line{true},
         .exit_code{251},
     };
-    static constexpr failure_handler shift_failure{
+    static constexpr failure_handler shift_failure_{
         .label{"baz_shift_panic"},
         .name{"shift"},
         .comment{"shift failure handler (--checks=shift)"},
         .takes_line{true},
         .exit_code{252},
     };
-    static constexpr failure_handler stack_overflow_failure{
+    static constexpr failure_handler stack_overflow_failure_{
         .label{"baz_stack_overflow"},
         .name{"stack overflow"},
         .comment{"stack overflow handler (--checks=stack)"},
@@ -688,15 +688,15 @@ class machine {
     };
 
     // in the order they are emitted after the code
-    static constexpr std::array<failure_handler, 7> failure_handlers{
-        frame_overflow_failure, division_failure,       overlap_failure,
-        overflow_failure,       stack_overflow_failure, shift_failure,
-        bounds_failure,
+    static constexpr std::array<failure_handler, 7> failure_handlers_{
+        frame_overflow_failure_, division_failure_,       overlap_failure_,
+        overflow_failure_,       stack_overflow_failure_, shift_failure_,
+        bounds_failure_,
     };
 
     // a failed sector read or write jumps to it, the sector routines emit it,
     // see 'emit_sector_routines'
-    static constexpr failure_handler sd_card_failure{
+    static constexpr failure_handler sd_card_failure_{
         .label{"baz_sd_card_panic"},
         .name{"sd card"},
         .comment{"sd card failure handler (sector_read or sector_write)"},
@@ -706,12 +706,12 @@ class machine {
 
     // a panic is told by its exit code alone, e.g. by a script
     static_assert([] -> bool {
-        std::array<int, failure_handlers.size() + 1> codes{
-            sd_card_failure.exit_code,
+        std::array<int, failure_handlers_.size() + 1> codes{
+            sd_card_failure_.exit_code,
         };
 
-        for (size_t i{}; i < failure_handlers.size(); ++i) {
-            codes.at(i + 1) = failure_handlers.at(i).exit_code;
+        for (size_t i{}; i < failure_handlers_.size(); ++i) {
+            codes.at(i + 1) = failure_handlers_.at(i).exit_code;
         }
 
         std::ranges::sort(codes);
@@ -902,7 +902,7 @@ class machine {
         output.add_separator_newline();
         output.begin_data_section();
         output.align(target_.data_alignment);
-        output.label(0, data_label);
+        output.label(0, data_label_);
     }
 
     // the code emitted up to 'end_noinline_body' is a body of 'function':
@@ -1203,9 +1203,9 @@ class machine {
         return target_.target_calls.arguments.front();
     }
 
-    // releases the variables base, optimizes the jumps and asserts that the
-    // registers are balanced, then the target's last steps; called once at
-    // the end of the compile pass
+    // releases the variables base and asserts that the registers are
+    // balanced, optimizes the jumps, then the target's last steps; called once
+    // at the end of the compile pass
     auto finish() -> void {
         finish_registers();
         finish_output();
@@ -1327,13 +1327,13 @@ class machine {
     auto reserve_variables(const size_t size_bytes) -> void {
         assembler& output{target_assembler()};
 
-        output.label(0, data_end_label);
+        output.label(0, data_end_label_);
         output.add_separator_newline();
         output.begin_variables_section();
         output.align(target_.data_alignment);
-        output.label(0, variables_label);
+        output.label(0, variables_label_);
         output.reserve(size_bytes);
-        output.label(0, variables_end_label);
+        output.label(0, variables_end_label_);
     }
 
     // an index or a count of elements becomes a byte offset
@@ -1356,7 +1356,7 @@ class machine {
     [[nodiscard]] auto sector_size_bytes() const -> size_t {
         assert(target_.has_sd_card);
 
-        return card_sector_size_bytes;
+        return card_sector_size_bytes_;
     }
 
     // a blank line that separates the code from the report
@@ -1920,7 +1920,7 @@ class machine {
 
             const bool is_handler{
                 std::ranges::any_of(
-                    failure_handlers,
+                    failure_handlers_,
                     [&](const failure_handler& handler) -> bool {
                         return handler.label == routine;
                     }),
@@ -1965,13 +1965,13 @@ class machine {
     // the handlers that the code branches to, see 'mark_used'; before
     // 'emit_used_routines', a handler marks the routines it calls
     auto emit_used_failure_handlers() -> void {
-        for (const failure_handler& handler : failure_handlers) {
+        for (const failure_handler& handler : failure_handlers_) {
             if (not is_used(handler.label)) {
                 continue;
             }
 
             // note: only a bounded stack is checked, see 'is_stack_bounded'
-            assert(handler.label != stack_overflow_failure.label or
+            assert(handler.label != stack_overflow_failure_.label or
                    is_stack_bounded());
 
             comment({}, 0, handler.comment);

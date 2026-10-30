@@ -1,0 +1,7 @@
+# a built-in name without '(' is reported as a missing '(' wherever it
+# stands, not as a discarded result
+
+func main() {
+    var a = i8[2]
+    array_length a
+}

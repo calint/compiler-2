@@ -265,8 +265,9 @@ class expr_type final : public statement {
     expr_type(toc& tc, tokenizer& tz, const type& tp,
               const destination_kind kind, const literal_typing typing);
 
-    // a method receiver that has already been parsed
-    explicit expr_type(std::unique_ptr<stmt_identifier> receiver);
+    // a path parsed apart, e.g. a method receiver or the array argument of a
+    // built-in ('path_argument')
+    explicit expr_type(std::unique_ptr<stmt_identifier> path);
 
     // a 'unique_ptr' of a class that is incomplete here needs
     // the special members where 'stmt_identifier' and 'stmt_call' are complete
@@ -333,12 +334,6 @@ class expr_type final : public statement {
 
     auto compile_identifier_copy(toc& tc, const size_t indent,
                                  const destination& dst) const -> void;
-
-    // e.g. "an instance of 'point' is not a number"
-    [[nodiscard]] auto not_a_number() const -> std::string {
-        return std::format("{} of {} is not a number", value_kind(),
-                           in_quotes(get_type().name()));
-    }
 
     // creates the 'stmt_call' or 'stmt_identifier'
     auto parse_copy_source(toc& tc, tokenizer& tz, const term_kind tm) -> void;

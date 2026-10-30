@@ -1,0 +1,4 @@
+
+1906.baz:5:1: expected ',' followed by another field in type 'p'
+func main() {}
+^

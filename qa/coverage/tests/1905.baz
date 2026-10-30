@@ -1,0 +1,9 @@
+# a chained comparison in an argument is reported at the first comparison,
+# its condition is not an operand
+
+func f(b bool) {}
+
+func main() {
+    var x = 1
+    f(x < 1 < 2)
+}

@@ -1,0 +1,13 @@
+# a type parameter named like its based generic type is rejected at the
+# definition
+
+type box<T type> { a T }
+
+type text<text type> = box<text>
+
+func text.f() {}
+
+type s = text<i8>
+
+func main() {
+}

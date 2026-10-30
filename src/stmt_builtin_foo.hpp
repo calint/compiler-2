@@ -299,15 +299,15 @@ class stmt_builtin_foo final : public statement {
     }
 
     // the element and the counter are declared during the parse so the block
-    // can name them
+    // can name them, the labels are made at the compile
     // note: called by the constructor after 'ident_' is made
     [[nodiscard]] auto parse_code(toc& tc, tokenizer& tz) const -> stmt_block {
         const ident_info array_info{make_ident_info(tc, ident_)};
-        const std::string label{tc.create_unique_label(tok(), "foo")};
 
-        const toc::scope_entry foo{tc,
-                                   scope::loop(label, loop_end::also_when_done,
-                                               toc::continue_label(label))};
+        const toc::scope_entry foo{
+            tc,
+            scope::loop({}, loop_end::also_when_done, {}),
+        };
 
         add_loop_names(tc, 0, array_info, var_placement{}, var_placement{});
 

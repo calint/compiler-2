@@ -3,17 +3,20 @@
 // what the next tokens are, decided before they are parsed: 'classify_term'
 // tells what the first token of a value or a statement denotes; a name
 // followed by a character has one meaning only, e.g. 'point{' is a record
-// literal and 'show<' a generic call; the name after a '.' is decided by
+// literal and 'show<' a generic call; 'builtin_value_type' gives the type of
+// the value of a built-in; the name after a '.' is decided by
 // 'stmt_identifier::is_method_name', a function head by 'func_head'
 
 #include <algorithm>
 #include <cstdint>
 #include <string_view>
 
+#include "compile_error.hpp"
 #include "constant_parser.hpp"
 #include "toc.hpp"
 #include "token.hpp"
 #include "tokenizer.hpp"
+#include "type.hpp"
 
 // e.g. '[]{1, 2}' has the default type, no expression starts with '['
 [[nodiscard]] inline auto is_default_array_literal(const tokenizer& tz)
@@ -205,6 +208,53 @@ enum class term_kind : uint8_t {
     }
 
     return term_kind::record_type;
+}
+
+// the integer type of a conversion, e.g. 'i8' of 'i8(x)'; 'bool' and 'void'
+// have none, 'get_type_or_throw' rejects 'void' and a type wider than the
+// target
+[[nodiscard]] inline auto conversion_type(const toc& tc, const token& tk)
+    -> const type& {
+
+    const type& converted{tc.get_type_or_throw(tk)};
+
+    if (not converted.is_integer()) {
+        throw compile_error{tk, "'bool' has no conversion, compare "
+                                "instead, e.g. 'x != 0'"};
+    }
+
+    return converted;
+}
+
+// the type of the value of the built-in at 'tk', classified as 'tm', e.g. 'i8'
+// of 'i8(1)', none when 'tk' names no built-in with a value;
+// 'parse_builtin' makes a statement for each
+[[nodiscard]] inline auto builtin_value_type(const toc& tc, const token& tk,
+                                             const term_kind tm)
+    -> const type* {
+
+    if (tm == term_kind::conversion) {
+        return &conversion_type(tc, tk);
+    }
+
+    if (tm != term_kind::builtin_function) {
+        return nullptr;
+    }
+
+    const reserved_names::builtin_value value{
+        reserved_names::find_builtin_function(tk.text())->value,
+    };
+
+    // e.g. the count of 'read(0, buf, 4)'
+    if (value == reserved_names::builtin_value::count) {
+        return &tc.builtins().default_type();
+    }
+
+    if (value == reserved_names::builtin_value::boolean) {
+        return &tc.builtins().boolean();
+    }
+
+    return nullptr;
 }
 
 // a call of a generic function without type arguments is the whole value,

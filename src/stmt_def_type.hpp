@@ -355,6 +355,9 @@ class stmt_def_type_generic final : public statement {
 
         for (const generic_param& param : params) {
             tc.assert_generic_param_free(param.name_tk);
+
+            tc.assert_generic_param_apart(param.name_tk, name_tk_,
+                                          "generic type");
         }
 
         // e.g. 'type text<size> = list<i8, size>'
@@ -532,7 +535,7 @@ class type_instantiator final {
         generic_reparse reparse{tc, generic.definition, *generic.fields_tk};
         reparse.scope().add_args(instance.args);
 
-        // only read to fill 'type_', not printed by 'source_to'
+        // only read to fill 'tp', not printed by 'source_to'
         const type_fields fields{tc, reparse.tz(), alias_tk};
         fields.add_to(tp, alias_tk);
     }

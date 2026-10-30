@@ -5380,8 +5380,8 @@ SRC=1693 && COMPERR
 # that no constant ends, the code after it is checked
 SRC=1694 && COMPERR
 
-# a built-in without a value is rejected where a value is parsed, with or
-# without '(': an operand and an initializer
+# a built-in without '(' is rejected as a missing '(' where a value is
+# parsed: an operand and an initializer
 SRC=1695 && COMPERR
 SRC=1696 && COMPERR
 
@@ -6007,7 +6007,8 @@ SRC=1884 && COMPERR
 # an array as a generic type argument
 SRC=1885 && COMPERR
 
-# a second comparison is reported with its whole operator
+# a comparison followed by another is reported at the first, its condition
+# is not an operand
 SRC=1886 && COMPERR
 
 # a character that cannot start a name is not looked up
@@ -6045,3 +6046,36 @@ SRC=1897 && COMPERR
 
 # a built-in type followed by '.'
 SRC=1898 && COMPERR
+
+# a type parameter named like its generic type, with a method and an alias
+SRC=1899 && COMPERR
+
+# a type parameter named like its based generic type
+SRC=1900 && COMPERR
+
+# a variable named like a scratch register in a deep list
+SRC=1901 && EXP=173 && RUN
+
+# a whole array of instances in a comparison
+SRC=1902 && COMPERR
+
+# a call without parameters and without its ')'
+SRC=1903 && COMPERR
+
+# a generic call with a stray token after an argument
+SRC=1904 && COMPERR
+
+# a chained comparison as an argument
+SRC=1905 && COMPERR
+
+# a field list without its '}'
+SRC=1906 && COMPERR
+
+# a parameter list without its ')'
+SRC=1907 && COMPERR
+
+# an element indexed again
+SRC=1908 && COMPERR
+
+# a built-in name without '(' as a statement
+SRC=1909 && COMPERR
