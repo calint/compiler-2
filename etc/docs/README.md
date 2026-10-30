@@ -299,7 +299,8 @@ program does not depend on inlining.
    - the rules that need the length are left to the calls: 's[7]' and
      'array_copy(s, d, 2)' are accepted, 's[-1]' is not; the 'n' of a 'foo' over
      such a parameter is a read-only variable there and in the parse, not a
-     constant (8.3 for a 'let' of it)
+     constant; a 'let' whose value folds only at a call is a constant there,
+     e.g. 'let m = n', so 's[m]' past the end is rejected like 's[n]'
    - an error that depends on the arguments of a call
      ('compile_error::depends_on_call'): running out of scratch registers,
      e.g. twelve parameters that one call gives the same argument, or of the
@@ -838,11 +839,15 @@ order. The examples use 'make' and 'same' from the start of 2.10 and a type
    ('a')".
 
 2. The destination, when the result is declared with it (2.10.1, item 2):
-   the type the call is assigned to.
+   the type the call is assigned to, also when the call is an element of a
+   list assigned to it, which is computed at that type; a conversion or a
+   comparison gives no destination.
 
    ```text
    var m = name{}
    m = make(2)                 T = name, the type of 'm'
+   c = k + make(2)             T = i16 with 'c' an 'i16' and 'k' an 'i8'
+   c = i16(make(2))            rejected: "cannot deduce 'T' ..."
    ```
 
    'var m = make(2)' has no destination type: 'm' takes its type from the
@@ -1926,12 +1931,6 @@ message, x86_64 and rv32i linux stop with a signal.
   behavior.
 - Definite assignment does not count the writes of a call, e.g.
   'init(res)' is a read of 'res'; a conservative rejection.
-- Whether a 'let' is a constant is decided at the parse
-  ('make_stmt_def_var'), where the 'n' of a 'foo' over an unsized array
-  parameter is a variable; so 'let m = n' stays a variable also at a call
-  that gives the length, and 's[m]' past the end is left to the run-time
-  bounds check where 's[n]' is rejected at compile time; an item of
-  'etc/todo.txt'.
 - The check of a body without its calls ends at the first error that depends on
   a call other than an inlined recursion, e.g. running out of scratch registers,
   so the code after it is not checked there (1.5): e.g. a later 'res = f(res)'

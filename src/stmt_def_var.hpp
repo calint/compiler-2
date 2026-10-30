@@ -67,27 +67,6 @@ class initializer_declaration final {
         assert(not shape_.is_length_unknown());
     }
 
-    // 'value' does not read the defined name, its parse rejected that
-    // ('scope::initializer')
-    [[nodiscard]] auto fold(const toc& tc, const expr_any& value) const
-        -> std::optional<folded_value> {
-
-        std::optional<folded_value> constant{
-            value.fold_checked(tc, tc.use_at(type_ref())),
-        };
-
-        // note: untyped only at the default type, e.g. 'let k = 5' fits any
-        //       integer where it is used; 'let b = true' is a 'bool'
-
-        if (constant and not constant->is_typed() and
-            not type_ref().is_same(tc.builtins().default_type())) {
-
-            constant->own_type = &type_ref();
-        }
-
-        return constant;
-    }
-
     // the value at the deduced type and size
     [[nodiscard]] auto parse_value(toc& tc, tokenizer& tz) const -> expr_any {
         // note: set by the parse, which throws when it fails
@@ -109,6 +88,28 @@ class initializer_declaration final {
     //
     // statics
     //
+
+    // the value of a 'let' declared as 'tp' when it folds; 'value' does not
+    // read the defined name, its parse rejected that ('scope::initializer')
+    [[nodiscard]] static auto fold(const toc& tc, const expr_any& value,
+                                   const type& tp)
+        -> std::optional<folded_value> {
+
+        std::optional<folded_value> constant{
+            value.fold_checked(tc, tc.use_at(tp)),
+        };
+
+        // note: untyped only at the default type, e.g. 'let k = 5' fits any
+        //       integer where it is used; 'let b = true' is a 'bool'
+
+        if (constant and not constant->is_typed() and
+            not tp.is_same(tc.builtins().default_type())) {
+
+            constant->own_type = &tp;
+        }
+
+        return constant;
+    }
 
     // a variable, a 'var' or a 'dat', named by 'name_tk'
     [[nodiscard]] static auto
@@ -460,6 +461,21 @@ class stmt_def_var final : public statement {
 
         x.comment(tok(), indent, statement::trimmed_source(*this));
 
+        // a 'let' whose value folds only in this compile is a constant here,
+        // e.g. 'let m = n' in a 'foo' over an unsized array parameter at a
+        // call that gives the length
+        if (const std::optional<folded_value> constant{fold_let(tc)}) {
+            // note: the compile of a 'var' checks the elements of a condition
+            //       after the one that decides it, so does this
+
+            assign_var_.value().check_folded_conditions(tc, indent);
+
+            tc.add_const(declared_.src_loc_tk, indent, declared_.name,
+                         *constant);
+
+            return;
+        }
+
         tc.add_var(indent, declared_, var_kind::var);
 
         // the assignment names its destination itself
@@ -471,6 +487,18 @@ class stmt_def_var final : public statement {
     }
 
   private:
+    // a constant is not an array, as at the parse ('make_stmt_def_var')
+    [[nodiscard]] auto fold_let(const toc& tc) const
+        -> std::optional<folded_value> {
+
+        if (not tok().is_text("let") or declared_.shape.is_array()) {
+            return std::nullopt;
+        }
+
+        return initializer_declaration::fold(tc, assign_var_.value(),
+                                             get_type());
+    }
+
     //
     // statics
     //
@@ -523,7 +551,9 @@ inline auto make_stmt_def_var(toc& tc, const token tk, tokenizer& tz)
     };
 
     const std::optional<folded_value> constant{
-        may_fold ? declaration.fold(tc, value) : std::nullopt,
+        may_fold
+            ? initializer_declaration::fold(tc, value, declaration.type_ref())
+            : std::nullopt,
     };
 
     if (constant) {

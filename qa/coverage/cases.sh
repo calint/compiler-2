@@ -6521,3 +6521,7 @@ if [[ $MACHINE != x86_64 ]]; then SRC=2054 && OPTS="--vars=0x80001000" COMPERR; 
 
 # nested noinline calls in an expression stored to memory compile in linear time
 SRC=2055 && EXP=41 && RUN
+
+# a 'let' of the 'n' of a 'foo' over an unsized array is a constant at a call
+SRC=2056 && COMPERR
+SRC=2057 && COMPERR

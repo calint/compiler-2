@@ -215,7 +215,7 @@ def note_slow(compiler, path, options, seconds):
     # seconds, one finding for each program and option list
     try:
         with open(path, "rb") as f:
-            source = f.read().decode("latin-1")
+            source = joined_include(path, f.read().decode("latin-1"))
     except OSError:
         return
     key = f"{' '.join(options)} {hashlib.sha1(source.encode()).hexdigest()}"
@@ -409,6 +409,10 @@ OPTION_LISTS = (("--checks=noub",), ("--checks=noub", "--nopt"),
                 ("--checks=noub,line",))
 
 
+# the first line of a program that 'split_include' split
+PART_INCLUDE = 'include "lib/part.baz"\n'
+
+
 def split_include(work, source):
     # about every third program has its definitions in an included file in a
     # directory, 'main' stays in the file that is built, the program is the
@@ -421,7 +425,18 @@ def split_include(work, source):
     os.makedirs(os.path.join(work, "lib"), exist_ok=True)
     with open(os.path.join(work, "lib", "part.baz"), "wb") as f:
         f.write(source[:at + 1].encode("latin-1", "replace"))
-    return 'include "lib/part.baz"\n' + source[at + 1:]
+    return PART_INCLUDE + source[at + 1:]
+
+
+def joined_include(path, source):
+    # the whole program of a file that 'split_include' wrote, so that a
+    # finding compiles without its directory
+    if not source.startswith(PART_INCLUDE):
+        return source
+    with open(os.path.join(os.path.dirname(path), "lib", "part.baz"),
+              "rb") as f:
+        part = f.read().decode("latin-1")
+    return part + source[len(PART_INCLUDE):]
 
 
 def build_and_run(work, source, target, options, stdin=b"",

@@ -119,6 +119,12 @@ class stmt_assign_var final : public statement {
         });
     }
 
+    //
+    // class methods
+    //
+
+    [[nodiscard]] auto value() const -> const expr_any& { return expr_; }
+
   private:
     // the value is written part by part, so a part must not read what is
     // already written, e.g. the 'p.x' of 'p = {p.y, p.x}'; 'unsized_count'

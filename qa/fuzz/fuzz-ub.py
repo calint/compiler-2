@@ -979,6 +979,18 @@ class Params(Indexes):
     def tname(self, e):
         return self.var_type(e[1])
 
+    def value_of(self, e, env):
+        # an argument is computed at the type of its parameter, the type of
+        # its first variable, not at the default type as an index is
+        t = self.var_type(e[1])
+        a = env[e[1]]
+        if e[0] == "v":
+            return a
+        b = env[e[2]] if isinstance(e[2], str) else e[2]
+        if not fits(t, b):
+            raise Rejected("literal")
+        return apply(t, e[0], a, b)
+
     def statement_text(self, s):
         k = s[0]
         tri = self.kind == "tri"
