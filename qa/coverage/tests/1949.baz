@@ -1,0 +1,7 @@
+# an instance literal for a 'bool' is a value of another type, as for a number
+type point {x i32, y i32}
+
+func main() {
+    var b = true
+    b = point{1, 2}
+}

@@ -223,7 +223,7 @@ inline auto parse_call_or_identifier(toc& tc, tokenizer& tz, const token& tk,
 
     // e.g. the 'i8' of 'i8 + 1' or of 'i8 = 1', the 'point' of '1 + point'
     // or of 'point{1, 2}' that starts a statement, or the 'i8[]' of
-    // 'x + i8[]{1}'
+    // 'i8[]{1}' that starts a statement
     if (names_type(tm)) {
         throw compile_error{
             tk, std::format("{} is a type, not a value", in_quotes(tk.text()))};
@@ -370,6 +370,17 @@ inline auto parse_operand(toc& tc, tokenizer& tz, unary_ops uops,
             "'{}' is the zero value of a typed destination, not an operand"};
     }
 
+    const term_kind tm{classify_term(tc, tk, tz)};
+
+    // e.g. the '[2]{1, 2}' of 'a == [2]{1, 2}' or the 'i8[2]{1, 2}' of
+    // 'x + i8[2]{1, 2}', an array is compared as memory like an instance
+    if (tm == term_kind::array_literal or
+        (tk.is_none() and is_default_array_literal(tz))) {
+
+        throw compile_error{tk, "an array literal is not an operand here, "
+                                "store it in a variable first"};
+    }
+
     if (tk.is_none()) {
         throw compile_error{tk, "expected a constant, a name or a call"};
     }
@@ -379,8 +390,6 @@ inline auto parse_operand(toc& tc, tokenizer& tz, unary_ops uops,
         throw compile_error{tk, "'not' makes a condition, which is not an "
                                 "operand here, store it in a 'bool' first"};
     }
-
-    const term_kind tm{classify_term(tc, tk, tz)};
 
     // e.g. the 'point{1, 2}' of 'p == point{1, 2}', an instance is compared
     // as memory, which only a variable has

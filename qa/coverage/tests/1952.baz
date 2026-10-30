@@ -1,0 +1,5 @@
+# a whole array literal for a number is a type mismatch
+func main() {
+    var n = i16(1)
+    n = i8[2]{1, 2}
+}

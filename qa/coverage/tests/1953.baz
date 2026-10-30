@@ -1,0 +1,5 @@
+# a whole array literal for a bool is a type mismatch
+func main() {
+    var b = true
+    b = i8[2]
+}

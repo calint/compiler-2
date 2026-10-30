@@ -1,0 +1,4 @@
+
+1948.baz:2:6: 'noinline' is a keyword
+func noinline.m() { }
+     ^~~~~~~~

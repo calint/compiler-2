@@ -156,9 +156,9 @@ struct func_head {
 
     // 'tz' is after 'func'
     //
-    // the '(' is looked for after each word: a word followed by '(' is the
-    // name, e.g. 'func noinline()' reads 'noinline' as the name, which is
-    // then rejected as a keyword
+    // the '(' is looked for after each word: a word followed by '(', '.' or
+    // '<' is the name, e.g. 'func noinline()' and 'func mut.m()' read the
+    // keyword as the name, which is then rejected
     [[nodiscard]] static auto read(const toc& tc, tokenizer& tz) -> func_head {
         func_head head{};
         head.start_tk = tz.cur_position_token();
@@ -187,6 +187,13 @@ struct func_head {
     }
 
   private:
+    // 'name_tk' is a modifier, a word follows it, not the '(', '.' or '<'
+    // after a name
+    [[nodiscard]] auto is_name_next(const tokenizer& tz) const -> bool {
+        const char next{tz.peek_char_after_whitespace()};
+        return not open_paren_tk and next != '.' and next != '<';
+    }
+
     // 'name_tk' is the receiver: a type, whose method gets an implicit first
     // parameter 'self' and whose constructor builds a 'self', or a generic
     // type, whose instances get the method; the name of a method of a type
@@ -224,16 +231,16 @@ struct func_head {
                               read_name_tk.text());
     }
 
-    // 'noinline' and 'mut' before the name; a word followed by '(' is read as
-    // the name
+    // 'noinline' and 'mut' before the name; a word followed by '(', '.' or
+    // '<' is read as the name
     auto read_modifiers(tokenizer& tz) -> void {
-        if (name_tk.is_text("noinline") and not open_paren_tk) {
+        if (name_tk.is_text("noinline") and is_name_next(tz)) {
             noinline_tk = name_tk;
             name_tk = tz.next_token();
             open_paren_tk = tz.is_next_char_token('(');
         }
 
-        if (name_tk.is_text("mut") and not open_paren_tk) {
+        if (name_tk.is_text("mut") and is_name_next(tz)) {
             mut_tk = name_tk;
             name_tk = tz.next_token();
             open_paren_tk = tz.is_next_char_token('(');

@@ -1,0 +1,4 @@
+
+1954.baz:5:9: an array literal is not an operand here, store it in a variable first
+    b = i8[2]{1, 2} == a
+        ^~

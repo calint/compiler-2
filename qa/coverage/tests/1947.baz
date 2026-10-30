@@ -1,0 +1,15 @@
+# a generic method call outside a function is rejected before its instance
+# is made, an error in the instance body is not reached
+
+type point {x, y}
+
+func point.get<T type>() res T {
+    res = T{1}
+}
+
+var p = point{1, 2}
+var g = p.get<i8>()
+
+func main() {
+    exit(g)
+}

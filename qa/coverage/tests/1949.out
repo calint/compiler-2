@@ -1,0 +1,4 @@
+
+1949.baz:6:9: expected type 'bool', got 'point'
+    b = point{1, 2}
+        ^~~~~

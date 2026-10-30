@@ -1,0 +1,12 @@
+# a generic call outside a function is rejected where it is parsed, before
+# its instance is made and its arguments are read, as a plain call
+
+func put<T type>(a, v T) res T {
+    res = v
+}
+
+var g = put(1, nope)
+
+func main() {
+    exit(g)
+}

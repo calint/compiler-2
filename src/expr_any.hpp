@@ -1024,6 +1024,50 @@ class expr_any final : public statement {
         }
     }
 
+    // an array literal that no operator continues, e.g. 'i8[2]{1, 2}' or
+    // '[2]', not '[2]{1, 2} == a'; 'tz' is at its '['
+    [[nodiscard]] static auto is_whole_array_literal(const tokenizer& tz)
+        -> bool {
+
+        tokenizer after_literal{tz};
+
+        // note: a literal the source ends in is rejected as an operand
+        if (not after_literal.skip_enclosed('[', ']')) {
+            return false;
+        }
+
+        if (after_literal.peek_char_after_whitespace() == '{' and
+            not after_literal.skip_braced_block()) {
+
+            return false;
+        }
+
+        return not continues_expression(after_literal);
+    }
+
+    // a user type alone or an instance literal that no operator continues,
+    // e.g. 'point' or 'point{1, 2}', not 'point{1, 2} == p'
+    [[nodiscard]] static auto is_whole_record(const term_kind tm,
+                                              const tokenizer& tz) -> bool {
+
+        if (tm == term_kind::record_type) {
+            return not continues_expression(tz);
+        }
+
+        if (tm != term_kind::record_literal) {
+            return false;
+        }
+
+        tokenizer after_literal{tz};
+
+        // note: a literal the source ends in is rejected as an operand
+        if (not after_literal.skip_braced_block()) {
+            return false;
+        }
+
+        return not continues_expression(after_literal);
+    }
+
     [[nodiscard]] static auto parse_variant(toc& tc, tokenizer& tz,
                                             const type& tp,
                                             const literal_typing typing)
@@ -1080,17 +1124,34 @@ class expr_any final : public statement {
         }
 
         // e.g. 'x = point' or 'x = point{1, 2}' for an 'i8' 'x', as 'x = p' of
-        // a 'point' 'p'; a condition may compare an instance literal
+        // a 'point' 'p'; a condition may compare an instance literal, which the
+        // comparison rejects, e.g. 'b = point{1, 2} == p'
         const term_kind tm{classify_term(tc, tk, tz)};
 
-        const bool is_bare_record{
-            tm == term_kind::record_type and not continues_expression(tz),
-        };
-
-        if (is_bare_record or
+        if (is_whole_record(tm, tz) or
             (tm == term_kind::record_literal and not tp.is_bool())) {
 
             throw_type_mismatch(tk, tp.name(), tc.get_type_or_throw(tk).name());
+        }
+
+        // e.g. 'x = i8[2]{1, 2}' or 'x = [2]{1, 2}' for an 'i8' 'x', like an
+        // instance literal; an operand or a compared literal is rejected as
+        // an operand, e.g. 'b = [2]{1, 2} == a'
+        const bool is_array_literal{
+            tm == term_kind::array_literal or
+                (tk.is_none() and is_default_array_literal(tz)),
+        };
+
+        if (is_array_literal and
+            (not tp.is_bool() or is_whole_array_literal(tz))) {
+
+            const type& element_type{
+                tk.is_none() ? tc.builtins().default_type()
+                             : tc.get_type_or_throw(tk),
+            };
+
+            throw_type_mismatch(tk, tp.name(),
+                                std::format("{}[]", element_type.name()));
         }
 
         tz.put_back_token(tk);

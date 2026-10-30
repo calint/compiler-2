@@ -6189,3 +6189,30 @@ SRC=1944 && COMPERR
 
 # a method call where an array is expected
 SRC=1945 && COMPERR
+
+# a generic call in a global initializer
+SRC=1946 && COMPERR
+
+# a generic method call in a global initializer
+SRC=1947 && COMPERR
+
+# a modifier used as the type of a method name
+SRC=1948 && COMPERR
+
+# an instance literal for a 'bool'
+SRC=1949 && COMPERR
+
+# an untyped array literal after an operator
+SRC=1950 && COMPERR
+
+# a typed array literal after an operator
+SRC=1951 && COMPERR
+
+# a whole array literal for a number
+SRC=1952 && COMPERR
+
+# a whole array literal for a 'bool'
+SRC=1953 && COMPERR
+
+# a compared array literal
+SRC=1954 && COMPERR

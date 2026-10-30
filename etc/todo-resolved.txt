@@ -1,6 +1,20 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] hard: design review series 2, round 36 (2026-10-30, user: continue
+    the rounds until no more findings; 7 reviewers A-G, the groups rotated
+    again)
+    => done (2026-10-30): messages: A1 a generic call in a global initializer
+       is "a call runs only inside a function" before its instance is made
+       and its arguments are read, like a plain call (1946, 1947); B1
+       'noinline' or 'mut' followed by '.' or '<' is the name, "'noinline' is
+       a keyword" (1948); E1 a lone instance literal for a 'bool' is a type
+       mismatch, only a compared one keeps "store it in a variable first"
+       (refines round 35 C2, 1949); G1 an array literal as an operand is "an
+       array literal is not an operand here, store it in a variable first",
+       a whole one for a number or a 'bool' is "expected type 'i16', got
+       'i8[]'" ('tokenizer::skip_enclosed', 1950-1954; E2 found the same);
+       three reviewers found nothing
 [x] hard: design review series 2, round 35 (2026-10-30, user: keep doing
     rounds until no more findings; 7 reviewers A-G, the groups rotated
     again)

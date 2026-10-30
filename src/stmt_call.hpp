@@ -2390,6 +2390,12 @@ class stmt_call final : public statement {
             return {};
         }
 
+        // note: before the instance is made and the deduction reads the
+        //       arguments, a call outside a function is reported as for a
+        //       function that is not generic ('read_open_paren')
+
+        assert_call_in_func(tc, tok());
+
         generic_call generic{
             generic_call::parse(tc, tz, tok(), name, expected_type),
         };

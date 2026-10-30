@@ -320,12 +320,7 @@ class tokenizer final {
     // character literals may contain brackets; false when no '}' closes it
     // e.g. '{ a = { 1 } b = 2 }', a closer without an opener ends it early
     [[nodiscard]] auto skip_braced_block() -> bool {
-        // note: every caller has seen the '{'
-        std::ignore = seen_char_token('{');
-
-        skip_to_unnested("}");
-
-        return is_next_char_token('}').has_value();
+        return skip_enclosed('{', '}');
     }
 
     // skips the next braced block and returns the source text from the end of
@@ -336,6 +331,19 @@ class tokenizer final {
         }
 
         return text_after(tk);
+    }
+
+    // skips from the 'open' that is next to the 'close' that ends it, e.g.
+    // the '[2 * n]' of 'i8[2 * n]{}'; false when no 'close' ends it
+    [[nodiscard]] auto skip_enclosed(const char open, const char close)
+        -> bool {
+
+        // note: every caller has seen the 'open'
+        std::ignore = seen_char_token(open);
+
+        skip_to_unnested(std::string_view{&close, 1});
+
+        return is_next_char_token(close).has_value();
     }
 
     // skips up to and including the ')' that closes a '(' that is already read

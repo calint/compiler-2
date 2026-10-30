@@ -1,0 +1,3 @@
+# a modifier followed by '.' is read as the name, a keyword
+func noinline.m() { }
+func main() { }
