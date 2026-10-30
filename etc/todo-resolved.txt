@@ -1,6 +1,15 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] hard: bug hunt series 2, round 25 (2026-10-30, user: bug hunts in a
+    loop until a round finds none, then one more; 3 hunters: P1 each
+    run-time check alone and in subsets, P2 values that are constants only
+    at a call, P3 assignments and literals written part by part)
+    => done (2026-10-30): nothing found (P1 about 400k runs on 3 targets,
+       P2 about 17000 programs in 10 to 14 builds, P3 about 2400 programs in
+       20 variants, all against Python models); note P3: 'int(m == z)' of
+       records says "cannot convert a value of type 'rec'" where scalars get
+       "a comparison makes a condition ... store it in a 'bool' first"
 [x] hard: bug hunt series 2, round 24 (2026-10-30, user: bug hunts in a
     loop until a round finds none, then one more; the round after the
     'let' change; 3 hunters: O1 a 'let' that folds only at a call, O2
