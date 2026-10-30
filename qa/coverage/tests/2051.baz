@@ -1,0 +1,9 @@
+# a wrapping conversion of a bitwise operation on wider operands keeps the
+# low bits, rv32i normalizes the narrow result
+
+func main() {
+    var a = i16(0x1234)
+    var b = i16(0x1111)
+    var r = i8(a ^ b)
+    exit(int(r))
+}

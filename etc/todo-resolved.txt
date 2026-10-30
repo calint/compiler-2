@@ -1,6 +1,27 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] hard: bug hunt after design review round 47, and round 48 stopped
+    (2026-10-30, user: low on tokens, bug hunts instead of design rounds; 3
+    hunters: H1 differential runs, H2 the '--checks=noub' guarantee, H3
+    generics, aliasing and order)
+    => done (2026-10-30): bug: H1 B1 rv32i aborted on '&', '|' or '^' over
+       operands wider than a wrapping conversion, e.g. 'i8(a ^ b)' of 'i16's
+       (a regression of round 33 G1, which made the normalization an assert;
+       without the assert the values were wrong); 'binary_operation'
+       normalizes a source wider than the destination (2051, 2052); H2 and
+       H3 found nothing (thousands of generated programs against Python
+       models on both targets); round 48 stopped after two reports, both
+       applied: F1 a method call without a result where an array is
+       expected is "a call of 'point.clear' is not an array" in every context
+       (2049, 2050), C1 an unused '<tuple>' include; bug: H1 a 'bool' array
+       argument of an array parameter was rejected as "must be indexed", the
+       argument was parsed as a value of the element type, a condition for
+       'bool'; the name of an array is parsed as a path as the array of a
+       built-in ('assert_array_argument_start' tells it, 'path_argument';
+       0660 0661 underline the name, 2053); rejected: passing an array shape
+       (takes the array-literal parse, worse messages) and a flag telling the
+       value parse it reads an array argument (a mode for one type)
 [x] hard: design review series 2, round 47 (2026-10-30, user: continue
     the rounds until no more findings; 7 reviewers A-G, the groups rotated
     again)

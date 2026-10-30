@@ -1,0 +1,4 @@
+
+2049.baz:12:11: a call of 'point.clear' is not an array
+    a = p.clear()
+          ^~~~~

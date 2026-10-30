@@ -6500,3 +6500,18 @@ SRC=2047 && COMPERR
 
 # a generic method named without '('
 SRC=2048 && COMPERR
+
+# a method call without a result assigned to an array
+SRC=2049 && COMPERR
+
+# a method call without a result for an array field
+SRC=2050 && COMPERR
+
+# a wrapping conversion of a bitwise operation on wider operands
+SRC=2051 && EXP=37 && RUN
+
+# the narrow result of a bitwise operation on wider operands in a wider use
+SRC=2052 && EXP=72 && RUN
+
+# a 'bool' array argument of a 'bool' array parameter
+SRC=2053 && EXP=6 && RUN

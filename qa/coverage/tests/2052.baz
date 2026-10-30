@@ -1,0 +1,14 @@
+# the narrow result of a bitwise operation on wider operands is extended
+# before a wider use
+
+func main() {
+    var a = i16(0x0080)
+    var b = i16(0x0100)
+    var k = i32(1000)
+    var r = i32(k + i8(a ^ b))
+    var s = i16(0x7f0f)
+    var t = i16(0x00f0)
+    var u = i32(i8(s | t) + 0)
+    var v = i32(i8(s & 0x0f0f))
+    exit(int(r - 800 + u + 1 + v - 15))
+}

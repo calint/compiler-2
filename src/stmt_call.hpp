@@ -2322,7 +2322,15 @@ class stmt_call final : public statement {
                 arg_delims_tk_.emplace_back(delimiter_tk);
             }
 
-            assert_array_argument_start(tc, tz, params.at(i));
+            // e.g. the 'bs' of 'f(bs)' for 'gs bool[]', a path as the array
+            // of a built-in, not a value of the element type, which for a
+            // 'bool' is a condition that rejects a whole array
+            if (assert_array_argument_start(tc, tz, params.at(i))) {
+                const token tk{tz.next_token()};
+
+                args_.push_back(path_argument(stmt_identifier{tc, tk, tz}));
+                continue;
+            }
 
             const bool is_deducing{
                 std::ranges::contains(deducing_args, arg_index),
@@ -2622,13 +2630,14 @@ class stmt_call final : public statement {
     // report its kind, e.g. 'p' of a 'point' for 's i8[]': an array literal,
     // which has no storage that the parameter refers to, e.g. '{1, 2}',
     // '[2]{1, 2}' or 'i8[]{1, 2}', a type, a call and a whole name; '{}' and
-    // an expression are reported where they are used
+    // an expression are reported where they are used; true for the name of
+    // an array, which the call parses as a path
     static auto assert_array_argument_start(toc& tc, const tokenizer& tz,
                                             const stmt_def_func_param& param)
-        -> void {
+        -> bool {
 
         if (not param.is_array() or is_zero_value(tz)) {
-            return;
+            return false;
         }
 
         tokenizer probe{tz};
@@ -2647,15 +2656,14 @@ class stmt_call final : public statement {
             const term_kind tm{classify_term(tc, tk, probe)};
 
             if (tm == term_kind::value or tm == term_kind::literal) {
-                assert_array_name(tc, tk, probe, param);
-                return;
+                return assert_array_name(tc, tk, probe, param);
             }
 
             // e.g. 'i8', 'point{1, 2}' or 'mk()', as for the array of a
             // built-in
             if (tm != term_kind::array_literal) {
                 stmt_identifier::assert_not_type_or_call(tc, tk, tm);
-                return;
+                return false;
             }
 
             literal_tk = tk;
@@ -2672,18 +2680,21 @@ class stmt_call final : public statement {
     // is after it
     // note: read from the copy, the call parses it again
     static auto assert_array_name(toc& tc, const token& tk, tokenizer probe,
-                                  const stmt_def_func_param& param) -> void {
+                                  const stmt_def_func_param& param) -> bool {
 
         const stmt_identifier ident{tc, tk, probe};
 
         // e.g. 'p.get()', as for the array of a built-in
         ident.assert_not_method(tc, probe);
 
-        if (ident.is_array() or continues_expression(probe)) {
-            return;
+        const bool continues{continues_expression(probe)};
+
+        if (not ident.is_array() and not continues) {
+            throw_not_array_argument(tk.start_position(), ident.path_text(),
+                                     param);
         }
 
-        throw_not_array_argument(tk.start_position(), ident.path_text(), param);
+        return ident.is_array() and not continues;
     }
 
     // an argument that reaches a part of an earlier one or of the result that

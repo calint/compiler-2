@@ -1,0 +1,14 @@
+# a method call without a result for an array field is a call that is not
+# an array, as in an argument
+
+type point {x, y}
+
+type row {a i8[2]}
+
+func point.clear() {
+}
+
+func main() {
+    var p = point{1, 2}
+    var r = row{p.clear()}
+}

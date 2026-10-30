@@ -1,0 +1,4 @@
+
+2050.baz:13:19: a call of 'point.clear' is not an array
+    var r = row{p.clear()}
+                  ^~~~~

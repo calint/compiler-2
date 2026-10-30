@@ -308,14 +308,14 @@ inline auto expr_type::assert_call_type() const -> void {
 
     const stmt_call& call{*call_source()};
 
-    // e.g. 'p = f()' with 'func f()', the message of a number destination
-    if (not call.callee().has_result()) {
-        throw_no_value(call.callee_name_token(), call.callee().name());
-    }
-
     // a function returns one value, not an array
     if (is_array_destination_) {
         throw_call_not_array(call.callee_name_token(), call.callee().name());
+    }
+
+    // e.g. 'p = f()' with 'func f()', the message of a number destination
+    if (not call.callee().has_result()) {
+        throw_no_value(call.callee_name_token(), call.callee().name());
     }
 
     const type& result_type{call.get_type()};

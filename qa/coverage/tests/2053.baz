@@ -1,0 +1,27 @@
+# a 'bool' array is an argument of a 'bool' array parameter, inlined and
+# noinline, as an array of numbers is
+
+func count(gs bool[]) res {
+    res = 0
+    foo gs {
+        if e {
+            res = res + 1
+        }
+    }
+}
+
+func noinline count_noinline(gs bool[]) res {
+    res = 0
+    foo gs {
+        if e {
+            res = res + 2
+        }
+    }
+}
+
+func main() {
+    var bs = bool[5]
+    bs[1] = true
+    bs[3] = true
+    exit(count(bs) + count_noinline(bs))
+}

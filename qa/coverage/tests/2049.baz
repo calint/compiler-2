@@ -1,0 +1,13 @@
+# a method call without a result where an array is expected is a call that
+# is not an array, as for a plain call or a method with a result
+
+type point {x, y}
+
+func point.clear() {
+}
+
+func main() {
+    var p = point{1, 2}
+    var a = i8[2]
+    a = p.clear()
+}

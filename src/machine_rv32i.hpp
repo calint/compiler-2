@@ -821,12 +821,11 @@ class machine_rv32i : public machine {
                operation == arithmetic_operator::bit_or or
                operation == arithmetic_operator::bit_xor);
 
-        // note: the front end rejects a 'bool' as an arithmetic operand and a
-        //       source wider than the destination, so the result keeps the
-        //       extension of the operands, see 'needs_normalize'
+        // note: the front end rejects a 'bool' as an arithmetic operand; a
+        //       source wider than the destination, from the argument of a
+        //       conversion, is normalized by 'binary_operation'
 
         assert(not dst.type_ref().is_bool() and not src.type_ref().is_bool());
-        assert(src.type_ref().size_bytes() <= dst.type_ref().size_bytes());
 
         op instruction{op::xor_op};
 
@@ -1582,9 +1581,17 @@ class machine_rv32i : public machine {
         // note: a checked narrow result passed 'check_fits_width', so the
         //       register already holds it extended
 
-        store_operation_result(indent, dst, loaded.address, loaded.value,
-                               not check.enabled and
-                                   needs_normalize(instruction));
+        // note: a source wider than the destination, from the wrapping
+        //       argument of a conversion, leaves bits outside its width
+
+        const bool wider_source{
+            src.type_ref().size_bytes() > dst.type_ref().size_bytes(),
+        };
+
+        store_operation_result(
+            indent, dst, loaded.address, loaded.value,
+            not check.enabled and
+                (needs_normalize(instruction) or wider_source));
     }
 
     // passing checks branch to 'bounds_pass_' and failing ones to
