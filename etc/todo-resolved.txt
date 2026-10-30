@@ -1,10 +1,10 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
-[x] hard: bug hunt after design review round 47, and round 48 stopped
-    (2026-10-30, user: low on tokens, bug hunts instead of design rounds; 3
-    hunters: H1 differential runs, H2 the '--checks=noub' guarantee, H3
-    generics, aliasing and order)
+[x] hard: bug hunt series 2, round 18 (2026-10-30, after design review
+    round 47, round 48 stopped; user: low on tokens, bug hunts instead of
+    design rounds; 3 hunters: H1 differential runs, H2 the '--checks=noub'
+    guarantee, H3 generics, aliasing and order)
     => done (2026-10-30): bug: H1 B1 rv32i aborted on '&', '|' or '^' over
        operands wider than a wrapping conversion, e.g. 'i8(a ^ b)' of 'i16's
        (a regression of round 33 G1, which made the normalization an assert;
