@@ -1,0 +1,7 @@
+# a generic call's type argument names an instance first, as for a field type
+
+type box<T type> { x T }
+
+func mk<T type>() res T { res = T }
+
+func main() { var b = mk<box<i8>>() }

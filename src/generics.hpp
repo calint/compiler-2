@@ -215,6 +215,18 @@ struct generic_arg_tokens {
                                     "'a T[]'"};
             }
 
+            // e.g. the inner 'list' of 'box<list<i8>>', as for a field type
+            if (tz.peek_char_after_whitespace() == '<') {
+                const std::string instance{
+                    std::format("{}<...>", arg_tk.text()),
+                };
+
+                throw compile_error{
+                    arg_tk, std::format("{} is not a generic argument, {}",
+                                        in_quotes(instance),
+                                        instance_hint(arg_tk.text()))};
+            }
+
             const token delim_tk{
                 tz.expect_char_token(
                     ',', std::format("expected ',' or '>' after generic "

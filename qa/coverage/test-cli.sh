@@ -230,6 +230,7 @@ CLI_FILE_ERRORS() {
     exit_code=$?
     set -e
     [[ $exit_code -eq 1 ]]
+    [[ ! -s gen.s ]]
     grep -Fq "cannot write file '/dev/full'" err
     # a source is read up to its size limit
     set +e
@@ -285,6 +286,11 @@ CLI_SOURCE_LINE_ENDS() {
     sed 's/^    /\t/' 0841.baz >gen-tab.baz
     "$BIN" gen-tab.baz >gen.s 2>err && exit 1
     grep -q $'^\t   ^$' err
+    # a carriage return inside a character literal is shown in the listing
+    printf "func main() {\r\n    var c = '\r'\r\n    exit(c)\r\n}\r\n" \
+        >gen-crlf.baz
+    "$BIN" gen-crlf.baz >gen.s 2>err
+    grep -Fq "var c = '\\x0d'" gen.s
     rm -f gen-crlf.baz gen-tab.baz
     echo ok
 }

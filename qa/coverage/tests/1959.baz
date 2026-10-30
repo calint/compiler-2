@@ -1,0 +1,6 @@
+# an array literal of the default type for an instance is a type mismatch
+type point {x i8, y i8}
+func main() {
+    var p = point{}
+    p = [2]{1, 2}
+}

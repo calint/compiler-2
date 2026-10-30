@@ -1,0 +1,7 @@
+# an error in the fields of a generic type names the generic definition
+
+type box<T type> { x T y }
+
+type s = box<i8>
+
+func main() {}

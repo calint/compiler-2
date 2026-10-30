@@ -1,4 +1,4 @@
 
-1916.baz:5:13: an array of 'i8' is not a number
+1916.baz:5:13: an array literal is not an operand here, store it in a variable first
     var a = i8[2]{1, 2} + 1
             ^~

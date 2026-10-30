@@ -1,0 +1,10 @@
+
+1961.baz:3:31: expected ',' followed by another field in type 'list'
+type list<T type, n> { a T[n] len }
+                              ^
+1961.baz:5:19: instantiated by 'list<i8, 8>'
+type text<size> = list<i8, size>
+                  ^~~~
+1961.baz:7:6: instantiated by
+type str = text<8>
+     ^~~

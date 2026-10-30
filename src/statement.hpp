@@ -141,16 +141,18 @@ class one_line_source final {
     }
 
     // a backslash before a line end continues the literal on the next line,
-    // the comment stays on one, a carriage return is dropped so that a crlf
-    // continuation looks like a lf one
+    // the comment stays on one; the carriage return of a crlf line end is
+    // dropped so that a crlf continuation looks like a lf one
     [[nodiscard]] static auto one_line_literal(const std::string_view literal)
         -> std::string {
 
         std::string kept;
         bool escaped{};
 
-        for (const char ch : literal) {
-            if (ch == '\r') {
+        for (size_t i{}; i < literal.size(); ++i) {
+            const char ch{literal.at(i)};
+
+            if (ch == '\r' and literal.substr(i + 1).starts_with('\n')) {
                 continue;
             }
 

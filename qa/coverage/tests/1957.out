@@ -1,0 +1,4 @@
+
+1957.baz:5:13: an instance literal of 'point' is not an operand here, store it in a variable first
+    let b = point{1, 2} and true
+            ^~~~~

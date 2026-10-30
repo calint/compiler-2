@@ -1,0 +1,4 @@
+
+1958.baz:5:9: expected type 'point', got 'i8[]'
+    p = i8[2]{1, 2}
+        ^~

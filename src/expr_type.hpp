@@ -56,6 +56,22 @@ enum class literal_typing : uint8_t { written, from_destination };
                              in_quotes(type_name), in_quotes(value))};
 }
 
+// an array literal where a single value of 'tp' is expected, e.g. the
+// 'i8[2]{1, 2}' of 'x = i8[2]{1, 2}'; 'element_tk' is its element type, none
+// for the default type, e.g. the '[2]' of 'p = [2]'
+[[noreturn]] inline auto throw_array_literal_mismatch(const toc& tc,
+                                                      const token& element_tk,
+                                                      const type& tp) -> void {
+
+    const type& element_type{
+        element_tk.is_none() ? tc.builtins().default_type()
+                             : tc.get_type_or_throw(element_tk),
+    };
+
+    throw_type_mismatch(element_tk, tp.name(),
+                        std::format("{}[]", element_type.name()));
+}
+
 // the '}' that ends a list of values that is full, after a trailing ',' that
 // is appended to 'delims_tk'; a value after the ',' is 'too_many', anything
 // else 'unclosed', e.g. the '3' of '{1, 2, 3}' or the ')' of '{1, 2)'

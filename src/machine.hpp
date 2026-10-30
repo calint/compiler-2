@@ -813,7 +813,7 @@ class machine {
                           const type& value_type) const -> operand = 0;
 
     // compares 'size_bytes' of two arrays and puts 1 into the destination of
-    // the request when they are equal
+    // the request when they are equal, when they differ if it is 'inverted'
     virtual auto memory_equal(const token& src_loc_tk, const size_t indent,
                               const size_t size_bytes,
                               const equality_request& request) -> void = 0;

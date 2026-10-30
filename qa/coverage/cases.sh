@@ -4795,7 +4795,8 @@ SRC=1508 && COMPERR
 # a failed check in an included file names that file
 SRC=1509 && EXP=255 && RUN_ERR
 
-# a parenthesized 'and' is not an operand, a bare type name is not a number
+# a parenthesized 'and' is not an operand, a bare type name with an operator is
+# a type
 SRC=1510 && COMPERR
 SRC=1511 && COMPERR
 SRC=1512 && COMPERR
@@ -6216,3 +6217,30 @@ SRC=1953 && COMPERR
 
 # a compared array literal
 SRC=1954 && COMPERR
+
+# a 'var' initializer that compares an instance literal
+SRC=1955 && COMPERR
+
+# a 'var' initializer that compares an array literal
+SRC=1956 && COMPERR
+
+# a 'let' initializer with an instance literal in an 'and'
+SRC=1957 && COMPERR
+
+# a whole array literal for an instance
+SRC=1958 && COMPERR
+
+# an array literal of the default type for an instance
+SRC=1959 && COMPERR
+
+# an error in the fields of a generic type names the definition
+SRC=1960 && COMPERR
+
+# an error in the fields of a base of bases names the root
+SRC=1961 && COMPERR
+
+# an instance of a generic type as a generic type argument
+SRC=1962 && COMPERR
+
+# an instance of a generic type as a type argument of a call
+SRC=1963 && COMPERR

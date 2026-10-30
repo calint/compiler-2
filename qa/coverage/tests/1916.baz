@@ -1,5 +1,5 @@
-# an array literal followed by an operator is not a number, as an array name
-# is not: the message is at the literal, not "unexpected '+'"
+# an array literal followed by an operator is an operand, as in an
+# assignment: the message is at the literal, not "unexpected '+'"
 
 func main() {
     var a = i8[2]{1, 2} + 1

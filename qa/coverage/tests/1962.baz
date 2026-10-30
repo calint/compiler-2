@@ -1,0 +1,8 @@
+# an instance of a generic type as a generic argument is named first, as for
+# a field type
+
+type box<T type> { x T }
+
+type s = box<box<i8>>
+
+func main() {}

@@ -1,0 +1,4 @@
+
+1963.baz:7:26: 'box<...>' is not a generic argument, name an instance first, e.g. 'type str = box<...>'
+func main() { var b = mk<box<i8>>() }
+                         ^~~

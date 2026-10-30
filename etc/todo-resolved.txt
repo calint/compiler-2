@@ -1,6 +1,26 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] hard: design review series 2, round 37 (2026-10-30, user: continue
+    the rounds until no more findings; 7 reviewers A-G, the groups rotated
+    again)
+    => done (2026-10-30): bugs: E1 rv32i writes the listing only after the
+       image was written, a failed image write leaves stdout empty like a
+       failed open (test-cli); G3 a raw carriage return inside a literal is
+       shown in the listing comment, only that of a crlf is dropped
+       (test-cli); messages: F1 a 'var', 'let' or 'dat' initializer that
+       starts with an instance literal, an array literal or a type followed
+       by an operator gets the operand message at the literal, as after '='
+       (1955-1957; 1512 and 1916 change, reopens 2026-10-22 item 12 and
+       round 32 F1); A1 an array literal for an instance is "expected type
+       'point', got 'i8[]'" ('throw_array_literal_mismatch', 1958, 1959);
+       G1 an error in the fields of a generic type names the definition,
+       not the alias (1960, 1961); G2 an instance of a generic type as a
+       generic argument is "'box<...>' is not a generic argument, name an
+       instance first" (1962, 1963); code: B1 'constructor_function_name'
+       and a dead 'types().has' test gone (reopens round 7 with no local
+       left for clang-tidy); comment: D1 'memory_equal' when 'inverted'; one
+       reviewer found nothing
 [x] hard: design review series 2, round 36 (2026-10-30, user: continue
     the rounds until no more findings; 7 reviewers A-G, the groups rotated
     again)

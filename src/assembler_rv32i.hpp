@@ -835,12 +835,18 @@ class assembler_rv32i final : public assembler {
                    });
     }
 
-    // 'binary' receives the sections as one image from address zero
+    // 'binary' receives the sections as one image from address zero, the
+    // text follows only when the image was written, so a failing build
+    // writes nothing
     auto write_resolved(std::ostream& os, std::ostream& binary) const -> void {
         assert(jumps_resolved_);
 
-        write_text(os);
         write_image(binary);
+        binary.flush();
+
+        if (binary) {
+            write_text(os);
+        }
     }
 
     auto xor_op(const size_t indent, const std::string_view rd,

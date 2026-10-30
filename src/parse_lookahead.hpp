@@ -284,3 +284,45 @@ enum class term_kind : uint8_t {
     return classify_term(tc, tk, tz) == term_kind::builtin_type and
            not continues_expression(tz);
 }
+
+// an array literal that no operator continues, e.g. 'i8[2]{1, 2}' or '[2]',
+// not '[2]{1, 2} == a'; 'tz' is at its '['
+// note: a literal that does not end is parsed as a whole, which reports it
+[[nodiscard]] inline auto is_whole_array_literal(const tokenizer& tz) -> bool {
+    tokenizer after_literal{tz};
+
+    if (not after_literal.skip_enclosed('[', ']')) {
+        return true;
+    }
+
+    if (after_literal.peek_char_after_whitespace() == '{' and
+        not after_literal.skip_braced_block()) {
+
+        return true;
+    }
+
+    return not continues_expression(after_literal);
+}
+
+// a user type alone or an instance literal that no operator continues, e.g.
+// 'point' or 'point{1, 2}', not 'point{1, 2} == p'
+// note: a literal that does not end is parsed as a whole, which reports it
+[[nodiscard]] inline auto is_whole_record(const term_kind tm,
+                                          const tokenizer& tz) -> bool {
+
+    if (tm == term_kind::record_type) {
+        return not continues_expression(tz);
+    }
+
+    if (tm != term_kind::record_literal) {
+        return false;
+    }
+
+    tokenizer after_literal{tz};
+
+    if (not after_literal.skip_braced_block()) {
+        return true;
+    }
+
+    return not continues_expression(after_literal);
+}

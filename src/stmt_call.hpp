@@ -2184,7 +2184,13 @@ class stmt_call final : public statement {
                                 "expected a constructor name after '.'"};
         }
 
-        const std::string name{constructor_function_name(tc, tok(), name_tk)};
+        // note: the parse took 'tok()' as a type ('classify_term'), the type
+        //       a type parameter is bound to names the constructor, e.g.
+        //       'point.at' for 'T.at' where 'T' is 'point'
+
+        const std::string name{
+            method_name_of(tc.get_type_or_throw(tok()).name(), name_tk.text()),
+        };
 
         if (not tc.is_func(name)) {
             throw compile_error{
@@ -2636,27 +2642,6 @@ class stmt_call final : public statement {
         }
     }
 
-    // 'point.at' for the type named as written, e.g. an alias with constructors
-    // of its own; else the name of the type that a type parameter is bound to,
-    // e.g. 'T.at' where 'T' is 'point'
-    [[nodiscard]] static auto
-    constructor_function_name(const toc& tc, const token& type_tk,
-                              const token& constructor_name_tk) -> std::string {
-
-        std::string name{
-            method_name_of(type_tk.text(), constructor_name_tk.text()),
-        };
-
-        if (tc.is_func(name) or not tc.types().has(type_tk.text())) {
-            return name;
-        }
-
-        name = method_name_of(tc.get_type_or_throw(type_tk).name(),
-                              constructor_name_tk.text());
-
-        return name;
-    }
-
     [[nodiscard]] static auto is_widened_integer(const type& result_type,
                                                  const type& dst_type) -> bool {
 
@@ -2723,18 +2708,12 @@ class stmt_call final : public statement {
                                                const token& type_tk)
         -> std::string {
 
-        std::string description{type_tk.text()};
+        const std::string_view bound{tc.get_type_or_throw(type_tk).name()};
 
-        if (tc.types().has(type_tk.text())) {
-            const std::string_view bound{
-                tc.get_type_or_throw(type_tk).name(),
-            };
-
-            if (bound != type_tk.text()) {
-                description += std::format(" ({})", bound);
-            }
+        if (bound == type_tk.text()) {
+            return std::string{bound};
         }
 
-        return description;
+        return std::format("{} ({})", type_tk.text(), bound);
     }
 };

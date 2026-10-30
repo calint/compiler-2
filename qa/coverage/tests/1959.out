@@ -1,0 +1,4 @@
+
+1959.baz:5:9: expected type 'point', got 'i64[]'
+    p = [2]{1, 2}
+        ^

@@ -68,6 +68,13 @@ inline expr_type::expr_type(toc& tc, tokenizer& tz, const type& tp,
                             tc.get_type_or_throw(tok()).name());
     }
 
+    // e.g. 'p = i8[2]{1, 2}' or 'p = [2]{1, 2}', as for a number destination
+    if (tm == term_kind::array_literal or
+        (tok().is_none() and is_default_array_literal(tz))) {
+
+        throw_array_literal_mismatch(tc, tok(), tp);
+    }
+
     // note: compared by type, a type parameter names the type of its argument
     if (is_typed_literal) {
         const type& named_type{tc.get_type_or_throw(tok())};

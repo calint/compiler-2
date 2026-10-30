@@ -1,0 +1,4 @@
+
+1956.baz:5:13: an array literal is not an operand here, store it in a variable first
+    var b = i8[2]{1, 2} == a
+            ^~

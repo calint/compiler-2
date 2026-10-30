@@ -1,0 +1,7 @@
+
+1960.baz:3:24: expected ',' followed by another field in type 'box'
+type box<T type> { x T y }
+                       ^
+1960.baz:5:6: instantiated by
+type s = box<i8>
+     ^

@@ -1,0 +1,6 @@
+# a compared array literal that starts a declaration is an operand, as in an
+# assignment, not the initializer of an array followed by a comparison
+func main() {
+    var a = i8[2]{1, 2}
+    var b = i8[2]{1, 2} == a
+}

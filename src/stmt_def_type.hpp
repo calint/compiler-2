@@ -48,10 +48,12 @@ class type_fields final {
     token close_brace_tk_;
 
   public:
-    // e.g. '{ x, y }' of 'type point { x, y }', 'name_tk' names the type in
-    // the errors
+    // e.g. '{ x, y }' of 'type point { x, y }', 'name_tk' names the type the
+    // fields make, 'definition_tk' the definition they are read from, e.g.
+    // 'str' and 'text' of 'type str = text<8>'
     // note: the callers dispatch on the '{'
-    type_fields(toc& tc, tokenizer& tz, const token& name_tk)
+    type_fields(toc& tc, tokenizer& tz, const token& name_tk,
+                const token& definition_tk)
         : open_brace_tk_{tz.seen_char_token('{')} {
 
         while (true) {
@@ -82,7 +84,7 @@ class type_fields final {
                 tz.expect_char_token(
                     ',', std::format("expected ',' followed by another field "
                                      "in type {}",
-                                     in_quotes(name_tk.text()))),
+                                     in_quotes(definition_tk.text()))),
             };
 
             field_delims_tk_.emplace_back(delimiter_tk);
@@ -265,7 +267,8 @@ class stmt_def_type final : public statement {
 
   public:
     stmt_def_type(toc& tc, const token tk, const token name_tk, tokenizer& tz)
-        : statement{tk}, name_tk_{name_tk}, fields_{tc, tz, name_tk_} {
+        : statement{tk}, name_tk_{name_tk},
+          fields_{tc, tz, name_tk_, name_tk_} {
 
         fields_.add_to(type_, name_tk_);
 
@@ -540,7 +543,9 @@ class type_instantiator final {
         reparse.scope().add_args(instance.args);
 
         // only read to fill 'tp', not printed by 'source_to'
-        const type_fields fields{tc, reparse.tz(), alias_tk};
+        const type_fields fields{tc, reparse.tz(), alias_tk,
+                                 generic.src_loc_tk};
+
         fields.add_to(tp, alias_tk);
     }
 

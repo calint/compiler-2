@@ -201,8 +201,10 @@ class initializer_declaration final {
         // 'expr_arith' cannot parse the '{' of an instance literal
         const token tk{tz.next_token()};
 
+        // an instance literal that an operator continues is an operand, e.g.
+        // 'var b = point{1, 2} == p'
         if (const term_kind tm{classify_term(tc, tk, tz)};
-            tm == term_kind::record_literal or tm == term_kind::record_type) {
+            is_whole_record(tm, tz)) {
 
             set_type(tc.get_type_or_throw(tk));
             return;
@@ -297,7 +299,8 @@ class initializer_declaration final {
 
     // the element type of a string or of an array literal, e.g. 'i8' of
     // '"hi"', 'point' of 'point[]{{1, 2}}' or the default type of '[]{1, 2}',
-    // null when the initializer is neither
+    // null when the initializer is neither or an operator continues the
+    // literal, e.g. 'var b = [2]{1, 2} == a'
     [[nodiscard]] static auto literal_element_type(const toc& tc, tokenizer& tz)
         -> const type* {
 
@@ -306,13 +309,15 @@ class initializer_declaration final {
         }
 
         if (is_default_array_literal(tz)) {
-            return &tc.builtins().default_type();
+            return is_whole_array_literal(tz) ? &tc.builtins().default_type()
+                                              : nullptr;
         }
 
         const token tk{tz.next_token()};
 
         const bool is_literal{
-            classify_term(tc, tk, tz) == term_kind::array_literal,
+            classify_term(tc, tk, tz) == term_kind::array_literal and
+                is_whole_array_literal(tz),
         };
 
         tz.put_back_token(tk);

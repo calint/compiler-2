@@ -1,0 +1,7 @@
+# a compared instance literal that starts a declaration is an operand, as in
+# an assignment, not a value of the declared type followed by a comparison
+type point {x i32, y i32}
+func main() {
+    var p = point{1, 2}
+    var b = point{1, 2} == p
+}
