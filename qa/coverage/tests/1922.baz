@@ -1,0 +1,9 @@
+# a generic call whose literal argument is followed by a token that does not
+# continue it reports the missing ')' like a plain call, not that the type
+# cannot be deduced
+
+func f<T type>(x T) {}
+
+func main() {
+    f(1 2)
+}

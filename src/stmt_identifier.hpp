@@ -868,6 +868,11 @@ class stmt_identifier final : public statement {
             throw compile_error{tz, "expected an array"};
         }
 
+        // e.g. the 'not' of 'foo not a'
+        if (tm == term_kind::keyword) {
+            throw_unexpected_keyword(tk);
+        }
+
         // e.g. the '"abc"' of 'array_length("abc")'
         if (tm == term_kind::string) {
             throw compile_error{

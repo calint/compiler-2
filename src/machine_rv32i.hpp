@@ -261,8 +261,8 @@ class machine_rv32i : public machine {
     // a numeric local label as defined and as a branch refers to it; '1f'
     // means the next '1:' in the emitted text, so the numbers repeat across
     // operations under one rule: a numeric label is referenced only inside
-    // the operation that defines it, and nothing emitted between a reference
-    // and its label defines a numeric label, e.g. a 'branch_to_failure'
+    // the operation that defines it, and no other operation emitted between
+    // a reference and its label defines one, e.g. a 'branch_to_failure'
     // inside a walk emits none
     struct local_label {
         std::string_view name;
@@ -820,6 +820,13 @@ class machine_rv32i : public machine {
         assert(operation == arithmetic_operator::bit_and or
                operation == arithmetic_operator::bit_or or
                operation == arithmetic_operator::bit_xor);
+
+        // note: the front end rejects a 'bool' as an arithmetic operand and a
+        //       source wider than the destination, so the result keeps the
+        //       extension of the operands, see 'needs_normalize'
+
+        assert(not dst.type_ref().is_bool() and not src.type_ref().is_bool());
+        assert(src.type_ref().size_bytes() <= dst.type_ref().size_bytes());
 
         op instruction{op::xor_op};
 
@@ -1576,10 +1583,9 @@ class machine_rv32i : public machine {
         // note: a checked narrow result passed 'check_fits_width', so the
         //       register already holds it extended
 
-        store_operation_result(
-            indent, dst, loaded.address, loaded.value,
-            not check.enabled and
-                needs_normalize(instruction, dst, src, constant));
+        store_operation_result(indent, dst, loaded.address, loaded.value,
+                               not check.enabled and
+                                   needs_normalize(instruction));
     }
 
     // passing checks branch to 'bounds_pass_' and failing ones to
@@ -2296,9 +2302,7 @@ class machine_rv32i : public machine {
                         const bool use_immediate, const operand& dst)
         -> std::array<operand, 2> {
 
-        if (shares_address_base(lhs, rhs) and
-            not register_needs_extension(lhs.type_ref(), rhs)) {
-
+        if (shares_address_base(lhs, rhs)) {
             return comparison_operands_through_shared_base(src_loc_tk, indent,
                                                            lhs, rhs);
         }
@@ -2324,6 +2328,12 @@ class machine_rv32i : public machine {
     [[nodiscard]] auto comparison_operands_through_shared_base(
         const token& src_loc_tk, const size_t indent, const operand& lhs,
         const operand& rhs) -> std::array<operand, 2> {
+
+        // note: the front end compares a 'bool' only with a 'bool' and
+        //       rejects a right side wider than the left, so the load of the
+        //       right side extends it as the left side reads it
+
+        assert(not register_needs_extension(lhs.type_ref(), rhs));
 
         const operand left{
             alloc_scratch_register(src_loc_tk, indent, lhs.type_ref()),
@@ -4621,29 +4631,11 @@ class machine_rv32i : public machine {
         return narrow_constant(*constant, width_type);
     }
 
-    // whether the result may have bits outside the destination width
-    [[nodiscard]] static auto
-    needs_normalize(const op instruction, const operand& dst,
-                    const operand& src, const std::optional<int32_t> constant)
-        -> bool {
-
-        // sums can carry out of the width
-        if (instruction == op::add or instruction == op::sub) {
-            return true;
-        }
-
-        const type& dst_type{dst.type_ref()};
-
-        // note: 'narrowed_immediate' extends a constant like the register, so
-        //       a bitwise result with it stays extended
-
-        if (constant.has_value()) {
-            return false;
-        }
-
-        // bitwise results stay in range when the source representation does
-        return src.type_ref().size_bytes() > dst_type.size_bytes() or
-               src.type_ref().is_bool() != dst_type.is_bool();
+    // whether the result may have bits outside the destination width: a sum
+    // can carry out of it, a bitwise result of extended operands, a constant
+    // extended by 'narrowed_immediate' included, stays extended
+    [[nodiscard]] static auto needs_normalize(const op instruction) -> bool {
+        return instruction == op::add or instruction == op::sub;
     }
 
     [[nodiscard]] static auto offset_by(const operand& address,
@@ -4740,7 +4732,8 @@ class machine_rv32i : public machine {
         -> bool {
 
         // note: the callers handled an immediate before, 'copy_value' as a
-        //       constant and 'comparison_operands' needs two memory operands
+        //       constant and 'comparison_operands_through_shared_base' takes
+        //       two memory operands
 
         assert(not src.is_immediate());
 

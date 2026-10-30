@@ -1,0 +1,4 @@
+
+1927.baz:4:12: expected ')' after the arguments
+    exit(1 2)
+           ^

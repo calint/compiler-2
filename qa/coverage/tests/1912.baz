@@ -1,0 +1,6 @@
+# a full array literal ends with '}' like an instance value: a missing '}'
+# is not a missing ','
+
+func main() {
+    var a = i8[2]{1, 2)
+}

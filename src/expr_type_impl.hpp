@@ -70,7 +70,7 @@ inline expr_type::expr_type(toc& tc, tokenizer& tz, const type& tp,
 
     // e.g. 'var p = point', no fields are listed
     if (is_bare) {
-        assert_value_ends(tz);
+        assert_value_ends(tz, tok(), value_kind(), tp);
         return;
     }
 
@@ -86,7 +86,7 @@ inline expr_type::expr_type(toc& tc, tokenizer& tz, const type& tp,
     // e.g. 'p = pt', the token is empty at '{x, y}'
     if (not tok().is_none() and not is_typed_literal) {
         parse_copy_source(tc, tz, tm);
-        assert_value_ends(tz);
+        assert_value_ends(tz, tok(), value_kind(), tp);
         return;
     }
 
@@ -111,12 +111,15 @@ inline expr_type::expr_type(toc& tc, tokenizer& tz, const type& tp,
     }
 
     parse_fields(tc, tz);
-    assert_value_ends(tz);
+    assert_value_ends(tz, tok(), value_kind(), tp);
 }
 
-// e.g. the '+' of 'p + 1'; an equality gets the message of a number
-// destination, it makes a condition
-inline auto expr_type::assert_value_ends(const tokenizer& tz) const -> void {
+// an equality gets the message of a number destination, it makes a condition
+inline auto expr_type::assert_value_ends(const tokenizer& tz,
+                                         const token& value_tk,
+                                         const std::string_view kind,
+                                         const type& tp) -> void {
+
     if (not continues_expression(tz)) {
         return;
     }
@@ -132,9 +135,8 @@ inline auto expr_type::assert_value_ends(const tokenizer& tz) const -> void {
         expr_arith::assert_no_condition_next(tz);
     }
 
-    throw compile_error{tok(),
-                        std::format("{} of {} is not a number", value_kind(),
-                                    in_quotes(get_type().name()))};
+    throw compile_error{value_tk, std::format("{} of {} is not a number", kind,
+                                              in_quotes(tp.name()))};
 }
 
 // the fields of 'tp' in braces, e.g. '{x, y}' of 'obj.pos = {x, y}'
@@ -154,27 +156,14 @@ inline auto expr_type::parse_fields(toc& tc, tokenizer& tz) -> void {
         const size_t index{list.exprs.size()};
 
         if (index == flds.size()) {
-            const std::optional<token> delimiter_tk{tz.is_next_char_token(',')};
+            list.close_brace_tk = read_full_list_end(
+                tz, list.delims_tk,
+                std::format("too many fields for type {}",
+                            in_quotes(tp.name())),
+                std::format("expected '}}' to close the value of type {}",
+                            in_quotes(tp.name())));
 
-            // a trailing ',' lets each field end its line the same way
-            if (delimiter_tk and read_close_brace(tz)) {
-                list.delims_tk.emplace_back(*delimiter_tk);
-                break;
-            }
-
-            // e.g. '{x, y' without its '}' or the second ',' of '{x, y,,}',
-            // no value is too much there
-            if (not delimiter_tk or not starts_value(tz)) {
-                throw compile_error{
-                    tz,
-                    std::format("expected '}}' to close the value of type {}",
-                                in_quotes(tp.name()))};
-            }
-
-            // the error is at the field that is too much
-            // e.g. the 'z' of '{x, y, z}' for a type with two fields
-            throw compile_error{tz, std::format("too many fields for type {}",
-                                                in_quotes(tp.name()))};
+            break;
         }
 
         const type_field& tf{flds.at(index)};
@@ -267,13 +256,20 @@ inline auto expr_type::parse_copy_source(toc& tc, tokenizer& tz,
 inline auto expr_type::assert_call_type() const -> void {
     const type& tp{get_type()};
 
+    const stmt_call& call{*call_source()};
+
+    // e.g. 'p = f()' with 'func f()', the message of a number destination
+    if (not call.callee().has_result()) {
+        throw_no_value(call.callee_name_token(), call.callee().name());
+    }
+
     // a function returns one value, not an array
     if (is_array_destination_) {
         throw compile_error{tok(),
                             "an array cannot be assigned the result of a call"};
     }
 
-    const type& result_type{call_source()->get_type()};
+    const type& result_type{call.get_type()};
 
     if (tp.is_same(result_type)) {
         return;

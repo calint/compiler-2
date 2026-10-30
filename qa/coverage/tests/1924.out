@@ -1,0 +1,4 @@
+
+1924.baz:10:9: function 'f' has no result
+    p = f()
+        ^

@@ -1,0 +1,6 @@
+# a result cannot be an array
+
+func f() res i8[3] {
+}
+
+func main() {}

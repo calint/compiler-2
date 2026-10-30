@@ -350,9 +350,12 @@ class register_reporter final {
              descending(trace_.get().noinline_uses(),
                         &register_trace::noinline_use::saved_peak)) {
 
+            // note: a call is to a 'stmt_def_func::body_label'
+            assert(label.starts_with(machine::body_label_prefix));
+
             lines.push_back(
                 std::format("{:>7}{:>7}  {} {}", use.saved_peak, use.calls,
-                            without_prefix(label, machine::body_label_prefix),
+                            label.substr(machine::body_label_prefix.size()),
                             machine_.get().location_text(use.peak_site_tk)));
         }
 
@@ -447,13 +450,6 @@ class register_reporter final {
         }
 
         return lines;
-    }
-
-    [[nodiscard]] static auto without_prefix(const std::string_view text,
-                                             const std::string_view prefix)
-        -> std::string_view {
-
-        return text.starts_with(prefix) ? text.substr(prefix.size()) : text;
     }
 
     // breaks a line that is too long at spaces, the parts keep its indentation

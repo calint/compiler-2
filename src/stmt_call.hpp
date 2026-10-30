@@ -18,6 +18,7 @@
 
 #include "compile_error.hpp"
 #include "expr_any.hpp"
+#include "expr_bool.hpp"
 #include "generics.hpp"
 #include "ident_info.hpp"
 #include "machine.hpp"
@@ -38,6 +39,9 @@
 //
 //   'stmt_call'       parses the call, prints its source and hands it to one
 //                     of the compilers (last in the file, it uses the others)
+//   'assert_not_string_argument', 'missing_argument_text',
+//   'missing_delimiter_text'
+//                     free, first, 'generic_call' and 'stmt_call' use them
 //   'generic_call'    the instance of a generic function that the call names
 //   'call_limits'     how deep the compile of calls nests
 //   'call_site'       what compiling the call needs of it
@@ -45,8 +49,7 @@
 //   'noinline_call'   passes addresses to the body that is emitted once
 //   'constructor_call_tag'
 //                     selects the constructor of 'point.at(1, 2)'
-//   free functions    'assert_not_string_argument', 'assert_call_in_func',
-//                     'path_argument'
+//   free functions    'assert_call_in_func', 'path_argument'
 //   'builtin_arguments'
 //                     the arguments of a built-in that parses like a call,
 //                     e.g. 'exit(0)'
@@ -70,6 +73,35 @@
 // the formatter sorts the functions of a class by name, so the comment above
 // each class lists them in the order they run
 //
+
+// a string is in read-only data that a parameter would refer to
+inline auto assert_not_string_argument(tokenizer& tz) -> void {
+    if (tz.peek_char_after_whitespace() != '"') {
+        return;
+    }
+
+    throw compile_error{tz.next_token(), "a string is not an argument, it "
+                                         "would refer to read-only data"};
+}
+
+// the argument numbered 'number', counted from 1 without a receiver, is
+// missing, the ')' is where it would start
+[[nodiscard]] inline auto missing_argument_text(const size_t number,
+                                                const std::string_view param)
+    -> std::string {
+
+    return std::format("expected argument {} ({})", number, in_quotes(param));
+}
+
+// the argument numbered 'number', counted from 1 without a receiver, lacks
+// the ',' before it
+[[nodiscard]] inline auto missing_delimiter_text(const size_t number,
+                                                 const std::string_view param)
+    -> std::string {
+
+    return std::format("expected ',' before argument {} ({})", number,
+                       in_quotes(param));
+}
 
 // the instance of a generic function that a call names, its type arguments
 // written, e.g. 'tz.to<name>()', or deduced from the arguments, e.g. 'f(x)' of
@@ -164,19 +196,6 @@ struct generic_call {
         const token tk{tz.next_token()};
         const term_kind tm{classify_term(tc, tk, tz)};
 
-        // e.g. 'show(nope)', an unknown name is reported as such, not as a
-        // type that cannot be deduced
-        if (tm == term_kind::unknown) {
-            std::ignore = tc.resolve_declared(tk, tk.text());
-        }
-
-        // e.g. 'show(nope(1))', reported as an unknown function
-        if (tm == term_kind::call and not tc.is_func(tk.text()) and
-            not tc.types().has(tk.text())) {
-
-            std::ignore = tc.get_func_or_throw(tk, tk.text());
-        }
-
         // e.g. 'mk()' hidden by 'let mk = 5' is still a call, its result
         // tells the type
         if (tm != term_kind::value) {
@@ -200,6 +219,48 @@ struct generic_call {
         return &make_ident_info(tc, ident).type_ref();
     }
 
+    // the argument at 'index' parsed without a type, as the initializer of a
+    // 'var' is, so a mistake in it is reported as in a call without type
+    // parameters; a value parses and tells no type, e.g. 'true' or 'x + 1',
+    // nor does a literal that takes its type from the parameter, e.g.
+    // '{1, 2}'; a token after it that is not a delimiter is reported as
+    // there too, e.g. the '2' of 'f(1 2)'. 'tz' is after the '(' and is a
+    // copy
+    // note: the parse records nothing that outlives the error that follows
+    static auto assert_argument_parses(
+        toc& tc, tokenizer tz,
+        const std::span<const generic_signature_param> params,
+        const size_t index) -> void {
+
+        std::ignore = skip_to_argument(tz, index);
+
+        assert_not_string_argument(tz);
+
+        const char next{tz.peek_char_after_whitespace()};
+
+        if (next == '{' or next == '[') {
+            return;
+        }
+
+        std::ignore = expr_bool{tc, tz.next_whitespace_token(), tz};
+
+        const char delimiter{tz.peek_char_after_whitespace()};
+
+        if (delimiter == ',' or delimiter == ')') {
+            return;
+        }
+
+        const size_t next_index{index + 1};
+
+        if (next_index == params.size()) {
+            throw compile_error{tz, std::string{missing_close_paren_text}};
+        }
+
+        throw compile_error{
+            tz, missing_delimiter_text(next_index + 1,
+                                       params.at(next_index).name_tk.text())};
+    }
+
     // e.g. 'f(1)' of 'func f<T type>(a, x T)' lacks the argument that would
     // tell 'T', which is the error; 'tz' is after the '(' and is a copy
     static auto assert_argument_present(tokenizer tz, const size_t index,
@@ -213,8 +274,7 @@ struct generic_call {
             return;
         }
 
-        throw compile_error{tz, std::format("expected argument {} ({})",
-                                            index + 1, in_quotes(param_name))};
+        throw compile_error{tz, missing_argument_text(index + 1, param_name)};
     }
 
     // the type arguments of 'f(x)' for 'func f<T type>(s T)': a type parameter
@@ -261,6 +321,13 @@ struct generic_call {
 
             if (arg_type == nullptr and source.is_result) {
                 arg_type = expected_type;
+            }
+
+            // e.g. 'show(exit(1))' or 'show(point)', an argument that is not
+            // a value is reported as in a call without type parameters
+            if (arg_type == nullptr and source.param_index) {
+                assert_argument_parses(tc, scan, generic.signature.params,
+                                       *source.param_index);
             }
 
             if (arg_type == nullptr) {
@@ -313,9 +380,10 @@ struct generic_call {
             return not continues_expression(tz);
         };
 
-        // e.g. 'point{1, 2}'
+        // e.g. 'point{1, 2}', a missing '}' is left to the parse of the
+        // argument
         if (tm == term_kind::record_literal) {
-            tz.skip_braced_block();
+            std::ignore = tz.skip_braced_block();
             return is_whole_argument() ? &tc.get_type_or_throw(tk) : nullptr;
         }
 
@@ -1425,16 +1493,6 @@ class noinline_call final {
 // selects the constructor of 'stmt_call' for 'point.at(1, 2)'
 struct constructor_call_tag {};
 
-// a string is in read-only data that a parameter would refer to
-inline auto assert_not_string_argument(tokenizer& tz) -> void {
-    if (tz.peek_char_after_whitespace() != '"') {
-        return;
-    }
-
-    throw compile_error{tz.next_token(), "a string is not an argument, it "
-                                         "would refer to read-only data"};
-}
-
 // a call outside a function would run before 'main'
 inline auto assert_call_in_func(const toc& tc, const token& call_tk) -> void {
     if (not tc.scopes().is_in_func()) {
@@ -1473,7 +1531,7 @@ class builtin_arguments final {
                       const size_t min_count, const size_t max_count)
         : open_paren_tk_{tz.seen_char_token('(')} {
 
-        read_arguments(tc, tz, array_indexes);
+        read_arguments(tc, tz, array_indexes, max_count);
 
         if (args_.size() < min_count or args_.size() > max_count) {
             throw compile_error{
@@ -1520,9 +1578,11 @@ class builtin_arguments final {
         args_.push_back(path_argument(std::move(array)));
     }
 
-    // up to and including the ')'
+    // up to and including the ')', which follows the argument numbered
+    // 'max_count'
     auto read_arguments(toc& tc, tokenizer& tz,
-                        const std::span<const size_t> array_indexes) -> void {
+                        const std::span<const size_t> array_indexes,
+                        const size_t max_count) -> void {
 
         while (true) {
             if (const std::optional<token> close_paren_tk{
@@ -1551,9 +1611,11 @@ class builtin_arguments final {
                 continue;
             }
 
-            // e.g. 'write(1, text n)' lacks the ','
+            // e.g. 'write(1, text n)' lacks the ',', 'exit(1 n)' the ')'
             close_paren_tk_ = tz.expect_char_token(
-                ')', "expected ',' or ')' after the argument");
+                ')', args_.size() < max_count
+                         ? "expected ',' or ')' after the argument"
+                         : missing_close_paren_text);
 
             return;
         }
@@ -2167,19 +2229,22 @@ class stmt_call final : public statement {
         args_.reserve(params.size());
 
         for (size_t i{first}; i < params.size(); ++i) {
+            // counted without a receiver, like 'deducing_args'
+            const size_t arg_index{i - first_argument_index()};
+
             // otherwise the missing argument is reported as a parse error of
             // the parameter's type
             // e.g. 'f()' of 'func f(x)'
             if (tz.peek_char_after_whitespace() == ')') {
-                throw_missing_argument(tz, params.at(i), i);
+                throw compile_error{
+                    tz,
+                    missing_argument_text(arg_index + 1, params.at(i).name())};
             }
 
             // e.g. the ',' of 'f(a, b)'
             if (i != first) {
                 const std::string message{
-                    std::format("expected ',' before {} ({})",
-                                describe_argument(i),
-                                in_quotes(params.at(i).name())),
+                    missing_delimiter_text(arg_index + 1, params.at(i).name()),
                 };
 
                 const token delimiter_tk{tz.expect_char_token(',', message)};
@@ -2193,8 +2258,7 @@ class stmt_call final : public statement {
             assert_not_array_literal_argument(tc, tz, params.at(i));
 
             const bool is_deducing{
-                std::ranges::contains(deducing_args,
-                                      i - first_argument_index()),
+                std::ranges::contains(deducing_args, arg_index),
             };
 
             // e.g. 'a' and 'b + 1' of 'f(a, b + 1)'
@@ -2207,8 +2271,7 @@ class stmt_call final : public statement {
                                       params.size() - first_argument_index());
 
         // e.g. 'f(a, b' lacks it
-        close_paren_tk_ =
-            tz.expect_char_token(')', "expected ')' after the arguments");
+        close_paren_tk_ = tz.expect_char_token(')', missing_close_paren_text);
 
         // e.g. the '.' of 'mk().y' or 'mk().sum()', a result has no storage
         // to read a field of or to call a method on
@@ -2335,15 +2398,6 @@ class stmt_call final : public statement {
         for (const token& t : generic_tks_) {
             t.source_to(os);
         }
-    }
-
-    [[noreturn]] auto throw_missing_argument(const tokenizer& tz,
-                                             const stmt_def_func_param& param,
-                                             const size_t index) const -> void {
-
-        throw compile_error{tz, std::format("expected {} ({})",
-                                            describe_argument(index),
-                                            in_quotes(param.name()))};
     }
 
     // 'what' names the argument, 'hint' says how to make it writable

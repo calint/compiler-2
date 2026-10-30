@@ -1,0 +1,4 @@
+
+1916.baz:5:13: an array of 'i8' is not a number
+    var a = i8[2]{1, 2} + 1
+            ^~

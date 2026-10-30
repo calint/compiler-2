@@ -1,0 +1,4 @@
+
+1914.baz:6:15: unexpected 'else' in single statement block
+    if a == 1 else {
+              ^~~~

@@ -6079,3 +6079,60 @@ SRC=1908 && COMPERR
 
 # a built-in name without '(' as a statement
 SRC=1909 && COMPERR
+
+# a keyword where an array is expected
+SRC=1910 && COMPERR
+
+# a comparison as a statement
+SRC=1911 && COMPERR
+
+# a full array literal without its '}'
+SRC=1912 && COMPERR
+
+# a generic call whose argument is not a value
+SRC=1913 && COMPERR
+
+# an 'else' right after a condition
+SRC=1914 && COMPERR
+
+# a keyword after the '=' of an alias
+SRC=1915 && COMPERR
+
+# an array literal followed by an operator
+SRC=1916 && COMPERR
+
+# a string followed by an operator in a field value
+SRC=1917 && COMPERR
+
+# a type defined twice
+SRC=1918 && COMPERR
+
+# a broken number as a generic argument
+SRC=1919 && COMPERR
+
+# a call of a generic type
+SRC=1920 && COMPERR
+
+# an array result
+SRC=1921 && COMPERR
+
+# a generic call with a stray token after a literal argument
+SRC=1922 && COMPERR
+
+# a generic call with an unclosed instance literal argument
+SRC=1923 && COMPERR
+
+# a call without a result to an instance
+SRC=1924 && COMPERR
+
+# a call without a result to an array
+SRC=1925 && COMPERR
+
+# a 'bool' argument of a generic function
+SRC=1926 && COMPERR
+
+# a built-in with all its arguments and no ')'
+SRC=1927 && COMPERR
+
+# an i/o call in a global initializer
+SRC=1928 && COMPERR

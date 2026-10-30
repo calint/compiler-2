@@ -1,0 +1,9 @@
+# an 'else' right after a condition is a branch without code, not an 'else'
+# without 'if'
+
+func main() {
+    var a = 1
+    if a == 1 else {
+        exit(1)
+    }
+}

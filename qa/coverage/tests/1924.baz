@@ -1,0 +1,11 @@
+# a call of a function without a result to an instance is reported as for a
+# number destination
+
+type point {x, y}
+
+func f() {}
+
+func main() {
+    var p = point
+    p = f()
+}

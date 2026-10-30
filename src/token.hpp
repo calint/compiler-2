@@ -197,7 +197,7 @@ class token final {
         return text_ == s;
     }
 
-    // a name, a keyword or a number, not a string or no token
+    // a name, a keyword, a number or a character, not a string or no token
     [[nodiscard]] auto is_word() const -> bool {
         return not text_.empty() and not is_string();
     }

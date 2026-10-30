@@ -142,6 +142,12 @@ class stmt_block final : public statement {
             return;
         }
 
+        // e.g. the 'else' of 'if a == 1 else {...}', a branch without code
+        if (tk.is_text("else")) {
+            throw compile_error{tk,
+                                "unexpected 'else' in single statement block"};
+        }
+
         statements_.emplace_back(parse_statement(tc, tz, tk));
     }
 

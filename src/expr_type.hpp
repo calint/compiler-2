@@ -18,9 +18,11 @@
 #include "decouple.hpp"
 #include "ident_info.hpp"
 #include "operand.hpp"
+#include "parse_lookahead.hpp"
 #include "statement.hpp"
 #include "toc.hpp"
 #include "token.hpp"
+#include "tokenizer.hpp"
 #include "type.hpp"
 #include "ub_reads.hpp"
 
@@ -52,6 +54,35 @@ enum class literal_typing : uint8_t { written, from_destination };
     throw compile_error{
         type_tk, std::format("the destination gives the type {}, write {}",
                              in_quotes(type_name), in_quotes(value))};
+}
+
+// the '}' that ends a list of values that is full, after a trailing ',' that
+// is appended to 'delims_tk'; a value after the ',' is 'too_many', anything
+// else 'unclosed', e.g. the '3' of '{1, 2, 3}' or the ')' of '{1, 2)'
+[[nodiscard]] inline auto read_full_list_end(tokenizer& tz,
+                                             std::vector<token>& delims_tk,
+                                             std::string too_many,
+                                             std::string unclosed) -> token {
+
+    const std::optional<token> delimiter_tk{tz.is_next_char_token(',')};
+
+    if (delimiter_tk) {
+        delims_tk.emplace_back(*delimiter_tk);
+    }
+
+    if (const std::optional<token> close_brace_tk{
+            tz.is_next_char_token('}'),
+        }) {
+
+        return *close_brace_tk;
+    }
+
+    // the error is at the value that is too much
+    if (delimiter_tk and starts_value(tz)) {
+        throw compile_error{tz, std::move(too_many)};
+    }
+
+    throw compile_error{tz, std::move(unclosed)};
 }
 
 // a step from a destination to a part of it: the field 'field', or the
@@ -316,12 +347,20 @@ class expr_type final : public statement {
     auto plan_writes(const toc& tc, const part_location& at,
                      write_plan& plan) const -> void;
 
+    //
+    // statics
+    //
+
+    // 'kind' of 'tp' written at 'value_tk' is not continued, e.g. the
+    // '+' of 'p + 1' or of 'i8[2]{1, 2} + 1'
+    static auto assert_value_ends(const tokenizer& tz, const token& value_tk,
+                                  std::string_view kind, const type& tp)
+        -> void;
+
   private:
     auto assert_call_type() const -> void;
 
     auto assert_copy_source_shape(const toc& tc) const -> void;
-
-    auto assert_value_ends(const tokenizer& tz) const -> void;
 
     // the call whose result is the value, null for a literal or a copy
     [[nodiscard]] auto call_source() const -> const stmt_call* {

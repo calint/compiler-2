@@ -1,0 +1,4 @@
+
+1928.baz:5:9: a call runs only inside a function, not in the initializer of a global
+var x = write(1, b, nope)
+        ^~~~~

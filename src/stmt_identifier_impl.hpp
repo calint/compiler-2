@@ -384,13 +384,12 @@ inline auto stmt_identifier::path_address::add_index(const ident_elem& cur_elem,
         x.scale_index(index_tk, indent, index_register, element_size_bytes);
     }
 
-    return operand::mem(
-        address.base_register(), index_register.register_name(),
-        is_encodable_scale ? element_size_bytes : 1,
-        add_address_offset(
-            address.displacement(),
-            scaled_address_offset(addend_elements, element_size_bytes)),
-        cur_info.type_ref());
+    return operand::mem(address.base_register(), index_register.register_name(),
+                        is_encodable_scale ? element_size_bytes : 1,
+                        add_scaled_address_offset(address.displacement(),
+                                                  addend_elements,
+                                                  element_size_bytes),
+                        cur_info.type_ref());
 }
 
 inline auto stmt_identifier::compile_checked_index(

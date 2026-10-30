@@ -1,4 +1,4 @@
 
-1462.baz:6:12: 'else' without 'if'
-    } else else {
-           ^~~~
+1462.baz:7:7: 'else' without 'if'
+    } else {
+      ^~~~

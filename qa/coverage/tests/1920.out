@@ -1,0 +1,4 @@
+
+1920.baz:7:13: generic type 'box' is not a function, name an instance first, e.g. 'type str = box<...>'
+    var b = box(1)
+            ^~~

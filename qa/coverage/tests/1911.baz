@@ -1,0 +1,6 @@
+# a comparison as a statement is not read as an assignment
+
+func main() {
+    var n = 1
+    n == 2
+}

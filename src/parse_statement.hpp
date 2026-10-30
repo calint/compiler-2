@@ -219,8 +219,7 @@ inline auto parse_call_or_identifier(toc& tc, tokenizer& tz, const token& tk,
 
     // e.g. the 'loop' of 'x = loop(1)' or a 'mut' that starts a statement
     if (tm == term_kind::keyword) {
-        throw compile_error{
-            tk, std::format("unexpected keyword {}", in_quotes(tk.text()))};
+        throw_unexpected_keyword(tk);
     }
 
     // e.g. the 'i8' of 'i8 + 1' or of 'i8 = 1', the 'point' of '1 + point'
@@ -336,8 +335,12 @@ inline auto parse_name_statement(toc& tc, tokenizer& tz, const token tk,
 
     stmt_identifier& dst{*std::get<std::unique_ptr<stmt_identifier>>(parsed)};
 
-    // e.g. 'p1 = p2'
-    if (const std::optional<token> equals_tk{tz.is_next_char_token('=')}) {
+    // e.g. 'p1 = p2', not the comparison 'x == 1'
+    const std::optional<token> equals_tk{
+        tz.peek_operator() == "==" ? std::nullopt : tz.is_next_char_token('='),
+    };
+
+    if (equals_tk) {
         return std::make_unique<stmt_assign_var>(tc, tz, std::move(dst),
                                                  *equals_tk);
     }

@@ -1,6 +1,61 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] hard: design review series 2, round 33 (2026-10-30, user: continue
+    reviewing and fix the recommended until no more issues are found; 7
+    reviewers A-G, the groups rotated again)
+    => done (2026-10-30): messages: F1 a 'bool' argument of a generic call
+       says "cannot deduce" again (round 31 D1 parsed it at the default type
+       and reported a mismatch; now parsed as a 'var' initializer, 1926); B1
+       an unclosed instance literal in a generic call is reported as in a
+       'var' (1923); D1 a call without a result to an instance or an array is
+       "function 'f' has no result" (1924, 1925); F2 a missing ')' after the
+       last allowed argument of a built-in or conversion is "expected ')'
+       after the arguments", one text (0181 0249 0269 0619 0680, 1927;
+       refines C.2 of 2026-10-26: a ',' is wrong at the maximum); F4 an i/o
+       call checks where it stands and the sd card before its arguments
+       (1928); A1 a parameter declared twice is "parameter 'a' already
+       defined" ('scope::var_role', 1253); one source for "cannot parse
+       constant" and "expected argument N"; code: rv32i 'needs_normalize' of
+       bitwise ops and a shared-base comparison test were dead, now asserts
+       (reopens the shape of round 10); 'add_scaled_address_offset' asserts
+       what its caller checked (a wrong note gone); one reviewer found
+       nothing
+[x] hard: design review series 2, round 32 (2026-10-30, user: continue
+    reviewing and fix the recommended until no more issues are found; 7
+    reviewers A-G, the groups rotated again)
+    => done (2026-10-30): messages: F1 an array literal or a string followed
+       by an operator is "an array of 'i8' is not a number"
+       ('assert_value_ends' after the array forms, 1916, 1917); E1 a type
+       defined twice is reported at its name before its fields
+       ('assert_type_name_free', 1918); E2 a broken number as a generic
+       argument is "cannot parse constant" (1919); D1 a call of a generic type
+       is "generic type 'box' is not a function" (1920); D2 an array result
+       is "a result cannot be an array" (1921); A1 a generic call with a stray
+       token after any argument reports the delimiter like a plain call, the
+       two messages from one source (1922); code: one end of a full list for
+       instance and array literals (F2, reopens the shape of round 31 B1);
+       comments: the numeric label rule of rv32i 'local_label', 'is_word';
+       two reviewers found nothing
+[x] hard: design review series 2, round 31 (2026-10-30, user: design rounds
+    until nothing more to fix; 7 reviewers A-G, the groups rotated again,
+    messages tried against malformed programs)
+    => done (2026-10-30): one mistake, one message: C1 a keyword where an
+       array is expected is "unexpected keyword" ('throw_unexpected_keyword'
+       shared, 1910); C2 'n == 2' as a statement is not read as an
+       assignment (1911); B1 a full array literal without '}' says "expected
+       '}' to close the array of size N" like an instance value (0268, 1884,
+       1912; reopens the array wording of 1884); D1 a generic call whose
+       argument is not a value reports the argument, parsed at the default
+       type on the failure path only, not "cannot deduce" (0780, 1913; two
+       special cases gone; the wider trial-parse item stays open); F1 an
+       'else' right after a condition is "unexpected 'else' in single
+       statement block" (1914; 1462 tests "'else' without 'if'" with a second
+       braced 'else'); F2 a keyword after the '=' of an alias is "expected a
+       generic type after '='" (1915); A1 the dead fallback of the register
+       report's prefix strip an assert ('without_prefix' gone); kept: 'x = x
+       = 2' and 'var y = x = 2' keep their two messages, each right for its
+       context
 [x] hard: design review series 2, round 30 (2026-10-29, user: design rounds
     until nothing more to fix; 7 reviewers A-G, the groups rotated again,
     asked to try malformed programs against the messages)

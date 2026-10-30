@@ -1,0 +1,7 @@
+# an i/o call in a global initializer is reported as a call before its
+# arguments are read
+
+var b = i8[4]
+var x = write(1, b, nope)
+
+func main() {}

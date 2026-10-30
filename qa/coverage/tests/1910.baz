@@ -1,0 +1,7 @@
+# a keyword where an array is expected is an unexpected keyword, not an
+# unknown name
+
+func main() {
+    var a = i8[2]
+    var n = array_length(else)
+}

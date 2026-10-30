@@ -1,0 +1,4 @@
+
+1925.baz:8:9: function 'f' has no result
+    a = f()
+        ^

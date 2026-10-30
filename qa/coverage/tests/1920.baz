@@ -1,0 +1,8 @@
+# a call of a generic type is reported as a generic type, not as an unknown
+# function
+
+type box<T type> {x T}
+
+func main() {
+    var b = box(1)
+}

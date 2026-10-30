@@ -235,6 +235,12 @@ class compile_error final : public std::exception {
                        min_count, conjunction, max_count);
 }
 
+// the last argument of a call is not followed by the ')', e.g. 'f(1 2)' of
+// 'func f(x)'
+inline constexpr std::string_view missing_close_paren_text{
+    "expected ')' after the arguments",
+};
+
 // an array where an element is needed, e.g. the 'a' of 'a + 1'
 [[noreturn]] inline auto throw_unindexed_array(const token& src_loc_tk,
                                                const std::string_view name)
@@ -291,6 +297,24 @@ throw_parentheses_group_nothing(const token& open_paren_tk,
 // 'x = (1 + 2 exit(x)'
 [[noreturn]] inline auto throw_unclosed_list(const token& next_tk) -> void {
     throw compile_error{next_tk, "expected ')' to close expression"};
+}
+
+// a keyword where a value or an array is expected, e.g. the 'else' of 'x =
+// else'
+[[noreturn]] inline auto throw_unexpected_keyword(const token& keyword_tk)
+    -> void {
+
+    throw compile_error{keyword_tk, std::format("unexpected keyword {}",
+                                                in_quotes(keyword_tk.text()))};
+}
+
+// a word that starts like a number but is none, e.g. '0x' or '12_000'
+[[noreturn]] inline auto throw_unparsed_number(const token& src_loc_tk,
+                                               const std::string_view text)
+    -> void {
+
+    throw compile_error{
+        src_loc_tk, std::format("cannot parse constant {}", in_quotes(text))};
 }
 
 // a user type where a number is needed, e.g. the 'p' of 'p + 1'

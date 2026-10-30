@@ -47,18 +47,18 @@ class type;
             base >= std::numeric_limits<int64_t>::min() - offset);
 }
 
-// the byte offset of 'count' elements of 'size_bytes', count may be negative
-[[nodiscard]] inline auto scaled_address_offset(const int64_t count,
-                                                const size_t size_bytes)
+// 'base' plus 'count' elements of 'size_bytes', which 'fits_address_offset'
+// accepted
+[[nodiscard]] inline auto add_scaled_address_offset(const int64_t base,
+                                                    const int64_t count,
+                                                    const size_t size_bytes)
     -> int64_t {
 
-    const int64_t size{address_offset(size_bytes)};
+    assert(fits_address_offset(base, count, size_bytes));
 
-    // note: constant indexes are bounds checked against the storage size
-    assert(size == 0 or (count <= std::numeric_limits<int64_t>::max() / size and
-                         count >= std::numeric_limits<int64_t>::min() / size));
+    const int64_t scaled{count * address_offset(size_bytes)};
 
-    return count * size;
+    return base + scaled;
 }
 
 [[nodiscard]] inline auto add_address_offset(const int64_t base,

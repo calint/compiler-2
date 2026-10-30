@@ -534,6 +534,18 @@ class scope final {
         return func_part().takes_from_call;
     }
 
+    // what the variable 'name' of this scope is in a message: a function
+    // scope declares only the parameters and the result
+    [[nodiscard]] auto var_role(const std::string_view name) const
+        -> std::string_view {
+
+        if (not is_func()) {
+            return "variable";
+        }
+
+        return is_result(name) ? "result" : "parameter";
+    }
+
     //
     // statics
     //
@@ -1922,11 +1934,8 @@ class ident_resolver final {
 
         assert(not funcs_.get().has(ident));
 
-        // a broken number, e.g. '0x' or '12_000'
         if (starts_number(ident)) {
-            throw compile_error{
-                src_loc_tk,
-                std::format("cannot parse constant {}", in_quotes(ident))};
+            throw_unparsed_number(src_loc_tk, ident);
         }
 
         // e.g. the '$' of 'var x = $', which no definition can name
@@ -2333,15 +2342,17 @@ class definition_checks final {
                                       const std::string_view name) const
         -> void {
 
-        if (not scopes_.get().back().has_var(name)) {
+        const scope& scp{scopes_.get().back()};
+
+        if (not scp.has_var(name)) {
             return;
         }
 
-        const var_info& decl_var{scopes_.get().back().get_var_const_ref(name)};
+        const var_info& decl_var{scp.get_var_const_ref(name)};
 
         throw compile_error{src_loc_tk,
-                            std::format("variable {} already defined at {}",
-                                        in_quotes(name),
+                            std::format("{} {} already defined at {}",
+                                        scp.var_role(name), in_quotes(name),
                                         where(decl_var.src_loc_tk))};
     }
 
@@ -2366,15 +2377,11 @@ class definition_checks final {
 
         const var_info& decl_var{func_scp.get_var_const_ref(name)};
 
-        const std::string_view role{
-            func_scp.is_result(name) ? "result" : "parameter",
-        };
-
         throw compile_error{
             src_loc_tk,
             std::format("{} {} hides the {} {} declared at {}", what,
-                        in_quotes(name), role, in_quotes(name),
-                        where(decl_var.src_loc_tk)),
+                        in_quotes(name), func_scp.var_role(name),
+                        in_quotes(name), where(decl_var.src_loc_tk)),
         };
     }
 
@@ -2523,7 +2530,7 @@ class variable_comments final {
 //                  'mark_generic_func_instantiated', 'enter_type_params',
 //                  'exit_type_params', 'assert_generic_param_apart',
 //                  'assert_generic_param_free', 'assert_generic_params_free',
-//                  'assert_method_type_param_free',
+//                  'assert_method_type_param_free', 'assert_type_name_free',
 //                  'assert_valid_unqualified_name', 'begin_definition',
 //                  'current_definition', 'instance_visibility',
 //                  'constant_value_of', 'record_use',
@@ -2868,8 +2875,7 @@ class toc final {
 
         assert(not is_compiling_);
 
-        definitions_.assert_type_not_defined(info.src_loc_tk, name);
-
+        // note: the name was checked by 'assert_type_name_free'
         generics_.add_type(name, std::move(info));
     }
 
@@ -2913,7 +2919,7 @@ class toc final {
     auto add_type(const token& src_loc_tk, const type& tpe) -> void {
         assert(not is_compiling_);
 
-        definitions_.assert_type_not_defined(src_loc_tk, tpe.name());
+        // note: the name was checked by 'assert_type_name_free'
         assert_type_fits_target(src_loc_tk, tpe);
 
         types_.add(src_loc_tk, tpe);
@@ -3022,6 +3028,14 @@ class toc final {
         assert(scopes_.is_empty());
 
         storage_.assert_released();
+    }
+
+    // a type name is checked where it is read, before the body, e.g. the
+    // field type 'p' of a second 'type p {x p}' names the first 'p'
+    auto assert_type_name_free(const token& name_tk) const -> void {
+        assert(not is_compiling_);
+
+        definitions_.assert_type_not_defined(name_tk, name_tk.text());
     }
 
     // a name of a type, function, variable, constant, data or parameter, which
@@ -3191,6 +3205,11 @@ class toc final {
             return folded_value::untyped(*value);
         }
 
+        // a broken number, as in a value
+        if (tk.is_number()) {
+            throw_unparsed_number(tk, tk.text());
+        }
+
         return scopes_.const_value(tk.text());
     }
 
@@ -3323,6 +3342,13 @@ class toc final {
             throw compile_error{
                 src_loc_tk,
                 std::format("{} is a value, not a function", in_quotes(name))};
+        }
+
+        // e.g. 'box(1)' of 'type box<T type> {x T}'
+        if (generics_.has_type(name)) {
+            throw compile_error{
+                src_loc_tk, std::format("generic type {} is not a function, {}",
+                                        in_quotes(name), instance_hint(name))};
         }
 
         throw compile_error{

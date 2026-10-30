@@ -1,0 +1,4 @@
+
+1917.baz:7:16: an array of 'i8' is not a number
+    var t = st{"ab" + 1}
+               ^~~~

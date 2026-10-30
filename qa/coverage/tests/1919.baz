@@ -1,0 +1,6 @@
+# a broken number as a generic argument is reported as in a value
+
+type p<n> { x i8[n] }
+type q = p<0x>
+
+func main() {}

@@ -1,0 +1,5 @@
+# a built-in that has all its arguments expects ')', not another ','
+
+func main() {
+    exit(1 2)
+}

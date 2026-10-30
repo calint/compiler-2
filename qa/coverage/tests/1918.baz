@@ -1,0 +1,6 @@
+# a type defined twice is reported at its name, before its fields
+
+type p {x}
+type p {x p}
+
+func main() {}

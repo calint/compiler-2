@@ -1,0 +1,4 @@
+
+1919.baz:4:12: cannot parse constant '0x'
+type q = p<0x>
+           ^~

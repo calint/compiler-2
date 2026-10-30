@@ -1,0 +1,10 @@
+# an instance literal without its '}' in a generic call is reported as in a
+# 'var', not as an unclosed block
+
+type point {x, y}
+
+func show<T type>(p T) {}
+
+func main() {
+    show(point{1, 2)
+}

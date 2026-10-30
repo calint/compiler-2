@@ -110,21 +110,10 @@ class stmt_builtin_io final : public statement {
     stmt_builtin_io(toc& tc, const io_function& io, unary_ops uops,
                     const token tk, tokenizer& tz)
         : statement{tk, std::move(uops)}, io_{io},
-          args_{tc,
-                tz,
-                tk,
-                array_indexes_,
-                io_function::min_arg_count(),
-                io.max_arg_count()},
+          args_{read_arguments(tc, io, tk, tz)},
           at_{optional_positions_of(io_, args_.count())} {
 
-        assert_call_in_func(tc, tok());
-
         set_type(io_.result_type(tc));
-
-        if (io_.is_sector) {
-            assert_target_has_sd_card(tc);
-        }
 
         assert_buffer_path();
 
@@ -400,14 +389,6 @@ class stmt_builtin_io final : public statement {
         }
     }
 
-    auto assert_target_has_sd_card(toc& tc) const -> void {
-        const machine& x{tc.machine()};
-
-        if (not x.has_sd_card()) {
-            throw compile_error{tok(), "the target has no sd card"};
-        }
-    }
-
     // the array the call transfers, a path since 'assert_buffer_path'
     [[nodiscard]] auto buffer_path() const -> const stmt_identifier& {
         return *args_.at(buffer_index_).bare_path();
@@ -636,6 +617,30 @@ class stmt_builtin_io final : public statement {
 
         return machine::bounds_range::up_to(
             start, element_count - static_cast<size_t>(*known_count));
+    }
+
+    // the arguments after the checks of the call itself, made first as for a
+    // call of a function, e.g. 'write' in the initializer of a global
+    [[nodiscard]] static auto read_arguments(toc& tc, const io_function& io,
+                                             const token& tk, tokenizer& tz)
+        -> builtin_arguments {
+
+        assert_call_in_func(tc, tk);
+
+        const machine& x{tc.machine()};
+
+        if (io.is_sector and not x.has_sd_card()) {
+            throw compile_error{tk, "the target has no sd card"};
+        }
+
+        return {
+            tc,
+            tz,
+            tk,
+            array_indexes_,
+            io_function::min_arg_count(),
+            io.max_arg_count(),
+        };
     }
 
     [[nodiscard]] static auto

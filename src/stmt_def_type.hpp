@@ -173,9 +173,13 @@ struct generic_type_use {
         const token equals_tk{tz.seen_char_token('=')};
         const token name_tk{tz.next_token()};
 
-        // note: the '=' is the place when the source ends after it
+        // note: the '=' is the place when the source ends after it; a
+        //       keyword names no generic type, e.g. the 'func' of the next
+        //       definition after 'type str ='
 
-        if (not name_tk.is_word()) {
+        if (not name_tk.is_word() or
+            std::ranges::contains(reserved_names::keywords, name_tk.text())) {
+
             throw compile_error{name_tk.is_none() ? equals_tk : name_tk,
                                 "expected a generic type after '='"};
         }
@@ -619,6 +623,8 @@ inline auto make_stmt_def_type(toc& tc, const token tk, tokenizer& tz)
     // e.g. 'type read {x}' could have no method, 'read.get' reads as the
     // built-in
     tc.assert_valid_unqualified_name(name_tk);
+
+    tc.assert_type_name_free(name_tk);
 
     const char next{tz.peek_char_after_whitespace()};
 

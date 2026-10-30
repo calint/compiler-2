@@ -1,0 +1,9 @@
+# a call of a function without a result to an array is reported as for a
+# number destination
+
+func f() {}
+
+func main() {
+    var a = i8[2]
+    a = f()
+}

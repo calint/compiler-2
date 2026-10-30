@@ -1,0 +1,8 @@
+# a generic call whose argument is not a value reports it as a call of a
+# function without type parameters does, not that the type cannot be deduced
+
+func show<T type>(x T) {}
+
+func main() {
+    show(main)
+}

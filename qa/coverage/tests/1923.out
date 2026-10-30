@@ -1,0 +1,4 @@
+
+1923.baz:9:20: expected '}' to close the value of type 'point'
+    show(point{1, 2)
+                   ^

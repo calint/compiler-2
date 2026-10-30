@@ -1,0 +1,4 @@
+
+1915.baz:6:1: expected a generic type after '='
+func main() {}
+^~~~

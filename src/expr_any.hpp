@@ -147,6 +147,11 @@ class expr_any final : public statement {
           form_{parse_form(tc, tz, tp, typing)} {
 
         set_type(tp);
+
+        // a copy checks its end itself
+        if (is_array() and not is_whole_array_copy()) {
+            expr_type::assert_value_ends(tz, array_token(), "an array", tp);
+        }
     }
 
     // a path parsed apart, e.g. a method receiver or the array argument of a
@@ -464,22 +469,6 @@ class expr_any final : public statement {
         return nullptr;
     }
 
-    // the list of a known length has room for the next element
-    auto assert_room_for_element(const tokenizer& tz,
-                                 const element_list& list) const -> void {
-
-        if (not array_count_ or list.elements.size() != *array_count_) {
-            return;
-        }
-
-        // e.g. the ')' of '[2]{1, 2, )', the element reports what is missing
-        if (not starts_value(tz)) {
-            return;
-        }
-
-        throw compile_error{tz, too_many_elements(*array_count_)};
-    }
-
     // the copy size comes from the source, so its length is that of the
     // destination, 'array_count' when known
     auto assert_whole_array_copy_fits(
@@ -625,6 +614,16 @@ class expr_any final : public statement {
         std::optional<token> close_brace_tk{tz.is_next_char_token('}')};
 
         while (not close_brace_tk) {
+            // a list of a known length ends when it is full
+            if (array_count_ and list.elements.size() == *array_count_) {
+                close_brace_tk = read_full_list_end(
+                    tz, list.delims_tk, too_many_elements(*array_count_),
+                    std::format("expected '}}' to close the array of size {}",
+                                *array_count_));
+
+                break;
+            }
+
             if (not list.elements.empty()) {
                 read_element_delimiter(tz, tp, list);
 
@@ -635,8 +634,6 @@ class expr_any final : public statement {
                     break;
                 }
             }
-
-            assert_room_for_element(tz, list);
 
             // note: the whitespace is read first, the initializers run in
             //       order
@@ -1171,9 +1168,9 @@ class expr_any final : public statement {
                            array_count);
     }
 
-    // the parse checks a list of a known length as each element is read
-    // ('assert_room_for_element'), the plan one of an unsized destination,
-    // whose length the call gives
+    // the parse checks a list of a known length when it is full
+    // ('read_full_list_end'), the plan one of an unsized destination, whose
+    // length the call gives
     [[nodiscard]] static auto too_many_elements(const size_t array_count)
         -> std::string {
 

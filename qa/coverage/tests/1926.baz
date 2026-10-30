@@ -1,0 +1,8 @@
+# a 'bool' argument of a generic function cannot deduce its type without a
+# destination, it is not a mismatch with the default type
+
+func show<T type>(x T) {}
+
+func main() {
+    show(true)
+}

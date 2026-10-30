@@ -1,4 +1,4 @@
 
-0268.baz:4:21: expected ',' followed by a value of type 'p'
+0268.baz:4:21: expected '}' to close the array of size 2
 dat x = p[2]{{1},{2}
                     ^

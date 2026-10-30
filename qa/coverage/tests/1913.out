@@ -1,0 +1,4 @@
+
+1913.baz:7:10: 'main' is a function, not a value, a call ends with '()'
+    show(main)
+         ^~~~

@@ -344,6 +344,12 @@ struct func_result {
             statement::assert_no_type_arguments(tc, tz, type_tk);
         }
 
+        // e.g. the '[' of 'res i8[4]' or 'res[4]'
+        if (not is_keyword and tz.peek_char_after_whitespace() == '[') {
+            throw compile_error{tz, "a result cannot be an array, pass the "
+                                    "array as a 'mut' parameter"};
+        }
+
         // a word or a string before the '{' of the body is meant as the
         // type, else a missing '{' is reported by the body, e.g. 'func f()
         // res number {'

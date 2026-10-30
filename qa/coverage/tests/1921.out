@@ -1,0 +1,4 @@
+
+1921.baz:3:16: a result cannot be an array, pass the array as a 'mut' parameter
+func f() res i8[3] {
+               ^

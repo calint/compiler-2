@@ -1,0 +1,8 @@
+# a string that fills an array, followed by an operator, is an array, which is
+# not a number
+
+type st {s i8[4], n i8}
+
+func main() {
+    var t = st{"ab" + 1}
+}

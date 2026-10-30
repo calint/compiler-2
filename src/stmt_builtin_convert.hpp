@@ -410,7 +410,7 @@ class stmt_builtin_convert final : public statement {
         tz.assert_no_surplus_argument(type_tk.text(), 1);
 
         const token close_paren_tk{
-            tz.expect_char_token(')', "expected ')' after the argument"),
+            tz.expect_char_token(')', missing_close_paren_text),
         };
 
         return {

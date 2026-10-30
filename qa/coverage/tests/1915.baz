@@ -1,0 +1,6 @@
+# a keyword after the '=' of an alias is no generic type
+
+type list<n> { items i8[n] }
+type str =
+
+func main() {}
