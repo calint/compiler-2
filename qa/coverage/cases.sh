@@ -6515,3 +6515,6 @@ SRC=2052 && EXP=72 && RUN
 
 # a 'bool' array argument of a 'bool' array parameter
 SRC=2053 && EXP=6 && RUN
+
+# a 'foo' over an array whose last index does not fit its counter is rejected
+if [[ $MACHINE != x86_64 ]]; then SRC=2054 && OPTS="--vars=0x80001000" COMPERR; fi

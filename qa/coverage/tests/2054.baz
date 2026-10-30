@@ -1,0 +1,12 @@
+# a 'foo' without a count over more elements than its counter 'i' can number
+# is rejected; rv32i only, x86_64 holds it
+
+func main() {
+    var a = i8[0x80000001]
+    foo a {
+        if i < 0 {
+            exit(3)
+        }
+    }
+    exit(0)
+}

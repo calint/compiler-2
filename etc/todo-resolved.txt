@@ -1,6 +1,17 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] hard: bug hunt series 2, round 19 (2026-10-30, user: bug hunts in a
+    loop until a round finds none, then one more; 3 hunters: J1 composite
+    data, J2 control flow and the jump optimizer, J3 integer edges folded
+    against computed)
+    => done (2026-10-30): bug: J1-1 on rv32i a 'foo' without a count over
+       more than 2^31 elements was accepted and its counter 'i' wrapped
+       negative at the last element (a bounds panic on valid code); it is
+       rejected as the 'n' of such a 'foo' and 'array_length' are (round 17
+       F1), "counter 'i' ... does not fit 'i32', give a count" (2054); J2
+       and J3 found nothing (thousands of generated programs against Python
+       models, both targets, the options and the check combinations)
 [x] hard: bug hunt series 2, round 18 (2026-10-30, after design review
     round 47, round 48 stopped; user: low on tokens, bug hunts instead of
     design rounds; 3 hunters: H1 differential runs, H2 the '--checks=noub'

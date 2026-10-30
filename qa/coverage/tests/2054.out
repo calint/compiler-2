@@ -1,0 +1,4 @@
+
+2054.baz:6:9: counter 'i' of 'foo' over 2147483649 elements does not fit 'i32', give a count
+    foo a {
+        ^

@@ -237,7 +237,22 @@ class stmt_builtin_foo final : public statement {
         -> operand {
 
         if (not count_) {
-            return operand::imm(array_len, tc.builtins().default_type());
+            const type& counter_type{tc.builtins().default_type()};
+
+            // e.g. 'i8[0x80000001]' on rv32i, whose last 'i' is 2^31
+            if (not constant_arith::fits_width(
+                    static_cast<int64_t>(array_len - 1), counter_type)) {
+
+                const std::string message{
+                    std::format("counter 'i' of 'foo' over {} elements does "
+                                "not fit {}, give a count",
+                                array_len, in_quotes(counter_type.name())),
+                };
+
+                throw compile_error{ident_.tok(), message};
+            }
+
+            return operand::imm(array_len, counter_type);
         }
 
         const expr_any& count{count_->count};
