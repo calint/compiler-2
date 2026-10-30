@@ -1,4 +1,4 @@
 
-1599.baz:7:26: a call of 'f' is not an array, store its result in a variable first
+1599.baz:7:26: a call of 'f' is not an array
     var n = array_length(f(1))
                          ^

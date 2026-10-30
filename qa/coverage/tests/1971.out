@@ -1,0 +1,4 @@
+
+1971.baz:5:12: expected a count before '{'
+    foo a, {
+           ^

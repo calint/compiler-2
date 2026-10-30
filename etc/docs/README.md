@@ -794,12 +794,14 @@ order. The examples use 'make' and 'same' from the start of 2.10 and a type
    Instead the argument is read ahead as text, and only an argument whose
    type shows in that text tells the type:
 
-   1. a variable, a field or an element that is the whole argument
+   1. a variable, a field, an element or a typed constant that is the
+      whole argument
 
       ```text
       same(s, t)              T = the type of 's'
       same(p.x, q.x)          T = the type of the field 'x'
       same(a[i], t)           T = the element type of 'a'
+      same(k, t)              T = i8 for 'let k = i8(3)'
       ```
 
    2. a value that names its type: an instance literal, a constructor call,
@@ -825,6 +827,7 @@ order. The examples use 'make' and 'same' from the start of 2.10 and a type
 
       ```text
       same(1, t)              a literal: its type depends on where it goes
+      same(n, t)              an untyped constant, e.g. 'let n = 3', likewise
       same({}, t)             '{}' does not name a type
       same(s + 1, t)          an expression, not the whole argument
       same(s.get(), t)        a method call

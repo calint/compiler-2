@@ -1,4 +1,4 @@
 
-1497.baz:4:13: generic method 'buffer.app' already defined at 3:13
+1497.baz:4:6: generic method 'buffer.app' already defined at 3:6
 func buffer.app<T type>(x T) {}
-            ^~~
+     ^~~~~~

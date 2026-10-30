@@ -2165,12 +2165,12 @@ class definition_checks final {
                 known.method_name_tk.text() == method.method_name_tk.text()) {
 
                 throw compile_error{
-                    method.method_name_tk,
+                    method.type_tk,
                     std::format(
                         "generic method {} already defined at {}",
                         in_quotes(method_name_of(method.type_tk.text(),
                                                  method.method_name_tk.text())),
-                        where(known.method_name_tk))};
+                        where(known.type_tk))};
             }
         }
     }

@@ -34,7 +34,7 @@ class register_pool final {
         token src_loc_tk;
         size_t indent{};
         holder_kind holder{};
-        // the index of the inlined call that allocated it, see
+        // the index of the call level that allocated it, see
         // 'register_trace::frame'
         size_t frame{};
     };

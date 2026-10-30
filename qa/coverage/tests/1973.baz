@@ -1,0 +1,5 @@
+# a string followed by an operator that starts a declaration is an operand,
+# as in an assignment
+func main() {
+    var x = "ab" + 1
+}

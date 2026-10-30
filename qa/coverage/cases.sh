@@ -6265,3 +6265,21 @@ SRC=1969 && COMPERR
 
 # a type parameter bound to a built-in where the destination gives the type
 SRC=1970 && COMPERR
+
+# a 'foo' without a count before its block
+SRC=1971 && COMPERR
+
+# a 'var' initializer that compares a string
+SRC=1972 && COMPERR
+
+# a 'var' initializer with a string and an operator
+SRC=1973 && COMPERR
+
+# a type parameter named like the alias of its instance
+SRC=1974 && COMPERR
+
+# a typed constant deduces a generic parameter
+SRC=1975 && EXP=6 && RUN
+
+# a call where a built-in takes an array
+SRC=1976 && COMPERR

@@ -9,6 +9,7 @@
 #include <optional>
 #include <ostream>
 #include <string_view>
+#include <tuple>
 #include <utility>
 
 #include "compile_error.hpp"
@@ -305,7 +306,11 @@ class initializer_declaration final {
         -> const type* {
 
         if (tz.peek_char_after_whitespace() == '"') {
-            return &tc.builtins().i8();
+            tokenizer after_string{tz};
+            std::ignore = after_string.next_token();
+
+            return continues_expression(after_string) ? nullptr
+                                                      : &tc.builtins().i8();
         }
 
         if (is_default_array_literal(tz)) {

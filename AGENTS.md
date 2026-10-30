@@ -185,7 +185,11 @@
   `qa/lint/check-all.sh`), formatter applied.
 - Commit message: always `.` (no body, no trailer).
 - After each step, review round or fix phase, pause for the user to commit,
-  then continue.
+  then continue. Exception, design review rounds: once a round's step checks
+  pass, start the next round's reviewers on the working tree; its phase
+  checks and the commit run meanwhile, and the next round's patches are
+  applied only after both. Reviewers send patches and tests; the
+  comparison over all cases runs once, after merging.
 - When the agents of a round are done, remove their temporary worktrees and
   branches (after checking they hold no commits).
 - Shell scripts `cd` to their own directory and use relative paths.

@@ -1,4 +1,4 @@
 
-0813.baz:9:11: generic method 'text.size' already defined at 8:11
+0813.baz:9:6: generic method 'text.size' already defined at 8:6
 func text.size() res { res = capacity }
-          ^~~~
+     ^~~~

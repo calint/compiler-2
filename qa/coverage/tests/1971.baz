@@ -1,0 +1,8 @@
+# a 'foo' with a ',' and no count before its block is reported at the '{'
+# like an 'if' without a condition
+func main() {
+    var a = i8[4]
+    foo a, {
+        e = 1
+    }
+}

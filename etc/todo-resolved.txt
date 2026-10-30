@@ -1,6 +1,26 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] hard: design review series 2, round 39 (2026-10-30, user: continue
+    the rounds until no more findings; 7 reviewers A-G, the groups rotated
+    again)
+    => done (2026-10-30): bug: E1 a typed constant tells the type of a
+       generic parameter like a variable of its type, 'same(k, k)' for 'let
+       k = i8(3)' is 'same<i8>' (README 1.7; README 2.10.2, 1975);
+       messages: A1 'foo a, {' without a count is "expected a count before
+       '{'" like an 'if' without a condition, 'foo a, {} {...}' is rejected
+       like 'if {} {...}' (1971); G1 a string followed by an operator that
+       starts a 'var', 'let' or 'dat' is an operand as after '=' (completes
+       round 37 F1, 1972, 1973); B1 a type parameter named like the alias of
+       its instance gets the hiding message, not "cannot contain itself"
+       (1974); F1 "a call of 'f' is not an array" without the hint to store
+       the result, a result is never an array (1599 1674 1945, 1976); B2 a
+       generic method defined twice is located at its type like the other
+       method messages (0813 1497 1515); comment: B3 'allocation::frame' is
+       the call level; left: E2 the arguments before a deducing one when
+       the deduction fails (open item on deduction by a trial parse), D's
+       string compared with an array keeps "it fills only an array of 'i8'"
+       (+8 lines of special case for wording); two reviewers found nothing
 [x] hard: design review series 2, round 38 (2026-10-30, user: continue
     the rounds until no more findings; 7 reviewers A-G, the groups rotated
     again)

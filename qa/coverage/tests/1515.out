@@ -1,4 +1,4 @@
 
-1515.baz:7:11: generic method 'text.print' already defined at 5:11
+1515.baz:7:6: generic method 'text.print' already defined at 5:6
 func text.print() {}
-          ^~~~~
+     ^~~~

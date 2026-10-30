@@ -1,0 +1,4 @@
+
+1974.baz:5:10: generic parameter 'T' hides the type 'T' defined at 6:6, use another name
+type box<T type> {x T}
+         ^

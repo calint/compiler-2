@@ -43,8 +43,12 @@ class stmt_def_type_field final : public statement {
 
         type_tk_ = read_declared_type(tc, tz);
 
-        // e.g. the 'p' of 'type p {x p}', the type is defined after its fields
-        if (type_tk_ and type_tk_->text() == type_name_tk.text()) {
+        // e.g. the 'p' of 'type p {x p}', the type is defined after its
+        // fields; a type parameter of that name names its argument, e.g. the
+        // 'T' of 'type box<T type> {x T}' in 'type T = box<i8>'
+        if (type_tk_ and type_tk_->text() == type_name_tk.text() and
+            not tc.types().has(type_tk_->text())) {
+
             throw compile_error{*type_tk_,
                                 std::format("type {} cannot contain itself",
                                             in_quotes(type_name_tk.text()))};

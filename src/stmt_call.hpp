@@ -180,12 +180,12 @@ struct generic_call {
     // statics
     //
 
-    // the type of the argument at 'index' when it is a variable, a field or an
-    // element, or the value it makes names its type: 'point{1, 2}',
-    // 'point.at(1, 2)' or 'mk(1, 2)', otherwise null; an argument that no
-    // operator continues is whole, e.g. 'a' of 'f(a 2)', the parse of the
-    // call reports what follows it. 'tz' is after the '(', it ends after the
-    // argument when the argument tells its type
+    // the type of the argument at 'index' when it is a variable, a field, an
+    // element or a typed constant, or the value it makes names its type:
+    // 'point{1, 2}', 'point.at(1, 2)' or 'mk(1, 2)', otherwise null; an
+    // argument that no operator continues is whole, e.g. 'a' of 'f(a 2)', the
+    // parse of the call reports what follows it. 'tz' is after the '(', it
+    // ends after the argument when the argument tells its type
     [[nodiscard]] static auto argument_type(toc& tc, tokenizer& tz,
                                             const size_t index) -> const type* {
 
@@ -202,11 +202,6 @@ struct generic_call {
             return value_type(tc, tz, tk, tm);
         }
 
-        // note: a constant does not tell its type, like a literal
-        if (tc.scopes().lookup(tk.text()).is_constant()) {
-            return nullptr;
-        }
-
         // note: read from the copy to find where the argument ends and its
         //       type, the call parses it again
 
@@ -216,7 +211,14 @@ struct generic_call {
             return nullptr;
         }
 
-        return &make_ident_info(tc, ident).type_ref();
+        const ident_info info{make_ident_info(tc, ident)};
+
+        // e.g. 'k' of 'let k = 5' does not tell its type, like a literal
+        if (info.is_const() and not info.constant().is_typed()) {
+            return nullptr;
+        }
+
+        return &info.type_ref();
     }
 
     // the argument at 'index' parsed without a type, as the initializer of a

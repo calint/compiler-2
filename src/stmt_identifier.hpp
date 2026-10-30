@@ -1190,15 +1190,15 @@ class stmt_identifier final : public statement {
                                  in_quotes(root), in_quotes(name_tk.text()))};
     }
 
-    // e.g. the 'f' of 'array_length(f())', 'callee' as written
+    // e.g. the 'f' of 'array_length(f())', 'callee' as written; a result is
+    // never an array
     [[noreturn]] static auto throw_call_not_array(const token& src_loc_tk,
                                                   const std::string_view callee)
         -> void {
 
         throw compile_error{
-            src_loc_tk, std::format("a call of {} is not an array, store its "
-                                    "result in a variable first",
-                                    in_quotes(callee))};
+            src_loc_tk,
+            std::format("a call of {} is not an array", in_quotes(callee))};
     }
 
     // a '[' after 'path', which is not an array

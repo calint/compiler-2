@@ -7,6 +7,7 @@
 #include <string>
 #include <string_view>
 
+#include "compile_error.hpp"
 #include "expr_any.hpp"
 #include "ident_info.hpp"
 #include "statement.hpp"
@@ -354,6 +355,11 @@ class stmt_builtin_foo final : public statement {
 
         if (not delim_tk) {
             return std::nullopt;
+        }
+
+        // e.g. 'foo a, { e = 1 }', like an 'if' without a condition
+        if (tz.peek_char_after_whitespace() == '{') {
+            throw compile_error{tz, "expected a count before '{'"};
         }
 
         return count_part{

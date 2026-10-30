@@ -1,4 +1,4 @@
 
-1945.baz:10:28: a call of 'p.m' is not an array, store its result in a variable first
+1945.baz:10:28: a call of 'p.m' is not an array
     var n = array_length(p.m())
                            ^
