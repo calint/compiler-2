@@ -1,0 +1,4 @@
+
+1998.baz:5:12: unexpected ']'
+    res = a]
+           ^

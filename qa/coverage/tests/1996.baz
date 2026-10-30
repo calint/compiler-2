@@ -1,0 +1,31 @@
+# a constant element of an unsized array parameter is a known element for the
+# aliasing checks, as in an array of known length: 's[0]' and 's[1]' are
+# disjoint
+
+func swap(a mut i8, b mut i8) {
+    var t = a
+    a = b
+    b = t
+}
+
+func flip(s mut i8[]) {
+    swap(s[0], s[1])
+}
+
+func keep_second(s mut i8[]) {
+    var x = i8(5)
+    s = {x, s[1]}
+}
+
+func main() {
+    var a = i8[]{1, 2}
+    flip(a)
+    if a[0] != 2 or a[1] != 1 {
+        exit(1)
+    }
+    keep_second(a)
+    if a[0] != 5 or a[1] != 1 {
+        exit(2)
+    }
+    exit(0)
+}

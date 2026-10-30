@@ -1,0 +1,6 @@
+# a variable compared in its own initializer is read before it is set, not
+# taken as a 'bool'
+
+func main() {
+    var b = b == 1
+}

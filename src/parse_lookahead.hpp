@@ -47,6 +47,17 @@
            next != '\0';
 }
 
+// a string is in read-only data that an array parameter would refer to, a
+// string for a number is rejected where the number is parsed
+inline auto assert_not_string_argument(tokenizer& tz) -> void {
+    if (tz.peek_char_after_whitespace() != '"') {
+        return;
+    }
+
+    throw compile_error{tz.next_token(), "a string is not an argument, it "
+                                         "would refer to read-only data"};
+}
+
 // '{}' follows, the zero value of a typed destination
 [[nodiscard]] inline auto is_zero_value(const tokenizer& tz) -> bool {
     tokenizer probe{tz};

@@ -1,4 +1,4 @@
-# a string where a built-in takes an array is not an array
+# a string where a built-in takes an array is not an argument
 
 func main() {
     foo "abc" {}

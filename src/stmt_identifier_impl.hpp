@@ -193,6 +193,13 @@ stmt_identifier::narrow_to_element(const std::optional<int64_t> constant_index,
     // note: 'assert_constant_index' rejected a negative index and one past the
     //       end, the end itself starts the empty range of a zero count
 
+    // an unsized array parameter: a constant element is known, its bytes
+    // are not; they matter only for a result, which has a length
+    if (constant_index and not array_len and reach == path_reach::element) {
+        access_path_.add_fixed_index(static_cast<size_t>(*constant_index));
+        return;
+    }
+
     if (not constant_index or not array_len or
         std::cmp_equal(*constant_index, *array_len)) {
 

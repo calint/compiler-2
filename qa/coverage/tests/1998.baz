@@ -1,0 +1,9 @@
+# a closer without an opener in the body of a generic function that no
+# instance parses is reported as in a body that is parsed
+
+func g<T type>(a T) res T {
+    res = a]
+}
+
+func main() {
+}

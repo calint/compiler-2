@@ -6328,3 +6328,42 @@ SRC=1990 && COMPERR
 
 # a generic parameter of a function named like a built-in type
 SRC=1991 && COMPERR
+
+# a type defined after a generic function and before its instance
+SRC=1992 && COMPERR
+
+# a string for an untyped parameter of a generic function
+SRC=1993 && COMPERR
+
+# an array literal where a built-in takes an array
+SRC=1994 && COMPERR
+
+# an array literal without a type where a built-in takes an array
+SRC=1995 && COMPERR
+
+# constant elements of an unsized array parameter
+SRC=1996 && EXP=0 && RUN
+
+# a constant element of an unsized array parameter written before its read
+SRC=1997 && COMPERR
+
+# a stray closer in a generic body without an instance
+SRC=1998 && COMPERR
+
+# a variable indexed in its own initializer
+SRC=1999 && COMPERR
+
+# a variable compared in its own initializer
+SRC=2000 && COMPERR
+
+# a field of a variable in its own initializer
+SRC=2001 && COMPERR
+
+# a string as a parameter type of a generic function
+SRC=2002 && COMPERR
+
+# a string as the result type of a generic function
+SRC=2003 && COMPERR
+
+# a missing ',' before an argument a built-in needs
+SRC=2004 && COMPERR

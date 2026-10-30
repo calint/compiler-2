@@ -473,8 +473,10 @@ struct generic_deduction {
 // '(x U)'
 struct generic_signature_param {
     token name_tk;
-    // empty for an array, which is not of the type itself
+    // empty for an array, which is not of the type itself, and for the
+    // default type
     std::string type_name;
+    bool is_array{};
 };
 
 // what a generic function or a method of a generic type declares, read once

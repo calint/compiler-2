@@ -1,0 +1,11 @@
+# a constant element of an unsized array parameter that a list wrote before
+# is read after the write, not maybe
+
+func flip(s mut i8[]) {
+    s = {s[1], s[0]}
+}
+
+func main() {
+    var a = i8[]{1, 2}
+    flip(a)
+}

@@ -1,0 +1,4 @@
+
+2001.baz:5:13: use of uninitialized variable 'p'
+    var p = p.x
+            ^

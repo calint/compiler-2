@@ -1,6 +1,28 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] hard: design review series 2, round 41 (2026-10-30, user: continue
+    the rounds until no more findings; 7 reviewers A-G, the groups rotated
+    again)
+    => done (2026-10-30): bugs: E1 a constant element of an unsized array
+       parameter is a known element for the aliasing and clobber checks,
+       'swap(s[0], s[1])' and 's = {x, s[1]}' were rejected (1996, 1997);
+       F1 a string as a type in a generic signature is rejected where read,
+       also without an instance (2002, 2003); B1 a string for an untyped
+       parameter of a generic function is "a string is not a number", a
+       regression of round 40 A2 ('generic_signature_param::is_array',
+       1993); messages: G1 a variable read in its own initializer is "use
+       of uninitialized variable" before any type check ('scope::initializer',
+       1181 1367, 1999-2001); B2 a string where 'foo' takes an array gets the
+       read-only reason like the other built-ins (reopens round 4 A2, 1810);
+       B3 an array literal where a built-in takes an array is "an array
+       literal is not an argument" (1994, 1995); F2 a missing ',' before an
+       argument a built-in still needs is "expected ',' before argument N"
+       (0182 0212 0214, 2004); G2 a stray closer in a skipped generic body is
+       "unexpected ')'" as in a parsed body (1793 1794, 1998); A1 a type
+       parameter hiding a later type is checked once, without an
+       "instantiated by" frame (item 4.5, 1076, 1992); comment: C1 the 'a7'
+       of the rv32i sector routines; one reviewer found nothing
 [x] hard: design review series 2, round 40 (2026-10-30, user: continue
     the rounds until no more findings; 7 reviewers A-G, the groups rotated
     again; from this round the next round starts once the step checks

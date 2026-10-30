@@ -1,4 +1,4 @@
 
-1181.baz:7:17: 'point' is not an array, it cannot be indexed
+1181.baz:7:17: use of uninitialized variable 'point'
     var point = point[2]{{1, 2}}
                 ^~~~~

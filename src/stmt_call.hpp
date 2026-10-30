@@ -39,8 +39,7 @@
 //
 //   'stmt_call'       parses the call, prints its source and hands it to one
 //                     of the compilers (last in the file, it uses the others)
-//   'assert_not_string_argument', 'missing_argument_text',
-//   'missing_delimiter_text'
+//   'missing_argument_text', 'missing_delimiter_text'
 //                     free, first, 'generic_call' and 'stmt_call' use them
 //   'generic_call'    the instance of a generic function that the call names
 //   'call_limits'     how deep the compile of calls nests
@@ -73,17 +72,6 @@
 // the formatter sorts the functions of a class by name, so the comment above
 // each class lists them in the order they run
 //
-
-// a string is in read-only data that an array parameter would refer to, a
-// string for a number is rejected where the number is parsed
-inline auto assert_not_string_argument(tokenizer& tz) -> void {
-    if (tz.peek_char_after_whitespace() != '"') {
-        return;
-    }
-
-    throw compile_error{tz.next_token(), "a string is not an argument, it "
-                                         "would refer to read-only data"};
-}
 
 // the argument numbered 'number', counted from 1 without a receiver, is
 // missing, the ')' is where it would start
@@ -237,8 +225,7 @@ struct generic_call {
 
         std::ignore = skip_to_argument(tz, index);
 
-        // an array parameter has no type name
-        if (params.at(index).type_name.empty()) {
+        if (params.at(index).is_array) {
             assert_not_string_argument(tz);
         }
 
@@ -1573,7 +1560,7 @@ class builtin_arguments final {
             argument_count_text(name_tk.text(), min_count, max_count),
         };
 
-        read_arguments(tc, tz, array_indexes, max_count, count_text);
+        read_arguments(tc, tz, array_indexes, min_count, max_count, count_text);
 
         if (args_.size() < min_count) {
             throw compile_error{name_tk, count_text};
@@ -1616,7 +1603,7 @@ class builtin_arguments final {
     // 'zz' of 'exit(1, zz)'
     auto read_arguments(toc& tc, tokenizer& tz,
                         const std::span<const size_t> array_indexes,
-                        const size_t max_count,
+                        const size_t min_count, const size_t max_count,
                         const std::string_view count_text) -> void {
 
         while (true) {
@@ -1629,8 +1616,6 @@ class builtin_arguments final {
             }
 
             if (std::ranges::contains(array_indexes, args_.size())) {
-                assert_not_string_argument(tz);
-
                 stmt_identifier array{
                     stmt_identifier::parse_array_argument(tc, tz),
                 };
@@ -1654,14 +1639,35 @@ class builtin_arguments final {
                 continue;
             }
 
-            // e.g. 'write(1, text n)' lacks the ',', 'exit(1 n)' the ')'
+            // e.g. 'array_copy(a b, 1)' lacks the ',' like a call of a
+            // function, 'write(1, text n)' the ',' or the ')', 'exit(1 n)'
+            // the ')'
             close_paren_tk_ = tz.expect_char_token(
-                ')', args_.size() < max_count
-                         ? "expected ',' or ')' after the argument"
-                         : missing_close_paren_text);
+                ')', missing_after_argument_text(args_.size(), min_count,
+                                                 max_count));
 
             return;
         }
+    }
+
+    //
+    // statics
+    //
+
+    // what may follow the argument numbered 'count'
+    [[nodiscard]] static auto
+    missing_after_argument_text(const size_t count, const size_t min_count,
+                                const size_t max_count) -> std::string {
+
+        if (count < min_count) {
+            return std::format("expected ',' before argument {}", count + 1);
+        }
+
+        if (count < max_count) {
+            return "expected ',' or ')' after the argument";
+        }
+
+        return std::string{missing_close_paren_text};
     }
 };
 

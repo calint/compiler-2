@@ -1,0 +1,4 @@
+
+2000.baz:5:13: use of uninitialized variable 'b'
+    var b = b == 1
+            ^

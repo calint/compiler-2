@@ -1,4 +1,4 @@
 
-1793.baz:5:9: expected '}' to close block
+1793.baz:5:9: unexpected ')'
     x i8)
         ^

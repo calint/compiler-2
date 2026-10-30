@@ -89,8 +89,8 @@ class machine_rv32i : public machine {
 
     static constexpr size_t max_padding_gaps_zeroed_one_by_one_{8};
 
-    // what an i/o or sector routine may change besides 'a0', free at the call,
-    // see 'call_io_routine'
+    // what an i/o or sector routine may change besides 'a0' and the 'a7' it
+    // returns through, free at the call, see 'call_io_routine'
     static constexpr std::array<std::string_view, 4> io_routine_clobbered_{
         "a3",
         "a4",
@@ -649,9 +649,9 @@ class machine_rv32i : public machine {
 
     // the routines that the calls of 'sector_read' and 'sector_write' jump
     // to, each only when it is used; a routine takes the sector in 'a0', the
-    // address in 'a1' and the size in 'a2', returns through 'a7' and changes
-    // only 'a0' and 'io_routine_clobbered_'; only a target that
-    // 'has_sd_card' is asked
+    // address in 'a1' and the size in 'a2', returns through 'a7', which it
+    // may change, and changes only 'a0' and 'io_routine_clobbered_' else;
+    // only a target that 'has_sd_card' is asked
     virtual auto emit_sector_routines([[maybe_unused]] const bool read_used,
                                       [[maybe_unused]] const bool write_used)
         -> void {

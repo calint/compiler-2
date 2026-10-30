@@ -1,0 +1,6 @@
+# a field of a variable in its own initializer is read before it is set, not
+# a field of the default type
+
+func main() {
+    var p = p.x
+}

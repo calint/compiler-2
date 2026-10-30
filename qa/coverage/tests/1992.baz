@@ -1,0 +1,11 @@
+# a type defined after a generic function and before its instance is
+# rejected like one defined after the instance, at the type parameter without
+# the instance, which only binds the arguments
+
+func f<T type>(a T) {}
+
+type T {x}
+
+func main() {
+    f<i8>(1)
+}

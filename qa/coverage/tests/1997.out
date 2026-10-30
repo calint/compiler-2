@@ -1,0 +1,7 @@
+
+1997.baz:5:16: 's[0]' is read but has been overwritten in the same statement, use a temporary variable
+    s = {s[1], s[0]}
+               ^
+1997.baz:10:5: called from
+    flip(a)
+    ^~~~

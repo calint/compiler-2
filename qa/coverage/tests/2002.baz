@@ -1,0 +1,6 @@
+# a string as the type of a parameter of a generic function is rejected
+# where it is read, also without an instance
+func f<T type>(a "i8") {
+}
+
+func main() {}

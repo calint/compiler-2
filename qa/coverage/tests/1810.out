@@ -1,4 +1,4 @@
 
-1810.baz:4:9: '"abc"' is not an array
+1810.baz:4:9: a string is not an argument, it would refer to read-only data
     foo "abc" {}
         ^~~~~

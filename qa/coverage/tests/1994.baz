@@ -1,0 +1,5 @@
+# an array literal where a built-in takes an array is not an argument
+
+func main() {
+    var n = array_length(i8[2]{1, 2})
+}

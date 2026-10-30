@@ -860,6 +860,20 @@ class stmt_identifier final : public statement {
                                 "a unary operator makes a value, not an array"};
         }
 
+        assert_not_string_argument(tz);
+
+        // an array literal has no storage
+        constexpr std::string_view literal_text{
+            "an array literal is not an argument, store it in a variable first",
+        };
+
+        // e.g. '{1, 2}' or '[2]{1, 2}'
+        if (not is_zero_value(tz) and (tz.peek_char_after_whitespace() == '{' or
+                                       is_default_array_literal(tz))) {
+
+            throw compile_error{tz, std::string{literal_text}};
+        }
+
         const token tk{tz.next_token()};
         const term_kind tm{classify_term(tc, tk, tz)};
 
@@ -873,10 +887,9 @@ class stmt_identifier final : public statement {
             throw_unexpected_keyword(tk);
         }
 
-        // e.g. the '"abc"' of 'array_length("abc")'
-        if (tm == term_kind::string) {
-            throw compile_error{
-                tk, std::format("{} is not an array", in_quotes(tk.text()))};
+        // e.g. 'i8[2]{1, 2}'
+        if (tm == term_kind::array_literal) {
+            throw compile_error{tk, std::string{literal_text}};
         }
 
         // e.g. the 'point' of 'point{1, 2}', 'point(5)' or 'point.at(1, 2)'

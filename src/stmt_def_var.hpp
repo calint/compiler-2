@@ -286,7 +286,7 @@ class initializer_declaration final {
             return;
         }
 
-        const toc::scope_entry block{tc, scope::block()};
+        const toc::scope_entry block{tc, scope::initializer()};
 
         tc.add_var(0, make_var_info(name_tk_, type_ref(), shape_),
                    var_kind::var);
@@ -428,12 +428,8 @@ class stmt_def_var final : public statement {
 
         set_type(declaration.type_ref());
 
-        // the newly defined variable is not yet assigned in its initialization
-        if (const stmt_identifier* const read{first_read_of(declared_.name)}) {
-            throw compile_error{read->tok(),
-                                std::format("use of uninitialized variable {}",
-                                            in_quotes(declared_.name))};
-        }
+        // note: a read of the variable in its initializer was rejected
+        //       where it was parsed ('scope::initializer')
 
         // marked after the initializer, which writes the variable; statements
         // parsed from here on cannot assign it

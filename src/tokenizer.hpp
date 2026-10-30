@@ -327,6 +327,9 @@ class tokenizer final {
     // 'tk' to the end of the block
     auto skip_braced_block_after(const token& tk) -> std::string_view {
         if (not skip_braced_block()) {
+            // e.g. the ')' of '{ x ) }', as in a block that is parsed
+            assert_not_at_delimiter();
+
             throw compile_error{*this, "expected '}' to close block"};
         }
 

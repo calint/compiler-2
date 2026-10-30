@@ -1,0 +1,6 @@
+# a variable indexed in its own initializer is read before it is set, not
+# taken as a variable of the default type
+
+func main() {
+    var a = a[0]
+}

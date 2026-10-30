@@ -1,0 +1,6 @@
+# a string as the result type of a generic function is rejected where it is
+# read, also without an instance
+func f<T type>() res "i8" {
+}
+
+func main() {}

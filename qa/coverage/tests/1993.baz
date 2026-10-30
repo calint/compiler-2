@@ -1,0 +1,9 @@
+# a string for a parameter without a type of a generic function is not a number
+
+func f<T type>(a, x T) res T {
+    res = x
+}
+
+func main() {
+    var n = f("a")
+}

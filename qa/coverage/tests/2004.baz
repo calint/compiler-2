@@ -1,0 +1,6 @@
+# a missing ',' before an argument a built-in needs is reported like that of
+# a call of a function
+func main() {
+    var b = i8[4]
+    var n = read(0 b)
+}

@@ -468,6 +468,14 @@ class statement {
                         instance_hint(type_tk.text()))};
     }
 
+    // where it is read, also in a generic definition that no instance
+    // parses, e.g. the '"i8"' of 'a "i8"' or of 'res "i8" {'
+    static auto assert_not_string_type(const token& type_tk) -> void {
+        if (type_tk.is_string()) {
+            throw compile_error{type_tk, "expected a type name, got a string"};
+        }
+    }
+
     // the type after the name of a field or a parameter, none for the default
     // type, e.g. the 'x' of '{x, y}' or 'a[4]'; a keyword names no type, e.g.
     // the 'func' of a definition after a '(' or '{' that is not closed
@@ -483,6 +491,7 @@ class statement {
             return std::nullopt;
         }
 
+        assert_not_string_type(type_tk);
         assert_no_type_arguments(tc, tz, type_tk);
 
         return type_tk;

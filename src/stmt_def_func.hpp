@@ -376,6 +376,10 @@ struct func_result {
             tc.types().has(type_tk.text()) or is_type_before_body,
         };
 
+        if (has_type) {
+            statement::assert_not_string_type(type_tk);
+        }
+
         if (not has_type) {
             tz.put_back_token(type_tk);
 
@@ -1582,6 +1586,7 @@ class stmt_def_func_generic final : public statement {
                         ? param.type_tk->text()
                         : "",
                 },
+                .is_array{param.is_array()},
             });
         }
 

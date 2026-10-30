@@ -1,0 +1,4 @@
+
+1999.baz:5:13: use of uninitialized variable 'a'
+    var a = a[0]
+            ^

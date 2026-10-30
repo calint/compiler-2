@@ -1,0 +1,4 @@
+
+2003.baz:3:22: expected a type name, got a string
+func f<T type>() res "i8" {
+                     ^~~~

@@ -1,4 +1,4 @@
 
-1794.baz:5:12: expected '}' to close block
+1794.baz:5:12: unexpected ')'
     res = a)
            ^

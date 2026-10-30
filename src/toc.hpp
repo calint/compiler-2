@@ -327,6 +327,10 @@ class scope final {
     std::optional<loop_part> loop_;
     std::optional<function_part> func_;
 
+    // the block of a variable while its initializer is parsed, see
+    // 'scope::initializer'
+    bool is_initializer_{};
+
   public:
     auto add_binding(const param_binding& binding) -> void {
         func_part().bindings.put(std::string{binding.from}, binding);
@@ -427,6 +431,10 @@ class scope final {
     }
 
     [[nodiscard]] auto is_func() const -> bool { return func_.has_value(); }
+
+    [[nodiscard]] auto is_initializer() const -> bool {
+        return is_initializer_;
+    }
 
     // only a call inlined; 'main' is compiled in place too but is not one
     [[nodiscard]] auto is_inlined_func() const -> bool {
@@ -551,6 +559,17 @@ class scope final {
     //
 
     [[nodiscard]] static auto block() -> scope { return scope{""}; }
+
+    // a block that declares a variable while its initializer is parsed, so a
+    // name in it resolves to the variable, e.g. the 'x' of 'var x = x + 1',
+    // which is not set yet
+    [[nodiscard]] static auto initializer() -> scope {
+        scope scp{""};
+
+        scp.is_initializer_ = true;
+
+        return scp;
+    }
 
     // a function compiled in place, 'call_path' keeps its labels unique and
     // 'return' jumps to 'return_label'
@@ -697,7 +716,10 @@ class type_table final {
     auto add_param(const token& src_loc_tk, const std::string_view name,
                    const type& tpe) -> void {
 
-        assert(not exists(name));
+        // note: a type of that name defined after the generic definition is
+        //       hidden until 'toc::assert_generic_params_free' rejects it
+
+        assert(not is_param(name));
 
         params_.back().put(std::string{name}, {
                                                   .src_loc_tk{src_loc_tk},
@@ -1912,6 +1934,18 @@ class ident_resolver final {
                                const std::string_view ident) const
         -> ident_info {
 
+        const name_meaning meaning{scopes_.get().lookup(ident)};
+
+        // e.g. the 'a' of 'var a = a[0]', before its type, which is not known
+        // yet, tells another mistake
+        if (meaning.is_variable() and
+            scopes_.get().at(meaning.scope_index).is_initializer()) {
+
+            throw compile_error{src_loc_tk,
+                                std::format("use of uninitialized variable {}",
+                                            in_quotes(ident))};
+        }
+
         const ident_info id_info{resolve_or_empty(src_loc_tk, ident)};
 
         if (not id_info.is_empty()) {
@@ -2932,7 +2966,6 @@ class toc final {
 
         assert(not is_compiling_);
 
-        definitions_.assert_generic_param_not_type(src_loc_tk, name);
         types_.add_param(src_loc_tk, name, tpe);
     }
 
@@ -3369,10 +3402,10 @@ class toc final {
 
         assert(not is_compiling_);
 
-        // e.g. the '"i8"' of 'func f() res "i8" {'
-        if (type_tk.is_string()) {
-            throw compile_error{type_tk, "expected a type name, got a string"};
-        }
+        // note: a declared type is read by 'statement::read_declared_type'
+        //       and 'func_result::read', which reject a string
+
+        assert(not type_tk.is_string());
 
         const std::string_view name{type_tk.text()};
 

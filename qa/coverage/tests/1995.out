@@ -1,0 +1,4 @@
+
+1995.baz:5:19: an array literal is not an argument, store it in a variable first
+    array_copy(a, {1, 2}, 2)
+                  ^
