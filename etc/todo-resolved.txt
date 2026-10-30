@@ -1,6 +1,21 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] hard: bug hunt series 2, round 21 (2026-10-30, user: bug hunts in a
+    loop until a round finds none, then one more; 3 hunters: L1 methods and
+    records, L2 compile time that grows with nesting, L3 globals, 'let',
+    'dat' and initialization)
+    => done (2026-10-30): L2 found two parse cases that double per level,
+       documented (the item below); L1 and L3 found nothing (thousands of
+       generated programs against Python models, both targets, the options)
+[-] medium: bug hunt series 2, round 21 L2-1, L2-2: the parse doubles per
+    level of calls nested in an index of a path argument whose type is
+    deduced ('generic_call::argument_type') or that is checked to name an
+    array ('assert_array_name'): both parse the path on a tokenizer copy and
+    the call parses it again; 18 levels take 2 to 4 s
+    => discarded (2026-10-30, user: document it and leave it): README 5.2;
+       rejected: a path peek that skips the indexes (a second path parser
+       beside 'stmt_identifier' for programs nested past about 15 levels)
 [x] hard: bug hunt series 2, round 20 (2026-10-30, user: bug hunts in a
     loop until a round finds none, then one more; 3 hunters: K1 io built-ins
     and the options, K2 register pressure, frames and the stack, K3 the

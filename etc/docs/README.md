@@ -1283,6 +1283,14 @@ or as the whole instance by a gap count that each backend measured once
 ('machine::zero_padding'): compiling both would multiply the versions above
 it, and an instance with thousands of gaps would cost compile time.
 
+The parse also doubles its work per level in two cases. Deducing a type
+argument from a path argument, and checking that an array argument is a name,
+parse the path on a copy of the tokenizer with its indexes; the call then
+parses it again. A call nested in such an index is parsed twice per level, e.g.
+'id(a[id(a[id(a[i])])])' with 'id' generic, or 'first(t[first(t[i].a)].a)'
+with an array parameter: 12 levels parse in about 50 ms, 18 in 2 to 4 s. A
+type argument, 'id<i32>(...)', or the index in a 'let' avoids it.
+
 ### 5.3 State: each version starts from the same machine
 
 A version changes more than the lines it emits. 'machine::version_scope' and
