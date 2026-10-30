@@ -1,6 +1,15 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] hard: bug hunt series 2, round 24 (2026-10-30, user: bug hunts in a
+    loop until a round finds none, then one more; the round after the
+    'let' change; 3 hunters: O1 a 'let' that folds only at a call, O2
+    regressions of rounds 19 and 20, O3 names, scopes and include files)
+    => done (2026-10-30): bug: O1-1 a regression of the 'let' change, such a
+       constant was untyped (the 'let' item below, 2058); O2 and O3 found
+       nothing; open note O1: the 'n' of a 'foo' over an unsized parameter
+       is an untyped constant at a call, 'n == x' of an 'i8' is rejected
+       there where 'array_length(s) == x' is accepted (older than the change)
 [x] hard: bug hunt series 2, round 23 (2026-10-30, user: bug hunts in a
     loop until a round finds none, then one more; the one more after round
     22; 3 hunters: N1 the fuzzers with new seeds and larger settings, N2
