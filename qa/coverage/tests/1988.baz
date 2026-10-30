@@ -1,0 +1,9 @@
+# a string for a parameter that is not an array
+
+func f(x) res {
+    res = x
+}
+
+func main() {
+    var n = f("a")
+}

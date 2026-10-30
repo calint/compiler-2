@@ -1,4 +1,4 @@
 # a type alias without a generic type after '=' at the end of the file is
-# rejected at the '='
+# rejected after the '='
 
 type str =

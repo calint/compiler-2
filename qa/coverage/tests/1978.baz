@@ -1,0 +1,11 @@
+# a whole array for an instance parameter must be indexed whatever its element
+# type
+
+type point { x, y }
+
+func show(p point) {}
+
+func main() {
+    var a = i8[2]
+    show(a)
+}

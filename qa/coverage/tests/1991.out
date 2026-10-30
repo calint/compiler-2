@@ -1,0 +1,4 @@
+
+1991.baz:4:8: 'i8' is a built-in type
+func f<i8>() {
+       ^~

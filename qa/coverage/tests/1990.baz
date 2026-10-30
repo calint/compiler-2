@@ -1,0 +1,10 @@
+# a result of a method of a generic type named like a type parameter of the
+# type is rejected at the definition
+
+type box<T type> {x T}
+func box.f() T {
+    T = 1
+}
+type b = box<i8>
+func main() {
+}

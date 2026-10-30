@@ -1,0 +1,7 @@
+# a generic parameter of a function without the kind 'type' is first
+# reported for a name no parameter can have, not with a hint to add 'type'
+
+func f<i8>() {
+}
+func main() {
+}

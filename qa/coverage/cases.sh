@@ -3769,7 +3769,7 @@ SRC=1171 && COMPERR
 SRC=1172 && COMPERR
 
 # a type alias without a generic type after '=' at the end of the file is
-# rejected at the '='
+# rejected after the '='
 SRC=1173 && COMPERR
 
 # a lone utf-8 continuation byte before the token is one column of the
@@ -6283,3 +6283,48 @@ SRC=1975 && EXP=6 && RUN
 
 # a call where a built-in takes an array
 SRC=1976 && COMPERR
+
+# a whole array for an instance
+SRC=1977 && COMPERR
+
+# a whole array for an instance parameter
+SRC=1978 && COMPERR
+
+# an array of another element type for an array parameter of instances
+SRC=1979 && COMPERR
+
+# a whole array compared with an instance
+SRC=1980 && COMPERR
+
+# a method call assigned to an array
+SRC=1981 && COMPERR
+
+# a constructor call where a built-in takes an array
+SRC=1982 && COMPERR
+
+# a type followed by '(' where 'foo' takes an array
+SRC=1983 && COMPERR
+
+# a delimiter after the '=' of an alias
+SRC=1984 && COMPERR
+
+# an operator after the array of a 'foo'
+SRC=1985 && COMPERR
+
+# an operator after the array of a built-in
+SRC=1986 && COMPERR
+
+# a string where a built-in takes a number
+SRC=1987 && COMPERR
+
+# a string for a parameter that is not an array
+SRC=1988 && COMPERR
+
+# a method parameter named like a type parameter of its generic type
+SRC=1989 && COMPERR
+
+# a method result named like a type parameter of its generic type
+SRC=1990 && COMPERR
+
+# a generic parameter of a function named like a built-in type
+SRC=1991 && COMPERR

@@ -1,6 +1,27 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] hard: design review series 2, round 40 (2026-10-30, user: continue
+    the rounds until no more findings; 7 reviewers A-G, the groups rotated
+    again; from this round the next round starts once the step checks
+    pass, the comparison runs once after merging, the fuzzers run 6 jobs)
+    => done (2026-10-30): bug: B1 a parameter or result of a method of a
+       generic type named like a type parameter of the type is rejected at
+       the definition, it was accepted or rejected by the instance (item
+       4.5 invariant, 1989, 1990); messages: F1 a whole array for an
+       instance or compared with one is "array 'a' must be indexed" before
+       its type, for an array parameter the mismatch names the parameter
+       (1977-1980); F2 an array assigned a call is "a call of 'f' is not an
+       array" like a built-in (0884, 1981); F3 a type before '(' or '.'
+       where a built-in takes an array is "'point' is a type, not an array"
+       (1982, 1983); A1 an operator after the array of a built-in is "an
+       operator makes a value, not an array" (1985, 1986); A2 a string
+       where a number goes is "a string is not a number" also in calls, the
+       read-only reason only where an array is taken (1987, 1988); B2
+       'func f<i8>()' is "'i8' is a built-in type" without the hint to add
+       'type' (1991); G1 a missing generic type after '=' is located after
+       it like every end-of-source error (reopens 1173, which predates
+       'located_in_text'; 1071 1173, 1984); three reviewers found nothing
 [x] hard: design review series 2, round 39 (2026-10-30, user: continue
     the rounds until no more findings; 7 reviewers A-G, the groups rotated
     again)

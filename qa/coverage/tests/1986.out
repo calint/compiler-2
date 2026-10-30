@@ -1,0 +1,4 @@
+
+1986.baz:5:28: an operator makes a value, not an array
+    var n = array_length(a + 1)
+                           ^

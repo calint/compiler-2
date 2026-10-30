@@ -250,6 +250,16 @@ inline constexpr std::string_view missing_close_paren_text{
         src_loc_tk, std::format("array {} must be indexed", in_quotes(name))};
 }
 
+// a call where an array is expected, e.g. the 'f()' of 'array_length(f())',
+// 'callee' names the function; a result is never an array
+[[noreturn]] inline auto throw_call_not_array(const token& src_loc_tk,
+                                              const std::string_view callee)
+    -> void {
+
+    throw compile_error{src_loc_tk, std::format("a call of {} is not an array",
+                                                in_quotes(callee))};
+}
+
 // a generic function without its type arguments where they cannot be
 // deduced; 'written' is the name as the source writes it
 [[noreturn]] inline auto throw_generic_function_without_arguments(

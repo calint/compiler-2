@@ -1,0 +1,11 @@
+# an array of another element type for an array parameter of instances names
+# the parameter, as for numbers
+
+type point { x, y }
+
+func show(ps point[]) {}
+
+func main() {
+    var a = i8[2]
+    show(a)
+}

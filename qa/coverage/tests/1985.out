@@ -1,0 +1,4 @@
+
+1985.baz:5:11: an operator makes a value, not an array
+    foo a + 1 {
+          ^

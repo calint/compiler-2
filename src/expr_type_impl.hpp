@@ -267,6 +267,15 @@ inline auto expr_type::parse_copy_source(toc& tc, tokenizer& tz,
         throw compile_error{tok(), "expected an array"};
     }
 
+    // note: a whole array for an instance is rejected before its type, as
+    //       for a number: by the plan of an assignment
+    //       ('assert_copy_source_shape') or by the call it is an argument of,
+    //       which checks the type of an array parameter
+
+    if (src_info.is_array() and not is_array_destination_) {
+        return;
+    }
+
     if (not tp.is_same(src_info.type_ref())) {
         throw_type_mismatch(ident.last_token(), tp.name(),
                             src_info.type_ref().name());
@@ -285,8 +294,7 @@ inline auto expr_type::assert_call_type() const -> void {
 
     // a function returns one value, not an array
     if (is_array_destination_) {
-        throw compile_error{tok(),
-                            "an array cannot be assigned the result of a call"};
+        throw_call_not_array(call.callee_name_token(), call.callee().name());
     }
 
     const type& result_type{call.get_type()};

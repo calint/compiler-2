@@ -733,17 +733,18 @@ class expr_bool_op final : public statement {
                         const ident_info& lhs_info, const ident_info& rhs_info)
         -> std::optional<size_t> {
 
+        // a whole array is not compared as its first element, whatever its
+        // type, as with a number
+        if (lhs_info.is_array() != rhs_info.is_array()) {
+            assert_not_whole_array(lhs, lhs_info);
+            assert_not_whole_array(rhs, rhs_info);
+        }
+
         if (not lhs_info.type_ref().is_same(rhs_info.type_ref())) {
             throw compile_error{
                 rhs.tok(), std::format("cannot compare type {} with type {}",
                                        in_quotes(lhs_info.type_ref().name()),
                                        in_quotes(rhs_info.type_ref().name()))};
-        }
-
-        // a whole array is not compared as its first element
-        if (lhs_info.is_array() != rhs_info.is_array()) {
-            assert_not_whole_array(lhs, lhs_info);
-            assert_not_whole_array(rhs, rhs_info);
         }
 
         const size_t element_size_bytes{lhs_info.type_ref().size_bytes()};

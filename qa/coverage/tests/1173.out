@@ -1,4 +1,4 @@
 
-1173.baz:4:10: expected a generic type after '='
+1173.baz:4:11: expected a generic type after '='
 type str =
-         ^
+          ^

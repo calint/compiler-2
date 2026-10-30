@@ -1,0 +1,4 @@
+
+1987.baz:4:10: a string is not a number, it fills only an array of 'i8'
+    exit("a")
+         ^~~

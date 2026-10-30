@@ -1,4 +1,4 @@
 
-0884.baz:9:9: an array cannot be assigned the result of a call
+0884.baz:9:9: a call of 'one' is not an array
     a = one()
         ^~~

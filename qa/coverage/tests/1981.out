@@ -1,0 +1,4 @@
+
+1981.baz:13:11: a call of 'point.sum' is not an array
+    a = p.sum()
+          ^~~

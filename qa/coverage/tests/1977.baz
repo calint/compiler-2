@@ -1,0 +1,10 @@
+# a whole array for an instance must be indexed whatever its element type, as
+# for a number
+
+type point { x, y }
+
+func main() {
+    var p = point
+    var a = i8[2]
+    p = a
+}

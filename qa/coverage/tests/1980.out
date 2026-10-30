@@ -1,0 +1,4 @@
+
+1980.baz:9:18: array 'a' must be indexed
+    var b = p == a
+                 ^

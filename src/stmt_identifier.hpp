@@ -849,8 +849,8 @@ class stmt_identifier final : public statement {
     //
 
     // the array of a built-in, e.g. the 'a' of 'array_length(a)' or of
-    // 'foo a', is a variable, a field or an element; a call, a type or a
-    // function has none
+    // 'foo a', is an array or an element of one, not a value made of it; a
+    // call, a type or a function has none
     [[nodiscard]] static auto parse_array_argument(toc& tc, tokenizer& tz)
         -> stmt_identifier {
 
@@ -879,15 +879,16 @@ class stmt_identifier final : public statement {
                 tk, std::format("{} is not an array", in_quotes(tk.text()))};
         }
 
-        if (names_type(tm)) {
+        // e.g. the 'point' of 'point{1, 2}', 'point(5)' or 'point.at(1, 2)'
+        if (names_type(tm) or tm == term_kind::type_called or
+            tm == term_kind::constructor_call) {
+
             throw compile_error{tk, std::format("{} is a type, not an array",
                                                 in_quotes(tk.text()))};
         }
 
-        if (tm == term_kind::call or tm == term_kind::type_called or
-            tm == term_kind::generic_call or tm == term_kind::conversion or
-            tm == term_kind::builtin_function or
-            tm == term_kind::constructor_call) {
+        if (tm == term_kind::call or tm == term_kind::generic_call or
+            tm == term_kind::conversion or tm == term_kind::builtin_function) {
 
             throw_call_not_array(tk, tk.text());
         }
@@ -904,6 +905,12 @@ class stmt_identifier final : public statement {
         stmt_identifier array{tc, tk, tz, path_reach::to_end};
 
         array.assert_not_method(tc, tz);
+        array.assert_array_or_element();
+
+        // e.g. the '+' of 'array_length(a + 1)'
+        if (continues_expression(tz)) {
+            throw compile_error{tz, "an operator makes a value, not an array"};
+        }
 
         return array;
     }
@@ -1188,17 +1195,6 @@ class stmt_identifier final : public statement {
         throw compile_error{
             name_tk, std::format("{} is a constant, it has no field {}",
                                  in_quotes(root), in_quotes(name_tk.text()))};
-    }
-
-    // e.g. the 'f' of 'array_length(f())', 'callee' as written; a result is
-    // never an array
-    [[noreturn]] static auto throw_call_not_array(const token& src_loc_tk,
-                                                  const std::string_view callee)
-        -> void {
-
-        throw compile_error{
-            src_loc_tk,
-            std::format("a call of {} is not an array", in_quotes(callee))};
     }
 
     // a '[' after 'path', which is not an array

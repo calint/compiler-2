@@ -179,7 +179,7 @@ struct func_head {
 
         // e.g. 'func tokenizer.to<T type>()' or 'func text.to<T type>()'
         if (not head.open_paren_tk and tz.peek_char_after_whitespace() == '<') {
-            head.type_param_tks = read_type_params(tz);
+            head.type_param_tks = read_type_params(tc, tz);
             head.open_paren_tk = tz.is_next_char_token('(');
         }
 
@@ -283,7 +283,7 @@ struct func_head {
     }
 
     // e.g. '<T type, U type>', a generic function has type parameters only
-    [[nodiscard]] static auto read_type_params(tokenizer& tz)
+    [[nodiscard]] static auto read_type_params(const toc& tc, tokenizer& tz)
         -> std::vector<token> {
 
         std::vector<token> param_tks;
@@ -293,6 +293,11 @@ struct func_head {
             toc::assert_valid_name(param.name_tk);
 
             if (not param.is_type) {
+                // note: a name no parameter can have first, e.g. 'i8' of
+                //       'func f<i8>()'; an instance has only type parameters
+
+                tc.assert_valid_unqualified_name(param.name_tk);
+
                 throw compile_error{
                     param.name_tk,
                     std::format("generic parameter {} of a function must "
@@ -1454,9 +1459,36 @@ class stmt_def_func_generic final : public statement {
     // statics
     //
 
+    // a type parameter of a generic type names a type in the bodies of its
+    // methods, a parameter or a result of that name would name two things;
+    // 'what' names the kind of 'name_tk'
+    static auto assert_apart_from_receiver_types(const toc& tc,
+                                                 const func_head& head,
+                                                 const token& name_tk,
+                                                 const std::string_view what)
+        -> void {
+
+        const generic_type_info& receiver{
+            tc.generics().get_type(head.name_tk.text()),
+        };
+
+        for (const generic_param& param : receiver.params) {
+            if (param.is_type and param.name_tk.text() == name_tk.text()) {
+                throw compile_error{
+                    name_tk,
+                    std::format("{} {} is also the name of the generic "
+                                "parameter of {} at {}, use another name",
+                                what, in_quotes(name_tk.text()),
+                                in_quotes(head.name_tk.text()),
+                                tc.where(param.name_tk))};
+            }
+        }
+    }
+
     // the rules of a generic definition, checked once whether or not an
     // instance is made: the type parameters hide nothing and are named apart
-    // from the signature, a constructor has a receiver and no type parameters
+    // from the signature, so are those of the generic type of a method, a
+    // constructor has a receiver and no type parameters
     static auto assert_generic_signature(const toc& tc, const func_head& head,
                                          const generic_signature& signature)
         -> void {
@@ -1486,6 +1518,19 @@ class stmt_def_func_generic final : public statement {
             if (signature.result_name_tk) {
                 tc.assert_generic_param_apart(
                     param_tk, *signature.result_name_tk, "result");
+            }
+        }
+
+        // e.g. 'T' of 'func box.f(T)' of 'type box<T type>'
+        if (head.is_generic_type_method()) {
+            for (const generic_signature_param& param : signature.params) {
+                assert_apart_from_receiver_types(tc, head, param.name_tk,
+                                                 "parameter");
+            }
+
+            if (signature.result_name_tk) {
+                assert_apart_from_receiver_types(
+                    tc, head, *signature.result_name_tk, "result");
             }
         }
 

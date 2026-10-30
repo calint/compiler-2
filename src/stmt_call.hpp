@@ -74,7 +74,8 @@
 // each class lists them in the order they run
 //
 
-// a string is in read-only data that a parameter would refer to
+// a string is in read-only data that an array parameter would refer to, a
+// string for a number is rejected where the number is parsed
 inline auto assert_not_string_argument(tokenizer& tz) -> void {
     if (tz.peek_char_after_whitespace() != '"') {
         return;
@@ -236,7 +237,10 @@ struct generic_call {
 
         std::ignore = skip_to_argument(tz, index);
 
-        assert_not_string_argument(tz);
+        // an array parameter has no type name
+        if (params.at(index).type_name.empty()) {
+            assert_not_string_argument(tz);
+        }
 
         const char next{tz.peek_char_after_whitespace()};
 
@@ -1607,13 +1611,6 @@ class builtin_arguments final {
     }
 
   private:
-    // an array or an element, checked where it is read
-    auto add_array_argument(stmt_identifier array) -> void {
-        array.assert_array_or_element();
-
-        args_.push_back(path_argument(std::move(array)));
-    }
-
     // up to and including the ')', which follows the argument numbered
     // 'max_count' at the latest; a surplus argument is not parsed, e.g. the
     // 'zz' of 'exit(1, zz)'
@@ -1631,11 +1628,14 @@ class builtin_arguments final {
                 return;
             }
 
-            assert_not_string_argument(tz);
-
             if (std::ranges::contains(array_indexes, args_.size())) {
-                add_array_argument(
-                    stmt_identifier::parse_array_argument(tc, tz));
+                assert_not_string_argument(tz);
+
+                stmt_identifier array{
+                    stmt_identifier::parse_array_argument(tc, tz),
+                };
+
+                args_.push_back(path_argument(std::move(array)));
             } else {
                 args_.emplace_back(tc, tz, tc.builtins().default_type(),
                                    literal_typing::from_destination);
@@ -2303,7 +2303,6 @@ class stmt_call final : public statement {
                 arg_delims_tk_.emplace_back(delimiter_tk);
             }
 
-            assert_not_string_argument(tz);
             assert_array_argument_start(tc, tz, params.at(i));
 
             const bool is_deducing{
@@ -2598,6 +2597,8 @@ class stmt_call final : public statement {
         }
 
         tokenizer probe{tz};
+
+        assert_not_string_argument(probe);
 
         std::optional<token> literal_tk{probe.is_next_char_token('{')};
 

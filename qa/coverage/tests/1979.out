@@ -1,0 +1,4 @@
+
+1979.baz:10:10: expected type 'point' for parameter 'ps', got 'i8'
+    show(a)
+         ^

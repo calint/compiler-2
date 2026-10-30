@@ -1,0 +1,4 @@
+
+1990.baz:5:14: result 'T' is also the name of the generic parameter of 'box' at 4:10, use another name
+func box.f() T {
+             ^

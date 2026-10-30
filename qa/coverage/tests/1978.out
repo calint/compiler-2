@@ -1,0 +1,4 @@
+
+1978.baz:10:10: array 'a' must be indexed
+    show(a)
+         ^

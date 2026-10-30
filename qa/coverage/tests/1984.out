@@ -1,0 +1,4 @@
+
+1984.baz:2:10: expected a generic type after '='
+type p = )
+         ^

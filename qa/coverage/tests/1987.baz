@@ -1,0 +1,5 @@
+# a string where a built-in takes a number
+
+func main() {
+    exit("a")
+}

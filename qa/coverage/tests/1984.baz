@@ -1,0 +1,3 @@
+# a delimiter after the '=' of an alias is no generic type, the caret is at it
+type p = )
+func main() {}

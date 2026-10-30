@@ -1,0 +1,4 @@
+
+1977.baz:9:9: array 'a' must be indexed
+    p = a
+        ^

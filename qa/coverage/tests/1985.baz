@@ -1,0 +1,8 @@
+# an operator after the array of a 'foo'
+
+func main() {
+    var a = i8[4]
+    foo a + 1 {
+        e = 1
+    }
+}

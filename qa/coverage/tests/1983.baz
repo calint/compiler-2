@@ -1,0 +1,7 @@
+# a type followed by '(' where 'foo' takes an array is a type
+
+type point { x, y }
+
+func main() {
+    foo point(5) {}
+}

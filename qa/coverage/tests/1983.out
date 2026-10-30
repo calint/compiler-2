@@ -1,0 +1,4 @@
+
+1983.baz:6:9: 'point' is a type, not an array
+    foo point(5) {}
+        ^~~~~

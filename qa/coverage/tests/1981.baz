@@ -1,0 +1,14 @@
+# a method call assigned to an array is not an array, as where a built-in
+# takes one
+
+type point { x, y }
+
+func point.sum() res i8 {
+    res = 1
+}
+
+func main() {
+    var p = point
+    var a = i8[2]
+    a = p.sum()
+}

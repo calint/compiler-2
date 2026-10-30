@@ -1,0 +1,4 @@
+
+1982.baz:11:26: 'point' is a type, not an array
+    var n = array_length(point.at(1, 2))
+                         ^~~~~
