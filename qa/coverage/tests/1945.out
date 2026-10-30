@@ -1,4 +1,4 @@
 
-1945.baz:10:28: a call of 'p.m' is not an array
+1945.baz:10:28: a call of 'point.m' is not an array
     var n = array_length(p.m())
                            ^

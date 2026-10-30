@@ -1,6 +1,23 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] hard: design review series 2, round 45 (2026-10-30, user: continue
+    the rounds until no more findings; 7 reviewers A-G, the groups rotated
+    again)
+    => done (2026-10-30): bugs: G2 an unclosed bracket in a skipped generic
+       body is reported at the '}' that does not close it, the skip keeps
+       its expected closers ('skip_to_unnested'; reopens 1795, 2032); G1 a
+       stray closer after a space in a skipped body is quoted as itself, not
+       as the space (2031); messages: B1 a function without a body before a
+       type definition is "expected '{' to begin block", not "'type' is a
+       keyword" (2027); F1 an operator after a typed literal whose type the
+       destination gives is reported as the operator error, not "write
+       '{...}'" ('throw_known_literal_type', 2028-2030); A1 a method call
+       where an array is expected is named like its callee, 'point.m'
+       ('is_call_next' inlined; reopens round 36 A1, 1945 2009, 2026);
+       listing: C1 the count of 'array_copy' and 'arrays_equal' is commented
+       once (listings of the run-time path lose one comment line, images
+       equal); two reviewers found nothing
 [x] hard: design review series 2, round 44 (2026-10-30, user: continue
     the rounds until no more findings; 7 reviewers A-G, the groups rotated
     again)

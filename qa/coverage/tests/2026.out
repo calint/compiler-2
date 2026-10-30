@@ -1,0 +1,4 @@
+
+2026.baz:11:11: a call of 'point.m' is not an array
+    foo p.m<i8>(1) {
+          ^

@@ -1,0 +1,10 @@
+# the body of a generic type is skipped to its closing '}' without being
+# parsed; a closer that does not close the last open bracket ends the skip
+# and is reported where it is, as in a body that is parsed
+
+type l<n> {
+    x i8[n
+}
+
+func main() {
+}

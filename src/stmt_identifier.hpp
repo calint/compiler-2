@@ -588,18 +588,24 @@ class stmt_identifier final : public statement {
             return;
         }
 
-        const std::string method_path{
-            std::format("{}.{}", dotted_path_, method_->name_tk.text()),
-        };
-
         const std::string method_name{
             method_name_of(resolve_path(tc).type_ref().name(),
                            method_->name_tk.text()),
         };
 
-        if (is_call_next(tc, tz, method_name)) {
-            throw_call_not_array(method_->name_tk, method_path);
+        const char next{tz.peek_char_after_whitespace()};
+
+        // a call is named like its callee in the other call messages, e.g.
+        // 'point.m' of 'p.m()'
+        if (next == '(' or
+            (next == '<' and tc.generics().has_func(method_name))) {
+
+            throw_call_not_array(method_->name_tk, method_name);
         }
+
+        const std::string method_path{
+            std::format("{}.{}", dotted_path_, method_->name_tk.text()),
+        };
 
         throw compile_error{method_->name_tk,
                             std::format("{} is a method, not an array",
@@ -1132,17 +1138,6 @@ class stmt_identifier final : public statement {
         toc& tc, const size_t indent, const expr_any& index_expr,
         const operand& index_register, const array_shape& shape,
         const std::optional<size_t>& range_count) -> int64_t;
-
-    // a '(' or the type arguments of the generic function 'func_name' follow
-    [[nodiscard]] static auto is_call_next(const toc& tc, const tokenizer& tz,
-                                           const std::string_view func_name)
-        -> bool {
-
-        const char next{tz.peek_char_after_whitespace()};
-
-        return next == '(' or
-               (next == '<' and tc.generics().has_func(func_name));
-    }
 
     // 'name_tk' after the path so far names a method of the path's type
     [[nodiscard]] static auto is_method_name(const toc& tc, const tokenizer& tz,

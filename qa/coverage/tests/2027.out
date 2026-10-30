@@ -1,0 +1,4 @@
+
+2027.baz:6:1: expected '{' to begin block
+type point {x, y}
+^

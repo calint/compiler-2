@@ -81,7 +81,7 @@ inline expr_type::expr_type(toc& tc, tokenizer& tz, const type& tp,
 
     // e.g. 'point{1, 2}' for a field of type 'point' is '{1, 2}'
     if (is_typed_literal and typing == literal_typing::from_destination) {
-        throw_known_type(tok(), tp.name(), is_bare ? "{}" : "{...}");
+        throw_known_literal_type(tz, tok(), value_kind(), tp, tp.name());
     }
 
     // e.g. 'var p = point', no fields are listed
@@ -158,6 +158,23 @@ inline auto expr_type::assert_value_ends(const tokenizer& tz,
 
     throw compile_error{value_tk, std::format("{} of {} is not a number", kind,
                                               in_quotes(tp.name()))};
+}
+
+inline auto
+expr_type::throw_known_literal_type(const tokenizer& tz, const token& type_tk,
+                                    const std::string_view kind, const type& tp,
+                                    const std::string_view type_name) -> void {
+
+    tokenizer after_literal{tz};
+
+    const bool has_values{after_literal.peek_char_after_whitespace() == '{'};
+
+    // note: a literal that does not end is reported by its type
+    if (not has_values or after_literal.skip_braced_block()) {
+        assert_value_ends(after_literal, type_tk, kind, tp);
+    }
+
+    throw_known_type(type_tk, type_name, has_values ? "{...}" : "{}");
 }
 
 // the fields of 'tp' in braces, e.g. '{x, y}' of 'obj.pos = {x, y}'

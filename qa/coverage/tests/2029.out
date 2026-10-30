@@ -1,0 +1,4 @@
+
+2029.baz:4:9: an array of 'i8' is not a number
+    a = i8[2]{3, 4} + 1
+        ^~

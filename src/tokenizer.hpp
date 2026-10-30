@@ -129,17 +129,20 @@ class tokenizer final {
     }
 
     // 'next_token' made no text: the source ended or a delimiter is next, which
-    // no statement or definition starts with
+    // no statement or definition starts with; a skip stops before the
+    // whitespace of the closer that ends it, e.g. the ')' of '{ f() ) }'
     auto assert_not_at_delimiter() const -> void {
-        if (is_eos()) {
+        const size_t delimiter_ix{next_token_position().start_index()};
+
+        if (delimiter_ix == src_.size()) {
             return;
         }
 
         // e.g. the '==' of 'exit(0) == 1', an operator is quoted whole
-        const std::string_view op{operator_at_cursor()};
+        const std::string_view op{peek_operator()};
 
         const std::string_view delimiter{
-            op.empty() ? std::string_view{&src_.at(char_ix_), 1} : op,
+            op.empty() ? src_.substr(delimiter_ix, 1) : op,
         };
 
         throw compile_error{*this,
@@ -313,11 +316,12 @@ class tokenizer final {
 
     // skips an argument of a call, up to the ',' or ')' that ends it
     // e.g. 'a + f(b, c), d)' stops at the ',' before 'd'
-    auto skip_argument() -> void { skip_to_unnested(",)"); }
+    auto skip_argument() -> void { std::ignore = skip_to_unnested(",)"); }
 
     // skips the braced block that starts at the next '{', strings and
     // character literals may contain brackets; false when no '}' closes it
-    // e.g. '{ a = { 1 } b = 2 }', a closer without an opener ends it early
+    // e.g. '{ a = { 1 } b = 2 }', a closer that does not close the last open
+    // bracket ends it early
     [[nodiscard]] auto skip_braced_block() -> bool {
         return skip_enclosed('{', '}');
     }
@@ -343,15 +347,19 @@ class tokenizer final {
         // note: every caller has seen the 'open'
         std::ignore = seen_char_token(open);
 
-        skip_to_unnested(std::string_view{&close, 1});
+        if (not skip_to_unnested(std::string_view{&close, 1})) {
+            return false;
+        }
 
-        return is_next_char_token(close).has_value();
+        std::ignore = seen_char_token(close);
+
+        return true;
     }
 
     // skips up to and including the ')' that closes a '(' that is already read
     // e.g. 'b, f(c)) + d', the ')' before ' + d'
     auto skip_to_close_paren() -> void {
-        skip_to_unnested(")");
+        std::ignore = skip_to_unnested(")");
 
         if (not is_eos()) {
             skip_token();
@@ -602,30 +610,41 @@ class tokenizer final {
     }
 
     // skips tokens up to a character of 'stops' that is outside of brackets
-    // opened by the skipped tokens, the character is not read
-    auto skip_to_unnested(const std::string_view stops) -> void {
-        size_t depth{};
+    // opened by the skipped tokens, the character is not read; false when
+    // the source ends or a closer that does not close the last open bracket
+    // ends the skip, e.g. the '}' of 'a[1 }'
+    [[nodiscard]] auto skip_to_unnested(const std::string_view stops) -> bool {
+        constexpr std::string_view openers{"([{"};
+        constexpr std::string_view closers{")]}"};
+
+        // the closers of the open brackets, the innermost last
+        std::string expected_closers;
 
         while (not is_eos()) {
             const char next{peek_char_after_whitespace()};
 
-            if (depth == 0 and stops.contains(next)) {
-                return;
+            if (expected_closers.empty() and stops.contains(next)) {
+                return true;
             }
 
-            if (next == '(' or next == '[' or next == '{') {
-                ++depth;
-            } else if (next == ')' or next == ']' or next == '}') {
-                // a closer without an opener ends the skip
-                if (depth == 0) {
-                    return;
+            const size_t opener_ix{openers.find(next)};
+
+            if (opener_ix != std::string_view::npos) {
+                expected_closers.push_back(closers.at(opener_ix));
+            } else if (closers.contains(next)) {
+                if (expected_closers.empty() or
+                    expected_closers.back() != next) {
+
+                    return false;
                 }
 
-                --depth;
+                expected_closers.pop_back();
             }
 
             skip_token();
         }
+
+        return false;
     }
 
     // skips a token, or the character of a delimiter, which has an empty token

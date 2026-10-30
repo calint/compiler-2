@@ -1,0 +1,4 @@
+
+2031.baz:6:15: unexpected ')'
+    res = f() )
+              ^

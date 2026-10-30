@@ -5729,8 +5729,8 @@ SRC=1793 && COMPERR
 # opener ends the skip early
 SRC=1794 && COMPERR
 
-# the body of a generic type is skipped to its '}': an open '[' takes the '}'
-# with it, the block reaches the end of the file
+# the body of a generic type is skipped to its '}': a closer that does not
+# close the last open bracket ends the skip
 SRC=1795 && COMPERR
 
 # the operand of a bulk operation that is not an array is quoted as written
@@ -6430,3 +6430,24 @@ SRC=2024 && EXP=0 && RUN
 
 # the caret after stray utf-8 continuation bytes
 SRC=2025 && COMPERR
+
+# a call of a generic method where an array is expected
+SRC=2026 && COMPERR
+
+# a function without a body before a type definition
+SRC=2027 && COMPERR
+
+# an operator after an instance literal whose type the destination gives
+SRC=2028 && COMPERR
+
+# an operator after an array literal whose type the destination gives
+SRC=2029 && COMPERR
+
+# a type alone compared where the destination gives the type
+SRC=2030 && COMPERR
+
+# a stray closer after a space in a skipped generic body
+SRC=2031 && COMPERR
+
+# an unclosed bracket in a skipped generic body
+SRC=2032 && COMPERR

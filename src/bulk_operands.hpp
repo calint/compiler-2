@@ -74,20 +74,17 @@ class bulk_operands final {
 
         // compiles the count into the register the machine asks for, then
         // checks the ranges and frees the start registers
+        // note: the compile of the count comments its source, as the
+        //       arguments of 'read' and 'exit' do
         [[nodiscard]] auto count() -> std::function<void(const operand&)> {
             return [this](const operand& count_register) -> void {
-                machine& x{tc_.machine()};
-
-                const expr_any& count_expr{operands_.count()};
-
-                x.comment(count_expr.tok(), indent_,
-                          statement::trimmed_source(count_expr));
-
-                count_expr.compile(tc_, indent_,
-                                   destination::of_register(count_register));
+                operands_.count().compile(
+                    tc_, indent_, destination::of_register(count_register));
 
                 check_range(operands_.first(), starts_.at(0), count_register);
                 check_range(operands_.second(), starts_.at(1), count_register);
+
+                machine& x{tc_.machine()};
 
                 for (const std::optional<operand>& start :
                      std::views::reverse(starts_)) {

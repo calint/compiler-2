@@ -1,0 +1,10 @@
+# a closer without an opener after a closer and a space in the body of a
+# generic function that no instance parses is quoted as the closer, not as
+# the space before it
+
+func g<T type>(a T) res T {
+    res = f() )
+}
+
+func main() {
+}

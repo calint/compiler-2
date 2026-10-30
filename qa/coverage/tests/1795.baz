@@ -1,5 +1,5 @@
 # the body of a generic type is skipped to its closing '}' without being
-# parsed; a bracket that is not closed takes the '}' with it
+# parsed; a closer that does not close the last open bracket ends the skip
 
 type l<n> {
     x i8[n

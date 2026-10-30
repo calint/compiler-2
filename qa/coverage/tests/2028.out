@@ -1,0 +1,4 @@
+
+2028.baz:6:9: an instance of 'point' is not a number
+    p = point{3, 4} + 1
+        ^~~~~

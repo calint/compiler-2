@@ -372,8 +372,13 @@ struct func_result {
                 tz.peek_char_after_whitespace() == '{',
         };
 
+        // a keyword is read as a result name only before a '{' or a known
+        // type, e.g. the 'true' of 'func f() true int {'; before another name
+        // it starts what follows a function that lacks its body, e.g. the
+        // 'type' of 'type p {x}'
         const bool has_type{
-            tc.types().has(type_tk.text()) or is_type_before_body,
+            tc.types().has(type_tk.text()) or
+                (is_type_before_body and not is_keyword),
         };
 
         if (has_type) {

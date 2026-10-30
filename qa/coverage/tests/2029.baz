@@ -1,0 +1,5 @@
+# an operator after an array literal whose type the destination gives
+func main() {
+    var a = i8[2]{1, 2}
+    a = i8[2]{3, 4} + 1
+}

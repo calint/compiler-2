@@ -1,0 +1,7 @@
+# a type alone compared where the destination gives the type
+type point {x i32, y i32}
+
+func main() {
+    var p = point{1, 2}
+    p = point == p
+}

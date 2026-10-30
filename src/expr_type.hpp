@@ -373,6 +373,14 @@ class expr_type final : public statement {
                                   std::string_view kind, const type& tp)
         -> void;
 
+    // a literal that names the type its destination gives, at 'type_tk'
+    // with 'tz' after the type; an operator after the literal is reported
+    // instead, as after '{...}', e.g. the '+' of 'p = point{1, 2} + 1'
+    [[noreturn]] static auto
+    throw_known_literal_type(const tokenizer& tz, const token& type_tk,
+                             std::string_view kind, const type& tp,
+                             std::string_view type_name) -> void;
+
   private:
     auto assert_call_type() const -> void;
 

@@ -590,10 +590,9 @@ class expr_any final : public statement {
         // e.g. 'i8[]{1, 2}' for an 'i8' array field is '{1, 2}' and 'i8[4]'
         // is '{}'
         if (typing == literal_typing::from_destination) {
-            throw_known_type(is_typed ? tk : open_bracket_tk,
-                             std::format("{}[]", literal_type.name()),
-                             tz.peek_char_after_whitespace() == '{' ? "{...}"
-                                                                    : "{}");
+            expr_type::throw_known_literal_type(
+                tz, is_typed ? tk : open_bracket_tk, "an array", tp,
+                std::format("{}[]", literal_type.name()));
         }
 
         if (not prefix.size.has_value()) {

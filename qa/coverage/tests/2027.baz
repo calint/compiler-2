@@ -1,0 +1,9 @@
+# a function that lacks its body before a type definition is reported at the
+# 'type', as before any other definition
+
+func f()
+
+type point {x, y}
+
+func main() {
+}

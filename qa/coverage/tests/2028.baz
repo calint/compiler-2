@@ -1,0 +1,7 @@
+# an operator after an instance literal whose type the destination gives
+type point {x i32, y i32}
+
+func main() {
+    var p = point{1, 2}
+    p = point{3, 4} + 1
+}
