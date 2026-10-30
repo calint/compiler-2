@@ -1,6 +1,14 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] hard: bug hunt series 2, round 22 (2026-10-30, user: bug hunts in a
+    loop until a round finds none, then one more; 3 hunters: M1 'bool' as a
+    value and comparisons, M2 the bare-metal targets as whole programs, M3
+    features crossed in generated programs of 200 to 320 lines)
+    => done (2026-10-30): nothing found, the first clean round of the loop
+       (M1 about 3900 programs, M2 the suite on 4 targets in 5 variants
+       with an instrumented fpga emulator, M3 about 4800 programs in 30
+       builds each, all against Python models)
 [x] hard: bug hunt series 2, round 21 (2026-10-30, user: bug hunts in a
     loop until a round finds none, then one more; 3 hunters: L1 methods and
     records, L2 compile time that grows with nesting, L3 globals, 'let',
