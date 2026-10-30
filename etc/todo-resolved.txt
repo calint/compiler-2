@@ -1,6 +1,18 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] hard: bug hunt series 2, round 26 (2026-10-30, user: bug hunts in a
+    loop until a round finds none, then one more; the one more after round
+    25; 3 hunters: Q1 roome and the tutorial as mutation sources, Q2 the
+    jump optimizer and the rv32i jump growth, Q3 a generator and an
+    interpreter written from the README alone)
+    => done (2026-10-30): nothing found, the loop ends (Q1 inline and
+       noinline flips and about 70 rewrites in 21 configurations, Q2 the
+       4 KiB and 1 MiB boundaries and about 700 control-flow programs with
+       the rv32i images against llvm-mc, Q3 18701 programs in about 160000
+       runs); note Q3: a name passed alone must have the parameter's type
+       while a call or an expression widens, stated in README 1.3, not in
+       the tutorial
 [x] hard: bug hunt series 2, round 25 (2026-10-30, user: bug hunts in a
     loop until a round finds none, then one more; 3 hunters: P1 each
     run-time check alone and in subsets, P2 values that are constants only
