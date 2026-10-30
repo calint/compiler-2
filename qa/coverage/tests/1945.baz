@@ -1,0 +1,12 @@
+# a method call where an array is expected is a call, not a method
+type point { x, y }
+
+func point.m() res {
+    res = self.x
+}
+
+func main() {
+    var p = point
+    var n = array_length(p.m())
+    exit(n)
+}

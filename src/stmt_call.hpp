@@ -1379,10 +1379,8 @@ class noinline_call final {
         machine& x{tc.machine()};
 
         if (tc.checks().frame) {
-            x.check_frame_capacity(
-                call_.tk, indent, frame_address,
-                operand::symbol(call_.func->frame_size_label(array_lengths),
-                                tc.builtins().address()));
+            x.check_frame_capacity(call_.tk, indent, frame_address,
+                                   call_.func->frame_size_label(array_lengths));
         }
 
         // the registers holding the addresses of the arguments are still

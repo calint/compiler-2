@@ -1079,6 +1079,20 @@ class expr_any final : public statement {
                 std::make_unique<expr_zero>(tc.get_type_or_throw(tk), tk));
         }
 
+        // e.g. 'x = point' or 'x = point{1, 2}' for an 'i8' 'x', as 'x = p' of
+        // a 'point' 'p'; a condition may compare an instance literal
+        const term_kind tm{classify_term(tc, tk, tz)};
+
+        const bool is_bare_record{
+            tm == term_kind::record_type and not continues_expression(tz),
+        };
+
+        if (is_bare_record or
+            (tm == term_kind::record_literal and not tp.is_bool())) {
+
+            throw_type_mismatch(tk, tp.name(), tc.get_type_or_throw(tk).name());
+        }
+
         tz.put_back_token(tk);
 
         // a generic call takes the type of a known destination for its

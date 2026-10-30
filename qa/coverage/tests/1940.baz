@@ -1,0 +1,11 @@
+# a type parameter named before an instance names the type it is bound to
+type point {x i32, y i32}
+type seg {a point, b i8}
+
+func f<U type>() res point {
+    res = U{}
+}
+
+func main() {
+    var p = f<seg>()
+}

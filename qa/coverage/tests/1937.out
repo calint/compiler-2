@@ -1,0 +1,4 @@
+
+1937.baz:2:19: parameter 'a' already defined at 2:16
+func f<T type>(a, a) { }
+                  ^

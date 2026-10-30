@@ -1,0 +1,5 @@
+# a parameter declared twice in a method of a generic type without an
+# instance
+type box<n> { x }
+func box.f(a, a) { }
+func main() { }

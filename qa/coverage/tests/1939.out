@@ -1,0 +1,4 @@
+
+1939.baz:4:15: parameter 'a' already defined at 4:12
+func box.f(a, a) { }
+              ^

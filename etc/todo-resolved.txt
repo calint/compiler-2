@@ -1,6 +1,25 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] hard: design review series 2, round 35 (2026-10-30, user: keep doing
+    rounds until no more findings; 7 reviewers A-G, the groups rotated
+    again)
+    => done (2026-10-30): bugs: E1 a parameter declared twice and a result
+       named like a parameter are rejected in a generic definition without
+       an instance, checked in the parameter list both paths share (1937
+       1938 1939; 0847 renamed its result to keep testing the missing body;
+       item 4.5 invariant); messages: C1 a typed instance literal of a type
+       parameter names the bound type (1940); C2 a bare type or an instance
+       literal of the other kind is a type mismatch, "expected an array" for
+       an array ('bool' keeps "store it in a variable first" for a compared
+       literal, 1941-1944); A1 a method call where an array is expected is
+       "a call of 'p.m' is not an array" like a function call (1945); G1 a
+       conversion with a missing argument is reported at its name like a
+       built-in ('tokenizer::assert_no_missing_argument' gone, 1685); code:
+       B1 the operand kind 'symbol' gone, 'check_frame_capacity' takes the
+       label (reopens item 9 of 2026-10-19: no instruction takes it since
+       round 11); F1 one 'is_equality' in 'operand.hpp'; one reviewer found
+       nothing
 [x] hard: design review series 2, round 34 (2026-10-30, user: continue
     design review rounds and fix the recommended until there are no more
     issues; 7 reviewers A-G, the groups rotated again)

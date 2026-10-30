@@ -78,18 +78,6 @@ class tokenizer final {
         assert(char_ix_ <= src_.size());
     }
 
-    // the argument of a conversion: a ')' where an argument starts is a
-    // missing one, e.g. 'int()'
-    auto assert_no_missing_argument(const std::string_view name,
-                                    const size_t count) const -> void {
-
-        if (peek_char_after_whitespace() != ')') {
-            return;
-        }
-
-        throw compile_error{*this, argument_count_text(name, count, count)};
-    }
-
     // a ',' where the last of 'count' arguments ends is a surplus one, e.g.
     // 'i8(1, 2)', or a trailing ','; without parameters anything but a
     // closer or the end is, e.g. 'f(1)' of 'func f()'; a missing ')' is the

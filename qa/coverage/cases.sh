@@ -6161,3 +6161,31 @@ SRC=1935 && COMPERR
 
 # an empty string assigned to an unsized array parameter
 SRC=1936 && EXP=7 && RUN
+
+# a parameter declared twice in a generic function without an instance
+SRC=1937 && COMPERR
+
+# a result named like a parameter in a generic function without an instance
+SRC=1938 && COMPERR
+
+# a parameter declared twice in a method of a generic type without an
+# instance
+SRC=1939 && COMPERR
+
+# a typed instance literal of a type parameter names the bound type
+SRC=1940 && COMPERR
+
+# a user type alone for a number
+SRC=1941 && COMPERR
+
+# an instance literal for a number
+SRC=1942 && COMPERR
+
+# a built-in type alone for an instance
+SRC=1943 && COMPERR
+
+# a built-in type alone for an array
+SRC=1944 && COMPERR
+
+# a method call where an array is expected
+SRC=1945 && COMPERR

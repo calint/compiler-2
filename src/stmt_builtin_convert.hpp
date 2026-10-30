@@ -391,7 +391,11 @@ class stmt_builtin_convert final : public statement {
 
         const token open_paren_tk{tz.seen_char_token('(')};
 
-        tz.assert_no_missing_argument(type_tk.text(), 1);
+        // e.g. 'int()', at the name like a built-in with too few arguments
+        if (tz.peek_char_after_whitespace() == ')') {
+            throw compile_error{type_tk,
+                                argument_count_text(type_tk.text(), 1, 1)};
+        }
 
         expr_arith arg{tc, tz};
 

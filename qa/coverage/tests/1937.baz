@@ -1,0 +1,3 @@
+# a parameter declared twice in a generic function without an instance
+func f<T type>(a, a) { }
+func main() { }

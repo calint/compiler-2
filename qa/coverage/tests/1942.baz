@@ -1,0 +1,7 @@
+# an instance literal for a number is a value of another type
+type point {x i32, y i32}
+
+func main() {
+    var x = i8
+    x = point{1, 2}
+}

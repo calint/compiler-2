@@ -128,6 +128,23 @@ class stmt_def_func_param final : public statement {
         std::vector<token> delimiter_tks;
         token close_paren_tk;
 
+        // reported at the result, also in a generic definition that no
+        // instance parses, e.g. the second 'a' of 'func f<T type>(a T) a'
+        auto
+        assert_result_not_named_like_param(const token& result_name_tk) const
+            -> void {
+
+            if (find(result_name_tk) == nullptr) {
+                return;
+            }
+
+            throw compile_error{
+                result_name_tk,
+                std::format("result {} is named like a parameter",
+                            in_quotes(result_name_tk.text())),
+            };
+        }
+
         //
         // statics
         //
@@ -146,7 +163,20 @@ class stmt_def_func_param final : public statement {
                         read_delimiter(tz, list.params.back()));
                 }
 
-                list.params.push_back(syntax::read(tc, tz));
+                const syntax param{syntax::read(tc, tz)};
+
+                // where it is read, also in a generic definition that no
+                // instance parses, e.g. the second 'a' of 'func f<T type>(a,
+                // a T)'
+                if (const syntax* const existing{list.find(param.name_tk)}) {
+                    throw compile_error{
+                        param.name_tk,
+                        std::format("parameter {} already defined at {}",
+                                    in_quotes(param.name_tk.text()),
+                                    tc.where(existing->name_tk))};
+                }
+
+                list.params.push_back(param);
 
                 close_paren_tk = tz.is_next_char_token(')');
             }
@@ -157,6 +187,17 @@ class stmt_def_func_param final : public statement {
         }
 
       private:
+        // the parameter named like 'name_tk', null when none is
+        [[nodiscard]] auto find(const token& name_tk) const -> const syntax* {
+            for (const syntax& param : params) {
+                if (param.name_tk.text() == name_tk.text()) {
+                    return &param;
+                }
+            }
+
+            return nullptr;
+        }
+
         //
         // statics
         //

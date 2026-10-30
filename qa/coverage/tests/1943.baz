@@ -1,0 +1,7 @@
+# a built-in type alone for an instance is a value of another type
+type point {x i32, y i32}
+
+func main() {
+    var p = point
+    p = i8
+}

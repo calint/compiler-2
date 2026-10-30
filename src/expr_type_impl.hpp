@@ -58,9 +58,23 @@ inline expr_type::expr_type(toc& tc, tokenizer& tz, const type& tp,
                                in_quotes(tok().text()))};
     }
 
+    // e.g. 'p = i8' is the zero value of 'i8', as 'p = x' of an 'i8' 'x'
+    if (is_bare_builtin_type(tc, tok(), tz)) {
+        if (is_array_destination_) {
+            throw compile_error{tok(), "expected an array"};
+        }
+
+        throw_type_mismatch(tok(), tp.name(),
+                            tc.get_type_or_throw(tok()).name());
+    }
+
     // note: compared by type, a type parameter names the type of its argument
-    if (is_typed_literal and not tc.get_type_or_throw(tok()).is_same(tp)) {
-        throw_type_mismatch(tok(), tp.name(), tok().text());
+    if (is_typed_literal) {
+        const type& named_type{tc.get_type_or_throw(tok())};
+
+        if (not named_type.is_same(tp)) {
+            throw_type_mismatch(tok(), tp.name(), named_type.name());
+        }
     }
 
     // e.g. 'point{1, 2}' for a field of type 'point' is '{1, 2}'
@@ -129,9 +143,7 @@ inline auto expr_type::assert_value_ends(const tokenizer& tz,
     };
 
     // note: instances and arrays compare only by '==' and '!='
-    if (op == comparison_operator::equal or
-        op == comparison_operator::not_equal) {
-
+    if (op and is_equality(*op)) {
         expr_arith::assert_no_condition_next(tz);
     }
 

@@ -1,0 +1,3 @@
+# a result named like a parameter in a generic function without an instance
+func f<T type>(a T) a { }
+func main() { }

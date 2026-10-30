@@ -808,24 +808,6 @@ class stmt_def_func final : public statement {
         }
     }
 
-    // the result is declared before the parameters, slot 0 is the result,
-    // so the duplicate is found here at the result
-    auto assert_result_not_named_like_param() const -> void {
-        if (not result_) {
-            return;
-        }
-
-        for (const stmt_def_func_param& param : params_) {
-            if (param.name() == result_->name_tk.text()) {
-                throw compile_error{
-                    result_->name_tk,
-                    std::format("result {} is named like a parameter",
-                                in_quotes(result_->name_tk.text())),
-                };
-            }
-        }
-    }
-
     // every statement is reached and every path through the body sets the
     // result, also the end, which returns like a 'return' statement
     // note: without a result the type is 'void', of no bytes, which every
@@ -967,16 +949,14 @@ class stmt_def_func final : public statement {
     }
 
     // e.g. 'a i32, b i32' up to the closing parenthesis
-    auto parse_params(toc& tc, tokenizer& tz) -> void {
-        stmt_def_func_param::syntax_list list{
-            stmt_def_func_param::syntax_list::read(tc, tz),
-        };
+    auto parse_params(toc& tc, const stmt_def_func_param::syntax_list& list)
+        -> void {
 
         for (const stmt_def_func_param::syntax& param : list.params) {
             params_.emplace_back(tc, param);
         }
 
-        param_delims_tk_ = std::move(list.delimiter_tks);
+        param_delims_tk_ = list.delimiter_tks;
         close_paren_tk_ = list.close_paren_tk;
     }
 
@@ -1001,11 +981,17 @@ class stmt_def_func final : public statement {
 
     // '(parameters) [result]', then the calls after it know the function
     auto parse_signature(toc& tc, tokenizer& tz) -> void {
-        parse_params(tc, tz);
+        const stmt_def_func_param::syntax_list list{
+            stmt_def_func_param::syntax_list::read(tc, tz),
+        };
+
+        parse_params(tc, list);
 
         parse_result(tc, tz);
 
-        assert_result_not_named_like_param();
+        if (result_) {
+            list.assert_result_not_named_like_param(result_->name_tk);
+        }
 
         head_.assert_mut_has_receiver(is_constructor());
 
@@ -1550,6 +1536,8 @@ class stmt_def_func_generic final : public statement {
         if (const std::optional<func_result> result{
                 func_result::read(tc, tz),
             }) {
+
+            list.assert_result_not_named_like_param(result->name_tk);
 
             signature.result_name_tk = result->name_tk;
             signature.result_type_tk = result->type_tk;

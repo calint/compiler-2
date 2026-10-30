@@ -1,0 +1,7 @@
+
+1940.baz:6:11: expected type 'point', got 'seg'
+    res = U{}
+          ^
+1940.baz:10:13: instantiated by 'f<seg>'
+    var p = f<seg>()
+            ^

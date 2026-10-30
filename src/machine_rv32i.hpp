@@ -854,12 +854,11 @@ class machine_rv32i : public machine {
 
     auto check_frame_capacity(const token& src_loc_tk, const size_t indent,
                               const operand& frame_address,
-                              const operand& frame_size_bytes)
+                              const std::string_view frame_size_label)
         -> void override {
 
         assert(frame_address.is_memory());
         assert(frame_address.index_register().empty());
-        assert(frame_size_bytes.is_symbol());
 
         constexpr local_label fits{
             .name{"1"},
@@ -887,7 +886,7 @@ class machine_rv32i : public machine {
         // note: a frame fits in '--vars' when compiled, so the end of 'vars'
         //       less the frame size does not wrap
         assembler_.la(indent, last_start.register_name(), variables_end_label_,
-                      frame_size_bytes.symbol());
+                      frame_size_label);
 
         assembler_.bgeu(indent, last_start.register_name(),
                         start.register_name(), fits.reference);
@@ -2629,9 +2628,7 @@ class machine_rv32i : public machine {
                              const std::optional<int64_t> immediate,
                              const bool inverted) -> void {
 
-        if (operation == comparison_operator::equal or
-            operation == comparison_operator::not_equal) {
-
+        if (is_equality(operation)) {
             emit_equality_result(
                 indent, result, left, right, immediate,
                 inverted != (operation == comparison_operator::not_equal));
@@ -2827,9 +2824,7 @@ class machine_rv32i : public machine {
         const bool inverted{action.inverted != not action.branch_on_true};
 
         // equality and inequality share one branch pair
-        if (operation == comparison_operator::equal or
-            operation == comparison_operator::not_equal) {
-
+        if (is_equality(operation)) {
             const bool branch_on_unequal{
                 inverted != (operation == comparison_operator::not_equal),
             };

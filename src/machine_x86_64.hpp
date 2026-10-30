@@ -313,14 +313,13 @@ class machine_x86_64 final : public machine {
 
     auto check_frame_capacity(const token& src_loc_tk, const size_t indent,
                               const operand& frame_address,
-                              const operand& frame_size_bytes)
+                              const std::string_view frame_size_label)
         -> void override {
 
         assert(frame_address.is_memory());
         assert(frame_address.index_register().empty());
         // note: the frame follows the storage in use from the base
         assert(frame_address.displacement() >= 0);
-        assert(frame_size_bytes.is_symbol());
 
         comment(src_loc_tk, indent, "frame capacity check begin");
 
@@ -338,9 +337,9 @@ class machine_x86_64 final : public machine {
         // the 2 GiB of 'rip' relative ones
         assembler_.instruction(
             indent, op::mov, to_argument(last_base),
-            assembler_x86_64::immediate::of_qword_expression(std::format(
-                "{} - {} - {}", variables_end_label_, frame_size_bytes.symbol(),
-                frame_address.displacement())));
+            assembler_x86_64::immediate::of_qword_expression(
+                std::format("{} - {} - {}", variables_end_label_,
+                            frame_size_label, frame_address.displacement())));
 
         // note: signed, the highest base is negative when the frame size and
         //       the displacement pass the address of 'vars.end'; addresses and
@@ -2199,10 +2198,6 @@ class machine_x86_64 final : public machine {
 
         if (value.is_immediate()) {
             return assembler_x86_64::immediate{value.immediate()};
-        }
-
-        if (value.is_symbol()) {
-            return assembler_x86_64::immediate::of_expression(value.symbol());
         }
 
         if (value.is_register()) {

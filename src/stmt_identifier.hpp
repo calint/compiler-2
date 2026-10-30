@@ -889,10 +889,7 @@ class stmt_identifier final : public statement {
             tm == term_kind::builtin_function or
             tm == term_kind::constructor_call) {
 
-            throw compile_error{
-                tk, std::format("a call of {} is not an array, store its "
-                                "result in a variable first",
-                                in_quotes(tk.text()))};
+            throw_call_not_array(tk, tk.text());
         }
 
         if (tm == term_kind::function_name) {
@@ -906,7 +903,7 @@ class stmt_identifier final : public statement {
 
         stmt_identifier array{tc, tk, tz, path_reach::to_end};
 
-        array.assert_not_method();
+        array.assert_not_method(tc, tz);
 
         return array;
     }
@@ -969,18 +966,29 @@ class stmt_identifier final : public statement {
         }
     }
 
-    // where only an array is expected, the path does not end at a method,
-    // e.g. 'array_length(a.m)'
-    auto assert_not_method() const -> void {
+    // where only an array is expected, the path does not end at a method or
+    // its call, e.g. 'array_length(a.m)' or 'foo a.m() {}'
+    auto assert_not_method(const toc& tc, const tokenizer& tz) const -> void {
         if (not method_) {
             return;
         }
 
-        throw compile_error{
-            method_->name_tk,
-            std::format("{} is a method, not an array",
-                        in_quotes(std::format("{}.{}", dotted_path_,
-                                              method_->name_tk.text())))};
+        const std::string method_path{
+            std::format("{}.{}", dotted_path_, method_->name_tk.text()),
+        };
+
+        const std::string method_name{
+            method_name_of(resolve_path(tc).type_ref().name(),
+                           method_->name_tk.text()),
+        };
+
+        if (is_call_next(tc, tz, method_name)) {
+            throw_call_not_array(method_->name_tk, method_path);
+        }
+
+        throw compile_error{method_->name_tk,
+                            std::format("{} is a method, not an array",
+                                        in_quotes(method_path))};
     }
 
     // walks the elements from the root: the root resolved, then each field
@@ -1093,6 +1101,17 @@ class stmt_identifier final : public statement {
         const operand& index_register, const array_shape& shape,
         const std::optional<size_t>& range_count) -> int64_t;
 
+    // a '(' or the type arguments of the generic function 'func_name' follow
+    [[nodiscard]] static auto is_call_next(const toc& tc, const tokenizer& tz,
+                                           const std::string_view func_name)
+        -> bool {
+
+        const char next{tz.peek_char_after_whitespace()};
+
+        return next == '(' or
+               (next == '<' and tc.generics().has_func(func_name));
+    }
+
     // 'name_tk' after the path so far names a method of the path's type
     [[nodiscard]] static auto is_method_name(const toc& tc, tokenizer& tz,
                                              const ident_info& prefix,
@@ -1110,11 +1129,7 @@ class stmt_identifier final : public statement {
 
         // a method and a field may share a name, only the call has '(' or the
         // type arguments of a generic method
-        const char next{tz.peek_char_after_whitespace()};
-
-        if (next == '(' or
-            (next == '<' and tc.generics().has_func(method_name))) {
-
+        if (is_call_next(tc, tz, method_name)) {
             return true;
         }
 
@@ -1172,6 +1187,17 @@ class stmt_identifier final : public statement {
         throw compile_error{
             name_tk, std::format("{} is a constant, it has no field {}",
                                  in_quotes(root), in_quotes(name_tk.text()))};
+    }
+
+    // e.g. the 'f' of 'array_length(f())', 'callee' as written
+    [[noreturn]] static auto throw_call_not_array(const token& src_loc_tk,
+                                                  const std::string_view callee)
+        -> void {
+
+        throw compile_error{
+            src_loc_tk, std::format("a call of {} is not an array, store its "
+                                    "result in a variable first",
+                                    in_quotes(callee))};
     }
 
     // a '[' after 'path', which is not an array

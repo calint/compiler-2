@@ -888,13 +888,6 @@ class expr_bool_op final : public statement {
         return not action.inverted and action.target.empty();
     }
 
-    [[nodiscard]] static auto is_equality(const comparison_operator op)
-        -> bool {
-
-        return op == comparison_operator::equal or
-               op == comparison_operator::not_equal;
-    }
-
     // a user type instance or a whole array in storage, compared in place
     [[nodiscard]] static auto is_memory_operand(const toc& tc,
                                                 const expr_arith& side)

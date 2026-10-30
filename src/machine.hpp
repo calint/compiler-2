@@ -747,11 +747,12 @@ class machine {
     can_lower_index_scale(const size_t size_bytes) const -> bool = 0;
 
     // jumps to the frame overflow handler when the callee frame at
-    // 'frame_address' of 'frame_size_bytes' does not fit in the variables
+    // 'frame_address' does not fit in the variables; 'frame_size_label' is the
+    // assembler constant of its size, defined after the body
     virtual auto check_frame_capacity(const token& src_loc_tk,
                                       const size_t indent,
                                       const operand& frame_address,
-                                      const operand& frame_size_bytes)
+                                      const std::string_view frame_size_label)
         -> void = 0;
 
     // jumps to the stack overflow handler when a noinline call, made with the

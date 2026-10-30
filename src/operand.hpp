@@ -71,13 +71,10 @@ class type;
 }
 
 // what an operation of the backend reads or writes: empty, a register, an
-// immediate, a symbol or a memory operand '[base + index * scale +
-// displacement]'; the front end builds it and the backend lowers it to what
-// the target encodes
+// immediate or a memory operand '[base + index * scale + displacement]'; the
+// front end builds it and the backend lowers it to what the target encodes
 class operand final {
-    // a symbol is the value of a label or a constant of the assembler, known
-    // when the program is assembled
-    enum class kind : uint8_t { empty, reg, memory, immediate, symbol };
+    enum class kind : uint8_t { empty, reg, memory, immediate };
 
     kind kind_{kind::empty};
     const type* type_ptr_{};
@@ -88,7 +85,6 @@ class operand final {
     std::string base_register_;
     std::string index_register_;
     int64_t immediate_{};
-    std::string symbol_;
     int64_t displacement_{};
     uint64_t scale_{1};
 
@@ -154,10 +150,6 @@ class operand final {
                scale_ == other.scale_ and displacement_ == other.displacement_;
     }
 
-    [[nodiscard]] auto is_symbol() const -> bool {
-        return kind_ == kind::symbol;
-    }
-
     // the register of a register operand, e.g. 'rax'
     [[nodiscard]] auto register_name() const -> const std::string& {
         assert(is_register());
@@ -171,12 +163,6 @@ class operand final {
         assert(is_register());
 
         allocation_register_ = name;
-    }
-
-    [[nodiscard]] auto symbol() const -> const std::string& {
-        assert(is_symbol());
-
-        return symbol_;
     }
 
     [[nodiscard]] auto type_ref() const -> const type& {
@@ -255,20 +241,6 @@ class operand final {
         result.kind_ = kind::reg;
         result.type_ptr_ = &value_type;
         result.base_register_ = name;
-
-        return result;
-    }
-
-    // e.g. the frame size of a noinline body, defined after the body
-    [[nodiscard]] static auto symbol(const std::string_view name,
-                                     const type& value_type) -> operand {
-
-        assert(not name.empty());
-
-        operand result;
-        result.kind_ = kind::symbol;
-        result.type_ptr_ = &value_type;
-        result.symbol_ = name;
 
         return result;
     }
@@ -581,6 +553,11 @@ inline constexpr auto comparison_spellings{
     -> comparison_operator {
 
     return facts_of(op).negated;
+}
+
+[[nodiscard]] constexpr auto is_equality(const comparison_operator op) -> bool {
+    return op == comparison_operator::equal or
+           op == comparison_operator::not_equal;
 }
 
 // the operator that gives the same result with the operands swapped
