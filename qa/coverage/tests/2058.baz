@@ -1,0 +1,15 @@
+# a 'let' that folds only at a call keeps the type of its variable, here the
+# default type: 'm == x' with 'x' an 'i8' compares as at the noinline call
+
+func f(k int, x i8) res int {
+    let m = 0 + k
+    res = 0
+    if m == x {
+        res = 1
+    }
+}
+
+func main() {
+    var x = i8(44)
+    exit(f(300, x) + 2)
+}

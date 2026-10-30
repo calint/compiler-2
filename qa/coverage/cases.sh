@@ -6525,3 +6525,6 @@ SRC=2055 && EXP=41 && RUN
 # a 'let' of the 'n' of a 'foo' over an unsized array is a constant at a call
 SRC=2056 && COMPERR
 SRC=2057 && COMPERR
+
+# a 'let' that folds only at a call keeps its type
+SRC=2058 && EXP=2 && RUN

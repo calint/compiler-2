@@ -487,7 +487,9 @@ class stmt_def_var final : public statement {
     }
 
   private:
-    // a constant is not an array, as at the parse ('make_stmt_def_var')
+    // a constant is not an array, as at the parse ('make_stmt_def_var'); it
+    // keeps the type of the variable the parse made, also the default type,
+    // e.g. 'let m = 0 + k' compares as an 'int'
     [[nodiscard]] auto fold_let(const toc& tc) const
         -> std::optional<folded_value> {
 
@@ -495,8 +497,15 @@ class stmt_def_var final : public statement {
             return std::nullopt;
         }
 
-        return initializer_declaration::fold(tc, assign_var_.value(),
-                                             get_type());
+        std::optional<folded_value> constant{
+            initializer_declaration::fold(tc, assign_var_.value(), get_type()),
+        };
+
+        if (constant and not constant->is_typed()) {
+            constant->own_type = &get_type();
+        }
+
+        return constant;
     }
 
     //

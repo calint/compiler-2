@@ -26,7 +26,10 @@
        declares a constant where it folds, as 'foo' declares 'n'
        ('stmt_def_var::fold_let', 'initializer_declaration::fold' static);
        inlined and noinline (2056, 2057); README 1.5 item 2, the 8.3 item
-       gone; x86_64 9 and rv32i 43 listing lines shorter (1155 1236 1237)
+       gone; x86_64 9 and rv32i 43 listing lines shorter (1155 1236 1237);
+       bug hunt round 24 O1-1: such a constant keeps the type of its
+       variable, also the default type, 'let m = 0 + k' compared as untyped
+       rejected 'm == x' of an 'i8' at an inlined call (2058)
 [x] hard: bug hunt series 2, round 22 (2026-10-30, user: bug hunts in a
     loop until a round finds none, then one more; 3 hunters: M1 'bool' as a
     value and comparisons, M2 the bare-metal targets as whole programs, M3
