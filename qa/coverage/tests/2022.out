@@ -1,0 +1,7 @@
+
+2022.baz:5:26: 'point' is a type, not an array
+    var n = array_length(T)
+                         ^
+2022.baz:9:5: instantiated by 'g<point>'
+    g<point>()
+    ^

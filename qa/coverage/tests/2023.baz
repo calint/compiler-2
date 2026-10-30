@@ -1,0 +1,5 @@
+# a conversion for an array is a call, as for the array of a built-in
+func main() {
+    var a = i8[2]
+    a = i8(1)
+}

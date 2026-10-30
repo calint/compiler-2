@@ -1,4 +1,4 @@
 
-1171.baz:7:9: expected an array
+1171.baz:7:9: a call of 'array_length' is not an array
     b = array_length(a)
         ^~~~~~~~~~~~

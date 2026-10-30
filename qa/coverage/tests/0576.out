@@ -1,4 +1,4 @@
 
-0576.baz:7:19: expected an array
+0576.baz:7:19: 'p' is not an array
     var l = line{ p }
                   ^

@@ -1,0 +1,15 @@
+# a method called on a type parameter names the type it is bound to
+
+type point {x, y}
+
+func point.get() res {
+    res = self.x
+}
+
+func mk<T type>() res T {
+    res = T.get()
+}
+
+func main() {
+    var p = mk<point>()
+}

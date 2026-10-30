@@ -1,4 +1,4 @@
 
-1925.baz:8:9: function 'f' has no result
+1925.baz:8:9: a call of 'f' is not an array
     a = f()
         ^

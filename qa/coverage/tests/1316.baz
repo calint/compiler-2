@@ -1,5 +1,5 @@
-# the count of 'read' assigned to an array is rejected like any value of a
-# built-in type, the source must be an array
+# the count of 'read' assigned to an array is rejected as a call, the source
+# must be an array
 func main() {
     var buf = i8[4]
     var a = int[2]

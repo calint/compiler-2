@@ -1,6 +1,25 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] hard: design review series 2, round 44 (2026-10-30, user: continue
+    the rounds until no more findings; 7 reviewers A-G, the groups rotated
+    again)
+    => done (2026-10-30): bugs: F1 a field hides the type arguments of a
+       generic method of the same name, 'p.x < 3' was read as 'x<...>'; only
+       '(' makes the name a call, an explicit 'p.x<i64>(3)' is then rejected
+       like for a plain method (2024); G1 the caret after stray utf-8
+       continuation bytes, only the bytes a lead byte announces take no
+       column (2025); messages: E1 an array destination gets the messages of
+       an array argument through 'assert_not_type_or_call' ('5' is not an
+       array, 'i8' is a type, not an array, a call of 'f' is not an array;
+       reopens round 35 C2 and, for arrays, round 33 D1; 0264 0352 0576 0577
+       0845 0897 1171 1316 1925 1944 1969, 2022, 2023); B1 a constructor or
+       an array receiver called with '<' on a value is reported by kind and
+       receiver first (2019, 2020); B2 a method called on a type parameter
+       names the bound type, 'T (point)' (2021); dropped: A1 "method 'p.f'
+       already defined" (reopens series 1 round 8 G-4; "function 'pt.clear'
+       has no result" also calls a method a function, changing one message
+       moves the inconsistency); two reviewers found nothing
 [x] hard: design review series 2, round 43 (2026-10-30, user: continue
     the rounds until no more findings; 7 reviewers A-G, the groups rotated
     again)

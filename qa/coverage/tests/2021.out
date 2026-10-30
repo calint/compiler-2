@@ -1,0 +1,7 @@
+
+2021.baz:10:13: 'point.get' is a method, call it on a value of type 'T (point)'
+    res = T.get()
+            ^~~
+2021.baz:14:13: instantiated by 'mk<point>'
+    var p = mk<point>()
+            ^~

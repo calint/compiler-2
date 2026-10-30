@@ -1,4 +1,4 @@
 
-0577.baz:7:10: expected an array
+0577.baz:7:10: 'ps[1]' is not an array
     qs = ps[1]
          ^~

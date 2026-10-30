@@ -1,4 +1,4 @@
 
-0897.baz:8:18: expected an array, got an instance of 'point'
+0897.baz:8:18: 'point' is a type, not an array
     var l = line{point}
                  ^~~~~

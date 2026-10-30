@@ -6409,3 +6409,24 @@ SRC=2017 && COMPERR
 
 # an operator after a statement
 SRC=2018 && COMPERR
+
+# a constructor called on a value with type arguments
+SRC=2019 && COMPERR
+
+# an array receiver of a method called with type arguments
+SRC=2020 && COMPERR
+
+# a method called on a type parameter
+SRC=2021 && COMPERR
+
+# a type parameter where a built-in takes an array
+SRC=2022 && COMPERR
+
+# a conversion assigned to an array
+SRC=2023 && COMPERR
+
+# a field hides the type arguments of a generic method of the same name
+SRC=2024 && EXP=0 && RUN
+
+# the caret after stray utf-8 continuation bytes
+SRC=2025 && COMPERR

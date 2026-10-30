@@ -239,6 +239,8 @@ auto print_source_line(std::string_view src, size_t start_index,
 
 [[nodiscard]] auto is_utf8_continuation(char ch) -> bool;
 
+[[nodiscard]] auto utf8_continuation_count(char ch) -> size_t;
+
 [[nodiscard]] auto is_escaped_in_line(char ch) -> bool;
 
 [[nodiscard]] auto printable_line(std::string_view line) -> std::string;
@@ -1034,25 +1036,45 @@ auto print_source_error(const source_files& files,
     return byte >= first and byte <= last;
 }
 
-// the columns a terminal shows: a continuation byte after a lead or
-// continuation byte is part of that character, a lone one is shown as a
-// replacement character, a control byte as its escape
+// the continuation bytes that the lead byte 'ch' of a UTF-8 character
+// announces, 0 for any other byte
+[[nodiscard]] auto utf8_continuation_count(const char ch) -> size_t {
+    constexpr unsigned char first_lead_of_two{0xC0};
+    constexpr unsigned char first_lead_of_three{0xE0};
+    constexpr unsigned char first_lead_of_four{0xF0};
+    constexpr unsigned char first_invalid_lead{0xF8};
+
+    const unsigned char byte{static_cast<unsigned char>(ch)};
+
+    if (byte < first_lead_of_two or byte >= first_invalid_lead) {
+        return 0;
+    }
+
+    if (byte < first_lead_of_three) {
+        return 1;
+    }
+
+    return byte < first_lead_of_four ? 2 : 3;
+}
+
+// the columns a terminal shows: the continuation bytes a lead byte announces
+// are part of its character, any other one is shown as a replacement
+// character, a control byte as its escape
 [[nodiscard]] auto display_columns(const std::string_view text) -> size_t {
-    constexpr unsigned char first_non_ascii{0x80};
     constexpr size_t escape_columns{4};
     // note: 4 for the '\xNN' that 'printable_line' shows
 
     size_t columns{};
-    bool after_non_ascii{};
+    size_t continuations_left{};
 
     for (const char ch : text) {
-        if (is_escaped_in_line(ch)) {
-            columns += escape_columns;
-        } else if (not after_non_ascii or not is_utf8_continuation(ch)) {
-            ++columns;
+        if (continuations_left != 0 and is_utf8_continuation(ch)) {
+            --continuations_left;
+            continue;
         }
 
-        after_non_ascii = static_cast<unsigned char>(ch) >= first_non_ascii;
+        columns += is_escaped_in_line(ch) ? escape_columns : 1;
+        continuations_left = utf8_continuation_count(ch);
     }
 
     return columns;

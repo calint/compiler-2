@@ -51,20 +51,14 @@ inline expr_type::expr_type(toc& tc, tokenizer& tz, const type& tp,
     // destination
     const bool is_typed_literal{tm == term_kind::record_literal or is_bare};
 
-    // an array is copied from an array, a value of its element type is not
-    // one; a type parameter names the type of its argument
-    if (is_array_destination_ and is_typed_literal) {
-        throw compile_error{
-            tok(), std::format("expected an array, got an instance of {}",
-                               in_quotes(tc.get_type_or_throw(tok()).name()))};
+    // an array is copied from an array; a type, a call or a function is not
+    // one, as for the array of a built-in, e.g. 'a = point' or 'a = f()'
+    if (is_array_destination_) {
+        stmt_identifier::assert_not_type_or_call(tc, tok(), tm);
     }
 
     // e.g. 'p = i8' is the zero value of 'i8', as 'p = x' of an 'i8' 'x'
     if (is_bare_builtin_type(tc, tok(), tz)) {
-        if (is_array_destination_) {
-            throw compile_error{tok(), "expected an array"};
-        }
-
         throw_type_mismatch(tok(), tp.name(),
                             tc.get_type_or_throw(tok()).name());
     }
@@ -236,9 +230,10 @@ inline auto expr_type::parse_copy_source(toc& tc, tokenizer& tz,
             parse_builtin(tc, tz, tok(), tm, no_uops, builtin_place::value),
         }) {
 
-        if (is_array_destination_) {
-            throw compile_error{tok(), "expected an array"};
-        }
+        // note: an array destination rejected a built-in before
+        //       ('assert_not_type_or_call')
+
+        assert(not is_array_destination_);
 
         throw_type_mismatch(tok(), tp.name(), builtin->get_type().name());
     }
@@ -270,8 +265,8 @@ inline auto expr_type::parse_copy_source(toc& tc, tokenizer& tz,
 
     // before the type, which a literal takes from the target, e.g. the '5'
     // of 'a = 5' with 'a' an 'i8' array
-    if (is_array_destination_ and not src_info.is_array()) {
-        throw compile_error{tok(), "expected an array"};
+    if (is_array_destination_) {
+        ident.assert_array();
     }
 
     // note: a whole array for an instance is rejected before its type, as

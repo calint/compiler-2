@@ -1,0 +1,13 @@
+# an array receiver of a method that is not generic, called with type
+# arguments, is reported at the receiver like that of a generic method
+
+type point {x, y}
+
+func point.get() res {
+    res = self.x
+}
+
+func main() {
+    var a = point[2]
+    var x = a.get<i8>()
+}

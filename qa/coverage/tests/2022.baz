@@ -1,0 +1,10 @@
+# a type parameter for the array of a built-in names the type it is bound to
+type point {x i32, y i32}
+
+func g<T type>() {
+    var n = array_length(T)
+}
+
+func main() {
+    g<point>()
+}

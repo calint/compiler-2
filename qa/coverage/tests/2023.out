@@ -1,0 +1,4 @@
+
+2023.baz:4:9: a call of 'i8' is not an array
+    a = i8(1)
+        ^~

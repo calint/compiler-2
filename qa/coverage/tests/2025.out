@@ -1,0 +1,4 @@
+
+2025.baz:4:17: expected a definition ('func', 'type', 'var', 'let' or 'dat'), got 'x'
+dat s = "Ã©©€€" x
+               ^

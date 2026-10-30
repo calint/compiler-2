@@ -1,4 +1,4 @@
 
-1316.baz:6:9: expected an array
+1316.baz:6:9: a call of 'read' is not an array
     a = read(0, buf, 4)
         ^~~~

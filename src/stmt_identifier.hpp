@@ -876,15 +876,17 @@ class stmt_identifier final : public statement {
     // a term that starts no array where an array is expected, after an array
     // literal was reported: a type, a call or a function, e.g. the 'point' of
     // 'point{1, 2}' or the 'f' of 'f(1)'
-    static auto assert_not_type_or_call(const token& tk, const term_kind tm)
-        -> void {
+    static auto assert_not_type_or_call(const toc& tc, const token& tk,
+                                        const term_kind tm) -> void {
 
-        // e.g. the 'point' of 'point{1, 2}', 'point(5)' or 'point.at(1, 2)'
+        // e.g. the 'point' of 'point{1, 2}', 'point(5)' or 'point.at(1, 2)';
+        // a type parameter names the type of its argument
         if (names_type(tm) or tm == term_kind::type_called or
             tm == term_kind::constructor_call) {
 
-            throw compile_error{tk, std::format("{} is a type, not an array",
-                                                in_quotes(tk.text()))};
+            throw compile_error{
+                tk, std::format("{} is a type, not an array",
+                                in_quotes(tc.get_type_or_throw(tk).name()))};
         }
 
         if (tm == term_kind::call or tm == term_kind::generic_call or
@@ -944,7 +946,7 @@ class stmt_identifier final : public statement {
             throw compile_error{tk, std::string{literal_text}};
         }
 
-        assert_not_type_or_call(tk, tm);
+        assert_not_type_or_call(tc, tk, tm);
 
         // note: the operand of a bulk operation reaches from the element it
         //       names on
@@ -1157,13 +1159,14 @@ class stmt_identifier final : public statement {
             return false;
         }
 
-        // a method and a field may share a name, only the call has '(' or the
-        // type arguments of a generic method
-        if (is_call_next(tc, tz, method_name)) {
+        // a method and a field may share a name, only the call has '('; a
+        // field hides the type arguments of a generic method like a value
+        // hides a generic function, e.g. the comparison 'p.x < 3'
+        if (tz.peek_char_after_whitespace() == '(') {
             return true;
         }
 
-        // without a field 'lst.clear = 1' reports the missing arguments
+        // without a field 'lst.clear = 1' is a method without its '('
         return not path_type.has_field(name_tk.text());
     }
 

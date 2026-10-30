@@ -1,5 +1,5 @@
 
-1969.baz:7:17: expected an array, got an instance of 'point'
+1969.baz:7:17: 'point' is a type, not an array
     var s = seg{T{1, 2}}
                 ^
 1969.baz:11:5: instantiated by 'f<point>'

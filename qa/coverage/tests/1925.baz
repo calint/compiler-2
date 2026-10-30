@@ -1,5 +1,5 @@
-# a call of a function without a result to an array is reported as for a
-# number destination
+# a call of a function without a result to an array is a call, not an array,
+# as for an array argument
 
 func f() {}
 

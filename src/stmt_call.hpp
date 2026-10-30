@@ -1755,6 +1755,11 @@ class stmt_call final : public statement {
                            receiver.method_name_token().text()),
         };
 
+        // the receiver is written first, it is checked before the instance
+        // is made and the deduction reads the arguments
+        assert_call_in_func(tc, tok());
+        assert_method_receiver(tc, receiver, name);
+
         // e.g. 'p.get<i8>()' where 'get' is not generic, the '<' is not an
         // operator after a method name
         if (not tc.generics().has_func(name) and
@@ -1765,11 +1770,6 @@ class stmt_call final : public statement {
                                    "type arguments",
                                    in_quotes(name))};
         }
-
-        // the receiver is written first, it is checked before the instance
-        // is made and the deduction reads the arguments
-        assert_call_in_func(tc, tok());
-        assert_method_receiver(tc, receiver, name);
 
         const std::vector<size_t> deducing_args{
             resolve_callee(tc, tz, name, expected_type),
@@ -2224,7 +2224,8 @@ class stmt_call final : public statement {
             throw compile_error{
                 name_tk,
                 std::format("{} is a method, call it on a value of type {}",
-                            in_quotes(name), in_quotes(tok().text()))};
+                            in_quotes(name),
+                            in_quotes(type_description(tc, tok())))};
         }
 
         return tc.get_func_or_throw(name_tk, name);
@@ -2635,7 +2636,7 @@ class stmt_call final : public statement {
             // e.g. 'i8', 'point{1, 2}' or 'mk()', as for the array of a
             // built-in
             if (tm != term_kind::array_literal) {
-                stmt_identifier::assert_not_type_or_call(tk, tm);
+                stmt_identifier::assert_not_type_or_call(tc, tk, tm);
                 return;
             }
 

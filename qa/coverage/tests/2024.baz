@@ -1,0 +1,25 @@
+# a field hides the type arguments of a generic method of the same name like
+# a value hides a generic function: 'p.x < 3' compares the field, 'p.x(v)'
+# calls the method
+
+func assert(err, ok bool) { if not ok exit(err) }
+
+type point {
+    x,
+    y
+}
+
+func point.x<T type>(v T) res T {
+    res = v
+}
+
+func main() {
+    var p = point{1, 2}
+    assert(1, p.x < 3)
+    assert(2, p.x <= 1)
+    assert(3, p.x << 1 == 2)
+    var ps = point[2]
+    ps[1].x = 2
+    assert(4, ps[1].x < 3)
+    assert(5, p.x(i8(7)) == 7)
+}

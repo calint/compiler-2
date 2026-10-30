@@ -1,4 +1,4 @@
 
-1944.baz:4:9: expected an array
+1944.baz:4:9: 'i8' is a type, not an array
     a = i8
         ^~
