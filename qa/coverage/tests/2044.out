@@ -1,0 +1,4 @@
+
+2044.baz:11:7: a call of 'mk' is not an array, it cannot be indexed
+    f(mk()[0])
+      ^~

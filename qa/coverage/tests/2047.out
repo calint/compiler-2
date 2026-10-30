@@ -1,0 +1,4 @@
+
+2047.baz:10:9: 'id' is a function, not a value, a call ends with '()'
+    x = id
+        ^~

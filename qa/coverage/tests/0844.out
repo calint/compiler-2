@@ -1,4 +1,4 @@
 
-0844.baz:9:15: generic function 'point.get' needs type arguments, e.g. 'get<...>'
+0844.baz:9:15: expected '(' after method name
     var x = p.get
               ^~~

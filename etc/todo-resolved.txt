@@ -1,6 +1,20 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] hard: design review series 2, round 47 (2026-10-30, user: continue
+    the rounds until no more findings; 7 reviewers A-G, the groups rotated
+    again)
+    => done (2026-10-30): bugs: C1 every indented row of the register report
+       stays whole, only lines of text wrap ('last_word_space' and the hanging
+       indent gone, -39 lines; reopens round 46 C1, 2046); A1 a call followed
+       by '[' is "a call of 'mk' is not an array, it cannot be indexed" in
+       every context (2044, 2045); messages: G1 a generic function or method
+       named without '(' gets the message of a plain one, the hint to write
+       type arguments led to the next error ('throw_generic_function_
+       without_arguments' gone; README 2.10.2; 0792 0844, 2047, 2048); code:
+       F1 the unread 'set_type' of 'stmt_assign_var' gone; B1 'stmt_call.hpp'
+       includes 'expr_type.hpp' as three comments say; two reviewers found
+       nothing
 [x] hard: design review series 2, round 46 (2026-10-30, user: continue
     the rounds until no more findings; 7 reviewers A-G, the groups rotated
     again)

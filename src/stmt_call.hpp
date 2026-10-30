@@ -19,6 +19,7 @@
 #include "compile_error.hpp"
 #include "expr_any.hpp"
 #include "expr_bool.hpp"
+#include "expr_type.hpp"
 #include "generics.hpp"
 #include "ident_info.hpp"
 #include "machine.hpp"
@@ -317,9 +318,11 @@ struct generic_call {
         // the arguments are looked at ahead, the call reads them later
         tokenizer scan{tz};
 
+        // note: a function is a call here only before its '('
+        //       ('classify_term'), a method at its name, e.g. 'p.get'
+
         if (not scan.is_next_char_token('(')) {
-            throw_generic_function_without_arguments(name_tk, generic_name,
-                                                     name_tk.text());
+            throw compile_error{name_tk, "expected '(' after method name"};
         }
 
         deduction deduced{};
@@ -2338,11 +2341,22 @@ class stmt_call final : public statement {
         close_paren_tk_ = tz.expect_char_token(')', missing_close_paren_text);
 
         // e.g. the '.' of 'mk().y' or 'mk().sum()', a result has no storage
-        // to read a field of or to call a method on
-        if (tz.peek_char_after_whitespace() == '.') {
+        // to read a field of or to call a method on; the '[' of 'mk()[0]', a
+        // result is never an array
+        const char next{tz.peek_char_after_whitespace()};
+
+        if (next == '.' or next == '[') {
             // e.g. 'g().y' of a 'g' without a result, as 'x = g()'
             if (not callee().has_result()) {
                 throw_no_value(callee_name_token(), callee().name());
+            }
+
+            if (next == '[') {
+                throw compile_error{
+                    callee_name_token(),
+                    std::format("a call of {} is not an array, it cannot be "
+                                "indexed",
+                                in_quotes(callee().name()))};
             }
 
             throw compile_error{

@@ -1,0 +1,13 @@
+# a method call followed by '[' in a condition is reported as a call that is
+# not an array, not as a value to compare
+
+type point {x, y}
+
+func point.get() res {
+    res = self.x
+}
+
+func main() {
+    var p = point{1, 2}
+    if p.get()[0] == 1 exit(0)
+}

@@ -860,8 +860,9 @@ order. The examples use 'make' and 'same' from the start of 2.10 and a type
 
    Written, the same call is 'var m = make<name>(2)'.
 
-A generic function or method called without '(' and without '<' is rejected
-with "needs type arguments", since there is nothing to deduce from.
+A generic function or method named without '(' is not a call, it is rejected
+as a plain one is: "'f' is a function, not a value", "expected '(' after
+method name".
 
 #### 2.10.3 Call: the instance
 

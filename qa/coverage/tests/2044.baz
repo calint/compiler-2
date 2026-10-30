@@ -1,0 +1,12 @@
+# a call followed by '[' is reported as a call that is not an array, also
+# in an argument, where the '[' was taken for a missing ')'
+
+func mk() res {
+    res = 1
+}
+
+func f(a) {}
+
+func main() {
+    f(mk()[0])
+}

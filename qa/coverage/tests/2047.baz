@@ -1,0 +1,11 @@
+# a generic function named without '(' is a function, not a value, as a
+# plain one; its types would deduce from the destination of 'x = id(x)'
+
+func id<T type>(x T) res T {
+    res = x
+}
+
+func main() {
+    var x = i8(1)
+    x = id
+}

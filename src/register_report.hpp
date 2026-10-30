@@ -210,7 +210,8 @@ class register_reporter final {
 
         compile_error error{src_loc_tk, std::move(message)};
 
-        // the lines of the message of an error are not longer than this
+        // the lines of text of the message of an error are not longer than
+        // this, the rows of its tables may be
         constexpr size_t max_detail_width{80};
 
         const std::string text{
@@ -440,28 +441,6 @@ class register_reporter final {
         return ordered;
     }
 
-    // the last space at or before 'width' that is between two words, none
-    // when there is none; the spaces of a gap separate the columns of a row
-    // of a table, e.g. those before a candidate frame
-    [[nodiscard]] static auto last_word_space(const std::string& text,
-                                              const size_t width) -> size_t {
-
-        assert(width < text.size());
-
-        for (size_t i{width}; i > 0; --i) {
-            const bool is_between_words{
-                text.at(i) == ' ' and text.at(i - 1) != ' ' and
-                    i + 1 < text.size() and text.at(i + 1) != ' ',
-            };
-
-            if (is_between_words) {
-                return i;
-            }
-        }
-
-        return std::string::npos;
-    }
-
     [[nodiscard]] static auto split_lines(const std::string_view text)
         -> std::vector<std::string> {
 
@@ -474,46 +453,28 @@ class register_reporter final {
         return lines;
     }
 
-    // breaks a line that is too long at the spaces between its words, the
-    // parts keep its indentation
+    // breaks a line of text that is too long at its spaces; an indented line,
+    // a row of a table, stays whole so that its columns stay in place
     [[nodiscard]] static auto wrapped(const std::string& line,
                                       const size_t width)
         -> std::vector<std::string> {
 
+        if (line.starts_with(' ')) {
+            return {line};
+        }
+
         std::vector<std::string> parts;
-
-        const std::string indentation(
-            std::min(line.find_first_not_of(' '), line.size()), ' ');
-
         std::string rest{line};
 
         while (rest.size() > width) {
-            const size_t space{last_word_space(rest, width)};
+            const size_t space{rest.rfind(' ', width)};
 
-            // note: a word longer than the width is left as it is, as are
-            //       the columns of a table
-
-            if (space == std::string::npos) {
-                break;
-            }
-
-            const size_t word_end{
-                std::min(rest.find(' ', space + 1), rest.size()),
-            };
-
-            // a word that does not fit on a line of its own stays after the
-            // words before it
-            if (indentation.size() + word_end - (space + 1) > width) {
-                break;
-            }
+            // note: the lines of text have no word longer than the width
+            assert(space != std::string::npos);
 
             parts.push_back(rest.substr(0, space));
-
-            std::string next{indentation};
-            next += rest.substr(space + 1);
+            rest = rest.substr(space + 1);
             // note: +1 because the space that the line broke at is dropped
-
-            rest = std::move(next);
         }
 
         parts.push_back(std::move(rest));

@@ -269,18 +269,6 @@ inline constexpr std::string_view missing_close_paren_text{
         call_tk, std::format("function {} has no result", in_quotes(name))};
 }
 
-// a generic function without its type arguments where they cannot be
-// deduced; 'written' is the name as the source writes it
-[[noreturn]] inline auto throw_generic_function_without_arguments(
-    const token& src_loc_tk, const std::string_view name,
-    const std::string_view written) -> void {
-
-    throw compile_error{
-        src_loc_tk,
-        std::format("generic function {} needs type arguments, e.g. '{}<...>'",
-                    in_quotes(name), written)};
-}
-
 // the end of a message about a generic type used where an instance is needed
 [[nodiscard]] inline auto instance_hint(const std::string_view name)
     -> std::string {

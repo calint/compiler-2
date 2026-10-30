@@ -269,11 +269,8 @@ inline auto parse_call_or_identifier(toc& tc, tokenizer& tz, const token& tk,
                                            std::move(uops), tk, tz);
     }
 
-    // e.g. the 'f' of 'x = f + 1'; the resolver tells a generic function
-    // that it needs type arguments
-    if (tm == term_kind::function_name and
-        not tc.generics().has_func(tk.text())) {
-
+    // e.g. the 'f' of 'x = f + 1', also of a generic function
+    if (tm == term_kind::function_name) {
         throw compile_error{
             tk, std::format("{} is a function, not a value, a call ends with "
                             "'()'",

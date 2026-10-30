@@ -2702,7 +2702,7 @@ SRC=0842 && COMPERR
 # an instance is not compared with a whole array of its type
 SRC=0843 && COMPERR
 
-# a generic method needs type arguments when they cannot be deduced
+# a generic method named without '(' needs its '(' like a plain one
 SRC=0844 && COMPERR
 
 # an array field of a data instance is initialized with braces
@@ -6485,3 +6485,18 @@ SRC=2042 && COMPERR
 
 # a parameter of 'main' written in its body
 SRC=2043 && COMPERR
+
+# a call followed by '['
+SRC=2044 && COMPERR
+
+# a method call followed by '[' in a condition
+SRC=2045 && COMPERR
+
+# x86: a frame row of the register report longer than the line stays whole
+if [[ $MACHINE == x86_64 ]]; then SRC=2046 && COMPERR; fi
+
+# a generic function named without '('
+SRC=2047 && COMPERR
+
+# a generic method named without '('
+SRC=2048 && COMPERR

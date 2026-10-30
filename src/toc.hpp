@@ -1960,14 +1960,11 @@ class ident_resolver final {
                             in_quotes(ident), instance_hint(ident))};
         }
 
-        if (generics_.get().has_func(ident)) {
-            throw_generic_function_without_arguments(src_loc_tk, ident, ident);
-        }
-
         // note: a function used as a value is rejected where it is parsed
         //       ('parse_call_or_identifier')
 
-        assert(not funcs_.get().has(ident));
+        assert(not funcs_.get().has(ident) and
+               not generics_.get().has_func(ident));
 
         if (starts_number(ident)) {
             throw_unparsed_number(src_loc_tk, ident);
