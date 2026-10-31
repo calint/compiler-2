@@ -1,5 +1,5 @@
-# a generic parameter is not named like a global defined after it either,
-# the order of the definitions does not matter
+# a generic parameter hides a global defined after it too, the order of the
+# definitions does not matter
 func f<U type>(x U) res int {
     res = int(x)
 }

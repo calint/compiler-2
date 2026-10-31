@@ -1,0 +1,9 @@
+# a constant divisor that does not fit the default type is rejected as such,
+# not as the zero its low bits make on rv32i
+func main() {
+    var b = 1 / 4294967296 == 1
+    if b {
+        exit(1)
+    }
+    exit(0)
+}

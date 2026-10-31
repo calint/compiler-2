@@ -603,7 +603,9 @@ class expr_arith final : public statement {
     }
 
     // an element wraps at the width as its register holds it; the first
-    // element gives the list its type, e.g. 'i16(300) + 1' is typed
+    // element gives the list its type, e.g. 'i16(300) + 1' is typed; led by
+    // an untyped one, the list is typed when it holds a typed one, as a
+    // variable in its place, e.g. '0 + k' with 'k' a typed constant
     [[nodiscard]] auto fold(const toc& tc, const value_use& use) const
         -> std::optional<folded_value> override {
 
@@ -623,26 +625,39 @@ class expr_arith final : public statement {
         }
 
         int64_t value{first->value};
+        const type* own_type{first->own_type};
 
         for (const auto [o, e] :
              std::views::zip(ops_, exprs_ | std::views::drop(1))) {
 
-            const std::optional<int64_t> rhs{
-                folded_value::value_of(e->fold(tc, use)),
-            };
+            const std::optional<folded_value> element{e->fold(tc, use)};
 
-            if (not rhs) {
+            if (not element) {
                 return std::nullopt;
             }
 
-            if (use.checks_overflow and constant_arith::overflows_width(
-                                            value, o.op, *rhs, width_type)) {
+            if (own_type == nullptr and element->is_typed()) {
+                own_type = &get_type();
+            }
+
+            const int64_t rhs{element->value};
+
+            // note: the fold keeps the low bits of a divisor that does not
+            //       fit, e.g. '4294967296' is 0 on rv32i, so its fit is
+            //       checked before the zero
+
+            if (is_division(o.op) and rhs == 0) {
+                e->assert_not_narrowed(tc, width_type);
+            }
+
+            if (use.checks_overflow and
+                constant_arith::overflows_width(value, o.op, rhs, width_type)) {
 
                 throw compile_error{e->tok(),
                                     "constant expression overflows the type"};
             }
 
-            value = fold_operation(tc, value, o.op, *e, *rhs, width_type);
+            value = fold_operation(tc, value, o.op, *e, rhs, width_type);
         }
 
         const int64_t result{
@@ -651,7 +666,7 @@ class expr_arith final : public statement {
 
         return folded_value{
             .value{constant_arith::wrap_to_width(result, width_type)},
-            .own_type{first->own_type},
+            .own_type{own_type},
         };
     }
 

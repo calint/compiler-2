@@ -1,6 +1,4 @@
-# a generic parameter cannot have the name of a type defined after it, also
-# when nothing instantiates the generic function
-
+# a generic parameter hides a type of its name defined after it
 func f<point type>(x point) res point {
     res = x
 }
@@ -8,5 +6,6 @@ func f<point type>(x point) res point {
 type point {x, y}
 
 func main() {
-    exit(0)
+    var p = point{3, 4}
+    exit(int(f(i8(2))) + p.y)
 }

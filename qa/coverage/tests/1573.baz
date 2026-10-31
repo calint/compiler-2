@@ -1,5 +1,4 @@
-# a generic parameter is not named like a global constant defined before it,
-# which would hide it only in some places, e.g. 'U(5)' still converts
+# a generic parameter hides a global constant of its name, 'U(5)' converts
 let U = 3
 
 func f<U type>() res i8 {
@@ -7,5 +6,5 @@ func f<U type>() res i8 {
 }
 
 func main() {
-    exit(i64(f<i8>()))
+    exit(int(f<i8>()) + U)
 }

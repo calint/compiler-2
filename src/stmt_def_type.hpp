@@ -359,7 +359,7 @@ class stmt_def_type_generic final : public statement {
         std::vector<generic_param> params{generic_param::parse(tz)};
 
         for (const generic_param& param : params) {
-            tc.assert_generic_param_free(param.name_tk);
+            tc.assert_valid_unqualified_name(param.name_tk);
 
             tc.assert_generic_param_apart(param.name_tk, name_tk_,
                                           "generic type");

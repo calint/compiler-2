@@ -1,8 +1,11 @@
 # a type parameter named like the alias of its instance is the parameter in
-# the fields, the alias name is reported as hidden, not as a type that
-# contains itself
-
+# the fields
 type box<T type> {x T}
+
 type T = box<i8>
+
 func main() {
+    var b = T
+    b.x = i8(5)
+    exit(int(b.x))
 }

@@ -1,13 +1,12 @@
-# a generic parameter named like a function is rejected, a call such as 'T(5)'
-# would convert for one instance and call the function for another
-
+# a generic parameter hides a function of its name, 'T(5)' converts
 func T(x) res {
     res = x + 1
 }
 
 func f<T type>(a T) res {
-    res = T(5)
+    res = int(T(5)) + int(a)
 }
 
 func main() {
+    exit(f(i8(1)) + T(10))
 }

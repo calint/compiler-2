@@ -1,6 +1,5 @@
-# a type defined after an alias and before a method of the generic type hides a
-# type parameter of the method's instance, the error is at the parameter
-
+# a type defined after an alias and before a method of the generic type does
+# not hide the type parameter of the method's instance
 type list<T type> {
     a T,
 }
@@ -9,6 +8,13 @@ type s = list<i8>
 
 type T {x}
 
-func list.f() {}
+func list.get() res T {
+    res = T(self.a + 1)
+}
 
-func main() {}
+func main() {
+    var l = s
+    l.a = 4
+    var t = T{2}
+    exit(int(l.get()) + t.x)
+}

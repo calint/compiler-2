@@ -1,4 +1,0 @@
-
-1373.baz:5:8: constant '301' does not fit 'e' of type 'i8'
-    if 1 + i16(300) > e {
-       ^

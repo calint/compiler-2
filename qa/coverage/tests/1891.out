@@ -1,4 +1,0 @@
-
-1891.baz:7:11: generic parameter 'first' hides the generic function 'first' defined at 3:6, use another name
-type pair<first type> {
-          ^~~~~

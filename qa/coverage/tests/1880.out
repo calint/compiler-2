@@ -1,4 +1,0 @@
-
-1880.baz:4:8: generic parameter 'T' hides the function 'T' defined at 8:6, use another name
-type w<T type> {
-       ^

@@ -675,32 +675,6 @@ class generic_registry final {
         return methods_;
     }
 
-    // the parameters of every generic definition, e.g. 'T' of 'func f<T
-    // type>()', 'U' of 'func box.f<U type>()' and 'n' of 'type list<T type,
-    // n>'; not those of the functions that instances of a generic type make
-    // of its methods, the definition holds them
-    [[nodiscard]] auto param_tokens() const -> std::vector<token> {
-        std::vector<token> tks;
-
-        for (const generic_func_info& func : funcs_.values()) {
-            if (not func.receiver) {
-                tks.append_range(func.signature.type_param_tks);
-            }
-        }
-
-        for (const generic_method_info& method : methods_) {
-            tks.append_range(method.signature.type_param_tks);
-        }
-
-        for (const generic_type_info& type : types_.values()) {
-            for (const generic_param& param : type.params) {
-                tks.push_back(param.name_tk);
-            }
-        }
-
-        return tks;
-    }
-
     // the names of the generic functions without an instance, in the order of
     // definition; a method of a generic type with type parameters of its own
     // is one, also without an instance of its type, e.g. 'box.f' of 'func

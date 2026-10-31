@@ -1,7 +1,15 @@
-# a parameter of a generic function does not hide a type
-
+# a parameter of a generic type hides a type of its name
 type name {x}
 
-func f<name type>() {}
+type box<name type> {
+    a name,
+}
 
-func main() {}
+type b8 = box<i8>
+
+func main() {
+    var b = b8
+    b.a = i8(3)
+    var nm = name{4}
+    exit(int(b.a) + nm.x)
+}

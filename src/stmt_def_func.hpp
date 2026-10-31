@@ -1523,7 +1523,7 @@ class stmt_def_func_generic final : public statement {
                 tc.assert_method_type_param_free(param_tk, head.name_tk.text());
             }
 
-            tc.assert_generic_param_free(param_tk);
+            tc.assert_valid_unqualified_name(param_tk);
 
             tc.assert_generic_param_apart(param_tk, name_tk,
                                           head.method ? "method" : "function");

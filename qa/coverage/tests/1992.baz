@@ -1,11 +1,12 @@
-# a type defined after a generic function and before its instance is
-# rejected like one defined after the instance, at the type parameter without
-# the instance, which only binds the arguments
-
-func f<T type>(a T) {}
+# a type defined after a generic function and before its instance does not
+# hide the type parameter
+func f<T type>(a T) res {
+    res = int(T(a + 1))
+}
 
 type T {x}
 
 func main() {
-    f<i8>(1)
+    var t = T{3}
+    exit(f(i8(1)) + t.x)
 }

@@ -261,8 +261,6 @@ class program final {
             const toc::scope_entry root{tc_, scope::block()};
 
             parse_files();
-
-            tc_.assert_generic_params_free();
         }
 
         // the program starts at 'main', its signature is checked where it is

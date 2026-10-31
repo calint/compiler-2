@@ -1,5 +1,5 @@
-# a constant list whose first element is not typed is a number that must fit
-# the other side, a later typed element does not type it
+# a constant list whose first element is not typed and that holds a typed
+# element is a value of the list's type like the same list of a variable
 func main() {
     var e = i8(1)
     if 1 + i16(300) > e {

@@ -80,3 +80,8 @@ an included file (`split_include` in `fuzzlib.py`).
 - a sector past the end of the card panics `sd card` on x86_64 and rv32i,
   rv32i-fpga does not detect it; rv32i-qemu has no sd card
 - a very long expression compiles in more than linear time
+- nasm 3.02 may stall ("unable to find valid values for all labels") on x86_64
+  code with many jumps near the short jump limit, e.g. with
+  `--checks=noub,line`; the code has no size that depends on a label, the
+  stall is in nasm's jump sizing (`nasm -O1` assembles it), reduced in
+  `etc/nasm-issue.s`

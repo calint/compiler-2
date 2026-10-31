@@ -1,4 +1,0 @@
-
-1573.baz:5:8: generic parameter 'U' hides the constant 'U' defined at 3:5, use another name
-func f<U type>() res i8 {
-       ^

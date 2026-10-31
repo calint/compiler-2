@@ -1,13 +1,21 @@
-# a generic parameter named like a function defined after it is rejected at the
-# end of the parse
-
+# a generic parameter hides a function of its name defined after it, 'T(...)'
+# in a method converts
 type w<T type> {
-    a T
+    a T,
+}
+
+type w8 = w<i8>
+
+func w.next() res T {
+    res = T(self.a + 1)
 }
 
 func T(x) res {
-    res = x
+    res = x + 1
 }
 
 func main() {
+    var v = w8
+    v.a = i8(2)
+    exit(int(v.next()) + T(3))
 }

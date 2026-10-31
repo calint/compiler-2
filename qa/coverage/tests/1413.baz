@@ -1,13 +1,18 @@
-# a generic parameter cannot have the name of a generic type, it would hide it
-
+# a generic parameter hides a generic type of its name
 type list<T type, n> {
     items T[n],
 }
 
-func f<list type>(x list) res list {
-    res = x
+type pt {x, y}
+
+func f<list type>(x list) res {
+    var t = list{5, 6}
+    res = t.y + x.x
 }
 
+type l4 = list<i8, 4>
+
 func main() {
-    exit(int(f<i32>(1)))
+    var l = l4
+    exit(f(pt{1, 2}) + array_length(l.items))
 }

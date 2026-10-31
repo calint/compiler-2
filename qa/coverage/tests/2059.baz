@@ -1,0 +1,9 @@
+# a 'let' of a constant list led by a literal that holds a typed constant has
+# the type of the list, it is narrowed like the same 'var'
+func main() {
+    let w = i32(5)
+    let m = 0 + w
+    var z = i8(0)
+    z = m
+    exit(z)
+}

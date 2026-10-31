@@ -2534,8 +2534,8 @@ SRC=0787 && COMPERR
 # a generic parameter is declared once
 SRC=0788 && COMPERR
 
-# a generic parameter does not hide a type
-SRC=0789 && COMPERR
+# a parameter of a generic function hides a type of its name
+SRC=0789 && EXP=7 && RUN
 
 # a generic type is not a type until an alias names an instance
 SRC=0790 && COMPERR
@@ -2579,8 +2579,8 @@ SRC=0802 && COMPERR
 # a comma in a generic parameter list is followed by a parameter
 SRC=0803 && COMPERR
 
-# a parameter of a generic function does not hide a type
-SRC=0804 && COMPERR
+# a parameter of a generic type hides a type of its name
+SRC=0804 && EXP=7 && RUN
 
 # a generic function cannot have the name of a function
 SRC=0805 && COMPERR
@@ -3429,9 +3429,9 @@ SRC=1074 && EXP=0 && OPTS="--vars=0x400" RUN
 # parameter of the type, the error names the parameter of the type
 SRC=1075 && COMPERR
 
-# a type defined after an alias and before a method of the generic type hides a
-# type parameter of the method's instance, the error is at the parameter
-SRC=1076 && COMPERR
+# a type defined after an alias and before a method of the generic type does
+# not hide the type parameter of the method's instance
+SRC=1076 && EXP=7 && RUN
 
 # a surplus written type argument is reported with the count, before the
 # arguments are resolved, like the arguments of a generic type
@@ -4507,9 +4507,9 @@ SRC=1371 && EXP=0 && RUN
 # narrower left side like the same list of a variable
 SRC=1372 && COMPERR
 
-# a constant list whose first element is not typed is a number that must fit
-# the other side, a later typed element does not type it
-SRC=1373 && COMPERR
+# a constant list whose first element is not typed and that holds a typed
+# element is a value of the list's type like the same list of a variable
+SRC=1373 && EXP=1 && RUN
 
 # a constant is stored at the width of its destination: the low bits of a
 # wider typed constant and an inlined argument with its unary ops
@@ -4602,9 +4602,9 @@ SRC=1410 && COMPERR
 SRC=1411 && COMPERR
 SRC=1412 && COMPERR
 
-# a generic parameter named like a generic type or like a type defined later
-SRC=1413 && COMPERR
-SRC=1414 && COMPERR
+# a generic parameter hides a generic type and a type defined later
+SRC=1413 && EXP=11 && RUN
+SRC=1414 && EXP=6 && RUN
 
 # an operator on a whole array; the path of an 'include' decodes its escapes
 SRC=1415 && COMPERR
@@ -4972,17 +4972,15 @@ SRC=1570 && COMPERR
 # an array size is a constant expression, a built-in that folds is one
 SRC=1571 && EXP=5 && RUN
 
-# a generic parameter is not named like a global variable defined before it,
-# which would hide it only in some places, e.g. 'x U' still names the type
-SRC=1572 && COMPERR
+# a generic parameter hides a global variable of its name
+SRC=1572 && EXP=8 && RUN
 
-# a generic parameter is not named like a global constant defined before it,
-# which would hide it only in some places, e.g. 'U(5)' still converts
-SRC=1573 && COMPERR
+# a generic parameter hides a global constant of its name, 'U(5)' converts
+SRC=1573 && EXP=8 && RUN
 
-# a generic parameter is not named like a global defined after it either, the
-# order of the definitions does not matter
-SRC=1574 && COMPERR
+# a generic parameter hides a global defined after it too, the order of the
+# definitions does not matter
+SRC=1574 && EXP=7 && RUN
 
 # a function reached only by the check of an uncalled function is checked on
 # its own, 'g<i8>' takes nothing from a call
@@ -5108,9 +5106,9 @@ SRC=1612 && COMPERR
 # the remaining elements are zeroed after the listed ones, which read them first
 SRC=1613 && EXP=4 && RUN
 
-# a type parameter of a method of a generic type without an instance hides no
-# global defined after it
-SRC=1614 && COMPERR
+# a type parameter of a method of a generic type hides a global defined after
+# it
+SRC=1614 && EXP=6 && RUN
 
 # a type parameter is not named like its function, also when bound to a user
 # type
@@ -5991,9 +5989,9 @@ SRC=1877 && COMPERR
 # reported at the constructor name
 SRC=1878 && COMPERR
 
-# a generic parameter named like a function is rejected, in both orders
-SRC=1879 && COMPERR
-SRC=1880 && COMPERR
+# a generic parameter hides a function of its name, in both orders
+SRC=1879 && EXP=17 && RUN
+SRC=1880 && EXP=7 && RUN
 
 # an array length that does not fit the default type is rejected on rv32i
 if [[ $MACHINE != x86_64 ]]; then SRC=1881 && OPTS="--vars=0x80001000" COMPERR; fi
@@ -6024,8 +6022,8 @@ SRC=1889 && COMPERR
 # a field of a call result on the next line
 SRC=1890 && COMPERR
 
-# a generic parameter named like a generic function is rejected
-SRC=1891 && COMPERR
+# a generic parameter hides a generic function of its name
+SRC=1891 && EXP=8 && RUN
 
 # a constant index past the 64-bit offset range of an unsized array
 if [[ $MACHINE == x86_64 ]]; then SRC=1892 && COMPERR; fi
@@ -6276,7 +6274,7 @@ SRC=1972 && COMPERR
 SRC=1973 && COMPERR
 
 # a type parameter named like the alias of its instance
-SRC=1974 && COMPERR
+SRC=1974 && EXP=5 && RUN
 
 # a typed constant deduces a generic parameter
 SRC=1975 && EXP=6 && RUN
@@ -6330,7 +6328,7 @@ SRC=1990 && COMPERR
 SRC=1991 && COMPERR
 
 # a type defined after a generic function and before its instance
-SRC=1992 && COMPERR
+SRC=1992 && EXP=5 && RUN
 
 # a string for an untyped parameter of a generic function
 SRC=1993 && COMPERR
@@ -6528,3 +6526,10 @@ SRC=2057 && COMPERR
 
 # a 'let' that folds only at a call keeps its type
 SRC=2058 && EXP=2 && RUN
+
+# a 'let' of a literal-led list that holds a typed constant is narrowed like
+# the same 'var'
+SRC=2059 && COMPERR
+
+# a constant divisor that does not fit is rejected before its zero low bits
+if [[ $MACHINE != x86_64 ]]; then SRC=2060 && COMPERR; fi

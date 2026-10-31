@@ -168,9 +168,15 @@ enum class term_kind : uint8_t {
         return term_kind::builtin_type;
     }
 
+    // a type parameter hides a global of its name, e.g. the function 'T' in
+    // the 'T(5)' of 'func f<T type>()'
+    const bool is_type_param{tc.type_param_named(text) != nullptr};
+
     // e.g. 'let point = 3' makes 'point' in 'point + 1' the constant, not the
     // type
-    const bool is_hidden{tc.scopes().lookup(text).is_value()};
+    const bool is_hidden{
+        not is_type_param and tc.scopes().lookup(text).is_value(),
+    };
 
     // a keyword before '(' is not a call, e.g. 'not (a == 2)'
     // note: 'self' is the one keyword that names a value
@@ -183,7 +189,7 @@ enum class term_kind : uint8_t {
     // note: a call 'f()' still calls a hidden function, a hidden 'f<'
     //       starts a comparison
 
-    if (tc.generics().has_func(text) and
+    if (not is_type_param and tc.generics().has_func(text) and
         (next == '(' or (next == '<' and not is_hidden))) {
 
         return term_kind::generic_call;
@@ -191,8 +197,8 @@ enum class term_kind : uint8_t {
 
     if (next == '(') {
         // note: a function may be named like a type, e.g. 'point(3)'
-        if (not is_hidden and tc.types().has(text) and
-            not tc.funcs().has(text)) {
+        if (is_type_param or (not is_hidden and tc.types().has(text) and
+                              not tc.funcs().has(text))) {
 
             return term_kind::type_called;
         }

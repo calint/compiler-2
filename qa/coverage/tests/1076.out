@@ -1,4 +1,0 @@
-
-1076.baz:4:11: generic parameter 'T' hides the type 'T' defined at 10:6, use another name
-type list<T type> {
-          ^

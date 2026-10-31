@@ -1,11 +1,12 @@
-# a generic parameter is not named like a global variable defined before it,
-# which would hide it only in some places, e.g. 'x U' still names the type
+# a generic parameter hides a global variable of its name, 'x U' and 'U(...)'
+# name the type
 var U = 100
 
-func f<U type>(x U) res int {
-    res = U
+func f<U type>(x U) res {
+    var y = U(x + 1)
+    res = int(y)
 }
 
 func main() {
-    exit(f(i8(7)))
+    exit(f(i8(7)) + U - 100)
 }

@@ -716,8 +716,7 @@ class type_table final {
     auto add_param(const token& src_loc_tk, const std::string_view name,
                    const type& tpe) -> void {
 
-        // note: a type of that name defined after the generic definition is
-        //       hidden until 'toc::assert_generic_params_free' rejects it
+        // note: it hides a type of that name, see 'find'
 
         assert(not is_param(name));
 
@@ -2224,50 +2223,6 @@ class definition_checks final {
                         in_quotes(param_tk.text()), what, where(name_tk))};
     }
 
-    // a function of that name would give a call two meanings, e.g. 'T(5)' a
-    // conversion when 'T' is 'i8' and a call when it is a record
-    auto assert_generic_param_not_function(const token& src_loc_tk,
-                                           const std::string_view name) const
-        -> void {
-
-        if (funcs_.get().exists(name)) {
-            throw compile_error{
-                src_loc_tk,
-                std::format("generic parameter {} hides the function {} "
-                            "defined at {}, use another name",
-                            in_quotes(name), in_quotes(name),
-                            where(funcs_.get().get(name).src_loc_tk))};
-        }
-
-        if (not generics_.get().exists_func(name)) {
-            return;
-        }
-
-        throw compile_error{
-            src_loc_tk,
-            std::format("generic parameter {} hides the generic function {} "
-                        "defined at {}, use another name",
-                        in_quotes(name), in_quotes(name),
-                        where(generics_.get().get_func(name).src_loc_tk))};
-    }
-
-    // a generic parameter of a definition cannot be the name of a generic
-    // type; an instance names the generic type itself, e.g. 'text' names 'str'
-    auto assert_generic_param_not_generic_type(
-        const token& src_loc_tk, const std::string_view name) const -> void {
-
-        if (not generics_.get().exists_type(name)) {
-            return;
-        }
-
-        throw compile_error{
-            src_loc_tk,
-            std::format("generic parameter {} hides the generic type {} "
-                        "defined at {}, use another name",
-                        in_quotes(name), in_quotes(name),
-                        where(generics_.get().get_type(name).src_loc_tk))};
-    }
-
     // the body of a method of a generic type sees the parameters of the
     // type too, e.g. 'n' of 'type box<n>' in 'func box.f<n type>()' would
     // name two things
@@ -2289,65 +2244,6 @@ class definition_checks final {
                                 where(param.name_tk))};
             }
         }
-    }
-
-    // a generic parameter names its argument, so it cannot be the name of a
-    // type
-    auto assert_generic_param_not_type(const token& src_loc_tk,
-                                       const std::string_view name) const
-        -> void {
-
-        if (not types_.get().exists(name)) {
-            return;
-        }
-
-        // note: a built-in type name is rejected by
-        //       'toc::assert_valid_unqualified_name' at the definition
-
-        assert(not types_.get().is_builtin(name));
-
-        const token& type_tk{types_.get().src_loc_tk_of(name)};
-
-        throw compile_error{
-            src_loc_tk,
-            std::format("generic parameter {} hides the type {} defined "
-                        "at {}, use another name",
-                        in_quotes(name), in_quotes(name), where(type_tk))};
-    }
-
-    // a generic parameter names its argument, a value of that name would hide
-    // it only in some places, e.g. 'U(5)' still converts after 'let U = 3'
-    auto assert_generic_param_not_value(const token& src_loc_tk,
-                                        const std::string_view name) const
-        -> void {
-
-        const name_meaning meaning{scopes_.get().lookup(name)};
-
-        if (not meaning.is_value()) {
-            return;
-        }
-
-        // note: a definition is parsed, bindings exist only while compiling
-        assert(not meaning.is_binding());
-
-        const scope& scp{scopes_.get().at(meaning.scope_index)};
-
-        if (meaning.is_constant()) {
-            throw compile_error{
-                src_loc_tk,
-                std::format("generic parameter {} hides the constant {} "
-                            "defined at {}, use another name",
-                            in_quotes(name), in_quotes(name),
-                            where(scp.get_const(name).src_loc_tk))};
-        }
-
-        throw compile_error{
-            src_loc_tk,
-            std::format(
-                "generic parameter {} hides the variable {} defined at {}, "
-                "use another name",
-                in_quotes(name), in_quotes(name),
-                where(scp.get_var_const_ref(name).src_loc_tk))};
     }
 
     // a scope declares a variable or a constant of a name, not both
@@ -2561,7 +2457,6 @@ class variable_comments final {
 //                  'add_generic_type_instance', 'add_dat',
 //                  'mark_generic_func_instantiated', 'enter_type_params',
 //                  'exit_type_params', 'assert_generic_param_apart',
-//                  'assert_generic_param_free', 'assert_generic_params_free',
 //                  'assert_loop_names_free', 'assert_method_type_param_free',
 //                  'assert_type_name_free', 'assert_valid_unqualified_name',
 //                  'begin_definition', 'current_definition',
@@ -3018,29 +2913,17 @@ class toc final {
         definitions_.assert_generic_param_apart(param_tk, name_tk, what);
     }
 
-    // a generic parameter is a name like the others, e.g. not a keyword
-    auto assert_generic_param_free(const token& name_tk) const -> void {
-        assert(not is_compiling_);
+    // the type a type parameter of the instance being parsed is bound to,
+    // e.g. 'U' bound to 'i8'; null for any other name, also for the generic
+    // type of a method, which names its instance like a type name does
+    [[nodiscard]] auto type_param_named(const std::string_view name) const
+        -> const type* {
 
-        assert_valid_unqualified_name(name_tk);
-        definitions_.assert_generic_param_not_type(name_tk, name_tk.text());
-        definitions_.assert_generic_param_not_value(name_tk, name_tk.text());
-
-        definitions_.assert_generic_param_not_generic_type(name_tk,
-                                                           name_tk.text());
-
-        definitions_.assert_generic_param_not_function(name_tk, name_tk.text());
-    }
-
-    // the parse is over: a type or a global value defined after a generic
-    // definition is checked against its parameters too, so the order of the
-    // definitions does not matter
-    auto assert_generic_params_free() const -> void {
-        assert(not is_compiling_);
-
-        for (const token& param_tk : generics_.param_tokens()) {
-            assert_generic_param_free(param_tk);
+        if (not types_.is_param(name) or generics_.exists_type(name)) {
+            return nullptr;
         }
+
+        return &types_.get(name);
     }
 
     // the names a 'foo' declares are no type parameter either, see
@@ -3816,19 +3699,6 @@ class toc final {
         scopes_.set_max_scope_count(state.max_scope_count);
         storage_.restore_peaks(state.storage);
         scopes_.restore_reach_state(state.reach);
-    }
-
-    // the type a type parameter of the instance being parsed is bound to,
-    // e.g. 'U' bound to 'i8'; null for any other name, also for the generic
-    // type of a method, which names its instance like a type name does
-    [[nodiscard]] auto type_param_named(const std::string_view name) const
-        -> const type* {
-
-        if (not types_.is_param(name) or generics_.exists_type(name)) {
-            return nullptr;
-        }
-
-        return &types_.get(name);
     }
 };
 

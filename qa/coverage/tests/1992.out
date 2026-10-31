@@ -1,4 +1,0 @@
-
-1992.baz:5:8: generic parameter 'T' hides the type 'T' defined at 7:6, use another name
-func f<T type>(a T) {}
-       ^

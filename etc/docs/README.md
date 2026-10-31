@@ -191,7 +191,12 @@ rejected. The body of a function is the block above its scope, a name declared
 there that repeats a parameter or the result is rejected, a deeper block or a
 'foo' may hide it ('definition_checks::assert_not_hiding_signature'). In a
 function scope a parameter hides a constant of the generic instance, which is
-the context of the definition. Every question about a name asks this lookup:
+the context of the definition. A generic parameter hides a global of its name,
+a type, a generic type, a function, a generic function, a variable or a
+constant, defined before or after it: a constant parameter is a constant of
+the instance scope, a type parameter wins in the type table and in the parser
+('type_param_named'), e.g. 'T(5)' in 'func f<T type>()' converts also when a
+function 'T' exists. A local cannot be named like a type parameter. Every question about a name asks this lookup:
 the resolver ('ident_resolver'), the aliasing check, and the lookaheads of the
 parser, where a variable, a parameter or a constant hides a type or a generic
 function of its name, e.g. after 'let point = 3' the 'point' of 'point + 1' is
@@ -465,7 +470,9 @@ kept ('ident_info', the alias of an inlined argument, the constant of a 'let'):
 
 - typed: it has the rules of a variable of its 'own_type': a conversion
   ('i8(300)', 'i16(k)'), a constant argument of an inlined call,
-  'array_length', a list led by one, a 'let' of a type other than the
+  'array_length', a list led by one, a list led by an untyped one that
+  holds one, at the type of the list ('0 + k' with 'k' an 'i32' constant is
+  an 'int', as with a variable 'k'), a 'let' of a type other than the
   default type, e.g. 'let k = i8(3)' or 'let b = true'
 - untyped: a literal or a 'let' of untyped values, checked by its value where
   it is used, e.g. 'let k = 5' fits an 'i8', 'let k = 300' does not
@@ -730,6 +737,9 @@ base with the arguments it got, e.g. 'list<i8, 8>', before the alias frame.
 3. The fields and the methods of a generic type see the names defined
    before them, like a plain definition, also when an alias after them
    instantiates them.
+4. A generic parameter hides a global of its name wherever the global is
+   defined (1.3), so a method defined after the global still sees the
+   parameter.
 
 ### 2.10 Generic functions
 
