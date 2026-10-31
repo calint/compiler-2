@@ -467,7 +467,7 @@ module.exports = grammar({
     ),
 
     // List of expressions used for positional initialization
-    initializer_list: $ => sep1($._expression, ','),
+    initializer_list: $ => seq(sep1($._expression, ','), optional(',')),
 
 
     // -------------------------------------------------------------------------

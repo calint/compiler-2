@@ -92,3 +92,27 @@ func f() {
         (block
           (function_call
             (identifier)))))))
+
+================================================================================
+Trailing comma in an initializer list
+================================================================================
+
+func main() {
+    var a = [3]{4, 5,}
+}
+
+--------------------------------------------------------------------------------
+
+(program
+  (function_definition
+    (func_keyword)
+    (identifier)
+    (block
+      (variable_declaration
+        (var_keyword)
+        (identifier)
+        (typed_array_initializer
+          (number_literal)
+          (initializer_list
+            (number_literal)
+            (number_literal)))))))

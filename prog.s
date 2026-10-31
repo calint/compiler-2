@@ -82,7 +82,7 @@ main:
         if.38.24.190.5:
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.190.5:
-        cmp r15b, 0
+        test r15b, r15b
         jne if.38.24.190.5.end
         if.38.24.190.5.code:
 ;           [prog.baz:38:34] exit(1)
@@ -90,8 +90,7 @@ main:
 ;           [prog.baz:38:39] rdi = 1
 ;           [prog.baz:38:39] src: folded constant '1'
             mov rdi, 1
-            mov rax, 60
-            syscall
+            jmp baz_exit
 ;           [prog.baz:38:34] free named register rdi
         if.38.24.190.5.end:
     func.assert..190.5.end:
@@ -113,7 +112,7 @@ main:
         if.38.24.193.5:
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.193.5:
-        cmp r15b, 0
+        test r15b, r15b
         jne if.38.24.193.5.end
         if.38.24.193.5.code:
 ;           [prog.baz:38:34] exit(1)
@@ -121,8 +120,7 @@ main:
 ;           [prog.baz:38:39] rdi = 1
 ;           [prog.baz:38:39] src: folded constant '1'
             mov rdi, 1
-            mov rax, 60
-            syscall
+            jmp baz_exit
 ;           [prog.baz:38:34] free named register rdi
         if.38.24.193.5.end:
     func.assert..193.5.end:
@@ -168,7 +166,7 @@ main:
         if.38.24.204.5:
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.204.5:
-        cmp r15b, 0
+        test r15b, r15b
         jne if.38.24.204.5.end
         if.38.24.204.5.code:
 ;           [prog.baz:38:34] exit(1)
@@ -176,8 +174,7 @@ main:
 ;           [prog.baz:38:39] rdi = 1
 ;           [prog.baz:38:39] src: folded constant '1'
             mov rdi, 1
-            mov rax, 60
-            syscall
+            jmp baz_exit
 ;           [prog.baz:38:34] free named register rdi
         if.38.24.204.5.end:
     func.assert..204.5.end:
@@ -201,7 +198,7 @@ main:
         if.38.24.205.5:
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.205.5:
-        cmp r15b, 0
+        test r15b, r15b
         jne if.38.24.205.5.end
         if.38.24.205.5.code:
 ;           [prog.baz:38:34] exit(1)
@@ -209,8 +206,7 @@ main:
 ;           [prog.baz:38:39] rdi = 1
 ;           [prog.baz:38:39] src: folded constant '1'
             mov rdi, 1
-            mov rax, 60
-            syscall
+            jmp baz_exit
 ;           [prog.baz:38:34] free named register rdi
         if.38.24.205.5.end:
     func.assert..205.5.end:
@@ -241,7 +237,7 @@ main:
         if.38.24.208.5:
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.208.5:
-        cmp r15b, 0
+        test r15b, r15b
         jne if.38.24.208.5.end
         if.38.24.208.5.code:
 ;           [prog.baz:38:34] exit(1)
@@ -249,8 +245,7 @@ main:
 ;           [prog.baz:38:39] rdi = 1
 ;           [prog.baz:38:39] src: folded constant '1'
             mov rdi, 1
-            mov rax, 60
-            syscall
+            jmp baz_exit
 ;           [prog.baz:38:34] free named register rdi
         if.38.24.208.5.end:
     func.assert..208.5.end:
@@ -275,7 +270,7 @@ main:
         if.38.24.209.5:
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.209.5:
-        cmp r15b, 0
+        test r15b, r15b
         jne if.38.24.209.5.end
         if.38.24.209.5.code:
 ;           [prog.baz:38:34] exit(1)
@@ -283,8 +278,7 @@ main:
 ;           [prog.baz:38:39] rdi = 1
 ;           [prog.baz:38:39] src: folded constant '1'
             mov rdi, 1
-            mov rax, 60
-            syscall
+            jmp baz_exit
 ;           [prog.baz:38:34] free named register rdi
         if.38.24.209.5.end:
     func.assert..209.5.end:
@@ -309,7 +303,7 @@ main:
         if.38.24.210.5:
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.210.5:
-        cmp r15b, 0
+        test r15b, r15b
         jne if.38.24.210.5.end
         if.38.24.210.5.code:
 ;           [prog.baz:38:34] exit(1)
@@ -317,8 +311,7 @@ main:
 ;           [prog.baz:38:39] rdi = 1
 ;           [prog.baz:38:39] src: folded constant '1'
             mov rdi, 1
-            mov rax, 60
-            syscall
+            jmp baz_exit
 ;           [prog.baz:38:34] free named register rdi
         if.38.24.210.5.end:
     func.assert..210.5.end:
@@ -343,7 +336,7 @@ main:
         if.38.24.211.5:
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.211.5:
-        cmp r15b, 0
+        test r15b, r15b
         jne if.38.24.211.5.end
         if.38.24.211.5.code:
 ;           [prog.baz:38:34] exit(1)
@@ -351,8 +344,7 @@ main:
 ;           [prog.baz:38:39] rdi = 1
 ;           [prog.baz:38:39] src: folded constant '1'
             mov rdi, 1
-            mov rax, 60
-            syscall
+            jmp baz_exit
 ;           [prog.baz:38:34] free named register rdi
         if.38.24.211.5.end:
     func.assert..211.5.end:
@@ -379,7 +371,7 @@ main:
         if.38.24.212.5:
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.212.5:
-        cmp r15b, 0
+        test r15b, r15b
         jne if.38.24.212.5.end
         if.38.24.212.5.code:
 ;           [prog.baz:38:34] exit(1)
@@ -387,8 +379,7 @@ main:
 ;           [prog.baz:38:39] rdi = 1
 ;           [prog.baz:38:39] src: folded constant '1'
             mov rdi, 1
-            mov rax, 60
-            syscall
+            jmp baz_exit
 ;           [prog.baz:38:34] free named register rdi
         if.38.24.212.5.end:
     func.assert..212.5.end:
@@ -421,7 +412,7 @@ main:
         if.38.24.215.5:
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.215.5:
-        cmp r15b, 0
+        test r15b, r15b
         jne if.38.24.215.5.end
         if.38.24.215.5.code:
 ;           [prog.baz:38:34] exit(1)
@@ -429,8 +420,7 @@ main:
 ;           [prog.baz:38:39] rdi = 1
 ;           [prog.baz:38:39] src: folded constant '1'
             mov rdi, 1
-            mov rax, 60
-            syscall
+            jmp baz_exit
 ;           [prog.baz:38:34] free named register rdi
         if.38.24.215.5.end:
     func.assert..215.5.end:
@@ -461,7 +451,7 @@ main:
         if.38.24.216.5:
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.216.5:
-        cmp r15b, 0
+        test r15b, r15b
         jne if.38.24.216.5.end
         if.38.24.216.5.code:
 ;           [prog.baz:38:34] exit(1)
@@ -469,8 +459,7 @@ main:
 ;           [prog.baz:38:39] rdi = 1
 ;           [prog.baz:38:39] src: folded constant '1'
             mov rdi, 1
-            mov rax, 60
-            syscall
+            jmp baz_exit
 ;           [prog.baz:38:34] free named register rdi
         if.38.24.216.5.end:
     func.assert..216.5.end:
@@ -501,7 +490,7 @@ main:
         if.38.24.221.5:
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.221.5:
-        cmp r15b, 0
+        test r15b, r15b
         jne if.38.24.221.5.end
         if.38.24.221.5.code:
 ;           [prog.baz:38:34] exit(1)
@@ -509,8 +498,7 @@ main:
 ;           [prog.baz:38:39] rdi = 1
 ;           [prog.baz:38:39] src: folded constant '1'
             mov rdi, 1
-            mov rax, 60
-            syscall
+            jmp baz_exit
 ;           [prog.baz:38:34] free named register rdi
         if.38.24.221.5.end:
     func.assert..221.5.end:
@@ -545,7 +533,7 @@ main:
         if.38.24.226.5:
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.226.5:
-        cmp r15b, 0
+        test r15b, r15b
         jne if.38.24.226.5.end
         if.38.24.226.5.code:
 ;           [prog.baz:38:34] exit(1)
@@ -553,8 +541,7 @@ main:
 ;           [prog.baz:38:39] rdi = 1
 ;           [prog.baz:38:39] src: folded constant '1'
             mov rdi, 1
-            mov rax, 60
-            syscall
+            jmp baz_exit
 ;           [prog.baz:38:34] free named register rdi
         if.38.24.226.5.end:
     func.assert..226.5.end:
@@ -585,7 +572,7 @@ main:
         if.38.24.231.5:
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.231.5:
-        cmp r15b, 0
+        test r15b, r15b
         jne if.38.24.231.5.end
         if.38.24.231.5.code:
 ;           [prog.baz:38:34] exit(1)
@@ -593,8 +580,7 @@ main:
 ;           [prog.baz:38:39] rdi = 1
 ;           [prog.baz:38:39] src: folded constant '1'
             mov rdi, 1
-            mov rax, 60
-            syscall
+            jmp baz_exit
 ;           [prog.baz:38:34] free named register rdi
         if.38.24.231.5.end:
     func.assert..231.5.end:
@@ -618,7 +604,7 @@ main:
         if.38.24.239.5:
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.239.5:
-        cmp r15b, 0
+        test r15b, r15b
         jne if.38.24.239.5.end
         if.38.24.239.5.code:
 ;           [prog.baz:38:34] exit(1)
@@ -626,8 +612,7 @@ main:
 ;           [prog.baz:38:39] rdi = 1
 ;           [prog.baz:38:39] src: folded constant '1'
             mov rdi, 1
-            mov rax, 60
-            syscall
+            jmp baz_exit
 ;           [prog.baz:38:34] free named register rdi
         if.38.24.239.5.end:
     func.assert..239.5.end:
@@ -708,7 +693,7 @@ main:
         if.38.24.247.5:
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.247.5:
-        cmp r15b, 0
+        test r15b, r15b
         jne if.38.24.247.5.end
         if.38.24.247.5.code:
 ;           [prog.baz:38:34] exit(1)
@@ -716,8 +701,7 @@ main:
 ;           [prog.baz:38:39] rdi = 1
 ;           [prog.baz:38:39] src: folded constant '1'
             mov rdi, 1
-            mov rax, 60
-            syscall
+            jmp baz_exit
 ;           [prog.baz:38:34] free named register rdi
         if.38.24.247.5.end:
     func.assert..247.5.end:
@@ -735,7 +719,7 @@ main:
         if.38.24.248.5:
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.248.5:
-        cmp r15b, 0
+        test r15b, r15b
         jne if.38.24.248.5.end
         if.38.24.248.5.code:
 ;           [prog.baz:38:34] exit(1)
@@ -743,8 +727,7 @@ main:
 ;           [prog.baz:38:39] rdi = 1
 ;           [prog.baz:38:39] src: folded constant '1'
             mov rdi, 1
-            mov rax, 60
-            syscall
+            jmp baz_exit
 ;           [prog.baz:38:34] free named register rdi
         if.38.24.248.5.end:
     func.assert..248.5.end:
@@ -757,7 +740,6 @@ main:
     lea rsi, [rbp + 432]
 ;   [prog.baz:250:24] arr
     lea rdi, [rbp + 424]
-;   [prog.baz:250:29] 2
 ;   [prog.baz:250:29] rcx = 2
 ;   [prog.baz:250:29] src: folded constant '2'
     mov rcx, 2
@@ -791,7 +773,7 @@ main:
         if.38.24.251.5:
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.251.5:
-        cmp r15b, 0
+        test r15b, r15b
         jne if.38.24.251.5.end
         if.38.24.251.5.code:
 ;           [prog.baz:38:34] exit(1)
@@ -799,8 +781,7 @@ main:
 ;           [prog.baz:38:39] rdi = 1
 ;           [prog.baz:38:39] src: folded constant '1'
             mov rdi, 1
-            mov rax, 60
-            syscall
+            jmp baz_exit
 ;           [prog.baz:38:34] free named register rdi
         if.38.24.251.5.end:
     func.assert..251.5.end:
@@ -815,34 +796,15 @@ main:
     mov qword [rbp + 464], 0
     mov qword [rbp + 472], 0
 ;   [prog.baz:255:5] array_copy(arr, arr1, 4)
-;   [prog.baz:255:5] allocate named register rsi
-;   [prog.baz:255:5] allocate named register rdi
-;   [prog.baz:255:5] allocate named register rcx
 ;   [prog.baz:255:16] arr
-    lea rsi, [rbp + 424]
 ;   [prog.baz:255:21] arr1
-    lea rdi, [rbp + 448]
-;   [prog.baz:255:27] 4
-;   [prog.baz:255:27] rcx = 4
-;   [prog.baz:255:27] src: folded constant '4'
-    mov rcx, 4
-    sal rcx, 2
-;   [prog.baz:255:5] overlap check begin
+;   [prog.baz:255:5] size <= 16 B, use mov
 ;   [prog.baz:255:5] allocate scratch register -> r15
-    mov r15, rdi
-    sub r15, rsi
-;   [prog.baz:255:5] the same range is not an overlap
-    je .Lbaz_overlap.1
-;   [prog.baz:255:5] destination starts inside the source
-    cmp r15, rcx
-    jb baz_overlap_line_255
-    .Lbaz_overlap.1:
+    mov r15, qword [rbp + 424]
+    mov qword [rbp + 448], r15
+    mov r15, qword [rbp + 432]
+    mov qword [rbp + 456], r15
 ;   [prog.baz:255:5] free scratch register r15
-;   [prog.baz:255:5] overlap check end
-    rep movsb
-;   [prog.baz:255:5] free named register rcx
-;   [prog.baz:255:5] free named register rdi
-;   [prog.baz:255:5] free named register rsi
 ;   [prog.baz:256:5] var eq = arrays_equal(arr[1], arr1[1], 3)
 ;   [prog.baz:256:9] eq: bool (1 B @ [rbp + 480])
 ;   [prog.baz:256:9] eq = arrays_equal(arr[1], arr1[1], 3)
@@ -851,19 +813,14 @@ main:
 ;   [prog.baz:256:14] arrays_equal(arr[1], arr1[1], 3)
 ;   [prog.baz:256:14] allocate named register rsi
 ;   [prog.baz:256:14] allocate named register rdi
-;   [prog.baz:256:14] allocate named register rcx
 ;   [prog.baz:256:27] arr[1]
     lea rsi, [rbp + 428]
 ;   [prog.baz:256:35] arr1[1]
     lea rdi, [rbp + 452]
-;   [prog.baz:256:44] 3
-;   [prog.baz:256:44] rcx = 3
-;   [prog.baz:256:44] src: folded constant '3'
-    mov rcx, 3
-    sal rcx, 2
-    test rcx, rcx
-    repe cmpsb
-;   [prog.baz:256:14] free named register rcx
+    cmpsq
+    jne .Lbaz_equal.1
+    cmpsd
+    .Lbaz_equal.1:
 ;   [prog.baz:256:14] free named register rdi
 ;   [prog.baz:256:14] free named register rsi
     sete byte [rbp + 480]
@@ -882,8 +839,7 @@ main:
 ;           [prog.baz:38:39] rdi = 1
 ;           [prog.baz:38:39] src: folded constant '1'
             mov rdi, 1
-            mov rax, 60
-            syscall
+            jmp baz_exit
 ;           [prog.baz:38:34] free named register rdi
         if.38.24.259.5.end:
     func.assert..259.5.end:
@@ -900,23 +856,18 @@ main:
 ;       [prog.baz:262:16] arrays_equal(arr, arr1, 4)
 ;       [prog.baz:262:16] allocate named register rsi
 ;       [prog.baz:262:16] allocate named register rdi
-;       [prog.baz:262:16] allocate named register rcx
 ;       [prog.baz:262:29] arr
         lea rsi, [rbp + 424]
 ;       [prog.baz:262:34] arr1
         lea rdi, [rbp + 448]
-;       [prog.baz:262:40] 4
-;       [prog.baz:262:40] rcx = 4
-;       [prog.baz:262:40] src: folded constant '4'
-        mov rcx, 4
-        sal rcx, 2
-        test rcx, rcx
-        repe cmpsb
-;       [prog.baz:262:16] free named register rcx
+        cmpsq
+        jne .Lbaz_equal.2
+        cmpsq
+        .Lbaz_equal.2:
 ;       [prog.baz:262:16] free named register rdi
 ;       [prog.baz:262:16] free named register rsi
         sete r15b
-    cmp r15b, 0
+    test r15b, r15b
     sete r15b
     bool.262.12.end:
 ;   [prog.baz:38:6] assert(ok bool)
@@ -925,7 +876,7 @@ main:
         if.38.24.262.5:
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.262.5:
-        cmp r15b, 0
+        test r15b, r15b
         jne if.38.24.262.5.end
         if.38.24.262.5.code:
 ;           [prog.baz:38:34] exit(1)
@@ -933,8 +884,7 @@ main:
 ;           [prog.baz:38:39] rdi = 1
 ;           [prog.baz:38:39] src: folded constant '1'
             mov rdi, 1
-            mov rax, 60
-            syscall
+            jmp baz_exit
 ;           [prog.baz:38:34] free named register rdi
         if.38.24.262.5.end:
     func.assert..262.5.end:
@@ -960,9 +910,9 @@ main:
 ;       [prog.baz:265:19] arr4
         lea rdi, [rbp + 484]
         cmpsq
-        jne .Lbaz_equal.2
+        jne .Lbaz_equal.3
         cmpsq
-        .Lbaz_equal.2:
+        .Lbaz_equal.3:
 ;       [prog.baz:265:12] free named register rdi
 ;       [prog.baz:265:12] free named register rsi
         sete r15b
@@ -973,7 +923,7 @@ main:
         if.38.24.265.5:
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.265.5:
-        cmp r15b, 0
+        test r15b, r15b
         jne if.38.24.265.5.end
         if.38.24.265.5.code:
 ;           [prog.baz:38:34] exit(1)
@@ -981,8 +931,7 @@ main:
 ;           [prog.baz:38:39] rdi = 1
 ;           [prog.baz:38:39] src: folded constant '1'
             mov rdi, 1
-            mov rax, 60
-            syscall
+            jmp baz_exit
 ;           [prog.baz:38:34] free named register rdi
         if.38.24.265.5.end:
     func.assert..265.5.end:
@@ -1070,7 +1019,7 @@ main:
         if.38.24.274.5:
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.274.5:
-        cmp r15b, 0
+        test r15b, r15b
         jne if.38.24.274.5.end
         if.38.24.274.5.code:
 ;           [prog.baz:38:34] exit(1)
@@ -1078,8 +1027,7 @@ main:
 ;           [prog.baz:38:39] rdi = 1
 ;           [prog.baz:38:39] src: folded constant '1'
             mov rdi, 1
-            mov rax, 60
-            syscall
+            jmp baz_exit
 ;           [prog.baz:38:34] free named register rdi
         if.38.24.274.5.end:
     func.assert..274.5.end:
@@ -1106,7 +1054,7 @@ main:
         if.38.24.277.5:
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.277.5:
-        cmp r15b, 0
+        test r15b, r15b
         jne if.38.24.277.5.end
         if.38.24.277.5.code:
 ;           [prog.baz:38:34] exit(1)
@@ -1114,8 +1062,7 @@ main:
 ;           [prog.baz:38:39] rdi = 1
 ;           [prog.baz:38:39] src: folded constant '1'
             mov rdi, 1
-            mov rax, 60
-            syscall
+            jmp baz_exit
 ;           [prog.baz:38:34] free named register rdi
         if.38.24.277.5.end:
     func.assert..277.5.end:
@@ -1170,7 +1117,7 @@ main:
         if.38.24.283.5:
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.283.5:
-        cmp r15b, 0
+        test r15b, r15b
         jne if.38.24.283.5.end
         if.38.24.283.5.code:
 ;           [prog.baz:38:34] exit(1)
@@ -1178,8 +1125,7 @@ main:
 ;           [prog.baz:38:39] rdi = 1
 ;           [prog.baz:38:39] src: folded constant '1'
             mov rdi, 1
-            mov rax, 60
-            syscall
+            jmp baz_exit
 ;           [prog.baz:38:34] free named register rdi
         if.38.24.283.5.end:
     func.assert..283.5.end:
@@ -1198,7 +1144,7 @@ main:
         if.38.24.284.5:
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.284.5:
-        cmp r15b, 0
+        test r15b, r15b
         jne if.38.24.284.5.end
         if.38.24.284.5.code:
 ;           [prog.baz:38:34] exit(1)
@@ -1206,8 +1152,7 @@ main:
 ;           [prog.baz:38:39] rdi = 1
 ;           [prog.baz:38:39] src: folded constant '1'
             mov rdi, 1
-            mov rax, 60
-            syscall
+            jmp baz_exit
 ;           [prog.baz:38:34] free named register rdi
         if.38.24.284.5.end:
     func.assert..284.5.end:
@@ -1245,7 +1190,7 @@ main:
         if.38.24.295.5:
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.295.5:
-        cmp r15b, 0
+        test r15b, r15b
         jne if.38.24.295.5.end
         if.38.24.295.5.code:
 ;           [prog.baz:38:34] exit(1)
@@ -1253,8 +1198,7 @@ main:
 ;           [prog.baz:38:39] rdi = 1
 ;           [prog.baz:38:39] src: folded constant '1'
             mov rdi, 1
-            mov rax, 60
-            syscall
+            jmp baz_exit
 ;           [prog.baz:38:34] free named register rdi
         if.38.24.295.5.end:
     func.assert..295.5.end:
@@ -1272,7 +1216,7 @@ main:
         if.38.24.296.5:
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.296.5:
-        cmp r15b, 0
+        test r15b, r15b
         jne if.38.24.296.5.end
         if.38.24.296.5.code:
 ;           [prog.baz:38:34] exit(1)
@@ -1280,8 +1224,7 @@ main:
 ;           [prog.baz:38:39] rdi = 1
 ;           [prog.baz:38:39] src: folded constant '1'
             mov rdi, 1
-            mov rax, 60
-            syscall
+            jmp baz_exit
 ;           [prog.baz:38:34] free named register rdi
         if.38.24.296.5.end:
     func.assert..296.5.end:
@@ -1307,9 +1250,9 @@ main:
 ;       [prog.baz:301:17] q
         lea rdi, [rbp + 536]
         cmpsq
-        jne .Lbaz_equal.3
+        jne .Lbaz_equal.4
         cmpsq
-        .Lbaz_equal.3:
+        .Lbaz_equal.4:
 ;       [prog.baz:301:12] free named register rdi
 ;       [prog.baz:301:12] free named register rsi
         sete r15b
@@ -1320,7 +1263,7 @@ main:
         if.38.24.301.5:
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.301.5:
-        cmp r15b, 0
+        test r15b, r15b
         jne if.38.24.301.5.end
         if.38.24.301.5.code:
 ;           [prog.baz:38:34] exit(1)
@@ -1328,8 +1271,7 @@ main:
 ;           [prog.baz:38:39] rdi = 1
 ;           [prog.baz:38:39] src: folded constant '1'
             mov rdi, 1
-            mov rax, 60
-            syscall
+            jmp baz_exit
 ;           [prog.baz:38:34] free named register rdi
         if.38.24.301.5.end:
     func.assert..301.5.end:
@@ -1349,9 +1291,9 @@ main:
 ;       [prog.baz:306:17] q
         lea rdi, [rbp + 536]
         cmpsq
-        jne .Lbaz_equal.4
+        jne .Lbaz_equal.5
         cmpsq
-        .Lbaz_equal.4:
+        .Lbaz_equal.5:
 ;       [prog.baz:306:12] free named register rdi
 ;       [prog.baz:306:12] free named register rsi
         setne r15b
@@ -1362,7 +1304,7 @@ main:
         if.38.24.306.5:
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.306.5:
-        cmp r15b, 0
+        test r15b, r15b
         jne if.38.24.306.5.end
         if.38.24.306.5.code:
 ;           [prog.baz:38:34] exit(1)
@@ -1370,8 +1312,7 @@ main:
 ;           [prog.baz:38:39] rdi = 1
 ;           [prog.baz:38:39] src: folded constant '1'
             mov rdi, 1
-            mov rax, 60
-            syscall
+            jmp baz_exit
 ;           [prog.baz:38:34] free named register rdi
         if.38.24.306.5.end:
     func.assert..306.5.end:
@@ -1412,7 +1353,7 @@ main:
         if.38.24.310.5:
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.310.5:
-        cmp r15b, 0
+        test r15b, r15b
         jne if.38.24.310.5.end
         if.38.24.310.5.code:
 ;           [prog.baz:38:34] exit(1)
@@ -1420,8 +1361,7 @@ main:
 ;           [prog.baz:38:39] rdi = 1
 ;           [prog.baz:38:39] src: folded constant '1'
             mov rdi, 1
-            mov rax, 60
-            syscall
+            jmp baz_exit
 ;           [prog.baz:38:34] free named register rdi
         if.38.24.310.5.end:
     func.assert..310.5.end:
@@ -1460,7 +1400,7 @@ main:
         if.38.24.314.5:
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.314.5:
-        cmp r15b, 0
+        test r15b, r15b
         jne if.38.24.314.5.end
         if.38.24.314.5.code:
 ;           [prog.baz:38:34] exit(1)
@@ -1468,8 +1408,7 @@ main:
 ;           [prog.baz:38:39] rdi = 1
 ;           [prog.baz:38:39] src: folded constant '1'
             mov rdi, 1
-            mov rax, 60
-            syscall
+            jmp baz_exit
 ;           [prog.baz:38:34] free named register rdi
         if.38.24.314.5.end:
     func.assert..314.5.end:
@@ -1515,7 +1454,7 @@ main:
         if.38.24.318.5:
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.318.5:
-        cmp r15b, 0
+        test r15b, r15b
         jne if.38.24.318.5.end
         if.38.24.318.5.code:
 ;           [prog.baz:38:34] exit(1)
@@ -1523,8 +1462,7 @@ main:
 ;           [prog.baz:38:39] rdi = 1
 ;           [prog.baz:38:39] src: folded constant '1'
             mov rdi, 1
-            mov rax, 60
-            syscall
+            jmp baz_exit
 ;           [prog.baz:38:34] free named register rdi
         if.38.24.318.5.end:
     func.assert..318.5.end:
@@ -1555,7 +1493,7 @@ main:
         if.38.24.321.5:
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.321.5:
-        cmp r15b, 0
+        test r15b, r15b
         jne if.38.24.321.5.end
         if.38.24.321.5.code:
 ;           [prog.baz:38:34] exit(1)
@@ -1563,8 +1501,7 @@ main:
 ;           [prog.baz:38:39] rdi = 1
 ;           [prog.baz:38:39] src: folded constant '1'
             mov rdi, 1
-            mov rax, 60
-            syscall
+            jmp baz_exit
 ;           [prog.baz:38:34] free named register rdi
         if.38.24.321.5.end:
     func.assert..321.5.end:
@@ -1582,15 +1519,11 @@ main:
 ;   [prog.baz:324:13] = expression
 ;   [prog.baz:324:13] factorial(five)
 ;   [prog.baz:324:13] frame capacity check begin
+;   [prog.baz:324:13] callee storage starts after the caller's storage (rbp + 592)
 ;   [prog.baz:324:13] allocate scratch register -> r15
-;   [prog.baz:324:13] allocate scratch register -> r14
-    lea r15, [rbp + 592]
-    mov r14, strict qword vars.end
-    sub r14, r15
-    mov r15, size.func.factorial
-    cmp r15, r14
-    ja baz_frame_overflow
-;   [prog.baz:324:13] free scratch register r14
+    mov r15, strict qword vars.end - size.func.factorial - 592
+    cmp r15, rbp
+    jl baz_frame_overflow
 ;   [prog.baz:324:13] free scratch register r15
 ;   [prog.baz:324:13] frame capacity check end
 ;   [prog.baz:324:13] result address in callee frame
@@ -1619,7 +1552,7 @@ main:
         if.38.24.325.5:
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.325.5:
-        cmp r15b, 0
+        test r15b, r15b
         jne if.38.24.325.5.end
         if.38.24.325.5.code:
 ;           [prog.baz:38:34] exit(1)
@@ -1627,8 +1560,7 @@ main:
 ;           [prog.baz:38:39] rdi = 1
 ;           [prog.baz:38:39] src: folded constant '1'
             mov rdi, 1
-            mov rax, 60
-            syscall
+            jmp baz_exit
 ;           [prog.baz:38:34] free named register rdi
         if.38.24.325.5.end:
     func.assert..325.5.end:
@@ -1666,7 +1598,7 @@ main:
         if.38.24.328.5:
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.328.5:
-        cmp r15b, 0
+        test r15b, r15b
         jne if.38.24.328.5.end
         if.38.24.328.5.code:
 ;           [prog.baz:38:34] exit(1)
@@ -1674,8 +1606,7 @@ main:
 ;           [prog.baz:38:39] rdi = 1
 ;           [prog.baz:38:39] src: folded constant '1'
             mov rdi, 1
-            mov rax, 60
-            syscall
+            jmp baz_exit
 ;           [prog.baz:38:34] free named register rdi
         if.38.24.328.5.end:
     func.assert..328.5.end:
@@ -1711,7 +1642,7 @@ main:
         if.38.24.334.5:
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.334.5:
-        cmp r15b, 0
+        test r15b, r15b
         jne if.38.24.334.5.end
         if.38.24.334.5.code:
 ;           [prog.baz:38:34] exit(1)
@@ -1719,8 +1650,7 @@ main:
 ;           [prog.baz:38:39] rdi = 1
 ;           [prog.baz:38:39] src: folded constant '1'
             mov rdi, 1
-            mov rax, 60
-            syscall
+            jmp baz_exit
 ;           [prog.baz:38:34] free named register rdi
         if.38.24.334.5.end:
     func.assert..334.5.end:
@@ -1738,7 +1668,7 @@ main:
         if.38.24.335.5:
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.335.5:
-        cmp r15b, 0
+        test r15b, r15b
         jne if.38.24.335.5.end
         if.38.24.335.5.code:
 ;           [prog.baz:38:34] exit(1)
@@ -1746,8 +1676,7 @@ main:
 ;           [prog.baz:38:39] rdi = 1
 ;           [prog.baz:38:39] src: folded constant '1'
             mov rdi, 1
-            mov rax, 60
-            syscall
+            jmp baz_exit
 ;           [prog.baz:38:34] free named register rdi
         if.38.24.335.5.end:
     func.assert..335.5.end:
@@ -1775,7 +1704,7 @@ main:
         if.38.24.338.5:
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.338.5:
-        cmp r15b, 0
+        test r15b, r15b
         jne if.38.24.338.5.end
         if.38.24.338.5.code:
 ;           [prog.baz:38:34] exit(1)
@@ -1783,8 +1712,7 @@ main:
 ;           [prog.baz:38:39] rdi = 1
 ;           [prog.baz:38:39] src: folded constant '1'
             mov rdi, 1
-            mov rax, 60
-            syscall
+            jmp baz_exit
 ;           [prog.baz:38:34] free named register rdi
         if.38.24.338.5.end:
     func.assert..338.5.end:
@@ -1809,7 +1737,7 @@ main:
             add r14, qword [rbp + 616]
             jo baz_overflow_line_55
         func.point.sum..339.15.end:
-    cmp r14, 0
+    test r14, r14
     sete r15b
 ;   [prog.baz:339:12] free scratch register r14
     bool.339.12.end:
@@ -1819,7 +1747,7 @@ main:
         if.38.24.339.5:
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.339.5:
-        cmp r15b, 0
+        test r15b, r15b
         jne if.38.24.339.5.end
         if.38.24.339.5.code:
 ;           [prog.baz:38:34] exit(1)
@@ -1827,8 +1755,7 @@ main:
 ;           [prog.baz:38:39] rdi = 1
 ;           [prog.baz:38:39] src: folded constant '1'
             mov rdi, 1
-            mov rax, 60
-            syscall
+            jmp baz_exit
 ;           [prog.baz:38:34] free named register rdi
         if.38.24.339.5.end:
     func.assert..339.5.end:
@@ -1886,7 +1813,7 @@ main:
         if.38.24.345.5:
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.345.5:
-        cmp r15b, 0
+        test r15b, r15b
         jne if.38.24.345.5.end
         if.38.24.345.5.code:
 ;           [prog.baz:38:34] exit(1)
@@ -1894,8 +1821,7 @@ main:
 ;           [prog.baz:38:39] rdi = 1
 ;           [prog.baz:38:39] src: folded constant '1'
             mov rdi, 1
-            mov rax, 60
-            syscall
+            jmp baz_exit
 ;           [prog.baz:38:34] free named register rdi
         if.38.24.345.5.end:
     func.assert..345.5.end:
@@ -1913,7 +1839,7 @@ main:
         if.38.24.346.5:
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.346.5:
-        cmp r15b, 0
+        test r15b, r15b
         jne if.38.24.346.5.end
         if.38.24.346.5.code:
 ;           [prog.baz:38:34] exit(1)
@@ -1921,8 +1847,7 @@ main:
 ;           [prog.baz:38:39] rdi = 1
 ;           [prog.baz:38:39] src: folded constant '1'
             mov rdi, 1
-            mov rax, 60
-            syscall
+            jmp baz_exit
 ;           [prog.baz:38:34] free named register rdi
         if.38.24.346.5.end:
     func.assert..346.5.end:
@@ -1940,7 +1865,7 @@ main:
         if.38.24.347.5:
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.347.5:
-        cmp r15b, 0
+        test r15b, r15b
         jne if.38.24.347.5.end
         if.38.24.347.5.code:
 ;           [prog.baz:38:34] exit(1)
@@ -1948,8 +1873,7 @@ main:
 ;           [prog.baz:38:39] rdi = 1
 ;           [prog.baz:38:39] src: folded constant '1'
             mov rdi, 1
-            mov rax, 60
-            syscall
+            jmp baz_exit
 ;           [prog.baz:38:34] free named register rdi
         if.38.24.347.5.end:
     func.assert..347.5.end:
@@ -1996,7 +1920,7 @@ main:
         if.38.24.351.5:
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.351.5:
-        cmp r15b, 0
+        test r15b, r15b
         jne if.38.24.351.5.end
         if.38.24.351.5.code:
 ;           [prog.baz:38:34] exit(1)
@@ -2004,8 +1928,7 @@ main:
 ;           [prog.baz:38:39] rdi = 1
 ;           [prog.baz:38:39] src: folded constant '1'
             mov rdi, 1
-            mov rax, 60
-            syscall
+            jmp baz_exit
 ;           [prog.baz:38:34] free named register rdi
         if.38.24.351.5.end:
     func.assert..351.5.end:
@@ -2023,7 +1946,7 @@ main:
         if.38.24.352.5:
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.352.5:
-        cmp r15b, 0
+        test r15b, r15b
         jne if.38.24.352.5.end
         if.38.24.352.5.code:
 ;           [prog.baz:38:34] exit(1)
@@ -2031,8 +1954,7 @@ main:
 ;           [prog.baz:38:39] rdi = 1
 ;           [prog.baz:38:39] src: folded constant '1'
             mov rdi, 1
-            mov rax, 60
-            syscall
+            jmp baz_exit
 ;           [prog.baz:38:34] free named register rdi
         if.38.24.352.5.end:
     func.assert..352.5.end:
@@ -2063,7 +1985,7 @@ main:
         if.38.24.355.5:
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.355.5:
-        cmp r15b, 0
+        test r15b, r15b
         jne if.38.24.355.5.end
         if.38.24.355.5.code:
 ;           [prog.baz:38:34] exit(1)
@@ -2071,8 +1993,7 @@ main:
 ;           [prog.baz:38:39] rdi = 1
 ;           [prog.baz:38:39] src: folded constant '1'
             mov rdi, 1
-            mov rax, 60
-            syscall
+            jmp baz_exit
 ;           [prog.baz:38:34] free named register rdi
         if.38.24.355.5.end:
     func.assert..355.5.end:
@@ -2090,7 +2011,7 @@ main:
         if.38.24.356.5:
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.356.5:
-        cmp r15b, 0
+        test r15b, r15b
         jne if.38.24.356.5.end
         if.38.24.356.5.code:
 ;           [prog.baz:38:34] exit(1)
@@ -2098,8 +2019,7 @@ main:
 ;           [prog.baz:38:39] rdi = 1
 ;           [prog.baz:38:39] src: folded constant '1'
             mov rdi, 1
-            mov rax, 60
-            syscall
+            jmp baz_exit
 ;           [prog.baz:38:34] free named register rdi
         if.38.24.356.5.end:
     func.assert..356.5.end:
@@ -2117,7 +2037,7 @@ main:
         if.38.24.357.5:
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.357.5:
-        cmp r15b, 0
+        test r15b, r15b
         jne if.38.24.357.5.end
         if.38.24.357.5.code:
 ;           [prog.baz:38:34] exit(1)
@@ -2125,8 +2045,7 @@ main:
 ;           [prog.baz:38:39] rdi = 1
 ;           [prog.baz:38:39] src: folded constant '1'
             mov rdi, 1
-            mov rax, 60
-            syscall
+            jmp baz_exit
 ;           [prog.baz:38:34] free named register rdi
         if.38.24.357.5.end:
     func.assert..357.5.end:
@@ -2157,7 +2076,7 @@ main:
         if.38.24.360.5:
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.360.5:
-        cmp r15b, 0
+        test r15b, r15b
         jne if.38.24.360.5.end
         if.38.24.360.5.code:
 ;           [prog.baz:38:34] exit(1)
@@ -2165,8 +2084,7 @@ main:
 ;           [prog.baz:38:39] rdi = 1
 ;           [prog.baz:38:39] src: folded constant '1'
             mov rdi, 1
-            mov rax, 60
-            syscall
+            jmp baz_exit
 ;           [prog.baz:38:34] free named register rdi
         if.38.24.360.5.end:
     func.assert..360.5.end:
@@ -2197,7 +2115,7 @@ main:
         if.38.24.362.5:
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.362.5:
-        cmp r15b, 0
+        test r15b, r15b
         jne if.38.24.362.5.end
         if.38.24.362.5.code:
 ;           [prog.baz:38:34] exit(1)
@@ -2205,8 +2123,7 @@ main:
 ;           [prog.baz:38:39] rdi = 1
 ;           [prog.baz:38:39] src: folded constant '1'
             mov rdi, 1
-            mov rax, 60
-            syscall
+            jmp baz_exit
 ;           [prog.baz:38:34] free named register rdi
         if.38.24.362.5.end:
     func.assert..362.5.end:
@@ -2242,7 +2159,7 @@ main:
         if.38.24.372.5:
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.372.5:
-        cmp r15b, 0
+        test r15b, r15b
         jne if.38.24.372.5.end
         if.38.24.372.5.code:
 ;           [prog.baz:38:34] exit(1)
@@ -2250,8 +2167,7 @@ main:
 ;           [prog.baz:38:39] rdi = 1
 ;           [prog.baz:38:39] src: folded constant '1'
             mov rdi, 1
-            mov rax, 60
-            syscall
+            jmp baz_exit
 ;           [prog.baz:38:34] free named register rdi
         if.38.24.372.5.end:
     func.assert..372.5.end:
@@ -2301,7 +2217,7 @@ main:
         if.38.24.374.5:
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.374.5:
-        cmp r15b, 0
+        test r15b, r15b
         jne if.38.24.374.5.end
         if.38.24.374.5.code:
 ;           [prog.baz:38:34] exit(1)
@@ -2309,8 +2225,7 @@ main:
 ;           [prog.baz:38:39] rdi = 1
 ;           [prog.baz:38:39] src: folded constant '1'
             mov rdi, 1
-            mov rax, 60
-            syscall
+            jmp baz_exit
 ;           [prog.baz:38:34] free named register rdi
         if.38.24.374.5.end:
     func.assert..374.5.end:
@@ -2358,7 +2273,7 @@ main:
         if.38.24.377.5:
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.377.5:
-        cmp r15b, 0
+        test r15b, r15b
         jne if.38.24.377.5.end
         if.38.24.377.5.code:
 ;           [prog.baz:38:34] exit(1)
@@ -2366,8 +2281,7 @@ main:
 ;           [prog.baz:38:39] rdi = 1
 ;           [prog.baz:38:39] src: folded constant '1'
             mov rdi, 1
-            mov rax, 60
-            syscall
+            jmp baz_exit
 ;           [prog.baz:38:34] free named register rdi
         if.38.24.377.5.end:
     func.assert..377.5.end:
@@ -2403,7 +2317,7 @@ main:
         if.38.24.382.5:
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.382.5:
-        cmp r15b, 0
+        test r15b, r15b
         jne if.38.24.382.5.end
         if.38.24.382.5.code:
 ;           [prog.baz:38:34] exit(1)
@@ -2411,8 +2325,7 @@ main:
 ;           [prog.baz:38:39] rdi = 1
 ;           [prog.baz:38:39] src: folded constant '1'
             mov rdi, 1
-            mov rax, 60
-            syscall
+            jmp baz_exit
 ;           [prog.baz:38:34] free named register rdi
         if.38.24.382.5.end:
     func.assert..382.5.end:
@@ -2425,7 +2338,6 @@ main:
     lea rsi, [rbp + 816]
 ;   [prog.baz:386:9] worlds[0].locations
     lea rdi, [rbp + 752]
-;   [prog.baz:387:9] array_length(worlds[0].locations)
 ;   [prog.baz:387:9] rcx = 8
 ;   [prog.baz:387:9] src: folded constant 'array_length(worlds[0].locations)'
     mov rcx, 8
@@ -2435,11 +2347,11 @@ main:
     mov r15, rdi
     sub r15, rsi
 ;   [prog.baz:384:5] the same range is not an overlap
-    je .Lbaz_overlap.5
+    je .Lbaz_overlap.6
 ;   [prog.baz:384:5] destination starts inside the source
     cmp r15, rcx
     jb baz_overlap_line_384
-    .Lbaz_overlap.5:
+    .Lbaz_overlap.6:
 ;   [prog.baz:384:5] free scratch register r15
 ;   [prog.baz:384:5] overlap check end
     rep movsb
@@ -2459,7 +2371,7 @@ main:
         if.38.24.391.5:
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.391.5:
-        cmp r15b, 0
+        test r15b, r15b
         jne if.38.24.391.5.end
         if.38.24.391.5.code:
 ;           [prog.baz:38:34] exit(1)
@@ -2467,8 +2379,7 @@ main:
 ;           [prog.baz:38:39] rdi = 1
 ;           [prog.baz:38:39] src: folded constant '1'
             mov rdi, 1
-            mov rax, 60
-            syscall
+            jmp baz_exit
 ;           [prog.baz:38:34] free named register rdi
         if.38.24.391.5.end:
     func.assert..391.5.end:
@@ -2485,13 +2396,8 @@ main:
     lea rsi, [rbp + 752]
 ;   [prog.baz:394:14] worlds[1].locations
     lea rdi, [rbp + 816]
-;   [prog.baz:395:14] array_length(worlds[0].locations)
-;   [prog.baz:395:14] rcx = 8
-;   [prog.baz:395:14] src: folded constant 'array_length(worlds[0].locations)'
     mov rcx, 8
-    sal rcx, 3
-    test rcx, rcx
-    repe cmpsb
+    repe cmpsq
 ;   [prog.baz:392:12] free named register rcx
 ;   [prog.baz:392:12] free named register rdi
 ;   [prog.baz:392:12] free named register rsi
@@ -2502,7 +2408,7 @@ main:
         if.38.24.392.5:
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.392.5:
-        cmp r15b, 0
+        test r15b, r15b
         jne if.38.24.392.5.end
         if.38.24.392.5.code:
 ;           [prog.baz:38:34] exit(1)
@@ -2510,8 +2416,7 @@ main:
 ;           [prog.baz:38:39] rdi = 1
 ;           [prog.baz:38:39] src: folded constant '1'
             mov rdi, 1
-            mov rax, 60
-            syscall
+            jmp baz_exit
 ;           [prog.baz:38:34] free named register rdi
         if.38.24.392.5.end:
     func.assert..392.5.end:
@@ -2545,7 +2450,7 @@ main:
         if.38.24.400.5:
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.400.5:
-        cmp r15b, 0
+        test r15b, r15b
         jne if.38.24.400.5.end
         if.38.24.400.5.code:
 ;           [prog.baz:38:34] exit(1)
@@ -2553,8 +2458,7 @@ main:
 ;           [prog.baz:38:39] rdi = 1
 ;           [prog.baz:38:39] src: folded constant '1'
             mov rdi, 1
-            mov rax, 60
-            syscall
+            jmp baz_exit
 ;           [prog.baz:38:34] free named register rdi
         if.38.24.400.5.end:
     func.assert..400.5.end:
@@ -2572,7 +2476,7 @@ main:
         if.38.24.401.5:
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.401.5:
-        cmp r15b, 0
+        test r15b, r15b
         jne if.38.24.401.5.end
         if.38.24.401.5.code:
 ;           [prog.baz:38:34] exit(1)
@@ -2580,8 +2484,7 @@ main:
 ;           [prog.baz:38:39] rdi = 1
 ;           [prog.baz:38:39] src: folded constant '1'
             mov rdi, 1
-            mov rax, 60
-            syscall
+            jmp baz_exit
 ;           [prog.baz:38:34] free named register rdi
         if.38.24.401.5.end:
     func.assert..401.5.end:
@@ -2638,15 +2541,11 @@ main:
         jo baz_overflow_line_407
 ;       [prog.baz:408:9] print_num(counter)
 ;       [prog.baz:408:9] frame capacity check begin
+;       [prog.baz:408:9] callee storage starts after the caller's storage (rbp + 1416)
 ;       [prog.baz:408:9] allocate scratch register -> r15
-;       [prog.baz:408:9] allocate scratch register -> r14
-        lea r15, [rbp + 1416]
-        mov r14, strict qword vars.end
-        sub r14, r15
-        mov r15, size.func.print_num
-        cmp r15, r14
-        ja baz_frame_overflow
-;       [prog.baz:408:9] free scratch register r14
+        mov r15, strict qword vars.end - size.func.print_num - 1416
+        cmp r15, rbp
+        jl baz_frame_overflow
 ;       [prog.baz:408:9] free scratch register r15
 ;       [prog.baz:408:9] frame capacity check end
 ;       [prog.baz:408:9] address of argument 'counter' to parameter 'num'
@@ -2904,15 +2803,11 @@ main:
     func.print..423.5.end:
 ;   [prog.baz:424:5] print_num(names)
 ;   [prog.baz:424:5] frame capacity check begin
+;   [prog.baz:424:5] callee storage starts after the caller's storage (rbp + 1416)
 ;   [prog.baz:424:5] allocate scratch register -> r15
-;   [prog.baz:424:5] allocate scratch register -> r14
-    lea r15, [rbp + 1416]
-    mov r14, strict qword vars.end
-    sub r14, r15
-    mov r15, size.func.print_num
-    cmp r15, r14
-    ja baz_frame_overflow
-;   [prog.baz:424:5] free scratch register r14
+    mov r15, strict qword vars.end - size.func.print_num - 1416
+    cmp r15, rbp
+    jl baz_frame_overflow
 ;   [prog.baz:424:5] free scratch register r15
 ;   [prog.baz:424:5] frame capacity check end
 ;   [prog.baz:424:5] address of argument 'names' to parameter 'num'
@@ -2981,12 +2876,7 @@ main:
 ;   [prog.baz:429:19] rdx = 1
 ;   [prog.baz:429:19] src: folded constant '1'
     mov rdx, 1
-;   [prog.baz:429:22] allocate scratch register -> r15
-;   [prog.baz:429:22] r15 = 12
-;   [prog.baz:429:22] src: folded constant 'array_length(bye) - 1'
-    mov r15, 12
-    add rsi, r15
-;   [prog.baz:429:5] free scratch register r15
+    add rsi, 12
 ;   [prog.baz:429:5] allocate named register rax
     mov rax, 1
     syscall
@@ -2995,8 +2885,7 @@ main:
 ;   [prog.baz:429:5] free named register rsi
 ;   [prog.baz:429:5] free named register rdi
     mov rdi, 0
-    mov rax, 60
-    syscall
+    jmp baz_exit
 ;
 ;[prog.baz:176:15] noinline factorial(n) res
 func.factorial:
@@ -3045,15 +2934,11 @@ func.factorial:
 ;   [prog.baz:181:19] = expression
 ;   [prog.baz:181:19] factorial(m)
 ;   [prog.baz:181:19] frame capacity check begin
+;   [prog.baz:181:19] callee storage starts after the caller's storage (rbx + 32)
 ;   [prog.baz:181:19] allocate scratch register -> r15
-;   [prog.baz:181:19] allocate scratch register -> r14
-    lea r15, [rbx + 32]
-    mov r14, strict qword vars.end
-    sub r14, r15
-    mov r15, size.func.factorial
-    cmp r15, r14
-    ja baz_frame_overflow
-;   [prog.baz:181:19] free scratch register r14
+    mov r15, strict qword vars.end - size.func.factorial - 32
+    cmp r15, rbx
+    jl baz_frame_overflow
 ;   [prog.baz:181:19] free scratch register r15
 ;   [prog.baz:181:19] frame capacity check end
 ;   [prog.baz:181:19] result address in callee frame
@@ -3193,18 +3078,6 @@ func.print_num:
 ;       [prog.baz:155:31] allocate named register rdx
 ;       [prog.baz:155:31] allocate scratch register -> r12
         mov r12, 10
-;       [prog.baz:155:31] division check begin
-;       [prog.baz:155:31] zero divisor
-        cmp r12, 0
-        je baz_division_line_155
-;       [prog.baz:155:31] minimum divided by -1 overflows
-        cmp r12, -1
-        jne .Lbaz_division.6
-        mov rdx, -9223372036854775808
-        cmp rax, rdx
-        je baz_division_line_155
-        .Lbaz_division.6:
-;       [prog.baz:155:31] division check end
         cqo
         idiv r12
 ;       [prog.baz:155:31] free scratch register r12
@@ -3217,7 +3090,7 @@ func.print_num:
 ;       [prog.baz:155:18] free scratch register r14
 ;       [prog.baz:155:9] free scratch register r15
 ;       [prog.baz:156:9] n = n / 10
-;       [prog.baz:156:13] kept the first of two versions of 12 and 14 instructions, the smaller
+;       [prog.baz:156:13] kept the first of two versions of 5 and 7 instructions, the smaller
 ;       [prog.baz:156:13] n
 ;       [prog.baz:156:17] n / 10
 ;       [prog.baz:156:17] src: constant
@@ -3226,18 +3099,6 @@ func.print_num:
 ;       [prog.baz:156:17] allocate named register rdx
 ;       [prog.baz:156:17] allocate scratch register -> r15
         mov r15, 10
-;       [prog.baz:156:17] division check begin
-;       [prog.baz:156:17] zero divisor
-        cmp r15, 0
-        je baz_division_line_156
-;       [prog.baz:156:17] minimum divided by -1 overflows
-        cmp r15, -1
-        jne .Lbaz_division.7
-        mov rdx, -9223372036854775808
-        cmp rax, rdx
-        je baz_division_line_156
-        .Lbaz_division.7:
-;       [prog.baz:156:17] division check end
         cqo
         idiv r15
 ;       [prog.baz:156:17] free scratch register r15
@@ -3377,42 +3238,17 @@ baz_frame_overflow:
     mov rax, 1
     mov rdi, 2
     lea rsi, [msg_frame_overflow]
-    mov rdx, msg_frame_overflow_len
+    mov rdx, 23
     syscall
     mov rdi, 254
-    mov rax, 60
-    syscall
+    jmp baz_exit
 section .rodata
 msg_frame_overflow:
 db `\npanic: frame overflow\n`
-msg_frame_overflow_len equ $ - msg_frame_overflow
-section .text
-; division failure handler (--checks=division)
-baz_division_line_155:
-    mov rbp, 155
-    jmp baz_division_panic_file_0
-baz_division_line_156:
-    mov rbp, 156
-baz_division_panic_file_0:
-;    print message to stderr
-    mov rax, 1
-    mov rdi, 2
-    lea rsi, [msg_division_file_0]
-    mov rdx, msg_division_file_0_len
-    syscall
-    mov rbx, 253
-    jmp baz_report_line
-section .rodata
-msg_division_file_0:
-db `\npanic: division at prog.baz:`
-msg_division_file_0_len equ $ - msg_division_file_0
 section .text
 ; overlap failure handler (--checks=overlap)
 baz_overlap_line_250:
     mov rbp, 250
-    jmp baz_overlap_panic_file_0
-baz_overlap_line_255:
-    mov rbp, 255
     jmp baz_overlap_panic_file_0
 baz_overlap_line_384:
     mov rbp, 384
@@ -3421,14 +3257,13 @@ baz_overlap_panic_file_0:
     mov rax, 1
     mov rdi, 2
     lea rsi, [msg_overlap_file_0]
-    mov rdx, msg_overlap_file_0_len
+    mov rdx, 28
     syscall
     mov rbx, 251
     jmp baz_report_line
 section .rodata
 msg_overlap_file_0:
 db `\npanic: overlap at prog.baz:`
-msg_overlap_file_0_len equ $ - msg_overlap_file_0
 section .text
 ; overflow failure handler (--checks=overflow)
 baz_overflow_line_55:
@@ -3492,14 +3327,13 @@ baz_overflow_panic_file_0:
     mov rax, 1
     mov rdi, 2
     lea rsi, [msg_overflow_file_0]
-    mov rdx, msg_overflow_file_0_len
+    mov rdx, 29
     syscall
     mov rbx, 249
     jmp baz_report_line
 section .rodata
 msg_overflow_file_0:
 db `\npanic: overflow at prog.baz:`
-msg_overflow_file_0_len equ $ - msg_overflow_file_0
 section .text
 ; bounds failure handler (--checks=upper or --checks=lower)
 baz_bounds_line_96:
@@ -3536,13 +3370,12 @@ baz_bounds_panic_file_0:
     mov rax, 1
     mov rdi, 2
     lea rsi, [msg_bounds_file_0]
-    mov rdx, msg_bounds_file_0_len
+    mov rdx, 27
     syscall
     mov rbx, 255
 section .rodata
 msg_bounds_file_0:
 db `\npanic: bounds at prog.baz:`
-msg_bounds_file_0_len equ $ - msg_bounds_file_0
 section .text
 baz_report_line:
 ;    line number is in 'rbp'
@@ -3568,14 +3401,14 @@ baz_report_line:
     sub rdx, rdi
     mov rdi, 2
     syscall
-;    exit with the error code in 'rbx'
-    mov rax, 60
     mov rdi, rbx
-    syscall
 section .bss
 num_buffer:
 resb 21
 section .text
+baz_exit:
+    mov rax, 60
+    syscall
 
 section .data
 align 16
@@ -3606,7 +3439,7 @@ times 1 db 0
 ;[prog.baz:29:8] nums
 ;[prog.baz:29:15] i64[4]
 dq 1
-;[prog.baz:29:15] pad 3 'i64' of size 8
+;[prog.baz:29:15] zero remaining elements: 3 * 8 B = 24 B
 times 24 db 0
 ;[prog.baz:30:8] str1
 ;[prog.baz:30:20] i8
@@ -3618,7 +3451,7 @@ times 127 db 0
 db 3
 ;[prog.baz:31:23] i8[127]
 db `baz`
-;[prog.baz:31:23] pad 124 'i8' of size 1
+;[prog.baz:31:23] zero remaining elements: 124 * 1 B = 124 B
 times 124 db 0
 ;[prog.baz:33:5] greeted
 ;[prog.baz:33:15] i8[15]
@@ -3638,8 +3471,8 @@ vars.end:
 ; free named register rbp
 
 ;           noinline functions:
-;                    factorial: 1 body, 2 calls, 32 instructions
-;                    print_num: 1 body, 2 calls, 81 instructions
+;                    factorial: 1 body, 2 calls, 29 instructions
+;                    print_num: 1 body, 2 calls, 67 instructions
 ;
 ;   removed jumps to next code: 75
 ;    removed unreachable jumps: 2
@@ -3650,7 +3483,7 @@ vars.end:
 ;                     dat size: 376 B
 ;              dat var padding: 8 B
 ;           max body vars size: 1045 B
-;                 instructions: 1008
+;                 instructions: 900
 ;
 ; register use at the peak: 6 of 13 registers live, 2 named by instructions
 ;

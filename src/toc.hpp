@@ -2913,19 +2913,6 @@ class toc final {
         definitions_.assert_generic_param_apart(param_tk, name_tk, what);
     }
 
-    // the type a type parameter of the instance being parsed is bound to,
-    // e.g. 'U' bound to 'i8'; null for any other name, also for the generic
-    // type of a method, which names its instance like a type name does
-    [[nodiscard]] auto type_param_named(const std::string_view name) const
-        -> const type* {
-
-        if (not types_.is_param(name) or generics_.exists_type(name)) {
-            return nullptr;
-        }
-
-        return &types_.get(name);
-    }
-
     // the names a 'foo' declares are no type parameter either, see
     // 'assert_valid_unqualified_name'
     auto assert_loop_names_free(const token& foo_tk) const -> void {
@@ -3540,6 +3527,19 @@ class toc final {
         -> std::optional<storage_path> {
 
         return resolver_.resolve_storage(name, path);
+    }
+
+    // the type a type parameter of the instance being parsed is bound to,
+    // e.g. 'U' bound to 'i8'; null for any other name, also for the generic
+    // type of a method, which names its instance like a type name does
+    [[nodiscard]] auto type_param_named(const std::string_view name) const
+        -> const type* {
+
+        if (not types_.is_param(name) or generics_.exists_type(name)) {
+            return nullptr;
+        }
+
+        return &types_.get(name);
     }
 
     [[nodiscard]] auto types() const -> const type_table& { return types_; }

@@ -5610,18 +5610,18 @@ SRC=1760 && DIFF
 
 # the start of a range is checked before the count: the bounds check fails
 # before the division by zero in the count
-SRC=1761 && EXP=255 && OPTS="--checks=noub" RUN
+SRC=1761 && EXP=255 && OPTS="--checks=noub" RUN_ERR
 
 # the start of a range is checked before the count: the bounds check fails
 # before the call in the count exits
-SRC=1762 && EXP=255 && OPTS="--checks=noub" RUN
+SRC=1762 && EXP=255 && OPTS="--checks=noub" RUN_ERR
 
 # ranges that end at the length of the arrays, a start at the length with a
 # count of 0
 SRC=1763 && OPTS="--checks=noub" DIFF
 
 # a run-time start with a constant count past the end fails the bounds check
-SRC=1764 && EXP=255 && RUN
+SRC=1764 && EXP=255 && RUN_ERR
 
 # a keyword before '(' in the argument of a generic call is not a call
 SRC=1765 && EXP=4 && RUN
