@@ -54,7 +54,9 @@ was how to handle end-of-line comments: make them part of the whitespace that
 belongs to the token. I thought that was clever.
 
 At times it drifted into a bad solution and had to be corrected and steered
-onto a different line of thought.
+onto a different line of thought. For example, it tried to solve the data
+overlap problem with byte ranges alone instead of the path to a particular
+piece of data.
 
 I have no background in compiler theory; this is an experiment. That shows in
 the arithmetic and boolean expressions, which are handled without an abstract
