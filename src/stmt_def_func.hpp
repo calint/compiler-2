@@ -431,8 +431,9 @@ struct frame_slot {
 //   an inlined call,      'inlined_func'     bindings to the arguments
 //   'compile_inlined'
 //   a noinline body,      'noinline_func'    variables reached through the
-//   'emit_noinline_body'                     addresses in the frame
-//   and 'check_body'                         ('compile_in_frame')
+//   'emit_noinline_body',                    addresses in the frame
+//   'check_body' and                         ('compile_in_frame')
+//   'check_noinline_body'
 //   'main',               'main_func'        none
 //   'compile_main'
 //
@@ -537,7 +538,7 @@ class stmt_def_func final : public statement {
                 (is_inlined() and (not params().empty() or has_result())),
         };
 
-        std::optional<compile_error> error{
+        try {
             tc.dry_run(
                 [&] -> void {
                     scope body_scope{frame_scope({})};
@@ -548,29 +549,23 @@ class stmt_def_func final : public statement {
 
                     std::ignore = compile_in_frame(tc, 0, {});
                 },
-                machine::discarded_code::body, takes_from_call),
-        };
-
-        if (not error) {
-            return;
+                machine::discarded_code::body, takes_from_call);
+        } catch (compile_error& e) {
+            add_instance_trace(e);
+            throw;
         }
-
-        add_instance_trace(*error);
-
-        throw std::move(*error);
     }
 
     // the body of a noinline function for array lengths that only a dry run
     // asked for, compiled as 'emit_noinline_body' does, nothing kept
-    [[nodiscard]] auto
-    check_noinline_body(toc& tc,
-                        const std::span<const size_t> array_lengths) const
-        -> std::optional<compile_error> {
+    auto check_noinline_body(toc& tc,
+                             const std::span<const size_t> array_lengths) const
+        -> void {
 
         assert(not is_inlined());
         assert(array_lengths.size() == array_param_count());
 
-        return tc.dry_run(
+        tc.dry_run(
             [&] -> void {
                 const toc::scope_entry body{tc, frame_scope(array_lengths)};
 

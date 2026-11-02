@@ -315,17 +315,16 @@ program does not depend on inlining.
      limit; such an error ends the check and the function is accepted; in
      skipped code it is dropped and the check goes on ('toc::check_skipped');
      a recursive inlined call in the check
-     ('scope_stack::is_in_body_taking_from_call'), also a call of the
-     function in its own check ('scope_stack::inlined_nesting'), with a
-     value argument that folds is expanded in a dry run, its deeper levels in it, and such an
-     error ends the recursion, not the check ('stmt_call::check_recursion'):
-     the 'g(x, 2)' of an 'f(x)' that nothing calls is checked as in 'main',
-     and one that a value, an instance or a length the check does not know
-     drives ends at the nesting limit or out of registers; one without such
-     an argument is not expanded, its arguments are bound as for the body,
-     which is not compiled ('inline_call::compile_arguments'), so a
-     recursion that only a constant argument of the call ends does not end
-     the check
+     ('scope_stack::is_in_body_taking_from_call'), also a call of the function
+     in its own check ('scope_stack::inlined_nesting'), is compiled in a dry run
+     with its deeper levels, and such an error ends the recursion, not the check
+     ('stmt_call::check_recursion'): one with a value argument that folds is
+     expanded, the 'g(x, 2)' of an 'f(x)' that nothing calls is checked as in
+     'main', and one that a value, an instance or a length the check does not
+     know drives ends at the nesting limit or out of registers; one without such
+     an argument is not expanded, its arguments are bound as for the body, which
+     is not compiled ('inline_call::compile_arguments'), so a recursion that
+     only a constant argument of the call ends does not end the check
 3. A function that takes nothing from a call, a noinline one without unsized
    array parameters or an inlined one without parameters and result, is
    rejected by such an error. The check has the registers of a noinline body
@@ -1306,13 +1305,12 @@ or as the whole instance by a gap count that each backend measured once
 ('machine::zero_padding'): compiling both would multiply the versions above
 it, and an instance with thousands of gaps would cost compile time.
 
-The parse also doubles its work per level in two cases. Deducing a type
-argument from a path argument, and checking that an array argument is a name,
-parse the path on a copy of the tokenizer with its indexes; the call then
-parses it again. A call nested in such an index is parsed twice per level, e.g.
-'id(a[id(a[id(a[i])])])' with 'id' generic, or 'first(t[first(t[i].a)].a)'
-with an array parameter: 12 levels parse in about 50 ms, 18 in 2 to 4 s. A
-type argument, 'id<i32>(...)', or the index in a 'let' avoids it.
+The parse also doubles its work per level in one case. Deducing a type
+argument from a path argument parses the path on a copy of the tokenizer with
+its indexes; the call then parses it again. A call nested in such an index is
+parsed twice per level, e.g. 'id(a[id(a[id(a[i])])])' with 'id' generic: 12
+levels parse in about 50 ms, 18 in 2 to 4 s. A type argument, 'id<i32>(...)',
+or the index in a 'let' avoids it.
 
 ### 5.3 State: each version starts from the same machine
 
@@ -1808,11 +1806,18 @@ the parse and the width at the compile.
 'array_copy', 'arrays_equal', 'read', 'write' and the sector functions emit
 their arguments in the order of the source: the arrays or the buffer, then
 the count. The range from a start needs the count, so the check is split. The
-address walk checks a run-time start as '0 <= start <= length', or against
-the length less a constant count, and copies it into a register the caller
-allocated before the walk ('lea_request::start_register'); after the count,
-'bulk_operands::run_time_emitters' checks 'start + count <= length' and frees
-the register. No element is read or written before the check.
+address walk checks a run-time start as '0 <= start <= length' and copies it
+into a register the caller allocated before the walk
+('lea_request::start_register'); after the count, or after the second address
+when the count is constant, 'bulk_operands::run_time_emitters' checks
+'start + count <= length' and frees the register. No element is read or
+written before the check.
+
+A constant count is not checked with the start in its walk, against the length
+less the count: the second array would then be computed after the check, so
+'array_copy(a[k], b[f()], 4)' did not run the call when 'k' is past 1 and
+'b[1 / z]' panicked on the range instead of the division, unlike the same
+copy with the count in a variable (bug hunt round 56 H2).
 
 Rejected: the count first, with a check that the order makes no difference
 (the check saw only writes to variables, so output, 'exit' and the run-time
@@ -1954,10 +1959,11 @@ message, x86_64 stops with a signal.
 - Definite assignment does not count the writes of a call, e.g.
   'init(res)' is a read of 'res'; a conservative rejection.
 - The check of a body without its calls ends at the first error that depends on
-  a call outside an inlined recursion, e.g. running out of scratch registers,
-  so the code after it is not checked there (1.5): e.g. a later 'res = f(res)'
-  is then judged only at each call, where an inlined result held in a register
-  shares nothing, so it is accepted on x86_64 and rejected on rv32i.
+  a call outside the recursive calls of an inlined recursion, e.g. running out
+  of scratch registers, so the code after it is not checked there (1.5): e.g.
+  a later 'res = f(res)' is then judged only at each call, where an inlined
+  result held in a register shares nothing, so it is accepted on x86_64 and
+  rejected on rv32i.
 - A noinline call there with an array argument of unknown length is not
   checked with the lengths of its other array arguments, which an inlined
   call is: in a function nothing calls the verdict depends on inline versus

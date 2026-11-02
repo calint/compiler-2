@@ -1,0 +1,35 @@
+# the check of a body without its call binds the arguments of an inlined
+# recursion it does not expand in a dry run: 'r(b, i + 1, x + 1)' within the
+# 'foo' levels ran out of registers on x86_64 and ended the check before
+# 'd / 0'
+
+func r(s i8[], i, x) res {
+    res = 0
+    if i >= array_length(s) {
+        return
+    }
+    var a = i8[3]
+    foo a {
+        foo a {
+            foo a {
+                foo a {
+                    foo a {
+                        foo a {
+                            foo a {
+                                foo a {
+                                    var b = i8[2]
+                                    var w = r(b, i + 1, x + 1)
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    var d = 7
+    d = d / 0
+}
+
+func main() {
+}

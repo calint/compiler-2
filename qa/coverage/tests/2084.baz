@@ -1,0 +1,9 @@
+# the argument of an array parameter before a missing argument of a generic
+# call is read as in the call, not as a value
+
+func f<T type>(s T[], x T) {}
+
+func main() {
+    var a = i8[4]
+    f(-a)
+}

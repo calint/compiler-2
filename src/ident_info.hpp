@@ -622,12 +622,12 @@ class destination final {
 
 // what a caller asks of the address of an identifier
 struct lea_request {
-    // the path starts a range of at least this many elements, its last index
-    // may be the end less them; none for an element
-    std::optional<size_t> range_count;
+    // the path starts a range, its last index may be the end; false for an
+    // element
+    bool is_range{};
 
     // a run-time start of the range is copied here, the caller checks it
-    // against a count computed after the address
+    // against a count after the later arguments
     std::optional<operand> start_register;
 
     // the register the caller prefers the address to start in, none without

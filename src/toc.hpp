@@ -3048,19 +3048,13 @@ class toc final {
         }
 
         // the dry run puts back the reach of the code after it
-        std::optional<compile_error> error{
-            dry_run(
-                [&] -> void {
-                    scopes_.set_reachable(true);
-                    compile();
-                },
-                machine::discarded_code::here,
-                scopes_.is_in_body_taking_from_call()),
-        };
-
-        if (error) {
-            throw std::move(*error);
-        }
+        dry_run(
+            [&] -> void {
+                scopes_.set_reachable(true);
+                compile();
+            },
+            machine::discarded_code::here,
+            scopes_.is_in_body_taking_from_call());
     }
 
     // what '--checks' turned on
@@ -3132,16 +3126,15 @@ class toc final {
 
     // runs 'compile' for its errors only: its output, string constants and
     // use of storage leave no trace; 'code' says which registers it starts
-    // with ('machine::emit_discarded'); the error it ends at is handed back
-    // to reject the program, except one that depends on a call where the
-    // code takes from a call ('takes_from_call'); it is an error of the
-    // source, so no reader of the kind drops it: the check of a body starts
-    // from the registers of a noinline body, and skipped code is never
-    // inside a version, an inlined body skips no code, see 'check_skipped'
-    [[nodiscard]] auto dry_run(const std::function_ref<void()> compile,
-                               const machine::discarded_code code,
-                               const bool takes_from_call)
-        -> std::optional<compile_error> {
+    // with ('machine::emit_discarded'); the error it ends at rejects the
+    // program, except one that depends on a call where the code takes from a
+    // call ('takes_from_call'); it is rethrown as an error of the source, so
+    // no reader of the kind drops it: the check of a body starts from the
+    // registers of a noinline body, and skipped code is never inside a
+    // version, an inlined body skips no code, see 'check_skipped'
+    auto dry_run(const std::function_ref<void()> compile,
+                 const machine::discarded_code code, const bool takes_from_call)
+        -> void {
 
         assert(is_compiling_);
 
@@ -3153,15 +3146,13 @@ class toc final {
             x.emit_discarded(compile, code);
         } catch (compile_error& e) {
             if (takes_from_call and e.depends_on_call()) {
-                return std::nullopt;
+                return;
             }
 
             e.kind = compile_error::error_kind::source;
 
-            return std::move(e);
+            throw;
         }
-
-        return std::nullopt;
     }
 
     // 'machine::emit_most_efficient' with each version compiled from the

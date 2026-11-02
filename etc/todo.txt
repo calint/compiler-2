@@ -6,6 +6,43 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
 --------------------------------------------------------------------------------
 1. clean up
 --------------------------------------------------------------------------------
+[ ] easy: decide: '{}' where an array goes has two messages: a built-in or
+    'foo' says "expected an array" (0377), a call "'{}' is not an array,
+    parameter 'x' takes one" (0254, its own 'is_zero_value' branch)
+    => option: one "'{}' is not an array" in
+       'stmt_identifier::parse_array_argument', the branch of the call gone
+       (0254 loses "parameter 'x' takes one", 0377 changes); or keep
+       (design review series 2, round 57 B3)
+[ ] easy: decide: round 56 H2-1 checks the range of a run-time start with a
+    constant count after the later arguments (left to right, as a run-time
+    count); cost: 3 instructions on x86_64 and 4 on rv32i (5 before round 57
+    A1) per such start and one held scratch register (the 12 affected tests
+    3179 -> 3379 instructions under noub before round 57 A1)
+    => option: only the start of the first array waits, nothing observable
+       runs between the second walk and a constant count, so the start of
+       the second array may be checked at once (saves about half the cost,
+       adds a special case); or keep as is (one rule)
+[ ] medium: decide: the check of a body without its calls ends at the first
+    error that depends on a call outside the recursive calls of an inlined
+    recursion, mostly running out of scratch registers on x86_64 (README 8.3
+    bullet 3), so the code after it is checked only at the calls; rounds 54
+    to 56 hunters found every remaining target-dependent verdict there (e.g.
+    five nested 'foo' around an inlined call in a function with an unsized
+    array parameter: accepted on x86_64 when nothing calls it, rejected on
+    rv32i and at any call)
+    => option: check each statement of such a body in its own dry run, so a
+       call-dependent error drops that statement and the check goes on (the
+       rule 'toc::dry_run' already applies to skipped code and recursions);
+       removes the 8.3 bullet; cost: one dry run per statement of every
+       function that takes from a call, compile time to be measured; or keep
+       as documented (design review series 2, round 56); round 57 H2: it also
+       happens in a function without parameters that has a result (the
+       result counts as taken from a call), e.g. an 'f() res i8' with a
+       'foo' whose count calls a generic 'g<i16>' that runs out of 'rdx';
+       round 58 B: the same rule covers README 1.5 item 2, a recursion whose
+       constant arguments pass the nesting limit ends the check, e.g.
+       'g(k i32)' calling 'g(k + 1)' until 'k == 0', reached as 'g(2)' in an
+       'f(x)' that nothing calls: accepted, rejected at any call of 'f'
 [ ] medium: a chain of distinct inlined functions with deeply nested
     expressions overflows the compiler's stack (segfault on both targets,
     bug hunt round 6 S2): each limit holds alone, parse nesting 128 per body

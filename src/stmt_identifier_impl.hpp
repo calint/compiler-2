@@ -334,7 +334,7 @@ inline auto stmt_identifier::path_address::add_index(const ident_elem& cur_elem,
 
     int64_t addend_elements{
         compile_checked_index(tc, indent, cur_elem.index_expr(), index_register,
-                              cur_info.shape(), request.range_count),
+                              cur_info.shape(), request.is_range),
     };
 
     if (request.start_register) {
@@ -386,7 +386,7 @@ inline auto stmt_identifier::path_address::add_index(const ident_elem& cur_elem,
 inline auto stmt_identifier::compile_checked_index(
     toc& tc, const size_t indent, const expr_any& index_expr,
     const operand& index_register, const array_shape& shape,
-    const std::optional<size_t>& range_count) -> int64_t {
+    const bool is_range) -> int64_t {
 
     machine& x{tc.machine()};
 
@@ -414,15 +414,11 @@ inline auto stmt_identifier::compile_checked_index(
 
     const std::optional<size_t> array_len{shape.length()};
 
-    // note: a constant count past the end was rejected at compile time; an
-    //       unknown length checks the index alone, its code is discarded
-
-    assert(not range_count or not array_len or *range_count <= *array_len);
+    // note: an unknown length checks the index alone, its code is discarded
 
     const machine::bounds_range checked{
-        range_count and array_len
-            ? machine::bounds_range::up_to(index_register,
-                                           *array_len - *range_count)
+        is_range and array_len
+            ? machine::bounds_range::up_to(index_register, *array_len)
             : machine::bounds_range::index(index_register,
                                            shape.element_count()),
     };
@@ -443,7 +439,7 @@ inline auto stmt_identifier::path_address::indexed_element(
 
     if (constant_index) {
         assert_constant_index(cur_info, cur_elem.index_expr().tok(), path,
-                              *constant_index, request.range_count.has_value());
+                              *constant_index, request.is_range);
 
         // note: the caller checks the range from a constant start
         assert(not request.start_register);

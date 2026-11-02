@@ -1,4 +1,4 @@
 
-1834.baz:7:7: an array literal is not an argument, parameter 's' takes an array
+1834.baz:7:7: an array literal is not an argument, store it in a variable first
     f({1, 2, 3})
       ^

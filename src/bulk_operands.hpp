@@ -49,16 +49,24 @@ class bulk_operands final {
 
     // the address of each array and the run-time count, for the element
     // operations of the machine, 'memory_equal' and 'copy_block', which emit
-    // them in the order of the arguments; a start is checked after a run-time
-    // count, with its address for a constant one; a run-time start is held in a
-    // register from its address to its check
+    // them in the order of the arguments; a range is checked after the count,
+    // or after the second address when the count is constant, so a later
+    // argument runs first, e.g. the call of 'array_copy(a[k], b[f()], 4)'
     class run_time_emitters final {
+        // a run-time start, held in a register from before the walk of its
+        // address until the walk has returned and its range is checked
+        struct held_start {
+            std::optional<operand> start;
+            bool is_walked{};
+            bool is_checked{};
+        };
+
         const bulk_operands& operands_;
         toc& tc_;
         size_t indent_{};
         const token& src_loc_tk_;
-        // the run-time start of the first and of the second array
-        std::array<std::optional<operand>, 2> starts_{};
+        // the start of the first and of the second array
+        std::array<held_start, 2> starts_{};
 
       public:
         run_time_emitters(const bulk_operands& operands, toc& tc,
@@ -73,7 +81,7 @@ class bulk_operands final {
         ~run_time_emitters() = default;
 
         // compiles the count into the register the machine asks for, then
-        // checks the ranges and frees the start registers
+        // checks the ranges of a run-time count
         // note: the compile of the count comments its source, as the
         //       arguments of 'read' and 'exit' do
         [[nodiscard]] auto count() -> std::function<void(const operand&)> {
@@ -81,82 +89,87 @@ class bulk_operands final {
                 operands_.count().compile(
                     tc_, indent_, destination::of_register(count_register));
 
-                const bool count_lower_checked{
-                    check_range(operands_.first(), starts_.at(0),
-                                count_register, false),
-                };
+                // note: a constant count checked the ranges after the second
+                //       address, e.g. for the overlap check of 'array_copy'
 
-                std::ignore = check_range(operands_.second(), starts_.at(1),
-                                          count_register, count_lower_checked);
-
-                machine& x{tc_.machine()};
-
-                for (const std::optional<operand>& start :
-                     std::views::reverse(starts_)) {
-
-                    if (start) {
-                        x.free_scratch_register(src_loc_tk_, indent_, *start);
-                    }
+                if (operands_.count().constant_value(tc_)) {
+                    return;
                 }
+
+                check_ranges(count_register);
+                free_done_starts();
             };
         }
 
         [[nodiscard]] auto first() -> machine::address_emitter {
-            return address_of(operands_.first(), starts_.at(0));
+            return address_of(operands_.first(), starts_.at(0), false);
         }
 
+        // a constant count checks the ranges once the second address is
+        // built, where a run-time count is computed
         [[nodiscard]] auto second() -> machine::address_emitter {
-            return address_of(operands_.second(), starts_.at(1));
+            const bool checks_ranges{
+                operands_.count().constant_value(tc_).has_value(),
+            };
+
+            return address_of(operands_.second(), starts_.at(1), checks_ranges);
         }
 
       private:
         // a run-time start gets its register before the walk of the address,
-        // which frees its own registers first
+        // which frees its own registers first; 'checks_ranges' checks the
+        // ranges before the address is used
         [[nodiscard]] auto address_of(const stmt_identifier& array,
-                                      std::optional<operand>& start)
+                                      held_start& held,
+                                      const bool checks_ranges)
             -> machine::address_emitter {
 
-            return [this, &array,
-                    &start](const std::optional<operand>& address_register,
-                            const machine::address_use use) -> void {
-                const std::optional<int64_t> constant_count{
-                    operands_.count().constant_value(tc_),
-                };
-
-                if (is_count_checked() and
+            return [this, &array, &held, checks_ranges](
+                       const std::optional<operand>& address_register,
+                       const machine::address_use use) -> void {
+                if (tc_.checks().is_bounds() and
                     not array.constant_start_index(tc_)) {
 
                     machine& x{tc_.machine()};
 
-                    start = x.alloc_scratch_register(
+                    held.start = x.alloc_scratch_register(
                         array.tok(), indent_, tc_.builtins().default_type());
                 }
 
-                // note: the count is not negative once 'check' has run
-                const size_t range_count{
-                    constant_count ? static_cast<size_t>(*constant_count) : 0,
-                };
+                // note: the walk checks a start up to the length, its range
+                //       is checked after the later arguments
 
                 array.compile_address(tc_, indent_, src_loc_tk_,
                                       {
-                                          .range_count{range_count},
-                                          .start_register{start},
+                                          .is_range{true},
+                                          .start_register{held.start},
                                           .address_register{address_register},
                                       },
-                                      use);
+                                      [&](const operand& address) -> void {
+                                          if (checks_ranges) {
+                                              check_ranges(std::nullopt);
+                                          }
+
+                                          use(address);
+                                      });
+
+                held.is_walked = true;
+
+                free_done_starts();
             };
         }
 
-        // the range from the start of 'array' against the count in
-        // 'count_register', 'start' holds a run-time start; true when it
-        // checked the lower bound of the count
-        [[nodiscard]] auto check_range(const stmt_identifier& array,
-                                       const std::optional<operand>& start,
-                                       const operand& count_register,
-                                       const bool count_lower_checked) const
-            -> bool {
+        // the range from the start of 'array': 'start' holds a run-time
+        // start, which the walk of the address checked up to the length,
+        // 'count_register' a run-time count, none for a constant one; true
+        // when it checked the lower bound of the count
+        [[nodiscard]] auto
+        check_range(const stmt_identifier& array,
+                    const std::optional<operand>& start,
+                    const std::optional<operand>& count_register,
+                    const bool count_lower_checked) const -> bool {
 
-            if (not is_count_checked()) {
+            if (not tc_.checks().is_bounds()) {
                 return false;
             }
 
@@ -177,12 +190,43 @@ class bulk_operands final {
 
             machine& x{tc_.machine()};
 
+            if (not count_register) {
+                // note: a constant start with a constant count was checked at
+                //       compile time
+
+                if (not start) {
+                    return false;
+                }
+
+                const std::optional<int64_t> count{
+                    operands_.count().constant_value(tc_),
+                };
+
+                // note: a constant count is at most the length, rejected at
+                //       compile time otherwise
+
+                assert(count and *count >= 0 and
+                       std::cmp_less_equal(*count, array_count));
+
+                machine::bounds_range range{
+                    machine::bounds_range::up_to(
+                        *start, array_count - static_cast<size_t>(*count)),
+                };
+
+                range.start_lower_checked = true;
+
+                x.check_bounds(array.tok(), indent_, range, options);
+
+                return false;
+            }
+
             if (start) {
                 machine::bounds_range range{
-                    machine::bounds_range::range(*start, count_register,
+                    machine::bounds_range::range(*start, *count_register,
                                                  array_count),
                 };
 
+                range.start_lower_checked = true;
                 range.count_lower_checked = count_lower_checked;
 
                 x.check_bounds(array.tok(), indent_, range, options);
@@ -203,17 +247,50 @@ class bulk_operands final {
             x.check_bounds(
                 array.tok(), indent_,
                 machine::bounds_range::up_to(
-                    count_register,
+                    *count_register,
                     array_count - static_cast<size_t>(*constant_start)),
                 options);
 
             return options.lower;
         }
 
-        // a constant count is checked with the start, before the count
-        [[nodiscard]] auto is_count_checked() const -> bool {
-            return tc_.checks().is_bounds() and
-                   not operands_.count().constant_value(tc_);
+        // the ranges of both arrays after the later arguments,
+        // 'count_register' holds a run-time count, none for a constant one
+        auto check_ranges(const std::optional<operand>& count_register)
+            -> void {
+
+            const bool count_lower_checked{
+                check_range(operands_.first(), starts_.at(0).start,
+                            count_register, false),
+            };
+
+            std::ignore = check_range(operands_.second(), starts_.at(1).start,
+                                      count_register, count_lower_checked);
+
+            for (held_start& held : starts_) {
+                held.is_checked = true;
+            }
+        }
+
+        // frees the starts that are walked and checked from the top, outside
+        // the walk of an address; when the machine nests the walks, the
+        // first start is under the registers of the first address and is
+        // freed after it
+        auto free_done_starts() -> void {
+            for (held_start& held : std::views::reverse(starts_)) {
+                if (not held.start) {
+                    continue;
+                }
+
+                if (not held.is_walked or not held.is_checked) {
+                    return;
+                }
+
+                machine& x{tc_.machine()};
+
+                x.free_scratch_register(src_loc_tk_, indent_, *held.start);
+                held.start.reset();
+            }
         }
     };
 

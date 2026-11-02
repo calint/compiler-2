@@ -1,0 +1,4 @@
+
+2079.baz:31:13: divisor must not be zero
+    d = d / 0
+            ^

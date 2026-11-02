@@ -39,8 +39,8 @@
 //   'throw_call_not_array'   a call where an array is expected
 //   'stmt_identifier'        the path node; its members that use 'expr_any'
 //                            are in 'stmt_identifier_impl.hpp'
-//   'place', 'make_ident_info', 'assert_not_whole_array',
-//   'make_scalar_ident_info', 'as_place'
+//   'place', 'make_ident_info', 'is_whole_array',
+//   'assert_not_whole_array', 'make_scalar_ident_info', 'as_place'
 //                            what a value names when it is a place
 //   'statement::visit_call_effects', 'visit_operand_reads',
 //   'statement::has_call', 'statement::visit_reads',
@@ -543,7 +543,7 @@ class stmt_identifier final : public statement {
                              const machine::address_use use) -> void {
             compile_address(tc, indent, src_loc_tk,
                             {
-                                .range_count{},
+                                .is_range{},
                                 .start_register{},
                                 .address_register{address_register},
                             },
@@ -892,38 +892,9 @@ class stmt_identifier final : public statement {
     // statics
     //
 
-    // a term that starts no array where an array is expected, after an array
-    // literal was reported: a type, a call or a function, e.g. the 'point' of
-    // 'point{1, 2}' or the 'f' of 'f(1)'
-    static auto assert_not_type_or_call(const toc& tc, const token& tk,
-                                        const term_kind tm) -> void {
-
-        // e.g. the 'point' of 'point{1, 2}', 'point(5)' or 'point.at(1, 2)';
-        // a type parameter names the type of its argument
-        if (names_type(tm) or tm == term_kind::type_called or
-            tm == term_kind::constructor_call) {
-
-            throw compile_error{
-                tk, std::format("{} is a type, not an array",
-                                in_quotes(tc.get_type_or_throw(tk).name()))};
-        }
-
-        if (tm == term_kind::call or tm == term_kind::generic_call or
-            tm == term_kind::conversion or tm == term_kind::builtin_function) {
-
-            throw_call_not_array(tk, tk.text());
-        }
-
-        if (tm == term_kind::function_name) {
-            throw compile_error{tk, std::format("{} is a function, not an "
-                                                "array",
-                                                in_quotes(tk.text()))};
-        }
-    }
-
-    // the array of a built-in, e.g. the 'a' of 'array_length(a)' or of
-    // 'foo a', is an array or an element of one, not a value made of it; a
-    // call, a type or a function has none
+    // the path where an array is expected, e.g. the 'a' of 'array_length(a)',
+    // 'foo a' or 'f(a)', not a value made of it; a call, a type or a function
+    // has none; the caller checks that it names an array or an element
     [[nodiscard]] static auto parse_array_argument(toc& tc, tokenizer& tz)
         -> stmt_identifier {
 
@@ -952,11 +923,6 @@ class stmt_identifier final : public statement {
             throw compile_error{tz, "expected an array"};
         }
 
-        // e.g. the 'not' of 'foo not a'
-        if (tk.is_text("not")) {
-            throw compile_error{tk, "'not' makes a condition, not an array"};
-        }
-
         if (tm == term_kind::keyword) {
             throw_unexpected_keyword(tk);
         }
@@ -974,7 +940,6 @@ class stmt_identifier final : public statement {
         stmt_identifier array{tc, tk, tz, path_reach::to_end};
 
         array.assert_not_method(tc, tz);
-        array.assert_array_or_element();
 
         assert_no_operator_after_array(tz);
 
@@ -1149,6 +1114,35 @@ class stmt_identifier final : public statement {
                                         in_quotes(prefix.type_ref().name()))};
     }
 
+    // a term that starts no array where an array is expected, after an array
+    // literal was reported: a type, a call or a function, e.g. the 'point' of
+    // 'point{1, 2}' or the 'f' of 'f(1)'
+    static auto assert_not_type_or_call(const toc& tc, const token& tk,
+                                        const term_kind tm) -> void {
+
+        // e.g. the 'point' of 'point{1, 2}', 'point(5)' or 'point.at(1, 2)';
+        // a type parameter names the type of its argument
+        if (names_type(tm) or tm == term_kind::type_called or
+            tm == term_kind::constructor_call) {
+
+            throw compile_error{
+                tk, std::format("{} is a type, not an array",
+                                in_quotes(tc.get_type_or_throw(tk).name()))};
+        }
+
+        if (tm == term_kind::call or tm == term_kind::generic_call or
+            tm == term_kind::conversion or tm == term_kind::builtin_function) {
+
+            throw_call_not_array(tk, tk.text());
+        }
+
+        if (tm == term_kind::function_name) {
+            throw compile_error{tk, std::format("{} is a function, not an "
+                                                "array",
+                                                in_quotes(tk.text()))};
+        }
+    }
+
     // the index goes into 'index_register', returns the constant a trailing
     // '+ c' or '- c' leaves out for the displacement, e.g. 'ix + 1' compiles
     // 'ix' and returns 1, only without bounds checks since they check the sum
@@ -1156,7 +1150,7 @@ class stmt_identifier final : public statement {
     [[nodiscard]] static auto compile_checked_index(
         toc& tc, const size_t indent, const expr_any& index_expr,
         const operand& index_register, const array_shape& shape,
-        const std::optional<size_t>& range_count) -> int64_t;
+        const bool is_range) -> int64_t;
 
     // the field 'name_tk' of what the path up to it resolved to, a constant
     // named 'root' has none
@@ -1271,17 +1265,24 @@ struct place {
     return ident.is_array_element() ? declared.as_element() : declared;
 }
 
+// the path of a whole array, e.g. the 'a' of 'a + 1', not the 'a[1]' of
+// 'a[1] + 1'
+[[nodiscard]] inline auto is_whole_array(const statement& value) -> bool {
+    const stmt_identifier* const path{value.operand_path()};
+    return path != nullptr and path->is_array();
+}
+
 // a whole array is not a value of its element type, whatever that type is,
 // e.g. the 'a' of 'a + 1', '-a', 'x = a' or 'a < 1'; checked at the parse
 // (README 7.13)
 inline auto assert_not_whole_array(const statement& value) -> void {
-    const stmt_identifier* const path{value.operand_path()};
-
-    if (path == nullptr or not path->is_array()) {
+    if (not is_whole_array(value)) {
         return;
     }
 
-    throw_unindexed_array(path->tok(), path->dotted_path());
+    const stmt_identifier& path{*value.operand_path()};
+
+    throw_unindexed_array(path.tok(), path.dotted_path());
 }
 
 // a whole array is not read as its first element

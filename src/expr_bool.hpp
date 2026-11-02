@@ -854,11 +854,6 @@ class expr_bool_op final : public statement {
                            not stored->info.type_ref().is_builtin());
     }
 
-    [[nodiscard]] static auto is_whole_array(const expr_arith& side) -> bool {
-        const stmt_identifier* const path{side.operand_path()};
-        return path != nullptr and path->is_array();
-    }
-
     // the comparison needs its left operand in a register; a constant left
     // side was mirrored onto the right unless it is typed and does not fit it
     [[nodiscard]] static auto left_operand(toc& tc, const size_t indent,

@@ -1,0 +1,9 @@
+# 'not' before the argument of an array parameter makes a condition, as for
+# the array of a built-in, and not a value of the element type
+
+func f(gs bool[]) {}
+
+func main() {
+    var bs = bool[2]
+    f(not bs)
+}

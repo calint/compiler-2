@@ -1,6 +1,69 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] hard: design review series 2, round 59 (2026-11-02 night, the
+    confirming round of the loop; 3 reviewers over all of 'src/', each line
+    read and attacked: A names, paths, types and the no-UB checks, B the
+    machines, assemblers, bulk and built-ins, C calls, definitions,
+    expressions, control and the front end)
+    => done (2026-11-02): nothing found (no bug, no design change that pays;
+       A: about 3000 model runs, B: a conversion differential of 1500
+       programs and about 14500 model runs, C: about 90 attack programs);
+       the loop ends; open: the decide items at the top of todo
+[x] hard: design review series 2, round 58 (2026-11-02 night, user: loop,
+    fix as recommended, decisions at the top of todo; 2 hunters: H1 the
+    tools of rounds 55 to 57 with new seeds plus literals and generic-type
+    methods, H2 the model on 4 targets (rv32i-qemu too), 8 option sets and
+    asan; 3 reviewers: A the machines and bulk, B calls, definitions, 'toc'
+    and 'program', C the rest of 'src/')
+    => done (2026-11-02): no bugs (H1: about 400000 runs; H2: about 41000
+       programs, acceptance independent of '--checks', '--nopt' and
+       '--versions', no asan report); design: A1 'run_time_emitters::
+       address_of' checks the ranges itself for the second array of a
+       constant count, one lambda layer and a redundant free gone (-4); B and
+       C found nothing; decide item: B a constant recursion past the nesting
+       limit, added to the 8.3 bullet item
+[x] hard: design review series 2, round 57 (2026-11-02 night, user: loop,
+    fix as recommended, decisions at the top of todo; 2 hunters: H1
+    evaluation order of every construct with several operands, H2 the model
+    differential with methods, constructors, nested records and arrays,
+    generic types, 'foo' and loops; 3 reviewers: A the range rules of bulk,
+    io and 'foo', B calls and paths, C the machines, expressions, 'toc' and
+    definitions)
+    => done (2026-11-02): no bugs (H1: no order violation in about 70000
+       programs; H2: no mismatch in about 290000 runs on 3 targets);
+       design: A1 one 'bulk_operands' 'check_range' for the three start and
+       count cases, 'bounds_range::start_lower_checked' skips what the walk
+       proved (31 listings smaller, 8439 -> 8309 instructions; rv32i cost
+       of round 56 H2-1 5 -> 4); B1 a generic call without type arguments
+       reads an array argument like a plain call (2084, 2085); B2
+       'assert_not_type_or_call' private; C1 a comment; decide items: B3 two
+       '{}' messages, H2 a new case for the 8.3 bullet item
+[x] hard: design review series 2, round 56 (2026-11-02 night, user: loop,
+    fix as recommended, decisions at the top of todo; 2 hunters: H1 the
+    corpus moved into uncalled functions and generated programs (README 1.5),
+    H2 a model differential with generics, 'read', sectors, '--versions',
+    'dat', 'let' and deep recursion; 3 reviewers: A the check of a body
+    without its calls, B expressions and paths, C the rest of 'src/')
+    => done (2026-11-02): bugs: H2-1 with a constant count the range of a
+       run-time start was checked at its address, before the later
+       arguments, so 'array_copy(a[k], b[1 / z], 4)' panicked 'bounds' where
+       a variable count panics 'division' (left to right, README 1.7, 7.14):
+       the range is checked where a run-time count would be computed,
+       'lea_request::range_count' becomes 'is_range' (2081-2083; 1552 and 11
+       listings: 3 more instructions on x86_64, 5 on rv32i per such start;
+       decide item at the top of todo); A1 the bind-only path of an inlined
+       recursion in a body check ran outside a dry run, so running out of
+       registers there ended the check on x86_64 (2079): 'check_recursion'
+       compiles one level, the first in the dry run; design: A2
+       'toc::dry_run' rethrows instead of returning the error (-23); B3 a
+       call parses an array argument with 'parse_array_argument', as a
+       built-in ('assert_array_argument_start', 'assert_array_name',
+       'assert_argument_usable' gone, -69; removes the parse doubling of
+       round 21 L2-2, 16 levels 0.74 s -> 0.01 s; 0694 1834 1842); B1 one
+       'not' rule in 'assert_no_value_operator' (2080); B2 one
+       'is_whole_array'; docs: A3 README 8.3; C found nothing; H1 found
+       nothing outside README 8.3 bullet 3 (decide item at the top of todo)
 [x] hard: design review series 2, round 55 (2026-11-02, user: keep
     looping the design review with major refactoring allowed; 2 hunters:
     H1 acceptance against calls (README 1.5), H2 a differential generator

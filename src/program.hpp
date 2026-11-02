@@ -492,14 +492,12 @@ class program final {
                 continue;
             }
 
-            std::optional<compile_error> error{
-                body.func->check_noinline_body(tc, body.array_lengths),
-            };
-
-            if (error) {
-                error->add_call_frame(body.call_tk, body.call_source);
-
-                throw std::move(*error);
+            // an error in the body reports the call that asked for it
+            try {
+                body.func->check_noinline_body(tc, body.array_lengths);
+            } catch (compile_error& e) {
+                e.add_call_frame(body.call_tk, body.call_source);
+                throw;
             }
         }
     }

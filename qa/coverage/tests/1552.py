@@ -2,7 +2,7 @@
 
 import re
 
-# the run-time bounds checks, one is expected
+# the run-time bounds checks
 checks = 0
 for line in open('gen.s'):
     if re.search(r'\] bounds check begin$', line):

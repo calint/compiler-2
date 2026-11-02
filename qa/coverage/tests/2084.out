@@ -1,0 +1,4 @@
+
+2084.baz:8:7: a unary operator makes a value, not an array
+    f(-a)
+      ^

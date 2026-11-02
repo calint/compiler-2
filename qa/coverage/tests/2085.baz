@@ -1,0 +1,9 @@
+# an element where an array parameter before a missing argument of a generic
+# call goes is reported before the missing argument, as in the call
+
+func f<T type>(s T[], x T) {}
+
+func main() {
+    var a = i8[4]
+    f(a[1])
+}

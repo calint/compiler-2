@@ -1,0 +1,8 @@
+# the range of a run-time start with a constant count is checked after the
+# later arguments also in a copy within one array that checks the overlap
+func main() {
+    var a = i8[5]
+    var k = 3
+    var z = 0
+    array_copy(a[k], a[1 / z], 3)
+}

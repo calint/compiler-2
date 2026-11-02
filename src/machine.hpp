@@ -222,6 +222,9 @@ class machine {
         operand checked;
         // the count of a range, none otherwise
         std::optional<operand> count;
+        // the start is known not to be negative, e.g. checked by the walk of
+        // its address
+        bool start_lower_checked{};
         // the count is known not to be negative, e.g. checked for the first
         // array of a copy
         bool count_lower_checked{};
@@ -239,6 +242,7 @@ class machine {
             return {
                 .checked{index},
                 .count{},
+                .start_lower_checked{},
                 .count_lower_checked{},
                 .array_count{array_count},
                 .allow_end{},
@@ -253,6 +257,7 @@ class machine {
             return {
                 .checked{start},
                 .count{count},
+                .start_lower_checked{},
                 .count_lower_checked{},
                 .array_count{array_count},
                 .allow_end{true},
@@ -267,6 +272,7 @@ class machine {
             return {
                 .checked{value},
                 .count{},
+                .start_lower_checked{},
                 .count_lower_checked{},
                 .array_count{limit},
                 .allow_end{true},
@@ -1043,6 +1049,13 @@ class machine {
             .upper{options.upper},
             .lower_checked{options.lower},
         };
+
+        // e.g. a start that the walk of its address checked, under
+        // '--checks=lower' alone
+        if (plan.sign_tested.empty() and not plan.upper) {
+            comment(src_loc_tk, indent, "bounds check end");
+            return;
+        }
 
         emit_bounds_check(src_loc_tk, indent, range, plan);
 
@@ -2074,19 +2087,30 @@ class machine {
             return {};
         }
 
+        std::vector<operand> tested;
+
+        if (range.start_lower_checked) {
+            comment(src_loc_tk, indent, "start {} lower bound already checked",
+                    range.checked.register_name());
+        } else {
+            tested.push_back(range.checked);
+        }
+
         if (not range.count) {
-            return {range.checked};
+            return tested;
         }
 
         if (range.count_lower_checked) {
             comment(src_loc_tk, indent, "count {} lower bound already checked",
                     range.count->register_name());
 
-            return {range.checked};
+            return tested;
         }
 
         // a negative count passes 'start + count' but spans the address space
-        return {range.checked, *range.count};
+        tested.push_back(*range.count);
+
+        return tested;
     }
 
     // the registers the backend holds itself in a 'noinline' body: the

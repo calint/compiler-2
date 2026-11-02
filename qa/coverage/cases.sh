@@ -4903,7 +4903,8 @@ SRC=1550 && COMPERR
 SRC=1551 && COMPERR
 
 # a constant count with a constant start is checked at compile time, its
-# range is not checked again at run time; a run-time start is, once
+# range is not checked again at run time; a run-time start is checked up to
+# the length in its walk and its range after the count
 SRC=1552 && DIFFPY
 
 # a condition stored in an inlined result that a later element reads, the
@@ -6594,3 +6595,31 @@ SRC=2077 && COMPERR
 # the check of a body without its call does not expand the call of the
 # function in it, a recursion that no constant drives
 SRC=2078 && COMPERR
+
+# the check of a body without its call binds the arguments of a recursion
+# it does not expand in a dry run, running out of registers there ends the
+# recursion, not the check
+SRC=2079 && COMPERR
+
+# 'not' before the argument of an array parameter is reported as a condition
+SRC=2080 && COMPERR
+
+# the range of a run-time start with a constant count is checked after the
+# later arguments, the call exits before it
+SRC=2081 && EXP=7 && OPTS="--checks=noub" RUN
+
+# the range of a run-time start with a constant count is checked after the
+# division in the second array of 'arrays_equal'
+SRC=2082 && EXP=253 && OPTS="--checks=noub" RUN_ERR
+
+# the range of a run-time start with a constant count is checked after the
+# division in the second array of a copy that checks the overlap
+SRC=2083 && EXP=253 && OPTS="--checks=noub" RUN_ERR
+
+# an array argument before a missing argument of a generic call is read as
+# in the call: a unary operator makes a value
+SRC=2084 && COMPERR
+
+# an array argument before a missing argument of a generic call is read as
+# in the call: an element is not an array
+SRC=2085 && COMPERR

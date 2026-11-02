@@ -40,7 +40,8 @@
 //
 //   'stmt_call'       parses the call, prints its source and hands it to one
 //                     of the compilers (last in the file, it uses the others)
-//   'missing_argument_text', 'missing_delimiter_text'
+//   'missing_argument_text', 'missing_delimiter_text',
+//   'throw_not_array_argument', 'parse_array_parameter_argument'
 //                     free, first, 'generic_call' and 'stmt_call' use them
 //   'generic_call'    the instance of a generic function that the call names
 //   'call_limits'     how deep the compile of calls nests
@@ -91,6 +92,39 @@
 
     return std::format("expected ',' before argument {} ({})", number,
                        in_quotes(param));
+}
+
+[[noreturn]] inline auto throw_not_array_argument(const token& src_loc_tk,
+                                                  const std::string_view source,
+                                                  const std::string_view param)
+    -> void {
+
+    throw compile_error{
+        src_loc_tk, std::format("{} is not an array, parameter {} takes one",
+                                in_quotes(source), in_quotes(param))};
+}
+
+// the whole array the array parameter 'param' takes, read as the array of a
+// built-in and not as a value of the element type, which would report its
+// kind, e.g. 'p' of a 'point' for 's i8[]'; an element would give the
+// parameter the whole array's length
+[[nodiscard]] inline auto parse_array_parameter_argument(
+    toc& tc, tokenizer& tz, const std::string_view param) -> stmt_identifier {
+
+    // e.g. the '{}' of 'f({})', which has no storage that the parameter
+    // refers to
+    if (is_zero_value(tz)) {
+        throw_not_array_argument(tz.next_token(), "{}", param);
+    }
+
+    stmt_identifier array{stmt_identifier::parse_array_argument(tc, tz)};
+
+    if (not array.is_array()) {
+        throw_not_array_argument(array.tok().start_position(),
+                                 array.path_text(), param);
+    }
+
+    return array;
 }
 
 // the instance of a generic function that a call names, its type arguments
@@ -212,12 +246,12 @@ struct generic_call {
     }
 
     // the argument at 'index' parsed without a type, as the initializer of a
-    // 'var' is, so a mistake in it is reported as in a call without type
-    // parameters; a value parses and tells no type, e.g. 'true' or 'x + 1',
-    // nor does a literal that takes its type from the parameter, e.g.
-    // '{1, 2}'; a token after it that is not a delimiter is reported as
-    // there too, e.g. the '2' of 'f(1 2)'. 'tz' is after the '(' and is a
-    // copy
+    // 'var' is or an array argument of a call, so a mistake in it is reported
+    // as in a call without type parameters; a value parses and tells no type,
+    // e.g. 'true' or 'x + 1', nor does a literal that takes its type from the
+    // parameter, e.g. '{1, 2}'; a token after it that is not a delimiter is
+    // reported as there too, e.g. the '2' of 'f(1 2)'. 'tz' is after the '('
+    // and is a copy
     // note: the parse records nothing that outlives the error that follows
     static auto assert_argument_parses(
         toc& tc, tokenizer tz,
@@ -227,7 +261,12 @@ struct generic_call {
         std::ignore = skip_to_argument(tz, index);
 
         if (params.at(index).is_array) {
-            assert_not_string_argument(tz);
+            std::ignore = parse_array_parameter_argument(
+                tc, tz, params.at(index).name_tk.text());
+
+            assert_delimiter_after(tz, params, index);
+
+            return;
         }
 
         const char next{tz.peek_char_after_whitespace()};
@@ -267,8 +306,10 @@ struct generic_call {
         tokenizer after_last{tz};
 
         // e.g. 'p' of 'f(p)' or 'point{1, 2}', else parsed like a 'var'
-        // initializer
-        if (argument_type(tc, after_last, last) != nullptr) {
+        // initializer or, for an array parameter, as in the call
+        if (not params.at(last).is_array and
+            argument_type(tc, after_last, last) != nullptr) {
+
             assert_delimiter_after(after_last, params, last);
         } else {
             assert_argument_parses(tc, tz, params, last);
@@ -1040,7 +1081,8 @@ class inline_call final {
                   machine::held_registers& held) -> param_binding {
 
         // note: 'stmt_call::assert_argument_types' checked the type, an array
-        //       argument is a place ('stmt_call::assert_argument_usable')
+        //       argument is a place
+        //       ('parse_array_parameter_argument')
 
         assert(arg_place or not param.is_array());
 
@@ -1598,6 +1640,8 @@ class builtin_arguments final {
                     stmt_identifier::parse_array_argument(tc, tz),
                 };
 
+                array.assert_array_or_element();
+
                 args_.push_back(path_argument(std::move(array)));
             } else {
                 args_.emplace_back(tc, tz, tc.builtins().default_type(),
@@ -1655,8 +1699,8 @@ class builtin_arguments final {
 // ('assert_call_in_func', first as for a built-in), the kind of the callee
 // ('assert_method_receiver', 'constructor_func'), the callee
 // ('resolve_callee', a generic function through 'generic_call'), then from
-// the '(' the arguments ('parse_arguments', each checked by
-// 'assert_array_argument_start', 'assert_argument_usable' and
+// the '(' the arguments ('parse_arguments', an array one read by
+// 'parse_array_parameter_argument', each checked by
 // 'assert_argument_writable'), then 'record_uses_of_call'
 //
 // compiling, in 'compile': the checks made before the inlined and noinline
@@ -1816,22 +1860,9 @@ class stmt_call final : public statement {
                                   : 0,
         };
 
-        // a check without a call expands a recursion that a constant argument
-        // drives, e.g. the 'g(n - 1)' of 'g(2)', in a dry run: a value or an
-        // array length it does not know may not let it end, so an error that
-        // depends on a call ends the expansion, not the check; a recursion
-        // that no constant drives binds its arguments only, the body is
-        // checked where the recursion is entered and in its own check
         if (nesting != 0 and tc.scopes().is_in_body_taking_from_call()) {
-            if (not has_constant_argument(tc)) {
-                inline_call{call}.compile_arguments(tc, indent);
-                return;
-            }
-
-            if (nesting == 1) {
-                check_recursion(tc, indent, dst, call);
-                return;
-            }
+            check_recursion(tc, indent, dst, call, nesting);
+            return;
         }
 
         compile_call(tc, indent, dst, call);
@@ -2141,19 +2172,32 @@ class stmt_call final : public statement {
         return is_method() ? args_.at(0).tok() : tok();
     }
 
-    // the expansion of an inlined recursion for its errors, see 'compile';
-    // the deeper calls of the recursion expand within it
+    // a recursion in the check of a body without its calls, in a dry run
+    // with its deeper levels: a value or an array length the check does not
+    // know may not let it end, so an error that depends on a call ends the
+    // recursion, not the check; a constant argument expands it, e.g. the
+    // 'g(n - 1)' of 'g(2)', otherwise only its arguments are bound, the body
+    // is checked where the recursion is entered and in its own check
     auto check_recursion(toc& tc, const size_t indent, const destination& dst,
-                         const call_site& call) const -> void {
+                         const call_site& call, const size_t nesting) const
+        -> void {
 
-        std::optional<compile_error> error{
-            tc.dry_run([&] -> void { compile_call(tc, indent, dst, call); },
-                       machine::discarded_code::here, true),
+        const auto compile_level = [&] -> void {
+            if (not has_constant_argument(tc)) {
+                inline_call{call}.compile_arguments(tc, indent);
+                return;
+            }
+
+            compile_call(tc, indent, dst, call);
         };
 
-        if (error) {
-            throw std::move(*error);
+        // note: a deeper level is in the dry run of the first
+        if (nesting > 1) {
+            compile_level();
+            return;
         }
+
+        tc.dry_run(compile_level, machine::discarded_code::here, true);
     }
 
     // the call without its operators, inlined or noinline
@@ -2327,10 +2371,10 @@ class stmt_call final : public statement {
             // e.g. the 'bs' of 'f(bs)' for 'gs bool[]', a path as the array
             // of a built-in, not a value of the element type, which for a
             // 'bool' is a condition that rejects a whole array
-            if (assert_array_argument_start(tc, tz, params.at(i))) {
-                const token tk{tz.next_token()};
+            if (params.at(i).is_array()) {
+                args_.push_back(path_argument(parse_array_parameter_argument(
+                    tc, tz, params.at(i).name())));
 
-                args_.push_back(path_argument(stmt_identifier{tc, tk, tz}));
                 continue;
             }
 
@@ -2378,8 +2422,16 @@ class stmt_call final : public statement {
         const std::vector<std::optional<place>> places{argument_places(tc)};
 
         for (size_t i{}; i < args_.size(); ++i) {
-            assert_argument_usable(args_.at(i), params.at(i), places.at(i));
-            assert_argument_writable(i, places.at(i));
+            const std::optional<place>& arg_place{places.at(i)};
+
+            // note: an array argument is the path of a whole array
+            //       ('parse_array_parameter_argument'), the parse of a value
+            //       rejected one ('assert_not_whole_array')
+
+            assert(params.at(i).is_array() ==
+                   (arg_place and arg_place->info.is_array()));
+
+            assert_argument_writable(i, arg_place);
         }
 
         record_uses_of_call(tc, places);
@@ -2602,109 +2654,6 @@ class stmt_call final : public statement {
     // statics
     //
 
-    // an array parameter takes a whole array, a scalar parameter does not
-    static auto assert_argument_usable(const expr_any& arg,
-                                       const stmt_def_func_param& param,
-                                       const std::optional<place>& arg_place)
-        -> void {
-
-        if (param.is_array()) {
-            // an expression is not an array, nor is a name with a unary
-            // operator, e.g. '-a'
-            const bool is_array_arg{arg_place and arg_place->info.is_array()};
-
-            // an element would give the parameter the whole array's
-            // length, pass the array and a start index instead
-            if (not is_array_arg) {
-                throw_not_array_argument(arg.tok(), trimmed_source(arg), param);
-            }
-
-            return;
-        }
-
-        // note: the parse of the value rejected a whole array, which the
-        //       binding would make the parameter name
-        //       ('assert_not_whole_array')
-
-        assert(not arg_place or not arg_place->info.is_array());
-    }
-
-    // an argument of an array parameter that is not an array is reported
-    // before the parse reads it as a value of the element type, which would
-    // report its kind, e.g. 'p' of a 'point' for 's i8[]': an array literal,
-    // which has no storage that the parameter refers to, e.g. '{1, 2}',
-    // '[2]{1, 2}' or 'i8[]{1, 2}', a type, a call, a whole name and an
-    // operator, as for the array of a built-in; '{}' and a condition are
-    // reported where they are used; true for the name of an array, which the
-    // call parses as a path
-    static auto assert_array_argument_start(toc& tc, const tokenizer& tz,
-                                            const stmt_def_func_param& param)
-        -> bool {
-
-        if (not param.is_array() or is_zero_value(tz)) {
-            return false;
-        }
-
-        tokenizer probe{tz};
-
-        assert_not_string_argument(probe);
-
-        // e.g. the '-' of 'f(-a)'
-        assert_no_value_operator(probe, "an array");
-
-        std::optional<token> literal_tk{probe.is_next_char_token('{')};
-
-        // a '[' starts an array literal of the default type
-        if (not literal_tk) {
-            literal_tk = probe.is_next_char_token('[');
-        }
-
-        if (not literal_tk) {
-            const token tk{probe.next_token()};
-            const term_kind tm{classify_term(tc, tk, probe)};
-
-            if (tm == term_kind::value or tm == term_kind::literal) {
-                assert_array_name(tc, tk, probe, param);
-                return true;
-            }
-
-            // e.g. 'i8', 'point{1, 2}' or 'mk()', as for the array of a
-            // built-in
-            if (tm != term_kind::array_literal) {
-                stmt_identifier::assert_not_type_or_call(tc, tk, tm);
-                return false;
-            }
-
-            literal_tk = tk;
-        }
-
-        throw compile_error{
-            *literal_tk,
-            std::format("an array literal is not an argument, parameter {} "
-                        "takes an array",
-                        in_quotes(param.name()))};
-    }
-
-    // the name of an array that no operator continues, 'tk' is its first
-    // token and 'probe' is after it
-    // note: read from the copy, the call parses it again
-    static auto assert_array_name(toc& tc, const token& tk, tokenizer probe,
-                                  const stmt_def_func_param& param) -> void {
-
-        const stmt_identifier ident{tc, tk, probe};
-
-        // e.g. 'p.get()', as for the array of a built-in
-        ident.assert_not_method(tc, probe);
-
-        // e.g. the '+' of 'f(a + 1)'
-        assert_no_operator_after_array(probe);
-
-        if (not ident.is_array()) {
-            throw_not_array_argument(tk.start_position(), ident.path_text(),
-                                     param);
-        }
-    }
-
     // an argument that reaches a part of an earlier one or of the result that
     // one of the two writes
     static auto
@@ -2779,17 +2728,6 @@ class stmt_call final : public statement {
         }
 
         return std::format(" (both name {})", in_quotes(name));
-    }
-
-    [[noreturn]] static auto
-    throw_not_array_argument(const token& src_loc_tk,
-                             const std::string_view source,
-                             const stmt_def_func_param& param) -> void {
-
-        throw compile_error{
-            src_loc_tk,
-            std::format("{} is not an array, parameter {} takes one",
-                        in_quotes(source), in_quotes(param.name()))};
     }
 
     [[noreturn]] static auto

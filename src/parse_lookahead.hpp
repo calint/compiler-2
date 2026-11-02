@@ -10,6 +10,7 @@
 #include <algorithm>
 #include <cstdint>
 #include <format>
+#include <optional>
 #include <string_view>
 
 #include "compile_error.hpp"
@@ -100,10 +101,18 @@ inline auto assert_not_string_argument(tokenizer& tz) -> void {
                                          "would refer to read-only data"};
 }
 
-// a '(' or a unary operator makes a value where 'what' is expected, e.g. the
-// '(' of 'array_length((a))' or the '-' of 'q = -p' for "an instance of 'pt'"
+// a '(' or a unary operator makes a value and a 'not' a condition where
+// 'what' is expected, e.g. the '(' of 'array_length((a))', the '-' of
+// 'q = -p' for "an instance of 'pt'" or the 'not' of 'f(not bs)'
 inline auto assert_no_value_operator(const tokenizer& tz,
                                      const std::string_view what) -> void {
+
+    tokenizer probe{tz};
+
+    if (const std::optional<token> not_tk{probe.is_next_word_token("not")}) {
+        throw compile_error{
+            *not_tk, std::format("'not' makes a condition, not {}", what)};
+    }
 
     if (tz.peek_char_after_whitespace() == '(') {
         throw compile_error{
