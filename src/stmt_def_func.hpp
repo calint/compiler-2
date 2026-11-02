@@ -422,8 +422,8 @@ struct frame_slot {
 };
 
 // a function: its signature, its body and the checks of the body; 'compile'
-// emits nothing, the body is compiled by its calls; the three ways a body is
-// compiled:
+// emits nothing, the body is compiled by its calls, that of 'main' where the
+// program starts; the ways a body is compiled:
 //
 //   when                  scope              the parameters
 //   'parse_body'          'inlined_func' or  variables, named only
@@ -433,6 +433,8 @@ struct frame_slot {
 //   a noinline body,      'noinline_func'    variables reached through the
 //   'emit_noinline_body'                     addresses in the frame
 //   and 'check_body'                         ('compile_in_frame')
+//   'main',               'main_func'        none
+//   'compile_main'
 //
 // 'check_body' compiles a function without its calls like a noinline
 // body; 'toc' keeps the address of the definition, so it is not
@@ -637,9 +639,26 @@ class stmt_def_func final : public statement {
         x.label(indent, ret_jmp_label);
     }
 
-    // in place or in a body of its own, the function is compiled
-    auto compile_statements(toc& tc, const size_t indent) const -> void {
-        code_.compile(tc, indent, destination{});
+    // where the program starts, 'main' takes nothing from a call
+    auto compile_main(toc& tc) const -> void {
+        assert(name() == reserved_names::main);
+
+        const toc::scope_entry main{tc, scope::main_func()};
+
+        machine& x{tc.machine()};
+
+        x.comment({}, 0, "");
+
+        x.label(0, reserved_names::main);
+
+        compile_statements(tc, 0);
+
+        // code after an 'exit' or 'return' on every path would never run;
+        // the compile knows the conditions it folded, e.g. with constant
+        // arguments of an inlined call
+        if (tc.is_reachable()) {
+            x.exit(token{}, 1, operand::imm(0, tc.builtins().default_type()));
+        }
     }
 
     // the body of a noinline function for one set of array lengths, after
@@ -937,13 +956,18 @@ class stmt_def_func final : public statement {
         compile_statements(tc, indent);
         x.return_function(indent + 1);
 
-        const size_t frame_size_bytes{tc.layout().peak_frame_size_bytes()};
+        const size_t frame_size_bytes{tc.layout().max_frame_size_bytes()};
 
         if (slot_register) {
             x.free_named_register(tok(), indent + 1, *slot_register);
         }
 
         return frame_size_bytes;
+    }
+
+    // in place or in a body of its own, the function is compiled
+    auto compile_statements(toc& tc, const size_t indent) const -> void {
+        code_.compile(tc, indent, destination{});
     }
 
     // e.g. 'func point.at(x, y) self' builds a 'point'
@@ -1069,17 +1093,19 @@ class stmt_def_func final : public statement {
             add_self_param();
         }
 
-        // e.g. 'text.size' for the instance 'str.size', empty if the function
-        // is not an instance of a method of a generic type
-        const std::string generic_method{
-            instance_ ? instance_->generic_method : std::string{},
-        };
-
         // see 'definition_order'
         const bool is_ordered{not instance_ and not head_.is_type_member()};
 
-        tc.add_func(head_.name_tk, std::string{name()}, *this, generic_method,
-                    is_ordered);
+        tc.add_func(
+            std::string{name()},
+            {
+                .src_loc_tk{head_.name_tk},
+                .def{this},
+                .generic_method{
+                    instance_ ? instance_->generic_method : std::string{},
+                },
+                .definition{is_ordered ? tc.current_definition() : 0},
+            });
     }
 
     auto source_def_comment_to(machine& x, const size_t indent) const -> void {

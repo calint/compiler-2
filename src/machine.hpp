@@ -454,6 +454,12 @@ class machine {
 
     using version_result = std::expected<compiled_version, unavailable_version>;
 
+    // the version 'emit_most_efficient' keeps and the comment of why
+    struct version_choice {
+        bool keeps_first{};
+        std::string comment;
+    };
+
   protected:
     // the lines of the failures in each file, with '--checks=line'
     using failure_lines = std::map<size_t, std::set<size_t>>;
@@ -561,13 +567,16 @@ class machine {
         }
     };
 
-    // what a bounds check does about the lower bound, decided from its
-    // options and operands
+    // what a backend emits for a bounds check, decided by 'check_bounds' from
+    // its options and operands
     struct bounds_plan {
-        // the unsigned upper comparison already fails a negative index or
-        // count as long as the limit is below 2^(width - 1), only a sum
-        // 'index + count' needs both signs checked
-        bool upper_covers_lower{};
+        // the values tested for a negative sign, in order
+        std::vector<operand> sign_tested;
+        // the range is compared with the array count
+        bool upper{};
+        // the lower bound is checked or covered, so the upper compare is
+        // unsigned
+        bool lower_checked{};
     };
 
     struct constant_factor {
@@ -1015,11 +1024,15 @@ class machine {
 
         assert(not range.count_lower_checked or range.count);
 
-        const bounds_plan plan{plan_bounds_check(options, range)};
-
         comment(src_loc_tk, indent, "bounds check begin");
 
-        emit_bounds_check(src_loc_tk, indent, range, options, plan);
+        const bounds_plan plan{
+            .sign_tested{lower_bound_tests(src_loc_tk, indent, range, options)},
+            .upper{options.upper},
+            .lower_checked{options.lower},
+        };
+
+        emit_bounds_check(src_loc_tk, indent, range, plan);
 
         comment(src_loc_tk, indent, "bounds check end");
     }
@@ -1155,19 +1168,18 @@ class machine {
             std::rethrow_exception(first.error().error);
         }
 
-        const bool keeps_first{keeps_first_version(first, second)};
+        const version_choice choice{choose_version(first, second)};
 
-        comment(src_loc_tk, indent,
-                version_comment(first, second, keeps_first));
+        comment(src_loc_tk, indent, choice.comment);
 
-        compiled_version& kept{keeps_first ? *first : *second};
+        compiled_version& kept{choice.keeps_first ? *first : *second};
 
         state_ = std::move(kept.end_state);
         failure_locations_.append_range(kept.failures);
 
         output.append(std::move(kept.lines));
 
-        return keeps_first;
+        return choice.keeps_first;
     }
 
     // the code after the program: the handlers its checks branch to, then the
@@ -1449,10 +1461,9 @@ class machine {
         -> std::string = 0;
 
     // the compares and branches of 'check_bounds' after its plan, between the
-    // begin and end comments
+    // begin and end comments: the sign tests, then the upper compare
     virtual auto emit_bounds_check(const token& src_loc_tk, const size_t indent,
                                    const bounds_range& range,
-                                   const bounds_check_options& options,
                                    const bounds_plan& plan) -> void = 0;
 
     // the call instruction of 'call_function'
@@ -1511,30 +1522,6 @@ class machine {
 
     [[nodiscard]] auto builtins() const -> const builtin_type_set& {
         return builtins_.get();
-    }
-
-    // the comments of a lower bound check, which the upper comparison or an
-    // earlier check may cover
-    auto comment_lower_bound(const token& src_loc_tk, const size_t indent,
-                             const bounds_range& range, const bounds_plan& plan)
-        -> void {
-
-        comment(src_loc_tk, indent, "lower bound");
-
-        if (plan.upper_covers_lower) {
-            comment(src_loc_tk, indent,
-                    "{} lower bound covered by the unsigned upper bound",
-                    range.checked.register_name());
-
-            return;
-        }
-
-        if (range.count_lower_checked) {
-            assert(range.count);
-
-            comment(src_loc_tk, indent, "count {} lower bound already checked",
-                    range.count->register_name());
-        }
     }
 
     // the lines of the failures of 'routine' by the file they are in
@@ -1917,6 +1904,63 @@ class machine {
         }
     }
 
+    // of two versions, at least one available, the one to keep and why, e.g.
+    // 'kept the second of two versions of 4 and 3 instructions, the smaller'
+    [[nodiscard]] auto choose_version(const version_result& first,
+                                      const version_result& second) const
+        -> version_choice {
+
+        if (not second) {
+            return {
+                .keeps_first{true},
+                .comment{
+                    std::format("kept the first of two versions, the second "
+                                "runs out of {}",
+                                second.error().resource),
+                },
+            };
+        }
+
+        if (not first) {
+            return {
+                .keeps_first{false},
+                .comment{
+                    std::format("kept the second of two versions, the first "
+                                "runs out of {}",
+                                first.error().resource),
+                },
+            };
+        }
+
+        const assembler& output{target_assembler()};
+
+        const size_t first_count{output.instruction_count_of(first->lines)};
+        const size_t second_count{output.instruction_count_of(second->lines)};
+
+        bool keeps_first{first_count <= second_count};
+        std::string_view reason{"the smaller"};
+
+        if (kept_version_ == kept_version::first) {
+            keeps_first = true;
+            reason = "as '--versions=first' asks";
+        } else if (kept_version_ == kept_version::last) {
+            keeps_first = false;
+            reason = "as '--versions=last' asks";
+        } else if (first_count == second_count) {
+            reason = "the first of equal sizes";
+        }
+
+        return {
+            .keeps_first{keeps_first},
+            .comment{
+                std::format("kept the {} of two versions of {} and {} "
+                            "instructions, {}",
+                            keeps_first ? "first" : "second", first_count,
+                            second_count, reason),
+            },
+        };
+    }
+
     // the lines of 'emit' with the state they end in, compiled from the
     // current state, which is put back
     [[nodiscard]] auto compile_version(const std::function_ref<void()> emit)
@@ -1989,29 +2033,6 @@ class machine {
                                    });
     }
 
-    // of two versions, at least one available, the one to keep
-    [[nodiscard]] auto keeps_first_version(const version_result& first,
-                                           const version_result& second) const
-        -> bool {
-
-        if (not first or not second) {
-            return first.has_value();
-        }
-
-        if (kept_version_ == kept_version::first) {
-            return true;
-        }
-
-        if (kept_version_ == kept_version::last) {
-            return false;
-        }
-
-        const assembler& output{target_assembler()};
-
-        return output.instruction_count_of(first->lines) <=
-               output.instruction_count_of(second->lines);
-    }
-
     // loaded before the frame base is set, the address may be relative to the
     // caller's; the receiver already in the register is passed as is
     auto load_slot_address(const token& src_loc_tk, const size_t indent,
@@ -2040,6 +2061,54 @@ class machine {
         return locations_.for_listing(src_loc_tk);
     }
 
+    // the values of 'range' that a lower bound check tests for a sign, with
+    // the comments of what it leaves out
+    [[nodiscard]] auto lower_bound_tests(const token& src_loc_tk,
+                                         const size_t indent,
+                                         const bounds_range& range,
+                                         const bounds_check_options& options)
+        -> std::vector<operand> {
+
+        if (not options.lower) {
+            return {};
+        }
+
+        comment(src_loc_tk, indent, "lower bound");
+
+        // the compare is at the default type, 'signed_max' its largest value
+        const uint64_t signed_max{
+            (uint64_t{1} << (default_type().size_bits() - 1)) - 1,
+        };
+
+        // note: the unsigned upper compare already fails a negative index or
+        //       count as long as the limit is below 2^(width - 1), only a sum
+        //       'index + count' needs both signs checked
+
+        if (options.upper and not range.count and
+            range.array_count <= signed_max) {
+
+            comment(src_loc_tk, indent,
+                    "{} lower bound covered by the unsigned upper bound",
+                    range.checked.register_name());
+
+            return {};
+        }
+
+        if (not range.count) {
+            return {range.checked};
+        }
+
+        if (range.count_lower_checked) {
+            comment(src_loc_tk, indent, "count {} lower bound already checked",
+                    range.count->register_name());
+
+            return {range.checked};
+        }
+
+        // a negative count passes 'start + count' but spans the address space
+        return {range.checked, *range.count};
+    }
+
     // the registers the backend holds itself in a 'noinline' body: the
     // variables base and the frame base
     [[nodiscard]] auto noinline_body_pool() const -> register_pool {
@@ -2064,23 +2133,6 @@ class machine {
     // start
     [[nodiscard]] auto noinline_body_register_count() const -> size_t {
         return scratch_register_count(noinline_body_pool().allocations());
-    }
-
-    // the compare is at the default type, 'signed_max' its largest value
-    [[nodiscard]] auto plan_bounds_check(const bounds_check_options& options,
-                                         const bounds_range& range) const
-        -> bounds_plan {
-
-        const uint64_t signed_max{
-            (uint64_t{1} << (default_type().size_bits() - 1)) - 1,
-        };
-
-        return {
-            .upper_covers_lower{
-                options.lower and options.upper and not range.count and
-                    range.array_count <= signed_max,
-            },
-        };
     }
 
     // the index of 'register_name', which names a register
@@ -2243,46 +2295,6 @@ class machine {
         output.comment(0, "generated by baz");
         output.comment(0, "");
         output.add_separator_newline();
-    }
-
-    // the version kept and why, at least one available, e.g. 'kept the second
-    // of two versions of 4 and 3 instructions, the smaller'
-    [[nodiscard]] auto version_comment(const version_result& first,
-                                       const version_result& second,
-                                       const bool keeps_first) const
-        -> std::string {
-
-        if (not second) {
-            return std::format("kept the first of two versions, the second "
-                               "runs out of {}",
-                               second.error().resource);
-        }
-
-        if (not first) {
-            return std::format("kept the second of two versions, the first "
-                               "runs out of {}",
-                               first.error().resource);
-        }
-
-        const assembler& output{target_assembler()};
-
-        const size_t first_count{output.instruction_count_of(first->lines)};
-        const size_t second_count{output.instruction_count_of(second->lines)};
-
-        std::string_view reason{"the smaller"};
-
-        if (kept_version_ == kept_version::first) {
-            reason = "as '--versions=first' asks";
-        } else if (kept_version_ == kept_version::last) {
-            reason = "as '--versions=last' asks";
-        } else if (first_count == second_count) {
-            reason = "the first of equal sizes";
-        }
-
-        return std::format("kept the {} of two versions of {} and {} "
-                           "instructions, {}",
-                           keeps_first ? "first" : "second", first_count,
-                           second_count, reason);
     }
 
     //

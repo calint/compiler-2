@@ -5710,9 +5710,8 @@ SRC=1789 && COMPERR
 # quote in the name
 SRC=1790 && COMPERR
 
-# code that a compile skips takes no variable storage, a local there is not
-# held to '--vars'
-SRC=1791 && EXP=3 && RUN
+# code that a compile skips is held to '--vars' as if it ran
+SRC=1791 && COMPERR
 
 # a typed constant on the left of a comparison compares as an immediate on the
 # right when it fits, at the left side's width where it does not
@@ -6541,3 +6540,13 @@ SRC=2062 && COMPERR
 
 # the overflow of a constant step reports the line of the constant
 SRC=2063 && EXP=249 && OPTS="--checks=overflow,line --reproduce-source" RUN_ERR
+
+# a call outside a function is reported before its callee is looked up
+SRC=2064 && COMPERR
+
+# a function nothing calls is held to '--vars' as if it were called
+SRC=2065 && COMPERR
+
+# the check of a body without its call expands an inlined recursion whose
+# arguments are constants
+SRC=2066 && COMPERR

@@ -874,6 +874,11 @@ class assembler_rv32i final : public assembler {
     // statics
     //
 
+    // 'value' fits the 12-bit signed immediate of the I and S formats
+    [[nodiscard]] static auto fits_immediate(const int64_t value) -> bool {
+        return fits(value, immediate_min, immediate_max);
+    }
+
     // the size of the expansion that 'write_code' encodes, so the layout and
     // the image agree
     [[nodiscard]] static auto li_value_size_bytes(const int64_t value)
@@ -1656,8 +1661,7 @@ class assembler_rv32i final : public assembler {
         if (operands == form::immediate or operands == form::load or
             operands == form::store) {
 
-            return not symbolic and
-                   fits(value.number, immediate_min, immediate_max);
+            return not symbolic and fits_immediate(value.number);
         }
 
         if (operands == form::shift) {
@@ -1860,7 +1864,7 @@ class assembler_rv32i final : public assembler {
             std::bit_cast<int32_t>(static_cast<uint32_t>(value)),
         };
 
-        if (fits(number, immediate_min, immediate_max)) {
+        if (fits_immediate(number)) {
             return {
                 encode_immediate(addi_encoding_, rd, zero_register_, number),
             };

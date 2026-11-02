@@ -38,7 +38,7 @@
 //   memory       'copy_block', 'store_bytes', 'zero' unrolled or with
 //                'rep', the bulk operations with 'rsi', 'rdi' and 'rcx'
 //   comparisons  'compare_and_branch', 'store_condition', 'memory_equal'
-//   checks       'emit_bounds_check' with 'check_lower_bound' and
+//   checks       'emit_bounds_check' with 'test_sign' and
 //                'check_upper_bound', 'check_divisor', 'check_shift_count',
 //                'check_copy_overlap', 'check_frame_capacity', the overflow
 //                checks 'branch_on_overflow' and 'check_byte_product', each
@@ -187,14 +187,14 @@ class machine_x86_64 final : public machine {
             return;
         }
 
+        const operation_scope scope{*this};
+
         const operand reg{
             alloc_scratch_register(src_loc_tk, indent, default_type()),
         };
 
         lea(src_loc_tk, indent, reg, address);
         mov(src_loc_tk, indent, dst, reg);
-
-        free_scratch_register(src_loc_tk, indent, reg);
     }
 
     auto bitwise(const token& src_loc_tk, const size_t indent,
@@ -238,6 +238,8 @@ class machine_x86_64 final : public machine {
                 "callee storage starts after the caller's storage ({})",
                 address_text(frame_address));
 
+        const operation_scope scope{*this};
+
         const operand last_base{
             alloc_scratch_register(src_loc_tk, indent, default_type()),
         };
@@ -262,7 +264,6 @@ class machine_x86_64 final : public machine {
         branch_to_failure(src_loc_tk, indent, condition::l,
                           frame_overflow_failure_);
 
-        free_scratch_register(src_loc_tk, indent, last_base);
         comment(src_loc_tk, indent, "frame capacity check end");
     }
 
@@ -308,6 +309,8 @@ class machine_x86_64 final : public machine {
         comment(src_loc_tk, indent, "size <= {} B, use mov",
                 threshold_for_rep_movs_size_bytes_);
 
+        const operation_scope scope{*this};
+
         const operand tmp{
             alloc_scratch_register(src_loc_tk, indent, default_type()),
         };
@@ -323,8 +326,6 @@ class machine_x86_64 final : public machine {
                 mov(src_loc_tk, indent,
                     memory_part(dst, part_size_bytes, offset), reg);
             });
-
-        free_scratch_register(src_loc_tk, indent, tmp);
     }
 
     auto copy_elements(const token& src_loc_tk, const size_t indent,
@@ -480,6 +481,8 @@ class machine_x86_64 final : public machine {
         }
 
         if (product.type_ref().size_bytes() == size_byte_) {
+            const operation_scope scope{*this};
+
             // a register product holds the wide product in place, its low
             // byte is the result
             const bool is_in_place{product.is_register()};
@@ -502,14 +505,11 @@ class machine_x86_64 final : public machine {
                 check_byte_product(src_loc_tk, indent, left, right);
             }
 
-            free_scratch_register(src_loc_tk, indent, right);
-
             if (is_in_place) {
                 return;
             }
 
             mov(src_loc_tk, indent, product, left);
-            free_scratch_register(src_loc_tk, indent, left);
 
             return;
         }
@@ -537,6 +537,8 @@ class machine_x86_64 final : public machine {
             return;
         }
 
+        const operation_scope scope{*this};
+
         const operand reg{
             alloc_scratch_register(
                 src_loc_tk, indent,
@@ -551,7 +553,6 @@ class machine_x86_64 final : public machine {
         }
 
         mov(src_loc_tk, indent, product, reg);
-        free_scratch_register(src_loc_tk, indent, reg);
     }
 
     auto return_function(const size_t indent) -> void override {
@@ -729,18 +730,17 @@ class machine_x86_64 final : public machine {
     }
 
     auto emit_bounds_check(const token& src_loc_tk, const size_t indent,
-                           const bounds_range& range,
-                           const bounds_check_options& options,
-                           const bounds_plan& plan) -> void override {
+                           const bounds_range& range, const bounds_plan& plan)
+        -> void override {
 
-        if (options.lower) {
-            check_lower_bound(src_loc_tk, indent, range, plan);
+        for (const operand& value : plan.sign_tested) {
+            test_sign(src_loc_tk, indent, value);
         }
 
-        if (options.upper) {
+        if (plan.upper) {
             comment(src_loc_tk, indent, "upper bound");
 
-            check_upper_bound(src_loc_tk, indent, range, options.lower);
+            check_upper_bound(src_loc_tk, indent, range, plan.lower_checked);
         }
     }
 
@@ -1037,6 +1037,8 @@ class machine_x86_64 final : public machine {
             std::format(".Lbaz_overlap.{}", local_label_count_++),
         };
 
+        const operation_scope scope{*this};
+
         const operand distance{
             alloc_scratch_register(src_loc_tk, indent, default_type()),
         };
@@ -1053,7 +1055,6 @@ class machine_x86_64 final : public machine {
         cmp(src_loc_tk, indent, distance, qword_register("rcx"));
         branch_to_failure(src_loc_tk, indent, condition::b, overlap_failure_);
         assembler_.label(indent, passed);
-        free_scratch_register(src_loc_tk, indent, distance);
 
         comment(src_loc_tk, indent, "overlap check end");
     }
@@ -1089,23 +1090,6 @@ class machine_x86_64 final : public machine {
         assembler_.label(indent, not_minimum);
 
         comment(src_loc_tk, indent, "division check end");
-    }
-
-    auto check_lower_bound(const token& src_loc_tk, const size_t indent,
-                           const bounds_range& range, const bounds_plan& plan)
-        -> void {
-
-        comment_lower_bound(src_loc_tk, indent, range, plan);
-
-        if (not plan.upper_covers_lower) {
-            test_sign(src_loc_tk, indent, range.checked);
-
-            // a negative count passes 'start + count' but spans the address
-            // space
-            if (range.count and not range.count_lower_checked) {
-                test_sign(src_loc_tk, indent, *range.count);
-            }
-        }
     }
 
     // a count in 'rcx' below zero or not below the width jumps to the failure
@@ -1145,6 +1129,8 @@ class machine_x86_64 final : public machine {
 
         const operand& count{*range.count};
 
+        const operation_scope scope{*this};
+
         const operand reg_top_idx{
             alloc_scratch_register(src_loc_tk, indent, default_type()),
         };
@@ -1175,9 +1161,6 @@ class machine_x86_64 final : public machine {
         }
 
         cmp(src_loc_tk, indent, reg_top_idx, immediate(range.array_count));
-
-        free_scratch_register(src_loc_tk, indent, reg_top_idx);
-
         branch_to_failure(src_loc_tk, indent, out_of_bounds, bounds_failure_);
     }
 
@@ -1532,6 +1515,8 @@ class machine_x86_64 final : public machine {
             return;
         }
 
+        const operation_scope scope{*this};
+
         const operand scratch_reg{
             alloc_scratch_register(src_loc_tk, indent, default_type()),
         };
@@ -1544,7 +1529,6 @@ class machine_x86_64 final : public machine {
 
         assembler_.instruction(indent, op::cqo);
         emit_unary(src_loc_tk, indent, op::idiv, scratch_reg);
-        free_scratch_register(src_loc_tk, indent, scratch_reg);
     }
 
     // the source goes through a register of the destination width, which
@@ -1552,6 +1536,8 @@ class machine_x86_64 final : public machine {
     auto emit_through_register(const token& src_loc_tk, const size_t indent,
                                const op code, const operand& dst_op,
                                const operand& src_op) -> void {
+
+        const operation_scope scope{*this};
 
         const operand reg{
             alloc_scratch_register(
@@ -1561,8 +1547,6 @@ class machine_x86_64 final : public machine {
 
         mov(src_loc_tk, indent, reg, src_op);
         emit(indent, code, dst_op, reg);
-
-        free_scratch_register(src_loc_tk, indent, reg);
     }
 
     auto emit_unary(const token& src_loc_tk, const size_t indent, const op code,

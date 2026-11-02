@@ -111,23 +111,18 @@ class expr_any final : public statement {
         }
     };
 
-    // e.g. 'i8[]{1, 2}' or '{{1, 2}, {3, 4}}'
+    // e.g. 'i8[]{1, 2}', '{{1, 2}, {3, 4}}' or 'i8[4]', which is 'i8[4]{}'
     struct element_list {
         // none when the destination gives the type and the size
         std::optional<array_prefix> prefix;
-        token open_brace_tk;
+        // none without braces, then 'prefix' gives the size
+        std::optional<token> open_brace_tk;
         std::vector<listed_element> elements;
         std::vector<token> delims_tk;
-        token close_brace_tk;
+        std::optional<token> close_brace_tk;
     };
 
-    // e.g. 'i8[4]', every element is zero
-    struct zero_array {
-        array_prefix prefix;
-    };
-
-    using form_variant =
-        std::variant<single_value, string_array, element_list, zero_array>;
+    using form_variant = std::variant<single_value, string_array, element_list>;
 
     // what the destination gives, e.g. an array parameter 's[]' is an array
     // of unknown length, its argument gives the length when it is compiled
@@ -177,11 +172,6 @@ class expr_any final : public statement {
             return;
         }
 
-        if (const zero_array* const zero{std::get_if<zero_array>(&form_)}) {
-            zero->prefix.source_to(os);
-            return;
-        }
-
         const element_list* const list{std::get_if<element_list>(&form_)};
 
         if (list == nullptr) {
@@ -193,11 +183,11 @@ class expr_any final : public statement {
             list->prefix->source_to(os);
         }
 
-        list->open_brace_tk.source_to(os);
+        token::source_to(os, list->open_brace_tk);
 
         source_delimited_to(os, list->elements, list->delims_tk);
 
-        list->close_brace_tk.source_to(os);
+        token::source_to(os, list->close_brace_tk);
     }
 
     auto compile(toc& tc, const size_t indent, const destination& dst) const
@@ -285,7 +275,10 @@ class expr_any final : public statement {
         }
 
         if (const element_list* const list{std::get_if<element_list>(&form_)}) {
-            return list->open_brace_tk;
+            // note: a list without a prefix has braces
+            assert(list->open_brace_tk);
+
+            return *list->open_brace_tk;
         }
 
         return tok();
@@ -361,15 +354,13 @@ class expr_any final : public statement {
         return as_statement(value_at(index));
     }
 
-    // none for a string or a zero array
+    // none for a string
     [[nodiscard]] auto element_count() const -> size_t {
         if (const element_list* const list{std::get_if<element_list>(&form_)}) {
             return list->elements.size();
         }
 
-        if (std::holds_alternative<string_array>(form_) or
-            std::holds_alternative<zero_array>(form_)) {
-
+        if (std::holds_alternative<string_array>(form_)) {
             return 0;
         }
 
@@ -434,9 +425,7 @@ class expr_any final : public statement {
                                 too_many_elements(*array_count)};
         }
 
-        if (const element_list* const list{std::get_if<element_list>(&form_)}) {
-            plan_elements(tc, *list, at, plan);
-        }
+        plan_elements(tc, std::get<element_list>(form_), at, plan);
 
         if (not array_count) {
             return;
@@ -462,17 +451,16 @@ class expr_any final : public statement {
     }
 
   private:
-    // the prefix of an element list or a zero array, null for another form
+    // the prefix of an element list, null when it has none or for another
+    // form
     [[nodiscard]] auto array_prefix_of() const -> const array_prefix* {
-        if (const element_list* const list{std::get_if<element_list>(&form_)}) {
-            return list->prefix ? &*list->prefix : nullptr;
+        const element_list* const list{std::get_if<element_list>(&form_)};
+
+        if (list == nullptr or not list->prefix) {
+            return nullptr;
         }
 
-        if (const zero_array* const zero{std::get_if<zero_array>(&form_)}) {
-            return &zero->prefix;
-        }
-
-        return nullptr;
+        return &*list->prefix;
     }
 
     // the copy size comes from the source, so its length is that of the
@@ -654,7 +642,7 @@ class expr_any final : public statement {
             close_brace_tk = tz.is_next_char_token('}');
         }
 
-        list.close_brace_tk = *close_brace_tk;
+        list.close_brace_tk = close_brace_tk;
 
         if (not array_count_) {
             array_count_ = list.elements.size();
@@ -697,24 +685,17 @@ class expr_any final : public statement {
 
         const std::optional<token> open_brace_tk{tz.is_next_char_token('{')};
 
-        if (not open_brace_tk and prefix) {
-            // e.g. 'var a = i8[4]' is 'i8[4]{}'
-            if (not prefix->size.has_value()) {
-                throw compile_error{
-                    prefix->close_bracket_tk,
-                    std::format("an array needs a constant size, e.g. "
-                                "'{}[4]'",
-                                prefix->element_type_tk
-                                    ? prefix->element_type_tk->text()
-                                    : "")};
-            }
-
-            return zero_array{
-                .prefix{std::move(*prefix)},
-            };
+        // e.g. 'var a = i8[]', which lists nothing and gives no size
+        if (not open_brace_tk and prefix and not prefix->size.has_value()) {
+            throw compile_error{
+                prefix->close_bracket_tk,
+                std::format("an array needs a constant size, e.g. '{}[4]'",
+                            prefix->element_type_tk
+                                ? prefix->element_type_tk->text()
+                                : "")};
         }
 
-        if (not open_brace_tk) {
+        if (not open_brace_tk and not prefix) {
             // 'expr_path' copies the whole array as bytes, 'expr_arith' would
             // read a single scalar
             // e.g. 'var b = a' copies the array 'a'
@@ -723,16 +704,19 @@ class expr_any final : public statement {
             };
         }
 
-        // e.g. the '{1, 2, 3}' of 'var a = i8[]{1, 2, 3}'
+        // e.g. the '{1, 2, 3}' of 'var a = i8[]{1, 2, 3}', or none of 'var a =
+        // i8[4]'
         element_list list{
             .prefix{std::move(prefix)},
-            .open_brace_tk{*open_brace_tk},
+            .open_brace_tk{open_brace_tk},
             .elements{},
             .delims_tk{},
             .close_brace_tk{},
         };
 
-        parse_braced_elements(tc, tz, tp, list);
+        if (open_brace_tk) {
+            parse_braced_elements(tc, tz, tp, list);
+        }
 
         return list;
     }
@@ -767,11 +751,14 @@ class expr_any final : public statement {
                 constant_bytes(tc, list, get_type()),
             }) {
 
+            // note: only a list in braces has elements to pack
+            assert(list.open_brace_tk);
+
             plan.push_back({
                 .at{at},
                 .action{
                     bytes_write{
-                        .src_loc_tk{list.open_brace_tk},
+                        .src_loc_tk{*list.open_brace_tk},
                         .bytes{std::move(*bytes)},
                         .is_string{},
                     },

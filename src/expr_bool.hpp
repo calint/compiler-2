@@ -27,17 +27,12 @@
 //
 // a condition, e.g. 'a < b and not c', is the types below, in reading order:
 //
-//   'condition_result', 'branch_targets'
-//                            what a compiled condition found out and where it
-//                            continues
+//   'branch_targets'         where a compiled condition continues
 //   'condition_nots'         the leading 'not's
 //   'expr_bool_op'           one comparison or the shorthand, an operand alone
 //   'expr_bool'              a list joined by 'and' or by 'or', its elements
 //                            comparisons or parenthesized lists
 //
-
-// what compiling a condition found out about its value without running it
-enum class condition_result : uint8_t { unknown, always_false, always_true };
 
 // where a condition continues, e.g. the code of an 'if' when it holds and the
 // next branch when it does not; the same label for both when the value is
@@ -52,22 +47,6 @@ struct branch_targets {
         return if_false == if_true;
     }
 };
-
-[[nodiscard]] inline auto known_result(const bool value) -> condition_result {
-    return value ? condition_result::always_true
-                 : condition_result::always_false;
-}
-
-[[nodiscard]] inline auto is_known(const condition_result result) -> bool {
-    return result != condition_result::unknown;
-}
-
-// only for a known result
-[[nodiscard]] inline auto result_value(const condition_result result) -> bool {
-    assert(is_known(result));
-
-    return result == condition_result::always_true;
-}
 
 // the 'not's that lead a condition, e.g. both of 'not not a == b', like
 // 'unary_ops' of a value; each is a token with the whitespace before it
@@ -229,7 +208,7 @@ class expr_bool_op final : public statement {
     compile_branch(toc& tc, const size_t indent, const std::string_view target,
                    const bool branch_on_true, const bool inverted,
                    const connective joined_by, const operand& dst) const
-        -> condition_result {
+        -> std::optional<bool> {
 
         const std::string_view list_op{
             joined_by == connective::logical_or ? "or" : "and",
@@ -260,12 +239,12 @@ class expr_bool_op final : public statement {
 
         if (not comparison_) {
             compile_shorthand(tc, indent, action);
-            return condition_result::unknown;
+            return std::nullopt;
         }
 
         compile_comparison(tc, indent, *comparison_, action);
 
-        return condition_result::unknown;
+        return std::nullopt;
     }
 
     // the value when the sides fold, which 'compile_branch' emits as a
@@ -420,7 +399,7 @@ class expr_bool_op final : public statement {
     // a constant emits no comparison, only the short-circuit branch
     auto compile_constant(toc& tc, const size_t indent, const bool value,
                           const machine::comparison_action& action) const
-        -> condition_result {
+        -> std::optional<bool> {
 
         machine& x{tc.machine()};
 
@@ -436,7 +415,7 @@ class expr_bool_op final : public statement {
             x.branch(indent, action.target);
         }
 
-        return known_result(value);
+        return value;
     }
 
     // the operand alone, compared with 0, when it does not fold
@@ -1080,9 +1059,12 @@ class expr_bool final : public statement {
         x.free_scratch_register(tok(), indent, reg);
     }
 
+    // what the compile found out about the value without running it, empty
+    // when the run decides it
     [[nodiscard]] auto compile(toc& tc, const size_t indent,
                                const branch_targets& targets,
-                               const operand& dst) const -> condition_result {
+                               const operand& dst) const
+        -> std::optional<bool> {
 
         return compile_rec(tc, indent, targets, false, dst);
     }
@@ -1231,7 +1213,7 @@ class expr_bool final : public statement {
     compile_elements_from(toc& tc, const size_t indent,
                           const branch_targets& targets, const bool inverted,
                           const operand& dst, const size_t first) const
-        -> condition_result {
+        -> std::optional<bool> {
 
         bool has_runtime_element{};
 
@@ -1243,18 +1225,18 @@ class expr_bool final : public statement {
         const size_t last_index{bools_.size() - 1};
 
         for (size_t expr_index{first}; expr_index < last_index; ++expr_index) {
-            const condition_result const_eval{
+            const std::optional<bool> const_eval{
                 compile_inner_element(tc, indent, expr_index, targets, inverted,
                                       dst),
             };
 
-            if (not is_known(const_eval)) {
+            if (not const_eval) {
                 has_runtime_element = true;
                 paths.join_path();
                 continue;
             }
 
-            if (is_short_circuit(result_value(const_eval), inverted)) {
+            if (is_short_circuit(*const_eval, inverted)) {
                 tc.check_skipped([&] -> void {
                     std::ignore = compile_elements_from(
                         tc, indent, targets, inverted, dst, expr_index + 1);
@@ -1266,7 +1248,7 @@ class expr_bool final : public statement {
             }
         }
 
-        const condition_result last{
+        const std::optional<bool> last{
             compile_last_element(tc, indent, targets, inverted, dst,
                                  has_runtime_element),
         };
@@ -1280,7 +1262,7 @@ class expr_bool final : public statement {
     [[nodiscard]] auto
     compile_inner_element(toc& tc, const size_t indent, const size_t expr_index,
                           const branch_targets& targets, const bool inverted,
-                          const operand& dst) const -> condition_result {
+                          const operand& dst) const -> std::optional<bool> {
 
         const bool is_or{is_or_list() != inverted};
 
@@ -1317,7 +1299,7 @@ class expr_bool final : public statement {
     [[nodiscard]] auto compile_last_element(
         toc& tc, const size_t indent, const branch_targets& targets,
         const bool inverted, const operand& dst,
-        const bool has_runtime_element) const -> condition_result {
+        const bool has_runtime_element) const -> std::optional<bool> {
 
         // a stored value branches nowhere at its end, the label of both
         // outcomes follows; an empty target is no branch ('machine')
@@ -1335,36 +1317,34 @@ class expr_bool final : public statement {
                 std::get_if<expr_bool>(&bools_.back()),
             }) {
 
-            const condition_result const_eval{
+            const std::optional<bool> const_eval{
                 nested_expr->compile_with_label(tc, indent, targets, inverted,
                                                 dst),
             };
 
             // the nested list already emitted its final branch
-            if (not is_known(const_eval)) {
-                return condition_result::unknown;
+            if (not const_eval) {
+                return std::nullopt;
             }
 
-            return resolve_last_constant(tc, indent, result_value(const_eval),
-                                         if_true, inverted,
-                                         has_runtime_element);
+            return resolve_last_constant(tc, indent, *const_eval, if_true,
+                                         inverted, has_runtime_element);
         }
 
         const expr_bool_op& expr{std::get<expr_bool_op>(bools_.back())};
 
-        const condition_result const_eval{
+        const std::optional<bool> const_eval{
             expr.compile_branch(tc, indent, if_false, false, inverted,
                                 joined_by(inverted), dst),
         };
 
-        if (is_known(const_eval)) {
-            return resolve_last_constant(tc, indent, result_value(const_eval),
-                                         if_true, inverted,
-                                         has_runtime_element);
+        if (const_eval) {
+            return resolve_last_constant(tc, indent, *const_eval, if_true,
+                                         inverted, has_runtime_element);
         }
 
         if (is_stored_only) {
-            return condition_result::unknown;
+            return std::nullopt;
         }
 
         machine& x{tc.machine()};
@@ -1372,13 +1352,13 @@ class expr_bool final : public statement {
         // every element that failed has branched to false
         x.branch(indent, if_true);
 
-        return condition_result::unknown;
+        return std::nullopt;
     }
 
     [[nodiscard]] auto
     compile_rec(toc& tc, const size_t indent, const branch_targets& targets,
                 const bool outer_inverted, const operand& dst) const
-        -> condition_result {
+        -> std::optional<bool> {
 
         // the element of a list that is only that element comments the same
         // source and also how it is joined and inverted
@@ -1429,7 +1409,7 @@ class expr_bool final : public statement {
                                           const branch_targets& targets,
                                           const bool outer_inverted,
                                           const operand& dst) const
-        -> condition_result {
+        -> std::optional<bool> {
 
         machine& x{tc.machine()};
 
@@ -1561,20 +1541,20 @@ class expr_bool final : public statement {
     [[nodiscard]] auto resolve_last_constant(
         toc& tc, const size_t indent, const bool const_eval,
         const std::string_view jmp_to_if_true, const bool inverted,
-        const bool has_runtime_element) const -> condition_result {
+        const bool has_runtime_element) const -> std::optional<bool> {
 
         if (not has_runtime_element) {
-            return known_result(const_eval);
+            return const_eval;
         }
 
         if (is_short_circuit(const_eval, inverted)) {
-            return known_result(const_eval);
+            return const_eval;
         }
 
         // a constant false has already branched to false, a stored value has
         // no branch
         if (not const_eval or jmp_to_if_true.empty()) {
-            return condition_result::unknown;
+            return std::nullopt;
         }
 
         machine& x{tc.machine()};
@@ -1582,7 +1562,7 @@ class expr_bool final : public statement {
         // a constant true emits no branch of its own
         x.branch(indent, jmp_to_if_true);
 
-        return condition_result::unknown;
+        return std::nullopt;
     }
 
     //

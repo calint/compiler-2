@@ -20,7 +20,7 @@
 // the condition returns, where the next branch and the 'else' start, e.g.
 // not after 'if stop() == 1' with 'stop' an inlined 'exit'
 struct branch_condition {
-    condition_result known{};
+    std::optional<bool> known;
     bool returns{};
 };
 
@@ -36,9 +36,8 @@ class stmt_if_branch final : public statement {
     std::optional<else_if_tokens> lead_;
     expr_bool condition_;
     // the value of the condition known where the 'if' is written, e.g. from
-    // literals and constants, 'unknown' when it depends on the run or on a
-    // call
-    condition_result constant_at_parse_{};
+    // literals and constants, empty when it depends on the run or on a call
+    std::optional<bool> constant_at_parse_;
     stmt_block code_;
 
   public:
@@ -48,7 +47,7 @@ class stmt_if_branch final : public statement {
                    const std::optional<else_if_tokens>& lead)
         : statement{tz.next_whitespace_token()}, lead_{lead},
           condition_{parse_condition(tc, tz)},
-          constant_at_parse_{constant_of(tc, condition_)}, code_{tc, tz} {}
+          constant_at_parse_{condition_.constant_value(tc)}, code_{tc, tz} {}
 
     //
     // overridden methods
@@ -90,7 +89,7 @@ class stmt_if_branch final : public statement {
 
         x.label(indent, label);
 
-        const condition_result const_eval{
+        const std::optional<bool> const_eval{
             condition_.compile(tc, indent,
                                {
                                    .if_false{jmp_to_if_false_label},
@@ -107,7 +106,7 @@ class stmt_if_branch final : public statement {
         // note: code that never runs holds the compile rules too, see
         //       'toc::check_skipped'
 
-        if (const_eval == condition_result::always_false) {
+        if (const_eval == false) {
             tc.check_skipped(
                 [&] -> void { code_.compile(tc, indent, destination{}); });
 
@@ -121,7 +120,7 @@ class stmt_if_branch final : public statement {
         return condition;
     }
 
-    [[nodiscard]] auto constant_at_parse() const -> condition_result {
+    [[nodiscard]] auto constant_at_parse() const -> std::optional<bool> {
         return constant_at_parse_;
     }
 
@@ -141,19 +140,6 @@ class stmt_if_branch final : public statement {
         }
 
         return ws_tk;
-    }
-
-    [[nodiscard]] static auto constant_of(const toc& tc,
-                                          const expr_bool& condition)
-        -> condition_result {
-
-        const std::optional<bool> constant{condition.constant_value(tc)};
-
-        if (not constant) {
-            return condition_result::unknown;
-        }
-
-        return known_result(*constant);
     }
 
     [[nodiscard]] static auto parse_condition(toc& tc, tokenizer& tz)

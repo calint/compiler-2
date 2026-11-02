@@ -88,12 +88,12 @@ class stmt_if final : public statement {
 
             is_start_reachable = condition.returns;
 
-            const condition_result known{condition.known};
+            const std::optional<bool> known{condition.known};
 
             // note: the compile knows at least what the parse knew, the
             //       paths of the definite assignment follow the parse
 
-            assert(not is_known(branches_.at(i).constant_at_parse()) or
+            assert(not branches_.at(i).constant_at_parse() or
                    branches_.at(i).constant_at_parse() == known);
 
             if (runs(known)) {
@@ -139,7 +139,7 @@ class stmt_if final : public statement {
         bool is_chain_ended{};
 
         for (const stmt_if_branch& branch : branches_) {
-            const condition_result known{branch.constant_at_parse()};
+            const std::optional<bool> known{branch.constant_at_parse()};
 
             if (is_chain_ended or not runs(known)) {
                 paths.trace_skipped(branch);
@@ -212,8 +212,7 @@ class stmt_if final : public statement {
         // without a jump
         const bool falls_through{is_last_branch and not has_else_code()};
 
-        if (condition.known == condition_result::unknown and
-            not falls_through) {
+        if (not condition.known and not falls_through) {
 
             machine& x{tc.machine()};
 
@@ -281,15 +280,17 @@ class stmt_if final : public statement {
         return std::format("{}.{}", if_label, branch_index);
     }
 
-    [[nodiscard]] static auto ends_chain(const condition_result known) -> bool {
-        return known == condition_result::always_true;
+    [[nodiscard]] static auto ends_chain(const std::optional<bool> known)
+        -> bool {
+
+        return known.value_or(false);
     }
 
     // the chain rule, the same for the compile and for the paths of the
     // definite assignment: a branch whose condition is false does not run, one
     // whose condition is true ends the chain, the later branches and the
     // 'else' do not run
-    [[nodiscard]] static auto runs(const condition_result known) -> bool {
-        return known != condition_result::always_false;
+    [[nodiscard]] static auto runs(const std::optional<bool> known) -> bool {
+        return known.value_or(true);
     }
 };

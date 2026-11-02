@@ -265,8 +265,8 @@ class machine_rv32i : public machine {
         std::string_view reference;
     };
 
-    // the local labels of the bulk operations, the other operations define
-    // theirs where they use them
+    // the local labels of the bulk operations, the run-time checks use the
+    // two below, other operations define theirs where they use them
     static constexpr local_label chunk_loop_{
         .name{"1"},
         .reference{"1b"},
@@ -296,13 +296,14 @@ class machine_rv32i : public machine {
         .reference{"7f"},
     };
 
-    // the labels of a bounds check: a failing check branches to 'bounds_fail_'
-    // where the line and the handler follow, a passing one to 'bounds_pass_'
-    static constexpr local_label bounds_fail_{
+    // the labels of a run-time check: a failing check branches to
+    // 'check_failed_' where the line and the handler follow, a passing one to
+    // 'check_passed_' past them
+    static constexpr local_label check_failed_{
         .name{"1"},
         .reference{"1f"},
     };
-    static constexpr local_label bounds_pass_{
+    static constexpr local_label check_passed_{
         .name{"2"},
         .reference{"2f"},
     };
@@ -442,9 +443,8 @@ class machine_rv32i : public machine {
 
     // the operation scope frees its temporaries before the end comment
     auto emit_bounds_check(const token& src_loc_tk, const size_t indent,
-                           const bounds_range& range,
-                           const bounds_check_options& options,
-                           const bounds_plan& plan) -> void override {
+                           const bounds_range& range, const bounds_plan& plan)
+        -> void override {
 
         // array lengths are limited by the variables that hold the arrays, the
         // line is loaded with 'li' into a 32-bit register
@@ -457,22 +457,19 @@ class machine_rv32i : public machine {
             scope.protect(*range.count);
         }
 
-        if (options.lower) {
-            check_lower_bound(src_loc_tk, indent, range, plan,
-                              not options.upper);
-        }
+        branch_on_negative(indent, plan.sign_tested, not plan.upper);
 
-        if (options.upper) {
+        if (plan.upper) {
             comment(src_loc_tk, indent, "upper bound");
 
-            check_upper_bound(src_loc_tk, indent, range, options.lower);
+            check_upper_bound(src_loc_tk, indent, range, plan.lower_checked);
         }
 
-        assembler_.label(indent, bounds_fail_.name);
+        assembler_.label(indent, check_failed_.name);
 
         branch_to_failure(src_loc_tk, indent, bounds_failure_);
 
-        assembler_.label(indent, bounds_pass_.name);
+        assembler_.label(indent, check_passed_.name);
     }
 
     auto emit_call(const size_t indent, const std::string_view label)
@@ -546,12 +543,12 @@ class machine_rv32i : public machine {
                           [[maybe_unused]] const operand& result)
         -> void override {
 
+        const operation_scope scope{*this};
+
         // the arguments are in the registers of 'target_call_registers',
         // checked by 'call_target'; 'a7' selects the system call or receives
         // the return address
-        const operand call_register{
-            alloc_named_register(src_loc_tk, indent, "a7", default_type()),
-        };
+        reserve_named_register(src_loc_tk, indent, "a7");
 
         if (function == target_call::read) {
             emit_read_call(indent);
@@ -560,8 +557,6 @@ class machine_rv32i : public machine {
         } else {
             call_sector_routine(indent, function);
         }
-
-        free_named_register(src_loc_tk, indent, call_register);
     }
 
     // unused routines contribute no code
@@ -846,16 +841,13 @@ class machine_rv32i : public machine {
         assert(frame_address.is_memory());
         assert(frame_address.index_register().empty());
 
-        constexpr local_label fits{
-            .name{"1"},
-            .reference{"1f"},
-        };
-
         comment(src_loc_tk, indent, "frame capacity check begin");
 
         comment(src_loc_tk, indent,
                 "callee storage starts after the caller's storage ({})",
                 address_text(frame_address));
+
+        const operation_scope scope{*this};
 
         const operand start{
             alloc_scratch_register(src_loc_tk, indent, default_type()),
@@ -875,13 +867,11 @@ class machine_rv32i : public machine {
                       frame_size_label);
 
         assembler_.bgeu(indent, last_start.register_name(),
-                        start.register_name(), fits.reference);
+                        start.register_name(), check_passed_.reference);
 
-        free_scratch_register(src_loc_tk, indent, last_start);
-        free_scratch_register(src_loc_tk, indent, start);
         branch_to_failure(src_loc_tk, indent, frame_overflow_failure_);
 
-        assembler_.label(indent, fits.name);
+        assembler_.label(indent, check_passed_.name);
         comment(src_loc_tk, indent, "frame capacity check end");
     }
 
@@ -900,12 +890,9 @@ class machine_rv32i : public machine {
                 leaf_stack_bytes(),
         };
 
-        constexpr local_label fits{
-            .name{"2"},
-            .reference{"2f"},
-        };
-
         comment(src_loc_tk, indent, "stack capacity check begin");
+
+        const operation_scope scope{*this};
 
         const operand limit{
             alloc_scratch_register(src_loc_tk, indent, default_type()),
@@ -923,13 +910,11 @@ class machine_rv32i : public machine {
                         -static_cast<int64_t>(call_bytes));
 
         assembler_.bgeu(indent, lowest.register_name(), limit.register_name(),
-                        fits.reference);
+                        check_passed_.reference);
 
-        free_scratch_register(src_loc_tk, indent, lowest);
-        free_scratch_register(src_loc_tk, indent, limit);
         branch_to_failure(src_loc_tk, indent, stack_overflow_failure_);
 
-        assembler_.label(indent, fits.name);
+        assembler_.label(indent, check_passed_.name);
         comment(src_loc_tk, indent, "stack capacity check end");
     }
 
@@ -961,8 +946,7 @@ class machine_rv32i : public machine {
         // a branch compares registers, a boolean result can use an immediate
         const bool use_immediate{
             not action.destination.is_empty() and constant.has_value() and
-                threshold >= assembler_rv32i::immediate_min and
-                threshold <= assembler_rv32i::immediate_max,
+                assembler_rv32i::fits_immediate(threshold),
         };
 
         const std::optional<int64_t> immediate{
@@ -1034,6 +1018,8 @@ class machine_rv32i : public machine {
                        const std::function_ref<void(const operand&)> emit_count,
                        const copy_request& request) -> void override {
 
+        const operation_scope bulk_scope{*this};
+
         bulk_operation bulk{
             begin_array_operation(src_loc_tk, indent, "source", "destination"),
         };
@@ -1053,8 +1039,6 @@ class machine_rv32i : public machine {
         }
 
         copy_runtime_count(src_loc_tk, indent, bulk, request.alignment);
-
-        release_bulk(src_loc_tk, indent, bulk);
     }
 
     auto copy_value(const token& src_loc_tk, const size_t indent,
@@ -1135,6 +1119,8 @@ class machine_rv32i : public machine {
                    const std::function_ref<void(const operand&)> emit_count,
                    const equality_request& request) -> void override {
 
+        const operation_scope bulk_scope{*this};
+
         bulk_operation bulk{
             begin_array_operation(src_loc_tk, indent, "lhs", "rhs"),
         };
@@ -1155,8 +1141,6 @@ class machine_rv32i : public machine {
         }
 
         compare_runtime_count(src_loc_tk, indent, bulk, request);
-
-        release_bulk(src_loc_tk, indent, bulk);
     }
 
     // the exit routine is shared, an exit is a jump to it
@@ -1589,29 +1573,21 @@ class machine_rv32i : public machine {
                 (needs_normalize(instruction) or wider_source));
     }
 
-    // passing checks branch to 'bounds_pass_' and failing ones to
-    // 'bounds_fail_', the last check branches past the handler on success so
-    // failures fall through to it
-    auto branch_on_negative(const size_t indent, const std::string_view index,
-                            const std::optional<operand>& reg_count,
+    // passing checks branch to 'check_passed_' and failing ones to
+    // 'check_failed_'; when 'is_last', the last value branches past the handler
+    // on success so failures fall through to it
+    auto branch_on_negative(const size_t indent,
+                            const std::span<const operand> values,
                             const bool is_last) -> void {
 
-        const auto check_negative = [&](const std::string_view reg,
-                                        const bool last) -> void {
-            assembler_.branch_zero(indent, last ? op::bgez : op::bltz, reg,
-                                   last ? bounds_pass_.reference
-                                        : bounds_fail_.reference);
-        };
+        for (size_t i{}; i < values.size(); ++i) {
+            const bool last{is_last and i + 1 == values.size()};
 
-        if (not reg_count) {
-            check_negative(index, is_last);
-            return;
+            assembler_.branch_zero(indent, last ? op::bgez : op::bltz,
+                                   values.at(i).register_name(),
+                                   last ? check_passed_.reference
+                                        : check_failed_.reference);
         }
-
-        check_negative(index, false);
-
-        // a negative count passes 'start + count' but spans the address space
-        check_negative(reg_count->register_name(), is_last);
     }
 
     // a jump to 'handler', which is marked used; with the line, the line in
@@ -1729,12 +1705,9 @@ class machine_rv32i : public machine {
                             const operand& src, const operand& dst,
                             const operand& count_bytes) -> void {
 
-        constexpr local_label passed{
-            .name{"1"},
-            .reference{"1f"},
-        };
-
         comment(src_loc_tk, indent, "overlap check begin");
+
+        const operation_scope scope{*this};
 
         const operand distance{
             alloc_scratch_register(src_loc_tk, indent, default_type()),
@@ -1745,20 +1718,17 @@ class machine_rv32i : public machine {
 
         comment(src_loc_tk, indent, "the same range is not an overlap");
 
-        assembler_.beqz(indent, distance.register_name(), passed.reference);
+        assembler_.beqz(indent, distance.register_name(),
+                        check_passed_.reference);
 
         comment(src_loc_tk, indent, "destination starts inside the source");
 
         assembler_.bgeu(indent, distance.register_name(),
-                        count_bytes.register_name(), passed.reference);
-
-        free_scratch_register(src_loc_tk, indent, distance);
-
-        comment(src_loc_tk, indent, "failed: report and exit");
+                        count_bytes.register_name(), check_passed_.reference);
 
         branch_to_failure(src_loc_tk, indent, overlap_failure_);
 
-        assembler_.label(indent, passed.name);
+        assembler_.label(indent, check_passed_.name);
 
         comment(src_loc_tk, indent, "overlap check end");
     }
@@ -1773,35 +1743,23 @@ class machine_rv32i : public machine {
             constant_arith::signed_minimum(dividend_size_bytes * bits_per_byte),
         };
 
-        constexpr local_label fail{
-            .name{"1"},
-            .reference{"1f"},
-        };
-
-        constexpr local_label pass{
-            .name{"2"},
-            .reference{"2f"},
-        };
-
         comment(src_loc_tk, indent, "division check begin");
 
         comment(src_loc_tk, indent, "zero divisor");
 
-        assembler_.beqz(indent, "a1", fail.reference);
+        assembler_.beqz(indent, "a1", check_failed_.reference);
 
         comment(src_loc_tk, indent, "minimum divided by -1 overflows");
 
         assembler_.li(indent, "a2", -1);
-        assembler_.bne(indent, "a1", "a2", pass.reference);
+        assembler_.bne(indent, "a1", "a2", check_passed_.reference);
         assembler_.li(indent, "a2", minimum);
-        assembler_.bne(indent, "a0", "a2", pass.reference);
-        assembler_.label(indent, fail.name);
-
-        comment(src_loc_tk, indent, "failed: report and exit");
+        assembler_.bne(indent, "a0", "a2", check_passed_.reference);
+        assembler_.label(indent, check_failed_.name);
 
         branch_to_failure(src_loc_tk, indent, division_failure_);
 
-        assembler_.label(indent, pass.name);
+        assembler_.label(indent, check_passed_.name);
 
         comment(src_loc_tk, indent, "division check end");
     }
@@ -1814,36 +1772,15 @@ class machine_rv32i : public machine {
                           const size_t width_bytes,
                           const std::string_view extended) -> void {
 
-        constexpr local_label fits{
-            .name{"2"},
-            .reference{"2f"},
-        };
-
         const size_t shift{
             register_bits_ - (width_bytes * bits_per_byte),
         };
 
         assembler_.slli(indent, extended, value, shift);
         assembler_.srai(indent, extended, extended, shift);
-        assembler_.beq(indent, extended, value, fits.reference);
+        assembler_.beq(indent, extended, value, check_passed_.reference);
         branch_to_failure(src_loc_tk, indent, overflow_failure_);
-        assembler_.label(indent, fits.name);
-    }
-
-    // the lower bound, the last check of the bounds check branches past the
-    // handler, see 'branch_on_negative'
-    auto check_lower_bound(const token& src_loc_tk, const size_t indent,
-                           const bounds_range& range, const bounds_plan& plan,
-                           const bool is_last) -> void {
-
-        comment_lower_bound(src_loc_tk, indent, range, plan);
-
-        if (not plan.upper_covers_lower) {
-            branch_on_negative(indent, range.checked.register_name(),
-                               range.count_lower_checked ? std::nullopt
-                                                         : range.count,
-                               is_last);
-        }
+        assembler_.label(indent, check_passed_.name);
     }
 
     // after the checked multiply helper: the flag is in 'a1', the product in
@@ -1851,16 +1788,11 @@ class machine_rv32i : public machine {
     auto check_multiply_result(const token& src_loc_tk, const size_t indent,
                                const operand& dst) -> void {
 
-        constexpr local_label fits{
-            .name{"2"},
-            .reference{"2f"},
-        };
-
         comment(src_loc_tk, indent, "overflow check begin");
 
-        assembler_.beqz(indent, "a1", fits.reference);
+        assembler_.beqz(indent, "a1", check_passed_.reference);
         branch_to_failure(src_loc_tk, indent, overflow_failure_);
-        assembler_.label(indent, fits.name);
+        assembler_.label(indent, check_passed_.name);
 
         const size_t width{dst.type_ref().size_bytes()};
 
@@ -1876,12 +1808,9 @@ class machine_rv32i : public machine {
     auto check_negate(const token& src_loc_tk, const size_t indent,
                       const operand& value, const size_t width_bytes) -> void {
 
-        constexpr local_label fits{
-            .name{"2"},
-            .reference{"2f"},
-        };
-
         comment(src_loc_tk, indent, "overflow check begin");
+
+        const operation_scope scope{*this};
 
         const operand minimum{
             alloc_scratch_register(src_loc_tk, indent, default_type()),
@@ -1894,11 +1823,10 @@ class machine_rv32i : public machine {
         assembler_.li(indent, minimum.register_name(), minimum_value);
 
         assembler_.bne(indent, value.register_name(), minimum.register_name(),
-                       fits.reference);
+                       check_passed_.reference);
 
-        free_scratch_register(src_loc_tk, indent, minimum);
         branch_to_failure(src_loc_tk, indent, overflow_failure_);
-        assembler_.label(indent, fits.name);
+        assembler_.label(indent, check_passed_.name);
         comment(src_loc_tk, indent, "overflow check end");
     }
 
@@ -1908,12 +1836,9 @@ class machine_rv32i : public machine {
                            const operand& amount, const type& dst_type)
         -> void {
 
-        constexpr local_label pass{
-            .name{"1"},
-            .reference{"1f"},
-        };
-
         comment(src_loc_tk, indent, "shift check begin");
+
+        const operation_scope scope{*this};
 
         const operand limit{
             alloc_scratch_register(src_loc_tk, indent, default_type()),
@@ -1922,15 +1847,11 @@ class machine_rv32i : public machine {
         assembler_.li(indent, limit.register_name(), dst_type.size_bits());
 
         assembler_.bltu(indent, amount.register_name(), limit.register_name(),
-                        pass.reference);
-
-        free_scratch_register(src_loc_tk, indent, limit);
-
-        comment(src_loc_tk, indent, "failed: report and exit");
+                        check_passed_.reference);
 
         branch_to_failure(src_loc_tk, indent, shift_failure_);
 
-        assembler_.label(indent, pass.name);
+        assembler_.label(indent, check_passed_.name);
 
         comment(src_loc_tk, indent, "shift check end");
     }
@@ -1951,13 +1872,13 @@ class machine_rv32i : public machine {
 
         if (range.allow_end) {
             assembler_.bgeu(indent, limit.register_name(), top,
-                            bounds_pass_.reference);
+                            check_passed_.reference);
 
             return;
         }
 
         assembler_.bltu(indent, top, limit.register_name(),
-                        bounds_pass_.reference);
+                        check_passed_.reference);
     }
 
     // accesses widen after the first only when a start inside a word was
@@ -2410,8 +2331,7 @@ class machine_rv32i : public machine {
         };
 
         if (constant.has_value() and
-            immediate >= assembler_rv32i::immediate_min and
-            immediate <= assembler_rv32i::immediate_max) {
+            assembler_rv32i::fits_immediate(immediate)) {
 
             assembler_.immediate_op(indent, immediate_form(instruction),
                                     left.register_name(), left.register_name(),
@@ -2510,13 +2430,12 @@ class machine_rv32i : public machine {
             src.is_register() and src.register_name() != value.register_name(),
         };
 
-        // note: above the minimum because one of the two 'addi' takes the
-        //       negated constant
+        // note: the negation fits too, one of the two 'addi' takes it
 
         const bool is_small_constant{
             constant.has_value() and
-                *constant > assembler_rv32i::immediate_min and
-                *constant <= assembler_rv32i::immediate_max,
+                assembler_rv32i::fits_immediate(*constant) and
+                assembler_rv32i::fits_immediate(-int64_t{*constant}),
         };
 
         comment(src_loc_tk, indent, "overflow check begin");
@@ -2531,8 +2450,6 @@ class machine_rv32i : public machine {
 
             check_fits_width(src_loc_tk, indent, value.register_name(),
                              width_bytes, extended.register_name());
-
-            free_scratch_register(src_loc_tk, indent, extended);
         } else if (is_register_source or is_small_constant) {
             emit_checked_with_one_register(src_loc_tk, indent, instruction, src,
                                            value, constant);
@@ -2565,19 +2482,9 @@ class machine_rv32i : public machine {
         const operand& src, const operand& value,
         const std::optional<int32_t> constant) -> void {
 
-        constexpr local_label fits{
-            .name{"2"},
-            .reference{"2f"},
-        };
-
         constexpr local_label below{
             .name{"3"},
             .reference{"3f"},
-        };
-
-        constexpr local_label failed{
-            .name{"4"},
-            .reference{"4f"},
         };
 
         const bool is_add{instruction == op::add};
@@ -2612,10 +2519,10 @@ class machine_rv32i : public machine {
 
             assembler_.branch(indent, below_first ? op::blt : op::bge,
                               value.register_name(), first.register_name(),
-                              fits.reference);
+                              check_passed_.reference);
 
             branch_to_failure(src_loc_tk, indent, overflow_failure_);
-            assembler_.label(indent, fits.name);
+            assembler_.label(indent, check_passed_.name);
 
             return;
         }
@@ -2627,17 +2534,17 @@ class machine_rv32i : public machine {
         }
 
         assembler_.branch(indent, op::bge, value.register_name(),
-                          first.register_name(), fits.reference);
+                          first.register_name(), check_passed_.reference);
 
-        assembler_.j(indent, failed.reference);
+        assembler_.j(indent, check_failed_.reference);
         assembler_.label(indent, below.name);
 
         assembler_.branch(indent, op::blt, value.register_name(),
-                          first.register_name(), fits.reference);
+                          first.register_name(), check_passed_.reference);
 
-        assembler_.label(indent, failed.name);
+        assembler_.label(indent, check_failed_.name);
         branch_to_failure(src_loc_tk, indent, overflow_failure_);
-        assembler_.label(indent, fits.name);
+        assembler_.label(indent, check_passed_.name);
     }
 
     auto emit_comparison_branch(const size_t indent,
@@ -3241,6 +3148,8 @@ class machine_rv32i : public machine {
             return operand::mem(result_name, {}, 1, low, address.type_ref());
         }
 
+        const operation_scope scope{*this};
+
         const operand displacement{
             alloc_scratch_register(src_loc_tk, indent, default_type()),
         };
@@ -3249,8 +3158,6 @@ class machine_rv32i : public machine {
 
         assembler_.add(indent, result_name, result_name,
                        displacement.register_name());
-
-        free_scratch_register(src_loc_tk, indent, displacement);
 
         return operand::mem(result_name, {}, 1, low, address.type_ref());
     }
@@ -3375,12 +3282,6 @@ class machine_rv32i : public machine {
         copy_value(src_loc_tk, indent, kept, result);
 
         return kept;
-    }
-
-    auto release_bulk(const token& src_loc_tk, const size_t indent,
-                      const bulk_operation& bulk) -> void {
-
-        free_scratch_registers(src_loc_tk, indent, bulk.registers);
     }
 
     // the loop ends when its pointer reaches 'end', replacing a counter that
@@ -3622,7 +3523,7 @@ class machine_rv32i : public machine {
         // a negative index is left to the lower check, which has already
         // failed it when enabled
         if (not range.count and not lower_checked) {
-            assembler_.bltz(indent, index, bounds_pass_.reference);
+            assembler_.bltz(indent, index, check_passed_.reference);
             return std::string{index};
         }
 
@@ -3669,9 +3570,9 @@ class machine_rv32i : public machine {
         assembler_.srai(indent, limit.register_name(), top, sign_shift_);
 
         assembler_.bne(indent, high.register_name(), limit.register_name(),
-                       bounds_fail_.reference);
+                       check_failed_.reference);
 
-        assembler_.bltz(indent, top, bounds_pass_.reference);
+        assembler_.bltz(indent, top, check_passed_.reference);
 
         return top;
     }

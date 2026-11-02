@@ -1,0 +1,11 @@
+# a function nothing calls is held to '--vars' in its check without its
+# calls, as a call of it is
+
+func noinline big() {
+    var a = i8[300000]
+    a[0] = 1
+}
+
+func main() {
+    exit(3)
+}

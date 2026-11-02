@@ -1,5 +1,5 @@
-# code that a compile skips takes no variable storage: a local there is not
-# held to '--vars' (README 8.3), the same declaration alone is rejected
+# code that a compile skips is held to '--vars' as if it ran, the same
+# declaration alone is rejected
 
 func main() {
     if 1 == 2 {

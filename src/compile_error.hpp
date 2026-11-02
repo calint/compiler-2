@@ -70,12 +70,11 @@ class compile_error final : public std::exception {
     // calls cannot be judged by them; the readers, the only code that
     // changes an error instead of ending with it: 'machine::compile_version'
     // drops every kind but 'source' of a version,
-    // 'stmt_call' turns 'out_of_registers' into a recursion error in an
-    // inlined recursion, 'stmt_def_func::check_body' drops every kind but
-    // 'source' when the body takes from a call, and 'toc::check_skipped'
-    // drops them in skipped code there; 'toc::throw_dry_run_error'
-    // resets the kind to 'source' so that none of them drops the error of a
-    // dry run
+    // 'call_limits' rewords 'out_of_registers' in an inlined recursion,
+    // 'stmt_def_func::check_body' drops every kind but 'source' when the body
+    // takes from a call, and 'toc::check_skipped' drops them in skipped code
+    // there; 'toc::throw_dry_run_error' resets the kind to 'source' so that
+    // none of them drops the error of a dry run
     enum class error_kind : uint8_t {
         source,
         out_of_registers,

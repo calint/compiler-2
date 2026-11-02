@@ -170,11 +170,12 @@ Invariants the code relies on:
    body of the callee in place (1.3). A noinline call adds a body to compile for
    the array lengths of its arguments; the bodies are compiled after 'main', and
    compiling one can add more. Then each function but 'main' is checked once
-   without its calls and emits nothing (1.5). Then the failure handlers that the
-   code branches to ('machine::emit_used_failure_handlers'), the routines and
-   helpers the code and the handlers marked used
-   ('machine::emit_used_routines'), the read-only strings, the data and the
-   variables.
+   without its calls and emits nothing (1.5), then the noinline bodies that
+   skipped code and those checks asked for ('program::check_noinline_bodies').
+   Then the failure handlers that the code branches to
+   ('machine::emit_used_failure_handlers'), the routines and helpers the code
+   and the handlers marked used ('machine::emit_used_routines'), the read-only
+   strings, the data and the variables.
 
 3. output ('machine::finish', 'write_assembly'): the buffered lines get their
    jumps optimized, the assembly is written, the rv32i targets also write the
@@ -255,8 +256,8 @@ What dropped code changed is put back by its owner, also when an error
 unwinds it:
 
 1. 'toc::dry_run_scope', for a dry run: the 'toc::compile_state' (the
-   deepest scope count, the storage peak and the frame peak of the scope
-   that holds the storage, and whether the code after is reached,
+   deepest scope count, the storage peak and the frame peak
+   ('storage_layout::peaks'), and whether the code after is reached,
    'scope_stack::reach_state') and the string constants added; a noinline call
    reached inside a dry run adds a body to check only, not to emit
    ('toc::add_noinline_body')
@@ -313,11 +314,14 @@ program does not depend on inlining.
      e.g. 'r(x - 1)' in 'r(x)' that a constant argument ends; such an error
      ends the check and the function is accepted, in skipped code it is
      dropped and the check goes on ('toc::check_skipped'); a recursive
-     inlined call is not expanded in the check
-     ('scope_stack::is_in_body_taking_from_call'), its value arguments are
-     compiled at the types of their parameters
+     inlined call with a value argument that does not fold is not expanded
+     in the check ('scope_stack::is_in_body_taking_from_call'), its value
+     arguments are compiled at the types of their parameters
      ('stmt_call::check_arguments_alone'), so a recursion that only a
-     constant argument ends does not end the check
+     constant argument of the call ends does not end the check; one whose
+     value arguments all fold is expanded as at a call
+     ('stmt_call::has_constant_value_arguments'), so the 'g(2)' of an
+     'f(x)' that nothing calls is checked as in 'main'
 3. A function that takes nothing from a call, a noinline one without unsized
    array parameters or an inlined one without parameters and result, is
    rejected by such an error. The check has the registers of a noinline body
@@ -356,7 +360,7 @@ expansion of a recursion with constant arguments, or after a 'loop' whose
 reached ('toc::is_reachable'), 'toc::end_path' and 'toc::record_break' end a
 path, 'toc::path_merge' joins the branches of an 'if' with the same chain rule
 as the parse, 'toc::join_loop' ends a loop by its 'loop_end'
-('scope::is_left_by_break'; a 'foo' whose count folds above 0 runs out only
+('loop_reach'; a 'foo' whose count folds above 0 runs out only
 where its body or a 'continue' reaches the counter step,
 'loop_end::when_stepped'), an inlined call whose body reaches neither its end
 nor a 'return' leaves the code after the call unreached ('toc::pop_scope'), and
@@ -371,17 +375,16 @@ and the 'else' after one that always runs, the operands of 'and' and 'or' after
 the one that decides the list, the body of a 'foo' whose count folds to 0, and
 the code after a statement that leaves on every path, e.g. 'if 1 == 2 { n = a }'
 with 'a' an array is rejected. Such code is judged as if it ran, with the
-registers held where it stands; a 'break' or 'return' in it does not end the
-paths of the code that runs ('scope_stack::reach_state'). The parse walk does
-the same for the branches of an 'if' that it knows never run
-('assignment_flow::path_merge::trace_skipped'): they are walked as if they ran
-from the 'if', so in them too a read of an unset result, a 'return' before it is
-set and a statement after a path that cannot continue are rejected. The
-variables of skipped code take no storage, so '--vars' does not hold there
-(8.3). In a compile with the constants of a call skipped code is not checked, a
-constant argument decides it: 'if b != 0 { res = a / b }' in 'ratio(10, 0)'
-guards the division, and the check of the body without its calls, where the
-guard does not fold, holds the rules in it.
+registers and the variable storage in use where it stands; a 'break' or
+'return' in it does not end the paths of the code that runs
+('scope_stack::reach_state'). The parse walk does the same for the branches of
+an 'if' that it knows never run ('assignment_flow::path_merge::trace_skipped'):
+they are walked as if they ran from the 'if', so in them too a read of an unset
+result, a 'return' before it is set and a statement after a path that cannot
+continue are rejected. In a compile with the constants of a call skipped code is
+not checked, a constant argument decides it: 'if b != 0 { res = a / b }' in
+'ratio(10, 0)' guards the division, and the check of the body without its
+calls, where the guard does not fold, holds the rules in it.
 
 ### 1.6 Reports
 
@@ -1658,8 +1661,8 @@ functions, the generics, the data and the storage layout. A method of 'toc'
 changes state or combines tables, a question to one table goes through its
 const accessor, e.g. 'tc.scopes().lookup(name)'. The exception is a question
 the statements ask at every step, which has a 'toc' method that forwards it:
-'is_reachable', 'current_definition', 'source_of', and the two answers of
-'ident_resolver', 'resolve_declared' and 'storage_of'.
+'is_reachable', 'current_definition', 'source_of', 'where', and the two
+answers of 'ident_resolver', 'resolve_declared' and 'storage_of'.
 
 'toc' is also the compile context: it carries the machine and whether the
 program is being parsed or compiled, and whether a dry run is active. A
@@ -1942,7 +1945,8 @@ message, x86_64 stops with a signal.
 - Definite assignment does not count the writes of a call, e.g.
   'init(res)' is a read of 'res'; a conservative rejection.
 - The check of a body without its calls ends at the first error that depends on
-  a call other than an inlined recursion, e.g. running out of scratch registers,
+  a call other than an inlined recursion that a value it does not know drives,
+  e.g. running out of scratch registers or a constant recursion that never ends,
   so the code after it is not checked there (1.5): e.g. a later 'res = f(res)'
   is then judged only at each call, where an inlined result held in a register
   shares nothing, so it is accepted on x86_64 and rejected on rv32i.
@@ -1960,11 +1964,6 @@ message, x86_64 stops with a signal.
   (1.5); no result changes. Ending the path there needs the reach of each
   exit of a condition and every operand list to stop at the call (bug hunt
   round 14 B1-1, B1-2).
-- Code that a compile skips (1.5.1) is checked in a dry run, which emits
-  nothing, so its variables take no storage and are not held to '--vars':
-  in 'main', 'if 1 == 2 { var a = i8[300000] }' is accepted where the
-  declaration alone is rejected with '--vars=0x40000'; none of it runs, it
-  accepts no undefined behavior.
 - The x86_64 listing leaves the size of each jump to nasm. On rare listings
   nasm's default search ('-Ox') does not settle ("unable to find valid values
   for all labels"), e.g. a '--nopt' listing of 'fuzz-flow' seed 71;

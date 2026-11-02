@@ -1,0 +1,7 @@
+# a call outside a function is reported before its callee is looked up
+
+var g = nope()
+
+func main() {
+    exit(g)
+}

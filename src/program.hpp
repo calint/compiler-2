@@ -308,7 +308,7 @@ class program final {
                 }
             }
 
-            compile_main(tc_, tc_.get_main_or_throw());
+            tc_.get_main_or_throw().compile_main(tc_);
             compile_noinline_functions(tc_);
             check_function_bodies(tc_);
             check_noinline_bodies(tc_);
@@ -500,26 +500,6 @@ class program final {
                 error->add_call_frame(body.call_tk, body.call_source);
                 toc::throw_dry_run_error(std::move(*error));
             }
-        }
-    }
-
-    // the main function is compiled where the program starts
-    static auto compile_main(toc& tc, const stmt_def_func& func_main) -> void {
-        const toc::scope_entry main{tc, scope::main_func()};
-
-        machine& x{tc.machine()};
-
-        x.comment({}, 0, "");
-
-        x.label(0, reserved_names::main);
-
-        func_main.compile_statements(tc, 0);
-
-        // code after an 'exit' or 'return' on every path would never run;
-        // the compile knows the conditions it folded, e.g. with constant
-        // arguments of an inlined call
-        if (tc.is_reachable()) {
-            x.exit(token{}, 1, operand::imm(0, tc.builtins().default_type()));
         }
     }
 

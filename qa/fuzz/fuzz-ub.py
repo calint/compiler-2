@@ -713,6 +713,8 @@ INDEX_SCALARS = ["i8", "i16", "i32", "i64"]
 class Indexes:
     name = "indexes"
     lenient = True
+    # each start of a copy is checked at its address, left to right
+    checks_start_at_address = True
 
     def __init__(self, rnd):
         self.rnd = rnd
@@ -867,14 +869,15 @@ class Indexes:
                         total += x[i][s[2]] if tri else x[i]
                 elif k == "copy":
                     to = x if s[1] == 1 else y
-                    # each start is checked at its address, left to right
                     si = self.value_of(s[2], env)
-                    if not 0 <= si <= len(x):
+                    if self.checks_start_at_address and not 0 <= si <= len(x):
                         raise Panic("bounds")
                     di = self.value_of(s[3], env)
-                    if not 0 <= di <= len(to):
+                    if self.checks_start_at_address and not 0 <= di <= len(to):
                         raise Panic("bounds")
                     n = self.value_of(s[4], env)
+                    if not 0 <= si <= len(x) or not 0 <= di <= len(to):
+                        raise Panic("bounds")
                     # a start at the end with a count of zero touches nothing
                     in_range = (n >= 0 and 0 <= si and 0 <= di
                                 and si + n <= len(x) and di + n <= len(to))
@@ -966,6 +969,8 @@ class Shifts:
 
 class Params(Indexes):
     name = "params"
+    # a call computes every argument before its body checks the starts
+    checks_start_at_address = False
 
     def __init__(self, rnd):
         super().__init__(rnd)

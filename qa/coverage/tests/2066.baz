@@ -1,0 +1,19 @@
+# the check of a body without its call expands an inlined recursion whose
+# arguments are constants, 'g(2)' does not take them from the call of 'f'
+
+func g(n) res {
+    if n == 0 {
+        res = 0
+        return
+    }
+    var a = i8[2]
+    res = a[3 - n] + g(n - 1)
+}
+
+func f(x) res {
+    res = x + g(2)
+}
+
+func main() {
+    exit(0)
+}

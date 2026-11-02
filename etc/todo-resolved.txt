@@ -1,6 +1,53 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] hard: design review series 2, round 52 (2026-11-02, user: keep
+    looping the design review with major refactoring allowed; 7 reviewers:
+    A register lifetimes in both backends, B 'stmt_call', C the state of
+    'toc', D the requests of 'machine', E conditions and value lists, F
+    definitions end to end, G top-down, each concept against the guarantee
+    that needs it)
+    => done (2026-11-02): decisions (user): G1 a dry run checks '--vars'
+       like a run, the exception for skipped code, the check of a body
+       without its calls and checked noinline bodies gone (1791 rejected,
+       2065; README 1.5.1, 8.3); C3 the check of a body without its calls
+       expands an inlined recursion whose value arguments all fold, as at a
+       call; one without value arguments is still cut
+       ('has_constant_value_arguments', 'is_value_param'; 2066, accepted
+       before; reopens round 20 F.2, 1694 unchanged); messages: B1 an
+       inlined recursion out of registers "runs out of registers before it
+       ends", one 'call_limits::compile_within_limits' (the todo item
+       below; 0870 1289 1507 1877); B2 a call outside a function is
+       reported before its callee is looked up, one check per constructor,
+       'parse_arguments' reads the '(' (2064); design: A1 a backend
+       operation frees what it allocates through 'operation_scope' on both
+       targets ('free_scratch_register' gone from the backends, rv32i
+       'release_bulk' gone); A2 'assembler_rv32i::fits_immediate'; A3 the
+       rv32i checks use 'check_failed_' and 'check_passed_' (11 local labels
+       gone, -59); C1 one 'storage_layout::max_frame_size_bytes_' (-36); C2
+       'loop_reach' and 'func_reach' saved whole (-20); D1 the bounds plan
+       made once in 'machine::check_bounds' (-33); D2 one 'choose_version';
+       E1 'std::optional<bool>' for a known condition ('condition_result'
+       gone, -33); E2 'zero_array' an 'element_list' without braces (-13);
+       F1 'add_func(name, func_info)' (-13); F3 'stmt_def_func::compile_main';
+       docs: G3 README 1.2 and 7.6; fuzzer: A0 'fuzz-ub.py' 'Params'
+       computes every argument before the body checks the starts
+       ('checks_start_at_address'); dropped: F2 (a scope kind that does not
+       describe the body), D3 ('equality_request::inverted' as an assert)
+[x] easy: an inlined recursion that ends at a constant depth but runs out of
+    registers is reported as "recursion of inlined function 'r' cannot be
+    expanded at compile time, declare it 'noinline'" ('stmt_call.hpp', the
+    catch of 'out_of_registers' around 'inline_call', which assumes the
+    recursion does not end); e.g. 'r(ps i32[], p i32, i, n)' adding
+    'r(ps, ps[i + n], i, n - 1)' while 'n > 0', called as 'r(a, a[k], k, 7)':
+    rejected on x86_64 (13 scratch registers), accepted on rv32i; the
+    rejection is README 8 item 3, the message names the wrong cause (docs
+    review 2026-10-28, R4)
+    => done (2026-11-02, design review series 2, round 52 B1): the message
+       says what happened, "recursion of inlined function 'r' runs out of
+       registers before it ends at compile time, declare it 'noinline'";
+       'call_limits::compile_within_limits' asserts the nesting, finds the
+       recursion and rewords the error (0870 1289 1507 1877)
 [x] hard: design review series 2, round 51 (2026-11-02, user: keep
     looping the design review with major refactoring allowed; 7 reviewers:
     A rv32i, B x86_64 with the register pool and report, C the no-UB

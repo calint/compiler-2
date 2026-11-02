@@ -249,6 +249,27 @@ struct const_info {
 // a parameter or the result
 enum class var_kind : uint8_t { var, dat, param, result };
 
+// whether the end of a loop and its counter step are reached by a jump, a
+// 'break' or a 'continue' of it was compiled; read by 'toc::join_loop'
+struct loop_reach {
+    bool is_left_by_break{};
+    bool is_continued{};
+};
+
+// while a function body compiles: the code after the current statement runs on
+// some path ('toc::is_reachable'), and a 'return' of it was compiled, which
+// jumps to the end of an inlined call ('toc::pop_scope')
+struct func_reach {
+    bool is_reachable{true};
+    bool is_left_by_return{};
+
+    // the end of the body of an inlined call is reached, by its last
+    // statement or by a 'return'
+    [[nodiscard]] auto is_end_reached() const -> bool {
+        return is_reachable or is_left_by_return;
+    }
+};
+
 // a block, a loop or a function being compiled; the static functions make
 // each kind, e.g. 'scope::block()'
 class scope final {
@@ -270,13 +291,7 @@ class scope final {
         // 'param_binding'
         lut<param_binding> bindings;
 
-        // while the body compiles: the code after the current statement runs
-        // on some path, see 'toc::is_reachable'
-        bool is_reachable{true};
-
-        // a 'return' of the body was compiled, it jumps to the end of an
-        // inlined call, see 'toc::pop_scope'
-        bool is_left_by_return{};
+        func_reach reach;
 
         // compiled without a call, so what it folds is no constant of a call:
         // 'main' and the body check of 'stmt_def_func::check_body', see
@@ -295,9 +310,6 @@ class scope final {
 
         // while the body is parsed: what its callers name too
         body_uses uses;
-
-        // a noinline body: the most bytes its variables took
-        size_t peak_frame_size_bytes{};
     };
 
     // what only a loop scope has
@@ -306,12 +318,7 @@ class scope final {
         // of a 'loop' or the counter step of a 'foo'
         loop_end end{loop_end::at_break};
         std::string continue_label;
-        // a 'break' of it was compiled, so its end is reached; read by
-        // 'toc::join_loop' and 'scope_stack::reach_state_now'
-        bool is_left_by_break{};
-        // a 'continue' of it was compiled, so its counter step is reached;
-        // read by 'toc::join_loop' and 'scope_stack::reach_state_now'
-        bool is_continued{};
+        loop_reach reach;
     };
 
     // optional name
@@ -421,16 +428,6 @@ class scope final {
         return not func_ and not loop_;
     }
 
-    [[nodiscard]] auto is_continued() const -> bool {
-        return loop().is_continued;
-    }
-
-    // the end of the body of an inlined call is reached, by its last
-    // statement or by a 'return'
-    [[nodiscard]] auto is_end_reached() const -> bool {
-        return func_part().is_reachable or func_part().is_left_by_return;
-    }
-
     [[nodiscard]] auto is_func() const -> bool { return func_.has_value(); }
 
     [[nodiscard]] auto is_initializer() const -> bool {
@@ -442,14 +439,6 @@ class scope final {
         return func_ and func_->kind == func_kind::inlined;
     }
 
-    [[nodiscard]] auto is_left_by_break() const -> bool {
-        return loop().is_left_by_break;
-    }
-
-    [[nodiscard]] auto is_left_by_return() const -> bool {
-        return func_part().is_left_by_return;
-    }
-
     [[nodiscard]] auto is_loop() const -> bool { return loop_.has_value(); }
 
     [[nodiscard]] auto is_main() const -> bool {
@@ -458,10 +447,6 @@ class scope final {
 
     [[nodiscard]] auto is_name(const std::string_view name) const -> bool {
         return name_ == name;
-    }
-
-    [[nodiscard]] auto is_reachable() const -> bool {
-        return func_part().is_reachable;
     }
 
     [[nodiscard]] auto is_result(const std::string_view name) const -> bool {
@@ -502,41 +487,18 @@ class scope final {
         return std::nullopt;
     }
 
-    [[nodiscard]] auto peak_frame_size_bytes() const -> size_t {
-        assert(has_frame());
-
-        return func_part().peak_frame_size_bytes;
+    [[nodiscard]] auto reach_of_func() -> func_reach& {
+        return func_part().reach;
     }
 
-    auto record_frame_size_bytes(const size_t size_bytes) -> void {
-        assert(has_frame());
-
-        function_part& func{func_part()};
-
-        func.peak_frame_size_bytes =
-            std::max(func.peak_frame_size_bytes, size_bytes);
+    [[nodiscard]] auto reach_of_func() const -> const func_reach& {
+        return func_part().reach;
     }
 
-    auto restore_peak_frame_size_bytes(const size_t size_bytes) -> void {
-        assert(has_frame());
+    [[nodiscard]] auto reach_of_loop() -> loop_reach& { return loop().reach; }
 
-        func_part().peak_frame_size_bytes = size_bytes;
-    }
-
-    auto set_continued(const bool is_continued_in) -> void {
-        loop().is_continued = is_continued_in;
-    }
-
-    auto set_left_by_break(const bool is_left) -> void {
-        loop().is_left_by_break = is_left;
-    }
-
-    auto set_left_by_return(const bool is_left) -> void {
-        func_part().is_left_by_return = is_left;
-    }
-
-    auto set_reachable(const bool is_reachable_in) -> void {
-        func_part().is_reachable = is_reachable_in;
+    [[nodiscard]] auto reach_of_loop() const -> const loop_reach& {
+        return loop().reach;
     }
 
     [[nodiscard]] auto takes_from_call() const -> bool {
@@ -593,8 +555,7 @@ class scope final {
         scp.loop_ = loop_part{
             .end{end},
             .continue_label{std::move(continue_label)},
-            .is_left_by_break{},
-            .is_continued{},
+            .reach{loop_reach{}},
         };
 
         return scp;
@@ -662,14 +623,12 @@ class scope final {
             .call_path{std::move(call_path)},
             .ret_label{std::move(return_label)},
             .bindings{},
-            .is_reachable{true},
-            .is_left_by_return{},
+            .reach{func_reach{}},
             .is_without_call{},
             .takes_from_call{},
             .result_name{},
             .param_names{},
             .uses{},
-            .peak_frame_size_bytes{},
         };
 
         return scp;
@@ -883,17 +842,8 @@ class function_table final {
     explicit function_table(const definition_order& order) : order_{order} {}
 
     // the name has been checked
-    auto add(const token& src_loc_tk, std::string name,
-             const stmt_def_func& func_def, std::string generic_method,
-             const size_t definition) -> void {
-
-        funcs_.put(std::move(name),
-                   {
-                       .src_loc_tk{src_loc_tk},
-                       .def{&func_def},
-                       .generic_method{std::move(generic_method)},
-                       .definition{definition},
-                   });
+    auto add(std::string name, func_info info) -> void {
+        funcs_.put(std::move(name), std::move(info));
     }
 
     // keeps the instance alive, 'funcs_' refers to it
@@ -1140,10 +1090,8 @@ class scope_stack final {
         // the innermost loop, the one a 'break' or a 'continue' of skipped
         // code marks
         std::optional<size_t> loop_index;
-        bool is_left_by_break{};
-        bool is_continued{};
-        bool is_reachable{};
-        bool is_left_by_return{};
+        loop_reach loop;
+        func_reach func;
     };
 
     explicit scope_stack(const definition_order& order) : order_{order} {}
@@ -1327,39 +1275,37 @@ class scope_stack final {
     [[nodiscard]] auto reach_state_now() const -> reach_state {
         // see 'toc::is_reachable'
         if (not is_in_func()) {
-            return {
-                .loop_index{},
-                .is_left_by_break{},
-                .is_continued{},
-                .is_reachable{true},
-                .is_left_by_return{},
-            };
+            return {};
         }
 
         const std::optional<size_t> loop_index{innermost_loop_index()};
 
+        if (not loop_index) {
+            return {
+                .loop_index{},
+                .loop{loop_reach{}},
+                .func{current_func_scope().reach_of_func()},
+            };
+        }
+
         return {
             .loop_index{loop_index},
-            .is_left_by_break{
-                loop_index and scopes_.at(*loop_index).is_left_by_break(),
-            },
-            .is_continued{
-                loop_index and scopes_.at(*loop_index).is_continued(),
-            },
-            .is_reachable{current_func_scope().is_reachable()},
-            .is_left_by_return{current_func_scope().is_left_by_return()},
+            .loop{scopes_.at(*loop_index).reach_of_loop()},
+            .func{current_func_scope().reach_of_func()},
         };
     }
 
     // a 'break' of the innermost 'loop' or 'foo' is compiled, see
-    // 'scope::is_left_by_break'
+    // 'loop_reach'
     auto record_break() -> void {
-        innermost_loop_ref().set_left_by_break(true);
+        innermost_loop_ref().reach_of_loop().is_left_by_break = true;
     }
 
     // a 'continue' of the innermost 'loop' or 'foo' is compiled, see
-    // 'scope::is_continued'
-    auto record_continue() -> void { innermost_loop_ref().set_continued(true); }
+    // 'loop_reach'
+    auto record_continue() -> void {
+        innermost_loop_ref().reach_of_loop().is_continued = true;
+    }
 
     // a variable, data or constant of the root scope
     auto record_global(const std::string_view name) -> void {
@@ -1373,8 +1319,10 @@ class scope_stack final {
     }
 
     // a 'return' of the innermost function is compiled, see
-    // 'scope::is_end_reached'
-    auto record_return() -> void { func_scope().set_left_by_return(true); }
+    // 'func_reach'
+    auto record_return() -> void {
+        func_scope().reach_of_func().is_left_by_return = true;
+    }
 
     // records 'storage' when its root is a global, a parameter or the result
     // of the body being parsed, see 'body_uses'; a local of the body is not
@@ -1414,14 +1362,10 @@ class scope_stack final {
         }
 
         if (state.loop_index) {
-            scope& loop{scopes_.at(*state.loop_index)};
-
-            loop.set_left_by_break(state.is_left_by_break);
-            loop.set_continued(state.is_continued);
+            scopes_.at(*state.loop_index).reach_of_loop() = state.loop;
         }
 
-        func_scope().set_reachable(state.is_reachable);
-        func_scope().set_left_by_return(state.is_left_by_return);
+        func_scope().reach_of_func() = state.func;
     }
 
     auto set_max_scope_count(const size_t count) -> void {
@@ -1434,7 +1378,7 @@ class scope_stack final {
             return;
         }
 
-        func_scope().set_reachable(is_reachable);
+        func_scope().reach_of_func().is_reachable = is_reachable;
     }
 
   private:
@@ -1545,15 +1489,16 @@ class storage_layout final {
     // included; the frames of noinline calls stack at run time, which
     // '--checks=frame' checks
     size_t max_body_vars_size_bytes_{};
+    // the most bytes of variables in the frame being compiled, see
+    // 'begin_frame'
+    size_t max_frame_size_bytes_{};
 
   public:
     // the peaks that a dry run or a version of 'toc::emit_most_efficient'
     // raises and 'restore_peaks' puts back
     struct peaks {
         size_t max_body_vars_size_bytes{};
-        // the index of the scope, scopes added meanwhile may move the scopes
-        std::optional<size_t> frame_scope_index;
-        size_t peak_frame_size_bytes{};
+        size_t max_frame_size_bytes{};
     };
 
     storage_layout(const ::machine& backend, scope_stack& scopes,
@@ -1574,9 +1519,7 @@ class storage_layout final {
     // places 'var' after the storage in use of the nearest scope with a
     // frame, else after the variables; its storage is set and the innermost
     // scope holds the bytes it takes with the alignment padding
-    auto allocate_var(const token& src_loc_tk, var_info& var,
-                      const bool checks_capacity) -> void {
-
+    auto allocate_var(const token& src_loc_tk, var_info& var) -> void {
         const size_t var_size_bytes{var_storage_size_bytes(src_loc_tk, var)};
         const size_t var_alignment{var_storage_alignment(var)};
 
@@ -1592,9 +1535,7 @@ class storage_layout final {
             add_storage_size(src_loc_tk, padding_bytes, var_size_bytes),
         };
 
-        if (checks_capacity) {
-            assert_vars_capacity(src_loc_tk, var, allocated_size_bytes);
-        }
+        assert_vars_capacity(src_loc_tk, var, allocated_size_bytes);
 
         assert_total_fits_target(
             src_loc_tk, add_storage_size(src_loc_tk, dats_and_vars_size_bytes(),
@@ -1605,17 +1546,14 @@ class storage_layout final {
         const size_t offset_bytes{next_offset_bytes + padding_bytes};
 
         if (location.scope_index) {
-            scope& frame_scope{
-                scopes_.get().at(*location.scope_index),
-            };
-
             stored.offset = address_offset(offset_bytes);
             stored.base_register = machine_.get().frame_base_register();
 
             // note: the frame is within the data and variables checked above
 
-            frame_scope.record_frame_size_bytes(
-                sum_storage_size(next_offset_bytes, allocated_size_bytes));
+            max_frame_size_bytes_ = std::max(
+                sum_storage_size(next_offset_bytes, allocated_size_bytes),
+                max_frame_size_bytes_);
         } else {
             stored.offset = offset_from_variables_base(offset_bytes);
         }
@@ -1653,8 +1591,23 @@ class storage_layout final {
                         total_bytes, max_bytes)};
     }
 
+    // a scope with a frame is compiled; the frames do not nest, a noinline
+    // body is compiled after the body that calls it
+    auto begin_frame() -> void {
+        assert(not find_storage_location().scope_index);
+
+        max_frame_size_bytes_ = 0;
+    }
+
     [[nodiscard]] auto max_body_vars_size_bytes() const -> size_t {
         return max_body_vars_size_bytes_;
+    }
+
+    // asked inside a noinline body, which has a frame
+    [[nodiscard]] auto max_frame_size_bytes() const -> size_t {
+        assert(find_storage_location().scope_index);
+
+        return max_frame_size_bytes_;
     }
 
     // a callee frame starts aligned for any variable it holds
@@ -1680,29 +1633,10 @@ class storage_layout final {
                             address_type);
     }
 
-    [[nodiscard]] auto peak_frame_size_bytes() const -> size_t {
-        const std::optional<size_t> scope_index{
-            find_storage_location().scope_index,
-        };
-
-        // note: asked inside a noinline body, which has a frame
-        assert(scope_index);
-
-        return scope_at(*scope_index).peak_frame_size_bytes();
-    }
-
     [[nodiscard]] auto peaks_now() const -> peaks {
-        const std::optional<size_t> scope_index{
-            find_storage_location().scope_index,
-        };
-
         return {
             .max_body_vars_size_bytes{max_body_vars_size_bytes_},
-            .frame_scope_index{scope_index},
-            .peak_frame_size_bytes{
-                scope_index ? scope_at(*scope_index).peak_frame_size_bytes()
-                            : 0,
-            },
+            .max_frame_size_bytes{max_frame_size_bytes_},
         };
     }
 
@@ -1724,12 +1658,7 @@ class storage_layout final {
 
     auto restore_peaks(const peaks& saved) -> void {
         max_body_vars_size_bytes_ = saved.max_body_vars_size_bytes;
-
-        if (saved.frame_scope_index) {
-            scopes_.get()
-                .at(*saved.frame_scope_index)
-                .restore_peak_frame_size_bytes(saved.peak_frame_size_bytes);
-        }
+        max_frame_size_bytes_ = saved.max_frame_size_bytes;
     }
 
     [[nodiscard]] auto var_storage_alignment(const var_info& var) const
@@ -1824,10 +1753,6 @@ class storage_layout final {
         };
 
         return add_address_offset(offset, -shift);
-    }
-
-    [[nodiscard]] auto scope_at(const size_t index) const -> const scope& {
-        return std::as_const(scopes_.get()).at(index);
     }
 
     // bytes of variables, without the dats and the padding after them
@@ -2632,6 +2557,10 @@ class toc final {
                                     : ::machine::frame_kind::inlined);
             }
 
+            if (tc.is_compiling_ and scp.has_frame()) {
+                tc_.storage_.begin_frame();
+            }
+
             tc_.scopes_.push(std::move(scp));
         }
 
@@ -2842,19 +2771,13 @@ class toc final {
         add_var(0, var, var_kind::dat);
     }
 
-    // see 'definition_order'
-    auto add_func(const token& src_loc_tk, std::string name,
-                  const stmt_def_func& func_def, std::string generic_method,
-                  const bool is_ordered) -> void {
-
+    auto add_func(std::string name, func_info info) -> void {
         assert(not is_compiling_);
 
-        definitions_.assert_function_not_defined(src_loc_tk, name,
-                                                 generic_method);
+        definitions_.assert_function_not_defined(info.src_loc_tk, name,
+                                                 info.generic_method);
 
-        funcs_.add(src_loc_tk, std::move(name), func_def,
-                   std::move(generic_method),
-                   is_ordered ? order_.current() : 0);
+        funcs_.add(std::move(name), std::move(info));
     }
 
     // keeps the instance alive, 'funcs_' refers to it
@@ -2964,7 +2887,7 @@ class toc final {
         if (is_compiling_ and kind == var_kind::dat) {
             storage_.place_dat(src_loc_tk, var);
         } else if (is_compiling_ and is_in_storage) {
-            storage_.allocate_var(src_loc_tk, var, checks_storage_capacity());
+            storage_.allocate_var(src_loc_tk, var);
         }
 
         scopes_.back().add_var(var, kind);
@@ -3114,9 +3037,8 @@ class toc final {
     // checks where what it folds is no constant of a call: in 'main' and in
     // the body check of a function, and in the initializer of a global, which
     // takes nothing from a call either; there every compile rule holds in all
-    // code but the capacity of '--vars', its locals take no storage; in a body
-    // that takes from a call an error that depends on a call is dropped as in
-    // that check, any other rejects the program
+    // code; in a body that takes from a call an error that depends on a call is
+    // dropped as in that check, any other rejects the program
     auto check_skipped(const std::function_ref<void()> compile) -> void {
         assert(is_compiling_);
 
@@ -3391,7 +3313,7 @@ class toc final {
             return true;
         }
 
-        return scopes_.current_func_scope().is_reachable();
+        return scopes_.current_func_scope().reach_of_func().is_reachable;
     }
 
     // the end of a loop is reached by a compiled 'break' or as its
@@ -3405,15 +3327,16 @@ class toc final {
         assert(loop.is_loop());
 
         const loop_end end{loop.loop_end_kind()};
+        const loop_reach& reach{loop.reach_of_loop()};
 
-        const bool is_step_reached{is_reachable() or loop.is_continued()};
+        const bool is_step_reached{is_reachable() or reach.is_continued};
 
         const bool runs_out{
             end == loop_end::also_when_done or
                 (end == loop_end::when_stepped and is_step_reached),
         };
 
-        scopes_.set_reachable(runs_out or loop.is_left_by_break());
+        scopes_.set_reachable(runs_out or reach.is_left_by_break);
     }
 
     [[nodiscard]] auto layout() const -> const storage_layout& {
@@ -3679,11 +3602,6 @@ class toc final {
                         in_quotes(tpe.name()), tpe.size_bytes(), max_bytes)};
     }
 
-    // a dry run emits nothing, its locals take no variable storage
-    [[nodiscard]] auto checks_storage_capacity() const -> bool {
-        return dry_run_depth_ == 0;
-    }
-
     [[nodiscard]] auto compile_state_now() const -> compile_state {
         return {
             .max_scope_count{scopes_.max_scope_count()},
@@ -3700,7 +3618,8 @@ class toc final {
         const scope& popped{scopes_.back()};
 
         const bool ends_caller_path{
-            popped.is_inlined_func() and not popped.is_end_reached(),
+            popped.is_inlined_func() and
+                not popped.reach_of_func().is_end_reached(),
         };
 
         scopes_.pop();
