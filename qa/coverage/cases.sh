@@ -6550,3 +6550,10 @@ SRC=2065 && COMPERR
 # the check of a body without its call expands an inlined recursion whose
 # arguments are constants
 SRC=2066 && COMPERR
+
+# a unary operator makes a value, not an instance
+SRC=2067 && COMPERR
+
+# the check of a body without its call does not expand an inlined recursion
+# that an unsized array ends
+SRC=2068 && COMPERR

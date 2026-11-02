@@ -374,7 +374,7 @@ class scope final {
         return func_part().uses;
     }
 
-    [[nodiscard]] auto body_uses_ref() -> body_uses& {
+    [[nodiscard]] auto body_uses_of_func() -> body_uses& {
         return func_part().uses;
     }
 
@@ -1280,17 +1280,15 @@ class scope_stack final {
 
         const std::optional<size_t> loop_index{innermost_loop_index()};
 
-        if (not loop_index) {
-            return {
-                .loop_index{},
-                .loop{loop_reach{}},
-                .func{current_func_scope().reach_of_func()},
-            };
+        loop_reach loop{};
+
+        if (loop_index) {
+            loop = scopes_.at(*loop_index).reach_of_loop();
         }
 
         return {
             .loop_index{loop_index},
-            .loop{scopes_.at(*loop_index).reach_of_loop()},
+            .loop{loop},
             .func{current_func_scope().reach_of_func()},
         };
     }
@@ -1315,7 +1313,7 @@ class scope_stack final {
 
     // the body being parsed passes its result to a 'mut' parameter
     auto record_result_passed_as_mut() -> void {
-        func_scope().body_uses_ref().mark_result_passed_as_mut();
+        func_scope().body_uses_of_func().mark_result_passed_as_mut();
     }
 
     // a 'return' of the innermost function is compiled, see
@@ -1333,7 +1331,7 @@ class scope_stack final {
         scope& func{func_scope()};
 
         if (storage.root.is_global()) {
-            func.body_uses_ref().add_global(storage, is_written);
+            func.body_uses_of_func().add_global(storage, is_written);
             return;
         }
 
@@ -1342,8 +1340,8 @@ class scope_stack final {
         }
 
         if (func.is_result(storage.root.name)) {
-            func.body_uses_ref().add_binding(std::nullopt, storage.path,
-                                             is_written);
+            func.body_uses_of_func().add_binding(std::nullopt, storage.path,
+                                                 is_written);
 
             return;
         }
@@ -1352,7 +1350,8 @@ class scope_stack final {
                 func.param_index(storage.root.name),
             }) {
 
-            func.body_uses_ref().add_binding(index, storage.path, is_written);
+            func.body_uses_of_func().add_binding(index, storage.path,
+                                                 is_written);
         }
     }
 
@@ -2191,22 +2190,24 @@ class definition_checks final {
         }
     }
 
-    // a scope declares a variable or a constant of a name, not both
-    auto assert_name_free(const token& src_loc_tk,
+    // a scope declares a variable or a constant of a name, not both, and the
+    // body of a function repeats no parameter or the result; 'what' names
+    // the kind of the declaration, e.g. "constant"
+    auto assert_name_free(const token& src_loc_tk, const std::string_view what,
                           const std::string_view name) const -> void {
 
         assert_not_declared_in_scope(src_loc_tk, name);
 
-        if (not scopes_.get().back().has_const(name)) {
-            return;
+        if (scopes_.get().back().has_const(name)) {
+            const const_info& existing{scopes_.get().back().get_const(name)};
+
+            throw compile_error{src_loc_tk,
+                                std::format("constant {} already defined at {}",
+                                            in_quotes(name),
+                                            where(existing.src_loc_tk))};
         }
 
-        const const_info& existing{scopes_.get().back().get_const(name)};
-
-        throw compile_error{src_loc_tk,
-                            std::format("constant {} already defined at {}",
-                                        in_quotes(name),
-                                        where(existing.src_loc_tk))};
+        assert_not_hiding_signature(src_loc_tk, what, name);
     }
 
     // a parameter may hide a constant of the generic instance in the same
@@ -2227,35 +2228,6 @@ class definition_checks final {
                             std::format("{} {} already defined at {}",
                                         scp.var_role(name), in_quotes(name),
                                         where(decl_var.src_loc_tk))};
-    }
-
-    // the body of a function is the block above its scope, a name declared
-    // there cannot repeat a parameter or the result; a deeper block may
-    auto assert_not_hiding_signature(const token& src_loc_tk,
-                                     const std::string_view what,
-                                     const std::string_view name) const
-        -> void {
-
-        const std::vector<scope>& scopes{scopes_.get().all()};
-
-        if (scopes.size() < 2 or not scopes.back().is_block()) {
-            return;
-        }
-
-        const scope& func_scp{scopes.at(scopes.size() - 2)};
-
-        if (not func_scp.is_func() or not func_scp.has_var(name)) {
-            return;
-        }
-
-        const var_info& decl_var{func_scp.get_var_const_ref(name)};
-
-        throw compile_error{
-            src_loc_tk,
-            std::format("{} {} hides the {} {} declared at {}", what,
-                        in_quotes(name), func_scp.var_role(name),
-                        in_quotes(name), where(decl_var.src_loc_tk)),
-        };
     }
 
     // a generic type and a type share the namespace of types
@@ -2285,6 +2257,35 @@ class definition_checks final {
     }
 
   private:
+    // the body of a function is the block above its scope, a name declared
+    // there cannot repeat a parameter or the result; a deeper block may
+    auto assert_not_hiding_signature(const token& src_loc_tk,
+                                     const std::string_view what,
+                                     const std::string_view name) const
+        -> void {
+
+        const std::vector<scope>& scopes{scopes_.get().all()};
+
+        if (scopes.size() < 2 or not scopes.back().is_block()) {
+            return;
+        }
+
+        const scope& func_scp{scopes.at(scopes.size() - 2)};
+
+        if (not func_scp.is_func() or not func_scp.has_var(name)) {
+            return;
+        }
+
+        const var_info& decl_var{func_scp.get_var_const_ref(name)};
+
+        throw compile_error{
+            src_loc_tk,
+            std::format("{} {} hides the {} {} declared at {}", what,
+                        in_quotes(name), func_scp.var_role(name),
+                        in_quotes(name), where(decl_var.src_loc_tk)),
+        };
+    }
+
     // the message tells an instance of a generic method and a function
     // written in the source apart
     [[noreturn]] auto throw_function_defined(
@@ -2455,7 +2456,7 @@ class toc final {
     storage_layout storage_;
     check_options checks_{};
     // above zero inside 'dry_run': a noinline body a call asks for is only
-    // checked ('add_noinline_body') and the storage capacity is not checked
+    // checked ('add_noinline_body')
     size_t dry_run_depth_{};
     // false while the program is parsed: the names are declared without
     // storage and without comments
@@ -2715,8 +2716,7 @@ class toc final {
                    const std::string_view name, const folded_value& constant)
         -> void {
 
-        definitions_.assert_name_free(src_loc_tk, name);
-        definitions_.assert_not_hiding_signature(src_loc_tk, "constant", name);
+        definitions_.assert_name_free(src_loc_tk, "constant", name);
 
         if (is_compiling_) {
             ::machine& x{machine()};
@@ -2742,7 +2742,7 @@ class toc final {
         assert(not is_compiling_);
 
         // note: a name declared twice is reported before where it is declared
-        definitions_.assert_name_free(var.src_loc_tk, var.name);
+        definitions_.assert_name_free(var.src_loc_tk, "variable", var.name);
 
         // note: a 'dat' in a block is rejected when it is parsed
         assert(scopes_.is_at_root());
@@ -2871,10 +2871,7 @@ class toc final {
         if (kind == var_kind::param or kind == var_kind::result) {
             definitions_.assert_not_declared_in_scope(src_loc_tk, var.name);
         } else {
-            definitions_.assert_name_free(src_loc_tk, var.name);
-
-            definitions_.assert_not_hiding_signature(src_loc_tk, "variable",
-                                                     var.name);
+            definitions_.assert_name_free(src_loc_tk, "variable", var.name);
         }
 
         // a variable in a register or at one has no storage; the parse only

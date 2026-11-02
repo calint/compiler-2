@@ -91,10 +91,10 @@ class expr_bool_op final : public statement {
         bool is_memory{};
     };
 
-    // a side with what it folds to, folded once where it is compiled: a typed
-    // constant is compared as a value of its type, e.g. 'i8(3)' or a constant
-    // argument of an inlined call, an untyped one as written, e.g. '3' or
-    // 'K + 1', and must fit the other side
+    // a side with what it folds to, folded where the run-time compare is
+    // emitted: a typed constant is compared as a value of its type, e.g.
+    // 'i8(3)' or a constant argument of an inlined call, an untyped one as
+    // written, e.g. '3' or 'K + 1', and must fit the other side
     struct comparison_side {
         const expr_arith* node{};
         // empty when computed or read at run time

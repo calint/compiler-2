@@ -311,7 +311,8 @@ program does not depend on inlining.
      ('compile_error::depends_on_call'): running out of scratch registers,
      e.g. twelve parameters that one call gives the same argument, or of the
      variable storage ('out_of_storage'), and the limits of inlined calls,
-     e.g. 'r(x - 1)' in 'r(x)' that a constant argument ends; such an error
+     e.g. a recursion 'g(70)' whose constant arguments pass the nesting
+     limit; such an error
      ends the check and the function is accepted, in skipped code it is
      dropped and the check goes on ('toc::check_skipped'); a recursive
      inlined call with a value argument that does not fold is not expanded
@@ -319,8 +320,8 @@ program does not depend on inlining.
      arguments are compiled at the types of their parameters
      ('stmt_call::check_arguments_alone'), so a recursion that only a
      constant argument of the call ends does not end the check; one whose
-     value arguments all fold is expanded as at a call
-     ('stmt_call::has_constant_value_arguments'), so the 'g(2)' of an
+     value arguments all fold and that passes no unsized array is expanded
+     as at a call ('stmt_call::has_known_arguments'), so the 'g(2)' of an
      'f(x)' that nothing calls is checked as in 'main'
 3. A function that takes nothing from a call, a noinline one without unsized
    array parameters or an inlined one without parameters and result, is
@@ -1546,7 +1547,7 @@ stmt_identifier::compile_checked_index
                                       (_impl)
 stmt_identifier::get_lea_operand      an operand without a path to walk is
                                       the storage of the name
-machine_x86_64::with_lowered_addresses, machine_rv32i::lower_address
+machine_x86_64::lower_address, machine_rv32i::lower_address
                                       what the target encodes
 ```
 

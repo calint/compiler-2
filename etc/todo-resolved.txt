@@ -1,6 +1,30 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] hard: design review series 2, round 53 (2026-11-02, user: keep
+    looping the design review with major refactoring allowed; 7 reviewers,
+    each file read fresh after rounds 49 to 52, also for what those rounds
+    left inconsistent: A 'toc' and the no-UB checks, B 'machine' and
+    x86_64, C rv32i and the assemblers, D calls and definitions, E values
+    and paths, F arithmetic, conditions and control, G the docs against the
+    code)
+    => done (2026-11-02): bug: D2 the check of a body without its calls
+       stopped at an inlined recursion that the length of an unsized array
+       ends, so an error after it that needs no argument was accepted where
+       nothing calls the function (older than round 52): such a recursion is
+       cut ('has_known_arguments'; 2068); messages: E1 a '(' or a unary
+       operator where an instance goes gets the wording of the array side,
+       one 'assert_no_value_operator' (0724, 2067); design: F1 a branch of an
+       'if' is the private 'stmt_if::branch', one 'compile_branch_at'
+       ('stmt_if_branch.hpp' gone, -45); F2 one path for a stored operand in
+       'expr_arith', the callback gone; C1 rv32i 'end_check' emits the pass
+       label of every check (-14); B1 one 'pop_allocation' frees a register,
+       'operand::allocation_register_' gone; B2 'machine' keeps
+       'target_options' whole; B3 'register_reporter(machine)'; D1 the parse
+       finds the places of the arguments once; A1 one 'assert_name_free'; A2
+       A3 E2 F4 D3 comments and accessors; docs: G1 and D4 README 6.8, 1.5;
+       kept (user): D5 a recursion that a 'mut' or an instance argument
+       drives still ends the check, as README 1.5.1 says
 [x] hard: design review series 2, round 52 (2026-11-02, user: keep
     looping the design review with major refactoring allowed; 7 reviewers:
     A register lifetimes in both backends, B 'stmt_call', C the state of

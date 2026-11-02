@@ -525,11 +525,12 @@ class stmt_def_func final : public statement {
     // call folds away, compiled like a noinline body and discarded; an unsized
     // array parameter has no length
     // ('ident_info::is_length_unknown'). an error that depends on the
-    // arguments of a call, e.g. an inlined recursion that a constant argument
-    // ends, cannot be told and ends the check; a body that takes nothing from
-    // a call, a noinline one without unsized arrays or an inlined one without
-    // parameters and result, has no such error; an inlined result is the
-    // destination of the call, checked here through an address
+    // arguments of a call, e.g. running out of registers or an inlined
+    // recursion past the nesting limit, cannot be told and ends the check; a
+    // body that takes nothing from a call, a noinline one without unsized
+    // arrays or an inlined one without parameters and result, has no such
+    // error; an inlined result is the destination of the call, checked here
+    // through an address
     auto check_body(toc& tc) const -> void {
         const bool takes_from_call{
             array_param_count() != 0 or

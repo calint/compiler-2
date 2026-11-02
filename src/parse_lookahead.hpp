@@ -9,6 +9,7 @@
 
 #include <algorithm>
 #include <cstdint>
+#include <format>
 #include <string_view>
 
 #include "compile_error.hpp"
@@ -97,6 +98,22 @@ inline auto assert_not_string_argument(tokenizer& tz) -> void {
 
     throw compile_error{tz.next_token(), "a string is not an argument, it "
                                          "would refer to read-only data"};
+}
+
+// a '(' or a unary operator makes a value where 'what' is expected, e.g. the
+// '(' of 'array_length((a))' or the '-' of 'q = -p' for "an instance of 'pt'"
+inline auto assert_no_value_operator(const tokenizer& tz,
+                                     const std::string_view what) -> void {
+
+    if (tz.peek_char_after_whitespace() == '(') {
+        throw compile_error{
+            tz, std::format("parentheses make a value, not {}", what)};
+    }
+
+    if (tz.is_unary_operator_next()) {
+        throw compile_error{
+            tz, std::format("a unary operator makes a value, not {}", what)};
+    }
 }
 
 // '{}' follows, the zero value of a typed destination

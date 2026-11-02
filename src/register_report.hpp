@@ -200,19 +200,20 @@ class register_reporter final {
     std::reference_wrapper<const register_trace> trace_;
 
   public:
-    register_reporter(const machine& backend, const register_trace& trace)
-        : machine_{backend}, trace_{trace} {}
+    explicit register_reporter(const machine& backend)
+        : machine_{backend}, trace_{backend.state_.trace} {}
 
-    // see 'machine::register_error'
-    [[nodiscard]] auto make_error(const token& src_loc_tk, std::string message,
-                                  const register_pool& pool) const
-        -> compile_error {
+    // see 'machine::register_error', the registers held now
+    [[nodiscard]] auto make_error(const token& src_loc_tk,
+                                  std::string message) const -> compile_error {
 
         compile_error error{src_loc_tk, std::move(message)};
 
         // the lines of text of the message of an error are not longer than
         // this, the rows of its tables may be
         constexpr size_t max_detail_width{80};
+
+        const register_pool& pool{machine_.get().state_.registers};
 
         const std::string text{
             make_register_report("register use at the failure",
@@ -503,11 +504,10 @@ inline auto machine::register_error(const token& src_loc_tk,
                                     std::string message) const
     -> compile_error {
 
-    return register_reporter{*this, state_.trace}.make_error(
-        src_loc_tk, std::move(message), state_.registers);
+    return register_reporter{*this}.make_error(src_loc_tk, std::move(message));
 }
 
 // declared in 'machine'
 inline auto machine::register_peak_report() const -> std::vector<std::string> {
-    return register_reporter{*this, state_.trace}.peak_report();
+    return register_reporter{*this}.peak_report();
 }

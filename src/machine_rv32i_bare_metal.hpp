@@ -21,7 +21,6 @@ class machine_rv32i_bare_metal : public machine_rv32i {
     static constexpr std::string_view read_label_{".Lbaz_read"};
     static constexpr std::string_view write_label_{".Lbaz_write"};
 
-    size_t stack_size_bytes_{};
     // the memory of the device, the image is loaded at its start
     size_t memory_size_bytes_{};
 
@@ -51,7 +50,6 @@ class machine_rv32i_bare_metal : public machine_rv32i {
                              const bool has_sd_card)
         : machine_rv32i{builtins, files, options,
                         bare_metal_target(has_sd_card)},
-          stack_size_bytes_{options.stack_size_bytes},
           memory_size_bytes_{memory_size_bytes} {
 
         // note: the options are checked before the source is parsed, so an
@@ -117,7 +115,7 @@ class machine_rv32i_bare_metal : public machine_rv32i {
     }
 
     [[nodiscard]] auto stack_size_bytes() const -> size_t {
-        return stack_size_bytes_;
+        return options().stack_size_bytes;
     }
 
   private:

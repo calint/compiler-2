@@ -78,9 +78,9 @@ class operand final {
 
     kind kind_{kind::empty};
     const type* type_ptr_{};
-    // the register the backend allocated, e.g. 'rax' for the operand 'eax',
-    // empty when the operand does not own the register it names
-    std::string allocation_register_;
+    // the operand holds a register the backend allocated, which is freed by
+    // the index of its name in any width, e.g. 'eax' frees 'rax'
+    bool is_allocated_{};
     // the register of a register operand, the base of a memory operand
     std::string base_register_;
     std::string index_register_;
@@ -90,10 +90,6 @@ class operand final {
 
   public:
     operand() = default;
-
-    [[nodiscard]] auto allocation_register() const -> const std::string& {
-        return allocation_register_;
-    }
 
     // the base of a memory operand, e.g. 'rbp' of '[rbp + 8]'
     [[nodiscard]] auto base_register() const -> const std::string& {
@@ -120,13 +116,15 @@ class operand final {
         return index_register_;
     }
 
-    // the memory operand '[reg]', its address is the value of the register
     [[nodiscard]] auto is_address_in_register(const std::string_view name) const
         -> bool {
 
         return is_memory() and base_register_ == name and
                index_register_.empty() and displacement_ == 0;
     }
+
+    // the memory operand '[reg]', its address is the value of the register
+    [[nodiscard]] auto is_allocated() const -> bool { return is_allocated_; }
 
     [[nodiscard]] auto is_empty() const -> bool { return kind_ == kind::empty; }
 
@@ -159,10 +157,10 @@ class operand final {
 
     [[nodiscard]] auto scale() const -> uint64_t { return scale_; }
 
-    auto set_allocation_register(const std::string_view name) -> void {
+    auto set_allocated(const bool allocated) -> void {
         assert(is_register());
 
-        allocation_register_ = name;
+        is_allocated_ = allocated;
     }
 
     [[nodiscard]] auto type_ref() const -> const type& {

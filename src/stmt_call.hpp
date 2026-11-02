@@ -1013,7 +1013,10 @@ class inline_call final {
                   const std::optional<place>& arg_place,
                   machine::held_registers& held) -> param_binding {
 
-        // note: 'stmt_call::assert_argument_types' checked the type
+        // note: 'stmt_call::assert_argument_types' checked the type, an array
+        //       argument is a place ('stmt_call::assert_argument_usable')
+
+        assert(arg_place or not param.is_array());
 
         if (arg_place) {
             const stmt_identifier& ident{*arg_place->ident};
@@ -1787,13 +1790,13 @@ class stmt_call final : public statement {
                 tc.scopes().inlined_nesting(callee().name()) != 0,
         };
 
-        // a check without a call does not expand a recursion that a value it
-        // does not know drives: the body is checked where the recursion is
-        // entered and in its own check, a constant that would end it is one
-        // of a call; constant arguments, e.g. 'g(2)', end it or reach the
-        // inlining limit, which the check drops
+        // a check without a call does not expand a recursion that a value or
+        // an array length it does not know drives: the body is checked where
+        // the recursion is entered and in its own check, a constant that would
+        // end it is one of a call; constant arguments, e.g. 'g(2)', end it or
+        // reach the inlining limit, which the check drops
         if (is_recursion and tc.scopes().is_in_body_taking_from_call() and
-            not has_constant_value_arguments(tc)) {
+            not has_known_arguments(tc, call.places)) {
 
             check_arguments_alone(tc, indent);
             return;
@@ -1816,7 +1819,7 @@ class stmt_call final : public statement {
         -> void override {
 
         statement::visit_call_effects(tc, visitor);
-        visit_callee_reach(tc, visitor);
+        visit_callee_reach(tc, argument_places(tc), visitor);
     }
 
     // the arguments in their order
@@ -1842,9 +1845,9 @@ class stmt_call final : public statement {
     }
 
   private:
-    // the place each argument names, decided at each compile because the
-    // bindings of the current scope decide it; none for a value without
-    // storage:
+    // the place each argument names, decided again at the parse, the walk of
+    // the effects and each compile because the bindings of the current scope
+    // decide it; none for a value without storage:
     //
     //   argument        example         inlined body gets  noinline body
     //   place           'p', 'a[i]'     the name, or the   its address
@@ -1862,15 +1865,8 @@ class stmt_call final : public statement {
         std::vector<std::optional<place>> places;
         places.reserve(args_.size());
 
-        for (const auto [arg, param] :
-             std::views::zip(args_, callee().params())) {
-
-            std::optional<place> arg_place{as_place(tc, arg)};
-
-            // note: an array argument is a place, see 'assert_argument_usable'
-            assert(not param.is_array() or arg_place);
-
-            places.push_back(std::move(arg_place));
+        for (const expr_any& arg : args_) {
+            places.push_back(as_place(tc, arg));
         }
 
         return places;
@@ -1913,7 +1909,8 @@ class stmt_call final : public statement {
     // an argument that is not a writable variable is rejected here, also in
     // a function that is never called, so inlining does not change what is
     // accepted
-    auto assert_argument_writable(const toc& tc, const size_t index) const
+    auto assert_argument_writable(const size_t index,
+                                  const std::optional<place>& written) const
         -> void {
 
         // a parameter without 'mut' takes any argument
@@ -1930,8 +1927,6 @@ class stmt_call final : public statement {
                                            in_quotes(trimmed_source(arg))),
                                "");
         }
-
-        const std::optional<place> written{as_place(tc, arg)};
 
         // e.g. '2' or a 'let' constant
         // note: 'arg' is a path, see above
@@ -2224,14 +2219,28 @@ class stmt_call final : public statement {
         return is_method() ? 1 : 0;
     }
 
-    // the call has a value argument and every one folds to a constant
-    [[nodiscard]] auto has_constant_value_arguments(const toc& tc) const
+    // the call has a value argument, every one folds to a constant, and no
+    // array argument has a length that only a call gives
+    [[nodiscard]] auto has_known_arguments(
+        const toc& tc, const std::span<const std::optional<place>> places) const
         -> bool {
 
         bool has_value_argument{};
 
-        for (const auto [arg, param] :
-             std::views::zip(args_, callee().params())) {
+        for (const auto [arg, param, arg_place] :
+             std::views::zip(args_, callee().params(), places)) {
+
+            // e.g. an unsized array parameter passed on
+            if (param.is_array()) {
+                // note: an array argument is a place, see 'argument_places'
+                assert(arg_place);
+
+                if (arg_place->info.is_length_unknown()) {
+                    return false;
+                }
+
+                continue;
+            }
 
             if (not is_value_param(param)) {
                 continue;
@@ -2369,12 +2378,14 @@ class stmt_call final : public statement {
                                 in_quotes(callee().name()))};
         }
 
+        const std::vector<std::optional<place>> places{argument_places(tc)};
+
         for (size_t i{}; i < args_.size(); ++i) {
-            assert_argument_usable(tc, args_.at(i), params.at(i));
-            assert_argument_writable(tc, i);
+            assert_argument_usable(tc, args_.at(i), params.at(i), places.at(i));
+            assert_argument_writable(i, places.at(i));
         }
 
-        record_uses_of_call(tc);
+        record_uses_of_call(tc, places);
     }
 
     // the type is the result type of the callee, resolved before, so an
@@ -2400,25 +2411,26 @@ class stmt_call final : public statement {
 
     // what the callee reaches of the caller is the caller's use too, see
     // 'visit_callee_reach'
-    auto record_uses_of_call(toc& tc) const -> void {
+    auto record_uses_of_call(
+        toc& tc, const std::span<const std::optional<place>> places) const
+        -> void {
 
         // note: a call outside a function was rejected (the constructors)
         assert(tc.scopes().is_in_func());
 
-        visit_callee_reach(tc, [&](const call_effect& effect) -> void {
+        visit_callee_reach(tc, places, [&](const call_effect& effect) -> void {
             tc.record_storage_use(effect.storage, effect.is_write
                                                       ? use_kind::write
                                                       : use_kind::read);
         });
 
-        for (size_t i{}; i < args_.size(); ++i) {
-            // a value or a constant is passed as a copy
-            const std::optional<place> passed{as_place(tc, args_.at(i))};
+        for (const auto [passed, param] :
+             std::views::zip(places, callee().params())) {
 
             // note: a 'mut' argument needs storage, the result of an inlined
             //       call may be bound to a register
 
-            if (passed and not callee().params().at(i).is_read_only() and
+            if (passed and not param.is_read_only() and
                 tc.scopes().names_result(passed->ident->tok().text())) {
 
                 tc.record_result_passed_as_mut();
@@ -2518,6 +2530,7 @@ class stmt_call final : public statement {
     // note: only a function that calls itself has an incomplete record
     //       ('assert_callee_body_parsed')
     auto visit_callee_reach(const toc& tc,
+                            const std::span<const std::optional<place>> places,
                             const call_effect_visitor visitor) const -> void {
 
         const body_uses& callee_uses{callee().uses()};
@@ -2531,10 +2544,10 @@ class stmt_call final : public statement {
             });
         }
 
-        for (size_t i{}; i < args_.size(); ++i) {
-            // a value or a constant is passed as a copy
-            const std::optional<place> passed{as_place(tc, args_.at(i))};
+        for (const auto [i, passed] :
+             std::views::zip(std::views::iota(size_t{}), places)) {
 
+            // a value or a constant is passed as a copy
             if (not passed) {
                 continue;
             }
@@ -2595,15 +2608,14 @@ class stmt_call final : public statement {
 
     // an array parameter takes a whole array, a scalar parameter does not
     static auto assert_argument_usable(const toc& tc, const expr_any& arg,
-                                       const stmt_def_func_param& param)
+                                       const stmt_def_func_param& param,
+                                       const std::optional<place>& arg_place)
         -> void {
 
         if (param.is_array()) {
             // an expression is not an array, nor is a name with a unary
             // operator, e.g. '-a'
-            const std::optional<place> array{as_place(tc, arg)};
-
-            const bool is_array_arg{array and array->info.is_array()};
+            const bool is_array_arg{arg_place and arg_place->info.is_array()};
 
             // an element would give the parameter the whole array's
             // length, pass the array and a start index instead
@@ -2711,7 +2723,6 @@ class stmt_call final : public statement {
         }
     }
 
-    // the '.' and the name after a type, e.g. '.at' of 'point.at(1, 2)'
     // a parameter that takes a value, not a place: read-only, built-in and
     // not an array
     [[nodiscard]] static auto is_value_param(const stmt_def_func_param& param)
@@ -2744,6 +2755,7 @@ class stmt_call final : public statement {
         return false;
     }
 
+    // the '.' and the name after a type, e.g. '.at' of 'point.at(1, 2)'
     [[nodiscard]] static auto read_constructor_tokens(tokenizer& tz)
         -> constructor_tokens {
 

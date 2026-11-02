@@ -156,7 +156,7 @@ class machine_rv32i_linux final : public machine_rv32i {
         a.data(word_size_bytes_, sd_card_words);
         a.switch_section(section::rodata);
         a.label(0, sd_card_name_label_);
-        a.string_data(sd_card_file_name());
+        a.string_data(options().sd_card_file_name);
         a.data(1, name_end);
         a.switch_section(section::text);
     }

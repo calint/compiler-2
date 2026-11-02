@@ -104,20 +104,9 @@ inline expr_type::expr_type(toc& tc, tokenizer& tz, const type& tp,
         return;
     }
 
-    // e.g. the '(' of 'q = (p)', parentheses group numbers
-    if (tz.peek_char_after_whitespace() == '(') {
-        throw compile_error{
-            tz, std::format("a value in parentheses is a number, not {} of "
-                            "{}",
-                            "an instance", in_quotes(tp.name()))};
-    }
-
-    // e.g. the '-' of 'q = -p' or of 'q = -1'
-    if (tz.is_unary_operator_next()) {
-        throw compile_error{
-            tz, std::format("a unary operator makes a number, not {} of {}",
-                            "an instance", in_quotes(tp.name()))};
-    }
+    // e.g. the '(' of 'q = (p)' or the '-' of 'q = -p'
+    assert_no_value_operator(
+        tz, std::format("an instance of {}", in_quotes(tp.name())));
 
     parse_fields(tc, tz);
     assert_value_ends(tz, tok(), "an instance", tp);
@@ -255,8 +244,8 @@ inline auto expr_type::parse_copy_source(toc& tc, tokenizer& tz,
 
     // note: a whole array for an instance is rejected before its type, as
     //       for a number: by the plan of an assignment
-    //       ('assert_copy_source_shape') or by the call it is an argument of,
-    //       which checks the type of an array parameter
+    //       ('assert_copy_source_shape') or by the call it is an argument of
+    //       ('stmt_call::assert_argument_usable')
 
     if (ident.is_array()) {
         return;

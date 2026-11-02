@@ -176,9 +176,9 @@ class machine {
         // the use of registers is kept for 'register_peak_report'
         bool register_report{};
         // the image of the sd card on targets with an operating system
-        std::string_view sd_card_file_name;
+        std::string sd_card_file_name;
         // the image that the rv32i targets write
-        std::string_view binary_file_name;
+        std::string binary_file_name;
         // the stack of the bare-metal targets
         size_t stack_size_bytes{};
         // the memory of 'rv32i-fpga'
@@ -392,13 +392,7 @@ class machine {
     std::reference_wrapper<const builtin_type_set> builtins_;
     // the assembler member of the backend
     std::reference_wrapper<assembler> output_;
-    assembler::jump_mode jump_mode_{};
-    // the image of the sd card on targets with an operating system
-    std::string sd_card_file_name_;
-
-    kept_version kept_version_{kept_version::smaller};
-    // see 'target_options::reports_line'
-    bool reports_line_{};
+    target_options options_;
 
     // the state before a version, put back when the scope ends, also when an
     // error unwinds; a version that is kept is given its end state again
@@ -542,14 +536,8 @@ class machine {
                 // trace
                 const register_pool::allocation entry{pool.top()};
 
-                machine_.comment(
-                    entry.src_loc_tk, entry.indent, "free {} register {}",
-                    entry.holder == register_pool::holder_kind::scratch
-                        ? "scratch"
-                        : "named",
-                    machine_.register_display_name(entry.index));
-
-                pool.pop(entry.index);
+                machine_.pop_allocation(entry.src_loc_tk, entry.indent,
+                                        entry.index);
             }
 
             pool.restore_unavailable(saved_mask_);
@@ -615,9 +603,7 @@ class machine {
             const target_options& options, const target_description& target,
             assembler& output)
         : target_{target}, locations_{files}, builtins_{builtins},
-          output_{output}, jump_mode_{options.jumps},
-          sd_card_file_name_{options.sd_card_file_name},
-          kept_version_{options.kept}, reports_line_{options.reports_line} {
+          output_{output}, options_{options} {
 
         if (options.register_report) {
             state_.trace.enable();
@@ -1251,9 +1237,9 @@ class machine {
     auto free_named_register(const token& src_loc_tk, const size_t indent,
                              const operand& reg) -> void {
 
-        assert(reg.is_register() and not reg.allocation_register().empty());
+        assert(reg.is_register() and reg.is_allocated());
 
-        release_named_register(src_loc_tk, indent, reg.allocation_register());
+        release_named_register(src_loc_tk, indent, reg.register_name());
     }
 
     auto free_named_registers(const token& src_loc_tk, const size_t indent,
@@ -1268,15 +1254,12 @@ class machine {
     auto free_scratch_register(const token& src_loc_tk, const size_t indent,
                                const operand& reg) -> void {
 
-        assert(reg.is_register() and not reg.allocation_register().empty());
-
-        comment(src_loc_tk, indent, "free scratch register {}",
-                reg.allocation_register());
+        assert(reg.is_register() and reg.is_allocated());
 
         assert(state_.registers.top().holder ==
                register_pool::holder_kind::scratch);
 
-        pop_allocation(reg.allocation_register());
+        pop_allocation(src_loc_tk, indent, pool_index(reg.register_name()));
     }
 
     [[nodiscard]] auto has_indexed_addressing() const -> bool {
@@ -1303,8 +1286,8 @@ class machine {
     // the code when asked for, else none; defined in 'register_report.hpp'
     [[nodiscard]] auto register_peak_report() const -> std::vector<std::string>;
 
-    // the register of 'reg' at the width of 'type_ref', freed by the same
-    // allocation name, e.g. 'al' of 'rax' on x86_64
+    // the register of 'reg' at the width of 'type_ref', freed as 'reg' is,
+    // e.g. 'al' of 'rax' on x86_64
     [[nodiscard]] auto register_view(const operand& reg,
                                      const type& type_ref) const -> operand {
 
@@ -1312,7 +1295,7 @@ class machine {
 
         operand result{make_register_operand(reg.register_name(), type_ref)};
 
-        result.set_allocation_register(reg.allocation_register());
+        result.set_allocated(reg.is_allocated());
 
         return result;
     }
@@ -1600,7 +1583,7 @@ class machine {
 
         mark_used(handler.label);
 
-        if (not reports_line_ or not handler.takes_line) {
+        if (not options_.reports_line or not handler.takes_line) {
             return false;
         }
 
@@ -1617,6 +1600,10 @@ class machine {
     // version that is not kept and discarded code use nothing
     auto mark_used(const std::string_view routine) -> void {
         state_.used_routines.emplace(routine);
+    }
+
+    [[nodiscard]] auto options() const -> const target_options& {
+        return options_;
     }
 
     [[nodiscard]] auto out_of_registers_error(const token& src_loc_tk) const
@@ -1671,12 +1658,10 @@ class machine {
     auto release_named_register(const token& src_loc_tk, const size_t indent,
                                 const std::string_view register_name) -> void {
 
-        comment(src_loc_tk, indent, "free named register {}", register_name);
-
         assert(state_.registers.top().holder !=
                register_pool::holder_kind::scratch);
 
-        pop_allocation(register_name);
+        pop_allocation(src_loc_tk, indent, pool_index(register_name));
     }
 
     // 'alloc_named_register' without an operand, for a register that the
@@ -1693,10 +1678,6 @@ class machine {
 
         push_allocation(src_loc_tk, indent, register_name,
                         register_pool::holder_kind::named);
-    }
-
-    [[nodiscard]] auto sd_card_file_name() const -> std::string_view {
-        return sd_card_file_name_;
     }
 
     // the assembler the target writes its output with
@@ -1821,7 +1802,7 @@ class machine {
     }
 
   public:
-    // the queries of the register report
+    // the queries and the register state that the register report reads
     friend class register_reporter;
 
   private:
@@ -1838,14 +1819,14 @@ class machine {
     //
 
     // the operand of a register handed out by 'alloc_named_register' or
-    // 'alloc_scratch_register', which frees it by its allocation name
+    // 'alloc_scratch_register', which frees it by the index of its name
     [[nodiscard]] auto allocated_operand(const std::string_view register_name,
                                          const type& type_ref) const
         -> operand {
 
         operand result{make_register_operand(register_name, type_ref)};
 
-        result.set_allocation_register(register_name);
+        result.set_allocated(true);
 
         return result;
     }
@@ -1940,10 +1921,10 @@ class machine {
         bool keeps_first{first_count <= second_count};
         std::string_view reason{"the smaller"};
 
-        if (kept_version_ == kept_version::first) {
+        if (options_.kept == kept_version::first) {
             keeps_first = true;
             reason = "as '--versions=first' asks";
-        } else if (kept_version_ == kept_version::last) {
+        } else if (options_.kept == kept_version::last) {
             keeps_first = false;
             reason = "as '--versions=last' asks";
         } else if (first_count == second_count) {
@@ -2006,7 +1987,9 @@ class machine {
                    is_stack_bounded());
 
             comment({}, 0, handler.comment);
-            emit_failure_handler(handler, reports_line_ and handler.takes_line);
+
+            emit_failure_handler(handler,
+                                 options_.reports_line and handler.takes_line);
         }
     }
 
@@ -2014,7 +1997,7 @@ class machine {
     auto finish_output() -> void {
         assembler& output{target_assembler()};
 
-        if (jump_mode_ == assembler::jump_mode::optimized) {
+        if (options_.jumps == assembler::jump_mode::optimized) {
             output.optimize_jumps();
         }
     }
@@ -2146,9 +2129,20 @@ class machine {
         return *index;
     }
 
-    // registers are released in reverse order of allocation
-    auto pop_allocation(const std::string_view register_name) -> void {
-        state_.registers.pop(pool_index(register_name));
+    // registers are released in reverse order of allocation, the comment
+    // names the register as the report does
+    auto pop_allocation(const token& src_loc_tk, const size_t indent,
+                        const size_t index) -> void {
+
+        const bool is_scratch{
+            state_.registers.top().holder ==
+                register_pool::holder_kind::scratch,
+        };
+
+        comment(src_loc_tk, indent, "free {} register {}",
+                is_scratch ? "scratch" : "named", register_display_name(index));
+
+        state_.registers.pop(index);
     }
 
     // named and scratch allocations share one stack, each is recorded for

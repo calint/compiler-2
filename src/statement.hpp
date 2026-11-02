@@ -229,9 +229,9 @@ class stmt_identifier;
 
 // a node of the program: it parses itself in its constructor, writes its
 // source back ('source_to') and compiles; the whitespace before a value is
-// held by a wrapper ('expr_any', 'expr_bool', 'expr_bool_op',
-// 'stmt_if_branch') in a whitespace-only token, while a list ('expr_arith') is
-// a position and its first element holds it; the virtuals in groups, with the
+// held by a wrapper ('expr_any', 'expr_bool', 'expr_bool_op', a branch of
+// 'stmt_if') in a whitespace-only token, while a list ('expr_arith') is a
+// position and its first element holds it; the virtuals in groups, with the
 // classes that override them, the default is 'std::unreachable()' where no
 // other class reaches it; a parse step named 'parse_' makes a node or a part
 // that holds one, e.g. 'parse_condition', one named 'read_' takes tokens only,

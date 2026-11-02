@@ -1482,7 +1482,7 @@ class machine_x86_64 final : public machine {
         assembler_.comment(0, "the file name ends with a zero byte");
         assembler_.label(0, "baz_sd_card_name");
 
-        assembler_.string_data(sd_card_file_name());
+        assembler_.string_data(options().sd_card_file_name);
 
         assembler_.data(size_byte_, zero_value);
 

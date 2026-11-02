@@ -618,7 +618,9 @@ auto print_help(const char* const program_name) -> void {
             .kept{opts.kept_version},
             .register_report{opts.reports.registers},
             .sd_card_file_name{
-                opts.sd_card_file_name.value_or(default_sd_card_file_name),
+                std::string{
+                    opts.sd_card_file_name.value_or(default_sd_card_file_name),
+                },
             },
             .binary_file_name{binary},
             .stack_size_bytes{

@@ -258,8 +258,8 @@ class machine_rv32i : public machine {
     // means the next '1:' in the emitted text, so the numbers repeat across
     // operations under one rule: a numeric label is referenced only inside
     // the operation that defines it, and no other operation emitted between
-    // a reference and its label defines one, e.g. a 'branch_to_failure'
-    // inside a walk emits none
+    // a reference and its label defines one, e.g. no run-time check is
+    // emitted inside a walk
     struct local_label {
         std::string_view name;
         std::string_view reference;
@@ -298,7 +298,7 @@ class machine_rv32i : public machine {
 
     // the labels of a run-time check: a failing check branches to
     // 'check_failed_' where the line and the handler follow, a passing one to
-    // 'check_passed_' past them
+    // 'check_passed_' past them, which 'end_check' defines
     static constexpr local_label check_failed_{
         .name{"1"},
         .reference{"1f"},
@@ -384,7 +384,6 @@ class machine_rv32i : public machine {
     // register is dead there
     static constexpr std::string_view no_return_jump_register_{"t0"};
 
-    std::string binary_file_name_;
     assembler_rv32i assembler_;
 
   protected:
@@ -392,8 +391,7 @@ class machine_rv32i : public machine {
     machine_rv32i(const builtin_type_set& builtins, const source_files& files,
                   const target_options& options,
                   const target_description& target)
-        : machine{builtins, files, options, target, assembler_},
-          binary_file_name_{options.binary_file_name} {}
+        : machine{builtins, files, options, target, assembler_} {}
 
     static constexpr size_t word_size_bytes_{4};
     static constexpr size_t register_bits_{
@@ -467,9 +465,7 @@ class machine_rv32i : public machine {
 
         assembler_.label(indent, check_failed_.name);
 
-        branch_to_failure(src_loc_tk, indent, bounds_failure_);
-
-        assembler_.label(indent, check_passed_.name);
+        end_check(src_loc_tk, indent, bounds_failure_);
     }
 
     auto emit_call(const size_t indent, const std::string_view label)
@@ -490,7 +486,7 @@ class machine_rv32i : public machine {
 
     // the handler of a check that prints 'panic: NAME' then exits with its
     // code; with the line, one entry per file prints 'panic: NAME at FILE:'
-    // and the line number in 'a0', see 'branch_to_failure'
+    // and the line number in 'a0', see 'end_check'
     auto emit_failure_handler(const failure_handler& handler,
                               const bool with_line) -> void override {
 
@@ -869,9 +865,7 @@ class machine_rv32i : public machine {
         assembler_.bgeu(indent, last_start.register_name(),
                         start.register_name(), check_passed_.reference);
 
-        branch_to_failure(src_loc_tk, indent, frame_overflow_failure_);
-
-        assembler_.label(indent, check_passed_.name);
+        end_check(src_loc_tk, indent, frame_overflow_failure_);
         comment(src_loc_tk, indent, "frame capacity check end");
     }
 
@@ -912,9 +906,7 @@ class machine_rv32i : public machine {
         assembler_.bgeu(indent, lowest.register_name(), limit.register_name(),
                         check_passed_.reference);
 
-        branch_to_failure(src_loc_tk, indent, stack_overflow_failure_);
-
-        assembler_.label(indent, check_passed_.name);
+        end_check(src_loc_tk, indent, stack_overflow_failure_);
         comment(src_loc_tk, indent, "stack capacity check end");
     }
 
@@ -1380,9 +1372,11 @@ class machine_rv32i : public machine {
     // the binary image is written together with the assembly source
     auto write_assembly(std::ostream& os) -> void override {
         // note: 'main' names the image of every rv32i target
-        assert(not binary_file_name_.empty());
+        const std::string& file_name{options().binary_file_name};
 
-        std::ofstream binary{binary_file_name_, std::ios::binary};
+        assert(not file_name.empty());
+
+        std::ofstream binary{file_name, std::ios::binary};
 
         // the file did not open, or e.g. a full disk left the image incomplete
         if (binary) {
@@ -1391,8 +1385,8 @@ class machine_rv32i : public machine {
         }
 
         if (not binary) {
-            throw unlocated_error{std::format("cannot write file {}",
-                                              in_quotes(binary_file_name_))};
+            throw unlocated_error{
+                std::format("cannot write file {}", in_quotes(file_name))};
         }
     }
 
@@ -1590,28 +1584,6 @@ class machine_rv32i : public machine {
         }
     }
 
-    // a jump to 'handler', which is marked used; with the line, the line in
-    // 'a0' and a jump to the entry of the handler for the file of 'src_loc_tk'
-    auto branch_to_failure(const token& src_loc_tk, const size_t indent,
-                           const failure_handler& handler) -> void {
-
-        if (not mark_failure(handler, src_loc_tk)) {
-            assembler_.resolved_jump(indent, handler.label,
-                                     no_return_jump_register_);
-
-            return;
-        }
-
-        comment(src_loc_tk, indent, "source line");
-        assembler_.li(indent, "a0", src_loc_tk.at_line());
-
-        const std::string entry_label{
-            failure_entry_label(handler.label, src_loc_tk.file_index()),
-        };
-
-        assembler_.resolved_jump(indent, entry_label, no_return_jump_register_);
-    }
-
     // 'result' is the register of 'routine' that 'dst' receives, 'check' the
     // overflow check of 'multiply_checked' or the division check of 'divide'
     auto call_arithmetic_helper(const token& src_loc_tk, const size_t indent,
@@ -1726,9 +1698,7 @@ class machine_rv32i : public machine {
         assembler_.bgeu(indent, distance.register_name(),
                         count_bytes.register_name(), check_passed_.reference);
 
-        branch_to_failure(src_loc_tk, indent, overlap_failure_);
-
-        assembler_.label(indent, check_passed_.name);
+        end_check(src_loc_tk, indent, overlap_failure_);
 
         comment(src_loc_tk, indent, "overlap check end");
     }
@@ -1757,9 +1727,7 @@ class machine_rv32i : public machine {
         assembler_.bne(indent, "a0", "a2", check_passed_.reference);
         assembler_.label(indent, check_failed_.name);
 
-        branch_to_failure(src_loc_tk, indent, division_failure_);
-
-        assembler_.label(indent, check_passed_.name);
+        end_check(src_loc_tk, indent, division_failure_);
 
         comment(src_loc_tk, indent, "division check end");
     }
@@ -1779,8 +1747,7 @@ class machine_rv32i : public machine {
         assembler_.slli(indent, extended, value, shift);
         assembler_.srai(indent, extended, extended, shift);
         assembler_.beq(indent, extended, value, check_passed_.reference);
-        branch_to_failure(src_loc_tk, indent, overflow_failure_);
-        assembler_.label(indent, check_passed_.name);
+        end_check(src_loc_tk, indent, overflow_failure_);
     }
 
     // after the checked multiply helper: the flag is in 'a1', the product in
@@ -1791,8 +1758,7 @@ class machine_rv32i : public machine {
         comment(src_loc_tk, indent, "overflow check begin");
 
         assembler_.beqz(indent, "a1", check_passed_.reference);
-        branch_to_failure(src_loc_tk, indent, overflow_failure_);
-        assembler_.label(indent, check_passed_.name);
+        end_check(src_loc_tk, indent, overflow_failure_);
 
         const size_t width{dst.type_ref().size_bytes()};
 
@@ -1825,8 +1791,7 @@ class machine_rv32i : public machine {
         assembler_.bne(indent, value.register_name(), minimum.register_name(),
                        check_passed_.reference);
 
-        branch_to_failure(src_loc_tk, indent, overflow_failure_);
-        assembler_.label(indent, check_passed_.name);
+        end_check(src_loc_tk, indent, overflow_failure_);
         comment(src_loc_tk, indent, "overflow check end");
     }
 
@@ -1849,9 +1814,7 @@ class machine_rv32i : public machine {
         assembler_.bltu(indent, amount.register_name(), limit.register_name(),
                         check_passed_.reference);
 
-        branch_to_failure(src_loc_tk, indent, shift_failure_);
-
-        assembler_.label(indent, check_passed_.name);
+        end_check(src_loc_tk, indent, shift_failure_);
 
         comment(src_loc_tk, indent, "shift check end");
     }
@@ -2186,11 +2149,11 @@ class machine_rv32i : public machine {
         }
 
         // materialized operands are ours to overwrite after the comparison
-        if (not left.allocation_register().empty() and not lhs.is_register()) {
+        if (left.is_allocated() and not lhs.is_register()) {
             return left;
         }
 
-        if (not right.allocation_register().empty() and not rhs.is_register()) {
+        if (right.is_allocated() and not rhs.is_register()) {
             return right;
         }
 
@@ -2521,8 +2484,7 @@ class machine_rv32i : public machine {
                               value.register_name(), first.register_name(),
                               check_passed_.reference);
 
-            branch_to_failure(src_loc_tk, indent, overflow_failure_);
-            assembler_.label(indent, check_passed_.name);
+            end_check(src_loc_tk, indent, overflow_failure_);
 
             return;
         }
@@ -2543,8 +2505,7 @@ class machine_rv32i : public machine {
                           first.register_name(), check_passed_.reference);
 
         assembler_.label(indent, check_failed_.name);
-        branch_to_failure(src_loc_tk, indent, overflow_failure_);
-        assembler_.label(indent, check_passed_.name);
+        end_check(src_loc_tk, indent, overflow_failure_);
     }
 
     auto emit_comparison_branch(const size_t indent,
@@ -2880,6 +2841,31 @@ class machine_rv32i : public machine {
             assembler_.sub(indent, loaded.value.register_name(), "zero",
                            loaded.value.register_name());
         }
+    }
+
+    // the end of a run-time check: a jump to 'handler', which is marked used,
+    // for the failing branches, then 'check_passed_' for the passing ones;
+    // with the line, the line in 'a0' and a jump to the entry of the handler
+    // for the file of 'src_loc_tk'
+    auto end_check(const token& src_loc_tk, const size_t indent,
+                   const failure_handler& handler) -> void {
+
+        if (not mark_failure(handler, src_loc_tk)) {
+            assembler_.resolved_jump(indent, handler.label,
+                                     no_return_jump_register_);
+        } else {
+            comment(src_loc_tk, indent, "source line");
+            assembler_.li(indent, "a0", src_loc_tk.at_line());
+
+            const std::string entry_label{
+                failure_entry_label(handler.label, src_loc_tk.file_index()),
+            };
+
+            assembler_.resolved_jump(indent, entry_label,
+                                     no_return_jump_register_);
+        }
+
+        assembler_.label(indent, check_passed_.name);
     }
 
     // a register that is zero exactly when the operands are equal

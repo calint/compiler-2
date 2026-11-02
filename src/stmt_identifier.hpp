@@ -929,15 +929,7 @@ class stmt_identifier final : public statement {
         -> stmt_identifier {
 
         // e.g. the '-' of 'array_length(-a)'
-        if (tz.is_unary_operator_next()) {
-            throw compile_error{tz,
-                                "a unary operator makes a value, not an array"};
-        }
-
-        // e.g. the '(' of 'array_length((a))'
-        if (tz.peek_char_after_whitespace() == '(') {
-            throw compile_error{tz, "parentheses make a value, not an array"};
-        }
+        assert_no_value_operator(tz, "an array");
 
         assert_not_string_argument(tz);
 
@@ -993,7 +985,8 @@ class stmt_identifier final : public statement {
         return array;
     }
 
-    // the whole array of 'foo', e.g. not the 'a[1]' of 'foo a[1]'
+    // a whole array, e.g. the 'a' of 'foo a' or of 'var b = a', not the 'a[1]'
+    // of 'foo a[1]'
     [[nodiscard]] static auto parse_whole_array(toc& tc, tokenizer& tz)
         -> stmt_identifier {
 

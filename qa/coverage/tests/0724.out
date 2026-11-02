@@ -1,4 +1,4 @@
 
-0724.baz:7:9: a value in parentheses is a number, not an instance of 'point'
+0724.baz:7:9: parentheses make a value, not an instance of 'point'
     q = (1)
         ^

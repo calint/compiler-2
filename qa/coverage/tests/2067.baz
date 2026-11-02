@@ -1,0 +1,9 @@
+# a unary operator makes a value, not an instance
+
+type point { x, y }
+
+func main() {
+    var p = point{3, 4}
+    var q = point
+    q = -p
+}

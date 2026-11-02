@@ -10,24 +10,106 @@
 #include <utility>
 #include <vector>
 
+#include "compile_error.hpp"
+#include "expr_bool.hpp"
 #include "ident_info.hpp"
 #include "machine.hpp"
 #include "stmt_block.hpp"
-#include "stmt_if_branch.hpp"
 #include "token.hpp"
+#include "tokenizer.hpp"
 #include "ub_assigned.hpp"
 
 // 'if', 'else if' and 'else': the branches are tried in order and the first
 // whose condition holds runs; a branch that is constant true ends the chain
 // and one that is constant false is not emitted
 class stmt_if final : public statement {
+    // the 'else if' before a branch after the first
+    struct else_if_tokens {
+        token else_tk;
+        token if_tk;
+    };
+
+    // one condition of an 'if' or 'else if' and the block it guards, e.g.
+    // 'a == b {x = 1}' of 'if a == b {x = 1} else {y = 2}'
+    struct branch {
+        // 'lead' was read before
+        branch(toc& tc, tokenizer& tz,
+               const std::optional<else_if_tokens>& lead_in)
+            : lead{lead_in}, ws_tk{tz.next_whitespace_token()},
+              condition{parse_condition(tc, tz)},
+              constant_at_parse{condition.constant_value(tc)}, code{tc, tz} {}
+
+        // none for the first branch, kept to reproduce the source
+        std::optional<else_if_tokens> lead;
+        // the whitespace before the condition
+        token ws_tk;
+        expr_bool condition;
+        // the value of the condition known where the 'if' is written, e.g.
+        // from literals and constants, empty when it depends on the run or on
+        // a call
+        std::optional<bool> constant_at_parse;
+        stmt_block code;
+
+        auto source_to(std::ostream& os) const -> void {
+            if (lead) {
+                lead->else_tk.source_to(os);
+                lead->if_tk.source_to(os);
+            }
+
+            ws_tk.source_to(os);
+            condition.source_to(os);
+            code.source_to(os);
+        }
+
+        // the condition is read before the branch code runs
+        auto trace_assignment(assignment_flow& flow) const -> void {
+            condition.assert_result_not_read(flow);
+            code.trace_assignment(flow);
+        }
+
+        //
+        // statics
+        //
+
+        // an empty token where the condition starts, 'ws_tk' holds the
+        // whitespace before it; a '{' there means the condition is missing,
+        // e.g. 'if {x = 1}'
+        [[nodiscard]] static auto condition_start(tokenizer& tz) -> token {
+            const token ws_tk{tz.next_whitespace_token()};
+
+            if (tz.peek_char_after_whitespace() == '{') {
+                throw compile_error{tz, "expected a condition before '{'"};
+            }
+
+            return ws_tk;
+        }
+
+        [[nodiscard]] static auto parse_condition(toc& tc, tokenizer& tz)
+            -> expr_bool {
+
+            expr_bool condition{tc, condition_start(tz), tz};
+
+            condition.assert_boolean_operands();
+
+            return condition;
+        }
+    };
+
+    // what a branch found of its condition: its value where known and
+    // whether the condition returns, where the next branch and the 'else'
+    // start, e.g. not after 'if stop() == 1' with 'stop' an inlined 'exit'
+    struct branch_condition {
+        std::optional<bool> known;
+        bool returns{};
+    };
+
     // e.g. 'else {z = 3}'
     struct else_part {
         token else_tk;
         stmt_block code;
     };
 
-    std::vector<stmt_if_branch> branches_;
+    std::vector<branch> branches_;
     // none without an 'else'
     std::optional<else_part> else_;
 
@@ -52,8 +134,8 @@ class stmt_if final : public statement {
     auto source_to(std::ostream& os) const -> void override {
         statement::source_to(os);
 
-        for (const stmt_if_branch& branch : branches_) {
-            branch.source_to(os);
+        for (const branch& b : branches_) {
+            b.source_to(os);
         }
 
         // the 'else' code, also when it is empty
@@ -93,8 +175,8 @@ class stmt_if final : public statement {
             // note: the compile knows at least what the parse knew, the
             //       paths of the definite assignment follow the parse
 
-            assert(not branches_.at(i).constant_at_parse() or
-                   branches_.at(i).constant_at_parse() == known);
+            assert(not branches_.at(i).constant_at_parse or
+                   branches_.at(i).constant_at_parse == known);
 
             if (runs(known)) {
                 paths.join_path();
@@ -138,13 +220,13 @@ class stmt_if final : public statement {
         // and bodies, e.g. 'if false { a = res }'
         bool is_chain_ended{};
 
-        for (const stmt_if_branch& branch : branches_) {
-            const std::optional<bool> known{branch.constant_at_parse()};
+        for (const branch& b : branches_) {
+            const std::optional<bool> known{b.constant_at_parse};
 
             if (is_chain_ended or not runs(known)) {
-                paths.trace_skipped(branch);
+                paths.trace_skipped(b);
             } else {
-                paths.trace(branch);
+                paths.trace(b);
             }
 
             is_chain_ended = is_chain_ended or ends_chain(known);
@@ -185,16 +267,21 @@ class stmt_if final : public statement {
         });
     }
 
-    // the branch at 'branch_index', what it found of its condition
+    // the branch at 'branch_index': its condition at its label, its code and
+    // the jump past the other branches; what it found of its condition
     [[nodiscard]] auto compile_branch_at(toc& tc, const size_t indent,
                                          const size_t branch_index,
                                          const std::string_view if_label) const
         -> branch_condition {
 
-        const size_t branch_count{branches_.size()};
+        const branch& b{branches_.at(branch_index)};
+        const bool is_last_branch{branch_index == branches_.size() - 1};
 
-        const stmt_if_branch& if_branch{branches_.at(branch_index)};
-        const bool is_last_branch{branch_index == branch_count - 1};
+        const std::string label{branch_label(if_label, branch_index)};
+
+        // an 'or' condition branches to the code as soon as one operand is
+        // true
+        const std::string code_label{std::format("{}.code", label)};
 
         // a false condition continues at the next branch or the 'else'
         const std::string jmp_if_false{
@@ -202,20 +289,42 @@ class stmt_if final : public statement {
                            : branch_label(if_label, branch_index + 1),
         };
 
-        // a condition that is constant true ends the chain at this branch
-        const branch_condition condition{
-            if_branch.compile_branch(
-                tc, indent, branch_label(if_label, branch_index), jmp_if_false),
+        machine& x{tc.machine()};
+
+        x.label(indent, label);
+
+        const std::optional<bool> known{
+            b.condition.compile(tc, indent,
+                                {
+                                    .if_false{jmp_if_false},
+                                    .if_true{code_label},
+                                },
+                                {}),
         };
+
+        const branch_condition condition{
+            .known{known},
+            .returns{tc.is_reachable()},
+        };
+
+        // note: code that never runs holds the compile rules too, see
+        //       'toc::check_skipped'
+
+        if (known == false) {
+            tc.check_skipped(
+                [&] -> void { b.code.compile(tc, indent, destination{}); });
+
+            return condition;
+        }
+
+        x.label(indent, code_label);
+        b.code.compile(tc, indent, destination{});
 
         // the last branch without an 'else' continues after the 'if'
         // without a jump
         const bool falls_through{is_last_branch and not has_else_code()};
 
-        if (not condition.known and not falls_through) {
-
-            machine& x{tc.machine()};
-
+        if (not known and not falls_through) {
             x.branch(indent, toc::end_label(if_label));
         }
 

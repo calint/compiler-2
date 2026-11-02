@@ -1,0 +1,7 @@
+
+2068.baz:14:13: index 3 is out of bounds for array 'a' of size 2
+    res = a[k]
+            ^
+2068.baz:19:17: called from 'h(3)'
+    res = res + h(3)
+                ^

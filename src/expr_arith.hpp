@@ -1123,6 +1123,8 @@ class expr_arith final : public statement {
     // statics
     //
 
+    // the element is computed into a scratch register or read where it is
+    // stored
     static auto asm_op(toc& tc, const size_t indent,
                        const arithmetic_operator op, const destination& dst,
                        const statement& src) -> void {
@@ -1132,21 +1134,15 @@ class expr_arith final : public statement {
         x.comment(src.tok(), indent,
                   statement::trimmed_source(src, dst.text(), source_text(op)));
 
-        // note: the rewrite hides an overflow of the negation, the check
-        //       computes it
+        // note: a constant element is a constant step, its value folded by
+        //       'make_steps', see 'emit_constant_step'
 
-        if (arith_steps::is_additive(op) and not tc.checks_overflow(dst) and
-            is_negated_operand(tc, src)) {
-
-            compile_negated_operand(tc, indent, op, dst, src);
+        if (src.is_computed()) {
+            compile_computed_operand(tc, indent, op, dst, src);
             return;
         }
 
-        emit_with_source(
-            tc, indent, src, dst,
-            [&](const operand& value, const machine::factor_use use) -> void {
-                emit_operation(tc, indent, src.tok(), op, dst, value, use);
-            });
+        compile_stored_operand(tc, indent, op, dst, src);
     }
 
     // a constant divisor is not zero and a constant shift count is inside the
@@ -1228,6 +1224,31 @@ class expr_arith final : public statement {
                         width_bits - 1, width_bits)};
     }
 
+    // the operand in a scratch register that the operation may overwrite
+    static auto compile_computed_operand(toc& tc, const size_t indent,
+                                         const arithmetic_operator op,
+                                         const destination& dst,
+                                         const statement& src) -> void {
+
+        assert(not src.fold(tc, tc.use_of(dst)));
+
+        machine& x{tc.machine()};
+
+        x.comment(src.tok(), indent, "src: expression");
+
+        const operand reg{
+            x.alloc_scratch_register(src.tok(), indent, dst.type_ref()),
+        };
+
+        // note: the callers are the operators after the first element
+        src.compile(tc, indent, dst.in_register(reg));
+
+        emit_operation(tc, indent, src.tok(), op, dst, reg,
+                       machine::factor_use::may_overwrite);
+
+        x.free_scratch_register(src.tok(), indent, reg);
+    }
+
     static auto compile_constant(toc& tc, const size_t indent,
                                  const token& src_loc_tk,
                                  const destination& dst, const int64_t value,
@@ -1263,46 +1284,63 @@ class expr_arith final : public statement {
         first.compile(tc, indent, dst);
     }
 
-    // 'a + -b' is 'a - b' and 'a - -b' is 'a + b'
-    static auto compile_negated_operand(toc& tc, const size_t indent,
-                                        const arithmetic_operator op,
-                                        const destination& dst,
-                                        const statement& src) -> void {
+    // a name or a literal read in place, a register that holds the result
+    // of unary ops may be overwritten; 'a + -b' is 'a - b' and 'a - -b' is
+    // 'a + b'
+    static auto compile_stored_operand(toc& tc, const size_t indent,
+                                       const arithmetic_operator op,
+                                       const destination& dst,
+                                       const statement& src) -> void {
 
-        machine& x{tc.machine()};
+        // note: a value that is not computed is a name or a literal, '{}' is a
+        //       whole value and folds before; the rewrite hides an overflow
+        //       of the negation, the check computes it
 
-        x.comment(src.tok(), indent, "src: negated operand");
+        const bool is_negation_folded{
+            arith_steps::is_additive(op) and not tc.checks_overflow(dst) and
+                is_negated_operand(tc, src),
+        };
 
         const stmt_identifier& ident{*src.operand_path()};
+
         const ident_info src_info{make_scalar_ident_info(tc, ident)};
-        machine::held_registers held{x, src.tok(), indent};
 
-        const operand src_operand{
-            ident.get_lea_operand(tc, indent, src_info, held),
-        };
+        assert(not src_info.is_const());
 
-        x.add_subtract(src.tok(), indent,
-                       op == arithmetic_operator::add
-                           ? arithmetic_operator::subtract
-                           : arithmetic_operator::add,
-                       dst.operand(), src_operand, tc.overflow_options(dst));
-    }
-
-    [[nodiscard]] static auto compile_to_scratch(toc& tc, const size_t indent,
-                                                 const statement& src,
-                                                 const destination& dst)
-        -> operand {
+        const bool has_unary_ops{not ident.get_unary_ops().is_empty()};
 
         machine& x{tc.machine()};
 
-        const operand reg{
-            x.alloc_scratch_register(src.tok(), indent, dst.type_ref()),
+        x.comment(src.tok(), indent, "{}",
+                  stored_operand_comment(is_negation_folded, has_unary_ops));
+
+        machine::held_registers held{x, src.tok(), indent};
+
+        if (is_negation_folded) {
+            const arithmetic_operator flipped{
+                op == arithmetic_operator::add ? arithmetic_operator::subtract
+                                               : arithmetic_operator::add,
+            };
+
+            const operand src_operand{
+                ident.get_lea_operand(tc, indent, src_info, held),
+            };
+
+            emit_operation(tc, indent, src.tok(), flipped, dst, src_operand,
+                           machine::factor_use::read_only);
+
+            return;
+        }
+
+        const operand src_operand{
+            ident.compile_value_operand(tc, indent, src.tok(), src_info,
+                                        dst.type_ref(),
+                                        tc.overflow_options(dst), held),
         };
 
-        // note: the callers are the operators after the first element
-        src.compile(tc, indent, dst.in_register(reg));
-
-        return reg;
+        emit_operation(tc, indent, src.tok(), op, dst, src_operand,
+                       has_unary_ops ? machine::factor_use::may_overwrite
+                                     : machine::factor_use::read_only);
     }
 
     // the immediate of a constant step at the width of 'dst'
@@ -1399,64 +1437,6 @@ class expr_arith final : public statement {
         x.bitwise(src_loc_tk, indent, op, dst.operand(), value);
     }
 
-    // compiles 'src' into an operand the operation on 'dst' accepts, emits
-    // the operation and frees the registers that producing the operand needed
-    static auto emit_with_source(
-        toc& tc, const size_t indent, const statement& src,
-        const destination& dst,
-        const std::function_ref<void(const operand&, machine::factor_use)> emit)
-        -> void {
-
-        const type& operand_type{dst.type_ref()};
-
-        // note: a constant element is a constant step, its value folded by
-        //       'make_steps', see 'emit_constant_step'
-
-        machine& x{tc.machine()};
-
-        if (src.is_computed()) {
-            assert(not src.fold(tc, tc.use_of(dst)));
-
-            x.comment(src.tok(), indent, "src: expression");
-
-            const operand reg{
-                compile_to_scratch(tc, indent, src, dst),
-            };
-
-            emit(reg, machine::factor_use::may_overwrite);
-            x.free_scratch_register(src.tok(), indent, reg);
-
-            return;
-        }
-
-        // note: a value that is not computed is a name or a literal, '{}' is a
-        //       whole value and folds before
-
-        const stmt_identifier& ident{*src.operand_path()};
-
-        const ident_info src_info{make_scalar_ident_info(tc, ident)};
-
-        assert(not src_info.is_const());
-
-        // a register that holds the result of unary ops may be overwritten
-        const bool has_unary_ops{not ident.get_unary_ops().is_empty()};
-
-        x.comment(src.tok(), indent,
-                  has_unary_ops ? "src: operand with unary ops"
-                                : "src: operand");
-
-        machine::held_registers held{x, src.tok(), indent};
-
-        const operand src_operand{
-            ident.compile_value_operand(tc, indent, src.tok(), src_info,
-                                        operand_type, tc.overflow_options(dst),
-                                        held),
-        };
-
-        emit(src_operand, has_unary_ops ? machine::factor_use::may_overwrite
-                                        : machine::factor_use::read_only);
-    }
-
     // rejects a constant divisor or shift count like 'compile', and the
     // minimum divided by -1 where the division check is on or where it has
     // no value: the 64-bit one traps on x86_64
@@ -1550,5 +1530,20 @@ class expr_arith final : public statement {
             .node{std::move(element)},
             .is_enclosed{},
         };
+    }
+
+    [[nodiscard]] static auto
+    stored_operand_comment(const bool is_negation_folded,
+                           const bool has_unary_ops) -> std::string_view {
+
+        if (is_negation_folded) {
+            return "src: negated operand";
+        }
+
+        if (has_unary_ops) {
+            return "src: operand with unary ops";
+        }
+
+        return "src: operand";
     }
 };

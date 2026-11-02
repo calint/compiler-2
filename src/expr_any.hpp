@@ -400,8 +400,8 @@ class expr_any final : public statement {
             destination_.is_length_unknown() ? unsized_count : array_count_,
         };
 
-        // the source's shape of an array copy is checked by its plan, then
-        // the lengths
+        // the parse checked that the source of an array copy is an array,
+        // its length is checked here
         if (std::holds_alternative<single_value>(form_)) {
             plan_element(tc, 0, at, plan);
 
@@ -470,7 +470,9 @@ class expr_any final : public statement {
 
         const ident_info src_info{make_ident_info(tc, *operand_path())};
 
-        // note: the plan of the source checked that it is an array
+        // note: the parse checked that the source is an array
+        //       ('expr_path::parse_whole_array')
+
         assert(src_info.is_array());
 
         const std::optional<size_t> src_len{src_info.array_len()};
@@ -917,8 +919,9 @@ class expr_any final : public statement {
             return;
         }
 
-        // a whole array is an argument of an array parameter, e.g. the 'a' of
-        // 'f(a)'; its element type is checked where the call is compiled
+        // a whole array is reported where it is used, as an array that must
+        // be indexed and not by its element type, e.g. the 'cs' of 'x = cs'
+        // with 'cs' an array of instances
         if (const std::optional<place> array{as_place(tc, value)};
             array and array->info.is_array()) {
 
