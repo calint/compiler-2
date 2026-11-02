@@ -1,7 +1,7 @@
 # a constant index in range is an offset known at compile, no index register
 # is computed at run time
 #
-# test-constant-folding.sh checks the instructions of lines marked '# folds'
+# 'listing.py folds' checks the instructions of lines marked '# folds'
 
 let two = 2
 

@@ -442,9 +442,9 @@ The comment lines say what was compiled and how:
 
 ```text
 bind x -> 3            a parameter of an inlined body names its argument
-src: operand           an operand read as it is stored; 'src: constant', 'src:
-                       folded constant' a value known at compile time,
-                       'src: expression' one computed first
+src: operand           an operand read as it is stored; 'src: folded
+                       constant' a value known at compile time, 'src:
+                       expression' one computed first
 copy field 'x'         a part of an instance literal
 zero padding: 4 B      the bytes no field writes
 allocate scratch register -> r15, free scratch register r15

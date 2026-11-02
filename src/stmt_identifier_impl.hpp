@@ -54,12 +54,27 @@ inline stmt_identifier::stmt_identifier(toc& tc, token tk, tokenizer& tz,
     // the path read so far, resolved at its last name
     ident_info prefix{tc.resolve_declared(tk, tk.text())};
 
+    // the root variable covers its whole storage
+    accessed_bytes_ = {
+        .offset{},
+        .size_bytes{prefix.value_size_bytes(tk)},
+    };
+
+    // the field the element names, null for the root
+    const type_field* fld{};
+
     // a path of elements, e.g. 'rooms[i].entities[j].name'
     while (true) {
         assert_indexable(prefix, tz, tk);
-        parse_element(tc, tz, tk);
+        parse_element(tc, tz, tk, fld);
 
         const path_continuation next{read_continuation(tc, tz, prefix)};
+
+        const path_field* const field{std::get_if<path_field>(&next)};
+
+        // only the last element reaches to the end of its array
+        narrow_to_element(tc, prefix,
+                          field == nullptr ? reach : path_reach::element);
 
         // the path so far is resolved as the receiver
         if (const method_tokens* const method{
@@ -69,8 +84,6 @@ inline stmt_identifier::stmt_identifier(toc& tc, token tk, tokenizer& tz,
             method_ = *method;
             break;
         }
-
-        const path_field* const field{std::get_if<path_field>(&next)};
 
         if (field == nullptr) {
             break;
@@ -83,7 +96,12 @@ inline stmt_identifier::stmt_identifier(toc& tc, token tk, tokenizer& tz,
         tk = field->name_tk;
         dotted_path_.push_back('.');
         dotted_path_ += tk.text();
-        prefix = step_field(prefix, tok().text(), tk);
+
+        const type& parent_type{prefix.type_ref()};
+
+        fld = &field_of(prefix, tok().text(), tk);
+        prefix = prefix.field(*fld);
+        narrow_to_field(parent_type, *fld, tk);
     }
 
     // note: a function name is rejected before a path is parsed
@@ -91,8 +109,6 @@ inline stmt_identifier::stmt_identifier(toc& tc, token tk, tokenizer& tz,
     //       a generic function by the resolver here
 
     resolve_type(prefix);
-
-    resolve_accessed_bytes(tc, reach);
 
     tc.record_use(tok().text(), access_path_, use_kind::read);
 
@@ -129,7 +145,7 @@ inline auto stmt_identifier::assert_constant_indexes(
     const toc& tc, const std::string_view what) const -> void {
 
     // note: the parse checked a constant index against its array
-    //       ('resolve_accessed_bytes')
+    //       ('narrow_to_element')
 
     for (const ident_elem& e : elems_) {
         if (not e.index) {
@@ -183,10 +199,26 @@ inline auto stmt_identifier::constant_start_index(const toc& tc) const
     return elems_.back().index_expr().constant_value(tc);
 }
 
-inline auto
-stmt_identifier::narrow_to_element(const std::optional<int64_t> constant_index,
-                                   const ident_info& array_info,
-                                   const path_reach reach) -> void {
+inline auto stmt_identifier::narrow_to_element(const toc& tc,
+                                               const ident_info& array_info,
+                                               const path_reach reach) -> void {
+
+    const ident_elem& elem{elems_.back()};
+
+    if (not elem.index) {
+        return;
+    }
+
+    const std::optional<int64_t> constant_index{
+        elem.index_expr().constant_value(tc),
+    };
+
+    // the checks that use the accessed bytes would report an unknown
+    // element first, e.g. a result that may be unset
+    if (constant_index) {
+        assert_constant_index(array_info, elem.index_expr().tok(), dotted_path_,
+                              *constant_index, reach == path_reach::to_end);
+    }
 
     const std::optional<size_t> array_len{array_info.array_len()};
 
@@ -228,7 +260,9 @@ stmt_identifier::narrow_to_element(const std::optional<int64_t> constant_index,
 }
 
 inline auto stmt_identifier::parse_element(toc& tc, tokenizer& tz,
-                                           const token& tk) -> void {
+                                           const token& tk,
+                                           const type_field* const fld)
+    -> void {
 
     // e.g. the '[i]' of 'rooms[i]', none for 'name'
     const std::optional<token> open_bracket_tk{tz.is_next_char_token('[')};
@@ -236,6 +270,7 @@ inline auto stmt_identifier::parse_element(toc& tc, tokenizer& tz,
     if (not open_bracket_tk) {
         elems_.push_back({
             .name_tk{tk},
+            .field{fld},
             .index{},
         });
 
@@ -254,6 +289,7 @@ inline auto stmt_identifier::parse_element(toc& tc, tokenizer& tz,
 
     elems_.push_back({
         .name_tk{tk},
+        .field{fld},
         .index{
             index_part{
                 .open_bracket_tk{*open_bracket_tk},
@@ -267,60 +303,6 @@ inline auto stmt_identifier::parse_element(toc& tc, tokenizer& tz,
     if (tz.peek_char_after_whitespace() == '[') {
         throw_not_indexable(tk, path_text());
     }
-}
-
-inline auto stmt_identifier::resolve_accessed_bytes(toc& tc,
-                                                    const path_reach reach)
-    -> void {
-
-    for_each_prefix(tc, [&](const prefix_step& step) -> void {
-        const ident_elem& elem{*step.elem};
-
-        if (step.fld == nullptr) {
-            // the root variable covers its whole storage
-            accessed_bytes_ = {
-                .offset{},
-                .size_bytes{step.info->value_size_bytes(tok())},
-            };
-        } else {
-            const size_t field_offset{step.fld->offset};
-
-            access_path_.add_field(field_offset);
-
-            // a field covers its trailing padding so that assigning every
-            // field assigns the whole instance; the last field keeps the
-            // padding after the instance that holds it, like the last element
-            const size_t field_end{
-                step.parent_type
-                    ->next_field_offset(elem.name_tk, elem.name_tk.text())
-                    .value_or(accessed_bytes_.size_bytes),
-            };
-
-            narrow_accessed_bytes(field_offset, field_end - field_offset);
-        }
-
-        if (not elem.index) {
-            return;
-        }
-
-        const path_reach elem_reach{
-            step.is_last ? reach : path_reach::element,
-        };
-
-        const std::optional<int64_t> constant_index{
-            elem.index_expr().constant_value(tc),
-        };
-
-        // the checks that use the accessed bytes would report an unknown
-        // element first, e.g. a result that may be unset
-        if (constant_index) {
-            assert_constant_index(*step.info, elem.index_expr().tok(),
-                                  step.path, *constant_index,
-                                  elem_reach == path_reach::to_end);
-        }
-
-        narrow_to_element(constant_index, *step.info, elem_reach);
-    });
 }
 
 inline auto stmt_identifier::path_address::add_index(const ident_elem& cur_elem,

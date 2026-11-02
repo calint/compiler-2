@@ -33,7 +33,7 @@
 //                'register_names_', the order 'scratch_registers_', the
 //                roles in 'x86_64_target'
 //   operations   'emit_op' chooses the form of an instruction,
-//                'with_lowered_addresses' fits an operand into one,
+//                'lower_address' fits an operand into one,
 //                'multiply_by_constant', 'emit_signed_divide', 'shift'
 //   memory       'copy_block', 'store_bytes', 'zero' unrolled or with
 //                'rep', the bulk operations with 'rsi', 'rdi' and 'rcx'
@@ -101,102 +101,22 @@ class machine_x86_64 final : public machine {
 
     static constexpr std::array<register_names, 16> register_names_{
         {
-            {
-                .qword{"rax"},
-                .dword{"eax"},
-                .word{"ax"},
-                .byte{"al"},
-            },
-            {
-                .qword{"rbx"},
-                .dword{"ebx"},
-                .word{"bx"},
-                .byte{"bl"},
-            },
-            {
-                .qword{"rcx"},
-                .dword{"ecx"},
-                .word{"cx"},
-                .byte{"cl"},
-            },
-            {
-                .qword{"rdx"},
-                .dword{"edx"},
-                .word{"dx"},
-                .byte{"dl"},
-            },
-            {
-                .qword{"rbp"},
-                .dword{"ebp"},
-                .word{"bp"},
-                .byte{"bpl"},
-            },
-            {
-                .qword{"rsi"},
-                .dword{"esi"},
-                .word{"si"},
-                .byte{"sil"},
-            },
-            {
-                .qword{"rdi"},
-                .dword{"edi"},
-                .word{"di"},
-                .byte{"dil"},
-            },
-            {
-                .qword{"rsp"},
-                .dword{"esp"},
-                .word{"sp"},
-                .byte{"spl"},
-            },
-            {
-                .qword{"r8"},
-                .dword{"r8d"},
-                .word{"r8w"},
-                .byte{"r8b"},
-            },
-            {
-                .qword{"r9"},
-                .dword{"r9d"},
-                .word{"r9w"},
-                .byte{"r9b"},
-            },
-            {
-                .qword{"r10"},
-                .dword{"r10d"},
-                .word{"r10w"},
-                .byte{"r10b"},
-            },
-            {
-                .qword{"r11"},
-                .dword{"r11d"},
-                .word{"r11w"},
-                .byte{"r11b"},
-            },
-            {
-                .qword{"r12"},
-                .dword{"r12d"},
-                .word{"r12w"},
-                .byte{"r12b"},
-            },
-            {
-                .qword{"r13"},
-                .dword{"r13d"},
-                .word{"r13w"},
-                .byte{"r13b"},
-            },
-            {
-                .qword{"r14"},
-                .dword{"r14d"},
-                .word{"r14w"},
-                .byte{"r14b"},
-            },
-            {
-                .qword{"r15"},
-                .dword{"r15d"},
-                .word{"r15w"},
-                .byte{"r15b"},
-            },
+            {.qword{"rax"}, .dword{"eax"}, .word{"ax"}, .byte{"al"}},
+            {.qword{"rbx"}, .dword{"ebx"}, .word{"bx"}, .byte{"bl"}},
+            {.qword{"rcx"}, .dword{"ecx"}, .word{"cx"}, .byte{"cl"}},
+            {.qword{"rdx"}, .dword{"edx"}, .word{"dx"}, .byte{"dl"}},
+            {.qword{"rbp"}, .dword{"ebp"}, .word{"bp"}, .byte{"bpl"}},
+            {.qword{"rsi"}, .dword{"esi"}, .word{"si"}, .byte{"sil"}},
+            {.qword{"rdi"}, .dword{"edi"}, .word{"di"}, .byte{"dil"}},
+            {.qword{"rsp"}, .dword{"esp"}, .word{"sp"}, .byte{"spl"}},
+            {.qword{"r8"}, .dword{"r8d"}, .word{"r8w"}, .byte{"r8b"}},
+            {.qword{"r9"}, .dword{"r9d"}, .word{"r9w"}, .byte{"r9b"}},
+            {.qword{"r10"}, .dword{"r10d"}, .word{"r10w"}, .byte{"r10b"}},
+            {.qword{"r11"}, .dword{"r11d"}, .word{"r11w"}, .byte{"r11b"}},
+            {.qword{"r12"}, .dword{"r12d"}, .word{"r12w"}, .byte{"r12b"}},
+            {.qword{"r13"}, .dword{"r13d"}, .word{"r13w"}, .byte{"r13b"}},
+            {.qword{"r14"}, .dword{"r14d"}, .word{"r14w"}, .byte{"r14b"}},
+            {.qword{"r15"}, .dword{"r15d"}, .word{"r15w"}, .byte{"r15b"}},
         },
     };
 
@@ -412,6 +332,8 @@ class machine_x86_64 final : public machine {
                        const std::function_ref<void(const operand&)> emit_count,
                        const copy_request& request) -> void override {
 
+        const operation_scope bulk{*this};
+
         load_bulk_registers(src_loc_tk, indent, element_size_bytes, emit_count,
                             request.src, request.dst);
 
@@ -420,7 +342,6 @@ class machine_x86_64 final : public machine {
         }
 
         assembler_.instruction(indent, op::rep_movsb);
-        release_bulk(src_loc_tk, indent);
     }
 
     auto copy_value(const token& src_loc_tk, const size_t indent,
@@ -439,6 +360,8 @@ class machine_x86_64 final : public machine {
         assert(operation == arithmetic_operator::divide or
                operation == arithmetic_operator::remainder);
 
+        const operation_scope named{*this};
+
         reserve_named_register(src_loc_tk, indent, "rax");
         mov(src_loc_tk, indent, qword_register("rax"), dst);
 
@@ -450,9 +373,6 @@ class machine_x86_64 final : public machine {
         mov(src_loc_tk, indent, dst,
             qword_register(operation == arithmetic_operator::divide ? "rax"
                                                                     : "rdx"));
-
-        release_named_register(src_loc_tk, indent, "rdx");
-        release_named_register(src_loc_tk, indent, "rax");
     }
 
     auto
@@ -461,17 +381,18 @@ class machine_x86_64 final : public machine {
                    const std::function_ref<void(const operand&)> emit_count,
                    const equality_request& request) -> void override {
 
+        const operation_scope bulk{*this};
+
         load_bulk_registers(src_loc_tk, indent, element_size_bytes, emit_count,
                             request.lhs, request.rhs);
 
-        // note: a zero count compares nothing and leaves the flags of 'test',
-        //       ZF set, so it compares equal
+        // note: a zero count compares nothing and leaves the flags of
+        //       'test', ZF set, so it compares equal
 
         emit_op(src_loc_tk, indent, op::test, qword_register("rcx"),
                 qword_register("rcx"));
 
         assembler_.instruction(indent, op::repe_cmpsb);
-        release_bulk(src_loc_tk, indent);
 
         store_condition(src_loc_tk, indent,
                         condition_for_comparison(comparison_operator::equal,
@@ -508,6 +429,8 @@ class machine_x86_64 final : public machine {
         // only 'repe cmpsq' counts in 'rcx'
         const bool is_counted{compares.front() == op::repe_cmpsq};
 
+        const operation_scope bulk{*this};
+
         reserve_named_register(src_loc_tk, indent, "rsi");
         reserve_named_register(src_loc_tk, indent, "rdi");
 
@@ -540,13 +463,6 @@ class machine_x86_64 final : public machine {
         if (not end_label.empty()) {
             assembler_.label(indent, end_label);
         }
-
-        if (is_counted) {
-            release_named_register(src_loc_tk, indent, "rcx");
-        }
-
-        release_named_register(src_loc_tk, indent, "rdi");
-        release_named_register(src_loc_tk, indent, "rsi");
 
         store_condition(src_loc_tk, indent,
                         condition_for_comparison(comparison_operator::equal,
@@ -667,6 +583,8 @@ class machine_x86_64 final : public machine {
             return;
         }
 
+        const operation_scope named{*this};
+
         reserve_named_register(src_loc_tk, indent, "rcx");
 
         // note: a count wider than the value is rejected as narrowed
@@ -681,8 +599,6 @@ class machine_x86_64 final : public machine {
 
         emit_op(src_loc_tk, indent, code, dst,
                 sized_register("rcx", size_byte_));
-
-        release_named_register(src_loc_tk, indent, "rcx");
     }
 
     // an immediate store is one instruction without a register while a copy
@@ -771,6 +687,8 @@ class machine_x86_64 final : public machine {
         -> void override {
 
         if (size_bytes > threshold_for_rep_stos_size_bytes_) {
+            const operation_scope named{*this};
+
             reserve_named_register(src_loc_tk, indent, "rax");
             reserve_named_register(src_loc_tk, indent, "rdi");
             reserve_named_register(src_loc_tk, indent, "rcx");
@@ -784,9 +702,6 @@ class machine_x86_64 final : public machine {
                 immediate(size_bytes));
 
             assembler_.instruction(indent, op::rep_stosb);
-            release_named_register(src_loc_tk, indent, "rcx");
-            release_named_register(src_loc_tk, indent, "rdi");
-            release_named_register(src_loc_tk, indent, "rax");
 
             return;
         }
@@ -1017,6 +932,8 @@ class machine_x86_64 final : public machine {
         return std::in_range<int32_t>(value.displacement());
     }
 
+    // the registers of 'rep movsb' and 'repe cmpsb', freed by the
+    // 'operation_scope' of the caller
     [[nodiscard]] auto begin_bulk(const token& src_loc_tk, const size_t indent)
         -> operand {
 
@@ -1286,6 +1203,7 @@ class machine_x86_64 final : public machine {
         const std::function_ref<void(const operand&)> load_source_address)
         -> void {
 
+        const operation_scope bulk{*this};
         const operand count{begin_bulk(src_loc_tk, indent)};
 
         load_source_address(qword_register("rsi"));
@@ -1293,8 +1211,6 @@ class machine_x86_64 final : public machine {
         mov(src_loc_tk, indent, count, immediate(size_bytes));
 
         assembler_.instruction(indent, op::rep_movsb);
-
-        release_bulk(src_loc_tk, indent);
     }
 
     // writes the instruction with the operands as they are
@@ -1310,43 +1226,6 @@ class machine_x86_64 final : public machine {
         assembler_.label(0, exit_label_);
         assembler_.instruction(1, op::mov, "rax", syscall_exit_);
         assembler_.instruction(1, op::syscall);
-    }
-
-    // an immediate that does not fit the instruction goes through a register
-    auto emit_immediate_op(const token& src_loc_tk, const size_t indent,
-                           const op code, const operand& dst_op,
-                           const operand& src_op) -> void {
-
-        if (not needs_immediate_register(code, dst_op, src_op)) {
-            emit(indent, code, dst_op, src_op);
-            return;
-        }
-
-        const operand reg{
-            alloc_scratch_register(src_loc_tk, indent, builtins().i64),
-        };
-
-        emit(indent, op::mov, reg, src_op);
-        emit(indent, code, dst_op, reg);
-        free_scratch_register(src_loc_tk, indent, reg);
-    }
-
-    // x86 has no memory to memory form, the source goes through a register of
-    // the destination width
-    auto emit_memory_to_memory_op(const token& src_loc_tk, const size_t indent,
-                                  const op code, const operand& dst_op,
-                                  const operand& src_op) -> void {
-
-        const operand reg{
-            alloc_scratch_register(
-                src_loc_tk, indent,
-                builtin_type_for_size_bytes(dst_op.type_ref().size_bytes())),
-        };
-
-        mov(src_loc_tk, indent, reg, src_op);
-        emit(indent, code, dst_op, reg);
-
-        free_scratch_register(src_loc_tk, indent, reg);
     }
 
     // the text of a message in read-only data
@@ -1383,22 +1262,29 @@ class machine_x86_64 final : public machine {
         if (not address_is_encodable(dst_op) or
             not address_is_encodable(src_op)) {
 
-            with_lowered_addresses(
-                src_loc_tk, indent, dst_op, src_op,
-                [&](const operand& dst, const operand& src) -> void {
-                    emit_op(src_loc_tk, indent, code, dst, src);
-                });
+            // registers the operands refer to must not be picked for lowering
+            const operation_scope scope{*this, dst_op, src_op};
+
+            const operand dst{lower_address(src_loc_tk, indent, dst_op)};
+            const operand src{lower_address(src_loc_tk, indent, src_op)};
+
+            emit_op(src_loc_tk, indent, code, dst, src);
 
             return;
         }
 
-        if (src_op.is_immediate()) {
-            emit_immediate_op(src_loc_tk, indent, code, dst_op, src_op);
+        if (src_op.is_immediate() and
+            not needs_immediate_register(code, dst_op, src_op)) {
+
+            emit(indent, code, dst_op, src_op);
             return;
         }
 
-        if (dst_op.is_memory() and src_op.is_memory()) {
-            emit_memory_to_memory_op(src_loc_tk, indent, code, dst_op, src_op);
+        // a wide immediate, and memory to memory, which x86 has no form for
+        if (src_op.is_immediate() or
+            (dst_op.is_memory() and src_op.is_memory())) {
+
+            emit_through_register(src_loc_tk, indent, code, dst_op, src_op);
             return;
         }
 
@@ -1661,15 +1547,31 @@ class machine_x86_64 final : public machine {
         free_scratch_register(src_loc_tk, indent, scratch_reg);
     }
 
+    // the source goes through a register of the destination width, which
+    // sign extends it
+    auto emit_through_register(const token& src_loc_tk, const size_t indent,
+                               const op code, const operand& dst_op,
+                               const operand& src_op) -> void {
+
+        const operand reg{
+            alloc_scratch_register(
+                src_loc_tk, indent,
+                builtin_type_for_size_bytes(dst_op.type_ref().size_bytes())),
+        };
+
+        mov(src_loc_tk, indent, reg, src_op);
+        emit(indent, code, dst_op, reg);
+
+        free_scratch_register(src_loc_tk, indent, reg);
+    }
+
     auto emit_unary(const token& src_loc_tk, const size_t indent, const op code,
                     const operand& value) -> void {
 
-        with_lowered_addresses(
-            src_loc_tk, indent, value, operand{},
-            [&](const operand& lowered,
-                [[maybe_unused]] const operand& empty) -> void {
-                assembler_.instruction(indent, code, to_argument(lowered));
-            });
+        const operation_scope scope{*this, value};
+        const operand lowered{lower_address(src_loc_tk, indent, value)};
+
+        assembler_.instruction(indent, code, to_argument(lowered));
     }
 
     // the source is sign extended to the destination width
@@ -1701,7 +1603,7 @@ class machine_x86_64 final : public machine {
             return;
         }
 
-        emit_memory_to_memory_op(src_loc_tk, indent, code, dst_op, src_op);
+        emit_through_register(src_loc_tk, indent, code, dst_op, src_op);
     }
 
     template <std::integral value_t>
@@ -1728,14 +1630,15 @@ class machine_x86_64 final : public machine {
     auto lea(const token& src_loc_tk, const size_t indent, const operand& dst,
              const operand& address) -> void {
 
-        with_lowered_addresses(src_loc_tk, indent, dst, address,
-                               [&](const operand& lowered_dst,
-                                   const operand& lowered_address) -> void {
-                                   assembler_.instruction(
-                                       indent, op::lea,
-                                       to_argument(lowered_dst),
-                                       to_address(lowered_address));
-                               });
+        // note: 'lea' writes only registers, 'address_of' moves through one
+
+        assert(dst.is_register());
+
+        const operation_scope scope{*this, dst, address};
+        const operand lowered{lower_address(src_loc_tk, indent, address)};
+
+        assembler_.instruction(indent, op::lea, to_argument(dst),
+                               to_address(lowered));
     }
 
     auto load_bulk_addresses(const token& src_loc_tk, const size_t indent,
@@ -1876,12 +1779,6 @@ class machine_x86_64 final : public machine {
         return make_register_operand(name, builtins().i64);
     }
 
-    auto release_bulk(const token& src_loc_tk, const size_t indent) -> void {
-        release_named_register(src_loc_tk, indent, "rcx");
-        release_named_register(src_loc_tk, indent, "rdi");
-        release_named_register(src_loc_tk, indent, "rsi");
-    }
-
     // a register as its part of the width, a memory operand as an access
     // of the width
     [[nodiscard]] auto sized_operand(const operand& value,
@@ -1947,14 +1844,11 @@ class machine_x86_64 final : public machine {
     auto store_condition(const token& src_loc_tk, const size_t indent,
                          const condition cc, const operand& dst) -> void {
 
+        const operation_scope scope{*this, dst};
         const operand byte{sized_operand(dst, size_byte_)};
+        const operand lowered{lower_address(src_loc_tk, indent, byte)};
 
-        with_lowered_addresses(
-            src_loc_tk, indent, byte, operand{},
-            [&](const operand& lowered,
-                [[maybe_unused]] const operand& empty) -> void {
-                assembler_.setcc(indent, cc, to_argument(lowered));
-            });
+        assembler_.setcc(indent, cc, to_argument(lowered));
     }
 
     // a negative value is out of bounds
@@ -1963,26 +1857,6 @@ class machine_x86_64 final : public machine {
 
         emit_op(src_loc_tk, indent, op::test, value, value);
         branch_to_failure(src_loc_tk, indent, condition::s, bounds_failure_);
-    }
-
-    auto with_lowered_addresses(
-        const token& src_loc_tk, const size_t indent, const operand& dst,
-        const operand& src,
-        const std::function_ref<void(const operand&, const operand&)> emit)
-        -> void {
-
-        if (address_is_encodable(dst) and address_is_encodable(src)) {
-            emit(dst, src);
-            return;
-        }
-
-        // registers the operands refer to must not be picked for lowering
-        const operation_scope scope{*this, dst, src};
-
-        const operand lowered_dst{lower_address(src_loc_tk, indent, dst)};
-        const operand lowered_src{lower_address(src_loc_tk, indent, src)};
-
-        emit(lowered_dst, lowered_src);
     }
 
     //

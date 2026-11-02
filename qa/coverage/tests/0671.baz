@@ -1,7 +1,7 @@
 # 'array_length' is a constant at compile: comparisons, counts, indexes and
 # arguments use its value
 #
-# test-constant-folding.sh checks the instructions of lines marked '# folds'
+# 'listing.py folds' checks the instructions of lines marked '# folds'
 
 func assert(err, expr bool) { if not expr exit(err) }
 

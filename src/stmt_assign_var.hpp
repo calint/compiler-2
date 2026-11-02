@@ -70,7 +70,12 @@ class stmt_assign_var final : public statement {
 
         const ident_info dst_info{make_ident_info(tc, stmt_ident_)};
 
-        assert_parts_not_clobbered(tc, dst_storage, dst_info.array_len());
+        // note: the plan that is checked is the plan that is emitted
+
+        write_plan plan;
+        expr_.plan_writes(tc, part_location{}, dst_info.array_len(), plan);
+
+        assert_parts_not_clobbered(tc, dst_storage, plan);
 
         // note: the parse rejected a constant destination
         assert(not dst_info.is_const());
@@ -96,7 +101,7 @@ class stmt_assign_var final : public statement {
                                  }),
         };
 
-        expr_.compile(tc, indent, var_dst);
+        emit_write_plan(tc, indent, plan, var_dst);
     }
 
     // the value is read before the destination is written
@@ -126,43 +131,6 @@ class stmt_assign_var final : public statement {
     [[nodiscard]] auto value() const -> const expr_any& { return expr_; }
 
   private:
-    // the value is written part by part, so a part must not read what is
-    // already written, e.g. the 'p.x' of 'p = {p.y, p.x}'; 'unsized_count'
-    // is the size of an unsized array destination
-    auto assert_parts_not_clobbered(
-        const toc& tc, const std::optional<storage_path>& dst,
-        const std::optional<size_t> unsized_count) const -> void {
-
-        // note: a value in a register is written as one part that no other
-        //       name reaches
-
-        if (not dst) {
-            return;
-        }
-
-        write_plan plan;
-        expr_.plan_writes(tc, part_location{}, unsized_count, plan);
-
-        // the parts written by the steps before the current one
-        std::vector<storage_path> written;
-
-        for (const write_step& step : plan) {
-            if (const value_write* const value{
-                    std::get_if<value_write>(&step.action),
-                }) {
-
-                assert_no_read_of_written_part(tc, *value->item, written);
-            }
-
-            for (const access_path& part : step.covered) {
-                written.push_back({
-                    .root{dst->root},
-                    .path{dst->path.extended_by(part)},
-                });
-            }
-        }
-    }
-
     //
     // statics
     //
@@ -225,6 +193,40 @@ class stmt_assign_var final : public statement {
                                 in_quotes(effect.name))};
             }
         });
+    }
+
+    // the value is written part by part as 'plan' says, so a part must not
+    // read what is already written, e.g. the 'p.x' of 'p = {p.y, p.x}'
+    static auto
+    assert_parts_not_clobbered(const toc& tc,
+                               const std::optional<storage_path>& dst,
+                               const write_plan& plan) -> void {
+
+        // note: a value in a register is written as one part that no other
+        //       name reaches
+
+        if (not dst) {
+            return;
+        }
+
+        // the parts written by the steps before the current one
+        std::vector<storage_path> written;
+
+        for (const write_step& step : plan) {
+            if (const value_write* const value{
+                    std::get_if<value_write>(&step.action),
+                }) {
+
+                assert_no_read_of_written_part(tc, *value->item, written);
+            }
+
+            for (const access_path& part : step.covered) {
+                written.push_back({
+                    .root{dst->root},
+                    .path{dst->path.extended_by(part)},
+                });
+            }
+        }
     }
 
     // the write is recorded before the value parses; the value is parsed as

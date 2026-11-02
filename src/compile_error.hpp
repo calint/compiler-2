@@ -241,16 +241,6 @@ inline constexpr std::string_view missing_close_paren_text{
         src_loc_tk, std::format("array {} must be indexed", in_quotes(name))};
 }
 
-// a call where an array is expected, e.g. the 'f()' of 'array_length(f())',
-// 'callee' names the function; a result is never an array
-[[noreturn]] inline auto throw_call_not_array(const token& src_loc_tk,
-                                              const std::string_view callee)
-    -> void {
-
-    throw compile_error{src_loc_tk, std::format("a call of {} is not an array",
-                                                in_quotes(callee))};
-}
-
 // a call of a function without a result where a value is needed, e.g. 'x =
 // array_copy(a, b, 1)'
 [[noreturn]] inline auto throw_no_value(const token& call_tk,

@@ -677,7 +677,7 @@ class expr_any final : public statement {
         // array, e.g. 'i8[]{1, 2}' or 'a' of 'var b = a'
 
         // e.g. "hello" fills the start of an 'i8' array
-        if (tz.is_peek_char('"')) {
+        if (tz.peek_char_after_whitespace() == '"') {
             const token string_tk{tz.next_token()};
 
             array_count_ = string_array_count(tc.builtins().i8(), string_tk, tp,
@@ -1207,7 +1207,7 @@ inline stmt_array_size::stmt_array_size(toc& tc, tokenizer& tz)
 
     set_type(tc.builtins().default_type());
 
-    if (tz.is_peek_char(']')) {
+    if (tz.peek_char_after_whitespace() == ']') {
         return;
     }
 

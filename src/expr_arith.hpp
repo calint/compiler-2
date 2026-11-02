@@ -50,15 +50,6 @@ class arith_steps final {
     // statics
     //
 
-    // a constant element whose operator the passes do not regroup, a divisor
-    // or a shift count; a regroupable constant element is merged, or kept as
-    // it is under the overflow check, where the passes are off, and is then
-    // emitted like a merged one, so a constant that changes nothing does not
-    // reach the backend
-    [[nodiscard]] static auto has_fixed_role(const step& s) -> bool {
-        return not is_merged(s) and not is_regroupable(s.op);
-    }
-
     // the constant that leaves a value unchanged
     [[nodiscard]] static auto identity_of(const arithmetic_operator op)
         -> int64_t {
@@ -852,11 +843,7 @@ class expr_arith final : public statement {
 
             assert(first.op != arithmetic_operator::subtract);
 
-            const token& src_loc_tk{
-                arith_steps::is_merged(first) ? tok() : first.element->tok(),
-            };
-
-            compile_constant(tc, indent, src_loc_tk, dst, *first.value,
+            compile_constant(tc, indent, step_token(first), dst, *first.value,
                              first.folded_source);
 
             return;
@@ -927,11 +914,10 @@ class expr_arith final : public statement {
         x.free_scratch_register(tok(), indent, reg);
     }
 
-    // a step with a value: a constant element with a fixed role, a divisor or
-    // a shift count, e.g. 'x / 3' or 'x << k', its value folded by
-    // 'make_steps'; or a regroupable constant or a product of merged divisors,
-    // e.g. the '+ 8' the passes merged of 'a + 3 + 5', which may change
-    // nothing, e.g. 'b + 1 - 1'
+    // a step with a value: a constant element, e.g. the '3' of 'x / 3', its
+    // value folded by 'make_steps', or constants the passes merged, e.g. the
+    // '+ 8' of 'a + 3 + 5'; a constant that changes nothing does not reach the
+    // backend, e.g. 'x / 1' or 'b + 1 - 1'
     auto emit_constant_step(toc& tc, const size_t indent,
                             const destination& dst, const step& s) const
         -> void {
@@ -941,40 +927,14 @@ class expr_arith final : public statement {
 
         const int64_t step_value{*s.value};
 
+        const token& src_loc_tk{step_token(s)};
+
+        assert_constant_operand(src_loc_tk, s.op, step_value, dst.type_ref());
+
         machine& x{tc.machine()};
 
-        if (arith_steps::has_fixed_role(s)) {
-            const statement& element{*s.element};
-
-            x.comment(element.tok(), indent,
-                      statement::trimmed_source(element, dst.text(),
-                                                source_text(s.op)));
-
-            if (element.is_computed()) {
-                x.comment(element.tok(), indent, "src: folded constant {}",
-                          in_quotes(statement::trimmed_source(element)));
-            } else {
-                x.comment(element.tok(), indent, "src: constant");
-            }
-
-            assert_constant_operand(element.tok(), s.op, step_value,
-                                    dst.type_ref());
-
-            // e.g. 'x / 1' or 'x >> 0'
-            if (traits_of(s.op).identity == step_value) {
-                x.comment(element.tok(), indent, "changes nothing");
-                return;
-            }
-
-            emit_operation(tc, indent, element.tok(), s.op, dst,
-                           constant_operand(dst, step_value),
-                           machine::factor_use::read_only);
-
-            return;
-        }
-
-        if (step_value == arith_steps::identity_of(s.op)) {
-            x.comment(tok(), indent,
+        if (traits_of(s.op).identity == step_value) {
+            x.comment(src_loc_tk, indent,
                       "src: folded constant {} is {} and changes nothing",
                       in_quotes(s.folded_source), step_value);
 
@@ -995,13 +955,14 @@ class expr_arith final : public statement {
 
         const int64_t value{is_subtracted ? -step_value : step_value};
 
-        x.comment(tok(), indent, "{} {} {}", dst.text(), source_text(op),
+        x.comment(src_loc_tk, indent, "{} {} {}", dst.text(), source_text(op),
                   value);
 
-        x.comment(tok(), indent, "src: folded constant {}",
+        x.comment(src_loc_tk, indent, "src: folded constant {}",
                   in_quotes(s.folded_source));
 
-        emit_operation(tc, indent, tok(), op, dst, constant_operand(dst, value),
+        emit_operation(tc, indent, src_loc_tk, op, dst,
+                       constant_operand(dst, value),
                        machine::factor_use::read_only);
     }
 
@@ -1139,6 +1100,11 @@ class expr_arith final : public statement {
         close_paren_tk_ = tz.is_next_char_token(')');
 
         return close_paren_tk_.has_value();
+    }
+
+    // a merged constant has no element and is located at the list
+    [[nodiscard]] auto step_token(const step& s) const -> const token& {
+        return arith_steps::is_merged(s) ? tok() : s.element->tok();
     }
 
     // the elements are operands of the operators of the list or of its unary

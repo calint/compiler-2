@@ -1,0 +1,9 @@
+# a path is checked left to right: the constant index past the end is
+# reported before the field after it that the type does not have
+
+type pt { x, y }
+
+func main() {
+    var a = pt[4]
+    exit(a[9].zz)
+}

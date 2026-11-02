@@ -243,26 +243,21 @@ class stmt_if final : public statement {
     // returned, 'else' ends it with the else code, anything else is a new
     // statement
     auto parse_else(toc& tc, tokenizer& tz) -> std::optional<else_if_tokens> {
-        const token else_tk{tz.next_token()};
+        const std::optional<token> else_tk{tz.is_next_word_token("else")};
 
-        if (not else_tk.is_text("else")) {
-            tz.put_back_token(else_tk);
+        if (not else_tk) {
             return std::nullopt;
         }
 
-        const token if_tk{tz.next_token()};
-
-        if (if_tk.is_text("if")) {
+        if (const std::optional<token> if_tk{tz.is_next_word_token("if")}) {
             return else_if_tokens{
-                .else_tk{else_tk},
-                .if_tk{if_tk},
+                .else_tk{*else_tk},
+                .if_tk{*if_tk},
             };
         }
 
-        tz.put_back_token(if_tk);
-
         else_ = {
-            .else_tk{else_tk},
+            .else_tk{*else_tk},
             .code{tc, tz},
         };
 

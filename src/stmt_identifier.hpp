@@ -36,6 +36,7 @@
 //
 //   'assert_constant_index', 'constant_range',
 //   'assert_constant_range'  the constant checks of an index and a range
+//   'throw_call_not_array'   a call where an array is expected
 //   'stmt_identifier'        the path node; its members that use 'expr_any'
 //                            are in 'stmt_identifier_impl.hpp'
 //   'place', 'make_ident_info', 'assert_not_whole_array',
@@ -176,6 +177,16 @@ class stmt_identifier;
                                                  const stmt_identifier& ident)
     -> ident_info;
 
+// a call where an array is expected, e.g. the 'f()' of 'array_length(f())',
+// 'callee' names the function; a result is never an array
+[[noreturn]] inline auto throw_call_not_array(const token& src_loc_tk,
+                                              const std::string_view callee)
+    -> void {
+
+    throw compile_error{src_loc_tk, std::format("a call of {} is not an array",
+                                                in_quotes(callee))};
+}
+
 // a path of names, fields and indexes, e.g. 'w.rooms[i].items[j].x', also the
 // receiver of a method call, or a literal, e.g. '3' or 'true'; it is a place
 // ('as_place') when it reaches storage: a variable, a field or an element; the
@@ -200,6 +211,8 @@ class stmt_identifier final : public statement {
 
     struct ident_elem {
         token name_tk;
+        // the field it names in the instance before it, null for the root
+        const type_field* field{};
         // none without an index, e.g. 'name'
         std::optional<index_part> index;
 
@@ -222,10 +235,6 @@ class stmt_identifier final : public statement {
         std::string_view path;
         // what 'path' resolves to
         const ident_info* info{};
-        // the instance that holds the field, null for the root
-        const type* parent_type{};
-        // the field in 'parent_type', null for the root
-        const type_field* fld{};
         bool is_last{};
     };
 
@@ -583,8 +592,7 @@ class stmt_identifier final : public statement {
         }
 
         const std::string method_name{
-            method_name_of(resolve_path(tc).type_ref().name(),
-                           method_->name_tk.text()),
+            method_name_of(get_type().name(), method_->name_tk.text()),
         };
 
         const char next{tz.peek_char_after_whitespace()};
@@ -657,11 +665,13 @@ class stmt_identifier final : public statement {
         for_each_prefix(tc, [&](const prefix_step& step) -> void {
             const ident_info& cur_info{*step.info};
 
-            if (step.fld == nullptr) {
+            const type_field* const fld{step.elem->field};
+
+            if (fld == nullptr) {
                 address = builder.start(cur_info);
             } else {
                 // field offsets stay in the operand, not in the base register
-                address.increment_offset(address_offset(step.fld->offset));
+                address.increment_offset(address_offset(fld->offset));
             }
 
             value_type = &cur_info.type_ref();
@@ -1058,13 +1068,8 @@ class stmt_identifier final : public statement {
         for (size_t i{}; i < elems_.size(); ++i) {
             const ident_elem& elem{elems_.at(i)};
 
-            const type* parent_type{};
-            const type_field* fld{};
-
-            if (i != 0) {
-                parent_type = &info.type_ref();
-                fld = &parent_type->field(elem.name_tk, elem.name_tk.text());
-                info = info.field(*fld);
+            if (elem.field != nullptr) {
+                info = info.field(*elem.field);
                 path.push_back('.');
                 path += elem.name_tk.text();
             }
@@ -1073,8 +1078,6 @@ class stmt_identifier final : public statement {
                 .elem{&elem},
                 .path{path},
                 .info{&info},
-                .parent_type{parent_type},
-                .fld{fld},
                 .is_last{i == elems_.size() - 1},
             });
         }
@@ -1099,17 +1102,31 @@ class stmt_identifier final : public statement {
         };
     }
 
-    // an unknown element leaves the whole array as the accessed range and
-    // adds a run-time index to the path
-    auto narrow_to_element(std::optional<int64_t> constant_index,
-                           const ident_info& array_info, path_reach reach)
-        -> void;
+    // the index of the last element parsed, 'array_info' its array; an
+    // unknown element leaves the whole array as the accessed range and adds a
+    // run-time index to the path
+    auto narrow_to_element(const toc& tc, const ident_info& array_info,
+                           path_reach reach) -> void;
 
-    // a path element with an optional '[index]'
-    auto parse_element(toc& tc, tokenizer& tz, const token& tk) -> void;
+    // a field covers its trailing padding so that assigning every field
+    // assigns the whole instance; the last field keeps the padding after the
+    // instance that holds it, like the last element
+    auto narrow_to_field(const type& parent_type, const type_field& fld,
+                         const token& name_tk) -> void {
 
-    // 'reach' is that of the last element
-    auto resolve_accessed_bytes(toc& tc, path_reach reach) -> void;
+        access_path_.add_field(fld.offset);
+
+        const size_t field_end{
+            parent_type.next_field_offset(name_tk, name_tk.text())
+                .value_or(accessed_bytes_.size_bytes),
+        };
+
+        narrow_accessed_bytes(fld.offset, field_end - fld.offset);
+    }
+
+    // a path element with an optional '[index]', 'fld' the field it names
+    auto parse_element(toc& tc, tokenizer& tz, const token& tk,
+                       const type_field* fld) -> void;
 
     // the path is an array only while its last element is not indexed
     auto resolve_type(const ident_info& info) -> void {
@@ -1151,6 +1168,23 @@ class stmt_identifier final : public statement {
         toc& tc, const size_t indent, const expr_any& index_expr,
         const operand& index_register, const array_shape& shape,
         const std::optional<size_t>& range_count) -> int64_t;
+
+    // the field 'name_tk' of what the path up to it resolved to, a constant
+    // named 'root' has none
+    [[nodiscard]] static auto field_of(const ident_info& prefix,
+                                       const std::string_view root,
+                                       const token& name_tk)
+        -> const type_field& {
+
+        if (not prefix.is_const()) {
+            return prefix.type_ref().field(name_tk, name_tk.text());
+        }
+
+        // e.g. '1.x', ''a'.x' or 'k.x' of 'let k = 3'
+        throw compile_error{
+            name_tk, std::format("{} is a constant, it has no field {}",
+                                 in_quotes(root), in_quotes(name_tk.text()))};
+    }
 
     // 'name_tk' after the path so far names a method of the path's type
     [[nodiscard]] static auto is_method_name(const toc& tc, const tokenizer& tz,
@@ -1200,7 +1234,7 @@ class stmt_identifier final : public statement {
         }
 
         // e.g. the '$' of 'p.$', which names no field or method; a constant
-        // has no field of any name ('step_field')
+        // has no field of any name ('field_of')
         if (not prefix.is_const()) {
             toc::assert_valid_name(next_tk);
         }
@@ -1217,23 +1251,6 @@ class stmt_identifier final : public statement {
             .dot_tk{*dot_tk},
             .name_tk{next_tk},
         };
-    }
-
-    // the field 'name_tk' of what the path up to it resolved to, a constant
-    // named 'root' has none
-    [[nodiscard]] static auto step_field(const ident_info& prefix,
-                                         const std::string_view root,
-                                         const token& name_tk) -> ident_info {
-
-        if (not prefix.is_const()) {
-            return prefix.field(
-                prefix.type_ref().field(name_tk, name_tk.text()));
-        }
-
-        // e.g. '1.x', ''a'.x' or 'k.x' of 'let k = 3'
-        throw compile_error{
-            name_tk, std::format("{} is a constant, it has no field {}",
-                                 in_quotes(root), in_quotes(name_tk.text()))};
     }
 
     // a '[' after 'path', which is not an array

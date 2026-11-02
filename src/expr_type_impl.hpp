@@ -105,7 +105,7 @@ inline expr_type::expr_type(toc& tc, tokenizer& tz, const type& tp,
     }
 
     // e.g. the '(' of 'q = (p)', parentheses group numbers
-    if (tz.is_peek_char('(')) {
+    if (tz.peek_char_after_whitespace() == '(') {
         throw compile_error{
             tz, std::format("a value in parentheses is a number, not {} of "
                             "{}",
@@ -253,20 +253,18 @@ inline auto expr_type::parse_copy_source(toc& tc, tokenizer& tz,
 
     const stmt_identifier& ident{*operand_path()};
 
-    const ident_info src_info{make_ident_info(tc, ident)};
-
     // note: a whole array for an instance is rejected before its type, as
     //       for a number: by the plan of an assignment
     //       ('assert_copy_source_shape') or by the call it is an argument of,
     //       which checks the type of an array parameter
 
-    if (src_info.is_array()) {
+    if (ident.is_array()) {
         return;
     }
 
-    if (not tp.is_same(src_info.type_ref())) {
+    if (not tp.is_same(ident.get_type())) {
         throw_type_mismatch(ident.last_token(), tp.name(),
-                            src_info.type_ref().name());
+                            ident.get_type().name());
     }
 }
 
@@ -289,14 +287,17 @@ inline auto expr_type::assert_call_type() const -> void {
     throw_type_mismatch(tok(), tp.name(), result_type.name());
 }
 
-inline auto expr_type::source_to(std::ostream& os) const -> void {
-    if (const stmt_call* const call{call_source()}) {
-        call->source_to(os);
-        return;
+inline auto expr_type::copy_or_call() const -> const statement* {
+    if (const expr_path* const path{std::get_if<expr_path>(&value_)}) {
+        return path;
     }
 
-    if (const expr_path* const path{std::get_if<expr_path>(&value_)}) {
-        path->source_to(os);
+    return call_source();
+}
+
+inline auto expr_type::source_to(std::ostream& os) const -> void {
+    if (const statement* const value{copy_or_call()}) {
+        value->source_to(os);
         return;
     }
 
@@ -319,8 +320,8 @@ inline auto expr_type::source_to(std::ostream& os) const -> void {
 
 // a copy is of its source, e.g. the 'p' of 'q = p'
 inline auto expr_type::operand_path() const -> const stmt_identifier* {
-    const expr_path* const path{std::get_if<expr_path>(&value_)};
-    return path != nullptr ? path->operand_path() : nullptr;
+    const statement* const value{copy_or_call()};
+    return value != nullptr ? value->operand_path() : nullptr;
 }
 
 inline auto expr_type::compile(toc& tc, const size_t indent,
@@ -425,18 +426,9 @@ inline auto expr_type::assert_copy_source_shape(const toc& tc) const -> void {
 inline auto expr_type::visit_operands(const operand_visitor visitor) const
     -> void {
 
-    if (const stmt_identifier* const ident{operand_path()}) {
+    if (const statement* const value{copy_or_call()}) {
         visitor({
-            .node{ident},
-            .written_place{},
-        });
-
-        return;
-    }
-
-    if (const stmt_call* const call{call_source()}) {
-        visitor({
-            .node{call},
+            .node{value},
             .written_place{},
         });
 

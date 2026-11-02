@@ -201,7 +201,7 @@ class initializer_declaration final {
         const token tk{tz.next_token()};
 
         // e.g. 'var p = {1, 2}', a destination gives the type of '{...}'
-        if (tk.is_none() and tz.is_peek_char('{')) {
+        if (tk.is_none() and tz.peek_char_after_whitespace() == '{') {
             throw compile_error{
                 tk, std::format("the type of {} is not known, write it before "
                                 "the '{{'",

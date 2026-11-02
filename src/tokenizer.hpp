@@ -123,21 +123,10 @@ class tokenizer final {
                                          const std::string_view message)
         -> token {
 
-        return expect_char_token_after(next_token_position(), ch, message);
-    }
-
-    // the token of the character 'ch' when it is next, otherwise an error at
-    // 'src_loc_tk', e.g. the name before a missing '(', since the next token
-    // can be on a later line
-    [[nodiscard]] auto expect_char_token_after(const token& src_loc_tk,
-                                               const char ch,
-                                               const std::string_view message)
-        -> token {
-
         const std::optional<token> tk{is_next_char_token(ch)};
 
         if (not tk) {
-            throw compile_error{src_loc_tk, std::string{message}};
+            throw compile_error{*this, std::string{message}};
         }
 
         return *tk;
@@ -176,8 +165,19 @@ class tokenizer final {
         return token{file_ix_, ws_before, bgn_ix, txt, ws_after, at_line};
     }
 
-    [[nodiscard]] auto is_peek_char(const char ch) const -> bool {
-        return not is_eos() and src_.at(char_ix_) == ch;
+    // the token of the word 'word' when it is next, the cursor stays when not,
+    // e.g. the 'else' after a branch
+    [[nodiscard]] auto is_next_word_token(const std::string_view word)
+        -> std::optional<token> {
+
+        const token tk{next_token()};
+
+        if (not tk.is_text(word)) {
+            put_back_token(tk);
+            return std::nullopt;
+        }
+
+        return tk;
     }
 
     // a prefix operator follows, e.g. the '-' of '-x'
@@ -451,6 +451,10 @@ class tokenizer final {
         skip_char();
 
         return true;
+    }
+
+    [[nodiscard]] auto is_peek_char(const char ch) const -> bool {
+        return not is_eos() and src_.at(char_ix_) == ch;
     }
 
     [[nodiscard]] auto is_token_text_at_source(const token& tk) const -> bool {

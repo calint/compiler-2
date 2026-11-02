@@ -6535,3 +6535,9 @@ if [[ $MACHINE != x86_64 ]]; then SRC=2060 && COMPERR; fi
 
 # parentheses where an array goes
 SRC=2061 && COMPERR
+
+# a path is checked left to right
+SRC=2062 && COMPERR
+
+# the overflow of a constant step reports the line of the constant
+SRC=2063 && EXP=249 && OPTS="--checks=overflow,line --reproduce-source" RUN_ERR

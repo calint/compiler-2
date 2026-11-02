@@ -1,7 +1,7 @@
 # constant elements of an arithmetic list fold at compile at the width of the
 # destination and give the same values as the run-time computation
 #
-# test-constant-folding.sh checks the instructions of lines marked '# folds'
+# 'listing.py folds' checks the instructions of lines marked '# folds'
 
 let c = 4
 

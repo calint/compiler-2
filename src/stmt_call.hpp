@@ -1485,7 +1485,10 @@ class builtin_arguments final {
         return args_.at(index);
     }
 
-    [[nodiscard]] auto count() const -> size_t { return args_.size(); }
+    // null past the last argument, e.g. the count that 'read(0, b)' leaves out
+    [[nodiscard]] auto find(const size_t index) const -> const expr_any* {
+        return index < args_.size() ? &args_.at(index) : nullptr;
+    }
 
     auto source_to(std::ostream& os) const -> void {
         open_paren_tk_.source_to(os);
@@ -2341,9 +2344,15 @@ class stmt_call final : public statement {
 
         set_type(callee().result_type());
 
-        open_paren_tk_ = tz.expect_char_token_after(
-            callee_name_token(), '(',
-            std::format("expected '(' after {}", what));
+        const std::optional<token> paren_tk{tz.is_next_char_token('(')};
+
+        // at the name, the next token can be on a later line
+        if (not paren_tk) {
+            throw compile_error{callee_name_token(),
+                                std::format("expected '(' after {}", what)};
+        }
+
+        open_paren_tk_ = *paren_tk;
     }
 
     // what the callee reaches of the caller is the caller's use too, see

@@ -1675,11 +1675,10 @@ class stmt_def_func_generic final : public statement {
         assert_generic_signature(tc, head, signature);
         head.assert_mut_has_receiver(signature.is_constructor());
 
-        const token open_brace_tk{
-            tz.expect_char_token('{', "expected '{' to begin block"),
-        };
-
-        tz.put_back_token(open_brace_tk);
+        // the body reads the '{'
+        if (tz.peek_char_after_whitespace() != '{') {
+            throw compile_error{tz, "expected '{' to begin block"};
+        }
 
         return signature;
     }

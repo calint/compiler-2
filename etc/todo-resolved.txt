@@ -1,6 +1,36 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] hard: design review series 2, round 51 (2026-11-02, user: keep
+    looping the design review with major refactoring allowed; 7 reviewers:
+    A rv32i, B x86_64 with the register pool and report, C the no-UB
+    checks, D the built-ins, E the arithmetic list, F the front end and
+    driver, G paths and types)
+    => done (2026-11-02): bug: E1 a constant step under the overflow check
+       reported the line of its list, not its own ('var r = a' then '+ 1'
+       on the next line): one path for every constant step, located at its
+       element ('step_token'; 'has_fixed_role' and 'src: constant' gone,
+       -34; listing comments of about 700 compiles, code equal; 2063);
+       design: A1 one 'walk_known_size' for the rv32i copy, compare and zero
+       of a known size, in the callback form of 'walk_runtime_count'
+       (reopens the 2026-10 'on purpose' decision, -102); A2 the rv32i
+       helpers named by routine and result register ('helper_result' gone,
+       -16); B1 x86_64 named registers freed by 'operation_scope'
+       ('release_bulk' gone); B2 'with_lowered_addresses' gone, its callers
+       lower in a scope (-22); B3 one 'emit_through_register' (-14); B4 the
+       x86_64 register names one row per register (-80); C1 an assignment
+       checks the plan it emits ('write_plan' made once); D1 one
+       'check_range_from_start' for io, the optional arguments found by
+       'builtin_arguments::find' ('optional_positions' gone, -23); F1
+       'tokenizer::is_next_word_token'; F2 'is_peek_char' private, the
+       callers peek after whitespace, 'expect_char_token_after' inlined; F3
+       'throw_call_not_array' beside its user; G1 the parse walks a path once
+       and checks it left to right, the field kept per element
+       ('resolve_accessed_bytes' gone; 2062); G2 G3 parse-time re-walks and
+       forwarders of 'expr_type' gone; small: D2, E2 (tests name 'listing.py
+       folds'); dropped: B5 (one divide path relies on a skipped move), A3
+       A4 G4 G5 F4 nits, E's pass 3 without its zero exception (an
+       optimization), D's shared range maker (breaks even)
 [x] hard: design review series 2, round 50 (2026-11-02, user: keep
     looping the design review with major refactoring allowed; 7 reviewers:
     A the roles of 'expr_type', B 'toc', C the 'statement' interface, D the

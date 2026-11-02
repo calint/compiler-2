@@ -76,15 +76,8 @@ class condition_nots final {
 
   public:
     explicit condition_nots(tokenizer& tz) {
-        while (true) {
-            const token tk{tz.next_token()};
-
-            if (not tk.is_text("not")) {
-                tz.put_back_token(tk);
-                return;
-            }
-
-            nots_.emplace_back(tk);
+        while (const std::optional<token> tk{tz.is_next_word_token("not")}) {
+            nots_.emplace_back(*tk);
         }
     }
 

@@ -136,7 +136,7 @@ class stmt_if_branch final : public statement {
     [[nodiscard]] static auto condition_start(tokenizer& tz) -> token {
         const token ws_tk{tz.next_whitespace_token()};
 
-        if (tz.is_peek_char('{')) {
+        if (tz.peek_char_after_whitespace() == '{') {
             throw compile_error{tz, "expected a condition before '{'"};
         }
 

@@ -46,7 +46,8 @@
 //                'helper_specs_', 'call_arithmetic_helper',
 //                'emit_arithmetic_helpers'
 //   memory       'zero_known_size', 'copy_known_size', 'compare_known_size'
-//                for a known size, 'walk_runtime_count' for a run-time count
+//                through 'walk_known_size' for a known size,
+//                'walk_runtime_count' for a run-time count
 //                (see the note before 'local_label')
 //   comparisons  'compare_and_branch', 'emit_comparison_branch'
 //   checks       'emit_bounds_check', 'check_divisor', 'check_fits_width',
@@ -158,11 +159,9 @@ class machine_rv32i : public machine {
         }
     };
 
-    // what a call of '.Lbaz_multiply', '.Lbaz_multiply_checked' or
-    // '.Lbaz_divide' computes
-    enum class helper_result : uint8_t { product, quotient, remainder };
-
-    // the run-time routines of 'call_arithmetic_helper'
+    // the run-time routines of 'call_arithmetic_helper': they take 'a0' and
+    // 'a1' and return the product or the quotient in 'a0', the division also
+    // the remainder in 'a1'
     enum class helper_routine : uint8_t { multiply, multiply_checked, divide };
 
     // a run-time routine of 'call_arithmetic_helper', 'clobbers' are the
@@ -240,13 +239,10 @@ class machine_rv32i : public machine {
         bool needs_load{};
     };
 
-    // note: zero, copy and compare each have their own functions for a known
-    //       size ('zero_known_size', 'copy_known_size', 'compare_known_size');
-    //       the code is repeated on purpose, so each function reads from top
-    //       to bottom; only plain decisions are shared ('aligned_parts',
-    //       'plan_loop_start', 'plan_known_loop'); copy and compare share the
-    //       walk of a run-time count ('walk_runtime_count') and differ only in
-    //       the access they emit
+    // note: zero, copy and compare share the walk of a known size
+    //       ('walk_known_size'), copy and compare that of a run-time count
+    //       ('walk_runtime_count'); each operation gives only the access it
+    //       emits, its registers and, for a known size, when it unrolls
     //       * the variables base 's0' and a noinline frame base 's1' are
     //         word aligned, so an unindexed address from them has a known
     //         position within a word; other addresses are only as aligned as
@@ -345,6 +341,18 @@ class machine_rv32i : public machine {
         operand dst;
         operand count;
         std::function_ref<void(size_t)> access;
+    };
+
+    // the addresses of a known size walked together, 'access' emits one access
+    // of 'width' bytes at an operand per address and 'verb' names it in
+    // comments
+    struct known_walk {
+        token src_loc_tk;
+        size_t indent{};
+        std::string_view verb;
+        std::span<const operand> addresses;
+        std::span<const access_start> starts;
+        std::function_ref<void(size_t, std::span<const operand>)> access;
     };
 
     // the registers a comparison loads both sides into
@@ -1111,11 +1119,14 @@ class machine_rv32i : public machine {
 
         validate_operands(dst, divisor);
 
+        const operand result{
+            operand::reg(operation == arithmetic_operator::remainder ? "a1"
+                                                                     : "a0",
+                         default_type()),
+        };
+
         call_arithmetic_helper(src_loc_tk, indent, dst, divisor,
-                               operation == arithmetic_operator::remainder
-                                   ? helper_result::remainder
-                                   : helper_result::quotient,
-                               check);
+                               helper_routine::divide, result, check);
     }
 
     auto
@@ -1221,8 +1232,13 @@ class machine_rv32i : public machine {
 
         // variable factors use the shared run-time helper
         if (not constant.has_value() or is_checked_constant) {
-            call_arithmetic_helper(src_loc_tk, indent, product, factor,
-                                   helper_result::product, check);
+            const helper_routine routine{
+                check.enabled ? helper_routine::multiply_checked
+                              : helper_routine::multiply,
+            };
+
+            call_arithmetic_helper(src_loc_tk, indent, product, factor, routine,
+                                   operand::reg("a0", default_type()), check);
 
             return;
         }
@@ -1620,10 +1636,12 @@ class machine_rv32i : public machine {
         assembler_.resolved_jump(indent, entry_label, no_return_jump_register_);
     }
 
-    // 'check' is the overflow check of a product, else the division check
+    // 'result' is the register of 'routine' that 'dst' receives, 'check' the
+    // overflow check of 'multiply_checked' or the division check of 'divide'
     auto call_arithmetic_helper(const token& src_loc_tk, const size_t indent,
                                 const operand& dst, const operand& source,
-                                const helper_result result_kind,
+                                const helper_routine routine,
+                                const operand& result,
                                 const runtime_check& check) -> void {
 
         // the first argument would overwrite a source in 'a0', which is
@@ -1635,10 +1653,6 @@ class machine_rv32i : public machine {
         const operation_scope scope{*this, dst, source};
 
         const uint32_t live{registers().unavailable_mask()};
-
-        const helper_routine routine{
-            arithmetic_helper_routine(result_kind, check.enabled),
-        };
 
         const helper_spec& spec{helper_spec_of(routine)};
 
@@ -1678,11 +1692,6 @@ class machine_rv32i : public machine {
         if (routine == helper_routine::multiply_checked) {
             check_multiply_result(src_loc_tk, indent, dst);
         }
-
-        const operand result{
-            operand::reg(result_kind == helper_result::remainder ? "a1" : "a0",
-                         default_type()),
-        };
 
         // the destination is not restored so it can retain the result
         if (dst.is_register()) {
@@ -2062,123 +2071,27 @@ class machine_rv32i : public machine {
             alloc_compare_registers(src_loc_tk, indent, result, in_use),
         };
 
-        compare_known_walk(src_loc_tk, indent, size_bytes, memory, registers);
-
-        write_compare_result(src_loc_tk, indent, result, registers,
-                             request.inverted);
-    }
-
-    // the walk's own registers are freed before the result is written
-    auto compare_known_walk(const token& src_loc_tk, const size_t indent,
-                            const size_t size_bytes,
-                            const compared_memory& memory,
-                            const compare_registers& registers) -> void {
-
-        const operand& left{memory.left};
-        const operand& right{memory.right};
-        const std::array<access_start, 2>& starts{memory.starts};
-
-        const operation_scope walk_scope{*this};
+        const auto access{
+            [&](const size_t width, const std::span<const operand> at) -> void {
+                compare_access(indent, registers, width, at.front(), at.back());
+            },
+        };
 
         // a load pair and a branch per access beat the pointer setup of a loop
         // for small sizes
-        if (size_bytes <= copy_unroll_threshold_bytes_) {
-            comment_aligned_parts(src_loc_tk, indent, "compare", size_bytes,
-                                  starts);
+        walk_known_size(
+            {
+                .src_loc_tk{src_loc_tk},
+                .indent{indent},
+                .verb{"compare"},
+                .addresses{in_use},
+                .starts{memory.starts},
+                .access{access},
+            },
+            size_bytes, size_bytes <= copy_unroll_threshold_bytes_);
 
-            const operand left_at{
-                unrolled_address(src_loc_tk, indent, left, size_bytes),
-            };
-
-            const operand right_at{
-                unrolled_address(src_loc_tk, indent, right, size_bytes),
-            };
-
-            compare_parts(indent, registers, size_bytes, starts, left_at,
-                          right_at);
-
-            return;
-        }
-
-        const known_loop loop{plan_known_loop(size_bytes, starts)};
-
-        comment_known_loop(src_loc_tk, indent, "compare", loop, starts);
-
-        if (loop.head_size_bytes != 0) {
-            // a head pointer for a far offset is not needed by the loop
-            const operation_scope head_scope{*this};
-
-            const operand left_at{
-                unrolled_address(src_loc_tk, indent, left,
-                                 loop.head_size_bytes),
-            };
-
-            const operand right_at{
-                unrolled_address(src_loc_tk, indent, right,
-                                 loop.head_size_bytes),
-            };
-
-            compare_parts(indent, registers, loop.head_size_bytes, starts,
-                          left_at, right_at);
-        }
-
-        const operand left_pointer{
-            load_pointer(src_loc_tk, indent,
-                         offset_by(left, loop.head_size_bytes)),
-        };
-
-        const operand right_pointer{
-            load_pointer(src_loc_tk, indent,
-                         offset_by(right, loop.head_size_bytes)),
-        };
-
-        const operand end{
-            alloc_scratch_register(src_loc_tk, indent, default_type()),
-        };
-
-        comment(src_loc_tk, indent, "{}", describe_loop("compare", loop.width));
-
-        set_loop_end(src_loc_tk, indent, end, left_pointer,
-                     loop.chunk_count * loop.width);
-
-        assembler_.label(indent, chunk_loop_.name);
-
-        compare_access(indent, registers, loop.width, memory_at(left_pointer),
-                       memory_at(right_pointer));
-
-        advance(indent, left_pointer, loop.width);
-        advance(indent, right_pointer, loop.width);
-
-        assembler_.bne(indent, left_pointer.register_name(),
-                       end.register_name(), chunk_loop_.reference);
-
-        if (loop.tail_size_bytes == 0) {
-            return;
-        }
-
-        comment(src_loc_tk, indent, "compare {} B tail", loop.tail_size_bytes);
-
-        // the pointers are at a boundary of the loop width
-        const access_start boundary{
-            .alignment{loop.width},
-            .phase{},
-        };
-
-        compare_parts(indent, registers, loop.tail_size_bytes,
-                      std::span{&boundary, 1}, memory_at(left_pointer),
-                      memory_at(right_pointer));
-    }
-
-    auto compare_parts(const size_t indent, const compare_registers& registers,
-                       const size_t size_bytes,
-                       const std::span<const access_start> starts,
-                       const operand& left, const operand& right) -> void {
-
-        for (const access_part& part : aligned_parts(size_bytes, starts)) {
-            compare_access(indent, registers, part.width,
-                           offset_by(left, part.offset),
-                           offset_by(right, part.offset));
-        }
+        write_compare_result(src_loc_tk, indent, result, registers,
+                             request.inverted);
     }
 
     // run-time count: the addresses are pointer registers and 'count' is a
@@ -2387,99 +2300,26 @@ class machine_rv32i : public machine {
             alloc_scratch_register(src_loc_tk, indent, default_type()),
         };
 
+        const std::array<operand, 2> addresses{src, dst};
+
+        const auto access{
+            [&](const size_t width, const std::span<const operand> at) -> void {
+                copy_access(indent, value, width, at.front(), at.back());
+            },
+        };
+
         // direct offsets avoid two pointer temporaries for ordinary small
         // copies
-        if (size_bytes <= copy_unroll_threshold_bytes_) {
-            comment_aligned_parts(src_loc_tk, indent, "copy", size_bytes,
-                                  starts);
-
-            const operand from{
-                unrolled_address(src_loc_tk, indent, src, size_bytes),
-            };
-
-            const operand to{
-                unrolled_address(src_loc_tk, indent, dst, size_bytes),
-            };
-
-            copy_parts(indent, value, size_bytes, starts, from, to);
-
-            return;
-        }
-
-        const known_loop loop{plan_known_loop(size_bytes, starts)};
-
-        comment_known_loop(src_loc_tk, indent, "copy", loop, starts);
-
-        if (loop.head_size_bytes != 0) {
-            // a head pointer for a far offset is not needed by the loop
-            const operation_scope head_scope{*this};
-
-            const operand from{
-                unrolled_address(src_loc_tk, indent, src, loop.head_size_bytes),
-            };
-
-            const operand to{
-                unrolled_address(src_loc_tk, indent, dst, loop.head_size_bytes),
-            };
-
-            copy_parts(indent, value, loop.head_size_bytes, starts, from, to);
-        }
-
-        const operand src_pointer{
-            load_pointer(src_loc_tk, indent,
-                         offset_by(src, loop.head_size_bytes)),
-        };
-
-        const operand dst_pointer{
-            load_pointer(src_loc_tk, indent,
-                         offset_by(dst, loop.head_size_bytes)),
-        };
-
-        const operand end{
-            alloc_scratch_register(src_loc_tk, indent, default_type()),
-        };
-
-        comment(src_loc_tk, indent, "{}", describe_loop("copy", loop.width));
-
-        set_loop_end(src_loc_tk, indent, end, src_pointer,
-                     loop.chunk_count * loop.width);
-
-        assembler_.label(indent, chunk_loop_.name);
-
-        copy_access(indent, value, loop.width, memory_at(src_pointer),
-                    memory_at(dst_pointer));
-
-        advance(indent, src_pointer, loop.width);
-        advance(indent, dst_pointer, loop.width);
-
-        assembler_.bne(indent, src_pointer.register_name(), end.register_name(),
-                       chunk_loop_.reference);
-
-        if (loop.tail_size_bytes == 0) {
-            return;
-        }
-
-        comment(src_loc_tk, indent, "copy {} B tail", loop.tail_size_bytes);
-
-        // the pointers are at a boundary of the loop width
-        const access_start boundary{
-            .alignment{loop.width},
-            .phase{},
-        };
-
-        copy_parts(indent, value, loop.tail_size_bytes, std::span{&boundary, 1},
-                   memory_at(src_pointer), memory_at(dst_pointer));
-    }
-
-    auto copy_parts(const size_t indent, const operand& value,
-                    const size_t size_bytes,
-                    const std::span<const access_start> starts,
-                    const operand& from, const operand& to) -> void {
-
-        for (const access_part& part : aligned_parts(size_bytes, starts)) {
-            copy_access(indent, value, part.width, offset_by(from, part.offset),
-                        offset_by(to, part.offset));
-        }
+        walk_known_size(
+            {
+                .src_loc_tk{src_loc_tk},
+                .indent{indent},
+                .verb{"copy"},
+                .addresses{addresses},
+                .starts{starts},
+                .access{access},
+            },
+            size_bytes, size_bytes <= copy_unroll_threshold_bytes_);
     }
 
     // run-time count: the addresses are pointer registers and 'count' is a
@@ -3836,6 +3676,88 @@ class machine_rv32i : public machine {
         return top;
     }
 
+    // unrolled accesses from the direct offsets, or a loop of the widest
+    // width every start reaches after a head unrolled from them, then a tail;
+    // the walk's own registers are freed before a comparison writes its result
+    auto walk_known_size(const known_walk& walk, const size_t size_bytes,
+                         const bool is_unrolled) -> void {
+
+        const operation_scope walk_scope{*this};
+
+        if (is_unrolled) {
+            comment_aligned_parts(walk.src_loc_tk, walk.indent, walk.verb,
+                                  size_bytes, walk.starts);
+
+            walk_unrolled(walk, size_bytes);
+
+            return;
+        }
+
+        const known_loop loop{plan_known_loop(size_bytes, walk.starts)};
+
+        comment_known_loop(walk.src_loc_tk, walk.indent, walk.verb, loop,
+                           walk.starts);
+
+        if (loop.head_size_bytes != 0) {
+            // a head pointer for a far offset is not needed by the loop
+            const operation_scope head_scope{*this};
+
+            walk_unrolled(walk, loop.head_size_bytes);
+        }
+
+        std::vector<operand> pointers;
+        pointers.reserve(walk.addresses.size());
+
+        for (const operand& address : walk.addresses) {
+            pointers.push_back(
+                load_pointer(walk.src_loc_tk, walk.indent,
+                             offset_by(address, loop.head_size_bytes)));
+        }
+
+        const operand end{
+            alloc_scratch_register(walk.src_loc_tk, walk.indent,
+                                   default_type()),
+        };
+
+        comment(walk.src_loc_tk, walk.indent, "{}",
+                describe_loop(walk.verb, loop.width));
+
+        set_loop_end(walk.src_loc_tk, walk.indent, end, pointers.front(),
+                     loop.chunk_count * loop.width);
+
+        std::vector<operand> at;
+        at.reserve(pointers.size());
+
+        for (const operand& pointer : pointers) {
+            at.push_back(memory_at(pointer));
+        }
+
+        assembler_.label(walk.indent, chunk_loop_.name);
+        walk.access(loop.width, at);
+
+        for (const operand& pointer : pointers) {
+            advance(walk.indent, pointer, loop.width);
+        }
+
+        assembler_.bne(walk.indent, pointers.front().register_name(),
+                       end.register_name(), chunk_loop_.reference);
+
+        if (loop.tail_size_bytes == 0) {
+            return;
+        }
+
+        comment(walk.src_loc_tk, walk.indent, "{} {} B tail", walk.verb,
+                loop.tail_size_bytes);
+
+        // the pointers are at a boundary of the loop width
+        const access_start boundary{
+            .alignment{loop.width},
+            .phase{},
+        };
+
+        walk_parts(walk, loop.tail_size_bytes, std::span{&boundary, 1}, at);
+    }
+
     auto walk_runtime_bytes(const runtime_walk& walk) -> void {
         const std::string_view count{walk.count.register_name()};
 
@@ -4002,6 +3924,19 @@ class machine_rv32i : public machine {
         assembler_.label(walk.indent, walk_end_.name);
     }
 
+    // the first 'size_bytes' from the direct offsets of the addresses
+    auto walk_unrolled(const known_walk& walk, const size_t size_bytes)
+        -> void {
+
+        std::vector<operand> at;
+        for (const operand& address : walk.addresses) {
+            at.push_back(unrolled_address(walk.src_loc_tk, walk.indent, address,
+                                          size_bytes));
+        }
+
+        walk_parts(walk, size_bytes, walk.starts, at);
+    }
+
     // a register destination holds the result directly, memory needs a scratch
     [[nodiscard]] auto working_register(const token& src_loc_tk,
                                         const size_t indent, const operand& dst)
@@ -4055,80 +3990,27 @@ class machine_rv32i : public machine {
 
         const std::span<const access_start> starts{&start, 1};
 
-        if (aligned_part_count(size_bytes, starts) <=
-            zero_unroll_threshold_parts_) {
-
-            comment_aligned_parts(src_loc_tk, indent, "zero", size_bytes,
-                                  starts);
-
-            const operand at{
-                unrolled_address(src_loc_tk, indent, dst, size_bytes),
-            };
-
-            zero_parts(indent, size_bytes, starts, at);
-
-            return;
-        }
-
-        const known_loop loop{plan_known_loop(size_bytes, starts)};
-
-        comment_known_loop(src_loc_tk, indent, "zero", loop, starts);
-
-        if (loop.head_size_bytes != 0) {
-            // a head pointer for a far offset is not needed by the loop
-            const operation_scope head_scope{*this};
-
-            const operand at{
-                unrolled_address(src_loc_tk, indent, dst, loop.head_size_bytes),
-            };
-
-            zero_parts(indent, loop.head_size_bytes, starts, at);
-        }
-
-        const operand pointer{
-            load_pointer(src_loc_tk, indent,
-                         offset_by(dst, loop.head_size_bytes)),
+        const auto access{
+            [&](const size_t width, const std::span<const operand> at) -> void {
+                zero_access(indent, width, at.front());
+            },
         };
 
-        const operand end{
-            alloc_scratch_register(src_loc_tk, indent, default_type()),
+        const bool is_unrolled{
+            aligned_part_count(size_bytes, starts) <=
+                zero_unroll_threshold_parts_,
         };
 
-        comment(src_loc_tk, indent, "{}", describe_loop("zero", loop.width));
-
-        set_loop_end(src_loc_tk, indent, end, pointer,
-                     loop.chunk_count * loop.width);
-
-        assembler_.label(indent, chunk_loop_.name);
-        zero_access(indent, loop.width, memory_at(pointer));
-        advance(indent, pointer, loop.width);
-
-        assembler_.bne(indent, pointer.register_name(), end.register_name(),
-                       chunk_loop_.reference);
-
-        if (loop.tail_size_bytes == 0) {
-            return;
-        }
-
-        comment(src_loc_tk, indent, "zero {} B tail", loop.tail_size_bytes);
-
-        // the pointer is at a boundary of the loop width
-        const access_start boundary{
-            .alignment{loop.width},
-            .phase{},
-        };
-
-        zero_parts(indent, loop.tail_size_bytes, std::span{&boundary, 1},
-                   memory_at(pointer));
-    }
-
-    auto zero_parts(const size_t indent, const size_t size_bytes,
-                    const std::span<const access_start> starts,
-                    const operand& address) -> void {
-
-        for (const access_part& part : aligned_parts(size_bytes, starts)) {
-            zero_access(indent, part.width, offset_by(address, part.offset));
-        }
+        walk_known_size(
+            {
+                .src_loc_tk{src_loc_tk},
+                .indent{indent},
+                .verb{"zero"},
+                .addresses{std::span{&dst, 1}},
+                .starts{starts},
+                .access{access},
+            },
+            size_bytes, is_unrolled);
     }
 
     //
@@ -4231,21 +4113,6 @@ class machine_rv32i : public machine {
         }
 
         return immediates_size_bytes <= copy_size_bytes;
-    }
-
-    [[nodiscard]] static auto
-    arithmetic_helper_routine(const helper_result result_kind,
-                              const bool is_checked) -> helper_routine {
-
-        if (result_kind != helper_result::product) {
-            return helper_routine::divide;
-        }
-
-        if (is_checked) {
-            return helper_routine::multiply_checked;
-        }
-
-        return helper_routine::multiply;
     }
 
     // folding removes the operations that keep the destination, an operation
@@ -4881,6 +4748,21 @@ class machine_rv32i : public machine {
 
         if (src.is_memory()) {
             validate_address(src);
+        }
+    }
+
+    // the accesses of 'size_bytes' past the operands 'at'
+    static auto walk_parts(const known_walk& walk, const size_t size_bytes,
+                           const std::span<const access_start> starts,
+                           const std::span<const operand> at) -> void {
+
+        for (const access_part& part : aligned_parts(size_bytes, starts)) {
+            std::vector<operand> moved;
+            for (const operand& address : at) {
+                moved.push_back(offset_by(address, part.offset));
+            }
+
+            walk.access(part.width, moved);
         }
     }
 

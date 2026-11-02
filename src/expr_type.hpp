@@ -347,9 +347,7 @@ class expr_path final : public statement {
 
         expr_path source{stmt_identifier::parse_whole_array(tc, tz)};
 
-        const ident_info src_info{make_ident_info(tc, source.path_)};
-
-        const type& src_type{src_info.type_ref()};
+        const type& src_type{source.get_type()};
 
         if (not element_type.is_same(src_type)) {
             throw_type_mismatch(source.path_.last_token(), element_type.name(),
@@ -462,6 +460,9 @@ class expr_type final : public statement {
 
         return call != nullptr ? call->get() : nullptr;
     }
+
+    // the copy or the call that is the value, null for a literal
+    [[nodiscard]] auto copy_or_call() const -> const statement*;
 
     // creates the 'stmt_call' or 'expr_path'
     auto parse_copy_source(toc& tc, tokenizer& tz, const term_kind tm) -> void;
