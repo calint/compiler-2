@@ -37,6 +37,18 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
        or roome puts it on the next line; rejected: an error for the
        ambiguity (forbids a block after a declaration), '{}' required before
        a block (against the omitted '{}' style), no bare blocks (a feature)
+[ ] medium: the compile time of nested inlined calls with an indexed
+    argument doubles per level: 'stmt_call::compile_with_address_choice'
+    compiles each such body in two versions, and a nested call inside each
+    version again (a valid 'r(ps[gi], n - 1)' that 'main' calls with depth 8
+    takes 345 ms on rv32i-fpga, depth 14 23 s; the expanded recursion of a
+    body check since round 54 A1 reaches it too, e.g. 12 -> 678 ms);
+    'expr_arith' avoids it for calls in a list; either fix changes listings
+    (design review series 2, round 54 A2)
+    => fix if wanted: only the outermost choice measures both versions and
+       nested ones take the first, or the choice is made from 'body_uses'
+       (a parameter read more than once gets a register) without a second
+       compile; both narrow the version optimization, so measure
 [ ] easy: low priority: the compile time of a value of a huge type grows
     with its bytes where it is a result, a constructor or '{}' (about 9 ns
     per byte, a field of 64 MiB 0.6 s; bug hunt round 1 K3.1)

@@ -8,7 +8,6 @@
 #include <format>
 #include <optional>
 #include <ostream>
-#include <span>
 #include <string>
 #include <string_view>
 #include <utility>
@@ -137,44 +136,22 @@ class stmt_builtin_io final : public statement {
 
         x.comment(tok(), indent, statement::trimmed_source(*this));
 
-        const target_call_names& registers{x.target_call_registers()};
-
         const std::vector<operand> args{
-            compile_arguments(tc, indent, registers.arguments, buffer),
+            compile_arguments(tc, indent, buffer),
         };
 
-        if (not io_.has_result()) {
-            x.call_target(tok(), indent, io_.function, args, operand{});
-            x.free_named_registers(tok(), indent, args);
-            return;
+        const operand result{x.call_target(tok(), indent, io_.function, args)};
+
+        if (io_.has_result()) {
+            get_unary_ops().compile(x, indent, tok(), result,
+                                    tc.overflow_options(dst));
+
+            if (not dst.is_empty()) {
+                x.copy_value(tok(), indent, dst.operand(), result);
+            }
         }
 
-        const bool result_is_argument{
-            std::ranges::contains(registers.arguments, registers.result),
-        };
-
-        const operand result{
-            result_is_argument
-                ? x.make_register_operand(registers.result,
-                                          tc.builtins().default_type())
-                : x.alloc_named_register(tok(), indent, registers.result,
-                                         tc.builtins().default_type()),
-        };
-
-        x.call_target(tok(), indent, io_.function, args, result);
-
-        get_unary_ops().compile(x, indent, tok(), result,
-                                tc.overflow_options(dst));
-
-        if (not dst.is_empty()) {
-            x.copy_value(tok(), indent, dst.operand(), result);
-        }
-
-        if (not result_is_argument) {
-            x.free_named_register(tok(), indent, result);
-        }
-
-        x.free_named_registers(tok(), indent, args);
+        x.free_target_call(tok(), indent, args, result);
     }
 
     // 'read' and 'sector_read' write their buffer, e.g. 'b' of 'read(0, b)'
@@ -482,21 +459,15 @@ class stmt_builtin_io final : public statement {
     // every argument into the register of the call the target takes it in,
     // in the order of the arguments, then the range check and the byte
     // count; the count and start are in elements
-    [[nodiscard]] auto
-    compile_arguments(toc& tc, const size_t indent,
-                      const std::span<const std::string_view> registers,
-                      const place& buffer) const -> std::vector<operand> {
-
-        const type& type_default{tc.builtins().default_type()};
+    [[nodiscard]] auto compile_arguments(toc& tc, const size_t indent,
+                                         const place& buffer) const
+        -> std::vector<operand> {
 
         machine& x{tc.machine()};
 
-        std::vector<operand> args;
-        args.reserve(registers.size());
-        for (const std::string_view name : registers) {
-            args.push_back(
-                x.alloc_named_register(tok(), indent, name, type_default));
-        }
+        const std::vector<operand> args{
+            x.alloc_target_call_arguments(tok(), indent),
+        };
 
         // the descriptor, or the sector of a sector function
         const operand& descriptor{args.at(0)};

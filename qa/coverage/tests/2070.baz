@@ -1,0 +1,24 @@
+# the check of a body without its call goes on after an inlined recursion
+# whose constant arguments pass the nesting limit, to the 'h(3)' after it
+
+func g(n) res {
+    if n == 0 {
+        res = 0
+        return
+    }
+    res = g(n - 1)
+}
+
+func h(k) res {
+    var a = i8[2]
+    res = a[k]
+}
+
+func f(x) res {
+    res = x + g(70)
+    res = res + h(3)
+}
+
+func main() {
+    exit(0)
+}

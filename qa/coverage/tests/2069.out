@@ -1,0 +1,19 @@
+
+2069.baz:8:21: index 4 is out of bounds for array 'a' of size 4
+        res = x + a[k] + f(x, k + 1)
+                    ^
+2069.baz:8:26: called from 'f(x, k + 1)'
+        res = x + a[k] + f(x, k + 1)
+                         ^
+2069.baz:8:26: called from 'f(x, k + 1)'
+        res = x + a[k] + f(x, k + 1)
+                         ^
+2069.baz:8:26: called from 'f(x, k + 1)'
+        res = x + a[k] + f(x, k + 1)
+                         ^
+2069.baz:8:26: called from 'f(x, k + 1)'
+        res = x + a[k] + f(x, k + 1)
+                         ^
+2069.baz:15:11: called from 'f(p, 0)'
+    res = f(p, 0)
+          ^

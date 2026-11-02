@@ -1,6 +1,35 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] hard: design review series 2, round 54 (2026-11-02, user: keep
+    looping the design review with major refactoring allowed; 2 hunters:
+    H1 acceptance against calls (README 1.5), H2 results against inlining,
+    '--nopt', '--versions' and the target; 5 reviewers: A the check of a
+    body without its calls, B expressions, C both machines, D 'toc', paths
+    and variables, E the front end, built-ins and assemblers)
+    => done (2026-11-02): bug (user chose the hybrid fix): the check of a
+       body without its calls cut an inlined recursion when any value
+       argument did not fold, even one that does not drive it, and ended at
+       a call-dependent error of a recursion, so an error that needs no
+       argument was accepted where nothing calls the function (A1 2069 2070,
+       H1-1 2071, and round 53 D5 2072, all older than this round): a
+       recursion with a value argument that folds is expanded in a dry run
+       ('stmt_call::check_recursion', 'has_constant_argument'), an error that
+       depends on a call ends the recursion, not the check; one without such
+       an argument is cut as before; README 1.5, 1.9, 8.3; cost: v9 of A
+       12 -> 678 ms on rv32i-fpga, from A2 (todo item); H2 found no
+       undocumented difference in about 450000 compiles and runs;
+       optimization: C1 rv32i checks '* -1' as a checked negation, as x86_64
+       (0521 rv32i); design: B1 'expr_arith' compiles a list without three
+       one-use hops (-20); B2 'assert_value_ends' and
+       'throw_known_literal_type' free functions beside their siblings (-14);
+       B3 'stmt_if::else_code'; E1 the machine allocates and frees the
+       registers of a target call ('target_call_registers' gone, -16); D1
+       one 'initializer_declaration::fold_let' holds the 'let' rule; D2 one
+       'toc::record_use' (-11); noted: D3 a whole array in arithmetic is
+       caught at the compile, not the parse (README 7.13; the todo item on
+       arrays in arithmetic), H2 the end of the check at a register error
+       (README 8.3 bullet 3)
 [x] hard: design review series 2, round 53 (2026-11-02, user: keep
     looping the design review with major refactoring allowed; 7 reviewers,
     each file read fresh after rounds 49 to 52, also for what those rounds

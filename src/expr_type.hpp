@@ -16,6 +16,7 @@
 #include "access_path.hpp"
 #include "compile_error.hpp"
 #include "decouple.hpp"
+#include "expr_arith.hpp"
 #include "ident_info.hpp"
 #include "operand.hpp"
 #include "parse_lookahead.hpp"
@@ -56,6 +57,52 @@ enum class literal_typing : uint8_t { written, from_destination };
     throw compile_error{
         type_tk, std::format("the destination gives the type {}, write {}",
                              in_quotes(type_name), in_quotes(value))};
+}
+
+// 'kind' of 'tp' written at 'value_tk' is not continued, e.g. the '+' of
+// 'p + 1' or of 'i8[2]{1, 2} + 1'; an equality gets the message of a number
+// destination, it makes a condition
+inline auto assert_value_ends(const tokenizer& tz, const token& value_tk,
+                              const std::string_view kind, const type& tp)
+    -> void {
+
+    if (not continues_expression(tz)) {
+        return;
+    }
+
+    const std::optional<comparison_operator> op{
+        comparison_of(tz.peek_operator()),
+    };
+
+    // note: instances and arrays compare only by '==' and '!='
+    if (op and is_equality(*op)) {
+        expr_arith::assert_no_condition_next(tz);
+    }
+
+    throw compile_error{value_tk, std::format("{} of {} is not a number", kind,
+                                              in_quotes(tp.name()))};
+}
+
+// a literal that names the type its destination gives, at 'type_tk' with
+// 'tz' after the type; an operator after the literal is reported instead, as
+// after '{...}', e.g. the '+' of 'p = point{1, 2} + 1'
+[[noreturn]] inline auto
+throw_known_literal_type(const tokenizer& tz, const token& type_tk,
+                         const std::string_view kind, const type& tp,
+                         const std::string_view type_name) -> void {
+
+    tokenizer after_literal{tz};
+
+    const bool has_values{after_literal.peek_char_after_whitespace() == '{'};
+
+    // note: a literal that does not end is reported by its type
+    if (not has_values or after_literal.skip_braced_block()) {
+        assert_value_ends(after_literal, type_tk, kind, tp);
+    }
+
+    const bool is_zero{not has_values or is_zero_value(tz)};
+
+    throw_known_type(type_tk, type_name, is_zero ? "{}" : "{...}");
 }
 
 // an array literal where a single value of 'tp' is expected, e.g. the
@@ -428,24 +475,6 @@ class expr_type final : public statement {
     // appends the steps that write the value at 'at'
     auto plan_writes(const toc& tc, const part_location& at,
                      write_plan& plan) const -> void;
-
-    //
-    // statics
-    //
-
-    // 'kind' of 'tp' written at 'value_tk' is not continued, e.g. the
-    // '+' of 'p + 1' or of 'i8[2]{1, 2} + 1'
-    static auto assert_value_ends(const tokenizer& tz, const token& value_tk,
-                                  std::string_view kind, const type& tp)
-        -> void;
-
-    // a literal that names the type its destination gives, at 'type_tk'
-    // with 'tz' after the type; an operator after the literal is reported
-    // instead, as after '{...}', e.g. the '+' of 'p = point{1, 2} + 1'
-    [[noreturn]] static auto
-    throw_known_literal_type(const tokenizer& tz, const token& type_tk,
-                             std::string_view kind, const type& tp,
-                             std::string_view type_name) -> void;
 
   private:
     auto assert_call_type() const -> void;

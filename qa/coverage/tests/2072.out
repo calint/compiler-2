@@ -1,0 +1,7 @@
+
+2072.baz:15:9: 'w' of type 'i16' is narrowed to 'i8', use 'i8(...)'
+    b = w
+        ^
+2072.baz:12:5: called from
+    f(q, 2)
+    ^

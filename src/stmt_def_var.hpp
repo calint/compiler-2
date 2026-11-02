@@ -89,11 +89,17 @@ class initializer_declaration final {
     // statics
     //
 
-    // the value of a 'let' declared as 'tp' when it folds; 'value' does not
-    // read the defined name, its parse rejected that ('scope::initializer')
-    [[nodiscard]] static auto fold(const toc& tc, const expr_any& value,
-                                   const type& tp)
+    // the value of a 'let' declared as 'tp' when it folds, none for a 'var'
+    // or an array, which is not a constant; 'value' does not read the
+    // defined name, its parse rejected that ('scope::initializer')
+    [[nodiscard]] static auto fold_let(const toc& tc, const token& keyword_tk,
+                                       const expr_any& value, const type& tp,
+                                       const array_shape shape)
         -> std::optional<folded_value> {
+
+        if (not keyword_tk.is_text("let") or shape.is_array()) {
+            return std::nullopt;
+        }
 
         std::optional<folded_value> constant{
             value.fold_checked(tc, tc.use_at(tp)),
@@ -487,18 +493,15 @@ class stmt_def_var final : public statement {
     }
 
   private:
-    // a constant is not an array, as at the parse ('make_stmt_def_var'); it
-    // keeps the type of the variable the parse made, also the default type,
-    // e.g. 'let m = 0 + k' compares as an 'int'
+    // as at the parse ('make_stmt_def_var'); the constant keeps the type of
+    // the variable the parse made, also the default type, e.g. 'let m = 0 + k'
+    // compares as an 'int'
     [[nodiscard]] auto fold_let(const toc& tc) const
         -> std::optional<folded_value> {
 
-        if (not tok().is_text("let") or declared_.shape.is_array()) {
-            return std::nullopt;
-        }
-
         std::optional<folded_value> constant{
-            initializer_declaration::fold(tc, assign_var_.value(), get_type()),
+            initializer_declaration::fold_let(tc, tok(), assign_var_.value(),
+                                              get_type(), declared_.shape),
         };
 
         if (constant and not constant->is_typed()) {
@@ -554,15 +557,9 @@ inline auto make_stmt_def_var(toc& tc, const token tk, tokenizer& tz)
 
     expr_any value{declaration.parse_value(tc, tz)};
 
-    // a constant is not an array
-    const bool may_fold{
-        tk.is_text("let") and not declaration.shape().is_array(),
-    };
-
     const std::optional<folded_value> constant{
-        may_fold
-            ? initializer_declaration::fold(tc, value, declaration.type_ref())
-            : std::nullopt,
+        initializer_declaration::fold_let(tc, tk, value, declaration.type_ref(),
+                                          declaration.shape()),
     };
 
     if (constant) {

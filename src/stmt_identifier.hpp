@@ -857,7 +857,7 @@ class stmt_identifier final : public statement {
                                             in_quotes(dotted_path_))};
         }
 
-        tc.record_use(tok().text(), access_path_, use_kind::write);
+        tc.record_use(storage(tc), use_kind::write);
     }
 
     // what the path resolves to at its last name, an indexed last name as the

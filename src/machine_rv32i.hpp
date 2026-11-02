@@ -1197,29 +1197,17 @@ class machine_rv32i : public machine {
         // operation
         validate_operands(product, factor);
 
-        const std::optional<int32_t> constant{immediate_value(factor)};
-
-        // zero and one cannot overflow, shifts and adds do not report the
-        // bits they lose
-        const bool is_checked_constant{
-            check.enabled and constant.has_value() and *constant != 0 and
-                *constant != 1,
-        };
-
-        // variable factors use the shared run-time helper
-        if (not constant.has_value() or is_checked_constant) {
-            const helper_routine routine{
-                check.enabled ? helper_routine::multiply_checked
-                              : helper_routine::multiply,
-            };
-
-            call_arithmetic_helper(src_loc_tk, indent, product, factor, routine,
-                                   operand::reg("a0", default_type()), check);
-
+        if (multiply_by_constant(src_loc_tk, indent, product, factor, check)) {
             return;
         }
 
-        multiply_by_constant(src_loc_tk, indent, product, factor, *constant);
+        const helper_routine routine{
+            check.enabled ? helper_routine::multiply_checked
+                          : helper_routine::multiply,
+        };
+
+        call_arithmetic_helper(src_loc_tk, indent, product, factor, routine,
+                               operand::reg("a0", default_type()), check);
     }
 
     auto return_function(const size_t indent) -> void override {
@@ -3183,30 +3171,45 @@ class machine_rv32i : public machine {
         return operand::mem(pointer.register_name(), {}, 1, 0, default_type());
     }
 
-    // the factor is a known constant, keep only the bits that fit in the
-    // product's type before choosing how to multiply
-    auto multiply_by_constant(const token& src_loc_tk, const size_t indent,
-                              const operand& product, const operand& factor,
-                              const int32_t constant) -> void {
+    // a constant factor is resolved at compile time, at the bits that fit
+    // the product's type: zero clears, one needs no code, minus one negates
+    // and the others shift and add; false when the helper multiplies
+    [[nodiscard]] auto
+    multiply_by_constant(const token& src_loc_tk, const size_t indent,
+                         const operand& product, const operand& factor,
+                         const runtime_check& check) -> bool {
+
+        const std::optional<int32_t> constant{immediate_value(factor)};
+
+        if (not constant) {
+            return false;
+        }
 
         const size_t bits{product.type_ref().size_bits()};
 
         const constant_factor factor_info{
-            classify_factor(static_cast<uint32_t>(constant), bits),
+            classify_factor(static_cast<uint32_t>(*constant), bits),
         };
 
         if (factor_info.kind == factor_kind::zero) {
             store_constant_result(src_loc_tk, indent, product, 0);
-            return;
+            return true;
         }
 
         if (factor_info.kind == factor_kind::one) {
-            return;
+            return true;
         }
 
         if (factor_info.kind == factor_kind::minus_one) {
-            unary(src_loc_tk, indent, arithmetic_operator::negate, product);
-            return;
+            unary(src_loc_tk, indent, arithmetic_operator::negate, product,
+                  check);
+
+            return true;
+        }
+
+        // shifts and adds do not report the bits they lose, the helper does
+        if (check.enabled) {
+            return false;
         }
 
         if (factor_info.kind == factor_kind::power_of_two) {
@@ -3214,12 +3217,14 @@ class machine_rv32i : public machine {
                   operand::imm(factor_info.shift, default_type()),
                   runtime_check{});
 
-            return;
+            return true;
         }
 
         multiply_by_shifts_and_adds(
             src_loc_tk, indent, product, factor,
             static_cast<uint32_t>(factor_info.multiplier), bits);
+
+        return true;
     }
 
     // the remaining constant needs shifts and adds; keep the original value

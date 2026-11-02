@@ -18,7 +18,6 @@
 #include "compile_error.hpp"
 #include "decouple.hpp"
 #include "expr_any.hpp"
-#include "expr_arith.hpp"
 #include "expr_type.hpp"
 #include "ident_info.hpp"
 #include "operand.hpp"
@@ -110,48 +109,6 @@ inline expr_type::expr_type(toc& tc, tokenizer& tz, const type& tp,
 
     parse_fields(tc, tz);
     assert_value_ends(tz, tok(), "an instance", tp);
-}
-
-// an equality gets the message of a number destination, it makes a condition
-inline auto expr_type::assert_value_ends(const tokenizer& tz,
-                                         const token& value_tk,
-                                         const std::string_view kind,
-                                         const type& tp) -> void {
-
-    if (not continues_expression(tz)) {
-        return;
-    }
-
-    const std::optional<comparison_operator> op{
-        comparison_of(tz.peek_operator()),
-    };
-
-    // note: instances and arrays compare only by '==' and '!='
-    if (op and is_equality(*op)) {
-        expr_arith::assert_no_condition_next(tz);
-    }
-
-    throw compile_error{value_tk, std::format("{} of {} is not a number", kind,
-                                              in_quotes(tp.name()))};
-}
-
-inline auto
-expr_type::throw_known_literal_type(const tokenizer& tz, const token& type_tk,
-                                    const std::string_view kind, const type& tp,
-                                    const std::string_view type_name) -> void {
-
-    tokenizer after_literal{tz};
-
-    const bool has_values{after_literal.peek_char_after_whitespace() == '{'};
-
-    // note: a literal that does not end is reported by its type
-    if (not has_values or after_literal.skip_braced_block()) {
-        assert_value_ends(after_literal, type_tk, kind, tp);
-    }
-
-    const bool is_zero{not has_values or is_zero_value(tz)};
-
-    throw_known_type(type_tk, type_name, is_zero ? "{}" : "{...}");
 }
 
 // the fields of 'tp' in braces, e.g. '{x, y}' of 'obj.pos = {x, y}'

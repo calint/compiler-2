@@ -741,8 +741,8 @@ class expr_arith final : public statement {
             return std::nullopt;
         }
 
-        compile_elements(tc, indent, dst,
-                         std::span{steps}.first(steps.size() - 1));
+        compile_steps(tc, indent, dst,
+                      std::span{steps}.first(steps.size() - 1));
 
         return last.value;
     }
@@ -816,20 +816,6 @@ class expr_arith final : public statement {
             *open_paren_tk_, statement::trimmed_source(*exprs_.front()));
     }
 
-    // a nested list is folded when it is compiled as an element:
-    //   '3 + a * 3 * 2 / 3 / 2 * 4 + 5'  =>  'a * 6 / 6 * 4 + 8'
-    auto compile_elements(toc& tc, const size_t indent, const destination& dst,
-                          const std::span<const step> steps) const -> void {
-
-        compile_first_step(tc, indent, dst, steps.front());
-
-        for (const step& s : steps.subspan(1)) {
-            // note: 1 because the first step is compiled above
-
-            compile_step(tc, indent, dst, s);
-        }
-    }
-
     auto compile_first_step(toc& tc, const size_t indent,
                             const destination& dst, const step& first) const
         -> void {
@@ -849,12 +835,24 @@ class expr_arith final : public statement {
             return;
         }
 
-        compile_first_element(tc, indent, dst, *first.element);
+        const statement& element{*first.element};
+
+        machine& x{tc.machine()};
+
+        // an identifier copies itself, anything else is computed into 'dst'
+        if (element.is_computed()) {
+            x.comment(element.tok(), indent,
+                      statement::trimmed_source(
+                          element, dst.text(),
+                          source_text(arithmetic_operator::assign)));
+
+            x.comment(element.tok(), indent, "= expression");
+        }
+
+        element.compile(tc, indent, dst);
 
         // only a zero constant leaves a subtracted element first: '2 - b - 2'
         if (first.op == arithmetic_operator::subtract) {
-            machine& x{tc.machine()};
-
             x.unary(tok(), indent, arithmetic_operator::negate, dst.operand(),
                     tc.overflow_options(dst));
         }
@@ -876,14 +874,37 @@ class expr_arith final : public statement {
             return;
         }
 
-        asm_op(tc, indent, s.op, dst, *s.element);
+        const statement& src{*s.element};
+
+        machine& x{tc.machine()};
+
+        x.comment(
+            src.tok(), indent,
+            statement::trimmed_source(src, dst.text(), source_text(s.op)));
+
+        // the element is computed into a scratch register or read where it
+        // is stored
+        if (src.is_computed()) {
+            compile_computed_operand(tc, indent, s.op, dst, src);
+            return;
+        }
+
+        compile_stored_operand(tc, indent, s.op, dst, src);
     }
 
-    // the steps that 'plan_steps' made for 'dst'
+    // the steps that 'plan_steps' made for 'dst'; a nested list is folded
+    // when it is compiled as an element:
+    //   '3 + a * 3 * 2 / 3 / 2 * 4 + 5'  =>  'a * 6 / 6 * 4 + 8'
     auto compile_steps(toc& tc, const size_t indent, const destination& dst,
                        const std::span<const step> steps) const -> void {
 
-        compile_elements(tc, indent, dst, steps);
+        compile_first_step(tc, indent, dst, steps.front());
+
+        for (const step& s : steps.subspan(1)) {
+            // note: 1 because the first step is compiled above
+
+            compile_step(tc, indent, dst, s);
+        }
 
         machine& x{tc.machine()};
 
@@ -1123,28 +1144,6 @@ class expr_arith final : public statement {
     // statics
     //
 
-    // the element is computed into a scratch register or read where it is
-    // stored
-    static auto asm_op(toc& tc, const size_t indent,
-                       const arithmetic_operator op, const destination& dst,
-                       const statement& src) -> void {
-
-        machine& x{tc.machine()};
-
-        x.comment(src.tok(), indent,
-                  statement::trimmed_source(src, dst.text(), source_text(op)));
-
-        // note: a constant element is a constant step, its value folded by
-        //       'make_steps', see 'emit_constant_step'
-
-        if (src.is_computed()) {
-            compile_computed_operand(tc, indent, op, dst, src);
-            return;
-        }
-
-        compile_stored_operand(tc, indent, op, dst, src);
-    }
-
     // a constant divisor is not zero and a constant shift count is inside the
     // width, for a fold and for a constant step
     static auto assert_constant_operand(const token& src_loc_tk,
@@ -1263,25 +1262,6 @@ class expr_arith final : public statement {
 
         x.copy_value(src_loc_tk, indent, dst.operand(),
                      constant_operand(dst, value));
-    }
-
-    // an identifier copies itself, anything else is computed into 'dst'
-    static auto compile_first_element(toc& tc, const size_t indent,
-                                      const destination& dst,
-                                      const statement& first) -> void {
-
-        if (first.is_computed()) {
-            machine& x{tc.machine()};
-
-            x.comment(first.tok(), indent,
-                      statement::trimmed_source(
-                          first, dst.text(),
-                          source_text(arithmetic_operator::assign)));
-
-            x.comment(first.tok(), indent, "= expression");
-        }
-
-        first.compile(tc, indent, dst);
     }
 
     // a name or a literal read in place, a register that holds the result

@@ -1200,8 +1200,8 @@ class scope_stack final {
     [[nodiscard]] auto is_empty() const -> bool { return scopes_.empty(); }
 
     // a check of a body that takes from a call is in the stack, see
-    // 'stmt_def_func::check_body': a recursive inlined call is not expanded
-    // there ('stmt_call::check_arguments_alone')
+    // 'stmt_def_func::check_body': a recursive inlined call there is expanded
+    // in a dry run or not at all ('stmt_call::compile')
     [[nodiscard]] auto is_in_body_taking_from_call() const -> bool {
         return std::ranges::any_of(scopes_, [](const scope& scp) -> bool {
             return scp.is_func() and scp.is_without_call() and
@@ -2405,7 +2405,7 @@ class variable_comments final {
 //                  'assert_valid_unqualified_name',
 //                  'begin_definition', 'current_definition',
 //                  'constant_value_of', 'record_use',
-//                  'record_storage_use', 'record_result_passed_as_mut',
+//                  'record_result_passed_as_mut',
 //                  'parse_nesting_scope', 'make_var_read_only',
 //                  'get_func_or_throw', 'get_type_or_throw', 'is_func',
 //                  'source_of', 'type_param_named', 'where'
@@ -3416,32 +3416,20 @@ class toc final {
         end_path();
     }
 
-    // a resolved 'storage' the body being parsed uses, e.g. a global that a
-    // function it calls uses, so a local of the same name does not shadow it
-    auto record_storage_use(const storage_path& storage, const use_kind kind)
-        -> void {
-
-        assert(not is_compiling_);
-
-        scopes_.record_storage_use(storage, kind == use_kind::write);
-    }
-
-    // a path in a function body whose root is 'name', see 'body_uses';
-    // outside a function nothing is recorded
-    auto record_use(const std::string_view name, const access_path& path,
+    // resolved 'storage' that the body being parsed uses, see 'body_uses',
+    // e.g. a path in it or a global that a function it calls uses, so a
+    // local of the same name does not shadow it; none outside a function or
+    // without storage
+    auto record_use(const std::optional<storage_path>& storage,
                     const use_kind kind) -> void {
 
         assert(not is_compiling_);
 
-        if (not scopes_.is_in_func()) {
+        if (not storage or not scopes_.is_in_func()) {
             return;
         }
 
-        // note: the parse records the uses, no name is bound to an argument
-
-        if (const std::optional<storage_path> storage{storage_of(name, path)}) {
-            record_storage_use(*storage, kind);
-        }
+        scopes_.record_storage_use(*storage, kind == use_kind::write);
     }
 
     // the declared name 'ident', e.g. the whole array of 'ps[1]'; the free

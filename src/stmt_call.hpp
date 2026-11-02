@@ -1785,21 +1785,27 @@ class stmt_call final : public statement {
 
         assert_call_accepted(tc, dst, call.places);
 
-        const bool is_recursion{
-            callee().is_inlined() and
-                tc.scopes().inlined_nesting(callee().name()) != 0,
+        const size_t nesting{
+            callee().is_inlined() ? tc.scopes().inlined_nesting(callee().name())
+                                  : 0,
         };
 
-        // a check without a call does not expand a recursion that a value or
-        // an array length it does not know drives: the body is checked where
-        // the recursion is entered and in its own check, a constant that would
-        // end it is one of a call; constant arguments, e.g. 'g(2)', end it or
-        // reach the inlining limit, which the check drops
-        if (is_recursion and tc.scopes().is_in_body_taking_from_call() and
-            not has_known_arguments(tc, call.places)) {
+        // a check without a call expands a recursion that a constant argument
+        // drives, e.g. the 'g(n - 1)' of 'g(2)', in a dry run: a value or an
+        // array length it does not know may not let it end, so an error that
+        // depends on a call ends the expansion, not the check; a recursion
+        // that no constant drives is not expanded, the body is checked where
+        // the recursion is entered and in its own check
+        if (nesting != 0 and tc.scopes().is_in_body_taking_from_call()) {
+            if (not has_constant_argument(tc)) {
+                check_arguments_alone(tc, indent);
+                return;
+            }
 
-            check_arguments_alone(tc, indent);
-            return;
+            if (nesting == 1) {
+                check_recursion(tc, indent, dst, call);
+                return;
+            }
         }
 
         compile_call(tc, indent, dst, call);
@@ -2134,6 +2140,21 @@ class stmt_call final : public statement {
         }
     }
 
+    // the expansion of an inlined recursion for its errors, see 'compile';
+    // the deeper calls of the recursion expand within it
+    auto check_recursion(toc& tc, const size_t indent, const destination& dst,
+                         const call_site& call) const -> void {
+
+        std::optional<compile_error> error{
+            tc.dry_run([&] -> void { compile_call(tc, indent, dst, call); },
+                       machine::discarded_code::here),
+        };
+
+        if (error and not error->depends_on_call()) {
+            toc::throw_dry_run_error(std::move(*error));
+        }
+    }
+
     // the call without its operators, inlined or noinline
     auto compile_call(toc& tc, const size_t indent, const destination& dst,
                       const call_site& call) const -> void {
@@ -2219,41 +2240,16 @@ class stmt_call final : public statement {
         return is_method() ? 1 : 0;
     }
 
-    // the call has a value argument, every one folds to a constant, and no
-    // array argument has a length that only a call gives
-    [[nodiscard]] auto has_known_arguments(
-        const toc& tc, const std::span<const std::optional<place>> places) const
-        -> bool {
+    // a value argument folds to a constant
+    [[nodiscard]] auto has_constant_argument(const toc& tc) const -> bool {
+        return std::ranges::any_of(
+            std::views::zip(args_, callee().params()),
+            [&](const auto& pair) -> bool {
+                const auto& [arg, param]{pair};
 
-        bool has_value_argument{};
-
-        for (const auto [arg, param, arg_place] :
-             std::views::zip(args_, callee().params(), places)) {
-
-            // e.g. an unsized array parameter passed on
-            if (param.is_array()) {
-                // note: an array argument is a place, see 'argument_places'
-                assert(arg_place);
-
-                if (arg_place->info.is_length_unknown()) {
-                    return false;
-                }
-
-                continue;
-            }
-
-            if (not is_value_param(param)) {
-                continue;
-            }
-
-            if (not arg.fold(tc, tc.use_at(param.get_type()))) {
-                return false;
-            }
-
-            has_value_argument = true;
-        }
-
-        return has_value_argument;
+                return is_value_param(param) and
+                       arg.fold(tc, tc.use_at(param.get_type()));
+            });
     }
 
     // the call is in the body of its callee, a recursion
@@ -2419,9 +2415,8 @@ class stmt_call final : public statement {
         assert(tc.scopes().is_in_func());
 
         visit_callee_reach(tc, places, [&](const call_effect& effect) -> void {
-            tc.record_storage_use(effect.storage, effect.is_write
-                                                      ? use_kind::write
-                                                      : use_kind::read);
+            tc.record_use(effect.storage,
+                          effect.is_write ? use_kind::write : use_kind::read);
         });
 
         for (const auto [passed, param] :

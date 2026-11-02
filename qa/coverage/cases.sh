@@ -6554,6 +6554,22 @@ SRC=2066 && COMPERR
 # a unary operator makes a value, not an instance
 SRC=2067 && COMPERR
 
-# the check of a body without its call does not expand an inlined recursion
+# the check of a body without its call goes on after an inlined recursion
 # that an unsized array ends
 SRC=2068 && COMPERR
+
+# the check of a body without its call expands an inlined recursion that a
+# constant argument ends beside one that does not fold
+SRC=2069 && COMPERR
+
+# the check of a body without its call goes on after an inlined recursion
+# whose constant arguments pass the nesting limit
+SRC=2070 && COMPERR
+
+# the check of a body without its call expands an inlined recursion that the
+# constant it has ends
+SRC=2071 && COMPERR
+
+# the check of a body without its call goes on after an inlined recursion
+# that an instance drives beside a constant argument
+SRC=2072 && COMPERR

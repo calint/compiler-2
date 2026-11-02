@@ -110,7 +110,9 @@ inline stmt_identifier::stmt_identifier(toc& tc, token tk, tokenizer& tz,
 
     resolve_type(prefix);
 
-    tc.record_use(tok().text(), access_path_, use_kind::read);
+    // note: the parse records the uses, no name is bound to an argument
+
+    tc.record_use(storage(tc), use_kind::read);
 
     names_result_ = tc.scopes().names_result(tok().text());
 }

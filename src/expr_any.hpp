@@ -146,7 +146,7 @@ class expr_any final : public statement {
 
         // a copy checks its end itself
         if (is_array() and not is_whole_array_copy()) {
-            expr_type::assert_value_ends(tz, array_token(), "an array", tp);
+            assert_value_ends(tz, array_token(), "an array", tp);
         }
     }
 
@@ -581,9 +581,9 @@ class expr_any final : public statement {
         // e.g. 'i8[]{1, 2}' for an 'i8' array field is '{1, 2}' and 'i8[4]'
         // is '{}'
         if (typing == literal_typing::from_destination) {
-            expr_type::throw_known_literal_type(
-                tz, is_typed ? tk : open_bracket_tk, "an array", tp,
-                std::format("{}[]", literal_type.name()));
+            throw_known_literal_type(tz, is_typed ? tk : open_bracket_tk,
+                                     "an array", tp,
+                                     std::format("{}[]", literal_type.name()));
         }
 
         if (not prefix.size.has_value()) {

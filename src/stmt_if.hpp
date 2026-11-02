@@ -197,12 +197,9 @@ class stmt_if final : public statement {
         if (reaches_else) {
             paths.begin_path(is_start_reachable);
 
-            // note: spelled out because clang-tidy does not see that
-            //       'has_else_code' checks 'else_'
-
-            if (else_ and not else_->code.is_empty()) {
+            if (const stmt_block* const code{else_code()}) {
                 x.label(indent, label_else_branch);
-                else_->code.compile(tc, indent, destination{});
+                code->compile(tc, indent, destination{});
             }
 
             paths.join_path();
@@ -322,7 +319,7 @@ class stmt_if final : public statement {
 
         // the last branch without an 'else' continues after the 'if'
         // without a jump
-        const bool falls_through{is_last_branch and not has_else_code()};
+        const bool falls_through{is_last_branch and else_code() == nullptr};
 
         if (not known and not falls_through) {
             x.branch(indent, toc::end_label(if_label));
@@ -331,20 +328,24 @@ class stmt_if final : public statement {
         return condition;
     }
 
+    // an empty 'else' compiles as none, null then
+    [[nodiscard]] auto else_code() const -> const stmt_block* {
+        if (not else_ or else_->code.is_empty()) {
+            return nullptr;
+        }
+
+        return &else_->code;
+    }
+
     // an empty 'else' continues after the 'if'
     [[nodiscard]] auto else_label(const std::string_view if_label) const
         -> std::string {
 
-        if (not has_else_code()) {
+        if (else_code() == nullptr) {
             return toc::end_label(if_label);
         }
 
         return std::format("{}.else", if_label);
-    }
-
-    // an empty 'else' compiles as none
-    [[nodiscard]] auto has_else_code() const -> bool {
-        return else_ and not else_->code.is_empty();
     }
 
     // reads what follows a branch: 'else if' continues the chain and is

@@ -312,17 +312,19 @@ program does not depend on inlining.
      e.g. twelve parameters that one call gives the same argument, or of the
      variable storage ('out_of_storage'), and the limits of inlined calls,
      e.g. a recursion 'g(70)' whose constant arguments pass the nesting
-     limit; such an error
-     ends the check and the function is accepted, in skipped code it is
-     dropped and the check goes on ('toc::check_skipped'); a recursive
-     inlined call with a value argument that does not fold is not expanded
-     in the check ('scope_stack::is_in_body_taking_from_call'), its value
-     arguments are compiled at the types of their parameters
-     ('stmt_call::check_arguments_alone'), so a recursion that only a
-     constant argument of the call ends does not end the check; one whose
-     value arguments all fold and that passes no unsized array is expanded
-     as at a call ('stmt_call::has_known_arguments'), so the 'g(2)' of an
-     'f(x)' that nothing calls is checked as in 'main'
+     limit; such an error ends the check and the function is accepted; in
+     skipped code it is dropped and the check goes on ('toc::check_skipped');
+     a recursive inlined call in the check
+     ('scope_stack::is_in_body_taking_from_call') with a value argument that
+     folds is expanded in a dry run, its deeper levels in it, and such an
+     error ends the recursion, not the check ('stmt_call::check_recursion'):
+     the 'g(x, 2)' of an 'f(x)' that nothing calls is checked as in 'main',
+     and one that a value, an instance or a length the check does not know
+     drives ends at the nesting limit or out of registers; one without such
+     an argument is not expanded, its value arguments are compiled at the
+     types of their parameters ('stmt_call::check_arguments_alone'), so a
+     recursion that only a constant argument of the call ends does not end
+     the check
 3. A function that takes nothing from a call, a noinline one without unsized
    array parameters or an inlined one without parameters and result, is
    rejected by such an error. The check has the registers of a noinline body
@@ -579,8 +581,9 @@ compile (7.8), 'main.cpp' prints it with its frames.
    the kind and change the error instead of ending with it: a version that runs
    out is dropped when the other one is available (5.3), an inlined recursion
    that runs out of registers is reported as the recursion, the check of a
-   function without its calls ends at such an error (1.5), and skipped code in
-   a body that takes from a call drops it ('toc::check_skipped'); the comment of
+   function without its calls ends at such an error (1.5), and skipped code
+   and an expanded inlined recursion in a body that takes from a call drop it
+   ('toc::check_skipped', 'stmt_call::check_recursion'); the comment of
    'error_kind' names the functions. An error that ends a dry run is a 'source'
    one ('toc::throw_dry_run_error'), so none of them drops it.
 3. A file that cannot be read is an 'unlocated_error', which
@@ -1946,8 +1949,7 @@ message, x86_64 stops with a signal.
 - Definite assignment does not count the writes of a call, e.g.
   'init(res)' is a read of 'res'; a conservative rejection.
 - The check of a body without its calls ends at the first error that depends on
-  a call other than an inlined recursion that a value it does not know drives,
-  e.g. running out of scratch registers or a constant recursion that never ends,
+  a call outside an inlined recursion, e.g. running out of scratch registers,
   so the code after it is not checked there (1.5): e.g. a later 'res = f(res)'
   is then judged only at each call, where an inlined result held in a register
   shares nothing, so it is accepted on x86_64 and rejected on rv32i.
