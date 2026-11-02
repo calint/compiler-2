@@ -164,10 +164,10 @@ class token final {
 
   public:
     token(const size_t file_ix, const std::string_view ws_left,
-          const size_t start_ix, const std::string_view name,
+          const size_t start_ix, const std::string_view text,
           const std::string_view ws_right, const size_t at_line)
         : file_ix_{file_ix}, ws_left_{ws_left}, start_ix_{start_ix},
-          text_{name}, ws_right_{ws_right}, at_line_{at_line} {}
+          text_{text}, ws_right_{ws_right}, at_line_{at_line} {}
 
     token() = default;
 

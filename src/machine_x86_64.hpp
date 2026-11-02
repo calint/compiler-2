@@ -65,8 +65,6 @@ class machine_x86_64 final : public machine {
     // the user address space of x86_64 Linux, 128 TiB
     static constexpr size_t user_address_space_bytes_{0x800000000000};
 
-    static constexpr std::array<size_t, 4> index_register_scalings_{1, 2, 4, 8};
-
     static constexpr size_t threshold_for_rep_stos_size_bytes_{32};
 
     // note: a gap takes one to three stores, the whole instance a few qword
@@ -302,12 +300,6 @@ class machine_x86_64 final : public machine {
         -> void override {
 
         assembler_.jmp(indent, target);
-    }
-
-    [[nodiscard]] auto can_lower_index_scale(const size_t size_bytes) const
-        -> bool override {
-
-        return std::ranges::contains(index_register_scalings_, size_bytes);
     }
 
     auto check_frame_capacity(const token& src_loc_tk, const size_t indent,
@@ -1201,7 +1193,7 @@ class machine_x86_64 final : public machine {
 
             // a negative count passes 'start + count' but spans the address
             // space
-            if (range.count and not plan.count_known) {
+            if (range.count and not range.count_lower_checked) {
                 test_sign(src_loc_tk, indent, *range.count);
             }
         }
@@ -2216,6 +2208,7 @@ class machine_x86_64 final : public machine {
             .data_alignment{data_alignment_},
             .max_storage_bytes{user_address_space_bytes_},
             .has_indexed_addressing{true},
+            .max_index_scale_bytes{size_qword_},
             .max_padding_gaps_zeroed_one_by_one{
                 max_padding_gaps_zeroed_one_by_one_,
             },

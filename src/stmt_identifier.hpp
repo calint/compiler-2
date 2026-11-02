@@ -520,12 +520,6 @@ class stmt_identifier final : public statement {
     // class methods
     //
 
-    // the bytes of the root variable that the path reaches, the whole array
-    // after a run-time index
-    [[nodiscard]] auto accessed_bytes() const -> const byte_range& {
-        return accessed_bytes_;
-    }
-
     // the emitter of the address of this statement for a bulk operation;
     // nothing is emitted here, the backend calls the returned emitter when it
     // needs the address: the emitter builds it with 'compile_address', which
@@ -610,6 +604,18 @@ class stmt_identifier final : public statement {
         throw compile_error{method_->name_tk,
                             std::format("{} is a method, not an array",
                                         in_quotes(method_path))};
+    }
+
+    // a read of the result needs the bytes it reaches assigned, the whole
+    // array after a run-time index
+    auto assert_set_before_read(const assignment_flow& flow) const -> void {
+        if (not names_result_ or flow.assigned().covers(accessed_bytes_)) {
+            return;
+        }
+
+        throw compile_error{tok(),
+                            std::format("result {} is read before it is set",
+                                        in_quotes(tok().text()))};
     }
 
     // the address of this place from 'compile_lea': 'use' runs while the
@@ -796,8 +802,6 @@ class stmt_identifier final : public statement {
 
         return method_->name_tk;
     }
-
-    [[nodiscard]] auto names_result() const -> bool { return names_result_; }
 
     auto operator=(stmt_identifier&&) noexcept -> stmt_identifier&;
 
@@ -1338,15 +1342,7 @@ inline auto statement::assert_result_not_read(const assignment_flow& flow) const
     -> void {
 
     visit_reads([&flow](const stmt_identifier& read) -> void {
-        if (not read.names_result() or
-            flow.assigned().covers(read.accessed_bytes())) {
-
-            return;
-        }
-
-        throw compile_error{read.tok(),
-                            std::format("result {} is read before it is set",
-                                        in_quotes(read.tok().text()))};
+        read.assert_set_before_read(flow);
     });
 }
 

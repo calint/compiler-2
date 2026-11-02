@@ -4655,10 +4655,9 @@ SRC=1435 && COMPERR
 SRC=1436 && COMPERR
 
 # an unchecked division by zero ends the program: x86_64 with SIGFPE, rv32i
-# with SIGTRAP, bare metal with the exit code of the division panic
+# with the exit code of the division panic
 if [[ $MACHINE == x86_64 ]]; then SRC=1437 && EXP=136 && RUN; fi
-if [[ $MACHINE == rv32i ]]; then SRC=1437 && EXP=133 && RUN; fi
-if [[ $MACHINE == rv32i-qemu || $MACHINE == rv32i-fpga ]]; then SRC=1437 && EXP=253 && RUN; fi
+if [[ $MACHINE != x86_64 ]]; then SRC=1437 && EXP=253 && RUN; fi
 
 # a built-in without a value used as one, a built-in value not used
 SRC=1438 && COMPERR

@@ -470,7 +470,7 @@ class program final {
 
         for (const stmt_def_func* const f : tc.funcs().defs()) {
             if (f != &func_main) {
-                f->check_body(tc, 0);
+                f->check_body(tc);
             }
         }
     }

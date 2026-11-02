@@ -26,8 +26,8 @@ struct list_operand {
 using operand_visitor = std::function_ref<void(const list_operand& operand)>;
 
 // receives each read of a variable, the path that reads it: its root token,
-// where an error points, the bytes of the variable that it reaches, the whole
-// array after a run-time index, and its path
+// where an error points, and the storage it reaches, see
+// 'stmt_identifier::may_reach' and 'assert_set_before_read'
 using read_visitor = std::function_ref<void(const stmt_identifier& read)>;
 
 // what the body of a called function does to storage its caller names too: a

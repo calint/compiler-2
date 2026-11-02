@@ -306,6 +306,23 @@ auto check_default_stack_fits(const options& opts) -> void {
                     *opts.memory_size_bytes, default_stack_size_bytes)};
 }
 
+// the 'text' of each row of a table joined by ', ', e.g. 'upper, lower, line'
+// note: by value, a filtered view is not iterated through a const reference
+template <std::ranges::input_range Names>
+[[nodiscard]] auto joined_texts(Names names) -> std::string {
+    std::string texts;
+
+    for (const auto& name : names) {
+        if (not texts.empty()) {
+            texts += ", ";
+        }
+
+        texts += name.text;
+    }
+
+    return texts;
+}
+
 // an option of the target rows, e.g. '--stack' and 'reads_stack'
 struct target_option {
     std::string_view name;
@@ -339,19 +356,13 @@ auto check_target_reads(const options& opts) -> void {
             continue;
         }
 
-        std::string readers;
+        const auto reads = [&option](const target_name& name) -> bool {
+            return name.*option.reads;
+        };
 
-        for (const target_name& name : target_names) {
-            if (not(name.*option.reads)) {
-                continue;
-            }
-
-            if (not readers.empty()) {
-                readers += ", ";
-            }
-
-            readers += name.text;
-        }
+        const std::string readers{
+            joined_texts(target_names | std::views::filter(reads)),
+        };
 
         throw option_error{
             std::format("invalid {}: target {} does not read it, the targets "
@@ -370,24 +381,6 @@ auto check_target_reads(const options& opts) -> void {
     }
 
     return arg.substr(name.size());
-}
-
-// the 'text' of each row of a table joined by ', ', e.g. 'upper, lower, line'
-template <typename Name, size_t count>
-[[nodiscard]] auto joined_texts(const std::array<Name, count>& names)
-    -> std::string {
-
-    std::string texts;
-
-    for (const Name& name : names) {
-        if (not texts.empty()) {
-            texts += ", ";
-        }
-
-        texts += name.text;
-    }
-
-    return texts;
 }
 
 auto parse_option(const char* const argument, options& opts) -> void {

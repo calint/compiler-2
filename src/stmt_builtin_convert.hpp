@@ -13,6 +13,7 @@
 #include "expr_arith.hpp"
 #include "ident_info.hpp"
 #include "operand.hpp"
+#include "parse_lookahead.hpp"
 #include "statement.hpp"
 #include "toc.hpp"
 #include "token.hpp"
@@ -185,14 +186,6 @@ class stmt_builtin_convert final : public statement {
         uops.compile(x, indent, tok(), target.operand(), uops_check);
     }
 
-    // the argument is made in 'reg' at the width of the type, where its
-    // arithmetic wraps
-    auto compile_at_type(toc& tc, const size_t indent, const operand& reg) const
-        -> void {
-
-        compile_argument(tc, indent, destination::of_register(reg), {});
-    }
-
     // the value is made in the register at the width of the type, the unary
     // ops apply after it widens in place, e.g. '-i8(x)' of an 'x' of 128
     // overflows 'i8' there; a memory destination gets it from a scratch
@@ -208,7 +201,9 @@ class stmt_builtin_convert final : public statement {
                 : x.alloc_scratch_register(tok(), indent, get_type()),
         };
 
-        compile_at_type(tc, indent, converted);
+        // the argument is made at the width of the type, where its
+        // arithmetic wraps
+        compile_argument(tc, indent, destination::of_register(converted), {});
 
         const operand widened{x.register_view(converted, dst.type_ref())};
 
@@ -411,7 +406,7 @@ class stmt_builtin_convert final : public statement {
         // is stored first
         expr_arith::assert_no_condition_next(tz);
 
-        tz.assert_no_surplus_argument(type_tk.text(), 1);
+        assert_no_surplus_argument(tz, type_tk.text(), 1);
 
         const token close_paren_tk{
             tz.expect_char_token(')', missing_close_paren_text),

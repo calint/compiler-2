@@ -716,9 +716,6 @@ class assembler_rv32i final : public assembler {
 
         assert(info(code).operands == form::branch);
 
-        const std::string_view mnemonic{info(code).mnemonic};
-        const std::string operands{std::format("{}, {}", rs1, rs2)};
-
         const size_t index{
             store_record(jump_registers{
                 .rs1{number_of(rs1)},
@@ -726,17 +723,26 @@ class assembler_rv32i final : public assembler {
             }),
         };
 
-        add_jump(std::format("{}{} {}, {}", indentation(indent), mnemonic,
-                             operands, target),
-                 mnemonic, operands, target, scratch, index);
+        add_jump(indent,
+                 {
+                     .mnemonic{std::string{info(code).mnemonic}},
+                     .operands{std::format("{}, {}", rs1, rs2)},
+                     .target{std::string{target}},
+                     .scratch{std::string{scratch}},
+                 },
+                 index);
     }
 
     // an unconditional jump grown until it reaches 'target'
     auto resolved_jump(const size_t indent, const std::string_view target,
                        const std::string_view scratch) -> void {
 
-        add_jump(std::format("{}j {}", indentation(indent), target), "j", {},
-                 target, scratch);
+        add_jump(indent, {
+                             .mnemonic{"j"},
+                             .operands{},
+                             .target{std::string{target}},
+                             .scratch{std::string{scratch}},
+                         });
     }
 
     auto ret(const size_t indent) -> void {
@@ -918,8 +924,9 @@ class assembler_rv32i final : public assembler {
     [[nodiscard]] auto format_jump(const jump_info& jump) const
         -> std::string override {
 
-        // only branches are formatted, when inverted
-        assert(not jump.operands.empty());
+        if (jump.operands.empty()) {
+            return std::format("{} {}", jump.mnemonic, jump.target);
+        }
 
         return std::format("{} {}, {}", jump.mnemonic, jump.operands,
                            jump.target);
@@ -934,7 +941,15 @@ class assembler_rv32i final : public assembler {
     inverse_branch_mnemonic(const std::string_view mnemonic) const
         -> std::string_view override {
 
-        return inverse(mnemonic);
+        constexpr std::array<mnemonic_pair, 3> pairs{
+            {
+                {"beq", "bne"},
+                {"blt", "bge"},
+                {"bltu", "bgeu"},
+            },
+        };
+
+        return paired_mnemonic(pairs, mnemonic);
     }
 
     [[nodiscard]] auto unconditional_jump_mnemonic() const
@@ -1040,7 +1055,7 @@ class assembler_rv32i final : public assembler {
             };
         }
 
-        const std::string_view inverted{inverse(jump.mnemonic)};
+        const std::string_view inverted{inverse_branch_mnemonic(jump.mnemonic)};
 
         // the inverted branch skips the jump that follows it
         std::vector<uint32_t> words{
@@ -1327,7 +1342,8 @@ class assembler_rv32i final : public assembler {
             std::format(".Lbaz_jump.{}", skip_count++),
         };
 
-        std::println(os, "{}{} {}, {}", indent, inverse(l.jump->mnemonic),
+        std::println(os, "{}{} {}, {}", indent,
+                     inverse_branch_mnemonic(l.jump->mnemonic),
                      l.jump->operands, skip_label);
 
         write_long_jump(os, indent, l);
@@ -1860,20 +1876,6 @@ class assembler_rv32i final : public assembler {
 
         // 'ecall', 'ebreak' and 'ret' have no operands
         return std::string{mnemonic};
-    }
-
-    [[nodiscard]] static auto inverse(const std::string_view mnemonic)
-        -> std::string_view {
-
-        constexpr std::array<mnemonic_pair, 3> pairs{
-            {
-                {"beq", "bne"},
-                {"blt", "bge"},
-                {"bltu", "bgeu"},
-            },
-        };
-
-        return paired_mnemonic(pairs, mnemonic);
     }
 
     // the sequence 'li' expands to

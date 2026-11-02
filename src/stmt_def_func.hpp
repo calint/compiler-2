@@ -542,7 +542,7 @@ class stmt_def_func final : public statement {
     // a call, a noinline one without unsized arrays or an inlined one without
     // parameters and result, has no such error; an inlined result is the
     // destination of the call, checked here through an address
-    auto check_body(toc& tc, const size_t indent) const -> void {
+    auto check_body(toc& tc) const -> void {
         const bool takes_from_call{
             array_param_count() != 0 or
                 (is_inlined() and (not params().empty() or has_result())),
@@ -557,7 +557,7 @@ class stmt_def_func final : public statement {
 
                     const toc::scope_entry body{tc, std::move(body_scope)};
 
-                    std::ignore = compile_in_frame(tc, indent, {});
+                    std::ignore = compile_in_frame(tc, 0, {});
                 },
                 machine::discarded_code::body),
         };
@@ -648,7 +648,7 @@ class stmt_def_func final : public statement {
         for (size_t i{}; i < params_.size(); ++i) {
             slots.push_back({
                 .param_index{i},
-                .is_in_register{i == 0 and has_receiver_in_register()},
+                .is_in_register{i == 0 and has_self_param()},
             });
         }
 
@@ -878,7 +878,7 @@ class stmt_def_func final : public statement {
 
         machine& x{tc.machine()};
 
-        if (has_receiver_in_register()) {
+        if (has_self_param()) {
             slot_register = x.alloc_named_register(
                 tok(), indent + 1, x.slot_register(), tc.builtins().address());
         }
@@ -923,13 +923,9 @@ class stmt_def_func final : public statement {
         return scope::noinline_func(name(), body_call_path(array_lengths));
     }
 
-    // the receiver of a method has its address in the slot register of the
-    // backend, not in a frame slot
-    [[nodiscard]] auto has_receiver_in_register() const -> bool {
-        return has_self_param();
-    }
-
-    // a method of a type, a constructor builds its 'self' instead
+    // a method of a type, a constructor builds its 'self' instead; the
+    // address of 'self' is in the slot register of the backend, not in a frame
+    // slot
     [[nodiscard]] auto has_self_param() const -> bool {
         return head_.method and not is_constructor();
     }

@@ -1,6 +1,30 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] hard: design review series 2, round 49 (2026-11-02, user: design
+    review and simplify, major refactoring allowed; 7 reviewers A-G over
+    all of 'src/', structure first)
+    => done (2026-11-02): no bugs; design: A1 the read half of definite
+       assignment in 'stmt_identifier::assert_set_before_read', the pair of
+       'record_assignment' ('accessed_bytes', 'names_result' gone); C1 the
+       lower-checked mask of 'register_pool' gone, the bulk count states it
+       ('bounds_range::count_lower_checked', -19); C3
+       'can_lower_index_scale' from 'target_description::
+       max_index_scale_bytes', no virtual; D1 an unchecked division by zero
+       exits 253 on every rv32i target, the linux 'ebreak' hook gone (1437
+       rv32i 253, README 8.2; 44 rv32i listings one instruction shorter); D2
+       bare metal checks the memory end in 'finish_target'
+       ('check_memory_end' gone); F1 'array_copy' with a constant count
+       takes its addresses from 'run_time_emitters' (-16); F2
+       'add_jump(indent, jump_info, record)', one jump formatter per target;
+       G1 'stmt_def_dat' keeps its 'initializer_declaration' (-14); G2
+       'joined_texts' over a range; G3 'assert_no_surplus_argument' in
+       'parse_lookahead.hpp', out of the lexer; G6 'invalid_name_message' and
+       'throw_unparsed_number' beside their user in 'toc.hpp'; small: B2 B3
+       F3 F4 A2 A3 C4 G4 G5; dropped: B1 (+3 for one copy of the state), C2
+       (the shared handler skeleton, rounds 13 and 14), D3 (the formatter
+       keeps the note above); open for round 50: E1 the three roles of
+       'expr_type', E2 the paren pair of 'expr_arith' and 'expr_bool'
 [x] hard: bug hunt series 2, round 26 (2026-10-30, user: bug hunts in a
     loop until a round finds none, then one more; the one more after round
     25; 3 hunters: Q1 roome and the tutorial as mutation sources, Q2 the

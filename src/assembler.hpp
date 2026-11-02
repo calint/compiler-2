@@ -320,24 +320,18 @@ class assembler {
     }
 
   protected:
-    // 'mnemonic' is the unconditional jump or a branch taking 'operands'
-    auto add_jump(std::string text, const std::string_view mnemonic,
-                  const std::string_view operands,
-                  const std::string_view target, const std::string_view scratch,
+    // the mnemonic of 'jump' is the unconditional jump or a branch taking
+    // its operands; the text is 'format_jump' of it
+    auto add_jump(const size_t indent, jump_info jump,
                   const std::optional<size_t> record = std::nullopt) -> void {
+
+        std::string text{indentation(indent) + format_jump(jump)};
 
         current_lines().push_back({
             .text{std::move(text)},
             .label{},
             .call_target{},
-            .jump{
-                std::make_unique<jump_info>(jump_info{
-                    .mnemonic{std::string{mnemonic}},
-                    .operands{std::string{operands}},
-                    .target{std::string{target}},
-                    .scratch{std::string{scratch}},
-                }),
-            },
+            .jump{std::make_unique<jump_info>(std::move(jump))},
             .code_size{instruction_size()},
             .entry{},
             .removed{},

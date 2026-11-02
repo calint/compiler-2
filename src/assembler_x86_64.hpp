@@ -304,16 +304,23 @@ class assembler_x86_64 final : public assembler {
     auto jcc(const size_t indent, const condition cc,
              const std::string_view target) -> void {
 
-        const std::string mnemonic{std::format("j{}", condition_suffix(cc))};
-
-        add_jump(std::format("{}{} {}", indentation(indent), mnemonic, target),
-                 mnemonic, {}, target, {});
+        add_jump(indent,
+                 {
+                     .mnemonic{std::format("j{}", condition_suffix(cc))},
+                     .operands{},
+                     .target{std::string{target}},
+                     .scratch{},
+                 });
     }
 
     // jumps go to the base as jumps so they can be optimized
     auto jmp(const size_t indent, const std::string_view target) -> void {
-        add_jump(std::format("{}jmp {}", indentation(indent), target), "jmp",
-                 {}, target, {});
+        add_jump(indent, {
+                             .mnemonic{"jmp"},
+                             .operands{},
+                             .target{std::string{target}},
+                             .scratch{},
+                         });
     }
 
     auto setcc(const size_t indent, const condition cc, const argument& dst)

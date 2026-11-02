@@ -131,10 +131,10 @@ class assigned_bytes final {
 // definite-assignment walk of the result through a function body, which also
 // finds the statements that are not reached; a function without a result has
 // no bytes to assign. the statements report what they do ('assign',
-// 'end_path', 'record_break'), the parse tells which reads name the result
-// ('stmt_identifier::names_result'), and the rules that join paths are here:
-// 'trace_loop' traces a body by its 'loop_end', 'path_merge' joins the paths
-// of an 'if'
+// 'end_path', 'record_break'), a path that names the result writes or reads
+// its bytes ('stmt_identifier::record_assignment', 'assert_set_before_read'),
+// and the rules that join paths are here: 'trace_loop' traces a body by its
+// 'loop_end', 'path_merge' joins the paths of an 'if'
 class assignment_flow final {
     // the name of the result as declared, e.g. 'res', reported when a 'return'
     // may leave it unset

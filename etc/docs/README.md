@@ -1113,11 +1113,11 @@ point over the bodies is needed (8.3).
 'assignment_flow' walks the result of a function through its body, which every
 path must set before it returns ('stmt_def_func::assert_sets_result'). The
 parse tells which reads and writes name the result, by the one lookup of 1.3
-('stmt_identifier::names_result'), so a name that hides it is not the result.
+('scope_stack::names_result'), so a name that hides it is not the result.
 Each statement reports what it does ('assign', 'end_path', 'record_break'), the
 class joins the paths ('trace_loop' with its 'loop_end', 'path_merge' for an
 'if'), and 'assigned_bytes' keeps the byte ranges set on every path. A read
-outside them is "use of uninitialized variable". The same walk finds the
+outside them is "result 'res' is read before it is set". The same walk finds the
 statements that are not reached (1.5.1); a function without a result has no
 bytes to assign. A variable is set
 where it is declared, so the one local that can be read unset is the variable
@@ -1930,8 +1930,8 @@ exits with the code of its check, the same on every target
 | frame overflow | 254 |
 | bounds | 255 |
 
-An unchecked division by zero on a bare-metal target exits 253 without the
-message, x86_64 and rv32i linux stop with a signal.
+An unchecked division by zero on an rv32i target exits 253 without the
+message, x86_64 stops with a signal.
 
 ### 8.3 Known limits
 

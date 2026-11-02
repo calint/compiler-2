@@ -199,15 +199,6 @@ class compile_error final : public std::exception {
     return std::format("'{}'", source);
 }
 
-// a word that cannot be a name, e.g. '$x'
-[[nodiscard]] inline auto invalid_name_message(const std::string_view name)
-    -> std::string {
-
-    return std::format("{} is not a valid name, a name starts with a letter "
-                       "or '_' and has only letters, digits and '_'",
-                       in_quotes(name));
-}
-
 // a count with its noun for a message, e.g. '1 argument' or '2 arguments'
 [[nodiscard]] inline auto counted(const size_t count,
                                   const std::string_view noun) -> std::string {
@@ -313,15 +304,6 @@ throw_parentheses_group_nothing(const token& open_paren_tk,
 
     throw compile_error{keyword_tk, std::format("unexpected keyword {}",
                                                 in_quotes(keyword_tk.text()))};
-}
-
-// a word that starts like a number but is none, e.g. '0x' or '12_000'
-[[noreturn]] inline auto throw_unparsed_number(const token& src_loc_tk,
-                                               const std::string_view text)
-    -> void {
-
-    throw compile_error{
-        src_loc_tk, std::format("cannot parse constant {}", in_quotes(text))};
 }
 
 // a user type where a number is needed, e.g. the 'p' of 'p + 1'

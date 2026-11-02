@@ -31,8 +31,8 @@
 #include "type.hpp"
 
 // a check of an operation at run time: enabled, a failure jumps to the failure
-// handler of the check, which reports the line when the machine
-// 'reports_line'; the operation that takes it tells what fails
+// handler of the check, which reports the line when
+// 'target_options::reports_line'; the operation that takes it tells what fails
 struct runtime_check {
     bool enabled{};
 };
@@ -58,6 +58,8 @@ struct target_description {
     // whether an access can add an index register to a base register, else
     // an indexed address is computed into a register by separate instructions
     bool has_indexed_addressing{};
+    // the largest element size an indexed address scales by, a power of two
+    size_t max_index_scale_bytes{};
     // above this count 'zero_padding' zeroes the whole instance, which is
     // then smaller than a zero per gap
     size_t max_padding_gaps_zeroed_one_by_one{};
@@ -222,6 +224,9 @@ class machine {
         operand checked;
         // the count of a range, none otherwise
         std::optional<operand> count;
+        // the count is known not to be negative, e.g. checked for the first
+        // array of a copy
+        bool count_lower_checked{};
         size_t array_count{};
         bool allow_end{};
 
@@ -236,6 +241,7 @@ class machine {
             return {
                 .checked{index},
                 .count{},
+                .count_lower_checked{},
                 .array_count{array_count},
                 .allow_end{},
             };
@@ -249,6 +255,7 @@ class machine {
             return {
                 .checked{start},
                 .count{count},
+                .count_lower_checked{},
                 .array_count{array_count},
                 .allow_end{true},
             };
@@ -262,6 +269,7 @@ class machine {
             return {
                 .checked{value},
                 .count{},
+                .count_lower_checked{},
                 .array_count{limit},
                 .allow_end{true},
             };
@@ -558,9 +566,6 @@ class machine {
         // count as long as the limit is below 2^(width - 1), only a sum
         // 'index + count' needs both signs checked
         bool upper_covers_lower{};
-
-        // the second array of a copy or compare checks the same count again
-        bool count_known{};
     };
 
     struct constant_factor {
@@ -742,9 +747,6 @@ class machine {
 
     virtual auto branch(const size_t indent, const std::string_view target)
         -> void = 0;
-
-    [[nodiscard]] virtual auto
-    can_lower_index_scale(const size_t size_bytes) const -> bool = 0;
 
     // jumps to the frame overflow handler when the callee frame at
     // 'frame_address' does not fit in the variables; 'frame_size_label' is the
@@ -981,6 +983,13 @@ class machine {
         emit_target_call(src_loc_tk, indent, function, result);
     }
 
+    [[nodiscard]] auto can_lower_index_scale(const size_t size_bytes) const
+        -> bool {
+
+        return std::has_single_bit(size_bytes) and
+               size_bytes <= target_.max_index_scale_bytes;
+    }
+
     // jumps to the bounds failure handler when 'range' is outside its array,
     // by the bounds that 'options' turns on
     auto check_bounds(const token& src_loc_tk, const size_t indent,
@@ -1000,15 +1009,13 @@ class machine {
         assert(range.checked.is_register() and
                (not range.count or range.count->is_register()));
 
+        assert(not range.count_lower_checked or range.count);
+
         const bounds_plan plan{plan_bounds_check(options, range)};
 
         comment(src_loc_tk, indent, "bounds check begin");
 
         emit_bounds_check(src_loc_tk, indent, range, options, plan);
-
-        if (options.lower) {
-            mark_lower_checked(range);
-        }
 
         comment(src_loc_tk, indent, "bounds check end");
     }
@@ -1552,7 +1559,7 @@ class machine {
             return;
         }
 
-        if (plan.count_known) {
+        if (range.count_lower_checked) {
             assert(range.count);
 
             comment(src_loc_tk, indent, "count {} lower bound already checked",
@@ -2054,13 +2061,6 @@ class machine {
         return locations_.for_listing(src_loc_tk);
     }
 
-    // a passed lower bounds check leaves the checked register non-negative
-    // until it is allocated again
-    auto mark_lower_checked(const bounds_range& range) -> void {
-        state_.registers.mark_lower_checked(
-            register_mask(lower_checked_register(range)));
-    }
-
     // the registers the backend holds itself in a 'noinline' body: the
     // variables base and the frame base
     [[nodiscard]] auto noinline_body_pool() const -> register_pool {
@@ -2096,17 +2096,11 @@ class machine {
             (uint64_t{1} << (default_type().size_bits() - 1)) - 1,
         };
 
-        const bool count_known{
-            range.count and state_.registers.is_lower_checked(
-                                register_mask(range.count->register_name())),
-        };
-
         return {
             .upper_covers_lower{
                 options.lower and options.upper and not range.count and
                     range.array_count <= signed_max,
             },
-            .count_known{count_known},
         };
     }
 
@@ -2331,17 +2325,5 @@ class machine {
         }
 
         return "inlined call levels";
-    }
-
-    // the register whose lower bound a check settles, a count alone is checked
-    // as the index of its own range
-    [[nodiscard]] static auto lower_checked_register(const bounds_range& range)
-        -> std::string_view {
-
-        if (not range.count) {
-            return range.checked.register_name();
-        }
-
-        return range.count->register_name();
     }
 };

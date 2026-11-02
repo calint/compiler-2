@@ -41,9 +41,6 @@ class register_pool final {
 
   private:
     uint32_t unavailable_{};
-    // registers a lower bounds check found non-negative, allocating a register
-    // forgets it since the new owner writes its own value
-    uint32_t lower_checked_{};
     std::vector<allocation> allocations_;
 
   public:
@@ -69,17 +66,9 @@ class register_pool final {
 
     [[nodiscard]] auto is_empty() const -> bool { return allocations_.empty(); }
 
-    [[nodiscard]] auto is_lower_checked(const uint32_t mask) const -> bool {
-        return (lower_checked_ & mask) != 0;
-    }
-
     // 'mask' has a register that is allocated or protected
     [[nodiscard]] auto is_unavailable(const uint32_t mask) const -> bool {
         return (unavailable_ & mask) != 0;
-    }
-
-    auto mark_lower_checked(const uint32_t mask) -> void {
-        lower_checked_ |= mask;
     }
 
     // the register of the last allocation, freeing is in reverse order
@@ -99,7 +88,6 @@ class register_pool final {
 
         allocations_.push_back(entry);
         unavailable_ |= mask;
-        lower_checked_ &= ~mask;
     }
 
     // forgets what 'protect' added since 'saved' was read by 'unavailable_mask'

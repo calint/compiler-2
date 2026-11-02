@@ -48,10 +48,10 @@ class bulk_operands final {
     enum class second_use : uint8_t { read, written };
 
     // the address of each array and the run-time count, for the element
-    // operations of the machine and for 'memory_equal', which emit them in the
-    // order of the arguments; a start is checked after a run-time count, with
-    // its address for a constant one; a run-time start is held in a register
-    // from its address to its check
+    // operations of the machine, 'memory_equal' and 'copy_block', which emit
+    // them in the order of the arguments; a start is checked after a run-time
+    // count, with its address for a constant one; a run-time start is held in a
+    // register from its address to its check
     class run_time_emitters final {
         const bulk_operands& operands_;
         toc& tc_;
@@ -81,8 +81,13 @@ class bulk_operands final {
                 operands_.count().compile(
                     tc_, indent_, destination::of_register(count_register));
 
-                check_range(operands_.first(), starts_.at(0), count_register);
-                check_range(operands_.second(), starts_.at(1), count_register);
+                const bool count_lower_checked{
+                    check_range(operands_.first(), starts_.at(0),
+                                count_register, false),
+                };
+
+                std::ignore = check_range(operands_.second(), starts_.at(1),
+                                          count_register, count_lower_checked);
 
                 machine& x{tc_.machine()};
 
@@ -143,13 +148,16 @@ class bulk_operands final {
         }
 
         // the range from the start of 'array' against the count in
-        // 'count_register', 'start' holds a run-time start
-        auto check_range(const stmt_identifier& array,
-                         const std::optional<operand>& start,
-                         const operand& count_register) const -> void {
+        // 'count_register', 'start' holds a run-time start; true when it
+        // checked the lower bound of the count
+        [[nodiscard]] auto check_range(const stmt_identifier& array,
+                                       const std::optional<operand>& start,
+                                       const operand& count_register,
+                                       const bool count_lower_checked) const
+            -> bool {
 
             if (not is_count_checked()) {
-                return;
+                return false;
             }
 
             const array_shape shape{array.resolve_path(tc_).shape()};
@@ -158,20 +166,28 @@ class bulk_operands final {
             //       calls, its code is discarded
 
             if (shape.is_length_unknown()) {
-                return;
+                return false;
             }
 
             const size_t array_count{shape.element_count()};
 
+            const machine::bounds_check_options options{
+                tc_.checks().bounds_options(),
+            };
+
             machine& x{tc_.machine()};
 
             if (start) {
-                x.check_bounds(array.tok(), indent_,
-                               machine::bounds_range::range(
-                                   *start, count_register, array_count),
-                               tc_.checks().bounds_options());
+                machine::bounds_range range{
+                    machine::bounds_range::range(*start, count_register,
+                                                 array_count),
+                };
 
-                return;
+                range.count_lower_checked = count_lower_checked;
+
+                x.check_bounds(array.tok(), indent_, range, options);
+
+                return options.lower;
             }
 
             const std::optional<int64_t> constant_start{
@@ -189,7 +205,9 @@ class bulk_operands final {
                 machine::bounds_range::up_to(
                     count_register,
                     array_count - static_cast<size_t>(*constant_start)),
-                tc_.checks().bounds_options());
+                options);
+
+            return options.lower;
         }
 
         // a constant count is checked with the start, before the count

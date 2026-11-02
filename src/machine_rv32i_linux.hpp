@@ -37,20 +37,6 @@ class machine_rv32i_linux final : public machine_rv32i {
     // overridden methods
     //
 
-    // an operating system loads the program where it has room
-    auto
-    check_memory_end([[maybe_unused]] const size_t memory_end_address) const
-        -> void override {}
-
-    // linux stops the program with a trap signal
-    auto emit_divide_by_zero_trap() -> void override {
-        assembler_rv32i& a{assembler()};
-
-        a.label(0, "1");
-        a.ebreak(1);
-        a.j(1, "1b");
-    }
-
     // the system call ends the program with the exit code in 'a0'
     auto emit_exit_routine() -> void override {
         assembler_rv32i& a{assembler()};

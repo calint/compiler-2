@@ -65,14 +65,14 @@ class stmt_builtin_array_copy final : public statement {
             tc.checks().overlap and may_overlap(tc),
         };
 
+        bulk_operands::run_time_emitters emit{operands_, tc, indent, tok()};
+
         if (count and not checks_overlap) {
             compile_constant_count(tc, indent, element_type,
-                                   static_cast<size_t>(*count));
+                                   static_cast<size_t>(*count), emit);
 
             return;
         }
-
-        bulk_operands::run_time_emitters emit{operands_, tc, indent, tok()};
 
         x.copy_elements(tok(), indent, element_type.size_bytes(), emit.count(),
                         {
@@ -93,38 +93,22 @@ class stmt_builtin_array_copy final : public statement {
     // the size is known so the copy is unrolled when small and the width
     // follows the alignment of both addresses
     auto compile_constant_count(toc& tc, const size_t indent,
-                                const type& element_type,
-                                const size_t count) const -> void {
+                                const type& element_type, const size_t count,
+                                bulk_operands::run_time_emitters& emit) const
+        -> void {
 
-        const stmt_identifier& src{operands_.first()};
-        const stmt_identifier& dst{operands_.second()};
-
-        machine& x{tc.machine()};
-
-        machine::held_registers held{x, tok(), indent};
-
-        // the walk checks a run-time start against the end less the count
-        const lea_request range{
-            .range_count{count},
-            .start_register{},
-            .address_register{},
+        const size_t size_bytes{
+            product_storage_size(element_type.size_bytes(), count),
         };
 
-        x.comment(src.tok(), indent, statement::trimmed_source(src));
+        emit.first()(std::nullopt, [&](const operand& src) -> void {
+            emit.second()(std::nullopt, [&](const operand& dst) -> void {
+                machine& x{tc.machine()};
 
-        const operand src_operand{
-            src.compile_lea(tc, indent, held, range),
-        };
-
-        x.comment(dst.tok(), indent, statement::trimmed_source(dst));
-
-        const operand dst_operand{
-            dst.compile_lea(tc, indent, held, range),
-        };
-
-        x.copy_block(tok(), indent, dst_operand, src_operand,
-                     product_storage_size(element_type.size_bytes(), count),
-                     element_type.alignment());
+                x.copy_block(tok(), indent, dst, src, size_bytes,
+                             element_type.alignment());
+            });
+        });
     }
 
     // the two arrays are in the same variable, e.g. 'array_copy(a[0], a[1], n)'

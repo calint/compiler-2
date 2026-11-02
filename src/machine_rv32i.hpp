@@ -59,9 +59,9 @@
 //                'emit_report_line_routine'
 //   calls        'emit_call', the sector and i/o routine calls
 //   target hooks 'emit_read_call', 'emit_write_call', 'emit_exit_routine',
-//                'emit_stack_limit_load', 'emit_divide_by_zero_trap',
-//                'emit_sector_routines', 'check_memory_end', and the machine
-//                virtuals 'emit_target_setup' and 'emit_used_routines';
+//                'emit_stack_limit_load', 'emit_sector_routines', and the
+//                machine virtuals 'emit_target_setup', 'emit_used_routines'
+//                and 'finish_target';
 //                the protected section is what the targets build on
 //   output       'write_assembly' writes the text and the image
 class machine_rv32i : public machine {
@@ -593,10 +593,7 @@ class machine_rv32i : public machine {
         // instructions, a failing build writes nothing
         assembler_.resolve_jumps();
 
-        const size_t memory_end_address{assembler_.memory_end_address()};
-
-        check_address_range(memory_end_address);
-        check_memory_end(memory_end_address);
+        check_address_range(assembler_.memory_end_address());
     }
 
     [[nodiscard]] auto register_index_of(const std::string_view name) const
@@ -630,14 +627,6 @@ class machine_rv32i : public machine {
     //
     // virtual methods
     //
-
-    // devices with a fixed memory size reject images that do not fit, an
-    // operating system loads the program where it has room
-    virtual auto check_memory_end(const size_t memory_end_address) const
-        -> void = 0;
-
-    // the divide helper found a zero divisor without '--checks=division'
-    virtual auto emit_divide_by_zero_trap() -> void = 0;
 
     // '.Lbaz_exit' ends the program with the exit code in 'a0'
     virtual auto emit_exit_routine() -> void = 0;
@@ -739,6 +728,11 @@ class machine_rv32i : public machine {
             .data_alignment{data_alignment_},
             .max_storage_bytes{assembler_rv32i::address_space_bytes},
             .has_indexed_addressing{false},
+
+            // note: 'scale_index' shifts by any power of two, a type stays
+            //       below the 4 GiB address space
+
+            .max_index_scale_bytes{assembler_rv32i::address_space_bytes},
             .max_padding_gaps_zeroed_one_by_one{
                 max_padding_gaps_zeroed_one_by_one_,
             },
@@ -842,13 +836,6 @@ class machine_rv32i : public machine {
         -> void override {
 
         assembler_.resolved_jump(indent, target, far_jump_register());
-    }
-
-    [[nodiscard]] auto can_lower_index_scale(const size_t size_bytes) const
-        -> bool override {
-
-        // note: a type stays below the 4 GiB address space
-        return std::has_single_bit(size_bytes);
     }
 
     auto check_frame_capacity(const token& src_loc_tk, const size_t indent,
@@ -1852,7 +1839,8 @@ class machine_rv32i : public machine {
 
         if (not plan.upper_covers_lower) {
             branch_on_negative(indent, range.checked.register_name(),
-                               plan.count_known ? std::nullopt : range.count,
+                               range.count_lower_checked ? std::nullopt
+                                                         : range.count,
                                is_last);
         }
     }
@@ -2887,7 +2875,10 @@ class machine_rv32i : public machine {
         assembler_.sub(1, "a1", "a1", "a4");
         assembler_.ret(1);
         assembler_.label(0, "5");
-        emit_divide_by_zero_trap();
+
+        // without '--checks=division' a zero divisor exits like its panic
+        exit(token{}, 1,
+             operand::imm(division_failure_.exit_code, default_type()));
     }
 
     auto emit_equality_result(const size_t indent,

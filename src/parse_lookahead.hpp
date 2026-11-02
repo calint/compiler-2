@@ -44,6 +44,41 @@
     return tz.is_binary_operator_next() or continues_condition(tz);
 }
 
+// a ',' where the last of 'count' arguments ends is a surplus one, e.g.
+// 'i8(1, 2)', or a trailing ','; without parameters anything but a
+// closer or the end is, e.g. 'f(1)' of 'func f()'; a missing ')' is the
+// caller's, e.g. 'f(' before a '}'
+inline auto assert_no_surplus_argument(const tokenizer& tz,
+                                       const std::string_view name,
+                                       const size_t count) -> void {
+
+    const char next{tz.peek_char_after_whitespace()};
+
+    if (next == ')' or next == ']' or next == '}' or next == '\0') {
+        return;
+    }
+
+    if (count != 0 and next != ',') {
+        return;
+    }
+
+    // e.g. 'f(1, 2,)' has no surplus argument, the ',' of 'f(,)' follows
+    // no argument
+    if (count != 0) {
+        tokenizer probe{tz};
+
+        const std::optional<token> delimiter_tk{
+            probe.is_next_char_token(','),
+        };
+
+        assert(delimiter_tk);
+
+        probe.assert_no_trailing_delimiter(*delimiter_tk, ')', "a call");
+    }
+
+    throw compile_error{tz, argument_count_text(name, count, count)};
+}
+
 // a value can start at the next character, not a closer, a ',' or the end of
 // the source, e.g. not at the ')' of '[2]{1, 2, )'
 [[nodiscard]] inline auto starts_value(const tokenizer& tz) -> bool {

@@ -34,9 +34,6 @@ class tokenizer final {
         "/",  "%",  "&",  "|",  "^",  "<",  ">", "~",
     };
 
-    // note: the longer first, an operator is never after one that is its
-    //       prefix, e.g. '<<' before '<'
-
     static_assert([] -> bool {
         for (size_t i{}; i < operators_.size(); ++i) {
             for (size_t j{i + 1}; j < operators_.size(); ++j) {
@@ -76,40 +73,6 @@ class tokenizer final {
           at_line_{position_tk.at_line()}, file_ix_{position_tk.file_index()} {
 
         assert(char_ix_ <= src_.size());
-    }
-
-    // a ',' where the last of 'count' arguments ends is a surplus one, e.g.
-    // 'i8(1, 2)', or a trailing ','; without parameters anything but a
-    // closer or the end is, e.g. 'f(1)' of 'func f()'; a missing ')' is the
-    // caller's, e.g. 'f(' before a '}'
-    auto assert_no_surplus_argument(const std::string_view name,
-                                    const size_t count) const -> void {
-
-        const char next{peek_char_after_whitespace()};
-
-        if (next == ')' or next == ']' or next == '}' or next == '\0') {
-            return;
-        }
-
-        if (count != 0 and next != ',') {
-            return;
-        }
-
-        // e.g. 'f(1, 2,)' has no surplus argument, the ',' of 'f(,)' follows
-        // no argument
-        if (count != 0) {
-            tokenizer probe{*this};
-
-            const std::optional<token> delimiter_tk{
-                probe.is_next_char_token(','),
-            };
-
-            assert(delimiter_tk);
-
-            probe.assert_no_trailing_delimiter(*delimiter_tk, ')', "a call");
-        }
-
-        throw compile_error{*this, argument_count_text(name, count, count)};
     }
 
     // e.g. the last ',' of 'f(1, 2,)', 'close' ends the list; a braced list

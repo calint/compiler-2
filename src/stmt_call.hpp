@@ -2340,8 +2340,8 @@ class stmt_call final : public statement {
                                            : literal_typing::from_destination);
         }
 
-        tz.assert_no_surplus_argument(callee().name(),
-                                      params.size() - first_argument_index());
+        assert_no_surplus_argument(tz, callee().name(),
+                                   params.size() - first_argument_index());
 
         // e.g. 'f(a, b' lacks it
         close_paren_tk_ = tz.expect_char_token(')', missing_close_paren_text);

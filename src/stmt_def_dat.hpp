@@ -73,6 +73,8 @@ class stmt_def_dat final : public statement {
 
     token name_tk_;
     token equals_tk_;
+    // the type and size the initializer gives, the name is not in scope
+    initializer_declaration declaration_;
     expr_any initializer_;
     elem root_elem_{};
 
@@ -80,10 +82,11 @@ class stmt_def_dat final : public statement {
     stmt_def_dat(toc& tc, const token src_loc_tk, tokenizer& tz)
         : statement{src_loc_tk}, name_tk_{read_name(tc, tz)},
           equals_tk_{initializer_declaration::read_equals(tz, "dat")},
-          initializer_{parse_initializer(tc, tz, name_tk_)},
-          root_elem_{fold_data(tc, initializer_.get_type(), initializer_)} {
+          declaration_{tc, tz, name_tk_, name_in_initializer::hidden},
+          initializer_{declaration_.parse_value(tc, tz)},
+          root_elem_{fold_data(tc, declaration_.type_ref(), initializer_)} {
 
-        set_type(initializer_.get_type());
+        set_type(declaration_.type_ref());
 
         // register the data without emitting output so it is available
         // during subsequent parsing
@@ -139,14 +142,8 @@ class stmt_def_dat final : public statement {
 
   private:
     [[nodiscard]] auto make_var_info() const -> var_info {
-        const array_shape shape{
-            initializer_.is_array()
-                ? array_shape::array(initializer_.array_count())
-                : array_shape{},
-        };
-
-        return initializer_declaration::make_var_info(name_tk_, get_type(),
-                                                      shape);
+        return initializer_declaration::make_var_info(
+            name_tk_, declaration_.type_ref(), declaration_.shape());
     }
 
     //
@@ -389,21 +386,6 @@ class stmt_def_dat final : public statement {
         return {
             .form{std::move(fields)},
         };
-    }
-
-    // the value at the type and size it deduces, the name is not in scope
-    [[nodiscard]] static auto parse_initializer(toc& tc, tokenizer& tz,
-                                                const token& name_tk)
-        -> expr_any {
-
-        const initializer_declaration declaration{
-            tc,
-            tz,
-            name_tk,
-            name_in_initializer::hidden,
-        };
-
-        return declaration.parse_value(tc, tz);
     }
 
     [[nodiscard]] static auto read_name(const toc& tc, tokenizer& tz) -> token {

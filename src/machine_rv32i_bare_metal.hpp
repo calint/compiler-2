@@ -8,8 +8,6 @@
 #include "assembler_rv32i.hpp"
 #include "compile_error.hpp"
 #include "machine_rv32i.hpp"
-#include "operand.hpp"
-#include "token.hpp"
 
 // runs the flat image without an operating system, the targets supply the
 // stack setup, the uart access and how the program ends
@@ -67,34 +65,6 @@ class machine_rv32i_bare_metal : public machine_rv32i {
     // overridden methods
     //
 
-    // the stack may not reach past the end of memory or into the variables,
-    // how much of it is used at run time is checked only by
-    // '--checks=stack', which checks no stack for 'main' itself
-    auto check_memory_end(const size_t memory_end_address) const
-        -> void override {
-
-        const size_t memory_bytes{memory_size_bytes()};
-
-        // note: the constructor rejected a stack larger than the memory
-        assert(stack_size_bytes() <= memory_bytes);
-
-        if (memory_end_address <= memory_bytes - stack_size_bytes()) {
-            return;
-        }
-
-        throw unlocated_error{
-            std::format("code, data and variables use {} B and the stack {} B, "
-                        "which exceeds the {} B of device memory",
-                        memory_end_address, stack_size_bytes(), memory_bytes)};
-    }
-
-    // no operating system catches a trap, the program exits with the code of
-    // the division panic
-    auto emit_divide_by_zero_trap() -> void override {
-        exit(token{}, 1,
-             operand::imm(division_failure_.exit_code, default_type()));
-    }
-
     auto emit_read_call(const size_t indent) -> void override {
         call_io_routine(indent, read_label_);
     }
@@ -114,6 +84,28 @@ class machine_rv32i_bare_metal : public machine_rv32i {
 
     auto emit_write_call(const size_t indent) -> void override {
         call_io_routine(indent, write_label_);
+    }
+
+    // the stack may not reach past the end of memory or into the variables,
+    // how much of it is used at run time is checked only by
+    // '--checks=stack', which checks no stack for 'main' itself
+    auto finish_target() -> void override {
+        machine_rv32i::finish_target();
+
+        const size_t memory_end_address{assembler().memory_end_address()};
+        const size_t memory_bytes{memory_size_bytes()};
+
+        // note: the constructor rejected a stack larger than the memory
+        assert(stack_size_bytes() <= memory_bytes);
+
+        if (memory_end_address <= memory_bytes - stack_size_bytes()) {
+            return;
+        }
+
+        throw unlocated_error{
+            std::format("code, data and variables use {} B and the stack {} B, "
+                        "which exceeds the {} B of device memory",
+                        memory_end_address, stack_size_bytes(), memory_bytes)};
     }
 
     //
@@ -152,7 +144,7 @@ class machine_rv32i_bare_metal : public machine_rv32i {
     //
 
     // the stack fits the memory and what 'main' may use without a stack
-    // check, which 'check_memory_end' and the stack limit rely on
+    // check, which 'finish_target' and the stack limit rely on
     auto check_stack_size() const -> void {
         if (stack_size_bytes() > memory_size_bytes()) {
             throw option_error{

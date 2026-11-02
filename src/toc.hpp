@@ -1909,6 +1909,24 @@ class builtin_roles final {
     }
 };
 
+// a word that cannot be a name, e.g. '$x'
+[[nodiscard]] inline auto invalid_name_message(const std::string_view name)
+    -> std::string {
+
+    return std::format("{} is not a valid name, a name starts with a letter "
+                       "or '_' and has only letters, digits and '_'",
+                       in_quotes(name));
+}
+
+// a word that starts like a number but is none, e.g. '0x' or '12_000'
+[[noreturn]] inline auto throw_unparsed_number(const token& src_loc_tk,
+                                               const std::string_view text)
+    -> void {
+
+    throw compile_error{
+        src_loc_tk, std::format("cannot parse constant {}", in_quotes(text))};
+}
+
 // resolves one name by 'scope_stack::lookup' to what it means, a variable, a
 // register or a constant ('resolve'), and to the storage it reaches
 // ('resolve_storage'); a binding means what its argument resolved to in the
@@ -2464,7 +2482,7 @@ class variable_comments final {
 //                  'record_storage_use', 'record_result_passed_as_mut',
 //                  'parse_nesting_scope', 'make_var_read_only',
 //                  'get_func_or_throw', 'get_type_or_throw', 'is_func',
-//                  'source_of', 'where'
+//                  'source_of', 'type_param_named', 'where'
 //   compile        'add_binding', 'add_bytes_constant', 'add_string_constant',
 //                  'add_noinline_body', 'dry_run', 'check_skipped',
 //                  'is_checking_without_call', 'emit_most_efficient',
