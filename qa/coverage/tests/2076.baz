@@ -1,0 +1,8 @@
+# a whole array of 'bool' under a unary operator is rejected as an array that
+# must be indexed, not as a 'bool' to convert
+func main() {
+    var bs = bool[2]
+    var n = 0
+    n = -bs
+    exit(n)
+}

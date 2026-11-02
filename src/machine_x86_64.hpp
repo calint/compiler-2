@@ -1736,11 +1736,8 @@ class machine_x86_64 final : public machine {
         }
 
         if (factor_info.kind == factor_kind::minus_one) {
-            emit_unary(src_loc_tk, indent, op::neg, product);
-
-            if (check.enabled) {
-                branch_on_overflow(src_loc_tk, indent);
-            }
+            unary(src_loc_tk, indent, arithmetic_operator::negate, product,
+                  check);
 
             return true;
         }

@@ -1153,7 +1153,9 @@ class scope_stack final {
 
     // how many times the inlined function 'name' is being compiled in place
     // by the current function body, inlined bodies are searched down to the
-    // nearest function with a body of its own
+    // nearest function with a body of its own; that is the inlined function
+    // itself in the check of its body without its calls, where a call of it
+    // is a recursion ('stmt_def_func::check_body')
     [[nodiscard]] auto inlined_nesting(const std::string_view name) const
         -> size_t {
 
@@ -1163,12 +1165,12 @@ class scope_stack final {
                 continue;
             }
 
-            if (scp.has_frame()) {
-                break;
-            }
-
             if (scp.is_name(name)) {
                 ++count;
+            }
+
+            if (scp.has_frame()) {
+                break;
             }
         }
 
@@ -3045,11 +3047,6 @@ class toc final {
             return;
         }
 
-        const bool takes_from_call{
-            scopes_.is_in_func() and
-                scopes_.current_func_scope().takes_from_call(),
-        };
-
         // the dry run puts back the reach of the code after it
         std::optional<compile_error> error{
             dry_run(
@@ -3057,11 +3054,12 @@ class toc final {
                     scopes_.set_reachable(true);
                     compile();
                 },
-                machine::discarded_code::here),
+                machine::discarded_code::here,
+                scopes_.is_in_body_taking_from_call()),
         };
 
-        if (error and not(takes_from_call and error->depends_on_call())) {
-            throw_dry_run_error(std::move(*error));
+        if (error) {
+            throw std::move(*error);
         }
     }
 
@@ -3133,11 +3131,16 @@ class toc final {
     }
 
     // runs 'compile' for its errors only: its output, string constants and
-    // use of storage leave no trace; the error it ends at, if any, is handed
-    // back, see 'throw_dry_run_error'; 'code' says which registers it starts
-    // with ('machine::emit_discarded')
+    // use of storage leave no trace; 'code' says which registers it starts
+    // with ('machine::emit_discarded'); the error it ends at is handed back
+    // to reject the program, except one that depends on a call where the
+    // code takes from a call ('takes_from_call'); it is an error of the
+    // source, so no reader of the kind drops it: the check of a body starts
+    // from the registers of a noinline body, and skipped code is never
+    // inside a version, an inlined body skips no code, see 'check_skipped'
     [[nodiscard]] auto dry_run(const std::function_ref<void()> compile,
-                               const machine::discarded_code code)
+                               const machine::discarded_code code,
+                               const bool takes_from_call)
         -> std::optional<compile_error> {
 
         assert(is_compiling_);
@@ -3149,6 +3152,12 @@ class toc final {
         try {
             x.emit_discarded(compile, code);
         } catch (compile_error& e) {
+            if (takes_from_call and e.depends_on_call()) {
+                return std::nullopt;
+            }
+
+            e.kind = compile_error::error_kind::source;
+
             return std::move(e);
         }
 
@@ -3543,15 +3552,6 @@ class toc final {
         -> std::string {
 
         return std::format("{}.end", label);
-    }
-
-    // an error that ends a dry run is reported as an error of the source: the
-    // check of a body starts from the registers of a noinline body, and
-    // skipped code is never inside a version, an inlined body skips no code,
-    // see 'check_skipped'
-    [[noreturn]] static auto throw_dry_run_error(compile_error error) -> void {
-        error.kind = compile_error::error_kind::source;
-        throw error;
     }
 
   private:

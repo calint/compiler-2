@@ -315,14 +315,15 @@ program does not depend on inlining.
      limit; such an error ends the check and the function is accepted; in
      skipped code it is dropped and the check goes on ('toc::check_skipped');
      a recursive inlined call in the check
-     ('scope_stack::is_in_body_taking_from_call') with a value argument that
-     folds is expanded in a dry run, its deeper levels in it, and such an
+     ('scope_stack::is_in_body_taking_from_call'), also a call of the
+     function in its own check ('scope_stack::inlined_nesting'), with a
+     value argument that folds is expanded in a dry run, its deeper levels in it, and such an
      error ends the recursion, not the check ('stmt_call::check_recursion'):
      the 'g(x, 2)' of an 'f(x)' that nothing calls is checked as in 'main',
      and one that a value, an instance or a length the check does not know
      drives ends at the nesting limit or out of registers; one without such
-     an argument is not expanded, its value arguments are compiled at the
-     types of their parameters ('stmt_call::check_arguments_alone'), so a
+     an argument is not expanded, its arguments are bound as for the body,
+     which is not compiled ('inline_call::compile_arguments'), so a
      recursion that only a constant argument of the call ends does not end
      the check
 3. A function that takes nothing from a call, a noinline one without unsized
@@ -583,9 +584,9 @@ compile (7.8), 'main.cpp' prints it with its frames.
    that runs out of registers is reported as the recursion, the check of a
    function without its calls ends at such an error (1.5), and skipped code
    and an expanded inlined recursion in a body that takes from a call drop it
-   ('toc::check_skipped', 'stmt_call::check_recursion'); the comment of
-   'error_kind' names the functions. An error that ends a dry run is a 'source'
-   one ('toc::throw_dry_run_error'), so none of them drops it.
+   ('toc::check_skipped', 'stmt_call::check_recursion'), all three through
+   'toc::dry_run'; the comment of 'error_kind' names the functions. An error
+   that ends a dry run is a 'source' one, so none of them drops it.
 3. A file that cannot be read is an 'unlocated_error', which
    'program::load_file' locates at its 'include'.
 
@@ -1336,7 +1337,7 @@ registers in one version only. The error carries a kind other than 'source'
 ('compile_error::error_kind'), which is set where the error is made; when both
 versions run out, the error of the first is reported. Any other error is an
 error of the program and ends the compile. An error of discarded code is a
-'source' error ('toc::throw_dry_run_error'), so a version never drops it; the
+'source' error ('toc::dry_run'), so a version never drops it; the
 check of a body starts from the registers of a noinline body, which do not
 depend on the code around it, and skipped code from the registers held where
 it stands, as if it ran ('machine::discarded_code').
@@ -1781,8 +1782,12 @@ The compile decides whether a program is accepted, the parse is its first
 validation. One rule is checked at the parse: the kind of a value at its
 destination, a 'bool' or an instance where a number is needed and a number or
 an instance where a 'bool' is ('expr_any::assert_number_kind',
-'expr_bool_op::assert_boolean_operands'); the compile checks the width of the
-same value and asserts the kind ('stmt_identifier::assert_not_narrowed').
+'expr_bool_op::assert_boolean_operands'), and a whole array where any of them
+is, an operand or a compared side included, e.g. 'ps + 1' or 'ps == p' with
+'ps' an array, as one message whatever the element type
+('assert_not_whole_array'); the compile checks the width of the same value and
+asserts the kind ('stmt_identifier::assert_not_narrowed',
+'make_scalar_ident_info').
 
 Why: every value passes one point at the parse, the constructor of 'expr_any'
 with the type of its destination, while the compile reaches a value in about

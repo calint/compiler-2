@@ -479,8 +479,6 @@ class expr_type final : public statement {
   private:
     auto assert_call_type() const -> void;
 
-    auto assert_copy_source_shape(const toc& tc) const -> void;
-
     // the call whose result is the value, null for a literal or a copy
     [[nodiscard]] auto call_source() const -> const stmt_call* {
         const std::unique_ptr<stmt_call>* const call{

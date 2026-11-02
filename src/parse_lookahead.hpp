@@ -116,6 +116,16 @@ inline auto assert_no_value_operator(const tokenizer& tz,
     }
 }
 
+// an operator after an array makes a value, e.g. the '+' of
+// 'array_length(a + 1)' or of 'f(a + 1)' for an array parameter
+inline auto assert_no_operator_after_array(const tokenizer& tz) -> void {
+    if (not continues_expression(tz)) {
+        return;
+    }
+
+    throw compile_error{tz, "an operator makes a value, not an array"};
+}
+
 // '{}' follows, the zero value of a typed destination
 [[nodiscard]] inline auto is_zero_value(const tokenizer& tz) -> bool {
     tokenizer probe{tz};

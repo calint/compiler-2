@@ -172,7 +172,7 @@ class expr_bool_op final : public statement {
             return;
         }
 
-        assert_not_array(lhs_);
+        assert_not_whole_array(lhs_);
 
         const type& lhs_type{lhs_.get_type()};
 
@@ -330,9 +330,17 @@ class expr_bool_op final : public statement {
         if (not is_memory) {
             assert_not_record(lhs_, equality);
             assert_not_record(cmp.rhs, equality);
+            return false;
         }
 
-        return is_memory;
+        // a whole array is compared only as memory, with an array, e.g. not
+        // the 'ps' of 'if ps', 'ps < q', 'ps == 1' or 'ps == p'
+        if (is_whole_array(lhs_) != is_whole_array(cmp.rhs)) {
+            assert_not_whole_array(lhs_);
+            assert_not_whole_array(cmp.rhs);
+        }
+
+        return true;
     }
 
     // a shorthand is named since its source shows no comparison with 0
@@ -617,22 +625,10 @@ class expr_bool_op final : public statement {
         }
     }
 
-    // a whole array is compared only as memory, with an array by '==' or
-    // '!=', e.g. not the 'ps' of 'if ps', 'ps < q' or 'ps == 1'
-    static auto assert_not_array(const expr_arith& side) -> void {
-        const stmt_identifier* const path{side.operand_path()};
-
-        if (path == nullptr or not path->is_array()) {
-            return;
-        }
-
-        throw_unindexed_array(path->tok(), path->dotted_path());
-    }
-
     static auto assert_not_record(const expr_arith& side,
                                   const bool is_equality) -> void {
 
-        assert_not_array(side);
+        assert_not_whole_array(side);
 
         if (side.get_type().is_builtin()) {
             return;
@@ -689,17 +685,15 @@ class expr_bool_op final : public statement {
 
     // the bytes that both sides hold, they hold the same type and, as arrays,
     // the same number of elements; empty when an array length is not known
-    [[nodiscard]] static auto
-    compared_size_bytes(const stmt_identifier& lhs, const stmt_identifier& rhs,
-                        const ident_info& lhs_info, const ident_info& rhs_info)
+    [[nodiscard]] static auto compared_size_bytes(const stmt_identifier& rhs,
+                                                  const ident_info& lhs_info,
+                                                  const ident_info& rhs_info)
         -> std::optional<size_t> {
 
-        // a whole array is not compared as its first element, whatever its
-        // type, as with a number
-        if (lhs_info.is_array() != rhs_info.is_array()) {
-            assert_not_whole_array(lhs, lhs_info);
-            assert_not_whole_array(rhs, rhs_info);
-        }
+        // note: the parse rejected a whole array on one side only
+        //       ('classify_operands')
+
+        assert(lhs_info.is_array() == rhs_info.is_array());
 
         if (not lhs_info.type_ref().is_same(rhs_info.type_ref())) {
             throw compile_error{
@@ -722,7 +716,6 @@ class expr_bool_op final : public statement {
         }
 
         // arrays are compared element by element, so their lengths must agree
-        // note: a whole array on one side only was rejected above
         if (*lhs_len != *rhs_len) {
             throw compile_error{
                 rhs.tok(),
@@ -748,7 +741,7 @@ class expr_bool_op final : public statement {
         const ident_info rhs_info{make_memory_operand_info(tc, rhs)};
 
         const std::optional<size_t> size_bytes{
-            compared_size_bytes(lhs, rhs, lhs_info, rhs_info),
+            compared_size_bytes(rhs, lhs_info, rhs_info),
         };
 
         // nothing to compare, the code of a function checked without a call
@@ -859,6 +852,11 @@ class expr_bool_op final : public statement {
 
         return stored and (stored->info.is_array() or
                            not stored->info.type_ref().is_builtin());
+    }
+
+    [[nodiscard]] static auto is_whole_array(const expr_arith& side) -> bool {
+        const stmt_identifier* const path{side.operand_path()};
+        return path != nullptr and path->is_array();
     }
 
     // the comparison needs its left operand in a register; a constant left

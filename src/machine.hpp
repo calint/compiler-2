@@ -104,8 +104,7 @@ struct target_description {
 //   registers      'alloc_scratch_register', 'free_scratch_register',
 //                  'held_registers' (what a front-end step holds),
 //                  'free_named_register', 'slot_register', 'register_view',
-//                  'alloc_named_register', 'make_register_operand',
-//                  'alloc_target_call_arguments', 'free_target_call'
+//                  'alloc_named_register', 'make_register_operand'
 //   operations     'add_subtract', 'multiply', 'divide', 'shift', 'bitwise',
 //                  'unary', 'zero', 'zero_padding', 'copy_value',
 //                  'store_bytes', 'address_of', 'scale_index', 'store_boolean';
@@ -896,22 +895,6 @@ class machine {
         return allocated_operand(*register_name, type_ref);
     }
 
-    // the registers 'call_target' takes its arguments in, in their order,
-    // held until 'free_target_call'
-    [[nodiscard]] auto alloc_target_call_arguments(const token& src_loc_tk,
-                                                   const size_t indent)
-        -> std::vector<operand> {
-
-        std::vector<operand> args;
-        args.reserve(target_.target_calls.arguments.size());
-        for (const std::string_view name : target_.target_calls.arguments) {
-            args.push_back(
-                alloc_named_register(src_loc_tk, indent, name, default_type()));
-        }
-
-        return args;
-    }
-
     // starts the data section, after the code and every routine it uses
     auto begin_data() -> void {
         assembler& output{target_assembler()};
@@ -982,32 +965,47 @@ class machine {
         restore_call_registers(indent, saved);
     }
 
-    // a call of 'read', 'write', 'sector_read' or 'sector_write' with the
-    // arguments of 'alloc_target_call_arguments'; the count that 'read' and
-    // 'write' return is held until 'free_target_call', empty for a sector
-    // function; a sector is an unsigned 32 bit number, the size of a sector
-    // transfer is 'sector_size_bytes', a sector past the end of the card
-    // panics where the target can tell
-    [[nodiscard]] auto call_target(const token& src_loc_tk, const size_t indent,
-                                   const target_call function,
-                                   const std::span<const operand> args)
-        -> operand {
+    // a call of 'read', 'write', 'sector_read' or 'sector_write':
+    // 'emit_arguments' compiles the arguments into the registers it is given,
+    // in their order, and 'use_result' takes the count that 'read' and
+    // 'write' return, it is not called for a sector function; the registers
+    // are held for the call only; a sector is an unsigned 32 bit number, the
+    // size of a sector transfer is 'sector_size_bytes', a sector past the end
+    // of the card panics where the target can tell
+    auto
+    call_target(const token& src_loc_tk, const size_t indent,
+                const target_call function,
+                const std::function_ref<void(std::span<const operand> args)>
+                    emit_arguments,
+                const std::function_ref<void(const operand& result)> use_result)
+        -> void {
 
-        assert(args.size() == target_.target_calls.arguments.size());
+        const operation_scope call{*this};
+
+        std::vector<operand> args;
+        args.reserve(target_.target_calls.arguments.size());
+        for (const std::string_view name : target_.target_calls.arguments) {
+            args.push_back(
+                alloc_named_register(src_loc_tk, indent, name, default_type()));
+        }
+
+        emit_arguments(args);
 
         const bool is_sector{
             function == target_call::sector_read or
                 function == target_call::sector_write,
         };
 
-        const operand result{
-            is_sector ? operand{}
-                      : alloc_target_call_result(src_loc_tk, indent),
-        };
+        if (is_sector) {
+            emit_target_call(src_loc_tk, indent, function, operand{});
+            return;
+        }
+
+        const operand result{alloc_target_call_result(src_loc_tk, indent)};
 
         emit_target_call(src_loc_tk, indent, function, result);
 
-        return result;
+        use_result(result);
     }
 
     [[nodiscard]] auto can_lower_index_scale(const size_t size_bytes) const
@@ -1279,20 +1277,6 @@ class machine {
                register_pool::holder_kind::scratch);
 
         pop_allocation(src_loc_tk, indent, pool_index(reg.register_name()));
-    }
-
-    // the registers of a 'call_target', its result first
-    auto free_target_call(const token& src_loc_tk, const size_t indent,
-                          const std::span<const operand> args,
-                          const operand& result) -> void {
-
-        if (result.is_allocated()) {
-            free_named_register(src_loc_tk, indent, result);
-        }
-
-        for (const operand& arg : args | std::views::reverse) {
-            free_named_register(src_loc_tk, indent, arg);
-        }
     }
 
     [[nodiscard]] auto has_indexed_addressing() const -> bool {

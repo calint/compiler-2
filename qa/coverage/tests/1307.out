@@ -1,4 +1,4 @@
 
-1307.baz:7:7: '~a' is not an array, parameter 'x' takes one
+1307.baz:7:7: a unary operator makes a value, not an array
     f(~a)
       ^

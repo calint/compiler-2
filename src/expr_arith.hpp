@@ -1176,6 +1176,8 @@ class expr_arith final : public statement {
     // stored 'bool' is 0 or 1, arithmetic would make other values, so it is
     // converted
     static auto assert_number(const statement& term) -> void {
+        assert_not_whole_array(term);
+
         const type& operand_type{term.get_type()};
 
         if (not operand_type.is_builtin()) {

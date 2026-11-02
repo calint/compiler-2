@@ -821,7 +821,55 @@ class inline_call final {
             });
     }
 
+    // the arguments bound as for the body, which is not compiled, e.g. an
+    // inlined recursion that the check of a body without its calls does not
+    // expand ('stmt_call::compile')
+    auto compile_arguments(toc& tc, const size_t indent) const -> void {
+        call_site::in_temporaries_block(
+            tc, has_argument_temporary(), [&] -> void {
+                machine& x{tc.machine()};
+
+                machine::held_registers held{x, call_.tk, indent + 1};
+
+                std::ignore = bind_arguments(tc, indent, held);
+            });
+    }
+
   private:
+    // the bindings of the arguments of the inlined body, in their order
+    [[nodiscard]] auto bind_arguments(toc& tc, const size_t indent,
+                                      machine::held_registers& held) const
+        -> std::vector<param_binding> {
+
+        std::vector<param_binding> arguments;
+
+        for (const auto [i, arg, param, arg_place] :
+             std::views::zip(std::views::iota(size_t{}), call_.args,
+                             call_.func->params(), call_.places)) {
+
+            // note: a temporary is made here, in the order of the arguments,
+            //       and named per call, so each level of an inlined recursion
+            //       binds its own
+
+            if (is_temporary(arg_place, param)) {
+                const destination temporary{
+                    call_.make_argument_temporary(tc, indent, i),
+                };
+
+                arguments.push_back(param_binding::make_name(
+                    param.name(), temporary.bound_info(),
+                    call_.temporary_argument_name(i)));
+
+                continue;
+            }
+
+            arguments.push_back(
+                bind_argument(tc, indent, arg, param, arg_place, held));
+        }
+
+        return arguments;
+    }
+
     // an error found in the inlined body reports where it was called from,
     // an error in the arguments is in the caller and has no call frame
     auto compile_body(toc& tc, const size_t indent,
@@ -974,29 +1022,7 @@ class inline_call final {
             bindings.result = bind_result(dst, *result);
         }
 
-        for (const auto [i, arg, param, arg_place] :
-             std::views::zip(std::views::iota(size_t{}), call_.args,
-                             call_.func->params(), call_.places)) {
-
-            // note: a temporary is made here, in the order of the arguments,
-            //       and named per call, so each level of an inlined recursion
-            //       binds its own
-
-            if (is_temporary(arg_place, param)) {
-                const destination temporary{
-                    call_.make_argument_temporary(tc, indent, i),
-                };
-
-                bindings.arguments.push_back(param_binding::make_name(
-                    param.name(), temporary.bound_info(),
-                    call_.temporary_argument_name(i)));
-
-                continue;
-            }
-
-            bindings.arguments.push_back(
-                bind_argument(tc, indent, arg, param, arg_place, held));
-        }
+        bindings.arguments = bind_arguments(tc, indent, held);
 
         return bindings;
     }
@@ -1794,11 +1820,11 @@ class stmt_call final : public statement {
         // drives, e.g. the 'g(n - 1)' of 'g(2)', in a dry run: a value or an
         // array length it does not know may not let it end, so an error that
         // depends on a call ends the expansion, not the check; a recursion
-        // that no constant drives is not expanded, the body is checked where
-        // the recursion is entered and in its own check
+        // that no constant drives binds its arguments only, the body is
+        // checked where the recursion is entered and in its own check
         if (nesting != 0 and tc.scopes().is_in_body_taking_from_call()) {
             if (not has_constant_argument(tc)) {
-                check_arguments_alone(tc, indent);
+                inline_call{call}.compile_arguments(tc, indent);
                 return;
             }
 
@@ -2115,31 +2141,6 @@ class stmt_call final : public statement {
         return is_method() ? args_.at(0).tok() : tok();
     }
 
-    // the value arguments of a call that is not expanded, compiled at the type
-    // of their parameter for their checks; a 'mut' argument, an array and an
-    // instance are checked where they are parsed and by 'assert_call_accepted'
-    auto check_arguments_alone(toc& tc, const size_t indent) const -> void {
-        machine& x{tc.machine()};
-
-        for (const auto [arg, param] :
-             std::views::zip(args_, callee().params())) {
-
-            if (not is_value_param(param)) {
-                continue;
-            }
-
-            const type& param_type{param.get_type()};
-
-            const operand reg{
-                x.alloc_scratch_register(tok(), indent, param_type),
-            };
-
-            arg.compile(tc, indent, destination::of_register(reg));
-
-            x.free_scratch_register(tok(), indent, reg);
-        }
-    }
-
     // the expansion of an inlined recursion for its errors, see 'compile';
     // the deeper calls of the recursion expand within it
     auto check_recursion(toc& tc, const size_t indent, const destination& dst,
@@ -2147,11 +2148,11 @@ class stmt_call final : public statement {
 
         std::optional<compile_error> error{
             tc.dry_run([&] -> void { compile_call(tc, indent, dst, call); },
-                       machine::discarded_code::here),
+                       machine::discarded_code::here, true),
         };
 
-        if (error and not error->depends_on_call()) {
-            toc::throw_dry_run_error(std::move(*error));
+        if (error) {
+            throw std::move(*error);
         }
     }
 
@@ -2377,7 +2378,7 @@ class stmt_call final : public statement {
         const std::vector<std::optional<place>> places{argument_places(tc)};
 
         for (size_t i{}; i < args_.size(); ++i) {
-            assert_argument_usable(tc, args_.at(i), params.at(i), places.at(i));
+            assert_argument_usable(args_.at(i), params.at(i), places.at(i));
             assert_argument_writable(i, places.at(i));
         }
 
@@ -2602,7 +2603,7 @@ class stmt_call final : public statement {
     //
 
     // an array parameter takes a whole array, a scalar parameter does not
-    static auto assert_argument_usable(const toc& tc, const expr_any& arg,
+    static auto assert_argument_usable(const expr_any& arg,
                                        const stmt_def_func_param& param,
                                        const std::optional<place>& arg_place)
         -> void {
@@ -2621,19 +2622,21 @@ class stmt_call final : public statement {
             return;
         }
 
-        // the binding would make the parameter name the whole array
-        if (const stmt_identifier* const ident{arg.operand_path()}) {
-            assert_not_whole_array(*ident, make_ident_info(tc, *ident));
-        }
+        // note: the parse of the value rejected a whole array, which the
+        //       binding would make the parameter name
+        //       ('assert_not_whole_array')
+
+        assert(not arg_place or not arg_place->info.is_array());
     }
 
     // an argument of an array parameter that is not an array is reported
     // before the parse reads it as a value of the element type, which would
     // report its kind, e.g. 'p' of a 'point' for 's i8[]': an array literal,
     // which has no storage that the parameter refers to, e.g. '{1, 2}',
-    // '[2]{1, 2}' or 'i8[]{1, 2}', a type, a call and a whole name; '{}' and
-    // an expression are reported where they are used; true for the name of
-    // an array, which the call parses as a path
+    // '[2]{1, 2}' or 'i8[]{1, 2}', a type, a call, a whole name and an
+    // operator, as for the array of a built-in; '{}' and a condition are
+    // reported where they are used; true for the name of an array, which the
+    // call parses as a path
     static auto assert_array_argument_start(toc& tc, const tokenizer& tz,
                                             const stmt_def_func_param& param)
         -> bool {
@@ -2645,6 +2648,9 @@ class stmt_call final : public statement {
         tokenizer probe{tz};
 
         assert_not_string_argument(probe);
+
+        // e.g. the '-' of 'f(-a)'
+        assert_no_value_operator(probe, "an array");
 
         std::optional<token> literal_tk{probe.is_next_char_token('{')};
 
@@ -2658,7 +2664,8 @@ class stmt_call final : public statement {
             const term_kind tm{classify_term(tc, tk, probe)};
 
             if (tm == term_kind::value or tm == term_kind::literal) {
-                return assert_array_name(tc, tk, probe, param);
+                assert_array_name(tc, tk, probe, param);
+                return true;
             }
 
             // e.g. 'i8', 'point{1, 2}' or 'mk()', as for the array of a
@@ -2678,25 +2685,24 @@ class stmt_call final : public statement {
                         in_quotes(param.name()))};
     }
 
-    // a path that no operator continues, 'tk' is its first token and 'probe'
-    // is after it
+    // the name of an array that no operator continues, 'tk' is its first
+    // token and 'probe' is after it
     // note: read from the copy, the call parses it again
     static auto assert_array_name(toc& tc, const token& tk, tokenizer probe,
-                                  const stmt_def_func_param& param) -> bool {
+                                  const stmt_def_func_param& param) -> void {
 
         const stmt_identifier ident{tc, tk, probe};
 
         // e.g. 'p.get()', as for the array of a built-in
         ident.assert_not_method(tc, probe);
 
-        const bool continues{continues_expression(probe)};
+        // e.g. the '+' of 'f(a + 1)'
+        assert_no_operator_after_array(probe);
 
-        if (not ident.is_array() and not continues) {
+        if (not ident.is_array()) {
             throw_not_array_argument(tk.start_position(), ident.path_text(),
                                      param);
         }
-
-        return ident.is_array() and not continues;
     }
 
     // an argument that reaches a part of an earlier one or of the result that

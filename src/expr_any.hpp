@@ -910,21 +910,16 @@ class expr_any final : public statement {
     // it, and not an instance, whatever the value, e.g. 'c', 'f()' or
     // 'arrays_equal(a, b, n)'; at the parse, the one point every value passes
     // (README 7.13); the width is checked where the value is compiled
-    static auto assert_number_kind(const toc& tc, const expr_arith& value,
-                                   const type& tp) -> void {
+    static auto assert_number_kind(const expr_arith& value, const type& tp)
+        -> void {
+
+        // a whole array is reported as one and not by its element type, e.g.
+        // the 'cs' of 'x = cs' with 'cs' an array of instances
+        assert_not_whole_array(value);
 
         const type& value_type{value.get_type()};
 
         if (value_type.is_builtin() and not value_type.is_bool()) {
-            return;
-        }
-
-        // a whole array is reported where it is used, as an array that must
-        // be indexed and not by its element type, e.g. the 'cs' of 'x = cs'
-        // with 'cs' an array of instances
-        if (const std::optional<place> array{as_place(tc, value)};
-            array and array->info.is_array()) {
-
             return;
         }
 
@@ -1100,7 +1095,7 @@ class expr_any final : public statement {
                              expr_arith::options::plain(destination_type)};
 
             if (not tp.is_bool()) {
-                assert_number_kind(tc, value, tp);
+                assert_number_kind(value, tp);
             }
 
             // e.g. the '>' of 'int(a > 2)', which would end the number

@@ -1,0 +1,4 @@
+
+2076.baz:6:10: array 'bs' must be indexed
+    n = -bs
+         ^~

@@ -71,11 +71,10 @@ class compile_error final : public std::exception {
     // changes an error instead of ending with it: 'machine::compile_version'
     // drops every kind but 'source' of a version,
     // 'call_limits' rewords 'out_of_registers' in an inlined recursion,
-    // 'stmt_def_func::check_body' drops every kind but 'source' when the body
-    // takes from a call, 'toc::check_skipped' drops them in skipped code
-    // there and 'stmt_call::check_recursion' in an inlined recursion there;
-    // 'toc::throw_dry_run_error' resets the kind to 'source' so that none of
-    // them drops the error of a dry run
+    // 'toc::dry_run' drops every kind but 'source' in code that takes from a
+    // call, for 'stmt_def_func::check_body', 'toc::check_skipped' and
+    // 'stmt_call::check_recursion', and hands back any other error as a
+    // 'source' one so that none of them drops it
     enum class error_kind : uint8_t {
         source,
         out_of_registers,

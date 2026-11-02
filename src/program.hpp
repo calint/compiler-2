@@ -498,7 +498,8 @@ class program final {
 
             if (error) {
                 error->add_call_frame(body.call_tk, body.call_source);
-                toc::throw_dry_run_error(std::move(*error));
+
+                throw std::move(*error);
             }
         }
     }

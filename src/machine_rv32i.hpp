@@ -541,9 +541,9 @@ class machine_rv32i : public machine {
 
         const operation_scope scope{*this};
 
-        // the arguments are in the registers of 'target_call_registers',
-        // checked by 'call_target'; 'a7' selects the system call or receives
-        // the return address
+        // the arguments are in the registers of 'target_calls', allocated by
+        // 'call_target'; 'a7' selects the system call or receives the return
+        // address
         reserve_named_register(src_loc_tk, indent, "a7");
 
         if (function == target_call::read) {

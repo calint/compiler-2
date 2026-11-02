@@ -1,0 +1,7 @@
+# a whole array converted is rejected where it is parsed, as an array that
+# must be indexed
+func main() {
+    var bs = bool[2]
+    var n = int(bs)
+    exit(n)
+}

@@ -1,6 +1,43 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] hard: design review series 2, round 55 (2026-11-02, user: keep
+    looping the design review with major refactoring allowed; 2 hunters:
+    H1 acceptance against calls (README 1.5), H2 a differential generator
+    with a Python model on 3 targets; 3 reviewers: A the check of a body
+    without its calls, B the machines with io, 'foo' and bulk, D a whole
+    array in arithmetic)
+    => done (2026-11-02): bugs (README 1.5, older than this round): A1 the
+       cut of an inlined recursion in a body check compiled only its value
+       arguments, an index of an array or instance argument past a local
+       array was accepted where nothing calls the function: the cut binds
+       the arguments as the call does and skips the body
+       ('inline_call::compile_arguments', 'check_arguments_alone' gone;
+       2073 2074); H1-1 the call of a function in its own check was not a
+       recursion ('scope_stack::inlined_nesting' stopped at the frame of the
+       checked function), so an out-of-registers error in it ended the check
+       on x86_64 only (2078; 2072 loses its frame); design: A2 one drop rule
+       in 'toc::dry_run' ('throw_dry_run_error' gone); D2 one parse rule
+       for a whole array where a value goes, the compile sites are asserts
+       (the todo item below; 0885 1306 1307, 2075-2077; README 7.13); B1 a
+       target call is one 'machine::call_target' with callbacks, the
+       machine pairs the frees (-26); B2 x86_64 '* -1' through 'unary'; H2
+       found no mismatch in about 963000 runs of 135000 programs (a mutant
+       run with a check off found 18 and 9)
+[x] easy: a whole array of instances or 'bool' in arithmetic is reported as
+    an instance or a 'bool': 'n = ps + 1' and 'var x = -ps' with 'ps' a
+    'pt[2]' say "an instance of 'pt' is not a number", 'n = 1 + bs' with 'bs'
+    a 'bool[2]' hints 'int(bs)', which is rejected; a number array says
+    "array 'a' must be indexed"; rejecting every array in
+    'expr_arith::assert_number' changes 0885, 1306 and 1307, which test the
+    parameter message "'a + 1' is not an array" on purpose (design review
+    series 2, round 29 A3)
+    => done (2026-11-02, design review series 2, round 55 D2): one parse rule,
+       'assert_not_whole_array', rejects a whole array where a value goes,
+       "array 'a' must be indexed" for number, instance and 'bool' arrays;
+       the compile sites are asserts; where an array argument goes an
+       operator after it or a unary operator is "an operator makes a value,
+       not an array" (0885 1306 1307; 2075 2076 2077; README 7.13)
 [x] hard: design review series 2, round 54 (2026-11-02, user: keep
     looping the design review with major refactoring allowed; 2 hunters:
     H1 acceptance against calls (README 1.5), H2 results against inlining,

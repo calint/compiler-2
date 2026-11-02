@@ -1,0 +1,10 @@
+# a whole array of instances in arithmetic is rejected as an array that must be
+# indexed, not as an instance
+type pt { x, y }
+
+func main() {
+    var ps = pt[2]
+    var n = 0
+    n = ps + 1
+    exit(n)
+}

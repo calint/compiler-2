@@ -199,14 +199,9 @@ inline auto expr_type::parse_copy_source(toc& tc, tokenizer& tz,
 
     const stmt_identifier& ident{*operand_path()};
 
-    // note: a whole array for an instance is rejected before its type, as
-    //       for a number: by the plan of an assignment
-    //       ('assert_copy_source_shape') or by the call it is an argument of
-    //       ('stmt_call::assert_argument_usable')
-
-    if (ident.is_array()) {
-        return;
-    }
+    // a whole array is reported as one, not by its element type, as for a
+    // number
+    assert_not_whole_array(ident);
 
     if (not tp.is_same(ident.get_type())) {
         throw_type_mismatch(ident.last_token(), tp.name(),
@@ -284,9 +279,7 @@ inline auto expr_type::compile(toc& tc, const size_t indent,
     // note: a literal is written in parts by the 'write_plan' of the value
     //       that holds it, see 'expr_any::plan_writes'
 
-    // note: 'plan_writes' checked the shape, the plan of every value is made
-    //       before it is compiled ('assert_copy_source_shape')
-
+    // note: the parse rejected a whole array ('parse_copy_source')
     assert(not make_ident_info(tc, *operand_path()).is_array());
 
     std::get<expr_path>(value_).compile(tc, indent, dst);
@@ -299,8 +292,6 @@ inline auto expr_type::plan_writes(const toc& tc, const part_location& at,
 
     // a call or a copy writes the value at once
     if (not is_literal()) {
-        assert_copy_source_shape(tc);
-
         plan.push_back({
             .at{at},
             .action{
@@ -354,19 +345,6 @@ inline auto expr_type::plan_writes(const toc& tc, const part_location& at,
     plan_unwritten(at, unlisted.empty() ? "padding" : "remaining fields",
                    written_bytes, get_type().size_bytes() - written_bytes,
                    std::move(unlisted), plan);
-}
-
-// the copy size comes from the source: an instance is copied only from one;
-// checked when the plan is made, at compile time, where a parameter is
-// resolved to what its call passed
-inline auto expr_type::assert_copy_source_shape(const toc& tc) const -> void {
-    const stmt_identifier* const ident{operand_path()};
-
-    if (ident == nullptr or not make_ident_info(tc, *ident).is_array()) {
-        return;
-    }
-
-    throw_unindexed_array(tok(), ident->dotted_path());
 }
 
 inline auto expr_type::visit_operands(const operand_visitor visitor) const

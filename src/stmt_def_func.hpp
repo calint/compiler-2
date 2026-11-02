@@ -548,15 +548,16 @@ class stmt_def_func final : public statement {
 
                     std::ignore = compile_in_frame(tc, 0, {});
                 },
-                machine::discarded_code::body),
+                machine::discarded_code::body, takes_from_call),
         };
 
-        if (not error or (takes_from_call and error->depends_on_call())) {
+        if (not error) {
             return;
         }
 
         add_instance_trace(*error);
-        toc::throw_dry_run_error(std::move(*error));
+
+        throw std::move(*error);
     }
 
     // the body of a noinline function for array lengths that only a dry run
@@ -575,7 +576,7 @@ class stmt_def_func final : public statement {
 
                 std::ignore = compile_in_frame(tc, 0, array_lengths);
             },
-            machine::discarded_code::body);
+            machine::discarded_code::body, false);
     }
 
     // the body in place at the call 'call_tk', under labels named by the

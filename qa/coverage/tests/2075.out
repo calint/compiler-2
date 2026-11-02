@@ -1,0 +1,4 @@
+
+2075.baz:8:9: array 'ps' must be indexed
+    n = ps + 1
+        ^~

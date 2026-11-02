@@ -6,14 +6,6 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
 --------------------------------------------------------------------------------
 1. clean up
 --------------------------------------------------------------------------------
-[ ] easy: a whole array of instances or 'bool' in arithmetic is reported as
-    an instance or a 'bool': 'n = ps + 1' and 'var x = -ps' with 'ps' a
-    'pt[2]' say "an instance of 'pt' is not a number", 'n = 1 + bs' with 'bs'
-    a 'bool[2]' hints 'int(bs)', which is rejected; a number array says
-    "array 'a' must be indexed"; rejecting every array in
-    'expr_arith::assert_number' changes 0885, 1306 and 1307, which test the
-    parameter message "'a + 1' is not an array" on purpose (design review
-    series 2, round 29 A3)
 [ ] medium: a chain of distinct inlined functions with deeply nested
     expressions overflows the compiler's stack (segfault on both targets,
     bug hunt round 6 S2): each limit holds alone, parse nesting 128 per body

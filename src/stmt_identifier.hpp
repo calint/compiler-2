@@ -457,7 +457,6 @@ class stmt_identifier final : public statement {
         // instances are copied whole and cannot narrow
         assert(dst_type.is_builtin());
 
-        // a whole array is rejected before its type is asked, as in 'compile'
         const ident_info info{make_scalar_ident_info(tc, *this)};
 
         if (info.is_const() and not info.constant().is_typed()) {
@@ -977,10 +976,7 @@ class stmt_identifier final : public statement {
         array.assert_not_method(tc, tz);
         array.assert_array_or_element();
 
-        // e.g. the '+' of 'array_length(a + 1)'
-        if (continues_expression(tz)) {
-            throw compile_error{tz, "an operator makes a value, not an array"};
-        }
+        assert_no_operator_after_array(tz);
 
         return array;
     }
@@ -1275,14 +1271,17 @@ struct place {
     return ident.is_array_element() ? declared.as_element() : declared;
 }
 
-inline auto assert_not_whole_array(const stmt_identifier& ident,
-                                   const ident_info& info) -> void {
+// a whole array is not a value of its element type, whatever that type is,
+// e.g. the 'a' of 'a + 1', '-a', 'x = a' or 'a < 1'; checked at the parse
+// (README 7.13)
+inline auto assert_not_whole_array(const statement& value) -> void {
+    const stmt_identifier* const path{value.operand_path()};
 
-    if (not info.is_array()) {
+    if (path == nullptr or not path->is_array()) {
         return;
     }
 
-    throw_unindexed_array(ident.tok(), ident.dotted_path());
+    throw_unindexed_array(path->tok(), path->dotted_path());
 }
 
 // a whole array is not read as its first element
@@ -1291,7 +1290,10 @@ inline auto assert_not_whole_array(const stmt_identifier& ident,
     -> ident_info {
 
     ident_info info{make_ident_info(tc, ident)};
-    assert_not_whole_array(ident, info);
+
+    // note: the parse rejected a whole array ('assert_not_whole_array')
+    assert(not info.is_array());
+
     return info;
 }
 

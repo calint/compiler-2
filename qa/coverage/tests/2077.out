@@ -1,0 +1,4 @@
+
+2077.baz:5:17: array 'bs' must be indexed
+    var n = int(bs)
+                ^~

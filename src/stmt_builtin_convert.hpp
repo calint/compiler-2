@@ -394,6 +394,9 @@ class stmt_builtin_convert final : public statement {
 
         expr_arith arg{tc, tz};
 
+        // e.g. the 'ps' of 'int(ps)', reported as an array, not by its type
+        assert_not_whole_array(arg);
+
         if (not arg.get_type().is_builtin()) {
             throw compile_error{
                 arg.tok(),

@@ -1,0 +1,24 @@
+# the check of a body without its call does not expand the call of the
+# function in it: 'r(s, i + 1)' within the 'foo' levels ran out of registers
+# on x86_64 and ended the check before 'd / 0'
+
+func r(s i8[], i) res {
+    res = 0
+    if i >= array_length(s) {
+        return
+    }
+    var a = i8[3]
+    foo a {
+        foo a {
+            foo a {
+                foo a, r(s, i + 1) {
+                }
+            }
+        }
+    }
+    var d = 7
+    d = d / 0
+}
+
+func main() {
+}

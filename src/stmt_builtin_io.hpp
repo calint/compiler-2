@@ -8,10 +8,10 @@
 #include <format>
 #include <optional>
 #include <ostream>
+#include <span>
 #include <string>
 #include <string_view>
 #include <utility>
-#include <vector>
 
 #include "ident_info.hpp"
 #include "machine.hpp"
@@ -136,22 +136,19 @@ class stmt_builtin_io final : public statement {
 
         x.comment(tok(), indent, statement::trimmed_source(*this));
 
-        const std::vector<operand> args{
-            compile_arguments(tc, indent, buffer),
-        };
+        x.call_target(
+            tok(), indent, io_.function,
+            [&](const std::span<const operand> args) -> void {
+                compile_arguments(tc, indent, buffer, args);
+            },
+            [&](const operand& result) -> void {
+                get_unary_ops().compile(x, indent, tok(), result,
+                                        tc.overflow_options(dst));
 
-        const operand result{x.call_target(tok(), indent, io_.function, args)};
-
-        if (io_.has_result()) {
-            get_unary_ops().compile(x, indent, tok(), result,
-                                    tc.overflow_options(dst));
-
-            if (not dst.is_empty()) {
-                x.copy_value(tok(), indent, dst.operand(), result);
-            }
-        }
-
-        x.free_target_call(tok(), indent, args, result);
+                if (not dst.is_empty()) {
+                    x.copy_value(tok(), indent, dst.operand(), result);
+                }
+            });
     }
 
     // 'read' and 'sector_read' write their buffer, e.g. 'b' of 'read(0, b)'
@@ -457,17 +454,10 @@ class stmt_builtin_io final : public statement {
     }
 
     // every argument into the register of the call the target takes it in,
-    // in the order of the arguments, then the range check and the byte
-    // count; the count and start are in elements
-    [[nodiscard]] auto compile_arguments(toc& tc, const size_t indent,
-                                         const place& buffer) const
-        -> std::vector<operand> {
-
-        machine& x{tc.machine()};
-
-        const std::vector<operand> args{
-            x.alloc_target_call_arguments(tok(), indent),
-        };
+    // 'args', in the order of the arguments, then the range check and the
+    // byte count; the count and start are in elements
+    auto compile_arguments(toc& tc, const size_t indent, const place& buffer,
+                           const std::span<const operand> args) const -> void {
 
         // the descriptor, or the sector of a sector function
         const operand& descriptor{args.at(0)};
@@ -490,11 +480,11 @@ class stmt_builtin_io final : public statement {
         check_range_from_start(tc, indent, buffer_reg, count, known_count,
                                buffer_info);
 
+        machine& x{tc.machine()};
+
         // the count becomes the byte count
         x.scale_index(tok(), indent, count,
                       buffer_info.type_ref().size_bytes());
-
-        return args;
     }
 
     // without a count the whole array is transferred, a sector function

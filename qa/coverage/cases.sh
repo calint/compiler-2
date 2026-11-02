@@ -6573,3 +6573,24 @@ SRC=2071 && COMPERR
 # the check of a body without its call goes on after an inlined recursion
 # that an instance drives beside a constant argument
 SRC=2072 && COMPERR
+
+# the check of a body without its call binds an array argument of an inlined
+# recursion it does not expand
+SRC=2073 && COMPERR
+
+# the check of a body without its call binds an instance argument of an
+# inlined recursion it does not expand
+SRC=2074 && COMPERR
+
+# a whole array of instances in arithmetic is reported as an array
+SRC=2075 && COMPERR
+
+# a whole array of 'bool' under a unary operator is reported as an array
+SRC=2076 && COMPERR
+
+# a whole array converted is reported as an array
+SRC=2077 && COMPERR
+
+# the check of a body without its call does not expand the call of the
+# function in it, a recursion that no constant drives
+SRC=2078 && COMPERR
