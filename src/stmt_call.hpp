@@ -56,7 +56,7 @@
 //
 // an argument, from the parse to the body:
 //
-//   'call_site::argument_places' the place each argument names, none for a
+//   'stmt_call::argument_places' the place each argument names, none for a
 //                                value; whether an argument goes through a
 //                                temporary is the rule of 'inline_call' or
 //                                'noinline_call'
@@ -581,6 +581,9 @@ struct call_site {
     std::span<const expr_any> args;
     // the callee, resolved when the call was parsed; never null
     const stmt_def_func* func{};
+    // one per argument, the verdict that the checks of the call and its
+    // compile share, see 'stmt_call::argument_places'
+    std::vector<std::optional<place>> places;
 
     // the error was found inside the inlined body, unless it is in the call
     // itself where the call is already the error location
@@ -610,38 +613,6 @@ struct call_site {
         return destination::of_name(
             tc.resolve_declared(tk, name), name,
             tc.storage_of(name, access_path::whole_variable()));
-    }
-
-    // the place each argument names, decided at each compile because the
-    // bindings of the current scope decide it; none for a value without
-    // storage:
-    //
-    //   argument        example         inlined body gets  noinline body
-    //   place           'p', 'a[i]'     the name, or the   its address
-    //                                   computed address
-    //   instance        'point{1, 2}',  a temporary        a temporary
-    //                   'mk(1, 2)'
-    //   value           'x + 1',        a constant, a      a temporary
-    //                   '-a[i]', '-x',  register, or the
-    //                   '3', 'k', 'x'   register 'x' is
-    //                   bound to a      bound to
-    //                   register
-    [[nodiscard]] auto argument_places(const toc& tc) const
-        -> std::vector<std::optional<place>> {
-
-        std::vector<std::optional<place>> places;
-        places.reserve(args.size());
-
-        for (const auto [arg, param] : std::views::zip(args, func->params())) {
-            std::optional<place> arg_place{as_place(tc, arg)};
-
-            // note: an array argument is a place, see 'assert_argument_usable'
-            assert(not param.is_array() or arg_place);
-
-            places.push_back(std::move(arg_place));
-        }
-
-        return places;
     }
 
     // the result is made in a temporary of the call, then copied into
@@ -770,8 +741,8 @@ struct call_site {
 //      made in a temporary, an indexed argument may get its address in a
 //      register ('compile_with_address_choice',
 //      'compile_body_with_address_registers')
-//   3. 'compile_body': the body under labels unique to the call, with the
-//      bindings added
+//   3. 'compile_body': the body in place with the bindings
+//      ('stmt_def_func::compile_inlined')
 class inline_call final {
     // what the body names by its result and its parameters
     struct call_bindings {
@@ -780,13 +751,9 @@ class inline_call final {
     };
 
     call_site call_{};
-    // one per argument, see 'call_site::argument_places'
-    std::vector<std::optional<place>> places_;
 
   public:
-    inline_call(const toc& tc, call_site call)
-        : call_{std::move(call)}, places_{call_.argument_places(tc)} {
-
+    explicit inline_call(call_site call) : call_{std::move(call)} {
         assert(call_.func->is_inlined());
     }
 
@@ -823,69 +790,18 @@ class inline_call final {
     }
 
   private:
+    // an error found in the inlined body reports where it was called from,
+    // an error in the arguments is in the caller and has no call frame
     auto compile_body(toc& tc, const size_t indent,
                       const call_bindings& bindings) const -> void {
 
-        // the body is inlined at every call, so its labels are named by the
-        // call
-        const std::string new_call_path{tc.call_path_at(call_.tk)};
-
-        const std::string call_label{
-            std::format("{}..{}", call_.func->body_label(), new_call_path),
-        };
-
-        const std::string ret_jmp_label{toc::end_label(call_label)};
-
-        machine& x{tc.machine()};
-
-        call_.func->source_def_comment_to(x, indent);
-
-        x.label(indent, call_label);
-
-        const toc::scope_entry body{
-            tc,
-            scope::inlined_func(call_.func->name(), new_call_path,
-                                ret_jmp_label),
-            call_.tk,
-        };
-
-        // an error found in the inlined body reports where it was called from,
-        // an error in the arguments is in the caller and has no call frame
         try {
-            call_.func->add_constants(tc, indent + 1);
-
-            const auto add_binding{
-                [&](const param_binding& binding) -> void {
-                    const ident_info& bound{binding.info};
-
-                    x.comment_binding(call_.tk, indent + 1, binding.from,
-                                      binding.text,
-                                      bound.is_address_by_call()
-                                          ? std::optional{bound.operand()}
-                                          : std::nullopt);
-
-                    tc.add_binding(binding);
-                },
-            };
-
-            if (bindings.result) {
-                add_binding(*bindings.result);
-            }
-
-            for (const param_binding& binding : bindings.arguments) {
-                add_binding(binding);
-            }
-
-            // the result reaches the destination through the binding of 'res',
-            // so the statements of the body have no destination
-            call_.func->compile_statements(tc, indent);
+            call_.func->compile_inlined(tc, indent, call_.tk, bindings.result,
+                                        bindings.arguments);
         } catch (compile_error& e) {
             call_.add_call_frame(e);
             throw;
         }
-
-        // provide the exit label for 'return' to jump to
-        x.label(indent, ret_jmp_label);
     }
 
     // a new register per argument because the index register may belong to
@@ -998,9 +914,10 @@ class inline_call final {
 
     [[nodiscard]] auto has_argument_temporary() const -> bool {
         return std::ranges::any_of(
-            std::views::iota(size_t{}, places_.size()),
+            std::views::iota(size_t{}, call_.places.size()),
             [this](const size_t i) -> bool {
-                return is_temporary(places_.at(i), call_.func->params().at(i));
+                return is_temporary(call_.places.at(i),
+                                    call_.func->params().at(i));
             });
     }
 
@@ -1027,7 +944,7 @@ class inline_call final {
 
         for (const auto [i, arg, param, arg_place] :
              std::views::zip(std::views::iota(size_t{}), call_.args,
-                             call_.func->params(), places_)) {
+                             call_.func->params(), call_.places)) {
 
             // note: a temporary is made here, in the order of the arguments,
             //       and named per call, so each level of an inlined recursion
@@ -1057,7 +974,7 @@ class inline_call final {
     //
 
     // the inlined body reaches a place or a value of a built-in type by
-    // the binding it gives, see 'call_site::argument_places'
+    // the binding it gives, see 'stmt_call::argument_places'
     [[nodiscard]] static auto
     bind_argument(toc& tc, const size_t indent, const expr_any& arg,
                   const stmt_def_func_param& param,
@@ -1219,15 +1136,11 @@ class noinline_call final {
         operand address;
     };
 
+    // a place is passed by its address, any other argument in a temporary
     call_site call_{};
-    // one per argument, a place is passed by its address, any other in a
-    // temporary
-    std::vector<std::optional<place>> places_;
 
   public:
-    noinline_call(const toc& tc, call_site call)
-        : call_{std::move(call)}, places_{call_.argument_places(tc)} {
-
+    explicit noinline_call(call_site call) : call_{std::move(call)} {
         assert(not call_.func->is_inlined());
     }
 
@@ -1240,7 +1153,7 @@ class noinline_call final {
 
         const bool has_temporaries{
             has_result_temporary(dst, *call_.func) or
-                std::ranges::any_of(places_,
+                std::ranges::any_of(call_.places,
                                     [](const std::optional<place>& p) -> bool {
                                         return not p;
                                     }),
@@ -1280,7 +1193,7 @@ class noinline_call final {
         std::vector<noinline_arg> arguments;
 
         for (const auto [i, arg_place] :
-             std::views::zip(std::views::iota(size_t{}), places_)) {
+             std::views::zip(std::views::iota(size_t{}), call_.places)) {
 
             // e.g. a literal or an expression
             if (not arg_place) {
@@ -1534,9 +1447,7 @@ inline auto assert_call_in_func(const toc& tc, const token& call_tk) -> void {
 // 'array_length'; the whitespace before it belongs to its first token
 [[nodiscard]] inline auto path_argument(stmt_identifier path) -> expr_any {
     const token pos_tk{path.tok().start_position()};
-
-    return {pos_tk,
-            expr_type{std::make_unique<stmt_identifier>(std::move(path))}};
+    return {pos_tk, expr_path{std::move(path)}};
 }
 
 // the arguments of a built-in that parses like a call, e.g. '(1, buf, 4)' of
@@ -1832,13 +1743,13 @@ class stmt_call final : public statement {
         // note: the built-ins that parse like a call, e.g. 'exit' and the io
         //       functions, are nodes of their own ('stmt_builtin_*')
 
-        const call_site call{site()};
+        const call_site call{site(tc)};
 
         machine& x{tc.machine()};
 
         x.comment(tok(), indent, call.source);
 
-        assert_call_accepted(tc, dst);
+        assert_call_accepted(tc, dst, call.places);
 
         const bool is_recursion{
             callee().is_inlined() and
@@ -1848,7 +1759,7 @@ class stmt_call final : public statement {
         // a check without a call does not expand a recursion: the body is
         // checked where the recursion is entered and in its own check, a
         // constant that would end it is one of a call
-        if (is_recursion and tc.is_checking_without_call()) {
+        if (is_recursion and tc.scopes().is_in_body_taking_from_call()) {
             check_arguments_alone(tc, indent);
             return;
         }
@@ -1896,15 +1807,52 @@ class stmt_call final : public statement {
     }
 
   private:
+    // the place each argument names, decided at each compile because the
+    // bindings of the current scope decide it; none for a value without
+    // storage:
+    //
+    //   argument        example         inlined body gets  noinline body
+    //   place           'p', 'a[i]'     the name, or the   its address
+    //                                   computed address
+    //   instance        'point{1, 2}',  a temporary        a temporary
+    //                   'mk(1, 2)'
+    //   value           'x + 1',        a constant, a      a temporary
+    //                   '-a[i]', '-x',  register, or the
+    //                   '3', 'k', 'x'   register 'x' is
+    //                   bound to a      bound to
+    //                   register
+    [[nodiscard]] auto argument_places(const toc& tc) const
+        -> std::vector<std::optional<place>> {
+
+        std::vector<std::optional<place>> places;
+        places.reserve(args_.size());
+
+        for (const auto [arg, param] :
+             std::views::zip(args_, callee().params())) {
+
+            std::optional<place> arg_place{as_place(tc, arg)};
+
+            // note: an array argument is a place, see 'assert_argument_usable'
+            assert(not param.is_array() or arg_place);
+
+            places.push_back(std::move(arg_place));
+        }
+
+        return places;
+    }
+
     // the type of each argument, one verdict for an inlined and a noinline
     // call: a name or a typed constant has the type of its parameter, its
     // storage or typed value is passed; a value that is not a place must fit
     // its built-in parameter, e.g. 'a + 1' and '-a' widen into it
-    auto assert_argument_types(const toc& tc) const -> void {
-        for (const auto [arg, param] :
-             std::views::zip(args_, callee().params())) {
+    auto assert_argument_types(
+        const toc& tc, const std::span<const std::optional<place>> places) const
+        -> void {
 
-            if (param.get_type().is_builtin() and not as_place(tc, arg)) {
+        for (const auto [arg, param, arg_place] :
+             std::views::zip(args_, callee().params(), places)) {
+
+            if (param.get_type().is_builtin() and not arg_place) {
                 arg.assert_not_narrowed(tc, param.get_type());
             }
 
@@ -1972,10 +1920,11 @@ class stmt_call final : public statement {
     // checked before the inlined and the noinline paths split, so inlining
     // does not change what is accepted; the result is the call's own, an
     // error in it has no call frame
-    auto assert_call_accepted(const toc& tc, const destination& dst) const
-        -> void {
+    auto assert_call_accepted(
+        const toc& tc, const destination& dst,
+        const std::span<const std::optional<place>> places) const -> void {
 
-        assert_no_shared_storage(tc, dst);
+        assert_no_shared_storage(tc, dst, places);
 
         // note: the parse rejected a discarded result
         //       ('parse_name_statement') and a call without one as a value
@@ -1987,7 +1936,7 @@ class stmt_call final : public statement {
             assert_result_type(dst);
         }
 
-        assert_argument_types(tc);
+        assert_argument_types(tc, places);
         // e.g. the 'i' of 'f(arr[i], h(i))' with 'h' writing 'i'
         assert_not_written_later(tc, *this, "argument");
     }
@@ -2036,8 +1985,9 @@ class stmt_call final : public statement {
     // so a part that one of them writes may be read or written under
     // another name; the record of the body says which parts it reaches
     // ('body_uses')
-    auto assert_no_shared_storage(const toc& tc, const destination& dst) const
-        -> void {
+    auto assert_no_shared_storage(
+        const toc& tc, const destination& dst,
+        const std::span<const std::optional<place>> places) const -> void {
 
         std::vector<reference> references;
 
@@ -2053,7 +2003,7 @@ class stmt_call final : public statement {
             const expr_any& arg{args_.at(i)};
 
             // a value or a constant is passed as a copy
-            const std::optional<place> passed{as_place(tc, arg)};
+            const std::optional<place>& passed{places.at(i)};
 
             if (not passed) {
                 continue;
@@ -2162,7 +2112,7 @@ class stmt_call final : public statement {
         -> void {
 
         if (not callee().is_inlined()) {
-            noinline_call{tc, call}.compile(tc, indent, dst);
+            noinline_call{call}.compile(tc, indent, dst);
             return;
         }
 
@@ -2171,7 +2121,7 @@ class stmt_call final : public statement {
         // a recursion that does not end with constant arguments runs out of
         // registers before it reaches the nesting limit, the advice is the same
         try {
-            inline_call{tc, call}.compile(tc, indent, dst);
+            inline_call{call}.compile(tc, indent, dst);
         } catch (const compile_error& e) {
             if (not is_recursion or
                 e.kind != compile_error::error_kind::out_of_registers) {
@@ -2456,7 +2406,7 @@ class stmt_call final : public statement {
     }
 
     // what 'inline_call' and 'noinline_call' need of this call
-    [[nodiscard]] auto site() const -> call_site {
+    [[nodiscard]] auto site(const toc& tc) const -> call_site {
         return {
             .tk{tok()},
             .begin_tk{call_begin_token()},
@@ -2464,6 +2414,7 @@ class stmt_call final : public statement {
             .source{statement::trimmed_source(*this)},
             .args{args_},
             .func{func_},
+            .places{argument_places(tc)},
         };
     }
 

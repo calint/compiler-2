@@ -298,7 +298,7 @@ class stmt_def_dat final : public statement {
         // e.g. 'dat b = a' copies the array 'a' at run time
         if (value.is_whole_array_copy()) {
             // note: the parse rejected a source that is not an array
-            //       ('expr_type::parse_copy_source'), a dat folds right after
+            //       ('expr_path::parse_whole_array'), a dat folds right after
             //       its parse with the same names
 
             assert(make_ident_info(tc, *value.operand_path()).is_array());

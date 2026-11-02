@@ -109,8 +109,8 @@ struct target_description {
 //                  'target_call_registers'
 //   operations     'add_subtract', 'multiply', 'divide', 'shift', 'bitwise',
 //                  'unary', 'zero', 'zero_padding', 'copy_value',
-//                  'store_bytes', 'address_of', 'scale_index', 'store_boolean',
-//                  'foo_advance_iteration'; bulk by a constant size
+//                  'store_bytes', 'address_of', 'scale_index', 'store_boolean';
+//                  bulk by a constant size
 //                  'copy_block', 'memory_equal', by a run-time count
 //                  'copy_elements', 'equal_elements'
 //   control        'label', 'branch', 'compare_and_branch', 'call_function',
@@ -390,6 +390,8 @@ class machine {
     target_description target_{};
     source_locations locations_;
     std::reference_wrapper<const builtin_type_set> builtins_;
+    // the assembler member of the backend
+    std::reference_wrapper<assembler> output_;
     assembler::jump_mode jump_mode_{};
     // the image of the sd card on targets with an operating system
     std::string sd_card_file_name_;
@@ -598,11 +600,13 @@ class machine {
     };
 
   public:
-    // 'files' locate the tokens of comments
+    // 'files' locate the tokens of comments; 'output' is not used here, the
+    // backend constructs it after the base
     machine(const builtin_type_set& builtins, const source_files& files,
-            const target_options& options, const target_description& target)
+            const target_options& options, const target_description& target,
+            assembler& output)
         : target_{target}, locations_{files}, builtins_{builtins},
-          jump_mode_{options.jumps},
+          output_{output}, jump_mode_{options.jumps},
           sd_card_file_name_{options.sd_card_file_name},
           kept_version_{options.kept}, reports_line_{options.reports_line} {
 
@@ -1220,35 +1224,6 @@ class machine {
         finish_target();
     }
 
-    // 'limit' is the constant array size or a register holding a count,
-    // 'counter' is a register or a memory operand
-    auto foo_advance_iteration(const token& src_loc_tk, const size_t indent,
-                               const operand& iterator, const operand& counter,
-                               const size_t element_size_bytes,
-                               const operand& limit,
-                               const std::string_view loop_label) -> void {
-
-        // note: element sizes are limited by the variables that hold the arrays
-        assert(element_size_bytes <= max_storage_bytes());
-
-        const operation_scope scope{*this, iterator, counter};
-
-        add_subtract(src_loc_tk, indent, arithmetic_operator::add, iterator,
-                     operand::imm(element_size_bytes, default_type()));
-
-        add_subtract(src_loc_tk, indent, arithmetic_operator::add, counter,
-                     operand::imm(1, default_type()));
-
-        compare_and_branch(src_loc_tk, indent, counter, limit,
-                           {
-                               .operation{comparison_operator::not_equal},
-                               .inverted{},
-                               .destination{},
-                               .target{loop_label},
-                               .branch_on_true{true},
-                           });
-    }
-
     // whether the counter of an array loop is better kept in memory than in a
     // register, decided when the loop starts
     [[nodiscard]] auto foo_counter_in_memory() const -> bool {
@@ -1530,11 +1505,6 @@ class machine {
                                      const std::span<const size_t> saved)
         -> void = 0;
 
-    // the assembler the target writes its output with
-    [[nodiscard]] virtual auto target_assembler() -> assembler& = 0;
-
-    [[nodiscard]] virtual auto target_assembler() const -> const assembler& = 0;
-
     //
     // class methods
     //
@@ -1740,6 +1710,15 @@ class machine {
 
     [[nodiscard]] auto sd_card_file_name() const -> std::string_view {
         return sd_card_file_name_;
+    }
+
+    // the assembler the target writes its output with
+    [[nodiscard]] auto target_assembler() -> assembler& {
+        return output_.get();
+    }
+
+    [[nodiscard]] auto target_assembler() const -> const assembler& {
+        return output_.get();
     }
 
     // 'emit' changes the registers 'clobbered', the allocated ones among them

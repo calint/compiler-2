@@ -1,5 +1,5 @@
-# 'not' where an array goes makes a condition, as a unary operator makes a
-# number
+# 'not' where an array goes makes a condition, as for the array of a
+# built-in, e.g. 'foo not a'
 
 func main() {
     var b = true

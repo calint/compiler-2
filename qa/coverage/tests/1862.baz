@@ -1,4 +1,4 @@
-# an operator after a copied array: an array is not a number
+# an operator after a copied array makes a value, not an array
 
 type left {value}
 

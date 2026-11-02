@@ -67,7 +67,8 @@ class stmt_array_size final : public statement {
 // its destination; one of the forms below, an array form only where the
 // destination is an array
 class expr_any final : public statement {
-    using expr_variant = std::variant<expr_arith, expr_bool, expr_type>;
+    using expr_variant =
+        std::variant<expr_arith, expr_bool, expr_type, expr_path>;
 
     // e.g. 'i8[3]' of 'i8[3]{1, 2}' or '[3]' at the default type, empty for
     // '{1, 2}', whose type and size the destination gives
@@ -156,12 +157,12 @@ class expr_any final : public statement {
 
     // a path parsed apart, e.g. a method receiver or the array argument of a
     // built-in
-    expr_any(const token pos_tk, expr_type path)
+    expr_any(const token pos_tk, expr_path path)
         : statement{pos_tk}, form_{single_value{
                                  .value{std::move(path)},
                              }} {
 
-        set_type(as_expr_type().get_type());
+        set_type(element(0).get_type());
     }
 
     //
@@ -291,7 +292,7 @@ class expr_any final : public statement {
     }
 
     // the element at 'index' of an instance value or of an array of
-    // instances, or the source of an array copy
+    // instances
     [[nodiscard]] auto as_expr_type(const size_t index = 0) const
         -> const expr_type& {
 
@@ -714,19 +715,11 @@ class expr_any final : public statement {
         }
 
         if (not open_brace_tk) {
-            // 'expr_type' copies the whole array as bytes, 'expr_arith' would
+            // 'expr_path' copies the whole array as bytes, 'expr_arith' would
             // read a single scalar
             // e.g. 'var b = a' copies the array 'a'
             return single_value{
-                .value{
-                    expr_type{
-                        tc,
-                        tz,
-                        tp,
-                        expr_type::destination_kind::whole_array,
-                        typing,
-                    },
-                },
+                .value{expr_path::parse_whole_array(tc, tz, tp)},
             };
         }
 
@@ -1030,8 +1023,7 @@ class expr_any final : public statement {
 
         // an instance value, e.g. 'point{1, 2}' or 'p'
         if (not tp.is_builtin()) {
-            return expr_type{tc, tz, tp, expr_type::destination_kind::instance,
-                             typing};
+            return expr_type{tc, tz, tp, typing};
         }
 
         // e.g. 'n = {}' is 'n = 0' and 'b = {}' is 'b = false'

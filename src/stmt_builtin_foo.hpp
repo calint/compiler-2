@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cassert>
 #include <cstddef>
 #include <cstdint>
 #include <optional>
@@ -126,9 +127,9 @@ class stmt_builtin_foo final : public statement {
         code_.compile(tc, indent, destination{});
         x.label(indent + 1, toc::continue_label(loop_label));
 
-        x.foo_advance_iteration(tok(), indent + 2, reg_iter, counter,
-                                array_info.type_ref().size_bytes(), limit,
-                                loop_label);
+        advance_iteration(tc, indent + 2, reg_iter, counter,
+                          array_info.type_ref().size_bytes(), limit,
+                          loop_label);
 
         x.label(indent, end_label);
 
@@ -216,6 +217,37 @@ class stmt_builtin_foo final : public statement {
 
         tc.add_const(src_loc_tk, indent, "n",
                      folded_value::untyped(static_cast<int64_t>(*array_len)));
+    }
+
+    // the iterator steps to the next element and the counter by one, the loop
+    // repeats until the counter is 'limit', a constant or a register
+    auto advance_iteration(toc& tc, const size_t indent,
+                           const operand& iterator, const operand& counter,
+                           const size_t element_size_bytes,
+                           const operand& limit,
+                           const std::string_view loop_label) const -> void {
+
+        machine& x{tc.machine()};
+
+        // note: element sizes are limited by the variables that hold the arrays
+        assert(element_size_bytes <= x.max_storage_bytes());
+
+        const type& default_type{tc.builtins().default_type()};
+
+        x.add_subtract(tok(), indent, arithmetic_operator::add, iterator,
+                       operand::imm(element_size_bytes, default_type));
+
+        x.add_subtract(tok(), indent, arithmetic_operator::add, counter,
+                       operand::imm(1, default_type));
+
+        x.compare_and_branch(tok(), indent, counter, limit,
+                             {
+                                 .operation{comparison_operator::not_equal},
+                                 .inverted{},
+                                 .destination{},
+                                 .target{loop_label},
+                                 .branch_on_true{true},
+                             });
     }
 
     // the 'foo' header as one comment line, e.g. 'foo a, 2'

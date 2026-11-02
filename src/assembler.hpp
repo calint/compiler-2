@@ -414,6 +414,42 @@ class assembler {
         return text;
     }
 
+    // 'bytes' between the quotes of a string directive: a backslash before
+    // a backslash and each of 'quote_chars', a line end or a tab by name, a
+    // printable character as it is and another byte by 'numeric_escape', a
+    // format of the byte value, e.g. '\x{:02x}'
+    [[nodiscard]] static auto
+    escaped_text(const std::string_view bytes,
+                 const std::string_view quote_chars,
+                 const std::string_view numeric_escape) -> std::string {
+
+        std::string text;
+
+        for (const char c : bytes) {
+            if (c == '\\' or quote_chars.contains(c)) {
+                text += '\\';
+                text += c;
+                continue;
+            }
+
+            if (const std::optional<std::string_view> named{named_escape(c)}) {
+                text += *named;
+                continue;
+            }
+
+            if (c >= ' ' and c <= '~') {
+                text += c;
+                continue;
+            }
+
+            const unsigned int byte{static_cast<unsigned char>(c)};
+
+            text += std::vformat(numeric_escape, std::make_format_args(byte));
+        }
+
+        return text;
+    }
+
     // the spaces before an instruction or a label, four for each level
     [[nodiscard]] static auto indentation(const size_t indent) -> std::string {
         constexpr size_t spaces_per_level{4};

@@ -259,15 +259,24 @@ class expr_bool_op final : public statement {
 
         x.label(indent, tc.create_cmp_label(tok()));
 
-        if (not comparison_) {
-            return compile_shorthand(tc, indent, action);
+        // a constant has the element's 'not's applied, the list inversion is
+        // left
+        if (const std::optional<bool> constant{constant_value(tc)}) {
+            return compile_constant(tc, indent, *constant != inverted, action);
         }
 
-        return compile_comparison(tc, indent, *comparison_, action);
+        if (not comparison_) {
+            compile_shorthand(tc, indent, action);
+            return condition_result::unknown;
+        }
+
+        compile_comparison(tc, indent, *comparison_, action);
+
+        return condition_result::unknown;
     }
 
-    // the value 'compile' would find without emitting code, empty when
-    // evaluated at run time
+    // the value when the sides fold, which 'compile_branch' emits as a
+    // constant, empty when evaluated at run time
     [[nodiscard]] auto constant_value(const toc& tc) const
         -> std::optional<bool> {
 
@@ -373,29 +382,21 @@ class expr_bool_op final : public statement {
         return " ";
     }
 
-    // the sides are classified once
-    [[nodiscard]] auto
-    compile_comparison(toc& tc, const size_t indent, const comparison& cmp,
-                       const machine::comparison_action& action) const
-        -> condition_result {
+    // a comparison whose sides do not both fold, the sides are classified
+    // once
+    auto compile_comparison(toc& tc, const size_t indent, const comparison& cmp,
+                            const machine::comparison_action& action) const
+        -> void {
 
         const comparison_side lhs{side_of(tc, lhs_)};
         const comparison_side rhs{side_of(tc, cmp.rhs)};
-
-        if (const std::optional<bool> constant{
-                constant_comparison(lhs, cmp.op, rhs),
-            }) {
-
-            return compile_constant(tc, indent, *constant != action.inverted,
-                                    action);
-        }
 
         // e.g. the 'i' of 'i == h(i)' with 'h' writing 'i'
         assert_not_written_later(tc, *this, "operand");
 
         if (cmp.is_memory) {
             resolve_memory_cmp(tc, indent, cmp, action);
-            return condition_result::unknown;
+            return;
         }
 
         assert_sides_fit(lhs, rhs, cmp.op);
@@ -411,7 +412,7 @@ class expr_bool_op final : public statement {
 
         if (not is_mirrored) {
             resolve_cmp(tc, indent, lhs, rhs, action);
-            return condition_result::unknown;
+            return;
         }
 
         machine::comparison_action mirrored_action{action};
@@ -421,8 +422,6 @@ class expr_bool_op final : public statement {
         const comparison_side& mirrored_rhs{lhs};
 
         resolve_cmp(tc, indent, mirrored_lhs, mirrored_rhs, mirrored_action);
-
-        return condition_result::unknown;
     }
 
     // a constant emits no comparison, only the short-circuit branch
@@ -447,26 +446,16 @@ class expr_bool_op final : public statement {
         return known_result(value);
     }
 
-    // the operand alone, compared with 0
-    [[nodiscard]] auto
-    compile_shorthand(toc& tc, const size_t indent,
-                      const machine::comparison_action& action) const
-        -> condition_result {
-
-        const comparison_side condition{side_of(tc, lhs_)};
-
-        if (const std::optional<bool> constant{constant_shorthand(condition)}) {
-            return compile_constant(tc, indent, *constant != action.inverted,
-                                    action);
-        }
+    // the operand alone, compared with 0, when it does not fold
+    auto compile_shorthand(toc& tc, const size_t indent,
+                           const machine::comparison_action& action) const
+        -> void {
 
         // note: the parse rejected an instance ('assert_boolean_operands')
 
         assert(lhs_.get_type().is_bool());
 
-        resolve_cmp_shorthand(tc, indent, condition, action);
-
-        return condition_result::unknown;
+        resolve_cmp_shorthand(tc, indent, side_of(tc, lhs_), action);
     }
 
     [[nodiscard]] auto is_negated() const -> bool { return nots_.is_negated(); }
@@ -941,44 +930,34 @@ class expr_bool_op final : public statement {
         return info;
     }
 
-    // the right operand may be an immediate; an untyped constant is compared
-    // as written, the caller checks that it fits the left side
+    // the right operand may be an immediate, a side that does not fold is
+    // read like a left one; an untyped constant is compared as written, the
+    // caller checks that it fits the left side
     [[nodiscard]] static auto right_operand(toc& tc, const size_t indent,
                                             const comparison_side& side,
                                             machine::held_registers& held)
         -> operand {
 
-        const expr_arith& expr{*side.node};
-
-        // a computed value, or the zero value '{}', which has no name
-        const stmt_identifier* const ident{expr.operand_path()};
-
-        if (ident == nullptr) {
-            if (not side.folded) {
-                return compile_to_scratch(tc, indent, expr, held);
-            }
-
-            machine& x{tc.machine()};
-
-            x.comment(expr.tok(), indent, "src: folded constant {}",
-                      in_quotes(statement::trimmed_source(expr)));
-
-            return immediate_of(side, tc.builtins().default_type());
+        if (not side.folded) {
+            return left_operand(tc, indent, side, held);
         }
 
-        const ident_info expr_info{make_scalar_ident_info(tc, *ident)};
+        const expr_arith& expr{*side.node};
 
-        if (side.is_typed_constant() or expr_info.is_const()) {
-            // note: a constant name or literal folds
-            assert(side.folded);
+        // a constant name or literal, else a list or the zero value '{}'
+        const stmt_identifier* const ident{expr.operand_path()};
 
+        if (ident != nullptr) {
+            const ident_info expr_info{make_scalar_ident_info(tc, *ident)};
             return immediate_of(side, expr_info.type_ref());
         }
 
-        // e.g. 'a', '-a[i]'
-        return ident->compile_value_operand(
-            tc, indent, expr.tok(), expr_info, expr_info.type_ref(),
-            tc.checks().overflow_options(), held);
+        machine& x{tc.machine()};
+
+        x.comment(expr.tok(), indent, "src: folded constant {}",
+                  in_quotes(statement::trimmed_source(expr)));
+
+        return immediate_of(side, tc.builtins().default_type());
     }
 
     // a side computed at run time in a register of its own type, so a

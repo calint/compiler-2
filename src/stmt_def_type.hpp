@@ -361,8 +361,8 @@ class stmt_def_type_generic final : public statement {
         for (const generic_param& param : params) {
             tc.assert_valid_unqualified_name(param.name_tk);
 
-            tc.assert_generic_param_apart(param.name_tk, name_tk_,
-                                          "generic type");
+            tc.definitions().assert_generic_param_apart(param.name_tk, name_tk_,
+                                                        "generic type");
         }
 
         // e.g. 'type text<size> = list<i8, size>'
@@ -555,7 +555,7 @@ class type_instantiator final {
                       const std::span<const generic_arg> args)
         -> std::vector<generic_arg> {
 
-        generic_scope scope{tc, generic.definition};
+        toc::generic_scope scope{tc, generic.definition};
         scope.add_args(args);
 
         // note: only a type with a base asks, see 'has_base'
@@ -627,7 +627,7 @@ inline auto make_stmt_def_type(toc& tc, const token tk, tokenizer& tz)
     // built-in
     tc.assert_valid_unqualified_name(name_tk);
 
-    tc.assert_type_name_free(name_tk);
+    tc.definitions().assert_type_not_defined(name_tk, name_tk.text());
 
     const char next{tz.peek_char_after_whitespace()};
 

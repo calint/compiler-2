@@ -383,7 +383,7 @@ class machine_rv32i : public machine {
     machine_rv32i(const builtin_type_set& builtins, const source_files& files,
                   const target_options& options,
                   const target_description& target)
-        : machine{builtins, files, options, target},
+        : machine{builtins, files, options, target, assembler_},
           binary_file_name_{options.binary_file_name} {}
 
     static constexpr size_t word_size_bytes_{4};
@@ -614,14 +614,6 @@ class machine_rv32i : public machine {
         -> void override {
 
         save_registers(indent, register_names_of(saved));
-    }
-
-    [[nodiscard]] auto target_assembler() -> ::assembler& override {
-        return assembler_;
-    }
-
-    [[nodiscard]] auto target_assembler() const -> const ::assembler& override {
-        return assembler_;
     }
 
     //

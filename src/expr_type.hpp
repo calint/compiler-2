@@ -20,6 +20,7 @@
 #include "operand.hpp"
 #include "parse_lookahead.hpp"
 #include "statement.hpp"
+#include "stmt_identifier.hpp"
 #include "toc.hpp"
 #include "token.hpp"
 #include "tokenizer.hpp"
@@ -37,6 +38,7 @@
 //   'write_plan', 'emit_write_plan'
 //                            the steps that write a value in parts, read by
 //                            the compile and by the aliasing check
+//   'expr_path'              a path taken whole, copied as bytes
 //   'expr_type'              a literal, a type name alone, a copy or a call
 //
 
@@ -277,13 +279,93 @@ inline auto emit_write_plan(toc& tc, const size_t indent,
     }
 }
 
-// note: members that use 'expr_any', 'stmt_identifier' or 'stmt_call' are
+// a path taken whole: the copy of an instance, e.g. the 'p' of 'q = p', the
+// source of a whole array copy, e.g. the 'a' of 'var b = a', or a path a call
+// reads as a place, a method receiver or the array of a built-in
+// ('path_argument'); compiled, it copies the bytes of its value
+class expr_path final : public statement {
+    stmt_identifier path_;
+
+  public:
+    explicit expr_path(stmt_identifier path)
+        : statement{path.tok()}, path_{std::move(path)} {
+
+        set_type(path_.get_type());
+    }
+
+    //
+    // overridden methods
+    //
+
+    auto source_to(std::ostream& os) const -> void override {
+        path_.source_to(os);
+    }
+
+    // e.g. 'pt1 = pt2' or 'var b = a'
+    auto compile(toc& tc, const size_t indent, const destination& dst) const
+        -> void override {
+
+        const type& dst_type{dst.type_ref()};
+
+        const ident_info src_info{make_ident_info(tc, path_)};
+
+        // note: the parse checked the type of the source
+        assert(dst_type.is_same(src_info.type_ref()));
+
+        machine& x{tc.machine()};
+
+        machine::held_registers held{x, tok(), indent};
+
+        const operand src_op{path_.get_lea_operand(tc, indent, src_info, held)};
+
+        const size_t size_bytes{src_info.value_size_bytes(tok())};
+
+        x.copy_block(tok(), indent, dst.operand(), src_op, size_bytes,
+                     dst_type.alignment());
+    }
+
+    [[nodiscard]] auto operand_path() const -> const stmt_identifier* override {
+        return &path_;
+    }
+
+    auto visit_operands(const operand_visitor visitor) const -> void override {
+        visitor({
+            .node{&path_},
+            .written_place{},
+        });
+    }
+
+    //
+    // statics
+    //
+
+    // the source of a whole array copy, an array of 'element_type', e.g. the
+    // 'a' of 'var b = a'
+    [[nodiscard]] static auto parse_whole_array(toc& tc, tokenizer& tz,
+                                                const type& element_type)
+        -> expr_path {
+
+        expr_path source{stmt_identifier::parse_whole_array(tc, tz)};
+
+        const ident_info src_info{make_ident_info(tc, source.path_)};
+
+        const type& src_type{src_info.type_ref()};
+
+        if (not element_type.is_same(src_type)) {
+            throw_type_mismatch(source.path_.last_token(), element_type.name(),
+                                src_type.name());
+        }
+
+        return source;
+    }
+};
+
+// note: members that use 'expr_any' or 'stmt_call' are
 //       implemented in 'expr_type_impl.hpp', which includes their headers;
 //       'expr_any.hpp' and 'stmt_call.hpp' include this one
 
 // a value of a user type: a list of fields '{...}', the type name alone as its
-// zero value, a copy of a name or a call; also the source of a whole array
-// copy, which only a name can be, 'is_array_destination_' selects that role
+// zero value, a copy of a name or a call
 class expr_type final : public statement {
     // the fields of a literal, e.g. '{1, 2}' of 'point{1, 2}', none for the
     // type name alone, e.g. 'point'
@@ -294,30 +376,16 @@ class expr_type final : public statement {
         token close_brace_tk;
     };
 
-    std::variant<field_list, std::unique_ptr<stmt_identifier>,
-                 std::unique_ptr<stmt_call>>
-        value_;
-
-    // only a whole array destination may copy a whole array source
-    bool is_array_destination_{};
+    std::variant<field_list, expr_path, std::unique_ptr<stmt_call>> value_;
 
   public:
-    // what the destination of the value holds, a whole array is filled only
-    // by a copy of an array, e.g. 'var b = a'
-    enum class destination_kind : uint8_t { instance, whole_array };
-
-    // parses 'expr_any' items and creates the 'stmt_call' or
-    // 'stmt_identifier'; the type name alone is its zero value, e.g.
-    // 'var p = point' is 'point{}'
+    // parses 'expr_any' items and creates the 'stmt_call' or 'expr_path'; the
+    // type name alone is its zero value, e.g. 'var p = point' is 'point{}'
     expr_type(toc& tc, tokenizer& tz, const type& tp,
-              const destination_kind kind, const literal_typing typing);
-
-    // a path parsed apart, e.g. a method receiver or the array argument of a
-    // built-in ('path_argument')
-    explicit expr_type(std::unique_ptr<stmt_identifier> path);
+              const literal_typing typing);
 
     // a 'unique_ptr' of a class that is incomplete here needs
-    // the special members where 'stmt_identifier' and 'stmt_call' are complete
+    // the special members where 'stmt_call' is complete
 
     expr_type(expr_type&&) noexcept;
 
@@ -395,10 +463,7 @@ class expr_type final : public statement {
         return call != nullptr ? call->get() : nullptr;
     }
 
-    auto compile_identifier_copy(toc& tc, const size_t indent,
-                                 const destination& dst) const -> void;
-
-    // creates the 'stmt_call' or 'stmt_identifier'
+    // creates the 'stmt_call' or 'expr_path'
     auto parse_copy_source(toc& tc, tokenizer& tz, const term_kind tm) -> void;
 
     // creates an 'expr_any' for each field
@@ -460,9 +525,5 @@ class expr_type final : public statement {
         };
 
         std::get<field_list>(value_).delims_tk.emplace_back(delimiter_tk);
-    }
-
-    [[nodiscard]] auto value_kind() const -> std::string_view {
-        return is_array_destination_ ? "an array" : "an instance";
     }
 };

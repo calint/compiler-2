@@ -353,7 +353,9 @@ class assembler_rv32i final : public assembler {
             values.push_back(static_cast<unsigned char>(byte));
         }
 
-        add_record(std::format(".ascii \"{}\"", ascii_text(bytes)), 0,
+        const std::string text{escaped_text(bytes, "\"", "\\{:03o}")};
+
+        add_record(std::format(".ascii \"{}\"", text), 0,
                    data_values{
                        .element_size_bytes{1},
                        .values{std::move(values)},
@@ -1427,35 +1429,6 @@ class assembler_rv32i final : public assembler {
 
         return (value + alignment_bytes - 1) / alignment_bytes *
                alignment_bytes;
-    }
-
-    [[nodiscard]] static auto ascii_text(const std::string_view bytes)
-        -> std::string {
-
-        std::string encoded;
-        for (const char c : bytes) {
-            if (c == '\\' or c == '"') {
-                encoded += '\\';
-                encoded += c;
-                continue;
-            }
-
-            if (const std::optional<std::string_view> named{named_escape(c)}) {
-                encoded += *named;
-                continue;
-            }
-
-            if (c >= ' ' and c <= '~') {
-                encoded += c;
-                continue;
-            }
-
-            encoded += std::format(
-                "\\{:03o}",
-                static_cast<unsigned int>(static_cast<unsigned char>(c)));
-        }
-
-        return encoded;
     }
 
     [[nodiscard]] static auto branch_word(const op code, const uint8_t first,

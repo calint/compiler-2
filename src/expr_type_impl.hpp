@@ -1,8 +1,7 @@
 #pragma once
 
-// the members of 'expr_type' that use 'expr_any', 'stmt_identifier' and
-// 'stmt_call'; the headers of 'expr_any' and 'stmt_call' include
-// 'expr_type.hpp', see 'decouple.hpp'
+// the members of 'expr_type' that use 'expr_any' and 'stmt_call'; the headers
+// of 'expr_any' and 'stmt_call' include 'expr_type.hpp', see 'decouple.hpp'
 
 #include <cassert>
 #include <cstddef>
@@ -35,10 +34,8 @@
 #include "unary_ops.hpp"
 
 inline expr_type::expr_type(toc& tc, tokenizer& tz, const type& tp,
-                            const destination_kind kind,
                             const literal_typing typing)
-    : statement{tz.next_token()},
-      is_array_destination_{kind == destination_kind::whole_array} {
+    : statement{tz.next_token()} {
 
     const toc::parse_nesting_scope nesting{tc, tz};
 
@@ -50,12 +47,6 @@ inline expr_type::expr_type(toc& tc, tokenizer& tz, const type& tp,
     // e.g. 'point{x, y}' names the type that '{x, y}' takes from the
     // destination
     const bool is_typed_literal{tm == term_kind::record_literal or is_bare};
-
-    // an array is copied from an array; a type, a call or a function is not
-    // one, as for the array of a built-in, e.g. 'a = point' or 'a = f()'
-    if (is_array_destination_) {
-        stmt_identifier::assert_not_type_or_call(tc, tok(), tm);
-    }
 
     // e.g. 'p = i8' is the zero value of 'i8', as 'p = x' of an 'i8' 'x'
     if (is_bare_builtin_type(tc, tok(), tz)) {
@@ -81,12 +72,12 @@ inline expr_type::expr_type(toc& tc, tokenizer& tz, const type& tp,
 
     // e.g. 'point{1, 2}' for a field of type 'point' is '{1, 2}'
     if (is_typed_literal and typing == literal_typing::from_destination) {
-        throw_known_literal_type(tz, tok(), value_kind(), tp, tp.name());
+        throw_known_literal_type(tz, tok(), "an instance", tp, tp.name());
     }
 
     // e.g. 'var p = point', no fields are listed
     if (is_bare) {
-        assert_value_ends(tz, tok(), value_kind(), tp);
+        assert_value_ends(tz, tok(), "an instance", tp);
         return;
     }
 
@@ -95,7 +86,7 @@ inline expr_type::expr_type(toc& tc, tokenizer& tz, const type& tp,
         throw compile_error{
             tok(),
             std::format("a string fills only an array of {}, not {} of {}",
-                        in_quotes(tc.builtins().i8().name()), value_kind(),
+                        in_quotes(tc.builtins().i8().name()), "an instance",
                         in_quotes(tp.name()))};
     }
 
@@ -103,13 +94,13 @@ inline expr_type::expr_type(toc& tc, tokenizer& tz, const type& tp,
     if (tok().is_text("not")) {
         throw compile_error{tok(),
                             std::format("'not' makes a condition, not {} of {}",
-                                        value_kind(), in_quotes(tp.name()))};
+                                        "an instance", in_quotes(tp.name()))};
     }
 
     // e.g. 'p = pt', the token is empty at '{x, y}'
     if (not tok().is_none() and not is_typed_literal) {
         parse_copy_source(tc, tz, tm);
-        assert_value_ends(tz, tok(), value_kind(), tp);
+        assert_value_ends(tz, tok(), "an instance", tp);
         return;
     }
 
@@ -118,23 +109,18 @@ inline expr_type::expr_type(toc& tc, tokenizer& tz, const type& tp,
         throw compile_error{
             tz, std::format("a value in parentheses is a number, not {} of "
                             "{}",
-                            value_kind(), in_quotes(tp.name()))};
+                            "an instance", in_quotes(tp.name()))};
     }
 
     // e.g. the '-' of 'q = -p' or of 'q = -1'
     if (tz.is_unary_operator_next()) {
         throw compile_error{
             tz, std::format("a unary operator makes a number, not {} of {}",
-                            value_kind(), in_quotes(tp.name()))};
-    }
-
-    // e.g. the ')' of 'a = )', 'expr_any' reads the '{' of an array
-    if (is_array_destination_) {
-        throw compile_error{tz, "expected an array"};
+                            "an instance", in_quotes(tp.name()))};
     }
 
     parse_fields(tc, tz);
-    assert_value_ends(tz, tok(), value_kind(), tp);
+    assert_value_ends(tz, tok(), "an instance", tp);
 }
 
 // an equality gets the message of a number destination, it makes a condition
@@ -224,16 +210,10 @@ inline auto expr_type::parse_fields(toc& tc, tokenizer& tz) -> void {
     }
 }
 
-// the special members need the complete 'stmt_identifier' and 'stmt_call'
+// the special members need the complete 'stmt_call'
 inline expr_type::expr_type(expr_type&&) noexcept = default;
 inline auto expr_type::operator=(expr_type&&) noexcept -> expr_type& = default;
 inline expr_type::~expr_type() = default;
-
-inline expr_type::expr_type(std::unique_ptr<stmt_identifier> path)
-    : statement{path->tok()}, value_{std::move(path)} {
-
-    set_type(operand_path()->get_type());
-}
 
 // e.g. 'obj.pos = p', 'obj.pos = f()', 'o.pos = lst.first()' or
 // 'o.pos = point.at(1, 2)'
@@ -248,11 +228,6 @@ inline auto expr_type::parse_copy_source(toc& tc, tokenizer& tz,
     if (const std::unique_ptr<statement> builtin{
             parse_builtin(tc, tz, tok(), tm, no_uops, builtin_place::value),
         }) {
-
-        // note: an array destination rejected a built-in before
-        //       ('assert_not_type_or_call')
-
-        assert(not is_array_destination_);
 
         throw_type_mismatch(tok(), tp.name(), builtin->get_type().name());
     }
@@ -272,28 +247,20 @@ inline auto expr_type::parse_copy_source(toc& tc, tokenizer& tz,
         return;
     }
 
-    std::unique_ptr<stmt_identifier>& parsed_ident{
-        std::get<std::unique_ptr<stmt_identifier>>(parsed),
+    value_ = expr_path{
+        std::move(*std::get<std::unique_ptr<stmt_identifier>>(parsed)),
     };
 
-    const stmt_identifier& ident{*parsed_ident};
-
-    value_ = std::move(parsed_ident);
+    const stmt_identifier& ident{*operand_path()};
 
     const ident_info src_info{make_ident_info(tc, ident)};
-
-    // before the type, which a literal takes from the target, e.g. the '5'
-    // of 'a = 5' with 'a' an 'i8' array
-    if (is_array_destination_) {
-        ident.assert_array();
-    }
 
     // note: a whole array for an instance is rejected before its type, as
     //       for a number: by the plan of an assignment
     //       ('assert_copy_source_shape') or by the call it is an argument of,
     //       which checks the type of an array parameter
 
-    if (src_info.is_array() and not is_array_destination_) {
+    if (src_info.is_array()) {
         return;
     }
 
@@ -307,11 +274,6 @@ inline auto expr_type::assert_call_type() const -> void {
     const type& tp{get_type()};
 
     const stmt_call& call{*call_source()};
-
-    // a function returns one value, not an array
-    if (is_array_destination_) {
-        throw_call_not_array(call.callee_name_token(), call.callee().name());
-    }
 
     // e.g. 'p = f()' with 'func f()', the message of a number destination
     if (not call.callee().has_result()) {
@@ -333,9 +295,8 @@ inline auto expr_type::source_to(std::ostream& os) const -> void {
         return;
     }
 
-    // the token of the base statement is the first one of the identifier
-    if (const stmt_identifier* const ident{operand_path()}) {
-        ident->source_to(os);
+    if (const expr_path* const path{std::get_if<expr_path>(&value_)}) {
+        path->source_to(os);
         return;
     }
 
@@ -358,11 +319,8 @@ inline auto expr_type::source_to(std::ostream& os) const -> void {
 
 // a copy is of its source, e.g. the 'p' of 'q = p'
 inline auto expr_type::operand_path() const -> const stmt_identifier* {
-    const std::unique_ptr<stmt_identifier>* const source{
-        std::get_if<std::unique_ptr<stmt_identifier>>(&value_),
-    };
-
-    return source != nullptr ? source->get() : nullptr;
+    const expr_path* const path{std::get_if<expr_path>(&value_)};
+    return path != nullptr ? path->operand_path() : nullptr;
 }
 
 inline auto expr_type::compile(toc& tc, const size_t indent,
@@ -379,9 +337,12 @@ inline auto expr_type::compile(toc& tc, const size_t indent,
     // note: a literal is written in parts by the 'write_plan' of the value
     //       that holds it, see 'expr_any::plan_writes'
 
-    assert(operand_path() != nullptr);
+    // note: 'plan_writes' checked the shape, the plan of every value is made
+    //       before it is compiled ('assert_copy_source_shape')
 
-    compile_identifier_copy(tc, indent, dst);
+    assert(not make_ident_info(tc, *operand_path()).is_array());
+
+    std::get<expr_path>(value_).compile(tc, indent, dst);
 }
 
 // e.g. '{1, 2}' writes the fields in order, then zeroes the unlisted fields
@@ -448,59 +409,17 @@ inline auto expr_type::plan_writes(const toc& tc, const part_location& at,
                    std::move(unlisted), plan);
 }
 
-// the copy size comes from the source: a whole array is copied only to an
-// array, an instance only from one; checked when the plan is made, at compile
-// time, where a parameter is resolved to what its call passed
+// the copy size comes from the source: an instance is copied only from one;
+// checked when the plan is made, at compile time, where a parameter is
+// resolved to what its call passed
 inline auto expr_type::assert_copy_source_shape(const toc& tc) const -> void {
     const stmt_identifier* const ident{operand_path()};
 
-    if (ident == nullptr) {
+    if (ident == nullptr or not make_ident_info(tc, *ident).is_array()) {
         return;
     }
-
-    const bool is_array_source{make_ident_info(tc, *ident).is_array()};
-
-    if (is_array_source == is_array_destination_) {
-        return;
-    }
-
-    // note: the parse rejected an instance copied into an array
-    //       ('parse_copy_source')
-
-    assert(not is_array_destination_);
 
     throw_unindexed_array(tok(), ident->dotted_path());
-}
-
-// e.g. 'pt1 = pt2'
-inline auto expr_type::compile_identifier_copy(toc& tc, const size_t indent,
-                                               const destination& dst) const
-    -> void {
-
-    const type& dst_type{dst.type_ref()};
-
-    const stmt_identifier& ident{*operand_path()};
-
-    const ident_info src_info{make_ident_info(tc, ident)};
-
-    // note: 'expr_type' validates the source type before entering here
-    assert(dst_type.is_same(src_info.type_ref()));
-
-    // note: 'plan_writes' checked the shape, the plan of every value is made
-    //       before it is compiled ('assert_copy_source_shape')
-
-    assert(src_info.is_array() == is_array_destination_);
-
-    machine& x{tc.machine()};
-
-    machine::held_registers held{x, tok(), indent};
-
-    const operand src_op{ident.get_lea_operand(tc, indent, src_info, held)};
-
-    const size_t size_bytes{src_info.value_size_bytes(tok())};
-
-    x.copy_block(tok(), indent, dst.operand(), src_op, size_bytes,
-                 dst_type.alignment());
 }
 
 inline auto expr_type::visit_operands(const operand_visitor visitor) const

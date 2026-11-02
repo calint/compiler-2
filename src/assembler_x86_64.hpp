@@ -228,27 +228,7 @@ class assembler_x86_64 final : public assembler {
     // '\n'; a byte that is not printable is a hex escape, not '\01', which
     // nasm reads as one octal escape with the digits after it
     auto string_data(const std::string_view bytes) -> void override {
-        std::string text;
-
-        for (const char c : bytes) {
-            if (c == '\\' or c == '"' or c == '`') {
-                text += '\\';
-                text += c;
-                continue;
-            }
-
-            if (const std::optional<std::string_view> named{named_escape(c)}) {
-                text += *named;
-                continue;
-            }
-
-            if (c >= ' ' and c <= '~') {
-                text += c;
-                continue;
-            }
-
-            text += std::format("\\x{:02x}", static_cast<unsigned char>(c));
-        }
+        const std::string text{escaped_text(bytes, "\"`", "\\x{:02x}")};
 
         add_text(std::format("db `{}`", text));
     }

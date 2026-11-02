@@ -221,7 +221,7 @@ class machine_x86_64 final : public machine {
   public:
     machine_x86_64(const builtin_type_set& builtins, const source_files& files,
                    const target_options& options)
-        : machine{builtins, files, options, x86_64_target()} {}
+        : machine{builtins, files, options, x86_64_target(), assembler_} {}
 
     //
     // overridden methods
@@ -983,14 +983,6 @@ class machine_x86_64 final : public machine {
             assembler_.instruction(indent, op::push,
                                    register_names_.at(index).qword);
         }
-    }
-
-    [[nodiscard]] auto target_assembler() -> assembler& override {
-        return assembler_;
-    }
-
-    [[nodiscard]] auto target_assembler() const -> const assembler& override {
-        return assembler_;
     }
 
   private:

@@ -428,8 +428,8 @@ struct frame_slot {
 //   when                  scope              the parameters
 //   'parse_body'          'inlined_func' or  variables, named only
 //                         'noinline_func'
-//   an inlined call       'inlined_func'     bindings to the arguments
-//   ('inline_call')
+//   an inlined call,      'inlined_func'     bindings to the arguments
+//   'compile_inlined'
 //   a noinline body,      'noinline_func'    variables reached through the
 //   'emit_noinline_body'                     addresses in the frame
 //   and 'check_body'                         ('compile_in_frame')
@@ -499,9 +499,8 @@ class stmt_def_func final : public statement {
         code_.source_to(os);
     }
 
-    // the body is compiled by its calls: in place by
-    // 'inline_call::compile_body', else once per array lengths by
-    // 'emit_noinline_body'
+    // the body is compiled by its calls: in place by 'compile_inlined', else
+    // once per array lengths by 'emit_noinline_body'
     auto compile([[maybe_unused]] toc& tc, [[maybe_unused]] const size_t indent,
                  [[maybe_unused]] const destination& dst) const
         -> void override {}
@@ -509,19 +508,6 @@ class stmt_def_func final : public statement {
     //
     // class methods
     //
-
-    // the constant arguments of the generic type of a method, in the scope of
-    // the body
-    auto add_constants(toc& tc, const size_t indent) const -> void {
-        if (not instance_) {
-            return;
-        }
-
-        for (const generic_arg& constant : instance_->constants) {
-            tc.add_const(head_.name_tk, indent, constant.param_tk.text(),
-                         folded_value::untyped(constant.constant()));
-        }
-    }
 
     // 'func' is a keyword so no user name or internal label starts with 'func.'
     // e.g. 'func.sum..len.4.8' for array lengths 4 and 8
@@ -587,6 +573,68 @@ class stmt_def_func final : public statement {
                 std::ignore = compile_in_frame(tc, 0, array_lengths);
             },
             machine::discarded_code::body);
+    }
+
+    // the body in place at the call 'call_tk', under labels named by the
+    // call, its result and parameters named by the bindings to the call
+    auto compile_inlined(toc& tc, const size_t indent, const token& call_tk,
+                         const std::optional<param_binding>& result,
+                         const std::span<const param_binding> arguments) const
+        -> void {
+
+        assert(is_inlined());
+        assert(result.has_value() == has_result());
+        assert(arguments.size() == params_.size());
+
+        const std::string call_path{tc.call_path_at(call_tk)};
+
+        const std::string call_label{
+            std::format("{}..{}", body_label(), call_path),
+        };
+
+        const std::string ret_jmp_label{toc::end_label(call_label)};
+
+        machine& x{tc.machine()};
+
+        source_def_comment_to(x, indent);
+
+        x.label(indent, call_label);
+
+        const toc::scope_entry body{
+            tc,
+            scope::inlined_func(name(), call_path, ret_jmp_label),
+            call_tk,
+        };
+
+        add_constants(tc, indent + 1);
+
+        const auto add_binding{
+            [&](const param_binding& binding) -> void {
+                const ident_info& bound{binding.info};
+
+                x.comment_binding(
+                    call_tk, indent + 1, binding.from, binding.text,
+                    bound.is_address_by_call() ? std::optional{bound.operand()}
+                                               : std::nullopt);
+
+                tc.add_binding(binding);
+            },
+        };
+
+        if (result) {
+            add_binding(*result);
+        }
+
+        for (const param_binding& binding : arguments) {
+            add_binding(binding);
+        }
+
+        // the result reaches the destination through the binding of 'res',
+        // so the statements of the body have no destination
+        compile_statements(tc, indent);
+
+        // provide the exit label for 'return' to jump to
+        x.label(indent, ret_jmp_label);
     }
 
     // in place or in a body of its own, the function is compiled
@@ -691,27 +739,22 @@ class stmt_def_func final : public statement {
         return statement::get_type();
     }
 
-    auto source_def_comment_to(machine& x, const size_t indent) const -> void {
-        std::stringstream ss;
-        source_signature_to(ss);
-
-        const std::string signature{one_line_source::of(ss.view())};
-
-        // the signature of a generic definition names its parameters, the
-        // instance names the arguments, e.g. 'pt.put<i16>'
-        if (instance_) {
-            x.comment(head_.name_tk, indent, "{}, instance {}", signature,
-                      in_quotes(instance_->name));
-
-            return;
-        }
-
-        x.comment(head_.name_tk, indent, "{}", signature);
-    }
-
     [[nodiscard]] auto uses() const -> const body_uses& { return body_uses_; }
 
   private:
+    // the constant arguments of the generic type of a method, in the scope of
+    // the body
+    auto add_constants(toc& tc, const size_t indent) const -> void {
+        if (not instance_) {
+            return;
+        }
+
+        for (const generic_arg& constant : instance_->constants) {
+            tc.add_const(head_.name_tk, indent, constant.param_tk.text(),
+                         folded_value::untyped(constant.constant()));
+        }
+    }
+
     // the frames of what made the instance, see 'func_instance::trace'
     auto add_instance_trace(compile_error& e) const -> void {
         if (instance_) {
@@ -1037,6 +1080,24 @@ class stmt_def_func final : public statement {
 
         tc.add_func(head_.name_tk, std::string{name()}, *this, generic_method,
                     is_ordered);
+    }
+
+    auto source_def_comment_to(machine& x, const size_t indent) const -> void {
+        std::stringstream ss;
+        source_signature_to(ss);
+
+        const std::string signature{one_line_source::of(ss.view())};
+
+        // the signature of a generic definition names its parameters, the
+        // instance names the arguments, e.g. 'pt.put<i16>'
+        if (instance_) {
+            x.comment(head_.name_tk, indent, "{}, instance {}", signature,
+                      in_quotes(instance_->name));
+
+            return;
+        }
+
+        x.comment(head_.name_tk, indent, "{}", signature);
     }
 
     // the definition after its first token, without the body
@@ -1516,21 +1577,22 @@ class stmt_def_func_generic final : public statement {
         for (const token& param_tk : signature.type_param_tks) {
             // e.g. 'n' of 'func box.f<n type>()' of 'type box<n>'
             if (head.is_generic_type_method()) {
-                tc.assert_method_type_param_free(param_tk, head.name_tk.text());
+                tc.definitions().assert_generic_param_not_receiver_param(
+                    param_tk, param_tk.text(), head.name_tk.text());
             }
 
             tc.assert_valid_unqualified_name(param_tk);
 
-            tc.assert_generic_param_apart(param_tk, name_tk,
-                                          head.method ? "method" : "function");
+            tc.definitions().assert_generic_param_apart(
+                param_tk, name_tk, head.method ? "method" : "function");
 
             for (const generic_signature_param& param : signature.params) {
-                tc.assert_generic_param_apart(param_tk, param.name_tk,
-                                              "parameter");
+                tc.definitions().assert_generic_param_apart(
+                    param_tk, param.name_tk, "parameter");
             }
 
             if (signature.result_name_tk) {
-                tc.assert_generic_param_apart(
+                tc.definitions().assert_generic_param_apart(
                     param_tk, *signature.result_name_tk, "result");
             }
         }

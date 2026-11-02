@@ -1,6 +1,30 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] hard: design review series 2, round 50 (2026-11-02, user: keep
+    looping the design review with major refactoring allowed; 7 reviewers:
+    A the roles of 'expr_type', B 'toc', C the 'statement' interface, D the
+    machine interface, E the call path, F parallel paths of the
+    expressions, G a clone detector over 'src/')
+    => done (2026-11-02): no bugs; design: A1 a path taken whole is the
+       class 'expr_path' (an instance copy, the source of a whole array copy
+       and 'path_argument'), 'expr_type' loses 'is_array_destination_',
+       'destination_kind', 'value_kind' and its array branches (-21);
+       'parse_array_argument' says "parentheses make a value, not an array"
+       and "'not' makes a condition, not an array" for every array argument
+       (1415 1862 2006, 2061); B1 'toc::generic_scope' a nested scope class,
+       4 forwarders gone (-34); B2 'tc.definitions()' for the definition
+       checks, 'is_checking_without_call' gone (-30); D1 'target_assembler'
+       held by 'machine', 2 virtuals and 4 overrides gone; D2 the 'foo' step
+       in 'stmt_builtin_foo'; E1 the places of the arguments once in
+       'call_site::places'; E2 'stmt_def_func::compile_inlined', the three
+       body compiles in one file; F1 a constant element of a condition
+       decided once by 'constant_value'; F2 'right_operand' reuses
+       'left_operand' (-21 both); G1 one option table lookup in 'main.cpp';
+       G2 one string escaper for both assemblers (reopens F.5, -11);
+       dropped: C1 a non-virtual 'tok' (+11, a token set after the
+       constructor), A2 a 'paren_pair' class (+5), E3 one order of the
+       result temporary (moves stack slots), D3 and F nits
 [x] hard: design review series 2, round 49 (2026-11-02, user: design
     review and simplify, major refactoring allowed; 7 reviewers A-G over
     all of 'src/', structure first)

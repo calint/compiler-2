@@ -314,8 +314,8 @@ program does not depend on inlining.
      ends the check and the function is accepted, in skipped code it is
      dropped and the check goes on ('toc::check_skipped'); a recursive
      inlined call is not expanded in the check
-     ('toc::is_checking_without_call'), its value arguments are compiled at
-     the types of their parameters
+     ('scope_stack::is_in_body_taking_from_call'), its value arguments are
+     compiled at the types of their parameters
      ('stmt_call::check_arguments_alone'), so a recursion that only a
      constant argument ends does not end the check
 3. A function that takes nothing from a call, a noinline one without unsized
@@ -933,7 +933,7 @@ generic_call::parse (stmt_call.hpp)   the type arguments of a call, written
 func_instantiator::instantiate_func,  the instance of a generic function, the
   instantiate_methods                 methods of a type instance
   (stmt_def_func.hpp)
-generic_reparse, generic_scope        the text parsed again with each
+generic_reparse, toc::generic_scope   the text parsed again with each
   (toc.hpp)                           parameter naming its argument
 generic_trace (generics.hpp)          the instances that led to an error
 ```

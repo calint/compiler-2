@@ -323,6 +323,26 @@ template <std::ranges::input_range Names>
     return texts;
 }
 
+// the row of 'rows' whose 'text' is 'value'; the message of an unknown one
+// names 'option' and lists the rows as the supported 'kind'
+template <class Row, size_t row_count>
+[[nodiscard]] auto named_row(const std::array<Row, row_count>& rows,
+                             const std::string_view value,
+                             const std::string_view option,
+                             const std::string_view kind) -> const Row& {
+
+    const auto found{std::ranges::find(rows, value, &Row::text)};
+
+    if (found == rows.end()) {
+        throw option_error{
+            std::format("invalid {}: {}, supported {} are: {}", option,
+                        in_quotes(value), kind, joined_texts(rows)),
+        };
+    }
+
+    return *found;
+}
+
 // an option of the target rows, e.g. '--stack' and 'reads_stack'
 struct target_option {
     std::string_view name;
@@ -445,17 +465,7 @@ auto apply_memory(const std::string_view value, options& opts) -> void {
 }
 
 auto apply_target(const std::string_view value, options& opts) -> void {
-    const auto* const found{
-        std::ranges::find(target_names, value, &target_name::text),
-    };
-
-    if (found == target_names.end()) {
-        throw option_error{
-            std::format("invalid --target: {}, supported targets are: {}",
-                        in_quotes(value), joined_texts(target_names))};
-    }
-
-    opts.target = found;
+    opts.target = &named_row(target_names, value, "--target", "targets");
 }
 
 auto apply_checks(const std::string_view value, options& opts) -> void {
@@ -487,17 +497,11 @@ auto apply_sdcard(const std::string_view value, options& opts) -> void {
 }
 
 auto apply_versions(const std::string_view value, options& opts) -> void {
-    const auto* const found{
-        std::ranges::find(kept_version_names, value, &kept_version_name::text),
+    const kept_version_name& row{
+        named_row(kept_version_names, value, "--versions", "values"),
     };
 
-    if (found == kept_version_names.end()) {
-        throw option_error{
-            std::format("invalid --versions: {}, supported values are: {}",
-                        in_quotes(value), joined_texts(kept_version_names))};
-    }
-
-    opts.kept_version = found->kind;
+    opts.kept_version = row.kind;
 }
 
 // the text of '--help', which the readme usage section pastes; the format
@@ -770,17 +774,11 @@ auto check_reproduced_source(const program& prg, const source_files& files)
             continue;
         }
 
-        const auto* const found{
-            std::ranges::find(report_names, report, &report_name::text),
+        const report_name& row{
+            named_row(report_names, report, "--report", "reports"),
         };
 
-        if (found == report_names.end()) {
-            throw option_error{
-                std::format("invalid --report: {}, supported reports are: {}",
-                            in_quotes(report), joined_texts(report_names))};
-        }
-
-        parsed.*found->member = true;
+        parsed.*row.member = true;
     }
 
     return parsed;

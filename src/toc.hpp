@@ -60,9 +60,10 @@
 //                   of one table goes through its const accessor, e.g.
 //                   'tc.scopes().current_func_scope()', except a query asked
 //                   at every step, e.g. 'is_reachable'
-//   generics        'resolve_generic_args' and 'generic_scope', the names of
-//                   the parameters of a generic instance; 'generic_reparse',
-//                   the definition parsed again for an instance
+//   generics        'resolve_generic_args' and 'toc::generic_scope', the
+//                   names of the parameters of a generic instance;
+//                   'generic_reparse', the definition parsed again for an
+//                   instance
 //
 
 class stmt_def_dat;
@@ -1251,7 +1252,8 @@ class scope_stack final {
     [[nodiscard]] auto is_empty() const -> bool { return scopes_.empty(); }
 
     // a check of a body that takes from a call is in the stack, see
-    // 'toc::is_checking_without_call'
+    // 'stmt_def_func::check_body': a recursive inlined call is not expanded
+    // there ('stmt_call::check_arguments_alone')
     [[nodiscard]] auto is_in_body_taking_from_call() const -> bool {
         return std::ranges::any_of(scopes_, [](const scope& scp) -> bool {
             return scp.is_func() and scp.is_without_call() and
@@ -2469,23 +2471,21 @@ class variable_comments final {
 // ('begin_compile'), after which every scope and its storage is released
 // ('assert_released'); the formatter sorts the methods by name, so by phase:
 //
-//   parse          'add_type', 'add_type_param', 'add_func',
-//                  'add_func_instance', 'add_generic_func',
-//                  'add_generic_method', 'add_generic_type',
-//                  'add_generic_type_instance', 'add_dat',
-//                  'mark_generic_func_instantiated', 'enter_type_params',
-//                  'exit_type_params', 'assert_generic_param_apart',
-//                  'assert_loop_names_free', 'assert_method_type_param_free',
-//                  'assert_type_name_free', 'assert_valid_unqualified_name',
+//   parse          'add_type', 'add_func', 'add_func_instance',
+//                  'add_generic_func', 'add_generic_method',
+//                  'add_generic_type', 'add_generic_type_instance',
+//                  'add_dat', 'mark_generic_func_instantiated',
+//                  'generic_scope', 'assert_loop_names_free',
+//                  'assert_valid_unqualified_name',
 //                  'begin_definition', 'current_definition',
-//                  'instance_visibility', 'constant_value_of', 'record_use',
+//                  'constant_value_of', 'record_use',
 //                  'record_storage_use', 'record_result_passed_as_mut',
 //                  'parse_nesting_scope', 'make_var_read_only',
 //                  'get_func_or_throw', 'get_type_or_throw', 'is_func',
 //                  'source_of', 'type_param_named', 'where'
 //   compile        'add_binding', 'add_bytes_constant', 'add_string_constant',
 //                  'add_noinline_body', 'dry_run', 'check_skipped',
-//                  'is_checking_without_call', 'emit_most_efficient',
+//                  'emit_most_efficient',
 //                  'create_cmp_label', 'create_unique_label',
 //                  'call_path_at', 'next_frame_address', 'use_of',
 //                  'overflow_options', 'checks_overflow', the reachability
@@ -2495,7 +2495,7 @@ class variable_comments final {
 //   both           'add_var' and 'add_const' (placed and commented only while
 //                  compiling), 'scope_entry', 'resolve_declared',
 //                  'get_main_or_throw', 'use_at' and 'storage_of'
-//   tables         'builtins', 'checks', 'data',
+//   tables         'builtins', 'checks', 'data', 'definitions',
 //                  'funcs', 'generics', 'layout', 'machine',
 //                  'noinline_worklist', 'scopes', 'types', 'usage'
 //
@@ -2672,6 +2672,76 @@ class toc final {
         ~parse_nesting_scope() { --tc_.parse_nesting_; }
     };
 
+    // while an instance of a generic definition is parsed, each parameter names
+    // its argument, e.g. 'T' names 'i8' and 'capacity' is the constant 8; the
+    // parameters of an enclosing instance are hidden and only the definitions
+    // up to the generic one are seen, all of it ends with the scope
+    class generic_scope final {
+        toc& tc_;
+        definition_order::instance_scope visible_;
+        // the constants are in a block of their own
+        std::optional<scope_entry> constants_block_;
+
+      public:
+        generic_scope(toc& tc, const size_t definition)
+            : tc_{tc}, visible_{tc.order_, definition} {
+
+            assert(not tc_.is_compiling_);
+
+            tc_.types_.enter_params();
+        }
+
+        generic_scope(const generic_scope&) = delete;
+        generic_scope(generic_scope&&) = delete;
+        auto operator=(const generic_scope&) -> generic_scope& = delete;
+        auto operator=(generic_scope&&) -> generic_scope& = delete;
+
+        ~generic_scope() {
+            constants_block_.reset();
+            tc_.types_.exit_params();
+        }
+
+        // a type is located at its parameter, a constant at its argument
+        auto add_args(const std::span<const generic_arg> args) -> void {
+            for (const generic_arg& arg : args) {
+                if (arg.is_type()) {
+                    tc_.types_.add_param(arg.param_tk, arg.param_tk.text(),
+                                         arg.type_ref());
+                } else {
+                    // note: a constant argument is always written
+                    assert(arg.arg_tk);
+
+                    add_const(*arg.arg_tk, arg.param_tk.text(), arg.constant());
+                }
+            }
+        }
+
+        // a method of an instance of a generic type sees the generic type as
+        // the instance and its type arguments, e.g. 'list' names 'str' and 'T'
+        // names 'i8'; its constants are in the scope of the body
+        auto add_receiver(const generic_type_instance& instance) -> void {
+            const generic_type_info& generic{
+                tc_.generics().get_type(instance.generic_name),
+            };
+
+            tc_.types_.add_param(generic.src_loc_tk, instance.generic_name,
+                                 *instance.type_ptr);
+
+            add_args(instance.type_args());
+        }
+
+      private:
+        auto add_const(const token& src_loc_tk, const std::string_view name,
+                       const int64_t value) -> void {
+
+            if (not constants_block_) {
+                constants_block_.emplace(tc_, scope::block());
+            }
+
+            tc_.add_const(src_loc_tk, 0, name, folded_value::untyped(value));
+        }
+    };
+
     // 'builtins' are the types of the language, shared with the machine
     toc(::machine& backend, const builtin_type_set& builtins,
         const source_files& files, const size_t vars_capacity_bytes,
@@ -2820,7 +2890,7 @@ class toc final {
 
         assert(not is_compiling_);
 
-        // note: the name was checked by 'assert_type_name_free'
+        // note: the name was checked by 'assert_type_not_defined'
         generics_.add_type(name, std::move(info));
     }
 
@@ -2864,20 +2934,10 @@ class toc final {
     auto add_type(const token& src_loc_tk, const type& tpe) -> void {
         assert(not is_compiling_);
 
-        // note: the name was checked by 'assert_type_name_free'
+        // note: the name was checked by 'assert_type_not_defined'
         assert_type_fits_target(src_loc_tk, tpe);
 
         types_.add(src_loc_tk, tpe);
-    }
-
-    // e.g. 'T' names 'i8' in an instance of 'func f<T type>()', until
-    // 'exit_type_params'
-    auto add_type_param(const token& src_loc_tk, const std::string_view name,
-                        const type& tpe) -> void {
-
-        assert(not is_compiling_);
-
-        types_.add_param(src_loc_tk, name, tpe);
     }
 
     auto add_var(const size_t indent, var_info var, const var_kind kind)
@@ -2922,15 +2982,6 @@ class toc final {
         }
     }
 
-    // see 'definition_checks::assert_generic_param_apart'
-    auto assert_generic_param_apart(const token& param_tk, const token& name_tk,
-                                    const std::string_view what) const -> void {
-
-        assert(not is_compiling_);
-
-        definitions_.assert_generic_param_apart(param_tk, name_tk, what);
-    }
-
     // the names a 'foo' declares are no type parameter either, see
     // 'assert_valid_unqualified_name'
     auto assert_loop_names_free(const token& foo_tk) const -> void {
@@ -2947,30 +2998,10 @@ class toc final {
         }
     }
 
-    // a type parameter of a method of the generic type 'generic_type'
-    auto
-    assert_method_type_param_free(const token& name_tk,
-                                  const std::string_view generic_type) const
-        -> void {
-
-        assert(not is_compiling_);
-
-        definitions_.assert_generic_param_not_receiver_param(
-            name_tk, name_tk.text(), generic_type);
-    }
-
     auto assert_released() const -> void {
         assert(scopes_.is_empty());
 
         storage_.assert_released();
-    }
-
-    // a type name is checked where it is read, before the body, e.g. the
-    // field type 'p' of a second 'type p {x p}' names the first 'p'
-    auto assert_type_name_free(const token& name_tk) const -> void {
-        assert(not is_compiling_);
-
-        definitions_.assert_type_not_defined(name_tk, name_tk.text());
     }
 
     // a name of a type, function, variable, constant, data or parameter, which
@@ -3175,6 +3206,13 @@ class toc final {
 
     [[nodiscard]] auto data() const -> const data_table& { return data_; }
 
+    // a check of a name read at the parse, e.g. a type name is checked where
+    // it is read, before the body, so the field type 'p' of a second
+    // 'type p {x p}' names the first 'p'
+    [[nodiscard]] auto definitions() const -> const definition_checks& {
+        return definitions_;
+    }
+
     // runs 'compile' for its errors only: its output, string constants and
     // use of storage leave no trace; the error it ends at, if any, is handed
     // back, see 'throw_dry_run_error'; 'code' says which registers it starts
@@ -3241,20 +3279,6 @@ class toc final {
         assert(is_compiling_);
 
         scopes_.set_reachable(false);
-    }
-
-    // the type parameters of an enclosing instance are hidden until
-    // 'exit_type_params'
-    auto enter_type_params() -> void {
-        assert(not is_compiling_);
-
-        types_.enter_params();
-    }
-
-    auto exit_type_params() -> void {
-        assert(not is_compiling_);
-
-        types_.exit_params();
     }
 
     [[nodiscard]] auto funcs() const -> const function_table& { return funcs_; }
@@ -3345,25 +3369,6 @@ class toc final {
         }
 
         return tp;
-    }
-
-    // an instance parse sees the definitions up to 'definition' while the
-    // result lives
-    [[nodiscard]] auto instance_visibility(const size_t definition)
-        -> definition_order::instance_scope {
-
-        assert(not is_compiling_);
-
-        return {order_, definition};
-    }
-
-    // inside the check of a body that takes from a call, see
-    // 'stmt_def_func::check_body': a recursive inlined call is not expanded
-    // there ('stmt_call::check_arguments_alone')
-    [[nodiscard]] auto is_checking_without_call() const -> bool {
-        assert(is_compiling_);
-
-        return scopes_.is_in_body_taking_from_call();
     }
 
     [[nodiscard]] auto is_func(const std::string_view name) const -> bool {
@@ -3726,8 +3731,9 @@ class toc final {
 //      as types and constants, e.g. '<i8, 8>' of 'list<T type, capacity>'
 //      gives 'T' 'i8' and 'capacity' 8; a call reads its type arguments in
 //      'stmt_call'
-//   2. a 'generic_scope' makes them names while the text of the definition is
-//      parsed again, 'type_table' holds the type names of the innermost scope
+//   2. a 'toc::generic_scope' makes them names while the text of the
+//      definition is parsed again, 'type_table' holds the type names of the
+//      innermost scope
 //
 
 // a generic argument of the wrong kind, e.g. a constant for a type
@@ -3841,83 +3847,12 @@ resolve_generic_args(const toc& tc, const std::string_view generic_name,
     return args;
 }
 
-// while an instance of a generic definition is parsed, each parameter names
-// its argument, e.g. 'T' names 'i8' and 'capacity' is the constant 8; the
-// parameters of an enclosing instance are hidden and only the definitions up
-// to the generic one are seen, all of it ends with the scope
-class generic_scope final {
-    toc& tc_;
-    definition_order::instance_scope visible_;
-    // the constants are in a block of their own
-    std::optional<toc::scope_entry> constants_block_;
-
-  public:
-    generic_scope(toc& tc, const size_t definition)
-        : tc_{tc}, visible_{tc.instance_visibility(definition)} {
-
-        tc_.enter_type_params();
-    }
-
-    generic_scope(const generic_scope&) = delete;
-    generic_scope(generic_scope&&) = delete;
-    auto operator=(const generic_scope&) -> generic_scope& = delete;
-    auto operator=(generic_scope&&) -> generic_scope& = delete;
-
-    ~generic_scope() {
-        constants_block_.reset();
-        tc_.exit_type_params();
-    }
-
-    // a type is located at its parameter, a constant at its argument
-    auto add_args(const std::span<const generic_arg> args) -> void {
-        for (const generic_arg& arg : args) {
-            if (arg.is_type()) {
-                add_type(arg.param_tk, arg.param_tk.text(), arg.type_ref());
-            } else {
-                // note: a constant argument is always written
-                assert(arg.arg_tk);
-
-                add_const(*arg.arg_tk, arg.param_tk.text(), arg.constant());
-            }
-        }
-    }
-
-    // a method of an instance of a generic type sees the generic type as the
-    // instance and its type arguments, e.g. 'list' names 'str' and 'T' names
-    // 'i8'; its constants are in the scope of the body
-    auto add_receiver(const generic_type_instance& instance) -> void {
-        const generic_type_info& generic{
-            tc_.generics().get_type(instance.generic_name),
-        };
-
-        add_type(generic.src_loc_tk, instance.generic_name, *instance.type_ptr);
-        add_args(instance.type_args());
-    }
-
-  private:
-    auto add_const(const token& src_loc_tk, const std::string_view name,
-                   const int64_t value) -> void {
-
-        if (not constants_block_) {
-            constants_block_.emplace(tc_, scope::block());
-        }
-
-        tc_.add_const(src_loc_tk, 0, name, folded_value::untyped(value));
-    }
-
-    auto add_type(const token& src_loc_tk, const std::string_view name,
-                  const type& tpe) -> void {
-
-        tc_.add_type_param(src_loc_tk, name, tpe);
-    }
-};
-
 // a generic definition parsed again for an instance while it lives: its
 // parameters name the arguments the caller adds to 'scope()', 'tz()' reads
 // from 'start_tk', and the parse counts toward the nesting of the parse
 // that needs the instance
 class generic_reparse final {
-    generic_scope scope_;
+    toc::generic_scope scope_;
     tokenizer tz_;
     toc::parse_nesting_scope nesting_;
 
@@ -3932,7 +3867,7 @@ class generic_reparse final {
     auto operator=(generic_reparse&&) -> generic_reparse& = delete;
     ~generic_reparse() = default;
 
-    [[nodiscard]] auto scope() -> generic_scope& { return scope_; }
+    [[nodiscard]] auto scope() -> toc::generic_scope& { return scope_; }
 
     [[nodiscard]] auto tz() -> tokenizer& { return tz_; }
 };

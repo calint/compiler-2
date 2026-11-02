@@ -924,6 +924,11 @@ class stmt_identifier final : public statement {
                                 "a unary operator makes a value, not an array"};
         }
 
+        // e.g. the '(' of 'array_length((a))'
+        if (tz.peek_char_after_whitespace() == '(') {
+            throw compile_error{tz, "parentheses make a value, not an array"};
+        }
+
         assert_not_string_argument(tz);
 
         // an array literal has no storage
@@ -947,6 +952,10 @@ class stmt_identifier final : public statement {
         }
 
         // e.g. the 'not' of 'foo not a'
+        if (tk.is_text("not")) {
+            throw compile_error{tk, "'not' makes a condition, not an array"};
+        }
+
         if (tm == term_kind::keyword) {
             throw_unexpected_keyword(tk);
         }

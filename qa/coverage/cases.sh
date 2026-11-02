@@ -5935,7 +5935,7 @@ SRC=1860 && COMPERR
 # an operator after a call result instance: an instance is not a number
 SRC=1861 && COMPERR
 
-# an operator after a copied array: an array is not a number
+# an operator after a copied array makes a value, not an array
 SRC=1862 && COMPERR
 
 # the mark under a token that holds a tab reaches the end of the token
@@ -6532,3 +6532,6 @@ SRC=2059 && COMPERR
 
 # a constant divisor that does not fit is rejected before its zero low bits
 if [[ $MACHINE != x86_64 ]]; then SRC=2060 && COMPERR; fi
+
+# parentheses where an array goes
+SRC=2061 && COMPERR
