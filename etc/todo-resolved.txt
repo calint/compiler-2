@@ -1,6 +1,25 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] hard: design review series 2, round 63 (2026-11-03, user: rounds of
+    design-to-simplify until nothing more is found; G the check of a body
+    without its calls as one design, I 'expr_any', identifiers, generics,
+    the x86_64 backend and 'program')
+    => done (2026-11-03): no bugs; decision (user): G1 the check of a body
+       without its calls is judged like a noinline body, running out of
+       registers or storage there rejects the function (README 1.5 item 3
+       for every body), only an inlined recursion drops an error that
+       depends on a call ('stmt_call::check_recursion'); 'toc::
+       compile_statement' and the drop in 'toc::dry_run' gone (round 60 D1
+       and round 62 H1 undone), the README 8.3 bullet of round 62 gone
+       (src -59, README -12, compile time unchanged); a function that fits
+       only at its calls is rejected: 1230 (x86_64), 1357, 2090 new outputs,
+       1719 rewritten (the caller holds two registers), 2087 2088 2091 2092
+       gone; design: I1 'expr_type::compile' gone, 'plan_writes' writes the
+       copy or call directly (-22); fuzzers: a model fuzzer
+       ('fuzzlib.judge') takes 'simplify the expression' as a limit, as
+       'fuzz-programs', since G1 rejects e.g. 9 of 300 'fuzz-methods'
+       programs of seed 6363 on x86_64 (16 arguments of a constructor)
 [x] hard: design review series 2, round 62 (2026-11-03, user: rounds of
     design-to-simplify until nothing more is found; H a hunter of the state
     a statement dropped in the check of a body without its calls fails to

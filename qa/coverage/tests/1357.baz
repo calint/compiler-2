@@ -1,6 +1,6 @@
-# an uncalled inlined function with a result and no parameters is checked
-# without the errors a call can avoid: its result is the destination of the
-# call, e.g. one register less for an expression
+# the check of an uncalled inlined function with a result has the registers
+# of a noinline body and reaches the result through an address, so an
+# expression that fits the registers of 'main' is rejected
 var g = 1
 
 func f() res {

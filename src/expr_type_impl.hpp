@@ -265,38 +265,19 @@ inline auto expr_type::operand_path() const -> const stmt_identifier* {
     return value != nullptr ? value->operand_path() : nullptr;
 }
 
-inline auto expr_type::compile(toc& tc, const size_t indent,
-                               const destination& dst) const -> void {
-
-    // note: the call zeroes the padding of the result, see
-    //       'call_site::zero_result_padding'
-
-    if (const stmt_call* const call{call_source()}) {
-        call->compile(tc, indent, dst);
-        return;
-    }
-
-    // note: a literal is written in parts by the 'write_plan' of the value
-    //       that holds it, see 'expr_any::plan_writes'
-
-    // note: the parse rejected a whole array ('parse_copy_source')
-    assert(not make_ident_info(tc, *operand_path()).is_array());
-
-    std::get<expr_path>(value_).compile(tc, indent, dst);
-}
-
 // e.g. '{1, 2}' writes the fields in order, then zeroes the unlisted fields
 // and the padding
 inline auto expr_type::plan_writes(const toc& tc, const part_location& at,
                                    write_plan& plan) const -> void {
 
-    // a call or a copy writes the value at once
-    if (not is_literal()) {
+    // a call or a copy writes the value at once; the call zeroes the
+    // padding of the result, see 'call_site::zero_result_padding'
+    if (const statement* const value{copy_or_call()}) {
         plan.push_back({
             .at{at},
             .action{
                 value_write{
-                    .item{this},
+                    .item{value},
                 },
             },
             .covered{at.path()},

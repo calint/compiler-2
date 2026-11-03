@@ -120,8 +120,7 @@ class stmt_block final : public statement {
 
             const statement& stmt{*statements_.at(i)};
 
-            tc.compile_statement(
-                [&] -> void { stmt.compile(tc, indent + 1, destination{}); });
+            stmt.compile(tc, indent + 1, destination{});
         }
     }
 

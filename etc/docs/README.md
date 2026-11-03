@@ -250,8 +250,8 @@ Some code is compiled and then dropped: a dry run only to be checked, and
 the longer of two versions after both are measured:
 
 1. 'toc::dry_run' and 'machine::emit_discarded': the body of each function
-   without its calls (1.5) and each statement of one that takes from a call
-   ('toc::compile_statement'), and code that a compile skips
+   without its calls (1.5), an inlined recursion there, and code that a
+   compile skips
    ('toc::check_skipped', 1.5.1): the code after a statement that leaves on
    every path, a branch whose condition folds to false, the branches and the
    'else' after one that always runs, the operands of 'and' and 'or' after the
@@ -317,26 +317,18 @@ program does not depend on inlining.
      such a parameter is a read-only variable there and in the parse, not a
      constant; a 'let' whose value folds only at a call is a constant there,
      e.g. 'let m = n', so 's[m]' past the end is rejected like 's[n]'
-   - an error that depends on the arguments of a call
-     ('compile_error::depends_on_call'): running out of scratch registers,
-     e.g. twelve parameters that one call gives the same argument, or of the
-     variable storage ('out_of_storage'), and the limits of inlined calls,
-     e.g. a recursion 'g(x, 70)' that the unknown 'x' drives past the nesting
-     limit; such an error drops the statement it is in and the check goes on
-     after it, as reached: each statement of the body, in every block, is
-     compiled in a dry run of its own ('toc::compile_statement'), so are the
-     condition of an 'if' and the array and count of a 'foo', whose blocks
-     are then checked as if they ran; a statement of an inlined body there is
-     part of the statement that calls it; in skipped code it is dropped too
-     ('toc::check_skipped'); a recursive
-     inlined call in the check ('scope_stack::is_in_body_taking_from_call'),
-     also a call of the function in its own check
-     ('scope_stack::inlined_nesting'), is compiled in a dry run with its
-     deeper levels, and such an error ends the recursion, not the statement
-     ('stmt_call::check_recursion'): one with a value argument that folds is
-     expanded, the 'g(x, 2)' of an 'f(x)' that nothing calls is checked as in
-     'main', and one that a value or a length the check does not know drives
-     ends at the nesting limit or out of registers; one whose value arguments
+   - the constants that end an inlined recursion: a recursive inlined call
+     in the check ('scope_stack::is_in_body_taking_from_call'), also a call
+     of the function in its own check ('scope_stack::inlined_nesting'), is
+     compiled in a dry run with its deeper levels, and an error that depends
+     on the arguments of a call ('compile_error::depends_on_call'), running
+     out of scratch registers or of the variable storage or the nesting
+     limit, ends the recursion ('stmt_call::check_recursion'), e.g. a
+     'g(x, 70)' that the unknown 'x' drives past the nesting limit: one with
+     a value argument that folds is expanded, the 'g(x, 2)' of an 'f(x)' that
+     nothing calls is checked as in 'main', and one that a value or a length
+     the check does not know drives ends at the nesting limit or out of
+     registers; one whose value arguments
      all fold and whose array arguments have their lengths nests as deep at
      every call, an instance or a 'mut' argument folds at no call, so the
      nesting limit rejects it, e.g. a 'g(k + 1)' entered as 'g(2)' that ends
@@ -345,16 +337,19 @@ program does not depend on inlining.
      its arguments are bound as for the body, which is not compiled
      ('inline_call::compile_arguments'), so a recursion that only a constant
      argument of the call ends is no error there
-3. A function that takes nothing from a call, a noinline one without unsized
-   array parameters or an inlined one without parameters and result, is
-   rejected by such an error. The check has the registers of a noinline body
-   (1.8), as many as any call of a noinline function and one fewer than
-   'main', which does not hold the frame base: an inlined function that
-   needs every register of 'main' is rejected also where its only call, from
-   'main', compiles (e.g. 14 nested 'a + (a * ...' levels on x86_64). An
-   inlined result counts as taken from the call: it is the destination of
-   the call, which the check reaches through an address, so it can need more
-   registers.
+3. Outside such a recursion the check is judged like a noinline body: running
+   out of scratch registers or of the variable storage rejects the function,
+   also where every call compiles. The check has the registers of a noinline
+   body (1.8), as many as any call of a noinline function and one fewer than
+   'main', which does not hold the frame base, and reaches the parameters and
+   an inlined result through addresses in its frame: an inlined function
+   that needs every register of 'main' is rejected also where its only call,
+   from 'main', compiles (e.g. 14 nested 'a + (a * ...' levels on x86_64),
+   and so is a 'g(v)' whose call 'sum(v, v, ...)' loads its parameter for
+   each of twelve parameters, which a call 'g(3)' folds. A function that
+   takes nothing from a call, a noinline one without unsized array
+   parameters or an inlined one without parameters and result, knows the
+   constants of its recursions: they are compiled as at a call.
 4. A noinline call in skipped code or in the check of a function without
    its calls asks for a body that is checked with the lengths of its array
    arguments and not emitted, as an inlined call there compiles its body
@@ -601,11 +596,9 @@ compile (7.8), 'main.cpp' prints it with its frames.
    the kind and change the error instead of ending with it: a version that runs
    out is dropped when the other one is available (5.3), an inlined recursion
    that runs out of registers is reported as the recursion, one that nests as
-   deep at every call makes the nesting limit a 'source' error, and
-   'toc::dry_run' drops it in the check of a body that takes from a call
-   (1.5): a statement ('toc::compile_statement'), skipped code
-   ('toc::check_skipped') and an expanded inlined recursion
-   ('stmt_call::check_recursion'); the comment of 'error_kind' names the
+   deep at every call makes the nesting limit a 'source' error, and an
+   inlined recursion in the check of a body that takes from a call ends at it
+   ('stmt_call::check_recursion', 1.5); the comment of 'error_kind' names the
    functions. An error that ends a dry run is a 'source' one, so none of them
    drops it.
 3. A file that cannot be read is an 'unlocated_error', which
@@ -1994,12 +1987,6 @@ message, x86_64 stops with a signal.
   (1.5); no result changes. Ending the path there needs the reach of each
   exit of a condition and every operand list to stop at the call (bug hunt
   round 14 B1-1, B1-2).
-- In the check of a body without its calls an error that depends on a call
-  drops the rest of its statement (1.5 item 2), and running out of registers
-  differs per target: a rule broken after it in the same statement is found
-  on one target and not on another where nothing calls the function, e.g.
-  the 'k(4)' of 'h(q) + k(4)' with 'h' out of registers on x86_64 only and
-  'k' an inlined body that indexes an 'i8[4]' at its argument.
 - The x86_64 listing leaves the size of each jump to nasm. On rare listings
   nasm's default search ('-Ox') does not settle ("unable to find valid values
   for all labels"), e.g. a '--nopt' listing of 'fuzz-flow' seed 71;

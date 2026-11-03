@@ -1,6 +1,6 @@
-# the check of a body without its calls drops a declaration that runs out of
-# variable storage and still resolves its name after it: the one call fills
-# the storage exactly, the check holds the address of 'x' in its frame too
+# the check of a body without its calls rejects a function that runs out of
+# variable storage there, also where its one call fits: the check holds the
+# address of 'x' in its frame too
 
 func f(x i32) {
     var big = i8[262144]

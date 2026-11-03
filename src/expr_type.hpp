@@ -445,9 +445,6 @@ class expr_type final : public statement {
 
     auto source_to(std::ostream& os) const -> void override;
 
-    auto compile(toc& tc, const size_t indent, const destination& dst) const
-        -> void override;
-
     [[nodiscard]] auto operand_path() const -> const stmt_identifier* override;
 
     // a copy or a call reads its source instead of the '{...}' items

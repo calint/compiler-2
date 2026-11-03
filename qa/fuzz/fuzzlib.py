@@ -474,6 +474,12 @@ def judge(work, source, expected, stdin=b"", targets=TARGETS,
             got = build_and_run(work, source, target, options, stdin)
             if got == expected:
                 continue
+            # the registers of the target are used up, a limit of the
+            # language and not a defect; e.g. the check of a function without
+            # its calls, which a constant argument of the call does not help
+            # (README 1.5 item 3)
+            if got[0] == "compile" and "simplify the expression" in got[1]:
+                continue
             key = f"{target} {' '.join(options)} {got[0]}"
             if got[0] == "compile":
                 category = f"{prefix}-reject"

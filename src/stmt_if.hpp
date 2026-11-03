@@ -291,19 +291,14 @@ class stmt_if final : public statement {
 
         x.label(indent, label);
 
-        // a condition is a statement of its own in the check of a body
-        // without its calls, an error of it that depends on a call leaves
-        // the code to be checked as if it ran, see 'toc::compile_statement'
-        std::optional<bool> known;
-
-        tc.compile_statement([&] -> void {
-            known = b.condition.compile(tc, indent,
-                                        {
-                                            .if_false{jmp_if_false},
-                                            .if_true{code_label},
-                                        },
-                                        {});
-        });
+        const std::optional<bool> known{
+            b.condition.compile(tc, indent,
+                                {
+                                    .if_false{jmp_if_false},
+                                    .if_true{code_label},
+                                },
+                                {}),
+        };
 
         const branch_condition condition{
             .known{known},

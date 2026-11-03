@@ -2263,6 +2263,13 @@ class stmt_call final : public statement {
                     e.kind = compile_error::error_kind::source;
                 }
 
+                // note: an error that depends on a call ends the recursion,
+                //       not the check
+
+                if (e.depends_on_call()) {
+                    return;
+                }
+
                 throw;
             }
         };

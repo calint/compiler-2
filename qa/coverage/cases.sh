@@ -3974,10 +3974,11 @@ SRC=1228 && EXP=6 && RUN
 # is computed at 64 bits, where the low bits of the result are zero
 if [[ $MACHINE == x86_64 ]]; then SRC=1229 && EXP=7 && RUN; fi
 
-# a function that runs out of scratch registers only when its parameters are
-# not known is accepted when nothing calls it, the registers depend on the
-# arguments of a call
-SRC=1230 && EXP=3 && RUN
+# the check of a body without its calls rejects a function that runs out of
+# scratch registers there, also where its calls fit: each argument 'v' of
+# 'sum' is loaded from the frame, which the call 'g(3)' folds; rv32i has the
+# registers
+if [[ $MACHINE == x86_64 ]]; then SRC=1230 && COMPERR; else SRC=1230 && EXP=3 && RUN; fi
 
 # an inlined recursion that a constant argument ends is accepted when nothing
 # calls it, its depth depends on the arguments of a call
@@ -4441,10 +4442,10 @@ SRC=1354 && OPTS="--checks=overflow" COMPERR
 # out of bounds also without the lower bound check
 SRC=1355 && EXP=255 && OPTS="--checks=upper --reproduce-source" RUN_ERR
 
-# an uncalled inlined function with a result and no parameters is checked
-# without the errors a call can avoid: its result is the destination of the
-# call, e.g. one register less for an expression
-SRC=1357 && EXP=0 && RUN
+# the check of an uncalled inlined function with a result has the registers
+# of a noinline body and reaches the result through an address, so an
+# expression that fits the registers of 'main' is rejected
+SRC=1357 && COMPERR
 
 # the parameter of a generic type is a name like the others, not a keyword
 SRC=1358 && COMPERR
@@ -6627,29 +6628,14 @@ SRC=2085 && COMPERR
 # a negated memory comparison of arrays and instances that only branches
 SRC=2086 && EXP=22 && RUN
 
-# the check of a body without its calls drops only the statement with an
-# error that depends on a call, inside a 'foo', and goes on after it
-SRC=2087 && COMPERR
-
-# the check of a body without its calls drops only the statement with an
-# error that depends on a call, in a function with only a result
-SRC=2088 && COMPERR
-
 # the check of a body without its calls rejects an inlined recursion whose
 # arguments all fold at the nesting limit
 SRC=2089 && COMPERR
 
-# a declaration that the check of a body without its calls drops for running
-# out of variable storage still names its variable after it
-SRC=2090 && EXP=1 && RUN
-
-# the check of a body without its calls checks the branches of an 'if' whose
-# condition it drops, also those a call skips
-SRC=2091 && COMPERR
-
-# the check of a body without its calls checks the body of a 'foo' whose
-# count it drops
-SRC=2092 && COMPERR
+# the check of a body without its calls rejects a function that runs out of
+# variable storage there, also where its one call fits: the check holds the
+# address of 'x' in its frame too
+SRC=2090 && COMPERR
 
 # the check of a body without its calls rejects an inlined recursion without
 # arguments as every call does

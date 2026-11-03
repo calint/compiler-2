@@ -300,8 +300,8 @@ class scope final {
         // 'toc::check_skipped'
         bool is_without_call{};
         // such a body that a call gives something, its parameters or an
-        // unsized array, so an error that depends on a call is no error of
-        // the body, see 'compile_error::depends_on_call'
+        // unsized array, so the constants that end a recursion are unknown,
+        // see 'stmt_call::check_recursion'
         bool takes_from_call{};
 
         // the name of the result, empty when there is none
@@ -1208,9 +1208,8 @@ class scope_stack final {
     [[nodiscard]] auto is_empty() const -> bool { return scopes_.empty(); }
 
     // a check of a body that takes from a call is in the stack, see
-    // 'stmt_def_func::check_body': a dry run there drops an error that
-    // depends on a call ('toc::dry_run'), a recursive inlined call is
-    // expanded in a dry run or not at all ('stmt_call::compile')
+    // 'stmt_def_func::check_body': a recursive inlined call is expanded in a
+    // dry run or not at all ('stmt_call::check_recursion')
     [[nodiscard]] auto is_in_body_taking_from_call() const -> bool {
         return std::ranges::any_of(scopes_, [](const scope& scp) -> bool {
             return scp.is_func() and scp.takes_from_call();
@@ -2888,10 +2887,6 @@ class toc final {
             std::holds_alternative<in_storage>(var.placement),
         };
 
-        // note: declared before it is placed, so the check of a body that
-        //       drops a declaration out of storage ('compile_statement') still
-        //       resolves the name in the statements after it
-
         scopes_.back().add_var(var, kind);
 
         var_info& declared{scopes_.back().get_var_ref(var.name)};
@@ -3048,8 +3043,7 @@ class toc final {
     // checks where what it folds is no constant of a call: in 'main' and in
     // the body check of a function, and in the initializer of a global, which
     // takes nothing from a call either; there every compile rule holds in all
-    // code; in a body that takes from a call an error that depends on a call is
-    // dropped as in that check, any other rejects the program
+    // code
     auto check_skipped(const std::function_ref<void()> compile) -> void {
         assert(is_compiling_);
 
@@ -3079,28 +3073,6 @@ class toc final {
         assert(is_compiling_);
 
         return overflow_options(dst).enabled;
-    }
-
-    // a statement of the check of a body that takes from a call
-    // ('stmt_def_func::check_body') is compiled in a dry run of its own: an
-    // error that depends on a call drops that statement only and the check
-    // goes on after it, as reached; the condition of an 'if' and the array
-    // and count of a 'foo' are statements here too, so their blocks are
-    // checked; a statement of an inlined body there is part of the statement
-    // that calls it, so a recursion does not go on past such an error at each
-    // level ('stmt_call::check_recursion')
-    auto compile_statement(const std::function_ref<void()> compile) -> void {
-        assert(is_compiling_);
-
-        const scope& func{scopes_.current_func_scope()};
-
-        // note: only the check of a body takes from a call
-        if (not func.takes_from_call()) {
-            compile();
-            return;
-        }
-
-        dry_run(compile, machine::discarded_code::here);
     }
 
     // a number, untyped, or a constant with its type
@@ -3160,18 +3132,14 @@ class toc final {
     // runs 'compile' for its errors only: its output, string constants and
     // use of storage leave no trace; 'code' says which registers it starts
     // with ('machine::emit_discarded'); the error it ends at rejects the
-    // program, except one that depends on a call in the check of a body that
-    // takes from a call ('scope_stack::is_in_body_taking_from_call'); it is
-    // rethrown as an error of the source, so no reader of the kind drops it:
-    // the check of a body starts from the registers of a noinline body, and
-    // skipped code is never inside a version, an inlined body skips no code,
-    // see 'check_skipped'
+    // program and is rethrown as an error of the source, so no reader of the
+    // kind drops it: the check of a body starts from the registers of a
+    // noinline body, and skipped code is never inside a version, an inlined
+    // body skips no code, see 'check_skipped'
     auto dry_run(const std::function_ref<void()> compile,
                  const machine::discarded_code code) -> void {
 
         assert(is_compiling_);
-
-        const bool takes_from_call{scopes_.is_in_body_taking_from_call()};
 
         const dry_run_scope scope{*this};
 
@@ -3180,10 +3148,6 @@ class toc final {
         try {
             x.emit_discarded(compile, code);
         } catch (compile_error& e) {
-            if (takes_from_call and e.depends_on_call()) {
-                return;
-            }
-
             e.kind = compile_error::error_kind::source;
 
             throw;
