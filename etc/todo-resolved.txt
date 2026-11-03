@@ -1,6 +1,21 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] hard: bug hunt series 2, round 30 (2026-11-03, user: bug hunt rounds
+    until no more bugs are found; the confirming round after round 29; 3
+    hunters: U1 the io and bulk built-ins, U2 each run-time check alone and
+    in subsets, U3 roome and the tutorial under rewrites that keep the
+    output)
+    => done (2026-11-03): nothing found, the loop ends (U1 about 8400
+       programs in 20 builds on 4 targets and 1000 sector programs against
+       Python models, 'fuzz-io.py' and 'fuzz-data.py' with new seeds; U2
+       about 230000 runs of every check alone, in subsets and with 'noub',
+       600 recursion programs at the 'frame' and 'stack' limits, 'fuzz-ub'
+       with its mutants; U3 about 460 roome and 225 tutorial variants in up
+       to 18 builds, 'fuzz-roome.py' 38000 sessions); notes: U3 a block on
+       the line after 'var c = i8[1]' is its initializer, the error is then
+       "use of uninitialized variable 'c'" inside the block; U2 "swap the
+       operands" of 'a + b > w' widens the comparison, not 'a + b' (1.7)
 [x] hard: bug hunt series 2, round 29 (2026-11-03, user: bug hunt rounds
     until no more bugs are found; the one more after round 28; 3 hunters:
     T1 evaluation order, side effects and aliasing, T2 control flow and the
