@@ -32,8 +32,8 @@ the binary image itself.
     array or a constant count that is negative or passes the end of the array
     is a compile error also without the checks
   * `frame`: non-inlined function frame capacity at runtime
-  * `division`: division by zero and `MIN / -1` at runtime; a constant zero
-    divisor is a compile error also without the check
+  * `division`: division by zero and `MIN / -1`, also of `%`, at runtime; a
+    constant zero divisor is a compile error also without the check
   * `shift`: shift count outside the type width at runtime, bits shifted out
     by `<<` are discarded; a constant count outside the width is a compile
     error also without the check
@@ -138,8 +138,8 @@ checks:
   line     report line number on failed bounds, division, shift, overlap or
            overflow check
   frame    runtime non-inlined function frame capacity
-  division runtime division by zero and 'MIN / -1', a constant 'MIN / -1' is
-           rejected at compile time
+  division runtime division by zero and 'MIN / -1', also of '%'; a constant
+           'MIN / -1' is rejected at compile time
   shift    runtime shift count below zero or not below the width of the type
   overlap  runtime 'array_copy' whose destination starts inside the source
   stack    runtime stack capacity at non-inlined calls on rv32i-qemu and
@@ -177,10 +177,10 @@ examples:
 ```text
 Language                     files          blank        comment           code
 -------------------------------------------------------------------------------
-C/C++ Header                    66           9263           6604          27350
-C++                              1            228             88            851
+C/C++ Header                    65           9056           6600          26676
+C++                              1            225             91            844
 -------------------------------------------------------------------------------
-SUM:                            67           9491           6692          28201
+SUM:                            66           9281           6691          27520
 -------------------------------------------------------------------------------
 ```
 

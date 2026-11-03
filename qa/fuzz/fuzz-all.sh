@@ -35,7 +35,7 @@ run ./fuzz-programs.py $((500 * scale)) "$seed"
 run ./fuzz-compiler.py $((3000 * scale)) "$seed"
 run ./fuzz-options.py $((3000 * scale)) "$seed"
 run ./fuzz-roome.py $((3000 * scale)) "$seed"
-run ./fuzz-alias.sh
+run ./fuzz-alias.sh $((2000000 * scale)) $((5000 * scale)) "$seed"
 run ./fuzz-ub.sh --mutants
 
 echo "=== findings are in findings/"

@@ -1,6 +1,45 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] hard: bug hunt series 2, round 28 (2026-11-03, user: bug hunt rounds
+    until no more bugs are found; 3 hunters: S1 the rv32i back end and its
+    assembler, S2 generics, records, methods and 'let' crossed, S3 the
+    README as a specification)
+    => done (2026-11-03): nothing found, the first clean round of the loop
+       (S1 about 560 programs on 4 targets with every rv32i image compared
+       with llvm-mc and ld.lld, the 12-bit edges, frames near 2 and 4 KiB,
+       jumps over 1.8 MiB, '--stack' and '--vars'; S2 about 6300 generated
+       programs in 18 builds each against Python models, 'fuzz-generics',
+       'fuzz-methods' and 'fuzz-data' with new seeds, 40 hand programs; S3
+       about 75 claims in 125 programs on 2 targets); docs: S3-2 README 1.7
+       an untyped constant on the left of a comparison is moved to the
+       right ('300 == s' of an 'i8' is rejected); S3-4 the 'division' check
+       names 'MIN % -1' beside 'MIN / -1' (usage, README, 8.1 and the
+       tutorial); note S3-1: '--bin' is ignored on x86_64 where the other
+       options a target does not read are rejected, on purpose until the
+       x86_64 binary of etc/todo.txt (test-cli.sh)
+[x] hard: bug hunt series 2, round 27 (2026-11-03, user: bug hunt rounds
+    until no more bugs are found; the first after design review rounds 49 to
+    66; 3 hunters: R1 regressions of rounds 49 to 66 against a build of
+    c1c94554, R2 the guarantees across targets, inlining and options, R3
+    the front end with the asan build and the fuzzers)
+    => done (2026-11-03): no compiler bug; fuzzer bugs: R3-1 'fuzzlib.py' and
+       'fuzz-programs.py' took only "simplify the expression" for running
+       out of registers, not "holds a scratch value" (also R1 2.1), one
+       'fl.out_of_registers' for the three messages; R3-2
+       'EXPECTED_DIFFERENCE' of 'fuzz-compiler.py' lacked "runs out of
+       registers" of an inlined recursion; R3-3 'fuzz-all.sh' ran
+       'fuzz-alias.sh' always at seed 1, now with the seed and the scale;
+       R1 about 16700 corpus compile pairs in 8 configurations and about
+       25000 generated programs, old against new; R2 2800 programs in 24
+       builds each against a Python model; R3 about 18000 mutated programs
+       through the asan build, 250 hand cases, 'fuzz-all.sh' seeds 2727 and
+       9191; open notes (R3): the compile time is quadratic in the length of
+       one source line ('source_locations::column', 100000 terms on a line
+       over 20 s) and in the variables of one scope ('scope_stack::
+       meaning_in', 10000 take 5 s); a function nothing calls still counts
+       its result in the storage that must fit what the target addresses
+       (only seen with a 128 TiB 'dat')
 [x] hard: design review series 2, round 66 (2026-11-03, the confirming
     round of the loop; X names, paths, types and the no-UB checks, Y the
     machines, assemblers, bulk and built-ins on 4 targets, Z calls,

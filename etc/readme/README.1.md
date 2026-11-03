@@ -32,8 +32,8 @@ the binary image itself.
     array or a constant count that is negative or passes the end of the array
     is a compile error also without the checks
   * `frame`: non-inlined function frame capacity at runtime
-  * `division`: division by zero and `MIN / -1` at runtime; a constant zero
-    divisor is a compile error also without the check
+  * `division`: division by zero and `MIN / -1`, also of `%`, at runtime; a
+    constant zero divisor is a compile error also without the check
   * `shift`: shift count outside the type width at runtime, bits shifted out
     by `<<` are discarded; a constant count outside the width is a compile
     error also without the check

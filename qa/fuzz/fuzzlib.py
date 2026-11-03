@@ -364,6 +364,16 @@ SANITIZER_TEXT = ("AddressSanitizer", "runtime error:", "LeakSanitizer",
                   "SUMMARY:", "libc++abi", "std::bad_alloc")
 
 
+# the messages of running out of registers, a limit of the language and not a
+# defect ('compile_error::error_kind::out_of_registers')
+OUT_OF_REGISTERS = re.compile(
+    r"simplify the expression|holds a scratch value|runs out of registers")
+
+
+def out_of_registers(text):
+    return OUT_OF_REGISTERS.search(text) is not None
+
+
 def signature(text):
     # a short stable key of a crash: the sanitizer's reason and the first
     # frames in the compiler
@@ -478,7 +488,7 @@ def judge(work, source, expected, stdin=b"", targets=TARGETS,
             # language and not a defect; e.g. the check of a function without
             # its calls, which a constant argument of the call does not help
             # (README 1.5 item 3)
-            if got[0] == "compile" and "simplify the expression" in got[1]:
+            if got[0] == "compile" and out_of_registers(got[1]):
                 continue
             key = f"{target} {' '.join(options)} {got[0]}"
             if got[0] == "compile":
