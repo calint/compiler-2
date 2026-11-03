@@ -1,6 +1,29 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] hard: bug hunt series 2, round 29 (2026-11-03, user: bug hunt rounds
+    until no more bugs are found; the one more after round 28; 3 hunters:
+    T1 evaluation order, side effects and aliasing, T2 control flow and the
+    jump optimizer, T3 the asan build over the corpus, the options and
+    'fuzz-night.sh')
+    => done (2026-11-03): no compiler bug; fuzzer bugs (T3):
+       'EXPECTED_DIFFERENCE' of 'fuzz-compiler.py' lacked "smaller than a
+       sector" (an 'int' array of 100 is 800 B on x86_64, 400 B on rv32i);
+       a mutant of a seed whose verdict differs by target, 2096 (README 8.3),
+       was an 'accept-diff', now the seed is compiled on both targets first
+       ('seed_differs'); T1 about 10700 generated programs in up to 8 builds,
+       35 hand probes in 20 builds, 'fuzz-effects.py' 20000 and
+       'fuzz-alias.sh' 100000 programs; T2 the far-jump scripts,
+       'fuzz-flow.py' 3000 and 3400 programs of a new generator in 10
+       builds, 288 runs at the rv32i 4 KiB branch reach; T3 about 42000 asan
+       against release compiles of every test, roome and the tutorial on 4
+       targets, 90 option cases, 'fuzz-night.sh' 45 minutes; notes: the
+       rv32i '--vars' range is measured from address 0 where the linux link
+       starts at 0x10000, a size past 4 GiB minus the base is refused by
+       'ld.lld' (a host limit, qemu cannot map it either); a listing that
+       cannot be written to stdout still leaves the rv32i image; the run of
+       2026-11-03 was interrupted by a /tmp out of inodes (old scratchpads
+       removed, user)
 [x] hard: bug hunt series 2, round 28 (2026-11-03, user: bug hunt rounds
     until no more bugs are found; 3 hunters: S1 the rv32i back end and its
     assembler, S2 generics, records, methods and 'let' crossed, S3 the

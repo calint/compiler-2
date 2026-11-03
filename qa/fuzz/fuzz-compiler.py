@@ -265,6 +265,20 @@ def classify_compile(c, source):
     return None
 
 
+def seed_differs(seed_text, options, work):
+    # the seed alone is accepted on one target and rejected on the other, e.g.
+    # a test of a documented difference, so its mutants are not findings
+    path = os.path.join(work, "seed.baz")
+    write_source(path, seed_text)
+    rejected = []
+    for target in ["x86_64", "rv32i-fpga"]:
+        c = fl.compile_source(fl.COMPILER, path,
+                              ["--target=" + target] + options,
+                              os.path.join(work, "seed.s"))
+        rejected.append(c.returncode != 0)
+    return rejected[0] != rejected[1]
+
+
 def first_diagnostic(text):
     match = fl.DIAGNOSTIC.search(text)
     return text[match.start():].split("\n")[0] if match else text.strip()[:100]
@@ -272,7 +286,7 @@ def first_diagnostic(text):
 
 # a target limit or a difference of the default integer type is not a finding
 EXPECTED_DIFFERENCE = re.compile(
-    r"overflows the type|scratch registers|cannot allocate register|always used by the operation|simplify the expression|runs out of registers|does not end at compile time|RV32I|shift count must be|'i64'|i64|out of range|too large|too many|does not fit|"
+    r"overflows the type|scratch registers|cannot allocate register|always used by the operation|simplify the expression|runs out of registers|does not end at compile time|RV32I|shift count must be|'i64'|i64|out of range|too large|too many|does not fit|smaller than a sector|"
     r"exceeds|capacity|memory|beyond")
 # the diagnostics that have no place in the source
 NO_LOCATION = re.compile(r"function 'main' not found")
@@ -287,7 +301,8 @@ def checks_options(rnd):
 def fuzz_one(args):
     seed, index = args
     rnd = random.Random(seed * 1000003 + index)
-    text = mutate(rnd, None)
+    seed_text = rnd.choice(SEEDS)
+    text = mutate(rnd, seed_text)
     work = tempfile.mkdtemp(prefix="fuzzc-")
     findings = []
     stats = {"accepted": 0, "rejected": 0, "compared": 0}
@@ -312,7 +327,8 @@ def fuzz_one(args):
                 findings.append(finding + (c2.stderr[-3000:],))
             elif not c2.returncode:
                 message = first_diagnostic(c.stderr).split(": ", 1)[-1]
-                if not EXPECTED_DIFFERENCE.search(c.stderr):
+                if not EXPECTED_DIFFERENCE.search(c.stderr) and not seed_differs(
+                        seed_text, options, work):
                     findings.append(("accept-diff", "rv32i accepts, x86 rejects: "
                                      + re.sub(r"\d+", "N", message[:90]),
                                      c.stderr[-500:]))
@@ -338,7 +354,8 @@ def fuzz_one(args):
             findings.append(finding + (c2.stderr[-3000:],))
         elif c2.returncode:
             message = first_diagnostic(c2.stderr).split(": ", 1)[-1]
-            if not EXPECTED_DIFFERENCE.search(c2.stderr):
+            if not EXPECTED_DIFFERENCE.search(c2.stderr) and not seed_differs(
+                    seed_text, options, work):
                 findings.append(("accept-diff", "x86 accepts, rv32i rejects: "
                                  + re.sub(r"[\d']+", "N", message[:90]),
                                  c2.stderr[-500:]))
