@@ -63,19 +63,18 @@ struct source_span {
 // (README 1.9, 7.8)
 class compile_error final : public std::exception {
   public:
-    // running out of scratch registers or of variable storage depends on the
-    // code compiled, another version of the same code may not run out
-    // ('machine::emit_most_efficient'); they and the limit of inlined calls
-    // depend on the arguments of a call, so a function checked without its
-    // calls cannot be judged by them; the readers, the only code that
-    // changes an error instead of ending with it: 'machine::compile_version'
-    // drops every kind but 'source' of a version,
-    // 'call_limits' rewords 'out_of_registers' in an inlined recursion,
-    // 'stmt_call::check_recursion' drops every kind but 'source' in a
-    // recursion of the check of a body that takes from a call, and makes
-    // 'inlining_limit' a 'source' error in one that nests as deep at every
-    // call, 'toc::dry_run' rethrows an error as a 'source' one so that none
-    // of them drops it
+    // a limit of the compile, not a rule of the program: running out of
+    // scratch registers or of variable storage depends on the code compiled,
+    // another version of the same code may not run out
+    // ('machine::emit_most_efficient'), and they and the limit of inlined
+    // calls depend on the arguments of a call; the readers, the only code
+    // that changes an error instead of ending with it:
+    // 'machine::compile_version' drops a limit of a version, 'call_limits'
+    // rewords 'out_of_registers' in an inlined recursion,
+    // 'stmt_call::check_recursion' drops a limit in a recursion of the check
+    // of a body that takes from a call but 'inlining_limit' in one that nests
+    // as deep at every call, 'toc::dry_run' rethrows an error as a 'source'
+    // one so that none of them drops it
     enum class error_kind : uint8_t {
         source,
         out_of_registers,
@@ -139,9 +138,8 @@ class compile_error final : public std::exception {
             call_frame::at(call_tk, std::move(text), std::move(reason)));
     }
 
-    // whether the error can be told only with the arguments of a call, see
-    // 'stmt_def_func::check_body'
-    [[nodiscard]] auto depends_on_call() const -> bool {
+    // see 'error_kind'
+    [[nodiscard]] auto is_limit() const -> bool {
         return kind != error_kind::source;
     }
 

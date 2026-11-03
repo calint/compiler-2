@@ -1953,7 +1953,7 @@ class machine {
             // note: every kind but 'source' depends on the code compiled, the
             //       other version may not reach it
 
-            if (not e.depends_on_call()) {
+            if (not e.is_limit()) {
                 throw;
             }
 

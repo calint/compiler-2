@@ -1,0 +1,10 @@
+
+2096.baz:13:7: index 5 is out of bounds for array 'a' of size 5
+    a[6 - k] = 1
+      ^
+2096.baz:14:31: called from 'r(x, k - 1)'
+    res = x + (x * (x + (x * (r(x, k - 1) + 1))))
+                              ^
+2096.baz:18:11: called from 'r(x, 2)'
+    res = r(x, 2)
+          ^

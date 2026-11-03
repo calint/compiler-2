@@ -1,6 +1,19 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] hard: design review series 2, round 64 (2026-11-03, user: rounds of
+    design-to-simplify until nothing more is found; J the check of a body
+    without its calls after round 63 G1, L a newcomer over 'src/')
+    => done (2026-11-03): decision (user): J1 an inlined recursion that a
+       constant argument ends still ends the check where it runs out of
+       registers, so an error at a deeper level that needs no argument is
+       found on rv32i and not on x86_64 where nothing calls it; documented,
+       README 1.5 item 2 and 8.3 (2096); design: J2 'compile_error::
+       depends_on_call' -> 'is_limit', the 'error_kind' comment corrected
+       after G1, 'check_recursion' no longer rewrites the kind (-3); nits:
+       L class comments of 'stmt_break' and 'stmt_continue', the note of
+       'parse_name_statement'; L found nothing else (about 110 attack
+       programs, 3000 model programs)
 [x] hard: design review series 2, round 63 (2026-11-03, user: rounds of
     design-to-simplify until nothing more is found; G the check of a body
     without its calls as one design, I 'expr_any', identifiers, generics,

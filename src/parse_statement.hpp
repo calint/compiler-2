@@ -297,13 +297,13 @@ inline auto parse_call_or_identifier(toc& tc, tokenizer& tz, const token& tk,
 // a statement that starts with a name: a call as in an expression, e.g.
 // 'f(x)', 'point.at(1, 2)' or 'lst.add(x)', otherwise an assignment, e.g.
 // 'p1 = p2'
-// note: 'unary_ops' not allowed before destination identifier
 inline auto parse_name_statement(toc& tc, tokenizer& tz, const token tk,
                                  const term_kind tm)
     -> std::unique_ptr<statement> {
 
     // no destination: no type argument is deduced, and a result is
-    // discarded, rejected here like the result of a built-in
+    // discarded, rejected here like the result of a built-in; a statement
+    // starts at its name, no unary operator comes before it
     call_or_identifier parsed{
         parse_call_or_identifier(tc, tz, tk, tm, unary_ops{}, nullptr),
     };

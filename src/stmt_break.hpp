@@ -11,6 +11,7 @@
 #include "token.hpp"
 #include "ub_assigned.hpp"
 
+// 'break' leaves the innermost 'loop' or 'foo'
 class stmt_break final : public statement {
   public:
     stmt_break(const toc& tc, const token src_loc_tk) : statement{src_loc_tk} {

@@ -11,6 +11,7 @@
 #include "token.hpp"
 #include "ub_assigned.hpp"
 
+// 'continue' goes on with the next round of the innermost 'loop' or 'foo'
 class stmt_continue final : public statement {
   public:
     stmt_continue(const toc& tc, const token src_loc_tk)

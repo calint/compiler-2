@@ -6647,3 +6647,8 @@ SRC=2094 && COMPERR
 # the check of a body without its calls rejects an inlined recursion that a
 # 'mut' argument drives as every call does
 SRC=2095 && COMPERR
+
+# the check of a body without its calls ends an inlined recursion that a
+# constant argument ends where it runs out of registers, x86_64 at an outer
+# level
+if [[ $MACHINE == x86_64 ]]; then SRC=2096 && EXP=0 && RUN; else SRC=2096 && COMPERR; fi

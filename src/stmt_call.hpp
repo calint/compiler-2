@@ -2256,17 +2256,15 @@ class stmt_call final : public statement {
         const auto compile_first_level = [&] -> void {
             try {
                 compile_level();
-            } catch (compile_error& e) {
-                if (nests_alike and
-                    e.kind == compile_error::error_kind::inlining_limit) {
+            } catch (const compile_error& e) {
+                // note: a limit ends the recursion, not the check
 
-                    e.kind = compile_error::error_kind::source;
-                }
+                const bool is_nesting_alike_limit{
+                    nests_alike and
+                        e.kind == compile_error::error_kind::inlining_limit,
+                };
 
-                // note: an error that depends on a call ends the recursion,
-                //       not the check
-
-                if (e.depends_on_call()) {
+                if (e.is_limit() and not is_nesting_alike_limit) {
                     return;
                 }
 

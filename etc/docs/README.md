@@ -317,26 +317,25 @@ program does not depend on inlining.
      such a parameter is a read-only variable there and in the parse, not a
      constant; a 'let' whose value folds only at a call is a constant there,
      e.g. 'let m = n', so 's[m]' past the end is rejected like 's[n]'
-   - the constants that end an inlined recursion: a recursive inlined call
-     in the check ('scope_stack::is_in_body_taking_from_call'), also a call
-     of the function in its own check ('scope_stack::inlined_nesting'), is
-     compiled in a dry run with its deeper levels, and an error that depends
-     on the arguments of a call ('compile_error::depends_on_call'), running
-     out of scratch registers or of the variable storage or the nesting
-     limit, ends the recursion ('stmt_call::check_recursion'), e.g. a
-     'g(x, 70)' that the unknown 'x' drives past the nesting limit: one with
-     a value argument that folds is expanded, the 'g(x, 2)' of an 'f(x)' that
-     nothing calls is checked as in 'main', and one that a value or a length
-     the check does not know drives ends at the nesting limit or out of
-     registers; one whose value arguments
-     all fold and whose array arguments have their lengths nests as deep at
-     every call, an instance or a 'mut' argument folds at no call, so the
-     nesting limit rejects it, e.g. a 'g(k + 1)' entered as 'g(2)' that ends
-     only at 'k == 0', or an 'r()' that calls 'r()', running out of registers
-     does not; any other without a value argument that folds is not expanded,
-     its arguments are bound as for the body, which is not compiled
-     ('inline_call::compile_arguments'), so a recursion that only a constant
-     argument of the call ends is no error there
+   - the constants that end an inlined recursion: a recursive inlined call in
+     the check ('scope_stack::is_in_body_taking_from_call'), also a call of the
+     function in its own check ('scope_stack::inlined_nesting'), is compiled in
+     a dry run with its deeper levels, and a limit of the compile, which depends
+     on the arguments of a call ('compile_error::is_limit'), running out of
+     scratch registers or of the variable storage or the nesting limit, ends the
+     recursion ('stmt_call::check_recursion'), e.g. a 'g(x, 70)' that the
+     unknown 'x' drives past the nesting limit: one with a value argument that
+     folds is expanded, the 'g(x, 2)' of an 'f(x)' that nothing calls is checked
+     as in 'main' up to a level that runs out of registers (8.3), and one that a
+     value or a length the check does not know drives ends at the nesting limit
+     or out of registers; one whose value arguments all fold and whose array
+     arguments have their lengths nests as deep at every call, an instance or a
+     'mut' argument folds at no call, so the nesting limit rejects it, e.g. a
+     'g(k + 1)' entered as 'g(2)' that ends only at 'k == 0', or an 'r()' that
+     calls 'r()', running out of registers does not; any other without a value
+     argument that folds is not expanded, its arguments are bound as for the
+     body, which is not compiled ('inline_call::compile_arguments'), so a
+     recursion that only a constant argument of the call ends is no error there
 3. Outside such a recursion the check is judged like a noinline body: running
    out of scratch registers or of the variable storage rejects the function,
    also where every call compiles. The check has the registers of a noinline
@@ -591,13 +590,14 @@ compile (7.8), 'main.cpp' prints it with its frames.
    ('generic_trace'), and the error of a noinline body gets the call that
    needed the body (4.1).
 2. Kinds ('compile_error::error_kind'): 'source', an error of the program, and
-   the kinds that depend on the code compiled or on the arguments of a call:
-   'out_of_registers', 'out_of_storage' and 'inlining_limit'. Four places read
-   the kind and change the error instead of ending with it: a version that runs
-   out is dropped when the other one is available (5.3), an inlined recursion
-   that runs out of registers is reported as the recursion, one that nests as
-   deep at every call makes the nesting limit a 'source' error, and an
-   inlined recursion in the check of a body that takes from a call ends at it
+   the limits of the compile, which depend on the code compiled or on the
+   arguments of a call ('compile_error::is_limit'): 'out_of_registers',
+   'out_of_storage' and 'inlining_limit'. Three places read the kind and
+   change the error instead of ending with it: a version that reaches a limit
+   is dropped when the other one is available (5.3), an inlined recursion
+   that runs out of registers is reported as the recursion, and an inlined
+   recursion in the check of a body that takes from a call ends at a limit,
+   but for the nesting limit in one that nests as deep at every call
    ('stmt_call::check_recursion', 1.5); the comment of 'error_kind' names the
    functions. An error that ends a dry run is a 'source' one, so none of them
    drops it.
@@ -1971,6 +1971,14 @@ message, x86_64 stops with a signal.
   written in whole, whatever the body writes, so it needs no fixed point of
   its summary; this rejects more than needed, it accepts no undefined
   behavior.
+- In the check of a body that takes from a call an inlined recursion ends
+  where it runs out of registers (1.5 item 2), also one that a constant
+  argument ends: an error at a deeper level that needs no argument is then
+  found only on a target with more registers or at a call that folds what
+  ran out, e.g. 'a[6 - k]' of an 'i8[5]' in 'r(x, k)' entered as 'r(x, 2)'
+  from an 'f(x)' that nothing calls, with deep expressions in 'x' around the
+  recursive call, is accepted on x86_64 and rejected on rv32i and at
+  'f(1)'.
 - Definite assignment does not count the writes of a call, e.g.
   'init(res)' is a read of 'res'; a conservative rejection.
 - A noinline call there with an array argument of unknown length is not
