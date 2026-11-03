@@ -324,23 +324,27 @@ program does not depend on inlining.
      e.g. a recursion 'g(x, 70)' that the unknown 'x' drives past the nesting
      limit; such an error drops the statement it is in and the check goes on
      after it, as reached: each statement of the body, in every block, is
-     compiled in a dry run of its own ('toc::compile_statement'), a statement
-     of an inlined body there is part of the statement that calls it; in
-     skipped code it is dropped too ('toc::check_skipped'); a recursive
+     compiled in a dry run of its own ('toc::compile_statement'), so are the
+     condition of an 'if' and the array and count of a 'foo', whose blocks
+     are then checked as if they ran; a statement of an inlined body there is
+     part of the statement that calls it; in skipped code it is dropped too
+     ('toc::check_skipped'); a recursive
      inlined call in the check ('scope_stack::is_in_body_taking_from_call'),
      also a call of the function in its own check
      ('scope_stack::inlined_nesting'), is compiled in a dry run with its
      deeper levels, and such an error ends the recursion, not the statement
      ('stmt_call::check_recursion'): one with a value argument that folds is
      expanded, the 'g(x, 2)' of an 'f(x)' that nothing calls is checked as in
-     'main', and one that a value, an instance or a length the check does not
-     know drives ends at the nesting limit or out of registers; one whose
-     arguments all fold nests as deep at every call, so the nesting limit
-     rejects it, e.g. a 'g(k + 1)' entered as 'g(2)' that ends only at
-     'k == 0', running out of registers does not; one without such an
-     argument is not expanded, its arguments are bound as for the body, which
-     is not compiled ('inline_call::compile_arguments'), so a recursion that
-     only a constant argument of the call ends is no error there
+     'main', and one that a value or a length the check does not know drives
+     ends at the nesting limit or out of registers; one whose value arguments
+     all fold and whose array arguments have their lengths nests as deep at
+     every call, an instance or a 'mut' argument folds at no call, so the
+     nesting limit rejects it, e.g. a 'g(k + 1)' entered as 'g(2)' that ends
+     only at 'k == 0', or an 'r()' that calls 'r()', running out of registers
+     does not; any other without a value argument that folds is not expanded,
+     its arguments are bound as for the body, which is not compiled
+     ('inline_call::compile_arguments'), so a recursion that only a constant
+     argument of the call ends is no error there
 3. A function that takes nothing from a call, a noinline one without unsized
    array parameters or an inlined one without parameters and result, is
    rejected by such an error. The check has the registers of a noinline body
@@ -596,8 +600,8 @@ compile (7.8), 'main.cpp' prints it with its frames.
    'out_of_registers', 'out_of_storage' and 'inlining_limit'. Four places read
    the kind and change the error instead of ending with it: a version that runs
    out is dropped when the other one is available (5.3), an inlined recursion
-   that runs out of registers is reported as the recursion, one whose
-   arguments all fold makes the nesting limit a 'source' error, and
+   that runs out of registers is reported as the recursion, one that nests as
+   deep at every call makes the nesting limit a 'source' error, and
    'toc::dry_run' drops it in the check of a body that takes from a call
    (1.5): a statement ('toc::compile_statement'), skipped code
    ('toc::check_skipped') and an expanded inlined recursion
@@ -1990,6 +1994,12 @@ message, x86_64 stops with a signal.
   (1.5); no result changes. Ending the path there needs the reach of each
   exit of a condition and every operand list to stop at the call (bug hunt
   round 14 B1-1, B1-2).
+- In the check of a body without its calls an error that depends on a call
+  drops the rest of its statement (1.5 item 2), and running out of registers
+  differs per target: a rule broken after it in the same statement is found
+  on one target and not on another where nothing calls the function, e.g.
+  the 'k(4)' of 'h(q) + k(4)' with 'h' out of registers on x86_64 only and
+  'k' an inlined body that indexes an 'i8[4]' at its argument.
 - The x86_64 listing leaves the size of each jump to nasm. On rare listings
   nasm's default search ('-Ox') does not settle ("unable to find valid values
   for all labels"), e.g. a '--nopt' listing of 'fuzz-flow' seed 71;

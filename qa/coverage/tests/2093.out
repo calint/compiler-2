@@ -1,0 +1,4 @@
+
+2093.baz:6:11: recursion of inlined function 'f' is nested deeper than 64 calls, declare it 'noinline'
+    res = f()
+          ^

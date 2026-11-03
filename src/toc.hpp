@@ -3084,9 +3084,11 @@ class toc final {
     // a statement of the check of a body that takes from a call
     // ('stmt_def_func::check_body') is compiled in a dry run of its own: an
     // error that depends on a call drops that statement only and the check
-    // goes on after it, as reached; a statement of an inlined body there is
-    // part of the statement that calls it, so a recursion does not go on past
-    // such an error at each level ('stmt_call::check_recursion')
+    // goes on after it, as reached; the condition of an 'if' and the array
+    // and count of a 'foo' are statements here too, so their blocks are
+    // checked; a statement of an inlined body there is part of the statement
+    // that calls it, so a recursion does not go on past such an error at each
+    // level ('stmt_call::check_recursion')
     auto compile_statement(const std::function_ref<void()> compile) -> void {
         assert(is_compiling_);
 

@@ -1080,7 +1080,7 @@ class inline_call final {
                   const std::optional<place>& arg_place,
                   machine::held_registers& held) -> param_binding {
 
-        // note: 'stmt_call::assert_argument_types' checked the type, an array
+        // note: 'stmt_call::assert_argument_type' checked the type, an array
         //       argument is a place
         //       ('parse_array_parameter_argument')
 
@@ -1223,7 +1223,7 @@ class inline_call final {
 //      is copied after the call; the arguments are compiled in their order,
 //      the address of a variable at its argument
 //   2. 'compile_with_arguments': the arguments agree with the parameters,
-//      checked by 'stmt_call::assert_argument_types' before ('assert_call'
+//      checked by 'stmt_call::assert_argument_type' before ('assert_call'
 //      asserts it); the body is compiled once per array lengths
 //      ('stmt_def_func::emit_noinline_body')
 //   3. the addresses are written to the callee frame ('populate_frame': the
@@ -1480,7 +1480,7 @@ class noinline_call final {
 
         assert(info.is_array() == param.is_array());
 
-        // note: 'stmt_call::assert_argument_types' checked a variable, a
+        // note: 'stmt_call::assert_argument_type' checked a variable, a
         //       temporary has the type of its parameter
 
         assert(info.type_ref().is_same(param.get_type()));
@@ -1700,8 +1700,8 @@ class builtin_arguments final {
 // ('assert_method_receiver', 'constructor_func'), the callee
 // ('resolve_callee', a generic function through 'generic_call'), then from
 // the '(' the arguments ('parse_arguments', an array one read by
-// 'parse_array_parameter_argument', each checked by
-// 'assert_argument_writable', then 'assert_argument_types'), then
+// 'parse_array_parameter_argument'), each checked in its order by
+// 'check_arguments' ('assert_argument_writable', 'assert_argument_type'), then
 // 'record_uses_of_call'
 //
 // compiling, in 'compile': the checks made before the inlined and noinline
@@ -1936,38 +1936,37 @@ class stmt_call final : public statement {
         return places;
     }
 
-    // the type of each argument, one verdict for an inlined and a noinline
+    // the type of an argument, one verdict for an inlined and a noinline
     // call: a name or a typed constant has the type of its parameter, its
     // storage or typed value is passed; a value that is not a place must fit
     // its built-in parameter, e.g. 'a + 1' and '-a' widen into it
     // note: checked at the parse, a binding has the type of its parameter,
     //       so no call changes the verdict
-    auto assert_argument_types(
-        const toc& tc, const std::span<const std::optional<place>> places) const
+    auto assert_argument_type(const toc& tc, const size_t index,
+                              const std::optional<place>& arg_place) const
         -> void {
 
-        for (const auto [arg, param, arg_place] :
-             std::views::zip(args_, callee().params(), places)) {
+        const expr_any& arg{args_.at(index)};
+        const stmt_def_func_param& param{callee().params().at(index)};
 
-            if (param.get_type().is_builtin() and not arg_place) {
-                arg.assert_not_narrowed(tc, param.get_type());
-            }
+        if (param.get_type().is_builtin() and not arg_place) {
+            arg.assert_not_narrowed(tc, param.get_type());
+        }
 
-            const stmt_identifier* const ident{arg.bare_path()};
+        const stmt_identifier* const ident{arg.bare_path()};
 
-            if (ident == nullptr) {
-                continue;
-            }
+        if (ident == nullptr) {
+            return;
+        }
 
-            const ident_info info{make_ident_info(tc, *ident)};
+        const ident_info info{make_ident_info(tc, *ident)};
 
-            if (info.is_const() and not info.constant().is_typed()) {
-                continue;
-            }
+        if (info.is_const() and not info.constant().is_typed()) {
+            return;
+        }
 
-            if (not info.type_ref().is_same(param.get_type())) {
-                throw_parameter_type_mismatch(arg, param, info);
-            }
+        if (not info.type_ref().is_same(param.get_type())) {
+            throw_parameter_type_mismatch(arg, param, info);
         }
     }
 
@@ -2158,6 +2157,33 @@ class stmt_call final : public statement {
         }
     }
 
+    // e.g. the '.' of 'mk().y' or 'mk().sum()', a result has no storage to
+    // read a field of or to call a method on; the '[' of 'mk()[0]', a result
+    // is never an array
+    auto assert_result_not_accessed(const tokenizer& tz) const -> void {
+        const char next{tz.peek_char_after_whitespace()};
+
+        if (next == '.' or next == '[') {
+            // e.g. 'g().y' of a 'g' without a result, as 'x = g()'
+            if (not callee().has_result()) {
+                throw_no_value(callee_name_token(), callee().name());
+            }
+
+            if (next == '[') {
+                throw compile_error{
+                    callee_name_token(),
+                    std::format("a call of {} is not an array, it cannot be "
+                                "indexed",
+                                in_quotes(callee().name()))};
+            }
+
+            throw compile_error{
+                tz, std::format("store the result of {} in a variable before "
+                                "reading a field or calling a method of it",
+                                in_quotes(callee().name()))};
+        }
+    }
+
     // the result has the type of the destination or is a narrower integer,
     // which widens into it like a name, e.g. 'exit(f8())'
     //
@@ -2175,23 +2201,45 @@ class stmt_call final : public statement {
         return is_method() ? args_.at(0).tok() : tok();
     }
 
+    // each argument in its order, then what the callee reaches of the
+    // caller is recorded
+    auto check_arguments(toc& tc) const -> void {
+        const std::vector<std::optional<place>> places{argument_places(tc)};
+
+        for (size_t i{}; i < args_.size(); ++i) {
+            const std::optional<place>& arg_place{places.at(i)};
+
+            // note: an array argument is the path of a whole array
+            //       ('parse_array_parameter_argument'), the parse of a value
+            //       rejected one ('assert_not_whole_array')
+
+            assert(callee().params().at(i).is_array() ==
+                   (arg_place and arg_place->info.is_array()));
+
+            assert_argument_writable(i, arg_place);
+            assert_argument_type(tc, i, arg_place);
+        }
+
+        record_uses_of_call(tc, places);
+    }
+
     // a recursion in the check of a body without its calls, in a dry run
     // with its deeper levels: a value or an array length the check does not
     // know may not let it end, so an error that depends on a call ends the
     // recursion, not the check; a constant argument expands it, e.g. the
     // 'g(n - 1)' of 'g(2)', otherwise only its arguments are bound, the body
     // is checked where the recursion is entered and in its own check; one
-    // whose arguments all fold nests as deep at every call, so the nesting
-    // limit rejects it, e.g. a 'g(k + 1)' that 'g(2)' enters and that ends
-    // only at 'k == 0'
+    // that nests as deep at every call is expanded and the nesting limit
+    // rejects it, e.g. a 'g(k + 1)' that 'g(2)' enters and that ends only at
+    // 'k == 0' ('nests_alike_at_every_call')
     auto check_recursion(toc& tc, const size_t indent, const destination& dst,
                          const call_site& call, const size_t nesting) const
         -> void {
 
-        const size_t constant_count{constant_argument_count(tc)};
+        const bool nests_alike{nests_alike_at_every_call(tc, call.places)};
 
         const auto compile_level = [&] -> void {
-            if (constant_count == 0) {
+            if (not nests_alike and not has_constant_argument(tc)) {
                 inline_call{call}.compile_arguments(tc, indent);
                 return;
             }
@@ -2205,13 +2253,11 @@ class stmt_call final : public statement {
             return;
         }
 
-        const bool is_constant_recursion{constant_count == args_.size()};
-
         const auto compile_first_level = [&] -> void {
             try {
                 compile_level();
             } catch (compile_error& e) {
-                if (is_constant_recursion and
+                if (nests_alike and
                     e.kind == compile_error::error_kind::inlining_limit) {
 
                     e.kind = compile_error::error_kind::source;
@@ -2236,18 +2282,6 @@ class stmt_call final : public statement {
         call_limits::compile_within_limits(
             tc, callee_name_token(), callee(),
             [&] -> void { inline_call{call}.compile(tc, indent, dst); });
-    }
-
-    // the value arguments that fold to a constant
-    [[nodiscard]] auto constant_argument_count(const toc& tc) const -> size_t {
-        return static_cast<size_t>(std::ranges::count_if(
-            std::views::zip(args_, callee().params()),
-            [&](const auto& pair) -> bool {
-                const auto& [arg, param]{pair};
-
-                return is_value_param(param) and
-                       arg.fold(tc, tc.use_at(param.get_type()));
-            }));
     }
 
     // the type names the constructor after the '.', e.g. 'at' of
@@ -2321,6 +2355,18 @@ class stmt_call final : public statement {
         return is_method() ? 1 : 0;
     }
 
+    // a value argument folds to a constant
+    [[nodiscard]] auto has_constant_argument(const toc& tc) const -> bool {
+        return std::ranges::any_of(
+            std::views::zip(args_, callee().params()),
+            [&](const auto& pair) -> bool {
+                const auto& [arg, param]{pair};
+
+                return is_value_param(param) and
+                       arg.fold(tc, tc.use_at(param.get_type()));
+            });
+    }
+
     // the call is in the body of its callee, a recursion
     [[nodiscard]] auto is_call_in_own_body(const toc& tc) const -> bool {
         return tc.scopes().current_func_scope().is_name(callee().name());
@@ -2351,6 +2397,27 @@ class stmt_call final : public statement {
                        });
 
         return result;
+    }
+
+    // what may end a recursion at one call and not at another is known here:
+    // every value argument folds and every array argument has its length; an
+    // instance or a 'mut' argument folds at no call
+    [[nodiscard]] auto nests_alike_at_every_call(
+        const toc& tc, const std::span<const std::optional<place>> places) const
+        -> bool {
+
+        return std::ranges::all_of(
+            std::views::zip(args_, callee().params(), places),
+            [&](const auto& triple) -> bool {
+                const auto& [arg, param, arg_place]{triple};
+
+                if (arg_place and arg_place->info.is_length_unknown()) {
+                    return false;
+                }
+
+                return not is_value_param(param) or
+                       arg.fold(tc, tc.use_at(param.get_type()));
+            });
     }
 
     // from the '(' on, 'what' names the callee; a method receiver is already
@@ -2418,49 +2485,9 @@ class stmt_call final : public statement {
         // e.g. 'f(a, b' lacks it
         close_paren_tk_ = tz.expect_char_token(')', missing_close_paren_text);
 
-        // e.g. the '.' of 'mk().y' or 'mk().sum()', a result has no storage
-        // to read a field of or to call a method on; the '[' of 'mk()[0]', a
-        // result is never an array
-        const char next{tz.peek_char_after_whitespace()};
+        assert_result_not_accessed(tz);
 
-        if (next == '.' or next == '[') {
-            // e.g. 'g().y' of a 'g' without a result, as 'x = g()'
-            if (not callee().has_result()) {
-                throw_no_value(callee_name_token(), callee().name());
-            }
-
-            if (next == '[') {
-                throw compile_error{
-                    callee_name_token(),
-                    std::format("a call of {} is not an array, it cannot be "
-                                "indexed",
-                                in_quotes(callee().name()))};
-            }
-
-            throw compile_error{
-                tz, std::format("store the result of {} in a variable before "
-                                "reading a field or calling a method of it",
-                                in_quotes(callee().name()))};
-        }
-
-        const std::vector<std::optional<place>> places{argument_places(tc)};
-
-        for (size_t i{}; i < args_.size(); ++i) {
-            const std::optional<place>& arg_place{places.at(i)};
-
-            // note: an array argument is the path of a whole array
-            //       ('parse_array_parameter_argument'), the parse of a value
-            //       rejected one ('assert_not_whole_array')
-
-            assert(params.at(i).is_array() ==
-                   (arg_place and arg_place->info.is_array()));
-
-            assert_argument_writable(i, arg_place);
-        }
-
-        assert_argument_types(tc, places);
-
-        record_uses_of_call(tc, places);
+        check_arguments(tc);
     }
 
     // the type is the result type of the callee, resolved before, so an

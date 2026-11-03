@@ -72,7 +72,7 @@ class compile_error final : public std::exception {
     // drops every kind but 'source' of a version,
     // 'call_limits' rewords 'out_of_registers' in an inlined recursion,
     // 'stmt_call::check_recursion' makes 'inlining_limit' a 'source' error
-    // in a recursion whose arguments all fold,
+    // in a recursion that nests as deep at every call,
     // 'toc::dry_run' drops every kind but 'source' in the check of a body
     // that takes from a call, for 'toc::compile_statement',
     // 'toc::check_skipped' and 'stmt_call::check_recursion', and rethrows

@@ -1,6 +1,6 @@
-# the check of a body without its call goes on after an inlined recursion
-# that an instance drives, a constant argument does not end it, to the
-# narrowing after it
+# the check of a body without its calls rejects an inlined recursion that an
+# instance drives beside a constant argument: an instance folds at no call, so
+# every call passes the nesting limit, before the narrowing after it
 
 type point { x, y }
 

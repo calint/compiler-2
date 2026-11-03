@@ -1,0 +1,15 @@
+# the check of a body without its calls rejects an inlined recursion that only
+# a 'mut' argument drives, which folds at no call, so every call passes the
+# nesting limit
+
+func r(p mut i32) res i32 {
+    if p == 0 {
+        res = 0
+        return
+    }
+    p = p - 1
+    res = r(p)
+}
+
+func main() {
+}

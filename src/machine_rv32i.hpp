@@ -45,7 +45,7 @@
 //                '.Lbaz_divide' for 'mul' and 'div',
 //                'helper_specs_', 'call_arithmetic_helper',
 //                'emit_arithmetic_helpers'
-//   memory       'zero_known_size', 'copy_known_size', 'compare_known_size'
+//   memory       'zero', 'copy_block', 'compare_known_size'
 //                through 'walk_known_size' for a known size,
 //                'walk_runtime_count' for a run-time count
 //                (see the note before 'local_label')
@@ -362,14 +362,6 @@ class machine_rv32i : public machine {
         operand right;
         // a register result holds the left value and saves the final copy
         bool left_is_result{};
-    };
-
-    // the two memory operands of a comparison of a known size and where each
-    // access starts in its word
-    struct compared_memory {
-        operand left;
-        operand right;
-        std::array<access_start, 2> starts{};
     };
 
     // the shared tail of the handlers that report a line, and its powers of
@@ -998,7 +990,32 @@ class machine_rv32i : public machine {
             start_of(dst, alignment),
         };
 
-        copy_known_size(src_loc_tk, indent, src, dst, size_bytes, starts);
+        const operation_scope scope{*this, dst, src};
+
+        const operand value{
+            alloc_scratch_register(src_loc_tk, indent, default_type()),
+        };
+
+        const std::array<operand, 2> addresses{src, dst};
+
+        const auto access{
+            [&](const size_t width, const std::span<const operand> at) -> void {
+                copy_access(indent, value, width, at.front(), at.back());
+            },
+        };
+
+        // direct offsets avoid two pointer temporaries for ordinary small
+        // copies
+        walk_known_size(
+            {
+                .src_loc_tk{src_loc_tk},
+                .indent{indent},
+                .verb{"copy"},
+                .addresses{addresses},
+                .starts{starts},
+                .access{access},
+            },
+            size_bytes, size_bytes <= copy_unroll_threshold_bytes_);
     }
 
     auto copy_elements(const token& src_loc_tk, const size_t indent,
@@ -1162,23 +1179,7 @@ class machine_rv32i : public machine {
 
         request.lhs(std::nullopt, [&](const operand& left) -> void {
             request.rhs(std::nullopt, [&](const operand& right) -> void {
-                // compared sizes are limited by the variables that hold the
-                // data
-                assert(size_bytes <= std::numeric_limits<uint32_t>::max());
-
-                // unrolled accesses can follow where each address is within
-                // its word
-                const std::array<access_start, 2> starts{
-                    start_of(left, request.alignment),
-                    start_of(right, request.alignment),
-                };
-
-                compare_known_size(src_loc_tk, indent, size_bytes,
-                                   {
-                                       .left{left},
-                                       .right{right},
-                                       .starts{starts},
-                                   },
+                compare_known_size(src_loc_tk, indent, size_bytes, left, right,
                                    request);
             });
         });
@@ -1382,7 +1383,31 @@ class machine_rv32i : public machine {
 
         const access_start start{start_of(dst, alignment)};
 
-        zero_known_size(src_loc_tk, indent, dst, size_bytes, start);
+        const operation_scope scope{*this, dst};
+
+        const std::span<const access_start> starts{&start, 1};
+
+        const auto access{
+            [&](const size_t width, const std::span<const operand> at) -> void {
+                zero_access(indent, width, at.front());
+            },
+        };
+
+        const bool is_unrolled{
+            aligned_part_count(size_bytes, starts) <=
+                zero_unroll_threshold_parts_,
+        };
+
+        walk_known_size(
+            {
+                .src_loc_tk{src_loc_tk},
+                .indent{indent},
+                .verb{"zero"},
+                .addresses{std::span{&dst, 1}},
+                .starts{starts},
+                .access{access},
+            },
+            size_bytes, is_unrolled);
     }
 
     //
@@ -1921,12 +1946,19 @@ class machine_rv32i : public machine {
     // request is 1 when every access matched, 0 at the first mismatch; its
     // 'inverted' swaps them
     auto compare_known_size(const token& src_loc_tk, const size_t indent,
-                            const size_t size_bytes,
-                            const compared_memory& memory,
+                            const size_t size_bytes, const operand& left,
+                            const operand& right,
                             const equality_request& request) -> void {
 
-        const operand& left{memory.left};
-        const operand& right{memory.right};
+        // compared sizes are limited by the variables that hold the data
+        assert(size_bytes <= std::numeric_limits<uint32_t>::max());
+
+        // unrolled accesses can follow where each address is within its word
+        const std::array<access_start, 2> starts{
+            start_of(left, request.alignment),
+            start_of(right, request.alignment),
+        };
+
         const operand& result{request.dst};
 
         const operation_scope operand_scope{*this, right, left};
@@ -1953,7 +1985,7 @@ class machine_rv32i : public machine {
                 .indent{indent},
                 .verb{"compare"},
                 .addresses{in_use},
-                .starts{memory.starts},
+                .starts{starts},
                 .access{access},
             },
             size_bytes, size_bytes <= copy_unroll_threshold_bytes_);
@@ -2155,40 +2187,6 @@ class machine_rv32i : public machine {
 
         assembler_.store(indent, store_op(width), value.register_name(),
                          to.displacement(), to.base_register());
-    }
-
-    // known size: the addresses are memory operands
-    auto copy_known_size(const token& src_loc_tk, const size_t indent,
-                         const operand& src, const operand& dst,
-                         const size_t size_bytes,
-                         const std::array<access_start, 2>& starts) -> void {
-
-        const operation_scope scope{*this, dst, src};
-
-        const operand value{
-            alloc_scratch_register(src_loc_tk, indent, default_type()),
-        };
-
-        const std::array<operand, 2> addresses{src, dst};
-
-        const auto access{
-            [&](const size_t width, const std::span<const operand> at) -> void {
-                copy_access(indent, value, width, at.front(), at.back());
-            },
-        };
-
-        // direct offsets avoid two pointer temporaries for ordinary small
-        // copies
-        walk_known_size(
-            {
-                .src_loc_tk{src_loc_tk},
-                .indent{indent},
-                .verb{"copy"},
-                .addresses{addresses},
-                .starts{starts},
-                .access{access},
-            },
-            size_bytes, size_bytes <= copy_unroll_threshold_bytes_);
     }
 
     // run-time count: the addresses are pointer registers and 'count' is a
@@ -3866,38 +3864,6 @@ class machine_rv32i : public machine {
 
         assembler_.store(indent, store_op(width), "zero",
                          address.displacement(), address.base_register());
-    }
-
-    // known size: the address is a memory operand
-    auto zero_known_size(const token& src_loc_tk, const size_t indent,
-                         const operand& dst, const size_t size_bytes,
-                         const access_start& start) -> void {
-
-        const operation_scope scope{*this, dst};
-
-        const std::span<const access_start> starts{&start, 1};
-
-        const auto access{
-            [&](const size_t width, const std::span<const operand> at) -> void {
-                zero_access(indent, width, at.front());
-            },
-        };
-
-        const bool is_unrolled{
-            aligned_part_count(size_bytes, starts) <=
-                zero_unroll_threshold_parts_,
-        };
-
-        walk_known_size(
-            {
-                .src_loc_tk{src_loc_tk},
-                .indent{indent},
-                .verb{"zero"},
-                .addresses{std::span{&dst, 1}},
-                .starts{starts},
-                .access{access},
-            },
-            size_bytes, is_unrolled);
     }
 
     //

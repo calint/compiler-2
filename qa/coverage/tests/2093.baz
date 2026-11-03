@@ -1,0 +1,10 @@
+# the check of a body without its calls rejects an inlined recursion without
+# arguments, which passes the nesting limit at every call; 'f' has a result,
+# so its check takes from a call
+
+func f() res i32 {
+    res = f()
+}
+
+func main() {
+}

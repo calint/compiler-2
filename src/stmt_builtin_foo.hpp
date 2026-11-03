@@ -81,7 +81,12 @@ class stmt_builtin_foo final : public statement {
 
         x.comment(ident_.tok(), indent, "initialize iterator e");
 
-        ident_.load_address(tc, indent, tok(), array_info, reg_iter);
+        // the array and the count are statements of their own in the check
+        // of a body without its calls, so the body is checked when an error
+        // of them that depends on a call drops them ('toc::compile_statement')
+        tc.compile_statement([&] -> void {
+            ident_.load_address(tc, indent, tok(), array_info, reg_iter);
+        });
 
         const operand limit{
             compile_limit(tc, indent, array_info.element_count(), held),
@@ -305,11 +310,13 @@ class stmt_builtin_foo final : public statement {
         x.comment(count.tok(), indent, "count {}",
                   statement::trimmed_source(count));
 
-        count.compile(tc, indent, destination::of_register(reg_count));
+        tc.compile_statement([&] -> void {
+            count.compile(tc, indent, destination::of_register(reg_count));
 
-        x.check_bounds(count.tok(), indent,
-                       machine::bounds_range::up_to(reg_count, array_len),
-                       tc.checks().bounds_options());
+            x.check_bounds(count.tok(), indent,
+                           machine::bounds_range::up_to(reg_count, array_len),
+                           tc.checks().bounds_options());
+        });
 
         return reg_count;
     }

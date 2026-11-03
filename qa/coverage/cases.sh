@@ -6571,8 +6571,8 @@ SRC=2070 && COMPERR
 # constant it has ends
 SRC=2071 && COMPERR
 
-# the check of a body without its call goes on after an inlined recursion
-# that an instance drives beside a constant argument
+# the check of a body without its calls rejects an inlined recursion that an
+# instance drives beside a constant argument, as every call does
 SRC=2072 && COMPERR
 
 # the check of a body without its call binds an array argument of an inlined
@@ -6642,3 +6642,22 @@ SRC=2089 && COMPERR
 # a declaration that the check of a body without its calls drops for running
 # out of variable storage still names its variable after it
 SRC=2090 && EXP=1 && RUN
+
+# the check of a body without its calls checks the branches of an 'if' whose
+# condition it drops, also those a call skips
+SRC=2091 && COMPERR
+
+# the check of a body without its calls checks the body of a 'foo' whose
+# count it drops
+SRC=2092 && COMPERR
+
+# the check of a body without its calls rejects an inlined recursion without
+# arguments as every call does
+SRC=2093 && COMPERR
+
+# the arguments of a call are checked left to right
+SRC=2094 && COMPERR
+
+# the check of a body without its calls rejects an inlined recursion that a
+# 'mut' argument drives as every call does
+SRC=2095 && COMPERR

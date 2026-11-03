@@ -1,6 +1,27 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] hard: design review series 2, round 62 (2026-11-03, user: rounds of
+    design-to-simplify until nothing more is found; H a hunter of the state
+    a statement dropped in the check of a body without its calls fails to
+    leave, E 'toc' and 'stmt_call', F the rv32i backend, 'expr_bool',
+    'expr_arith' and 'stmt_def_func')
+    => done (2026-11-03): bugs: H1 an error that depends on a call in the
+       header of an 'if' or a 'foo' dropped the whole statement in the check
+       of a body without its calls, blocks included, so a rule broken in
+       them was found on rv32i only (x86_64 runs out of registers), also in
+       a called function; the condition, the array and the count are
+       statements of their own ('toc::compile_statement'), 2091 2092; the
+       same inside one expression stays, README 8.3 bullet; E1 an inlined
+       recursion without arguments was accepted where nothing calls it and
+       rejected at every call (2093, 1575 frame); decision (user): E3 reopens
+       round 53 D5, a recursion that only 'mut' or instance arguments drive
+       nests alike at every call, so the check expands it
+       ('nests_alike_at_every_call'), 2072 rewritten, 2095; design: E2
+       'stmt_call::parse_arguments' split, the arguments checked in one walk
+       left to right (2094 for the changed message order); F1 the rv32i
+       known-size bulk helpers folded into 'copy_block' and 'zero',
+       'compared_memory' gone (-34)
 [x] hard: design review series 2, round 61 (2026-11-03, user: rounds of
     design-to-simplify until nothing more is found; A the machines and
     built-ins, B calls, definitions and 'toc', C expressions, statements and
