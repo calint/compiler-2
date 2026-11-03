@@ -215,9 +215,10 @@ class expr_bool_op final : public statement {
         };
 
         // inverted by the list and by the element's own 'not's
+        const bool is_inverted{inverted != is_negated()};
+
         const machine::comparison_action action{
-            .operation{operation()},
-            .inverted{inverted != is_negated()},
+            .operation{is_inverted ? negated(operation()) : operation()},
             .destination{dst},
             .target{target},
             .branch_on_true{branch_on_true},
@@ -396,7 +397,7 @@ class expr_bool_op final : public statement {
         }
 
         machine::comparison_action mirrored_action{action};
-        mirrored_action.operation = mirrored(cmp.op);
+        mirrored_action.operation = mirrored(action.operation);
 
         const comparison_side& mirrored_lhs{rhs};
         const comparison_side& mirrored_rhs{lhs};
@@ -535,11 +536,9 @@ class expr_bool_op final : public statement {
         const stmt_identifier& lhs{*lhs_path};
         const stmt_identifier& rhs{*rhs_path};
 
-        const bool is_not_equal{
-            cmp.op == comparison_operator::not_equal,
-        };
+        // note: 'cmp.op' is '==' or '!=', inverted when the action is
+        assert(is_equality(action.operation));
 
-        // a stored result has the inversion applied, a branch applies it
         const bool is_stored{not action.destination.is_empty()};
 
         machine& x{tc.machine()};
@@ -551,14 +550,13 @@ class expr_bool_op final : public statement {
         };
 
         compile_memory_equality(tc, indent + 1, tok(), lhs, rhs, result,
-                                (is_stored and action.inverted) !=
-                                    is_not_equal);
+                                action.operation ==
+                                    comparison_operator::not_equal);
 
         if (not is_stored or not action.target.empty()) {
             machine::comparison_action branch_action{action};
             branch_action.operation = comparison_operator::not_equal;
             branch_action.destination = {};
-            branch_action.inverted = not is_stored and action.inverted;
 
             x.compare_and_branch(tok(), indent, result,
                                  operand::imm(0, tc.builtins().default_type()),
@@ -840,7 +838,9 @@ class expr_bool_op final : public statement {
                (not action.destination.is_empty() and
                 action.destination.type_ref().is_bool()));
 
-        return not action.inverted and action.target.empty();
+        // note: a shorthand is compared '!= 0', '== 0' when inverted
+        return action.operation == comparison_operator::not_equal and
+               action.target.empty();
     }
 
     // a user type instance or a whole array in storage, compared in place

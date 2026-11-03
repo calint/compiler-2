@@ -1,0 +1,29 @@
+# the check of a body without its calls drops only the 'foo' whose count
+# runs out of registers on x86_64 with the address of the result held, and
+# goes on to the swap after it
+
+type point { x, y }
+
+func g<T type>(a T) res T {
+    var x0 = a
+    var x1 = a
+    var x2 = a
+    var x3 = a
+    var x4 = a
+    var x5 = a
+    var x6 = a
+    var x7 = a
+    res = x7 + (x6 + (x5 + (x4 + (x3 + (x2 + (x0 / x1))))))
+}
+
+func f() res i8 {
+    res = 1
+    var b = i8[4]
+    foo b, g<i16>(3) {
+    }
+    var p = point{1, 2}
+    p = {p.y, p.x}
+}
+
+func main() {
+}

@@ -646,8 +646,7 @@ class stmt_identifier final : public statement {
     }
 
     // the memory operand of this identifier, e.g. 'rbp + 4 * r15 + 248',
-    // 'held' receives the scratch registers of the indexing and
-    // 'machine' says which scalings an operand can have
+    // 'held' receives the scratch registers of the indexing
     [[nodiscard]] auto compile_lea(toc& tc, const size_t indent,
                                    machine::held_registers& held,
                                    const lea_request& request) const

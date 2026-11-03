@@ -36,7 +36,9 @@
 //
 //   records         'func_info', 'noinline_body', 'body_uses' (what a body
 //                   reaches that its callers name too), 'param_binding' (what
-//                   a parameter of an inlined call stands for), 'const_info'
+//                   a parameter of an inlined call stands for), 'const_info',
+//                   'loop_reach' and 'func_reach' (which code the compile
+//                   reaches, README 1.5.1)
 //   'scope'         a block, a loop or a function being compiled: its
 //                   constants, variables and parameter bindings; "frame" in
 //                   'scope' and 'storage_layout' is memory, e.g. the frame
@@ -740,7 +742,7 @@ class type_table final {
 // worklist that grows while they compile, and the bodies that only a dry run
 // asks for, checked and not emitted
 class noinline_worklist final {
-    std::vector<noinline_body> noinline_bodies_;
+    std::vector<noinline_body> emitted_bodies_;
     std::vector<noinline_body> checked_bodies_;
 
   public:
@@ -756,12 +758,12 @@ class noinline_worklist final {
     }
 
     // a body is emitted once per array lengths
-    auto add_noinline_body(const stmt_def_func& func,
-                           std::vector<size_t> array_lengths,
-                           const token& call_tk, std::string call_source)
+    auto add_emitted_body(const stmt_def_func& func,
+                          std::vector<size_t> array_lengths,
+                          const token& call_tk, std::string call_source)
         -> void {
 
-        add_once(noinline_bodies_, func, std::move(array_lengths), call_tk,
+        add_once(emitted_bodies_, func, std::move(array_lengths), call_tk,
                  std::move(call_source));
     }
 
@@ -776,23 +778,23 @@ class noinline_worklist final {
         return checked_bodies_.size();
     }
 
+    // a copy, the list grows while the bodies compile
+    [[nodiscard]] auto emitted_body_at(const size_t index) const
+        -> noinline_body {
+
+        return emitted_bodies_.at(index);
+    }
+
+    [[nodiscard]] auto emitted_body_count() const -> size_t {
+        return emitted_bodies_.size();
+    }
+
     [[nodiscard]] auto is_emitted(const noinline_body& body) const -> bool {
-        return contains(noinline_bodies_, *body.func, body.array_lengths);
+        return contains(emitted_bodies_, *body.func, body.array_lengths);
     }
 
     [[nodiscard]] auto is_empty() const -> bool {
-        return noinline_bodies_.empty() and checked_bodies_.empty();
-    }
-
-    // a copy, the list grows while the bodies compile
-    [[nodiscard]] auto noinline_body_at(const size_t index) const
-        -> noinline_body {
-
-        return noinline_bodies_.at(index);
-    }
-
-    [[nodiscard]] auto noinline_body_count() const -> size_t {
-        return noinline_bodies_.size();
+        return emitted_bodies_.empty() and checked_bodies_.empty();
     }
 
   private:
@@ -2842,8 +2844,8 @@ class toc final {
             return;
         }
 
-        noinline_worklist_.add_noinline_body(func, std::move(array_lengths),
-                                             call_tk, std::move(call_source));
+        noinline_worklist_.add_emitted_body(func, std::move(array_lengths),
+                                            call_tk, std::move(call_source));
     }
 
     // identical strings share the label of the first one compiled
@@ -3070,6 +3072,25 @@ class toc final {
         return overflow_options(dst).enabled;
     }
 
+    // a statement of the check of a body that takes from a call
+    // ('stmt_def_func::check_body') is compiled in a dry run of its own: an
+    // error that depends on a call drops that statement only and the check
+    // goes on after it, as reached; a statement of an inlined body there is
+    // part of the statement that calls it, so a recursion does not go on past
+    // such an error at each level ('stmt_call::check_recursion')
+    auto compile_statement(const std::function_ref<void()> compile) -> void {
+        assert(is_compiling_);
+
+        const scope& func{scopes_.current_func_scope()};
+
+        if (not func.is_without_call() or not func.takes_from_call()) {
+            compile();
+            return;
+        }
+
+        dry_run(compile, machine::discarded_code::here, true);
+    }
+
     // a number, untyped, or a constant with its type
     [[nodiscard]] auto constant_value_of(const token& tk) const
         -> std::optional<folded_value> {
@@ -3290,6 +3311,7 @@ class toc final {
         return tp;
     }
 
+    // a plain or a generic function, unlike 'funcs().has'
     [[nodiscard]] auto is_func(const std::string_view name) const -> bool {
         assert(not is_compiling_);
 

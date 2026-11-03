@@ -1701,7 +1701,8 @@ class builtin_arguments final {
 // ('resolve_callee', a generic function through 'generic_call'), then from
 // the '(' the arguments ('parse_arguments', an array one read by
 // 'parse_array_parameter_argument', each checked by
-// 'assert_argument_writable'), then 'record_uses_of_call'
+// 'assert_argument_writable', then 'assert_argument_types'), then
+// 'record_uses_of_call'
 //
 // compiling, in 'compile': the checks made before the inlined and noinline
 // paths split ('assert_call_accepted'), then 'inline_call' or 'noinline_call'
@@ -1939,6 +1940,8 @@ class stmt_call final : public statement {
     // call: a name or a typed constant has the type of its parameter, its
     // storage or typed value is passed; a value that is not a place must fit
     // its built-in parameter, e.g. 'a + 1' and '-a' widen into it
+    // note: checked at the parse, a binding has the type of its parameter,
+    //       so no call changes the verdict
     auto assert_argument_types(
         const toc& tc, const std::span<const std::optional<place>> places) const
         -> void {
@@ -2010,6 +2013,7 @@ class stmt_call final : public statement {
         }
     }
 
+    // what the destination and the bindings of the current scope decide,
     // checked before the inlined and the noinline paths split, so inlining
     // does not change what is accepted; the result is the call's own, an
     // error in it has no call frame
@@ -2029,7 +2033,6 @@ class stmt_call final : public statement {
             assert_result_type(dst);
         }
 
-        assert_argument_types(tc, places);
         // e.g. the 'i' of 'f(arr[i], h(i))' with 'h' writing 'i'
         assert_not_written_later(tc, *this, "argument");
     }
@@ -2177,13 +2180,18 @@ class stmt_call final : public statement {
     // know may not let it end, so an error that depends on a call ends the
     // recursion, not the check; a constant argument expands it, e.g. the
     // 'g(n - 1)' of 'g(2)', otherwise only its arguments are bound, the body
-    // is checked where the recursion is entered and in its own check
+    // is checked where the recursion is entered and in its own check; one
+    // whose arguments all fold nests as deep at every call, so the nesting
+    // limit rejects it, e.g. a 'g(k + 1)' that 'g(2)' enters and that ends
+    // only at 'k == 0'
     auto check_recursion(toc& tc, const size_t indent, const destination& dst,
                          const call_site& call, const size_t nesting) const
         -> void {
 
+        const size_t constant_count{constant_argument_count(tc)};
+
         const auto compile_level = [&] -> void {
-            if (not has_constant_argument(tc)) {
+            if (constant_count == 0) {
                 inline_call{call}.compile_arguments(tc, indent);
                 return;
             }
@@ -2197,7 +2205,23 @@ class stmt_call final : public statement {
             return;
         }
 
-        tc.dry_run(compile_level, machine::discarded_code::here, true);
+        const bool is_constant_recursion{constant_count == args_.size()};
+
+        const auto compile_first_level = [&] -> void {
+            try {
+                compile_level();
+            } catch (compile_error& e) {
+                if (is_constant_recursion and
+                    e.kind == compile_error::error_kind::inlining_limit) {
+
+                    e.kind = compile_error::error_kind::source;
+                }
+
+                throw;
+            }
+        };
+
+        tc.dry_run(compile_first_level, machine::discarded_code::here, true);
     }
 
     // the call without its operators, inlined or noinline
@@ -2212,6 +2236,18 @@ class stmt_call final : public statement {
         call_limits::compile_within_limits(
             tc, callee_name_token(), callee(),
             [&] -> void { inline_call{call}.compile(tc, indent, dst); });
+    }
+
+    // the value arguments that fold to a constant
+    [[nodiscard]] auto constant_argument_count(const toc& tc) const -> size_t {
+        return static_cast<size_t>(std::ranges::count_if(
+            std::views::zip(args_, callee().params()),
+            [&](const auto& pair) -> bool {
+                const auto& [arg, param]{pair};
+
+                return is_value_param(param) and
+                       arg.fold(tc, tc.use_at(param.get_type()));
+            }));
     }
 
     // the type names the constructor after the '.', e.g. 'at' of
@@ -2283,18 +2319,6 @@ class stmt_call final : public statement {
     // the receiver is not counted as an argument
     [[nodiscard]] auto first_argument_index() const -> size_t {
         return is_method() ? 1 : 0;
-    }
-
-    // a value argument folds to a constant
-    [[nodiscard]] auto has_constant_argument(const toc& tc) const -> bool {
-        return std::ranges::any_of(
-            std::views::zip(args_, callee().params()),
-            [&](const auto& pair) -> bool {
-                const auto& [arg, param]{pair};
-
-                return is_value_param(param) and
-                       arg.fold(tc, tc.use_at(param.get_type()));
-            });
     }
 
     // the call is in the body of its callee, a recursion
@@ -2433,6 +2457,8 @@ class stmt_call final : public statement {
 
             assert_argument_writable(i, arg_place);
         }
+
+        assert_argument_types(tc, places);
 
         record_uses_of_call(tc, places);
     }

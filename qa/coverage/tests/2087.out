@@ -1,0 +1,4 @@
+
+2087.baz:30:19: 'p.x' is read but has been overwritten in the same statement, use a temporary variable
+        p = {p.y, p.x}
+                  ^

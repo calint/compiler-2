@@ -1,12 +1,13 @@
 # the check of a body without its call goes on after an inlined recursion
-# whose constant arguments pass the nesting limit, to the 'h(3)' after it
+# that an argument it does not know drives past the nesting limit, to the
+# 'h(3)' after it
 
-func g(n) res {
+func g(n, k) res {
     if n == 0 {
-        res = 0
+        res = k
         return
     }
-    res = g(n - 1)
+    res = g(n - 1, k)
 }
 
 func h(k) res {
@@ -15,7 +16,7 @@ func h(k) res {
 }
 
 func f(x) res {
-    res = x + g(70)
+    res = x + g(x, 70)
     res = res + h(3)
 }
 

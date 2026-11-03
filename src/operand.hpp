@@ -116,6 +116,7 @@ class operand final {
         return index_register_;
     }
 
+    // the memory operand '[name]', its address is the value of the register
     [[nodiscard]] auto is_address_in_register(const std::string_view name) const
         -> bool {
 
@@ -123,7 +124,6 @@ class operand final {
                index_register_.empty() and displacement_ == 0;
     }
 
-    // the memory operand '[reg]', its address is the value of the register
     [[nodiscard]] auto is_allocated() const -> bool { return is_allocated_; }
 
     [[nodiscard]] auto is_empty() const -> bool { return kind_ == kind::empty; }

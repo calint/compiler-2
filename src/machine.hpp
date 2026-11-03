@@ -94,9 +94,9 @@ struct target_description {
 // the instructions, the names of its registers and the order it picks scratch
 // registers in; the public interface by group:
 //
-//   lifecycle      in the order 'program' calls it: 'start',
-//                  'begin_noinline_body' and 'end_noinline_body' for each
-//                  body, 'emit_runtime', 'emit_string_constants',
+//   lifecycle      in the order of a compile: 'start', 'begin_noinline_body'
+//                  and 'end_noinline_body' for each body
+//                  ('stmt_def_func'), 'emit_runtime', 'emit_string_constants',
 //                  'begin_data', 'reserve_variables', 'finish',
 //                  'write_assembly'
 //   data           'data_alignment', 'define_constant', 'emit_data_array',
@@ -192,11 +192,10 @@ class machine {
         size_t instruction_count{};
     };
 
+    // what 'compare_and_branch' does with 'lhs operation rhs'; a negated
+    // condition passes the negated operator, e.g. 'not a < b' is 'a >= b'
     struct comparison_action {
         comparison_operator operation{comparison_operator::equal};
-
-        // negate the comparison before storing or branching
-        bool inverted{};
 
         // receives 0 or 1, empty skips storing
         operand destination;
@@ -204,7 +203,7 @@ class machine {
         // branch label, empty skips branching
         std::string_view target;
 
-        // branch on true after 'inverted', otherwise on false
+        // branch when the comparison holds, otherwise when it does not
         bool branch_on_true{};
     };
 

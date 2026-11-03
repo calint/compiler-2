@@ -1,6 +1,53 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] hard: design review series 2, round 60 (2026-11-03, user: one more
+    round for good measure, simplifications for the human reviewer; N a
+    newcomer reading in the order of README 1.1, D a prototype of the first
+    decide item, A the machines and built-ins, B calls, definitions and
+    'toc', C expressions, statements and the front end)
+    => done (2026-11-03): no bugs; decision (user): D1 the item below;
+       design: A1 'comparison_action::inverted' gone, a negated comparison
+       passes the negated operator (4 XORs in the backends and the
+       'is_stored' rule gone, -14; 2086 for the one changed path); B1 the
+       argument types of a call checked once at the parse (1411 1412 1628
+       1629 lose a frame that depended on the calls); N2 the emitted bodies
+       of 'noinline_worklist' named so; C1 'branch_condition::returns' ->
+       'is_end_reachable', 'foo' 'is_count_end_reachable' (N3 alike);
+       docs: N1 README 1.1 names 'tc', 'tz', 'x', 'dst', 'src_loc_tk' and
+       'indent', the reading order says where step 7 names are, 1.9 and the
+       maps corrected; C2 A2 comments
+[x] medium: the check of a body without its calls ends at the first
+    error that depends on a call outside the recursive calls of an inlined
+    recursion, mostly running out of scratch registers on x86_64 (README 8.3
+    bullet 3), so the code after it is checked only at the calls; rounds 54
+    to 56 hunters found every remaining target-dependent verdict there (e.g.
+    five nested 'foo' around an inlined call in a function with an unsized
+    array parameter: accepted on x86_64 when nothing calls it, rejected on
+    rv32i and at any call)
+    => option: check each statement of such a body in its own dry run, so a
+       call-dependent error drops that statement and the check goes on (the
+       rule 'toc::dry_run' already applies to skipped code and recursions);
+       removes the 8.3 bullet; cost: one dry run per statement of every
+       function that takes from a call, compile time to be measured; or keep
+       as documented (design review series 2, round 56); round 57 H2: it also
+       happens in a function without parameters that has a result (the
+       result counts as taken from a call), e.g. an 'f() res i8' with a
+       'foo' whose count calls a generic 'g<i16>' that runs out of 'rdx';
+       round 58 B: the same rule covers README 1.5 item 2, a recursion whose
+       constant arguments pass the nesting limit ends the check, e.g.
+       'g(k i32)' calling 'g(k + 1)' until 'k == 0', reached as 'g(2)' in an
+       'f(x)' that nothing calls: accepted, rejected at any call of 'f'
+    => done (2026-11-03, user: apply; design review series 2, round 60 D1):
+       each statement of a body checked without its calls that takes from a
+       call runs in its own dry run ('toc::compile_statement', from
+       'stmt_block::compile_from'), a call-dependent error drops only that
+       statement and the check goes on; a recursion whose arguments all fold
+       is rejected at the nesting limit as at a call
+       ('constant_argument_count'); README 8.3 bullet 3 gone, 1.4 1.5
+       rewritten; 2070 rewritten to an argument the check does not know;
+       2087 2088 2089 (the three cases above, accepted on x86_64 before);
+       compile time unchanged (roome 0.164 s, corpus 13.3 s)
 [x] hard: design review series 2, round 59 (2026-11-02 night, the
     confirming round of the loop; 3 reviewers over all of 'src/', each line
     read and attacked: A names, paths, types and the no-UB checks, B the

@@ -274,19 +274,18 @@ class machine_x86_64 final : public machine {
         cmp(src_loc_tk, indent, lhs, rhs);
 
         if (not action.destination.is_empty()) {
-            store_condition(
-                src_loc_tk, indent,
-                condition_for_comparison(action.operation, action.inverted),
-                action.destination);
+            store_condition(src_loc_tk, indent,
+                            condition_for_comparison(action.operation),
+                            action.destination);
         }
 
         if (not action.target.empty()) {
-            const bool inverted{
-                action.branch_on_true ? action.inverted : not action.inverted,
+            const comparison_operator branched{
+                action.branch_on_true ? action.operation
+                                      : negated(action.operation),
             };
 
-            assembler_.jcc(indent,
-                           condition_for_comparison(action.operation, inverted),
+            assembler_.jcc(indent, condition_for_comparison(branched),
                            action.target);
         }
     }
@@ -396,8 +395,7 @@ class machine_x86_64 final : public machine {
         assembler_.instruction(indent, op::repe_cmpsb);
 
         store_condition(src_loc_tk, indent,
-                        condition_for_comparison(comparison_operator::equal,
-                                                 request.inverted),
+                        request.inverted ? condition::ne : condition::e,
                         request.dst);
     }
 
@@ -466,8 +464,7 @@ class machine_x86_64 final : public machine {
         }
 
         store_condition(src_loc_tk, indent,
-                        condition_for_comparison(comparison_operator::equal,
-                                                 request.inverted),
+                        request.inverted ? condition::ne : condition::e,
                         request.dst);
     }
 
@@ -1845,12 +1842,7 @@ class machine_x86_64 final : public machine {
     //
 
     [[nodiscard]] static auto
-    condition_for_comparison(const comparison_operator comparison,
-                             const bool inverted) -> condition {
-
-        const comparison_operator holds{
-            inverted ? negated(comparison) : comparison,
-        };
+    condition_for_comparison(const comparison_operator holds) -> condition {
 
         if (holds == comparison_operator::equal) {
             return condition::e;

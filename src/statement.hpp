@@ -239,9 +239,9 @@ class stmt_identifier;
 //
 //   every node     'compile', 'source_to', 'tok', 'trace_assignment'
 //                  (control flow); 'visit_operands' (the default is
-//                  'std::unreachable()'): a value, and a node whose
-//                  'trace_assignment' checks its reads with
-//                  'assert_result_not_read', a leaf says it has none;
+//                  'std::unreachable()'): overridden by every value and by
+//                  every node whose 'trace_assignment' checks its reads with
+//                  'assert_result_not_read', a leaf lists none;
 //                  'visit_reads', 'visit_call_effects' and
 //                  'has_call' walk the operands, 'stmt_identifier'
 //                  adds its own read, 'stmt_call' and 'stmt_builtin_io' what
@@ -255,8 +255,9 @@ class stmt_identifier;
 //                  'stmt_builtin_convert', forwarded by 'expr_arith'
 //   a place        'operand_path': 'stmt_identifier' and 'expr_path',
 //                  forwarded by 'expr_arith', 'expr_any' and 'expr_type'
-//                  when they hold one; 'bare_path' and 'as_place' derive
-//                  from it, the path is then asked through the members of
+//                  when they hold one; 'bare_path' and the free function
+//                  'as_place' ('stmt_identifier.hpp') derive from it, the
+//                  path is then asked through the members of
 //                  'stmt_identifier'
 class statement {
     token token_;

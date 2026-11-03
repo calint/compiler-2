@@ -1,0 +1,16 @@
+# the check of a body without its calls rejects an inlined recursion whose
+# arguments all fold and that passes the nesting limit, as every call does
+
+func g(k i32) {
+    if k == 0 {
+        return
+    }
+    g(k + 1)
+}
+
+func f(x i32) {
+    g(2)
+}
+
+func main() {
+}

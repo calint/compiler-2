@@ -88,7 +88,7 @@ class stmt_builtin_foo final : public statement {
         };
 
         // e.g. not after 'foo a, stop() { }' with 'stop' an inlined 'exit'
-        const bool count_returns{tc.is_reachable()};
+        const bool is_count_end_reachable{tc.is_reachable()};
 
         // a constant count above 0 runs the body, so the loop runs out only
         // where the body reaches its counter step, e.g. not after
@@ -135,7 +135,7 @@ class stmt_builtin_foo final : public statement {
 
         tc.join_loop();
 
-        if (not count_returns) {
+        if (not is_count_end_reachable) {
             tc.end_path();
         }
     }
@@ -243,7 +243,6 @@ class stmt_builtin_foo final : public statement {
         x.compare_and_branch(tok(), indent, counter, limit,
                              {
                                  .operation{comparison_operator::not_equal},
-                                 .inverted{},
                                  .destination{},
                                  .target{loop_label},
                                  .branch_on_true{true},
@@ -385,7 +384,6 @@ class stmt_builtin_foo final : public statement {
                              operand::imm(0, tc.builtins().default_type()),
                              {
                                  .operation{comparison_operator::less_equal},
-                                 .inverted{},
                                  .destination{},
                                  .target{end_label},
                                  .branch_on_true{true},

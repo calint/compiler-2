@@ -99,7 +99,10 @@ header comments and class maps first.
                                read: control flow, the simplest nodes; 'foo'
                                loops over an array
 7. stmt_def_var.hpp, stmt_assign_var.hpp
-                               read: a variable defined and assigned
+                               read: a variable defined and assigned; the
+                               'write_plan' is in expr_type.hpp (step 8),
+                               the path members in stmt_identifier.hpp
+                               (step 9), read by their comments here
 8. expr_any.hpp, expr_arith.hpp, expr_bool.hpp, expr_type.hpp
                                skim: values, arithmetic, conditions,
                                instances
@@ -110,8 +113,8 @@ header comments and class maps first.
    stmt_builtin_*.hpp          skim: the built-ins, conversion, io, array
                                copy, compare and length, exit, which
                                'parse_statement' dispatches
-   ub_order.hpp                read: the order checks, why code may compute
-                               an operand before one written earlier
+   ub_order.hpp                read: the order checks, a read against the
+                               writes before it in the order the code runs
 10. stmt_def_func.hpp, stmt_call.hpp, generics.hpp, stmt_def_type.hpp
                                skim: functions, inlined and noinline calls,
                                the generic instances (2.11)
@@ -132,6 +135,12 @@ name within their section banners ('// statics', '// class methods', ...), so
 a class does not read top to bottom in the order its steps run; the class and
 file maps at the top give that order, e.g. those of 'toc', 'machine' and
 'stmt_call'.
+
+The names most methods share: 'tc' the 'toc', 'tz' the tokenizer of the
+parse, 'x' the 'machine', 'dst' the 'destination' of a value, 'src_loc_tk' the
+token that an error, a listing comment and a label point at (line 0 has no
+place), and 'indent' the depth of the listing lines emitted
+('assembler::indentation'), one more for each nested block.
 
 Invariants the code relies on:
 
@@ -197,13 +206,13 @@ a type, a generic type, a function, a generic function, a variable or a
 constant, defined before or after it: a constant parameter is a constant of
 the instance scope, a type parameter wins in the type table and in the parser
 ('type_param_named'), e.g. 'T(5)' in 'func f<T type>()' converts also when a
-function 'T' exists. A local cannot be named like a type parameter. Every question about a name asks this lookup:
-the resolver ('ident_resolver'), the aliasing check, and the lookaheads of the
-parser, where a variable, a parameter or a constant hides a type or a generic
-function of its name, e.g. after 'let point = 3' the 'point' of 'point + 1' is
-the constant; a built-in type, e.g. 'i8', names no value, and neither does a
-type parameter, whatever its argument. A name followed by '(' is a call, no
-value is called. The same
+function 'T' exists. A local cannot be named like a type parameter. Every
+question about a name asks this lookup: the resolver ('ident_resolver'), the
+aliasing check, and the lookaheads of the parser, where a variable, a
+parameter or a constant hides a type or a generic function of its name, e.g.
+after 'let point = 3' the 'point' of 'point + 1' is the constant; a built-in
+type, e.g. 'i8', names no value, and neither does a type parameter, whatever
+its argument. A name followed by '(' is a call, no value is called. The same
 statement can resolve to another variable, register or constant each time it
 is compiled.
 
@@ -241,12 +250,13 @@ Some code is compiled and then dropped: a dry run only to be checked, and
 the longer of two versions after both are measured:
 
 1. 'toc::dry_run' and 'machine::emit_discarded': the body of each function
-   without its calls (1.5), and code that a compile skips ('toc::check_skipped',
-   1.5.1): the code after a statement that leaves on every path, a branch whose
-   condition folds to false, the branches and the 'else' after one that always
-   runs, the operands of 'and' and 'or' after the one that decides and the body
-   of a 'foo' whose count folds to 0; and the noinline bodies that only such
-   code asks for (1.5 item 4)
+   without its calls (1.5) and each statement of one that takes from a call
+   ('toc::compile_statement'), and code that a compile skips
+   ('toc::check_skipped', 1.5.1): the code after a statement that leaves on
+   every path, a branch whose condition folds to false, the branches and the
+   'else' after one that always runs, the operands of 'and' and 'or' after the
+   one that decides and the body of a 'foo' whose count folds to 0; and the
+   noinline bodies that only such code asks for (1.5 item 4)
 2. 'toc::emit_most_efficient' over 'machine::emit_most_efficient': two versions
    are compiled, each from the state before it, and the one with fewer
    instructions is kept with the state it ended in, e.g. with and without a
@@ -311,20 +321,26 @@ program does not depend on inlining.
      ('compile_error::depends_on_call'): running out of scratch registers,
      e.g. twelve parameters that one call gives the same argument, or of the
      variable storage ('out_of_storage'), and the limits of inlined calls,
-     e.g. a recursion 'g(70)' whose constant arguments pass the nesting
-     limit; such an error ends the check and the function is accepted; in
-     skipped code it is dropped and the check goes on ('toc::check_skipped');
-     a recursive inlined call in the check
-     ('scope_stack::is_in_body_taking_from_call'), also a call of the function
-     in its own check ('scope_stack::inlined_nesting'), is compiled in a dry run
-     with its deeper levels, and such an error ends the recursion, not the check
+     e.g. a recursion 'g(x, 70)' that the unknown 'x' drives past the nesting
+     limit; such an error drops the statement it is in and the check goes on
+     after it, as reached: each statement of the body, in every block, is
+     compiled in a dry run of its own ('toc::compile_statement'), a statement
+     of an inlined body there is part of the statement that calls it; in
+     skipped code it is dropped too ('toc::check_skipped'); a recursive
+     inlined call in the check ('scope_stack::is_in_body_taking_from_call'),
+     also a call of the function in its own check
+     ('scope_stack::inlined_nesting'), is compiled in a dry run with its
+     deeper levels, and such an error ends the recursion, not the statement
      ('stmt_call::check_recursion'): one with a value argument that folds is
      expanded, the 'g(x, 2)' of an 'f(x)' that nothing calls is checked as in
      'main', and one that a value, an instance or a length the check does not
-     know drives ends at the nesting limit or out of registers; one without such
-     an argument is not expanded, its arguments are bound as for the body, which
+     know drives ends at the nesting limit or out of registers; one whose
+     arguments all fold nests as deep at every call, so the nesting limit
+     rejects it, e.g. a 'g(k + 1)' entered as 'g(2)' that ends only at
+     'k == 0', running out of registers does not; one without such an
+     argument is not expanded, its arguments are bound as for the body, which
      is not compiled ('inline_call::compile_arguments'), so a recursion that
-     only a constant argument of the call ends does not end the check
+     only a constant argument of the call ends is no error there
 3. A function that takes nothing from a call, a noinline one without unsized
    array parameters or an inlined one without parameters and result, is
    rejected by such an error. The check has the registers of a noinline body
@@ -583,9 +599,10 @@ compile (7.8), 'main.cpp' prints it with its frames.
    that runs out of registers is reported as the recursion, the check of a
    function without its calls ends at such an error (1.5), and skipped code
    and an expanded inlined recursion in a body that takes from a call drop it
-   ('toc::check_skipped', 'stmt_call::check_recursion'), all three through
-   'toc::dry_run'; the comment of 'error_kind' names the functions. An error
-   that ends a dry run is a 'source' one, so none of them drops it.
+   ('toc::check_skipped', 'stmt_call::check_recursion'); the last two places
+   read it in 'toc::dry_run'; the comment of 'error_kind' names the
+   functions. An error that ends a dry run is a 'source' one, so none of them
+   drops it.
 3. A file that cannot be read is an 'unlocated_error', which
    'program::load_file' locates at its 'include'.
 
@@ -1958,12 +1975,6 @@ message, x86_64 stops with a signal.
   behavior.
 - Definite assignment does not count the writes of a call, e.g.
   'init(res)' is a read of 'res'; a conservative rejection.
-- The check of a body without its calls ends at the first error that depends on
-  a call outside the recursive calls of an inlined recursion, e.g. running out
-  of scratch registers, so the code after it is not checked there (1.5): e.g.
-  a later 'res = f(res)' is then judged only at each call, where an inlined
-  result held in a register shares nothing, so it is accepted on x86_64 and
-  rejected on rv32i.
 - A noinline call there with an array argument of unknown length is not
   checked with the lengths of its other array arguments, which an inlined
   call is: in a function nothing calls the verdict depends on inline versus

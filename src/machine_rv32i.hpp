@@ -966,8 +966,7 @@ class machine_rv32i : public machine {
 
         const std::string_view result{value.register_name()};
 
-        emit_boolean_result(indent, operation, result, left, right, immediate,
-                            action.inverted);
+        emit_boolean_result(indent, operation, result, left, right, immediate);
 
         // memory results require a store, register results are in place
         if (action.destination.is_memory()) {
@@ -2323,13 +2322,11 @@ class machine_rv32i : public machine {
                              const comparison_operator operation,
                              const std::string_view result, const operand& left,
                              const operand& right,
-                             const std::optional<int64_t> immediate,
-                             const bool inverted) -> void {
+                             const std::optional<int64_t> immediate) -> void {
 
         if (is_equality(operation)) {
-            emit_equality_result(
-                indent, result, left, right, immediate,
-                inverted != (operation == comparison_operator::not_equal));
+            emit_equality_result(indent, result, left, right, immediate,
+                                 operation == comparison_operator::not_equal);
 
             return;
         }
@@ -2346,7 +2343,7 @@ class machine_rv32i : public machine {
                    operation == comparison_operator::less_equal),
         };
 
-        if (inverted != complement) {
+        if (complement) {
             assembler_.xori(indent, result, result, 1);
         }
     }
@@ -2504,7 +2501,7 @@ class machine_rv32i : public machine {
         // a comparison without a boolean result is a branch
         assert(not action.target.empty());
 
-        const bool inverted{action.inverted != not action.branch_on_true};
+        const bool inverted{not action.branch_on_true};
 
         // equality and inequality share one branch pair
         if (is_equality(operation)) {

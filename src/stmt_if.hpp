@@ -96,11 +96,12 @@ class stmt_if final : public statement {
     };
 
     // what a branch found of its condition: its value where known and
-    // whether the condition returns, where the next branch and the 'else'
-    // start, e.g. not after 'if stop() == 1' with 'stop' an inlined 'exit'
+    // whether the code after the condition is reached, where the next branch
+    // and the 'else' start, e.g. not after 'if stop() == 1' with 'stop' an
+    // inlined 'exit'
     struct branch_condition {
         std::optional<bool> known;
-        bool returns{};
+        bool is_end_reachable{};
     };
 
     // e.g. 'else {z = 3}'
@@ -168,7 +169,7 @@ class stmt_if final : public statement {
                 compile_branch_at(tc, indent, i, if_label),
             };
 
-            is_start_reachable = condition.returns;
+            is_start_reachable = condition.is_end_reachable;
 
             const std::optional<bool> known{condition.known};
 
@@ -301,7 +302,7 @@ class stmt_if final : public statement {
 
         const branch_condition condition{
             .known{known},
-            .returns{tc.is_reachable()},
+            .is_end_reachable{tc.is_reachable()},
         };
 
         // note: code that never runs holds the compile rules too, see

@@ -6564,7 +6564,7 @@ SRC=2068 && COMPERR
 SRC=2069 && COMPERR
 
 # the check of a body without its call goes on after an inlined recursion
-# whose constant arguments pass the nesting limit
+# that an argument it does not know drives past the nesting limit
 SRC=2070 && COMPERR
 
 # the check of a body without its call expands an inlined recursion that the
@@ -6623,3 +6623,18 @@ SRC=2084 && COMPERR
 # an array argument before a missing argument of a generic call is read as
 # in the call: an element is not an array
 SRC=2085 && COMPERR
+
+# a negated memory comparison of arrays and instances that only branches
+SRC=2086 && EXP=22 && RUN
+
+# the check of a body without its calls drops only the statement with an
+# error that depends on a call, inside a 'foo', and goes on after it
+SRC=2087 && COMPERR
+
+# the check of a body without its calls drops only the statement with an
+# error that depends on a call, in a function with only a result
+SRC=2088 && COMPERR
+
+# the check of a body without its calls rejects an inlined recursion whose
+# arguments all fold at the nesting limit
+SRC=2089 && COMPERR

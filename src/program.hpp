@@ -509,11 +509,10 @@ class program final {
         // note: the calls in a body can request more bodies, so the count
         //       is read on every pass
 
-        for (size_t i{}; i < tc.noinline_worklist().noinline_body_count();
-             ++i) {
+        for (size_t i{}; i < tc.noinline_worklist().emitted_body_count(); ++i) {
 
             const noinline_body body{
-                tc.noinline_worklist().noinline_body_at(i),
+                tc.noinline_worklist().emitted_body_at(i),
             };
 
             // an error in the body reports the call that asked for it

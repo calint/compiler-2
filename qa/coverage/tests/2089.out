@@ -1,0 +1,7 @@
+
+2089.baz:8:5: recursion of inlined function 'g' is nested deeper than 64 calls, declare it 'noinline'
+    g(k + 1)
+    ^
+2089.baz:12:5: called from
+    g(2)
+    ^

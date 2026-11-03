@@ -111,13 +111,17 @@ class stmt_block final : public statement {
 
         for (size_t i{first}; i < statements_.size(); ++i) {
             // e.g. the code after a 'return', or of a branch whose condition
-            // never returns; 'check_skipped' compiles it as reached
+            // never returns, as 'stop() == 1' with 'stop' an inlined 'exit';
+            // 'check_skipped' compiles it as reached
             if (not tc.is_reachable()) {
                 tc.check_skipped([&] -> void { compile_from(tc, indent, i); });
                 return;
             }
 
-            statements_.at(i)->compile(tc, indent + 1, destination{});
+            const statement& stmt{*statements_.at(i)};
+
+            tc.compile_statement(
+                [&] -> void { stmt.compile(tc, indent + 1, destination{}); });
         }
     }
 
