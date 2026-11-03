@@ -596,11 +596,12 @@ compile (7.8), 'main.cpp' prints it with its frames.
    'out_of_registers', 'out_of_storage' and 'inlining_limit'. Four places read
    the kind and change the error instead of ending with it: a version that runs
    out is dropped when the other one is available (5.3), an inlined recursion
-   that runs out of registers is reported as the recursion, the check of a
-   function without its calls ends at such an error (1.5), and skipped code
-   and an expanded inlined recursion in a body that takes from a call drop it
-   ('toc::check_skipped', 'stmt_call::check_recursion'); the last two places
-   read it in 'toc::dry_run'; the comment of 'error_kind' names the
+   that runs out of registers is reported as the recursion, one whose
+   arguments all fold makes the nesting limit a 'source' error, and
+   'toc::dry_run' drops it in the check of a body that takes from a call
+   (1.5): a statement ('toc::compile_statement'), skipped code
+   ('toc::check_skipped') and an expanded inlined recursion
+   ('stmt_call::check_recursion'); the comment of 'error_kind' names the
    functions. An error that ends a dry run is a 'source' one, so none of them
    drops it.
 3. A file that cannot be read is an 'unlocated_error', which

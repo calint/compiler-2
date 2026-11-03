@@ -59,7 +59,7 @@
 //                'emit_panic_message', 'emit_message_data',
 //                'emit_report_line_routine'
 //   calls        'emit_call', the sector and i/o routine calls
-//   target hooks 'emit_read_call', 'emit_write_call', 'emit_exit_routine',
+//   target hooks 'emit_io_call', 'emit_exit_routine',
 //                'emit_stack_limit_load', 'emit_sector_routines', and the
 //                machine virtuals 'emit_target_setup', 'emit_used_routines'
 //                and 'finish_target';
@@ -532,7 +532,7 @@ class machine_rv32i : public machine {
     }
 
     // 'read' and 'write' are system calls or routines of the target, see
-    // 'emit_read_call'; the sector functions are routines, see
+    // 'emit_io_call'; the sector functions are routines, see
     // 'call_sector_routine'
     auto emit_target_call(const token& src_loc_tk, const size_t indent,
                           const target_call function,
@@ -546,10 +546,8 @@ class machine_rv32i : public machine {
         // address
         reserve_named_register(src_loc_tk, indent, "a7");
 
-        if (function == target_call::read) {
-            emit_read_call(indent);
-        } else if (function == target_call::write) {
-            emit_write_call(indent);
+        if (function == target_call::read or function == target_call::write) {
+            emit_io_call(indent, function);
         } else {
             call_sector_routine(indent, function);
         }
@@ -622,10 +620,12 @@ class machine_rv32i : public machine {
     // '.Lbaz_exit' ends the program with the exit code in 'a0'
     virtual auto emit_exit_routine() -> void = 0;
 
-    // 'a0' is the descriptor and receives the byte count, 'a1' is the address,
-    // 'a2' the count and 'a7' is reserved; an override may change the registers
-    // after 'a2' in the allocation order, see 'call_io_routine'
-    virtual auto emit_read_call(const size_t indent) -> void = 0;
+    // the call of 'read' or 'write': 'a0' is the descriptor and receives the
+    // byte count, 'a1' is the address, 'a2' the count and 'a7' is reserved;
+    // an override may change the registers after 'a2' in the allocation
+    // order, see 'call_io_routine'
+    virtual auto emit_io_call(const size_t indent, const target_call function)
+        -> void = 0;
 
     // the routines that the calls of 'sector_read' and 'sector_write' jump
     // to, each only when it is used; a routine takes the sector in 'a0', the
@@ -647,9 +647,6 @@ class machine_rv32i : public machine {
 
         std::unreachable();
     }
-
-    // same registers as 'emit_read_call'
-    virtual auto emit_write_call(const size_t indent) -> void = 0;
 
     //
     // class methods
@@ -2135,12 +2132,13 @@ class machine_rv32i : public machine {
             return dst;
         }
 
-        // materialized operands are ours to overwrite after the comparison
-        if (left.is_allocated() and not lhs.is_register()) {
+        // an operand the comparison loaded into a scratch register is ours to
+        // overwrite after it, 'zero' stands for a zero or an immediate
+        if (not lhs.is_register() and left.register_name() != "zero") {
             return left;
         }
 
-        if (right.is_allocated() and not rhs.is_register()) {
+        if (not rhs.is_register() and right.register_name() != "zero") {
             return right;
         }
 
@@ -2716,7 +2714,7 @@ class machine_rv32i : public machine {
         assembler_.li(1, "a0", stderr_descriptor_);
         assembler_.la(1, "a1", message_label);
         assembler_.li(1, "a2", message.size());
-        emit_write_call(1);
+        emit_io_call(1, target_call::write);
     }
 
     // writes the line number of 's2' in decimal, then exits with the code in
@@ -2759,7 +2757,7 @@ class machine_rv32i : public machine {
         assembler_.addi(1, "a2", "a2", 1);
         assembler_.mv(1, "a1", "sp");
         assembler_.li(1, "a0", stderr_descriptor_);
-        emit_write_call(1);
+        emit_io_call(1, target_call::write);
 
         exit(token{}, 1, make_register_operand("s3", default_type()));
 

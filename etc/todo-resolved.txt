@@ -1,6 +1,20 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] hard: design review series 2, round 61 (2026-11-03, user: rounds of
+    design-to-simplify until nothing more is found; A the machines and
+    built-ins, B calls, definitions and 'toc', C expressions, statements and
+    the front end, D cross-cutting: flags, clones, concepts)
+    => done (2026-11-03): bug: D2 a regression of round 60, a declaration
+       dropped in the check of a body without its calls for running out of
+       storage left its name undeclared, so a valid program was rejected
+       ("'big' not found") or the name resolved to a global; 'toc::add_var'
+       declares the name before it places the variable (2090); design: A1
+       the 'is_allocated' bit of 'operand' gone (-27); A2 one rv32i hook
+       'emit_io_call' for 'emit_read_call' and 'emit_write_call'; B1 (D1
+       alike) 'toc::dry_run' derives 'takes_from_call' from the scopes, the
+       parameter of its 5 callers gone, README 1.9 item 2 corrected; C found
+       nothing (about 60 attack programs, 40000 mutants)
 [x] hard: design review series 2, round 60 (2026-11-03, user: one more
     round for good measure, simplifications for the human reviewer; N a
     newcomer reading in the order of README 1.1, D a prototype of the first

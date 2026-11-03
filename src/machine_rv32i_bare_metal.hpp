@@ -63,8 +63,11 @@ class machine_rv32i_bare_metal : public machine_rv32i {
     // overridden methods
     //
 
-    auto emit_read_call(const size_t indent) -> void override {
-        call_io_routine(indent, read_label_);
+    auto emit_io_call(const size_t indent, const target_call function)
+        -> void override {
+
+        call_io_routine(indent, function == target_call::read ? read_label_
+                                                              : write_label_);
     }
 
     // only the routines the program calls are emitted
@@ -78,10 +81,6 @@ class machine_rv32i_bare_metal : public machine_rv32i {
         if (is_used(write_label_)) {
             emit_write_routine();
         }
-    }
-
-    auto emit_write_call(const size_t indent) -> void override {
-        call_io_routine(indent, write_label_);
     }
 
     // the stack may not reach past the end of memory or into the variables,

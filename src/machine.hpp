@@ -872,7 +872,7 @@ class machine {
                          const type& type_ref) -> operand {
 
         reserve_named_register(src_loc_tk, indent, register_name);
-        return allocated_operand(register_name, type_ref);
+        return make_register_operand(register_name, type_ref);
     }
 
     // the first free register in the scratch order of the backend
@@ -897,7 +897,7 @@ class machine {
         state_.max_scratch_regs =
             std::max(state_.max_scratch_regs, state_.registers.scratch_count());
 
-        return allocated_operand(*register_name, type_ref);
+        return make_register_operand(*register_name, type_ref);
     }
 
     // starts the data section, after the code and every routine it uses
@@ -1275,7 +1275,7 @@ class machine {
     auto free_named_register(const token& src_loc_tk, const size_t indent,
                              const operand& reg) -> void {
 
-        assert(reg.is_register() and reg.is_allocated());
+        assert(reg.is_register());
 
         release_named_register(src_loc_tk, indent, reg.register_name());
     }
@@ -1283,7 +1283,7 @@ class machine {
     auto free_scratch_register(const token& src_loc_tk, const size_t indent,
                                const operand& reg) -> void {
 
-        assert(reg.is_register() and reg.is_allocated());
+        assert(reg.is_register());
 
         assert(state_.registers.top().holder ==
                register_pool::holder_kind::scratch);
@@ -1322,11 +1322,7 @@ class machine {
 
         assert(reg.is_register());
 
-        operand result{make_register_operand(reg.register_name(), type_ref)};
-
-        result.set_allocated(reg.is_allocated());
-
-        return result;
+        return make_register_operand(reg.register_name(), type_ref);
     }
 
     // ends the data at 'dat.end', then the variables from 'vars' to
@@ -1854,19 +1850,6 @@ class machine {
 
         return alloc_named_register(src_loc_tk, indent, registers.result,
                                     default_type());
-    }
-
-    // the operand of a register handed out by 'alloc_named_register' or
-    // 'alloc_scratch_register', which frees it by the index of its name
-    [[nodiscard]] auto allocated_operand(const std::string_view register_name,
-                                         const type& type_ref) const
-        -> operand {
-
-        operand result{make_register_operand(register_name, type_ref)};
-
-        result.set_allocated(true);
-
-        return result;
     }
 
     // every operation freed what it allocated

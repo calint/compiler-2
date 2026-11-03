@@ -1,0 +1,13 @@
+# the check of a body without its calls drops a declaration that runs out of
+# variable storage and still resolves its name after it: the one call fills
+# the storage exactly, the check holds the address of 'x' in its frame too
+
+func f(x i32) {
+    var big = i8[262144]
+    big[0] = 1
+    exit(big[0])
+}
+
+func main() {
+    f(1)
+}

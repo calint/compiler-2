@@ -78,9 +78,6 @@ class operand final {
 
     kind kind_{kind::empty};
     const type* type_ptr_{};
-    // the operand holds a register the backend allocated, which is freed by
-    // the index of its name in any width, e.g. 'eax' frees 'rax'
-    bool is_allocated_{};
     // the register of a register operand, the base of a memory operand
     std::string base_register_;
     std::string index_register_;
@@ -124,8 +121,6 @@ class operand final {
                index_register_.empty() and displacement_ == 0;
     }
 
-    [[nodiscard]] auto is_allocated() const -> bool { return is_allocated_; }
-
     [[nodiscard]] auto is_empty() const -> bool { return kind_ == kind::empty; }
 
     [[nodiscard]] auto is_immediate() const -> bool {
@@ -156,12 +151,6 @@ class operand final {
     }
 
     [[nodiscard]] auto scale() const -> uint64_t { return scale_; }
-
-    auto set_allocated(const bool allocated) -> void {
-        assert(is_register());
-
-        is_allocated_ = allocated;
-    }
 
     [[nodiscard]] auto type_ref() const -> const type& {
         assert(type_ptr_);

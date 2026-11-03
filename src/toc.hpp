@@ -410,6 +410,10 @@ class scope final {
         return vars_.get_const_ref(name);
     }
 
+    [[nodiscard]] auto get_var_ref(const std::string_view name) -> var_info& {
+        return vars_.get_ref(name);
+    }
+
     [[nodiscard]] auto has_binding(const std::string_view name) const -> bool {
         return func_part().bindings.has(name);
     }
@@ -1204,12 +1208,12 @@ class scope_stack final {
     [[nodiscard]] auto is_empty() const -> bool { return scopes_.empty(); }
 
     // a check of a body that takes from a call is in the stack, see
-    // 'stmt_def_func::check_body': a recursive inlined call there is expanded
-    // in a dry run or not at all ('stmt_call::compile')
+    // 'stmt_def_func::check_body': a dry run there drops an error that
+    // depends on a call ('toc::dry_run'), a recursive inlined call is
+    // expanded in a dry run or not at all ('stmt_call::compile')
     [[nodiscard]] auto is_in_body_taking_from_call() const -> bool {
         return std::ranges::any_of(scopes_, [](const scope& scp) -> bool {
-            return scp.is_func() and scp.is_without_call() and
-                   scp.takes_from_call();
+            return scp.is_func() and scp.takes_from_call();
         });
     }
 
@@ -2867,7 +2871,7 @@ class toc final {
         types_.add(src_loc_tk, tpe);
     }
 
-    auto add_var(const size_t indent, var_info var, const var_kind kind)
+    auto add_var(const size_t indent, const var_info& var, const var_kind kind)
         -> void {
 
         const token src_loc_tk{var.src_loc_tk};
@@ -2884,14 +2888,20 @@ class toc final {
             std::holds_alternative<in_storage>(var.placement),
         };
 
-        // note: a 'dat' here is the compile half of 'add_dat'
-        if (is_compiling_ and kind == var_kind::dat) {
-            storage_.place_dat(src_loc_tk, var);
-        } else if (is_compiling_ and is_in_storage) {
-            storage_.allocate_var(src_loc_tk, var);
-        }
+        // note: declared before it is placed, so the check of a body that
+        //       drops a declaration out of storage ('compile_statement') still
+        //       resolves the name in the statements after it
 
         scopes_.back().add_var(var, kind);
+
+        var_info& declared{scopes_.back().get_var_ref(var.name)};
+
+        // note: a 'dat' here is the compile half of 'add_dat'
+        if (is_compiling_ and kind == var_kind::dat) {
+            storage_.place_dat(src_loc_tk, declared);
+        } else if (is_compiling_ and is_in_storage) {
+            storage_.allocate_var(src_loc_tk, declared);
+        }
 
         record_if_global(var.name);
 
@@ -2902,7 +2912,7 @@ class toc final {
         }
 
         if (is_compiling_) {
-            var_comments_.comment(src_loc_tk, indent, var);
+            var_comments_.comment(src_loc_tk, indent, declared);
         }
     }
 
@@ -3055,8 +3065,7 @@ class toc final {
                 scopes_.set_reachable(true);
                 compile();
             },
-            machine::discarded_code::here,
-            scopes_.is_in_body_taking_from_call());
+            machine::discarded_code::here);
     }
 
     // what '--checks' turned on
@@ -3083,12 +3092,13 @@ class toc final {
 
         const scope& func{scopes_.current_func_scope()};
 
-        if (not func.is_without_call() or not func.takes_from_call()) {
+        // note: only the check of a body takes from a call
+        if (not func.takes_from_call()) {
             compile();
             return;
         }
 
-        dry_run(compile, machine::discarded_code::here, true);
+        dry_run(compile, machine::discarded_code::here);
     }
 
     // a number, untyped, or a constant with its type
@@ -3148,16 +3158,18 @@ class toc final {
     // runs 'compile' for its errors only: its output, string constants and
     // use of storage leave no trace; 'code' says which registers it starts
     // with ('machine::emit_discarded'); the error it ends at rejects the
-    // program, except one that depends on a call where the code takes from a
-    // call ('takes_from_call'); it is rethrown as an error of the source, so
-    // no reader of the kind drops it: the check of a body starts from the
-    // registers of a noinline body, and skipped code is never inside a
-    // version, an inlined body skips no code, see 'check_skipped'
+    // program, except one that depends on a call in the check of a body that
+    // takes from a call ('scope_stack::is_in_body_taking_from_call'); it is
+    // rethrown as an error of the source, so no reader of the kind drops it:
+    // the check of a body starts from the registers of a noinline body, and
+    // skipped code is never inside a version, an inlined body skips no code,
+    // see 'check_skipped'
     auto dry_run(const std::function_ref<void()> compile,
-                 const machine::discarded_code code, const bool takes_from_call)
-        -> void {
+                 const machine::discarded_code code) -> void {
 
         assert(is_compiling_);
+
+        const bool takes_from_call{scopes_.is_in_body_taking_from_call()};
 
         const dry_run_scope scope{*this};
 

@@ -2221,7 +2221,7 @@ class stmt_call final : public statement {
             }
         };
 
-        tc.dry_run(compile_first_level, machine::discarded_code::here, true);
+        tc.dry_run(compile_first_level, machine::discarded_code::here);
     }
 
     // the call without its operators, inlined or noinline

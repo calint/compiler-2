@@ -532,6 +532,8 @@ class stmt_def_func final : public statement {
     // call, a noinline one without unsized arrays or an inlined one without
     // parameters and result, has no such error; an inlined result is the
     // destination of the call, checked here through an address
+    // note: an error outside the statements is no error of a call, the
+    //       parameters and the result are bound in the frame
     auto check_body(toc& tc) const -> void {
         const bool takes_from_call{
             array_param_count() != 0 or
@@ -549,7 +551,7 @@ class stmt_def_func final : public statement {
 
                     std::ignore = compile_in_frame(tc, 0, {});
                 },
-                machine::discarded_code::body, takes_from_call);
+                machine::discarded_code::body);
         } catch (compile_error& e) {
             add_instance_trace(e);
             throw;
@@ -571,7 +573,7 @@ class stmt_def_func final : public statement {
 
                 std::ignore = compile_in_frame(tc, 0, array_lengths);
             },
-            machine::discarded_code::body, false);
+            machine::discarded_code::body);
     }
 
     // the body in place at the call 'call_tk', under labels named by the

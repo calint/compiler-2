@@ -6638,3 +6638,7 @@ SRC=2088 && COMPERR
 # the check of a body without its calls rejects an inlined recursion whose
 # arguments all fold at the nesting limit
 SRC=2089 && COMPERR
+
+# a declaration that the check of a body without its calls drops for running
+# out of variable storage still names its variable after it
+SRC=2090 && EXP=1 && RUN

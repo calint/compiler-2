@@ -46,10 +46,14 @@ class machine_rv32i_linux final : public machine_rv32i {
         a.ecall(1);
     }
 
-    auto emit_read_call(const size_t indent) -> void override {
+    auto emit_io_call(const size_t indent, const target_call function)
+        -> void override {
+
         assembler_rv32i& a{assembler()};
 
-        a.li(indent, "a7", syscall_read_);
+        a.li(indent, "a7",
+             function == target_call::read ? syscall_read_ : syscall_write_);
+
         a.ecall(indent);
     }
 
@@ -159,12 +163,5 @@ class machine_rv32i_linux final : public machine_rv32i {
         a.string_data(options().sd_card_file_name);
         a.data(1, name_end);
         a.switch_section(section::text);
-    }
-
-    auto emit_write_call(const size_t indent) -> void override {
-        assembler_rv32i& a{assembler()};
-
-        a.li(indent, "a7", syscall_write_);
-        a.ecall(indent);
     }
 };
