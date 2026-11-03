@@ -1772,9 +1772,9 @@ the statements (7.1).
 Cost: an expression can run out of scratch registers where an allocator would
 spill to memory, the error advises to simplify the expression; and which
 register a value takes depends on how many are live, so the error is one of the
-kinds a version or the check of a function without its calls may drop (1.9);
-the targets have different numbers of scratch registers, so whether such an
-expression is accepted depends on the target (chapter 8).
+kinds a version or an inlined recursion in the check of a function without its
+calls may drop (1.9); the targets have different numbers of scratch registers,
+so whether such an expression is accepted depends on the target (chapter 8).
 
 ### 7.12 The default type is the width of a register
 

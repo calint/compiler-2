@@ -1,0 +1,8 @@
+# a '<<' after a generic argument is an operator, not the '<' of an instance:
+# an argument is one name or constant
+
+type list<T type, capacity> { arr T[capacity] }
+
+type s = list<i8, 1 << 4>
+
+func main() {}

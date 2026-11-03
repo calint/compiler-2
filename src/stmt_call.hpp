@@ -864,7 +864,7 @@ class inline_call final {
 
     // the arguments bound as for the body, which is not compiled, e.g. an
     // inlined recursion that the check of a body without its calls does not
-    // expand ('stmt_call::compile')
+    // expand ('stmt_call::check_recursion')
     auto compile_arguments(toc& tc, const size_t indent) const -> void {
         call_site::in_temporaries_block(
             tc, has_argument_temporary(), [&] -> void {

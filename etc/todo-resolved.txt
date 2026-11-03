@@ -1,6 +1,25 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] hard: design review series 2, round 66 (2026-11-03, the confirming
+    round of the loop; X names, paths, types and the no-UB checks, Y the
+    machines, assemblers, bulk and built-ins on 4 targets, Z calls,
+    definitions, 'toc', expressions, control and the front end)
+    => done (2026-11-03): nothing found (no bug, no design change, no nit;
+       X: about 2100 model programs, 3000 README 1.5 programs, corpus
+       mutation, the fuzzers with new seeds; Y: model runs on 4 targets,
+       a crash scan of every test, about 100 new program shapes; Z: about
+       2500 model programs, 3000 README 1.5 programs, 60 hand programs);
+       the loop ends; observation (Z): the minimum of 'i64' has no literal
+       ('-9223372036854775808' is out of range), not undefined behavior
+[x] hard: design review series 2, round 65 (2026-11-03; A the machines and
+    built-ins, B calls, definitions and 'toc', C expressions, statements and
+    the front end)
+    => done (2026-11-03): no bug, no design finding; nits: B1 the comment of
+       'inline_call::compile_arguments' names 'check_recursion', README 7.11
+       says only an inlined recursion in the check drops a limit; C1 a '<<'
+       after a generic argument is an operator, not the '<' of an instance
+       ('generic_arg_tokens::parse', 2097)
 [x] hard: design review series 2, round 64 (2026-11-03, user: rounds of
     design-to-simplify until nothing more is found; J the check of a body
     without its calls after round 63 G1, L a newcomer over 'src/')

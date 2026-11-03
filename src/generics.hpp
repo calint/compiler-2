@@ -215,8 +215,9 @@ struct generic_arg_tokens {
                                     "'a T[]'"};
             }
 
-            // e.g. the inner 'list' of 'box<list<i8>>', as for a field type
-            if (tz.peek_char_after_whitespace() == '<') {
+            // e.g. the inner 'list' of 'box<list<i8>>', as for a field type;
+            // the '<<' of 'list<i8, 1 << 4>' is an operator
+            if (tz.peek_operator() == "<") {
                 const std::string instance{
                     std::format("{}<...>", arg_tk.text()),
                 };

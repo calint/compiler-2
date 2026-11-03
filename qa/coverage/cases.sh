@@ -6652,3 +6652,6 @@ SRC=2095 && COMPERR
 # constant argument ends where it runs out of registers, x86_64 at an outer
 # level
 if [[ $MACHINE == x86_64 ]]; then SRC=2096 && EXP=0 && RUN; else SRC=2096 && COMPERR; fi
+
+# a '<<' after a generic argument is an operator, not the '<' of an instance
+SRC=2097 && COMPERR
