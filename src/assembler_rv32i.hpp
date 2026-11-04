@@ -260,7 +260,8 @@ class assembler_rv32i final : public assembler {
 
     std::vector<record> records_;
     // the jumps have been grown to reach their targets ('resolve_jumps'),
-    // the image layout and the text are then final
+    // the image layout is then final, only lines without code follow, e.g.
+    // the report
     bool jumps_resolved_{};
 
   public:
@@ -927,17 +928,6 @@ class assembler_rv32i final : public assembler {
     //
     // overridden methods
     //
-
-    [[nodiscard]] auto format_jump(const jump_info& jump) const
-        -> std::string override {
-
-        if (jump.operands.empty()) {
-            return std::format("{} {}", jump.mnemonic, jump.target);
-        }
-
-        return std::format("{} {}, {}", jump.mnemonic, jump.operands,
-                           jump.target);
-    }
 
     // pseudo instructions count as the ones they expand to
     [[nodiscard]] auto instruction_size() const -> size_t override {

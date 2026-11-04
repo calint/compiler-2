@@ -306,8 +306,9 @@ struct generic_call {
 
         tokenizer after_last{tz};
 
-        // e.g. 'p' of 'f(p)' or 'point{1, 2}', else parsed like a 'var'
-        // initializer or, for an array parameter, as in the call
+        // e.g. 'point{1, 2}' of 'g(point{1, 2})', which parses only at a
+        // type, else parsed like a 'var' initializer or, for an array
+        // parameter, as in the call
         if (not params.at(last).is_array and
             argument_type(tc, after_last, last) != nullptr) {
 
@@ -345,11 +346,17 @@ struct generic_call {
                                        params.at(next_index).name_tk.text())};
     }
 
-    // the type arguments of 'f(x)' for 'func f<T type>(s T)': a type parameter
-    // is the type of the argument for a parameter declared with that type, when
-    // the argument tells it ('argument_type'), or the type the call is assigned
-    // to when it is the result. a literal or an expression does not tell its
-    // type
+    // the type arguments of 'f(x)' for 'func f<T type>(s T)', for each type
+    // parameter in this order, so the errors come as a call without type
+    // parameters would report them first:
+    //   1. the arguments up to the deducing one are there
+    //      ('assert_argument_present')
+    //   2. the type that argument tells ('argument_type'), none for a literal
+    //      or an expression
+    //   3. otherwise the type the call is assigned to, when the result is
+    //      declared with the type parameter
+    //   4. otherwise an argument that does not parse is reported as in that
+    //      call ('assert_argument_parses'), then "cannot deduce"
     [[nodiscard]] static auto
     deduced_type_arguments(toc& tc, const tokenizer& tz, const token& name_tk,
                            const std::string_view generic_name,

@@ -24,22 +24,6 @@ class machine_rv32i_bare_metal : public machine_rv32i {
     // the memory of the device, the image is loaded at its start
     size_t memory_size_bytes_{};
 
-  protected:
-    //
-    // statics
-    //
-
-    // no operating system stops a stack overflow, see
-    // 'target_description::is_stack_bounded'
-    [[nodiscard]] static constexpr auto
-    bare_metal_target(const bool has_sd_card) -> target_description {
-
-        target_description target{rv32i_target()};
-        target.is_stack_bounded = true;
-        target.has_sd_card = has_sd_card;
-        return target;
-    }
-
   public:
     // 'memory_size_bytes' is the memory of the target, e.g. fixed for the
     // qemu 'virt' machine
@@ -115,6 +99,21 @@ class machine_rv32i_bare_metal : public machine_rv32i {
 
     [[nodiscard]] auto stack_size_bytes() const -> size_t {
         return options().stack_size_bytes;
+    }
+
+    //
+    // statics
+    //
+
+    // no operating system stops a stack overflow, see
+    // 'target_description::is_stack_bounded'
+    [[nodiscard]] static constexpr auto
+    bare_metal_target(const bool has_sd_card) -> target_description {
+
+        target_description target{rv32i_target()};
+        target.is_stack_bounded = true;
+        target.has_sd_card = has_sd_card;
+        return target;
     }
 
   private:

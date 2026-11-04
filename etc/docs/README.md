@@ -202,9 +202,11 @@ Invariants the code relies on:
    and the handlers marked used ('machine::emit_used_routines'), the read-only
    strings, the data and the variables.
 
-3. output ('machine::finish', 'write_assembly'): the buffered lines get their
-   jumps optimized, the assembly is written, the rv32i targets also write the
-   binary image.
+3. output ('machine::finish', then 'report_renderer', then 'write_assembly'):
+   the buffered lines get their jumps optimized, on rv32i the jumps that do
+   not reach their targets grow ('assembler_rv32i::resolve_jumps'), the report
+   is added as comments, the assembly is written, the rv32i targets also write
+   the binary image.
 
 ### 1.3 Names during compile: scopes and bindings
 
@@ -703,8 +705,8 @@ type str = text<8>
 The generic type must already be defined, and the count of arguments must match.
 Each argument is checked against its parameter: a type parameter gets a type, a
 constant parameter gets a constant. The result is a list of arguments
-('generic_arg', 'capacity' = 8), from which the instance is built (2.6), 'str' is registered as a real
-type, and the methods are made (2.7).
+('generic_arg', 'capacity' = 8), from which the instance is built (2.6), 'str'
+is registered as a real type, and the methods are made (2.7).
 
 ### 2.6 Building the instance, level by level
 
@@ -811,8 +813,9 @@ its 'self'.
 Each type parameter has the kind 'type' and may not reuse the name of
 something that already exists.
 
-So that a call can omit the type arguments, the definition records for each
-type parameter where a call can find it:
+So that a call can omit the type arguments, the definition keeps the declared
+types of its parameters and its result ('generic_signature'), and a call looks
+in them for each type parameter ('generic_signature::deduction'):
 
 1. the first parameter declared with exactly that type, e.g. 'a T'; an array
    parameter 'a T[]' does not count, since the argument's type is an array of
@@ -912,8 +915,10 @@ order. The examples use 'make' and 'same' from the start of 2.10 and a type
    'var m = make(2)' has no destination type: 'm' takes its type from the
    call, so there is nothing to take it from.
 
-3. If neither tells the type, the call is rejected and asks for the type
-   arguments to be written:
+3. If neither tells the type, an argument that told nothing is parsed
+   without a type, so its own error wins, e.g. "function 'exit' has no
+   result" for 'show(exit(1))'; otherwise the call is rejected and asks for
+   the type arguments to be written:
 
    ```text
    example.baz:15:13: cannot deduce 'T' of generic function 'make', write
@@ -975,8 +980,8 @@ example.baz:13:13: instantiated by 'make<name>'
 generic_registry (generics.hpp)       the generic definitions and their
                                       instances, kept as text
 type_instantiator (stmt_def_type.hpp) a generic type instance from an alias
-func_instantiator::define_func        a generic function or method kept as
-  (stmt_def_func.hpp)                 text
+func_instantiator::define_func,       a generic function, a method of a
+  define_method (stmt_def_func.hpp)   generic type, kept as text
 generic_call::parse (stmt_call.hpp)   the type arguments of a call, written
                                       or deduced from the arguments
 func_instantiator::instantiate_func,  the instance of a generic function, the

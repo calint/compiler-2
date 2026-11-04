@@ -58,8 +58,9 @@
 //     je if.19.8.code                   beq t0, t1, if.19.8.code
 //     cmp.19.27:                        cmp.19.27:
 //
-// a label between the lines stops a rule only when a jump or another line,
-// such as a call, names it, or when it is numeric, e.g. '1:' named by '1b'
+// a label between the two jumps of the last three rules stops the rule only
+// when it is in code and a line names it, e.g. a jump or a call, or when it
+// is numeric, e.g. '1:' named by '1b'
 
 class assembler {
   public:
@@ -325,6 +326,8 @@ class assembler {
     auto add_jump(const size_t indent, jump_info jump,
                   const std::optional<size_t> record = std::nullopt) -> void {
 
+        assert(code_section_);
+
         std::string text{indentation(indent) + format_jump(jump)};
 
         current_lines().push_back({
@@ -343,12 +346,14 @@ class assembler {
     auto add_line(std::string text, const size_t code_size,
                   const std::optional<size_t> record = std::nullopt) -> void {
 
+        assert(code_section_ or code_size == 0);
+
         current_lines().push_back({
             .text{std::move(text)},
             .label{},
             .call_target{},
             .jump{},
-            .code_size{code_section_ ? code_size : 0},
+            .code_size{code_size},
             .entry{},
             .removed{},
             .record{record},
@@ -512,10 +517,6 @@ class assembler {
     //
     // virtual methods
     //
-
-    // the jump instruction without indentation
-    [[nodiscard]] virtual auto format_jump(const jump_info& jump) const
-        -> std::string = 0;
 
     // the code size of one instruction in the target's unit
     [[nodiscard]] virtual auto instruction_size() const -> size_t = 0;
@@ -764,6 +765,18 @@ class assembler {
         assert(found != labels.end());
 
         return found->second;
+    }
+
+    // the jump instruction without indentation, e.g. 'beq t0, t1, target'
+    [[nodiscard]] static auto format_jump(const jump_info& jump)
+        -> std::string {
+
+        if (jump.operands.empty()) {
+            return std::format("{} {}", jump.mnemonic, jump.target);
+        }
+
+        return std::format("{} {}, {}", jump.mnemonic, jump.operands,
+                           jump.target);
     }
 
     // numeric labels, named by references such as '1b', are entries without a

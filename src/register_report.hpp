@@ -182,8 +182,10 @@ struct register_use_report final {
     [[nodiscard]] static auto right_aligned(const std::string_view text,
                                             const size_t width) -> std::string {
 
-        const size_t padding{width > text.size() ? width - text.size() : 0};
-        return std::string(padding, ' ') + std::string{text};
+        // note: the texts are register counts and the fixed headings
+        assert(text.size() <= width);
+
+        return std::string(width - text.size(), ' ') + std::string{text};
     }
 
     [[nodiscard]] static auto right_aligned(const size_t number,

@@ -2177,29 +2177,6 @@ class definition_checks final {
                         in_quotes(param_tk.text()), what, where(name_tk))};
     }
 
-    // the body of a method of a generic type sees the parameters of the
-    // type too, e.g. 'n' of 'type box<n>' in 'func box.f<n type>()' would
-    // name two things
-    auto assert_generic_param_not_receiver_param(
-        const token& src_loc_tk, const std::string_view name,
-        const std::string_view generic_type) const -> void {
-
-        const generic_type_info& generic{
-            generics_.get().get_type(generic_type),
-        };
-
-        for (const generic_param& param : generic.params) {
-            if (param.name_tk.text() == name) {
-                throw compile_error{
-                    src_loc_tk,
-                    std::format("generic parameter {} is already declared "
-                                "by {} at {}",
-                                in_quotes(name), in_quotes(generic_type),
-                                where(param.name_tk))};
-            }
-        }
-    }
-
     // a scope declares a variable or a constant of a name, not both, and the
     // body of a function repeats no parameter or the result; 'what' names
     // the kind of the declaration, e.g. "constant"

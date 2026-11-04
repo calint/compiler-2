@@ -6667,3 +6667,11 @@ SRC=2100 && COMPERR
 # a comparison of a known size compiles both addresses before it takes its
 # registers, so an index may shift or divide on x86_64
 SRC=2101 && EXP=0 && RUN
+
+# an instance literal before a deducing argument parses at its parameter
+# type: a missing argument, a missing ','
+SRC=2102 && COMPERR
+SRC=2103 && COMPERR
+
+# an array literal tells no type argument
+SRC=2104 && COMPERR

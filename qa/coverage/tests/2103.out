@@ -1,0 +1,4 @@
+
+2103.baz:5:29: expected ',' before argument 2 ('b')
+func main() { g(point{1, 2} 3) }
+                            ^

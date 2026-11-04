@@ -58,7 +58,7 @@
 //   handlers     'emit_failure_handler', 'emit_line_failure',
 //                'emit_panic_message', 'emit_message_data',
 //                'emit_report_line_routine'
-//   calls        'emit_call', the sector and i/o routine calls
+//   calls        'emit_call', 'emit_target_call' through 'call_io_routine'
 //   target hooks 'emit_io_call', 'emit_exit_routine',
 //                'emit_stack_limit_load', 'emit_sector_routines', and the
 //                machine virtuals 'emit_target_setup', 'emit_used_routines'
@@ -81,14 +81,13 @@ class machine_rv32i : public machine {
     // stores run faster than the loop's 3 instructions per word, the cap only
     // bounds the code size
     static constexpr size_t zero_unroll_threshold_parts_{16};
+    static constexpr size_t max_padding_gaps_zeroed_one_by_one_{8};
 
     // note: a gap takes one to three stores, the whole instance a store per
     //       word up to 64 B and a loop of 5 instructions with its head and
     //       tail beyond; measured on 2500 random types with padding, from 9
     //       gaps the whole instance was larger in 1 of 533, at 7 and 8 gaps in
     //       10 of 146
-
-    static constexpr size_t max_padding_gaps_zeroed_one_by_one_{8};
 
     // what an i/o or sector routine may change besides 'a0' and the 'a7' it
     // returns through, free at the call, see 'call_io_routine'
@@ -135,10 +134,9 @@ class machine_rv32i : public machine {
         // the two pointers then the count, in the order of allocation
         std::array<operand, 3> registers{};
         std::array<access_start, 2> starts{};
-        // a missing address would leave the word alignment unproven
+        // a missing address would leave the loop width unproven
         size_t address_count{};
 
-        // a missing address would leave the loop width unproven
         [[nodiscard]] auto checked_starts() const
             -> const std::array<access_start, 2>& {
 
@@ -377,397 +375,6 @@ class machine_rv32i : public machine {
     static constexpr std::string_view no_return_jump_register_{"t0"};
 
     assembler_rv32i assembler_;
-
-  protected:
-    // a target that differs from 'rv32i_target' passes its own table
-    machine_rv32i(const builtin_type_set& builtins, const source_files& files,
-                  const target_options& options,
-                  const target_description& target)
-        : machine{builtins, files, options, target, assembler_} {}
-
-    static constexpr size_t word_size_bytes_{4};
-    static constexpr size_t register_bits_{
-        std::numeric_limits<uint32_t>::digits,
-    };
-    // the routine a program calls to exit, the target defines it
-    static constexpr std::string_view exit_label_{".Lbaz_exit"};
-    // the sector routines, see 'emit_sector_routines'
-    static constexpr std::string_view sector_read_label_{".Lbaz_sector_read"};
-    static constexpr std::string_view sector_write_label_{
-        ".Lbaz_sector_write",
-    };
-
-    //
-    // overridden methods
-    //
-
-    // e.g. 's0 + t0 * 4 + 28' of a variable at a run-time index
-    [[nodiscard]] auto address_text(const operand& address) const
-        -> std::string override {
-
-        // note: variables and frames are addressed from a base register
-        assert(not address.base_register().empty());
-
-        std::string text{address.base_register()};
-
-        if (not address.index_register().empty()) {
-            text += std::format(" + {}", address.index_register());
-
-            if (address.scale() != 1) {
-                text += std::format(" * {}", address.scale());
-            }
-        }
-
-        if (address.displacement() < 0) {
-            const uint64_t magnitude{
-                uint64_t{} - static_cast<uint64_t>(address.displacement()),
-            };
-
-            text += std::format(" - {}", magnitude);
-        } else if (address.displacement() > 0) {
-            text += std::format(" + {}", address.displacement());
-        }
-
-        return text;
-    }
-
-    // the operation scope frees its temporaries before the end comment
-    auto emit_bounds_check(const token& src_loc_tk, const size_t indent,
-                           const bounds_range& range, const bounds_plan& plan)
-        -> void override {
-
-        // array lengths are limited by the variables that hold the arrays, the
-        // line is loaded with 'li' into a 32-bit register
-        assert(range.array_count <= std::numeric_limits<uint32_t>::max() and
-               src_loc_tk.at_line() <= std::numeric_limits<uint32_t>::max());
-
-        operation_scope scope{*this, range.checked};
-
-        if (range.count) {
-            scope.protect(*range.count);
-        }
-
-        branch_on_negative(indent, plan.sign_tested, not plan.upper);
-
-        if (plan.upper) {
-            comment(src_loc_tk, indent, "upper bound");
-
-            check_upper_bound(src_loc_tk, indent, range, plan.lower_checked);
-        }
-
-        assembler_.label(indent, check_failed_.name);
-
-        end_check(src_loc_tk, indent, bounds_failure_);
-    }
-
-    auto emit_call(const size_t indent, const std::string_view label)
-        -> void override {
-
-        assembler_.call(indent, label);
-    }
-
-    auto emit_entry() -> void override {
-        assembler_.option_norvc();
-        assembler_.option_norelax();
-        assembler_.add_separator_newline();
-        assembler_.switch_section(section::text);
-        assembler_.globl("_start");
-        assembler_.label(0, "_start");
-        assembler_.add_separator_newline();
-    }
-
-    // the handler of a check that prints 'panic: NAME' then exits with its
-    // code; with the line, one entry per file prints 'panic: NAME at FILE:'
-    // and the line number in 'a0', see 'end_check'
-    auto emit_failure_handler(const failure_handler& handler,
-                              const bool with_line) -> void override {
-
-        const std::string_view name{handler.name};
-        const std::string_view handler_label{handler.label};
-
-        const std::string label_name{handler.symbol()};
-
-        if (with_line) {
-            for (const size_t file_ix :
-                 failure_lines_of(handler_label) | std::views::keys) {
-
-                assembler_.label(0,
-                                 failure_entry_label(handler_label, file_ix));
-
-                emit_line_failure(
-                    std::format(".Lbaz_{}_message_{}", label_name, file_ix),
-                    failure_message(name, file_ix), handler.exit_code);
-            }
-
-            return;
-        }
-
-        const std::string message_label{
-            std::format(".Lbaz_{}_message", label_name),
-        };
-
-        assembler_.label(0, handler_label);
-
-        const std::string message{std::format("{}\n", panic_message(name))};
-
-        emit_panic_message(message_label, message);
-
-        exit(token{}, 1, operand::imm(handler.exit_code, default_type()));
-
-        emit_message_data(message_label, message);
-    }
-
-    // a 'noinline' body saves the return address below 'sp'
-    auto emit_frame_entry() -> void override {
-        assembler_.addi(1, "sp", "sp", -frame_save_bytes_);
-        assembler_.sw(1, "ra", 0, "sp");
-    }
-
-    // 'read' and 'write' are system calls or routines of the target, see
-    // 'emit_io_call'; the sector functions are routines, see
-    // 'call_sector_routine'
-    // a constant factor that 'multiply' did not resolve shifts and adds
-    // unless checked, else the helper multiplies
-    auto emit_multiply(const token& src_loc_tk, const size_t indent,
-                       const operand& product, const operand& factor,
-                       [[maybe_unused]] const factor_use use,
-                       const runtime_check& check) -> void override {
-
-        validate_operands(product, factor);
-
-        const std::optional<uint64_t> bits{immediate_bits(factor)};
-
-        // shifts and adds do not report the bits they lose, the helper does
-        if (bits and not check.enabled) {
-            const size_t width_bits{product.type_ref().size_bits()};
-
-            const constant_factor factor_info{
-                classify_factor(*bits, width_bits),
-            };
-
-            multiply_by_shifts_and_adds(
-                src_loc_tk, indent, product, factor,
-                static_cast<uint32_t>(factor_info.multiplier), width_bits);
-
-            return;
-        }
-
-        const helper_routine routine{
-            check.enabled ? helper_routine::multiply_checked
-                          : helper_routine::multiply,
-        };
-
-        call_arithmetic_helper(src_loc_tk, indent, product, factor, routine,
-                               operand::reg("a0", default_type()), check);
-    }
-
-    auto emit_target_call(const token& src_loc_tk, const size_t indent,
-                          const target_call function,
-                          [[maybe_unused]] const operand& result)
-        -> void override {
-
-        const operation_scope scope{*this};
-
-        // the arguments are in the registers of 'target_calls', allocated by
-        // 'call_target'; 'a7' selects the system call or receives the return
-        // address
-        reserve_named_register(src_loc_tk, indent, "a7");
-
-        if (function == target_call::read or function == target_call::write) {
-            emit_io_call(indent, function);
-        } else {
-            call_sector_routine(indent, function);
-        }
-    }
-
-    // unused routines contribute no code
-    auto emit_used_routines() -> void override {
-        if (is_used(report_line_label_)) {
-            emit_report_line_routine();
-        }
-
-        emit_arithmetic_helpers();
-
-        const bool is_read_used{is_used(sector_read_label_)};
-        const bool is_write_used{is_used(sector_write_label_)};
-
-        if (is_read_used or is_write_used) {
-            emit_sector_routines(is_read_used, is_write_used);
-        }
-
-        // note: after the routines that may use 'exit', e.g. the division by
-        //       zero
-
-        if (is_used(exit_label_)) {
-            emit_exit_routine();
-        }
-    }
-
-    auto emit_variables_base_load() -> void override {
-        const std::string_view base{variables_base_register()};
-
-        assembler_.la(0, base, variables_label_);
-
-        assembler_.addi(0, base, base,
-                        static_cast<int64_t>(variables_base_past_vars_bytes_));
-    }
-
-    auto finish_target() -> void override {
-        // the report counts after resolving because grown jumps take more
-        // instructions, a failing build writes nothing
-        assembler_.resolve_jumps();
-
-        check_address_range(assembler_.memory_end_address());
-    }
-
-    [[nodiscard]] auto register_index_of(const std::string_view name) const
-        -> std::optional<size_t> override {
-
-        return assembler_rv32i::register_number(name);
-    }
-
-    auto restore_call_registers(const size_t indent,
-                                const std::span<const size_t> saved)
-        -> void override {
-
-        restore_saved_registers(indent, register_names_of(saved));
-    }
-
-    auto save_call_registers(const size_t indent,
-                             const std::span<const size_t> saved)
-        -> void override {
-
-        save_registers(indent, register_names_of(saved));
-    }
-
-    //
-    // virtual methods
-    //
-
-    // '.Lbaz_exit' ends the program with the exit code in 'a0'
-    virtual auto emit_exit_routine() -> void = 0;
-
-    // the call of 'read' or 'write': 'a0' is the descriptor and receives the
-    // byte count, 'a1' is the address, 'a2' the count and 'a7' is reserved;
-    // an override may change the registers after 'a2' in the allocation
-    // order, see 'call_io_routine'
-    virtual auto emit_io_call(const size_t indent, const target_call function)
-        -> void = 0;
-
-    // the routines that the calls of 'sector_read' and 'sector_write' jump
-    // to, each only when it is used; a routine takes the sector in 'a0', the
-    // address in 'a1' and the size in 'a2', returns through 'a7', which it
-    // may change, and changes only 'a0' and 'io_routine_clobbered_' else;
-    // only a target that 'has_sd_card' is asked
-    virtual auto emit_sector_routines([[maybe_unused]] const bool read_used,
-                                      [[maybe_unused]] const bool write_used)
-        -> void {
-
-        std::unreachable();
-    }
-
-    // loads the lowest address the stack may reach into the register 'reg',
-    // only a target that 'is_stack_bounded' is asked
-    virtual auto
-    emit_stack_limit_load([[maybe_unused]] const size_t indent,
-                          [[maybe_unused]] const std::string_view reg) -> void {
-
-        std::unreachable();
-    }
-
-    //
-    // class methods
-    //
-
-    [[nodiscard]] auto assembler() -> assembler_rv32i& { return assembler_; }
-
-    // i/o routines replacing system calls return through 'a7' and change only
-    // 'io_routine_clobbered_' besides 'a0', which are free at the call, so
-    // like a system call it saves nothing
-    auto call_io_routine(const size_t indent, const std::string_view label)
-        -> void {
-
-        // the clobbered registers follow 'a1' and 'a2', which the call needs,
-        // in the allocation order, so they are free whenever the call is made
-        assert(std::ranges::none_of(
-            io_routine_clobbered_, [&](const std::string_view name) -> bool {
-                return registers().is_unavailable(register_mask(name));
-            }));
-
-        assembler_.call(indent, label, "a7");
-        mark_used(label);
-    }
-
-    // 'saved' as given to 'save_registers'
-    auto restore_saved_registers(const size_t indent,
-                                 const std::span<const std::string_view> saved)
-        -> void {
-
-        const size_t stack_bytes{saved_registers_size_bytes(saved.size())};
-
-        for (const auto [index, name] : std::views::enumerate(saved)) {
-            assembler_.lw(indent, name,
-                          static_cast<size_t>(index) * word_size_bytes_, "sp");
-        }
-
-        if (stack_bytes != 0) {
-            assembler_.addi(indent, "sp", "sp", stack_bytes);
-        }
-    }
-
-    // an aligned stack area is allocated only when a register is saved
-    auto save_registers(const size_t indent,
-                        const std::span<const std::string_view> saved) -> void {
-
-        const size_t stack_bytes{saved_registers_size_bytes(saved.size())};
-
-        if (stack_bytes != 0) {
-            assembler_.addi(indent, "sp", "sp",
-                            -static_cast<int64_t>(stack_bytes));
-        }
-
-        for (const auto [index, name] : std::views::enumerate(saved)) {
-            assembler_.sw(indent, name,
-                          static_cast<size_t>(index) * word_size_bytes_, "sp");
-        }
-    }
-
-    //
-    // statics
-    //
-
-    // see 'target_description'
-    [[nodiscard]] static constexpr auto rv32i_target() -> target_description {
-        return {
-            .address_size_bytes{word_size_bytes_},
-            .data_alignment{data_alignment_},
-            .max_storage_bytes{assembler_rv32i::address_space_bytes},
-            .has_indexed_addressing{false},
-
-            // note: 'scale_index' shifts by any power of two, a type stays
-            //       below the 4 GiB address space
-
-            .max_index_scale_bytes{assembler_rv32i::address_space_bytes},
-            .max_padding_gaps_zeroed_one_by_one{
-                max_padding_gaps_zeroed_one_by_one_,
-            },
-            // note: a load and store machine counts in a register
-            .memory_counter_pressure_count{},
-            .has_sd_card{true},
-            .string_alignment{word_size_bytes_},
-            .is_stack_bounded{},
-            .frame_base_register{"s1"},
-            .variables_base_register{"s0"},
-            // the last of the saved registers, no built-in names it
-            .slot_register{"s11"},
-            .variables_base_past_vars_bytes{variables_base_past_vars_bytes_},
-            .scratch_registers{scratch_registers_},
-            .target_calls{
-                .arguments{"a0", "a1", "a2"},
-                .result{"a0"},
-            },
-        };
-    }
 
   public:
     // 'options.binary_file_name' receives the image of the resolved output
@@ -1206,11 +813,9 @@ class machine_rv32i : public machine {
         return operand::reg(name, value_type);
     }
 
-    // every known size is compared from the address operands, small ones
-    // unrolled and larger ones in a loop
-    // known size: the addresses are memory operands and the result of the
-    // request is 1 when every access matched, 0 at the first mismatch; its
-    // 'inverted' swaps them
+    // known size: the addresses are memory operands, small sizes unrolled and
+    // larger ones in a loop; the result of the request is 1 when every access
+    // matched, 0 at the first mismatch, its 'inverted' swaps them
     auto memory_equal(const token& src_loc_tk, const size_t indent,
                       const size_t size_bytes, const operand& lhs,
                       const operand& rhs, const equality_request& request)
@@ -1484,6 +1089,399 @@ class machine_rv32i : public machine {
         return helper_save_bytes + line_digits_bytes_;
     }
 
+  protected:
+    // a target that differs from 'rv32i_target' passes its own table
+    machine_rv32i(const builtin_type_set& builtins, const source_files& files,
+                  const target_options& options,
+                  const target_description& target)
+        : machine{builtins, files, options, target, assembler_} {}
+
+    static constexpr size_t word_size_bytes_{4};
+    static constexpr size_t register_bits_{
+        std::numeric_limits<uint32_t>::digits,
+    };
+    // the routine a program calls to exit, the target defines it
+    static constexpr std::string_view exit_label_{".Lbaz_exit"};
+    // the sector routines, see 'emit_sector_routines'
+    static constexpr std::string_view sector_read_label_{".Lbaz_sector_read"};
+    static constexpr std::string_view sector_write_label_{
+        ".Lbaz_sector_write",
+    };
+
+    //
+    // overridden methods
+    //
+
+    // e.g. 's0 + t0 * 4 + 28' of a variable at a run-time index
+    [[nodiscard]] auto address_text(const operand& address) const
+        -> std::string override {
+
+        // note: variables and frames are addressed from a base register
+        assert(not address.base_register().empty());
+
+        std::string text{address.base_register()};
+
+        if (not address.index_register().empty()) {
+            text += std::format(" + {}", address.index_register());
+
+            if (address.scale() != 1) {
+                text += std::format(" * {}", address.scale());
+            }
+        }
+
+        if (address.displacement() < 0) {
+            const uint64_t magnitude{
+                uint64_t{} - static_cast<uint64_t>(address.displacement()),
+            };
+
+            text += std::format(" - {}", magnitude);
+        } else if (address.displacement() > 0) {
+            text += std::format(" + {}", address.displacement());
+        }
+
+        return text;
+    }
+
+    // the operation scope frees its temporaries before the end comment
+    auto emit_bounds_check(const token& src_loc_tk, const size_t indent,
+                           const bounds_range& range, const bounds_plan& plan)
+        -> void override {
+
+        // array lengths are limited by the variables that hold the arrays, the
+        // line is loaded with 'li' into a 32-bit register
+        assert(range.array_count <= std::numeric_limits<uint32_t>::max() and
+               src_loc_tk.at_line() <= std::numeric_limits<uint32_t>::max());
+
+        operation_scope scope{*this, range.checked};
+
+        if (range.count) {
+            scope.protect(*range.count);
+        }
+
+        branch_on_negative(indent, plan.sign_tested, not plan.upper);
+
+        if (plan.upper) {
+            comment(src_loc_tk, indent, "upper bound");
+
+            check_upper_bound(src_loc_tk, indent, range, plan.lower_checked);
+        }
+
+        assembler_.label(indent, check_failed_.name);
+
+        end_check(src_loc_tk, indent, bounds_failure_);
+    }
+
+    auto emit_call(const size_t indent, const std::string_view label)
+        -> void override {
+
+        assembler_.call(indent, label);
+    }
+
+    auto emit_entry() -> void override {
+        assembler_.option_norvc();
+        assembler_.option_norelax();
+        assembler_.add_separator_newline();
+        assembler_.switch_section(section::text);
+        assembler_.globl("_start");
+        assembler_.label(0, "_start");
+        assembler_.add_separator_newline();
+    }
+
+    // the handler of a check that prints 'panic: NAME' then exits with its
+    // code; with the line, one entry per file prints 'panic: NAME at FILE:'
+    // and the line number in 'a0', see 'end_check'
+    auto emit_failure_handler(const failure_handler& handler,
+                              const bool with_line) -> void override {
+
+        const std::string_view name{handler.name};
+        const std::string_view handler_label{handler.label};
+
+        const std::string label_name{handler.symbol()};
+
+        if (with_line) {
+            for (const size_t file_ix :
+                 failure_lines_of(handler_label) | std::views::keys) {
+
+                assembler_.label(0,
+                                 failure_entry_label(handler_label, file_ix));
+
+                emit_line_failure(
+                    std::format(".Lbaz_{}_message_{}", label_name, file_ix),
+                    failure_message(name, file_ix), handler.exit_code);
+            }
+
+            return;
+        }
+
+        const std::string message_label{
+            std::format(".Lbaz_{}_message", label_name),
+        };
+
+        assembler_.label(0, handler_label);
+
+        const std::string message{std::format("{}\n", panic_message(name))};
+
+        emit_panic_message(message_label, message);
+
+        exit(token{}, 1, operand::imm(handler.exit_code, default_type()));
+
+        emit_message_data(message_label, message);
+    }
+
+    // a 'noinline' body saves the return address below 'sp'
+    auto emit_frame_entry() -> void override {
+        assembler_.addi(1, "sp", "sp", -frame_save_bytes_);
+        assembler_.sw(1, "ra", 0, "sp");
+    }
+
+    // a constant factor that 'multiply' did not resolve shifts and adds
+    // unless checked, else the helper multiplies
+    auto emit_multiply(const token& src_loc_tk, const size_t indent,
+                       const operand& product, const operand& factor,
+                       [[maybe_unused]] const factor_use use,
+                       const runtime_check& check) -> void override {
+
+        validate_operands(product, factor);
+
+        const std::optional<uint64_t> bits{immediate_bits(factor)};
+
+        // shifts and adds do not report the bits they lose, the helper does
+        if (bits and not check.enabled) {
+            const size_t width_bits{product.type_ref().size_bits()};
+
+            const constant_factor factor_info{
+                classify_factor(*bits, width_bits),
+            };
+
+            multiply_by_shifts_and_adds(
+                src_loc_tk, indent, product, factor,
+                static_cast<uint32_t>(factor_info.multiplier), width_bits);
+
+            return;
+        }
+
+        const helper_routine routine{
+            check.enabled ? helper_routine::multiply_checked
+                          : helper_routine::multiply,
+        };
+
+        call_arithmetic_helper(src_loc_tk, indent, product, factor, routine,
+                               operand::reg("a0", default_type()), check);
+    }
+
+    // 'read' and 'write' are system calls or routines of the target, see
+    // 'emit_io_call'; the sector functions are routines with the sector in
+    // 'a0' where 'read' has the descriptor, there is no result
+    auto emit_target_call(const token& src_loc_tk, const size_t indent,
+                          const target_call function,
+                          [[maybe_unused]] const operand& result)
+        -> void override {
+
+        const operation_scope scope{*this};
+
+        // the arguments are in the registers of 'target_calls', allocated by
+        // 'call_target'; 'a7' selects the system call or receives the return
+        // address
+        reserve_named_register(src_loc_tk, indent, "a7");
+
+        if (function == target_call::read or function == target_call::write) {
+            emit_io_call(indent, function);
+        } else {
+            call_io_routine(indent, function == target_call::sector_read
+                                        ? sector_read_label_
+                                        : sector_write_label_);
+        }
+    }
+
+    // unused routines contribute no code
+    auto emit_used_routines() -> void override {
+        if (is_used(report_line_label_)) {
+            emit_report_line_routine();
+        }
+
+        emit_arithmetic_helpers();
+
+        const bool is_read_used{is_used(sector_read_label_)};
+        const bool is_write_used{is_used(sector_write_label_)};
+
+        if (is_read_used or is_write_used) {
+            emit_sector_routines(is_read_used, is_write_used);
+        }
+
+        // note: after the routines that may use 'exit', e.g. the division by
+        //       zero
+
+        if (is_used(exit_label_)) {
+            emit_exit_routine();
+        }
+    }
+
+    auto emit_variables_base_load() -> void override {
+        const std::string_view base{variables_base_register()};
+
+        assembler_.la(0, base, variables_label_);
+
+        assembler_.addi(0, base, base,
+                        static_cast<int64_t>(variables_base_past_vars_bytes_));
+    }
+
+    auto finish_target() -> void override {
+        // the report counts after resolving because grown jumps take more
+        // instructions, a failing build writes nothing
+        assembler_.resolve_jumps();
+
+        check_address_range(assembler_.memory_end_address());
+    }
+
+    [[nodiscard]] auto register_index_of(const std::string_view name) const
+        -> std::optional<size_t> override {
+
+        return assembler_rv32i::register_number(name);
+    }
+
+    auto restore_call_registers(const size_t indent,
+                                const std::span<const size_t> saved)
+        -> void override {
+
+        restore_saved_registers(indent, register_names_of(saved));
+    }
+
+    auto save_call_registers(const size_t indent,
+                             const std::span<const size_t> saved)
+        -> void override {
+
+        save_registers(indent, register_names_of(saved));
+    }
+
+    //
+    // virtual methods
+    //
+
+    // '.Lbaz_exit' ends the program with the exit code in 'a0'
+    virtual auto emit_exit_routine() -> void = 0;
+
+    // the call of 'read' or 'write': 'a0' is the descriptor and receives the
+    // byte count, 'a1' is the address, 'a2' the count and 'a7' is reserved;
+    // an override may change the registers after 'a2' in the allocation
+    // order, see 'call_io_routine'
+    virtual auto emit_io_call(const size_t indent, const target_call function)
+        -> void = 0;
+
+    // the routines that the calls of 'sector_read' and 'sector_write' jump
+    // to, each only when it is used; a routine takes the sector in 'a0', the
+    // address in 'a1' and the size in 'a2', returns through 'a7', which it
+    // may change, and changes only 'a0' and 'io_routine_clobbered_' else;
+    // only a target that 'has_sd_card' is asked
+    virtual auto emit_sector_routines([[maybe_unused]] const bool read_used,
+                                      [[maybe_unused]] const bool write_used)
+        -> void {
+
+        std::unreachable();
+    }
+
+    // loads the lowest address the stack may reach into the register 'reg',
+    // only a target that 'is_stack_bounded' is asked
+    virtual auto
+    emit_stack_limit_load([[maybe_unused]] const size_t indent,
+                          [[maybe_unused]] const std::string_view reg) -> void {
+
+        std::unreachable();
+    }
+
+    //
+    // class methods
+    //
+
+    [[nodiscard]] auto assembler() -> assembler_rv32i& { return assembler_; }
+
+    // i/o routines replacing system calls return through 'a7' and change only
+    // 'io_routine_clobbered_' besides 'a0', which are free at the call, so
+    // like a system call it saves nothing
+    auto call_io_routine(const size_t indent, const std::string_view label)
+        -> void {
+
+        // the clobbered registers follow 'a1' and 'a2', which the call needs,
+        // in the allocation order, so they are free whenever the call is made
+        assert(std::ranges::none_of(
+            io_routine_clobbered_, [&](const std::string_view name) -> bool {
+                return registers().is_unavailable(register_mask(name));
+            }));
+
+        assembler_.call(indent, label, "a7");
+        mark_used(label);
+    }
+
+    // 'saved' as given to 'save_registers'
+    auto restore_saved_registers(const size_t indent,
+                                 const std::span<const std::string_view> saved)
+        -> void {
+
+        const size_t stack_bytes{saved_registers_size_bytes(saved.size())};
+
+        for (const auto [index, name] : std::views::enumerate(saved)) {
+            assembler_.lw(indent, name,
+                          static_cast<size_t>(index) * word_size_bytes_, "sp");
+        }
+
+        if (stack_bytes != 0) {
+            assembler_.addi(indent, "sp", "sp", stack_bytes);
+        }
+    }
+
+    // an aligned stack area is allocated only when a register is saved
+    auto save_registers(const size_t indent,
+                        const std::span<const std::string_view> saved) -> void {
+
+        const size_t stack_bytes{saved_registers_size_bytes(saved.size())};
+
+        if (stack_bytes != 0) {
+            assembler_.addi(indent, "sp", "sp",
+                            -static_cast<int64_t>(stack_bytes));
+        }
+
+        for (const auto [index, name] : std::views::enumerate(saved)) {
+            assembler_.sw(indent, name,
+                          static_cast<size_t>(index) * word_size_bytes_, "sp");
+        }
+    }
+
+    //
+    // statics
+    //
+
+    // see 'target_description'
+    [[nodiscard]] static constexpr auto rv32i_target() -> target_description {
+        return {
+            .address_size_bytes{word_size_bytes_},
+            .data_alignment{data_alignment_},
+            .max_storage_bytes{assembler_rv32i::address_space_bytes},
+            .has_indexed_addressing{false},
+
+            // note: 'scale_index' shifts by any power of two, a type stays
+            //       below the 4 GiB address space
+
+            .max_index_scale_bytes{assembler_rv32i::address_space_bytes},
+            .max_padding_gaps_zeroed_one_by_one{
+                max_padding_gaps_zeroed_one_by_one_,
+            },
+            // note: a load and store machine counts in a register
+            .memory_counter_pressure_count{},
+            .has_sd_card{true},
+            .string_alignment{word_size_bytes_},
+            .is_stack_bounded{},
+            .frame_base_register{"s1"},
+            .variables_base_register{"s0"},
+            // the last of the saved registers, no built-in names it
+            .slot_register{"s11"},
+            .variables_base_past_vars_bytes{variables_base_past_vars_bytes_},
+            .scratch_registers{scratch_registers_},
+            .target_calls{
+                .arguments{"a0", "a1", "a2"},
+                .result{"a0"},
+            },
+        };
+    }
+
   private:
     //
     // overridden methods
@@ -1554,25 +1552,17 @@ class machine_rv32i : public machine {
                                const std::string_view second_role)
         -> bulk_operation {
 
-        const bulk_operation bulk{begin_bulk(src_loc_tk, indent)};
-
-        comment(src_loc_tk, indent, "{}: {}, {}: {}, {}: count",
-                bulk.pointer(0).register_name(), first_role,
-                bulk.pointer(1).register_name(), second_role,
-                bulk.count().register_name());
-
-        return bulk;
-    }
-
-    auto begin_bulk(const token& src_loc_tk, const size_t indent)
-        -> bulk_operation {
-
         // argument-order allocation keeps pointer and count names easy to
         // follow
         bulk_operation bulk{};
         for (operand& reg : bulk.registers) {
             reg = alloc_scratch_register(src_loc_tk, indent, default_type());
         }
+
+        comment(src_loc_tk, indent, "{}: {}, {}: {}, {}: count",
+                bulk.pointer(0).register_name(), first_role,
+                bulk.pointer(1).register_name(), second_role,
+                bulk.count().register_name());
 
         return bulk;
     }
@@ -1718,18 +1708,6 @@ class machine_rv32i : public machine {
 
         // memory destinations need their original address registers back
         copy_value(src_loc_tk, indent, dst, kept);
-    }
-
-    // the sector is in 'a0' where 'read' has the descriptor, there is no result
-    auto call_sector_routine(const size_t indent, const target_call function)
-        -> void {
-
-        const std::string_view label{
-            function == target_call::sector_read ? sector_read_label_
-                                                 : sector_write_label_,
-        };
-
-        call_io_routine(indent, label);
     }
 
     // a distance from the source to the destination that is not zero and below
@@ -2016,25 +1994,6 @@ class machine_rv32i : public machine {
             alloc_compare_registers(src_loc_tk, indent, result, in_use),
         };
 
-        compare_runtime_walk(src_loc_tk, indent, bulk, request.alignment,
-                             registers);
-
-        write_compare_result(src_loc_tk, indent, result, registers,
-                             request.inverted);
-    }
-
-    // the walk's own registers are freed before the result is written
-    auto compare_runtime_walk(const token& src_loc_tk, const size_t indent,
-                              const bulk_operation& bulk,
-                              const size_t alignment,
-                              const compare_registers& registers) -> void {
-
-        const operand& left{bulk.pointer(0)};
-        const operand& right{bulk.pointer(1)};
-        const operand& count{bulk.count()};
-
-        const operation_scope walk_scope{*this};
-
         const operand left_at{memory_at(left)};
         const operand right_at{memory_at(right)};
 
@@ -2044,17 +2003,25 @@ class machine_rv32i : public machine {
             },
         };
 
-        walk_runtime_count(
-            {
-                .src_loc_tk{src_loc_tk},
-                .indent{indent},
-                .verb{"compare"},
-                .src{left},
-                .dst{right},
-                .count{count},
-                .access{access},
-            },
-            bulk.checked_starts(), alignment);
+        {
+            // the walk's own registers are freed before the result is written
+            const operation_scope walk_scope{*this};
+
+            walk_runtime_count(
+                {
+                    .src_loc_tk{src_loc_tk},
+                    .indent{indent},
+                    .verb{"compare"},
+                    .src{left},
+                    .dst{right},
+                    .count{count},
+                    .access{access},
+                },
+                bulk.checked_starts(), request.alignment);
+        }
+
+        write_compare_result(src_loc_tk, indent, result, registers,
+                             request.inverted);
     }
 
     // 'source' in a register of the comparison width
@@ -2608,7 +2575,6 @@ class machine_rv32i : public machine {
             return;
         }
 
-        // 'x > y' is 'y < x' and 'x <= y' is the complement of 'y < x'
         const bool swapped{swaps_operands(operation)};
 
         assembler_.slt(indent, result,

@@ -8,7 +8,6 @@
 #include <optional>
 #include <ostream>
 #include <print>
-#include <ranges>
 #include <span>
 #include <string_view>
 #include <utility>
@@ -399,8 +398,8 @@ class stmt_def_type_generic final : public statement {
 // 'instantiate' are:
 //
 //   1. resolve the arguments of '= text<8>', 'size' of 'text' is 8
-//   2. follow the bases ('has_base', 'base_instance', 'resolve_base_args'),
-//      'text<8>' then 'list<i8, 8>'
+//   2. follow the bases ('has_base', 'base_instance'), 'text<8>' then
+//      'list<i8, 8>'
 //   3. parse the fields of 'list' as those of 'str' ('parse_root_fields')
 //   4. add 'str' and make the methods of 'list<i8, 8>' and 'text<8>', see
 //      'func_instantiator'
@@ -460,9 +459,7 @@ class type_instantiator final {
         // instance
         tc.add_type(alias_tk, tp);
 
-        for (const generic_type_instance& instance :
-             instances | std::views::reverse) {
-
+        for (const generic_type_instance& instance : instances) {
             tc.add_generic_type_instance(instance);
         }
 
@@ -474,7 +471,9 @@ class type_instantiator final {
     // statics
     //
 
-    // e.g. 'list<i8, 8>' for 'text<8>' with 'type text<size> = list<i8, size>'
+    // e.g. 'list<i8, 8>' for 'text<8>' with 'type text<size> = list<i8, size>',
+    // the argument tokens of the base name the parameters of 'instance', e.g.
+    // 'size' of 'list<i8, size>' is 8
     [[nodiscard]] static auto
     base_instance(toc& tc, const generic_type_instance& instance)
         -> generic_type_instance {
@@ -488,8 +487,16 @@ class type_instantiator final {
 
         const token& base_tk{*generic.base_tk};
 
+        const generic_type_info& base{tc.generics().get_type(base_tk.text())};
+
+        // the scope ends with the return, before the base binds its own
+        // parameters, which may have the same names
+        toc::generic_scope scope{tc, generic.definition};
+        scope.add_args(instance.args);
+
         std::vector<generic_arg> base_args{
-            resolve_base_args(tc, generic, instance.args),
+            resolve_generic_args(tc, base_tk.text(), base.params,
+                                 generic.base_arg_tks),
         };
 
         // an error in the base is reported with the arguments it got
@@ -545,28 +552,6 @@ class type_instantiator final {
                                  generic.src_loc_tk};
 
         fields.add_to(tp, alias_tk);
-    }
-
-    // the argument tokens of a base name the parameters of 'generic', e.g.
-    // 'size' of 'list<i8, size>' is 8 for 'text<8>'; the scope ends before
-    // the base binds its own parameters, which may have the same names
-    [[nodiscard]] static auto
-    resolve_base_args(toc& tc, const generic_type_info& generic,
-                      const std::span<const generic_arg> args)
-        -> std::vector<generic_arg> {
-
-        toc::generic_scope scope{tc, generic.definition};
-        scope.add_args(args);
-
-        // note: only a type with a base asks, see 'has_base'
-        assert(generic.base_tk);
-
-        const std::string_view base_name{generic.base_tk->text()};
-
-        const generic_type_info& base{tc.generics().get_type(base_name)};
-
-        return resolve_generic_args(tc, base_name, base.params,
-                                    generic.base_arg_tks);
     }
 };
 

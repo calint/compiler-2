@@ -23,7 +23,8 @@
 // distances
 //
 // the backend emits every instruction and directive through the functions
-// below so that the lines can later also be encoded to binary
+// below, not text, so an encoder like the rv32i one can be added
+// (etc/todo.txt, on hold)
 
 class assembler_x86_64 final : public assembler {
   public:
@@ -373,12 +374,6 @@ class assembler_x86_64 final : public assembler {
     //
     // overridden methods
     //
-
-    [[nodiscard]] auto format_jump(const jump_info& jump) const
-        -> std::string override {
-
-        return std::format("{} {}", jump.mnemonic, jump.target);
-    }
 
     // every instruction counts as one
     [[nodiscard]] auto instruction_size() const -> size_t override { return 1; }

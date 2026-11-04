@@ -1588,6 +1588,28 @@ class stmt_def_func_generic final : public statement {
         }
     }
 
+    // the body of a method of a generic type sees the parameters of the
+    // type too, e.g. 'n' of 'type box<n>' in 'func box.f<n type>()' would
+    // name two things
+    static auto assert_generic_param_not_receiver_param(
+        const toc& tc, const token& param_tk,
+        const std::string_view generic_type) -> void {
+
+        const generic_type_info& generic{tc.generics().get_type(generic_type)};
+
+        for (const generic_param& param : generic.params) {
+            if (param.name_tk.text() == param_tk.text()) {
+                throw compile_error{
+                    param_tk,
+                    std::format("generic parameter {} is already declared "
+                                "by {} at {}",
+                                in_quotes(param_tk.text()),
+                                in_quotes(generic_type),
+                                tc.where(param.name_tk))};
+            }
+        }
+    }
+
     // the rules of a generic definition, checked once whether or not an
     // instance is made: the type parameters hide nothing and are named apart
     // from the signature, so are those of the generic type of a method, a
@@ -1605,8 +1627,8 @@ class stmt_def_func_generic final : public statement {
         for (const token& param_tk : signature.type_param_tks) {
             // e.g. 'n' of 'func box.f<n type>()' of 'type box<n>'
             if (head.is_generic_type_method()) {
-                tc.definitions().assert_generic_param_not_receiver_param(
-                    param_tk, param_tk.text(), head.name_tk.text());
+                assert_generic_param_not_receiver_param(tc, param_tk,
+                                                        head.name_tk.text());
             }
 
             tc.assert_valid_unqualified_name(param_tk);

@@ -1,0 +1,4 @@
+# an array literal tells no type argument
+
+func show<T type>(v T) {}
+func main() { show([1, 2]) }

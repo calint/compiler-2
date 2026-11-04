@@ -1,6 +1,30 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] hard: design review series 2, round 70 (2026-11-04, user: continue
+    until no more improvements are found; M the assemblers, the jump
+    optimizer, the rv32i image and the reports, N 'machine_rv32i.hpp' and
+    its targets read whole, O generics and type definitions)
+    => done (2026-11-04): pure refactors, listings, errors and images of
+       every test equal on both targets; design: M1 one 'format_jump' in
+       'assembler', the virtual and its two overrides gone; M2 the code size
+       of a line outside code is an assert, not a silent 0, 'add_jump'
+       asserts code; O2 'resolve_base_args' folded into 'base_instance' (the
+       plan of 2026-10-18 item 6), the reverse walk of the instances gone;
+       O4 'assert_generic_param_not_receiver_param' moved from 'definitions'
+       beside its twin in 'stmt_def_func_generic'; N1 'machine_rv32i' reads
+       public, protected, private as x86_64, N3 'compare_runtime_walk', N4
+       'call_sector_routine', N5 'begin_bulk' folded into their only
+       callers, N10 the bare-metal class in the same order; M7 a dead branch
+       of 'right_aligned' is an assert; docs: M3 README 1.2 the output step
+       names the growing of rv32i jumps and the report, O1 the order of the
+       deduction checks as a list ('deduced_type_arguments') and README
+       2.10.2 item 3, O5 O6 README 2.10.1 and 2.11; comments M4 M5 M6, N2 a
+       comment the formatter had moved onto 'emit_multiply', N6 to N9, O3;
+       tests 2102 2103 2104 (O3); skipped: M8 renames, M9 about 0 lines or a
+       listing change each, N11 N12, N13 (a static table cannot name the
+       later functions), O7 a behavior change of little gain, O8 O9; all
+       four passes of the jump optimizer fire in the corpus (M)
 [x] hard: design review series 2, round 69 (2026-11-04, user: the loop of
     round 67 goes on; J a newcomer reading steps 8 to 14 of README 1.1, K a
     hunter of the regressions of rounds 67 and 68, L 'stmt_call.hpp' whole)
