@@ -2,14 +2,9 @@
             li t1, 6
 === 18:     if array_length(a) != 4 { # folds
 === 23:     array_copy(a, b, array_length(a)) # folds
-    lw t0, -2032(s0)
-    sw t0, -2016(s0)
-    lw t0, -2028(s0)
-    sw t0, -2012(s0)
-    lw t0, -2024(s0)
-    sw t0, -2008(s0)
-    lw t0, -2020(s0)
-    sw t0, -2004(s0)
+    addi t1, s0, -2032
+    addi t2, s0, -2016
+    addi t3, t1, 16
 === 27:     b[array_length(a) - 1] = 9 # folds
     li t0, 9
     sw t0, -2004(s0)

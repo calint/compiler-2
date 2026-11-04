@@ -77,7 +77,30 @@ class machine_rv32i : public machine {
     //       of a load or store, and 's0' stays aligned
 
     static constexpr size_t data_alignment_{16};
-    static constexpr size_t copy_unroll_threshold_bytes_{16};
+
+    //
+    // code-size thresholds, each measured, see its note
+    //
+
+    // a copy or a compare of a known size up to this is unrolled, a larger one
+    // loops by words
+    static constexpr size_t unroll_threshold_bytes_{12};
+
+    // note: measured on the tests, 'roome' and copies and compares of 1 to
+    //       128 B, 12 was smaller than 16 by 229, 20 and 319 words, a compare
+    //       gains most (two loads and a branch per word); below 10 a loop of a
+    //       start 3 B before a word boundary can have one chunk
+    //       ('plan_known_loop')
+
+    // a constant up to this is stored as immediates when they are smaller
+    // than its copy ('are_immediates_smaller'), a larger one is copied
+    static constexpr size_t immediates_threshold_bytes_{16};
+
+    // note: measured on the tests and stores of 1 to 128 B, 24 and 32 were
+    //       smaller by 16 and 20 words on the tests but larger by 34 and 132 on
+    //       the stores, 12 larger on both; it stays above the unroll threshold
+    //       of copies, which 12 and 16 together measured smallest
+
     // stores run faster than the loop's 3 instructions per word, the cap only
     // bounds the code size
     static constexpr size_t zero_unroll_threshold_parts_{16};
@@ -657,7 +680,7 @@ class machine_rv32i : public machine {
                 .starts{starts},
                 .access{access},
             },
-            size_bytes, size_bytes <= copy_unroll_threshold_bytes_);
+            size_bytes, size_bytes <= unroll_threshold_bytes_);
     }
 
     auto copy_elements(const token& src_loc_tk, const size_t indent,
@@ -859,7 +882,7 @@ class machine_rv32i : public machine {
                 .starts{starts},
                 .access{access},
             },
-            size_bytes, size_bytes <= copy_unroll_threshold_bytes_);
+            size_bytes, size_bytes <= unroll_threshold_bytes_);
 
         write_compare_result(src_loc_tk, indent, result, registers,
                              request.inverted);
@@ -3866,13 +3889,14 @@ class machine_rv32i : public machine {
     }
 
     // 'copy_block' of a constant takes 'la' and a load and a store for each of
-    // its 'copy_part_count' parts, above the unroll threshold it loops
+    // its 'copy_part_count' parts, counted as unrolled up to
+    // 'immediates_threshold_bytes_'
     [[nodiscard]] static auto
     are_immediates_smaller(const std::span<const byte_part> parts,
                            const size_t size_bytes,
                            const size_t copy_part_count) -> bool {
 
-        if (size_bytes > copy_unroll_threshold_bytes_) {
+        if (size_bytes > immediates_threshold_bytes_) {
             return false;
         }
 
@@ -4287,7 +4311,7 @@ class machine_rv32i : public machine {
 
         const size_t after_head_size_bytes{size_bytes - start.head_size_bytes};
 
-        // note: a loop is only chosen above 'copy_unroll_threshold_bytes_', so
+        // note: a loop is only chosen above 'unroll_threshold_bytes_', so
         //       there is more than one chunk
 
         assert(after_head_size_bytes / start.width > 1);

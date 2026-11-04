@@ -65,19 +65,6 @@ class machine_x86_64 final : public machine {
     // the user address space of x86_64 Linux, 128 TiB
     static constexpr size_t user_address_space_bytes_{0x800000000000};
 
-    static constexpr size_t threshold_for_rep_stos_size_bytes_{32};
-
-    static constexpr size_t max_padding_gaps_zeroed_one_by_one_{4};
-
-    // note: a gap takes one to three stores, the whole instance a few qword
-    //       stores up to 32 B and beyond 'rep stosb' with its setup, four
-    //       instructions; measured on 2500 random types with padding, from 5
-    //       gaps the whole instance was never larger, at 4 gaps it was larger
-    //       by one instruction in 32 of 128
-
-    static constexpr size_t threshold_for_rep_movs_size_bytes_{16};
-    // up to this many qwords single compares cost less than loading 'rcx'
-    static constexpr size_t threshold_for_repe_cmpsq_count_{2};
     static constexpr int syscall_read_{0};
     static constexpr int syscall_write_{1};
     static constexpr int syscall_exit_{60};
@@ -91,6 +78,47 @@ class machine_x86_64 final : public machine {
     static constexpr std::string_view report_line_label_{"baz_report_line"};
     // the routine an exit jumps to with the exit code in 'rdi'
     static constexpr std::string_view exit_label_{"baz_exit"};
+
+    //
+    // code-size thresholds, each measured, see its note
+    //
+
+    // the instructions of a 'rep stosb' or 'rep movsb' with its setup: a zero
+    // or a copy of more parts than this takes is emitted with it, a zero
+    // takes a store per part, a copy a load and a store ('part_count')
+    static constexpr size_t rep_form_instructions_{4};
+
+    // note: measured on the tests, 'roome' and zeroes and copies of 1 to 128
+    //       B, the part count was smaller by 14, 2 and 76 instructions than
+    //       the best byte thresholds, and keeps 'mov' where the two forms tie
+
+    // a string or a constant up to this size is stored as immediates, one or
+    // two instructions per qword, larger ones are copied with 'rep movsb'
+    static constexpr size_t immediate_store_threshold_bytes_{16};
+
+    // note: measured on the tests, 'roome' and stores of 1 to 128 B, 16 was
+    //       smallest, 24 and 32 larger by 7 and 11 instructions in the tests
+
+    // up to this many qwords single compares cost less than loading 'rcx'
+    static constexpr size_t threshold_for_repe_cmpsq_count_{2};
+
+    static constexpr size_t max_padding_gaps_zeroed_one_by_one_{4};
+
+    // note: a gap takes one to three stores, the whole instance a store per
+    //       part up to 'rep_form_instructions_' parts and beyond 'rep stosb'
+    //       with its setup; measured on 2500 random types with padding, from
+    //       5 gaps the whole instance was never larger, at 4 gaps it was
+    //       larger by one instruction in 32 of 128
+
+    // scratch values live from which an array loop counts in memory: 'inc'
+    // and 'cmp' work on memory, so a loop counter leaves its register to the
+    // values that need one once many are live
+    static constexpr size_t memory_counter_pressure_count_{6};
+
+    // note: measured on the tests and 'roome', from 5 the code size is flat
+    //       within 1 instruction and below it up to 9 larger; 6 to 8 accept
+    //       what the tests expect, 5 accepts 0726 and from 9 1816 runs out of
+    //       registers
 
     struct register_names {
         std::string_view qword;
@@ -127,11 +155,6 @@ class machine_x86_64 final : public machine {
 
     // note: in order of likelihood they are not used by name, 'rsi', 'rdi'
     //       and 'rcx' last since 'rep movsb' and 'repe cmpsb' need all three
-
-    // scratch values live from which an array loop counts in memory: 'inc'
-    // and 'cmp' work on memory, so a loop counter leaves its register to the
-    // values that need one once many are live
-    static constexpr size_t memory_counter_pressure_count_{6};
 
     // numbers the local labels of a memory compare, a division check and a
     // copy overlap check, each kind with its own prefix
@@ -296,7 +319,10 @@ class machine_x86_64 final : public machine {
                     const size_t size_bytes,
                     [[maybe_unused]] const size_t alignment) -> void override {
 
-        if (size_bytes > threshold_for_rep_movs_size_bytes_) {
+        const size_t parts{part_count(size_bytes)};
+
+        // note: 2 because a part is a load and a store
+        if (2 * parts > rep_form_instructions_) {
             copy_with_rep_movsb(src_loc_tk, indent, dst, size_bytes,
                                 [&](const operand& pointer) -> void {
                                     lea(src_loc_tk, indent, pointer, src);
@@ -305,8 +331,7 @@ class machine_x86_64 final : public machine {
             return;
         }
 
-        comment(src_loc_tk, indent, "size <= {} B, use mov",
-                threshold_for_rep_movs_size_bytes_);
+        comment(src_loc_tk, indent, "{} parts, use mov", parts);
 
         const operation_scope scope{*this};
 
@@ -526,7 +551,7 @@ class machine_x86_64 final : public machine {
                      const std::function_ref<std::string()> add_constant)
         -> void override {
 
-        if (bytes.size() > threshold_for_rep_movs_size_bytes_) {
+        if (bytes.size() > immediate_store_threshold_bytes_) {
             const std::string label{add_constant()};
 
             // rip-relative label addresses need no address register
@@ -542,7 +567,7 @@ class machine_x86_64 final : public machine {
         }
 
         comment(src_loc_tk, indent, "size <= {} B, use immediates",
-                threshold_for_rep_movs_size_bytes_);
+                immediate_store_threshold_bytes_);
 
         for_each_part(
             bytes.size(), size_qword_,
@@ -603,7 +628,9 @@ class machine_x86_64 final : public machine {
               const size_t size_bytes, [[maybe_unused]] const size_t alignment)
         -> void override {
 
-        if (size_bytes > threshold_for_rep_stos_size_bytes_) {
+        const size_t parts{part_count(size_bytes)};
+
+        if (parts > rep_form_instructions_) {
             const operation_scope named{*this};
 
             reserve_named_register(src_loc_tk, indent, "rax");
@@ -623,8 +650,7 @@ class machine_x86_64 final : public machine {
             return;
         }
 
-        comment(src_loc_tk, indent, "size <= {} B, use mov",
-                threshold_for_rep_stos_size_bytes_);
+        comment(src_loc_tk, indent, "{} parts, use mov", parts);
 
         for_each_part(
             size_bytes, size_qword_,
@@ -1900,6 +1926,15 @@ class machine_x86_64 final : public machine {
         }
 
         return allow_end ? condition::g : condition::ge;
+    }
+
+    // the parts 'for_each_part' takes from qwords down, e.g. 3 for 13 B: a
+    // qword, a dword and a byte
+    [[nodiscard]] static auto part_count(const size_t size_bytes) -> size_t {
+        const size_t tail_bytes{size_bytes % size_qword_};
+
+        return size_bytes / size_qword_ +
+               static_cast<size_t>(std::popcount(tail_bytes));
     }
 
     [[nodiscard]] static auto register_sum(const std::string_view base,

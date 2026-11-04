@@ -45,16 +45,19 @@
     sb zero, -2000(t1)
 === 42:     var line = "0123456789abcd\n"
     la t0, str.42.16
-    lw t1, 0(t0)
-    sw t1, -1984(s0)
-    lw t1, 4(t0)
-    sw t1, -1980(s0)
-    lw t1, 8(t0)
-    sw t1, -1976(s0)
-    lhu t1, 12(t0)
-    sh t1, -1972(s0)
-    lbu t1, 14(t0)
-    sb t1, -1970(s0)
+    mv t2, t0
+    addi t3, s0, -1984
+    addi t4, t2, 12
+    1:
+    lw t1, 0(t2)
+    sw t1, 0(t3)
+    addi t2, t2, 4
+    addi t3, t3, 4
+    bne t2, t4, 1b
+    lhu t1, 0(t2)
+    sh t1, 0(t3)
+    lbu t1, 2(t2)
+    sb t1, 2(t3)
 === read-only constants
 .balign 4
 str.42.16:

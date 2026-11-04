@@ -72,11 +72,6 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
     (drops the token shapes of 'value_type', about 70 lines); messages of
     malformed arguments may change (design review 2026-10-23 E.5, optional,
     lower confidence; round 14 F.3 kept the two deductions apart)
-[ ] easy: x86_64: 'threshold_for_rep_stos_size_bytes_' (32),
-    'threshold_for_rep_movs_size_bytes_' (16) and
-    'memory_counter_pressure_count_' (6) have no reason recorded (R8 X-10),
-    nor rv32i 'copy_unroll_threshold_bytes_' (16) (design review series 2,
-    round 71 R8); measure them against unrolled code and note the result
 [p] medium: low priority: generic function instances: the nesting limit
     counts the depth of the first use of an instance (H-2): its body is
     parsed inside the parse of that use, e.g. a body nested 70 levels used
