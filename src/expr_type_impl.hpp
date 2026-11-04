@@ -186,9 +186,18 @@ inline auto expr_type::parse_copy_source(toc& tc, tokenizer& tz,
             std::get_if<std::unique_ptr<stmt_call>>(&parsed),
         }) {
 
-        value_ = std::move(*call);
+        const stmt_call& source{**call};
 
-        assert_call_type();
+        // e.g. 'p = f()' with 'func f()', the message of a number destination
+        if (not source.callee().has_result()) {
+            throw_no_value(source.callee_name_token(), source.callee().name());
+        }
+
+        if (not tp.is_same(source.get_type())) {
+            throw_type_mismatch(tok(), tp.name(), source.get_type().name());
+        }
+
+        value_ = std::move(*call);
 
         return;
     }
@@ -209,31 +218,16 @@ inline auto expr_type::parse_copy_source(toc& tc, tokenizer& tz,
     }
 }
 
-inline auto expr_type::assert_call_type() const -> void {
-    const type& tp{get_type()};
-
-    const stmt_call& call{*call_source()};
-
-    // e.g. 'p = f()' with 'func f()', the message of a number destination
-    if (not call.callee().has_result()) {
-        throw_no_value(call.callee_name_token(), call.callee().name());
-    }
-
-    const type& result_type{call.get_type()};
-
-    if (tp.is_same(result_type)) {
-        return;
-    }
-
-    throw_type_mismatch(tok(), tp.name(), result_type.name());
-}
-
 inline auto expr_type::copy_or_call() const -> const statement* {
     if (const expr_path* const path{std::get_if<expr_path>(&value_)}) {
         return path;
     }
 
-    return call_source();
+    const std::unique_ptr<stmt_call>* const call{
+        std::get_if<std::unique_ptr<stmt_call>>(&value_),
+    };
+
+    return call != nullptr ? call->get() : nullptr;
 }
 
 inline auto expr_type::source_to(std::ostream& os) const -> void {

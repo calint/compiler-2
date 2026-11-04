@@ -1,0 +1,6 @@
+# an instance literal that the source ends inside of
+
+type point {x, y}
+
+func main() {
+    var p = point{1, 2

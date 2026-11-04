@@ -28,7 +28,8 @@
 - Pointers: `const macro_use* const p{std::get_if<...>(r)};`.
 - Use `and`/`or`/`not` and `std::format("{}", v)` (not `std::to_string`).
 - Backend access: `machine& x{tc.machine()};` (or `const`), even for one use,
-  just before its use with a blank line around; never `tc.machine().call()`.
+  just before its use with a blank line around (the blank-line return rule
+  wins); never `tc.machine().call()`. The assembler local is `output`.
 
 ### Blank lines
 
@@ -65,7 +66,8 @@
   interface's paired vocabulary.
 - One-letter names only in tight loops.
 - Public fields have no trailing underscore; private and protected members do.
-- Parameters shadowing members get an `_in` suffix; no locals named like
+- Parameters shadowing members get an `_in` suffix, only where a member of
+  that name is in scope (not in static factories); no locals named like
   enclosing class fields.
 
 ### Code

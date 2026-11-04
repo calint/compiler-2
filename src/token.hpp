@@ -130,9 +130,11 @@ static_assert(std::ranges::all_of(builtin_functions,
 
 // letters, digits and '_', not starting with a digit
 [[nodiscard]] inline auto is_identifier(const std::string_view text) -> bool {
-    const auto is_letter = [](const char ch) -> bool {
-        return (ch >= 'a' and ch <= 'z') or (ch >= 'A' and ch <= 'Z') or
-               ch == '_';
+    const auto is_letter{
+        [](const char ch) -> bool {
+            return (ch >= 'a' and ch <= 'z') or (ch >= 'A' and ch <= 'Z') or
+                   ch == '_';
+        },
     };
 
     return not text.empty() and is_letter(text.front()) and
@@ -146,12 +148,12 @@ static_assert(std::ranges::all_of(builtin_functions,
 // is written back from the tokens ('source_to') and an error points at one
 // (README 7.2); a default token ('token{}', line 0) has no place
 class token final {
-    size_t file_ix_{};          // index of the source file of the token
-    std::string_view ws_left_;  // whitespace left of token text
-    size_t start_ix_{};         // token text start index in source
-    std::string_view text_;     // token text
-    std::string_view ws_right_; // whitespace right of token text
-    size_t at_line_{};          // line number in the source
+    size_t file_ix_{}; // index of the source file of the token
+    std::string_view ws_left_;
+    size_t start_ix_{}; // start of the text in the source
+    std::string_view text_;
+    std::string_view ws_right_;
+    size_t at_line_{};
 
     // what a backslash in string or character text starts, see 'escape_at'
     struct escape {
@@ -397,9 +399,10 @@ class token final {
             // note: 1 because the digits follow the 'x'
         }
 
-        if (escape.size() != 1) {
-            return std::nullopt;
-        }
+        // note: a backslash is always followed by a character, which
+        //       'escape_length' takes whole when it is not an 'x'
+
+        assert(escape.size() == 1);
 
         switch (escape.at(0)) {
         case '0':

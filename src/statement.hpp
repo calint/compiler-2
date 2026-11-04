@@ -61,12 +61,14 @@ class one_line_source final {
         bool pending_space{};
 
         // leading and trailing whitespace is dropped
-        const auto add_pending_space = [&] -> void {
-            if (pending_space and not collapsed.empty()) {
-                collapsed.push_back(' ');
-            }
+        const auto add_pending_space{
+            [&] -> void {
+                if (pending_space and not collapsed.empty()) {
+                    collapsed.push_back(' ');
+                }
 
-            pending_space = false;
+                pending_space = false;
+            },
         };
 
         for (const source_piece& piece : split_into_pieces(text)) {

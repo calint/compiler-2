@@ -63,12 +63,12 @@ class machine_rv32i_fpga final : public machine_rv32i_bare_metal {
     // the emulator exits at 'ebreak' with 'a0' as its status, the loop halts
     // hardware that continues
     auto emit_exit_routine() -> void override {
-        assembler_rv32i& a{assembler()};
+        assembler_rv32i& output{assembler()};
 
-        a.label(0, exit_label_);
-        a.label(0, "1");
-        a.ebreak(1);
-        a.j(1, "1b");
+        output.label(0, exit_label_);
+        output.label(0, "1");
+        output.ebreak(1);
+        output.j(1, "1b");
     }
 
     // the card has a buffer of one sector: a read fills it from the sector,
@@ -79,36 +79,36 @@ class machine_rv32i_fpga final : public machine_rv32i_bare_metal {
     auto emit_sector_routines(const bool read_used, const bool write_used)
         -> void override {
 
-        assembler_rv32i& a{assembler()};
+        assembler_rv32i& output{assembler()};
 
         if (read_used) {
-            a.label(0, sector_read_label_);
-            emit_wait_while_busy(a, "1");
-            a.sw(1, "a0", sd_read_sector_offset_, "zero");
-            emit_wait_while_busy(a, "2");
-            a.mv(1, "a5", "a1");
-            a.add(1, "a6", "a1", "a2");
-            a.label(0, "3");
-            a.lw(1, "a4", sd_next_byte_offset_, "zero");
-            a.sb(1, "a4", 0, "a5");
-            a.addi(1, "a5", "a5", 1);
-            a.bne(1, "a5", "a6", "3b");
-            a.jr(1, "a7");
+            output.label(0, sector_read_label_);
+            emit_wait_while_busy(output, "1");
+            output.sw(1, "a0", sd_read_sector_offset_, "zero");
+            emit_wait_while_busy(output, "2");
+            output.mv(1, "a5", "a1");
+            output.add(1, "a6", "a1", "a2");
+            output.label(0, "3");
+            output.lw(1, "a4", sd_next_byte_offset_, "zero");
+            output.sb(1, "a4", 0, "a5");
+            output.addi(1, "a5", "a5", 1);
+            output.bne(1, "a5", "a6", "3b");
+            output.jr(1, "a7");
         }
 
         if (write_used) {
-            a.label(0, sector_write_label_);
-            emit_wait_while_busy(a, "1");
-            a.mv(1, "a5", "a1");
-            a.add(1, "a6", "a1", "a2");
-            a.label(0, "2");
-            a.lbu(1, "a4", 0, "a5");
-            a.sw(1, "a4", sd_next_byte_offset_, "zero");
-            a.addi(1, "a5", "a5", 1);
-            a.bne(1, "a5", "a6", "2b");
-            a.sw(1, "a0", sd_write_sector_offset_, "zero");
-            emit_wait_while_busy(a, "3");
-            a.jr(1, "a7");
+            output.label(0, sector_write_label_);
+            emit_wait_while_busy(output, "1");
+            output.mv(1, "a5", "a1");
+            output.add(1, "a6", "a1", "a2");
+            output.label(0, "2");
+            output.lbu(1, "a4", 0, "a5");
+            output.sw(1, "a4", sd_next_byte_offset_, "zero");
+            output.addi(1, "a5", "a5", 1);
+            output.bne(1, "a5", "a6", "2b");
+            output.sw(1, "a0", sd_write_sector_offset_, "zero");
+            emit_wait_while_busy(output, "3");
+            output.jr(1, "a7");
         }
     }
 
@@ -119,24 +119,24 @@ class machine_rv32i_fpga final : public machine_rv32i_bare_metal {
         // note: the constructor rejected a stack larger than the memory
         assert(stack_size_bytes() <= memory_size_bytes());
 
-        assembler_rv32i& a{assembler()};
+        assembler_rv32i& output{assembler()};
 
-        a.li(indent, reg, memory_size_bytes() - stack_size_bytes());
+        output.li(indent, reg, memory_size_bytes() - stack_size_bytes());
     }
 
     // no operating system sets up a stack, it grows down from the end of
     // memory
     auto emit_target_setup() -> void override {
-        assembler_rv32i& a{assembler()};
+        assembler_rv32i& output{assembler()};
 
         // 'std::format' has no digit separators so the halves are printed
         // apart
-        a.comment(0, std::format("load stack pointer to {:#x}:{:04x}",
-                                 memory_size_bytes() >> half_bits_,
-                                 memory_size_bytes() & half_mask_));
+        output.comment(0, std::format("load stack pointer to {:#x}:{:04x}",
+                                      memory_size_bytes() >> half_bits_,
+                                      memory_size_bytes() & half_mask_));
 
-        a.lui(0, "sp", memory_size_bytes() >> assembler_rv32i::lui_shift);
-        a.add_separator_newline();
+        output.lui(0, "sp", memory_size_bytes() >> assembler_rv32i::lui_shift);
+        output.add_separator_newline();
     }
 
   private:
@@ -145,27 +145,27 @@ class machine_rv32i_fpga final : public machine_rv32i_bare_metal {
     //
 
     auto emit_receive_byte() -> void override {
-        assembler_rv32i& a{assembler()};
+        assembler_rv32i& output{assembler()};
 
-        a.label(0, "2");
-        a.lw(1, "a4", uart_in_offset_, "zero");
-        a.beq(1, "a4", "a3", "2b");
+        output.label(0, "2");
+        output.lw(1, "a4", uart_in_offset_, "zero");
+        output.beq(1, "a4", "a3", "2b");
     }
 
     auto emit_transmit_byte() -> void override {
-        assembler_rv32i& a{assembler()};
+        assembler_rv32i& output{assembler()};
 
-        a.label(0, "2");
-        a.lw(1, "a4", uart_out_offset_, "zero");
-        a.bne(1, "a4", "a3", "2b");
-        a.lbu(1, "a4", 0, "a5");
-        a.sw(1, "a4", uart_out_offset_, "zero");
+        output.label(0, "2");
+        output.lw(1, "a4", uart_out_offset_, "zero");
+        output.bne(1, "a4", "a3", "2b");
+        output.lbu(1, "a4", 0, "a5");
+        output.sw(1, "a4", uart_out_offset_, "zero");
     }
 
     auto emit_uart_setup() -> void override {
-        assembler_rv32i& a{assembler()};
+        assembler_rv32i& output{assembler()};
 
-        a.li(1, "a3", uart_idle_);
+        output.li(1, "a3", uart_idle_);
     }
 
     //
@@ -174,12 +174,12 @@ class machine_rv32i_fpga final : public machine_rv32i_bare_metal {
 
     // the card is busy while it starts up and while it transfers a sector,
     // 'label_name' is a numeric label of the routine
-    static auto emit_wait_while_busy(assembler_rv32i& a,
+    static auto emit_wait_while_busy(assembler_rv32i& output,
                                      const std::string_view label_name)
         -> void {
 
-        a.label(0, label_name);
-        a.lw(1, "a4", sd_busy_offset_, "zero");
-        a.bnez(1, "a4", std::format("{}b", label_name));
+        output.label(0, label_name);
+        output.lw(1, "a4", sd_busy_offset_, "zero");
+        output.bnez(1, "a4", std::format("{}b", label_name));
     }
 };

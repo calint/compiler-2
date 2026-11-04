@@ -1,0 +1,4 @@
+
+2107.baz:8:7: function 'array_copy' has no result
+    g(array_copy(a, b, 1))
+      ^~~~~~~~~~

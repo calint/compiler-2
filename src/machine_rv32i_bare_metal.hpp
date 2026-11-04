@@ -160,50 +160,50 @@ class machine_rv32i_bare_metal : public machine_rv32i {
     // reads until a newline or the count is reached, 'a0' receives the count
     // and ctrl-d ends the read without being stored like at a terminal
     auto emit_read_routine() -> void {
-        assembler_rv32i& a{assembler()};
+        assembler_rv32i& output{assembler()};
 
-        a.label(0, read_label_);
+        output.label(0, read_label_);
         emit_uart_setup();
-        a.mv(1, "a6", "a1");
-        a.li(1, "a0", 0);
-        a.label(0, "1");
-        a.beq(1, "a0", "a2", "4f");
+        output.mv(1, "a6", "a1");
+        output.li(1, "a0", 0);
+        output.label(0, "1");
+        output.beq(1, "a0", "a2", "4f");
         emit_receive_byte();
         // the uart has no end of input, so ctrl-d stands for it
-        a.li(1, "a5", end_of_transmission_);
-        a.beq(1, "a4", "a5", "4f");
+        output.li(1, "a5", end_of_transmission_);
+        output.beq(1, "a4", "a5", "4f");
         // terminals send a carriage return for enter where a tty reads newline
-        a.li(1, "a5", carriage_return_);
-        a.bne(1, "a4", "a5", "3f");
-        a.li(1, "a4", newline_);
-        a.label(0, "3");
-        a.sb(1, "a4", 0, "a6");
-        a.addi(1, "a6", "a6", 1);
-        a.addi(1, "a0", "a0", 1);
-        a.li(1, "a5", newline_);
-        a.bne(1, "a4", "a5", "1b");
-        a.label(0, "4");
-        a.jr(1, "a7");
+        output.li(1, "a5", carriage_return_);
+        output.bne(1, "a4", "a5", "3f");
+        output.li(1, "a4", newline_);
+        output.label(0, "3");
+        output.sb(1, "a4", 0, "a6");
+        output.addi(1, "a6", "a6", 1);
+        output.addi(1, "a0", "a0", 1);
+        output.li(1, "a5", newline_);
+        output.bne(1, "a4", "a5", "1b");
+        output.label(0, "4");
+        output.jr(1, "a7");
     }
 
     // writes the count of bytes, 'a0' receives the count
     auto emit_write_routine() -> void {
-        assembler_rv32i& a{assembler()};
+        assembler_rv32i& output{assembler()};
 
-        a.label(0, write_label_);
+        output.label(0, write_label_);
         emit_uart_setup();
-        a.mv(1, "a5", "a1");
+        output.mv(1, "a5", "a1");
         // the descriptor is not needed so 'a0' holds the end
-        a.add(1, "a0", "a1", "a2");
+        output.add(1, "a0", "a1", "a2");
         // the end test sits at the bottom, one branch per byte, the guard
         // handles a count of zero
-        a.beq(1, "a5", "a0", "3f");
-        a.label(0, "1");
+        output.beq(1, "a5", "a0", "3f");
+        output.label(0, "1");
         emit_transmit_byte();
-        a.addi(1, "a5", "a5", 1);
-        a.bne(1, "a5", "a0", "1b");
-        a.label(0, "3");
-        a.mv(1, "a0", "a2");
-        a.jr(1, "a7");
+        output.addi(1, "a5", "a5", 1);
+        output.bne(1, "a5", "a0", "1b");
+        output.label(0, "3");
+        output.mv(1, "a0", "a2");
+        output.jr(1, "a7");
     }
 };

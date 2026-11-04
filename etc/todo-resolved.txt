@@ -1,6 +1,39 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] hard: design review series 2, round 71 (2026-11-04, user: continue
+    until no more improvements are found; P the vocabulary and parse
+    headers, Q values written in parts, the variable statements and the
+    built-ins, R one pass over 'src/' for the AGENTS rules the linters miss)
+    => done (2026-11-04): pure refactors, listings and errors of every test
+       equal on both targets; design: Q1 'expr_type::assert_call_type' and
+       'call_source' folded into their callers (-17), Q2 the known size of
+       'array_copy' in place as in 'arrays_equal', Q3
+       'stmt_identifier::compile_address' moved into 'argument_emitters' as
+       'walk_address' (its only user, no callback), Q4 'bytes_write::is_string'
+       -> 'constant_kind'; P3 'expr_arith::emit_operation' picks the machine
+       method by 'operator_family'; P4 a dead branch of 'decode_escape' is an
+       assert; P5 'skip_to_close_paren' no longer reads a closer that does not
+       match; R10 a nested if/else in the rv32i checked add moved into
+       'load_second_operand'; names: P6 'comparison_spelling' ->
+       'comparison_traits', 'comparison_spellings' -> 'comparison_operators',
+       'facts_of' -> 'traits_of'; R6 the assembler local is 'output' in the
+       rv32i targets (decision, user); R7 the '_in' suffix only where a member
+       of that name is in scope, the 'expr_arith::options' factories without
+       it (decision, user, AGENTS); R12 the blank-line return rule wins over
+       the blank line after a backend access (decision, user, AGENTS), one
+       blank line added; consistency: R2 14 comments of why an assert holds
+       marked 'note:', R3 the field comments of 'token' that restate the name,
+       R5 the 9 lambdas brace-initialized, 'lut' 'T data{}', R8 the gap note
+       of x86_64 below its constant, R9 code names quoted; docs: Q5 Q6 P7
+       comments and header maps; tests 2105 to 2109 (P1 the merge of
+       'assigned_bytes::add', P2 three reachable branches); todo: R1 the
+       formatter can move a note below a member onto the next one, R8 the
+       rv32i copy threshold joins the open measurement item; skipped: P8 P9,
+       Q 'compile_value_operand' (-Wnrvo), R4 more than one 'e.g.' (about 32
+       sites, a round of its own), R11 nested calls of low benefit; a note
+       (Q): 'format-source.sh' left a file cut short in a scratch copy with a
+       full disk, 'format-source.py' writes in place ('write_text')
 [x] hard: design review series 2, round 70 (2026-11-04, user: continue
     until no more improvements are found; M the assemblers, the jump
     optimizer, the rv32i image and the reports, N 'machine_rv32i.hpp' and

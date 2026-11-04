@@ -387,8 +387,10 @@ auto check_target_reads(const options& opts) -> void {
             continue;
         }
 
-        const auto reads = [&option](const target_name& name) -> bool {
-            return name.*option.reads;
+        const auto reads{
+            [&option](const target_name& name) -> bool {
+                return name.*option.reads;
+            },
         };
 
         const std::string readers{

@@ -1,0 +1,9 @@
+# a built-in without a result tells no type argument
+
+func g<T type>(x T) {}
+
+func main() {
+    var a = i8[2]
+    var b = i8[2]
+    g(array_copy(a, b, 1))
+}

@@ -118,7 +118,8 @@ class assembler {
     using mnemonic_pair = std::pair<std::string_view, std::string_view>;
 
   private:
-    // the lines [first_line, end_line) are a body of noinline 'function'
+    // the lines from 'first_line' up to 'end_line' are a body of noinline
+    // 'function'
     struct body {
         std::string function;
         std::string label;

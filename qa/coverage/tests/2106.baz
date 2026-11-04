@@ -1,0 +1,13 @@
+# a result written in parts with a gap between them is not set
+
+type r {a, b, c}
+
+func f() res r {
+    res.a = 2
+    res.c = 1
+}
+
+func main() {
+    var x = f()
+    exit(x.a)
+}

@@ -15,13 +15,13 @@
 template <class T> class lut final {
     struct elem {
         std::string key;
-        T data;
+        T data{};
     };
 
     std::vector<elem> elems_;
 
   public:
-    // note: for clarity, get_const_ref instead of overloading get_ref
+    // note: for clarity, 'get_const_ref' instead of overloading 'get_ref'
     [[nodiscard]] auto get_const_ref(const std::string_view key) const
         -> const T& {
 

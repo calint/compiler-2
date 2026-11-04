@@ -475,15 +475,15 @@ inline constexpr auto unary_spellings{
 
 // the facts of a comparison operator: its spelling, the operator true when
 // it is false, and the one with the same result when the operands swap
-struct comparison_spelling {
+struct comparison_traits {
     comparison_operator op{};
     std::string_view text;
     comparison_operator negated{};
     comparison_operator mirrored{};
 };
 
-inline constexpr auto comparison_spellings{
-    std::to_array<comparison_spelling>({
+inline constexpr auto comparison_operators{
+    std::to_array<comparison_traits>({
         {
             .op{comparison_operator::equal},
             .text{"=="},
@@ -524,10 +524,10 @@ inline constexpr auto comparison_spellings{
 };
 
 // the row of the comparison 'op'
-[[nodiscard]] constexpr auto facts_of(const comparison_operator op)
-    -> const comparison_spelling& {
+[[nodiscard]] constexpr auto traits_of(const comparison_operator op)
+    -> const comparison_traits& {
 
-    for (const comparison_spelling& spelling : comparison_spellings) {
+    for (const comparison_traits& spelling : comparison_operators) {
         if (spelling.op == op) {
             return spelling;
         }
@@ -540,7 +540,7 @@ inline constexpr auto comparison_spellings{
 [[nodiscard]] constexpr auto negated(const comparison_operator op)
     -> comparison_operator {
 
-    return facts_of(op).negated;
+    return traits_of(op).negated;
 }
 
 [[nodiscard]] constexpr auto is_equality(const comparison_operator op) -> bool {
@@ -552,12 +552,12 @@ inline constexpr auto comparison_spellings{
 [[nodiscard]] constexpr auto mirrored(const comparison_operator op)
     -> comparison_operator {
 
-    return facts_of(op).mirrored;
+    return traits_of(op).mirrored;
 }
 
 // negating or mirroring twice gives the operator back
 static_assert(std::ranges::all_of(
-    comparison_spellings, [](const comparison_spelling& spelling) -> bool {
+    comparison_operators, [](const comparison_traits& spelling) -> bool {
         return negated(spelling.negated) == spelling.op and
                mirrored(spelling.mirrored) == spelling.op;
     }));
@@ -566,14 +566,14 @@ static_assert(std::ranges::all_of(
 [[nodiscard]] inline auto source_text(const comparison_operator op)
     -> std::string_view {
 
-    return facts_of(op).text;
+    return traits_of(op).text;
 }
 
 // the comparison 'text' spells, none for any other text
 [[nodiscard]] inline auto comparison_of(const std::string_view text)
     -> std::optional<comparison_operator> {
 
-    for (const comparison_spelling& spelling : comparison_spellings) {
+    for (const comparison_traits& spelling : comparison_operators) {
         if (spelling.text == text) {
             return spelling.op;
         }

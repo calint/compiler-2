@@ -1712,15 +1712,16 @@ class assembler_rv32i final : public assembler {
     // initializers are usable only once the class is complete
     [[nodiscard]] static auto info(const op code) -> const op_info& {
         // one row of the table
-        constexpr auto row = [](const std::string_view mnemonic,
-                                const form operands, const uint32_t encoding,
-                                const bool swapped = false) -> op_info {
-            return {
-                .mnemonic{mnemonic},
-                .operands{operands},
-                .encoding{encoding},
-                .swapped{swapped},
-            };
+        constexpr auto row{
+            [](const std::string_view mnemonic, const form operands,
+               const uint32_t encoding, const bool swapped = false) -> op_info {
+                return {
+                    .mnemonic{mnemonic},
+                    .operands{operands},
+                    .encoding{encoding},
+                    .swapped{swapped},
+                };
+            },
         };
 
         // indexed by 'op'

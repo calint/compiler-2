@@ -454,8 +454,8 @@ struct generic_call {
                                          const token& tk, const term_kind tm)
         -> const type* {
 
-        const auto is_whole_argument = [&] -> bool {
-            return not continues_expression(tz);
+        const auto is_whole_argument{
+            [&] -> bool { return not continues_expression(tz); },
         };
 
         // e.g. 'point{1, 2}', a missing '}' is left to the parse of the
@@ -803,13 +803,15 @@ class inline_call final {
 
         const bool nests_alike{nests_alike_at_every_call(tc)};
 
-        const auto compile_level = [&] -> void {
-            if (not nests_alike and not has_constant_argument(tc)) {
-                compile_arguments(tc, indent);
-                return;
-            }
+        const auto compile_level{
+            [&] -> void {
+                if (not nests_alike and not has_constant_argument(tc)) {
+                    compile_arguments(tc, indent);
+                    return;
+                }
 
-            compile_within_limits(tc, indent, dst);
+                compile_within_limits(tc, indent, dst);
+            },
         };
 
         // note: a deeper level is in the dry run of the first
@@ -818,23 +820,25 @@ class inline_call final {
             return;
         }
 
-        const auto compile_first_level = [&] -> void {
-            try {
-                compile_level();
-            } catch (const compile_error& e) {
-                // note: a limit ends the recursion, not the check
+        const auto compile_first_level{
+            [&] -> void {
+                try {
+                    compile_level();
+                } catch (const compile_error& e) {
+                    // note: a limit ends the recursion, not the check
 
-                const bool is_nesting_alike_limit{
-                    nests_alike and
-                        e.kind == compile_error::error_kind::inlining_limit,
-                };
+                    const bool is_nesting_alike_limit{
+                        nests_alike and
+                            e.kind == compile_error::error_kind::inlining_limit,
+                    };
 
-                if (e.is_limit() and not is_nesting_alike_limit) {
-                    return;
+                    if (e.is_limit() and not is_nesting_alike_limit) {
+                        return;
+                    }
+
+                    throw;
                 }
-
-                throw;
-            }
+            },
         };
 
         tc.dry_run(compile_first_level, machine::discarded_code::here);
@@ -1593,7 +1597,9 @@ class noinline_call final {
             assert(dst.operand().is_memory());
             assert(dst.type_ref().is_same(func.result_type()));
 
-            // an array literal gives its call elements an element destination
+            // note: an array literal gives its call elements an element
+            //       destination
+
             assert(not dst.is_array());
         }
 

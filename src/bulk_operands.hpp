@@ -137,22 +137,8 @@ class bulk_operands final {
                         array.tok(), indent_, tc_.builtins().default_type());
                 }
 
-                // note: the walk checks a start up to the length, its range
-                //       is checked after the later arguments
-
-                array.compile_address(tc_, indent_, src_loc_tk_,
-                                      {
-                                          .is_range{true},
-                                          .start_register{held.start},
-                                          .address_register{address_register},
-                                      },
-                                      [&](const operand& address) -> void {
-                                          if (checks_ranges) {
-                                              check_ranges(std::nullopt);
-                                          }
-
-                                          use(address);
-                                      });
+                walk_address(array, held.start, address_register, checks_ranges,
+                             use);
 
                 held.is_walked = true;
 
@@ -292,6 +278,40 @@ class bulk_operands final {
                 x.free_scratch_register(src_loc_tk_, indent_, *held.start);
                 held.start.reset();
             }
+        }
+
+        // the address of 'array' passed to 'use' while the registers of its
+        // walk are held, then they are freed; 'checks_ranges' checks the
+        // ranges first
+        auto walk_address(const stmt_identifier& array,
+                          const std::optional<operand>& start,
+                          const std::optional<operand>& address_register,
+                          const bool checks_ranges,
+                          const machine::address_use use) -> void {
+
+            machine& x{tc_.machine()};
+
+            x.comment(array.tok(), indent_, statement::trimmed_source(array));
+
+            machine::held_registers walk{x, src_loc_tk_, indent_};
+
+            // note: the walk checks a start up to the length, its range is
+            //       checked after the later arguments
+
+            const operand address{
+                array.compile_lea(tc_, indent_, walk,
+                                  {
+                                      .is_range{true},
+                                      .start_register{start},
+                                      .address_register{address_register},
+                                  }),
+            };
+
+            if (checks_ranges) {
+                check_ranges(std::nullopt);
+            }
+
+            use(address);
         }
     };
 

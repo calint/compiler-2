@@ -5,7 +5,12 @@
 // followed by a character has one meaning only, e.g. 'point{' is a record
 // literal and 'show<' a generic call; 'builtin_value_type' gives the type of
 // the value of a built-in; the name after a '.' is decided by
-// 'stmt_identifier::is_method_name', a function head by 'func_head'
+// 'stmt_identifier::is_method_name', a function head by 'func_head'; the
+// rejections that run before a parse would misread
+// ('assert_no_surplus_argument', 'assert_not_string_argument',
+// 'assert_no_value_operator', 'assert_no_operator_after_array') and the shape
+// predicates ('continues_expression', 'is_zero_value',
+// 'is_whole_generic_call', 'is_array_literal_value', 'is_record_value')
 
 #include <algorithm>
 #include <cstdint>

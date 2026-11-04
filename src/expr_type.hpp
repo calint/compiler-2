@@ -33,6 +33,10 @@
 // types below in reading order:
 //
 //   'literal_typing'         whether a literal names its type
+//   'throw_known_type', 'assert_value_ends', 'throw_known_literal_type',
+//   'throw_array_literal_mismatch', 'read_full_list_end'
+//                            the messages of a value its destination does
+//                            not take, the end of a full list
 //   'part_step', 'part_location'
 //                            a part of a destination, a field or an element
 //   'value_write', 'bytes_write', 'zero_fill', 'write_comment', 'write_step',
@@ -237,8 +241,8 @@ struct value_write {
 struct bytes_write {
     token src_loc_tk;
     std::string bytes;
-    // stored as a string constant, otherwise as a bytes constant
-    bool is_string{};
+    // the label of the read-only constant, "str" or "init"
+    std::string_view constant_kind;
 };
 
 // bytes that no listed value writes are zeroed, e.g. padding, unlisted fields
@@ -296,16 +300,12 @@ inline auto emit_write_plan(toc& tc, const size_t indent,
                 std::get_if<bytes_write>(&step.action),
             }) {
 
-            x.store_bytes(bytes->src_loc_tk, indent, bytes->bytes,
-                          part_dst.operand(), part_dst.type_ref().alignment(),
-                          [&] -> std::string {
-                              const std::string_view kind{
-                                  bytes->is_string ? "str" : "init",
-                              };
-
-                              return tc.add_read_only_constant(
-                                  kind, bytes->src_loc_tk, bytes->bytes);
-                          });
+            x.store_bytes(
+                bytes->src_loc_tk, indent, bytes->bytes, part_dst.operand(),
+                part_dst.type_ref().alignment(), [&] -> std::string {
+                    return tc.add_read_only_constant(
+                        bytes->constant_kind, bytes->src_loc_tk, bytes->bytes);
+                });
 
             continue;
         }
@@ -474,17 +474,6 @@ class expr_type final : public statement {
                      write_plan& plan) const -> void;
 
   private:
-    auto assert_call_type() const -> void;
-
-    // the call whose result is the value, null for a literal or a copy
-    [[nodiscard]] auto call_source() const -> const stmt_call* {
-        const std::unique_ptr<stmt_call>* const call{
-            std::get_if<std::unique_ptr<stmt_call>>(&value_),
-        };
-
-        return call != nullptr ? call->get() : nullptr;
-    }
-
     // the copy or the call that is the value, null for a literal
     [[nodiscard]] auto copy_or_call() const -> const statement*;
 

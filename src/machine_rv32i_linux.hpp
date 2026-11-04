@@ -39,22 +39,23 @@ class machine_rv32i_linux final : public machine_rv32i {
 
     // the system call ends the program with the exit code in 'a0'
     auto emit_exit_routine() -> void override {
-        assembler_rv32i& a{assembler()};
+        assembler_rv32i& output{assembler()};
 
-        a.label(0, exit_label_);
-        a.li(1, "a7", syscall_exit_);
-        a.ecall(1);
+        output.label(0, exit_label_);
+        output.li(1, "a7", syscall_exit_);
+        output.ecall(1);
     }
 
     auto emit_io_call(const size_t indent, const target_call function)
         -> void override {
 
-        assembler_rv32i& a{assembler()};
+        assembler_rv32i& output{assembler()};
 
-        a.li(indent, "a7",
-             function == target_call::read ? syscall_read_ : syscall_write_);
+        output.li(indent, "a7",
+                  function == target_call::read ? syscall_read_
+                                                : syscall_write_);
 
-        a.ecall(indent);
+        output.ecall(indent);
     }
 
     // the registers as 'machine_rv32i::emit_sector_routines' says; an
@@ -86,82 +87,82 @@ class machine_rv32i_linux final : public machine_rv32i {
             static_cast<int>(register_bits_) - sector_shift,
         };
 
-        assembler_rv32i& a{assembler()};
+        assembler_rv32i& output{assembler()};
 
         if (read_used) {
-            a.label(0, sector_read_label_);
-            a.li(1, "a5", syscall_pread_);
-            a.j(1, sector_transfer_label_);
+            output.label(0, sector_read_label_);
+            output.li(1, "a5", syscall_pread_);
+            output.j(1, sector_transfer_label_);
         }
 
         if (write_used) {
-            a.label(0, sector_write_label_);
-            a.li(1, "a5", syscall_pwrite_);
+            output.label(0, sector_write_label_);
+            output.li(1, "a5", syscall_pwrite_);
         }
 
         // 'a5' holds the system call, 'a6' the return address
-        a.label(0, sector_transfer_label_);
-        a.mv(1, "a6", "a7");
-        a.la(1, "a3", sd_card_label_);
-        a.lw(1, "a4", descriptor_offset, "a3");
-        a.bgez(1, "a4", "2f");
+        output.label(0, sector_transfer_label_);
+        output.mv(1, "a6", "a7");
+        output.la(1, "a3", sd_card_label_);
+        output.lw(1, "a4", descriptor_offset, "a3");
+        output.bgez(1, "a4", "2f");
 
         save_registers(1, saved);
 
-        a.li(1, "a0", current_directory);
-        a.la(1, "a1", sd_card_name_label_);
-        a.li(1, "a2", read_write);
-        a.li(1, "a3", 0);
-        a.li(1, "a7", syscall_openat_);
-        a.ecall(1);
-        a.bltz(1, "a0", sd_card_failure_.label);
-        a.la(1, "a3", sd_card_label_);
-        a.sw(1, "a0", descriptor_offset, "a3");
+        output.li(1, "a0", current_directory);
+        output.la(1, "a1", sd_card_name_label_);
+        output.li(1, "a2", read_write);
+        output.li(1, "a3", 0);
+        output.li(1, "a7", syscall_openat_);
+        output.ecall(1);
+        output.bltz(1, "a0", sd_card_failure_.label);
+        output.la(1, "a3", sd_card_label_);
+        output.sw(1, "a0", descriptor_offset, "a3");
         // 'llseek' writes the size of the file at 'a3'
-        a.li(1, "a1", 0);
-        a.li(1, "a2", 0);
-        a.li(1, "a4", seek_end);
-        a.li(1, "a7", syscall_llseek_);
-        a.ecall(1);
-        a.bnez(1, "a0", sd_card_failure_.label);
-        a.lw(1, "a4", 0, "a3");
-        a.lw(1, "a0", size_high_offset, "a3");
-        a.srli(1, "a4", "a4", sector_shift);
-        a.slli(1, "a1", "a0", high_shift);
-        a.or_op(1, "a4", "a4", "a1");
+        output.li(1, "a1", 0);
+        output.li(1, "a2", 0);
+        output.li(1, "a4", seek_end);
+        output.li(1, "a7", syscall_llseek_);
+        output.ecall(1);
+        output.bnez(1, "a0", sd_card_failure_.label);
+        output.lw(1, "a4", 0, "a3");
+        output.lw(1, "a0", size_high_offset, "a3");
+        output.srli(1, "a4", "a4", sector_shift);
+        output.slli(1, "a1", "a0", high_shift);
+        output.or_op(1, "a4", "a4", "a1");
         // an image of 2 TiB or more has more sectors than a sector number
         // reaches
-        a.srli(1, "a0", "a0", sector_shift);
-        a.beqz(1, "a0", "1f");
-        a.li(1, "a4", -1);
-        a.label(0, "1");
-        a.sw(1, "a4", count_offset, "a3");
+        output.srli(1, "a0", "a0", sector_shift);
+        output.beqz(1, "a0", "1f");
+        output.li(1, "a4", -1);
+        output.label(0, "1");
+        output.sw(1, "a4", count_offset, "a3");
         restore_saved_registers(1, saved);
-        a.label(0, "2");
-        a.lw(1, "a4", count_offset, "a3");
-        a.bgeu(1, "a0", "a4", sd_card_failure_.label);
+        output.label(0, "2");
+        output.lw(1, "a4", count_offset, "a3");
+        output.bgeu(1, "a0", "a4", sd_card_failure_.label);
         // 'a0' the descriptor, 'a3' and 'a4' the low and high word of the
         // offset
-        a.lw(1, "a7", descriptor_offset, "a3");
-        a.slli(1, "a3", "a0", sector_shift);
-        a.srli(1, "a4", "a0", high_shift);
-        a.mv(1, "a0", "a7");
-        a.mv(1, "a7", "a5");
-        a.ecall(1);
-        a.bne(1, "a0", "a2", sd_card_failure_.label);
-        a.jr(1, "a6");
+        output.lw(1, "a7", descriptor_offset, "a3");
+        output.slli(1, "a3", "a0", sector_shift);
+        output.srli(1, "a4", "a0", high_shift);
+        output.mv(1, "a0", "a7");
+        output.mv(1, "a7", "a5");
+        output.ecall(1);
+        output.bne(1, "a0", "a2", sd_card_failure_.label);
+        output.jr(1, "a6");
 
         comment({}, 0, sd_card_failure_.comment);
         emit_failure_handler(sd_card_failure_, false);
 
-        a.switch_section(section::data);
-        a.align(word_size_bytes_);
-        a.label(0, sd_card_label_);
-        a.data(word_size_bytes_, sd_card_words);
-        a.switch_section(section::rodata);
-        a.label(0, sd_card_name_label_);
-        a.string_data(options().sd_card_file_name);
-        a.data(1, name_end);
-        a.switch_section(section::text);
+        output.switch_section(section::data);
+        output.align(word_size_bytes_);
+        output.label(0, sd_card_label_);
+        output.data(word_size_bytes_, sd_card_words);
+        output.switch_section(section::rodata);
+        output.label(0, sd_card_name_label_);
+        output.string_data(options().sd_card_file_name);
+        output.data(1, name_end);
+        output.switch_section(section::text);
     }
 };

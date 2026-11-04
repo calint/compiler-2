@@ -67,9 +67,21 @@ class stmt_builtin_array_copy final : public statement {
 
         bulk_operands::argument_emitters emit{operands_, tc, indent, tok()};
 
+        // the size is known so the copy is unrolled when small and the width
+        // follows the alignment of both addresses
         if (count and not checks_overlap) {
-            compile_constant_count(tc, indent, element_type,
-                                   static_cast<size_t>(*count), emit);
+            const size_t size_bytes{
+                product_storage_size(element_type.size_bytes(),
+                                     static_cast<size_t>(*count)),
+            };
+
+            emit.first()(std::nullopt, [&](const operand& src) -> void {
+                emit.second()(
+                    std::nullopt, [&](const operand& dst_address) -> void {
+                        x.copy_block(tok(), indent, dst_address, src,
+                                     size_bytes, element_type.alignment());
+                    });
+            });
 
             return;
         }
@@ -90,27 +102,6 @@ class stmt_builtin_array_copy final : public statement {
     }
 
   private:
-    // the size is known so the copy is unrolled when small and the width
-    // follows the alignment of both addresses
-    auto compile_constant_count(toc& tc, const size_t indent,
-                                const type& element_type, const size_t count,
-                                bulk_operands::argument_emitters& emit) const
-        -> void {
-
-        const size_t size_bytes{
-            product_storage_size(element_type.size_bytes(), count),
-        };
-
-        emit.first()(std::nullopt, [&](const operand& src) -> void {
-            emit.second()(std::nullopt, [&](const operand& dst) -> void {
-                machine& x{tc.machine()};
-
-                x.copy_block(tok(), indent, dst, src, size_bytes,
-                             element_type.alignment());
-            });
-        });
-    }
-
     // the two arrays are in the same variable, e.g. 'array_copy(a[0], a[1], n)'
     [[nodiscard]] auto may_overlap(const toc& tc) const -> bool {
         const std::optional<storage_path> src{operands_.first().storage(tc)};

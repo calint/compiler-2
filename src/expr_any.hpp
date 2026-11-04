@@ -770,7 +770,7 @@ class expr_any final : public statement {
                     bytes_write{
                         .src_loc_tk{*list.open_brace_tk},
                         .bytes{std::move(*bytes)},
-                        .is_string{},
+                        .constant_kind{"init"},
                     },
                 },
                 .covered{
@@ -866,7 +866,7 @@ class expr_any final : public statement {
                     bytes_write{
                         .src_loc_tk{string_tk},
                         .bytes{std::move(bytes)},
-                        .is_string{true},
+                        .constant_kind{"str"},
                     },
                 },
                 .covered{at.path()},

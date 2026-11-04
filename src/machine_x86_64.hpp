@@ -67,13 +67,13 @@ class machine_x86_64 final : public machine {
 
     static constexpr size_t threshold_for_rep_stos_size_bytes_{32};
 
+    static constexpr size_t max_padding_gaps_zeroed_one_by_one_{4};
+
     // note: a gap takes one to three stores, the whole instance a few qword
     //       stores up to 32 B and beyond 'rep stosb' with its setup, four
     //       instructions; measured on 2500 random types with padding, from 5
     //       gaps the whole instance was never larger, at 4 gaps it was larger
     //       by one instruction in 32 of 128
-
-    static constexpr size_t max_padding_gaps_zeroed_one_by_one_{4};
 
     static constexpr size_t threshold_for_rep_movs_size_bytes_{16};
     // up to this many qwords single compares cost less than loading 'rcx'
@@ -1131,7 +1131,7 @@ class machine_x86_64 final : public machine {
             alloc_scratch_register(src_loc_tk, indent, default_type()),
         };
 
-        // index and count registers have the default type
+        // note: index and count registers have the default type
         assert(count.type_ref().size_bytes() == size_qword_ and
                range.checked.type_ref().size_bytes() == size_qword_);
 

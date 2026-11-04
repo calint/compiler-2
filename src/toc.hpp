@@ -3155,16 +3155,20 @@ class toc final {
         compile_state first_end{start};
         compile_state second_end{start};
 
-        const auto first = [&] -> void {
-            restore_compile_state(start);
-            emit_first();
-            first_end = compile_state_now();
+        const auto first{
+            [&] -> void {
+                restore_compile_state(start);
+                emit_first();
+                first_end = compile_state_now();
+            },
         };
 
-        const auto second = [&] -> void {
-            restore_compile_state(start);
-            emit_second();
-            second_end = compile_state_now();
+        const auto second{
+            [&] -> void {
+                restore_compile_state(start);
+                emit_second();
+                second_end = compile_state_now();
+            },
         };
 
         ::machine& x{machine()};

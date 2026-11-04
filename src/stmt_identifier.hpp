@@ -364,6 +364,7 @@ class stmt_identifier final : public statement {
             -> operand {
 
             toc& tc{tc_.get()};
+
             machine& x{tc.machine()};
 
             const operand address_register{
@@ -470,7 +471,7 @@ class stmt_identifier final : public statement {
     auto assert_not_narrowed(const toc& tc, const type& dst_type) const
         -> void override {
 
-        // instances are copied whole and cannot narrow
+        // note: instances are copied whole and cannot narrow
         assert(dst_type.is_builtin());
 
         const ident_info info{make_scalar_ident_info(tc, *this)};
@@ -616,26 +617,6 @@ class stmt_identifier final : public statement {
         throw compile_error{tok(),
                             std::format("result {} is read before it is set",
                                         in_quotes(tok().text()))};
-    }
-
-    // the address of this place from 'compile_lea': 'use' runs while the
-    // scratch registers that build it are still allocated, then they are
-    // freed
-    auto
-    compile_address(toc& tc, const size_t indent, const token& src_loc_tk,
-                    const lea_request& request,
-                    const std::function_ref<void(const operand&)> use) const
-        -> void {
-
-        machine& x{tc.machine()};
-
-        x.comment(tok(), indent, statement::trimmed_source(*this));
-
-        machine::held_registers held{x, src_loc_tk, indent};
-
-        const operand address{compile_lea(tc, indent, held, request)};
-
-        use(address);
     }
 
     // the memory operand of this identifier, e.g. 'rbp + 4 * r15 + 248',

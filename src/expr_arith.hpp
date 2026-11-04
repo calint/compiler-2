@@ -324,7 +324,7 @@ class arith_steps final {
 class expr_arith final : public statement {
     using step = arith_steps::step;
 
-    std::vector<std::unique_ptr<statement>> exprs_; // expression list
+    std::vector<std::unique_ptr<statement>> exprs_;
     // the operators between the elements
     std::vector<spelled_operator<arithmetic_operator>> ops_;
     // of '(a + b)', none when not enclosed
@@ -369,16 +369,17 @@ class expr_arith final : public statement {
         //
 
         // a list in parentheses, e.g. '-(a + b)'
-        [[nodiscard]] static auto
-        enclosed(unary_ops uops_in, const token& open_paren_tk_in,
-                 const type* const destination_type_in) -> options {
+        [[nodiscard]] static auto enclosed(unary_ops uops,
+                                           const token& open_paren_tk,
+                                           const type* const destination_type)
+            -> options {
 
             return {
-                .uops{std::move(uops_in)},
-                .open_paren_tk{open_paren_tk_in},
+                .uops{std::move(uops)},
+                .open_paren_tk{open_paren_tk},
                 .first_op_precedence{list_start_precedence},
                 .first_expression{},
-                .destination_type{destination_type_in},
+                .destination_type{destination_type},
             };
         }
 
@@ -387,7 +388,7 @@ class expr_arith final : public statement {
         // 'list_start_precedence' a zero value, e.g. '{}'
         [[nodiscard]] static auto implied(const uint8_t precedence,
                                           std::unique_ptr<statement> first,
-                                          const type* const destination_type_in)
+                                          const type* const destination_type)
             -> options {
 
             return {
@@ -395,12 +396,12 @@ class expr_arith final : public statement {
                 .open_paren_tk{},
                 .first_op_precedence{precedence},
                 .first_expression{std::move(first)},
-                .destination_type{destination_type_in},
+                .destination_type{destination_type},
             };
         }
 
         // a list read from its first element
-        [[nodiscard]] static auto plain(const type* const destination_type_in)
+        [[nodiscard]] static auto plain(const type* const destination_type)
             -> options {
 
             return {
@@ -408,7 +409,7 @@ class expr_arith final : public statement {
                 .open_paren_tk{},
                 .first_op_precedence{list_start_precedence},
                 .first_expression{},
-                .destination_type{destination_type_in},
+                .destination_type{destination_type},
             };
         }
     };
@@ -1379,23 +1380,25 @@ class expr_arith final : public statement {
                                const destination& dst, const operand& value,
                                const machine::factor_use use) -> void {
 
+        const operator_family family{traits_of(op).family};
+
         machine& x{tc.machine()};
 
-        if (arith_steps::is_additive(op)) {
+        if (family == operator_family::add_subtract) {
             x.add_subtract(src_loc_tk, indent, op, dst.operand(), value,
                            tc.overflow_options(dst));
 
             return;
         }
 
-        if (op == arithmetic_operator::multiply) {
+        if (family == operator_family::multiply) {
             x.multiply(src_loc_tk, indent, dst.operand(), value, use,
                        tc.overflow_options(dst));
 
             return;
         }
 
-        if (is_division(op)) {
+        if (family == operator_family::divide) {
             // note: a constant divisor of 0 is rejected at compile time, so
             //       only -1 can fail, with the minimum as the dividend
 
@@ -1411,16 +1414,14 @@ class expr_arith final : public statement {
             return;
         }
 
-        if (is_shift(op)) {
+        if (family == operator_family::shift) {
             x.shift(src_loc_tk, indent, op, dst.operand(), value,
                     tc.checks().shift_options());
 
             return;
         }
 
-        assert(op == arithmetic_operator::bit_and or
-               op == arithmetic_operator::bit_or or
-               op == arithmetic_operator::bit_xor);
+        assert(family == operator_family::bitwise);
 
         x.bitwise(src_loc_tk, indent, op, dst.operand(), value);
     }

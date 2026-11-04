@@ -358,7 +358,8 @@ class stmt_builtin_io final : public statement {
         }
     }
 
-    // the array the call transfers, a path since 'assert_buffer_path'
+    // the array the call transfers, read as an array argument by
+    // 'builtin_arguments'
     [[nodiscard]] auto buffer_path() const -> const stmt_identifier& {
         return *args_.at(buffer_index_).bare_path();
     }

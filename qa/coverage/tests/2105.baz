@@ -1,0 +1,15 @@
+# a result written in parts out of order is set when every part is: the
+# ranges merge before and after the new one
+
+type r {a, b, c}
+
+func f() res r {
+    res.c = 1
+    res.a = 2
+    res.b = 3
+}
+
+func main() {
+    var x = f()
+    exit(x.a)
+}

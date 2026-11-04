@@ -42,40 +42,40 @@ class machine_rv32i_qemu final : public machine_rv32i_bare_metal {
 
     // ends qemu with the exit code 'a0' as its status
     auto emit_exit_routine() -> void override {
-        assembler_rv32i& a{assembler()};
+        assembler_rv32i& output{assembler()};
 
-        a.label(0, exit_label_);
-        a.slli(1, "a0", "a0", finisher_code_shift_);
-        a.li(1, "t0", finisher_pass_);
-        a.or_op(1, "a0", "a0", "t0");
-        a.lui(1, "t0", test_finisher_upper_);
-        a.sw(1, "a0", 0, "t0");
+        output.label(0, exit_label_);
+        output.slli(1, "a0", "a0", finisher_code_shift_);
+        output.li(1, "t0", finisher_pass_);
+        output.or_op(1, "a0", "a0", "t0");
+        output.lui(1, "t0", test_finisher_upper_);
+        output.sw(1, "a0", 0, "t0");
         // qemu shuts down after the store completes
-        a.label(0, "1");
-        a.j(1, "1b");
+        output.label(0, "1");
+        output.j(1, "1b");
     }
 
     // the stack follows the variables, see 'emit_target_setup'
     auto emit_stack_limit_load(const size_t indent, const std::string_view reg)
         -> void override {
 
-        assembler_rv32i& a{assembler()};
+        assembler_rv32i& output{assembler()};
 
-        a.la(indent, reg, variables_end_label_);
+        output.la(indent, reg, variables_end_label_);
     }
 
     // no operating system sets up a stack, it follows the variables
     auto emit_target_setup() -> void override {
-        assembler_rv32i& a{assembler()};
+        assembler_rv32i& output{assembler()};
 
-        a.comment(0, std::format("load stack pointer to {} + {} B",
-                                 in_quotes(variables_end_label_),
-                                 stack_size_bytes()));
+        output.comment(0, std::format("load stack pointer to {} + {} B",
+                                      in_quotes(variables_end_label_),
+                                      stack_size_bytes()));
 
-        a.la(0, "sp", variables_end_label_);
-        a.li(0, "t0", stack_size_bytes());
-        a.add(0, "sp", "sp", "t0");
-        a.add_separator_newline();
+        output.la(0, "sp", variables_end_label_);
+        output.li(0, "t0", stack_size_bytes());
+        output.add(0, "sp", "sp", "t0");
+        output.add_separator_newline();
     }
 
   private:
@@ -84,29 +84,29 @@ class machine_rv32i_qemu final : public machine_rv32i_bare_metal {
     //
 
     auto emit_receive_byte() -> void override {
-        assembler_rv32i& a{assembler()};
+        assembler_rv32i& output{assembler()};
 
-        a.label(0, "2");
-        a.lbu(1, "a4", line_status_offset_, "a3");
-        a.andi(1, "a4", "a4", line_status_data_ready_);
-        a.beqz(1, "a4", "2b");
-        a.lbu(1, "a4", 0, "a3");
+        output.label(0, "2");
+        output.lbu(1, "a4", line_status_offset_, "a3");
+        output.andi(1, "a4", "a4", line_status_data_ready_);
+        output.beqz(1, "a4", "2b");
+        output.lbu(1, "a4", 0, "a3");
     }
 
     auto emit_transmit_byte() -> void override {
-        assembler_rv32i& a{assembler()};
+        assembler_rv32i& output{assembler()};
 
-        a.label(0, "2");
-        a.lbu(1, "a4", line_status_offset_, "a3");
-        a.andi(1, "a4", "a4", line_status_transmit_empty_);
-        a.beqz(1, "a4", "2b");
-        a.lbu(1, "a4", 0, "a5");
-        a.sb(1, "a4", 0, "a3");
+        output.label(0, "2");
+        output.lbu(1, "a4", line_status_offset_, "a3");
+        output.andi(1, "a4", "a4", line_status_transmit_empty_);
+        output.beqz(1, "a4", "2b");
+        output.lbu(1, "a4", 0, "a5");
+        output.sb(1, "a4", 0, "a3");
     }
 
     auto emit_uart_setup() -> void override {
-        assembler_rv32i& a{assembler()};
+        assembler_rv32i& output{assembler()};
 
-        a.lui(1, "a3", uart_upper_);
+        output.lui(1, "a3", uart_upper_);
     }
 };

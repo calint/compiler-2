@@ -821,7 +821,7 @@ class machine_rv32i : public machine {
                       const operand& rhs, const equality_request& request)
         -> void override {
 
-        // compared sizes are limited by the variables that hold the data
+        // note: compared sizes are limited by the variables that hold the data
         assert(size_bytes <= std::numeric_limits<uint32_t>::max());
 
         // unrolled accesses can follow where each address is within its word
@@ -1147,8 +1147,9 @@ class machine_rv32i : public machine {
                            const bounds_range& range, const bounds_plan& plan)
         -> void override {
 
-        // array lengths are limited by the variables that hold the arrays, the
-        // line is loaded with 'li' into a 32-bit register
+        // note: array lengths are limited by the variables that hold the
+        //       arrays, the line is loaded with 'li' into a 32-bit register
+
         assert(range.array_count <= std::numeric_limits<uint32_t>::max() and
                src_loc_tk.at_line() <= std::numeric_limits<uint32_t>::max());
 
@@ -1400,8 +1401,10 @@ class machine_rv32i : public machine {
     auto call_io_routine(const size_t indent, const std::string_view label)
         -> void {
 
-        // the clobbered registers follow 'a1' and 'a2', which the call needs,
-        // in the allocation order, so they are free whenever the call is made
+        // note: the clobbered registers follow 'a1' and 'a2', which the call
+        //       needs, in the allocation order, so they are free whenever the
+        //       call is made
+
         assert(std::ranges::none_of(
             io_routine_clobbered_, [&](const std::string_view name) -> bool {
                 return registers().is_unavailable(register_mask(name));
@@ -1673,8 +1676,9 @@ class machine_rv32i : public machine {
             protect_register(name);
         }
 
-        // variables and frames are based on 's0' and 's1', and the save area
-        // moves 'sp'
+        // note: variables and frames are based on 's0' and 's1', and the save
+        //       area moves 'sp'
+
         assert(not dst.uses_register("sp"));
         assert(not source.uses_register("sp"));
 
@@ -2372,11 +2376,7 @@ class machine_rv32i : public machine {
                 alloc_scratch_register(src_loc_tk, indent, default_type()),
             };
 
-            if (constant.has_value()) {
-                assembler_.li(indent, second.register_name(), *constant);
-            } else {
-                copy_value(src_loc_tk, indent, second, src);
-            }
+            load_second_operand(src_loc_tk, indent, second, src, constant);
 
             emit_checked_with_one_register(src_loc_tk, indent, instruction,
                                            second, value, constant);
@@ -2462,7 +2462,7 @@ class machine_rv32i : public machine {
                                 const operand& left, const operand& right,
                                 const comparison_action& action) -> void {
 
-        // a comparison without a boolean result is a branch
+        // note: a comparison without a boolean result is a branch
         assert(not action.target.empty());
 
         const bool inverted{not action.branch_on_true};
@@ -2834,8 +2834,9 @@ class machine_rv32i : public machine {
             return result;
         }
 
-        // an operand that is not tested directly is in a register other than
-        // 'zero'
+        // note: an operand that is not tested directly is in a register other
+        //       than 'zero'
+
         assert(left.register_name() != "zero" and
                right.register_name() != "zero");
 
@@ -3023,6 +3024,20 @@ class machine_rv32i : public machine {
         address_of(src_loc_tk, indent, pointer, address);
 
         return pointer;
+    }
+
+    // the second operand of a checked sum or difference into the register
+    // 'dst', the immediate 'constant' when it is known
+    auto load_second_operand(const token& src_loc_tk, const size_t indent,
+                             const operand& dst, const operand& src,
+                             const std::optional<int32_t> constant) -> void {
+
+        if (constant.has_value()) {
+            assembler_.li(indent, dst.register_name(), *constant);
+            return;
+        }
+
+        copy_value(src_loc_tk, indent, dst, src);
     }
 
     // lower base + index * scale + displacement to register + signed 12-bit
@@ -3916,7 +3931,7 @@ class machine_rv32i : public machine {
 
         const std::string& name{result.register_name()};
 
-        // 'zero' discards writes and 'sp' holds the stack
+        // note: 'zero' discards writes and 'sp' holds the stack
         assert(name != "zero" and name != "sp");
 
         // writing the left value into one of the operands' registers would
@@ -3937,7 +3952,7 @@ class machine_rv32i : public machine {
 
         const std::string& dst_name{dst.register_name()};
 
-        // zero discards writes, so it cannot hold the computed address
+        // note: zero discards writes, so it cannot hold the computed address
         assert(dst_name != "zero");
 
         const bool is_base{dst_name == address.base_register()};
@@ -4272,7 +4287,9 @@ class machine_rv32i : public machine {
 
         const size_t after_head_size_bytes{size_bytes - start.head_size_bytes};
 
-        // a loop is only chosen above 16 bytes, so there is more than one chunk
+        // note: a loop is only chosen above 'copy_unroll_threshold_bytes_', so
+        //       there is more than one chunk
+
         assert(after_head_size_bytes / start.width > 1);
 
         return {
@@ -4487,7 +4504,7 @@ class machine_rv32i : public machine {
         assert(address.index_register().empty() or
                is_register(address.index_register()));
 
-        // an element size beyond the address range cannot be allocated
+        // note: an element size beyond the address range cannot be allocated
         assert(address.index_register().empty() or
                address.scale() <= std::numeric_limits<uint32_t>::max());
 

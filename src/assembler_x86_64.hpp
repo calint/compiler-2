@@ -337,8 +337,9 @@ class assembler_x86_64 final : public assembler {
     [[nodiscard]] static auto address_text(const memory& address)
         -> std::string {
 
-        // a symbol is addressed relative to 'rip', without registers, any
-        // other address from a base register
+        // note: a symbol is addressed relative to 'rip', without registers, any
+        //       other address from a base register
+
         assert(address.symbol.empty() != address.base.empty());
         assert(address.symbol.empty() or address.index.empty());
 

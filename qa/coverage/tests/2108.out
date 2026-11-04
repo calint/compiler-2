@@ -1,0 +1,4 @@
+
+2108.baz:6:23: expected '}' to close the value of type 'point'
+    var p = point{1, 2
+                      ^

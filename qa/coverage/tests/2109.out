@@ -1,0 +1,4 @@
+
+2109.baz:6:9: expected ',' before argument 2 ('y')
+    g(1 }, 2)
+        ^

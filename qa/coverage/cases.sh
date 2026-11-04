@@ -6675,3 +6675,17 @@ SRC=2103 && COMPERR
 
 # an array literal tells no type argument
 SRC=2104 && COMPERR
+
+# a result written in parts: set when every part is, out of order; a gap is
+# not set
+SRC=2105 && EXP=2 && RUN
+SRC=2106 && COMPERR
+
+# a built-in without a result tells no type argument
+SRC=2107 && COMPERR
+
+# an instance literal that the source ends inside of
+SRC=2108 && COMPERR
+
+# a stray closer inside an argument before a deducing one
+SRC=2109 && COMPERR

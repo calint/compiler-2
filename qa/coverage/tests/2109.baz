@@ -1,0 +1,7 @@
+# a stray closer inside an argument before a deducing one
+
+func g<T type>(x i8, y T) {}
+
+func main() {
+    g(1 }, 2)
+}

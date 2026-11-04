@@ -58,7 +58,7 @@ class tokenizer final {
             return std::ranges::contains(operators_, spelling.text);
         }));
     static_assert(std::ranges::all_of(
-        comparison_spellings, [](const comparison_spelling& spelling) -> bool {
+        comparison_operators, [](const comparison_traits& spelling) -> bool {
             return std::ranges::contains(operators_, spelling.text);
         }));
 
@@ -320,12 +320,11 @@ class tokenizer final {
     }
 
     // skips up to and including the ')' that closes a '(' that is already read
-    // e.g. 'b, f(c)) + d', the ')' before ' + d'
+    // e.g. 'b, f(c)) + d', the ')' before ' + d'; stops at the end of the
+    // source or at a closer that does not close the last open bracket
     auto skip_to_close_paren() -> void {
-        std::ignore = skip_to_unnested(")");
-
-        if (not is_eos()) {
-            skip_token();
+        if (skip_to_unnested(")")) {
+            std::ignore = seen_char_token(')');
         }
     }
 
