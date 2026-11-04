@@ -95,8 +95,8 @@ class expr_any final : public statement {
         }
     };
 
-    // e.g. 'x + 1', 'a < b' or 'point{1, 2}'; where the destination is an
-    // array, the array copied whole as bytes, e.g. the 'a' of 'var b = a'
+    // a value or an instance literal; where the destination is an array, the
+    // array copied whole as bytes, e.g. the 'a' of 'var b = a'
     struct single_value {
         expr_variant value;
     };
@@ -270,9 +270,9 @@ class expr_any final : public statement {
         return array_count_;
     }
 
-    // where an array is written: its element type, e.g. 'i8' of 'i8[]{1}', its
-    // '[' when the type is the default one, its '{' when the destination gives
-    // the type, else its value, e.g. a string
+    // where an array is written: its element type, its '[' when the type is
+    // the default one, its '{' when the destination gives the type, else its
+    // value, e.g. a string
     [[nodiscard]] auto array_token() const -> const token& {
         if (const array_prefix* const prefix{array_prefix_of()}) {
             if (prefix->element_type_tk) {
@@ -918,9 +918,9 @@ class expr_any final : public statement {
     static auto assert_not_aggregate(const toc& tc, tokenizer& tz,
                                      const type& tp, const token& tk) -> void {
 
-        // e.g. 'x = point' or 'x = point{1, 2}' for an 'i8' 'x', as 'x = p' of
-        // a 'point' 'p'; a condition may compare an instance literal, which the
-        // comparison rejects, e.g. 'b = point{1, 2} == p'
+        // a record or an instance literal, e.g. 'x = p', 'x = point' or
+        // 'x = point{1, 2}' for an 'i8' 'x' and a 'point' 'p'; a condition may
+        // compare an instance literal, which the comparison rejects
         const term_kind tm{classify_term(tc, tk, tz)};
 
         if (is_record_value(tm, tz) or
@@ -929,9 +929,9 @@ class expr_any final : public statement {
             throw_type_mismatch(tk, tp.name(), tc.get_type_or_throw(tk).name());
         }
 
-        // e.g. 'x = i8[2]{1, 2}' or 'x = [2]{1, 2}' for an 'i8' 'x', like an
-        // instance literal; an operand or a compared literal is rejected as
-        // an operand, e.g. 'b = [2]{1, 2} == a'
+        // an array literal, e.g. 'x = i8[2]{1, 2}' or 'x = [2]{1, 2}' for an
+        // 'i8' 'x', like an instance literal; an operand or a compared literal
+        // is rejected as an operand
         const bool is_array_literal{
             tm == term_kind::array_literal or
                 (tk.is_none() and is_default_array_literal(tz)),
@@ -1213,10 +1213,10 @@ class expr_any final : public statement {
     }
 };
 
-// e.g. 'i8[-]' is not an expression and 'i8[p]' with 'p' a parameter is not a
-// constant; the size is parsed like an index, but it counts storage and is no
-// value of the program, so it folds at 'i64' on every target, e.g. 'dat d =
-// i8[3000000000]' on rv32i, which the address range limits
+// the size is a constant or none; it is parsed like an index, but it counts
+// storage and is no value of the program, so it folds at 'i64' on every
+// target, e.g. 'dat d = i8[3000000000]' on rv32i, which the address range
+// limits
 inline stmt_array_size::stmt_array_size(toc& tc, tokenizer& tz)
     : statement{tz.next_whitespace_token()} {
 

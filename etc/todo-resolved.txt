@@ -1,6 +1,33 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] hard: design review series 2, round 72 (2026-11-04, user: continue
+    until no more improvements are found; S the comments with more than one
+    'e.g.' (round 71 R4), T the references that rounds 67 to 71 left stale)
+    => done (2026-11-04): comments only, listings and errors of every test
+       equal on both targets; S 39 function, member and statement comments in
+       21 files keep the one example that shows what the name cannot, a list
+       of cases keeps one example per case, class and file headers and the
+       label map of 'toc::call_path_at' are left; T README 1.4 item 1, 1.5
+       item 1 and the end of 4.1 name the noinline body without array
+       parameters that is checked as it is emitted (round 68 F1), 1.1 step
+       10 where 'builtin_arguments' is, three lines wrapped; 'check_skipped'
+       names that body too; 'visit_reads' says 'index_only_place'; the
+       'comparison_traits' loops name their variable 'traits'; the rv32i map
+       names 'emit_multiply'; four comments of 'inline_call' and 'stmt_call'
+       say "the check of a body that takes from a call", where
+       'check_recursion' runs; etc/todo.txt 'inline_call::
+       compile_with_address_choice', 'read_open_paren', 'store_bytes',
+       'add_read_only_constant'; the coverage item drops 'end_dry_run' and
+       'registers_of', both removed (2026-10-26, 2026-10-06); the lambda
+       consistency item is done (round 71 R5)
+[x] easy: consistency topic: lambdas are declared with '=' in some places and
+    with brace init in others: '=' in 'toc.hpp', 'statement.hpp',
+    'stmt_call.hpp', 'machine_rv32i.hpp', 'assembler_rv32i.hpp'; braces in
+    'stmt_builtin_io.hpp', 'stmt_call.hpp', 'expr_arith.hpp' (review round 3,
+    G2-11)
+    => done (2026-11-04): design review series 2, round 71 R5, every lambda
+       brace-initialized
 [x] hard: design review series 2, round 71 (2026-11-04, user: continue
     until no more improvements are found; P the vocabulary and parse
     headers, Q values written in parts, the variable statements and the

@@ -109,9 +109,8 @@ throw_known_literal_type(const tokenizer& tz, const token& type_tk,
     throw_known_type(type_tk, type_name, is_zero ? "{}" : "{...}");
 }
 
-// an array literal where a single value of 'tp' is expected, e.g. the
-// 'i8[2]{1, 2}' of 'x = i8[2]{1, 2}'; 'element_tk' is its element type, none
-// for the default type, e.g. the '[2]' of 'p = [2]'
+// an array literal where a single value of 'tp' is expected; 'element_tk' is
+// its element type, none for the default type, e.g. the '[2]' of 'p = [2]'
 [[noreturn]] inline auto throw_array_literal_mismatch(const toc& tc,
                                                       const token& element_tk,
                                                       const type& tp) -> void {
@@ -413,7 +412,7 @@ class expr_path final : public statement {
 // zero value, a copy of a name or a call
 class expr_type final : public statement {
     // the fields of a literal, e.g. '{1, 2}' of 'point{1, 2}', none for the
-    // type name alone, e.g. 'point'
+    // type name alone
     struct field_list {
         token open_brace_tk;
         std::vector<std::unique_ptr<expr_any>> exprs;

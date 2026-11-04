@@ -45,8 +45,7 @@
 // has no storage and is reached under its own name, a register the compiler
 // allocated under none; storage by the bytes a read reaches under any name,
 // e.g. the 'e' of 'a[0] = 7 - e' in a 'foo a', but not the 'p.y' of
-// 'p.x = p.y + 1', and by the storage the body of a call reaches, e.g. 'gw()'
-// writing 'gx' in 'gx = k + gw()'
+// 'p.x = p.y + 1', and by the storage the body of a call reaches
 [[nodiscard]] inline auto reaches_destination(const toc& tc,
                                               const statement& st,
                                               const destination& dst) -> bool {
@@ -99,8 +98,8 @@ inline auto assert_not_read_before(const toc& tc, const node_operand& earlier,
 // used, so a name that a later operand of the same list may write would read
 // the written value; such a list is rejected, e.g. the 'i' of 'f(arr[i],
 // h(i))' or of 'i == h(i)' with 'h' writing 'i'; 'node' lists its operands by
-// 'visit_operands', a 'statement' or a part of one, e.g. 'bulk_operands';
-// 'operand' names an operand of the list in the message, e.g. "argument"
+// 'visit_operands', a 'statement' or a part of one; 'operand' is the word the
+// message uses for an operand of the list
 // note: a call among the earlier operands has run before the later ones,
 //       only the names those read are checked
 inline auto assert_not_written_later(const toc& tc, const auto& node,

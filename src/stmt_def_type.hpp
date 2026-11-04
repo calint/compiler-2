@@ -47,9 +47,9 @@ class type_fields final {
     token close_brace_tk_;
 
   public:
-    // e.g. '{ x, y }' of 'type point { x, y }', 'name_tk' names the type the
-    // fields make, 'definition_tk' the definition they are read from, e.g.
-    // 'str' and 'text' of 'type str = text<8>'
+    // 'name_tk' names the type the fields make, 'definition_tk' the
+    // definition they are read from, e.g. 'str' and 'text' of
+    // 'type str = text<8>'
     // note: the callers dispatch on the '{'
     type_fields(toc& tc, tokenizer& tz, const token& name_tk,
                 const token& definition_tk)
@@ -471,9 +471,9 @@ class type_instantiator final {
     // statics
     //
 
-    // e.g. 'list<i8, 8>' for 'text<8>' with 'type text<size> = list<i8, size>',
-    // the argument tokens of the base name the parameters of 'instance', e.g.
-    // 'size' of 'list<i8, size>' is 8
+    // the base of 'instance', its argument tokens naming the parameters of
+    // 'instance', e.g. 'list<i8, 8>' for 'text<8>' with
+    // 'type text<size> = list<i8, size>'
     [[nodiscard]] static auto
     base_instance(toc& tc, const generic_type_instance& instance)
         -> generic_type_instance {

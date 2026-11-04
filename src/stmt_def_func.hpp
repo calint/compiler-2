@@ -74,13 +74,13 @@ struct func_head {
     token start_tk;
     std::optional<token> noinline_tk;
     std::optional<token> mut_tk;
-    // e.g. 'f', or the receiver type of a method, e.g. 'list' of 'list.add'
+    // the name, or the receiver type of a method, e.g. 'list' of 'list.add'
     token name_tk;
     // none for a function
     std::optional<method_part> method;
 
-    // e.g. 'f' or 'list.add', the receiver named as the type it is bound to,
-    // e.g. 'str.print' for 'text.print' when 'text' names 'str'
+    // the name with the receiver of a method, named as the type it is bound
+    // to, e.g. 'str.print' for 'text.print' when 'text' names 'str'
     std::string name;
     // e.g. 'T' of '<T type>'
     std::vector<token> type_param_tks;
@@ -373,9 +373,8 @@ struct func_result {
         };
 
         // a keyword is read as a result name only before a '{' or a known
-        // type, e.g. the 'true' of 'func f() true int {'; before another name
-        // it starts what follows a function that lacks its body, e.g. the
-        // 'type' of 'type p {x}'
+        // type; before another name it starts what follows a function that
+        // lacks its body, e.g. the 'type' of 'type p {x}'
         const bool has_type{
             tc.types().has(type_tk.text()) or
                 (is_type_before_body and not is_keyword),
@@ -741,7 +740,7 @@ class stmt_def_func final : public statement {
         return not head_.noinline_tk;
     }
 
-    // e.g. 'f', 'list.add', or the name of an instance, e.g.
+    // the name of the function or method, or that of an instance, e.g.
     // 'tokenizer.to<name>'
     [[nodiscard]] auto name() const -> std::string_view {
         return instance_ ? instance_->name : head_.name;
@@ -1264,9 +1263,9 @@ class func_instantiator final {
     // statics
     //
 
-    // records a generic function for its calls, e.g. 'func f<T type>(x T)'; a
-    // method of an instance of a generic type keeps that instance, e.g.
-    // 'str.append' of 'func text.append<T type>(s T)' keeps 'text<8>';
+    // records a generic function for its calls; a method of an instance of a
+    // generic type keeps that instance, e.g. 'str.append' of
+    // 'func text.append<T type>(s T)' keeps 'text<8>';
     // 'definition' is the last one the body sees, that of the generic method
     // for a method of a generic type
     static auto define_func(toc& tc, const token& func_tk,
@@ -1484,8 +1483,7 @@ class func_instantiator final {
 
     // e.g. 'str.print' of 'func text.print()', 'text' names 'str' while the
     // definition is parsed again; a method with type parameters of its own is
-    // a generic function of the instance, e.g. 'str.append' of
-    // 'func text.append<T type>(s T)'
+    // a generic function of the instance
     static auto parse_method_instance(toc& tc,
                                       const generic_method_info& method,
                                       const generic_type_instance& receiver)

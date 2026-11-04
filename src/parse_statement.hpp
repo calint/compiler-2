@@ -56,9 +56,8 @@
 // where a call of a built-in is parsed: in a value, or alone as a statement
 enum class builtin_place : uint8_t { value, statement };
 
-// a call of the built-in at 'tk', classified as 'tm', e.g. 'i8(x)',
-// 'array_copy(a, b, 4)' or 'read(0, b, n)', null when 'tk' names none; the
-// catalog says where it may stand, e.g. 'exit' has no value and
+// a call of the built-in at 'tk', classified as 'tm', null when 'tk' names
+// none; the catalog says where it may stand, e.g. 'exit' has no value and
 // 'arrays_equal' is no statement; 'uops' are taken only by a statement made
 inline auto parse_builtin(toc& tc, tokenizer& tz, const token& tk,
                           const term_kind tm, unary_ops& uops,
@@ -309,8 +308,7 @@ inline auto parse_call_or_identifier(toc& tc, tokenizer& tz, const token& tk,
 }
 
 // a statement that starts with a name: a call as in an expression, e.g.
-// 'f(x)', 'point.at(1, 2)' or 'lst.add(x)', otherwise an assignment, e.g.
-// 'p1 = p2'
+// 'f(x)', 'point.at(1, 2)' or 'lst.add(x)', otherwise an assignment
 inline auto parse_name_statement(toc& tc, tokenizer& tz, const token tk,
                                  const term_kind tm)
     -> std::unique_ptr<statement> {

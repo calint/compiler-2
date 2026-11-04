@@ -1101,8 +1101,8 @@ class machine {
                 address_text(*address));
     }
 
-    // e.g. 'b: bag (address @ [rbx])', the slot holds the address of the
-    // variable, e.g. a parameter of a noinline body
+    // the slot holds the address of the variable, e.g. a parameter of a
+    // noinline body
     auto comment_held_address(const token& src_loc_tk, const size_t indent,
                               const std::string_view text,
                               const operand& address) -> void {

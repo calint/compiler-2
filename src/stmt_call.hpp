@@ -157,8 +157,8 @@ struct generic_call {
     //
 
     // 'tz' is after the name and before the '<' or the '('
-    // note: 'name_tk' is the name as written, e.g. 'to', and 'generic_name'
-    //       the generic function, e.g. 'tokenizer.to'
+    // note: 'name_tk' is the name as written and 'generic_name' the generic
+    //       function, e.g. 'to' and 'tokenizer.to'
     [[nodiscard]] static auto
     parse(toc& tc, tokenizer& tz, const token& name_tk,
           const std::string_view generic_name, const type* const expected_type)
@@ -249,10 +249,9 @@ struct generic_call {
     // the argument at 'index' parsed without a type, as the initializer of a
     // 'var' is or an array argument of a call, so a mistake in it is reported
     // as in a call without type parameters; a value parses and tells no type,
-    // e.g. 'true' or 'x + 1', nor does a literal that takes its type from the
-    // parameter, e.g. '{1, 2}'; a token after it that is not a delimiter is
-    // reported as there too, e.g. the '2' of 'f(1 2)'. 'tz' is after the '('
-    // and is a copy
+    // nor does a literal that takes its type from the parameter, e.g.
+    // '{1, 2}'; a token after it that is not a delimiter is reported as there
+    // too. 'tz' is after the '(' and is a copy
     // note: the parse records nothing that outlives the error that follows
     static auto assert_argument_parses(
         toc& tc, tokenizer tz,
@@ -284,7 +283,7 @@ struct generic_call {
     // the arguments up to the one at 'index' are there, reported as in a
     // call without type parameters: the first missing one, e.g. 'b' of 'f(1)'
     // for 'func f<T type>(a, b, x T)', or a token after the argument where
-    // the list ends, e.g. the '2' of 'f(1 2)'. 'tz' is after the '('
+    // the list ends. 'tz' is after the '('
     static auto assert_argument_present(
         toc& tc, const tokenizer& tz,
         const std::span<const generic_signature_param> params,
@@ -763,7 +762,7 @@ struct call_site {
 // the steps:
 //
 //   0. 'compile_within_limits': the nesting limits ('call_limits'), or
-//      'check_recursion' in the check of a body without its calls
+//      'check_recursion' in the check of a body that takes from a call
 //   1. 'compile': a result narrower than the operand it widens into is
 //      computed in a register and widened ('compile_widened'), a block holds
 //      the temporaries of the call
@@ -788,7 +787,7 @@ class inline_call final {
         assert(call_.func->is_inlined());
     }
 
-    // a recursion in the check of a body without its calls, in a dry run
+    // a recursion in the check of a body that takes from a call, in a dry run
     // with its deeper levels: a value or an array length the check does not
     // know may not let it end, so a limit ('compile_error::is_limit') ends
     // the recursion, not the check (README 1.5 item 2):
@@ -947,8 +946,8 @@ class inline_call final {
     }
 
     // the arguments bound as for the body, which is not compiled, e.g. an
-    // inlined recursion that the check of a body without its calls does not
-    // expand ('inline_call::check_recursion')
+    // inlined recursion that the check of a body that takes from a call does
+    // not expand ('inline_call::check_recursion')
     auto compile_arguments(toc& tc, const size_t indent) const -> void {
         // a block holds the temporaries of the call
         std::optional<toc::scope_entry> temporaries;
@@ -1807,8 +1806,8 @@ class builtin_arguments final {
 //
 // compiling, in 'compile': the checks made before the inlined and noinline
 // paths split ('assert_call_accepted'), then 'inline_call' or 'noinline_call'
-// compiles the call, an inlined recursion in the check of a body without its
-// calls through 'inline_call::check_recursion'
+// compiles the call, an inlined recursion in the check of a body that takes
+// from a call through 'inline_call::check_recursion'
 class stmt_call final : public statement {
     // e.g. the '.' in 'lst.add(x)', the receiver is the first argument;
     // none when the call is not a method call
@@ -1846,9 +1845,9 @@ class stmt_call final : public statement {
     };
 
   public:
-    // 'tz' is after the name, e.g. 'f' of 'f(x)' or 'show' of 'show<name>(x)'.
-    // 'expected_type' is the type the call is assigned to, it tells a type
-    // parameter that is the result, e.g. 'x.f = tz.to()'
+    // 'tz' is after the name, before its '<' or '('. 'expected_type' is the
+    // type the call is assigned to, it tells a type parameter that is the
+    // result, e.g. 'x.f = tz.to()'
     stmt_call(toc& tc, unary_ops uops, const token tk, tokenizer& tz,
               const type* const expected_type)
         : statement{tk, std::move(uops)} {

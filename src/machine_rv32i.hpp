@@ -39,8 +39,8 @@
 //   addresses    'lower_address', 'lower_address_offset': an operand into a
 //                base register and a 12-bit offset
 //   operations   'binary_operation', 'emit_binary_instruction',
-//                'multiply_by_shifts_and_adds' (signed digits),
-//                'shift_by_constant', 'shift_by_register'
+//                'emit_multiply' through 'multiply_by_shifts_and_adds'
+//                (signed digits), 'shift_by_constant', 'shift_by_register'
 //   helpers      '.Lbaz_multiply', '.Lbaz_multiply_checked' and
 //                '.Lbaz_divide' for 'mul' and 'div',
 //                'helper_specs_', 'call_arithmetic_helper',

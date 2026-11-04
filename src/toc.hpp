@@ -3031,10 +3031,10 @@ class toc final {
 
     // code that the compile skips, e.g. a branch that folds to false or the
     // code after a statement that leaves on every path, is compiled for its
-    // checks where what it folds is no constant of a call: in 'main' and in
-    // the body check of a function, and in the initializer of a global, which
-    // takes nothing from a call either; there every compile rule holds in all
-    // code
+    // checks where what it folds is no constant of a call: in 'main', in a
+    // noinline body without array parameters, in the body check of a function
+    // and in the initializer of a global, which takes nothing from a call
+    // either; there every compile rule holds in all code
     auto check_skipped(const std::function_ref<void()> compile) -> void {
         assert(is_compiling_);
 
@@ -3612,7 +3612,7 @@ class toc final {
 //
 
 // a generic argument of the wrong kind, e.g. a constant for a type
-// parameter; 'got' is what was given, e.g. "a string"
+// parameter; 'got' is what was given
 [[noreturn]] inline auto throw_generic_arg_mismatch(
     const token& arg_tk, const std::string_view generic_name,
     const std::string_view param_name, const std::string_view expected,

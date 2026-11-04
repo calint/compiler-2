@@ -331,10 +331,10 @@ class expr_arith final : public statement {
     std::optional<token> open_paren_tk_;
     std::optional<token> close_paren_tk_;
 
-    // the first element is an enclosed list, e.g. the '(a + b)' of
-    // '(a + b) * c'; a first element given by the caller keeps it false: the
-    // element before a higher-precedence operator, which makes two or more
-    // elements, or a zero value, e.g. '{}', which is never enclosed
+    // the first element is an enclosed list; a first element given by the
+    // caller keeps it false: the element before a higher-precedence operator,
+    // which makes two or more elements, or a zero value, e.g. '{}', which is
+    // never enclosed
     bool is_first_enclosed_{};
 
     // an element of the list, 'is_enclosed' for a '(...)' list
@@ -385,7 +385,7 @@ class expr_arith final : public statement {
 
         // a list that starts with an element already read: of an operation
         // of a higher precedence, e.g. the 'b * c' of 'a + b * c', or at
-        // 'list_start_precedence' a zero value, e.g. '{}'
+        // 'list_start_precedence' a zero value
         [[nodiscard]] static auto implied(const uint8_t precedence,
                                           std::unique_ptr<statement> first,
                                           const type* const destination_type)
@@ -600,9 +600,9 @@ class expr_arith final : public statement {
     }
 
     // an element wraps at the width as its register holds it; the first
-    // element gives the list its type, e.g. 'i16(300) + 1' is typed; led by
-    // an untyped one, the list is typed when it holds a typed one, as a
-    // variable in its place, e.g. '0 + k' with 'k' a typed constant
+    // element gives the list its type; led by an untyped one, the list is
+    // typed when it holds a typed one, as a variable in its place, e.g.
+    // '0 + k' with 'k' a typed constant
     [[nodiscard]] auto fold(const toc& tc, const value_use& use) const
         -> std::optional<folded_value> override {
 
@@ -940,10 +940,9 @@ class expr_arith final : public statement {
         x.free_scratch_register(tok(), indent, reg);
     }
 
-    // a step with a value: a constant element, e.g. the '3' of 'x / 3', its
-    // value folded by 'make_steps', or constants the passes merged, e.g. the
-    // '+ 8' of 'a + 3 + 5'; a constant that changes nothing does not reach the
-    // backend, e.g. 'x / 1' or 'b + 1 - 1'
+    // a step with a value: a constant element, its value folded by
+    // 'make_steps', or constants the passes merged, e.g. the '+ 8' of
+    // 'a + 3 + 5'; a constant that changes nothing does not reach the backend
     auto emit_constant_step(toc& tc, const size_t indent,
                             const destination& dst, const step& s) const
         -> void {
@@ -1196,7 +1195,7 @@ class expr_arith final : public statement {
         }
 
         // the conversion goes inside the unary operators, e.g. '-int(t)'; an
-        // indexed name is not the whole operand, e.g. 'bs' of 'bs[1]'
+        // indexed name is not the whole operand
         const stmt_identifier* const ident{term.operand_path()};
         const bool is_named{ident and not ident->is_indexed()};
 
@@ -1341,9 +1340,9 @@ class expr_arith final : public statement {
 
     // the first step writes the destination, a later step that reads it
     // would read that; a name or literal first element is copied before
-    // anything writes and its unary ops apply in place after the copy, e.g.
-    // 'm = -m', a constant first step reads nothing; a read under another name
-    // counts, e.g. the 'e' of 'a[0] = e * 2 + e' in a 'foo a'
+    // anything writes and its unary ops apply in place after the copy, a
+    // constant first step reads nothing; a read under another name counts,
+    // e.g. the 'e' of 'a[0] = e * 2 + e' in a 'foo a'
     // note: the steps are those 'compile_steps' emits in place, e.g. 'n = -n
     //       + 1' leads with the constant, then reads 'n'
     [[nodiscard]] static auto

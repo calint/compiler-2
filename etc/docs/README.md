@@ -124,8 +124,8 @@ read by its header comments and class maps first.
                                skim: the built-ins, conversion, io, array
                                copy, compare and length, exit, which
                                'parse_statement' dispatches; their arguments
-                               are a 'builtin_arguments' (the end of
-                               stmt_call.hpp)
+                               are a 'builtin_arguments' (stmt_call.hpp,
+                               before 'stmt_call')
 11. generics.hpp, stmt_def_func.hpp, stmt_def_func_param.hpp, stmt_call.hpp,
     stmt_def_type.hpp, stmt_def_type_field.hpp
                                skim: the records of generic definitions and
@@ -281,8 +281,8 @@ Some code is compiled and then dropped: a dry run only to be checked, and
 the longer of two versions after both are measured:
 
 1. 'toc::dry_run' and 'machine::emit_discarded': the body of each function
-   without its calls (1.5), an inlined recursion there, and code that a
-   compile skips
+   but 'main' and an emitted noinline body without array parameters, without
+   its calls (1.5), an inlined recursion there, and code that a compile skips
    ('toc::check_skipped', 1.5.1): the code after a statement that leaves on
    every path, a branch whose condition folds to false, the branches and the
    'else' after one that always runs, the operands of 'and' and 'or' after the
@@ -299,8 +299,8 @@ unwinds it:
 1. 'toc::dry_run_scope', for a dry run: the 'toc::compile_state' (the
    deepest scope count, the storage peak and the frame peak
    ('storage_layout::peaks'), and whether the code after is reached,
-   'scope_stack::reach_state') and the read-only constants added; a noinline call
-   reached inside a dry run adds a body to check only, not to emit
+   'scope_stack::reach_state') and the read-only constants added; a noinline
+   call reached inside a dry run adds a body to check only, not to emit
    ('toc::add_noinline_body')
 2. 'toc::emit_most_efficient', for a version: the same peaks and reach state,
    each version starts from those before it and the kept one's remain, e.g.
@@ -335,10 +335,12 @@ program does not depend on inlining.
    calls: after the noinline bodies, 'program::check_function_bodies' compiles
    each function but 'main' like a noinline body under 'toc::dry_run'
    ('stmt_def_func::check_body'); an emitted noinline body without array
-   parameters takes nothing from a call, it was checked as it was emitted. So a rule that needs no argument holds also in
-   code that the constant arguments of a call fold away (1.5.1), and adding a
-   call cannot make a rejected function accepted. Its errors have no "called
-   from" frame. An instance of a generic definition is a function like the
+   parameters takes nothing from a call, it was checked as it was emitted. So
+   a rule that needs no argument holds also in code that the constant
+   arguments of a call fold away (1.5.1), and adding a call cannot make a
+   rejected function accepted. Its errors have no "called from" frame; an
+   emitted noinline body without array parameters reports the call that asked
+   for it (4.1). An instance of a generic definition is a function like the
    others: a use of a generic function makes it, an alias of a generic type
    makes its methods, and an instance that nothing calls is checked too; a
    generic function that nothing instantiates is listed in the report (1.6).
@@ -415,11 +417,12 @@ The compile decides, the parse is only the first validation, so every rule of
 the compile holds in all code. Code that a compile skips is compiled for its
 checks in a dry run ('toc::check_skipped') where what it folds is no constant of
 a call: in 'main', in a noinline body without array parameters, in the
-initializer of a global and in the check of a body without its calls. That is a branch whose condition folds to false, the branches
-and the 'else' after one that always runs, the operands of 'and' and 'or' after
-the one that decides the list, the body of a 'foo' whose count folds to 0, and
-the code after a statement that leaves on every path, e.g. 'if 1 == 2 { n = a }'
-with 'a' an array is rejected. Such code is judged as if it ran, with the
+initializer of a global and in the check of a body without its calls. That is
+a branch whose condition folds to false, the branches and the 'else' after one
+that always runs, the operands of 'and' and 'or' after the one that decides
+the list, the body of a 'foo' whose count folds to 0, and the code after a
+statement that leaves on every path, e.g. 'if 1 == 2 { n = a }' with 'a' an
+array is rejected. Such code is judged as if it ran, with the
 registers and the variable storage in use where it stands; a 'break' or
 'return' in it does not end the paths of the code that runs
 ('scope_stack::reach_state'). The parse walk does the same for the branches of
@@ -1253,8 +1256,9 @@ address    | result address         |    the callee's frame base
 
 The body is compiled for the first call that needs it. An error in the body
 carries that call as a frame ('noinline_body::call_tk'), so it points both at
-the call and at the line in the body. Every body is also checked without its
-calls (1.5).
+the call and at the line in the body. A body with array parameters is also
+checked without its calls; one without them was checked as it was emitted
+(1.5).
 
 ### 4.2 Shared storage
 

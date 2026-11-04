@@ -27,7 +27,7 @@ class constant_parser final {
     // statics
     //
 
-    // e.g. '12', ''a'' or 'true'; a number may still be malformed, e.g. '12x'
+    // a number, a character or a 'bool'; a number may be malformed, e.g. '12x'
     [[nodiscard]] static auto is_literal(const token& tk) -> bool {
         return tk.is_number() or is_character_literal(tk.text()) or
                is_bool_literal(tk.text());

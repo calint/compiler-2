@@ -55,7 +55,7 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
        ambiguity (forbids a block after a declaration), '{}' required before
        a block (against the omitted '{}' style), no bare blocks (a feature)
 [ ] medium: the compile time of nested inlined calls with an indexed
-    argument doubles per level: 'stmt_call::compile_with_address_choice'
+    argument doubles per level: 'inline_call::compile_with_address_choice'
     compiles each such body in two versions, and a nested call inside each
     version again (a valid 'r(ps[gi], n - 1)' that 'main' calls with depth 8
     takes 345 ms on rv32i-fpga, depth 14 23 s; the expanded recursion of a
@@ -201,10 +201,7 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
     => the other slots in registers: see the resolved item for the numbers
 [o] hard: coverage cleanup: every line that is not 'std::unreachable()' is
     reached by a test, or becomes an 'assert' or 'std::unreachable()'
-    => left: 'toc.hpp' 'end_dry_run' restore of the peak storage size (a dry
-       run inside a real noinline body; every attempt found the call already
-       checked), 'machine_x86_64.hpp' 'registers_of' index without base,
-       'main.cpp' 'generated source differs' (a defect of the compiler, not
+    => left: 'main.cpp' 'generated source differs' (a defect of the compiler, not
        user input); 'assembler_rv32i.hpp' 'long_jump' far form is reached by
        'test-far-jumps.sh' without 'short' (9 minutes), left out of
        'test-all.sh'
@@ -214,16 +211,11 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
 [p] hard: low priority: 'stmt_call' has three modes (function, method,
     constructor) told apart by empty tokens and three constructors that
     repeat the same steps
-    => done: the '(' check is one helper 'assert_open_paren_found'
+    => done: the '(' check is one helper, now 'read_open_paren'
     => no 'call_kind' enum: the dot tokens are needed to reproduce the source,
        an enum would be a second source of truth for what they already say
     => left: a class per mode, only if the compile paths differ enough
 [ ] medium: instrumentation of the maximum heap and stack use of the compiler
-[ ] easy: consistency topic: lambdas are declared with '=' in some places and
-    with brace init in others: '=' in 'toc.hpp', 'statement.hpp',
-    'stmt_call.hpp', 'machine_rv32i.hpp', 'assembler_rv32i.hpp'; braces in
-    'stmt_builtin_io.hpp', 'stmt_call.hpp', 'expr_arith.hpp' (review round 3,
-    G2-11)
 [p] hard: low priority: questionable: 'statement' has 20 virtuals whose
     defaults are 'std::unreachable()' plus 'is_*' tests; a closed set of node
     kinds as 'std::variant' with visitors would drop the defaults but costs
@@ -267,7 +259,7 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
     rsi, qword [..]'); same for the 'arrays_equal' destination
 [ ] medium: x86 register utilization: 0109.baz, 0082.baz, 0104.baz
 [ ] medium: rv32i: a constant above 16 bytes stored at an address inside a word
-    loops bytes ('copy_bytes') because the constant is word aligned and the
+    loops bytes ('store_bytes') because the constant is word aligned and the
     destination is not
     => lay the constant out from the destination's position within a word,
        needs the frontend 'add_constant' callback to pad it
@@ -383,11 +375,11 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
        compile error, a runtime count is checked with 'check_bounds' under
        '--checks=upper')
     => first step, no backend change: 'array_copy' with a constant count via
-       'machine::copy_bytes' with the first 'count' decoded bytes
+       'machine::store_bytes' with the first 'count' decoded bytes
     => runtime count and 'arrays_equal': a machine method that loads the
        address of a '.rodata' label (x86 'lea reg, [rel label]', rv32i 'la');
-       register the constant with 'toc::add_string_constant' only when
-       emitted
+       register the constant with 'toc::add_read_only_constant' (kind "str")
+       only when emitted
     => tree-sitter grammar; tests on both targets (runtime copy and compare,
        non-'i8' destination, count above the length, empty string)
 [ ] hard: a way to specify a range in the array: 'foo arr(bgn_index, len,

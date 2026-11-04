@@ -324,7 +324,7 @@ class stmt_builtin_convert final : public statement {
 
         // a narrower argument is computed at the width of the type, where its
         // arithmetic wraps, e.g. 'i16(a * (a >> 1))' of an 'i8' 'a' of 20 is
-        // 200; a single operand keeps its own width, e.g. a call's result
+        // 200; a single operand keeps its own width
         if (not argument().is_single_operand() and
             arg_type.size_bytes() < type_size_bytes) {
 

@@ -98,9 +98,9 @@ class expr_bool_op final : public statement {
     };
 
     // a side with what it folds to, folded where the run-time compare is
-    // emitted: a typed constant is compared as a value of its type, e.g.
-    // 'i8(3)' or a constant argument of an inlined call, an untyped one as
-    // written, e.g. '3' or 'K + 1', and must fit the other side
+    // emitted: a typed constant, also a constant argument of an inlined call,
+    // is compared as a value of its type, an untyped one as written, e.g.
+    // 'K + 1', and must fit the other side
     struct comparison_side {
         const expr_arith* node{};
         // empty when computed or read at run time
@@ -170,7 +170,7 @@ class expr_bool_op final : public statement {
     }
 
     // a stored 'bool' is 0 or 1 and a condition is a 'bool', an integer is
-    // compared first, e.g. 'n != 0', and not with a 'bool', e.g. 'b == 1'
+    // compared first, e.g. 'n != 0', and not with a 'bool'
     auto assert_boolean_operands() const -> void {
         if (comparison_) {
             assert_not_boolean_with_integer(*comparison_);

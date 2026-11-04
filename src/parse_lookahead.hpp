@@ -51,10 +51,9 @@
     return tz.is_binary_operator_next() or continues_condition(tz);
 }
 
-// a ',' where the last of 'count' arguments ends is a surplus one, e.g.
-// 'i8(1, 2)', or a trailing ','; without parameters anything but a
-// closer or the end is, e.g. 'f(1)' of 'func f()'; a missing ')' is the
-// caller's, e.g. 'f(' before a '}'
+// a ',' where the last of 'count' arguments ends is a surplus one, or a
+// trailing ','; without parameters anything but a closer or the end is, e.g.
+// 'f(1)' of 'func f()'; a missing ')' is the caller's
 inline auto assert_no_surplus_argument(const tokenizer& tz,
                                        const std::string_view name,
                                        const size_t count) -> void {

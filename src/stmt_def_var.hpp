@@ -310,10 +310,9 @@ class initializer_declaration final {
     // statics
     //
 
-    // the element type of a string or of an array literal, e.g. 'i8' of
-    // '"hi"', 'point' of 'point[]{{1, 2}}' or the default type of '[]{1, 2}',
-    // null when the initializer is neither or a comparison or a connective
-    // continues the literal, e.g. 'var b = [2]{1, 2} == a'
+    // the element type of a string, 'i8', or of an array literal, null when
+    // the initializer is neither or a comparison or a connective continues
+    // the literal, e.g. 'var b = [2]{1, 2} == a'
     [[nodiscard]] static auto literal_element_type(const toc& tc, tokenizer& tz)
         -> const type* {
 

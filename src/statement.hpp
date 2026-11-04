@@ -379,8 +379,8 @@ class statement {
         std::unreachable();
     }
 
-    // reports every read in this statement: the reads of the operands, of a
-    // written place only its indexes ('stmt_identifier.hpp')
+    // reports every read in this statement: the reads of the operands, of an
+    // 'index_only_place' only its indexes ('stmt_identifier.hpp')
     virtual auto visit_reads(const read_visitor reader) const -> void;
 
     //
@@ -491,8 +491,8 @@ class statement {
     }
 
     // the type after the name of a field or a parameter, none for the default
-    // type, e.g. the 'x' of '{x, y}' or 'a[4]'; a keyword names no type, e.g.
-    // the 'func' of a definition after a '(' or '{' that is not closed
+    // type; a keyword names no type, e.g. the 'func' of a definition after a
+    // '(' or '{' that is not closed
     [[nodiscard]] static auto read_declared_type(const toc& tc, tokenizer& tz)
         -> std::optional<token> {
 

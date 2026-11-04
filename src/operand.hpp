@@ -527,9 +527,9 @@ inline constexpr auto comparison_operators{
 [[nodiscard]] constexpr auto traits_of(const comparison_operator op)
     -> const comparison_traits& {
 
-    for (const comparison_traits& spelling : comparison_operators) {
-        if (spelling.op == op) {
-            return spelling;
+    for (const comparison_traits& traits : comparison_operators) {
+        if (traits.op == op) {
+            return traits;
         }
     }
 
@@ -556,11 +556,13 @@ inline constexpr auto comparison_operators{
 }
 
 // negating or mirroring twice gives the operator back
-static_assert(std::ranges::all_of(
-    comparison_operators, [](const comparison_traits& spelling) -> bool {
-        return negated(spelling.negated) == spelling.op and
-               mirrored(spelling.mirrored) == spelling.op;
-    }));
+static_assert(std::ranges::all_of(comparison_operators,
+                                  [](const comparison_traits& traits) -> bool {
+                                      return negated(traits.negated) ==
+                                                 traits.op and
+                                             mirrored(traits.mirrored) ==
+                                                 traits.op;
+                                  }));
 
 // the operator as written in the source
 [[nodiscard]] inline auto source_text(const comparison_operator op)
@@ -573,9 +575,9 @@ static_assert(std::ranges::all_of(
 [[nodiscard]] inline auto comparison_of(const std::string_view text)
     -> std::optional<comparison_operator> {
 
-    for (const comparison_traits& spelling : comparison_operators) {
-        if (spelling.text == text) {
-            return spelling.op;
+    for (const comparison_traits& traits : comparison_operators) {
+        if (traits.text == text) {
+            return traits.op;
         }
     }
 
