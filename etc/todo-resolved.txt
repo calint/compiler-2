@@ -1116,10 +1116,6 @@
     unconditionally, but it holds only under '--checks=noub' (README 8.2)
     => done (2026-10-29, user): AGENTS.md and README 8 say the goal holds
        when compiled with '--checks=noub'; README 1 does not state the goal
-[-] medium: decide: a 'bool' filled by 'read' or 'sector_read' can hold a
-    byte other than 0 or 1 (README 8)
-    => kept (2026-10-29, user): the README keeps it as the one unchecked
-       class; normalizing would add a check to every 'read' into a 'bool'
 [x] easy: the '--report=registers' lines named files as given on the
     command line, the listing comments relative to the main file (design
     review series 2, round 13 A1, then dropped for mixing with the error
