@@ -1,6 +1,45 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] hard: design review series 2, round 76 (2026-11-04, user: continue; a
+    hunter of the code generation of round 75, the two decide items)
+    => done (2026-11-04): no wrong code (about 3000 generated programs of
+       zero, copy and compare of 1 to 128 B at every offset in a word and of
+       every element type against a byte model, about 70000 builds and runs
+       on x86_64, rv32i-fpga and rv32i in pinned builds of 92783fad and the
+       working tree, 720 through asan); bug: round 75 rejected programs under
+       register pressure that round 74 accepted, x86_64 copies of 7 to 15 B and
+       zeroes of 23 to 31 B now took 'rep movsb' or 'rep stosb', whose named
+       registers an argument held, rv32i copies of 13 to 16 B a loop that needs
+       three more registers; decision (user): the form whose registers are
+       free, x86_64 'takes_rep_form' takes the rep form when the parts are
+       longer and its named registers free, with one held only beyond twice
+       the rep form, rv32i 'is_copy_unrolled' unrolls up to twice the
+       threshold when the pointers and the end of the loop are not free
+       ('machine::free_scratch_register_count'), so a value that is not small
+       is never unrolled; the listings of every test and the code size
+       unchanged (the fallback is taken only under pressure), 2110 2111 2112;
+       the two decide items at the top of section 1 kept (user)
+[-] easy: decide: '{}' where an array goes has two messages: a built-in or
+    'foo' says "expected an array" (0377), a call "'{}' is not an array,
+    parameter 'x' takes one" (0254, its own 'is_zero_value' branch)
+    => option: one "'{}' is not an array" in
+       'stmt_identifier::parse_array_argument', the branch of the call gone
+       (0254 loses "parameter 'x' takes one", 0377 changes); or keep
+       (design review series 2, round 57 B3)
+    => kept (2026-11-04, user): both messages, the one of a call names the
+       parameter
+[-] easy: decide: round 56 H2-1 checks the range of a run-time start with a
+    constant count after the later arguments (left to right, as a run-time
+    count); cost: 3 instructions on x86_64 and 4 on rv32i (5 before round 57
+    A1) per such start and one held scratch register (the 12 affected tests
+    3179 -> 3379 instructions under noub before round 57 A1)
+    => option: only the start of the first array waits, nothing observable
+       runs between the second walk and a constant count, so the start of
+       the second array may be checked at once (saves about half the cost,
+       adds a special case); or keep as is (one rule)
+    => kept (2026-11-04, user): one rule, every run-time start waits for the
+       later arguments
 [x] hard: design review series 2, round 75 (2026-11-04, user: the code-size
     thresholds in a section of their own in the machines, the measurement of
     round 74 M, the part-count rule on x86_64 and two rv32i thresholds)

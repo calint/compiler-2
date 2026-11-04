@@ -1,0 +1,23 @@
+
+2112.baz:21:160: out of scratch registers, simplify the expression
+    var s = sum(xs[i + 0].a[j + 0], xs[i + 1].a[j + 1], xs[i + 2].a[j + 2], xs[i + 3].a[j + 3], xs[i + 0].a[j + 4], xs[i + 1].a[j + 0], xs[i + 2].a[j + 1], xs[i + 3].a[j + 2], xs[i + 0].a[j + 3], xs[i + 1].a[j + 4], xs[i + 2].a[j + 0], xs[i + 3].a[j + 1], xs[i + 0].a[j + 2], mk(ys[i]))
+                                                                                                                                                               ^
+
+register use at the failure: 14 of 14 registers live
+
+  held  frame, registers (allocated at)
+    14  main
+          r15 21:20
+          r14 21:29
+          r13 21:40
+          r12 21:49
+          r10 21:60
+          r9 21:69
+          r8 21:80
+          r11 21:89
+          rbx 21:100
+          rdx 21:109
+          rax 21:120
+          rsi 21:129
+          rdi 21:140
+          rcx 21:149

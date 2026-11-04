@@ -6689,3 +6689,10 @@ SRC=2108 && COMPERR
 
 # a stray closer inside an argument before a deducing one
 SRC=2109 && COMPERR
+
+# a known-size copy or zero under register pressure takes the form whose
+# registers are free: x86_64 by parts with 'rsi' or 'rax' held, rv32i unrolled
+# without free registers for the loop
+SRC=2110 && EXP=5 && RUN
+SRC=2111 && EXP=4 && RUN
+if [[ $MACHINE == x86_64 ]]; then SRC=2112 && COMPERR; else SRC=2112 && EXP=6 && RUN; fi

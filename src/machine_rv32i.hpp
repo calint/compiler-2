@@ -680,7 +680,7 @@ class machine_rv32i : public machine {
                 .starts{starts},
                 .access{access},
             },
-            size_bytes, size_bytes <= unroll_threshold_bytes_);
+            size_bytes, is_copy_unrolled(size_bytes));
     }
 
     auto copy_elements(const token& src_loc_tk, const size_t indent,
@@ -882,7 +882,7 @@ class machine_rv32i : public machine {
                 .starts{starts},
                 .access{access},
             },
-            size_bytes, size_bytes <= unroll_threshold_bytes_);
+            size_bytes, is_copy_unrolled(size_bytes));
 
         write_compare_result(src_loc_tk, indent, result, registers,
                              request.inverted);
@@ -2888,6 +2888,18 @@ class machine_rv32i : public machine {
     // a jump grown beyond 1 MiB needs a register without a live value
     [[nodiscard]] auto far_jump_register() const -> std::string_view {
         return first_unused_scratch_register().value_or(std::string_view{});
+    }
+
+    // a copy or a compare of two arrays is unrolled up to the threshold, and
+    // up to twice it when the loop's two pointers and its end are not free
+    [[nodiscard]] auto is_copy_unrolled(const size_t size_bytes) const -> bool {
+        if (size_bytes <= unroll_threshold_bytes_) {
+            return true;
+        }
+
+        // note: 3 for a pointer per array and the end of the loop
+        return size_bytes <= 2 * unroll_threshold_bytes_ and
+               free_scratch_register_count() < 3;
     }
 
     // variables and frames start word aligned so a direct offset from their

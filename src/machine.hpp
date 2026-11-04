@@ -1616,6 +1616,14 @@ class machine {
         return std::nullopt;
     }
 
+    // the scratch registers of the backend that are free
+    [[nodiscard]] auto free_scratch_register_count() const -> size_t {
+        return static_cast<size_t>(std::ranges::count_if(
+            scratch_registers(), [&](const std::string_view name) -> bool {
+                return not state_.registers.is_unavailable(register_mask(name));
+            }));
+    }
+
     auto free_scratch_registers(const token& src_loc_tk, const size_t indent,
                                 const std::span<const operand> registers)
         -> void {

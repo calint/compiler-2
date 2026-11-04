@@ -1,0 +1,24 @@
+# a zero of 23 B under register pressure: with 'rax' held by an argument
+# x86_64 zeroes by parts, not with 'rep stosb'
+
+type r { a i8[23] }
+type r7 { a i8[7] }
+
+func mk(x r) res r {
+    res = {}
+    res.a[0] = x.a[0]
+}
+
+func sum(a0 i8, a1 i8, a2 i8, a3 i8, a4 i8, h r) res int {
+    res = a0 + a1 + a2 + a3 + a4 + h.a[0]
+}
+
+func main() {
+    var xs = r7[9]
+    var ys = r[3]
+    var i = 1
+    var j = 2
+    ys[i].a[0] = 4
+    var s = sum(xs[i + 0].a[j + 0], xs[i + 1].a[j + 1], xs[i + 2].a[j + 2], xs[i + 3].a[j + 3], xs[i + 0].a[j + 4], mk(ys[i]))
+    exit(s)
+}

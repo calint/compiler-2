@@ -321,8 +321,10 @@ class machine_x86_64 final : public machine {
 
         const size_t parts{part_count(size_bytes)};
 
+        constexpr std::array<std::string_view, 3> named{"rsi", "rdi", "rcx"};
+
         // note: 2 because a part is a load and a store
-        if (2 * parts > rep_form_instructions_) {
+        if (takes_rep_form(2 * parts, named)) {
             copy_with_rep_movsb(src_loc_tk, indent, dst, size_bytes,
                                 [&](const operand& pointer) -> void {
                                     lea(src_loc_tk, indent, pointer, src);
@@ -630,7 +632,10 @@ class machine_x86_64 final : public machine {
 
         const size_t parts{part_count(size_bytes)};
 
-        if (parts > rep_form_instructions_) {
+        constexpr std::array<std::string_view, 3> rep_registers{"rax", "rdi",
+                                                                "rcx"};
+
+        if (takes_rep_form(parts, rep_registers)) {
             const operation_scope named{*this};
 
             reserve_named_register(src_loc_tk, indent, "rax");
@@ -1800,6 +1805,29 @@ class machine_x86_64 final : public machine {
         const operand lowered{lower_address(src_loc_tk, indent, byte)};
 
         assembler_.setcc(indent, cc, to_argument(lowered));
+    }
+
+    // the rep form when the parts take more instructions than it; when one of
+    // its 'named' registers is held, only beyond twice its instructions, so a
+    // value that is not small is never unrolled
+    [[nodiscard]] auto
+    takes_rep_form(const size_t part_instructions,
+                   const std::span<const std::string_view> named) const
+        -> bool {
+
+        if (part_instructions <= rep_form_instructions_) {
+            return false;
+        }
+
+        const bool is_held{
+            std::ranges::any_of(named,
+                                [&](const std::string_view name) -> bool {
+                                    return registers().is_unavailable(
+                                        register_mask(name));
+                                }),
+        };
+
+        return not is_held or part_instructions > 2 * rep_form_instructions_;
     }
 
     // a negative value is out of bounds
