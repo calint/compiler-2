@@ -59,8 +59,9 @@ class stmt_builtin_array_copy final : public statement {
         };
 
         // the overlap check compares the addresses of the loop at run time;
-        // only one variable can overlap itself, the parse rejects names that
-        // may share storage, e.g. a 'mut' parameter and an argument
+        // only one variable can overlap itself, a call rejects arguments that
+        // may share storage ('stmt_call::assert_no_shared_storage'), e.g. two
+        // 'mut' parameters bound to one array
         const bool checks_overlap{
             tc.checks().overlap and may_overlap(tc),
         };

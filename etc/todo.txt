@@ -86,16 +86,6 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
     'memory_counter_pressure_count_' (6) have no reason recorded (R8 X-10),
     nor rv32i 'copy_unroll_threshold_bytes_' (16) (design review series 2,
     round 71 R8); measure them against unrolled code and note the result
-[p] medium: low priority: a 'bool' filled by 'read' or 'sector_read' can
-    hold a byte other than 0 or 1, and a record padding other than 0
-    (README 8); '==' compares bytes, so a 'bool' read as 120 is true but not
-    equal to 'true', and 'int(b)' is not 0 or 1
-    => kept (2026-10-29, user): the README keeps it as the one unchecked
-       class; normalizing would add a check to every 'read' into a 'bool'
-    => pending (2026-11-04, user): the reads are only of sectors written
-       with 'bool's; if it changes: a run-time check under '--checks=noub'
-       (new option) of the 'bool' bytes and the padding of the filled range,
-       emitted only when the element type holds a 'bool' or padding
 [p] medium: low priority: generic function instances: the nesting limit
     counts the depth of the first use of an instance (H-2): its body is
     parsed inside the parse of that use, e.g. a body nested 70 levels used

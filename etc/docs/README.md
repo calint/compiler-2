@@ -1935,6 +1935,12 @@ So whether a program is accepted can depend on the target through 1 to 5,
 and its result through 1, 4 and 5; under 'noub' the result of an accepted
 program that writes its types and stays within the limits does not.
 
+'==' compares bytes, so the compiler keeps them determined by the fields: a
+declaration zeroes its variable, a value written in parts zeroes the bytes it
+does not list ('expr_type::plan_unwritten'), a result written field by field
+has its padding zeroed first ('call_site::zero_result_padding'), definite
+assignment makes a result whole, and no conversion makes a 'bool'.
+
 The bytes that 'read' and 'sector_read' put into a buffer are assumed to be
 written from the same type, e.g. by 'write' or 'sector_write' of such a
 buffer: a 'bool' is 0 or 1 and the padding of a record is 0. Other bytes are
@@ -1955,8 +1961,8 @@ constants out of range, and the code the run-time checks.
 | a result or a global sharing storage with an argument | 'p = f(p)' with 'f' writing its result before it reads 'p', 'f(g)' with 'f' using the global 'g' | rejected ('stmt_call::assert_no_shared_storage', 3.7, 4.2) | always | 0522-0524, 0526, 0527, 0941 |
 | a value written in parts reading a part written before it | 'p = {p.y, p.x}', 'q = {{1}, q.a[3]}', 'g = {7, gx()}' | rejected ('stmt_assign_var', the 'write_plan' of 'expr_type.hpp', 3.7) | always | 1608-1612, 1634, 1635, 1644 |
 | evaluation order | 'f(arr[i], h(i))', 'i == h(i)' with 'h' writing 'i' | evaluation is left to right; an argument, a side of a comparison or a bulk or io argument that a call in a later one may write is rejected ('assert_not_written_later'), an arithmetic list reads each operand at its place; a destination that the value reads, also through a call, is written last ('reaches_destination'), 3.1 | always | 1636-1639, 1641, 1642, 1676; accepted: 1630-1633, 1640, 1643, 1678, 1702 |
-| narrowing | 'b = w' with 'b' an 'i8' and 'w' an 'i16' | rejected; a conversion such as 'i8(w)' wraps on purpose (1.7) | always | 0725, 0856, 0865, 1016, 1017, 1019, 1021, 1022 |
-| a constant out of range | 'a[9]' of 'a = i8[4]', 'x / 0', 'x << 70' | rejected ('assert_constant_index' for an index, 'fold' for the others, 1.7) | always | 0305, 0306, 0750-0752, 1118, 1119 |
+| narrowing | 'b = w' with 'b' an 'i8' and 'w' an 'i16' | rejected ('statement::assert_not_narrowed' through 'compile_checked' and 'fold_checked'); a conversion such as 'i8(w)' wraps on purpose (1.7) | always | 0725, 0856, 0865, 1016, 1017, 1019, 1021, 1022 |
+| a constant out of range | 'a[9]' of 'a = i8[4]', 'x / 0', 'x << 70' | rejected ('assert_constant_index' for an index, 'expr_arith::assert_constant_operand' for a divisor or a shift count, at a fold and at a constant step, 1.7) | always | 0305, 0306, 0750-0752, 1118, 1119 |
 | a constant expression that overflows | '0x7fffffffffffffff + 1' | rejected ('fold'), else it wraps | 'overflow' | 0995, 1002, 1010 |
 | array index out of bounds | 'a[i]' | run time ('machine::check_bounds' from 'stmt_identifier::compile_checked_index', the range of a bulk operation or an io built-in ('bulk_operands', 'stmt_builtin_io') and the count of a 'foo') | 'upper', 'lower' | 0302, 0303, 0307-0309, 0626, 0627, 1355 |
 | division by zero and 'MIN / -1', also of '%' | 'a / b' | run time ('machine::divide' from 'expr_arith::emit_operation', not for a constant divisor other than -1); a constant 'MIN / -1' is rejected ('fold'), the 64-bit one also without the check, it has no value | 'division' | 0965-0968, 1775-1777 |

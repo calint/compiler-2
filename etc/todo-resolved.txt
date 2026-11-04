@@ -1,6 +1,34 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[-] medium: a 'bool' filled by 'read' or 'sector_read' can
+    hold a byte other than 0 or 1, and a record padding other than 0
+    (README 8); '==' compares bytes, so a 'bool' read as 120 is true but not
+    equal to 'true', and 'int(b)' is not 0 or 1
+    => kept (2026-10-29, user): the README keeps it as the one unchecked
+       class; normalizing would add a check to every 'read' into a 'bool'
+    => pending (2026-11-04, user): the reads are only of sectors written
+       with 'bool's; if it changes: a run-time check under '--checks=noub'
+       (new option) of the 'bool' bytes and the padding of the filled range,
+       emitted only when the element type holds a 'bool' or padding
+    => kept (2026-11-04, user): input is assumed to be correct; the README 8
+       exception stays as it is
+[x] hard: design review series 2, round 73 (2026-11-04, user: continue
+    until no more improvements are found; the confirming round after rounds
+    67 to 72; A a fresh reviewer on a path of its own (control flow from
+    parse to code, a record assignment with a call, the data definitions), B
+    the no-UB guarantee as design, each check class of README 8.1 and each
+    exception of 8 and 8.3)
+    => done (2026-11-04): no code or design change; A found nothing (the two
+       reachability models are both needed, one on the constants of the
+       parse, one on what the compile folds; the write plan checked is the
+       one emitted); B each check class is decided in one place named after
+       its rule and every exception is still needed; docs: B1 README 8.1 the
+       narrowing row names 'statement::assert_not_narrowed', the constant row
+       'expr_arith::assert_constant_operand' at a fold and at a constant step;
+       B2 the overlap comment of 'array_copy' names the call, not the parse,
+       as where shared storage is rejected; B3 README 8 says how the bytes
+       that '==' compares stay determined by the fields; the loop ends
 [x] hard: design review series 2, round 72 (2026-11-04, user: continue
     until no more improvements are found; S the comments with more than one
     'e.g.' (round 71 R4), T the references that rounds 67 to 71 left stale)
