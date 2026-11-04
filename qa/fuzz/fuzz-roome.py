@@ -39,7 +39,7 @@ def build():
     if c.returncode:
         sys.exit("roome does not compile: " + c.stderr)
     obj = X86 + ".o"
-    if fl.run(["nasm", "-f", "elf64", asm, "-o", obj], 120,
+    if fl.run(["nasm", "-w+error", "-f", "elf64", asm, "-o", obj], 120,
               file_size=1 << 30).returncode:
         sys.exit("nasm failed")
     if fl.run(["ld", "-s", "-T", os.path.join(fl.ROOT, "baz.ld"), obj, "-o", X86],

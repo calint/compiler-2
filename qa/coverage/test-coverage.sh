@@ -9,8 +9,9 @@
 #   run     run all cases for the target; x86_64 runs the program natively,
 #           rv32i under qemu user mode, rv32i-qemu in a qemu system with a
 #           uart, and rv32i-fpga in the fpga emulator
-#   report  merge the profiles into 'report/'
+#   report  merge the profiles into 'report/' and remove them
 #
+# 'UPDATE=1' writes the output of each case as its expected '.out' file
 # 'VERSIONS=first' or 'VERSIONS=last' compiles with that '--versions' and runs
 # only the cases that run the program, see 'test-versions.sh'
 
@@ -20,7 +21,7 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 cd "$SCRIPT_DIR"
 
 BIN="$SCRIPT_DIR/../../baz"
-MACHINE="${MACHINE:-x86_64}"
+MACHINE=x86_64
 OPTS="--vars=0x40000 --checks=upper,lower,line"
 # also with the options of a case: every source is reproduced exactly
 REPRODUCE="--reproduce-source"
@@ -78,10 +79,13 @@ FPGA_EMULATOR=("$FPGA_EMULATOR_DIR/osqa" gen-rv32i.bin sdcard.img)
 case "$ACTION" in
 clean)
     echo $SEP
-    # 'find' since the profiles outgrow the argument list of 'rm'
-    find . -maxdepth 1 -name '*.profraw' -delete
-    rm -f -- baz.profdata cov.err profiles.txt gen gen.o gen.s diff.baz out err
-    rm -f -- tests/gen tests/gen.o tests/gen.s tests/gen-nopt.s tests/gen-rv32i.bin tests/diff.baz tests/out tests/err
+    # 'find' since the profiles and images outgrow the argument list of 'rm'
+    find . tests -maxdepth 1 -name '*.profraw' -delete
+    find tests -maxdepth 1 \( -name '*-rv32i*.bin' -o -name '*.core' \) -delete
+    # the program, object and listing of a case that 'run.sh' compiled
+    find tests -maxdepth 1 -regextype posix-extended -regex 'tests/[0-9]{4}(\.o|\.s)?' -delete
+    rm -f -- baz.profdata baz-*.profdata profiles.txt
+    rm -f -- tests/gen tests/gen.o tests/gen.s tests/gen-nopt.s tests/diff.baz tests/out tests/err
     rm -f -- tests/gen-image.o tests/gen-image.elf tests/gen-image.bin tests/sdcard.img
     rm -rf -- report/
     echo removed reports
@@ -105,6 +109,7 @@ report)
         exit 1
     fi
     llvm-profdata merge -o baz.profdata -sparse -input-files=profiles.txt
+    find . -maxdepth 1 -name '*.profraw' -delete
     rm -f -- profiles.txt
     llvm-cov show -format=html -output-dir=report/ -instr-profile=baz.profdata "$BIN"
     # plain text table of the same data
@@ -136,6 +141,8 @@ fi
 cd "$SCRIPT_DIR/tests"
 
 rm -f gen.s out err
+# a crash under qemu would write a core file 'qemu_gen_*.core'
+ulimit -c 0
 
 echo $SEP
 echo "running: $BIN --target=$MACHINE $OPTS $REPRODUCE $VERSION_OPTS"
@@ -152,7 +159,7 @@ verify-rv32i-image() {
     ld.lld -m elf32lriscv -T "$SCRIPT_DIR/rv32i-image.ld" -e _start -o gen-image.elf gen-image.o
     llvm-objcopy -O binary gen-image.elf gen-image.bin
     if ! cmp gen-image.bin gen-rv32i.bin; then
-        echo "FAILED. image differs from assembled 'gen.s'. see: llvm-objdump -d gen-image.elf"
+        echo "FAILED. image differs from assembled 'tests/gen.s'. see: llvm-objdump -d tests/gen-image.elf"
         exit 1
     fi
 }
@@ -213,7 +220,7 @@ execute_program_errors_to_out() {
 # also makes the sd card image of the case, see 'make_sdcard'
 compile_and_build() {
     if ! "$BIN" "$SRC.baz" --target="$MACHINE" --bin=gen-rv32i.bin $OPTS $REPRODUCE $VERSION_OPTS 2>err >gen.s; then
-        echo "compiler failed. see 'err' and 'gen.s'" >&2
+        echo "compiler failed. see 'tests/err' and 'tests/gen.s'" >&2
         exit 1
     fi
     assemble_and_link
@@ -242,7 +249,7 @@ check_output() {
     elif cmp -s out "$expected"; then
         echo ok
     else
-        echo "FAILED. output differs. see: diff out $expected"
+        echo "FAILED. output differs. see: diff tests/out tests/$expected"
         exit 1
     fi
 }
@@ -338,8 +345,9 @@ DIFFINP2() {
     compile_and_build
 
     program_command
-    "$SCRIPT_DIR/input-lines.py" "${SRC%.*}.in" "${PROGRAM_COMMAND[@]}" >out 2>err
-
+    local exit_code=0
+    "$SCRIPT_DIR/input-lines.py" "${SRC%.*}.in" "${PROGRAM_COMMAND[@]}" >out 2>err || exit_code=$?
+    expect_exit_zero $exit_code
     check_output "$(expected_output_file)"
 }
 
@@ -365,7 +373,7 @@ DIFFNOPT() {
         return
     fi
     if ! "$BIN" "$SRC.baz" --target="$MACHINE" --bin=gen-rv32i.bin $OPTS --nopt 2>err >gen-nopt.s; then
-        echo "compiler failed. see 'err' and 'gen-nopt.s'" >&2
+        echo "compiler failed. see 'tests/err' and 'tests/gen-nopt.s'" >&2
         exit 1
     fi
     compile_and_build
@@ -397,15 +405,15 @@ LISTING() {
     fi
     # 'UPDATE=1' writes the first one
     if [[ ! -e "$expected" && -z "${UPDATE:-}" ]]; then
-        echo "FAILED. no expected listing '$expected'"
+        echo "FAILED. no expected listing 'tests/$expected'"
         exit 1
     fi
     if ! "$BIN" "$SRC.baz" --target="$COMPILER_MACHINE" --bin=gen-rv32i.bin 2>err >gen.s; then
-        echo "compiler failed. see 'err' and 'gen.s'" >&2
+        echo "compiler failed. see 'tests/err' and 'tests/gen.s'" >&2
         exit 1
     fi
     if ! "$SCRIPT_DIR/listing.py" "$1" "$SRC.baz" "$COMPILER_MACHINE" <gen.s >out; then
-        echo "FAILED. see: out"
+        echo "FAILED. see: tests/out"
         exit 1
     fi
     check_output "$expected"

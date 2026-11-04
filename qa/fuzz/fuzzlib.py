@@ -186,9 +186,8 @@ def compile_source(compiler, path, options, assembly_path=None, cwd=None):
     assert_fresh(compiler)
     begin = time.time()
     result = _compile_source(compiler, path, options, assembly_path, cwd)
-    seconds = time.time() - begin
-    if seconds > SLOW_COMPILE and not result.timed_out:
-        note_slow(compiler, path, options, seconds)
+    if not result.timed_out:
+        note_if_slow(begin, compiler, options, path)
     return result
 
 
@@ -251,7 +250,7 @@ def _compile_source(compiler, path, options, assembly_path, cwd):
 def assemble_x86(assembly, work):
     obj = os.path.join(work, "f.o")
     exe = os.path.join(work, "f.x")
-    a = run(["nasm", "-f", "elf64", assembly, "-o", obj], 60,
+    a = run(["nasm", "-w+error", "-f", "elf64", assembly, "-o", obj], 60,
             file_size=1 << 30)
     # a tool that is stopped by a limit says nothing about the code
     if a.timed_out or a.signal:

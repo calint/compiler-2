@@ -57,7 +57,8 @@
 - A magic number whose reason is not obvious gets a `note:` line below it
   (`// note: +1 because the text starts after the opening quote`); common
   idioms (`size() - 1`, `i + 1`, masks, rounding up) need none. Multiline
-  `note:` blocks get a blank line above and below.
+  `note:` blocks get a blank line above and below, except one right below a
+  class member, which stays attached to it.
 
 ### Names
 
@@ -112,7 +113,8 @@
 - Per step: `qa/coverage/test-coverage.sh --target=x86_64 run`, then
   `--target=rv32i-fpga`, then `qa/coverage/test-cli.sh` (one after the other,
   they share `gen.s`); the linters; for a pure refactor, the listings and
-  errors of every test on x86_64 and rv32i compared with a build of HEAD.
+  errors of every test on x86_64 and rv32i compared with a build of HEAD
+  (`qa/coverage/compare-listings.sh BASE_BAZ NEW_BAZ`).
 - Per phase or behavior change, also `test-far-jumps.sh`,
   `test-far-jumps-no-scratch.sh`, `test-versions.sh`, `roome/qa/test.sh`, the
   asan build and the fuzzers (in a bug hunt round: asan and fuzzers once, at

@@ -54,7 +54,7 @@ echo "roome: rv32i-fpga ok"
 # registers
 ./baz --target=x86_64 --vars=0x20000 --checks=noub,line --sdcard="$WORK/sdcard-x86_64" \
     "$DIR/../src/main.baz" >"$WORK/roome-x86_64.s"
-nasm -f elf64 "$WORK/roome-x86_64.s" -o "$WORK/roome-x86_64.o"
+nasm -w+error -f elf64 "$WORK/roome-x86_64.s" -o "$WORK/roome-x86_64.o"
 ld -s -T baz.ld -o "$WORK/roome-x86_64" "$WORK/roome-x86_64.o"
 
 status=0

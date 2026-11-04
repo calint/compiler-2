@@ -220,7 +220,7 @@ with tempfile.TemporaryDirectory(prefix="baz-arena-") as temporary:
                     assert offsets[data_name] == [data_offset], offsets
                 assembly = directory / "arena.s"
                 assembly.write_text(result.stdout)
-                subprocess.run(["nasm", "-f", "elf64", "arena.s"], cwd=directory, check=True)
+                subprocess.run(["nasm", "-Werror", "-f", "elf64", "arena.s"], cwd=directory, check=True)
                 subprocess.run(
                     ["ld", "-s", "-T", str(ROOT / "baz.ld"), "-o", "arena", "arena.o"],
                     cwd=directory, check=True,

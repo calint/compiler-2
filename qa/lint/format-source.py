@@ -1340,8 +1340,29 @@ def is_block_start(line):
     return line.rstrip().endswith("{") or LABEL.match(line) is not None
 
 
-def note_blank_lines(lines):
-    # the lines to insert a blank line before
+def class_member_ends(cursor):
+    # the last lines of the members of a class and of its nested classes
+    open_n, close_n = body_lines(cursor)
+    ends = set()
+    for c, _, end in member_cursors(cursor, open_n, close_n):
+        ends.add(end)
+        if is_class_definition(c):
+            ends |= class_member_ends(c)
+
+    return ends
+
+
+def member_ends(tu, path):
+    ends = set()
+    for c in class_cursors(tu.cursor, path.resolve()):
+        ends |= class_member_ends(c)
+
+    return ends
+
+
+def note_blank_lines(lines, ends):
+    # the lines to insert a blank line before, 'ends' are the last lines of the
+    # class members
     inserts = set()
     previous_end = None
     n = 0
@@ -1356,7 +1377,10 @@ def note_blank_lines(lines):
         # a note right below another note is not the tail of a comment
         is_tail = COMMENT.match(above) is not None and n != previous_end
         if end - n > 1 and not is_tail:
-            if not is_blank(above) and not is_block_start(above):
+            # a note right below a member is a note of that member, which
+            # 'class_members' keeps with it only while no blank line is between
+            is_member_note = n - 1 in ends
+            if not (is_blank(above) or is_block_start(above) or is_member_note):
                 inserts.add(n)
 
             below = lines[end] if end < len(lines) else ""
@@ -1426,12 +1450,16 @@ def main():
         # shows them better
         print(f"would lay out: {path}")
 
+    # the notes need the members where the layout put them
+    if apply and laid_out:
+        tu = parse()
+
     # the notes are set apart before the blank lines between the statements,
     # whose return rule sees the blank lines they add
     noted = 0
     for path in paths:
         lines = path.read_text().split("\n")
-        inserts = note_blank_lines(lines)
+        inserts = note_blank_lines(lines, member_ends(tu, path))
         if not inserts:
             continue
 
@@ -1443,7 +1471,7 @@ def main():
 
         print(f"would set apart notes: {path} (+{len(inserts)})")
 
-    if apply and (laid_out or noted):
+    if apply and noted:
         tu = parse()
 
     texts = {p.resolve(): p.read_text().split("\n") for p in paths}

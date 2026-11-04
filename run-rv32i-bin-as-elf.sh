@@ -5,7 +5,7 @@ set -eu
 
 # resolve before changing directory since the argument is relative to the caller
 if [ $# -gt 0 ]; then
-    set -- "$(realpath "$1")"
+    set -- "$(realpath "$1")" "${2:-}"
 fi
 
 cd "$(dirname "$0")"

@@ -71,7 +71,7 @@ elif [ "$TARGET" = rv32i ]; then
     ld.lld -m elf32lriscv -e _start -o "$BIN" "$OBJ"
     ls --color -la "$ASM" "$ASM_NO_COMMENTS" "$BIN"
 else
-    nasm -f elf64 "$ASM"
+    nasm -w+error -f elf64 "$ASM"
     ld -s -T baz.ld -o "$BIN" "$OBJ"
     ls --color -la "$ASM" "$ASM_NO_COMMENTS" "$BIN"
 fi

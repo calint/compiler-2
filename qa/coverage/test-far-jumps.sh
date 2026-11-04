@@ -6,7 +6,9 @@
 #
 # usage: test-far-jumps.sh [short]
 #   short   only the 8.4 KiB bodies, which compile in seconds
-set -e
+set -eE
+# names the failed command; those under 'set +e' fail on purpose
+trap '[[ $- != *e* ]] || echo "FAILED. line $LINENO: $BASH_COMMAND" >&2' ERR
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 BIN="$SCRIPT_DIR/../../baz"

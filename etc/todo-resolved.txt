@@ -1,6 +1,51 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] hard: design review series 2, round 74 (2026-11-04, user: continue
+    with round 74 after the confirming round 73; F the formatter rule that
+    moved a note below a member onto the next one (round 71 R1), M the
+    measurement of the code-size thresholds without a reason, Q the scripts
+    a reviewer runs, a first review of 'qa/')
+    => done (2026-11-04): no source change; F 'format-source.py' keeps a
+       multiline note right below a class member with it (the todo item
+       above, AGENTS); Q 'test-cli.sh' and the two far-jump scripts name the
+       command that failed ('set -eE', an ERR trap that keeps quiet under 'set
+       +e'); 'test-coverage.sh' sets 'ulimit -c 0' (no more qemu core files,
+       their ignore line gone), 'report' deletes the merged profiles, 'clean'
+       removes what the runs leave, the header names 'UPDATE', the messages
+       name 'tests/', 'DIFFINP2' checks the exit code like 'DIFF'; 'test-all.sh'
+       says it leaves the coverage build in './baz', an unused profile name
+       gone there and in 'test-coverage-full.sh'; 'run-rv32i-bin-as-elf.sh'
+       passes its vars size; 'check-error-tests.py' reads the far-jump
+       scripts, its exceptions gone; 'test-cli.sh' prints the jump count it
+       checks and leaves no image behind; nasm '-w+error' in every assembly
+       of a listing ('run.sh', 'roome/qa/test.sh', 'fuzzlib.py',
+       'fuzz-roome.py', 'test-arena.py', 'test-cli.sh'); 1289.rv32i.out
+       (equal to 1289.out) gone; 'qa/fuzz/README.md' names 'fuzz-ub.py' as
+       the model; 'fuzzlib.compile_source' uses 'note_if_slow'; README "For
+       a reviewer" names 'fix-source.py' and the libclang bindings; new
+       'qa/coverage/compare-listings.sh BASE_BAZ NEW_BAZ', the refactor
+       check of AGENTS (user); decisions (user): 'qa/perf/inline-depth.sh'
+       tracked, 'scripts/perf.sh' with 'CMakeLists.txt' and the three '.cpp'
+       twins of 0046, 0068 and 0074 kept, the untracked profiles (2.9 GB),
+       core files and images of 'qa/coverage' deleted; skipped (Q): one
+       helper for compile and run (six copies, the flags now agree), the
+       '--target=x86' alias, the roome compile line in four places; M goes
+       on in round 75 with the section of the thresholds the user asked for
+[x] medium: 'format-source.py' can move a multiline note written right below
+    a member onto the next member: 'note_blank_lines' inserts a blank line
+    above it (a '}' or ';' line is no block start), and on the next run
+    'class_members' reads it as the leading comment of the next member, which
+    'by_name' sorts away (the strays of rounds 69 and 70 on 'emit_multiply'
+    and 'result_type_differs'; design review series 2, round 71 R1)
+    => option: 'note_blank_lines' gets the member ends from the cursors and
+       keeps a note right below one attached, or the check fails for a
+       floating multiline note between sorted methods
+    => done (2026-11-04): 'note_blank_lines' takes the member ends from the
+       cursors ('class_member_ends', 'member_ends') and sets no blank line
+       above a note right below one, so 'trailing_note' keeps it with its
+       member; the tree is parsed again after the class layout (design
+       review series 2, round 74 F)
 [-] medium: a 'bool' filled by 'read' or 'sector_read' can
     hold a byte other than 0 or 1, and a record padding other than 0
     (README 8); '==' compares bytes, so a 'bool' read as 120 is true but not

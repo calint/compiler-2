@@ -13,7 +13,9 @@
 # script of its own
 #
 # usage: test-far-jumps-no-scratch.sh
-set -e
+set -eE
+# names the failed command; those under 'set +e' fail on purpose
+trap '[[ $- != *e* ]] || echo "FAILED. line $LINENO: $BASH_COMMAND" >&2' ERR
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 BIN="$SCRIPT_DIR/../../baz"

@@ -7,7 +7,7 @@ first example of each finding and keeps it in `findings/` (ignored by git).
 ## Undefined behavior of a baz program
 
 The classes are those of the catalog, 8.1 of `etc/docs/README.md`:
-`fuzz-ub.sh` models the run-time classes, `fuzz-effects.py` the evaluation
+`fuzz-ub.py` models the run-time classes, `fuzz-effects.py` the evaluation
 order, parts written before and shared storage, `fuzz-alias.sh` the aliasing
 of paths, `fuzz-reject.py` and `fuzz-constructs.py` the compile-time
 rejections.
@@ -23,7 +23,7 @@ operation.
 | `fuzz-constructs.py`, `constructs.py` | one small program with a known result per construct of the tutorial (and a program with an error per rejection rule, reported on the line of the mistake), the tutorial itself, on both targets and with and without checks |
 | `fuzz-coverage.py` | runs the generators without the compiler and fails when a construct of `constructs.py` is never emitted by any of them |
 | `fuzz-night.sh [hours] [seed]` | `fuzz-all.sh` in rounds with new seeds and growing scale until the stop time, lists the new findings, log in `findings/night.log` |
-| `fuzz-ub.sh` | python model of arithmetic, widths, shifts, arrays, indexes and counts of every width, arrays as parameters, one expression in many contexts (argument, index, count, divisor, shift count, comparison, result), a wider later element that must be rejected or exact, calls and recursion against x86_64 and rv32i-fpga, `--mutants` turns off one check at a time and requires a mismatch |
+| `fuzz-ub.py` | python model of arithmetic, widths, shifts, arrays, indexes and counts of every width, arrays as parameters, one expression in many contexts (argument, index, count, divisor, shift count, comparison, result), a wider later element that must be rejected or exact, calls and recursion against x86_64 and rv32i-fpga |
 | `fuzz-exprs.py` | python model of nested expressions (unary, conversions, comparisons, `and`/`or`/`not` with short circuit, constants, loops); with `FUZZ_SPELLING=1` each typed value is spelled as a constant and as a variable, both programs must end alike |
 | `fuzz-data.py` | python model of user types (records, nested arrays, `bool`), `dat` and `var` initializers (partial, strings, characters), `let` constants and read-only variables with shadowing, constant expressions, copies, `==` and `!=` of records and arrays, `foo`, `array_copy`, `arrays_equal`, `write` of a part of an array |
 | `fuzz-flow.py` | python model of `if` / `else if` / `else`, `loop` with `break` and `continue`, blocks that shadow, `exit`, functions with a result, early `return`, `noinline` |
@@ -38,7 +38,7 @@ operation.
 | `fuzz-options.py` | the command line: sizes, check lists, targets, odd files |
 | `fuzz-roome.py` | mutated sessions of `roome/src/main.baz` on both targets |
 | `fuzz-alias.sh` | the alias check against a brute force of the bytes |
-| `fuzz-ub.sh --mutants` | the check of the checks |
+| `fuzz-ub.sh --mutants` | the check of the checks: turns off one check at a time and requires a mismatch of `fuzz-ub.py` |
 | `fuzz-reduce.py`, `fuzz-reduce-roome.py` | shrink a finding |
 
 `build-asan.sh` builds `build/baz-asan` (AddressSanitizer and

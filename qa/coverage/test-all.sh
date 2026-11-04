@@ -2,6 +2,8 @@
 # runs every test of this directory and builds the coverage report: the
 # compiler cases on all four targets, then the other suites with their
 # coverage profiles added to the report
+#
+# replaces './baz' with the coverage build; run './make.sh -O3 build' afterwards
 set -e
 
 cd "$(dirname "$0")"
@@ -17,7 +19,6 @@ cd "$(dirname "$0")"
 ./test-versions.sh
 
 # other suites
-export LLVM_PROFILE_FILE="$PWD/extra-%p.profraw"
 ./test-cli.sh
 ./test-arena.py
 ./test-far-jumps.sh short

@@ -3,9 +3,9 @@
 # 'unlocated_error', an 'option_error') is the expectation of a test: the
 # longest fixed part of its message, between the '{}' placeholders, appears in
 # an expected output of 'qa/coverage/tests', in a line of
-# 'qa/coverage/test-cli.sh' that is not a comment or in
-# 'qa/coverage/test-arena.py'; code that user input cannot reach is an
-# 'assert' (AGENTS.md), so every message has a test
+# 'qa/coverage/test-cli.sh' or of a 'qa/coverage/test-far-jumps*.sh' that is
+# not a comment or in 'qa/coverage/test-arena.py'; code that user input cannot
+# reach is an 'assert' (AGENTS.md), so every message has a test
 # usage: qa/lint/check-error-tests.py
 # exits 1 and prints each message without a test when there is one
 import glob
@@ -21,12 +21,6 @@ COVERAGE = os.path.join(ROOT, 'qa', 'coverage')
 ERROR = re.compile(r'(?:compile_error|unlocated_error|option_error)\s*'
                    r'(?:error\s*)?\{|compile_error::file_level\(')
 
-# the messages that only a suite outside the "enough" set expects, with why
-EXCEPTIONS = {
-    # 'test-far-jumps-no-scratch.sh' needs a jump past 1 MiB, too slow under
-    # the sanitizers of 'test-all.sh'
-    'exceeds 1 MiB and no scratch register is free',
-}
 LITERAL = re.compile(r'"((?:[^"\\]|\\.)*)"')
 
 # a fixed part shorter than this is too common to tell a message
@@ -96,8 +90,11 @@ def corpus():
         for path in glob.glob(os.path.join(COVERAGE, pattern)):
             with open(path, encoding='utf-8', errors='replace') as f:
                 texts.append(f.read())
-    with open(os.path.join(COVERAGE, 'test-cli.sh'), encoding='utf-8') as f:
-        texts += [line for line in f if not line.lstrip().startswith('#')]
+    scripts = ['test-cli.sh', 'test-far-jumps.sh',
+               'test-far-jumps-no-scratch.sh']
+    for script in scripts:
+        with open(os.path.join(COVERAGE, script), encoding='utf-8') as f:
+            texts += [line for line in f if not line.lstrip().startswith('#')]
     with open(os.path.join(COVERAGE, 'test-arena.py'), encoding='utf-8') as f:
         texts.append(f.read())
     return '\n'.join(texts)
@@ -126,7 +123,7 @@ def main():
     text = corpus()
     greps = grepped()
     missing = [m for m in messages()
-               if m[2] not in EXCEPTIONS and not is_expected(m[2], text)
+               if not is_expected(m[2], text)
                and not any(g in part for g in greps for part in m[3])]
     for file_name, line_no, fragment, _ in missing:
         print(f'{file_name}:{line_no}: no test expects "{fragment}"')

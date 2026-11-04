@@ -6,15 +6,6 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
 --------------------------------------------------------------------------------
 1. clean up
 --------------------------------------------------------------------------------
-[ ] medium: 'format-source.py' can move a multiline note written right below
-    a member onto the next member: 'note_blank_lines' inserts a blank line
-    above it (a '}' or ';' line is no block start), and on the next run
-    'class_members' reads it as the leading comment of the next member, which
-    'by_name' sorts away (the strays of rounds 69 and 70 on 'emit_multiply'
-    and 'result_type_differs'; design review series 2, round 71 R1)
-    => option: 'note_blank_lines' gets the member ends from the cursors and
-       keeps a note right below one attached, or the check fails for a
-       floating multiline note between sorted methods
 [ ] easy: decide: '{}' where an array goes has two messages: a built-in or
     'foo' says "expected an array" (0377), a call "'{}' is not an array,
     parameter 'x' takes one" (0254, its own 'is_zero_value' branch)

@@ -30,7 +30,7 @@
 # For the output of a compile (COMPERR, LISTING) TARGET is the target of the
 # compiler, rv32i also for rv32i-qemu and rv32i-fpga; for the output of a run
 # it is the target of the run, else that of the compiler. A program judged by
-# its output (DIFF, DIFFINP, DIFFPY) must exit 0.
+# its output (DIFF, DIFFINP, DIFFINP2, DIFFPY) must exit 0.
 #
 # A case inside 'if [[ $MACHINE ... ]]' runs only for those targets (x86_64,
 # rv32i, rv32i-qemu, rv32i-fpga), e.g. a 'RUN' whose exit code differs by

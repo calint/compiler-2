@@ -12,7 +12,8 @@ For a reviewer:
    (needs nasm, ld, llvm-mc, llvm-objcopy, ld.lld, llvm-profdata, llvm-cov,
    qemu-riscv32 and qemu-system-riscv32)
 5. lint and format: 'qa/lint/clang-tidy.sh', 'qa/lint/check-all.sh' (the
-   design rules), 'qa/lint/format-source.sh'
+   design rules), 'qa/lint/format-source.sh', 'qa/lint/fix-source.py'
+   ('format-source.py' and 'fix-source.py' need the python libclang bindings)
 6. fuzzing: 'qa/fuzz/fuzz-all.sh', see 'qa/fuzz/README.md'
 7. known limitations and planned work: 'etc/todo.txt', the reasons of past
    decisions: 'etc/todo-resolved.txt'

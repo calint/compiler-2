@@ -1,4 +1,3 @@
 # binaries built by the test scripts
 /report/*
-/tests/qemu_gen_*
 /tests/[0-9][0-9][0-9][0-9]

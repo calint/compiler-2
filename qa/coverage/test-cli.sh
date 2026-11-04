@@ -4,7 +4,9 @@
 # binary name, and the '--nopt', '--reproduce-source' and '--versions' behavior
 #
 # usage: test-cli.sh
-set -e
+set -eE
+# names the failed command; those under 'set +e' fail on purpose
+trap '[[ $- != *e* ]] || echo "FAILED. line $LINENO: $BASH_COMMAND" >&2' ERR
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 cd "$SCRIPT_DIR/tests"
@@ -147,13 +149,13 @@ CLI_JUMP_OPTIMIZATIONS() {
     local temp_dir assembly
     temp_dir=$(mktemp -d /tmp/baz-jump-cli.XXXXXX)
     for assembly in gen.s out; do
-        nasm -f elf64 "$assembly" -o "$temp_dir/test.o"
+        nasm -w+error -f elf64 "$assembly" -o "$temp_dir/test.o"
         ld -s -T "$SCRIPT_DIR/../../baz.ld" -o "$temp_dir/test" "$temp_dir/test.o"
         "$temp_dir/test"
     done
     rm -f "$temp_dir/test.o" "$temp_dir/test"
     rmdir "$temp_dir"
-    echo "ok (jumps to next: 2, inverted: 1; jumps $raw_count -> $optimized_count; both exit 0)"
+    echo "ok (jumps to next: 3, inverted: 1; jumps $raw_count -> $optimized_count; both exit 0)"
 }
 
 CLI_CHECKS_NOUB() {
@@ -369,7 +371,7 @@ CLI_CONTROL_BYTE_FILE_NAME() {
     printf 'func main() {\n    var a = i8[2]\n    var i = 3\n    a[i] = 1\n}\n' >"$name"
     "$BIN" --checks=upper,line "$name" >gen.s 2>err
     nasm -w+error -f elf64 gen.s -o gen.o
-    "$BIN" --target=rv32i --checks=upper,line "$name" >gen.s 2>err
+    "$BIN" --target=rv32i --bin=gen-rv32i.bin --checks=upper,line "$name" >gen.s 2>err
     llvm-mc -triple=riscv32 -mattr=-m,-a,-f,-d,-c -filetype=obj gen.s -o gen.o
     # the locations of the register report name the file, also escaped
     printf 'func g(x i64) res i64 {\n    res = x * 2 + 1\n}\n' >gen-lib.baz
