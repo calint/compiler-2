@@ -219,8 +219,9 @@ is compiled.
 An inlined call does not copy its arguments. It enters a function scope that
 maps each parameter name to the argument ('param_binding'), e.g. 'p' to
 'world.rooms[i]' with the address of that element computed once, '3' to the
-constant 3, or 'x' to a scratch register holding the value of an expression. The
-result name maps to the destination of the call. A binding holds what the
+constant 3, 'x' to a scratch register holding the value of an expression, or
+an instance literal or a call result to a temporary of the call. The result
+name maps to the destination of the call. A binding holds what the
 argument resolved to in the scopes of the caller: resolving 'p' in the body
 gives it, and 'p.x' steps to the field from there. The scopes
 below the binding do not change while the body compiles, so this is what a
@@ -243,6 +244,18 @@ resolver looks up one name; a path resolves its root and steps each field
 ('ident_info::field', 'stmt_identifier::for_each_prefix'). 'statement::compile'
 writes its value to a 'destination': nowhere for a statement, a register, or the
 storage a resolved name is at.
+
+Seven types answer "where is this value", each at its own step:
+
+| type | what it holds | made by | read by |
+|---|---|---|---|
+| 'var_info', 'var_placement' ('ident_info.hpp') | a declared variable and where it lives: storage, an address register or a value register | the declarations, placed by 'toc::add_var' | the resolver |
+| 'ident_info' | what a name resolves to: a constant, a register or a variable with its operand | the resolver ('ident_resolver') | every node |
+| 'param_binding' ('toc.hpp') | a parameter of an inlined call bound to the 'ident_info' of its argument | the inlined call | the resolver, in the body |
+| 'destination' | where 'compile' writes: nowhere, a register or storage | the caller of 'compile' | 'compile' |
+| 'place' ('stmt_identifier.hpp') | storage a node reads or passes in place, its path and its 'ident_info' | 'as_place' | calls, io and bulk built-ins |
+| 'storage_path' ('access_path.hpp') | the identity of the bytes a path names, for aliasing and order (3.3) | 'stmt_identifier::storage' | the no-UB checks |
+| 'value_use' | the width a value is computed at and whether it is checked for overflow | 'toc::use_of', 'toc::use_at' | the arithmetic |
 
 ### 1.4 Dry runs
 
@@ -320,22 +333,18 @@ program does not depend on inlining.
    - the constants that end an inlined recursion: a recursive inlined call in
      the check ('scope_stack::is_in_body_taking_from_call'), also a call of the
      function in its own check ('scope_stack::inlined_nesting'), is compiled in
-     a dry run with its deeper levels, and a limit of the compile, which depends
-     on the arguments of a call ('compile_error::is_limit'), running out of
-     scratch registers or of the variable storage or the nesting limit, ends the
-     recursion ('stmt_call::check_recursion'), e.g. a 'g(x, 70)' that the
-     unknown 'x' drives past the nesting limit: one with a value argument that
-     folds is expanded, the 'g(x, 2)' of an 'f(x)' that nothing calls is checked
-     as in 'main' up to a level that runs out of registers (8.3), and one that a
-     value or a length the check does not know drives ends at the nesting limit
-     or out of registers; one whose value arguments all fold and whose array
-     arguments have their lengths nests as deep at every call, an instance or a
-     'mut' argument folds at no call, so the nesting limit rejects it, e.g. a
-     'g(k + 1)' entered as 'g(2)' that ends only at 'k == 0', or an 'r()' that
-     calls 'r()', running out of registers does not; any other without a value
-     argument that folds is not expanded, its arguments are bound as for the
-     body, which is not compiled ('inline_call::compile_arguments'), so a
-     recursion that only a constant argument of the call ends is no error there
+     a dry run with its deeper levels, where a limit of the compile, which
+     depends on the arguments of a call ('compile_error::is_limit'), running
+     out of scratch registers or of the variable storage or the nesting limit,
+     ends the recursion, not the check ('stmt_call::check_recursion'); the
+     arguments decide how:
+
+     | arguments | compiled | the limit | example |
+     |---|---|---|---|
+     | every value argument folds and every array argument has its length, an instance or a 'mut' argument does not count ('nests_alike_at_every_call'): it nests as deep at every call | the levels | the nesting limit rejects the function, running out of registers ends the recursion | a 'g(k + 1)' entered as 'g(2)' that ends only at 'k == 0', an 'r()' that calls 'r()' |
+     | some value argument folds ('has_constant_argument') | the levels | any limit ends the recursion | the 'g(x, 2)' of an 'f(x)' that nothing calls, checked as in 'main' up to a level that runs out of registers (8.3); a 'g(x, 70)' that the unknown 'x' drives past the nesting limit |
+     | no value argument folds | only the arguments, bound as for the body ('inline_call::compile_arguments') | none, the body is checked where the recursion is entered and in its own check | a recursion that only a constant argument of the call ends is no error there |
+
 3. Outside such a recursion the check is judged like a noinline body: running
    out of scratch registers or of the variable storage rejects the function,
    also where every call compiles. The check has the registers of a noinline
@@ -405,7 +414,7 @@ calls, where the guard does not fold, holds the rules in it.
 
 ### 1.6 Reports
 
-After the code, as comments: noinline bodies, uninstantiated generics, jump
+After the code, as comments: noinline functions, uninstantiated generics, jump
 optimizations, usage ('report_renderer' in 'program.hpp'), and with
 '--report=registers' the use of registers at the busiest point
 ('register_report.hpp').
@@ -676,8 +685,8 @@ type str = text<8>
 
 The generic type must already be defined, and the count of arguments must match.
 Each argument is checked against its parameter: a type parameter gets a type, a
-constant parameter gets a constant. The result is a list of bindings ('capacity'
-= 8), from which the instance is built (2.6), 'str' is registered as a real
+constant parameter gets a constant. The result is a list of arguments
+('generic_arg', 'capacity' = 8), from which the instance is built (2.6), 'str' is registered as a real
 type, and the methods are made (2.7).
 
 ### 2.6 Building the instance, level by level
@@ -687,16 +696,16 @@ until one has fields of its own.
 
 ```text
 str = text<8>
-  level 1: text, bindings capacity = 8
+  level 1: text, arguments capacity = 8
            base is list<i8, capacity>
-  level 2: list, bindings T = i8, capacity = 8
+  level 2: list, arguments T = i8, capacity = 8
            no base: read the fields here
 ```
 
 At a level with a base, the parameters of that level are made visible in a
 temporary block ('capacity' becomes the constant 8, a type parameter becomes a
 name for its type) and the base arguments are resolved in it, giving the
-bindings of the next level. The block is then closed. Each level has its own
+arguments of the next level. The block is then closed. Each level has its own
 parameters, and closing the block lets a base reuse the same parameter names
 without a clash.
 
@@ -705,7 +714,7 @@ read from the saved start of the generic definition as for a plain type, and
 they are added to the type being built. All levels build the same type, so
 'str' gets the fields 'array i8[8]' and 'len'.
 
-Every level is recorded as an instance of its generic type with its bindings.
+Every level is recorded as an instance of its generic type with its arguments.
 This is what lets the methods of every level be made for 'str', and what lets
 an error name each step that led to it.
 
@@ -717,7 +726,7 @@ func list.is_full() res bool { ... }
 
 A method of a generic type is a recipe too, for the same reason as the fields:
 its body depends on the parameters. Every instance of the type gets its own
-copy, read again with the bindings of that instance visible.
+copy, read again with the arguments of that instance visible.
 
 1. When an alias is made, the methods are made for every level in the order
    they are defined, as for a type written by hand: a method of 'text' can
@@ -981,7 +990,7 @@ held by review and the tests, e.g. 1678, also for the built-ins that check a
 range after its count (7.14). The
 default of 'visit_operands' is 'std::unreachable()': a node that is asked and
 does not say fails in the tests instead of skipping the checks. An operand is a
-'list_operand' ('ub_reads.hpp'): a node it reads, or a place of which only the
+'node_operand' ('ub_reads.hpp'): a node it reads, or a place of which only the
 indexes are read, e.g. the buffer that 'read' fills. The walks and their
 defaults are listed in the class comment of 'statement', the order checks with
 the order each relies on in the header of 'ub_order.hpp'. The aliasing of the
@@ -1124,7 +1133,7 @@ programs: 'qa/fuzz/fuzz-alias.sh', see 'qa/fuzz/README.md'.
 The effect of a call is a summary that the parse makes of its body ('body_uses',
 4.2): the globals the body reads and writes, also through its calls, and what
 it reads and writes of each argument through its parameter, e.g. only 'q.y'
-of 'sety(q)' ('stmt_call::visit_callee_reach'). The calls in the arguments
+of 'sety(q)' ('stmt_call::visit_callee_effects'). The calls in the arguments
 come first. The parse records the same summary for the caller. A function
 that calls itself has no complete summary yet: there the argument of a 'mut'
 parameter is written whole and of another parameter read whole, so no fixed
@@ -1471,7 +1480,7 @@ An element size the backend can lower stays the scale of the operand: 1, 2, 4
 and 8 on x86_64, any power of two on rv32i (a shift at the access). Any other
 size multiplies the index register first ('scale_index') and the operand gets
 scale 1: 'imul' on x86_64, shifts and adds on rv32i (the non-adjacent form of
-the factor, 'multiply_by_constant').
+the factor, 'multiply_by_shifts_and_adds').
 
 ### 6.4 A constant added to an index
 
@@ -1693,7 +1702,7 @@ keeps them consistent.
 Rejected: passing the tables one by one, every signature would carry the
 ones its callees need.
 
-Cost: 'toc.hpp' holds about 4k lines and 'toc' more than 70 public methods,
+Cost: 'toc.hpp' holds about 4k lines and 'toc' 66 public methods,
 grouped by the map above the class; a node can reach every table through
 it.
 

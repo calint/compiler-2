@@ -198,14 +198,10 @@ inline auto parse_keyword_statement(toc& tc, tokenizer& tz, const token tk)
 using call_or_identifier =
     std::variant<std::unique_ptr<stmt_call>, std::unique_ptr<stmt_identifier>>;
 
-// parses what follows the token 'tk', classified as 'tm', as a call of a
-// function, a generic function, a constructor or a method, otherwise as an
-// identifier, 'uops' go to the call or the identifier and 'expected_type' is
-// the type the call is assigned to or null
-inline auto parse_call_or_identifier(toc& tc, tokenizer& tz, const token& tk,
-                                     const term_kind tm, unary_ops uops,
-                                     const type* const expected_type)
-    -> call_or_identifier {
+// a term that is neither a value nor a call, e.g. the 'i8' of 'i8 + 1' or
+// the 'f' of 'f + 1'
+inline auto assert_value_or_call(const toc& tc, const tokenizer& tz,
+                                 const token& tk, const term_kind tm) -> void {
 
     // e.g. the 'loop' of 'x = loop(1)' or a 'mut' that starts a statement
     if (tm == term_kind::keyword) {
@@ -247,11 +243,7 @@ inline auto parse_call_or_identifier(toc& tc, tokenizer& tz, const token& tk,
                             in_quotes(tk.text()), tk.text())};
     }
 
-    // e.g. 'f(x)' or 'show<name>(x)', the call reads the type arguments
-    if (next == '(' or tm == term_kind::generic_call) {
-        return std::make_unique<stmt_call>(tc, std::move(uops), tk, tz,
-                                           expected_type);
-    }
+    // note: a function name followed by '(' is a call ('classify_term')
 
     // e.g. 'show<name>(x)' where 'show' is not generic, says so instead of
     // reading the '<' as an operator; a variable or a constant of that name is
@@ -263,18 +255,38 @@ inline auto parse_call_or_identifier(toc& tc, tokenizer& tz, const token& tk,
                             in_quotes(tk.text()))};
     }
 
-    // e.g. 'point.at(1, 2)'
-    if (tm == term_kind::constructor_call) {
-        return std::make_unique<stmt_call>(constructor_call_tag{}, tc,
-                                           std::move(uops), tk, tz);
-    }
-
     // e.g. the 'f' of 'x = f + 1', also of a generic function
     if (tm == term_kind::function_name) {
         throw compile_error{
             tk, std::format("{} is a function, not a value, a call ends with "
                             "'()'",
                             in_quotes(tk.text()))};
+    }
+}
+
+// parses what follows the token 'tk', classified as 'tm', as a call of a
+// function, a generic function, a constructor or a method, otherwise as an
+// identifier, 'uops' go to the call or the identifier and 'expected_type' is
+// the type the call is assigned to or null
+inline auto parse_call_or_identifier(toc& tc, tokenizer& tz, const token& tk,
+                                     const term_kind tm, unary_ops uops,
+                                     const type* const expected_type)
+    -> call_or_identifier {
+
+    assert_value_or_call(tc, tz, tk, tm);
+
+    // e.g. 'f(x)' or 'show<name>(x)', the call reads the type arguments
+    if (tz.peek_char_after_whitespace() == '(' or
+        tm == term_kind::generic_call) {
+
+        return std::make_unique<stmt_call>(tc, std::move(uops), tk, tz,
+                                           expected_type);
+    }
+
+    // e.g. 'point.at(1, 2)'
+    if (tm == term_kind::constructor_call) {
+        return std::make_unique<stmt_call>(constructor_call_tag{}, tc,
+                                           std::move(uops), tk, tz);
     }
 
     // e.g. 'x', 'p.x', 'a[i]' or the literal '0x80'

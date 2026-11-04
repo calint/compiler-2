@@ -34,7 +34,7 @@
 //                roles in 'x86_64_target'
 //   operations   'emit_op' chooses the form of an instruction,
 //                'lower_address' fits an operand into one,
-//                'multiply_by_constant', 'emit_signed_divide', 'shift'
+//                'emit_multiply', 'emit_signed_divide', 'shift'
 //   memory       'copy_block', 'store_bytes', 'zero' unrolled or with
 //                'rep', the bulk operations with 'rsi', 'rdi' and 'rcx'
 //   comparisons  'compare_and_branch', 'store_condition', 'memory_equal'
@@ -468,90 +468,6 @@ class machine_x86_64 final : public machine {
                         request.dst);
     }
 
-    auto multiply(const token& src_loc_tk, const size_t indent,
-                  const operand& product, const operand& factor,
-                  const factor_use use, const runtime_check& check = {})
-        -> void override {
-
-        if (multiply_by_constant(src_loc_tk, indent, product, factor, check)) {
-            return;
-        }
-
-        if (product.type_ref().size_bytes() == size_byte_) {
-            const operation_scope scope{*this};
-
-            // a register product holds the wide product in place, its low
-            // byte is the result
-            const bool is_in_place{product.is_register()};
-
-            const operand left{
-                is_in_place ? register_view(product, default_type())
-                            : alloc_scratch_register(src_loc_tk, indent,
-                                                     default_type()),
-            };
-
-            const operand right{
-                alloc_scratch_register(src_loc_tk, indent, default_type()),
-            };
-
-            mov(src_loc_tk, indent, left, product);
-            mov(src_loc_tk, indent, right, factor);
-            emit_op(src_loc_tk, indent, op::imul, left, right);
-
-            if (check.enabled) {
-                check_byte_product(src_loc_tk, indent, left, right);
-            }
-
-            if (is_in_place) {
-                return;
-            }
-
-            mov(src_loc_tk, indent, product, left);
-
-            return;
-        }
-
-        if (product.is_register()) {
-            emit_op(src_loc_tk, indent, op::imul, product, factor);
-
-            if (check.enabled) {
-                branch_on_overflow(src_loc_tk, indent);
-            }
-
-            return;
-        }
-
-        if (use == factor_use::may_overwrite) {
-            emit_op(src_loc_tk, indent, op::imul, factor, product);
-
-            // the move keeps the flags
-            mov(src_loc_tk, indent, product, factor);
-
-            if (check.enabled) {
-                branch_on_overflow(src_loc_tk, indent);
-            }
-
-            return;
-        }
-
-        const operation_scope scope{*this};
-
-        const operand reg{
-            alloc_scratch_register(
-                src_loc_tk, indent,
-                builtin_type_for_size_bytes(product.type_ref().size_bytes())),
-        };
-
-        mov(src_loc_tk, indent, reg, product);
-        emit_op(src_loc_tk, indent, op::imul, reg, factor);
-
-        if (check.enabled) {
-            branch_on_overflow(src_loc_tk, indent);
-        }
-
-        mov(src_loc_tk, indent, product, reg);
-    }
-
     auto return_function(const size_t indent) -> void override {
         assembler_.instruction(indent, op::ret);
     }
@@ -816,6 +732,86 @@ class machine_x86_64 final : public machine {
     }
 
     // 'read' and 'write' are system calls, the sector functions routines
+    auto emit_multiply(const token& src_loc_tk, const size_t indent,
+                       const operand& product, const operand& factor,
+                       const factor_use use, const runtime_check& check)
+        -> void override {
+
+        if (product.type_ref().size_bytes() == size_byte_) {
+            const operation_scope scope{*this};
+
+            // a register product holds the wide product in place, its low
+            // byte is the result
+            const bool is_in_place{product.is_register()};
+
+            const operand left{
+                is_in_place ? register_view(product, default_type())
+                            : alloc_scratch_register(src_loc_tk, indent,
+                                                     default_type()),
+            };
+
+            const operand right{
+                alloc_scratch_register(src_loc_tk, indent, default_type()),
+            };
+
+            mov(src_loc_tk, indent, left, product);
+            mov(src_loc_tk, indent, right, factor);
+            emit_op(src_loc_tk, indent, op::imul, left, right);
+
+            if (check.enabled) {
+                check_byte_product(src_loc_tk, indent, left, right);
+            }
+
+            if (is_in_place) {
+                return;
+            }
+
+            mov(src_loc_tk, indent, product, left);
+
+            return;
+        }
+
+        if (product.is_register()) {
+            emit_op(src_loc_tk, indent, op::imul, product, factor);
+
+            if (check.enabled) {
+                branch_on_overflow(src_loc_tk, indent);
+            }
+
+            return;
+        }
+
+        if (use == factor_use::may_overwrite) {
+            emit_op(src_loc_tk, indent, op::imul, factor, product);
+
+            // the move keeps the flags
+            mov(src_loc_tk, indent, product, factor);
+
+            if (check.enabled) {
+                branch_on_overflow(src_loc_tk, indent);
+            }
+
+            return;
+        }
+
+        const operation_scope scope{*this};
+
+        const operand reg{
+            alloc_scratch_register(
+                src_loc_tk, indent,
+                builtin_type_for_size_bytes(product.type_ref().size_bytes())),
+        };
+
+        mov(src_loc_tk, indent, reg, product);
+        emit_op(src_loc_tk, indent, op::imul, reg, factor);
+
+        if (check.enabled) {
+            branch_on_overflow(src_loc_tk, indent);
+        }
+
+        mov(src_loc_tk, indent, product, reg);
+    }
+
     auto emit_target_call(const token& src_loc_tk, const size_t indent,
                           const target_call function, const operand& result)
         -> void override {
@@ -1696,58 +1692,6 @@ class machine_x86_64 final : public machine {
              const operand& dst_op, const operand& src_op) -> void {
 
         emit_op(src_loc_tk, indent, op::mov, dst_op, src_op);
-    }
-
-    // a constant factor is resolved at compile time: zero clears, one needs no
-    // code, minus one negates and a power of two is a shift, false when a
-    // multiplication is still needed
-    [[nodiscard]] auto
-    multiply_by_constant(const token& src_loc_tk, const size_t indent,
-                         const operand& product, const operand& factor,
-                         const runtime_check& check) -> bool {
-
-        const std::optional<uint64_t> bits{immediate_bits(factor)};
-
-        if (not bits) {
-            return false;
-        }
-
-        const constant_factor factor_info{
-            classify_factor(*bits, product.type_ref().size_bits()),
-        };
-
-        if (factor_info.kind == factor_kind::zero) {
-            // 'xor' is the shorter idiom, a memory product has no
-            // 'xor m, m' form
-            if (product.is_register()) {
-                emit_op(src_loc_tk, indent, op::xor_op, product, product);
-            } else {
-                mov(src_loc_tk, indent, product, immediate(0));
-            }
-
-            return true;
-        }
-
-        if (factor_info.kind == factor_kind::one) {
-            return true;
-        }
-
-        if (factor_info.kind == factor_kind::minus_one) {
-            unary(src_loc_tk, indent, arithmetic_operator::negate, product,
-                  check);
-
-            return true;
-        }
-
-        // a shift does not report the bits it loses, 'imul' does
-        if (factor_info.kind == factor_kind::other or check.enabled) {
-            return false;
-        }
-
-        emit_op(src_loc_tk, indent, op::sal, product,
-                immediate(factor_info.shift));
-
-        return true;
     }
 
     // e.g. the fixed registers of 'rep movsb' and syscalls

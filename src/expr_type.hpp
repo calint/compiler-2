@@ -378,7 +378,7 @@ class expr_path final : public statement {
     auto visit_operands(const operand_visitor visitor) const -> void override {
         visitor({
             .node{&path_},
-            .written_place{},
+            .index_only_place{},
         });
     }
 

@@ -1,6 +1,56 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] hard: design review series 2, round 67 (2026-11-04, user: keep looking
+    for improvements in a loop and do the recommended, a straight read for a
+    human reviewer from 'main' to the last line, also how the classes are
+    woven together; A the functions clang-tidy flags as complex or long, B
+    'toc', 'stmt_call' and 'stmt_def_func' whole, C the two backends side by
+    side, D the concepts as a newcomer meets them, E the control flow of one
+    program from 'main.cpp' to the assembler)
+    => done (2026-11-04): no bugs; design: A1 'expr_any::parse_variant' split
+       ('parse_zero_braces', 'parse_type_as_zero', 'assert_not_aggregate'),
+       A2 'stmt_builtin_io::check_range_from_start' split
+       ('move_to_constant_start', 'move_to_run_time_start'), A3
+       'checks_named' out of 'parse_checks', A4 the rejections of
+       'parse_call_or_identifier' in 'assert_value_or_call', A5
+       'make_target_options' out of 'compile_file'; C1 the constant factor
+       of a multiplication decided once in 'machine::multiply', the backends
+       implement 'emit_multiply', rv32i 'multiply_by_shifts_and_adds' (-49;
+       1730 on x86_64 clears with 'mov r14, 0' instead of 'xor r14, r14',
+       one instruction longer at one site of the corpus); E12 the inlined
+       and noinline call paths without lambdas: the block of the temporaries
+       is a local 'std::optional<toc::scope_entry>', 'call_site::
+       add_result_temporary' returns the destination, 'compile_call' holds
+       the nesting limit and its catch ('call_limits::compile_within_limits'
+       and 'in_temporaries_block' gone); B1 'scope::param_index' of a root in
+       the function scope that is not the result is a parameter, B2
+       'shared_name_note' gone (an argument root is never a temporary), B3
+       the non-const 'scope_stack::at' gone, B4 'argument_type' asserts the
+       argument is present; names: D3 'list_operand' -> 'node_operand', D4
+       'written_place' -> 'index_only_place', 'written_index' ->
+       'index_only_position', D5 'visit_callee_reach' ->
+       'visit_callee_effects', 'visit_reach_of' -> 'visit_effects_of';
+       docs: D1 README 1.5 item 2 the recursions of the check as a table,
+       the 'check_recursion' comment as a list, D2 README 1.3 a table of the
+       seven types of where a value is, D6 README 2.5 to 2.7 'arguments'
+       ('generic_arg') for 'bindings', D9 README 1.3 the temporaries of an
+       inlined call, 1.6 "noinline functions", 7.6 66 public methods; E14
+       the 'toc' class comment lists the modes a node does not see and who
+       sets and reads them; comments B6, D7, D8; tests 2098 2099 2100 (B5);
+       src +42 lines, of which about +60 are the comments and helper
+       signatures of A; skipped: A6 to A11 hard because of the problem or
+       decided, C2 to C6 about 0 lines each, E13 'toc::emit_most_efficient'
+       as one sequence would make the version types of 'machine' public
+       ('compiled_version', 'version_state', 'failure_location') to remove
+       one lambda, E15 'std::expected' for compile errors and E16 a
+       reachability result of 'compile', each through every 'compile'
+       override, B7 'is_inside_call' without a location unproven; verdict
+       (E): from 'main' through the passes of 'program' the read is straight
+       and direct; it stops being straight where a statement is compiled
+       more than once (dry runs, versions, inlined calls through 'toc',
+       'machine' and 'assembler'), 74 % of the statement compiles of roome
+       run in a dry run, mostly the check of a body without its calls
 [x] hard: bug hunt series 2, round 31 (2026-11-04, user: bug hunts and
     fixes in a loop until no more are found; 3 hunters: V1 constant folding
     against run-time evaluation, V2 the register allocator and calls under

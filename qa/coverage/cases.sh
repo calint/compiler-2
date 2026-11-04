@@ -6655,3 +6655,11 @@ if [[ $MACHINE == x86_64 ]]; then SRC=2096 && EXP=0 && RUN; else SRC=2096 && COM
 
 # a '<<' after a generic argument is an operator, not the '<' of an instance
 SRC=2097 && COMPERR
+
+# a constructor or a built-in named as the argument a type argument is
+# deduced from needs its '('
+SRC=2098 && COMPERR
+SRC=2099 && COMPERR
+
+# the result of a method call does not tell a type argument
+SRC=2100 && COMPERR

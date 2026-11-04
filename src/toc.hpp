@@ -299,9 +299,10 @@ class scope final {
         // 'main' and the body check of 'stmt_def_func::check_body', see
         // 'toc::check_skipped'
         bool is_without_call{};
-        // such a body that a call gives something, its parameters or an
-        // unsized array, so the constants that end a recursion are unknown,
-        // see 'stmt_call::check_recursion'
+        // of such a body: a call would give it what the check does not have,
+        // e.g. the length of an unsized array, so the constants that end a
+        // recursion are unknown, see 'stmt_def_func::check_body' and
+        // 'stmt_call::check_recursion'
         bool takes_from_call{};
 
         // the name of the result, empty when there is none
@@ -478,9 +479,9 @@ class scope final {
 
     [[nodiscard]] auto name() const -> std::string_view { return name_; }
 
-    // the index of the parameter 'name', none for another name
+    // the index of the parameter 'name'
     [[nodiscard]] auto param_index(const std::string_view name) const
-        -> std::optional<size_t> {
+        -> size_t {
 
         const std::vector<std::string>& names{func_part().param_names};
 
@@ -490,7 +491,7 @@ class scope final {
             }
         }
 
-        return std::nullopt;
+        std::unreachable();
     }
 
     [[nodiscard]] auto reach_of_func() -> func_reach& {
@@ -1116,10 +1117,6 @@ class scope_stack final {
         }
     }
 
-    [[nodiscard]] auto at(const size_t index) -> scope& {
-        return scopes_.at(index);
-    }
-
     [[nodiscard]] auto at(const size_t index) const -> const scope& {
         return scopes_.at(index);
     }
@@ -1353,13 +1350,11 @@ class scope_stack final {
             return;
         }
 
-        if (const std::optional<size_t> index{
-                func.param_index(storage.root.name),
-            }) {
+        // note: at the parse a function scope declares only its parameters
+        //       and its result ('add_signature_vars')
 
-            func.body_uses_of_func().add_binding(index, storage.path,
-                                                 is_written);
-        }
+        func.body_uses_of_func().add_binding(
+            func.param_index(storage.root.name), storage.path, is_written);
     }
 
     auto restore_reach_state(const reach_state& state) -> void {
@@ -2440,6 +2435,19 @@ class variable_comments final {
 // ('scope_entry'); the peaks ('compile_state') are put back by a dry run
 // with the constant count ('dry_run_scope') and set to those of the kept
 // version by 'emit_most_efficient'
+//
+// the modes a node does not see, each set in one place and read elsewhere:
+//
+//   'is_compiling_'           set by 'begin_compile'; read by 'scope_entry'
+//                             and 'add_var' (storage and comments)
+//   'dry_run_depth_'          set by 'dry_run_scope'; read by
+//                             'add_noinline_body' (a body to check, not emit)
+//   'scope::is_without_call'  set by 'stmt_def_func::check_body' and
+//                             'scope::main_func'; read for the innermost
+//                             function by 'check_skipped'
+//   'scope::takes_from_call'  set by 'stmt_def_func::check_body'; read for
+//                             any function by 'stmt_call::compile' through
+//                             'scope_stack::is_in_body_taking_from_call'
 class toc final {
     // the most levels of blocks and expressions inside each other, the parsers
     // recurse for each of them so the limit keeps the source from exhausting
@@ -3135,7 +3143,8 @@ class toc final {
     // program and is rethrown as an error of the source, so no reader of the
     // kind drops it: the check of a body starts from the registers of a
     // noinline body, and skipped code is never inside a version, an inlined
-    // body skips no code, see 'check_skipped'
+    // body skips no code, see 'check_skipped'; 'stmt_call::check_recursion'
+    // reads the kind inside the run, before it is rethrown
     auto dry_run(const std::function_ref<void()> compile,
                  const machine::discarded_code code) -> void {
 

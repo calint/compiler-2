@@ -1326,17 +1326,17 @@ inline auto
 statement::visit_call_effects(const toc& tc,
                               const call_effect_visitor visitor) const -> void {
 
-    visit_operands([&tc, &visitor](const list_operand& operand) -> void {
+    visit_operands([&tc, &visitor](const node_operand& operand) -> void {
         operand.node->visit_call_effects(tc, visitor);
     });
 }
 
 // the reads of 'operand', the indexes alone of a written place
-inline auto visit_operand_reads(const list_operand& operand,
+inline auto visit_operand_reads(const node_operand& operand,
                                 const read_visitor reader) -> void {
 
-    if (operand.written_place != nullptr) {
-        operand.written_place->visit_index_reads(reader);
+    if (operand.index_only_place != nullptr) {
+        operand.index_only_place->visit_index_reads(reader);
         return;
     }
 
@@ -1346,7 +1346,7 @@ inline auto visit_operand_reads(const list_operand& operand,
 inline auto statement::has_call() const -> bool {
     bool found{};
 
-    visit_operands([&found](const list_operand& operand) -> void {
+    visit_operands([&found](const node_operand& operand) -> void {
         found = found or operand.node->has_call();
     });
 
@@ -1354,7 +1354,7 @@ inline auto statement::has_call() const -> bool {
 }
 
 inline auto statement::visit_reads(const read_visitor reader) const -> void {
-    visit_operands([&reader](const list_operand& operand) -> void {
+    visit_operands([&reader](const node_operand& operand) -> void {
         visit_operand_reads(operand, reader);
     });
 }

@@ -1,0 +1,6 @@
+# a built-in named as the argument a type argument is deduced from is called:
+# it needs its '('
+
+func show<T type>(v T) {}
+
+func main() { show(array_length) }

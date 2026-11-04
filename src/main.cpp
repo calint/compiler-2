@@ -193,6 +193,10 @@ auto print_help(const char* const program_name) -> void;
 
 [[nodiscard]] auto compile_file(const options& opts) -> int;
 
+[[nodiscard]] auto make_target_options(const options& opts,
+                                       const std::string& binary)
+    -> machine::target_options;
+
 auto print_compiler_error(const source_files& files, const compile_error& error)
     -> void;
 
@@ -204,6 +208,10 @@ auto check_reproduced_source(const program& prg, const source_files& files)
                                     const size_t alignment) -> size_t;
 
 [[nodiscard]] auto parse_checks(const std::string_view checks) -> check_options;
+
+[[nodiscard]] auto checks_named(const std::string_view name,
+                                const std::string_view written)
+    -> std::vector<bool check_options::*>;
 
 [[nodiscard]] auto parse_reports(const std::string_view reports)
     -> report_options;
@@ -610,30 +618,9 @@ auto print_help(const char* const program_name) -> void {
                 : default_binary_file_name(src_file_name, *opts.target),
         };
 
-        const machine::target_options target_opts{
-            .jumps{
-                opts.optimize_jumps ? assembler::jump_mode::optimized
-                                    : assembler::jump_mode::as_emitted,
-            },
-            .kept{opts.kept_version},
-            .register_report{opts.reports.registers},
-            .sd_card_file_name{
-                std::string{
-                    opts.sd_card_file_name.value_or(default_sd_card_file_name),
-                },
-            },
-            .binary_file_name{binary},
-            .stack_size_bytes{
-                opts.stack_size_bytes.value_or(default_stack_size_bytes),
-            },
-            .memory_size_bytes{
-                opts.memory_size_bytes.value_or(default_memory_size_bytes),
-            },
-            .reports_line{opts.checks.reports_line},
-        };
-
         const std::unique_ptr<machine> backend{
-            opts.target->make(builtins, files, target_opts),
+            opts.target->make(builtins, files,
+                              make_target_options(opts, binary)),
         };
 
         // the checks the target cannot honor are off, e.g. x86_64 has no
@@ -677,6 +664,34 @@ auto print_help(const char* const program_name) -> void {
     }
 
     return 0;
+}
+
+// the options of the backend, '--bin' resolved to 'binary'
+[[nodiscard]] auto make_target_options(const options& opts,
+                                       const std::string& binary)
+    -> machine::target_options {
+
+    return {
+        .jumps{
+            opts.optimize_jumps ? assembler::jump_mode::optimized
+                                : assembler::jump_mode::as_emitted,
+        },
+        .kept{opts.kept_version},
+        .register_report{opts.reports.registers},
+        .sd_card_file_name{
+            std::string{
+                opts.sd_card_file_name.value_or(default_sd_card_file_name),
+            },
+        },
+        .binary_file_name{binary},
+        .stack_size_bytes{
+            opts.stack_size_bytes.value_or(default_stack_size_bytes),
+        },
+        .memory_size_bytes{
+            opts.memory_size_bytes.value_or(default_memory_size_bytes),
+        },
+        .reports_line{opts.checks.reports_line},
+    };
 }
 
 // the message of the error at its source line, the inlined calls and generic
@@ -854,30 +869,10 @@ static_assert([] -> bool {
             // note: 1 because the sign is not part of the name
         }
 
-        // the checks the option names, e.g. '-noub' disables every check
-        // that 'noub' enables
-        std::vector<bool check_options::*> members;
-
-        if (option == "noub") {
-            for (const check_name& name : check_names) {
-                if (name.is_ub) {
-                    members.push_back(name.member);
-                }
-            }
-        } else {
-            const auto* const found{
-                std::ranges::find(check_names, option, &check_name::text),
-            };
-
-            if (found == check_names.end()) {
-                throw option_error{std::format(
-                    "invalid --checks: {}, supported checks are: {}, "
-                    "noub, each with a '+' or '-' prefix",
-                    in_quotes(written), joined_texts(check_names))};
-            }
-
-            members.push_back(found->member);
-        }
+        // e.g. '-noub' disables every check that 'noub' enables
+        const std::vector<bool check_options::*> members{
+            checks_named(option, written),
+        };
 
         if (is_disable) {
             disabled.append_range(members);
@@ -893,6 +888,38 @@ static_assert([] -> bool {
     }
 
     return parsed;
+}
+
+// the checks 'name' turns on, e.g. every no-UB check for 'noub';
+// 'written' is the option as given, for the error
+[[nodiscard]] auto checks_named(const std::string_view name,
+                                const std::string_view written)
+    -> std::vector<bool check_options::*> {
+
+    if (name == "noub") {
+        std::vector<bool check_options::*> members;
+
+        for (const check_name& check : check_names) {
+            if (check.is_ub) {
+                members.push_back(check.member);
+            }
+        }
+
+        return members;
+    }
+
+    const auto* const found{
+        std::ranges::find(check_names, name, &check_name::text),
+    };
+
+    if (found == check_names.end()) {
+        throw option_error{
+            std::format("invalid --checks: {}, supported checks are: {}, "
+                        "noub, each with a '+' or '-' prefix",
+                        in_quotes(written), joined_texts(check_names))};
+    }
+
+    return {found->member};
 }
 
 // keeps the directory so the image lands next to its source

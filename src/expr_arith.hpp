@@ -705,7 +705,7 @@ class expr_arith final : public statement {
         for (const std::unique_ptr<statement>& e : exprs_) {
             visitor({
                 .node{e.get()},
-                .written_place{},
+                .index_only_place{},
             });
         }
     }

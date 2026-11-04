@@ -39,8 +39,8 @@
 //   addresses    'lower_address', 'lower_address_offset': an operand into a
 //                base register and a 12-bit offset
 //   operations   'binary_operation', 'emit_binary_instruction',
-//                'multiply_by_constant' (signed digits), 'shift_by_constant',
-//                'shift_by_register'
+//                'multiply_by_shifts_and_adds' (signed digits),
+//                'shift_by_constant', 'shift_by_register'
 //   helpers      '.Lbaz_multiply', '.Lbaz_multiply_checked' and
 //                '.Lbaz_divide' for 'mul' and 'div',
 //                'helper_specs_', 'call_arithmetic_helper',
@@ -526,6 +526,41 @@ class machine_rv32i : public machine {
     // 'read' and 'write' are system calls or routines of the target, see
     // 'emit_io_call'; the sector functions are routines, see
     // 'call_sector_routine'
+    // a constant factor that 'multiply' did not resolve shifts and adds
+    // unless checked, else the helper multiplies
+    auto emit_multiply(const token& src_loc_tk, const size_t indent,
+                       const operand& product, const operand& factor,
+                       [[maybe_unused]] const factor_use use,
+                       const runtime_check& check) -> void override {
+
+        validate_operands(product, factor);
+
+        const std::optional<uint64_t> bits{immediate_bits(factor)};
+
+        // shifts and adds do not report the bits they lose, the helper does
+        if (bits and not check.enabled) {
+            const size_t width_bits{product.type_ref().size_bits()};
+
+            const constant_factor factor_info{
+                classify_factor(*bits, width_bits),
+            };
+
+            multiply_by_shifts_and_adds(
+                src_loc_tk, indent, product, factor,
+                static_cast<uint32_t>(factor_info.multiplier), width_bits);
+
+            return;
+        }
+
+        const helper_routine routine{
+            check.enabled ? helper_routine::multiply_checked
+                          : helper_routine::multiply,
+        };
+
+        call_arithmetic_helper(src_loc_tk, indent, product, factor, routine,
+                               operand::reg("a0", default_type()), check);
+    }
+
     auto emit_target_call(const token& src_loc_tk, const size_t indent,
                           const target_call function,
                           [[maybe_unused]] const operand& result)
@@ -1183,28 +1218,6 @@ class machine_rv32i : public machine {
                                    request);
             });
         });
-    }
-
-    auto multiply(const token& src_loc_tk, const size_t indent,
-                  const operand& product, const operand& factor,
-                  [[maybe_unused]] const factor_use use,
-                  const runtime_check& check = {}) -> void override {
-
-        // validate memory operands even when a constant eliminates the
-        // operation
-        validate_operands(product, factor);
-
-        if (multiply_by_constant(src_loc_tk, indent, product, factor, check)) {
-            return;
-        }
-
-        const helper_routine routine{
-            check.enabled ? helper_routine::multiply_checked
-                          : helper_routine::multiply,
-        };
-
-        call_arithmetic_helper(src_loc_tk, indent, product, factor, routine,
-                               operand::reg("a0", default_type()), check);
     }
 
     auto return_function(const size_t indent) -> void override {
@@ -3162,62 +3175,6 @@ class machine_rv32i : public machine {
     // what an access through the register 'pointer' reads or writes
     [[nodiscard]] auto memory_at(const operand& pointer) const -> operand {
         return operand::mem(pointer.register_name(), {}, 1, 0, default_type());
-    }
-
-    // a constant factor is resolved at compile time, at the bits that fit
-    // the product's type: zero clears, one needs no code, minus one negates
-    // and the others shift and add; false when the helper multiplies
-    [[nodiscard]] auto
-    multiply_by_constant(const token& src_loc_tk, const size_t indent,
-                         const operand& product, const operand& factor,
-                         const runtime_check& check) -> bool {
-
-        const std::optional<int32_t> constant{immediate_value(factor)};
-
-        if (not constant) {
-            return false;
-        }
-
-        const size_t bits{product.type_ref().size_bits()};
-
-        const constant_factor factor_info{
-            classify_factor(static_cast<uint32_t>(*constant), bits),
-        };
-
-        if (factor_info.kind == factor_kind::zero) {
-            store_constant_result(src_loc_tk, indent, product, 0);
-            return true;
-        }
-
-        if (factor_info.kind == factor_kind::one) {
-            return true;
-        }
-
-        if (factor_info.kind == factor_kind::minus_one) {
-            unary(src_loc_tk, indent, arithmetic_operator::negate, product,
-                  check);
-
-            return true;
-        }
-
-        // shifts and adds do not report the bits they lose, the helper does
-        if (check.enabled) {
-            return false;
-        }
-
-        if (factor_info.kind == factor_kind::power_of_two) {
-            shift(src_loc_tk, indent, arithmetic_operator::shift_left, product,
-                  operand::imm(factor_info.shift, default_type()),
-                  runtime_check{});
-
-            return true;
-        }
-
-        multiply_by_shifts_and_adds(
-            src_loc_tk, indent, product, factor,
-            static_cast<uint32_t>(factor_info.multiplier), bits);
-
-        return true;
     }
 
     // the remaining constant needs shifts and adds; keep the original value

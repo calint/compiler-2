@@ -248,7 +248,7 @@ class expr_any final : public statement {
         for (size_t i{}; i < element_count(); ++i) {
             visitor({
                 .node{&element(i)},
-                .written_place{},
+                .index_only_place{},
             });
         }
     }
@@ -906,6 +906,36 @@ class expr_any final : public statement {
             [](const auto& item) -> const statement& { return item; });
     }
 
+    // a record or array literal where the built-in 'tp' is expected
+    static auto assert_not_aggregate(const toc& tc, tokenizer& tz,
+                                     const type& tp, const token& tk) -> void {
+
+        // e.g. 'x = point' or 'x = point{1, 2}' for an 'i8' 'x', as 'x = p' of
+        // a 'point' 'p'; a condition may compare an instance literal, which the
+        // comparison rejects, e.g. 'b = point{1, 2} == p'
+        const term_kind tm{classify_term(tc, tk, tz)};
+
+        if (is_record_value(tm, tz) or
+            (tm == term_kind::record_literal and not tp.is_bool())) {
+
+            throw_type_mismatch(tk, tp.name(), tc.get_type_or_throw(tk).name());
+        }
+
+        // e.g. 'x = i8[2]{1, 2}' or 'x = [2]{1, 2}' for an 'i8' 'x', like an
+        // instance literal; an operand or a compared literal is rejected as
+        // an operand, e.g. 'b = [2]{1, 2} == a'
+        const bool is_array_literal{
+            tm == term_kind::array_literal or
+                (tk.is_none() and is_default_array_literal(tz)),
+        };
+
+        if (is_array_literal and
+            (not tp.is_bool() or is_array_literal_value(tz))) {
+
+            throw_array_literal_mismatch(tc, tk, tp);
+        }
+    }
+
     // a number destination takes a number: not a 'bool', 'int(b)' converts
     // it, and not an instance, whatever the value, e.g. 'c', 'f()' or
     // 'arrays_equal(a, b, n)'; at the parse, the one point every value passes
@@ -1001,6 +1031,30 @@ class expr_any final : public statement {
         }
     }
 
+    // e.g. 'var x = i8' is 'var x = i8(0)' and 'var b = bool' is
+    // 'var b = false'
+    [[nodiscard]] static auto
+    parse_type_as_zero(toc& tc, tokenizer& tz, const type& tp,
+                       const literal_typing typing, const token& tk)
+        -> expr_variant {
+
+        if (typing == literal_typing::from_destination) {
+            // note: compared by type, a type parameter names the type of
+            //       its argument
+
+            const type& named_type{tc.get_type_or_throw(tk)};
+
+            if (not named_type.is_same(tp)) {
+                throw_type_mismatch(tk, tp.name(), named_type.name());
+            }
+
+            throw_known_type(tk, tp.name(), "{}");
+        }
+
+        return builtin_value(
+            tc, tz, std::make_unique<expr_zero>(tc.get_type_or_throw(tk), tk));
+    }
+
     [[nodiscard]] static auto parse_variant(toc& tc, tokenizer& tz,
                                             const type& tp,
                                             const literal_typing typing)
@@ -1011,74 +1065,20 @@ class expr_any final : public statement {
             return expr_type{tc, tz, tp, typing};
         }
 
-        // e.g. 'n = {}' is 'n = 0' and 'b = {}' is 'b = false'
         if (const std::optional<token> open_brace_tk{
                 tz.is_next_char_token('{'),
             }) {
 
-            const token close_brace_tk{
-                tz.expect_char_token(
-                    '}', "expected '}', the zero value of a built-in is '{}'"),
-            };
-
-            // e.g. the '+' of 'n = {} + 1'
-            if (continues_expression(tz)) {
-                throw compile_error{
-                    tz, "'{}' is a whole value, an operator cannot follow it"};
-            }
-
-            return builtin_value(tc, tz,
-                                 std::make_unique<expr_zero>(tp, *open_brace_tk,
-                                                             close_brace_tk));
+            return parse_zero_braces(tc, tz, tp, *open_brace_tk);
         }
 
-        // e.g. 'var x = i8' is 'var x = i8(0)' and 'var b = bool' is
-        // 'var b = false'
         const token tk{tz.next_token()};
 
         if (is_bare_builtin_type(tc, tk, tz)) {
-            if (typing == literal_typing::from_destination) {
-                // note: compared by type, a type parameter names the type of
-                //       its argument
-
-                const type& named_type{tc.get_type_or_throw(tk)};
-
-                if (not named_type.is_same(tp)) {
-                    throw_type_mismatch(tk, tp.name(), named_type.name());
-                }
-
-                throw_known_type(tk, tp.name(), "{}");
-            }
-
-            return builtin_value(
-                tc, tz,
-                std::make_unique<expr_zero>(tc.get_type_or_throw(tk), tk));
+            return parse_type_as_zero(tc, tz, tp, typing, tk);
         }
 
-        // e.g. 'x = point' or 'x = point{1, 2}' for an 'i8' 'x', as 'x = p' of
-        // a 'point' 'p'; a condition may compare an instance literal, which the
-        // comparison rejects, e.g. 'b = point{1, 2} == p'
-        const term_kind tm{classify_term(tc, tk, tz)};
-
-        if (is_record_value(tm, tz) or
-            (tm == term_kind::record_literal and not tp.is_bool())) {
-
-            throw_type_mismatch(tk, tp.name(), tc.get_type_or_throw(tk).name());
-        }
-
-        // e.g. 'x = i8[2]{1, 2}' or 'x = [2]{1, 2}' for an 'i8' 'x', like an
-        // instance literal; an operand or a compared literal is rejected as
-        // an operand, e.g. 'b = [2]{1, 2} == a'
-        const bool is_array_literal{
-            tm == term_kind::array_literal or
-                (tk.is_none() and is_default_array_literal(tz)),
-        };
-
-        if (is_array_literal and
-            (not tp.is_bool() or is_array_literal_value(tz))) {
-
-            throw_array_literal_mismatch(tc, tk, tp);
-        }
+        assert_not_aggregate(tc, tz, tp, tk);
 
         tz.put_back_token(tk);
 
@@ -1116,6 +1116,28 @@ class expr_any final : public statement {
         }
 
         return value;
+    }
+
+    // e.g. 'n = {}' is 'n = 0' and 'b = {}' is 'b = false'
+    [[nodiscard]] static auto parse_zero_braces(toc& tc, tokenizer& tz,
+                                                const type& tp,
+                                                const token& open_brace_tk)
+        -> expr_variant {
+
+        const token close_brace_tk{
+            tz.expect_char_token(
+                '}', "expected '}', the zero value of a built-in is '{}'"),
+        };
+
+        // e.g. the '+' of 'n = {} + 1'
+        if (continues_expression(tz)) {
+            throw compile_error{
+                tz, "'{}' is a whole value, an operator cannot follow it"};
+        }
+
+        return builtin_value(
+            tc, tz,
+            std::make_unique<expr_zero>(tp, open_brace_tk, close_brace_tk));
     }
 
     static auto read_element_delimiter(tokenizer& tz, const type& tp,

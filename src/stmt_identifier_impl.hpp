@@ -137,7 +137,7 @@ inline auto stmt_identifier::visit_operands(const operand_visitor visitor) const
         if (e.index) {
             visitor({
                 .node{&e.index_expr()},
-                .written_place{},
+                .index_only_place{},
             });
         }
     }

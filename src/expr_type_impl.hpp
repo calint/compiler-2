@@ -334,7 +334,7 @@ inline auto expr_type::visit_operands(const operand_visitor visitor) const
     if (const statement* const value{copy_or_call()}) {
         visitor({
             .node{value},
-            .written_place{},
+            .index_only_place{},
         });
 
         return;
@@ -343,7 +343,7 @@ inline auto expr_type::visit_operands(const operand_visitor visitor) const
     for (const std::unique_ptr<expr_any>& e : field_values()) {
         visitor({
             .node{e.get()},
-            .written_place{},
+            .index_only_place{},
         });
     }
 }

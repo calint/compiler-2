@@ -13,17 +13,17 @@ class statement;
 class stmt_identifier;
 
 // an operand of a node in evaluation order, e.g. an argument of a call; a
-// place of which only the indexes are read is 'written_place': the node
+// place of which only the indexes are read is 'index_only_place': the node
 // writes it, e.g. the buffer of 'read' or the destination of 'array_copy',
 // or needs only its length, e.g. the array of 'array_length'
-struct list_operand {
+struct node_operand {
     const statement* node{};
     // null when the operand is read
-    const stmt_identifier* written_place{};
+    const stmt_identifier* index_only_place{};
 };
 
 // receives each operand of a node in evaluation order
-using operand_visitor = std::function_ref<void(const list_operand& operand)>;
+using operand_visitor = std::function_ref<void(const node_operand& operand)>;
 
 // receives each read of a variable, the path that reads it: its root token,
 // where an error points, and the storage it reaches, see

@@ -5,7 +5,8 @@
 // caller asks of the address of an identifier ('lea_request'), why a name
 // cannot be written ('read_only_cause'), a value known at compile time
 // ('folded_value'), where a variable lives ('var_placement') and how a value
-// is used ('value_use')
+// is used ('value_use'); a declaration makes a 'var_info', a name resolves to
+// an 'ident_info', a node writes to a 'destination' (README 1.3)
 
 #include <cassert>
 #include <cstddef>

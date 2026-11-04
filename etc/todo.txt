@@ -305,6 +305,9 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
 --------------------------------------------------------------------------------
 3. new features
 --------------------------------------------------------------------------------
+[ ] easy: a type argument is deduced from the result of a function call,
+    'show(mk(1, 2))', not from the result of a method call, 'show(p.sum())'
+    is "cannot deduce 'T'" (2100; design review series 2, round 67 B5)
 [ ] easy: variable argument count in read/write might be confusing, consider
     requiring all arguments
 [ ] medium: 'size_of' for fields

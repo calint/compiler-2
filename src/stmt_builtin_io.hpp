@@ -364,93 +364,33 @@ class stmt_builtin_io final : public statement {
     }
 
     // the range is checked and the buffer address moves to the start, which
-    // is 0 without a start argument; a constant start in an array of known
-    // length is checked at compile time and moves the address by a constant,
-    // a run-time count is then checked against the elements after it; a
-    // run-time start is checked with the count, against the last start a
-    // constant count leaves, e.g. 'write(1, a, 2, s)'
+    // is 0 without a start argument
     auto check_range_from_start(toc& tc, const size_t indent,
                                 const operand& buffer_reg, const operand& count,
                                 const std::optional<int64_t> known_count,
                                 const ident_info& buffer_info) const -> void {
 
-        const std::optional<size_t> array_len{buffer_info.array_len()};
-        const size_t element_count{buffer_info.element_count()};
-        const size_t element_size_bytes{buffer_info.type_ref().size_bytes()};
-        const type& type_default{tc.builtins().default_type()};
-
         const expr_any* const start_arg{start_argument()};
-        const expr_any* const count_arg{count_argument()};
 
         const std::optional<int64_t> constant_start{
             start_arg != nullptr ? start_arg->constant_value(tc) : int64_t{},
         };
 
-        machine& x{tc.machine()};
-
         // note: an unsized array parameter has no length in the check of a
         //       function without its calls, see 'ident_info::is_length_unknown'
 
-        if (constant_start and (start_arg == nullptr or array_len)) {
-            // note: a constant start is at most the length, rejected at
-            //       compile time otherwise
+        if (constant_start and
+            (start_arg == nullptr or buffer_info.array_len())) {
 
-            assert(*constant_start >= 0 and
-                   std::cmp_less_equal(*constant_start, element_count));
-
-            const size_t start_count{static_cast<size_t>(*constant_start)};
-
-            if (count_arg != nullptr and not known_count) {
-                // the start, or the count when there is none
-                const expr_any& checked_arg{
-                    start_arg != nullptr ? *start_arg : *count_arg,
-                };
-
-                x.check_bounds(checked_arg.tok(), indent,
-                               machine::bounds_range::up_to(
-                                   count, element_count - start_count),
-                               tc.checks().bounds_options());
-            }
-
-            const size_t offset_bytes{start_count * element_size_bytes};
-
-            if (offset_bytes != 0) {
-                x.add_subtract(tok(), indent, arithmetic_operator::add,
-                               buffer_reg,
-                               operand::imm(offset_bytes, type_default));
-            }
+            move_to_constant_start(tc, indent, buffer_reg, count, known_count,
+                                   buffer_info,
+                                   static_cast<size_t>(*constant_start));
 
             return;
         }
 
-        // note: without a start argument the start is the constant 0
-        assert(start_arg != nullptr);
-
-        const operand start{
-            x.alloc_scratch_register(start_arg->tok(), indent, type_default),
-        };
-
-        start_arg->compile(tc, indent, destination::of_register(start));
-
-        // note: a constant count past the end is rejected at compile time
-        assert(not known_count or not array_len or
-               (*known_count >= 0 and
-                std::cmp_less_equal(*known_count, element_count)));
-
-        x.check_bounds(
-            start_arg->tok(), indent,
-            known_count and array_len
-                ? machine::bounds_range::up_to(
-                      start, element_count - static_cast<size_t>(*known_count))
-                : machine::bounds_range::range(start, count, element_count),
-            tc.checks().bounds_options());
-
-        x.scale_index(tok(), indent, start, element_size_bytes);
-
-        x.add_subtract(tok(), indent, arithmetic_operator::add, buffer_reg,
-                       start);
-
-        x.free_scratch_register(tok(), indent, start);
+        move_to_run_time_start(tc, indent, buffer_reg, count, known_count,
+                               buffer_info);
     }
 
     // every argument into the register of the call the target takes it in,
@@ -534,6 +474,97 @@ class stmt_builtin_io final : public statement {
     // the count, null when left out and for a sector function, which has none
     [[nodiscard]] auto count_argument() const -> const expr_any* {
         return io_.is_sector ? nullptr : args_.find(buffer_index_ + 1);
+    }
+
+    // a constant start in an array of known length is checked at compile
+    // time and moves the address by a constant, a run-time count is then
+    // checked against the elements after it
+    auto move_to_constant_start(toc& tc, const size_t indent,
+                                const operand& buffer_reg, const operand& count,
+                                const std::optional<int64_t> known_count,
+                                const ident_info& buffer_info,
+                                const size_t start_count) const -> void {
+
+        const size_t element_count{buffer_info.element_count()};
+
+        // note: a constant start is at most the length, rejected at
+        //       compile time otherwise
+
+        assert(start_count <= element_count);
+
+        const expr_any* const start_arg{start_argument()};
+        const expr_any* const count_arg{count_argument()};
+
+        machine& x{tc.machine()};
+
+        if (count_arg != nullptr and not known_count) {
+            // the start, or the count when there is none
+            const expr_any& checked_arg{
+                start_arg != nullptr ? *start_arg : *count_arg,
+            };
+
+            x.check_bounds(checked_arg.tok(), indent,
+                           machine::bounds_range::up_to(count, element_count -
+                                                                   start_count),
+                           tc.checks().bounds_options());
+        }
+
+        const size_t offset_bytes{
+            start_count * buffer_info.type_ref().size_bytes(),
+        };
+
+        if (offset_bytes != 0) {
+            const type& type_default{tc.builtins().default_type()};
+
+            x.add_subtract(tok(), indent, arithmetic_operator::add, buffer_reg,
+                           operand::imm(offset_bytes, type_default));
+        }
+    }
+
+    // a run-time start is checked with the count, against the last start a
+    // constant count leaves, e.g. 'write(1, a, 2, s)'
+    auto move_to_run_time_start(toc& tc, const size_t indent,
+                                const operand& buffer_reg, const operand& count,
+                                const std::optional<int64_t> known_count,
+                                const ident_info& buffer_info) const -> void {
+
+        const expr_any* const start_arg{start_argument()};
+
+        // note: without a start argument the start is the constant 0
+        assert(start_arg != nullptr);
+
+        const std::optional<size_t> array_len{buffer_info.array_len()};
+        const size_t element_count{buffer_info.element_count()};
+        const type& type_default{tc.builtins().default_type()};
+
+        machine& x{tc.machine()};
+
+        const operand start{
+            x.alloc_scratch_register(start_arg->tok(), indent, type_default),
+        };
+
+        start_arg->compile(tc, indent, destination::of_register(start));
+
+        // note: a constant count past the end is rejected at compile time
+        assert(not known_count or not array_len or
+               (*known_count >= 0 and
+                std::cmp_less_equal(*known_count, element_count)));
+
+        x.check_bounds(
+            start_arg->tok(), indent,
+            known_count and array_len
+                ? machine::bounds_range::up_to(
+                      start, element_count - static_cast<size_t>(*known_count))
+                : machine::bounds_range::range(start, count, element_count),
+            tc.checks().bounds_options());
+
+        x.scale_index(tok(), indent, start,
+                      buffer_info.type_ref().size_bytes());
+
+        x.add_subtract(tok(), indent, arithmetic_operator::add, buffer_reg,
+                       start);
+
+        x.free_scratch_register(tok(), indent, start);
     }
 
     // the start, the last argument a call can have, null when left out

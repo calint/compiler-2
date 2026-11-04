@@ -1,0 +1,4 @@
+
+2098.baz:10:26: expected '(' after constructor name
+func main() { show(point.at) }
+                         ^~

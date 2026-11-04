@@ -457,10 +457,6 @@ class machine {
         std::string comment;
     };
 
-  protected:
-    // the lines of the failures in each file, with '--checks=line'
-    using failure_lines = std::map<size_t, std::set<size_t>>;
-
     // how a constant factor multiplies, decided at its width
     enum class factor_kind : uint8_t {
         zero,
@@ -470,6 +466,10 @@ class machine {
         power_of_two,
         other,
     };
+
+  protected:
+    // the lines of the failures in each file, with '--checks=line'
+    using failure_lines = std::map<size_t, std::set<size_t>>;
 
     // the addresses and the result of a comparison of two arrays, 'alignment'
     // is the alignment known for both
@@ -821,11 +821,6 @@ class machine {
     virtual auto memory_equal(const token& src_loc_tk, const size_t indent,
                               const size_t size_bytes,
                               const equality_request& request) -> void = 0;
-
-    virtual auto multiply(const token& src_loc_tk, const size_t indent,
-                          const operand& product, const operand& factor,
-                          const factor_use use, const runtime_check& check = {})
-        -> void = 0;
 
     virtual auto return_function(const size_t indent) -> void = 0;
 
@@ -1311,6 +1306,53 @@ class machine {
         return target_.max_storage_bytes;
     }
 
+    // a constant factor is resolved at the width of 'product': zero clears,
+    // one needs no code, minus one negates and a power of two is a shift, the
+    // other factors go to 'emit_multiply'
+    auto multiply(const token& src_loc_tk, const size_t indent,
+                  const operand& product, const operand& factor,
+                  const factor_use use, const runtime_check& check = {})
+        -> void {
+
+        const std::optional<uint64_t> bits{immediate_bits(factor)};
+
+        if (not bits) {
+            emit_multiply(src_loc_tk, indent, product, factor, use, check);
+            return;
+        }
+
+        const constant_factor factor_info{
+            classify_factor(*bits, product.type_ref().size_bits()),
+        };
+
+        if (factor_info.kind == factor_kind::zero) {
+            copy_value(src_loc_tk, indent, product,
+                       operand::imm(0, product.type_ref()));
+
+            return;
+        }
+
+        if (factor_info.kind == factor_kind::one) {
+            return;
+        }
+
+        if (factor_info.kind == factor_kind::minus_one) {
+            unary(src_loc_tk, indent, arithmetic_operator::negate, product,
+                  check);
+
+            return;
+        }
+
+        // a shift does not report the bits it loses, a multiplication does
+        if (factor_info.kind == factor_kind::other or check.enabled) {
+            emit_multiply(src_loc_tk, indent, product, factor, use, check);
+            return;
+        }
+
+        shift(src_loc_tk, indent, arithmetic_operator::shift_left, product,
+              operand::imm(factor_info.shift, default_type()), runtime_check{});
+    }
+
     // the use of registers at the busiest point of the build, as lines after
     // the code when asked for, else none; defined in 'register_report.hpp'
     [[nodiscard]] auto register_peak_report() const -> std::vector<std::string>;
@@ -1481,6 +1523,14 @@ class machine {
     // the code at the start of a 'noinline' body after the frame base is
     // reserved, none by default; 'return_function' is its exit
     virtual auto emit_frame_entry() -> void {}
+
+    // a multiplication that 'multiply' did not resolve: a run-time factor, a
+    // constant one that is not zero, one, minus one or a power of two, or a
+    // checked power of two
+    virtual auto emit_multiply(const token& src_loc_tk, const size_t indent,
+                               const operand& product, const operand& factor,
+                               const factor_use use, const runtime_check& check)
+        -> void = 0;
 
     // the call of 'call_target', its arguments in their registers
     virtual auto emit_target_call(const token& src_loc_tk, const size_t indent,

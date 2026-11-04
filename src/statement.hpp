@@ -227,8 +227,10 @@ enum class width_change : uint8_t { narrowed, widened };
 
 class stmt_identifier;
 
-// a node of the program: it parses itself in its constructor, writes its
-// source back ('source_to') and compiles; the whitespace before a value is
+// a node of the program, a value too: 'stmt_identifier', 'stmt_call' and the
+// built-ins are values, the 'stmt_' prefix names a node; it parses itself in
+// its constructor, writes its source back ('source_to') and compiles; the
+// whitespace before a value is
 // held by a wrapper ('expr_any', 'expr_bool', 'expr_bool_op', a branch of
 // 'stmt_if') in a whitespace-only token, while a list ('expr_arith') is a
 // position and its first element holds it; the virtuals in groups, with the
@@ -353,7 +355,7 @@ class statement {
                                     const call_effect_visitor visitor) const
         -> void;
 
-    // the operands of this node in evaluation order, see 'list_operand'; the
+    // the operands of this node in evaluation order, see 'node_operand'; the
     // walks 'visit_reads' and 'visit_call_effects' read them; a value and a
     // statement whose 'trace_assignment' checks its reads say what they are,
     // a leaf that it has none

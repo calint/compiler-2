@@ -77,7 +77,7 @@
 // 'earlier' reads nothing that 'write', an effect of an operand computed
 // after it, reaches; 'writer' says where the call is in the message, e.g. "a
 // later argument"
-inline auto assert_not_read_before(const toc& tc, const list_operand& earlier,
+inline auto assert_not_read_before(const toc& tc, const node_operand& earlier,
                                    const call_effect& write,
                                    const std::string_view writer) -> void {
 
@@ -106,10 +106,10 @@ inline auto assert_not_read_before(const toc& tc, const list_operand& earlier,
 inline auto assert_not_written_later(const toc& tc, const auto& node,
                                      const std::string_view operand) -> void {
 
-    std::vector<list_operand> operands;
+    std::vector<node_operand> operands;
 
     node.visit_operands(
-        [&operands](const list_operand& o) -> void { operands.push_back(o); });
+        [&operands](const node_operand& o) -> void { operands.push_back(o); });
 
     const std::string writer{std::format("a later {}", operand)};
 
@@ -120,7 +120,7 @@ inline auto assert_not_written_later(const toc& tc, const auto& node,
                     return;
                 }
 
-                for (const list_operand& earlier :
+                for (const node_operand& earlier :
                      std::span{operands}.first(k)) {
 
                     assert_not_read_before(tc, earlier, effect, writer);

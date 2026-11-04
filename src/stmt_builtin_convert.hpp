@@ -152,7 +152,7 @@ class stmt_builtin_convert final : public statement {
     auto visit_operands(const operand_visitor visitor) const -> void override {
         visitor({
             .node{&argument_.arg},
-            .written_place{},
+            .index_only_place{},
         });
     }
 

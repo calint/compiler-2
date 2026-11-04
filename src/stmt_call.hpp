@@ -213,9 +213,10 @@ struct generic_call {
     [[nodiscard]] static auto argument_type(toc& tc, tokenizer& tz,
                                             const size_t index) -> const type* {
 
-        if (skip_to_argument(tz, index) != index) {
-            return nullptr;
-        }
+        [[maybe_unused]] const size_t reached{skip_to_argument(tz, index)};
+
+        // note: the callers saw the argument ('assert_argument_present')
+        assert(reached == index);
 
         const token tk{tz.next_token()};
         const term_kind tm{classify_term(tc, tk, tz)};
@@ -555,36 +556,6 @@ class call_limits final {
     // statics
     //
 
-    // an inlined call compiles its body in place, so nesting is limited; a
-    // recursion that does not end at compile time runs out of registers
-    // before it reaches the nesting limit, the advice is the same
-    static auto compile_within_limits(toc& tc, const token& call_tk,
-                                      const stmt_def_func& func,
-                                      const std::function_ref<void()> compile)
-        -> void {
-
-        assert_inline_nesting(tc, call_tk, func);
-
-        const bool is_recursion{tc.scopes().inlined_nesting(func.name()) != 0};
-
-        try {
-            compile();
-        } catch (const compile_error& e) {
-            if (not is_recursion or
-                e.kind != compile_error::error_kind::out_of_registers) {
-
-                throw;
-            }
-
-            throw recursion_error(call_tk, func);
-        }
-    }
-
-  private:
-    //
-    // statics
-    //
-
     // the inlined recursions of 'func' and the scopes are within their limits
     static auto assert_inline_nesting(toc& tc, const token& call_tk,
                                       const stmt_def_func& func) -> void {
@@ -609,17 +580,6 @@ class call_limits final {
                         max_scope_count));
     }
 
-    // the call is too deep to inline, e.g. a recursion that does not end at
-    // compile time
-    [[nodiscard]] static auto inlining_limit_error(const token& call_tk,
-                                                   std::string message)
-        -> compile_error {
-
-        compile_error error{call_tk, std::move(message)};
-        error.kind = compile_error::error_kind::inlining_limit;
-        return error;
-    }
-
     // an inlined recursion that runs out of registers, whether or not a
     // constant argument would end it
     [[nodiscard]] static auto recursion_error(const token& call_tk,
@@ -636,6 +596,22 @@ class call_limits final {
 
         error.kind = compile_error::error_kind::out_of_registers;
 
+        return error;
+    }
+
+  private:
+    //
+    // statics
+    //
+
+    // the call is too deep to inline, e.g. a recursion that does not end at
+    // compile time
+    [[nodiscard]] static auto inlining_limit_error(const token& call_tk,
+                                                   std::string message)
+        -> compile_error {
+
+        compile_error error{call_tk, std::move(message)};
+        error.kind = compile_error::error_kind::inlining_limit;
         return error;
     }
 };
@@ -668,6 +644,15 @@ struct call_site {
         e.add_call_frame(begin_tk, source);
     }
 
+    // the result is made in a temporary of the call, then copied into
+    // 'dst', widened when 'dst' is wider
+    [[nodiscard]] auto add_result_temporary(toc& tc, const size_t indent) const
+        -> destination {
+
+        return add_temporary(tc, indent, temporary_result_name(),
+                             func->result_type());
+    }
+
     // a variable in the current block, a root variable of its own
     auto add_temporary(toc& tc, const size_t indent, const std::string& name,
                        const type& tpe) const -> destination {
@@ -686,25 +671,6 @@ struct call_site {
         return destination::of_name(
             tc.resolve_declared(tk, name), name,
             tc.storage_of(name, access_path::whole_variable()));
-    }
-
-    // the result is made in a temporary of the call, then copied into
-    // 'dst', widened when 'dst' is wider
-    auto compile_through_result_temporary(
-        toc& tc, const size_t indent, const destination& dst,
-        const std::function_ref<void(const destination& result)> compile) const
-        -> void {
-
-        const destination result{
-            add_temporary(tc, indent, temporary_result_name(),
-                          func->result_type()),
-        };
-
-        compile(result);
-
-        machine& x{tc.machine()};
-
-        x.copy_value(tk, indent, dst.operand(), result.operand());
     }
 
     // a variable of the current block that holds the argument at 'index',
@@ -733,8 +699,7 @@ struct call_site {
         return temporary_name(tk, "call-arg", index);
     }
 
-    // the result of a call made in a temporary, see
-    // 'compile_through_result_temporary'
+    // the result of a call made in a temporary, see 'add_result_temporary'
     [[nodiscard]] auto temporary_result_name() const -> std::string {
         return temporary_name(tk, "call-result", 0);
     }
@@ -762,20 +727,6 @@ struct call_site {
     // note: a block is a scope, which counts toward the nesting limit and the
     //       'max scopes in use' report, so a call without temporaries enters
     //       none
-    static auto in_temporaries_block(toc& tc, const bool has_temporaries,
-                                     const std::function_ref<void()> compile)
-        -> void {
-
-        if (not has_temporaries) {
-            compile();
-            return;
-        }
-
-        const toc::scope_entry block{tc, scope::block()};
-
-        compile();
-    }
-
     // 'dst' has another type than the result, after 'assert_result_type' a
     // widening
     [[nodiscard]] static auto result_type_differs(const destination& dst,
@@ -848,32 +799,43 @@ class inline_call final {
             dst.is_register() and call_.func->uses().is_result_passed_as_mut(),
         };
 
-        call_site::in_temporaries_block(
-            tc, has_argument_temporary() or has_result_temporary, [&] -> void {
-                if (not has_result_temporary) {
-                    compile_with_bindings(tc, indent, dst);
-                    return;
-                }
+        // a block holds the temporaries of the call
+        std::optional<toc::scope_entry> temporaries;
 
-                call_.compile_through_result_temporary(
-                    tc, indent, dst, [&](const destination& result) -> void {
-                        compile_with_bindings(tc, indent, result);
-                    });
-            });
+        if (has_argument_temporary() or has_result_temporary) {
+            temporaries.emplace(tc, scope::block());
+        }
+
+        if (not has_result_temporary) {
+            compile_with_bindings(tc, indent, dst);
+            return;
+        }
+
+        const destination result{call_.add_result_temporary(tc, indent)};
+
+        compile_with_bindings(tc, indent, result);
+
+        machine& x{tc.machine()};
+
+        x.copy_value(call_.tk, indent, dst.operand(), result.operand());
     }
 
     // the arguments bound as for the body, which is not compiled, e.g. an
     // inlined recursion that the check of a body without its calls does not
     // expand ('stmt_call::check_recursion')
     auto compile_arguments(toc& tc, const size_t indent) const -> void {
-        call_site::in_temporaries_block(
-            tc, has_argument_temporary(), [&] -> void {
-                machine& x{tc.machine()};
+        // a block holds the temporaries of the call
+        std::optional<toc::scope_entry> temporaries;
 
-                machine::held_registers held{x, call_.tk, indent + 1};
+        if (has_argument_temporary()) {
+            temporaries.emplace(tc, scope::block());
+        }
 
-                std::ignore = bind_arguments(tc, indent, held);
-            });
+        machine& x{tc.machine()};
+
+        machine::held_registers held{x, call_.tk, indent + 1};
+
+        std::ignore = bind_arguments(tc, indent, held);
     }
 
   private:
@@ -1262,9 +1224,14 @@ class noinline_call final {
                                     }),
         };
 
-        call_site::in_temporaries_block(tc, has_temporaries, [&] -> void {
-            compile_arguments_and_call(tc, indent, dst);
-        });
+        // a block holds the temporaries of the call
+        std::optional<toc::scope_entry> temporaries;
+
+        if (has_temporaries) {
+            temporaries.emplace(tc, scope::block());
+        }
+
+        compile_arguments_and_call(tc, indent, dst);
     }
 
   private:
@@ -1328,10 +1295,11 @@ class noinline_call final {
             return;
         }
 
-        call_.compile_through_result_temporary(
-            tc, indent, dst, [&](const destination& result) -> void {
-                compile_with_arguments(tc, indent, result, arguments, held);
-            });
+        const destination result{call_.add_result_temporary(tc, indent)};
+
+        compile_with_arguments(tc, indent, result, arguments, held);
+
+        x.copy_value(call_.tk, indent, dst.operand(), result.operand());
     }
 
     // 'held' holds the addresses of the arguments, freed once the frame is
@@ -1599,20 +1567,20 @@ class builtin_arguments final {
         close_paren_tk_.source_to(os);
     }
 
-    // the arguments in their order; of the array at 'written_index' only
+    // the arguments in their order; of the array at 'index_only_position' only
     // the indexes are read, e.g. the buffer of 'read'
     auto visit_operands(const operand_visitor visitor,
-                        const std::optional<size_t> written_index) const
+                        const std::optional<size_t> index_only_position) const
         -> void {
 
         for (const auto [i, e] : std::views::enumerate(args_)) {
-            const bool is_written{
-                written_index and std::cmp_equal(i, *written_index),
+            const bool is_index_only{
+                index_only_position and std::cmp_equal(i, *index_only_position),
             };
 
             visitor({
                 .node{&e},
-                .written_place{is_written ? e.bare_path() : nullptr},
+                .index_only_place{is_index_only ? e.bare_path() : nullptr},
             });
         }
     }
@@ -1706,7 +1674,8 @@ class builtin_arguments final {
 //
 // compiling, in 'compile': the checks made before the inlined and noinline
 // paths split ('assert_call_accepted'), then 'inline_call' or 'noinline_call'
-// compiles the call
+// compiles the call, an inlined recursion in the check of a body without its
+// calls through 'check_recursion'
 class stmt_call final : public statement {
     // e.g. the '.' in 'lst.add(x)', the receiver is the first argument;
     // none when the call is not a method call
@@ -1883,7 +1852,7 @@ class stmt_call final : public statement {
         -> void override {
 
         statement::visit_call_effects(tc, visitor);
-        visit_callee_reach(tc, argument_places(tc), visitor);
+        visit_callee_effects(tc, argument_places(tc), visitor);
     }
 
     // the arguments in their order
@@ -1891,7 +1860,7 @@ class stmt_call final : public statement {
         for (const expr_any& e : args_) {
             visitor({
                 .node{&e},
-                .written_place{},
+                .index_only_place{},
             });
         }
     }
@@ -2225,13 +2194,14 @@ class stmt_call final : public statement {
 
     // a recursion in the check of a body without its calls, in a dry run
     // with its deeper levels: a value or an array length the check does not
-    // know may not let it end, so an error that depends on a call ends the
-    // recursion, not the check; a constant argument expands it, e.g. the
-    // 'g(n - 1)' of 'g(2)', otherwise only its arguments are bound, the body
-    // is checked where the recursion is entered and in its own check; one
-    // that nests as deep at every call is expanded and the nesting limit
-    // rejects it, e.g. a 'g(k + 1)' that 'g(2)' enters and that ends only at
-    // 'k == 0' ('nests_alike_at_every_call')
+    // know may not let it end, so a limit ('compile_error::is_limit') ends
+    // the recursion, not the check (README 1.5 item 2):
+    //   1. it nests as deep at every call ('nests_alike_at_every_call'):
+    //      expanded, the nesting limit rejects it, e.g. a 'g(k + 1)' that
+    //      'g(2)' enters and that ends only at 'k == 0'
+    //   2. a constant argument: expanded, e.g. the 'g(n - 1)' of 'g(2)'
+    //   3. otherwise only its arguments are bound, the body is checked where
+    //      the recursion is entered and in its own check
     auto check_recursion(toc& tc, const size_t indent, const destination& dst,
                          const call_site& call, const size_t nesting) const
         -> void {
@@ -2284,9 +2254,28 @@ class stmt_call final : public statement {
             return;
         }
 
-        call_limits::compile_within_limits(
-            tc, callee_name_token(), callee(),
-            [&] -> void { inline_call{call}.compile(tc, indent, dst); });
+        // note: an inlined call compiles its body in place, so nesting is
+        //       limited; a recursion that does not end at compile time runs
+        //       out of registers before it reaches the nesting limit, the
+        //       advice is the same
+
+        call_limits::assert_inline_nesting(tc, callee_name_token(), callee());
+
+        const bool is_recursion{
+            tc.scopes().inlined_nesting(callee().name()) != 0,
+        };
+
+        try {
+            inline_call{call}.compile(tc, indent, dst);
+        } catch (const compile_error& e) {
+            if (not is_recursion or
+                e.kind != compile_error::error_kind::out_of_registers) {
+
+                throw;
+            }
+
+            throw call_limits::recursion_error(callee_name_token(), callee());
+        }
     }
 
     // the type names the constructor after the '.', e.g. 'at' of
@@ -2396,10 +2385,10 @@ class stmt_call final : public statement {
 
         // note: the parts are compared, not named
 
-        visit_reach_of(tc, param_index, {}, target,
-                       [&](const call_effect& effect) -> void {
-                           result.reached.push_back(effect);
-                       });
+        visit_effects_of(tc, param_index, {}, target,
+                         [&](const call_effect& effect) -> void {
+                             result.reached.push_back(effect);
+                         });
 
         return result;
     }
@@ -2517,7 +2506,7 @@ class stmt_call final : public statement {
     }
 
     // what the callee reaches of the caller is the caller's use too, see
-    // 'visit_callee_reach'
+    // 'visit_callee_effects'
     auto record_uses_of_call(
         toc& tc, const std::span<const std::optional<place>> places) const
         -> void {
@@ -2525,10 +2514,11 @@ class stmt_call final : public statement {
         // note: a call outside a function was rejected (the constructors)
         assert(tc.scopes().is_in_func());
 
-        visit_callee_reach(tc, places, [&](const call_effect& effect) -> void {
-            tc.record_use(effect.storage,
-                          effect.is_write ? use_kind::write : use_kind::read);
-        });
+        visit_callee_effects(
+            tc, places, [&](const call_effect& effect) -> void {
+                tc.record_use(effect.storage, effect.is_write ? use_kind::write
+                                                              : use_kind::read);
+            });
 
         for (const auto [passed, param] :
              std::views::zip(places, callee().params())) {
@@ -2635,9 +2625,10 @@ class stmt_call final : public statement {
     // parameter is 'mut'
     // note: only a function that calls itself has an incomplete record
     //       ('assert_callee_body_parsed')
-    auto visit_callee_reach(const toc& tc,
-                            const std::span<const std::optional<place>> places,
-                            const call_effect_visitor visitor) const -> void {
+    auto
+    visit_callee_effects(const toc& tc,
+                         const std::span<const std::optional<place>> places,
+                         const call_effect_visitor visitor) const -> void {
 
         const body_uses& callee_uses{callee().uses()};
 
@@ -2665,7 +2656,7 @@ class stmt_call final : public statement {
             // note: a variable has storage
             assert(target);
 
-            visit_reach_of(tc, i, ident.dotted_path(), *target, visitor);
+            visit_effects_of(tc, i, ident.dotted_path(), *target, visitor);
         }
     }
 
@@ -2673,9 +2664,11 @@ class stmt_call final : public statement {
     // 'param_index' or the result (empty), by its record; a call of the
     // function it is in, whose record the parse is still making, reaches it
     // whole, written unless the parameter is read-only
-    auto visit_reach_of(const toc& tc, const std::optional<size_t> param_index,
-                        const std::string_view name, const storage_path& target,
-                        const call_effect_visitor visitor) const -> void {
+    auto visit_effects_of(const toc& tc,
+                          const std::optional<size_t> param_index,
+                          const std::string_view name,
+                          const storage_path& target,
+                          const call_effect_visitor visitor) const -> void {
 
         if (is_call_in_own_body(tc)) {
             visitor({
@@ -2723,11 +2716,17 @@ class stmt_call final : public statement {
                 continue;
             }
 
+            // note: the root of an argument is a name of the source or a
+            //       parameter, a temporary is the result or behind a binding
+
+            assert(not is_temporary_name(ref.target.root.name));
+
             throw compile_error{
-                ref.tk,
-                std::format("{} may share storage with {}{}, {}", ref.text,
-                            other.text, shared_name_note(ref.target.root.name),
-                            use_temporary_fix_)};
+                ref.tk, std::format("{} may share storage with {} (both name "
+                                    "{}), {}",
+                                    ref.text, other.text,
+                                    in_quotes(ref.target.root.name),
+                                    use_temporary_fix_)};
         }
     }
 
@@ -2774,18 +2773,6 @@ class stmt_call final : public statement {
             .dot_tk{dot_tk},
             .name_tk{tz.next_token()},
         };
-    }
-
-    // e.g. " (both name 'g')", none for a variable the compiler added, whose
-    // name the source does not have
-    [[nodiscard]] static auto shared_name_note(const std::string_view name)
-        -> std::string {
-
-        if (is_temporary_name(name)) {
-            return {};
-        }
-
-        return std::format(" (both name {})", in_quotes(name));
     }
 
     [[noreturn]] static auto

@@ -115,12 +115,12 @@ class stmt_assign_var final : public statement {
     auto visit_operands(const operand_visitor visitor) const -> void override {
         visitor({
             .node{&stmt_ident_},
-            .written_place{&stmt_ident_},
+            .index_only_place{&stmt_ident_},
         });
 
         visitor({
             .node{&expr_},
-            .written_place{},
+            .index_only_place{},
         });
     }
 
