@@ -36,7 +36,8 @@ class expr_any;
 // the constant size of an array, e.g. the '4' of 'i8[4]' or the 'n * 2' of a
 // field 'i8[n * 2]': an expression at the default type, folded by 'fold' when
 // parsed and never compiled; empty for 'i8[]'
-// note: defined after 'expr_any', which holds one
+// note: its members are defined after 'expr_any', which holds one, where a
+//       'unique_ptr' of 'expr_any' is complete
 class stmt_array_size final : public statement {
     std::unique_ptr<expr_any> value_;
     int64_t folded_{};
@@ -1003,12 +1004,12 @@ class expr_any final : public statement {
 
             const std::string false_label{toc::end_label(true_label)};
 
-            std::ignore = condition.compile(tc, indent,
-                                            {
-                                                .if_false{false_label},
-                                                .if_true{true_label},
-                                            },
-                                            {});
+            std::ignore = condition.compile_branches(tc, indent,
+                                                     {
+                                                         .if_false{false_label},
+                                                         .if_true{true_label},
+                                                     },
+                                                     {});
 
             machine& x{tc.machine()};
 

@@ -307,7 +307,7 @@ class scope final {
         // of such a body: a call would give it what the check does not have,
         // e.g. the length of an unsized array, so the constants that end a
         // recursion are unknown, see 'stmt_def_func::check_body' and
-        // 'stmt_call::check_recursion'
+        // 'inline_call::check_recursion'
         bool takes_from_call{};
 
         // the name of the result, empty when there is none
@@ -905,7 +905,7 @@ struct placed_dat {
 // read their offsets
 class data_table final {
     std::vector<placed_dat> dats_;
-    std::vector<machine::string_constant> constants_;
+    std::vector<machine::read_only_constant> constants_;
     size_t total_size_bytes_{};
     // the alignment of the data section of the machine and of the variables
     // after the dats
@@ -920,7 +920,7 @@ class data_table final {
     [[nodiscard]] auto add_constant(std::string label, std::string bytes)
         -> std::string {
 
-        for (const machine::string_constant& constant : constants_) {
+        for (const machine::read_only_constant& constant : constants_) {
             if (constant.bytes == bytes) {
                 return constant.label;
             }
@@ -961,7 +961,7 @@ class data_table final {
     }
 
     [[nodiscard]] auto constants() const
-        -> std::span<const machine::string_constant> {
+        -> std::span<const machine::read_only_constant> {
 
         return constants_;
     }
@@ -1214,7 +1214,7 @@ class scope_stack final {
 
     // a check of a body that takes from a call is in the stack, see
     // 'stmt_def_func::check_body': a recursive inlined call is expanded in a
-    // dry run or not at all ('stmt_call::check_recursion')
+    // dry run or not at all ('inline_call::check_recursion')
     [[nodiscard]] auto is_in_body_taking_from_call() const -> bool {
         return std::ranges::any_of(scopes_, [](const scope& scp) -> bool {
             return scp.is_func() and scp.takes_from_call();
@@ -2504,18 +2504,18 @@ class toc final {
     };
 
     // what a dry run changes in 'toc' is put back when it ends, also when an
-    // error unwinds: the 'compile_state' and the string constants; while it
+    // error unwinds: the 'compile_state' and the read-only constants; while it
     // lives a noinline body that a call asks for is only checked, see
     // 'add_noinline_body'
     class dry_run_scope final {
         toc& tc_;
         compile_state kept_state_{};
-        size_t kept_string_constant_count_{};
+        size_t kept_constant_count_{};
 
       public:
         explicit dry_run_scope(toc& tc)
             : tc_{tc}, kept_state_{tc.compile_state_now()},
-              kept_string_constant_count_{tc.data_.constant_count()} {
+              kept_constant_count_{tc.data_.constant_count()} {
 
             ++tc_.dry_run_depth_;
         }
@@ -2528,7 +2528,7 @@ class toc final {
         ~dry_run_scope() {
             --tc_.dry_run_depth_;
             tc_.restore_compile_state(kept_state_);
-            tc_.data_.resize_constants(kept_string_constant_count_);
+            tc_.data_.resize_constants(kept_constant_count_);
         }
     };
 
@@ -2861,7 +2861,6 @@ class toc final {
                                             call_tk, std::move(call_source));
     }
 
-    // identical strings share the label of the first one compiled
     // a read-only constant labeled 'kind' and the call path, e.g. "str" for
     // a string, kept once by its bytes
     [[nodiscard]] auto add_read_only_constant(const std::string_view kind,
@@ -3136,13 +3135,13 @@ class toc final {
         return definitions_;
     }
 
-    // runs 'compile' for its errors only: its output, string constants and
+    // runs 'compile' for its errors only: its output, read-only constants and
     // use of storage leave no trace; 'code' says which registers it starts
     // with ('machine::emit_discarded'); the error it ends at rejects the
     // program and is rethrown as an error of the source, so no reader of the
     // kind drops it: the check of a body starts from the registers of a
     // noinline body, and skipped code is never inside a version, an inlined
-    // body skips no code, see 'check_skipped'; 'stmt_call::check_recursion'
+    // body skips no code, see 'check_skipped'; 'inline_call::check_recursion'
     // reads the kind inside the run, before it is rethrown
     auto dry_run(const std::function_ref<void()> compile,
                  const machine::discarded_code code) -> void {
@@ -3164,7 +3163,7 @@ class toc final {
 
     // 'machine::emit_most_efficient' with each version compiled from the
     // state before it ('compile_state'), so the state that remains is that of
-    // the kept version, e.g. the frame size of a noinline body; a string
+    // the kept version, e.g. the frame size of a noinline body; a read-only
     // constant that the other version added stays, unused, so the labels stay
     // unique
     auto emit_most_efficient(const token& src_loc_tk, const size_t indent,

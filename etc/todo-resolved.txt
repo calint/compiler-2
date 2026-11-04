@@ -1,6 +1,31 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] hard: design review series 2, round 69 (2026-11-04, user: the loop of
+    round 67 goes on; J a newcomer reading steps 8 to 14 of README 1.1, K a
+    hunter of the regressions of rounds 67 and 68, L 'stmt_call.hpp' whole)
+    => done (2026-11-04): pure refactors, listings and errors of every test
+       equal on both targets; design: L1 the inlined recursion and the
+       nesting limits in 'inline_call' ('check_recursion',
+       'compile_within_limits', 'has_constant_argument',
+       'nests_alike_at_every_call', 'is_value_param'), 'stmt_call::compile'
+       is the checks, then the recursion, the inlined or the noinline call
+       ('compile_call' gone); J1 'read_open_paren' only reads the '(', the
+       callee check and the type in 'parse_arguments'; J8 rv32i
+       'compare_known_size' folded into 'memory_equal' (the pairs read as on
+       x86_64); names: J3 'bulk_operands::run_time_emitters' ->
+       'argument_emitters' (also a known size uses it), J7 the branching
+       'expr_bool::compile' -> 'compile_branches' with a map of the compile
+       chain, J9 'string_constant' -> 'read_only_constant',
+       'emit_string_constants' -> 'emit_read_only_constants',
+       'kept_string_constant_count_' -> 'kept_constant_count_'; docs: J4 J5
+       J6 README 1.1 steps 9 to 11 in the order of the includes, the
+       'builtin_arguments' of the built-ins named; comments J2 L2 (a note of
+       round 67 E12 left above 'result_type_differs'), J10, J11, J12, J13 two
+       notes of common idioms gone, J14, J15; skipped: J16 'read_method'
+       would break the 'read_' rule as the old name does, J17 to J20 renames
+       of low benefit (the 'lea' family left to the user with round 68 I11),
+       L2 a helper for the temporaries block (+8), L3 L4 L5 L6 small
 [x] hard: design review series 2, round 68 (2026-11-04, user: the loop of
     round 67 goes on, the next round started while round 67 was tested; F
     the code compiled more than once, G the callbacks from the backend into

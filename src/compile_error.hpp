@@ -70,9 +70,9 @@ class compile_error final : public std::exception {
     // calls depend on the arguments of a call; the readers, the only code
     // that changes an error instead of ending with it:
     //   1. 'machine::compile_version' drops a limit of a version
-    //   2. 'stmt_call::compile_call' rewords 'out_of_registers' in an inlined
-    //      recursion
-    //   3. 'stmt_call::check_recursion' drops a limit in a recursion of the
+    //   2. 'inline_call::compile_within_limits' rewords 'out_of_registers'
+    //      in an inlined recursion
+    //   3. 'inline_call::check_recursion' drops a limit in a recursion of the
     //      check of a body that takes from a call, but not 'inlining_limit'
     //      in one that nests as deep at every call
     //   4. 'toc::dry_run' rethrows an error as a 'source' one, so that none

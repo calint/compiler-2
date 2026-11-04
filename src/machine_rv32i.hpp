@@ -45,7 +45,7 @@
 //                '.Lbaz_divide' for 'mul' and 'div',
 //                'helper_specs_', 'call_arithmetic_helper',
 //                'emit_arithmetic_helpers'
-//   memory       'zero', 'copy_block', 'compare_known_size'
+//   memory       'zero', 'copy_block', 'memory_equal'
 //                through 'walk_known_size' for a known size,
 //                'walk_runtime_count' for a run-time count
 //                (see the note before 'local_label')
@@ -1208,12 +1208,56 @@ class machine_rv32i : public machine {
 
     // every known size is compared from the address operands, small ones
     // unrolled and larger ones in a loop
+    // known size: the addresses are memory operands and the result of the
+    // request is 1 when every access matched, 0 at the first mismatch; its
+    // 'inverted' swaps them
     auto memory_equal(const token& src_loc_tk, const size_t indent,
                       const size_t size_bytes, const operand& lhs,
                       const operand& rhs, const equality_request& request)
         -> void override {
 
-        compare_known_size(src_loc_tk, indent, size_bytes, lhs, rhs, request);
+        // compared sizes are limited by the variables that hold the data
+        assert(size_bytes <= std::numeric_limits<uint32_t>::max());
+
+        // unrolled accesses can follow where each address is within its word
+        const std::array<access_start, 2> starts{
+            start_of(lhs, request.alignment),
+            start_of(rhs, request.alignment),
+        };
+
+        const operand& result{request.dst};
+
+        const operation_scope operand_scope{*this, rhs, lhs};
+
+        const operation_scope result_scope{*this, result};
+
+        const std::array<operand, 2> in_use{lhs, rhs};
+
+        const compare_registers registers{
+            alloc_compare_registers(src_loc_tk, indent, result, in_use),
+        };
+
+        const auto access{
+            [&](const size_t width, const std::span<const operand> at) -> void {
+                compare_access(indent, registers, width, at.front(), at.back());
+            },
+        };
+
+        // a load pair and a branch per access beat the pointer setup of a loop
+        // for small sizes
+        walk_known_size(
+            {
+                .src_loc_tk{src_loc_tk},
+                .indent{indent},
+                .verb{"compare"},
+                .addresses{in_use},
+                .starts{starts},
+                .access{access},
+            },
+            size_bytes, size_bytes <= copy_unroll_threshold_bytes_);
+
+        write_compare_result(src_loc_tk, indent, result, registers,
+                             request.inverted);
     }
 
     auto return_function(const size_t indent) -> void override {
@@ -1951,60 +1995,8 @@ class machine_rv32i : public machine {
                        registers.right.register_name(), false_exit_.reference);
     }
 
-    // known size: the addresses are memory operands and the result of the
-    // request is 1 when every access matched, 0 at the first mismatch; its
-    // 'inverted' swaps them
-    auto compare_known_size(const token& src_loc_tk, const size_t indent,
-                            const size_t size_bytes, const operand& left,
-                            const operand& right,
-                            const equality_request& request) -> void {
-
-        // compared sizes are limited by the variables that hold the data
-        assert(size_bytes <= std::numeric_limits<uint32_t>::max());
-
-        // unrolled accesses can follow where each address is within its word
-        const std::array<access_start, 2> starts{
-            start_of(left, request.alignment),
-            start_of(right, request.alignment),
-        };
-
-        const operand& result{request.dst};
-
-        const operation_scope operand_scope{*this, right, left};
-
-        const operation_scope result_scope{*this, result};
-
-        const std::array<operand, 2> in_use{left, right};
-
-        const compare_registers registers{
-            alloc_compare_registers(src_loc_tk, indent, result, in_use),
-        };
-
-        const auto access{
-            [&](const size_t width, const std::span<const operand> at) -> void {
-                compare_access(indent, registers, width, at.front(), at.back());
-            },
-        };
-
-        // a load pair and a branch per access beat the pointer setup of a loop
-        // for small sizes
-        walk_known_size(
-            {
-                .src_loc_tk{src_loc_tk},
-                .indent{indent},
-                .verb{"compare"},
-                .addresses{in_use},
-                .starts{starts},
-                .access{access},
-            },
-            size_bytes, size_bytes <= copy_unroll_threshold_bytes_);
-
-        write_compare_result(src_loc_tk, indent, result, registers,
-                             request.inverted);
-    }
-
     // run-time count: the addresses are pointer registers and 'count' is a
-    // byte count, the result is as for 'compare_known_size'
+    // byte count, the result is as for 'memory_equal'
     auto compare_runtime_count(const token& src_loc_tk, const size_t indent,
                                const bulk_operation& bulk,
                                const equality_request& request) -> void {

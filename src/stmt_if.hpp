@@ -292,12 +292,12 @@ class stmt_if final : public statement {
         x.label(indent, label);
 
         const std::optional<bool> known{
-            b.condition.compile(tc, indent,
-                                {
-                                    .if_false{jmp_if_false},
-                                    .if_true{code_label},
-                                },
-                                {}),
+            b.condition.compile_branches(tc, indent,
+                                         {
+                                             .if_false{jmp_if_false},
+                                             .if_true{code_label},
+                                         },
+                                         {}),
         };
 
         const branch_condition condition{

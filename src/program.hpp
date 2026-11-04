@@ -543,7 +543,7 @@ class program final {
         machine& x{tc.machine()};
 
         x.comment({}, 0, "");
-        x.emit_string_constants(tc.data().constants());
+        x.emit_read_only_constants(tc.data().constants());
     }
 
     // the path that tells loaded files apart; a file without a canonical

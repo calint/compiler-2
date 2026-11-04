@@ -295,7 +295,8 @@ class stmt_def_dat final : public statement {
             return fold_data_element(tc, tp, value, 0);
         }
 
-        // e.g. 'dat b = a' copies the array 'a' at run time
+        // e.g. 'dat b = a', a copy of the array 'a', which only the run time
+        // makes
         if (value.is_whole_array_copy()) {
             // note: the parse rejected a source that is not an array
             //       ('expr_path::parse_whole_array'), a dat folds right after
@@ -362,7 +363,8 @@ class stmt_def_dat final : public statement {
             };
         }
 
-        // e.g. 'dat p = q' copies the instance 'q' at run time
+        // e.g. 'dat p = q', a copy of the instance 'q', which only the run time
+        // makes
         const expr_type& record{value.as_expr_type(index)};
 
         if (not record.is_literal()) {

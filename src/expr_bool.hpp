@@ -33,6 +33,12 @@
 //   'expr_bool'              a list joined by 'and' or by 'or', its elements
 //                            comparisons or parenthesized lists
 //
+// the compile of a list: 'compile' stores the value, 'compile_branches'
+// branches; both run 'compile_rec', which compiles the elements from the
+// first ('compile_elements_from'), each through 'compile_inner_element' or
+// 'compile_last_element', a comparison through 'expr_bool_op::compile_branch'
+// and a nested list through 'compile_with_label'
+//
 
 // where a condition continues, e.g. the code of an 'if' when it holds and the
 // next branch when it does not; the same label for both when the value is
@@ -1059,16 +1065,6 @@ class expr_bool final : public statement {
         x.free_scratch_register(tok(), indent, reg);
     }
 
-    // what the compile found out about the value without running it, empty
-    // when the run decides it
-    [[nodiscard]] auto compile(toc& tc, const size_t indent,
-                               const branch_targets& targets,
-                               const operand& dst) const
-        -> std::optional<bool> {
-
-        return compile_rec(tc, indent, targets, false, dst);
-    }
-
     // a condition known at compile time is 1 or 0
     [[nodiscard]] auto fold(const toc& tc,
                             [[maybe_unused]] const value_use& use) const
@@ -1117,6 +1113,16 @@ class expr_bool final : public statement {
                 item.assert_boolean_operands();
             });
         }
+    }
+
+    // branches to 'targets', returns what the compile found out about the
+    // value without running it, empty when the run decides it
+    [[nodiscard]] auto compile_branches(toc& tc, const size_t indent,
+                                        const branch_targets& targets,
+                                        const operand& dst) const
+        -> std::optional<bool> {
+
+        return compile_rec(tc, indent, targets, false, dst);
     }
 
     // the value the parse can tell, the part of what 'compile' finds that
@@ -1392,12 +1398,12 @@ class expr_bool final : public statement {
         };
 
         // note: every element stores its value, a known result included
-        std::ignore = compile(tc, indent,
-                              {
-                                  .if_false{jmp_to_end},
-                                  .if_true{jmp_to_end},
-                              },
-                              dst);
+        std::ignore = compile_branches(tc, indent,
+                                       {
+                                           .if_false{jmp_to_end},
+                                           .if_true{jmp_to_end},
+                                       },
+                                       dst);
 
         machine& x{tc.machine()};
 

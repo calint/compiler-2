@@ -113,19 +113,24 @@ read by its header comments and class maps first.
 8. stmt_def_var.hpp, stmt_def_dat.hpp, stmt_assign_var.hpp
                                read: a variable defined and assigned; the
                                'write_plan' is in expr_type.hpp (step 9, 3.7)
-9. expr_any.hpp, expr_zero.hpp, expr_arith.hpp, expr_bool.hpp,
-   expr_type.hpp, expr_type_impl.hpp, stmt_identifier_impl.hpp
+9. expr_zero.hpp, expr_arith.hpp, expr_bool.hpp, expr_type.hpp, expr_any.hpp,
+   expr_type_impl.hpp, stmt_identifier_impl.hpp
                                skim: values, arithmetic, conditions,
-                               instances; the index steps of the walk of a
-                               path are in stmt_identifier_impl.hpp
+                               instances and the write plan, then 'expr_any'
+                               that holds each of them; the index steps of
+                               the walk of a path are in
+                               stmt_identifier_impl.hpp
 10. stmt_builtin_*.hpp, bulk_operands.hpp
                                skim: the built-ins, conversion, io, array
                                copy, compare and length, exit, which
-                               'parse_statement' dispatches
-11. stmt_def_func.hpp, stmt_def_func_param.hpp, stmt_call.hpp, generics.hpp,
+                               'parse_statement' dispatches; their arguments
+                               are a 'builtin_arguments' (the end of
+                               stmt_call.hpp)
+11. generics.hpp, stmt_def_func.hpp, stmt_def_func_param.hpp, stmt_call.hpp,
     stmt_def_type.hpp, stmt_def_type_field.hpp
-                               skim: functions, inlined and noinline calls
-                               (4), the generic instances (2.11)
+                               skim: the records of generic definitions and
+                               instances, functions, inlined and noinline
+                               calls (4), the generic instances (2.11)
 12. toc.hpp                    skim: what the names are while compiling
 13. machine.hpp, register_pool.hpp, register_report.hpp, machine_x86_64.hpp,
     assembler.hpp, assembler_x86_64.hpp
@@ -292,14 +297,14 @@ unwinds it:
 1. 'toc::dry_run_scope', for a dry run: the 'toc::compile_state' (the
    deepest scope count, the storage peak and the frame peak
    ('storage_layout::peaks'), and whether the code after is reached,
-   'scope_stack::reach_state') and the string constants added; a noinline call
+   'scope_stack::reach_state') and the read-only constants added; a noinline call
    reached inside a dry run adds a body to check only, not to emit
    ('toc::add_noinline_body')
 2. 'toc::emit_most_efficient', for a version: the same peaks and reach state,
    each version starts from those before it and the kept one's remain, e.g.
-   the frame size of a noinline body that '--checks=frame' checks; a string
-   constant that the dropped version added stays, unused, so the labels stay
-   unique
+   the frame size of a noinline body that '--checks=frame' checks; a
+   read-only constant that the dropped version added stays, unused, so the
+   labels stay unique
 3. 'machine::version_scope', for a version and for the code of
    'machine::emit_discarded': the members of 'machine::version_state', e.g.
    the registers held and the routines marked used ('machine::mark_used')
@@ -348,7 +353,7 @@ program does not depend on inlining.
      a dry run with its deeper levels, where a limit of the compile, which
      depends on the arguments of a call ('compile_error::is_limit'), running
      out of scratch registers or of the variable storage or the nesting limit,
-     ends the recursion, not the check ('stmt_call::check_recursion'); the
+     ends the recursion, not the check ('inline_call::check_recursion'); the
      arguments decide how:
 
      | arguments | compiled | the limit | example |
@@ -620,7 +625,7 @@ compile (7.8), 'main.cpp' prints it with its frames.
    that runs out of registers is reported as the recursion, and an inlined
    recursion in the check of a body that takes from a call ends at a limit,
    but for the nesting limit in one that nests as deep at every call
-   ('stmt_call::check_recursion', 1.5); the comment of 'error_kind' names the
+   ('inline_call::check_recursion', 1.5); the comment of 'error_kind' names the
    functions. An error that ends a dry run is a 'source' one, so none of them
    drops it.
 3. A file that cannot be read is an 'unlocated_error', which
@@ -1846,7 +1851,7 @@ the count. The range from a start needs the count, so the check is split. The
 address walk checks a run-time start as '0 <= start <= length' and copies it
 into a register the caller allocated before the walk
 ('lea_request::start_register'); after the count, or after the second address
-when the count is constant, 'bulk_operands::run_time_emitters' checks
+when the count is constant, 'bulk_operands::argument_emitters' checks
 'start + count <= length' and frees the register. No element is read or
 written before the check.
 

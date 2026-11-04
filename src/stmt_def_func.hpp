@@ -527,7 +527,7 @@ class stmt_def_func final : public statement {
     // registers and variable storage; an unsized array parameter has no
     // length ('ident_info::is_length_unknown'); an inlined recursion of a
     // body that takes from a call ends at a limit ('compile_error::is_limit',
-    // 'stmt_call::check_recursion'); an inlined result is the destination
+    // 'inline_call::check_recursion'); an inlined result is the destination
     // of the call, checked here through an address
     auto check_body(toc& tc) const -> void {
         const bool takes_from_call{

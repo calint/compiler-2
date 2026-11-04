@@ -47,12 +47,13 @@ class bulk_operands final {
     // what the operation does to the second array
     enum class second_use : uint8_t { read, written };
 
-    // the address of each array and the run-time count, for the element
-    // operations of the machine, 'memory_equal' and 'copy_block', which emit
-    // them in the order of the arguments; a range is checked after the count,
+    // the addresses of the two arrays and the count, emitted in the order of
+    // the arguments: 'copy_elements' and 'equal_elements' of the machine call
+    // them, a known size calls the two address emitters itself before
+    // 'copy_block' or 'memory_equal'; a range is checked after the count,
     // or after the second address when the count is constant, so a later
     // argument runs first, e.g. the call of 'array_copy(a[k], b[f()], 4)'
-    class run_time_emitters final {
+    class argument_emitters final {
         // a run-time start, held in a register from before the walk of its
         // address until the walk has returned and its range is checked
         struct held_start {
@@ -69,16 +70,16 @@ class bulk_operands final {
         std::array<held_start, 2> starts_{};
 
       public:
-        run_time_emitters(const bulk_operands& operands, toc& tc,
+        argument_emitters(const bulk_operands& operands, toc& tc,
                           const size_t indent, const token& src_loc_tk)
             : operands_{operands}, tc_{tc}, indent_{indent},
               src_loc_tk_{src_loc_tk} {}
 
-        run_time_emitters(const run_time_emitters&) = delete;
-        run_time_emitters(run_time_emitters&&) = delete;
-        auto operator=(const run_time_emitters&) -> run_time_emitters& = delete;
-        auto operator=(run_time_emitters&&) -> run_time_emitters& = delete;
-        ~run_time_emitters() = default;
+        argument_emitters(const argument_emitters&) = delete;
+        argument_emitters(argument_emitters&&) = delete;
+        auto operator=(const argument_emitters&) -> argument_emitters& = delete;
+        auto operator=(argument_emitters&&) -> argument_emitters& = delete;
+        ~argument_emitters() = default;
 
         // compiles the count into the register the machine asks for, then
         // checks the ranges of a run-time count

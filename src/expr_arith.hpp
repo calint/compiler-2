@@ -153,7 +153,6 @@ class arith_steps final {
         }
 
         std::ranges::rotate(steps, steps.end() - 1);
-        // note: -1 moves the last step to the front
     }
 
     // pass 2: consecutive constant divisors merge into their product
@@ -907,7 +906,6 @@ class expr_arith final : public statement {
         compile_first_step(tc, indent, dst, steps.front());
 
         for (const step& s : steps.subspan(1)) {
-            // note: 1 because the first step is compiled above
 
             compile_step(tc, indent, dst, s);
         }
@@ -1026,9 +1024,11 @@ class expr_arith final : public statement {
                                                   : arithmetic_operator::assign;
     }
 
-    // unary ops on a memory destination are a load, modify and store on a
-    // load/store machine where a scratch register can be shorter, other single
-    // elements such as calls are not compiled twice
+    // one element that a memory destination takes without measuring a
+    // scratch version: a computed one, e.g. a call, which is not compiled
+    // twice, or a stored one without unary ops; unary ops on memory are a
+    // load, modify and store on a load/store machine, where a scratch register
+    // can be shorter
     [[nodiscard]] auto is_compiled_in_place() const -> bool {
         if (exprs_.size() != 1) {
             return false;

@@ -621,6 +621,8 @@ struct call_site {
     // the name of a function or method, the type of a constructor call; the
     // code and the errors of the call are located at it
     token tk;
+    // e.g. 'at' of 'point.at(1, 2)', else 'tk'; the limits are located at it
+    token name_tk;
     // the receiver of a method is written before the name
     token begin_tk;
     token close_paren_tk;
@@ -723,10 +725,6 @@ struct call_site {
     // statics
     //
 
-    // a block holds the temporaries of a call and frees them after it
-    // note: a block is a scope, which counts toward the nesting limit and the
-    //       'max scopes in use' report, so a call without temporaries enters
-    //       none
     // 'dst' has another type than the result, after 'assert_result_type' a
     // widening
     [[nodiscard]] static auto result_type_differs(const destination& dst,
@@ -757,6 +755,8 @@ struct call_site {
 //
 // the steps:
 //
+//   0. 'compile_within_limits': the nesting limits ('call_limits'), or
+//      'check_recursion' in the check of a body without its calls
 //   1. 'compile': a result narrower than the operand it widens into is
 //      computed in a register and widened ('compile_widened'), a block holds
 //      the temporaries of the call
@@ -781,6 +781,58 @@ class inline_call final {
         assert(call_.func->is_inlined());
     }
 
+    // a recursion in the check of a body without its calls, in a dry run
+    // with its deeper levels: a value or an array length the check does not
+    // know may not let it end, so a limit ('compile_error::is_limit') ends
+    // the recursion, not the check (README 1.5 item 2):
+    //   1. it nests as deep at every call ('nests_alike_at_every_call'):
+    //      expanded, the nesting limit rejects it, e.g. a 'g(k + 1)' that
+    //      'g(2)' enters and that ends only at 'k == 0'
+    //   2. a constant argument: expanded, e.g. the 'g(n - 1)' of 'g(2)'
+    //   3. otherwise only its arguments are bound, the body is checked where
+    //      the recursion is entered and in its own check
+    auto check_recursion(toc& tc, const size_t indent, const destination& dst,
+                         const size_t nesting) const -> void {
+
+        const bool nests_alike{nests_alike_at_every_call(tc)};
+
+        const auto compile_level = [&] -> void {
+            if (not nests_alike and not has_constant_argument(tc)) {
+                compile_arguments(tc, indent);
+                return;
+            }
+
+            compile_within_limits(tc, indent, dst);
+        };
+
+        // note: a deeper level is in the dry run of the first
+        if (nesting > 1) {
+            compile_level();
+            return;
+        }
+
+        const auto compile_first_level = [&] -> void {
+            try {
+                compile_level();
+            } catch (const compile_error& e) {
+                // note: a limit ends the recursion, not the check
+
+                const bool is_nesting_alike_limit{
+                    nests_alike and
+                        e.kind == compile_error::error_kind::inlining_limit,
+                };
+
+                if (e.is_limit() and not is_nesting_alike_limit) {
+                    return;
+                }
+
+                throw;
+            }
+        };
+
+        tc.dry_run(compile_first_level, machine::discarded_code::here);
+    }
+
     // a block holds the temporaries of the call
     auto compile(toc& tc, const size_t indent, const destination& dst) const
         -> void {
@@ -800,6 +852,9 @@ class inline_call final {
         };
 
         // a block holds the temporaries of the call
+        // note: a block is a scope, which counts toward the nesting limit and
+        //       the 'max scopes in use' report, so a call without temporaries
+        //       enters none
         std::optional<toc::scope_entry> temporaries;
 
         if (has_argument_temporary() or has_result_temporary) {
@@ -820,22 +875,29 @@ class inline_call final {
         x.copy_value(call_.tk, indent, dst.operand(), result.operand());
     }
 
-    // the arguments bound as for the body, which is not compiled, e.g. an
-    // inlined recursion that the check of a body without its calls does not
-    // expand ('stmt_call::check_recursion')
-    auto compile_arguments(toc& tc, const size_t indent) const -> void {
-        // a block holds the temporaries of the call
-        std::optional<toc::scope_entry> temporaries;
+    // the call within the nesting limits; a recursion that does not end at
+    // compile time runs out of registers before it reaches the nesting
+    // limit, the advice is the same
+    auto compile_within_limits(toc& tc, const size_t indent,
+                               const destination& dst) const -> void {
 
-        if (has_argument_temporary()) {
-            temporaries.emplace(tc, scope::block());
+        call_limits::assert_inline_nesting(tc, call_.name_tk, *call_.func);
+
+        const bool is_recursion{
+            tc.scopes().inlined_nesting(call_.func->name()) != 0,
+        };
+
+        try {
+            compile(tc, indent, dst);
+        } catch (const compile_error& e) {
+            if (not is_recursion or
+                e.kind != compile_error::error_kind::out_of_registers) {
+
+                throw;
+            }
+
+            throw call_limits::recursion_error(call_.name_tk, *call_.func);
         }
-
-        machine& x{tc.machine()};
-
-        machine::held_registers held{x, call_.tk, indent + 1};
-
-        std::ignore = bind_arguments(tc, indent, held);
     }
 
   private:
@@ -871,6 +933,24 @@ class inline_call final {
         }
 
         return arguments;
+    }
+
+    // the arguments bound as for the body, which is not compiled, e.g. an
+    // inlined recursion that the check of a body without its calls does not
+    // expand ('inline_call::check_recursion')
+    auto compile_arguments(toc& tc, const size_t indent) const -> void {
+        // a block holds the temporaries of the call
+        std::optional<toc::scope_entry> temporaries;
+
+        if (has_argument_temporary()) {
+            temporaries.emplace(tc, scope::block());
+        }
+
+        machine& x{tc.machine()};
+
+        machine::held_registers held{x, call_.tk, indent + 1};
+
+        std::ignore = bind_arguments(tc, indent, held);
     }
 
     // an error found in the inlined body reports where it was called from,
@@ -1004,6 +1084,18 @@ class inline_call final {
             });
     }
 
+    // a value argument folds to a constant
+    [[nodiscard]] auto has_constant_argument(const toc& tc) const -> bool {
+        return std::ranges::any_of(
+            std::views::zip(call_.args, call_.func->params()),
+            [&](const auto& pair) -> bool {
+                const auto& [arg, param]{pair};
+
+                return is_value_param(param) and
+                       arg.fold(tc, tc.use_at(param.get_type()));
+            });
+    }
+
     // the bindings of the result and of the arguments of the inlined body
     [[nodiscard]] auto make_bindings(toc& tc, const size_t indent,
                                      const destination& dst,
@@ -1028,6 +1120,24 @@ class inline_call final {
         bindings.arguments = bind_arguments(tc, indent, held);
 
         return bindings;
+    }
+
+    // what may end a recursion at one call and not at another is known here:
+    // every value argument folds and every array argument has its length; an
+    // instance or a 'mut' argument folds at no call
+    [[nodiscard]] auto nests_alike_at_every_call(const toc& tc) const -> bool {
+        return std::ranges::all_of(
+            std::views::zip(call_.args, call_.func->params(), call_.places),
+            [&](const auto& triple) -> bool {
+                const auto& [arg, param, arg_place]{triple};
+
+                if (arg_place and arg_place->info.is_length_unknown()) {
+                    return false;
+                }
+
+                return not is_value_param(param) or
+                       arg.fold(tc, tc.use_at(param.get_type()));
+            });
     }
 
     //
@@ -1172,6 +1282,15 @@ class inline_call final {
 
         return not arg_place and not param.get_type().is_builtin();
     }
+
+    // a parameter that takes a value, not a place: read-only, built-in and
+    // not an array
+    [[nodiscard]] static auto is_value_param(const stmt_def_func_param& param)
+        -> bool {
+
+        return param.is_read_only() and not param.is_array() and
+               param.get_type().is_builtin();
+    }
 };
 
 // compiles a call of a 'noinline' function: its body is emitted once for all
@@ -1194,6 +1313,8 @@ class inline_call final {
 class noinline_call final {
     // what the call passes for an argument: the variable it names or a
     // temporary of the current block that holds its value
+    // note: a place is passed by its address, any other argument in a
+    //       temporary
     struct noinline_arg {
         ident_info info;
         // computed at the argument's position in the list, in a register held
@@ -1201,7 +1322,6 @@ class noinline_call final {
         operand address;
     };
 
-    // a place is passed by its address, any other argument in a temporary
     call_site call_{};
 
   public:
@@ -1675,7 +1795,7 @@ class builtin_arguments final {
 // compiling, in 'compile': the checks made before the inlined and noinline
 // paths split ('assert_call_accepted'), then 'inline_call' or 'noinline_call'
 // compiles the call, an inlined recursion in the check of a body without its
-// calls through 'check_recursion'
+// calls through 'inline_call::check_recursion'
 class stmt_call final : public statement {
     // e.g. the '.' in 'lst.add(x)', the receiver is the first argument;
     // none when the call is not a method call
@@ -1831,11 +1951,15 @@ class stmt_call final : public statement {
         };
 
         if (nesting != 0 and tc.scopes().is_in_body_taking_from_call()) {
-            check_recursion(tc, indent, dst, call, nesting);
+            inline_call{call}.check_recursion(tc, indent, dst, nesting);
             return;
         }
 
-        compile_call(tc, indent, dst, call);
+        if (callee().is_inlined()) {
+            inline_call{call}.compile_within_limits(tc, indent, dst);
+        } else {
+            noinline_call{call}.compile(tc, indent, dst);
+        }
 
         // the operators of the call apply to its result where it is used, at
         // the width and with the overflow check of the destination, e.g. the
@@ -2192,92 +2316,6 @@ class stmt_call final : public statement {
         record_uses_of_call(tc, places);
     }
 
-    // a recursion in the check of a body without its calls, in a dry run
-    // with its deeper levels: a value or an array length the check does not
-    // know may not let it end, so a limit ('compile_error::is_limit') ends
-    // the recursion, not the check (README 1.5 item 2):
-    //   1. it nests as deep at every call ('nests_alike_at_every_call'):
-    //      expanded, the nesting limit rejects it, e.g. a 'g(k + 1)' that
-    //      'g(2)' enters and that ends only at 'k == 0'
-    //   2. a constant argument: expanded, e.g. the 'g(n - 1)' of 'g(2)'
-    //   3. otherwise only its arguments are bound, the body is checked where
-    //      the recursion is entered and in its own check
-    auto check_recursion(toc& tc, const size_t indent, const destination& dst,
-                         const call_site& call, const size_t nesting) const
-        -> void {
-
-        const bool nests_alike{nests_alike_at_every_call(tc, call.places)};
-
-        const auto compile_level = [&] -> void {
-            if (not nests_alike and not has_constant_argument(tc)) {
-                inline_call{call}.compile_arguments(tc, indent);
-                return;
-            }
-
-            compile_call(tc, indent, dst, call);
-        };
-
-        // note: a deeper level is in the dry run of the first
-        if (nesting > 1) {
-            compile_level();
-            return;
-        }
-
-        const auto compile_first_level = [&] -> void {
-            try {
-                compile_level();
-            } catch (const compile_error& e) {
-                // note: a limit ends the recursion, not the check
-
-                const bool is_nesting_alike_limit{
-                    nests_alike and
-                        e.kind == compile_error::error_kind::inlining_limit,
-                };
-
-                if (e.is_limit() and not is_nesting_alike_limit) {
-                    return;
-                }
-
-                throw;
-            }
-        };
-
-        tc.dry_run(compile_first_level, machine::discarded_code::here);
-    }
-
-    // the call without its operators, inlined or noinline
-    auto compile_call(toc& tc, const size_t indent, const destination& dst,
-                      const call_site& call) const -> void {
-
-        if (not callee().is_inlined()) {
-            noinline_call{call}.compile(tc, indent, dst);
-            return;
-        }
-
-        // note: an inlined call compiles its body in place, so nesting is
-        //       limited; a recursion that does not end at compile time runs
-        //       out of registers before it reaches the nesting limit, the
-        //       advice is the same
-
-        call_limits::assert_inline_nesting(tc, callee_name_token(), callee());
-
-        const bool is_recursion{
-            tc.scopes().inlined_nesting(callee().name()) != 0,
-        };
-
-        try {
-            inline_call{call}.compile(tc, indent, dst);
-        } catch (const compile_error& e) {
-            if (not is_recursion or
-                e.kind != compile_error::error_kind::out_of_registers) {
-
-                throw;
-            }
-
-            throw call_limits::recursion_error(callee_name_token(), callee());
-        }
-    }
-
     // the type names the constructor after the '.', e.g. 'at' of
     // 'point.at(1, 2)', a method of the type is not one; the call is in a
     // function, checked first as for a function call
@@ -2349,18 +2387,6 @@ class stmt_call final : public statement {
         return is_method() ? 1 : 0;
     }
 
-    // a value argument folds to a constant
-    [[nodiscard]] auto has_constant_argument(const toc& tc) const -> bool {
-        return std::ranges::any_of(
-            std::views::zip(args_, callee().params()),
-            [&](const auto& pair) -> bool {
-                const auto& [arg, param]{pair};
-
-                return is_value_param(param) and
-                       arg.fold(tc, tc.use_at(param.get_type()));
-            });
-    }
-
     // the call is in the body of its callee, a recursion
     [[nodiscard]] auto is_call_in_own_body(const toc& tc) const -> bool {
         return tc.scopes().current_func_scope().is_name(callee().name());
@@ -2393,34 +2419,19 @@ class stmt_call final : public statement {
         return result;
     }
 
-    // what may end a recursion at one call and not at another is known here:
-    // every value argument folds and every array argument has its length; an
-    // instance or a 'mut' argument folds at no call
-    [[nodiscard]] auto nests_alike_at_every_call(
-        const toc& tc, const std::span<const std::optional<place>> places) const
-        -> bool {
-
-        return std::ranges::all_of(
-            std::views::zip(args_, callee().params(), places),
-            [&](const auto& triple) -> bool {
-                const auto& [arg, param, arg_place]{triple};
-
-                if (arg_place and arg_place->info.is_length_unknown()) {
-                    return false;
-                }
-
-                return not is_value_param(param) or
-                       arg.fold(tc, tc.use_at(param.get_type()));
-            });
-    }
-
     // from the '(' on, 'what' names the callee; a method receiver is already
     // in 'args_', the parameter gives the type of a literal argument unless
     // its type was deduced from it, see 'generic_call::deducing_args'
     auto parse_arguments(toc& tc, tokenizer& tz, const std::string_view what,
                          const std::span<const size_t> deducing_args) -> void {
 
-        read_open_paren(tc, tz, what);
+        // the type is the result type of the callee, resolved before, so an
+        // unknown callee is reported before a missing '('
+        assert_callee_body_parsed(tc);
+
+        set_type(callee().result_type());
+
+        read_open_paren(tz, what);
 
         const std::span<const stmt_def_func_param> params{callee().params()};
         const size_t first{args_.size()};
@@ -2484,16 +2495,8 @@ class stmt_call final : public statement {
         check_arguments(tc);
     }
 
-    // the type is the result type of the callee, resolved before, so an
-    // unknown callee is reported before a missing '('; that error is at the
-    // name, the next token can be on a later line, and 'what' names the callee
-    auto read_open_paren(const toc& tc, tokenizer& tz,
-                         const std::string_view what) -> void {
-
-        assert_callee_body_parsed(tc);
-
-        set_type(callee().result_type());
-
+    // the '(' after the callee, 'what' names the callee
+    auto read_open_paren(tokenizer& tz, const std::string_view what) -> void {
         const std::optional<token> paren_tk{tz.is_next_char_token('(')};
 
         // at the name, the next token can be on a later line
@@ -2563,6 +2566,7 @@ class stmt_call final : public statement {
     [[nodiscard]] auto site(const toc& tc) const -> call_site {
         return {
             .tk{tok()},
+            .name_tk{callee_name_token()},
             .begin_tk{call_begin_token()},
             .close_paren_tk{close_paren_tk_},
             .source{statement::trimmed_source(*this)},
@@ -2728,15 +2732,6 @@ class stmt_call final : public statement {
                                     in_quotes(ref.target.root.name),
                                     use_temporary_fix_)};
         }
-    }
-
-    // a parameter that takes a value, not a place: read-only, built-in and
-    // not an array
-    [[nodiscard]] static auto is_value_param(const stmt_def_func_param& param)
-        -> bool {
-
-        return param.is_read_only() and not param.is_array() and
-               param.get_type().is_builtin();
     }
 
     [[nodiscard]] static auto is_widened_integer(const type& result_type,

@@ -57,7 +57,7 @@ class stmt_builtin_arrays_equal final : public statement {
             operands_.count().constant_value(tc),
         };
 
-        bulk_operands::run_time_emitters emit{operands_, tc, indent, tok()};
+        bulk_operands::argument_emitters emit{operands_, tc, indent, tok()};
 
         // a known size is compared like two instances; a count of 0 stays a
         // run-time walk, which compares nothing

@@ -65,7 +65,7 @@ class stmt_builtin_array_copy final : public statement {
             tc.checks().overlap and may_overlap(tc),
         };
 
-        bulk_operands::run_time_emitters emit{operands_, tc, indent, tok()};
+        bulk_operands::argument_emitters emit{operands_, tc, indent, tok()};
 
         if (count and not checks_overlap) {
             compile_constant_count(tc, indent, element_type,
@@ -94,7 +94,7 @@ class stmt_builtin_array_copy final : public statement {
     // follows the alignment of both addresses
     auto compile_constant_count(toc& tc, const size_t indent,
                                 const type& element_type, const size_t count,
-                                bulk_operands::run_time_emitters& emit) const
+                                bulk_operands::argument_emitters& emit) const
         -> void {
 
         const size_t size_bytes{

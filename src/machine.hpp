@@ -96,9 +96,9 @@ struct target_description {
 //
 //   lifecycle      in the order of a compile: 'start', 'begin_noinline_body'
 //                  and 'end_noinline_body' for each body
-//                  ('stmt_def_func'), 'emit_runtime', 'emit_string_constants',
-//                  'begin_data', 'reserve_variables', 'finish',
-//                  'write_assembly'
+//                  ('stmt_def_func'), 'emit_runtime',
+//                  'emit_read_only_constants', 'begin_data',
+//                  'reserve_variables', 'finish', 'write_assembly'
 //   data           'data_alignment', 'define_constant', 'emit_data_array',
 //                  'emit_string_data', 'emit_zero_data'
 //   registers      'alloc_scratch_register', 'free_scratch_register',
@@ -280,7 +280,7 @@ class machine {
     };
 
     // read-only bytes at 'label'
-    struct string_constant {
+    struct read_only_constant {
         std::string label;
         std::string bytes;
     };
@@ -1202,22 +1202,14 @@ class machine {
         return choice.keeps_first;
     }
 
-    // the code after the program: the handlers its checks branch to, then the
-    // routines that the code and the handlers call
-    auto emit_runtime() -> void {
-        emit_used_failure_handlers();
-        emit_used_routines();
-        assert_used_routines_emitted();
-    }
-
     // leaves the read-only data section current
-    auto emit_string_constants(const std::span<const string_constant> strings)
-        -> void {
+    auto emit_read_only_constants(
+        const std::span<const read_only_constant> constants) -> void {
 
         assembler& output{target_assembler()};
 
         output.begin_read_only_section();
-        for (const string_constant& s : strings) {
+        for (const read_only_constant& s : constants) {
             // note: a byte alignment needs no directive
             if (target_.string_alignment > 1) {
                 output.align(target_.string_alignment);
@@ -1226,6 +1218,14 @@ class machine {
             output.label(0, s.label);
             output.string_data(s.bytes);
         }
+    }
+
+    // the code after the program: the handlers its checks branch to, then the
+    // routines that the code and the handlers call
+    auto emit_runtime() -> void {
+        emit_used_failure_handlers();
+        emit_used_routines();
+        assert_used_routines_emitted();
     }
 
     auto emit_string_data(const std::string_view bytes) -> void {
