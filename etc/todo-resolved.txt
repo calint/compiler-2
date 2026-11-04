@@ -26,6 +26,18 @@
        would break the 'read_' rule as the old name does, J17 to J20 renames
        of low benefit (the 'lea' family left to the user with round 68 I11),
        L2 a helper for the temporaries block (+8), L3 L4 L5 L6 small
+       K (regressions of rounds 67 and 68, about 100000 compiles of the
+       corpus and 4200 generated programs in pinned builds of edd81c72,
+       445e06e1 and 640743f2 on x86_64 and rv32i-fpga, asan on 600): no
+       wrong code; C1, E12 and F1 keep every verdict; round 68 G1 moves
+       verdicts at the register limit on x86_64 both ways: a known-size
+       '==' or 'arrays_equal' whose index shifts or divides is accepted
+       (2101, about 1400 generated builds), and one under about 9 held
+       registers is now rejected ("cannot allocate register rsi because it
+       holds a scratch value"), since its addresses are walked before 'rsi',
+       'rdi' and 'rcx' are taken, as 'copy_block' already does; kept as a
+       limit (README 1.8 item 3, 8.3), the rule is one for both bulk
+       operations of a known size
 [x] hard: design review series 2, round 68 (2026-11-04, user: the loop of
     round 67 goes on, the next round started while round 67 was tested; F
     the code compiled more than once, G the callbacks from the backend into
