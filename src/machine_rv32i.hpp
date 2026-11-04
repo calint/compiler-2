@@ -1157,6 +1157,7 @@ class machine_rv32i : public machine {
     equal_elements(const token& src_loc_tk, const size_t indent,
                    const size_t element_size_bytes,
                    const std::function_ref<void(const operand&)> emit_count,
+                   const address_emitter& lhs, const address_emitter& rhs,
                    const equality_request& request) -> void override {
 
         const operation_scope bulk_scope{*this};
@@ -1165,7 +1166,7 @@ class machine_rv32i : public machine {
             begin_array_operation(src_loc_tk, indent, "lhs", "rhs"),
         };
 
-        load_bulk_addresses(src_loc_tk, indent, bulk, request.lhs, request.rhs);
+        load_bulk_addresses(src_loc_tk, indent, bulk, lhs, rhs);
 
         emit_count(bulk.count());
 
@@ -1206,18 +1207,13 @@ class machine_rv32i : public machine {
     }
 
     // every known size is compared from the address operands, small ones
-    // unrolled and larger ones in a loop, both addresses stay in their
-    // registers until it has compared
+    // unrolled and larger ones in a loop
     auto memory_equal(const token& src_loc_tk, const size_t indent,
-                      const size_t size_bytes, const equality_request& request)
+                      const size_t size_bytes, const operand& lhs,
+                      const operand& rhs, const equality_request& request)
         -> void override {
 
-        request.lhs(std::nullopt, [&](const operand& left) -> void {
-            request.rhs(std::nullopt, [&](const operand& right) -> void {
-                compare_known_size(src_loc_tk, indent, size_bytes, left, right,
-                                   request);
-            });
-        });
+        compare_known_size(src_loc_tk, indent, size_bytes, lhs, rhs, request);
     }
 
     auto return_function(const size_t indent) -> void override {

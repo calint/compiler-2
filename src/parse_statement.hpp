@@ -4,7 +4,9 @@
 // statement of a block ('parse_statement') and an operand of an expression
 // ('parse_operand'), the last two declared in 'decouple.hpp' because
 // 'stmt_block' and 'expr_arith', which call them, are included by the
-// statements they make; 'program' keeps the files and their includes
+// statements they make; 'program' keeps the files and their includes; a
+// function is defined before its use, so the entry points are last: read from
+// the bottom
 
 #include <cassert>
 #include <cstdint>

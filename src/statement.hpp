@@ -27,6 +27,14 @@
 #include "ub_reads.hpp"
 #include "unary_ops.hpp"
 
+// the node interface, the types below in reading order:
+//
+//   'one_line_source'  the source of a node on one line, for the comments of
+//                      the listing
+//   'width_change'     the width an expression is computed at compared with
+//                      its own
+//   'statement'        the base of every node
+
 // the source text of a statement on one line, for the comments of the output
 class one_line_source final {
     // a part of the source text as it reads, a source comment, or a string or
@@ -227,17 +235,20 @@ enum class width_change : uint8_t { narrowed, widened };
 
 class stmt_identifier;
 
-// a node of the program, a value too: 'stmt_identifier', 'stmt_call' and the
-// built-ins are values, the 'stmt_' prefix names a node; it parses itself in
-// its constructor, writes its source back ('source_to') and compiles; the
-// whitespace before a value is
-// held by a wrapper ('expr_any', 'expr_bool', 'expr_bool_op', a branch of
-// 'stmt_if') in a whitespace-only token, while a list ('expr_arith') is a
-// position and its first element holds it; the virtuals in groups, with the
-// classes that override them, the default is 'std::unreachable()' where no
-// other class reaches it; a parse step named 'parse_' makes a node or a part
-// that holds one, e.g. 'parse_condition', one named 'read_' takes tokens only,
-// e.g. 'read_open_paren'
+// a node of the program: it parses itself in its constructor, writes its
+// source back ('source_to') and compiles; a value is a node too, e.g.
+// 'stmt_identifier', 'stmt_call' and the built-ins, the 'stmt_' prefix names a
+// node, not a statement
+//
+// the whitespace before a value is held by a wrapper ('expr_any',
+// 'expr_bool', 'expr_bool_op', a branch of 'stmt_if') in a whitespace-only
+// token, while a list ('expr_arith') is a position and its first element
+// holds it; a parse step named 'parse_' makes a node or a part that holds one,
+// e.g. 'parse_condition', one named 'read_' takes tokens only, e.g.
+// 'read_open_paren'
+//
+// the virtuals in groups, with the classes that override them, the default
+// is 'std::unreachable()' where no other class reaches it:
 //
 //   every node     'compile', 'source_to', 'tok', 'trace_assignment'
 //                  (control flow); 'visit_operands' (the default is

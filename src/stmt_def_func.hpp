@@ -665,7 +665,15 @@ class stmt_def_func final : public statement {
         assert(not is_inlined());
         assert(array_lengths.size() == array_param_count());
 
-        const toc::scope_entry body{tc, frame_scope(array_lengths)};
+        scope body_scope{frame_scope(array_lengths)};
+
+        // without array parameters the body takes nothing from a call, it is
+        // checked as it is emitted, as 'main' is ('check_function_bodies')
+        if (array_lengths.empty()) {
+            body_scope.mark_without_call(false);
+        }
+
+        const toc::scope_entry body{tc, std::move(body_scope)};
 
         machine& x{tc.machine()};
 

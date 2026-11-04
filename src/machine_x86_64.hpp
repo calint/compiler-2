@@ -379,12 +379,13 @@ class machine_x86_64 final : public machine {
     equal_elements(const token& src_loc_tk, const size_t indent,
                    const size_t element_size_bytes,
                    const std::function_ref<void(const operand&)> emit_count,
+                   const address_emitter& lhs, const address_emitter& rhs,
                    const equality_request& request) -> void override {
 
         const operation_scope bulk{*this};
 
         load_bulk_registers(src_loc_tk, indent, element_size_bytes, emit_count,
-                            request.lhs, request.rhs);
+                            lhs, rhs);
 
         // note: a zero count compares nothing and leaves the flags of
         //       'test', ZF set, so it compares equal
@@ -418,7 +419,8 @@ class machine_x86_64 final : public machine {
     }
 
     auto memory_equal(const token& src_loc_tk, const size_t indent,
-                      const size_t size_bytes, const equality_request& request)
+                      const size_t size_bytes, const operand& lhs,
+                      const operand& rhs, const equality_request& request)
         -> void override {
 
         const std::vector<op> compares{memory_equal_compares(size_bytes)};
@@ -437,7 +439,8 @@ class machine_x86_64 final : public machine {
             reserve_named_register(src_loc_tk, indent, "rcx");
         }
 
-        load_bulk_addresses(src_loc_tk, indent, request.lhs, request.rhs);
+        lea(src_loc_tk, indent, qword_register("rsi"), lhs);
+        lea(src_loc_tk, indent, qword_register("rdi"), rhs);
 
         if (is_counted) {
             mov(src_loc_tk, indent, qword_register("rcx"),

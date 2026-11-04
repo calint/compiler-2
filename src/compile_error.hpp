@@ -69,12 +69,14 @@ class compile_error final : public std::exception {
     // ('machine::emit_most_efficient'), and they and the limit of inlined
     // calls depend on the arguments of a call; the readers, the only code
     // that changes an error instead of ending with it:
-    // 'machine::compile_version' drops a limit of a version, 'call_limits'
-    // rewords 'out_of_registers' in an inlined recursion,
-    // 'stmt_call::check_recursion' drops a limit in a recursion of the check
-    // of a body that takes from a call but 'inlining_limit' in one that nests
-    // as deep at every call, 'toc::dry_run' rethrows an error as a 'source'
-    // one so that none of them drops it
+    //   1. 'machine::compile_version' drops a limit of a version
+    //   2. 'stmt_call::compile_call' rewords 'out_of_registers' in an inlined
+    //      recursion
+    //   3. 'stmt_call::check_recursion' drops a limit in a recursion of the
+    //      check of a body that takes from a call, but not 'inlining_limit'
+    //      in one that nests as deep at every call
+    //   4. 'toc::dry_run' rethrows an error as a 'source' one, so that none
+    //      of the others drops it
     enum class error_kind : uint8_t {
         source,
         out_of_registers,

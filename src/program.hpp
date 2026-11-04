@@ -302,6 +302,8 @@ class program final {
         {
             const toc::scope_entry root{tc_, scope::block()};
 
+            // a global 'var' or 'dat' is declared again with its storage, a
+            // type writes its layout comment, a function emits nothing here
             for (const parsed_file& parsed : parsed_files_) {
                 for (const std::unique_ptr<statement>& s : parsed.statements) {
                     s->compile(tc_, 0, destination{});
@@ -375,6 +377,8 @@ class program final {
                 break;
             }
 
+            // a name is seen only after its definition, see
+            // 'definition_order'
             tc_.begin_definition();
             file.parsed.emplace_back(parse_definition(tc_, file.tz, tk));
             tk = file.tz.next_token();
@@ -469,7 +473,10 @@ class program final {
         const stmt_def_func& func_main{tc.get_main_or_throw()};
 
         for (const stmt_def_func* const f : tc.funcs().defs()) {
-            if (f != &func_main) {
+            // a noinline body without array lengths was checked as emitted
+            if (f != &func_main and
+                not tc.noinline_worklist().is_emitted(*f, {})) {
+
                 f->check_body(tc);
             }
         }
@@ -488,7 +495,9 @@ class program final {
                 tc.noinline_worklist().checked_body_at(i),
             };
 
-            if (tc.noinline_worklist().is_emitted(body)) {
+            if (tc.noinline_worklist().is_emitted(*body.func,
+                                                  body.array_lengths)) {
+
                 continue;
             }
 

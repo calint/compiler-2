@@ -32,7 +32,7 @@ class stmt_if final : public statement {
     // one condition of an 'if' or 'else if' and the block it guards, e.g.
     // 'a == b {x = 1}' of 'if a == b {x = 1} else {y = 2}'
     struct branch {
-        // 'lead' was read before
+        // 'lead_in' was read before
         branch(toc& tc, tokenizer& tz,
                const std::optional<else_if_tokens>& lead_in)
             : lead{lead_in}, ws_tk{tz.next_whitespace_token()},

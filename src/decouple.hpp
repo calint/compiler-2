@@ -1,12 +1,12 @@
 #pragma once
 
-// the declarations that break include cycles, defined in 'parse_statement.hpp'
-// and 'expr_type_impl.hpp':
-//   - the statement factories create the statements of a block and the
-//     elements of an expression, and the statement headers that need them
-//     ('stmt_block', 'expr_arith') are included by those classes
-//   - 'expr_type' holds 'stmt_call' and 'expr_any', whose headers include
-//     'expr_type.hpp'
+// the declarations that break include cycles:
+//   - the parse functions that 'stmt_block' and 'expr_arith' call, which
+//     make the statements of a block and the elements of an expression,
+//     defined in 'parse_statement.hpp', which includes every statement
+//   - the classes 'expr_type' holds, 'stmt_call' and 'expr_any', whose
+//     headers include 'expr_type.hpp'; its members that use them are in
+//     'expr_type_impl.hpp'
 
 #include <memory>
 

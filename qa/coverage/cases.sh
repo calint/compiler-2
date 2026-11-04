@@ -6663,3 +6663,7 @@ SRC=2099 && COMPERR
 
 # the result of a method call does not tell a type argument
 SRC=2100 && COMPERR
+
+# a comparison of a known size compiles both addresses before it takes its
+# registers, so an index may shift or divide on x86_64
+SRC=2101 && EXP=0 && RUN

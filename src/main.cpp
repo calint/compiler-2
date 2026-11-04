@@ -23,6 +23,9 @@
 #include <system_error>
 #include <vector>
 
+// note: the headers kept without a use here hold the definitions that close
+//       the include cycles (README 7.7)
+
 #include "assembler.hpp"
 #include "compile_error.hpp"
 #include "expr_type_impl.hpp" // IWYU pragma: keep

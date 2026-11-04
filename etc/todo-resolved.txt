@@ -1,6 +1,48 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] hard: design review series 2, round 68 (2026-11-04, user: the loop of
+    round 67 goes on, the next round started while round 67 was tested; F
+    the code compiled more than once, G the callbacks from the backend into
+    the front end, H the 'toc' facade method by method, I a newcomer reading
+    from 'main' in the order of README 1.1)
+    => done (2026-11-04): no bugs; design: F1 a called noinline function
+       without array parameters is checked as it is emitted, like 'main'
+       ('emit_noinline_body' marks it without a call,
+       'check_function_bodies' skips it), roome compiles 19 % faster (F,
+       273 to 222 ms), an error in its skipped code now has a "called from"
+       frame; G1
+       'memory_equal' takes the two addresses like 'copy_block', the
+       comparison of a known size is a straight sequence in 'expr_bool' and
+       'stmt_builtin_arrays_equal', 'address_emitter_of' gone (-12): a known
+       size takes operands, a run-time count emitters; on x86_64 74 compiles
+       of the corpus order comments or registers otherwise, the same
+       instruction count, and an index that shifts or divides is accepted
+       where "register rcx is always used" rejected it (2101); H1
+       'add_bytes_constant' and 'add_string_constant' folded into the public
+       'add_read_only_constant', H2 'create_cmp_label' gone (64 public
+       methods), H5 'type_param_named' asserts the parse; names: I11
+       'lea_request' moved beside its users in 'stmt_identifier.hpp'; docs:
+       I1 to I4 the reading order of README 1.1 names every file of 'src/',
+       reads 'stmt_identifier' and 'ub_order' before the nodes that use them,
+       the class map of 'machine' at step 2, the chapters of each step;
+       'check-readme-names.py' fails for a file the order does not name; H3
+       README 7.6 and the 'toc' map give the reason of the forwarders (a table
+       without an accessor), H4 the 'toc' maps name its other tables and a
+       program and a statics line; header maps I5 'statement.hpp', I6
+       'expr_any.hpp', 'expr_arith.hpp', I10 'ident_info.hpp'; comments I7
+       'decouple.hpp' (was wrong), I8 I9 'program', I12 'main.cpp', I13
+       'parse_statement.hpp', I14 the readers of 'error_kind' as a list
+       ('stmt_call::compile_call' after round 67 E12), I15 I16; skipped: F2
+       'check_noinline_body' with empty lengths (one compile in the corpus),
+       F3 one shape for the dry-run openers (would branch on the reason), F4
+       a smaller dry-run state (the string-constant restore is needed, 1217),
+       F5 the check of inlined callees decides the verdict of a function
+       nothing calls; G2 the bulk emitters, G3 'call_target' (round 57 B1),
+       G4 'store_bytes', G5 'emit_discarded' and 'emit_most_efficient'
+       (round 67 E13), each forced by a register reservation or the order of
+       evaluation; H6 H7 would lose a phase assert, H8 H9; I17 I18; the
+       renames of 'decouple.hpp' and 'lea_request' left to the user
 [x] hard: design review series 2, round 67 (2026-11-04, user: keep looking
     for improvements in a loop and do the recommended, a straight read for a
     human reviewer from 'main' to the last line, also how the classes are

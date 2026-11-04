@@ -3,7 +3,9 @@
 # 'src/': a quoted identifier with an underscore or a 'scope::name', e.g.
 # 'toc::storage_of' or 'plan_writes'; a quoted baz text without an underscore
 # is not checked; and that each test of the column 'tests' of the catalog
-# (8.1) is a case of 'qa/coverage/cases.sh', e.g. '0302' or '1301-1303'
+# (8.1) is a case of 'qa/coverage/cases.sh', e.g. '0302' or '1301-1303'; and
+# that the reading order of 1.1 names every file of 'src/', the built-ins as
+# 'stmt_builtin_*.hpp'
 # usage: qa/lint/check-readme-names.py
 # exits 1 and prints each missing name or test when there is one
 import os
@@ -55,9 +57,22 @@ def missing_tests():
             for line_no, n in catalog_tests() if n not in cases]
 
 
+# the files of 'src/' that the reading order of 1.1 does not name
+def missing_from_reading_order():
+    with open(README, encoding='utf-8') as f:
+        text = f.read()
+    start = text.index('Reading order, ')
+    block = text[start:text.index('```', text.index('```text', start) + 3)]
+    named = set(re.findall(r'[a-z0-9_]+\.[ch]pp', block))
+    return [f'README.md: reading order of 1.1 does not name {name}'
+            for name in sorted(os.listdir(SRC))
+            if name not in named and not (name.startswith('stmt_builtin_')
+                                          and 'stmt_builtin_*.hpp' in block)]
+
+
 def main():
     words = source_words()
-    missing = missing_tests()
+    missing = missing_tests() + missing_from_reading_order()
     with open(README, encoding='utf-8') as f:
         for line_no, line in enumerate(f, start=1):
             for name in QUOTED.findall(line):

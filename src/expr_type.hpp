@@ -296,16 +296,16 @@ inline auto emit_write_plan(toc& tc, const size_t indent,
                 std::get_if<bytes_write>(&step.action),
             }) {
 
-            x.store_bytes(
-                bytes->src_loc_tk, indent, bytes->bytes, part_dst.operand(),
-                part_dst.type_ref().alignment(), [&] -> std::string {
-                    if (bytes->is_string) {
-                        return tc.add_string_constant(bytes->src_loc_tk);
-                    }
+            x.store_bytes(bytes->src_loc_tk, indent, bytes->bytes,
+                          part_dst.operand(), part_dst.type_ref().alignment(),
+                          [&] -> std::string {
+                              const std::string_view kind{
+                                  bytes->is_string ? "str" : "init",
+                              };
 
-                    return tc.add_bytes_constant(bytes->src_loc_tk,
-                                                 bytes->bytes);
-                });
+                              return tc.add_read_only_constant(
+                                  kind, bytes->src_loc_tk, bytes->bytes);
+                          });
 
             continue;
         }

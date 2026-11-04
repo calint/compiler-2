@@ -1,12 +1,18 @@
 #pragma once
 
-// what a name resolves to ('ident_info'), what a variable is declared as
-// ('var_info'), where 'compile' writes a value ('destination'), what a
-// caller asks of the address of an identifier ('lea_request'), why a name
-// cannot be written ('read_only_cause'), a value known at compile time
-// ('folded_value'), where a variable lives ('var_placement') and how a value
-// is used ('value_use'); a declaration makes a 'var_info', a name resolves to
-// an 'ident_info', a node writes to a 'destination' (README 1.3)
+// what names and values are, the types below in reading order:
+//
+//   'read_only_cause'  why a name cannot be written
+//   'folded_value'     a value known at compile time
+//   'in_storage', 'at_address_register', 'in_value_register',
+//   'var_placement'    where a variable lives
+//   'var_info'         what a variable is declared as
+//   'ident_info'       what a name resolves to
+//   'value_use'        the width a value is used at
+//   'destination'      where 'compile' writes a value
+//
+// a declaration makes a 'var_info', a name resolves to an 'ident_info', a
+// node writes to a 'destination' (README 1.3)
 
 #include <cassert>
 #include <cstddef>
@@ -619,19 +625,4 @@ class destination final {
 
         return result;
     }
-};
-
-// what a caller asks of the address of an identifier
-struct lea_request {
-    // the path starts a range, its last index may be the end; false for an
-    // element
-    bool is_range{};
-
-    // a run-time start of the range is copied here, the caller checks it
-    // against a count after the later arguments
-    std::optional<operand> start_register;
-
-    // the register the caller prefers the address to start in, none without
-    // a preference
-    std::optional<operand> address_register;
 };

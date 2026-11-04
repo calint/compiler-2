@@ -230,7 +230,7 @@ class expr_bool_op final : public statement {
                   statement::trimmed_source(*this, "?",
                                             comment_label(list_op, inverted)));
 
-        x.label(indent, tc.create_cmp_label(tok()));
+        x.label(indent, tc.create_unique_label(tok(), "cmp"));
 
         // a constant has the element's 'not's applied, the list inversion is
         // left
@@ -750,11 +750,18 @@ class expr_bool_op final : public statement {
 
         machine& x{tc.machine()};
 
-        x.memory_equal(src_loc_tk, indent, *size_bytes,
+        machine::held_registers held{x, src_loc_tk, indent};
+
+        x.comment(lhs.tok(), indent, statement::trimmed_source(lhs));
+        const operand lhs_address{lhs.compile_lea(tc, indent, held, {})};
+
+        x.comment(rhs.tok(), indent, statement::trimmed_source(rhs));
+        const operand rhs_address{rhs.compile_lea(tc, indent, held, {})};
+
+        x.memory_equal(src_loc_tk, indent, *size_bytes, lhs_address,
+                       rhs_address,
                        {
                            .alignment{lhs_info.type_ref().alignment()},
-                           .lhs{lhs.address_emitter_of(tc, indent, src_loc_tk)},
-                           .rhs{rhs.address_emitter_of(tc, indent, src_loc_tk)},
                            .dst{dst},
                            .inverted{inverted},
                        });
@@ -1264,8 +1271,8 @@ class expr_bool final : public statement {
             }) {
 
             const std::string next_label{
-                tc.create_cmp_label(
-                    as_statement(bools_.at(expr_index + 1)).tok()),
+                tc.create_unique_label(
+                    as_statement(bools_.at(expr_index + 1)).tok(), "cmp"),
             };
 
             // an 'or' continues when false and an 'and' continues when true
@@ -1406,7 +1413,7 @@ class expr_bool final : public statement {
 
         machine& x{tc.machine()};
 
-        x.label(indent, tc.create_cmp_label(tok()));
+        x.label(indent, tc.create_unique_label(tok(), "cmp"));
 
         return compile_rec(tc, indent, targets, outer_inverted, dst);
     }

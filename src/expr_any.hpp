@@ -24,6 +24,13 @@
 #include "token.hpp"
 #include "ub_reads.hpp"
 
+// a value at the type of its destination, the types below in reading order:
+//
+//   'stmt_array_size'  the constant size of an array, an expression folded
+//                      when parsed
+//   'expr_any'         the value of an initializer, an argument or a field:
+//                      a number, a condition, an instance or an array form
+
 class expr_any;
 
 // the constant size of an array, e.g. the '4' of 'i8[4]' or the 'n * 2' of a

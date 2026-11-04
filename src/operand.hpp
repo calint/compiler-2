@@ -159,7 +159,8 @@ class operand final {
     }
 
     // the register operand 'name', or a memory operand with 'name' as its base
-    // or index; a backend with more names for one register compares indexes
+    // or index, compared by name; on x86_64, where 'eax' and 'rax' name one
+    // register, the backend compares register indexes instead
     [[nodiscard]] auto uses_register(const std::string_view name) const
         -> bool {
 

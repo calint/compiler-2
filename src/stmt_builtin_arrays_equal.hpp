@@ -62,25 +62,29 @@ class stmt_builtin_arrays_equal final : public statement {
         // a known size is compared like two instances; a count of 0 stays a
         // run-time walk, which compares nothing
         if (count and *count > 0) {
-            x.memory_equal(tok(), indent,
-                           product_storage_size(element_type.size_bytes(),
-                                                static_cast<size_t>(*count)),
-                           {
-                               .alignment{element_type.alignment()},
-                               .lhs{emit.first()},
-                               .rhs{emit.second()},
-                               .dst{dst.operand()},
-                               .inverted{},
-                           });
+            const size_t size_bytes{
+                product_storage_size(element_type.size_bytes(),
+                                     static_cast<size_t>(*count)),
+            };
+
+            emit.first()(std::nullopt, [&](const operand& lhs) -> void {
+                emit.second()(std::nullopt, [&](const operand& rhs) -> void {
+                    x.memory_equal(tok(), indent, size_bytes, lhs, rhs,
+                                   {
+                                       .alignment{element_type.alignment()},
+                                       .dst{dst.operand()},
+                                       .inverted{},
+                                   });
+                });
+            });
 
             return;
         }
 
         x.equal_elements(tok(), indent, element_type.size_bytes(), emit.count(),
+                         emit.first(), emit.second(),
                          {
                              .alignment{element_type.alignment()},
-                             .lhs{emit.first()},
-                             .rhs{emit.second()},
                              .dst{dst.operand()},
                              .inverted{},
                          });

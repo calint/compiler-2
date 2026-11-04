@@ -73,58 +73,68 @@ callbacks: the versions of 'machine::emit_most_efficient' and the code of
 emitters of the bulk operations; 'store_bytes' asks 'toc' for a read-only
 label.
 
-Reading order, each step builds on the ones before it. The code takes more
-than a day: 'read' marks what to read through, 'skim' what to read by its
-header comments and class maps first.
+Reading order, each step builds on the ones before it, except that the nodes
+of steps 7 and 8 hold the values of step 9, read by their comments there. The
+code takes more than a day: 'read' marks what to read through, 'skim' what to
+read by its header comments and class maps first.
 
 ```text
-1. main.cpp, program.hpp       skim: the driver and the passes
+1. main.cpp, program.hpp, stmt_include.hpp
+                               skim: the driver, the passes and the files
 2. compile_error.hpp           read: the error every step throws (1.9)
-   type.hpp, operand.hpp, ident_info.hpp, access_path.hpp, ub_reads.hpp,
-   ub_assigned.hpp
+   token.hpp, source_files.hpp, lut.hpp, constant_parser.hpp,
+   constant_arith.hpp, type.hpp, operand.hpp, ident_info.hpp,
+   access_path.hpp, ub_reads.hpp, ub_assigned.hpp
                                skim: the vocabulary of the node signatures,
                                'type', 'operand', 'destination',
                                'ident_info', 'folded_value', 'value_use', and
                                the walks every node takes part in (3.1)
    toc.hpp, its file map       read the map at the top, not the file: what
-                               every node asks 'toc' for (the file is step 11)
-3. statement.hpp               read: the node interface every statement has
+                               every node asks 'toc' for (the file is step 12)
+   machine.hpp, its class map  read the map, not the file: the operations
+                               every compile calls (the file is step 13)
+3. statement.hpp, unary_ops.hpp
+                               read: the node interface every statement has
 4. tokenizer.hpp, parse_lookahead.hpp
                                skim: the tokens and 'classify_term', which
                                every parse step asks first
-5. stmt_block.hpp, parse_statement.hpp
+5. stmt_block.hpp, decouple.hpp, parse_statement.hpp
                                read: a block, the statement it parses next
                                and the definitions of the top level
-6. stmt_if.hpp, stmt_loop.hpp, stmt_builtin_foo.hpp
-                               read: control flow, the simplest nodes; 'foo'
-                               loops over an array
-7. stmt_def_var.hpp, stmt_assign_var.hpp
-                               read: a variable defined and assigned; the
-                               'write_plan' is in expr_type.hpp (step 8),
-                               the path members in stmt_identifier.hpp
-                               (step 9), read by their comments here
-8. expr_any.hpp, expr_arith.hpp, expr_bool.hpp, expr_type.hpp
-                               skim: values, arithmetic, conditions,
-                               instances
-9. stmt_identifier.hpp, stmt_identifier_impl.hpp
-                               skim: a path of names, fields and indexes, or
-                               a literal; the index steps of the walk are in
-                               the _impl file
-   stmt_builtin_*.hpp          skim: the built-ins, conversion, io, array
-                               copy, compare and length, exit, which
-                               'parse_statement' dispatches
+6. stmt_identifier.hpp         skim: a path of names, fields and indexes, or
+                               a literal (6)
    ub_order.hpp                read: the order checks, a read against the
                                writes before it in the order the code runs
-10. stmt_def_func.hpp, stmt_call.hpp, generics.hpp, stmt_def_type.hpp
-                               skim: functions, inlined and noinline calls,
-                               the generic instances (2.11)
-11. toc.hpp                    skim: what the names are while compiling
-12. machine.hpp, register_pool.hpp, machine_x86_64.hpp, assembler.hpp
-                               skim: the operations, the registers (1.8) and
-                               one backend; the class map of 'machine' is
-                               read
-13. machine_rv32i.hpp, assembler_rv32i.hpp
-                               skim: the load/store backend and its image
+                               (3.1 to 3.5)
+7. stmt_if.hpp, stmt_loop.hpp, stmt_break.hpp, stmt_continue.hpp,
+   stmt_return.hpp, stmt_builtin_foo.hpp
+                               read: control flow, the simplest nodes; 'foo'
+                               loops over an array
+8. stmt_def_var.hpp, stmt_def_dat.hpp, stmt_assign_var.hpp
+                               read: a variable defined and assigned; the
+                               'write_plan' is in expr_type.hpp (step 9, 3.7)
+9. expr_any.hpp, expr_zero.hpp, expr_arith.hpp, expr_bool.hpp,
+   expr_type.hpp, expr_type_impl.hpp, stmt_identifier_impl.hpp
+                               skim: values, arithmetic, conditions,
+                               instances; the index steps of the walk of a
+                               path are in stmt_identifier_impl.hpp
+10. stmt_builtin_*.hpp, bulk_operands.hpp
+                               skim: the built-ins, conversion, io, array
+                               copy, compare and length, exit, which
+                               'parse_statement' dispatches
+11. stmt_def_func.hpp, stmt_def_func_param.hpp, stmt_call.hpp, generics.hpp,
+    stmt_def_type.hpp, stmt_def_type_field.hpp
+                               skim: functions, inlined and noinline calls
+                               (4), the generic instances (2.11)
+12. toc.hpp                    skim: what the names are while compiling
+13. machine.hpp, register_pool.hpp, register_report.hpp, machine_x86_64.hpp,
+    assembler.hpp, assembler_x86_64.hpp
+                               skim: the operations, the registers (1.8),
+                               the versions (5) and one backend
+14. machine_rv32i.hpp, machine_rv32i_linux.hpp, machine_rv32i_bare_metal.hpp,
+    machine_rv32i_qemu.hpp, machine_rv32i_fpga.hpp, assembler_rv32i.hpp
+                               skim: the load/store backend, its targets and
+                               its image
 ```
 
 A first day: chapters 1, 7, 3 and 4 of this document, then the header
@@ -178,8 +188,9 @@ Invariants the code relies on:
    'main' is compiled where the program starts. An inlined call compiles the
    body of the callee in place (1.3). A noinline call adds a body to compile for
    the array lengths of its arguments; the bodies are compiled after 'main', and
-   compiling one can add more. Then each function but 'main' is checked once
-   without its calls and emits nothing (1.5), then the noinline bodies that
+   compiling one can add more. Then each function but 'main' and an emitted
+   noinline body without array parameters is checked once without its calls
+   and emits nothing (1.5), then the noinline bodies that
    skipped code and those checks asked for ('program::check_noinline_bodies').
    Then the failure handlers that the code branches to
    ('machine::emit_used_failure_handlers'), the routines and helpers the code
@@ -316,7 +327,8 @@ program does not depend on inlining.
 1. Every function is checked once without its calls, also one that nothing
    calls: after the noinline bodies, 'program::check_function_bodies' compiles
    each function but 'main' like a noinline body under 'toc::dry_run'
-   ('stmt_def_func::check_body'). So a rule that needs no argument holds also in
+   ('stmt_def_func::check_body'); an emitted noinline body without array
+   parameters takes nothing from a call, it was checked as it was emitted. So a rule that needs no argument holds also in
    code that the constant arguments of a call fold away (1.5.1), and adding a
    call cannot make a rejected function accepted. Its errors have no "called
    from" frame. An instance of a generic definition is a function like the
@@ -395,8 +407,8 @@ the end of 'main' is emitted when the compile reaches it.
 The compile decides, the parse is only the first validation, so every rule of
 the compile holds in all code. Code that a compile skips is compiled for its
 checks in a dry run ('toc::check_skipped') where what it folds is no constant of
-a call: in 'main', in the initializer of a global and in the check of a body
-without its calls. That is a branch whose condition folds to false, the branches
+a call: in 'main', in a noinline body without array parameters, in the
+initializer of a global and in the check of a body without its calls. That is a branch whose condition folds to false, the branches
 and the 'else' after one that always runs, the operands of 'and' and 'or' after
 the one that decides the list, the body of a 'foo' whose count folds to 0, and
 the code after a statement that leaves on every path, e.g. 'if 1 == 2 { n = a }'
@@ -1687,10 +1699,10 @@ Cost:
 Every statement receives 'toc', which owns the scopes, the types, the
 functions, the generics, the data and the storage layout. A method of 'toc'
 changes state or combines tables, a question to one table goes through its
-const accessor, e.g. 'tc.scopes().lookup(name)'. The exception is a question
-the statements ask at every step, which has a 'toc' method that forwards it:
-'is_reachable', 'current_definition', 'source_of', 'where', and the two
-answers of 'ident_resolver', 'resolve_declared' and 'storage_of'.
+const accessor, e.g. 'tc.scopes().lookup(name)'. A table without an accessor
+is asked through 'toc': 'where' and 'source_of' (the source locations),
+'current_definition' (the definition order), and the two answers of
+'ident_resolver', 'resolve_declared' and 'storage_of'.
 
 'toc' is also the compile context: it carries the machine and whether the
 program is being parsed or compiled, and whether a dry run is active. A
@@ -1702,7 +1714,7 @@ keeps them consistent.
 Rejected: passing the tables one by one, every signature would carry the
 ones its callees need.
 
-Cost: 'toc.hpp' holds about 4k lines and 'toc' 66 public methods,
+Cost: 'toc.hpp' holds about 4k lines and 'toc' 64 public methods,
 grouped by the map above the class; a node can reach every table through
 it.
 

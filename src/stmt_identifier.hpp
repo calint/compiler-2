@@ -37,6 +37,7 @@
 //   'assert_constant_index', 'constant_range',
 //   'assert_constant_range'  the constant checks of an index and a range
 //   'throw_call_not_array'   a call where an array is expected
+//   'lea_request'            what a caller asks of the address of a path
 //   'stmt_identifier'        the path node; its members that use 'expr_any'
 //                            are in 'stmt_identifier_impl.hpp'
 //   'place', 'make_ident_info', 'is_whole_array',
@@ -186,6 +187,21 @@ class stmt_identifier;
     throw compile_error{src_loc_tk, std::format("a call of {} is not an array",
                                                 in_quotes(callee))};
 }
+
+// what a caller asks of the address of an identifier
+struct lea_request {
+    // the path starts a range, its last index may be the end; false for an
+    // element
+    bool is_range{};
+
+    // a run-time start of the range is copied here, the caller checks it
+    // against a count after the later arguments
+    std::optional<operand> start_register;
+
+    // the register the caller prefers the address to start in, none without
+    // a preference
+    std::optional<operand> address_register;
+};
 
 // a path of names, fields and indexes, e.g. 'w.rooms[i].items[j].x', also the
 // receiver of a method call, or a literal, e.g. '3' or 'true'; it is a place
@@ -527,29 +543,6 @@ class stmt_identifier final : public statement {
     //
     // class methods
     //
-
-    // the emitter of the address of this statement for a bulk operation;
-    // nothing is emitted here, the backend calls the returned emitter when it
-    // needs the address: the emitter builds it with 'compile_address', which
-    // passes it to the backend's 'use' while the scratch registers that built
-    // it are still allocated and frees them afterwards; it refers to its
-    // arguments, so it is only valid within the call that made it
-    [[nodiscard]] auto address_emitter_of(toc& tc, const size_t indent,
-                                          const token& src_loc_tk) const
-        -> machine::address_emitter {
-
-        return [this, &tc, indent,
-                &src_loc_tk](const std::optional<operand>& address_register,
-                             const machine::address_use use) -> void {
-            compile_address(tc, indent, src_loc_tk,
-                            {
-                                .is_range{},
-                                .start_register{},
-                                .address_register{address_register},
-                            },
-                            use);
-        };
-    }
 
     // a whole array, e.g. the 'a' of 'array_length(a)' or of 'foo a'
     auto assert_array() const -> void {

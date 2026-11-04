@@ -30,6 +30,12 @@
 #include "ub_reads.hpp"
 #include "unary_ops.hpp"
 
+// arithmetic, the types below in reading order:
+//
+//   'arith_steps'  the steps of a list and the passes 0 to 3 that regroup its
+//                  constants before it is compiled
+//   'expr_arith'   a list of elements and operators, e.g. 'a + b * c'
+
 // the steps of an arithmetic list and the passes that regroup its constants
 // before the list is compiled; pass 0 is 'expr_arith::make_steps', which
 // folds the elements, 'plan' runs the passes 1 to 3 in order:

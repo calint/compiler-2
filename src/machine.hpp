@@ -471,12 +471,10 @@ class machine {
     // the lines of the failures in each file, with '--checks=line'
     using failure_lines = std::map<size_t, std::set<size_t>>;
 
-    // the addresses and the result of a comparison of two arrays, 'alignment'
-    // is the alignment known for both
+    // the result of a comparison of two arrays, 'alignment' is the alignment
+    // known for both
     struct equality_request {
         size_t alignment{};
-        address_emitter lhs;
-        address_emitter rhs;
         operand dst;
         bool inverted{};
     };
@@ -800,13 +798,14 @@ class machine {
         -> void = 0;
 
     // 'emit_count' compiles the element count into the register it is given
-    // after the request emits the addresses, in the order of the arguments,
-    // the elements of both arrays are compared at the width 'alignment' allows
-    // and the result, 1 when they are equal, goes to 'dst'
+    // after 'lhs' and 'rhs' emit the addresses, in the order of the
+    // arguments, the elements of both arrays are compared at the width
+    // 'alignment' allows and the result, 1 when they are equal, goes to 'dst'
     virtual auto
     equal_elements(const token& src_loc_tk, const size_t indent,
                    const size_t element_size_bytes,
                    const std::function_ref<void(const operand&)> emit_count,
+                   const address_emitter& lhs, const address_emitter& rhs,
                    const equality_request& request) -> void = 0;
 
     virtual auto exit(const token& src_loc_tk, const size_t indent,
@@ -816,10 +815,12 @@ class machine {
     make_register_operand(const std::string_view name,
                           const type& value_type) const -> operand = 0;
 
-    // compares 'size_bytes' of two arrays and puts 1 into the destination of
-    // the request when they are equal, when they differ if it is 'inverted'
+    // compares 'size_bytes' at the addresses 'lhs' and 'rhs', whose registers
+    // the caller holds, and puts 1 into the destination of the request when
+    // they are equal, when they differ if it is 'inverted'
     virtual auto memory_equal(const token& src_loc_tk, const size_t indent,
-                              const size_t size_bytes,
+                              const size_t size_bytes, const operand& lhs,
+                              const operand& rhs,
                               const equality_request& request) -> void = 0;
 
     virtual auto return_function(const size_t indent) -> void = 0;

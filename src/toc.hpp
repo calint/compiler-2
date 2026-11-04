@@ -57,11 +57,16 @@
 //   'ident_resolver' resolves one name by 'lookup'
 //   'definition_checks' the errors of a name defined twice
 //   'variable_comments' the comment of where a variable is stored
-//   'toc'           the facade the statements use, owns all of the above; a
-//                   method of 'toc' changes state or combines tables, a query
-//                   of one table goes through its const accessor, e.g.
-//                   'tc.scopes().current_func_scope()', except a query asked
-//                   at every step, e.g. 'is_reachable'
+//   'toc'           the facade the statements use, owns all of the above and
+//                   'generic_registry', 'definition_order' ('generics.hpp')
+//                   and 'source_locations' ('source_files.hpp'); a method of
+//                   'toc' changes state or combines tables, a query of one
+//                   table goes through its const accessor, e.g.
+//                   'tc.scopes().current_func_scope()'; a table without an
+//                   accessor is asked through 'toc': 'where', 'source_of'
+//                   (the source locations), 'current_definition' (the
+//                   definition order), 'resolve_declared', 'storage_of' (the
+//                   resolver)
 //   generics        'resolve_generic_args' and 'toc::generic_scope', the
 //                   names of the parameters of a generic instance;
 //                   'generic_reparse', the definition parsed again for an
@@ -296,8 +301,8 @@ class scope final {
         func_reach reach;
 
         // compiled without a call, so what it folds is no constant of a call:
-        // 'main' and the body check of 'stmt_def_func::check_body', see
-        // 'toc::check_skipped'
+        // 'main', a noinline body without array parameters and the body check
+        // of 'stmt_def_func::check_body', see 'toc::check_skipped'
         bool is_without_call{};
         // of such a body: a call would give it what the check does not have,
         // e.g. the length of an unsized array, so the constants that end a
@@ -794,8 +799,11 @@ class noinline_worklist final {
         return emitted_bodies_.size();
     }
 
-    [[nodiscard]] auto is_emitted(const noinline_body& body) const -> bool {
-        return contains(emitted_bodies_, *body.func, body.array_lengths);
+    [[nodiscard]] auto
+    is_emitted(const stmt_def_func& func,
+               const std::vector<size_t>& array_lengths) const -> bool {
+
+        return contains(emitted_bodies_, func, array_lengths);
     }
 
     [[nodiscard]] auto is_empty() const -> bool {
@@ -2399,22 +2407,23 @@ class variable_comments final {
 // ('begin_compile'), after which every scope and its storage is released
 // ('assert_released'); the formatter sorts the methods by name, so by phase:
 //
+//   program        'begin_definition', 'begin_compile', 'assert_released',
+//                  'get_main_or_throw', 'usage', all from 'program'
 //   parse          'add_type', 'add_func', 'add_func_instance',
 //                  'add_generic_func', 'add_generic_method',
 //                  'add_generic_type', 'add_generic_type_instance',
 //                  'add_dat', 'mark_generic_func_instantiated',
 //                  'generic_scope', 'assert_loop_names_free',
 //                  'assert_valid_unqualified_name',
-//                  'begin_definition', 'current_definition',
+//                  'current_definition',
 //                  'constant_value_of', 'record_use',
 //                  'record_result_passed_as_mut',
 //                  'parse_nesting_scope', 'make_var_read_only',
 //                  'get_func_or_throw', 'get_type_or_throw', 'is_func',
 //                  'source_of', 'type_param_named', 'where'
-//   compile        'add_binding', 'add_bytes_constant', 'add_string_constant',
+//   compile        'add_binding', 'add_read_only_constant',
 //                  'add_noinline_body', 'dry_run', 'check_skipped',
-//                  'emit_most_efficient',
-//                  'create_cmp_label', 'create_unique_label',
+//                  'emit_most_efficient', 'create_unique_label',
 //                  'call_path_at', 'next_frame_address', 'use_of',
 //                  'overflow_options', 'checks_overflow', the reachability
 //                  ('is_reachable', 'end_path', 'record_break',
@@ -2422,10 +2431,11 @@ class variable_comments final {
 //                  'path_merge')
 //   both           'add_var' and 'add_const' (placed and commented only while
 //                  compiling), 'scope_entry', 'resolve_declared',
-//                  'get_main_or_throw', 'use_at' and 'storage_of'
+//                  'use_at' and 'storage_of'
 //   tables         'builtins', 'checks', 'data', 'definitions',
 //                  'funcs', 'generics', 'layout', 'machine',
-//                  'noinline_worklist', 'scopes', 'types', 'usage'
+//                  'noinline_worklist', 'scopes', 'types'
+//   statics        'assert_valid_name', 'continue_label', 'end_label'
 //
 // a statement may be compiled more than once (each inlined call, both
 // versions of 'emit_most_efficient', dry runs, 'check_body'), so what a
@@ -2442,7 +2452,8 @@ class variable_comments final {
 //                             and 'add_var' (storage and comments)
 //   'dry_run_depth_'          set by 'dry_run_scope'; read by
 //                             'add_noinline_body' (a body to check, not emit)
-//   'scope::is_without_call'  set by 'stmt_def_func::check_body' and
+//   'scope::is_without_call'  set by 'stmt_def_func::check_body',
+//                             'emit_noinline_body' without array lengths and
 //                             'scope::main_func'; read for the innermost
 //                             function by 'check_skipped'
 //   'scope::takes_from_call'  set by 'stmt_def_func::check_body'; read for
@@ -2718,15 +2729,6 @@ class toc final {
     }
 
     // e.g. the packed elements of a constant '{...}' initializer
-    [[nodiscard]] auto add_bytes_constant(const token& src_loc_tk,
-                                          const std::string_view bytes)
-        -> std::string {
-
-        assert(is_compiling_);
-
-        return add_read_only_constant("init", src_loc_tk, std::string{bytes});
-    }
-
     auto add_const(const token& src_loc_tk, const size_t indent,
                    const std::string_view name, const folded_value& constant)
         -> void {
@@ -2860,13 +2862,18 @@ class toc final {
     }
 
     // identical strings share the label of the first one compiled
-    [[nodiscard]] auto add_string_constant(const token& string_tk)
+    // a read-only constant labeled 'kind' and the call path, e.g. "str" for
+    // a string, kept once by its bytes
+    [[nodiscard]] auto add_read_only_constant(const std::string_view kind,
+                                              const token& src_loc_tk,
+                                              std::string bytes)
         -> std::string {
 
         assert(is_compiling_);
 
-        return add_read_only_constant("str", string_tk,
-                                      string_tk.string_bytes());
+        // note: the bytes of a literal may differ per call, e.g. '{k, 2}'
+        return data_.add_constant(create_unique_label(src_loc_tk, kind),
+                                  std::move(bytes));
     }
 
     auto add_type(const token& src_loc_tk, const type& tpe) -> void {
@@ -3010,7 +3017,7 @@ class toc final {
     //
     //   if.L.C         an 'if' at line L, column C; '.N' its branch N
     //                  ('stmt_if::branch_label'), '.code', '.else', '.end'
-    //   cmp.L.C        a condition ('create_cmp_label')
+    //   cmp.L.C        a condition ('expr_bool')
     //   bool.L.C.end   the end of a condition stored as a value
     //   loop.L.C       a 'loop', '.end' ('end_label')
     //   foo.L.C        a 'foo', '.continue' ('continue_label'), '.end'
@@ -3105,14 +3112,6 @@ class toc final {
     }
 
     // the label of the start of a comparison or of a list of comparisons
-    [[nodiscard]] auto create_cmp_label(const token& src_loc_tk) const
-        -> std::string {
-
-        assert(is_compiling_);
-
-        return create_unique_label(src_loc_tk, "cmp");
-    }
-
     [[nodiscard]] auto create_unique_label(const token& src_loc_tk,
                                            const std::string_view prefix) const
         -> std::string {
@@ -3475,6 +3474,8 @@ class toc final {
     [[nodiscard]] auto type_param_named(const std::string_view name) const
         -> const type* {
 
+        assert(not is_compiling_);
+
         if (not types_.is_param(name) or generics_.exists_type(name)) {
             return nullptr;
         }
@@ -3556,16 +3557,6 @@ class toc final {
 
   private:
     // the same bytes share a label, see 'data_table::add_constant'
-    [[nodiscard]] auto add_read_only_constant(const std::string_view kind,
-                                              const token& src_loc_tk,
-                                              std::string bytes)
-        -> std::string {
-
-        // note: the bytes of a literal may differ per call, e.g. '{k, 2}'
-        return data_.add_constant(create_unique_label(src_loc_tk, kind),
-                                  std::move(bytes));
-    }
-
     // a value of the type, e.g. a parameter, is addressed by the target even
     // when no storage of it is ever allocated; a value is smaller than the
     // address space, so its size and element counts fit an address
