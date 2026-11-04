@@ -1,6 +1,28 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] hard: bug hunt series 2, round 31 (2026-11-04, user: bug hunts and
+    fixes in a loop until no more are found; 3 hunters: V1 constant folding
+    against run-time evaluation, V2 the register allocator and calls under
+    pressure, V3 a source-guided attack on the 'noub' guarantee)
+    => done (2026-11-04): nothing found; with round 30 and no source change
+       since, the loop ends (V1 about 29000 programs in 4 spellings, all
+       constant, all run time and mixed, every operator, conversion and
+       width at the edges, about 320000 builds on 2 targets with and
+       without checks and '--nopt', 3000 through the asan build; V2 about
+       12500 programs of records, methods, mut arguments and recursion in 3
+       call modes, about 230000 builds, 4000 on rv32i linux, '--versions',
+       5400 asan compiles, 9 probes at the register limits; V3 about 35000
+       programs and 150000 builds probing each check and rejection of
+       'src/' for a missed operand form, 2112 io and bulk count and start
+       cases, multiply overflow edges, padding after a dirty stack,
+       '--versions' on 16000 programs, 60 odd programs through asan);
+       notes: V1 a typed constant list that narrows and overflows, 'p3 * p2'
+       with 'p3' an 'i8' and 'p2' an 'i32' bound to constants, says
+       "constant expression overflows the type" where the run-time twin says
+       "narrowed", the same verdict; V2 the "register rcx is always used"
+       rejection is common for 'array_copy' indexes with shifts, divisions
+       or inlined calls on x86_64 (README 1.8)
 [x] hard: bug hunt series 2, round 30 (2026-11-03, user: bug hunt rounds
     until no more bugs are found; the confirming round after round 29; 3
     hunters: U1 the io and bulk built-ins, U2 each run-time check alone and
