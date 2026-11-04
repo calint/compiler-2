@@ -1,6 +1,20 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] hard: design review series 2, round 77 (2026-11-04, user: continue; a
+    hunter of the choice of form by free registers of round 76)
+    => done (2026-11-04): nothing found; no program accepted by round 74 or
+       75 is rejected, no verdict differs between the default, first and last
+       versions, every accepted program gives the model's result; a dry run
+       starts with more registers free, and a form is only chosen when its
+       registers can be allocated, so the checked and the emitted code agree;
+       the operand scopes count as held before the choice; round 76 accepts
+       more under pressure (x86_64 copies of 17 to 32 B and zeroes of 33 to 64 B
+       by parts, rv32i copies and compares of 17 to 24 B unrolled); 11736
+       generated programs against a model, 3492 as bodies checked without
+       their calls, 1351 through asan, in pinned builds of 92783fad, c209156b
+       and c9447e2f on x86_64, rv32i-fpga and rv32i, about 700000 compiles
+       and 350000 runs
 [x] hard: design review series 2, round 76 (2026-11-04, user: continue; a
     hunter of the code generation of round 75, the two decide items)
     => done (2026-11-04): no wrong code (about 3000 generated programs of
