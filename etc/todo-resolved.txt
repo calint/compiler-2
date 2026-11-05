@@ -26,9 +26,13 @@
        'baz-lsp.lua' follows 'reserved_names': keywords name nothing,
        built-in types and functions name no declaration but a member or a
        method (three 'rename_fails' tests)
-    => left for the next steps: G1 and C2 (messages); D1-D3, A2, A3, C3;
-       F3-F13; not recommended, awaiting the user: E1, E8, G2, G3, F12 on
-       the test files
+    => step 2 (2026-11-05): C2 a method definition without its '(' says
+       "after method name" (test 2206, 1449 updated); G1 stopped: every
+       read-only message names the dotted path ('ps.a') for an assignment,
+       a copy and a 'mut' argument alike, so the finding's premise does not
+       hold
+    => left for the next steps: D1-D3, A2, A3, C3; F3-F13; not
+       recommended, awaiting the user: E1, E8, G2, G3, F12 on the test files
 [x] easy: unused includes (2026-11-05, user: 'machine_rv32i.hpp' had one,
     check the other files and add the check to the lint)
     => done (2026-11-05): 'misc-include-cleaner', run on each header alone,

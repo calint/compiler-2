@@ -6843,3 +6843,6 @@ if [[ $MACHINE == x86_64 ]]; then SRC=2204 && COMPERR; fi
 # a constant index past the length an unsized array parameter gets from its
 # call, in the argument of 'array_length'
 SRC=2205 && COMPERR
+
+# a method definition without its '('
+SRC=2206 && COMPERR
