@@ -270,6 +270,10 @@ CLI_REGISTER_REPORT() {
     "$BIN" --report=registers 0763.baz >out 2>err
     grep -Fq "calls of functions with a body of their own save the registers" out
     grep -Fq "the peak is in a function with a body of its own" out
+    # 2151.baz: the peak is in a global initializer, outside every function
+    "$BIN" --report=registers 2151.baz >out 2>err
+    grep -Fq "register use at the peak: 2 of" out
+    grep -Fq "global initializers" out
     echo ok
 }
 

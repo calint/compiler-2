@@ -103,21 +103,6 @@ class machine_rv32i_bare_metal : public machine_rv32i {
         return options().stack_size_bytes;
     }
 
-    //
-    // statics
-    //
-
-    // no operating system stops a stack overflow, see
-    // 'target_description::is_stack_bounded'
-    [[nodiscard]] static constexpr auto
-    bare_metal_target(const bool has_sd_card) -> target_description {
-
-        target_description target{rv32i_target()};
-        target.is_stack_bounded = true;
-        target.has_sd_card = has_sd_card;
-        return target;
-    }
-
   private:
     //
     // virtual methods
@@ -207,5 +192,20 @@ class machine_rv32i_bare_metal : public machine_rv32i {
         output.label(0, "3");
         output.mv(1, "a0", "a2");
         output.jr(1, "a7");
+    }
+
+    //
+    // statics
+    //
+
+    // no operating system stops a stack overflow, see
+    // 'target_description::is_stack_bounded'
+    [[nodiscard]] static constexpr auto
+    bare_metal_target(const bool has_sd_card) -> target_description {
+
+        target_description target{rv32i_target()};
+        target.is_stack_bounded = true;
+        target.has_sd_card = has_sd_card;
+        return target;
     }
 };

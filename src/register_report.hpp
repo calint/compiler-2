@@ -128,7 +128,6 @@ struct register_use_report final {
                 use.label);
 
             for (const std::string& held : use.registers) {
-                // the registers are indented under the label of the frame
                 text += std::format("\n{}{}", register_indent, held);
             }
         }
@@ -225,9 +224,9 @@ class register_reporter final {
                 .text(),
         };
 
-        for (const std::string& part :
-             wrapped_lines(split_lines(text), max_detail_width)) {
+        const std::vector<std::string> lines{split_lines(text)};
 
+        for (const std::string& part : wrapped_lines(lines, max_detail_width)) {
             error.detail += error.detail.empty() ? "" : "\n";
             error.detail += part;
         }
@@ -240,7 +239,10 @@ class register_reporter final {
     [[nodiscard]] auto peak_report() const -> std::vector<std::string> {
         // room for the comment marker and a space of the assembly output
         constexpr size_t max_line_width{78};
-        return wrapped_lines(register_peak_lines(), max_line_width);
+
+        const std::vector<std::string> lines{register_peak_lines()};
+
+        return wrapped_lines(lines, max_line_width);
     }
 
   private:

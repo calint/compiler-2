@@ -15,6 +15,7 @@
 class machine_rv32i_linux final : public machine_rv32i {
     using section = assembler_rv32i::section;
 
+    // the numbers of the generic linux table, 'asm-generic/unistd.h'
     static constexpr int syscall_read_{63};
     static constexpr int syscall_write_{64};
     static constexpr int syscall_exit_{93};
@@ -70,7 +71,8 @@ class machine_rv32i_linux final : public machine_rv32i {
         constexpr int current_directory{-100};
         constexpr int read_write{2};
         constexpr int seek_end{2};
-        // the 64 bit size of the file, the descriptor and the sector count
+        // the 64 bit size of the file, the descriptor, -1 until the file is
+        // opened, and the sector count
         constexpr std::array<int64_t, 4> sd_card_words{0, 0, -1, 0};
         constexpr int64_t size_high_offset{4};
         constexpr int64_t descriptor_offset{8};
@@ -92,7 +94,12 @@ class machine_rv32i_linux final : public machine_rv32i {
         if (read_used) {
             output.label(0, sector_read_label_);
             output.li(1, "a5", syscall_pread_);
-            output.j(1, sector_transfer_label_);
+
+            // note: without the write entry the transfer follows at once
+
+            if (write_used) {
+                output.j(1, sector_transfer_label_);
+            }
         }
 
         if (write_used) {

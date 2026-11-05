@@ -25,8 +25,8 @@ class type;
     return static_cast<int64_t>(size_bytes);
 }
 
-// whether 'count' elements of 'size_bytes', which may be negative, added to the
-// offset 'base' stay in the range of an address offset
+// whether 'count' elements of 'size_bytes' added to the offset 'base' stay in
+// the range of an address offset, 'count' may be negative
 [[nodiscard]] inline auto fits_address_offset(const int64_t base,
                                               const int64_t count,
                                               const size_t size_bytes) -> bool {
@@ -426,7 +426,8 @@ inline constexpr auto unary_spellings{
     }),
 };
 
-// the operator as written in the source, 'assign' as the '=' of a copy
+// a binary operator as written in the source, 'assign' as the '=' of a copy;
+// the steps of a list, whose comments print it, have no unary operator
 [[nodiscard]] inline auto source_text(const arithmetic_operator op)
     -> std::string_view {
 
@@ -434,17 +435,7 @@ inline constexpr auto unary_spellings{
         return "=";
     }
 
-    if (is_binary(op)) {
-        return traits_of(op).text;
-    }
-
-    for (const arithmetic_spelling& spelling : unary_spellings) {
-        if (spelling.op == op) {
-            return spelling.text;
-        }
-    }
-
-    std::unreachable();
+    return traits_of(op).text;
 }
 
 // the binary arithmetic operator 'text' spells, none for any other text

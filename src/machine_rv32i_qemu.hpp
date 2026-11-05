@@ -23,11 +23,9 @@ class machine_rv32i_qemu final : public machine_rv32i_bare_metal {
     // the finisher takes the exit code in the upper 16 bits
     static constexpr int finisher_code_shift_{16};
     static constexpr int finisher_pass_{0x5555};
-
+    static constexpr size_t ram_size_bytes_{0x800'0000};
     // note: 128 MiB, the memory of the 'virt' machine without '-m', fixed,
     //       '--memory' is for 'rv32i-fpga'
-
-    static constexpr size_t ram_size_bytes_{0x800'0000};
 
   public:
     machine_rv32i_qemu(const builtin_type_set& builtins,

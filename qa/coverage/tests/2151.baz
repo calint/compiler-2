@@ -1,0 +1,8 @@
+# the peak of the use of registers is in a global initializer, outside every
+# function
+var a = 1
+var r = a + (a + (a + a))
+
+func main() {
+    exit(r)
+}

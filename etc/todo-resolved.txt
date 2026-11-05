@@ -1,6 +1,26 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] hard: design review series 2, round 85 (2026-11-05, user: continue;
+    Q line by line the last files: 'operand.hpp', 'register_pool.hpp',
+    'register_report.hpp', 'bulk_operands.hpp' and the four rv32i targets)
+    => done (2026-11-05): Q1 'source_text' of an operator takes no unary one
+       (the steps of a list have none, no hit in a coverage build over every
+       case on four targets, roome and the cli tests), its loop gone; Q2 a
+       repeated comment gone; Q3 nested calls split; Q4 the note of
+       'ram_size_bytes_' below it; Q5 the rv32i linux system call numbers
+       name their table; Q6 the -1 of 'sd_card_words'; Q7
+       'bare_metal_target' private; Q8 the comment of 'fits_address_offset';
+       Q9 2150 a positive index constant past the displacement range
+       (x86_64), Q10 2151 the register peak in a global initializer
+       ('test-cli.sh' reads its report); Q11 rv32i linux: the read entry of
+       the sector routine jumps to the transfer only when the write entry
+       is between them, 1 instruction less where only 'sector_read' is used
+       (the 'j' is no jump record, so 'optimize_jumps' kept it); listings
+       otherwise equal on both targets; left: Q12 'operand::uses_register'
+       of a memory operand was never true, its callers are guards under
+       register pressure, not proven unreachable; Q13 the blank line before
+       a class after its header comment is mixed (a consistency topic)
 [x] hard: design review series 2, round 84 (2026-11-05, user: continue;
     line by line: N 'expr_any.hpp' and the identifier files, O the
     statements, 'program.hpp' and 'main.cpp', P the built-ins and the type

@@ -6733,3 +6733,10 @@ SRC=2141 && EXP=7 && RUN
 SRC=2121 && COMPERR
 SRC=2122 && COMPERR
 SRC=2123 && COMPERR
+
+# a positive index constant whose elements pass the displacement range is
+# added to the index, as in 0900 a negative one
+if [[ $MACHINE == x86_64 ]]; then SRC=2150 && EXP=7 && OPTS="--vars=0x40000" RUN; fi
+
+# the register peak in a global initializer, see 'test-cli.sh'
+SRC=2151 && EXP=4 && RUN
