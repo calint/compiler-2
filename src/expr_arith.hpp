@@ -522,6 +522,7 @@ class expr_arith final : public statement {
         // note: an empty position, the first element prints the whitespace
         tok().source_to(os);
         exprs_.front()->source_to(os);
+
         for (const auto [o, e] :
              std::views::zip(ops_, exprs_ | std::views::drop(1))) {
 
@@ -783,7 +784,7 @@ class expr_arith final : public statement {
     static auto assert_no_condition_next(const tokenizer& tz) -> void {
         tokenizer probe{tz};
 
-        if (comparison_of(tz.peek_operator())) {
+        if (comparison_of(probe.peek_operator())) {
             throw_comparison_as_operand(probe.seen_operator());
         }
 
@@ -907,7 +908,6 @@ class expr_arith final : public statement {
         compile_first_step(tc, indent, dst, steps.front());
 
         for (const step& s : steps.subspan(1)) {
-
             compile_step(tc, indent, dst, s);
         }
 

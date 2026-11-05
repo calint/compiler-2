@@ -1,6 +1,28 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] hard: design review series 2, round 82 (2026-11-05, user: continue;
+    J 'toc.hpp' line by line, K 'expr_bool.hpp' and 'expr_arith.hpp' line by
+    line)
+    => done (2026-11-05): pure refactors, listings and errors of every test
+       equal on both targets; J1 a stray comment above
+       'assert_type_fits_target' gone; J2 the comment of
+       'create_unique_label' says what it labels; J3 a blank line; J4-J8
+       nested calls split ('allocate_var', 'offset_from_variables_base',
+       'assert_generic_method_not_defined', 'assert_type_not_defined',
+       'add_read_only_constant'); K1 K2 blank lines; K3
+       'assert_no_condition_next' peeks on the probe it reads; K4 a local
+       that hid the struct 'comparison' -> 'suggestion'; K5 the comment of
+       'assert_instance_stored', its message one literal; K6 a wrong note of
+       'compile_shorthand', 'assert_not_record' -> 'assert_number_side' (the
+       files say instance); skipped: K 'read_close_paren' and 'is_enclosed'
+       in both expression classes (a few lines tied to each class); the
+       guards 'steps.size() < 2' of 'compile_without_trailing_addend' and
+       'not is_merged(first)' of 'lead_with_constant' never held in about
+       6000 compiles of the tests, roome and the tutorial on both targets,
+       kept since 'lead_with_constant' itself moves a merged step first; the
+       pointer tests 'ident and ...' against '!= nullptr' (a consistency
+       topic of its own)
 [x] hard: design review series 2, round 81 (2026-11-05, user: continue;
     G 'machine_rv32i.hpp' line by line, H 'machine.hpp' and the assemblers
     line by line, I a hunter of what round 80 F left)

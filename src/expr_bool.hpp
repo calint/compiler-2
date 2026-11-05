@@ -195,13 +195,13 @@ class expr_bool_op final : public statement {
         }
 
         const std::string source{statement::trimmed_source(lhs_)};
-        const std::string comparison{std::format("{} != 0", source)};
+        const std::string suggestion{std::format("{} != 0", source)};
 
         throw compile_error{
             lhs_.tok(),
             std::format("{} of type {} is not a 'bool', compare it, e.g. {}",
                         in_quotes(source), in_quotes(lhs_type.name()),
-                        in_quotes(comparison))};
+                        in_quotes(suggestion))};
     }
 
     // an element of a list: it branches to 'target' when its value is
@@ -335,8 +335,8 @@ class expr_bool_op final : public statement {
         }
 
         if (not is_memory) {
-            assert_not_record(lhs_, equality);
-            assert_not_record(cmp.rhs, equality);
+            assert_number_side(lhs_, equality);
+            assert_number_side(cmp.rhs, equality);
             return false;
         }
 
@@ -438,7 +438,8 @@ class expr_bool_op final : public statement {
                            const machine::comparison_action& action) const
         -> void {
 
-        // note: the parse rejected an instance ('assert_boolean_operands')
+        // note: the parse rejected an operand that is not a 'bool'
+        //       ('assert_boolean_operands')
 
         assert(lhs_.get_type().is_bool());
 
@@ -600,9 +601,8 @@ class expr_bool_op final : public statement {
                         in_quotes(typed_type.name()))};
     }
 
-    // an operator would compare a user type instance as its first field only
-    // e.g. the 'mk()' of 'p == mk()', an instance is compared as memory,
-    // which only a variable has
+    // an instance is compared as memory, which only a variable has, e.g. the
+    // 'mk()' of 'p == mk()'
     static auto assert_instance_stored(const expr_arith& side) -> void {
         if (side.get_type().is_builtin() or side.operand_path() != nullptr) {
             return;
@@ -610,8 +610,7 @@ class expr_bool_op final : public statement {
 
         throw compile_error{
             side.tok(),
-            std::format("store {} in a variable before comparing "
-                        "it",
+            std::format("store {} in a variable before comparing it",
                         in_quotes(statement::trimmed_source(side)))};
     }
 
@@ -629,8 +628,9 @@ class expr_bool_op final : public statement {
         }
     }
 
-    static auto assert_not_record(const expr_arith& side,
-                                  const bool is_equality) -> void {
+    // a side compared as a number, not a whole array or an instance
+    static auto assert_number_side(const expr_arith& side,
+                                   const bool is_equality) -> void {
 
         assert_not_whole_array(side);
 

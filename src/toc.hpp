@@ -1171,6 +1171,7 @@ class scope_stack final {
         -> size_t {
 
         size_t count{};
+
         for (const scope& scp : scopes_ | std::views::reverse) {
             if (not scp.is_func()) {
                 continue;
@@ -1546,9 +1547,12 @@ class storage_layout final {
 
         assert_vars_capacity(src_loc_tk, var, allocated_size_bytes);
 
-        assert_total_fits_target(
-            src_loc_tk, add_storage_size(src_loc_tk, dats_and_vars_size_bytes(),
-                                         allocated_size_bytes));
+        const size_t total_bytes{
+            add_storage_size(src_loc_tk, dats_and_vars_size_bytes(),
+                             allocated_size_bytes),
+        };
+
+        assert_total_fits_target(src_loc_tk, total_bytes);
 
         in_storage& stored{std::get<in_storage>(var.placement)};
 
@@ -1769,10 +1773,11 @@ class storage_layout final {
             return offset;
         }
 
-        const int64_t shift{
-            address_offset(
-                sum_storage_size(vars_start_bytes(), *past_vars_bytes)),
+        const size_t shift_bytes{
+            sum_storage_size(vars_start_bytes(), *past_vars_bytes),
         };
+
+        const int64_t shift{address_offset(shift_bytes)};
 
         return add_address_offset(offset, -shift);
     }
@@ -2165,13 +2170,15 @@ class definition_checks final {
             if (known.type_tk.text() == method.type_tk.text() and
                 known.method_name_tk.text() == method.method_name_tk.text()) {
 
+                const std::string name{
+                    method_name_of(method.type_tk.text(),
+                                   method.method_name_tk.text()),
+                };
+
                 throw compile_error{
                     method.type_tk,
-                    std::format(
-                        "generic method {} already defined at {}",
-                        in_quotes(method_name_of(method.type_tk.text(),
-                                                 method.method_name_tk.text())),
-                        where(known.type_tk))};
+                    std::format("generic method {} already defined at {}",
+                                in_quotes(name), where(known.type_tk))};
             }
         }
     }
@@ -2251,11 +2258,12 @@ class definition_checks final {
         }
 
         if (generics_.get().exists_type(name)) {
+            const token& generic_tk{generics_.get().get_type(name).src_loc_tk};
+
             throw compile_error{
                 src_loc_tk,
                 std::format("type {} already defined as a generic type at {}",
-                            in_quotes(name),
-                            where(generics_.get().get_type(name).src_loc_tk))};
+                            in_quotes(name), where(generic_tk))};
         }
     }
 
@@ -2863,9 +2871,10 @@ class toc final {
 
         assert(is_compiling_);
 
+        std::string label{create_unique_label(src_loc_tk, kind)};
+
         // note: the bytes of a literal may differ per call, e.g. '{k, 2}'
-        return data_.add_constant(create_unique_label(src_loc_tk, kind),
-                                  std::move(bytes));
+        return data_.add_constant(std::move(label), std::move(bytes));
     }
 
     auto add_type(const token& src_loc_tk, const type& tpe) -> void {
@@ -3103,7 +3112,8 @@ class toc final {
         return scopes_.const_value(tk.text());
     }
 
-    // the label of the start of a comparison or of a list of comparisons
+    // 'prefix' and the call path of 'src_loc_tk', e.g. 'if.7.5' for the
+    // 'if' at 7:5, see 'call_path_at'
     [[nodiscard]] auto create_unique_label(const token& src_loc_tk,
                                            const std::string_view prefix) const
         -> std::string {
@@ -3552,7 +3562,6 @@ class toc final {
     }
 
   private:
-    // the same bytes share a label, see 'data_table::add_constant'
     // a value of the type, e.g. a parameter, is addressed by the target even
     // when no storage of it is ever allocated; a value is smaller than the
     // address space, so its size and element counts fit an address
