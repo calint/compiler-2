@@ -35,11 +35,6 @@ func printer.println() {
     self.print_all(str_nl)
 }
 
-func printer.println_all(s i8[]) {
-    self.print_all(s)
-    self.println()
-}
-
 # a list of up to 'capacity' items
 type list<T type, capacity> {
     array T[capacity],
@@ -76,14 +71,12 @@ func mut list.insert_at(pos, item T) {
 }
 
 func mut list.delete_index(ix) {
-    # array copy it away
     array_copy(
         self.array[ix + 1],
         self.array[ix],
         self.len - ix - 1
     )
 
-    # set new len
     self.len = self.len - 1
 }
 
@@ -339,14 +332,6 @@ func tokenizer.token<T type>() res T {
     if res.len > array_length(res.array) res.len = array_length(res.array)
     res.array = {}
     array_copy(self.string.array[self.start], res.array, res.len)
-}
-
-# a token longer than 'T' holds is cut at its capacity
-func tokenizer.token_to<T type>(dst mut T) {
-    dst.len = self.len()
-    if dst.len > array_length(dst.array) dst.len = array_length(dst.array)
-    dst.array = {}
-    array_copy(self.string.array[self.start], dst.array, dst.len)
 }
 
 # the token becomes the rest of the line without leading spaces

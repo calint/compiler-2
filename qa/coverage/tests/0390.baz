@@ -27,7 +27,7 @@ func swap_into(src bytepair, dst mut bytepair) {
 }
 
 func main() {
-    var ws = wrap[2]{}
+    var ws = wrap[2]
 
     ws[0].l = {1, 2}
     swap_into(ws[0].l, ws[0].r)

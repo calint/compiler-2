@@ -1,0 +1,7 @@
+# an instance literal reached into is not an operand, assigned to a number
+type pt { x, y }
+
+func main() {
+    var s = 0
+    s = pt{1, 2}.x
+}

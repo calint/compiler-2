@@ -110,6 +110,12 @@ CMD="$CC src/main.cpp -o baz $DBG $OPT $RTTI $CF $CW $SANITIZERS $PROF"
 echo "$CMD"
 $CMD
 
+# the flags of the plain build for clangd, so every build writes the same
+# file; the unquoted words collapse the spaces
+EDITOR_FLAGS=$(echo $CC -fno-rtti $CF $CW)
+printf '[\n  {\n    "directory": "%s",\n    "command": "%s src/main.cpp",\n    "file": "src/main.cpp"\n  }\n]\n' \
+    "$PWD" "$EDITOR_FLAGS" >compile_commands.json
+
 if [ $BUILD_ONLY -eq 1 ]; then
     exit 0
 fi

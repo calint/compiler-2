@@ -32,7 +32,7 @@ func main() {
     write(1, p.text, 4)
 
     # an indexed destination has only the element alignment
-    var ps = padded[2]{}
+    var ps = padded[2]
     var i = 1
     ps[i].text = "hi\n"
     assert(4, ps[0].text[0] == 0)

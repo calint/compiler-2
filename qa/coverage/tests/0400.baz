@@ -14,8 +14,8 @@ func bump(dst mut pair, src mut pair, i mut) {
 }
 
 func main() {
-    var srcs = pair[2]{}
-    var dsts = pair[2]{}
+    var srcs = pair[2]
+    var dsts = pair[2]
 
     srcs[0] = {1, 2}
     srcs[1] = {10, 20}

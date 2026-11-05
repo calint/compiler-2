@@ -1,0 +1,4 @@
+# an array literal indexed is not an operand, as an initializer
+func main() {
+    var s = i8[]{1, 2}[1]
+}

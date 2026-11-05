@@ -17,7 +17,7 @@ type entity { messages string[8] }
 dat    pt0 = point{ -1 }
 dat    pt1 = point{  }
 dat    pt2 = point[2]{ {-1} }
-dat   wld0 = world{}
+dat   wld0 = world
 
 dat data_a = 0
 dat data_b = i32(32)
@@ -26,7 +26,7 @@ dat data_e = i8(0)
 dat data_f = true
 dat data_g = i16[]{  1  , 2  ,  3  }
 dat data_h = i16[5]{1,2}
-dat data_i = i8[128]{}
+dat data_i = i8[128]
 dat data_j = false
 dat data_k = bool[]{true, false}
 dat data_l = "hello world\n"
@@ -42,8 +42,8 @@ dat    str = string{   "hello world\n"   }
 dat   hero = entity{ {  {   "msg1"    }     ,      {       "msg2"        }         }          }
 dat   strs = string[4]{ {"hello\n"} ,  {"world"} }
 dat  strs2 = string[]{ {"hello\n"} ,  {"world"} }
-dat    dds = i32[4]{}
-dat   str3 = i8[128]{}
+dat    dds = i32[4]
+dat   str3 = i8[128]
 dat    ln1 = line{ { { -2 } , { 4 } } }
 
 func main() {

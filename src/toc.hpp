@@ -3015,9 +3015,9 @@ class toc final {
     //
     // e.g. 'if.7.5.36.13' is the 'if' at 7:5 inlined by the call at 36:13;
     // inside a noinline body for array lengths every label ends in them, e.g.
-    // 'loop.14.5.len.3', and in the body of a generic instance in its name,
-    // e.g. 'if.2.3.f..i8' ('stmt_def_func::body_call_path'); a location in an
-    // included file is 'fN.L.C' ('source_locations::for_label')
+    // 'loop.14.5.len.3', and in the noinline body of a generic instance in
+    // its name, e.g. 'if.2.3.f..i8' ('stmt_def_func::body_call_path'); a
+    // location in an included file is 'fN.L.C' ('source_locations::for_label')
     [[nodiscard]] auto call_path_at(const token& src_loc_tk) const
         -> std::string {
 

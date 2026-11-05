@@ -13,7 +13,7 @@ func op_on_arr2(e mut i32) {
 }
 
 func main() {
-    var arr = i32[4]{}
+    var arr = i32[4]
     var off = i32(2)
 
     arr[1] = 2

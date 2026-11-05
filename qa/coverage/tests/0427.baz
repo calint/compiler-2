@@ -2,7 +2,7 @@
 
 dat prefix = i8[3]{1, 2, 3}
 dat initial = i32(42)
-dat padding = i8[5]{}
+dat padding = i8[5]
 
 func main() {
     var source = initial

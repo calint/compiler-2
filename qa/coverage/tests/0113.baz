@@ -28,7 +28,7 @@ func main() {
     assert(m.w == -0x80)
 
     # Array of these types to verify stride
-    var ps = packed_small[3]{}
+    var ps = packed_small[3]
     ps[0].a = 10
     ps[1].a = 20
     ps[2].a = 30

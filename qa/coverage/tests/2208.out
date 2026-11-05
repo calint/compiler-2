@@ -1,0 +1,7 @@
+
+2208.baz:6:31: index 5 is out of bounds for array 'x' of size 4
+    var q = i8[array_length(x[5].a)]
+                              ^
+2208.baz:12:14: called from 'g(m)'
+    exit(int(g(m)))
+             ^

@@ -1,0 +1,5 @@
+# an array literal indexed is not an operand, assigned to a number
+func main() {
+    var s = 0
+    s = []{1, 2}[1]
+}

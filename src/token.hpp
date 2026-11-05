@@ -14,8 +14,8 @@
 #include <string_view>
 #include <system_error>
 
-// the names that have a meaning for the compiler, a program cannot use them
-// for what it defines
+// the names that have a meaning for the compiler, most of them a program
+// cannot use for what it defines
 namespace reserved_names {
 
 // the receiver of a method and the value built by a constructor
@@ -25,7 +25,7 @@ inline constexpr std::string_view self{"self"};
 inline constexpr std::string_view foo{"foo"};
 
 // the names a 'foo' declares in its body: the element, its index and the
-// length of the array
+// length of the array; no type parameter in scope at a 'foo' may have them
 inline constexpr std::string_view foo_element{"e"};
 inline constexpr std::string_view foo_counter{"i"};
 inline constexpr std::string_view foo_length{"n"};

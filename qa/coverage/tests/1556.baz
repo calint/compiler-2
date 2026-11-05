@@ -8,6 +8,6 @@ let m = 4
 type str = text<2>
 
 func main() {
-    var s = str{}
+    var s = str
     exit(s.len)
 }

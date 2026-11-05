@@ -133,7 +133,7 @@ func main() {
     var defaults = []{1, -1} # is default
     assert(23, array_length(defaults) == 2 and defaults[1] == -1)
 
-    var zeros = i8[4]{} # is i8
+    var zeros = i8[4] # is i8
     assert(24, zeros[0] == 0 and zeros[3] == 0)
 
     # a string is an 'i8' array of its size, an array copies the whole array

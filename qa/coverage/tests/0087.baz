@@ -13,7 +13,7 @@ func input(str mut i8[], len) nbytes {
 }
 
 func main() {
-    var input_buffer = i8[80]{}
+    var input_buffer = i8[80]
     var len = input(input_buffer, array_length(input_buffer))
     print(input_buffer, len)
 }

@@ -14,5 +14,5 @@ func mut text.append<T type>(s T) {
 
 func main() {
     var s = str
-    s.append(str)
+    s.append(1)
 }

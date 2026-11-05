@@ -8,6 +8,8 @@ echo clang tidy
 qa/lint/clang-tidy.sh fix
 echo format source
 qa/lint/format-source.sh
+echo check all
+qa/lint/check-all.sh
 echo test lsp
 etc/nvim/tree-sitter-baz/qa/test.sh
 echo parse sources

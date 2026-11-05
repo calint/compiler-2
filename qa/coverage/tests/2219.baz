@@ -1,0 +1,6 @@
+# an instance literal reached into where an array is expected
+type pt { x, a i8[3] }
+
+func main() {
+    exit(array_length(pt{1, {1, 2, 3}}.a))
+}

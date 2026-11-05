@@ -34,7 +34,7 @@ func fuz(wld1 mut world, wld2 mut world) {
 }
 
 func main() {
-    var worlds = world[2]{}
+    var worlds = world[2]
     fuz(worlds[0], worlds[1])
 
     var ok = arrays_equal(

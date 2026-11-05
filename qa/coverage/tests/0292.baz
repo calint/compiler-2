@@ -11,7 +11,7 @@ func copy_and_shift(source point) result point {
 
 func main() {
     var source = point{ 4, 25 }
-    var destination = point{}
+    var destination = point
     destination = copy_and_shift(source)
     assert(destination.x == 14)
     assert(destination.y == 15)

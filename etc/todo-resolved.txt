@@ -1,6 +1,100 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] hard: design review series 2, round 97 (2026-11-05, user: continue in a
+    loop; O review of round 96)
+    => done (2026-11-05): no bug; O1 a constructor call where an array is
+       expected is parsed like the other calls ('pt.at(1).a' gets the
+       "store the result" message, 'pt.at(nope)' the error of its argument,
+       1982 now "a call of 'point.at' is not an array"; test 2226), the
+       message names the callee instance (2123 'zero<i8>'; 2223 passes an
+       'i8' so its message is the same on both targets); O2 the
+       unreachable bare-type branch of 'parse_type_as_zero' removed; O3
+       'assert_not_type_or_call' keeps only what 'assert_no_call' leaves;
+       O4 the comments on 'stmt_identifier_impl.hpp' name 'stmt_call'
+[x] hard: design review series 2, round 96 (2026-11-05, user: continue in a
+    loop; N review of round 95)
+    => done (2026-11-05): N1 round 95 M1/M2 crashed on 'gm(n)' and on
+       nested type arguments where an array is expected (its lookahead
+       called 'skip_enclosed' at a character that was not the opener); N2,
+       N3 the lookahead also differed from a value in the order of its
+       checks and in the callee name; redesigned: a call or a method call
+       where an array is expected is parsed by 'stmt_call' on a copy of the
+       tokenizer, whose own checks report a field, an element or a method
+       of the result, then it is rejected as no array
+       ('stmt_identifier::assert_no_call', 'throw_method_call_not_array',
+       'is_method_call'; the two lookaheads removed; tests 2223 to 2225);
+       N4 the comment of 'assert_not_type_or_call' back in place; N5
+       'i8{1}.x' is not reported as a zero value
+[x] hard: design review series 2, round 95 (2026-11-05, user: continue in a
+    loop; M review of round 94)
+    => done (2026-11-05): M1 a call reached into where an array is expected
+       looks the callee up first ("function 'nope' not found", "has no
+       result"), M2 also a generic call ('gm<i8>') and a method call
+       ('p.m()'), 'assert_call_not_reached_into' and
+       'assert_method_call_not_reached_into' in 'stmt_identifier_impl.hpp',
+       which now includes 'stmt_def_func.hpp' (tests 2216 to 2218); M3 an
+       instance literal reached into where an array is expected says "is
+       not an argument" like an array literal there (test 2219); M4
+       'value_kind' instead of the kind strings of 'assert_value_ends', an
+       array is "an array literal" in every position (2212 updated); M5 a
+       zero value reached into, 'i8{}.x' or '{}.x', is "a constant, it has
+       no field or element" as '1.x' (tests 2221, 2222); M6 every escape
+       of a character literal is checked before its length, 'a\q' (test
+       2220); M7, M8 the '{}' 0758 and 0250 are about restored; M9 the
+       comment column of 0616, the header of 0342; M10 the header lists of
+       'stmt_identifier.hpp' and 'parse_lookahead.hpp', the comments of
+       'assert_value_ends' and 'assert_not_aggregate'
+[x] hard: design review series 2, round 94 (2026-11-05, user: continue in a
+    loop without stopping until done; the items left of rounds 90 to 93)
+    => done (2026-11-05): L1 a literal reached into, 'pt{1, 2}.x' or
+       '[]{1, 2}[1]', gets "... is not an operand here, store it in a
+       variable first" in every position ('is_literal_reached_into',
+       'throw_literal_not_operand' in 'parse_lookahead.hpp', tests 2209 to
+       2212); G2 a field of a call's result where an array is expected,
+       'array_length(mk().a)', gets the "store the result of 'mk'" message
+       of 'mk().x' ('throw_result_not_stored', tests 2213, 2214); G3 an
+       unsupported escape of a character literal is reported before its
+       length, as in a string ('\X41', test 2215); E1 test 0780 shows the
+       "cannot deduce" message the README cites; F12 the '{}' of a
+       default-initialized declaration omitted in 276 tests (426 lines),
+       kept where a block starts on the next line; the code, exit code and
+       first error line of each changed test equal before and after on
+       x86_64 and rv32i, the '.out' files differ only in quoted source
+       lines; J1 left open with the reason (the guarantee does not need it,
+       simplicity); E8 left for the user (own prose)
+[x] hard: design review series 2, round 93 (2026-11-05, user: continue in a
+    loop; L hunt of verdicts that differ between equivalent positions)
+    => done (2026-11-05): no verdict or result differs between positions,
+       inline and noinline, or targets beyond README 1.5 and chapter 8; L1
+       (a message only: a literal followed by '.' or '[' is rejected with
+       three wordings) is an open item of etc/todo.txt; no bug or design
+       finding, the loop ends
+[x] hard: design review series 2, round 92 (2026-11-05, user: continue in a
+    loop; J hunt of checks made only at the parse that depend on what a call
+    gives)
+    => done (2026-11-05): J1 code skipped by a condition known at the parse
+       is never checked against the length a call gives an unsized array
+       parameter ('if false { res = x[5] }'); no UB, the fix is a design
+       change with a compile time cost, so it is an open item of
+       etc/todo.txt and README 1.5.1 states the gap; every other position
+       of the class held; 'fuzz-all.sh' with asan clean after round 91
+[x] hard: design review series 2, round 91 (2026-11-05, user: continue in a
+    loop without my input to find and fix as recommended bugs and design
+    issues; H hunt of the round 90 changes, I review of the round 90 diff)
+    => done (2026-11-05): H1 the C1 check of round 90 missed an array size,
+       'var q = i8[array_length(x[5].a)]' with 'x' given 4 elements by the
+       call was accepted: a size folds when parsed, so 'plan_writes' folds
+       it again ('stmt_array_size::check_where_written', test 2208); I1
+       'compile_commands.json' untracked and ignored, 'make.sh' writes it;
+       I2 the 'prog.baz' comment on data no longer reads as the removed
+       rule; I3 a long line of README 6.6; I4 'assert_open_paren' with an
+       'if' instead of two ternaries; I5 2207 changes with every check on
+       rv32i-fpga only, its comments say so; I6 the 'reserved_names' header
+       and the 'foo_names' and 'baz-lsp.lua' comments; I7 the label legend
+       names the noinline body of a generic instance; 'fuzz-reject.py'
+       drops 'rule_dat_after_var', the rule round 90 A1 removed (its two
+       findings were that rule, not a compiler fault)
 [x] hard: design review series 2, round 90 (2026-11-05, user: make the
     code, documentation, tests and everything squeaky clean; A front end, B
     expressions, C statements, D backends, E docs, F qa and tools, G bug hunt)
@@ -41,8 +135,24 @@
        'foo_length') used by 'foo' and 'assert_loop_names_free'; A3 one
        'constant_parser::is_bool_literal', the 'toc.hpp' copy removed; C3
        every 'var_info' initializer lists '.read_only_why'
-    => left for the next step: F3-F13; not recommended, awaiting the user:
-       E1, E8, G2, G3, F12 on the test files
+    => step 4 (2026-11-05, user: continue in a loop and do the
+       recommended): F3 'CLI_CHECKS_NOUB' runs 2207 on rv32i-fpga, where
+       each check alone changes the code, and fails when one does not; F4
+       twelve duplicated tests removed (0313, 0037, 0028, 0039, 0047, 0133,
+       0125, 0825, 0219, 1488, 2012, 1489); F5 'roome/roome.s' and
+       'roome/src/main.s' untracked and ignored; F6 both prepare scripts run
+       'check-all.sh', the fast one 'test-cli.sh'; F7 'make.sh' writes
+       'compile_commands.json' with the flags of the plain build; F8
+       'fpga-flash.sh' reports a failed build; F9 the two '.vscode' tasks
+       run; F10 the 88 '--reproduce-source' of 'cases.sh' removed (the
+       runner adds it), 'OPTS=""' where it was the only option; F11 0538
+       removed; F12 the omitted '{}' in 'test-arena.py' and 'test-cli.sh',
+       kept where a block starts on the next line (open item "a block on
+       the line after a declaration"); F13 unused 'dat flag',
+       'room.remove_entity', 'tokenizer.token_to', 'printer.println_all'
+       and two restating comments removed from roome
+    => not recommended, awaiting the user: E1, E8, G2, G3, F12 on the test
+       files
 [x] easy: unused includes (2026-11-05, user: 'machine_rv32i.hpp' had one,
     check the other files and add the check to the lint)
     => done (2026-11-05): 'misc-include-cleaner', run on each header alone,

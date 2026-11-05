@@ -9,7 +9,7 @@ func main() {
     var x = i8(3)
     var a = i8[4]
     var i = 1
-    var p = pair{}
+    var p = pair
     p = {-x, ~a[i]}
     exit(p.a + p.b + 10)
 }

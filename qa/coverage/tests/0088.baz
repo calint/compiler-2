@@ -22,7 +22,7 @@ type location {
 }
 
 func main() {
-    var locations = location[4]{}
+    var locations = location[4]
 
     var i = 0
     loop {

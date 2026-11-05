@@ -8,7 +8,7 @@ func main() {
     assert(b.corners[1].x == 3, 2)
     assert(b.corners[1].y == 4, 3)
     assert(b.tag == 5, 4)
-    var bs = box[2]{}
+    var bs = box[2]
     var i = 1
     bs[i] = { { {6, 7} }, 8 }
     assert(bs[1].corners[0].y == 7, 5)

@@ -4,7 +4,7 @@
 func assert(err, ok bool) { if not ok exit(err) }
 
 func main() {
-    var pad = i8[5000]{}
+    var pad = i8[5000]
     var a = 5
     var b = 7
     var h = i16(300)

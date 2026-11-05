@@ -11,6 +11,6 @@ func f(s i8[]) {
 }
 
 func main() {
-    var p = point{}
+    var p = point
     f(p.get())
 }

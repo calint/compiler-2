@@ -67,6 +67,11 @@ class stmt_array_size final : public statement {
     // 'i8[4]'; asked only when 'has_value'
     [[nodiscard]] auto array_size() const -> size_t;
 
+    // folds the size again where its value is written, whose checks see what
+    // a call gives, e.g. the length of the unsized array parameter 'x' of
+    // 'i8[array_length(x[5].a)]'
+    auto check_where_written(const toc& tc) const -> void;
+
     [[nodiscard]] auto has_value() const -> bool { return value_ != nullptr; }
 };
 
@@ -153,7 +158,7 @@ class expr_any final : public statement {
 
         // a copy checks its end itself
         if (is_array() and not is_whole_array_copy()) {
-            assert_value_ends(tz, array_token(), "an array", tp);
+            assert_value_ends(tz, array_token(), value_kind::array, tp);
         }
     }
 
@@ -424,6 +429,10 @@ class expr_any final : public statement {
             return;
         }
 
+        if (const array_prefix* const prefix{array_prefix_of()}) {
+            prefix->size.check_where_written(tc);
+        }
+
         const size_t count{element_count()};
 
         // the parser could not check the size of an unsized destination
@@ -591,7 +600,7 @@ class expr_any final : public statement {
         // e.g. 'i8[]{1, 2}' for an 'i8' array field is '{1, 2}' and 'i8[4]'
         // is '{}'
         if (typing == literal_typing::from_destination) {
-            throw_known_literal_type(tz, literal_tk, "an array", tp,
+            throw_known_literal_type(tz, literal_tk, value_kind::array, tp,
                                      std::format("{}[]", literal_type.name()));
         }
 
@@ -915,7 +924,8 @@ class expr_any final : public statement {
             [](const auto& item) -> const statement& { return item; });
     }
 
-    // a record or array literal where the built-in 'tp' is expected
+    // a record or array literal where the built-in 'tp' is expected, also
+    // one reached into, e.g. 'pt{1, 2}.x'
     static auto assert_not_aggregate(const toc& tc, const tokenizer& tz,
                                      const type& tp, const token& tk) -> void {
 
@@ -923,6 +933,14 @@ class expr_any final : public statement {
         // 'x = point{1, 2}' for an 'i8' 'x'; a condition may compare an
         // instance literal, which the comparison rejects
         const term_kind tm{classify_term(tc, tk, tz)};
+
+        if (tm == term_kind::record_literal and
+            is_literal_reached_into(tm, tz)) {
+
+            throw_literal_not_operand(
+                tk,
+                std::format("an instance literal of {}", in_quotes(tk.text())));
+        }
 
         if (is_record_value(tm, tz) or
             (tm == term_kind::record_literal and not tp.is_bool())) {
@@ -937,6 +955,10 @@ class expr_any final : public statement {
             tm == term_kind::array_literal or
                 (tk.is_none() and is_default_array_literal(tz)),
         };
+
+        if (is_array_literal and is_literal_reached_into(tm, tz)) {
+            throw_literal_not_operand(tk, "an array literal");
+        }
 
         if (is_array_literal and
             (not tp.is_bool() or is_array_literal_value(tz))) {
@@ -977,6 +999,14 @@ class expr_any final : public statement {
             std::format("expected type {}, got 'bool', use '{}(...)'",
                         in_quotes(tp.name()), tp.name()),
         };
+    }
+
+    // e.g. the '.x' of 'i8{}.x', as of '1.x'; 'tz' is after the value
+    static auto assert_zero_not_reached_into(const tokenizer& tz) -> void {
+        if (is_reached_into(tz)) {
+            throw compile_error{
+                tz, "a zero value is a constant, it has no field or element"};
+        }
     }
 
     // a built-in value whose only element is parsed, e.g. the zero value of
@@ -1051,6 +1081,14 @@ class expr_any final : public statement {
     parse_type_as_zero(toc& tc, tokenizer& tz, const type& tp,
                        const literal_typing typing, const token& tk)
         -> expr_variant {
+
+        // e.g. the '.x' of 'i8{}.x'; 'classify_term' left no '.' or '['
+        // after a bare type
+        if (is_zero_value(tz)) {
+            tokenizer after_value{tz};
+            std::ignore = after_value.skip_braced_block();
+            assert_zero_not_reached_into(after_value);
+        }
 
         if (typing == literal_typing::from_destination) {
             // note: compared by type, a type parameter names the type of
@@ -1142,6 +1180,8 @@ class expr_any final : public statement {
             tz.expect_char_token(
                 '}', "expected '}', the zero value of a built-in is '{}'"),
         };
+
+        assert_zero_not_reached_into(tz);
 
         // e.g. the '+' of 'n = {} + 1'
         if (continues_expression(tz)) {
@@ -1265,6 +1305,22 @@ inline auto stmt_array_size::source_to(std::ostream& os) const -> void {
     if (value_) {
         value_->source_to(os);
     }
+}
+
+inline auto stmt_array_size::check_where_written(const toc& tc) const -> void {
+    if (not value_) {
+        return;
+    }
+
+    const std::optional<int64_t> folded{
+        folded_value::value_of(
+            value_->fold_checked(tc, tc.use_at(tc.builtins().i64()))),
+    };
+
+    // note: the names of a size are constants wherever it is written, and
+    //       a length is the same in every call
+
+    assert(folded == folded_);
 }
 
 inline auto stmt_array_size::array_size() const -> size_t {

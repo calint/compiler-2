@@ -23,7 +23,7 @@ func main() {
     assert(unsigned32 == half)
     var negative = i64(-2147483649)
     assert(negative == -half - 1)
-    var values = i64[2]{}
+    var values = i64[2]
     values[1] = 4294967296
     assert(values[1] == big)
     var flag = x == 4294967296

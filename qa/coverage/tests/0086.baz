@@ -24,7 +24,7 @@ func nl() {
 }
 
 func pn(num) {
-    var buf = i8[20]{}
+    var buf = i8[20]
     var n = num
     var is_negative = false
 
@@ -53,7 +53,7 @@ func pn(num) {
 }
 
 func main() {
-    var locations = location[4]{}
+    var locations = location[4]
 
     var i = 0
     loop {

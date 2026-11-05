@@ -6,7 +6,7 @@ func main() {
     var l = line{3, {0x6f, 0x6b, 10}}
     var n = write(1, l.text)
     if n != 3 exit(1)
-    var none = i8[1]{}
+    var none = i8[1]
     n = read(0, none)
     if n != 0 exit(2)
 }

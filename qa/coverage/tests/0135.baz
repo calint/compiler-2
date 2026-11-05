@@ -11,7 +11,7 @@ func fuz(x i32, y i32) res i32 {
 }
 
 func main() {
-    var arr = i32[4]{}
+    var arr = i32[4]
     var ix = i32(1)
     arr[ix] = 2
     # note: temporary because the result may share storage with the argument

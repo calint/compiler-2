@@ -72,7 +72,7 @@ func noinline mut point.move_twice(dx) {
 }
 
 func main() {
-    var lst = list{}
+    var lst = list
     lst.clear()
     assert(1, lst.is_empty())
     lst.add(3)
@@ -89,7 +89,7 @@ func main() {
     assert(6, lst.size() == 4 and lst.sum() == 17)
 
     # nested field and array element receivers
-    var h = holder{}
+    var h = holder
     h.lst.clear()
     h.lst.add(10)
     var i = 1

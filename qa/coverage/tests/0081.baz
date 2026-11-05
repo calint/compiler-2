@@ -19,7 +19,7 @@ func main() {
     assert(o2.pos.x == 0xab)
     assert(o2.pos.y == 0xba)
 
-    var objs = object[10]{}
+    var objs = object[10]
     objs[1].pos.y = 0xab
 
     objs[2] = objs[1]

@@ -19,7 +19,7 @@ func noinline nwide(x i8, y i16) res {
 }
 
 func main() {
-    var b = i8[2]{}
+    var b = i8[2]
     b[1] = 4
     exit(wide(b[1], 4) + nwide(b[1], 4))
 }

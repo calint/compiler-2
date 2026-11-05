@@ -39,10 +39,10 @@ func main() {
     assert(9, shorts[11] == 12)
 
     # a field after a byte and an indexed destination
-    var h = holder{}
+    var h = holder
     h.values = {3, -4, 5}
     assert(10, h.values[0] == 3 and h.values[1] == -4 and h.values[4] == 0)
-    var hs = holder[2]{}
+    var hs = holder[2]
     var i = 1
     hs[i].values = {6, 7}
     assert(11, hs[1].values[1] == 7 and hs[0].values[1] == 0)
@@ -59,19 +59,19 @@ func main() {
 
     # a constant count copies without a loop
     var src = i8[6]{1, 2, 3, 4, 5, 6}
-    var dst = i8[6]{}
+    var dst = i8[6]
     array_copy(src, dst, 3)
     assert(14, dst[0] == 1 and dst[2] == 3 and dst[3] == 0)
     var k = 2
     array_copy(src[k], dst[k], 4)
     assert(15, dst[2] == 3 and dst[5] == 6)
     array_copy(words, words, 0)
-    var wide = i32[3]{}
+    var wide = i32[3]
     array_copy(words, wide, 2)
     assert(16, wide[0] == -100000 and wide[1] == 65536)
 
     # more than the unroll threshold
-    var big = i16[12]{}
+    var big = i16[12]
     array_copy(shorts, big, 12)
     assert(17, arrays_equal(shorts, big, 12))
 }

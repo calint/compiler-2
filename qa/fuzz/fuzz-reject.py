@@ -233,19 +233,6 @@ def rule_dat_variable(rnd, c):
         p.add("}")
 
 
-def rule_dat_after_var(rnd, c):
-    for p in (c.bad, c.good):
-        if p is c.bad:
-            p.add("var g = 1")
-            p.add("dat d = 2", True)
-        else:
-            p.add("dat d = 2")
-            p.add("var g = 1")
-        p.add("func main() {")
-        p.add("    exit(0)")
-        p.add("}")
-
-
 def rule_alias_result(rnd, c):
     for p, text in ((c.bad, "x = add_to_zero(x)"),
                     (c.good, "var y = add_to_zero(x)")):
@@ -503,7 +490,7 @@ RULES = [
     (rule_let_instance, ()), (rule_argument_write, ()),
     (rule_array_argument_write, ()), (rule_element_write, ()),
     (rule_result_unassigned, ()), (rule_dat_variable, ()),
-    (rule_dat_after_var, ()), (rule_alias_result, ()),
+    (rule_alias_result, ()),
     (rule_record_overwrite, ()), (rule_constant_index, ()),
     (rule_wider_element, ()), (rule_mut_let, ()), (rule_mut_literal, ()),
     (rule_unknown_name, ()), (rule_argument_count, ()),

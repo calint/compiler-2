@@ -15,7 +15,7 @@ type team {
 }
 
 dat expected_motto = "strings longer than 16!\n"
-dat cleared = i8[3]{}
+dat cleared = i8[3]
 
 # an unsized parameter takes the size of the argument
 func greet(dst mut i8[]) {
@@ -28,7 +28,7 @@ func main() {
     write(1, hello, array_length(hello))
 
     # the rest of a sized array is zero
-    var buf = i8[8]{}
+    var buf = i8[8]
     buf = "abc"
     assert(2, buf[2] == 'c' and buf[3] == 0 and buf[7] == 0)
 
@@ -41,7 +41,7 @@ func main() {
     # an empty string zeroes a sized array
     buf = ""
     assert(4, buf[0] == 0 and buf[1] == 0)
-    var empty = i8[3]{}
+    var empty = i8[3]
     empty = ""
     assert(12, empty[0] == 0 and empty[2] == 0)
     assert(13, cleared[0] == 0 and cleared[2] == 0)

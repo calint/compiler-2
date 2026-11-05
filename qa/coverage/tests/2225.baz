@@ -1,0 +1,5 @@
+# an index of a call of a function that is not defined where an array is
+# expected
+func main() {
+    exit(array_length(nope()[0]))
+}

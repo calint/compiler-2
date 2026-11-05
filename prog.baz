@@ -17,7 +17,7 @@ type str {
     # trailing comma allowed
 }
 
-# initial data is declared before variables
+# initial data, placed before the variables whatever the source order
 
 dat   hello = "hello world from baz\n"
 dat prompt1 = "enter name:\n"

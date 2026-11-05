@@ -3,6 +3,6 @@
 type group { values i8[2] }
 
 func main() {
-    var groups = group[2]{}
+    var groups = group[2]
     groups[2].values[0] = 1
 }

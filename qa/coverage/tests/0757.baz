@@ -1,7 +1,7 @@
 # an indexed argument may be the array element a non-inline body names
 # the call is rejected: the function uses the global the call passes it
 
-var arr = i32[4]{}
+var arr = i32[4]
 
 func swap_values(x mut i32, y mut i32) {
     var tmp = x

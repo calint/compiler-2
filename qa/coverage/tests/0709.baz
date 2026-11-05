@@ -6,8 +6,8 @@ type cell {
 }
 
 func main() {
-    var cells = cell[3]{}
-    var out = [4]{}
+    var cells = cell[3]
+    var out = [4]
     var i = 1
     var j = 0
     var n = 2

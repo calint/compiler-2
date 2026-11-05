@@ -37,9 +37,12 @@
 //   'assert_constant_index', 'constant_range',
 //   'assert_constant_range'  the constant checks of an index and a range
 //   'throw_call_not_array'   a call where an array is expected
+//   'throw_result_not_stored'
+//                            a field or a method of a call's result
 //   'lea_request'            what a caller asks of the address of a path
 //   'stmt_identifier'        the path node; its members that use 'expr_any'
-//                            are in 'stmt_identifier_impl.hpp'
+//                            or 'stmt_call' are in
+//                            'stmt_identifier_impl.hpp'
 //   'place', 'make_ident_info', 'is_whole_array',
 //   'assert_not_whole_array', 'make_scalar_ident_info', 'as_place'
 //                            what a value names when it is a place
@@ -188,6 +191,19 @@ class stmt_identifier;
                                                 in_quotes(callee))};
 }
 
+// a field or a method of a call's result, e.g. the '.' of 'mk().x' at
+// 'at_dot'; a result has no storage to reach into
+[[noreturn]] inline auto throw_result_not_stored(const tokenizer& at_dot,
+                                                 const std::string_view callee)
+    -> void {
+
+    throw compile_error{at_dot,
+                        std::format("store the result of {} in a variable "
+                                    "before reading a field or calling a "
+                                    "method of it",
+                                    in_quotes(callee))};
+}
+
 // what a caller asks of the address of an identifier
 struct lea_request {
     // the path starts a range, its last index may be the end; false for an
@@ -212,7 +228,8 @@ struct lea_request {
 // builds one memory operand ('compile_lea', see 'etc/docs/README.md' chapter
 // 6); a path that names a constant has no storage; the members that use
 // 'expr_any' (the constructor, the element parse, the index steps of the walk)
-// are in 'stmt_identifier_impl.hpp'
+// or 'stmt_call' (a call where an array is expected) are in
+// 'stmt_identifier_impl.hpp'
 class stmt_identifier final : public statement {
     // what an indexed path reaches: the element, or from it to the end of
     // the array, e.g. the 'g[1]' of 'array_copy(s, g[1], 3)'
@@ -586,25 +603,16 @@ class stmt_identifier final : public statement {
                                 const int64_t count) const -> void;
 
     // where only an array is expected, the path does not end at a method or
-    // its call, e.g. 'array_length(a.m)' or 'foo a.m() {}'
+    // its call, e.g. 'array_length(a.m)'
     auto assert_not_method(const toc& tc, const tokenizer& tz) const -> void {
         if (not method_) {
             return;
         }
 
-        const std::string method_name{
-            method_name_of(get_type().name(), method_->name_tk.text()),
-        };
+        // note: a call of the method was reported
+        // ('throw_method_call_not_array')
 
-        const char next{tz.peek_char_after_whitespace()};
-
-        // a call is named like its callee in the other call messages, e.g.
-        // 'point.m' of 'p.m()'
-        if (next == '(' or
-            (next == '<' and tc.generics().has_func(method_name))) {
-
-            throw_call_not_array(method_->name_tk, method_name);
-        }
+        assert(not is_method_call(tc, tz));
 
         const std::string method_path{
             std::format("{}.{}", dotted_path_, method_->name_tk.text()),
@@ -745,6 +753,22 @@ class stmt_identifier final : public statement {
         return std::ranges::any_of(elems_, [](const ident_elem& e) -> bool {
             return e.index.has_value();
         });
+    }
+
+    // the path ends at a call of a method, e.g. 'p.m()' or 'p.m<i8>()'
+    [[nodiscard]] auto is_method_call(const toc& tc, const tokenizer& tz) const
+        -> bool {
+
+        if (not method_) {
+            return false;
+        }
+
+        const char next{tz.peek_char_after_whitespace()};
+
+        return next == '(' or
+               (next == '<' and
+                tc.generics().has_func(method_name_of(
+                    get_type().name(), method_->name_tk.text())));
     }
 
     [[nodiscard]] auto is_method_receiver() const -> bool {
@@ -911,12 +935,27 @@ class stmt_identifier final : public statement {
             throw compile_error{tk, std::string{literal_text}};
         }
 
+        // e.g. the 'pt{1, a}.a' of 'array_length(pt{1, a}.a)', not the type
+        if (tm == term_kind::record_literal and
+            is_literal_reached_into(tm, tz)) {
+
+            throw compile_error{
+                tk, std::format("an instance literal of {} is not an argument, "
+                                "store it in a variable first",
+                                in_quotes(tk.text()))};
+        }
+
+        assert_no_call(tc, tz, tk, tm);
         assert_not_type_or_call(tc, tk, tm);
 
         // note: the operand of a bulk operation reaches from the element it
         //       names on
 
         stmt_identifier array{tc, tk, tz, path_reach::to_end};
+
+        if (array.is_method_call(tc, tz)) {
+            throw_method_call_not_array(tc, tz, std::move(array));
+        }
 
         array.assert_not_method(tc, tz);
 
@@ -1076,6 +1115,13 @@ class stmt_identifier final : public statement {
     // statics
     //
 
+    // a call of a function or a constructor where an array is expected,
+    // parsed as a call so that a field, an element or a method of its result
+    // is reported as for a value, e.g. the 'mk().a' of 'array_length(mk().a)';
+    // 'tz' is after 'tk'
+    static auto assert_no_call(toc& tc, const tokenizer& tz, const token& tk,
+                               term_kind tm) -> void;
+
     // without a method 'T.m' a following '(' would otherwise be reported as a
     // missing field
     static auto assert_not_method_call(const ident_info& prefix,
@@ -1093,23 +1139,25 @@ class stmt_identifier final : public statement {
     }
 
     // a term that starts no array where an array is expected, after an array
-    // literal was reported: a type, a call or a function, e.g. the 'point' of
-    // 'point{1, 2}' or the 'f' of 'f(1)'
+    // literal and a call of a function were reported: a type, a conversion, a
+    // built-in call or a function, e.g. the 'point' of 'point{1, 2}' or the
+    // 'i8' of 'i8(1)'
     static auto assert_not_type_or_call(const toc& tc, const token& tk,
                                         const term_kind tm) -> void {
 
-        // e.g. the 'point' of 'point{1, 2}', 'point(5)' or 'point.at(1, 2)';
-        // a type parameter names the type of its argument
-        if (names_type(tm) or tm == term_kind::type_called or
-            tm == term_kind::constructor_call) {
+        // e.g. the 'point' of 'point{1, 2}' or 'point(5)'; a type parameter
+        // names the type of its argument
+        if (names_type(tm) or tm == term_kind::type_called) {
 
             throw compile_error{
                 tk, std::format("{} is a type, not an array",
                                 in_quotes(tc.get_type_or_throw(tk).name()))};
         }
 
-        if (tm == term_kind::call or tm == term_kind::generic_call or
-            tm == term_kind::conversion or tm == term_kind::builtin_function) {
+        // note: a call of a function or a constructor was reported
+        //       ('assert_no_call')
+
+        if (tm == term_kind::conversion or tm == term_kind::builtin_function) {
 
             throw_call_not_array(tk, tk.text());
         }
@@ -1213,6 +1261,12 @@ class stmt_identifier final : public statement {
             .name_tk{next_tk},
         };
     }
+
+    // the same for a call of a method of 'array', e.g. 'p.mk().a'
+    [[noreturn]] static auto throw_method_call_not_array(toc& tc,
+                                                         const tokenizer& tz,
+                                                         stmt_identifier array)
+        -> void;
 
     // a '[' after 'path', which is not an array
     [[noreturn]] static auto throw_not_indexable(const token& src_loc_tk,

@@ -7,7 +7,7 @@ func assert(x bool) { if not x exit(1) }
 
 func main() {
     var arr = point[2]{ {1, 2}, {3, 4} }
-    var type_inst = tagged_points{}
+    var type_inst = tagged_points
     type_inst = { 7, arr }
 
     assert(type_inst.tag == 7)

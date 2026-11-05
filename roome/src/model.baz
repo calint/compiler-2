@@ -169,23 +169,6 @@ func room.print(cur_entity) {
     }
 }
 
-func mut room.remove_entity(id) {
-    # find entity
-    var found_ix = self.entities.len
-    let name = entities.array[id].name
-    foo self.entities.array, self.entities.len {
-        if entities.array[e].name.equals(name) {
-            found_ix = i
-            break
-        }
-    }
-
-    # check program error
-    assert(1, found_ix != self.entities.len)
-
-    self.entities.delete_index(found_ix)
-}
-
 type rooms = list<room, rooms_len>
 
 # the bare room, the creation script makes the rest

@@ -1,4 +1,0 @@
-
-0219.baz:3:31: expected ',' followed by a value of type 'i8'
-func main() { var x = i8[2]{1 2} }
-                              ^

@@ -1,0 +1,4 @@
+
+2218.baz:15:28: store the result of 'pt.m' in a variable before reading a field or calling a method of it
+    exit(array_length(p.m().a))
+                           ^

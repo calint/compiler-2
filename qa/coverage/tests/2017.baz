@@ -8,6 +8,6 @@ func mut pt.clear() {
 }
 
 func main() {
-    var p = pt{}
+    var p = pt
     p.clear().clear()
 }

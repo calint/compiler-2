@@ -160,23 +160,35 @@ CLI_JUMP_OPTIMIZATIONS() {
 
 CLI_CHECKS_NOUB() {
     echo -n "cli --checks=noub expansion: "
-    "$BIN" --checks=noub 0015.baz >gen.s 2>err
-    "$BIN" --checks=upper,lower,frame,division,shift,overlap,stack,overflow 0015.baz >out 2>err
+    # each check alone changes the code of 2207.baz on rv32i-fpga, the one
+    # target with all of them, so a check missing from a list is seen
+    local fpga=(--target=rv32i-fpga --bin=gen-rv32i.bin)
+    "$BIN" "${fpga[@]}" 2207.baz >out 2>err
+    local check
+    for check in upper lower frame division shift overlap stack overflow; do
+        "$BIN" "${fpga[@]}" --checks="$check" 2207.baz >gen.s 2>err
+        if cmp -s gen.s out; then
+            echo "FAILED. --checks=$check changed nothing"
+            exit 1
+        fi
+    done
+    "$BIN" "${fpga[@]}" --checks=noub 2207.baz >gen.s 2>err
+    "$BIN" "${fpga[@]}" --checks=upper,lower,frame,division,shift,overlap,stack,overflow 2207.baz >out 2>err
     cmp -s gen.s out
-    "$BIN" --checks=line,noub 0015.baz >gen.s 2>err
-    "$BIN" --checks=upper,lower,line,frame,division,shift,overlap,stack,overflow 0015.baz >out 2>err
+    "$BIN" "${fpga[@]}" --checks=line,noub 2207.baz >gen.s 2>err
+    "$BIN" "${fpga[@]}" --checks=upper,lower,line,frame,division,shift,overlap,stack,overflow 2207.baz >out 2>err
     cmp -s gen.s out
-    "$BIN" --checks=noub,-division,-shift,-overlap,-stack,-overflow 0015.baz >gen.s 2>err
-    "$BIN" --checks=upper,lower,frame 0015.baz >out 2>err
+    "$BIN" "${fpga[@]}" --checks=noub,-division,-shift,-overlap,-stack,-overflow 2207.baz >gen.s 2>err
+    "$BIN" "${fpga[@]}" --checks=upper,lower,frame 2207.baz >out 2>err
     cmp -s gen.s out
-    "$BIN" --checks=-division,-shift,-overlap,-stack,-overflow,noub 0015.baz >gen.s 2>err
+    "$BIN" "${fpga[@]}" --checks=-division,-shift,-overlap,-stack,-overflow,noub 2207.baz >gen.s 2>err
     cmp -s gen.s out
-    "$BIN" --checks=+division 0015.baz >gen.s 2>err
-    "$BIN" --checks=division 0015.baz >out 2>err
+    "$BIN" "${fpga[@]}" --checks=+division 2207.baz >gen.s 2>err
+    "$BIN" "${fpga[@]}" --checks=division 2207.baz >out 2>err
     cmp -s gen.s out
     # '-noub' turns off what 'noub' turns on
-    "$BIN" --checks=noub,line,-noub 0015.baz >gen.s 2>err
-    "$BIN" --checks=line 0015.baz >out 2>err
+    "$BIN" "${fpga[@]}" --checks=noub,line,-noub 2207.baz >gen.s 2>err
+    "$BIN" "${fpga[@]}" --checks=line 2207.baz >out 2>err
     cmp -s gen.s out
     echo ok
 }
@@ -410,7 +422,7 @@ CLI_ADDRESS_RANGE() {
     echo -n "cli rv32i address range: "
     local target
     for target in rv32i rv32i-qemu rv32i-fpga; do
-        printf 'dat big = i8[3000000000]{}\nfunc main(){\n    exit(0)\n}\n' >gen-range.baz
+        printf 'dat big = i8[3000000000]\nfunc main(){\n    exit(0)\n}\n' >gen-range.baz
         set +e
         "$BIN" --target=$target --bin=gen-rv32i.bin gen-range.baz >gen.s 2>err
         local exit_code=$?
@@ -423,7 +435,7 @@ CLI_ADDRESS_RANGE() {
         else
             [[ $exit_code -eq 0 ]]
         fi
-        printf 'dat big = i8[4294967000]{}\nfunc main(){\n    exit(0)\n}\n' >gen-range.baz
+        printf 'dat big = i8[4294967000]\nfunc main(){\n    exit(0)\n}\n' >gen-range.baz
         rm -f gen-rv32i.bin
         set +e
         "$BIN" --target=$target --bin=gen-rv32i.bin gen-range.baz >gen.s 2>err

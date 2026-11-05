@@ -1,0 +1,4 @@
+
+2214.baz:14:20: store the result of 'mk' in a variable before reading a field or calling a method of it
+    exit(first(mk().a))
+                   ^

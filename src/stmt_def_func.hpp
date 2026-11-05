@@ -125,9 +125,12 @@ struct func_head {
             return;
         }
 
-        throw compile_error{method ? method->name_tk : name_tk,
-                            method ? "expected '(' after method name"
-                                   : "expected '(' after function name"};
+        if (method) {
+            throw compile_error{method->name_tk,
+                                "expected '(' after method name"};
+        }
+
+        throw compile_error{name_tk, "expected '(' after function name"};
     }
 
     // kept as text, its instances are the functions

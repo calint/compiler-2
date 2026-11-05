@@ -141,7 +141,7 @@ func main() {
 
     # byte arrays at odd offsets are copied and compared bytewise
     var bytes1 = i8[7]{1, 2, 3, 4, 5, 6, 7}
-    var bytes2 = i8[7]{}
+    var bytes2 = i8[7]
     array_copy(bytes1[1], bytes2[1], 5)
     assert(26, bytes2[0] == 0 and bytes2[1] == 2 and bytes2[5] == 6)
     assert(27, bytes2[6] == 0)

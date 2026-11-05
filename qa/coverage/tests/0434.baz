@@ -16,7 +16,7 @@ func noinline factorial(value i32) result i32 {
 }
 
 func noinline shift(value mut point) result point {
-    var buffer = i8[4096]{}
+    var buffer = i8[4096]
     buffer[4095] = 17
     result = value
     value.x = value.x + 2
@@ -39,7 +39,7 @@ func main() {
     result = factorial(value)
     assert(result == 1)
     var source = point{3, 20}
-    var destination = point{}
+    var destination = point
     destination = forward(source)
     assert(source.x == 5)
     assert(source.y == 20)

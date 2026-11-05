@@ -8,7 +8,7 @@
 // 'stmt_identifier::is_method_name', a function head by 'func_head'; the
 // rejections that run before a parse would misread ('assert_*') and the
 // predicates of the shape of what follows ('continues_*', 'is_*',
-// 'starts_value')
+// 'starts_value'); 'throw_literal_not_operand' words a literal reached into
 
 #include <algorithm>
 #include <cassert>
@@ -425,4 +425,47 @@ enum class term_kind : uint8_t {
     }
 
     return not continues_condition(after_literal);
+}
+
+// a literal ends where 'tz' is and a field or an element of it is named, e.g.
+// the '.x' of 'pt{1, 2}.x' or the '[1]' of 'i8[]{1, 2}[1]'
+[[nodiscard]] inline auto is_reached_into(const tokenizer& tz) -> bool {
+    const char next{tz.peek_char_after_whitespace()};
+    return next == '.' or next == '[';
+}
+
+// an array or instance literal at 'tz' that is reached into, e.g.
+// 'pt{1, 2}.x'; 'tz' is after the type name of a typed literal
+[[nodiscard]] inline auto is_literal_reached_into(const term_kind tm,
+                                                  const tokenizer& tz) -> bool {
+
+    tokenizer after_literal{tz};
+
+    const bool has_size{
+        tm == term_kind::array_literal or
+            after_literal.peek_char_after_whitespace() == '[',
+    };
+
+    if (has_size and not after_literal.skip_enclosed('[', ']')) {
+        return false;
+    }
+
+    if (after_literal.peek_char_after_whitespace() == '{' and
+        not after_literal.skip_braced_block()) {
+
+        return false;
+    }
+
+    return is_reached_into(after_literal);
+}
+
+// a literal has no storage, e.g. 'literal' is "an array literal" or "an
+// instance literal of 'point'"
+[[noreturn]] inline auto
+throw_literal_not_operand(const token& tk, const std::string_view literal)
+    -> void {
+
+    throw compile_error{tk, std::format("{} is not an operand here, store it "
+                                        "in a variable first",
+                                        literal)};
 }

@@ -118,9 +118,6 @@ SRC=0026 && EXP=0 && RUN
 # negated parameter and negated product in a function result
 SRC=0027 && EXP=0 && RUN
 
-# negated argument passed to a function with a negated product
-SRC=0028 && EXP=0 && RUN
-
 # unary argument passed to a function result
 SRC=0029 && EXP=0 && RUN
 
@@ -145,14 +142,8 @@ SRC=0035 && DIFFINP2
 # negated function result
 SRC=0036 && EXP=0 && RUN
 
-# negation of a function result that is itself negated
-SRC=0037 && EXP=0 && RUN
-
 # nested negated function calls
 SRC=0038 && EXP=0 && RUN
-
-# nested negated function calls with negated arguments
-SRC=0039 && EXP=0 && RUN
 
 # complement and negation composition
 SRC=0040 && EXP=0 && RUN
@@ -174,9 +165,6 @@ SRC=0045 && EXP=0 && RUN
 
 # signed division with nested unary operands
 SRC=0046 && EXP=0 && RUN
-
-# repeated unary negation and parenthesized negation in expressions
-SRC=0047 && EXP=0 && RUN
 
 # grouped negated boolean expressions
 SRC=0048 && EXP=0 && RUN
@@ -410,9 +398,6 @@ SRC=0123 && COMPERR
 # continue does not leave the loop, the later break still skips the result
 SRC=0124 && COMPERR
 
-# variable cannot initialize itself
-SRC=0125 && COMPERR
-
 # all functions are inlined
 SRC=0126 && EXP=0 && RUN
 
@@ -433,9 +418,6 @@ SRC=0131 && EXP=0 && RUN
 
 # i32 array values passed to a typed function
 SRC=0132 && EXP=0 && RUN
-
-# typed array values passed to arithmetic functions
-SRC=0133 && EXP=0 && RUN
 
 # indexed value inside a function argument expression
 SRC=0134 && EXP=0 && RUN
@@ -692,9 +674,6 @@ SRC=0217 && COMPERR
 # constant values require known identifiers
 SRC=0218 && COMPERR
 
-# variable array initializers require commas
-SRC=0219 && COMPERR
-
 # decimal constants must fit in i64
 SRC=0220 && COMPERR
 
@@ -893,7 +872,7 @@ SRC=0283 && COMPERR
 SRC=0284 && EXP=0 && RUN
 
 # direct default-type array indexing
-SRC=0285 && EXP=0 && OPTS="--reproduce-source" RUN
+SRC=0285 && EXP=0 && OPTS="" RUN
 
 # nested array and field indexing
 SRC=0286 && EXP=0 && RUN
@@ -962,10 +941,10 @@ SRC=0306 && COMPERR
 SRC=0307 && EXP=255 && RUN_ERR
 
 # lower-bound check without upper check
-SRC=0308 && EXP=255 && OPTS="--vars=0x10000 --checks=lower,line --reproduce-source" RUN_ERR
+SRC=0308 && EXP=255 && OPTS="--vars=0x10000 --checks=lower,line" RUN_ERR
 
 # upper-bound check without lower check
-SRC=0309 && EXP=255 && OPTS="--vars=0x10000 --checks=upper,line --reproduce-source" RUN_ERR
+SRC=0309 && EXP=255 && OPTS="--vars=0x10000 --checks=upper,line" RUN_ERR
 
 # panic line from a multiline index
 SRC=0310 && EXP=255 && RUN_ERR
@@ -975,9 +954,6 @@ SRC=0311 && EXP=0 && RUN
 
 # arithmetic underflow
 SRC=0312 && EXP=255 && RUN_ERR
-
-# arithmetic overflow
-SRC=0313 && EXP=255 && RUN_ERR
 
 # extreme index exposes NASM overflow
 if [[ $MACHINE == x86_64 ]]; then SRC=0314 && EXP=255 && RUN_ERR; fi
@@ -989,10 +965,10 @@ SRC=0315 && EXP=255 && RUN_ERR
 SRC=0316 && EXP=0 && RUN
 
 # one-element lower failure without line output
-SRC=0317 && EXP=255 && OPTS="--vars=0x10000 --checks=lower --reproduce-source" RUN_ERR
+SRC=0317 && EXP=255 && OPTS="--vars=0x10000 --checks=lower" RUN_ERR
 
 # one-element upper failure without line output
-SRC=0318 && EXP=255 && OPTS="--vars=0x10000 --checks=upper --reproduce-source" RUN_ERR
+SRC=0318 && EXP=255 && OPTS="--vars=0x10000 --checks=upper" RUN_ERR
 
 # signed eight-bit index remains negative
 SRC=0319 && EXP=255 && RUN_ERR
@@ -1019,7 +995,7 @@ SRC=0325 && COMPERR
 SRC=0326 && EXP=0 && RUN
 
 # combined bounds checks without line output
-SRC=0327 && EXP=255 && OPTS="--vars=0x10000 --checks=upper,lower --reproduce-source" RUN_ERR
+SRC=0327 && EXP=255 && OPTS="--vars=0x10000 --checks=upper,lower" RUN_ERR
 
 # unary negative constant index is rejected at compile
 SRC=0328 && COMPERR
@@ -1063,7 +1039,7 @@ SRC=0340 && COMPERR
 # explicit zero-sized data arrays are invalid
 SRC=0341 && COMPERR
 
-# empty string fills a sized dat array with zeros
+# a sized dat array without an initializer is zeroed
 SRC=0342 && EXP=0 && RUN
 
 # assign an empty string to a sized array variable
@@ -1290,16 +1266,16 @@ SRC=0412 && DIFF
 SRC=0413 && EXP=0 && RUN
 
 # non-inline recursion: factorial results and caller-local preservation
-SRC=0413 && EXP=0 && OPTS="--vars=0x40000 --checks=frame --reproduce-source" RUN
+SRC=0413 && EXP=0 && OPTS="--vars=0x40000 --checks=frame" RUN
 
 # non-inline recursion: factorial results and caller-local preservation
-SRC=0413 && EXP=254 && OPTS="--vars=0x40 --checks=frame --reproduce-source" RUN_ERR
+SRC=0413 && EXP=254 && OPTS="--vars=0x40 --checks=frame" RUN_ERR
 
 # non-inline user types: nested fields, reference mutation, copies and returns
 SRC=0414 && EXP=0 && RUN
 
 # non-inline user types: nested fields, reference mutation, copies and returns
-SRC=0414 && EXP=0 && OPTS="--vars=0x40000 --checks=frame --reproduce-source" RUN
+SRC=0414 && EXP=0 && OPTS="--vars=0x40000 --checks=frame" RUN
 
 # non-inline return value cannot be discarded
 SRC=0415 && COMPERR
@@ -1364,10 +1340,10 @@ SRC=0433 && EXP=0 && RUN
 SRC=0434 && EXP=0 && RUN
 
 # non-inline recursion, references, aggregate returns and large local frames
-SRC=0434 && EXP=0 && OPTS="--vars=0x40000 --checks=upper,lower,line,frame --reproduce-source" RUN
+SRC=0434 && EXP=0 && OPTS="--vars=0x40000 --checks=upper,lower,line,frame" RUN
 
 # non-inline recursion, references, aggregate returns and large local frames
-SRC=0434 && EXP=254 && OPTS="--vars=0x1020 --checks=frame --reproduce-source" RUN_ERR
+SRC=0434 && EXP=254 && OPTS="--vars=0x1020 --checks=frame" RUN_ERR
 
 # arrays with omitted element type use the target's default integer type
 SRC=0435 && EXP=0 && RUN
@@ -1699,7 +1675,6 @@ if [[ $MACHINE == x86_64 ]]; then SRC=0536 && EXP=119 && RUN; fi
 
 # x86: a nested expression deeper than all fourteen scratch registers
 if [[ $MACHINE == x86_64 ]]; then SRC=0537 && COMPERR; fi
-# SRC=0538 && EXP=0 && RUN # note: generates a huge file and is very slow
 
 # natural alignment: words at multiples of 4 and half words at even offsets,
 # padding between and after fields is zero so instances compare byte by byte
@@ -2172,7 +2147,7 @@ SRC=0673 && EXP=0 && RUN
 # a constant added to or subtracted from a run-time index goes into the
 # displacement when bounds checks are off, with checks on the sum is computed
 # in the index register
-SRC=0673 && EXP=0 && OPTS="--reproduce-source" RUN
+SRC=0673 && EXP=0 && OPTS="" RUN
 
 # dat items and variables are addressed from one base: on rv32i the base is
 # the start of the variables so dat items have negative offsets
@@ -2252,7 +2227,7 @@ SRC=0697 && COMPERR
 SRC=0698 && EXP=3 && RUN
 
 # array_copy of an indexed struct element
-SRC=0105 && EXP=0 && OPTS="--reproduce-source" RUN
+SRC=0105 && EXP=0 && OPTS="" RUN
 
 # a let initializer starting with a symbol is not a constant
 SRC=0699 && COMPERR
@@ -2261,19 +2236,19 @@ SRC=0699 && COMPERR
 SRC=0700 && COMPERR
 
 # a negative count is rejected by the lower check alone
-SRC=0701 && EXP=255 && OPTS="--vars=0x10000 --checks=lower --reproduce-source" RUN_ERR
+SRC=0701 && EXP=255 && OPTS="--vars=0x10000 --checks=lower" RUN_ERR
 
 # a constant count is range checked by the lower check alone
-SRC=0702 && EXP=0 && OPTS="--vars=0x10000 --checks=lower --reproduce-source" RUN_ERR
+SRC=0702 && EXP=0 && OPTS="--vars=0x10000 --checks=lower" RUN_ERR
 
 # a global passed to a non-inline function that also names it shares storage
-SRC=0703 && OPTS="--vars=0x40000 --checks=upper,lower,line --reproduce-source" COMPERR
+SRC=0703 && OPTS="--vars=0x40000 --checks=upper,lower,line" COMPERR
 
 # a constant passed to a mut parameter cannot be written
 SRC=0704 && COMPERR
 
 # an error in a method body names the method call
-SRC=0705 && OPTS="--vars=0x40000 --checks=upper,lower,line --reproduce-source" COMPERR
+SRC=0705 && OPTS="--vars=0x40000 --checks=upper,lower,line" COMPERR
 
 # a constant element decides a boolean list passed to an inline function
 SRC=0706 && EXP=2 && RUN
@@ -2288,7 +2263,7 @@ SRC=0708 && COMPERR
 SRC=0709 && EXP=0 && RUN
 
 # an index ending in a multiplied or divided constant gets no displacement
-SRC=0710 && EXP=5 && OPTS="--reproduce-source" RUN
+SRC=0710 && EXP=5 && OPTS="" RUN
 
 # adding the most negative value of the width stays an addition
 SRC=0711 && EXP=0 && RUN
@@ -2403,7 +2378,7 @@ if [[ $MACHINE != x86_64 ]]; then SRC=0746 && EXP=101 && RUN; fi
 if [[ $MACHINE != x86_64 ]]; then SRC=0747 && EXP=2 && RUN; fi
 
 # a range with a runtime start and count when only the upper limit is checked
-SRC=0748 && OPTS="--vars=0x40000 --checks=upper --reproduce-source" DIFF
+SRC=0748 && OPTS="--vars=0x40000 --checks=upper" DIFF
 
 # rv32i: a constant shift count of a 32-bit value must be below 32
 if [[ $MACHINE != x86_64 ]]; then SRC=0749 && COMPERR; fi
@@ -2425,13 +2400,13 @@ SRC=0753 && EXP=5 && RUN
 SRC=0754 && EXP=21 && RUN
 
 # a global reaches a global named by a callee through two non-inline calls
-SRC=0755 && OPTS="--vars=0x40000 --checks=upper,lower,line --reproduce-source" COMPERR
+SRC=0755 && OPTS="--vars=0x40000 --checks=upper,lower,line" COMPERR
 
 # a recursive non-inline call is checked once
 SRC=0756 && EXP=0 && RUN
 
 # an indexed argument may be the array element a non-inline body names
-SRC=0757 && OPTS="--vars=0x40000 --checks=upper,lower,line --reproduce-source" COMPERR
+SRC=0757 && OPTS="--vars=0x40000 --checks=upper,lower,line" COMPERR
 
 # a type or array initializer without '{}' is the same as with an empty '{}'
 SRC=0758 && EXP=0 && RUN
@@ -2451,7 +2426,7 @@ SRC=0762 && EXP=0 && RUN
 # two array parameters, recursion, methods, a dat array and an uncalled
 # function
 SRC=0763 && EXP=0 && RUN
-SRC=0763 && EXP=0 && OPTS="--vars=0x40000 --checks=frame --reproduce-source" RUN
+SRC=0763 && EXP=0 && OPTS="--vars=0x40000 --checks=frame" RUN
 
 # a constant index out of bounds is found for the lengths of one call
 SRC=0764 && COMPERR
@@ -2639,9 +2614,6 @@ SRC=0823 && EXP=1 && RUN
 
 # an array declared without braces needs a size
 SRC=0824 && COMPERR
-
-# an array declared without braces needs a size
-SRC=0825 && COMPERR
 
 # a parameter has a name
 SRC=0826 && COMPERR
@@ -2993,26 +2965,26 @@ SRC=0941 && COMPERR
 
 # arrays of different element sizes that overlap are assumed to reach the
 # same bytes
-SRC=0942 && OPTS="--vars=0x40000 --checks=upper,lower,line --reproduce-source" COMPERR
+SRC=0942 && OPTS="--vars=0x40000 --checks=upper,lower,line" COMPERR
 
 # the aliasing is made inside the body of the function that passes a
 # parameter and a global that name the same data
-SRC=0943 && OPTS="--vars=0x40000 --checks=upper,lower,line --reproduce-source" COMPERR
+SRC=0943 && OPTS="--vars=0x40000 --checks=upper,lower,line" COMPERR
 
 # the same for non-inlined functions, the aliasing is made inside the body of
 # the function that passes a parameter and a global
-SRC=0944 && OPTS="--vars=0x40000 --checks=upper,lower,line --reproduce-source" COMPERR
+SRC=0944 && OPTS="--vars=0x40000 --checks=upper,lower,line" COMPERR
 
 # the element 'e' of a 'foo' is passed to a function that reads the array,
 # which can be the element itself
-SRC=0945 && OPTS="--vars=0x40000 --checks=upper,lower,line --reproduce-source" COMPERR
+SRC=0945 && OPTS="--vars=0x40000 --checks=upper,lower,line" COMPERR
 
 # the same for a non-inlined function
 SRC=0946 && COMPERR
 
 # a call result is written into the element 'e' of a 'foo' and the function
 # reads the array, which can be the element itself
-SRC=0947 && OPTS="--vars=0x40000 --checks=upper,lower,line --reproduce-source" COMPERR
+SRC=0947 && OPTS="--vars=0x40000 --checks=upper,lower,line" COMPERR
 
 # the element 'e' of a 'foo' is passed to a function that reads another
 # array, which is accepted
@@ -3044,7 +3016,7 @@ SRC=0954 && EXP=0 && RUN
 
 # two run-time indexes in a path, the read is of the same field of an element
 # that both indexes can select
-SRC=0955 && OPTS="--vars=0x40000 --checks=upper,lower,line --reproduce-source" COMPERR
+SRC=0955 && OPTS="--vars=0x40000 --checks=upper,lower,line" COMPERR
 
 # two run-time indexes in a path, the read is of another field of the
 # elements, which is accepted
@@ -3056,7 +3028,7 @@ SRC=0957 && EXP=0 && RUN
 
 # the destination has two run-time indexes and the read one, the read is of
 # the same field that the destination can select
-SRC=0958 && OPTS="--vars=0x40000 --checks=upper,lower,line --reproduce-source" COMPERR
+SRC=0958 && OPTS="--vars=0x40000 --checks=upper,lower,line" COMPERR
 
 # the destination has one run-time index and the read two, the fields in the
 # elements are different, which is accepted
@@ -3082,66 +3054,66 @@ SRC=0963 && EXP=0 && RUN
 SRC=0964 && EXP=0 && RUN
 
 # --checks=division: defined divisions pass
-SRC=0965 && EXP=0 && OPTS="--checks=division --reproduce-source" RUN_ERR
+SRC=0965 && EXP=0 && OPTS="--checks=division" RUN_ERR
 
 # --checks=division: zero divisor
-SRC=0966 && EXP=253 && OPTS="--checks=division --reproduce-source" RUN_ERR
+SRC=0966 && EXP=253 && OPTS="--checks=division" RUN_ERR
 
 # --checks=division: zero divisor of a remainder
-SRC=0967 && EXP=253 && OPTS="--checks=division --reproduce-source" RUN_ERR
+SRC=0967 && EXP=253 && OPTS="--checks=division" RUN_ERR
 
 # --checks=division: minimum divided by -1
-SRC=0968 && EXP=253 && OPTS="--checks=division --reproduce-source" RUN_ERR
+SRC=0968 && EXP=253 && OPTS="--checks=division" RUN_ERR
 
 # --checks=division: minimum of 'i8' divided by -1
-SRC=0969 && EXP=253 && OPTS="--checks=division --reproduce-source" RUN_ERR
+SRC=0969 && EXP=253 && OPTS="--checks=division" RUN_ERR
 
 if [[ $MACHINE == x86_64 ]]; then
     # --checks=division: minimum of 'i64' divided by -1, a trap of the hardware
-    SRC=0970 && EXP=253 && OPTS="--checks=division --reproduce-source" RUN_ERR
+    SRC=0970 && EXP=253 && OPTS="--checks=division" RUN_ERR
 fi
 
 # --checks=division,line: zero divisor with the line, the fpga prints nothing
-SRC=0971 && EXP=253 && OPTS="--checks=division,line --reproduce-source" RUN_ERR
+SRC=0971 && EXP=253 && OPTS="--checks=division,line" RUN_ERR
 
 # --checks=division,line: minimum divided by -1 with the line
-SRC=0972 && EXP=253 && OPTS="--checks=division,line --reproduce-source" RUN_ERR
+SRC=0972 && EXP=253 && OPTS="--checks=division,line" RUN_ERR
 
 # --checks=upper,division,line: a bounds failure next to the division handler
-SRC=0973 && EXP=255 && OPTS="--checks=upper,division,line --reproduce-source" RUN_ERR
+SRC=0973 && EXP=255 && OPTS="--checks=upper,division,line" RUN_ERR
 
 # --checks=upper,division,line: the failing one of two divisions
-SRC=0974 && EXP=253 && OPTS="--checks=upper,division,line --reproduce-source" RUN_ERR
+SRC=0974 && EXP=253 && OPTS="--checks=upper,division,line" RUN_ERR
 
 # --checks=shift: counts within the width pass
-SRC=0975 && EXP=0 && OPTS="--checks=shift --reproduce-source" RUN_ERR
+SRC=0975 && EXP=0 && OPTS="--checks=shift" RUN_ERR
 
 # --checks=shift: count not below the width
-SRC=0976 && EXP=252 && OPTS="--checks=shift --reproduce-source" RUN_ERR
+SRC=0976 && EXP=252 && OPTS="--checks=shift" RUN_ERR
 
 # --checks=shift: negative count
-SRC=0977 && EXP=252 && OPTS="--checks=shift --reproduce-source" RUN_ERR
+SRC=0977 && EXP=252 && OPTS="--checks=shift" RUN_ERR
 
 # --checks=shift: count not below the width of 'i32'
-SRC=0978 && EXP=252 && OPTS="--checks=shift --reproduce-source" RUN_ERR
+SRC=0978 && EXP=252 && OPTS="--checks=shift" RUN_ERR
 
 # --checks=shift,line: count not below the width with the line
-SRC=0979 && EXP=252 && OPTS="--checks=shift,line --reproduce-source" RUN_ERR
+SRC=0979 && EXP=252 && OPTS="--checks=shift,line" RUN_ERR
 
 # --checks=shift: constant count outside the width
 SRC=0980 && OPTS="--checks=shift" COMPERR
 
 # --checks=overlap: disjoint, adjacent, identical and shifted down ranges pass
-SRC=0981 && EXP=0 && OPTS="--checks=overlap --reproduce-source" RUN_ERR
+SRC=0981 && EXP=0 && OPTS="--checks=overlap" RUN_ERR
 
 # --checks=overlap: destination starts inside the source
-SRC=0982 && EXP=251 && OPTS="--checks=overlap --reproduce-source" RUN_ERR
+SRC=0982 && EXP=251 && OPTS="--checks=overlap" RUN_ERR
 
 # --checks=overlap: destination starts inside the source, runtime count
-SRC=0983 && EXP=251 && OPTS="--checks=overlap --reproduce-source" RUN_ERR
+SRC=0983 && EXP=251 && OPTS="--checks=overlap" RUN_ERR
 
 # --checks=overlap,line: overlapping copy with the line
-SRC=0984 && EXP=251 && OPTS="--checks=overlap,line --reproduce-source" RUN_ERR
+SRC=0984 && EXP=251 && OPTS="--checks=overlap,line" RUN_ERR
 
 # --checks=stack: recursion that fits in the stack
 SRC=0985 && EXP=0 && OPTS="--checks=stack" RUN
@@ -3150,14 +3122,14 @@ SRC=0985 && EXP=0 && OPTS="--checks=stack" RUN
 if [[ $MACHINE == x86_64 || $MACHINE == rv32i ]]; then SRC=0986 && EXP=0 && OPTS="--checks=stack" RUN; fi
 
 # --checks=stack: recursion deeper than the stack panics
-if [[ $MACHINE == rv32i-qemu || $MACHINE == rv32i-fpga ]]; then SRC=0986 && EXP=250 && OPTS="--stack=0x100 --checks=stack --reproduce-source" RUN_ERR; fi
+if [[ $MACHINE == rv32i-qemu || $MACHINE == rv32i-fpga ]]; then SRC=0986 && EXP=250 && OPTS="--stack=0x100 --checks=stack" RUN_ERR; fi
 
 # --memory: the stack starts at the end of a smaller memory and fits, the
 # emulator has more memory
 if [[ $MACHINE == rv32i-fpga ]]; then SRC=0985 && EXP=0 && OPTS="--memory=0x20000 --stack=0x1000 --checks=stack" RUN; fi
 
 # --memory: recursion deeper than the stack of a smaller memory panics
-if [[ $MACHINE == rv32i-fpga ]]; then SRC=0986 && EXP=250 && OPTS="--memory=0x20000 --stack=0x100 --checks=stack --reproduce-source" RUN_ERR; fi
+if [[ $MACHINE == rv32i-fpga ]]; then SRC=0986 && EXP=250 && OPTS="--memory=0x20000 --stack=0x100 --checks=stack" RUN_ERR; fi
 
 # --checks=lower,stack: the check keeps the registers the call still uses
 SRC=0987 && EXP=0 && OPTS="--checks=lower,stack" RUN
@@ -3166,31 +3138,31 @@ SRC=0987 && EXP=0 && OPTS="--checks=lower,stack" RUN
 SRC=0988 && EXP=0 && OPTS="--checks=overflow" RUN
 
 # --checks=overflow: signed overflow of each operation
-SRC=0989 && EXP=249 && OPTS="--checks=overflow --reproduce-source" RUN_ERR
-SRC=0990 && EXP=249 && OPTS="--checks=overflow --reproduce-source" RUN_ERR
-SRC=0991 && EXP=249 && OPTS="--checks=overflow --reproduce-source" RUN_ERR
-SRC=0992 && EXP=249 && OPTS="--checks=overflow --reproduce-source" RUN_ERR
-SRC=0993 && EXP=249 && OPTS="--checks=overflow --reproduce-source" RUN_ERR
+SRC=0989 && EXP=249 && OPTS="--checks=overflow" RUN_ERR
+SRC=0990 && EXP=249 && OPTS="--checks=overflow" RUN_ERR
+SRC=0991 && EXP=249 && OPTS="--checks=overflow" RUN_ERR
+SRC=0992 && EXP=249 && OPTS="--checks=overflow" RUN_ERR
+SRC=0993 && EXP=249 && OPTS="--checks=overflow" RUN_ERR
 
 # --checks=overflow,line: overflow with the line
-SRC=0994 && EXP=249 && OPTS="--checks=overflow,line --reproduce-source" RUN_ERR
+SRC=0994 && EXP=249 && OPTS="--checks=overflow,line" RUN_ERR
 
 # --checks=overflow: constant expression that overflows
 SRC=0995 && OPTS="--checks=overflow" COMPERR
 
 # --checks=overflow: product by a constant and a narrow array element
-SRC=0996 && EXP=249 && OPTS="--checks=overflow --reproduce-source" RUN_ERR
-SRC=0997 && EXP=249 && OPTS="--checks=overflow --reproduce-source" RUN_ERR
+SRC=0996 && EXP=249 && OPTS="--checks=overflow" RUN_ERR
+SRC=0997 && EXP=249 && OPTS="--checks=overflow" RUN_ERR
 
 # --checks=overflow: 64 bit only on x86_64
-if [[ $MACHINE == x86_64 ]]; then SRC=0998 && EXP=249 && OPTS="--checks=overflow --reproduce-source" RUN_ERR; fi
+if [[ $MACHINE == x86_64 ]]; then SRC=0998 && EXP=249 && OPTS="--checks=overflow" RUN_ERR; fi
 
 # --checks=overflow: a bitwise operation with a constant that changes nothing
 SRC=0999 && EXP=0 && OPTS="--checks=overflow" RUN
 
 # --checks=overflow: the negation of the minimum as an operand of a bitwise operation
-SRC=1000 && EXP=249 && OPTS="--checks=overflow --reproduce-source" RUN_ERR
-SRC=1001 && EXP=249 && OPTS="--checks=overflow --reproduce-source" RUN_ERR
+SRC=1000 && EXP=249 && OPTS="--checks=overflow" RUN_ERR
+SRC=1001 && EXP=249 && OPTS="--checks=overflow" RUN_ERR
 
 # --checks=overflow: the negation of the minimum of a typed constant is rejected
 SRC=1002 && OPTS="--checks=overflow" COMPERR
@@ -3208,8 +3180,8 @@ SRC=1005 && EXP=5 && RUN
 SRC=1006 && COMPERR
 
 # --checks=overflow: the negation of the minimum of a narrow type in a sum or difference
-SRC=1007 && EXP=249 && OPTS="--checks=overflow --reproduce-source" RUN_ERR
-SRC=1008 && EXP=249 && OPTS="--checks=overflow --reproduce-source" RUN_ERR
+SRC=1007 && EXP=249 && OPTS="--checks=overflow" RUN_ERR
+SRC=1008 && EXP=249 && OPTS="--checks=overflow" RUN_ERR
 
 # a built-in call needs a ',' between the arguments
 SRC=1009 && COMPERR
@@ -3246,7 +3218,7 @@ if [[ $MACHINE == x86_64 ]]; then SRC=1018 && COMPERR; fi
 SRC=1019 && COMPERR
 
 # a variable declared from an expression has the type of its first element, the sum overflows as an i8
-SRC=1020 && EXP=249 && OPTS="--checks=overflow --reproduce-source" RUN_ERR
+SRC=1020 && EXP=249 && OPTS="--checks=overflow" RUN_ERR
 
 # a comparison operand whose later element is wider than the first is narrowed
 SRC=1021 && COMPERR
@@ -3333,7 +3305,7 @@ if [[ $MACHINE == x86_64 || $MACHINE == rv32i ]]; then SRC=1046 && EXP=248 && SD
 if [[ $MACHINE == x86_64 ]]; then SRC=1047 && EXP=248 && SDCARD=1M RUN_ERR; fi
 
 # an sd card image that cannot be opened panics
-if [[ $MACHINE == x86_64 || $MACHINE == rv32i ]]; then SRC=1048 && EXP=248 && OPTS="--sdcard=missing.img --reproduce-source" RUN_ERR; fi
+if [[ $MACHINE == x86_64 || $MACHINE == rv32i ]]; then SRC=1048 && EXP=248 && OPTS="--sdcard=missing.img" RUN_ERR; fi
 
 # a sector is a whole number of elements of the buffer
 if [[ $MACHINE != rv32i-qemu ]]; then SRC=1049 && COMPERR; fi
@@ -3548,7 +3520,7 @@ if [[ $MACHINE == x86_64 || $MACHINE == rv32i ]]; then SRC=1110 && EXP=0 && RUN;
 
 # a negative index fails the bounds check with both bounds enabled, the
 # handler without a line prints only its message
-SRC=1111 && EXP=255 && OPTS="--vars=0x10000 --checks=upper,lower --reproduce-source" RUN_ERR
+SRC=1111 && EXP=255 && OPTS="--vars=0x10000 --checks=upper,lower" RUN_ERR
 
 # a unary operator before a character literal inside parentheses
 SRC=1112 && EXP=34 && RUN
@@ -3580,7 +3552,7 @@ SRC=1120 && COMPERR
 # a constant count of zero at the end of the array copies nothing, with and
 # without the checks
 SRC=1121 && EXP=0 && RUN
-SRC=1121 && EXP=0 && OPTS="--reproduce-source" RUN
+SRC=1121 && EXP=0 && OPTS="" RUN
 
 # a negative constant 'foo' count is rejected
 SRC=1122 && COMPERR
@@ -3601,7 +3573,7 @@ SRC=1125 && COMPERR
 if [[ $MACHINE == x86_64 ]]; then
     SRC=1126 && OPTS="--checks=noub" COMPERR
 else
-    SRC=1126 && OPTS="--vars=0x40000 --checks=noub --reproduce-source" EXP=0 RUN
+    SRC=1126 && OPTS="--vars=0x40000 --checks=noub" EXP=0 RUN
 fi
 
 # a keyword is not a variable name, 'else = 7' after an 'if' would be read as
@@ -3626,12 +3598,12 @@ SRC=1131 && EXP=3 && RUN
 SRC=1132 && EXP=0 && RUN
 
 # 'array_length' as the left side of a multiplication by a run-time value
-SRC=1133 && EXP=6 && OPTS="--vars=0x40000 --checks=noub,line --reproduce-source" RUN
+SRC=1133 && EXP=6 && OPTS="--vars=0x40000 --checks=noub,line" RUN
 
 # the checked multiply on rv32i changes 'a4', which the deep sum holds; x86_64
 # has too few registers for the sum
 if [[ $MACHINE != x86_64 ]]; then
-    SRC=1134 && EXP=11 && OPTS="--vars=0x40000 --checks=overflow --reproduce-source" RUN
+    SRC=1134 && EXP=11 && OPTS="--vars=0x40000 --checks=overflow" RUN
 fi
 
 # a token made only of utf-8 continuation bytes is reported with a caret
@@ -3952,11 +3924,11 @@ if [[ $MACHINE == rv32i* ]]; then SRC=1224 && EXP=3 && RUN; fi
 
 # --checks=shift: the count of a shift in an 'i8' expression is compared with
 # the width of 'i8' also when the expression is computed in a wider register
-SRC=1225 && EXP=252 && OPTS="--checks=shift --reproduce-source" RUN_ERR
+SRC=1225 && EXP=252 && OPTS="--checks=shift" RUN_ERR
 
 # --checks=shift: a shift in the argument of a conversion to a narrower type
 # is checked against the width of the argument, in a register and in memory
-SRC=1226 && EXP=5 && OPTS="--vars=0x40000 --checks=shift --reproduce-source" RUN
+SRC=1226 && EXP=5 && OPTS="--vars=0x40000 --checks=shift" RUN
 
 # an array copy in an inlined body on rv32i: the version that folds the
 # indexed arguments into registers runs out of registers inside the copy and
@@ -3995,7 +3967,7 @@ SRC=1234 && EXP=40 && RUN
 
 # --checks=overflow: the negation of a conversion is checked at the width of
 # its destination at run time
-SRC=1235 && EXP=249 && OPTS="--checks=overflow --reproduce-source" RUN_ERR
+SRC=1235 && EXP=249 && OPTS="--checks=overflow" RUN_ERR
 
 # the 'n' of a 'foo' over an unsized array parameter is the length of the
 # argument, also where a 'let' reads it
@@ -4385,7 +4357,7 @@ SRC=1340 && EXP=0 && RUN
 
 # --checks=overflow: the negation of a conversion used at a wider width than
 # its type does not overflow
-SRC=1341 && EXP=0 && OPTS="--checks=overflow --reproduce-source" RUN_ERR
+SRC=1341 && EXP=0 && OPTS="--checks=overflow" RUN_ERR
 
 # the unary ops of a conversion of a constant apply where its value is used,
 # like those of a constant of its type
@@ -4393,7 +4365,7 @@ SRC=1342 && EXP=0 && RUN
 
 # --checks=overflow: the negation of a conversion of a constant used at a
 # wider width than its type does not overflow
-SRC=1343 && EXP=0 && OPTS="--checks=overflow --reproduce-source" RUN_ERR
+SRC=1343 && EXP=0 && OPTS="--checks=overflow" RUN_ERR
 
 # a noinline recursion that swaps a global and a local argument is checked for
 # both kinds of call and ends
@@ -4425,7 +4397,7 @@ SRC=1351 && EXP=0 && RUN
 
 # --checks=overflow: the body of an inlined function called in the argument of
 # a conversion is checked, only the conversion's own arithmetic wraps
-SRC=1352 && EXP=249 && OPTS="--checks=overflow --reproduce-source" RUN_ERR
+SRC=1352 && EXP=249 && OPTS="--checks=overflow" RUN_ERR
 
 # a folded conversion passed to an inlined function is a value of the type of
 # the parameter, its unary ops apply at that type
@@ -4437,7 +4409,7 @@ SRC=1354 && OPTS="--checks=overflow" COMPERR
 
 # --checks=upper: a range whose start plus count passes the signed maximum is
 # out of bounds also without the lower bound check
-SRC=1355 && EXP=255 && OPTS="--checks=upper --reproduce-source" RUN_ERR
+SRC=1355 && EXP=255 && OPTS="--checks=upper" RUN_ERR
 
 # the check of an uncalled inlined function with a result has the registers
 # of a noinline body and reaches the result through an address, so an
@@ -4538,14 +4510,14 @@ SRC=1380 && EXP=0 && OPTS="--checks=overflow" RUN
 
 # the '-' of a conversion overflows at the width of its use under the
 # overflow check
-SRC=1381 && EXP=249 && OPTS="--checks=overflow --reproduce-source" RUN_ERR
+SRC=1381 && EXP=249 && OPTS="--checks=overflow" RUN_ERR
 
 # the unary ops of a call in the argument of a conversion wrap under the
 # overflow check, as the argument's arithmetic does
 SRC=1382 && EXP=0 && OPTS="--checks=overflow" RUN
 
 # the arguments of a call in the argument of a conversion are checked
-SRC=1383 && EXP=249 && OPTS="--checks=overflow --reproduce-source" RUN_ERR
+SRC=1383 && EXP=249 && OPTS="--checks=overflow" RUN_ERR
 
 # an instance is not a number: a whole value, an operand, an element of an
 # array of instances on every target, a 'bool' destination and an index
@@ -4580,18 +4552,18 @@ SRC=1400 && COMPERR
 
 # a part read under another name of the destination: a parameter, inline and
 # noinline, the element of a 'foo', and a local that hides the global
-SRC=1401 && OPTS="--vars=0x40000 --checks=upper,lower,line --reproduce-source" COMPERR
-SRC=1402 && OPTS="--vars=0x40000 --checks=upper,lower,line --reproduce-source" COMPERR
+SRC=1401 && OPTS="--vars=0x40000 --checks=upper,lower,line" COMPERR
+SRC=1402 && OPTS="--vars=0x40000 --checks=upper,lower,line" COMPERR
 SRC=1403 && COMPERR
 SRC=1404 && EXP=0 && RUN
 
 # a part read under another name of the destination: while it is computed,
 # inline and noinline, not written yet and already written, rejected as storage
 # that may be shared
-SRC=1405 && OPTS="--vars=0x40000 --checks=upper,lower,line --reproduce-source" COMPERR
-SRC=1406 && OPTS="--vars=0x40000 --checks=upper,lower,line --reproduce-source" COMPERR
-SRC=1407 && OPTS="--vars=0x40000 --checks=upper,lower,line --reproduce-source" COMPERR
-SRC=1408 && OPTS="--vars=0x40000 --checks=upper,lower,line --reproduce-source" COMPERR
+SRC=1405 && OPTS="--vars=0x40000 --checks=upper,lower,line" COMPERR
+SRC=1406 && OPTS="--vars=0x40000 --checks=upper,lower,line" COMPERR
+SRC=1407 && OPTS="--vars=0x40000 --checks=upper,lower,line" COMPERR
+SRC=1408 && OPTS="--vars=0x40000 --checks=upper,lower,line" COMPERR
 SRC=1409 && COMPERR
 SRC=1410 && COMPERR
 
@@ -4751,8 +4723,6 @@ SRC=1484 && COMPERR
 SRC=1485 && COMPERR
 SRC=1486 && COMPERR
 SRC=1487 && EXP=19 && RUN
-SRC=1488 && COMPERR
-SRC=1489 && COMPERR
 
 # '{}' is a whole value of a typed destination, not an operand
 SRC=1490 && COMPERR
@@ -6384,9 +6354,6 @@ SRC=2010 && COMPERR
 # an array receiver of a generic method whose instance has an error
 SRC=2011 && COMPERR
 
-# a 'var' initializer that starts with '{...}'
-SRC=2012 && COMPERR
-
 # a 'let' initializer that is '{}'
 SRC=2013 && COMPERR
 
@@ -6538,7 +6505,7 @@ SRC=2061 && COMPERR
 SRC=2062 && COMPERR
 
 # the overflow of a constant step reports the line of the constant
-SRC=2063 && EXP=249 && OPTS="--checks=overflow,line --reproduce-source" RUN_ERR
+SRC=2063 && EXP=249 && OPTS="--checks=overflow,line" RUN_ERR
 
 # a call outside a function is reported before its callee is looked up
 SRC=2064 && COMPERR
@@ -6846,3 +6813,46 @@ SRC=2205 && COMPERR
 
 # a method definition without its '('
 SRC=2206 && COMPERR
+
+# every check of '--checks=noub' changes the code on rv32i-fpga, see
+# 'CLI_CHECKS_NOUB' of 'test-cli.sh'
+SRC=2207 && EXP=1 && OPTS="--checks=noub" RUN
+
+# a constant index past the length an unsized array parameter gets from its
+# call, in an array size
+SRC=2208 && COMPERR
+
+# a literal reached into by a field or an index is not an operand
+SRC=2209 && COMPERR
+SRC=2210 && COMPERR
+SRC=2211 && COMPERR
+SRC=2212 && COMPERR
+
+# a field of a call's result where an array is expected
+SRC=2213 && COMPERR
+SRC=2214 && COMPERR
+
+# an unsupported escape in a character literal before its length
+SRC=2215 && COMPERR
+
+# a call or a literal reached into where an array is expected
+SRC=2216 && COMPERR
+SRC=2217 && COMPERR
+SRC=2218 && COMPERR
+SRC=2219 && COMPERR
+
+# an unsupported escape after the first byte of a character literal
+SRC=2220 && COMPERR
+
+# a zero value reached into
+SRC=2221 && COMPERR
+SRC=2222 && COMPERR
+
+# a generic call deduced from its argument, a generic call with nested type
+# arguments and an index of a call where an array is expected
+SRC=2223 && COMPERR
+SRC=2224 && COMPERR
+SRC=2225 && COMPERR
+
+# a constructor call reached into where an array is expected
+SRC=2226 && COMPERR

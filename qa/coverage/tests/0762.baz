@@ -64,7 +64,7 @@ func main() {
     r = via_inline(b)
     if r != 15 exit(12)
 
-    var c = i32[3]{}
+    var c = i32[3]
     copy_all(a, c)
     if c[0] != 1 or c[2] != 3 exit(13)
 

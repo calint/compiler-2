@@ -10,6 +10,6 @@ func inspect(points mut point[]) {
 }
 
 func main() {
-    var points = point[2]{}
+    var points = point[2]
     inspect(points)
 }

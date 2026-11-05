@@ -20,7 +20,7 @@ func faz(x i32, y i32) res i32 {
 }
 
 func main() {
-    var values = i32[4]{}
+    var values = i32[4]
     values[1] = 4
     values[2] = 3
 

@@ -2283,10 +2283,7 @@ class stmt_call final : public statement {
                             in_quotes(callee().name()))};
         }
 
-        throw compile_error{
-            tz, std::format("store the result of {} in a variable before "
-                            "reading a field or calling a method of it",
-                            in_quotes(callee().name()))};
+        throw_result_not_stored(tz, callee().name());
     }
 
     // the result has the type of the destination or is a narrower integer,

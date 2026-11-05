@@ -1,8 +1,8 @@
 # a negative 'arrays_equal' count with start elements panics
 
 func main() {
-    var buf = i8[4]{}
-    var a = i8[4]{}
+    var buf = i8[4]
+    var a = i8[4]
     var k = 1
     var n = -1
     var e = arrays_equal(a[k], buf[k], n)

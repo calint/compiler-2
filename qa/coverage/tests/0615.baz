@@ -7,6 +7,6 @@ func mut point.move(dx) {
 }
 
 func main() {
-    var p = point{}
+    var p = point
     p.jump(1)
 }

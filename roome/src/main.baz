@@ -137,8 +137,6 @@ dat    str_hello = "\nwelcome to adventure #7\n    type 'help'\n"
 dat   str_prompt = " > "
 dat str_turn_end = "--\n"
 
-dat flag = "\n\nFLAG\n\n"
-
 func main() {
     run_creation_script()
 

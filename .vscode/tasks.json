@@ -18,7 +18,8 @@
         },
         {
             "label": "baz: run tests",
-            "command": "test-coverage.sh",
+            "command": "./test-coverage.sh",
+            "args": ["run"],
             "options": {
                 "cwd": "${workspaceFolder}/qa/coverage/"
             },
@@ -26,7 +27,7 @@
         },
         {
             "label": "baz: clang tidy",
-            "command": "clang-tidy.sh",
+            "command": "./clang-tidy.sh",
             "options": {
                 "cwd": "${workspaceFolder}/qa/lint/"
             },

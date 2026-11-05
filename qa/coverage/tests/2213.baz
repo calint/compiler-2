@@ -1,0 +1,11 @@
+# a field of a call's result where an array is expected, the result is
+# stored first
+type pt { x, a i8[3] }
+
+func mk() res pt {
+    res = {}
+}
+
+func main() {
+    exit(array_length(mk().a))
+}

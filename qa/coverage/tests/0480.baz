@@ -6,6 +6,6 @@ func first(values i32[]) res {
     res = 1
 }
 func main() {
-    var values = i32[2]{}
+    var values = i32[2]
     var r = first(values)
 }

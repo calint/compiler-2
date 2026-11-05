@@ -179,10 +179,10 @@ examples:
 ```text
 Language                     files          blank        comment           code
 -------------------------------------------------------------------------------
-C/C++ Header                    65           9115           6774          26633
+C/C++ Header                    65           9122           6779          26650
 C++                              1            235             97            864
 -------------------------------------------------------------------------------
-SUM:                            66           9350           6871          27497
+SUM:                            66           9357           6876          27514
 -------------------------------------------------------------------------------
 ```
 
@@ -213,7 +213,7 @@ type str {
     # trailing comma allowed
 }
 
-# initial data is declared before variables
+# initial data, placed before the variables whatever the source order
 
 dat   hello = "hello world from baz\n"
 dat prompt1 = "enter name:\n"

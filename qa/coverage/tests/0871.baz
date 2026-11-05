@@ -36,7 +36,7 @@ func main() {
     var p = point{1, 2}
     p = swap(p)
 
-    var ps = point[2]{}
+    var ps = point[2]
     ps[1] = swap(ps[1])
 
     bump(total)

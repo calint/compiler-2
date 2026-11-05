@@ -11,7 +11,7 @@ func count_of(s i8[]) res {
 
 func main() {
     var a = i32[4]{1, 2, 3, 4}
-    var b = i32[4]{}
+    var b = i32[4]
     var n = 0
 
     assert(1, array_length(a) == 4)
@@ -35,7 +35,7 @@ func main() {
     assert(7, n == -4)
 
     # an inline parameter sized by the argument
-    var s = i8[6]{}
+    var s = i8[6]
     assert(8, count_of(s) == 6)
 
     exit(0)

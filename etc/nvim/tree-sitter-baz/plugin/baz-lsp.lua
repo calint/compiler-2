@@ -40,9 +40,10 @@ local builtin_function_names =
   "array_copy array_length arrays_equal read write sector_read sector_write exit"
 local builtin_functions = word_set(builtin_function_names)
 
--- the names the compiler rejects ('reserved_names' in 'src/token.hpp'): a
--- keyword names nothing, a built-in type or function names no declaration but
--- a member or a method, which is always reached through a value
+-- the names the compiler rejects ('keywords' and 'builtin_functions' of
+-- 'reserved_names' in 'src/token.hpp', and the built-in types): a keyword
+-- names nothing, a built-in type or function names no declaration but a
+-- member or a method, which is always reached through a value
 local keywords = word_set("func noinline mut type dat var let foo loop if else "
   .. "continue break return self and or not true false include")
 local builtin_names = word_set("bool int i8 i16 i32 i64 " .. builtin_function_names)

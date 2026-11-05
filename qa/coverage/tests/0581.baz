@@ -5,6 +5,6 @@ func f(v i32) result i32 {
 }
 
 func main() {
-    var arr = i32[2]{}
+    var arr = i32[2]
     var x = f(arr)
 }

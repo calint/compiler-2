@@ -1,0 +1,4 @@
+
+2212.baz:3:13: an array literal is not an operand here, store it in a variable first
+    var s = i8[]{1, 2}[1]
+            ^~

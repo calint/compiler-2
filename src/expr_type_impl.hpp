@@ -71,12 +71,13 @@ inline expr_type::expr_type(toc& tc, tokenizer& tz, const type& tp,
 
     // e.g. 'point{1, 2}' for a field of type 'point' is '{1, 2}'
     if (is_typed_literal and typing == literal_typing::from_destination) {
-        throw_known_literal_type(tz, tok(), "an instance", tp, tp.name());
+        throw_known_literal_type(tz, tok(), value_kind::instance, tp,
+                                 tp.name());
     }
 
     // e.g. 'var p = point', no fields are listed
     if (is_bare) {
-        assert_value_ends(tz, tok(), "an instance", tp);
+        assert_value_ends(tz, tok(), value_kind::instance, tp);
         return;
     }
 
@@ -103,7 +104,7 @@ inline expr_type::expr_type(toc& tc, tokenizer& tz, const type& tp,
     // e.g. 'p = pt', the token is empty at '{x, y}'
     if (not tok().is_none() and not is_typed_literal) {
         parse_copy_source(tc, tz, tm);
-        assert_value_ends(tz, tok(), "an instance", tp);
+        assert_value_ends(tz, tok(), value_kind::instance, tp);
         return;
     }
 
@@ -111,7 +112,7 @@ inline expr_type::expr_type(toc& tc, tokenizer& tz, const type& tp,
     assert_no_value_operator(tz, instance_text);
 
     parse_fields(tc, tz);
-    assert_value_ends(tz, tok(), "an instance", tp);
+    assert_value_ends(tz, tok(), value_kind::instance, tp);
 }
 
 // the fields of 'tp' in braces, e.g. '{x, y}' of 'obj.pos = {x, y}'

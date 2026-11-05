@@ -51,7 +51,7 @@ func main() {
     assert(20, c == 'X')
     var n = i8('\xff')
     assert(21, n == -1)
-    var buf = i8[' ']{}
+    var buf = i8[' ']
     assert(22, array_length(buf) == 32)
     assert(23, is_digit('7') and not is_digit('a'))
 

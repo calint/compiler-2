@@ -9,8 +9,8 @@ func noinline f<A type, B type>(p A, q B) res i32 {
 }
 
 func noinline g() res i32 {
-    var pa = a{}
-    var pb = b{}
+    var pa = a
+    var pb = b
     res = f(pa, pb)
 }
 
@@ -21,8 +21,8 @@ func noinline f.a<T type>(q T) res i32 {
 }
 
 func main() {
-    var pb = b{}
-    var pf = f{}
+    var pb = b
+    var pf = f
     var r = pf.a(pb)
     exit(g() + r)
 }

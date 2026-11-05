@@ -28,7 +28,7 @@ func main() {
     assert(3, ps[2].a == 5 and ps[2].b == 6)
 
     # assigned later, with a listed element after the calls
-    var qs = pair[3]{}
+    var qs = pair[3]
     qs = {pair.at(7, 8), pair.at(9, 10)}
     assert(4, qs[0].a == 7 and qs[0].b == 8)
     assert(5, qs[1].a == 9 and qs[1].b == 10)

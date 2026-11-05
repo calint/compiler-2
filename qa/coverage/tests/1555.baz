@@ -7,6 +7,6 @@ let m = 4
 type str = list<i8>
 
 func main() {
-    var s = str{}
+    var s = str
     exit(s.len)
 }

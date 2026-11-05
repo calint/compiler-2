@@ -5,7 +5,7 @@ func print(str i8[], len) {
 }
 
 func noinline print_num(num) {
-    var buf = i8[20]{}
+    var buf = i8[20]
     var n = num
     var negative = n < 0
     if not negative n = -n
@@ -35,7 +35,7 @@ func noinline print_num(num) {
 }
 
 func main() {
-    var newline = i8[1]{}
+    var newline = i8[1]
     newline[0] = 10
     var first = 123
     var second = -2147483648

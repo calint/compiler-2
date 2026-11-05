@@ -13,7 +13,7 @@ func input(str mut i8[], len) nbytes {
 }
 
 func print_num(num) {
-    var buf = i8[20]{}
+    var buf = i8[20]
     var n = num
     var is_negative = false
     
@@ -49,7 +49,7 @@ func print_num(num) {
 }
 
 func main() {
-  var nl = i8[1]{}
+  var nl = i8[1]
   nl[0] = 10
 
   var i1 = 123

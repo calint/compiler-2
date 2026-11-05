@@ -434,7 +434,10 @@ result, a 'return' before it is set and a statement after a path that cannot
 continue are rejected. In a compile with the constants of a call skipped code is
 not checked, a constant argument decides it: 'if b != 0 { res = a / b }' in
 'ratio(10, 0)' guards the division, and the check of the body without its
-calls, where the guard does not fold, holds the rules in it.
+calls, where the guard does not fold, holds the rules in it. That check has no
+array lengths, so a rule that needs the length a call gives an unsized array
+parameter does not hold in skipped code, e.g. 'if false { res = x[5] }' at a
+call that gives 'x' 4 elements is accepted (etc/todo.txt).
 
 ### 1.6 Reports
 
@@ -1565,8 +1568,9 @@ A 'dat' is placed by the parse: 'toc::add_dat' gives it the next offset in
 'data_table' and declares its name, so the dats are all placed when the
 parse ends and the variables start at a fixed point after them
 ('storage_layout::vars_start_bytes'), whatever the order of dats and
-variables in the source. The compile declares it again like a global ('toc::add_var'), and
-'program::emit_data_section' writes its bytes ('stmt_def_dat::compile_data').
+variables in the source. The compile declares it again like a global
+('toc::add_var'), and 'program::emit_data_section' writes its bytes
+('stmt_def_dat::compile_data').
 
 x86_64 addresses variables from 'rbp', which points at the data: the variables
 follow the dats after the padding that aligns them ('dat var padding' in the

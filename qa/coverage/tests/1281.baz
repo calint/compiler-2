@@ -11,7 +11,7 @@ func make() res big {
 
 func main() {
     var h = holder{make(), 1}
-    var g = holder{}
+    var g = holder
     g.v.x[3999].b = 7
     g.n = 1
     var ret = 0

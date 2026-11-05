@@ -3,8 +3,8 @@
 type limits { index }
 
 func main() {
-    var values = i8[8]{}
-    var lim = limits{}
+    var values = i8[8]
+    var lim = limits
     lim.index = 8
     values[lim.index] = 1
 }

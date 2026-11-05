@@ -1,0 +1,16 @@
+# a method call reached into where an array is expected, the result is
+# stored first
+type pt { x, a i8[3] }
+
+func gm<T type>() res pt {
+    res = {}
+}
+
+func pt.m() res pt {
+    res = {}
+}
+
+func main() {
+    var p = pt
+    exit(array_length(p.m().a))
+}

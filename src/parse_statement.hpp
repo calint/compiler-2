@@ -377,8 +377,7 @@ inline auto parse_operand(toc& tc, tokenizer& tz, unary_ops uops,
     if (tm == term_kind::array_literal or
         (tk.is_none() and is_default_array_literal(tz))) {
 
-        throw compile_error{tk, "an array literal is not an operand here, "
-                                "store it in a variable first"};
+        throw_literal_not_operand(tk, "an array literal");
     }
 
     if (tk.is_none()) {
@@ -394,10 +393,8 @@ inline auto parse_operand(toc& tc, tokenizer& tz, unary_ops uops,
     // e.g. the 'point{1, 2}' of 'p == point{1, 2}', an instance is compared
     // as memory, which only a variable has
     if (tm == term_kind::record_literal) {
-        throw compile_error{
-            tk, std::format("an instance literal of {} is not an operand "
-                            "here, store it in a variable first",
-                            in_quotes(tk.text()))};
+        throw_literal_not_operand(
+            tk, std::format("an instance literal of {}", in_quotes(tk.text())));
     }
 
     if (std::unique_ptr<statement> builtin{

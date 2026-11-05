@@ -6,7 +6,7 @@ func assert(code, condition bool) {
 
 func main() {
     var a = i8[]{1, 2, 3, 4}
-    var b = i8[4]{}
+    var b = i8[4]
     array_copy(a[2], b[2], 2)
     assert(1, b[2] == 3 and b[3] == 4)
     array_copy(a, b, 4)

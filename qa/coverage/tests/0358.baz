@@ -13,7 +13,7 @@ func main() {
     var compare = i8[2]{ 1, 2 }
     var result_value = result{ arrays_equal(source, compare, 2) }
     assert(result_value.equal)
-    var results = result[2]{}
+    var results = result[2]
     var index = i32(1)
     results[index].equal = arrays_equal(source, compare, 2)
     assert(results[index].equal)

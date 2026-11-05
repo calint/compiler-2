@@ -78,6 +78,28 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
        check an uncalled inlined function with every register free, as a
        caller at the top of 'main' gives, and excuse call-dependent errors
        only when the function takes arguments
+[ ] medium: low priority: code skipped by a condition known at the parse in
+    a function with an unsized array parameter is never checked against the
+    length a call gives (round 92 J1): 'if false { res = x[5] }' in
+    'g(x i8[])' called with 4 elements is accepted, the same in 'main' with
+    an 'i8[4]' is rejected; likewise 'array_copy', '{...}' too long, a
+    string too long, 'array_length(x[5].a)' and the compare of two lengths
+    in such code; no UB, the code never runs; 'toc::check_skipped' returns
+    in a compile with a call's constants and 'stmt_def_func::check_body'
+    runs without lengths
+    => fix if wanted: at a call, compile in a dry run the code skipped by a
+       decision known at the parse ('stmt_if::branch::constant_at_parse',
+       the 'else' after a branch true at the parse, a 'foo' count and the
+       'and'/'or' operands that fold at the parse, the code after a path
+       that leaves at the parse) as 'main' does; code a call's constant
+       skips stays unchecked; measure the compile time, and a recursive
+       inlined call in parse-dead code would then expand to the depth limit
+       as it does in 'main'; rejected: a body check per array-length tuple
+       (rejects code guarded by a length, 'if array_length(x) == 4 {} else
+       { x[5] }')
+    => not done (2026-11-05, round 94): the no-UB guarantee does not need
+       it, the code never runs, and a dry run at every call in four kinds
+       of skipped code goes against the simplicity goal of AGENTS.md
 [ ] medium: aliasing: 'destination' as a variant '{none, reg, storage}';
     the storage part is done ('std::optional<stored_name>', the kind follows
     from the members, 'ident_info.hpp'), the operand still sits outside it

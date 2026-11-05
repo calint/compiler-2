@@ -7,8 +7,8 @@ func mk() res left {
 }
 
 func main() {
-    var ll = left{}
-    var l = left{}
+    var ll = left
+    var l = left
     var a = i8[2]
     var b = i8[2]
     l = mk() + 1

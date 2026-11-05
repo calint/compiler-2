@@ -1,4 +1,7 @@
 qa/fpga-work/
+# the listings of run.sh and of scripts/fpga-flash.sh
+roome.s
+src/main.s
 # the sd card of run.sh
 sdcard.img
 # the output of the last run of qa/test.sh

@@ -1,7 +1,0 @@
-# arithmetic overflow
-
-func main() {
-    var arr = i8[8]{}
-    var index = 7
-    arr[index + 1] = 1
-}

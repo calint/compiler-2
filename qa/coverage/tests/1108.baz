@@ -9,7 +9,7 @@ func nested(source packed[], destination mut packed[]) count {
 }
 func main() {
     var source = packed[3]{{1, 300}, {2, -400}, {3, 500}}
-    var destination = packed[3]{}
+    var destination = packed[3]
     var single = source[1]
     assert(single == source[1])
     single.second = 12

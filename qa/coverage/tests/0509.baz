@@ -6,7 +6,7 @@ func assert(err, expr bool) { if not expr exit(err) }
 type pair { lo i8, hi i8 }
 
 func main() {
-    var buf = i8[8]{}
+    var buf = i8[8]
     var got = read(0, buf, 6, 2)
     assert(1, got == 4)
     assert(2, buf[1] == 0 and buf[2] == 0x61 and buf[5] == 0x64)

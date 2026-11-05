@@ -1,0 +1,4 @@
+
+2217.baz:14:31: store the result of 'gm<i8>' in a variable before reading a field or calling a method of it
+    exit(array_length(gm<i8>().a))
+                              ^

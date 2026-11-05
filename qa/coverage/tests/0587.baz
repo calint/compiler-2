@@ -34,11 +34,11 @@ func noinline check_frame(n) {
 
         # declarations zero again each round after the checks wrote them
         var pad1 = i8(0)
-        var z1 = i8[20]{}
+        var z1 = i8[20]
         var pad2 = i8(0)
-        var z2 = i8[7]{}
-        var pad3 = i8[2]{}
-        var z3 = i8[13]{}
+        var z2 = i8[7]
+        var pad3 = i8[2]
+        var z3 = i8[13]
         check_zero(10, z1)
         check_zero(11, z2)
         check_zero(12, z3)
@@ -53,7 +53,7 @@ func noinline check_frame(n) {
         check_text(14, t2)
         assert(15, pad4 == 0)
 
-        var c1 = i8[11]{}
+        var c1 = i8[11]
         array_copy(t1, c1, 11)
         check_text(16, c1)
 
@@ -63,9 +63,9 @@ func noinline check_frame(n) {
 
 func main() {
     var pad1 = i8(0)
-    var z1 = i8[20]{}
-    var pad2 = i8[2]{}
-    var z2 = i8[15]{}
+    var z1 = i8[20]
+    var pad2 = i8[2]
+    var z2 = i8[15]
     check_zero(20, z1)
     check_zero(21, z2)
     assert(22, pad1 == 0)
@@ -74,16 +74,16 @@ func main() {
     # different positions within a word: 's0 + 39' to 's0 + 56'
     var pad3 = i8(0)
     var s1 = "abcdefghijklm"
-    var pad4 = i8[4]{}
-    var d1 = i8[13]{}
+    var pad4 = i8[4]
+    var d1 = i8[13]
     array_copy(s1, d1, 13)
     check_text(24, s1)
     check_text(25, d1)
     assert(26, pad3 == 0 and pad4[0] == 0 and pad4[3] == 0)
 
     # same position within a word: 's0 + 39' to 's0 + 71'
-    var pad5 = i8[2]{}
-    var d2 = i8[13]{}
+    var pad5 = i8[2]
+    var d2 = i8[13]
     array_copy(s1, d2, 13)
     check_text(27, d2)
     assert(28, pad5[0] == 0 and pad5[1] == 0)

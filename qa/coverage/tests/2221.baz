@@ -1,0 +1,4 @@
+# a zero value reached into is a constant without fields
+func main() {
+    var a = i8{}.x
+}

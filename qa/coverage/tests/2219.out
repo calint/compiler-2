@@ -1,0 +1,4 @@
+
+2219.baz:5:23: an instance literal of 'pt' is not an argument, store it in a variable first
+    exit(array_length(pt{1, {1, 2, 3}}.a))
+                      ^~

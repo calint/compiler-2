@@ -21,7 +21,7 @@ func copy_name(src location, dst mut location) {
 }
 
 func main() {
-    var locations = location[2]{}
+    var locations = location[2]
 
     locations[0].name.len = 3
     locations[0].name.data[1] = 0x61

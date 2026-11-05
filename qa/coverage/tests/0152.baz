@@ -20,7 +20,7 @@ func main() {
     assert(pts2[1].x == 3)
     assert(pts2[1].y == 5)
 
-    var pts1 = point[4]{}
+    var pts1 = point[4]
     pts1 = { { x, x + y }, { -6, 4 } }
     assert(pts1[0].x == -1)
     assert(pts1[0].y == -3)

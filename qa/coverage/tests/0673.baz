@@ -34,17 +34,17 @@ func main() {
     var small = i8[4]{1, 2, 3, 4}
     assert(10, small[ix + 2] == 4)
 
-    var pts = point[3]{}
+    var pts = point[3]
     pts[ix + 1].y = 7
     assert(11, pts[2].y == 7)
 
     # a 3 byte element has a scale the addressing mode cannot encode
-    var cols = rgb[3]{}
+    var cols = rgb[3]
     cols[ix + 1].g = 9
     assert(12, cols[2].g == 9)
     assert(13, cols[ix - 1].g == 0)
 
-    var worlds = world[2]{}
+    var worlds = world[2]
     worlds[ix].locations[ix + 2] = 5
     assert(14, worlds[1].locations[3] == 5)
     assert(15, worlds[0].locations[3] == 0)

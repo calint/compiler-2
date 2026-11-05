@@ -11,7 +11,7 @@ func input(str mut i8[], len) nbytes {
 }
 
 func pn(num) {
-    var buf = i8[20]{}
+    var buf = i8[20]
     var n = num
     var is_negative = false
 
@@ -51,7 +51,7 @@ func foozi(w1 world, w2 world){
 }
 
 func main() {
-    var wlds = world[2]{}
+    var wlds = world[2]
     wlds[0].note.size = 1
     wlds[1].note.size = 2
  

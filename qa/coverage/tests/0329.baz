@@ -3,7 +3,7 @@
 type group { values i8[2] }
 
 func main() {
-    var groups = group[2]{}
+    var groups = group[2]
     var outer = 0
     var inner = 2
     groups[outer].values[inner] = 1

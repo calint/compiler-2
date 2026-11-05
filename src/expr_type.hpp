@@ -33,6 +33,7 @@
 // types below in reading order:
 //
 //   'literal_typing'         whether a literal names its type
+//   'value_kind'             an instance or an array, named in the messages
 //   'throw_known_type', 'assert_value_ends', 'throw_known_literal_type',
 //   'throw_array_literal_mismatch', 'read_full_list_end'
 //                            the messages of a value its destination does
@@ -51,6 +52,9 @@
 // decides the type, elsewhere the destination gives it, e.g. '{1, 2}'
 enum class literal_typing : uint8_t { written, from_destination };
 
+// a value that is no number, named in the messages of 'assert_value_ends'
+enum class value_kind : uint8_t { instance, array };
+
 // a type written where the destination gives it, 'value' is how to write the
 // value without it, e.g. '{...}' or the zero value '{}'
 [[noreturn]] inline auto throw_known_type(const token& type_tk,
@@ -64,11 +68,20 @@ enum class literal_typing : uint8_t { written, from_destination };
 }
 
 // 'kind' of 'tp' written at 'value_tk' is not continued, e.g. the '+' of
-// 'p + 1' or of 'i8[2]{1, 2} + 1'; an equality gets the message of a number
-// destination, it makes a condition
+// 'p + 1' or of 'i8[2]{1, 2} + 1', nor reached into, e.g. the '.x' of
+// 'point{1, 2}.x'; an equality gets the message of a number destination, it
+// makes a condition
 inline auto assert_value_ends(const tokenizer& tz, const token& value_tk,
-                              const std::string_view kind, const type& tp)
-    -> void {
+                              const value_kind kind, const type& tp) -> void {
+
+    const bool is_array{kind == value_kind::array};
+
+    if (is_reached_into(tz)) {
+        throw_literal_not_operand(
+            value_tk, is_array ? std::string{"an array literal"}
+                               : std::format("an instance literal of {}",
+                                             in_quotes(tp.name())));
+    }
 
     if (not continues_expression(tz)) {
         return;
@@ -83,8 +96,10 @@ inline auto assert_value_ends(const tokenizer& tz, const token& value_tk,
         expr_arith::assert_no_condition_next(tz);
     }
 
-    throw compile_error{value_tk, std::format("{} of {} is not a number", kind,
-                                              in_quotes(tp.name()))};
+    throw compile_error{value_tk,
+                        std::format("{} of {} is not a number",
+                                    is_array ? "an array" : "an instance",
+                                    in_quotes(tp.name()))};
 }
 
 // a literal that names the type its destination gives, at 'type_tk' with
@@ -92,7 +107,7 @@ inline auto assert_value_ends(const tokenizer& tz, const token& value_tk,
 // after '{...}', e.g. the '+' of 'p = point{1, 2} + 1'
 [[noreturn]] inline auto
 throw_known_literal_type(const tokenizer& tz, const token& type_tk,
-                         const std::string_view kind, const type& tp,
+                         const value_kind kind, const type& tp,
                          const std::string_view type_name) -> void {
 
     tokenizer after_literal{tz};

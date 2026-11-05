@@ -7,7 +7,7 @@ func fiz(x i32) res i32 {
 }
 
 func main() {
-    var arr = i32[4]{}
+    var arr = i32[4]
     var ix = 1
     arr[ix] = 2
     var c = fiz(1 + arr[ix])

@@ -5,7 +5,7 @@ func legacy_write(values mut i8[], index) {
 }
 
 func main() {
-    var values = i8[8]{}
+    var values = i8[8]
     var last = 7
     legacy_write(values, last)
 }

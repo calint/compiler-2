@@ -1,0 +1,12 @@
+# a constructor call reached into where an array is expected, the result
+# is stored first
+type pt { x, a i8[3] }
+
+func pt.at(v) self {
+    self.x = v
+    self.a = {}
+}
+
+func main() {
+    exit(array_length(pt.at(1).a))
+}

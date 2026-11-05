@@ -39,19 +39,19 @@ func main() {
 
     # element sizes 12, 3 and 20 scale the index
     var ix = i32(2)
-    var ts = triple[4]{}
+    var ts = triple[4]
     ts[ix].b = 5
     ts[ix + 1].c = 6
     assert(9, ts[2].b == 5)
     assert(10, ts[3].c == 6)
     assert(11, ts[1].b == 0)
 
-    var bs = bytes3[4]{}
+    var bs = bytes3[4]
     bs[ix].c = 9
     assert(12, bs[2].c == 9)
     assert(13, bs[3].a == 0)
 
-    var fs = five[3]{}
+    var fs = five[3]
     fs[ix].d = 4
     assert(14, fs[2].d == 4)
     assert(15, fs[1].d == 0)

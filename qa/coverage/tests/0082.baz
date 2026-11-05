@@ -17,7 +17,7 @@ type mega_structure {layers scene_layer[4], colors color_rgba[8], metadata[16]}
 
 func main() {
     # Test 1: Basic nested array access
-    var cr = cluster[7]{}
+    var cr = cluster[7]
     cr[1].objs[2].pos.y = 8
     assert(cr[1].objs[2].pos.y == 8)
     cr[2].flags = ~2
@@ -37,7 +37,7 @@ func main() {
     assert(cr[a].objs[b].pos.y == 99)
     
     # Test 4: Deep nesting with particles
-    var pg = physics_grid[3]{}
+    var pg = physics_grid[3]
     pg[0].particles[0].vel.x = 100
     pg[0].particles[0].vel.y = 200
     pg[0].particles[0].vel.z = 300
@@ -58,7 +58,7 @@ func main() {
     assert(pg[1].particles[4].active == false)
     
     # Test 7: Scene layers - very deep nesting
-    var scene = scene_layer[2]{}
+    var scene = scene_layer[2]
     scene[0].clusters[1].objs[5].pos.x = 123
     scene[0].clusters[1].objs[5].pos.y = 456
     scene[0].clusters[1].objs[5].color = 0x7F00FF
@@ -75,7 +75,7 @@ func main() {
     assert(scene[1].grid.particles[2].pos.z == 30)
     
     # Test 9: Color array with byte fields
-    var colors = color_rgba[10]{}
+    var colors = color_rgba[10]
     colors[5].r = 127
     colors[5].g = 100
     colors[5].b = 64
@@ -86,7 +86,7 @@ func main() {
     assert(colors[5].a == 32)
     
     # Test 10: The mega structure - ultimate nesting test
-    var mega = mega_structure[1]{}
+    var mega = mega_structure[1]
     mega[0].layers[2].clusters[1].objs[7].pos.x = 9999
     assert(mega[0].layers[2].clusters[1].objs[7].pos.x == 9999)
     
@@ -114,7 +114,7 @@ func main() {
     assert(mega[0].layers[base].clusters[base + 1].objs[base * 2].color == 0x7BCDEF)
     
     # Test 13: Array at every level
-    var m2 = mega_structure[2]{}
+    var m2 = mega_structure[2]
     m2[0].layers[1].clusters[0].objs[3].pos.y = 555
     m2[1].layers[2].clusters[1].objs[4].color = 0x7AFEBABE
     assert(m2[0].layers[1].clusters[0].objs[3].pos.y == 555)
@@ -125,21 +125,21 @@ func main() {
     assert(m2[1].layers[0].grid.timestamp == 0x12345678)
     
     # Test 15: Edge case - first and last indices
-    var edges = object[8]{}
+    var edges = object[8]
     edges[0].pos.x = 111
     edges[7].pos.y = 222
     assert(edges[0].pos.x == 111)
     assert(edges[7].pos.y == 222)
     
     # Test 16: Sequential writes to same deep path
-    var seq = scene_layer[1]{}
+    var seq = scene_layer[1]
     seq[0].clusters[2].objs[9].pos.x = 1
     seq[0].clusters[2].objs[9].pos.x = 2
     seq[0].clusters[2].objs[9].pos.x = 3
     assert(seq[0].clusters[2].objs[9].pos.x == 3)
     
     # Test 17: Different sizes - i8, i32, default type mixed
-    var mix = cluster[1]{}
+    var mix = cluster[1]
     mix[0].objs[5].id = 0x11223344
     mix[0].objs[5].color = 0x11223344
     mix[0].flags = 0x11
@@ -163,7 +163,7 @@ func main() {
     assert(scene[0].clusters[2].flags == 3)
     
     # Test 20: Maximum depth chain
-    var deep = mega_structure[2]{}
+    var deep = mega_structure[2]
     deep[1].layers[3].clusters[2].objs[9].pos.x = 0x7FFFFFFF
     deep[1].layers[3].clusters[2].objs[9].pos.y = ~0x7FFFFFFF
     assert(deep[1].layers[3].clusters[2].objs[9].pos.x == 0x7FFFFFFF)

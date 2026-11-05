@@ -28,7 +28,7 @@ func main() {
     assert(4, p.a == 5)
     assert(5, p.b == 4)
 
-    var ps = pair[2]{}
+    var ps = pair[2]
     ps[0] = {6, 7}
     ps[1] = {8, 9}
     swap_values(ps[0].b, ps[1].a)

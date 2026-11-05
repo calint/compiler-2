@@ -13,7 +13,7 @@ func input(str mut i8[], len) nbytes {
 }
 
 func print_hex_32b(num i32) {
-    var buf = i8[9]{}
+    var buf = i8[9]
     var n = num
     
     var i = 8
@@ -36,7 +36,7 @@ func print_hex_32b(num i32) {
 }
 
 func main() {
-    var nl = i8[1]{}
+    var nl = i8[1]
     nl[0] = 0x0a
     print_hex_32b(0x1234abcd)
     print(nl, 1)

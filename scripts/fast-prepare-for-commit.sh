@@ -8,6 +8,8 @@ echo clang tidy
 qa/lint/clang-tidy.sh fix
 echo format source
 qa/lint/format-source.sh
+echo check all
+qa/lint/check-all.sh
 echo test lsp
 etc/nvim/tree-sitter-baz/qa/test.sh
 echo parse sources
@@ -21,6 +23,7 @@ qa/coverage/test-coverage.sh --target=x86 run
 #qa/coverage/test-coverage.sh --target=rv32i run
 #qa/coverage/test-coverage.sh --target=rv32i-qemu run
 qa/coverage/test-coverage.sh --target=rv32i-fpga run
+qa/coverage/test-cli.sh
 echo compile prog
 ./run.sh
 echo make readme

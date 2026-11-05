@@ -1,0 +1,5 @@
+# an unsupported escape in a character literal is reported before its
+# length, as in a string
+func main() {
+    var c = '\X41'
+}

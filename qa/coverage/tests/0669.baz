@@ -77,7 +77,7 @@ func main() {
     assert(13, n.inner == m.inner)
 
     # instances in an array, one with a run-time index
-    var ps = padded[2]{}
+    var ps = padded[2]
     ps[0] = padded.at(1, 2, 3)
     ps[1] = padded.at(1, 2, 3)
     var ix = 1

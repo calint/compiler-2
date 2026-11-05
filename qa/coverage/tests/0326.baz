@@ -7,7 +7,7 @@ func legacy_write(values mut i8[]) {
 }
 
 func main() {
-    var values = i8[8]{}
+    var values = i8[8]
     legacy_write(values)
     assert(values[7] == 1)
 }
