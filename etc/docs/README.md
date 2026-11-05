@@ -681,7 +681,8 @@ type list<T type, capacity> {
 ```
 
 'T type' is a type parameter, 'capacity' is a constant parameter. A parameter
-may not reuse the name of something that already exists, so that inside the
+may not be a keyword, a built-in name, the name of the generic type or of
+another parameter; it hides a global of its name (1.3), so that inside the
 recipe a name has one meaning.
 
 The braced block is skipped without reading the fields. An error in the fields
@@ -814,8 +815,10 @@ its 'self'.
 
 #### 2.10.1 Definition
 
-Each type parameter has the kind 'type' and may not reuse the name of
-something that already exists.
+Each type parameter has the kind 'type'. It may not be a keyword, a built-in
+name, the name of the function, of another generic parameter, of a generic
+parameter of the receiver, of a parameter or of the result; it hides a global
+of its name (1.3).
 
 So that a call can omit the type arguments, the definition keeps the declared
 types of its parameters and its result ('generic_signature'), and a call looks

@@ -22,6 +22,17 @@
        'const machine& x{machine_.get()};', 'toc.hpp' and
        'register_report.hpp', AGENTS; skipped: A6 a 'term_kind' of its own
        for '[' without a type (3 conditions against one more kind)
+       B found no bug: about 20000 generated programs against a model
+       (generic records and methods, 'dat', short circuits with effects,
+       nested inline 'return', 'break', 'continue', 'exit', include,
+       narrowing, i16 overflow, division and shift panics in order), 12 to 24
+       builds each (inline, noinline, '--nopt', versions) on x86_64 and
+       rv32i-fpga, 1000 through asan, about 300 hand probes; not covered:
+       i64, 'read' and the sector functions, the qemu targets
+       B1 (user): docs 2.3 and 2.10.1 said a generic parameter reuses no
+       existing name; they now name what is rejected (a keyword, a built-in,
+       the definition, another or a receiver's generic parameter, a
+       parameter, the result) and that it hides a global of its name (1.3)
 [x] hard: design review series 2, round 77 (2026-11-04, user: continue; a
     hunter of the choice of form by free registers of round 76)
     => done (2026-11-04): nothing found; no program accepted by round 74 or
