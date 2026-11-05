@@ -1,6 +1,8 @@
-# global dat must precede global vars
-
+# a 'dat' between global variables, the data is placed before the variables
 var value = 1
 dat data = 2
+var after = 3
 
-func main() {}
+func main() {
+    exit(value + data + after)
+}

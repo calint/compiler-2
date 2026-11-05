@@ -56,18 +56,6 @@ class arith_steps final {
     // statics
     //
 
-    // the constant that leaves a value unchanged
-    [[nodiscard]] static auto identity_of(const arithmetic_operator op)
-        -> int64_t {
-
-        const std::optional<int64_t> identity{traits_of(op).identity};
-
-        // note: asked of a regroupable operator or of a divisor
-        assert(identity);
-
-        return *identity;
-    }
-
     // '+' or '-'
     [[nodiscard]] static auto is_additive(const arithmetic_operator op)
         -> bool {
@@ -113,6 +101,18 @@ class arith_steps final {
         }
 
         merged.folded_source += s.folded_source;
+    }
+
+    // the constant that leaves a value unchanged
+    [[nodiscard]] static auto identity_of(const arithmetic_operator op)
+        -> int64_t {
+
+        const std::optional<int64_t> identity{traits_of(op).identity};
+
+        // note: asked of a regroupable operator
+        assert(identity);
+
+        return *identity;
     }
 
     // two operators of one run: equal, or '+' and '-'

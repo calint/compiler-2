@@ -1,4 +1,0 @@
-
-0367.baz:4:1: 'dat' must be before the first variable, 'value' at 3:5
-dat data = 2
-^~~

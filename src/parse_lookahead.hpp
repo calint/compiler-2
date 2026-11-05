@@ -51,6 +51,10 @@
     return tz.is_binary_operator_next() or continues_condition(tz);
 }
 
+[[nodiscard]] inline auto is_closer_or_end(const char ch) -> bool {
+    return ch == ')' or ch == ']' or ch == '}' or ch == '\0';
+}
+
 // a ',' where the last of 'count' arguments ends is a surplus one, or a
 // trailing ','; without parameters anything but a closer or the end is, e.g.
 // 'f(1)' of 'func f()'; a missing ')' is the caller's
@@ -60,7 +64,7 @@ inline auto assert_no_surplus_argument(const tokenizer& tz,
 
     const char next{tz.peek_char_after_whitespace()};
 
-    if (next == ')' or next == ']' or next == '}' or next == '\0') {
+    if (is_closer_or_end(next)) {
         return;
     }
 
@@ -89,9 +93,7 @@ inline auto assert_no_surplus_argument(const tokenizer& tz,
 // the source, e.g. not at the ')' of '[2]{1, 2, )'
 [[nodiscard]] inline auto starts_value(const tokenizer& tz) -> bool {
     const char next{tz.peek_char_after_whitespace()};
-
-    return next != ',' and next != ')' and next != ']' and next != '}' and
-           next != '\0';
+    return next != ',' and not is_closer_or_end(next);
 }
 
 // a string is in read-only data that an array parameter would refer to, a

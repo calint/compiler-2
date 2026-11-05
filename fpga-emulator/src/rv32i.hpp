@@ -541,7 +541,7 @@ private:
   }
 
   //
-  // immedidates decoding
+  // immediates decoding
   //  see /notes/riscv-docs/riscv-immediate-encodings.png
   //
 

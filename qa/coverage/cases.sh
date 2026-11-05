@@ -1138,8 +1138,8 @@ SRC=0365 && COMPERR
 # global variable shadowing in a nested block
 SRC=0366 && EXP=0 && RUN
 
-# global dat must precede global vars
-SRC=0367 && COMPERR
+# a 'dat' between global variables
+SRC=0367 && EXP=6 && RUN
 
 # 'foo' loop over a data array with 'continue', 'break' and nesting
 SRC=0368 && EXP=0 && RUN
@@ -5520,9 +5520,9 @@ SRC=1738 && EXP=5 && RUN
 # body, as a branch that folds to false does
 SRC=1739 && COMPERR
 
-# a 'dat' after the first variable names that variable, also a 'let' of an
-# array, which is a read-only variable
-SRC=1740 && COMPERR
+# a 'dat' after an included file that declares a variable and after a 'let'
+# of an array
+SRC=1740 && EXP=104 && RUN
 
 # a whole array of instances assigned to a number is rejected as an array that
 # must be indexed, before its type is asked
@@ -6839,3 +6839,7 @@ SRC=2203 && EXP=2 && OPTS="--checks=noub" RUN
 # a register that an operation holds is needed by an inlined call that zeroes
 # many parts (x86_64)
 if [[ $MACHINE == x86_64 ]]; then SRC=2204 && COMPERR; fi
+
+# a constant index past the length an unsized array parameter gets from its
+# call, in the argument of 'array_length'
+SRC=2205 && COMPERR

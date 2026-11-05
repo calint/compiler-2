@@ -1,6 +1,34 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] hard: design review series 2, round 90 (2026-11-05, user: make the
+    code, documentation, tests and everything squeaky clean; A front end, B
+    expressions, C statements, D backends, E docs, F qa and tools, G bug hunt)
+    => done (2026-11-05): applied A4 'call_path_at' legend names generic
+       instance labels, A6 'is_closer_or_end' in 'parse_lookahead.hpp', B1
+       a stale name in a note, B2 'identity_of' private, B3 'const toc&' and
+       'const tokenizer&' parameters, B4 no default index of 'as_expr_type',
+       B5 a note below its line, C4 a note on the discarded length in
+       'foo', E2-E7 README and tutorial wording, E9 R15 in the register
+       notes, F13 trailing spaces of roome, F14 a duplicated highlight query
+       and stale ignore lines, "immedidates" in the emulator; listings of
+       every test equal on both targets; discarded: A5 'auto' in
+       'checks_named' (clang-tidy 'readability-qualified-auto' wants the
+       pointer form)
+    => step 1 (2026-11-05, user: do recommended): C1 'array_length' of a
+       constant index past the length an unsized array parameter gets from
+       its call was accepted, 'assert_constant_indexes_in_bounds' checks it
+       when 'fold' resolves the path (test 2205); A1 the rule "'dat' must be
+       before the first variable" removed, the dats are placed by the parse
+       before every variable whatever the source order, 'add_dat' without
+       its token (tests 0367 and 1740 now run, 'include/counter.baz'); F1
+       'perf.sh' runs 'test-coverage.sh run'; F2 the rename check of
+       'baz-lsp.lua' follows 'reserved_names': keywords name nothing,
+       built-in types and functions name no declaration but a member or a
+       method (three 'rename_fails' tests)
+    => left for the next steps: G1 and C2 (messages); D1-D3, A2, A3, C3;
+       F3-F13; not recommended, awaiting the user: E1, E8, G2, G3, F12 on
+       the test files
 [x] easy: unused includes (2026-11-05, user: 'machine_rv32i.hpp' had one,
     check the other files and add the check to the lint)
     => done (2026-11-05): 'misc-include-cleaner', run on each header alone,

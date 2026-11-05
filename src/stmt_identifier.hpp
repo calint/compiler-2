@@ -575,6 +575,11 @@ class stmt_identifier final : public statement {
     auto assert_constant_indexes(const toc& tc, std::string_view what) const
         -> void;
 
+    // every constant index is within its array as the compile resolves it,
+    // e.g. the '5' of 'array_length(x[5].a)' with 'x' an unsized array
+    // parameter, whose length only its call gives
+    auto assert_constant_indexes_in_bounds(const toc& tc) const -> void;
+
     // a constant count of a bulk operation that starts at this path, see
     // 'assert_constant_range'
     auto assert_count_in_bounds(const toc& tc, const token& count_tk,

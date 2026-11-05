@@ -394,7 +394,7 @@ program does not depend on inlining.
    depends on inline versus noinline, a call of 'g' with a known length
    checks it.
 
-### 1.5.1 Code that is not reached
+#### 1.5.1 Code that is not reached
 
 A statement after a path that cannot continue is rejected at the parse: after
 'return', 'break', 'continue', 'exit', an 'if' that leaves on every path or a
@@ -459,7 +459,7 @@ max body vars size             the most bytes of variables in use while one
 instructions                   the machine instructions of the code
 ```
 
-### 1.6.1 Reading a listing
+#### 1.6.1 Reading a listing
 
 Each construct emits a comment with its source and location, then its code
 under labels named by where it is written and by the inlined calls around
@@ -1564,8 +1564,8 @@ address folded into one register, whichever is shorter (5.1).
 A 'dat' is placed by the parse: 'toc::add_dat' gives it the next offset in
 'data_table' and declares its name, so the dats are all placed when the
 parse ends and the variables start at a fixed point after them
-('storage_layout::vars_start_bytes'); this is why a 'dat' comes before any
-'var'. The compile declares it again like a global ('toc::add_var'), and
+('storage_layout::vars_start_bytes'), whatever the order of dats and
+variables in the source. The compile declares it again like a global ('toc::add_var'), and
 'program::emit_data_section' writes its bytes ('stmt_def_dat::compile_data').
 
 x86_64 addresses variables from 'rbp', which points at the data: the variables
@@ -1963,7 +1963,7 @@ constants out of range, and the code the run-time checks.
 | class | example | how | option | tests |
 |---|---|---|---|---|
 | uninitialized read | 'var x = x', 'res' read before it is set | rejected ('stmt_def_var' for a declaration; definite assignment of the result, 'ub_assigned.hpp', 3.10) | always | 0099, 0100, 0463, 0464, 1301-1303 |
-| an argument sharing bytes with another argument that the call writes | 'f(a, a)' with 'f' writing 'p.x' and reading 'q.x' | rejected ('stmt_call::assert_no_shared_storage', 3.7) | always | 0525, 0642, 0676 |
+| an argument sharing bytes with another argument that the call writes | 'f(a, a)' with 'f' writing 'p.x' and reading 'q.x' | rejected ('stmt_call::assert_no_shared_storage', 4.2) | always | 0525, 0642, 0676 |
 | a result or a global sharing storage with an argument | 'p = f(p)' with 'f' writing its result before it reads 'p', 'f(g)' with 'f' using the global 'g' | rejected ('stmt_call::assert_no_shared_storage', 3.7, 4.2) | always | 0522-0524, 0526, 0527, 0941 |
 | a value written in parts reading a part written before it | 'p = {p.y, p.x}', 'q = {{1}, q.a[3]}', 'g = {7, gx()}' | rejected ('stmt_assign_var', the 'write_plan' of 'expr_type.hpp', 3.7) | always | 1608-1612, 1634, 1635, 1644 |
 | evaluation order | 'f(arr[i], h(i))', 'i == h(i)' with 'h' writing 'i' | evaluation is left to right; an argument, a side of a comparison or a bulk or io argument that a call in a later one may write is rejected ('assert_not_written_later'), an arithmetic list reads each operand at its place; a destination that the value reads, also through a call, is written last ('reaches_destination'), 3.1 | always | 1636-1639, 1641, 1642, 1676; accepted: 1630-1633, 1640, 1643, 1678, 1702 |

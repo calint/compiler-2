@@ -116,7 +116,7 @@ func run_creation_script() {
 
     var tz = tokenizer
     var line_start = 0
- 
+
     foo str_creation_script {
         if e == '\n' {
             tz.set_line(str_creation_script, line_start, i - line_start)
@@ -125,7 +125,7 @@ func run_creation_script() {
         }
     }
 
-    # clear messages to entities 
+    # clear messages to entities
     foo entities.array, entities.len {
         e.messages.len = 0
     }

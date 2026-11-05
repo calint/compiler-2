@@ -347,7 +347,7 @@ class bulk_operands final {
     // the checks of the arguments in the order the statement reads: no
     // argument is written by a later one, the element types match, a constant
     // count is in bounds; returns the element type of both arrays
-    [[nodiscard]] auto check(toc& tc) const -> const type& {
+    [[nodiscard]] auto check(const toc& tc) const -> const type& {
         // e.g. the 'a' of 'array_copy(a, b, f())' with 'f' writing 'a'
         assert_not_written_later(tc, *this, "argument");
 
@@ -391,7 +391,9 @@ class bulk_operands final {
     }
 
     // the elements are compared or copied as a whole, so their types match
-    [[nodiscard]] auto resolve_element_type(toc& tc) const -> const type& {
+    [[nodiscard]] auto resolve_element_type(const toc& tc) const
+        -> const type& {
+
         const ident_info first_info{make_ident_info(tc, first())};
         const ident_info second_info{make_ident_info(tc, second())};
 

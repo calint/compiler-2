@@ -343,10 +343,10 @@ class type final {
     [[nodiscard]] auto padding_gaps(const size_t max_count) const
         -> std::vector<padding_gap> {
 
-        // note: + 1 because a gap is between two ranges, so more than
-        //       'max_count' + 1 ranges give more than 'max_count' gaps
-
         const size_t max_range_count{max_count + 1};
+
+        // note: +1 because a gap is between two ranges, so more than
+        //       'max_count' + 1 ranges give more than 'max_count' gaps
 
         const std::vector<byte_range> ranges{data_ranges(max_range_count)};
 

@@ -36,48 +36,25 @@ local function word_set(words)
 end
 
 -- built-in functions have no declaration in the source, they match by name
-local builtin_function_names = "array_copy array_length arrays_equal exit read write"
+local builtin_function_names =
+  "array_copy array_length arrays_equal read write sector_read sector_write exit"
 local builtin_functions = word_set(builtin_function_names)
 
--- the language allows a name that is a keyword where the keyword cannot start
--- the construct, e.g. a function named 'include' or a member named 'if'; these
--- are the words that cannot name a declaration in each context, some declare
--- but cannot be used, e.g. 'let not = 3' declares but 'not + 1' does not parse
-local builtin_type_names = "bool int i8 i16 i32 i64"
--- same words as 'reserved_words' in 'toc::assert_valid_variable_name': the
--- keywords and the built-in functions, whose use would be read as a call
-local keyword_names = "and break continue dat foo if let loop not or return var "
-  .. builtin_function_names
-local reserved_names = {
-  all = word_set("true false self"),
-  let = word_set(keyword_names),
-  var = word_set(keyword_names),
-  ["function"] = word_set("foo not"),
-  type = word_set(builtin_type_names),
-  generic = word_set("mut " .. builtin_type_names),
-}
-
--- the declaration kinds of 'reserved_names' by the node type of the declaration
-local reserved_by_declaration = {
-  let_definition = "let",
-  data_declaration = "let",
-  variable_declaration = "var",
-  parameter = "var",
-  return_annotation = "var",
-}
+-- the names the compiler rejects ('reserved_names' in 'src/token.hpp'): a
+-- keyword names nothing, a built-in type or function names no declaration but
+-- a member or a method, which is always reached through a value
+local keywords = word_set("func noinline mut type dat var let foo loop if else "
+  .. "continue break return self and or not true false include")
+local builtin_names = word_set("bool int i8 i16 i32 i64 " .. builtin_function_names)
 
 local function is_reserved(target, new_name)
-  if reserved_names.all[new_name] then
+  if keywords[new_name] then
     return true
   end
-  local context = target.kind
-  if target.kind == "variable" then
-    local decl = target.decls[1]
-    local parent = decl and decl:parent()
-    context = parent and reserved_by_declaration[parent:type()]
+  if target.kind == "member" or target.kind == "method" then
+    return false
   end
-  local set = context and reserved_names[context]
-  return set ~= nil and set[new_name] == true
+  return builtin_names[new_name] == true
 end
 
 local renameable_kinds = {

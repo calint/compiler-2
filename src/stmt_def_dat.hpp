@@ -91,7 +91,7 @@ class stmt_def_dat final : public statement {
 
         // register the data without emitting output so it is available
         // during subsequent parsing
-        tc.add_dat(*this, tok(), make_var_info());
+        tc.add_dat(*this, make_var_info());
     }
 
     // 'toc' keeps the address of the definition

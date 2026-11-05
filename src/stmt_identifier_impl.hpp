@@ -143,9 +143,6 @@ inline auto stmt_identifier::visit_operands(const operand_visitor visitor) const
 inline auto stmt_identifier::assert_constant_indexes(
     const toc& tc, const std::string_view what) const -> void {
 
-    // note: the parse checked a constant index against its array
-    //       ('narrow_to_element')
-
     for (const ident_elem& e : elems_) {
         if (not e.index) {
             continue;
@@ -163,6 +160,26 @@ inline auto stmt_identifier::assert_constant_indexes(
                         "constant, every element has the same length",
                         in_quotes(what))};
     }
+}
+
+inline auto
+stmt_identifier::assert_constant_indexes_in_bounds(const toc& tc) const
+    -> void {
+
+    for_each_prefix(tc, [&](const prefix_step& step) -> void {
+        if (not step.elem->index) {
+            return;
+        }
+
+        const expr_any& index{step.elem->index_expr()};
+        const std::optional<int64_t> value{index.constant_value(tc)};
+
+        // note: 'assert_constant_indexes' rejected a run-time index
+        assert(value);
+
+        assert_constant_index(*step.info, index.tok(), step.path, *value,
+                              false);
+    });
 }
 
 inline auto stmt_identifier::assert_count_in_bounds(const toc& tc,

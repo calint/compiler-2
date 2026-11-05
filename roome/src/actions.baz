@@ -51,7 +51,7 @@ func action_go(eid, tz mut tokenizer) {
         return
     }
 
-    entities.array[eid].room_id = to_room_id 
+    entities.array[eid].room_id = to_room_id
 
     rooms.array[to_room_id].entities.push(eid)
     rooms.array[cur_room_id].entities.delete_item(eid)
@@ -115,7 +115,7 @@ dat str_no_room_for_room = "no room for another room or exit\n"
 func action_new_room(eid, tz mut tokenizer) {
     if not tz.next_name_or_say(str_what_exit_name_to) return
 
-    let cur_room_id = entities.array[eid].room_id 
+    let cur_room_id = entities.array[eid].room_id
 
     # the new room, its exit and the names of the exits must fit
     if rooms.is_full() or rooms.array[cur_room_id].links.is_full() or

@@ -119,7 +119,7 @@ if [ "$MODE" != report ]; then
             set -- ./perf.sh --compile-workload
         fi
     else
-        set -- ../coverage/test-coverage.sh nobuild
+        set -- ../coverage/test-coverage.sh run
     fi
     perf record -F "$PERF_FREQ" --call-graph dwarf -o "$DATA_FILE" -- "$@"
 fi

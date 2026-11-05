@@ -293,7 +293,7 @@ class expr_any final : public statement {
 
     // the element at 'index' of an instance value or of an array of
     // instances
-    [[nodiscard]] auto as_expr_type(const size_t index = 0) const
+    [[nodiscard]] auto as_expr_type(const size_t index) const
         -> const expr_type& {
 
         const expr_type* const record{record_at(index)};
@@ -451,7 +451,7 @@ class expr_any final : public statement {
         const array_prefix* const prefix{array_prefix_of()};
 
         // note: only a declaration that sees a string or an array literal
-        //       asks ('stmt_def_var::literal_element_type')
+        //       asks ('initializer_declaration::deduce_declaration')
 
         assert(prefix != nullptr);
 
@@ -916,7 +916,7 @@ class expr_any final : public statement {
     }
 
     // a record or array literal where the built-in 'tp' is expected
-    static auto assert_not_aggregate(const toc& tc, tokenizer& tz,
+    static auto assert_not_aggregate(const toc& tc, const tokenizer& tz,
                                      const type& tp, const token& tk) -> void {
 
         // a user type or an instance literal, e.g. 'x = point' or

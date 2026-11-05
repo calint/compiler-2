@@ -104,9 +104,6 @@
 (function_call function: (identifier) @function.call)
 (foo_statement array: (identifier) @variable)
 
-(foo_statement
-  array: (identifier) @variable)
-
 ; references to file level 'dat', 'var' and 'let', predicate in
 ; plugin/baz-globals.lua
 ; placed after the '@variable' patterns so that it wins

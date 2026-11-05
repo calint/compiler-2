@@ -87,6 +87,10 @@ class stmt_builtin_array_length final : public statement {
             return std::nullopt;
         }
 
+        // the parse checked the indexes against the lengths it knows, a call
+        // gives an unsized array parameter its length
+        array().assert_constant_indexes_in_bounds(tc);
+
         const ident_info src_info{make_ident_info(tc, array())};
 
         // note: the parse rejected an argument that is not an array

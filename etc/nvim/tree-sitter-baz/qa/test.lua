@@ -541,6 +541,14 @@ rename_fails("var @p = point", "read", "cannot name this declaration")
 -- a keyword does not name a result
 rename_fails("func add(a, b) @res {", "loop", "cannot name this declaration")
 
+-- a keyword or a built-in name names no function or type
+rename_fails("func @add(a, b) res {", "include", "cannot name this declaration")
+rename_fails("func @add(a, b) res {", "sector_read", "cannot name this declaration")
+rename_fails("type @point {", "i8", "cannot name this declaration")
+
+-- a keyword names no member
+rename_fails("    @origin point,", "if", "cannot name this declaration")
+
 definition("proj/src/user.baz: var x = @shared_helper()", "proj/src/core.baz: func @shared_helper()")
 definition("proj/outside.baz: var y = @shared_helper()", "proj/src/core.baz: func @shared_helper()")
 rename("proj/src/core.baz: func @shared_helper()", "common_helper", {

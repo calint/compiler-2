@@ -1,0 +1,7 @@
+
+2205.baz:6:26: index 5 is out of bounds for array 'x' of size 4
+    res = array_length(x[5].a)
+                         ^
+2205.baz:11:14: called from 'g(m)'
+    exit(int(g(m)))
+             ^

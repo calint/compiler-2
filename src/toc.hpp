@@ -1665,9 +1665,6 @@ class storage_layout final {
     auto place_dat(const token& src_loc_tk, var_info& var) const -> void {
         const placed_dat& dat{data_.get().get_dat(var.name)};
 
-        // note: a 'dat' comes before any 'var', so no variable is placed yet
-        assert(used_vars_size_bytes() == 0);
-
         const ::machine& x{machine_.get()};
 
         // note: 'toc::add_dat' checked the dats against the target
@@ -2488,8 +2485,6 @@ class toc final {
     // false while the program is parsed: the names are declared without
     // storage and without comments
     bool is_compiling_{};
-    // the first global that is not a 'dat', a 'dat' after it is rejected
-    std::optional<token> first_global_var_tk_;
     // the parsers recurse on the one stack, e.g. a generic instance is parsed
     // inside the parse that needs it, so the levels are counted once for all
     // of them, see 'parse_nesting_scope'
@@ -2753,10 +2748,8 @@ class toc final {
 
     // the parse places the data of 'dat' after the dats before it and
     // declares the variable 'var' that names it, the compile declares it again
-    // with 'add_var'; 'dat_tk' locates the errors of where it is declared
-    auto add_dat(const stmt_def_dat& dat, const token& dat_tk,
-                 const var_info& var) -> void {
-
+    // with 'add_var'
+    auto add_dat(const stmt_def_dat& dat, const var_info& var) -> void {
         assert(not is_compiling_);
 
         // note: a name declared twice is reported before where it is declared
@@ -2764,15 +2757,6 @@ class toc final {
 
         // note: a 'dat' in a block is rejected when it is parsed
         assert(scopes_.is_at_root());
-
-        if (first_global_var_tk_) {
-            throw compile_error{
-                dat_tk,
-                std::format("'dat' must be before the first "
-                            "variable, {} at {}",
-                            in_quotes(first_global_var_tk_->text()),
-                            locations_.for_message(*first_global_var_tk_))};
-        }
 
         const size_t size_bytes{
             storage_.var_storage_size_bytes(var.src_loc_tk, var),
@@ -2916,12 +2900,6 @@ class toc final {
 
         record_if_global(var.name);
 
-        if (scopes_.is_at_root() and kind != var_kind::dat and
-            not first_global_var_tk_) {
-
-            first_global_var_tk_ = src_loc_tk;
-        }
-
         if (is_compiling_) {
             var_comments_.comment(src_loc_tk, indent, declared);
         }
@@ -3037,7 +3015,8 @@ class toc final {
     //
     // e.g. 'if.7.5.36.13' is the 'if' at 7:5 inlined by the call at 36:13;
     // inside a noinline body for array lengths every label ends in them, e.g.
-    // 'loop.14.5.len.3' ('stmt_def_func::body_call_path'); a location in an
+    // 'loop.14.5.len.3', and in the body of a generic instance in its name,
+    // e.g. 'if.2.3.f..i8' ('stmt_def_func::body_call_path'); a location in an
     // included file is 'fN.L.C' ('source_locations::for_label')
     [[nodiscard]] auto call_path_at(const token& src_loc_tk) const
         -> std::string {

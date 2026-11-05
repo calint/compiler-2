@@ -1,0 +1,2 @@
+# a global variable before the 'dat' of the including file
+var counter = 4

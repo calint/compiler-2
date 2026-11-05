@@ -40,9 +40,9 @@ the binary image itself.
   * `overlap`: `array_copy` whose destination starts inside the source at
     runtime, a copy down the array is allowed
   * `stack`: stack capacity at `noinline` calls on `rv32i-qemu` and
-    `rv32i-fpga` (`--memory` sets the memory of `rv32i-fpga`), the other
-    targets run in an operating system that stops a program that overflows the
-    stack
+    `rv32i-fpga` (`--stack` sets its size, `--memory` the memory of
+    `rv32i-fpga`), the other targets run in an operating system that stops a
+    program that overflows the stack
   * `overflow`: signed overflow of `+`, `-`, `*` and unary `-` at the width of
     the destination at runtime, a constant expression that overflows is
     rejected at compile time, the arithmetic of an explicit conversion such as
@@ -64,8 +64,10 @@ the binary image itself.
 
 * [`./make.sh`](make.sh) compiles the compiler then compiles and runs
   [`prog.baz`](prog.baz), `./make.sh build` only compiles the compiler
-* [`./run.sh`](run.sh)`[options] [NAME.baz]` compiles, assembles and runs
-  `NAME.baz` (default: `prog.baz`), the options are passed to `baz`
+* [`./run.sh`](run.sh) `[options] [NAME.baz]` compiles, assembles and runs
+  `NAME.baz` (default: `prog.baz`) with
+  `--checks=noub,line --report=registers`, the options are passed to `baz`
+  after them, a `--checks` replaces the default one
   * compiles to `NAME.s` and writes `NAME-without-comments.s`
   * builds and runs depending on `--target`
     * `x86_64` (default): assembles `NAME.o`, links `NAME`, runs natively
@@ -177,10 +179,10 @@ examples:
 ```text
 Language                     files          blank        comment           code
 -------------------------------------------------------------------------------
-C/C++ Header                    65           9111           6765          26615
+C/C++ Header                    65           9113           6769          26619
 C++                              1            235             97            864
 -------------------------------------------------------------------------------
-SUM:                            66           9346           6862          27479
+SUM:                            66           9348           6866          27483
 -------------------------------------------------------------------------------
 ```
 

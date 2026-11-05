@@ -271,6 +271,7 @@ class stmt_builtin_foo final : public statement {
             const type& counter_type{tc.builtins().default_type()};
 
             // e.g. 'i8[0x80000001]' on rv32i, whose last 'i' is 2^31
+            // note: 'discarded_array_len' (0) wraps to -1, which fits
             if (not constant_arith::fits_width(
                     static_cast<int64_t>(array_len - 1), counter_type)) {
 
