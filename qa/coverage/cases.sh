@@ -6703,3 +6703,16 @@ SRC=2113 && EXP=3 && RUN
 # --vars=48: an inlined body runs out of variable storage at its call, on rv32i
 # in both versions of a body with an indexed argument
 SRC=2114 && OPTS="--vars=48" COMPERR
+
+# a constant without a type, an instance literal, a constructor call or a
+# built-in value that an operator continues, or a call without a result tells
+# no type argument
+SRC=2115 && COMPERR
+SRC=2116 && COMPERR
+SRC=2117 && COMPERR
+SRC=2118 && COMPERR
+SRC=2119 && COMPERR
+
+# an inlined recursion ended by a constant argument binds an instance literal
+# in a temporary at a level that does not fold
+SRC=2120 && EXP=4 && RUN

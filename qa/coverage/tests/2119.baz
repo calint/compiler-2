@@ -1,0 +1,9 @@
+# a user function without a result tells no type argument
+
+func g() {}
+
+func show<T type>(s T) {}
+
+func main() {
+    show(g())
+}

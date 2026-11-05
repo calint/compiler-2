@@ -1,4 +1,4 @@
 
-1560.baz:7:12: generic parameter 'n' is already declared by 'box' at 3:10
+1560.baz:7:12: generic parameter 'n' is also the name of the generic parameter of 'box' at 3:10, use another name
 func box.f<n type>(a n) res int {
            ^

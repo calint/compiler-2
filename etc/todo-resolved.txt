@@ -1,6 +1,30 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] hard: design review series 2, round 83 (2026-11-05, user: continue;
+    L 'stmt_call.hpp' line by line, M 'stmt_def_func.hpp' and
+    'stmt_def_func_param.hpp' line by line)
+    => done (2026-11-05): listings of every test equal on both targets but
+       two messages; L1 'generic_call::value_type' asserts the '.' and '('
+       that 'classify_term' saw ('seen_char_token'); L2 'add_temporary'
+       '[[nodiscard]]'; L3 a repeated comment of 'inline_call::compile' gone;
+       L4 'has_known_lengths' named; L5 'place_storage' shared by
+       'assert_no_shared_storage' and 'visit_callee_effects', the note of an
+       incomplete record with 'visit_effects_of'; L6
+       'assert_result_not_accessed' returns early; L8 2115 to 2120 reach
+       code no test reached (deduction from an untyped constant, an instance
+       literal, a constructor call or a built-in value that an operator
+       continues, a call without a result, the temporaries block of an
+       inlined recursion); M1 'func_head::read_modifier' and 'read_name' read
+       'noinline', 'mut' and the name once; M2 M3 M6 M7 M8 M9 names, if/else,
+       comments, 'params_', 'read_mut' inlined; M4 'param_delimiter_tks_';
+       M5 the header of 'assert_generic_signature' said the type parameters
+       hide nothing; P1 (user) 'assert_apart_from_receiver_params' is the one
+       check against the generic parameters of the receiver, a generic
+       parameter of a method says "is also the name of the generic parameter
+       of 'box' at 3:10, use another name" (1075, 1560); kept (user): L7 the
+       branch of 'call_site::is_inside_call' for an error without a location
+       (a valid value of 'compile_error', not reached)
 [x] easy: consistency topic: a pointer is tested as 'p != nullptr' in 52
     places and as a bare 'p' in two ('expr_arith', round 82 K)
     => done (2026-11-05): both compare with 'nullptr'; clang-tidy

@@ -466,7 +466,7 @@ struct generic_call {
 
         // e.g. 'point.at(1, 2)'
         if (tm == term_kind::constructor_call) {
-            std::ignore = tz.is_next_char_token('.');
+            std::ignore = tz.seen_char_token('.');
 
             // the type names the result, the constructor, e.g. 'at', does not
             std::ignore = tz.next_token();
@@ -499,7 +499,7 @@ struct generic_call {
             return nullptr;
         }
 
-        std::ignore = tz.is_next_char_token('(');
+        std::ignore = tz.seen_char_token('(');
         tz.skip_to_close_paren();
 
         const type& return_type{
@@ -662,8 +662,9 @@ struct call_site {
     }
 
     // a variable in the current block, a root variable of its own
-    auto add_temporary(toc& tc, const size_t indent, const std::string& name,
-                       const type& tpe) const -> destination {
+    [[nodiscard]] auto add_temporary(toc& tc, const size_t indent,
+                                     const std::string& name,
+                                     const type& tpe) const -> destination {
 
         tc.add_var(indent,
                    {
@@ -843,7 +844,6 @@ class inline_call final {
         tc.dry_run(compile_first_level, machine::discarded_code::here);
     }
 
-    // a block holds the temporaries of the call
     auto compile(toc& tc, const size_t indent, const destination& dst) const
         -> void {
 
@@ -1447,15 +1447,19 @@ class noinline_call final {
             array_argument_lengths(*call_.func, arguments),
         };
 
-        // a body is emitted for a function that is called, once for all calls
-        // without array parameters
         // note: an argument of unknown length is in the check of a function
         //       without its calls, no body has its lengths
 
-        if (std::ranges::none_of(arguments, [](const noinline_arg& a) -> bool {
-                return a.info.is_length_unknown();
-            })) {
+        const bool has_known_lengths{
+            std::ranges::none_of(arguments,
+                                 [](const noinline_arg& a) -> bool {
+                                     return a.info.is_length_unknown();
+                                 }),
+        };
 
+        // a body is emitted for a function that is called, once for all calls
+        // without array parameters
+        if (has_known_lengths) {
             tc.add_noinline_body(*call_.func, array_lengths, call_.begin_tk,
                                  call_.source);
         }
@@ -2200,8 +2204,6 @@ class stmt_call final : public statement {
         }
 
         for (size_t i{}; i < args_.size(); ++i) {
-            const expr_any& arg{args_.at(i)};
-
             // a value or a constant is passed as a copy
             const std::optional<place>& passed{places.at(i)};
 
@@ -2209,19 +2211,15 @@ class stmt_call final : public statement {
                 continue;
             }
 
-            const std::optional<storage_path> target{
-                passed->ident->storage(tc),
-            };
-
-            // note: a variable has storage
-            assert(target);
+            const expr_any& arg{args_.at(i)};
+            const storage_path target{place_storage(tc, *passed)};
 
             reference arg_reference{
                 make_reference(
                     tc, i, arg.tok(),
                     std::format("{} {}", describe_argument(i),
                                 in_quotes(statement::trimmed_source(arg))),
-                    *target),
+                    target),
             };
 
             assert_not_shared_with_earlier(references, arg_reference);
@@ -2268,25 +2266,27 @@ class stmt_call final : public statement {
     auto assert_result_not_accessed(const tokenizer& tz) const -> void {
         const char next{tz.peek_char_after_whitespace()};
 
-        if (next == '.' or next == '[') {
-            // e.g. 'g().y' of a 'g' without a result, as 'x = g()'
-            if (not callee().has_result()) {
-                throw_no_value(callee_name_token(), callee().name());
-            }
-
-            if (next == '[') {
-                throw compile_error{
-                    callee_name_token(),
-                    std::format("a call of {} is not an array, it cannot be "
-                                "indexed",
-                                in_quotes(callee().name()))};
-            }
-
-            throw compile_error{
-                tz, std::format("store the result of {} in a variable before "
-                                "reading a field or calling a method of it",
-                                in_quotes(callee().name()))};
+        if (next != '.' and next != '[') {
+            return;
         }
+
+        // e.g. 'g().y' of a 'g' without a result, as 'x = g()'
+        if (not callee().has_result()) {
+            throw_no_value(callee_name_token(), callee().name());
+        }
+
+        if (next == '[') {
+            throw compile_error{
+                callee_name_token(),
+                std::format("a call of {} is not an array, it cannot be "
+                            "indexed",
+                            in_quotes(callee().name()))};
+        }
+
+        throw compile_error{
+            tz, std::format("store the result of {} in a variable before "
+                            "reading a field or calling a method of it",
+                            in_quotes(callee().name()))};
     }
 
     // the result has the type of the destination or is a narrower integer,
@@ -2635,12 +2635,8 @@ class stmt_call final : public statement {
                                    what, hint)};
     }
 
-    // the globals the callee uses and what its body reaches of an argument
-    // through its parameter; a call of the function being parsed has no
-    // complete record yet, so its argument is reached whole, written when the
-    // parameter is 'mut'
-    // note: only a function that calls itself has an incomplete record
-    //       ('assert_callee_body_parsed')
+    // the globals the callee uses and what its body reaches of each argument
+    // through its parameter ('visit_effects_of')
     auto
     visit_callee_effects(const toc& tc,
                          const std::span<const std::optional<place>> places,
@@ -2666,13 +2662,9 @@ class stmt_call final : public statement {
             }
 
             const stmt_identifier& ident{*passed->ident};
+            const storage_path target{place_storage(tc, *passed)};
 
-            const std::optional<storage_path> target{ident.storage(tc)};
-
-            // note: a variable has storage
-            assert(target);
-
-            visit_effects_of(tc, i, ident.dotted_path(), *target, visitor);
+            visit_effects_of(tc, i, ident.dotted_path(), target, visitor);
         }
     }
 
@@ -2680,6 +2672,8 @@ class stmt_call final : public statement {
     // 'param_index' or the result (empty), by its record; a call of the
     // function it is in, whose record the parse is still making, reaches it
     // whole, written unless the parameter is read-only
+    // note: only a function that calls itself has an incomplete record
+    //       ('assert_callee_body_parsed')
     auto visit_effects_of(const toc& tc,
                           const std::optional<size_t> param_index,
                           const std::string_view name,
@@ -2767,6 +2761,18 @@ class stmt_call final : public statement {
         }
 
         return false;
+    }
+
+    // the storage of the variable an argument names
+    [[nodiscard]] static auto place_storage(const toc& tc, const place& passed)
+        -> storage_path {
+
+        std::optional<storage_path> target{passed.ident->storage(tc)};
+
+        // note: a variable has storage
+        assert(target);
+
+        return std::move(*target);
     }
 
     // the '.' and the name after a type, e.g. '.at' of 'point.at(1, 2)'

@@ -162,10 +162,10 @@ struct func_head {
     [[nodiscard]] static auto read(const toc& tc, tokenizer& tz) -> func_head {
         func_head head{};
         head.start_tk = tz.cur_position_token();
-        head.name_tk = tz.next_token();
-        head.open_paren_tk = tz.is_next_char_token('(');
-
-        head.read_modifiers(tz);
+        head.read_name(tz);
+        head.noinline_tk = head.read_modifier(tz, "noinline");
+        head.mut_tk = head.read_modifier(tz, "mut");
+        head.name = head.name_tk.text();
 
         // a receiver names a type, e.g. 'point' of 'func point.at()', which
         // 'read_method_name' checks
@@ -218,35 +218,40 @@ struct func_head {
             }
         }
 
-        const token read_name_tk{read_method_name_token(tz)};
+        const token method_name_tk{read_method_name_token(tz)};
 
         method = method_part{
             .dot_tk{dot_tk},
-            .name_tk{read_name_tk},
+            .name_tk{method_name_tk},
             .receiver_tp{receiver_tp},
         };
 
-        name = method_name_of(receiver_tp != nullptr ? receiver_tp->name()
-                                                     : name_tk.text(),
-                              read_name_tk.text());
+        const std::string_view type_name{
+            receiver_tp != nullptr ? receiver_tp->name() : name_tk.text(),
+        };
+
+        name = method_name_of(type_name, method_name_tk.text());
     }
 
-    // 'noinline' and 'mut' before the name; a word followed by '(', '.' or
-    // '<' is read as the name
-    auto read_modifiers(tokenizer& tz) -> void {
-        if (name_tk.is_text("noinline") and is_name_next(tz)) {
-            noinline_tk = name_tk;
-            name_tk = tz.next_token();
-            open_paren_tk = tz.is_next_char_token('(');
+    // 'keyword' before the name, e.g. 'noinline', then the next word is read
+    // as the name; none when 'name_tk' is not it or is the name
+    auto read_modifier(tokenizer& tz, const std::string_view keyword)
+        -> std::optional<token> {
+
+        if (not name_tk.is_text(keyword) or not is_name_next(tz)) {
+            return std::nullopt;
         }
 
-        if (name_tk.is_text("mut") and is_name_next(tz)) {
-            mut_tk = name_tk;
-            name_tk = tz.next_token();
-            open_paren_tk = tz.is_next_char_token('(');
-        }
+        const token modifier_tk{name_tk};
+        read_name(tz);
 
-        name = name_tk.text();
+        return modifier_tk;
+    }
+
+    // a word, the name or a modifier before it, and the '(' if it follows
+    auto read_name(tokenizer& tz) -> void {
+        name_tk = tz.next_token();
+        open_paren_tk = tz.is_next_char_token('(');
     }
 
     // e.g. 'func list.add(x)'
@@ -382,9 +387,7 @@ struct func_result {
 
         if (has_type) {
             statement::assert_not_string_type(type_tk);
-        }
-
-        if (not has_type) {
+        } else {
             tz.put_back_token(type_tk);
 
             // a keyword without a '{' after it starts what follows a function
@@ -442,7 +445,7 @@ struct frame_slot {
 class stmt_def_func final : public statement {
     func_head head_{};
     std::vector<stmt_def_func_param> params_;
-    std::vector<token> param_delims_tk_;
+    std::vector<token> param_delimiter_tks_;
     token close_paren_tk_;
     std::optional<func_result> result_;
     stmt_block code_;
@@ -466,7 +469,7 @@ class stmt_def_func final : public statement {
 
   public:
     // a function of the user code, or an instance of a generic definition,
-    // e.g. 'tokenizer.to<name>' or 'str.print', see 'func_instantiator'.
+    // e.g. 'tokenizer.to<name>' or 'str.print', see 'func_instantiator';
     // 'tz' is after 'head'
     stmt_def_func(toc& tc, const token tk, const func_head& head, tokenizer& tz,
                   std::optional<func_instance> instance)
@@ -531,7 +534,7 @@ class stmt_def_func final : public statement {
     auto check_body(toc& tc) const -> void {
         const bool takes_from_call{
             array_param_count() != 0 or
-                (is_inlined() and (not params().empty() or has_result())),
+                (is_inlined() and (not params_.empty() or has_result())),
         };
 
         try {
@@ -891,8 +894,8 @@ class stmt_def_func final : public statement {
                                 "'main' cannot be declared 'noinline'"};
         }
 
-        if (not params().empty()) {
-            throw compile_error{params().front().tok(),
+        if (not params_.empty()) {
+            throw compile_error{params_.front().tok(),
                                 "'main' cannot have parameters"};
         }
     }
@@ -1038,7 +1041,7 @@ class stmt_def_func final : public statement {
         is_body_parsed_ = true;
     }
 
-    // e.g. 'a i32, b i32' up to the closing parenthesis
+    // the parameters read into 'list', e.g. 'a i32, b i32', with their types
     auto parse_params(toc& tc, const stmt_def_func_param::syntax_list& list)
         -> void {
 
@@ -1046,7 +1049,7 @@ class stmt_def_func final : public statement {
             params_.emplace_back(tc, param);
         }
 
-        param_delims_tk_ = list.delimiter_tks;
+        param_delimiter_tks_ = list.delimiter_tks;
         close_paren_tk_ = list.close_paren_tk;
     }
 
@@ -1144,7 +1147,7 @@ class stmt_def_func final : public statement {
         const size_t first_param{has_self_param() ? size_t{1} : size_t{0}};
 
         source_delimited_to(os, params_ | std::views::drop(first_param),
-                            param_delims_tk_);
+                            param_delimiter_tks_);
 
         close_paren_tk_.source_to(os);
 
@@ -1560,21 +1563,24 @@ class stmt_def_func_generic final : public statement {
     // statics
     //
 
-    // a type parameter of a generic type names a type in the bodies of its
-    // methods, a parameter or a result of that name would name two things;
-    // 'what' names the kind of 'name_tk'
-    static auto assert_apart_from_receiver_types(const toc& tc,
-                                                 const func_head& head,
-                                                 const token& name_tk,
-                                                 const std::string_view what)
-        -> void {
+    // the body of a method of a generic type sees the parameters of the type,
+    // e.g. 'T' of 'type box<T type>' in 'func box.f(T)' would name two
+    // things; a parameter or a result may hide a constant parameter, which
+    // 'is_type_only' leaves out; 'what' names the kind of 'name_tk'
+    static auto assert_apart_from_receiver_params(
+        const toc& tc, const func_head& head, const token& name_tk,
+        const std::string_view what, const bool is_type_only) -> void {
 
         const generic_type_info& receiver{
             tc.generics().get_type(head.name_tk.text()),
         };
 
         for (const generic_param& param : receiver.params) {
-            if (param.is_type and param.name_tk.text() == name_tk.text()) {
+            if (is_type_only and not param.is_type) {
+                continue;
+            }
+
+            if (param.name_tk.text() == name_tk.text()) {
                 throw compile_error{
                     name_tk,
                     std::format("{} {} is also the name of the generic "
@@ -1586,32 +1592,10 @@ class stmt_def_func_generic final : public statement {
         }
     }
 
-    // the body of a method of a generic type sees the parameters of the
-    // type too, e.g. 'n' of 'type box<n>' in 'func box.f<n type>()' would
-    // name two things
-    static auto assert_generic_param_not_receiver_param(
-        const toc& tc, const token& param_tk,
-        const std::string_view generic_type) -> void {
-
-        const generic_type_info& generic{tc.generics().get_type(generic_type)};
-
-        for (const generic_param& param : generic.params) {
-            if (param.name_tk.text() == param_tk.text()) {
-                throw compile_error{
-                    param_tk,
-                    std::format("generic parameter {} is already declared "
-                                "by {} at {}",
-                                in_quotes(param_tk.text()),
-                                in_quotes(generic_type),
-                                tc.where(param.name_tk))};
-            }
-        }
-    }
-
     // the rules of a generic definition, checked once whether or not an
-    // instance is made: the type parameters hide nothing and are named apart
-    // from the signature, so are those of the generic type of a method, a
-    // constructor has a receiver and no type parameters
+    // instance is made: the type parameters name no built-in and are named
+    // apart from the signature, so are those of the generic type of a method,
+    // a constructor has a receiver and no type parameters
     static auto assert_generic_signature(const toc& tc, const func_head& head,
                                          const generic_signature& signature)
         -> void {
@@ -1625,8 +1609,8 @@ class stmt_def_func_generic final : public statement {
         for (const token& param_tk : signature.type_param_tks) {
             // e.g. 'n' of 'func box.f<n type>()' of 'type box<n>'
             if (head.is_generic_type_method()) {
-                assert_generic_param_not_receiver_param(tc, param_tk,
-                                                        head.name_tk.text());
+                assert_apart_from_receiver_params(tc, head, param_tk,
+                                                  "generic parameter", false);
             }
 
             tc.assert_valid_unqualified_name(param_tk);
@@ -1648,13 +1632,13 @@ class stmt_def_func_generic final : public statement {
         // e.g. 'T' of 'func box.f(T)' of 'type box<T type>'
         if (head.is_generic_type_method()) {
             for (const generic_signature_param& param : signature.params) {
-                assert_apart_from_receiver_types(tc, head, param.name_tk,
-                                                 "parameter");
+                assert_apart_from_receiver_params(tc, head, param.name_tk,
+                                                  "parameter", true);
             }
 
             if (signature.result_name_tk) {
-                assert_apart_from_receiver_types(
-                    tc, head, *signature.result_name_tk, "result");
+                assert_apart_from_receiver_params(
+                    tc, head, *signature.result_name_tk, "result", true);
             }
         }
 

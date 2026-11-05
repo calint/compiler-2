@@ -1,0 +1,8 @@
+# the value of a built-in that an operator continues tells no type argument
+
+func show<T type>(s T) {}
+
+func main() {
+    var b = i8[4]
+    show(read(0, b) + 1)
+}

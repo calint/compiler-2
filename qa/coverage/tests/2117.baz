@@ -1,0 +1,13 @@
+# a constructor call that an operator continues tells no type argument
+
+type point {x, y}
+
+func point.at(x, y) self {
+    self = {x, y}
+}
+
+func show<T type>(s T) {}
+
+func main() {
+    show(point.at(1, 2) == point.at(1, 2))
+}

@@ -1,0 +1,4 @@
+
+2115.baz:9:13: cannot deduce 'T' of generic function 'show', write 'show<...>'
+    var r = show(k)
+            ^~~~

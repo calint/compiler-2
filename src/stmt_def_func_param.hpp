@@ -58,7 +58,8 @@ class stmt_def_func_param final : public statement {
             // parses, e.g. the 'mut' of 'func f(a, mut b i8)'
             tc.assert_valid_unqualified_name(name_tk);
 
-            const std::optional<token> mut_tk{read_mut(tz)};
+            // 'mut' after the name allows the body to write the parameter
+            const std::optional<token> mut_tk{tz.is_next_word_token("mut")};
 
             const std::optional<token> type_tk{read_declared_type(tc, tz)};
 
@@ -104,13 +105,6 @@ class stmt_def_func_param final : public statement {
                 .open_bracket_tk{*open_bracket_tk},
                 .close_bracket_tk{*close_bracket_tk},
             };
-        }
-
-        // 'mut' after the name allows the body to write the parameter
-        [[nodiscard]] static auto read_mut(tokenizer& tz)
-            -> std::optional<token> {
-
-            return tz.is_next_word_token("mut");
         }
     };
 

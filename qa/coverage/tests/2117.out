@@ -1,0 +1,4 @@
+
+2117.baz:12:10: store 'point.at(1, 2)' in a variable before comparing it
+    show(point.at(1, 2) == point.at(1, 2))
+         ^

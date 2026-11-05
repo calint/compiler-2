@@ -1,0 +1,9 @@
+# an instance literal that an operator continues tells no type argument
+
+type point {x, y}
+
+func show<T type>(s T) {}
+
+func main() {
+    show(point{1, 2} == point{1, 2})
+}

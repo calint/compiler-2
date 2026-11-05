@@ -1,0 +1,4 @@
+
+2118.baz:7:5: cannot deduce 'T' of generic function 'show', write 'show<...>'
+    show(read(0, b) + 1)
+    ^~~~

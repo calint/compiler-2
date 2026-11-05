@@ -1,4 +1,4 @@
 
-1075.baz:8:13: generic parameter 'T' is already declared by 'list' at 4:11
+1075.baz:8:13: generic parameter 'T' is also the name of the generic parameter of 'list' at 4:11, use another name
 func list.f<T type>(x T) {}
             ^

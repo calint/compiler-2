@@ -1,0 +1,4 @@
+
+2116.baz:8:10: an instance literal of 'point' is not an operand here, store it in a variable first
+    show(point{1, 2} == point{1, 2})
+         ^~~~~
