@@ -199,7 +199,6 @@ class assembler_x86_64 final : public assembler {
         add_text(std::format("{} {}", comment_start(indent), text));
     }
 
-    // 'location' is the source the comment is about
     auto comment(const size_t indent, const std::string_view location,
                  const std::string_view text) -> void override {
 
@@ -220,8 +219,8 @@ class assembler_x86_64 final : public assembler {
     }
 
     auto reserve(const size_t size_bytes) -> void override {
-        for_each_chunk(size_bytes, [&](const size_t chunk) -> void {
-            add_text(std::format("resb {}", chunk));
+        for_each_chunk(size_bytes, [&](const size_t chunk_bytes) -> void {
+            add_text(std::format("resb {}", chunk_bytes));
         });
     }
 
@@ -235,8 +234,8 @@ class assembler_x86_64 final : public assembler {
     }
 
     auto zero_data(const size_t size_bytes) -> void override {
-        for_each_chunk(size_bytes, [&](const size_t chunk) -> void {
-            add_text(std::format("times {} db 0", chunk));
+        for_each_chunk(size_bytes, [&](const size_t chunk_bytes) -> void {
+            add_text(std::format("times {} db 0", chunk_bytes));
         });
     }
 
@@ -506,19 +505,19 @@ class assembler_x86_64 final : public assembler {
 
     // nasm rejects a count above the signed 32-bit range in 'times' and 'resb',
     // a larger one is emitted in parts, the last one with the rest
-    static auto for_each_chunk(const size_t count,
+    static auto for_each_chunk(const size_t size_bytes,
                                const std::function_ref<void(size_t)> emit)
         -> void {
 
-        constexpr size_t max_chunk{std::numeric_limits<int32_t>::max()};
+        constexpr size_t max_chunk_bytes{std::numeric_limits<int32_t>::max()};
 
-        size_t remaining{count};
-        while (remaining > max_chunk) {
-            emit(max_chunk);
-            remaining -= max_chunk;
+        size_t remaining_bytes{size_bytes};
+        while (remaining_bytes > max_chunk_bytes) {
+            emit(max_chunk_bytes);
+            remaining_bytes -= max_chunk_bytes;
         }
 
-        emit(remaining);
+        emit(remaining_bytes);
     }
 
     // the table is inside a function because 'op_info' default member

@@ -6699,3 +6699,7 @@ if [[ $MACHINE == x86_64 ]]; then SRC=2112 && COMPERR; else SRC=2112 && EXP=6 &&
 
 # a break in a branch that never runs leaves the breaks of its loop
 SRC=2113 && EXP=3 && RUN
+
+# --vars=48: an inlined body runs out of variable storage at its call, on rv32i
+# in both versions of a body with an indexed argument
+SRC=2114 && OPTS="--vars=48" COMPERR

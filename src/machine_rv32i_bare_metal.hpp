@@ -73,7 +73,9 @@ class machine_rv32i_bare_metal : public machine_rv32i {
     auto finish_target() -> void override {
         machine_rv32i::finish_target();
 
-        const size_t memory_end_address{assembler().memory_end_address()};
+        const assembler_rv32i& output{assembler()};
+
+        const size_t memory_end_address{output.memory_end_address()};
         const size_t memory_bytes{memory_size_bytes()};
 
         // note: the constructor rejected a stack larger than the memory

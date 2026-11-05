@@ -315,7 +315,6 @@ class assembler_rv32i final : public assembler {
             std::format("{}{} {}", indentation(indent), comment_marker_, text));
     }
 
-    // 'location' is the source the comment is about
     auto comment(const size_t indent, const std::string_view location,
                  const std::string_view text) -> void override {
 
@@ -1996,28 +1995,27 @@ class assembler_rv32i final : public assembler {
 
         const auto line_of{&std::pair<size_t, int64_t>::first};
 
+        // note: the backend refers to labels it defines
+
         if (name.back() == 'f') {
-            const auto next{
+            const auto after{
                 std::ranges::upper_bound(definitions, line_index, {}, line_of),
             };
 
-            if (next != definitions.end()) {
-                return next->second;
-            }
+            assert(after != definitions.end());
+
+            return after->second;
         }
 
-        if (name.back() == 'b') {
-            const auto next{
-                std::ranges::lower_bound(definitions, line_index, {}, line_of),
-            };
+        assert(name.back() == 'b');
 
-            if (next != definitions.begin()) {
-                return std::prev(next)->second;
-            }
-        }
+        const auto not_before{
+            std::ranges::lower_bound(definitions, line_index, {}, line_of),
+        };
 
-        // the backend refers to labels it defines
-        std::unreachable();
+        assert(not_before != definitions.begin());
+
+        return std::prev(not_before)->second;
     }
 
     static auto write_data(std::ostream& os, const data_values& data) -> void {
@@ -2040,12 +2038,12 @@ class assembler_rv32i final : public assembler {
         }
     }
 
-    static auto write_zeros(std::ostream& os, size_t count) -> void {
+    static auto write_zeros(std::ostream& os, size_t size_bytes) -> void {
         static constexpr std::array<char, 4096> zeros{};
-        while (count != 0) {
-            const size_t chunk{std::min(count, zeros.size())};
-            os.write(zeros.data(), static_cast<std::streamsize>(chunk));
-            count -= chunk;
+        while (size_bytes != 0) {
+            const size_t chunk_bytes{std::min(size_bytes, zeros.size())};
+            os.write(zeros.data(), static_cast<std::streamsize>(chunk_bytes));
+            size_bytes -= chunk_bytes;
         }
     }
 };

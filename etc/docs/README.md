@@ -1388,10 +1388,11 @@ inlined call with fifteen indexed arguments on rv32i where folding each address
 into a register would need more registers than there are, the temporary of a
 scratch version past '--vars', or an inlined recursion that runs out of
 registers in one version only. The error carries a kind other than 'source'
-('compile_error::error_kind'), which is set where the error is made; when both
-versions run out, the error of the first is reported. Any other error is an
-error of the program and ends the compile. An error of discarded code is a
-'source' error ('toc::dry_run'), so a version never drops it; the
+('compile_error::error_kind'), which is set where the error is made. The
+second version holds the registers of the first and more, so only the second
+runs out alone; when the first runs out, its error is reported. Any other
+error is an error of the program and ends the compile. An error of discarded
+code is a 'source' error ('toc::dry_run'), so a version never drops it; the
 check of a body starts from the registers of a noinline body, which do not
 depend on the code around it, and skipped code from the registers held where
 it stands, as if it ran ('machine::discarded_code').

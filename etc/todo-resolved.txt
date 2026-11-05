@@ -1,6 +1,31 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] hard: design review series 2, round 81 (2026-11-05, user: continue;
+    G 'machine_rv32i.hpp' line by line, H 'machine.hpp' and the assemblers
+    line by line, I a hunter of what round 80 F left)
+    => done (2026-11-05): listings of every test equal on both targets; G1
+       'extend_shift_op' gone, its 'bool' branch unreachable (no conversion
+       makes a 'bool'), 'extend_register' asserts it; G2 'store_bytes',
+       'set_loop_end' and 'unrolled_address' use 'memory_at'; G3 nested
+       calls split; G4 a wrong comment of 'equality_tested_register' gone;
+       'machine_rv32i_bare_metal::finish_target' names 'output'; H1 two
+       comments that restated 'assembler::comment' gone; H2
+       'assembler_rv32i::symbol_value' returns early with asserts; H3 byte
+       counts named '_bytes'; H4 'max_scratch_regs' ->
+       'max_scratch_registers'; H5 '*index' to 'contains'; H6 the comment of
+       'noinline_body_register_count'; H7 'exhausted_resource' asserts the
+       inlining limit; H8 the second version of each caller of
+       'emit_most_efficient' holds the registers of the first and more, so
+       it fails where the first fails (I: 4500 programs, no first-only
+       failure): the first failing throws, the branch "the first runs out"
+       of 'choose_version' gone, docs 5 says it; "variable storage" of
+       'exhausted_resource' is reached, 2114; I found no bug: 1500 programs
+       of frames and '--vars' on four targets, 750 of '--stack' on bare
+       metal, 4100 with an emulator that records any store or 'sp' past the
+       limits, 9800 of 'array_copy' and 'arrays_equal' with extreme starts
+       and counts through generic wrappers, 4200 builds of option variants
+       on rv32i and rv32i-qemu, sectors past the card on rv32i-fpga
 [x] hard: design review series 2, round 80 (2026-11-05, user: go in a
     loop and do qa; F a hunter of what round 78 B left: i64 and the default
     type, 'read', 'write' and the sector functions, the qemu targets)

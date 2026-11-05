@@ -294,7 +294,7 @@ class machine {
         // the inlined calls being compiled and what the registers held
         register_trace trace;
         // the most scratch registers in use
-        size_t max_scratch_regs{};
+        size_t max_scratch_registers{};
         // the routines, helpers and failure handlers the code uses, by label;
         // emitted after the code, see 'mark_used'
         std::set<std::string, std::less<>> used_routines;
@@ -890,8 +890,8 @@ class machine {
         push_allocation(src_loc_tk, indent, *register_name,
                         register_pool::holder_kind::scratch);
 
-        state_.max_scratch_regs =
-            std::max(state_.max_scratch_regs, state_.registers.scratch_count());
+        state_.max_scratch_registers = std::max(
+            state_.max_scratch_registers, state_.registers.scratch_count());
 
         return make_register_operand(*register_name, type_ref);
     }
@@ -1171,7 +1171,7 @@ class machine {
     // emits both versions and keeps the one with less code, the first on ties,
     // or the one that '--versions' names; a version that fails with an error
     // other than 'source', e.g. running out of registers, is not kept, when
-    // both do the error of the first is thrown. each version starts from the
+    // the first does its error is thrown. each version starts from the
     // state before it, the state of the kept one remains; true when the first
     // is kept, 'toc' keeps its peaks ('toc::emit_most_efficient')
     [[nodiscard]] auto
@@ -1184,7 +1184,12 @@ class machine {
         version_result first{compile_version(emit_first)};
         version_result second{compile_version(emit_second)};
 
-        if (not first and not second) {
+        // note: the second version of each caller holds the registers of the
+        //       first and one more, with the same storage and inlining depth
+        //       ('expr_arith' through a scratch register, 'stmt_call' with
+        //       address registers), so it fails where the first fails
+
+        if (not first) {
             std::rethrow_exception(first.error().error);
         }
 
@@ -1437,7 +1442,7 @@ class machine {
         return {
             .optimizations{output.optimizations()},
             .noinline_functions{output.noinline_summaries()},
-            .max_scratch_registers{state_.max_scratch_regs},
+            .max_scratch_registers{state_.max_scratch_registers},
             .instruction_count{output.instruction_count()},
         };
     }
@@ -1785,7 +1790,7 @@ class machine {
             const std::optional<size_t> index{register_index_of(name)};
 
             if (index and
-                std::ranges::contains(state_.registers.allocations(), index,
+                std::ranges::contains(state_.registers.allocations(), *index,
                                       &register_pool::allocation::index)) {
 
                 saved.push_back(*index);
@@ -1942,11 +1947,13 @@ class machine {
         }
     }
 
-    // of two versions, at least one available, the one to keep and why, e.g.
+    // of two versions, the first available, the one to keep and why, e.g.
     // 'kept the second of two versions of 4 and 3 instructions, the smaller'
     [[nodiscard]] auto choose_version(const version_result& first,
                                       const version_result& second) const
         -> version_choice {
+
+        assert(first);
 
         if (not second) {
             return {
@@ -1955,17 +1962,6 @@ class machine {
                     std::format("kept the first of two versions, the second "
                                 "runs out of {}",
                                 second.error().resource),
-                },
-            };
-        }
-
-        if (not first) {
-            return {
-                .keeps_first{false},
-                .comment{
-                    std::format("kept the second of two versions, the first "
-                                "runs out of {}",
-                                first.error().resource),
                 },
             };
         }
@@ -2180,8 +2176,8 @@ class machine {
         return pool;
     }
 
-    // a 'noinline' body holds the variables base and the frame base from its
-    // start
+    // the scratch registers a 'noinline' body can use, which holds the
+    // variables base and the frame base from its start
     [[nodiscard]] auto noinline_body_register_count() const -> size_t {
         return scratch_register_count(noinline_body_pool().allocations());
     }
@@ -2350,7 +2346,7 @@ class machine {
         // note: the parse emits no code, so it allocates no register and uses
         //       no routine
 
-        assert(state_.max_scratch_regs == 0);
+        assert(state_.max_scratch_registers == 0);
         assert(state_.used_routines.empty());
 
         output.comment(0, "");
@@ -2376,6 +2372,9 @@ class machine {
         if (kind == compile_error::error_kind::out_of_storage) {
             return "variable storage";
         }
+
+        // note: 'compile_version' passes only a limit
+        assert(kind == compile_error::error_kind::inlining_limit);
 
         return "inlined call levels";
     }

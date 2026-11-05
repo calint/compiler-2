@@ -984,11 +984,10 @@ class machine_rv32i : public machine {
 
         assembler_.la(indent, pointer.register_name(), add_constant());
 
+        const operand constant{memory_at(pointer)};
+
         // read-only constants are word aligned so 'dst' limits the width
-        copy_block(
-            src_loc_tk, indent, dst,
-            operand::mem(pointer.register_name(), {}, 1, 0, dst.type_ref()),
-            bytes.size(), width);
+        copy_block(src_loc_tk, indent, dst, constant, bytes.size(), width);
     }
 
     auto unary(const token& src_loc_tk, const size_t indent,
@@ -1227,12 +1226,19 @@ class machine_rv32i : public machine {
             for (const size_t file_ix :
                  failure_lines_of(handler_label) | std::views::keys) {
 
-                assembler_.label(0,
-                                 failure_entry_label(handler_label, file_ix));
+                const std::string entry_label{
+                    failure_entry_label(handler_label, file_ix),
+                };
 
-                emit_line_failure(
+                assembler_.label(0, entry_label);
+
+                const std::string message_label{
                     std::format(".Lbaz_{}_message_{}", label_name, file_ix),
-                    failure_message(name, file_ix), handler.exit_code);
+                };
+
+                const std::string message{failure_message(name, file_ix)};
+
+                emit_line_failure(message_label, message, handler.exit_code);
             }
 
             return;
@@ -2864,7 +2870,6 @@ class machine_rv32i : public machine {
         assert(left.register_name() != "zero" and
                right.register_name() != "zero");
 
-        // neither operand is zero and the constant did not fit
         assembler_.xor_op(indent, result, left.register_name(),
                           right.register_name());
 
@@ -2874,6 +2879,11 @@ class machine_rv32i : public machine {
     auto extend_register(const size_t indent, const type& dst_type,
                          const operand& value) -> void {
 
+        // note: no conversion makes a 'bool', a 'bool' register is only
+        //       loaded from a 'bool' with 'lbu'
+
+        assert(not dst_type.is_bool());
+
         const size_t shift{register_bits_ - dst_type.size_bits()};
 
         // the register holds the value at the full width, as the comparisons
@@ -2881,9 +2891,8 @@ class machine_rv32i : public machine {
         assembler_.slli(indent, value.register_name(), value.register_name(),
                         shift);
 
-        assembler_.immediate_op(indent, extend_shift_op(dst_type),
-                                value.register_name(), value.register_name(),
-                                shift);
+        assembler_.srai(indent, value.register_name(), value.register_name(),
+                        shift);
     }
 
     // a jump grown beyond 1 MiB needs a register without a live value
@@ -3237,9 +3246,10 @@ class machine_rv32i : public machine {
                       const operand& end, const operand& pointer,
                       const size_t size_bytes) -> void {
 
-        address_of(src_loc_tk, indent, end,
-                   operand::mem(pointer.register_name(), {}, 1,
-                                address_offset(size_bytes), default_type()));
+        const operand at{memory_at(pointer)};
+        const operand past_end{offset_by(at, size_bytes)};
+
+        address_of(src_loc_tk, indent, end, past_end);
     }
 
     // a narrow register shifts to the top and back, extending in one pair
@@ -3256,10 +3266,9 @@ class machine_rv32i : public machine {
                             loaded.value.register_name(),
                             register_bits_ - bits + shift_count);
 
-            assembler_.immediate_op(indent, extend_shift_op(dst.type_ref()),
-                                    loaded.value.register_name(),
-                                    loaded.value.register_name(),
-                                    register_bits_ - bits);
+            assembler_.srai(indent, loaded.value.register_name(),
+                            loaded.value.register_name(),
+                            register_bits_ - bits);
 
             store_operation_result(indent, dst, loaded.address, loaded.value,
                                    false);
@@ -3450,8 +3459,7 @@ class machine_rv32i : public machine {
 
             address_of(src_loc_tk, indent, pointer, lowered);
 
-            lowered = operand::mem(pointer.register_name(), {}, 1, 0,
-                                   address.type_ref());
+            lowered = memory_at(pointer);
         }
 
         // one return keeps the copy elided
@@ -3556,9 +3564,10 @@ class machine_rv32i : public machine {
         pointers.reserve(walk.addresses.size());
 
         for (const operand& address : walk.addresses) {
+            const operand after_head{offset_by(address, loop.head_size_bytes)};
+
             pointers.push_back(
-                load_pointer(walk.src_loc_tk, walk.indent,
-                             offset_by(address, loop.head_size_bytes)));
+                load_pointer(walk.src_loc_tk, walk.indent, after_head));
         }
 
         const operand end{
@@ -4087,11 +4096,6 @@ class machine_rv32i : public machine {
         return std::format("addresses {} and {}",
                            describe_start(starts.front()),
                            describe_start(starts.back()));
-    }
-
-    // the shift that extends the high bits of a narrow value, zero for bool
-    [[nodiscard]] static auto extend_shift_op(const type& value_type) -> op {
-        return value_type.is_bool() ? op::srli : op::srai;
     }
 
     [[nodiscard]] static auto has_all_bits(const int32_t constant,
