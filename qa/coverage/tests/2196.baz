@@ -1,0 +1,13 @@
+# a type parameter called like a function with a user type argument
+type point {
+    x,
+}
+
+func f<T type>(p T) res {
+    res = T(5)
+}
+
+func main() {
+    var p = point{1}
+    exit(f(p))
+}

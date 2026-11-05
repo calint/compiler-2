@@ -67,7 +67,8 @@ class constant_parser final {
         const std::string_view body{str.substr(1, str.size() - 2)};
         // note: 1 and -2 because the literal is between the quotes
 
-        if (body.size() == 1 and body.at(0) != '\\') {
+        // note: a backslash would escape the closing quote
+        if (body.size() == 1) {
             return static_cast<unsigned char>(body.at(0));
         }
 

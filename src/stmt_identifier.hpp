@@ -733,7 +733,7 @@ class stmt_identifier final : public statement {
     [[nodiscard]] auto is_array() const -> bool { return shape_.is_array(); }
 
     [[nodiscard]] auto is_array_element() const -> bool {
-        return not elems_.empty() and elems_.back().index.has_value();
+        return elems_.back().index.has_value();
     }
 
     [[nodiscard]] auto is_indexed() const -> bool {

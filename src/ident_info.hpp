@@ -202,13 +202,12 @@ class ident_info final {
     }
 
     // one element of the array a variable names, e.g. 'ps' of 'ps[1]' as the
-    // element: the same storage without the shape; another kind is unchanged
+    // element: the same storage without the shape
     [[nodiscard]] auto as_element() const -> ident_info {
         ident_info element{*this};
 
-        if (var_part* const var{std::get_if<var_part>(&element.part_)}) {
-            var->shape = {};
-        }
+        // note: only a variable is an array
+        std::get<var_part>(element.part_).shape = {};
 
         return element;
     }

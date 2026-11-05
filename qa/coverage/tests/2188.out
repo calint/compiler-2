@@ -1,0 +1,7 @@
+
+2188.baz:3:13: 'box' not found
+    var b = box<2>
+            ^~~
+2188.baz:12:10: instantiated by 'make<i64>'
+    exit(make(1))
+         ^~~~

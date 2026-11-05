@@ -1,0 +1,5 @@
+# an array without a size and an element type
+func main() {
+    var a = []
+    exit(0)
+}

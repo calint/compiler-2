@@ -1,0 +1,4 @@
+
+2187.baz:7:9: the destination gives the type 'point', write '{...}'
+    p = point{1, 2
+        ^~~~~

@@ -1,0 +1,7 @@
+
+2196.baz:7:11: 'T' is a type, not a function, an instance is made with 'T{...}'
+    res = T(5)
+          ^
+2196.baz:12:10: instantiated by 'f<point>'
+    exit(f(p))
+         ^

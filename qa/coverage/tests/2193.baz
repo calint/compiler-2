@@ -1,0 +1,4 @@
+# a ']' after the last ',' of an array literal
+func main() {
+    var a = i8[2]{1, 2, ]
+}

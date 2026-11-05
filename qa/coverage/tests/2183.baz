@@ -1,0 +1,9 @@
+# an instance literal compared into a 'bool' is rejected by the comparison
+type point { x, y }
+
+func main() {
+    var p = point{1, 2}
+    var b = bool
+    b = point{1, 2} == p
+    exit(0)
+}

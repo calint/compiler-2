@@ -1789,8 +1789,10 @@ class machine {
         for (const std::string_view name : clobbered) {
             const std::optional<size_t> index{register_index_of(name)};
 
-            if (index and
-                std::ranges::contains(state_.registers.allocations(), *index,
+            // note: the callers name registers of the target, e.g. 'rcx'
+            assert(index);
+
+            if (std::ranges::contains(state_.registers.allocations(), *index,
                                       &register_pool::allocation::index)) {
 
                 saved.push_back(*index);
@@ -2253,12 +2255,13 @@ class machine {
         assert(allocated.holder != register_pool::holder_kind::backend);
 
         // note: a message names the file as the error header does, the
-        //       register report as the listing does ('location_text')
+        //       register report as the listing does ('location_text'); only
+        //       a register the backend holds has no source location
+
+        assert(allocated.src_loc_tk.at_line() != 0);
 
         const std::string holder_location{
-            allocated.src_loc_tk.at_line() == 0
-                ? "-"
-                : locations_.for_message(allocated.src_loc_tk),
+            locations_.for_message(allocated.src_loc_tk),
         };
 
         if (allocated.holder == register_pool::holder_kind::scratch) {

@@ -1,0 +1,7 @@
+# a literal of the type the destination gives that the end of the file
+# ends
+type point { x, y }
+
+func main() {
+    var p = point
+    p = point{1, 2

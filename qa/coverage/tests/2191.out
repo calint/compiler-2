@@ -1,0 +1,4 @@
+
+2191.baz:7:13: expected ')' after the arguments
+    exit(f(1])
+            ^

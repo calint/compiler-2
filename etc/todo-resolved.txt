@@ -1,6 +1,28 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] hard: design review series 2, round 88 (2026-11-05, user: continue;
+    T the missed branches outside asserts of the coverage cleanup)
+    => done (2026-11-05): 159 missed sides outside asserts -> 103, branches
+       88.42% -> 89.07%, listings of every test equal on both targets;
+       tests 2180 to 2204 and 'test-cli.sh' 'CLI_ERROR_LINE_BYTES' (invalid
+       UTF-8 and DEL on an error line and in a name),
+       'CLI_LONG_ARRAY_LOWER_BOUND', 'CLI_NO_EXIT_ROUTINE' (a 'main' that
+       never ends, which also reaches the end of
+       'following_unconditional_jump'); asserts of what no input reaches:
+       'referenced_labels', 'constant_comparison' of a left side that did
+       not fold, 'release_operand' with a 'not', 'with_saved_registers' of
+       a register name, the line of a held register in its message, an
+       error at the end of a source of whitespace only; simplified:
+       'constant_parser' a one-byte character literal, 'as_element' of a
+       variable only, 'plan_loop_start' without its head limit,
+       'is_indexed_reference' and 'is_array_element' without tests that
+       never decide; 2204 records the x86_64 rejection of a zero of 160 B
+       while 'exit' holds 'rdi' (the rep form beyond twice its size, round
+       76); left with their reasons in etc/todo.txt: the far jump forms,
+       'while (true)', loop ends before 'std::unreachable()', predicates
+       only asserts call, kept general predicates; proposed, not applied:
+       'type_table::exists' 'is_param' and 'receiver_type' as a reference
 [x] hard: design review series 2, round 87 (2026-11-05, user: continue;
     S the coverage cleanup of etc/todo.txt with a coverage build of HEAD)
     => done (2026-11-05): 103 missed lines of 21509 -> 86 of 21499, branches

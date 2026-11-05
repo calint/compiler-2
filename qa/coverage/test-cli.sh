@@ -301,6 +301,24 @@ CLI_SOURCE_LINE_ENDS() {
     echo ok
 }
 
+# invalid UTF-8 and DEL before the error column: a lead byte without its
+# continuation and an invalid lead byte take one column, DEL the four of
+# '\x7f'
+CLI_ERROR_LINE_BYTES() {
+    echo -n "cli error line with invalid UTF-8 and DEL: "
+    printf 'func main() {\n    var s = "\xc3A\xc3\xc3\xf8\x7f\xc3\xa9" + y\n}\n' \
+        >gen-bytes.baz
+    "$BIN" gen-bytes.baz >gen.s 2>err && exit 1
+    grep -Fq '\x7f' err
+    grep -Fxq '            ^~~~~~~~~~~~' err
+    # a DEL in a name is neither a letter nor a digit
+    printf 'func main() {\n    var a\x7f = 1\n}\n' >gen-bytes.baz
+    "$BIN" gen-bytes.baz >gen.s 2>err && exit 1
+    grep -Fq "'a\\x7f' is not a valid name" err
+    rm -f gen-bytes.baz
+    echo ok
+}
+
 CLI_UNINSTANTIATED_GENERICS() {
     echo -n "cli uninstantiated generics: "
     # 0851.baz: two generic functions and a method of a generic type without
@@ -439,6 +457,36 @@ CLI_FAR_INDEXED_ELEMENT() {
     # a register sums the base and the offset of 'a', then the index
     grep -Eq '^ +lea r[0-9]+, \[r[0-9]+ \+ r[0-9]+ \* 8\]$' gen.s
     rm -f gen-far.baz
+    echo ok
+}
+
+# compiled only, the program would zero 2.2 GB; an array longer than the
+# signed range of the default type tests the sign of its index, which the
+# unsigned upper compare does not cover (rv32i)
+CLI_LONG_ARRAY_LOWER_BOUND() {
+    echo -n "cli rv32i lower bound of an array past 2^31 elements: "
+    printf 'func main() {\n    var big = i8[2200000000]\n    var i = 2\n' >gen-long.baz
+    printf '    big[i] = 1\n    exit(big[i])\n}\n' >>gen-long.baz
+    "$BIN" --target=rv32i --bin=gen-rv32i.bin --vars=0x90000000 \
+        --checks=upper,lower gen-long.baz >gen.s 2>err
+    [[ ! -s err ]]
+    grep -Eq '^ +bltz t0, 1f$' gen.s
+    rm -f gen-long.baz
+    echo ok
+}
+
+# compiled only, the program never ends; a 'main' that neither ends nor
+# exits has no exit routine
+CLI_NO_EXIT_ROUTINE() {
+    echo -n "cli no exit routine: "
+    printf 'func main() {\n    loop {\n    }\n}\n' >gen-loop.baz
+    local target
+    for target in x86_64 rv32i; do
+        "$BIN" --target=$target --bin=gen-rv32i.bin gen-loop.baz >gen.s 2>err
+        [[ ! -s err ]]
+        grep -Fq baz_exit gen.s && exit 1
+    done
+    rm -f gen-loop.baz
     echo ok
 }
 
@@ -839,7 +887,10 @@ CLI_NOINLINE_REPORT
 CLI_REGISTER_REPORT
 CLI_ADDRESS_RANGE
 CLI_FAR_INDEXED_ELEMENT
+CLI_LONG_ARRAY_LOWER_BOUND
+CLI_NO_EXIT_ROUTINE
 CLI_SOURCE_LINE_ENDS
+CLI_ERROR_LINE_BYTES
 CLI_UNINSTANTIATED_GENERICS
 CLI_COMMENT_LOCATIONS
 CLI_INSTANCE_COMMENT

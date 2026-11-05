@@ -1,0 +1,4 @@
+
+2195.baz:3:5: 'i8' is a type, not a value
+    i8[]{1}
+    ^~

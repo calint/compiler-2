@@ -1,0 +1,8 @@
+# 'noinline' as the name of a generic function
+func noinline<T type>(x T) res T {
+    res = x
+}
+
+func main() {
+    exit(noinline(i8(3)))
+}

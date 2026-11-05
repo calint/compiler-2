@@ -1280,7 +1280,7 @@ class inline_call final {
 
         const ident_info& bound{binding.info};
 
-        return bound.is_address_by_call() and bound.operand().is_memory() and
+        return bound.is_address_by_call() and
                not bound.operand().index_register().empty();
     }
 

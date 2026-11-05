@@ -1,0 +1,4 @@
+
+2198.baz:2:6: 'noinline' is a keyword
+func noinline<T type>(x T) res T {
+     ^~~~~~~~

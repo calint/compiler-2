@@ -1034,7 +1034,13 @@ auto print_source_error(const source_files& files,
     }
 
     const size_t last{src.find_last_not_of(" \t\r\n")};
-    const size_t end{last == std::string_view::npos ? 0 : last + 1};
+
+    // note: an error at the end follows a token of the file, so the file is
+    //       not only whitespace
+
+    assert(last != std::string_view::npos);
+
+    const size_t end{last + 1};
 
     const size_t line{
         static_cast<size_t>(std::ranges::count(src.substr(0, end), '\n')) + 1,

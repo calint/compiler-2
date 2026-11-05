@@ -799,7 +799,10 @@ class expr_bool_op final : public statement {
                                                   const comparison_side& rhs)
         -> std::optional<bool> {
 
-        if (not lhs.folded or not rhs.folded) {
+        // note: 'constant_value' returns before a side that does not fold
+        assert(lhs.folded);
+
+        if (not rhs.folded) {
             return std::nullopt;
         }
 
@@ -1159,7 +1162,10 @@ class expr_bool final : public statement {
     // the operand when the whole expression is one 'bool' operand, e.g. 'x'
     // or 'f(x)' but not 'not x', else none and the expression is unchanged
     [[nodiscard]] auto release_operand() -> std::optional<expr_arith> {
-        if (bools_.size() != 1 or has_not()) {
+        // note: only a group in parentheses has 'not's of its own
+        assert(not has_not());
+
+        if (bools_.size() != 1) {
             return std::nullopt;
         }
 

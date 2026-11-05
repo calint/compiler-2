@@ -1,0 +1,4 @@
+
+2199.baz:2:10: an array parameter takes arrays of any size, write '[]'
+func f(a[4]) {
+         ^

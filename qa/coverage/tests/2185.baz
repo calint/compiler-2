@@ -1,0 +1,8 @@
+# a lone '=' after a parenthesized operand
+func main() {
+    var x = 1
+    if (x + 1) = 2 {
+        exit(1)
+    }
+    exit(2)
+}

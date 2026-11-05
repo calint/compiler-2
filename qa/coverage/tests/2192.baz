@@ -1,0 +1,7 @@
+# the end of the file where the ')' of the arguments is expected
+func f(x) res {
+    res = x
+}
+
+func main() {
+    exit(f(1

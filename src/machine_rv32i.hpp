@@ -3677,10 +3677,7 @@ class machine_rv32i : public machine {
             typed_starts(starts, alignment),
         };
 
-        // the run-time count may be smaller than any head
-        const loop_start start{
-            plan_loop_start(typed, std::numeric_limits<size_t>::max()),
-        };
+        const loop_start start{plan_loop_start(typed)};
 
         comment_pointer_loop(walk.src_loc_tk, walk.indent, start, typed,
                              alignment);
@@ -4319,12 +4316,11 @@ class machine_rv32i : public machine {
     }
 
     // the loop starts at the widest boundary every start reaches after a head
-    // of at most 'size_bytes'
     [[nodiscard]] static auto
     plan_known_loop(const size_t size_bytes,
                     const std::span<const access_start> starts) -> known_loop {
 
-        const loop_start start{plan_loop_start(starts, size_bytes)};
+        const loop_start start{plan_loop_start(starts)};
 
         const size_t after_head_size_bytes{size_bytes - start.head_size_bytes};
 
@@ -4341,11 +4337,9 @@ class machine_rv32i : public machine {
         };
     }
 
-    // the widest width that every start reaches after the same head of at most
-    // 'max_head_size_bytes'
+    // the widest width that every start reaches after the same head
     [[nodiscard]] static auto
-    plan_loop_start(const std::span<const access_start> starts,
-                    const size_t max_head_size_bytes) -> loop_start {
+    plan_loop_start(const std::span<const access_start> starts) -> loop_start {
 
         for (size_t width{word_size_bytes_}; width > 1; width /= 2) {
             const size_t phase{starts.front().phase % width};
@@ -4360,7 +4354,7 @@ class machine_rv32i : public machine {
                     }),
             };
 
-            if (reaches_width and head_size_bytes <= max_head_size_bytes) {
+            if (reaches_width) {
                 return {
                     .head_size_bytes{head_size_bytes},
                     .width{width},

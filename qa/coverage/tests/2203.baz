@@ -1,0 +1,11 @@
+# with the overflow check, logic constants wider than an immediate and the
+# subtraction of the immediate minimum
+func main() {
+    var x = 3000
+    x = x + -2048
+    x = x - -2048
+    var y = x & 4096
+    var z = x | 8192
+    var w = x ^ 8192
+    exit(z - w + y + x - 2998)
+}

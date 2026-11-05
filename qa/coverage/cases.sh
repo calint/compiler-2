@@ -6774,3 +6774,68 @@ SRC=2169 && COMPERR
 
 # a program that only writes sectors has no read routine
 if [[ $MACHINE != rv32i-qemu ]]; then SRC=2170 && EXP=7 && SDCARD=1M RUN; fi
+
+# a '$' of a source line that the listing quotes is part of a symbol for the
+# jump optimizer
+SRC=2180 && EXP=36 && RUN
+
+# a constant division with the division check: a quotient that fits and -1
+# as the divisor of a value that is not the minimum
+SRC=2181 && EXP=12 && OPTS="--checks=noub" RUN
+
+# an array without a size and an element type; an instance literal compared
+# into a 'bool'
+SRC=2182 && COMPERR
+SRC=2183 && COMPERR
+
+# an array of known length compared with an array parameter of any length
+SRC=2184 && EXP=7 && RUN
+
+# a lone '=' and '!' after a parenthesized operand
+SRC=2185 && COMPERR
+SRC=2186 && COMPERR
+
+# a literal of the type the destination gives that the end of the file ends
+SRC=2187 && COMPERR
+
+# a generic type defined after the generic function that uses it
+SRC=2188 && COMPERR
+
+# a generic type with two constants, one a typed constant; a field whose type
+# ends in padding; fields assigned on different paths; a negated conversion
+SRC=2189 && EXP=19 && RUN
+
+# with the shift check, a conversion that narrows and one that does not
+SRC=2190 && EXP=5 && OPTS="--checks=noub" RUN
+
+# the end of the arguments of a call and of an array literal: a ']' and the
+# end of the file where a ')' or a '}' is expected
+SRC=2191 && COMPERR
+SRC=2192 && COMPERR
+SRC=2193 && COMPERR
+SRC=2194 && COMPERR
+
+# an array literal as a statement and compared into a variable, a type
+# parameter called like a function, 'noinline' as a generic function name, an
+# array parameter with a size, a comparison as the argument of
+# 'array_length'
+SRC=2195 && COMPERR
+SRC=2196 && COMPERR
+SRC=2197 && COMPERR
+SRC=2198 && COMPERR
+SRC=2199 && COMPERR
+SRC=2200 && COMPERR
+
+# the lower check alone of a write whose start and count are known at run time
+SRC=2201 && OPTS="--checks=lower" DIFF
+
+# an inlined 'i8' parameter compared at the width of the left side
+SRC=2202 && EXP=2 && RUN
+
+# with the overflow check, logic constants wider than an immediate and the
+# subtraction of the immediate minimum
+SRC=2203 && EXP=2 && OPTS="--checks=noub" RUN
+
+# a register that an operation holds is needed by an inlined call that zeroes
+# many parts (x86_64)
+if [[ $MACHINE == x86_64 ]]; then SRC=2204 && COMPERR; fi

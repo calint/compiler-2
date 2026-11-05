@@ -1,0 +1,13 @@
+# an inlined 'i8' parameter compared at the width of the left side
+func g(a i8) res i32 {
+    res = {}
+    var b = 3
+    if b == a {
+        res = 2
+    }
+}
+
+func main() {
+    var y = i8(3)
+    exit(g(y + 0))
+}

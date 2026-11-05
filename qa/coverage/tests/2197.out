@@ -1,0 +1,4 @@
+
+2197.baz:4:13: an array literal is not an operand here, store it in a variable first
+    var b = [2]{1, 2} == a
+            ^

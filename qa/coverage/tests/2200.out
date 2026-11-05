@@ -1,0 +1,4 @@
+
+2200.baz:11:28: 'a.m' is a method, not an array
+    var n = array_length(a.m < 2)
+                           ^

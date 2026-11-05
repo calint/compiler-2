@@ -1,0 +1,6 @@
+# a '$' of a source line that the listing quotes in a comment is part of a
+# symbol for the jump optimizer, as in a label of nasm
+func main() {
+    var s = "a$b"
+    exit(s[1])
+}

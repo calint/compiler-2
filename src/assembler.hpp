@@ -703,9 +703,10 @@ class assembler {
 
             const auto found{labels.find(l.jump->target)};
 
-            if (found != labels.end()) {
-                referenced.insert(found->first);
-            }
+            // note: the backend defines the labels it jumps to ('destination')
+            assert(found != labels.end());
+
+            referenced.insert(found->first);
         }
 
         return referenced;
