@@ -321,6 +321,10 @@ class machine_x86_64 final : public machine {
                     const size_t size_bytes,
                     [[maybe_unused]] const size_t alignment) -> void override {
 
+        if (size_bytes == 0) {
+            return;
+        }
+
         const size_t parts{part_count(size_bytes)};
 
         constexpr std::array<std::string_view, 3> rep_registers{
@@ -442,14 +446,6 @@ class machine_x86_64 final : public machine {
 
         assembler_.jmp(indent, exit_label_);
         mark_used(exit_label_);
-    }
-
-    [[nodiscard]] auto make_register_operand(const std::string_view name,
-                                             const type& value_type) const
-        -> operand override {
-
-        return operand::reg(sized_register_name(name, value_type.size_bytes()),
-                            value_type);
     }
 
     auto memory_equal(const token& src_loc_tk, const size_t indent,
@@ -722,15 +718,13 @@ class machine_x86_64 final : public machine {
     // it, one stub per failure location sets 'rbp' to the line and enters the
     // entry of its file, which prints 'panic: NAME at FILE:', sets 'rbx' to the
     // exit code and enters the shared line report
-    auto emit_failure_handler(const failure_handler& handler,
-                              const bool with_line) -> void override {
-
+    auto emit_failure_handler(const failure_handler& handler) -> void override {
         const std::string_view name{handler.name};
         const std::string_view handler_label{handler.label};
 
         const std::string label_name{handler.symbol()};
 
-        if (not with_line) {
+        if (not reports_line(handler)) {
             const std::string message_label{std::format("msg_{}", label_name)};
             const std::string message{std::format("{}\n", panic_message(name))};
 
@@ -898,6 +892,14 @@ class machine_x86_64 final : public machine {
         assembler_.instruction(
             0, op::lea, variables_base_register(),
             assembler_x86_64::memory::of_symbol(data_label_));
+    }
+
+    [[nodiscard]] auto make_register_operand(const std::string_view name,
+                                             const type& value_type) const
+        -> operand override {
+
+        return operand::reg(sized_register_name(name, value_type.size_bytes()),
+                            value_type);
     }
 
     // the index in 'register_names_' of a register of any size
@@ -1521,7 +1523,7 @@ class machine_x86_64 final : public machine {
         comment({}, 0, sd_card_failure_.comment);
 
         // the stack is not unwound because the program exits
-        emit_failure_handler(sd_card_failure_, false);
+        emit_failure_handler(sd_card_failure_);
 
         assembler_.switch_section(section::rodata);
         assembler_.comment(0, "the file name ends with a zero byte");

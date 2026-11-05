@@ -104,7 +104,7 @@ struct target_description {
 //   registers      'alloc_scratch_register', 'free_scratch_register',
 //                  'held_registers' (what a front-end step holds),
 //                  'free_named_register', 'slot_register', 'register_view',
-//                  'alloc_named_register', 'make_register_operand'
+//                  'alloc_named_register'
 //   operations     'add_subtract', 'multiply', 'divide', 'shift', 'bitwise',
 //                  'unary', 'zero', 'zero_padding', 'copy_value',
 //                  'store_bytes', 'address_of', 'scale_index', 'store_boolean';
@@ -810,10 +810,6 @@ class machine {
 
     virtual auto exit(const token& src_loc_tk, const size_t indent,
                       const operand& exit_code) -> void = 0;
-
-    [[nodiscard]] virtual auto
-    make_register_operand(const std::string_view name,
-                          const type& value_type) const -> operand = 0;
 
     // compares 'size_bytes' at the addresses 'lhs' and 'rhs', whose registers
     // the caller holds, and puts 1 into the destination of the request when
@@ -1522,9 +1518,9 @@ class machine {
     // the entry of the program, e.g. its section and '_start'
     virtual auto emit_entry() -> void = 0;
 
-    // prints 'panic: NAME' of 'handler', with the line when 'with_line'
-    virtual auto emit_failure_handler(const failure_handler& handler,
-                                      const bool with_line) -> void = 0;
+    // prints 'panic: NAME' of 'handler', with the line when 'reports_line'
+    virtual auto emit_failure_handler(const failure_handler& handler)
+        -> void = 0;
 
     // the code at the start of a 'noinline' body after the frame base is
     // reserved, none by default; 'return_function' is its exit
@@ -1556,6 +1552,12 @@ class machine {
     // the checks and fixups of the output after the jumps are optimized, none
     // by default
     virtual auto finish_target() -> void {}
+
+    // the register 'name' as an operand of the scalar 'value_type', e.g.
+    // 'eax' for 'rax' and an 'i32' on x86_64
+    [[nodiscard]] virtual auto
+    make_register_operand(const std::string_view name,
+                          const type& value_type) const -> operand = 0;
 
     // the index of the register 'name' in any of its sizes, empty for text
     // that names no register, e.g. a label
@@ -1664,14 +1666,13 @@ class machine {
     }
 
     // marks 'handler' used for the failure at 'src_loc_tk'; true when the
-    // failure reports its line, e.g. not a frame overflow, which is not at a
-    // statement
+    // failure reports its line
     [[nodiscard]] auto mark_failure(const failure_handler& handler,
                                     const token& src_loc_tk) -> bool {
 
         mark_used(handler.label);
 
-        if (not options_.reports_line or not handler.takes_line) {
+        if (not reports_line(handler)) {
             return false;
         }
 
@@ -1750,6 +1751,14 @@ class machine {
                register_pool::holder_kind::scratch);
 
         pop_allocation(src_loc_tk, indent, pool_index(register_name));
+    }
+
+    // the failure of 'handler' reports its line, e.g. not a frame overflow,
+    // which is not at a statement
+    [[nodiscard]] auto reports_line(const failure_handler& handler) const
+        -> bool {
+
+        return options_.reports_line and handler.takes_line;
     }
 
     // 'alloc_named_register' without an operand, for a register that the
@@ -2043,8 +2052,7 @@ class machine {
 
             comment({}, 0, handler.comment);
 
-            emit_failure_handler(handler,
-                                 options_.reports_line and handler.takes_line);
+            emit_failure_handler(handler);
         }
     }
 

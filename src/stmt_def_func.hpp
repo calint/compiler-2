@@ -833,6 +833,7 @@ class stmt_def_func final : public statement {
                                .type_ptr{&result_type()},
                                .src_loc_tk{result_->name_tk},
                                .shape{},
+                               .read_only_why{},
                                .placement{placement},
                                .foo_array{},
                            },

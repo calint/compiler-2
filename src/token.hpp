@@ -24,6 +24,17 @@ inline constexpr std::string_view self{"self"};
 // the iterator over elements
 inline constexpr std::string_view foo{"foo"};
 
+// the names a 'foo' declares in its body: the element, its index and the
+// length of the array
+inline constexpr std::string_view foo_element{"e"};
+inline constexpr std::string_view foo_counter{"i"};
+inline constexpr std::string_view foo_length{"n"};
+inline constexpr std::array<std::string_view, 3> foo_names{
+    foo_element,
+    foo_counter,
+    foo_length,
+};
+
 // the function the program starts in
 inline constexpr std::string_view main{"main"};
 

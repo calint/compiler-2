@@ -31,8 +31,18 @@
        read-only message names the dotted path ('ps.a') for an assignment,
        a copy and a 'mut' argument alike, so the finding's premise does not
        hold
-    => left for the next steps: D1-D3, A2, A3, C3; F3-F13; not
-       recommended, awaiting the user: E1, E8, G2, G3, F12 on the test files
+    => step 3 (2026-11-05): D1 'make_register_operand' protected, out of
+       the interface comment; D2 x86_64 'copy_block' of 0 bytes returns
+       before taking a scratch register like rv32i (six x86_64 listings
+       lose the scratch comments, no instruction changes); D3
+       'emit_failure_handler' without 'with_line', 'machine::reports_line'
+       decides it once for 'mark_failure' and both backends; A2
+       'reserved_names::foo_names' ('foo_element', 'foo_counter',
+       'foo_length') used by 'foo' and 'assert_loop_names_free'; A3 one
+       'constant_parser::is_bool_literal', the 'toc.hpp' copy removed; C3
+       every 'var_info' initializer lists '.read_only_why'
+    => left for the next step: F3-F13; not recommended, awaiting the user:
+       E1, E8, G2, G3, F12 on the test files
 [x] easy: unused includes (2026-11-05, user: 'machine_rv32i.hpp' had one,
     check the other files and add the check to the lint)
     => done (2026-11-05): 'misc-include-cleaner', run on each header alone,

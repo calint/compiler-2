@@ -2910,7 +2910,7 @@ class toc final {
     auto assert_loop_names_free(const token& foo_tk) const -> void {
         assert(not is_compiling_);
 
-        for (const std::string_view name : {"e", "i", "n"}) {
+        for (const std::string_view name : reserved_names::foo_names) {
             if (const type* const bound{type_param_named(name)}) {
                 throw compile_error{
                     foo_tk,
@@ -3629,12 +3629,6 @@ class toc final {
                                     in_quotes(generic_name), expected, got)};
 }
 
-// 'true' or 'false'
-[[nodiscard]] inline auto is_bool_literal(const token& tk) -> bool {
-    return tk.is_text(reserved_names::true_value) or
-           tk.is_text(reserved_names::false_value);
-}
-
 // e.g. 'i8' of 'list<i8, 8>' for 'T'
 [[nodiscard]] inline auto resolve_type_arg(const toc& tc,
                                            const std::string_view generic_name,
@@ -3646,7 +3640,9 @@ class toc final {
                                    "a string");
     }
 
-    if (tc.constant_value_of(arg_tk) or is_bool_literal(arg_tk)) {
+    if (tc.constant_value_of(arg_tk) or
+        constant_parser::is_bool_literal(arg_tk.text())) {
+
         throw_generic_arg_mismatch(
             arg_tk, generic_name, param_name, "type",
             std::format("the constant {}", in_quotes(arg_tk.text())));
@@ -3667,7 +3663,7 @@ class toc final {
     }
 
     // e.g. 'true', no number
-    if (is_bool_literal(arg_tk)) {
+    if (constant_parser::is_bool_literal(arg_tk.text())) {
         throw_generic_arg_mismatch(
             arg_tk, generic_name, param_name, "number",
             std::format("the 'bool' constant {}", in_quotes(arg_tk.text())));

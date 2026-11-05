@@ -127,6 +127,7 @@ class initializer_declaration final {
             .type_ptr{&tp},
             .src_loc_tk{name_tk},
             .shape{shape},
+            .read_only_why{},
             .placement{},
             .foo_array{},
         };

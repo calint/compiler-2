@@ -671,6 +671,7 @@ struct call_site {
                        .type_ptr{&tpe},
                        .src_loc_tk{tk},
                        .shape{},
+                       .read_only_why{},
                        .placement{},
                        .foo_array{},
                    },

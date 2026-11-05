@@ -828,17 +828,6 @@ class machine_rv32i : public machine {
         mark_used(exit_label_);
     }
 
-    [[nodiscard]] auto make_register_operand(const std::string_view name,
-                                             const type& value_type) const
-        -> operand override {
-
-        assert_scalar(value_type);
-
-        assert(is_register(name));
-
-        return operand::reg(name, value_type);
-    }
-
     // known size: the addresses are memory operands, small sizes unrolled and
     // larger ones in a loop; the result of the request is 1 when every access
     // matched, 0 at the first mismatch, its 'inverted' swaps them
@@ -1216,15 +1205,13 @@ class machine_rv32i : public machine {
     // the handler of a check that prints 'panic: NAME' then exits with its
     // code; with the line, one entry per file prints 'panic: NAME at FILE:'
     // and the line number in 'a0', see 'end_check'
-    auto emit_failure_handler(const failure_handler& handler,
-                              const bool with_line) -> void override {
-
+    auto emit_failure_handler(const failure_handler& handler) -> void override {
         const std::string_view name{handler.name};
         const std::string_view handler_label{handler.label};
 
         const std::string label_name{handler.symbol()};
 
-        if (with_line) {
+        if (reports_line(handler)) {
             for (const size_t file_ix :
                  failure_lines_of(handler_label) | std::views::keys) {
 
@@ -1364,6 +1351,17 @@ class machine_rv32i : public machine {
         assembler_.resolve_jumps();
 
         check_address_range(assembler_.memory_end_address());
+    }
+
+    [[nodiscard]] auto make_register_operand(const std::string_view name,
+                                             const type& value_type) const
+        -> operand override {
+
+        assert_scalar(value_type);
+
+        assert(is_register(name));
+
+        return operand::reg(name, value_type);
     }
 
     [[nodiscard]] auto register_index_of(const std::string_view name) const

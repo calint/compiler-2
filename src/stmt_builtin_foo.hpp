@@ -171,7 +171,7 @@ class stmt_builtin_foo final : public statement {
         tc.add_var(
             indent,
             {
-                .name{"e"},
+                .name{std::string{reserved_names::foo_element}},
                 .type_ptr{&array_info.type_ref()},
                 .src_loc_tk{src_loc_tk},
                 .shape{},
@@ -186,7 +186,7 @@ class stmt_builtin_foo final : public statement {
 
         tc.add_var(indent,
                    {
-                       .name{"i"},
+                       .name{std::string{reserved_names::foo_counter}},
                        .type_ptr{&tc.builtins().default_type()},
                        .src_loc_tk{src_loc_tk},
                        .shape{},
@@ -202,7 +202,7 @@ class stmt_builtin_foo final : public statement {
         if (not array_len) {
             tc.add_var(indent,
                        {
-                           .name{"n"},
+                           .name{std::string{reserved_names::foo_length}},
                            .type_ptr{&tc.builtins().default_type()},
                            .src_loc_tk{src_loc_tk},
                            .shape{},
@@ -215,7 +215,7 @@ class stmt_builtin_foo final : public statement {
             return;
         }
 
-        tc.add_const(src_loc_tk, indent, "n",
+        tc.add_const(src_loc_tk, indent, reserved_names::foo_length,
                      folded_value::untyped(static_cast<int64_t>(*array_len)));
     }
 
@@ -330,7 +330,8 @@ class stmt_builtin_foo final : public statement {
             add_loop_names(tc, indent, array_info,
                            at_address_register{reg_iter}, var_placement{});
 
-            return tc.resolve_declared(tok(), "i").operand();
+            return tc.resolve_declared(tok(), reserved_names::foo_counter)
+                .operand();
         }
 
         const operand reg_counter{
