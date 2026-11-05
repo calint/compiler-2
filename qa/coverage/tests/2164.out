@@ -1,0 +1,4 @@
+
+2164.baz:3:13: unterminated string
+    var s = "abc
+            ^

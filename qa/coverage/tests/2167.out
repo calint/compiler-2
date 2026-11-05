@@ -1,0 +1,4 @@
+
+2167.baz:2:10: 'loop' is a keyword
+func f() loop {
+         ^~~~

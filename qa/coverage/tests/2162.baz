@@ -1,0 +1,8 @@
+# the source of a multiplication in 'a0', the last register and the first
+# argument of the helper routine (rv32i), runs out of registers: the version
+# through a scratch register fails, the first is kept
+func main() {
+    var x = 1
+    var r = (x + (x + (x + (x + (x + (x + (x + (x + (x + (x + (x + (x + (x + (x + (x + (x + (x + (x + (x + (x + (x + (x + (x + (x + (x + (x + (x + (x * (x + 1)))))))))))))))))))))))))))))
+    exit(r)
+}

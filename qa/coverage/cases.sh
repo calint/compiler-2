@@ -6740,3 +6740,37 @@ if [[ $MACHINE == x86_64 ]]; then SRC=2150 && EXP=7 && OPTS="--vars=0x40000" RUN
 
 # the register peak in a global initializer, see 'test-cli.sh'
 SRC=2151 && EXP=4 && RUN
+
+# the check of a generic function instance without its calls names the call
+# that instantiated it
+SRC=2160 && COMPERR
+
+# an inlined recursion that does not end at compile time in a version of a
+# call with an indexed argument (rv32i)
+SRC=2161 && COMPERR
+
+# the source of a multiplication in 'a0' fails the version through a scratch
+# register (rv32i)
+if [[ $MACHINE != x86_64 ]]; then SRC=2162 && EXP=29 && RUN; fi
+
+# a character literal that ends with a '\' at the end of the file, a string
+# that the end of the file ends and a character literal that ends with a '\'
+# at the end of a line are unterminated
+SRC=2163 && COMPERR
+SRC=2164 && COMPERR
+SRC=2165 && COMPERR
+
+# the prefixes '0X' and '0B' upper case, in a literal and an option value
+SRC=2166 && EXP=28 && OPTS="--vars=0X40000 --checks=upper,lower,line" RUN
+
+# a keyword before a '{' where the result type of a function is expected
+SRC=2167 && COMPERR
+
+# a '\x' escape whose two characters are not both hexadecimal digits
+SRC=2168 && COMPERR
+
+# 'false' is not a type argument
+SRC=2169 && COMPERR
+
+# a program that only writes sectors has no read routine
+if [[ $MACHINE != rv32i-qemu ]]; then SRC=2170 && EXP=7 && SDCARD=1M RUN; fi

@@ -1,0 +1,5 @@
+# a '\x' escape of two characters that are not both hexadecimal digits
+func main() {
+    var c = '\x1g'
+    exit(c)
+}

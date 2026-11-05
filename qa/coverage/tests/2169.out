@@ -1,0 +1,4 @@
+
+2169.baz:7:12: generic parameter 'T' of 'g' needs a type, got the constant 'false'
+    exit(g<false>(1))
+           ^~~~~

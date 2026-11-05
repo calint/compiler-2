@@ -1,0 +1,4 @@
+
+2168.baz:3:14: unsupported escape '\x1g'
+    var c = '\x1g'
+             ^~~~

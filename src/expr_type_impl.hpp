@@ -205,9 +205,8 @@ inline auto expr_type::parse_copy_source(toc& tc, tokenizer& tz,
         return;
     }
 
-    value_ = expr_path{
-        std::move(*std::get<std::unique_ptr<stmt_identifier>>(parsed)),
-    };
+    value_.emplace<expr_path>(
+        std::move(*std::get<std::unique_ptr<stmt_identifier>>(parsed)));
 
     const stmt_identifier& ident{*operand_path()};
 

@@ -1,0 +1,6 @@
+# a keyword before a '{' where the result type of a function is expected
+func f() loop {
+}
+
+func main() {
+}

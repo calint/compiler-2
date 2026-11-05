@@ -436,6 +436,7 @@ class stmt_identifier final : public statement {
 
     stmt_identifier(const stmt_identifier&) = delete;
     auto operator=(const stmt_identifier&) -> stmt_identifier& = delete;
+    auto operator=(stmt_identifier&&) -> stmt_identifier& = delete;
 
     ~stmt_identifier() override;
 
@@ -786,8 +787,6 @@ class stmt_identifier final : public statement {
 
         return method_->name_tk;
     }
-
-    auto operator=(stmt_identifier&&) noexcept -> stmt_identifier&;
 
     auto path_source_to(std::ostream& os) const -> void;
 

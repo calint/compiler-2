@@ -1,6 +1,24 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] hard: design review series 2, round 87 (2026-11-05, user: continue;
+    S the coverage cleanup of etc/todo.txt with a coverage build of HEAD)
+    => done (2026-11-05): 103 missed lines of 21509 -> 86 of 21499, branches
+       88.01% -> 88.42%; tests for lines no test reached: 2160 (the check of
+       a generic instance names its call), 2161 (inlined call levels in a
+       version), 2162 (a source in 'a0' fails the scratch version, rv32i),
+       'test-cli.sh' a far indexed element on x86_64; asserts of what no
+       input reaches: 'machine::location_text' of a token without a line,
+       the array assert of 'expr_any::compile' ('destination::
+       is_length_unknown' gone); the move assignments of 'stmt_identifier'
+       and 'stmt_array_size' deleted (two assignments 'emplace'); branches:
+       2163 to 2170 (unterminated literals at the end of a file and of a
+       line, '0X' and '0B', a keyword as a result type, '\x1g', 'false' as
+       a type argument, a program that only writes sectors); kept: the
+       'internal error' catch of 'main.cpp' and, as general predicates,
+       'expr_any::operand_path' of a literal and the end of
+       'assembler::following_unconditional_jump'; etc/todo.txt has the new
+       state
 [x] easy: consistency topic: a class header comment sits right above its
     'class' in about 100 places, with a blank line between in 7 (round 85 Q13)
     => done (2026-11-05): attached in 'assembler.hpp', 'assembler_rv32i.hpp',

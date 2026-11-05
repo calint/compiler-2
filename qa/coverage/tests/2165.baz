@@ -1,0 +1,6 @@
+# a character literal that ends with a '\' at the end of the line is
+# unterminated
+func main() {
+    var c = '\
+    exit(0)
+}

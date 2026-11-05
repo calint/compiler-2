@@ -518,11 +518,6 @@ class destination final {
         return is_final_address_;
     }
 
-    // see 'array_shape::is_length_unknown'
-    [[nodiscard]] auto is_length_unknown() const -> bool {
-        return shape().is_length_unknown();
-    }
-
     [[nodiscard]] auto is_named() const -> bool { return is_named_; }
 
     [[nodiscard]] auto is_register() const -> bool {

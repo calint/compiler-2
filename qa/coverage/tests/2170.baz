@@ -1,0 +1,7 @@
+# a program that only writes sectors has no read routine
+func main() {
+    var bytes = i8[512]
+    bytes[0] = 7
+    sector_write(0, bytes)
+    exit(bytes[0])
+}

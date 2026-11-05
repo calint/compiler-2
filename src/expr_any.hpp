@@ -49,6 +49,7 @@ class stmt_array_size final : public statement {
 
     stmt_array_size(const stmt_array_size&) = delete;
     auto operator=(const stmt_array_size&) -> stmt_array_size& = delete;
+    auto operator=(stmt_array_size&&) -> stmt_array_size& = delete;
 
     ~stmt_array_size() override;
 
@@ -67,8 +68,6 @@ class stmt_array_size final : public statement {
     [[nodiscard]] auto array_size() const -> size_t;
 
     [[nodiscard]] auto has_value() const -> bool { return value_ != nullptr; }
-
-    auto operator=(stmt_array_size&&) noexcept -> stmt_array_size&;
 };
 
 // the value of an initializer, an argument or a field, parsed at the type of
@@ -201,11 +200,10 @@ class expr_any final : public statement {
     auto compile(toc& tc, const size_t indent, const destination& dst) const
         -> void override {
 
-        // note: an unsized destination is the only array of unknown length
+        // note: an array literal is written by its assignment or definition
+        //       ('plan_writes'), the parse rejects one as an argument
 
-        assert(not is_array() or is_whole_array_copy() or
-               dst.is_length_unknown() ==
-                   (destination_.is_length_unknown() and not dst.array_len()));
+        assert(not is_array() or is_whole_array_copy());
 
         write_plan plan;
         plan_writes(tc, part_location{}, dst.array_len(), plan);
@@ -1258,9 +1256,6 @@ inline stmt_array_size::stmt_array_size(toc& tc, tokenizer& tz)
 }
 
 inline stmt_array_size::stmt_array_size(stmt_array_size&&) noexcept = default;
-
-inline auto stmt_array_size::operator=(stmt_array_size&&) noexcept
-    -> stmt_array_size& = default;
 
 inline stmt_array_size::~stmt_array_size() = default;
 

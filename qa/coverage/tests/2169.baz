@@ -1,0 +1,8 @@
+# 'false' is not a type argument
+func g<T type>(n T) res T {
+    res = n
+}
+
+func main() {
+    exit(g<false>(1))
+}

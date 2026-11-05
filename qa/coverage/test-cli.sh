@@ -429,6 +429,19 @@ CLI_ADDRESS_RANGE() {
     echo ok
 }
 
+# compiled only, the program would zero 3 GB
+CLI_FAR_INDEXED_ELEMENT() {
+    echo -n "cli x86_64 indexed element past the displacement range: "
+    printf 'func main() {\n    var big = i8[3000000000]\n    var a = i64[4]\n' >gen-far.baz
+    printf '    var i = 2\n    a[i] = 7\n    exit(a[i])\n}\n' >>gen-far.baz
+    "$BIN" --vars=0x100000000 gen-far.baz >gen.s 2>err
+    [[ ! -s err ]]
+    # a register sums the base and the offset of 'a', then the index
+    grep -Eq '^ +lea r[0-9]+, \[r[0-9]+ \+ r[0-9]+ \* 8\]$' gen.s
+    rm -f gen-far.baz
+    echo ok
+}
+
 CLI_FPGA_MEMORY() {
     echo -n "cli rv32i-fpga memory size: "
     local memory_size=$((0x800000)) stack_size=$((0x10000))
@@ -825,6 +838,7 @@ CLI_STACK_HANDLER
 CLI_NOINLINE_REPORT
 CLI_REGISTER_REPORT
 CLI_ADDRESS_RANGE
+CLI_FAR_INDEXED_ELEMENT
 CLI_SOURCE_LINE_ENDS
 CLI_UNINSTANTIATED_GENERICS
 CLI_COMMENT_LOCATIONS

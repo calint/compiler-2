@@ -1,0 +1,16 @@
+# an inlined recursion that does not end at compile time inside a version of
+# a call with an indexed argument (rv32i) fails as without versions
+func f(x mut) {
+    if x > 0 {
+        x = x - 1
+        f(x)
+    }
+}
+
+func main() {
+    var a = [4]
+    var i = 1
+    a[i] = 3
+    f(a[i])
+    exit(a[i])
+}

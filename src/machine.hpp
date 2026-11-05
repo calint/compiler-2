@@ -2090,9 +2090,11 @@ class machine {
     [[nodiscard]] auto location_text(const token& src_loc_tk) const
         -> std::string {
 
-        if (src_loc_tk.at_line() == 0) {
-            return "-";
-        }
+        // note: only the registers the backend holds, which the report does
+        //       not list, and the first frame, which it names without a call
+        //       site, have no source location
+
+        assert(src_loc_tk.at_line() != 0);
 
         return locations_.for_listing(src_loc_tk);
     }

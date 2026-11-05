@@ -75,11 +75,11 @@ class stmt_def_type_field final : public statement {
             tz.expect_char_token(']', "expected ']' after array size"),
         };
 
-        array_ = {
+        array_.emplace(array_part{
             .open_bracket_tk{*open_bracket_tk},
             .size{std::move(size)},
             .close_bracket_tk{close_bracket_tk},
-        };
+        });
     }
 
     //

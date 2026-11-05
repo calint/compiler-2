@@ -125,9 +125,6 @@ inline auto stmt_identifier::path_source_to(std::ostream& os) const -> void {
 
 inline stmt_identifier::stmt_identifier(stmt_identifier&&) noexcept = default;
 
-inline auto stmt_identifier::operator=(stmt_identifier&&) noexcept
-    -> stmt_identifier& = default;
-
 inline stmt_identifier::~stmt_identifier() = default;
 
 inline auto stmt_identifier::visit_operands(const operand_visitor visitor) const

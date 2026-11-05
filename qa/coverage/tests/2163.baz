@@ -1,0 +1,4 @@
+# a character literal that ends with a '\' at the end of the file is
+# unterminated
+func main() {
+    var c = '\

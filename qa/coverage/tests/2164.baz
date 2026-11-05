@@ -1,0 +1,3 @@
+# a string that the end of the file ends is unterminated
+func main() {
+    var s = "abc
