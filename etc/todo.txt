@@ -128,6 +128,12 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
           triaged one by one
        5. the README: 'check-readme-names.py', and the sections changed
           since the comparison of 2026-10-27 compared again with the code
+    => state 2026-11-05 (design review series 2, rounds 78 to 89, the hunts
+       of rounds 80 and 86 found no bugs): 2 done but
+       'roome/qa/test-fpga.sh' (the board), 3 done, 5 done (README and docs
+       compared with the compiler by programs in round 79 E, later doc edits
+       checked); left for the user: 1 'test-all.sh', 'test-fpga.sh', 4 the
+       night run (not started, user)
 [ ] medium: x86_64: a call with many indexed arguments in a noinline body
     runs out of registers where rv32i accepts it (2026-10-26, user: medium):
     the body reaches its array parameter through its address, and x86_64
