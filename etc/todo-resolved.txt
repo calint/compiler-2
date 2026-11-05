@@ -1,6 +1,25 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] hard: design review series 2, round 80 (2026-11-05, user: go in a
+    loop and do qa; F a hunter of what round 78 B left: i64 and the default
+    type, 'read', 'write' and the sector functions, the qemu targets)
+    => done (2026-11-05): nothing found; every mismatch was the model or an
+       exception of docs 8 (the default type, 8.2, the uart); about 39700
+       programs of i8 to i64 and 'int' at the width of each target against
+       a model (precedence, division, MIN / -1, run-time shifts by 32 to 63,
+       conversions both ways, inline and noinline), about 11200 of 'read',
+       'write' and the sector functions (constant, run-time and out of range
+       counts and starts, records with padding, the sd card image compared),
+       12656 builds of constant operands of every type and operator, about
+       8000 operand pairs per width of the rv32i multiply and divide
+       routines; on x86_64, rv32i, rv32i-qemu and rv32i-fpga, with noub,
+       '--nopt', first and last versions and check subsets; 3000 asan
+       programs and 29250 folded statements; 'fuzz-ub.py' 3000 and
+       'fuzz-io.py' 400 clean; not covered: multi-line uart input, a sector
+       past the card on fpga, the frame and stack checks and limits, option
+       variants on the qemu targets, generics and the bulk built-ins with
+       'int' extremes; the loop ends
 [x] hard: design review series 2, round 79 (2026-11-05, user: go in a
     loop and do qa; D a design review of the no-UB analysis files, E the
     docs against the compiler)
