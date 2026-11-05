@@ -1,6 +1,23 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] hard: design review series 2, round 86 (2026-11-05, user: continue;
+    R a hunter of the regressions of rounds 78 to 84 against a build of
+    f12c5cf9)
+    => done (2026-11-05): nothing found; about 140000 compile pairs of the
+       old and the new build on 12 configurations (x86_64, rv32i,
+       rv32i-fpga, rv32i-qemu; noub, line, '--nopt', first and last
+       versions, '--reproduce-source'), listings, errors, exit codes and
+       images equal but the message of 1075 and 1560 (round 83): mutants of
+       the tests and 6475 generated sources for the tokenizer and the
+       function heads (crlf, tabs, no final newline, comments and quotes at
+       the end, unterminated literals, 'noinline' and 'mut' as names and in
+       every order), 7000 programs that press both versions of
+       'emit_most_efficient' (the old build never kept the second because
+       the first ran out), 1500 'bool' programs, 109 probes of the new
+       asserts of 'expr_any', 1200 programs of the earlier generators,
+       roome; 'fuzz-all.sh' with asan clean; every source file has now been
+       read line by line (rounds 78 to 85); the loop ends
 [x] hard: design review series 2, round 85 (2026-11-05, user: continue;
     Q line by line the last files: 'operand.hpp', 'register_pool.hpp',
     'register_report.hpp', 'bulk_operands.hpp' and the four rv32i targets)
