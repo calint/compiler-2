@@ -224,8 +224,8 @@ main:
 ;   [prog.baz:208:12] allocate scratch register -> r14
 ;       [prog.baz:208:12] a
         mov r14, qword [rbp + 392]
-;       [prog.baz:208:12] r14 & 3
-;       [prog.baz:208:12] src: folded constant '& 3'
+;       [prog.baz:208:16] r14 & 3
+;       [prog.baz:208:16] src: folded constant '& 3'
         and r14, 3
     cmp r14, 3
     sete r15b
@@ -257,8 +257,8 @@ main:
 ;   [prog.baz:209:12] allocate scratch register -> r14
 ;       [prog.baz:209:12] a
         mov r14, qword [rbp + 392]
-;       [prog.baz:209:12] r14 | 8
-;       [prog.baz:209:12] src: folded constant '| 8'
+;       [prog.baz:209:16] r14 | 8
+;       [prog.baz:209:16] src: folded constant '| 8'
         or r14, 8
     cmp r14, 15
     sete r15b
@@ -290,8 +290,8 @@ main:
 ;   [prog.baz:210:12] allocate scratch register -> r14
 ;       [prog.baz:210:12] a
         mov r14, qword [rbp + 392]
-;       [prog.baz:210:12] r14 ^ 1
-;       [prog.baz:210:12] src: folded constant '^ 1'
+;       [prog.baz:210:16] r14 ^ 1
+;       [prog.baz:210:16] src: folded constant '^ 1'
         xor r14, 1
     cmp r14, 6
     sete r15b
@@ -324,7 +324,7 @@ main:
 ;       [prog.baz:211:12] a
         mov r14, qword [rbp + 392]
 ;       [prog.baz:211:17] r14 << 2
-;       [prog.baz:211:17] src: constant
+;       [prog.baz:211:17] src: folded constant '<< 2'
         sal r14, 2
     cmp r14, 28
     sete r15b
@@ -359,7 +359,7 @@ main:
         neg r14
         jo baz_overflow_line_212
 ;       [prog.baz:212:18] r14 >> 1
-;       [prog.baz:212:18] src: constant
+;       [prog.baz:212:18] src: folded constant '>> 1'
         sar r14, 1
     cmp r14, -4
     sete r15b
@@ -397,7 +397,7 @@ main:
 ;       [prog.baz:215:16] a
         mov r13, qword [rbp + 392]
 ;       [prog.baz:215:21] r13 << 1
-;       [prog.baz:215:21] src: constant
+;       [prog.baz:215:21] src: folded constant '<< 1'
         sal r13, 1
         add r14, r13
         jo baz_overflow_line_215
@@ -439,7 +439,7 @@ main:
         add r14, qword [rbp + 392]
         jo baz_overflow_line_216
 ;       [prog.baz:216:23] r14 << 1
-;       [prog.baz:216:23] src: constant
+;       [prog.baz:216:23] src: folded constant '<< 1'
         sal r14, 1
     cmp r14, 28
     sete r15b
@@ -621,7 +621,7 @@ main:
 ;   [prog.baz:242:9] arr: i32[4] (16 B @ [rbp + 424])
 ;   [prog.baz:242:9] arr = i32[4]
 ;   [prog.baz:242:15] zero remaining elements: 4 * 4 B = 16 B
-;   [prog.baz:242:15] size <= 32 B, use mov
+;   [prog.baz:242:15] 2 parts, use mov
     mov qword [rbp + 424], 0
     mov qword [rbp + 432], 0
 ;   [prog.baz:244:5] var ix = 1
@@ -651,8 +651,8 @@ main:
 ;   [prog.baz:246:9] set array index
 ;   [prog.baz:246:9] ix
     mov r15, qword [rbp + 440]
-;   [prog.baz:246:9] r15 + 1
-;   [prog.baz:246:9] src: folded constant '+ 1'
+;   [prog.baz:246:14] r15 + 1
+;   [prog.baz:246:14] src: folded constant '+ 1'
     inc r15
     jo baz_overflow_line_246
 ;   [prog.baz:246:9] bounds check begin
@@ -754,8 +754,8 @@ main:
     cmp r15, rcx
     jb baz_overlap_line_250
     .Lbaz_overlap.0:
-;   [prog.baz:250:5] free scratch register r15
 ;   [prog.baz:250:5] overlap check end
+;   [prog.baz:250:5] free scratch register r15
     rep movsb
 ;   [prog.baz:250:5] free named register rcx
 ;   [prog.baz:250:5] free named register rdi
@@ -790,7 +790,7 @@ main:
 ;   [prog.baz:254:9] arr1: i32[8] (32 B @ [rbp + 448])
 ;   [prog.baz:254:9] arr1 = i32[8]
 ;   [prog.baz:254:16] zero remaining elements: 8 * 4 B = 32 B
-;   [prog.baz:254:16] size <= 32 B, use mov
+;   [prog.baz:254:16] 4 parts, use mov
     mov qword [rbp + 448], 0
     mov qword [rbp + 456], 0
     mov qword [rbp + 464], 0
@@ -798,7 +798,7 @@ main:
 ;   [prog.baz:255:5] array_copy(arr, arr1, 4)
 ;   [prog.baz:255:16] arr
 ;   [prog.baz:255:21] arr1
-;   [prog.baz:255:5] size <= 16 B, use mov
+;   [prog.baz:255:5] 2 parts, use mov
 ;   [prog.baz:255:5] allocate scratch register -> r15
     mov r15, qword [rbp + 424]
     mov qword [rbp + 448], r15
@@ -811,19 +811,19 @@ main:
 ;   [prog.baz:256:14] eq = arrays_equal(arr[1], arr1[1], 3)
 ;   [prog.baz:256:14] = expression
 ;   [prog.baz:256:14] arrays_equal(arr[1], arr1[1], 3)
+;   [prog.baz:256:27] arr[1]
+;   [prog.baz:256:35] arr1[1]
 ;   [prog.baz:256:14] allocate named register rsi
 ;   [prog.baz:256:14] allocate named register rdi
-;   [prog.baz:256:27] arr[1]
     lea rsi, [rbp + 428]
-;   [prog.baz:256:35] arr1[1]
     lea rdi, [rbp + 452]
     cmpsq
     jne .Lbaz_equal.1
     cmpsd
     .Lbaz_equal.1:
+    sete byte [rbp + 480]
 ;   [prog.baz:256:14] free named register rdi
 ;   [prog.baz:256:14] free named register rsi
-    sete byte [rbp + 480]
 ;   [prog.baz:259:5] assert(eq)
 ;   [prog.baz:38:6] assert(ok bool)
     func.assert..259.5:
@@ -854,19 +854,19 @@ main:
 ;       [prog.baz:262:16] r15b = arrays_equal(arr, arr1, 4)
 ;       [prog.baz:262:16] = expression
 ;       [prog.baz:262:16] arrays_equal(arr, arr1, 4)
+;       [prog.baz:262:29] arr
+;       [prog.baz:262:34] arr1
 ;       [prog.baz:262:16] allocate named register rsi
 ;       [prog.baz:262:16] allocate named register rdi
-;       [prog.baz:262:29] arr
         lea rsi, [rbp + 424]
-;       [prog.baz:262:34] arr1
         lea rdi, [rbp + 448]
         cmpsq
         jne .Lbaz_equal.2
         cmpsq
         .Lbaz_equal.2:
+        sete r15b
 ;       [prog.baz:262:16] free named register rdi
 ;       [prog.baz:262:16] free named register rsi
-        sete r15b
     test r15b, r15b
     sete r15b
     bool.262.12.end:
@@ -892,7 +892,7 @@ main:
 ;   [prog.baz:264:5] var arr4 = arr
 ;   [prog.baz:264:9] arr4: i32[4] (16 B @ [rbp + 484])
 ;   [prog.baz:264:9] arr4 = arr
-;   [prog.baz:264:16] size <= 16 B, use mov
+;   [prog.baz:264:16] 2 parts, use mov
 ;   [prog.baz:264:16] allocate scratch register -> r15
     mov r15, qword [rbp + 424]
     mov qword [rbp + 484], r15
@@ -903,19 +903,19 @@ main:
 ;   [prog.baz:265:12] allocate scratch register -> r15
 ;   [prog.baz:265:12] ? arr == arr4
     cmp.265.12:
+;       [prog.baz:265:12] arr
+;       [prog.baz:265:19] arr4
 ;       [prog.baz:265:12] allocate named register rsi
 ;       [prog.baz:265:12] allocate named register rdi
-;       [prog.baz:265:12] arr
         lea rsi, [rbp + 424]
-;       [prog.baz:265:19] arr4
         lea rdi, [rbp + 484]
         cmpsq
         jne .Lbaz_equal.3
         cmpsq
         .Lbaz_equal.3:
+        sete r15b
 ;       [prog.baz:265:12] free named register rdi
 ;       [prog.baz:265:12] free named register rsi
-        sete r15b
     bool.265.12.end:
 ;   [prog.baz:38:6] assert(ok bool)
     func.assert..265.5:
@@ -950,8 +950,8 @@ main:
 ;   [prog.baz:272:24] set array index
 ;   [prog.baz:272:24] ix
     mov r15, qword [rbp + 440]
-;   [prog.baz:272:24] r15 - 1
-;   [prog.baz:272:24] src: folded constant '- 1'
+;   [prog.baz:272:29] r15 - 1
+;   [prog.baz:272:29] src: folded constant '- 1'
     dec r15
     jo baz_overflow_line_272
 ;   [prog.baz:272:24] bounds check begin
@@ -1091,8 +1091,8 @@ main:
 ;       [prog.baz:281:17] src: operand
         add qword [r15], r14
         jo baz_overflow_line_281
-;       [prog.baz:281:13] e + 2
-;       [prog.baz:281:13] src: folded constant '+ n'
+;       [prog.baz:281:21] e + 2
+;       [prog.baz:281:21] src: folded constant '+ n'
         add qword [r15], 2
         jo baz_overflow_line_281
         foo.280.5.continue:
@@ -1161,7 +1161,7 @@ main:
 ;   [prog.baz:290:9] p: point (16 B @ [rbp + 520])
 ;   [prog.baz:290:9] p = point
 ;   [prog.baz:290:13] zero remaining fields: 16 B
-;   [prog.baz:290:13] size <= 32 B, use mov
+;   [prog.baz:290:13] 2 parts, use mov
     mov qword [rbp + 520], 0
     mov qword [rbp + 528], 0
 ;   [prog.baz:292:7] p.fooz()
@@ -1232,7 +1232,7 @@ main:
 ;   [prog.baz:298:5] var q = p
 ;   [prog.baz:298:9] q: point (16 B @ [rbp + 536])
 ;   [prog.baz:298:9] q = p
-;   [prog.baz:298:13] size <= 16 B, use mov
+;   [prog.baz:298:13] 2 parts, use mov
 ;   [prog.baz:298:13] allocate scratch register -> r15
     mov r15, qword [rbp + 520]
     mov qword [rbp + 536], r15
@@ -1243,19 +1243,19 @@ main:
 ;   [prog.baz:301:12] allocate scratch register -> r15
 ;   [prog.baz:301:12] ? p == q
     cmp.301.12:
+;       [prog.baz:301:12] p
+;       [prog.baz:301:17] q
 ;       [prog.baz:301:12] allocate named register rsi
 ;       [prog.baz:301:12] allocate named register rdi
-;       [prog.baz:301:12] p
         lea rsi, [rbp + 520]
-;       [prog.baz:301:17] q
         lea rdi, [rbp + 536]
         cmpsq
         jne .Lbaz_equal.4
         cmpsq
         .Lbaz_equal.4:
+        sete r15b
 ;       [prog.baz:301:12] free named register rdi
 ;       [prog.baz:301:12] free named register rsi
-        sete r15b
     bool.301.12.end:
 ;   [prog.baz:38:6] assert(ok bool)
     func.assert..301.5:
@@ -1284,19 +1284,19 @@ main:
 ;   [prog.baz:306:12] allocate scratch register -> r15
 ;   [prog.baz:306:12] ? p != q
     cmp.306.12:
+;       [prog.baz:306:12] p
+;       [prog.baz:306:17] q
 ;       [prog.baz:306:12] allocate named register rsi
 ;       [prog.baz:306:12] allocate named register rdi
-;       [prog.baz:306:12] p
         lea rsi, [rbp + 520]
-;       [prog.baz:306:17] q
         lea rdi, [rbp + 536]
         cmpsq
         jne .Lbaz_equal.5
         cmpsq
         .Lbaz_equal.5:
+        setne r15b
 ;       [prog.baz:306:12] free named register rdi
 ;       [prog.baz:306:12] free named register rsi
-        setne r15b
     bool.306.12.end:
 ;   [prog.baz:38:6] assert(ok bool)
     func.assert..306.5:
@@ -1434,8 +1434,8 @@ main:
 ;       [prog.baz:67:11] allocate scratch register -> r15
 ;       [prog.baz:67:11] arg
         mov r15, qword [rbp + 560]
-;       [prog.baz:67:11] r15 * 2
-;       [prog.baz:67:11] src: folded constant '* 2'
+;       [prog.baz:67:17] r15 * 2
+;       [prog.baz:67:17] src: folded constant '* 2'
         imul r15, 2
         jo baz_overflow_line_67
         mov qword [rbp + 568], r15
@@ -1524,8 +1524,8 @@ main:
     mov r15, strict qword vars.end - size.func.factorial - 592
     cmp r15, rbp
     jl baz_frame_overflow
-;   [prog.baz:324:13] free scratch register r15
 ;   [prog.baz:324:13] frame capacity check end
+;   [prog.baz:324:13] free scratch register r15
 ;   [prog.baz:324:13] result address in callee frame
 ;   [prog.baz:324:13] allocate scratch register -> r15
     lea r15, [rbp + 584]
@@ -1781,8 +1781,8 @@ main:
 ;   [prog.baz:344:22] allocate scratch register -> r15
 ;   [prog.baz:344:22] x
     mov r15, qword [rbp + 624]
-;   [prog.baz:344:22] r15 * 10
-;   [prog.baz:344:22] src: folded constant '* 10'
+;   [prog.baz:344:26] r15 * 10
+;   [prog.baz:344:26] src: folded constant '* 10'
     imul r15, 10
     jo baz_overflow_line_344
     mov qword [rbp + 640], r15
@@ -1798,7 +1798,7 @@ main:
 ;   [prog.baz:344:34] src: folded constant '0xff0000'
     mov dword [rbp + 656], 16711680
 ;   [prog.baz:344:14] zero padding: 4 B
-;   [prog.baz:344:14] size <= 32 B, use mov
+;   [prog.baz:344:14] 1 parts, use mov
     mov dword [rbp + 660], 0
 ;   [prog.baz:345:5] assert(o1.pos.x == 10)
 ;   [prog.baz:345:12] allocate scratch register -> r15
@@ -1900,7 +1900,7 @@ main:
     neg qword [rbp + 672]
     jo baz_overflow_line_349
 ;   [prog.baz:350:5] o1.pos = p1
-;   [prog.baz:350:14] size <= 16 B, use mov
+;   [prog.baz:350:14] 2 parts, use mov
 ;   [prog.baz:350:14] allocate scratch register -> r15
     mov r15, qword [rbp + 664]
     mov qword [rbp + 640], r15
@@ -2175,7 +2175,7 @@ main:
 ;   [prog.baz:373:5] o3[1] = object.at(2, 74, 0xffffff)
 ;   [prog.baz:373:13] object.at(2, 74, 0xffffff)
 ;   [prog.baz:373:13] zero padding: 4 B
-;   [prog.baz:373:13] size <= 32 B, use mov
+;   [prog.baz:373:13] 1 parts, use mov
     mov dword [rbp + 748], 0
 ;   [prog.baz:119:6] object.at(x, y, color i32) self
     func.object.at..373.13:
@@ -2352,8 +2352,8 @@ main:
     cmp r15, rcx
     jb baz_overlap_line_384
     .Lbaz_overlap.6:
-;   [prog.baz:384:5] free scratch register r15
 ;   [prog.baz:384:5] overlap check end
+;   [prog.baz:384:5] free scratch register r15
     rep movsb
 ;   [prog.baz:384:5] free named register rcx
 ;   [prog.baz:384:5] free named register rdi
@@ -2389,19 +2389,19 @@ main:
 ;   [prog.baz:392:12] r15b = arrays_equal( worlds[0].locations, worlds[1].locations, array_length(worlds[0].locations) )
 ;   [prog.baz:392:12] = expression
 ;   [prog.baz:392:12] arrays_equal( worlds[0].locations, worlds[1].locations, array_length(worlds[0].locations) )
+;   [prog.baz:393:14] worlds[0].locations
+;   [prog.baz:394:14] worlds[1].locations
 ;   [prog.baz:392:12] allocate named register rsi
 ;   [prog.baz:392:12] allocate named register rdi
 ;   [prog.baz:392:12] allocate named register rcx
-;   [prog.baz:393:14] worlds[0].locations
     lea rsi, [rbp + 752]
-;   [prog.baz:394:14] worlds[1].locations
     lea rdi, [rbp + 816]
     mov rcx, 8
     repe cmpsq
+    sete r15b
 ;   [prog.baz:392:12] free named register rcx
 ;   [prog.baz:392:12] free named register rdi
 ;   [prog.baz:392:12] free named register rsi
-    sete r15b
 ;   [prog.baz:38:6] assert(ok bool)
     func.assert..392.5:
 ;       [prog.baz:392:5] bind ok -> r15b
@@ -2535,8 +2535,8 @@ main:
 ;       [prog.baz:407:9] counter = counter + 1
 ;       [prog.baz:407:19] kept the first of two versions of 2 and 4 instructions, the smaller
 ;       [prog.baz:407:19] counter
-;       [prog.baz:407:19] counter + 1
-;       [prog.baz:407:19] src: folded constant '+ 1'
+;       [prog.baz:407:29] counter + 1
+;       [prog.baz:407:29] src: folded constant '+ 1'
         inc qword [rbp + 1280]
         jo baz_overflow_line_407
 ;       [prog.baz:408:9] print_num(counter)
@@ -2546,8 +2546,8 @@ main:
         mov r15, strict qword vars.end - size.func.print_num - 1416
         cmp r15, rbp
         jl baz_frame_overflow
-;       [prog.baz:408:9] free scratch register r15
 ;       [prog.baz:408:9] frame capacity check end
+;       [prog.baz:408:9] free scratch register r15
 ;       [prog.baz:408:9] address of argument 'counter' to parameter 'num'
 ;       [prog.baz:408:9] allocate scratch register -> r15
         lea r15, [rbp + 1280]
@@ -2772,8 +2772,8 @@ main:
 ;               [prog.baz:104:5] names = names + 1
 ;               [prog.baz:104:13] kept the first of two versions of 2 and 4 instructions, the smaller
 ;               [prog.baz:104:13] names
-;               [prog.baz:104:13] names + 1
-;               [prog.baz:104:13] src: folded constant '+ 1'
+;               [prog.baz:104:21] names + 1
+;               [prog.baz:104:21] src: folded constant '+ 1'
                 inc qword [rbp + 368]
                 jo baz_overflow_line_104
             func.greet..419.13.end:
@@ -2808,8 +2808,8 @@ main:
     mov r15, strict qword vars.end - size.func.print_num - 1416
     cmp r15, rbp
     jl baz_frame_overflow
-;   [prog.baz:424:5] free scratch register r15
 ;   [prog.baz:424:5] frame capacity check end
+;   [prog.baz:424:5] free scratch register r15
 ;   [prog.baz:424:5] address of argument 'names' to parameter 'num'
 ;   [prog.baz:424:5] allocate scratch register -> r15
     lea r15, [rbp + 368]
@@ -2923,8 +2923,8 @@ func.factorial:
     mov qword [rbx + 16], r14
 ;   [prog.baz:180:13] free scratch register r14
 ;   [prog.baz:180:13] free scratch register r15
-;   [prog.baz:180:13] m - 1
-;   [prog.baz:180:13] src: folded constant '- 1'
+;   [prog.baz:180:17] m - 1
+;   [prog.baz:180:17] src: folded constant '- 1'
     dec qword [rbx + 16]
     jo baz_overflow_line_180
 ;   [prog.baz:181:5] var partial = factorial(m)
@@ -2939,8 +2939,8 @@ func.factorial:
     mov r15, strict qword vars.end - size.func.factorial - 32
     cmp r15, rbx
     jl baz_frame_overflow
-;   [prog.baz:181:19] free scratch register r15
 ;   [prog.baz:181:19] frame capacity check end
+;   [prog.baz:181:19] free scratch register r15
 ;   [prog.baz:181:19] result address in callee frame
 ;   [prog.baz:181:19] allocate scratch register -> r15
     lea r15, [rbx + 24]
@@ -2989,7 +2989,7 @@ func.print_num:
 ;   [prog.baz:139:9] buf: i8[20] (20 B @ [rbx + 8])
 ;   [prog.baz:139:9] buf = i8[buf_count]
 ;   [prog.baz:139:15] zero remaining elements: 20 * 1 B = 20 B
-;   [prog.baz:139:15] size <= 32 B, use mov
+;   [prog.baz:139:15] 3 parts, use mov
     mov qword [rbx + 8], 0
     mov qword [rbx + 16], 0
     mov dword [rbx + 24], 0
@@ -3044,8 +3044,8 @@ func.print_num:
 ;       [prog.baz:154:9] i = i - 1
 ;       [prog.baz:154:13] kept the first of two versions of 2 and 4 instructions, the smaller
 ;       [prog.baz:154:13] i
-;       [prog.baz:154:13] i - 1
-;       [prog.baz:154:13] src: folded constant '- 1'
+;       [prog.baz:154:17] i - 1
+;       [prog.baz:154:17] src: folded constant '- 1'
         dec qword [rbx + 48]
         jo baz_overflow_line_154
 ;       [prog.baz:155:9] buf[i] = i8('0' - n % 10)
@@ -3072,7 +3072,7 @@ func.print_num:
 ;       [prog.baz:155:27] n
         mov r13, qword [rbx + 32]
 ;       [prog.baz:155:31] r13 % 10
-;       [prog.baz:155:31] src: constant
+;       [prog.baz:155:31] src: folded constant '% 10'
 ;       [prog.baz:155:31] allocate named register rax
         mov rax, r13
 ;       [prog.baz:155:31] allocate named register rdx
@@ -3093,7 +3093,7 @@ func.print_num:
 ;       [prog.baz:156:13] kept the first of two versions of 5 and 7 instructions, the smaller
 ;       [prog.baz:156:13] n
 ;       [prog.baz:156:17] n / 10
-;       [prog.baz:156:17] src: constant
+;       [prog.baz:156:17] src: folded constant '/ 10'
 ;       [prog.baz:156:17] allocate named register rax
         mov rax, qword [rbx + 32]
 ;       [prog.baz:156:17] allocate named register rdx
@@ -3123,8 +3123,8 @@ func.print_num:
 ;       [prog.baz:161:9] i = i - 1
 ;       [prog.baz:161:13] kept the first of two versions of 2 and 4 instructions, the smaller
 ;       [prog.baz:161:13] i
-;       [prog.baz:161:13] i - 1
-;       [prog.baz:161:13] src: folded constant '- 1'
+;       [prog.baz:161:17] i - 1
+;       [prog.baz:161:17] src: folded constant '- 1'
         dec qword [rbx + 48]
         jo baz_overflow_line_161
 ;       [prog.baz:162:9] buf[i] = '-'
@@ -3185,15 +3185,15 @@ func.print_num:
 ;       [prog.baz:168:9] write_pos = write_pos + 1
 ;       [prog.baz:168:21] kept the first of two versions of 2 and 4 instructions, the smaller
 ;       [prog.baz:168:21] write_pos
-;       [prog.baz:168:21] write_pos + 1
-;       [prog.baz:168:21] src: folded constant '+ 1'
+;       [prog.baz:168:33] write_pos + 1
+;       [prog.baz:168:33] src: folded constant '+ 1'
         inc qword [rbx + 56]
         jo baz_overflow_line_168
 ;       [prog.baz:169:9] i = i + 1
 ;       [prog.baz:169:13] kept the first of two versions of 2 and 4 instructions, the smaller
 ;       [prog.baz:169:13] i
-;       [prog.baz:169:13] i + 1
-;       [prog.baz:169:13] src: folded constant '+ 1'
+;       [prog.baz:169:17] i + 1
+;       [prog.baz:169:17] src: folded constant '+ 1'
         inc qword [rbx + 48]
         jo baz_overflow_line_169
         if.170.9:

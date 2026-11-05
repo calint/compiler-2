@@ -20,7 +20,6 @@
 #include "decouple.hpp"
 #include "expr_any.hpp"
 #include "expr_type.hpp"
-#include "ident_info.hpp"
 #include "operand.hpp"
 #include "parse_lookahead.hpp"
 #include "parse_statement.hpp"

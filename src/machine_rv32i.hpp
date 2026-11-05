@@ -20,7 +20,6 @@
 #include <utility>
 #include <vector>
 
-#include "assembler.hpp"
 #include "assembler_rv32i.hpp"
 #include "compile_error.hpp"
 #include "constant_arith.hpp"

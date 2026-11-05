@@ -18,7 +18,6 @@
 #include <utility>
 #include <vector>
 
-#include "assembler.hpp"
 #include "assembler_x86_64.hpp"
 #include "constant_arith.hpp"
 #include "machine.hpp"

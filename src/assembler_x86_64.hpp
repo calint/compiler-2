@@ -8,7 +8,6 @@
 #include <format>
 #include <functional>
 #include <limits>
-#include <optional>
 #include <ostream>
 #include <print>
 #include <span>
