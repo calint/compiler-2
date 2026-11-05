@@ -1,6 +1,19 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: consistency topic: a class header comment sits right above its
+    'class' in about 100 places, with a blank line between in 7 (round 85 Q13)
+    => done (2026-11-05): attached in 'assembler.hpp', 'assembler_rv32i.hpp',
+       'assembler_x86_64.hpp' and the three bare-metal rv32i targets; the
+       header of 'destination' ('ident_info.hpp') keeps its blank line, it
+       ends with a multiline note (AGENTS)
+[-] easy: 'operand::uses_register' of a memory operand that names the
+    register was never true in a coverage build (round 85 Q12); its callers
+    ('call_arithmetic_helper', the comparison value, 'can_hold_left_value')
+    are guards under register pressure
+    => kept (2026-11-05): a predicate total over any operand, as the branches
+       of 'is_inside_call' (round 83 L7) and 'comment_end' (round 84 O8)
+       the user kept
 [x] hard: design review series 2, round 86 (2026-11-05, user: continue;
     R a hunter of the regressions of rounds 78 to 84 against a build of
     f12c5cf9)

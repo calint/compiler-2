@@ -11,7 +11,6 @@
 
 // runs the flat image without an operating system, the targets supply the
 // stack setup, the uart access and how the program ends
-
 class machine_rv32i_bare_metal : public machine_rv32i {
     static constexpr int newline_{'\n'};
     static constexpr int carriage_return_{'\r'};

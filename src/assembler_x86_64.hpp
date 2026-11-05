@@ -25,7 +25,6 @@
 // the backend emits every instruction and directive through the functions
 // below, not text, so an encoder like the rv32i one can be added
 // (etc/todo.txt, on hold)
-
 class assembler_x86_64 final : public assembler {
   public:
     // 'and', 'or', 'xor' and 'not' are c++ operator names

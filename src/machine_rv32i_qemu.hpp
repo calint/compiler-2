@@ -11,7 +11,6 @@
 // runs the flat image without an operating system on the qemu 'virt' machine,
 // input and output go through its ns16550a uart and exit ends qemu with the
 // exit code as its status
-
 class machine_rv32i_qemu final : public machine_rv32i_bare_metal {
     // 'lui' of the uart address 0x10000000
     static constexpr int uart_upper_{0x10000};

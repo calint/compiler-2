@@ -31,7 +31,6 @@
 //
 // registers are passed by name, as backend operands hold them, and the
 // encoded fields follow the instruction formats of the rv32i specification
-
 class assembler_rv32i final : public assembler {
   public:
     // 'and', 'or' and 'xor' are c++ operator names

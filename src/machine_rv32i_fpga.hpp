@@ -13,7 +13,6 @@
 // runs the flat image loaded at address 0 on the fpga or its emulator,
 // input and output go through the memory mapped uart, a panic prints its
 // message there like on rv32i-qemu
-
 class machine_rv32i_fpga final : public machine_rv32i_bare_metal {
     // the uart addresses 0xffff'fff4 and 0xffff'fff8 are reached as sign
     // extended offsets from the zero register

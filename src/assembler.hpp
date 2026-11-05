@@ -61,7 +61,6 @@
 // a label between the two jumps of the last three rules stops the rule only
 // when it is in code and a line names it, e.g. a jump or a call, or when it
 // is numeric, e.g. '1:' named by '1b'
-
 class assembler {
   public:
     // 'optimized' applies the jump optimizations listed above the class
