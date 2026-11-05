@@ -27,8 +27,9 @@ main.cpp         options, the backend for '--target', error printing
   |
 program.hpp      parse: every file, an included one before its includer,
   |              and the definite assignment of the results
-  |              compile: globals, 'main', noinline bodies, handlers,
-  |              used routines, read-only data, data and variables
+  |              compile: globals, 'main', noinline bodies, the checks
+  |              of the bodies without their calls, handlers, used
+  |              routines, read-only data, data and variables
   |              report after the code
   v
 nodes            statement.hpp, stmt_*.hpp, expr_*.hpp: a node parses
@@ -1526,7 +1527,7 @@ size, so with '--checks=upper' the index is 'j + 1' in the register:
 
 ```text
     mov r14, qword [rbp + 584]
-    add r14, 1
+    inc r14
     cmp r14, 4
     jge baz_bounds_panic
     sal r14, 4

@@ -1,6 +1,21 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] hard: design review series 2, round 79 (2026-11-05, user: go in a
+    loop and do qa; D a design review of the no-UB analysis files, E the
+    docs against the compiler)
+    => done (2026-11-05): listings of every test equal on both targets; D1
+       'constant_arith::overflows_width' uses 'fits_width'; D2 an unused
+       forward declaration of 'stmt_identifier' gone from 'decouple.hpp';
+       D3 'path_merge::trace_skipped' restores the breaks of a loop after a
+       branch that never runs, untested before, 2113; the comment of
+       'ident_info::part_' named only the constant kind, gone
+       ('folded_value' says it); E1 the '--checks=upper' listing of docs 6.4
+       shows 'inc r14'; E2 the box of docs 1.1 names the checks of the
+       bodies without their calls; README, the tutorial and the rest of the
+       docs current (messages, listings of 6.2, '--help', chapter 8 claims
+       checked by programs on both targets); skipped: the README cloc table
+       is 2 lines behind, 'etc/readme/make.sh' (user) updates it
 [x] hard: design review series 2, round 78 (2026-11-05, user: go in a
     loop and do qa; A a design review of the front end, C the AGENTS rules
     the linters miss in the backend, B a bug hunt away from the bulk code)

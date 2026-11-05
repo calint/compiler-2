@@ -148,7 +148,7 @@ class constant_arith final {
             return false;
         }
 
-        return wide_overflow or result != wrap_to_width(result, width_type);
+        return wide_overflow or not fits_width(result, width_type);
     }
 
     // the most negative value of a signed integer of 'size_bits', e.g. -128 for

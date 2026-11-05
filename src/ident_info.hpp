@@ -194,8 +194,6 @@ class ident_info final {
     };
 
     const type* type_ptr_{};
-    // a constant: a literal, a named constant or, typed, the value of an
-    // argument of an inlined call, which has the type of its parameter
     std::variant<std::monostate, folded_value, register_part, var_part> part_;
 
   public:

@@ -15,7 +15,6 @@
 class toc;
 class tokenizer;
 class statement;
-class stmt_identifier;
 class stmt_call;
 class expr_any;
 class type;

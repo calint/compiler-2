@@ -1,0 +1,16 @@
+# a 'break' in a branch that never runs does not narrow what the breaks of
+# its loop set: 'res' is set at the only 'break' that runs
+
+func f() res i32 {
+    loop {
+        if false {
+            break
+        }
+        res = 3
+        break
+    }
+}
+
+func main() {
+    exit(f())
+}

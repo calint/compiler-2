@@ -6696,3 +6696,6 @@ SRC=2109 && COMPERR
 SRC=2110 && EXP=5 && RUN
 SRC=2111 && EXP=4 && RUN
 if [[ $MACHINE == x86_64 ]]; then SRC=2112 && COMPERR; else SRC=2112 && EXP=6 && RUN; fi
+
+# a break in a branch that never runs leaves the breaks of its loop
+SRC=2113 && EXP=3 && RUN
