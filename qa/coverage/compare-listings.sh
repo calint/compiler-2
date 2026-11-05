@@ -26,8 +26,9 @@ DEFAULT_OPTIONS="--vars=0x40000 --checks=upper,lower,line"
 WORK=$(mktemp -d)
 trap 'rm -rf "$WORK"' EXIT
 
-# each case and its options, once per distinct pair
-grep -oE '^ *SRC=[0-9]+ .*' cases.sh | sed -E 's/^ *//' | while read -r line; do
+# each case and its options, once per distinct pair; a case may follow an
+# 'if' on the target, a commented-out one is not compiled
+grep -vE '^ *#' cases.sh | grep -oE 'SRC=[0-9]+[^;]*' | while read -r line; do
     src=$(sed -E 's/^SRC=([0-9]+).*/\1/' <<<"$line")
     options=$DEFAULT_OPTIONS
     if [[ "$line" =~ OPTS=\"([^\"]*)\" ]]; then

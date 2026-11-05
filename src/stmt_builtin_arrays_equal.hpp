@@ -67,8 +67,8 @@ class stmt_builtin_arrays_equal final : public statement {
                                      static_cast<size_t>(*count)),
             };
 
-            emit.first()(std::nullopt, [&](const operand& lhs) -> void {
-                emit.second()(std::nullopt, [&](const operand& rhs) -> void {
+            emit.both_addresses(
+                [&](const operand& lhs, const operand& rhs) -> void {
                     x.memory_equal(tok(), indent, size_bytes, lhs, rhs,
                                    {
                                        .alignment{element_type.alignment()},
@@ -76,7 +76,6 @@ class stmt_builtin_arrays_equal final : public statement {
                                        .inverted{},
                                    });
                 });
-            });
 
             return;
         }

@@ -1,0 +1,10 @@
+# an instance literal that a comparison continues is not a number
+
+type point {x, y}
+
+func main() {
+    var p = point{1, 2}
+    var x = i8
+    x = point{1, 2} == p
+    exit(x)
+}

@@ -1,6 +1,31 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] hard: design review series 2, round 84 (2026-11-05, user: continue;
+    line by line: N 'expr_any.hpp' and the identifier files, O the
+    statements, 'program.hpp' and 'main.cpp', P the built-ins and the type
+    files)
+    => done (2026-11-05): listings and errors of every test equal on both
+       targets; N1 'expr_any::assert_not_narrowed', N2 'size_token' and N3
+       'check_folded_conditions_of' assert what no input reaches (an array
+       is written by its plan, only a declaration that saw a literal asks
+       for the size token, only a 'dat' folds an instance), shown by a
+       coverage build over every case on both targets and roome; N4 a wrong
+       example in 'assert_not_aggregate'; N5 'literal_tk'; N6 'toc& tc' in
+       'fold_indexed_address'; N7 a repeated comment gone; O1 'parse_option'
+       takes the 'string_view'; O2 the comment of 'trimmed_source'; O3
+       'compile_data_string' decodes the string once; O5 'else_label' at its
+       use; P1 'argument_emitters::both_addresses' for a known size of
+       'array_copy' and 'arrays_equal'; P2 'stmt_builtin_io::constant_start';
+       P3 'default_type'; P4 'instance_text' in the 'expr_type' messages; P5
+       the unused move assignment of 'expr_type' deleted; tests for reachable
+       code no test reached: 2121 to 2123, 2130 (a branch after one that
+       always runs), 2131 (a mark under characters of 3 and 4 bytes), 2140,
+       2141; N9 'compare-listings.sh' also compiles the 96 cases behind an
+       'if' on the target; O9 (user) 0719 gone, an LF copy of 0633 that said
+       crlf ('test-cli.sh' compiles 0633 with crlf line ends); kept (user):
+       O8 the branch of 'statement::comment_end' for a comment without a line
+       end
 [x] hard: design review series 2, round 83 (2026-11-05, user: continue;
     L 'stmt_call.hpp' line by line, M 'stmt_def_func.hpp' and
     'stmt_def_func_param.hpp' line by line)

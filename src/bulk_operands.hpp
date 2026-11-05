@@ -49,7 +49,7 @@ class bulk_operands final {
 
     // the addresses of the two arrays and the count, emitted in the order of
     // the arguments: 'copy_elements' and 'equal_elements' of the machine call
-    // them, a known size calls the two address emitters itself before
+    // them, a known size gets both addresses from 'both_addresses' before
     // 'copy_block' or 'memory_equal'; a range is checked after the count,
     // or after the second address when the count is constant, so a later
     // argument runs first, e.g. the call of 'array_copy(a[k], b[f()], 4)'
@@ -80,6 +80,21 @@ class bulk_operands final {
         auto operator=(const argument_emitters&) -> argument_emitters& = delete;
         auto operator=(argument_emitters&&) -> argument_emitters& = delete;
         ~argument_emitters() = default;
+
+        // a known size: 'use' gets the two addresses, built in the order of
+        // the arguments, e.g. for 'copy_block' or 'memory_equal'
+        auto both_addresses(
+            const std::function_ref<void(const operand& first_address,
+                                         const operand& second_address)>
+                use) -> void {
+
+            first()(std::nullopt, [&](const operand& first_address) -> void {
+                second()(std::nullopt,
+                         [&](const operand& second_address) -> void {
+                             use(first_address, second_address);
+                         });
+            });
+        }
 
         // compiles the count into the register the machine asks for, then
         // checks the ranges of a run-time count

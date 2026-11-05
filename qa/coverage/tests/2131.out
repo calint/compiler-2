@@ -1,0 +1,4 @@
+
+2131.baz:4:17: a string is not a number, it fills only an array of 'i8'
+    var x = 1 + "€😀"
+                ^~~~

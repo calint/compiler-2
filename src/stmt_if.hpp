@@ -154,8 +154,6 @@ class stmt_if final : public statement {
         const std::string if_label{tc.create_unique_label(tok(), "if")};
         const std::string label_after_if{toc::end_label(if_label)};
 
-        const std::string label_else_branch{else_label(if_label)};
-
         toc::path_merge paths{tc};
         bool reaches_else{true};
         // a branch starts where the condition before it is false, the first
@@ -199,7 +197,7 @@ class stmt_if final : public statement {
             paths.begin_path(is_start_reachable);
 
             if (const stmt_block* const code{else_code()}) {
-                x.label(indent, label_else_branch);
+                x.label(indent, else_label(if_label));
                 code->compile(tc, indent, destination{});
             }
 

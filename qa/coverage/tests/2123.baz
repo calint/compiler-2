@@ -1,0 +1,9 @@
+# a generic call is not an array
+
+func zero<T type>() res T {
+    res = {}
+}
+
+func main() {
+    exit(array_length(zero<i8>()))
+}

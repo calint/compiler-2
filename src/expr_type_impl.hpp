@@ -11,6 +11,7 @@
 #include <ostream>
 #include <ranges>
 #include <span>
+#include <string>
 #include <utility>
 #include <variant>
 #include <vector>
@@ -80,20 +81,24 @@ inline expr_type::expr_type(toc& tc, tokenizer& tz, const type& tp,
         return;
     }
 
+    // e.g. "an instance of 'point'" in the messages below
+    const std::string instance_text{
+        std::format("an instance of {}", in_quotes(tp.name())),
+    };
+
     // e.g. 'q = "a"' for an instance 'q'
     if (tok().is_string()) {
         throw compile_error{
             tok(),
-            std::format("a string fills only an array of {}, not {} of {}",
-                        in_quotes(tc.builtins().i8().name()), "an instance",
-                        in_quotes(tp.name()))};
+            std::format("a string fills only an array of {}, not {}",
+                        in_quotes(tc.builtins().i8().name()), instance_text)};
     }
 
     // e.g. the 'not' of 'q = not b', as a unary operator below
     if (tok().is_text("not")) {
-        throw compile_error{tok(),
-                            std::format("'not' makes a condition, not {} of {}",
-                                        "an instance", in_quotes(tp.name()))};
+        throw compile_error{
+            tok(),
+            std::format("'not' makes a condition, not {}", instance_text)};
     }
 
     // e.g. 'p = pt', the token is empty at '{x, y}'
@@ -104,8 +109,7 @@ inline expr_type::expr_type(toc& tc, tokenizer& tz, const type& tp,
     }
 
     // e.g. the '(' of 'q = (p)' or the '-' of 'q = -p'
-    assert_no_value_operator(
-        tz, std::format("an instance of {}", in_quotes(tp.name())));
+    assert_no_value_operator(tz, instance_text);
 
     parse_fields(tc, tz);
     assert_value_ends(tz, tok(), "an instance", tp);
@@ -158,7 +162,6 @@ inline auto expr_type::parse_fields(toc& tc, tokenizer& tz) -> void {
 
 // the special members need the complete 'stmt_call'
 inline expr_type::expr_type(expr_type&&) noexcept = default;
-inline auto expr_type::operator=(expr_type&&) noexcept -> expr_type& = default;
 inline expr_type::~expr_type() = default;
 
 // e.g. 'obj.pos = p', 'obj.pos = f()', 'o.pos = lst.first()' or

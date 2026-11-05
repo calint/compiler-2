@@ -76,13 +76,11 @@ class stmt_builtin_array_copy final : public statement {
                                      static_cast<size_t>(*count)),
             };
 
-            emit.first()(std::nullopt, [&](const operand& src) -> void {
-                emit.second()(
-                    std::nullopt, [&](const operand& dst_address) -> void {
-                        x.copy_block(tok(), indent, dst_address, src,
-                                     size_bytes, element_type.alignment());
-                    });
-            });
+            emit.both_addresses(
+                [&](const operand& src, const operand& dst_address) -> void {
+                    x.copy_block(tok(), indent, dst_address, src, size_bytes,
+                                 element_type.alignment());
+                });
 
             return;
         }

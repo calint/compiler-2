@@ -537,8 +537,8 @@ class statement {
         }
     }
 
-    // one-line, whitespace-collapsed rendering of 'st's source, suitable for
-    // an assembler comment
+    // the source of 'st' on one line ('one_line_source::of'), for a listing
+    // comment or a message
     [[nodiscard]] static auto trimmed_source(const statement& st)
         -> std::string {
 

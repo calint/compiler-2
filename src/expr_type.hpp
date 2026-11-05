@@ -435,6 +435,7 @@ class expr_type final : public statement {
 
     expr_type(const expr_type&) = delete;
     auto operator=(const expr_type&) -> expr_type& = delete;
+    auto operator=(expr_type&&) -> expr_type& = delete;
 
     ~expr_type() override;
 
@@ -465,8 +466,6 @@ class expr_type final : public statement {
     [[nodiscard]] auto is_literal() const -> bool {
         return std::holds_alternative<field_list>(value_);
     }
-
-    auto operator=(expr_type&&) noexcept -> expr_type&;
 
     // appends the steps that write the value at 'at'
     auto plan_writes(const toc& tc, const part_location& at,

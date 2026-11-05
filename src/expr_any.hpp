@@ -215,9 +215,10 @@ class expr_any final : public statement {
     auto assert_not_narrowed(const toc& tc, const type& dst_type) const
         -> void override {
 
-        if (is_array()) {
-            return;
-        }
+        // note: an array is written by its plan, which checks each element
+        //       ('emit_write_plan')
+
+        assert(not is_array());
 
         element(0).assert_not_narrowed(tc, dst_type);
     }
@@ -443,17 +444,18 @@ class expr_any final : public statement {
     }
 
     // where a literal written without a size gives one, e.g. the '[' of
-    // 'i8[]{}' or the string '""'; none for another form
-    [[nodiscard]] auto size_token() const -> std::optional<token> {
+    // 'i8[]{}' or the string '""'
+    [[nodiscard]] auto size_token() const -> const token& {
         if (const string_array* const str{std::get_if<string_array>(&form_)}) {
             return str->string_tk;
         }
 
         const array_prefix* const prefix{array_prefix_of()};
 
-        if (prefix == nullptr) {
-            return std::nullopt;
-        }
+        // note: only a declaration that sees a string or an array literal
+        //       asks ('stmt_def_var::literal_element_type')
+
+        assert(prefix != nullptr);
 
         return prefix->open_bracket_tk;
     }
@@ -565,9 +567,11 @@ class expr_any final : public statement {
             is_typed ? tc.get_type_or_throw(tk) : tc.builtins().default_type(),
         };
 
+        // the element type, or the '[' of the default type
+        const token& literal_tk{is_typed ? tk : open_bracket_tk};
+
         if (not literal_type.is_same(tp)) {
-            throw_type_mismatch(is_typed ? tk : open_bracket_tk, tp.name(),
-                                literal_type.name());
+            throw_type_mismatch(literal_tk, tp.name(), literal_type.name());
         }
 
         // e.g. the '4' of 'i8[4]', none for 'i8[]'
@@ -589,8 +593,7 @@ class expr_any final : public statement {
         // e.g. 'i8[]{1, 2}' for an 'i8' array field is '{1, 2}' and 'i8[4]'
         // is '{}'
         if (typing == literal_typing::from_destination) {
-            throw_known_literal_type(tz, is_typed ? tk : open_bracket_tk,
-                                     "an array", tp,
+            throw_known_literal_type(tz, literal_tk, "an array", tp,
                                      std::format("{}[]", literal_type.name()));
         }
 
@@ -918,9 +921,9 @@ class expr_any final : public statement {
     static auto assert_not_aggregate(const toc& tc, tokenizer& tz,
                                      const type& tp, const token& tk) -> void {
 
-        // a record or an instance literal, e.g. 'x = p', 'x = point' or
-        // 'x = point{1, 2}' for an 'i8' 'x' and a 'point' 'p'; a condition may
-        // compare an instance literal, which the comparison rejects
+        // a user type or an instance literal, e.g. 'x = point' or
+        // 'x = point{1, 2}' for an 'i8' 'x'; a condition may compare an
+        // instance literal, which the comparison rejects
         const term_kind tm{classify_term(tc, tk, tz)};
 
         if (is_record_value(tm, tz) or
@@ -1028,9 +1031,14 @@ class expr_any final : public statement {
 
         const expr_type* const instance{std::get_if<expr_type>(&value)};
 
-        if (instance == nullptr or not instance->is_literal()) {
+        if (instance == nullptr) {
             return;
         }
+
+        // note: only a 'dat' folds an instance and it holds literals
+        //       ('stmt_def_dat::fold_data')
+
+        assert(instance->is_literal());
 
         for (const std::unique_ptr<expr_any>& field :
              instance->field_values()) {

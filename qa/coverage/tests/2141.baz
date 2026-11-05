@@ -1,0 +1,11 @@
+# a trailing ',' after the last listed field of an instance that lists only
+# some, the rest is zeroed
+type point {x, y, z}
+
+func main() {
+    var p = point{
+        3,
+        4,
+    }
+    exit(p.x + p.y + p.z)
+}

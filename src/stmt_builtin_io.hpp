@@ -284,9 +284,7 @@ class stmt_builtin_io final : public statement {
             count_arg != nullptr ? count_arg : start_arg,
         };
 
-        const std::optional<int64_t> start{
-            start_arg != nullptr ? start_arg->constant_value(tc) : int64_t{},
-        };
+        const std::optional<int64_t> start{constant_start(tc)};
 
         // a constant start alone, e.g. the -1 of 'write(1, a, n, -1)'; a count
         // of 0 may start at the end
@@ -373,19 +371,15 @@ class stmt_builtin_io final : public statement {
 
         const expr_any* const start_arg{start_argument()};
 
-        const std::optional<int64_t> constant_start{
-            start_arg != nullptr ? start_arg->constant_value(tc) : int64_t{},
-        };
+        const std::optional<int64_t> start{constant_start(tc)};
 
         // note: an unsized array parameter has no length in the check of a
         //       function without its calls, see 'ident_info::is_length_unknown'
 
-        if (constant_start and
-            (start_arg == nullptr or buffer_info.array_len())) {
+        if (start and (start_arg == nullptr or buffer_info.array_len())) {
 
             move_to_constant_start(tc, indent, buffer_reg, count, known_count,
-                                   buffer_info,
-                                   static_cast<size_t>(*constant_start));
+                                   buffer_info, static_cast<size_t>(*start));
 
             return;
         }
@@ -472,6 +466,19 @@ class stmt_builtin_io final : public statement {
         return static_cast<int64_t>(*array_len);
     }
 
+    // the start argument, 0 without one, empty when computed at run time
+    [[nodiscard]] auto constant_start(const toc& tc) const
+        -> std::optional<int64_t> {
+
+        const expr_any* const start_arg{start_argument()};
+
+        if (start_arg == nullptr) {
+            return int64_t{};
+        }
+
+        return start_arg->constant_value(tc);
+    }
+
     // the count, null when left out and for a sector function, which has none
     [[nodiscard]] auto count_argument() const -> const expr_any* {
         return io_.is_sector ? nullptr : args_.find(buffer_index_ + 1);
@@ -515,10 +522,10 @@ class stmt_builtin_io final : public statement {
         };
 
         if (offset_bytes != 0) {
-            const type& type_default{tc.builtins().default_type()};
+            const type& default_type{tc.builtins().default_type()};
 
             x.add_subtract(tok(), indent, arithmetic_operator::add, buffer_reg,
-                           operand::imm(offset_bytes, type_default));
+                           operand::imm(offset_bytes, default_type));
         }
     }
 
@@ -536,12 +543,12 @@ class stmt_builtin_io final : public statement {
 
         const std::optional<size_t> array_len{buffer_info.array_len()};
         const size_t element_count{buffer_info.element_count()};
-        const type& type_default{tc.builtins().default_type()};
+        const type& default_type{tc.builtins().default_type()};
 
         machine& x{tc.machine()};
 
         const operand start{
-            x.alloc_scratch_register(start_arg->tok(), indent, type_default),
+            x.alloc_scratch_register(start_arg->tok(), indent, default_type),
         };
 
         start_arg->compile(tc, indent, destination::of_register(start));

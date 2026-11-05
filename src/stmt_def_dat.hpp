@@ -9,6 +9,7 @@
 #include <ostream>
 #include <ranges>
 #include <span>
+#include <string>
 #include <string_view>
 #include <utility>
 #include <variant>
@@ -227,6 +228,7 @@ class stmt_def_dat final : public statement {
         size_t written_bytes{};
 
         const std::span<const type_field> flds{tp.fields()};
+
         for (const auto [e, f] : std::views::zip(record.values, flds)) {
             const size_t padding_bytes{f.offset - written_bytes};
 
@@ -260,14 +262,15 @@ class stmt_def_dat final : public statement {
     static auto compile_data_string(machine& x, const type& tp,
                                     const elem::string& str) -> void {
 
-        x.emit_string_data(str.src_loc_tk.string_bytes());
-        const size_t size_bytes{str.src_loc_tk.string_bytes().size()};
+        const std::string bytes{str.src_loc_tk.string_bytes()};
 
         // note: the parse rejected a string longer than its array
-        assert(size_bytes <= str.array_count);
+        assert(bytes.size() <= str.array_count);
+
+        x.emit_string_data(bytes);
 
         compile_zero_elements(x, str.src_loc_tk, tp,
-                              str.array_count - size_bytes);
+                              str.array_count - bytes.size());
     }
 
     // the elements after the listed ones are zero, as in a 'var'

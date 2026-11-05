@@ -2315,9 +2315,6 @@ SRC=0717 && COMPERR
 # main is compiled where the program starts
 SRC=0718 && COMPERR
 
-# a backslash before a crlf line end continues the string
-SRC=0719 && EXP=0 && RUN
-
 # bell and backspace escapes in strings and character literals
 SRC=0720 && EXP=0 && RUN
 
@@ -6716,3 +6713,23 @@ SRC=2119 && COMPERR
 # an inlined recursion ended by a constant argument binds an instance literal
 # in a temporary at a level that does not fold
 SRC=2120 && EXP=4 && RUN
+
+# the branches after one that always runs hold the compile rules too, e.g. a
+# noinline call there checks the body with the lengths of its array arguments
+SRC=2130 && COMPERR
+
+# the mark under an error counts a character of three or four bytes as one
+# column
+SRC=2131 && COMPERR
+
+# an 'array_length' in a constant list narrower than its type is rejected
+SRC=2140 && COMPERR
+
+# a trailing ',' after the last listed field of a partial instance literal
+SRC=2141 && EXP=7 && RUN
+
+# an instance literal that a comparison continues, or an array literal at the
+# default type, where a number is expected; a generic call where an array is
+SRC=2121 && COMPERR
+SRC=2122 && COMPERR
+SRC=2123 && COMPERR

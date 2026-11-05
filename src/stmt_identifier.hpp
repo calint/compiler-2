@@ -306,13 +306,15 @@ class stmt_identifier final : public statement {
         [[nodiscard]] auto fold_indexed_address(const operand& address)
             -> operand {
 
-            machine& x{tc_.get().machine()};
+            toc& tc{tc_.get()};
+
+            machine& x{tc.machine()};
 
             std::optional<operand> target{fold_register(address)};
 
             if (not target) {
-                target = x.alloc_scratch_register(
-                    src_loc_tk_, indent_, tc_.get().builtins().address());
+                target = x.alloc_scratch_register(src_loc_tk_, indent_,
+                                                  tc.builtins().address());
 
                 held_.get().add(*target);
             }
@@ -1059,7 +1061,6 @@ class stmt_identifier final : public statement {
     auto resolve_type(const ident_info& info) -> void {
         set_type(info.type_ref());
 
-        // an indexed element is technically no longer an array but an element
         if (elems_.back().index.has_value()) {
             return;
         }

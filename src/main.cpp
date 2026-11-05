@@ -179,7 +179,7 @@ auto check_target_reads(const options& opts) -> void;
 
 auto check_default_stack_fits(const options& opts) -> void;
 
-auto parse_option(const char* const argument, options& opts) -> void;
+auto parse_option(const std::string_view arg, options& opts) -> void;
 
 // the appliers of the options with a value store the value in 'opts'
 auto apply_vars(std::string_view value, options& opts) -> void;
@@ -288,7 +288,7 @@ namespace {
                 return 0;
             }
 
-            parse_option(argument, opts);
+            parse_option(arg, opts);
         }
 
         // note: after the loop because '--target' may follow the options
@@ -416,7 +416,7 @@ auto check_target_reads(const options& opts) -> void {
     return arg.substr(name.size());
 }
 
-auto parse_option(const char* const argument, options& opts) -> void {
+auto parse_option(const std::string_view arg, options& opts) -> void {
     constexpr std::array<value_option, 9> value_options{
         value_option{.name{"--vars="}, .apply{apply_vars}},
         value_option{.name{"--stack="}, .apply{apply_stack}},
@@ -428,8 +428,6 @@ auto parse_option(const char* const argument, options& opts) -> void {
         value_option{.name{"--sdcard="}, .apply{apply_sdcard}},
         value_option{.name{"--versions="}, .apply{apply_versions}},
     };
-
-    const std::string_view arg{argument};
 
     for (const value_option& option : value_options) {
         if (const std::optional<std::string_view> value{

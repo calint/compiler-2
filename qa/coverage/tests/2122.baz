@@ -1,0 +1,7 @@
+# an array literal at the default type is not a number
+
+func main() {
+    var x = i8
+    x = [2]{1, 2}
+    exit(x)
+}

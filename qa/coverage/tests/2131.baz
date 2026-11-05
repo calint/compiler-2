@@ -1,0 +1,5 @@
+# the mark under an error counts a character of three or four bytes as one
+# column
+func main() {
+    var x = 1 + "€😀"
+}
