@@ -1,6 +1,12 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: consistency topic: a pointer is tested as 'p != nullptr' in 52
+    places and as a bare 'p' in two ('expr_arith', round 82 K)
+    => done (2026-11-05): both compare with 'nullptr'; clang-tidy
+       'readability-implicit-bool-conversion' enabled with integer conditions
+       allowed (the reason it was off, 'if (counter++)'), so a new bare
+       pointer test fails the lint; listings equal on both targets
 [x] hard: design review series 2, round 82 (2026-11-05, user: continue;
     J 'toc.hpp' line by line, K 'expr_bool.hpp' and 'expr_arith.hpp' line by
     line)

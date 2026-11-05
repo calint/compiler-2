@@ -1197,7 +1197,7 @@ class expr_arith final : public statement {
         // the conversion goes inside the unary operators, e.g. '-int(t)'; an
         // indexed name is not the whole operand
         const stmt_identifier* const ident{term.operand_path()};
-        const bool is_named{ident and not ident->is_indexed()};
+        const bool is_named{ident != nullptr and not ident->is_indexed()};
 
         const std::string_view converted{
             is_named ? ident->dotted_path() : "...",
@@ -1474,7 +1474,7 @@ class expr_arith final : public statement {
                                               const statement& src) -> bool {
 
         const stmt_identifier* const ident{src.operand_path()};
-        return ident and not make_ident_info(tc, *ident).is_const();
+        return ident != nullptr and not make_ident_info(tc, *ident).is_const();
     }
 
     // an element or a parenthesized sub-expression: '-a' vs '-(a + b)'
