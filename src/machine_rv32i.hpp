@@ -791,6 +791,9 @@ class machine_rv32i : public machine {
                    const address_emitter& lhs, const address_emitter& rhs,
                    const equality_request& request) -> void override {
 
+        // note: 'arrays_equal' is the only caller, its result is not inverted
+        assert(not request.inverted);
+
         const operation_scope bulk_scope{*this};
 
         bulk_operation bulk{

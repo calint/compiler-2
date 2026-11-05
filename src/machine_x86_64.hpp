@@ -416,6 +416,9 @@ class machine_x86_64 final : public machine {
                    const address_emitter& lhs, const address_emitter& rhs,
                    const equality_request& request) -> void override {
 
+        // note: 'arrays_equal' is the only caller, its result is not inverted
+        assert(not request.inverted);
+
         const operation_scope bulk{*this};
 
         load_bulk_registers(src_loc_tk, indent, element_size_bytes, emit_count,
@@ -429,9 +432,7 @@ class machine_x86_64 final : public machine {
 
         assembler_.instruction(indent, op::repe_cmpsb);
 
-        store_condition(src_loc_tk, indent,
-                        request.inverted ? condition::ne : condition::e,
-                        request.dst);
+        store_condition(src_loc_tk, indent, condition::e, request.dst);
     }
 
     // the exit routine is shared, an exit is a jump to it

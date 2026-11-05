@@ -145,9 +145,11 @@ struct func_head {
         return method.has_value();
     }
 
-    // the type of 'name_tk' of a method of a type, null otherwise
-    [[nodiscard]] auto receiver_type() const -> const type* {
-        return method ? method->receiver_tp : nullptr;
+    // the type of 'name_tk' of a method of a type that is not generic
+    [[nodiscard]] auto receiver_type() const -> const type& {
+        assert(method and method->receiver_tp != nullptr);
+
+        return *method->receiver_tp;
     }
 
     //
@@ -797,11 +799,9 @@ class stmt_def_func final : public statement {
                              head_.method->name_tk.at_line()),
         };
 
-        assert(head_.receiver_type() != nullptr);
-
         params_.insert(
             params_.begin(),
-            stmt_def_func_param{self_tk, *head_.receiver_type(), head_.mut_tk});
+            stmt_def_func_param{self_tk, head_.receiver_type(), head_.mut_tk});
     }
 
     // the result and the parameters in the order of 'frame_slots', placed by
@@ -980,10 +980,7 @@ class stmt_def_func final : public statement {
         -> const type& {
 
         head_.assert_constructor_result(result.name_tk, result.type_tk);
-
-        assert(head_.receiver_type() != nullptr);
-
-        return *head_.receiver_type();
+        return head_.receiver_type();
     }
 
     // the scope of the body in a frame of its own, entered before the frame

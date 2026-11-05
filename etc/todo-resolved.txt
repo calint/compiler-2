@@ -1,6 +1,35 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] hard: coverage cleanup: every line that is not 'std::unreachable()' is
+    reached by a test, or becomes an 'assert' or 'std::unreachable()'
+    => left: 'main.cpp' 'generated source differs' (a defect of the compiler, not
+       user input); 'assembler_rv32i.hpp' 'long_jump' far form is reached by
+       'test-far-jumps.sh' without 'short' (9 minutes), left out of
+       'test-all.sh'
+    => state 2026-11-05 (round 88, coverage build without asan, every suite
+       but 'test-far-jumps.sh' without 'short'): 85 missed lines of 21496
+       (99.60%), 823 missed branches of 7533 (89.07%), 2613 missed regions
+       of 14546; the missed lines are 'std::unreachable()' bodies and the
+       kept ones: the two above, 'internal error' in 'main.cpp', the
+       predicates 'is_inside_call', 'comment_end' and 'expr_any::operand_path'
+       of a literal; of the missed branches 103 are outside asserts: the far
+       jump forms (12, reached by 'test-far-jumps.sh' and
+       'test-far-jumps-no-scratch.sh'), 'while (true)' (9), loop ends and
+       'default:' before 'std::unreachable()', predicates only asserts call,
+       and kept general predicates
+    => done (2026-11-05, design review series 2, rounds 87 to 89): state
+       round 89 (same build and suites): 85 missed lines of 21495 (99.60%),
+       828 missed branches of 7538 (89.02%), 2624 missed regions of 14556;
+       of the missed regions 2583 are the fail arms of asserts and 41 are
+       outside them: 'std::unreachable()' paths, the far jump forms of
+       'assembler_rv32i.hpp' (reached by 'test-far-jumps.sh' and
+       'test-far-jumps-no-scratch.sh'), the 'internal error' catch and
+       'generated source differs' of 'main.cpp', and the kept general
+       predicates 'comment_end', 'expr_any::operand_path' of a literal and
+       'is_inside_call'; round 89: 'equal_elements' asserts its result is not
+       inverted ('arrays_equal' is the only caller), 'func_head::
+       receiver_type' returns a reference
 [x] hard: design review series 2, round 88 (2026-11-05, user: continue;
     T the missed branches outside asserts of the coverage cleanup)
     => done (2026-11-05): 159 missed sides outside asserts -> 103, branches
