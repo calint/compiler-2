@@ -10,6 +10,7 @@
 #include <span>
 #include <string>
 #include <string_view>
+#include <tuple>
 #include <utility>
 #include <variant>
 #include <vector>
@@ -22,11 +23,11 @@
 
 //
 // generics: a generic definition is kept as text with its parameters, an
-// instance is that text parsed again in a 'toc::generic_scope'
-// where each parameter names its argument, see 'generic_reparse'; the
-// instantiators are 'type_instantiator' ('stmt_def_type.hpp') and
-// 'func_instantiator' ('stmt_def_func.hpp'), the type arguments of a call are
-// read by 'generic_call' ('stmt_call.hpp'), README 2.11
+// instance is that text parsed again in a 'toc::generic_scope' where each
+// parameter names its argument, see 'generic_reparse'; the instantiators
+// are 'type_instantiator' ('stmt_def_type.hpp') and 'func_instantiator'
+// ('stmt_def_func.hpp'), the type arguments of a call are read by
+// 'generic_call' ('stmt_call.hpp'), README 2.11
 //
 // e.g. 'type list<T type, capacity> {...}' is a 'generic_type_info', the alias
 // 'type str = list<i8, 8>' makes the 'generic_type_instance' 'list<i8, 8>'

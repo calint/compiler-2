@@ -29,7 +29,9 @@
 - Use `and`/`or`/`not` and `std::format("{}", v)` (not `std::to_string`).
 - Backend access: `machine& x{tc.machine()};` (or `const`), even for one use,
   just before its use with a blank line around (the blank-line return rule
-  wins); never `tc.machine().call()`. The assembler local is `output`.
+  wins); never `tc.machine().call()`. A class holding the backend as a
+  member does the same: `const machine& x{machine_.get()};`, never
+  `machine_.get().call()`. The assembler local is `output`.
 
 ### Blank lines
 

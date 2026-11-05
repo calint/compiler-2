@@ -231,12 +231,13 @@ class bulk_operands final {
             assert(constant_start and *constant_start >= 0 and
                    std::cmp_less_equal(*constant_start, array_count));
 
-            x.check_bounds(
-                array.tok(), indent_,
+            const machine::bounds_range range{
                 machine::bounds_range::up_to(
                     *count_register,
                     array_count - static_cast<size_t>(*constant_start)),
-                options);
+            };
+
+            x.check_bounds(array.tok(), indent_, range, options);
 
             return options.lower;
         }

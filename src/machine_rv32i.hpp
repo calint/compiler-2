@@ -82,8 +82,9 @@ class machine_rv32i : public machine {
     // code-size thresholds, each measured, see its note
     //
 
-    // a copy or a compare of a known size up to this is unrolled, a larger one
-    // loops by words
+    // a copy or a compare of a known size up to this is unrolled, up to twice
+    // this when the registers of a loop are not free ('is_copy_unrolled'), a
+    // larger one loops
     static constexpr size_t unroll_threshold_bytes_{12};
 
     // note: measured on the tests, 'roome' and copies and compares of 1 to
@@ -4323,8 +4324,8 @@ class machine_rv32i : public machine {
 
         const size_t after_head_size_bytes{size_bytes - start.head_size_bytes};
 
-        // note: a loop is only chosen above 'unroll_threshold_bytes_', so
-        //       there is more than one chunk
+        // note: a loop is only chosen above 'unroll_threshold_bytes_' or
+        //       'zero_unroll_threshold_parts_', so there is more than one chunk
 
         assert(after_head_size_bytes / start.width > 1);
 

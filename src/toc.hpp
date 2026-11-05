@@ -1556,7 +1556,10 @@ class storage_layout final {
 
         if (location.scope_index) {
             stored.offset = address_offset(offset_bytes);
-            stored.base_register = machine_.get().frame_base_register();
+
+            const ::machine& x{machine_.get()};
+
+            stored.base_register = x.frame_base_register();
 
             // note: the frame is within the data and variables checked above
 
@@ -1584,7 +1587,9 @@ class storage_layout final {
     auto assert_total_fits_target(const token& src_loc_tk,
                                   const size_t total_bytes) const -> void {
 
-        const size_t max_bytes{machine_.get().max_storage_bytes()};
+        const ::machine& x{machine_.get()};
+
+        const size_t max_bytes{x.max_storage_bytes()};
 
         // note: below, the code needs room too and a type stays below the
         //       end of the address space
@@ -1623,7 +1628,9 @@ class storage_layout final {
     [[nodiscard]] auto next_frame_address(const type& address_type) const
         -> operand {
 
-        const size_t frame_alignment{machine_.get().address_size_bytes()};
+        const ::machine& x{machine_.get()};
+
+        const size_t frame_alignment{x.address_size_bytes()};
 
         const storage_location location{find_storage_location()};
 
@@ -1632,12 +1639,12 @@ class storage_layout final {
         };
 
         if (location.scope_index) {
-            return operand::mem(machine_.get().frame_base_register(), {}, 1,
+            return operand::mem(x.frame_base_register(), {}, 1,
                                 address_offset(aligned_offset_bytes),
                                 address_type);
         }
 
-        return operand::mem(machine_.get().variables_base_register(), {}, 1,
+        return operand::mem(x.variables_base_register(), {}, 1,
                             offset_from_variables_base(aligned_offset_bytes),
                             address_type);
     }
@@ -1657,9 +1664,11 @@ class storage_layout final {
         // note: a 'dat' comes before any 'var', so no variable is placed yet
         assert(used_vars_size_bytes() == 0);
 
+        const ::machine& x{machine_.get()};
+
         // note: 'toc::add_dat' checked the dats against the target
         assert(dat.offset_bytes + var_storage_size_bytes(src_loc_tk, var) <
-               machine_.get().max_storage_bytes());
+               x.max_storage_bytes());
 
         std::get<in_storage>(var.placement).offset =
             offset_from_variables_base(dat.offset_bytes);
@@ -1674,7 +1683,8 @@ class storage_layout final {
         -> size_t {
 
         if (holds_address(var.placement)) {
-            return machine_.get().address_size_bytes();
+            const ::machine& x{machine_.get()};
+            return x.address_size_bytes();
         }
 
         return var.type_ptr->alignment();
@@ -1685,7 +1695,8 @@ class storage_layout final {
         -> size_t {
 
         if (holds_address(var.placement)) {
-            return machine_.get().address_size_bytes();
+            const ::machine& x{machine_.get()};
+            return x.address_size_bytes();
         }
 
         return var.shape.value_size_bytes(src_loc_tk, *var.type_ptr);
@@ -1748,8 +1759,10 @@ class storage_layout final {
 
         const int64_t offset{address_offset(offset_from_dat)};
 
+        const ::machine& x{machine_.get()};
+
         const std::optional<size_t> past_vars_bytes{
-            machine_.get().variables_base_past_vars_bytes(),
+            x.variables_base_past_vars_bytes(),
         };
 
         if (not past_vars_bytes) {
@@ -1825,7 +1838,8 @@ class builtin_roles final {
 
     // note: the same type as 'default_type', the word of the target
     [[nodiscard]] auto address() const -> const type& {
-        return machine_.get().default_type();
+        const ::machine& x{machine_.get()};
+        return x.default_type();
     }
 
     [[nodiscard]] auto boolean() const -> const type& {
@@ -1833,7 +1847,8 @@ class builtin_roles final {
     }
 
     [[nodiscard]] auto default_type() const -> const type& {
-        return machine_.get().default_type();
+        const ::machine& x{machine_.get()};
+        return x.default_type();
     }
 
     [[nodiscard]] auto i64() const -> const type& { return types_.get().i64; }
@@ -1998,12 +2013,13 @@ class ident_resolver final {
             return ident_info::make_register(in_register->reg);
         }
 
+        const ::machine& x{machine_.get()};
+
         return ident_info::make_var(
             *var.type_ptr,
             {
                 .operand{
-                    memory_at(var.placement,
-                              machine_.get().variables_base_register(),
+                    memory_at(var.placement, x.variables_base_register(),
                               *var.type_ptr),
                 },
                 .is_address_by_call{},

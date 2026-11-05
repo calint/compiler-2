@@ -215,7 +215,9 @@ class register_reporter final {
         // this, the rows of its tables may be
         constexpr size_t max_detail_width{80};
 
-        const register_pool& pool{machine_.get().state_.registers};
+        const machine& x{machine_.get()};
+
+        const register_pool& pool{x.state_.registers};
 
         const std::string text{
             make_register_report("register use at the failure",
@@ -246,8 +248,10 @@ class register_reporter final {
     [[nodiscard]] auto called_at(const register_trace::frame& frame) const
         -> std::string {
 
+        const machine& x{machine_.get()};
+
         return std::format("{} called at {}", frame.name,
-                           machine_.get().location_text(frame.call_site_tk));
+                           x.location_text(frame.call_site_tk));
     }
 
     // the most registers one call of each callee holds itself
@@ -325,12 +329,12 @@ class register_reporter final {
             }
         }
 
-        const machine& backend{machine_.get()};
+        const machine& x{machine_.get()};
 
         return {
             .heading{heading},
-            .register_total{backend.scratch_register_count(allocations)},
-            .noinline_register_total{backend.noinline_body_register_count()},
+            .register_total{x.scratch_register_count(allocations)},
+            .noinline_register_total{x.noinline_body_register_count()},
             .named_count{named},
             .frames{std::move(uses)},
         };
@@ -357,10 +361,12 @@ class register_reporter final {
             // note: a call is to a 'stmt_def_func::body_label'
             assert(label.starts_with(machine::body_label_prefix));
 
+            const machine& x{machine_.get()};
+
             lines.push_back(
                 std::format("{:>7}{:>7}  {} {}", use.saved_peak, use.calls,
                             label.substr(machine::body_label_prefix.size()),
-                            machine_.get().location_text(use.peak_site_tk)));
+                            x.location_text(use.peak_site_tk)));
         }
 
         return lines;
@@ -377,12 +383,14 @@ class register_reporter final {
             return {};
         }
 
+        const machine& x{machine_.get()};
+
         return {
             "",
             std::format("the peak is in a function with a body of its own, "
                         "compiled with all {} registers free, its callers are "
                         "not on this stack",
-                        machine_.get().noinline_body_register_count()),
+                        x.noinline_body_register_count()),
         };
     }
 
@@ -413,11 +421,13 @@ class register_reporter final {
     register_text(const register_pool::allocation& allocated) const
         -> std::string {
 
-        return std::format(
-            "{} {}{}", machine_.get().register_display_name(allocated.index),
-            machine_.get().location_text(allocated.src_loc_tk),
-            allocated.holder == register_pool::holder_kind::named ? " (named)"
-                                                                  : "");
+        const machine& x{machine_.get()};
+
+        return std::format("{} {}{}", x.register_display_name(allocated.index),
+                           x.location_text(allocated.src_loc_tk),
+                           allocated.holder == register_pool::holder_kind::named
+                               ? " (named)"
+                               : "");
     }
 
     //

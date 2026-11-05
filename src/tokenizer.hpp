@@ -95,17 +95,17 @@ class tokenizer final {
     // no statement or definition starts with; a skip stops before the
     // whitespace of the closer that ends it, e.g. the ')' of '{ f() ) }'
     auto assert_not_at_delimiter() const -> void {
-        const size_t delimiter_ix{next_token_position().start_index()};
+        const tokenizer probe{past_whitespace()};
 
-        if (delimiter_ix == src_.size()) {
+        if (probe.is_eos()) {
             return;
         }
 
         // e.g. the '==' of 'exit(0) == 1', an operator is quoted whole
-        const std::string_view op{peek_operator()};
+        const std::string_view op{probe.operator_at_cursor()};
 
         const std::string_view delimiter{
-            op.empty() ? src_.substr(delimiter_ix, 1) : op,
+            op.empty() ? src_.substr(probe.char_ix_, 1) : op,
         };
 
         throw compile_error{*this,
@@ -158,11 +158,9 @@ class tokenizer final {
 
         const size_t at_line{at_line_};
         const size_t bgn_ix{char_ix_};
-        const std::string_view txt{src_.substr(char_ix_, 1)};
         ++char_ix_;
-        const std::string_view ws_after{next_trailing_whitespace()};
 
-        return token{file_ix_, ws_before, bgn_ix, txt, ws_after, at_line};
+        return finish_token(ws_before, at_line, bgn_ix);
     }
 
     // the token of the word 'word' when it is next, the cursor stays when not,
@@ -200,19 +198,14 @@ class tokenizer final {
             return finish_character_literal_token(ws_before, at_line, bgn_ix);
         }
 
-        const std::string_view txt{next_token_str()};
-        const std::string_view ws_after{next_trailing_whitespace()};
+        skip_to_delimiter();
 
-        return {file_ix_, ws_before, bgn_ix, txt, ws_after, at_line};
+        return finish_token(ws_before, at_line, bgn_ix);
     }
 
     // the position of the next token, past the whitespace and comments
     [[nodiscard]] auto next_token_position() const -> token {
-        tokenizer probe{*this};
-
-        std::ignore = probe.next_whitespace();
-
-        return probe.cur_position_token();
+        return past_whitespace().cur_position_token();
     }
 
     // the whitespace before a value, as the own token of a wrapper node (see
@@ -225,21 +218,13 @@ class tokenizer final {
     // the character after the whitespace, comments and newlines included,
     // without reading
     [[nodiscard]] auto peek_char_after_whitespace() const -> char {
-        tokenizer probe{*this};
-
-        std::ignore = probe.next_whitespace();
-
-        return probe.peek_char();
+        return past_whitespace().peek_char();
     }
 
     // the operator after the whitespace without reading it, e.g. the '<<' of
     // ' << 2'; empty when none is next
     [[nodiscard]] auto peek_operator() const -> std::string_view {
-        tokenizer probe{*this};
-
-        std::ignore = probe.next_whitespace();
-
-        return probe.operator_at_cursor();
+        return past_whitespace().operator_at_cursor();
     }
 
     // only the last read token can be put back, otherwise the rewind lands
@@ -363,13 +348,7 @@ class tokenizer final {
             }
         }
 
-        const size_t end_ix{char_ix_};
-        const std::string_view ws_after{next_trailing_whitespace()};
-
-        const token literal_tk{
-            file_ix_, ws_before, bgn_ix, src_.substr(bgn_ix, end_ix - bgn_ix),
-            ws_after, at_line,
-        };
+        const token literal_tk{finish_token(ws_before, at_line, bgn_ix)};
 
         // checked where it is read like a string, also in a generic body that
         // no instance parses
@@ -418,13 +397,7 @@ class tokenizer final {
             skip_char();
         }
 
-        const size_t end_ix{char_ix_};
-        const std::string_view ws_after{next_trailing_whitespace()};
-
-        const token string_tk{
-            file_ix_, ws_before, bgn_ix, src_.substr(bgn_ix, end_ix - bgn_ix),
-            ws_after, at_line,
-        };
+        const token string_tk{finish_token(ws_before, at_line, bgn_ix)};
 
         if (const std::optional<token> escape_tk{
                 string_tk.unsupported_escape(),
@@ -436,6 +409,17 @@ class tokenizer final {
         }
 
         return string_tk;
+    }
+
+    // the token of the text from 'bgn_ix' to the cursor, with the whitespace
+    // after it that 'next_trailing_whitespace' gives
+    [[nodiscard]] auto finish_token(const std::string_view ws_before,
+                                    const size_t at_line, const size_t bgn_ix)
+        -> token {
+
+        const std::string_view text{src_.substr(bgn_ix, char_ix_ - bgn_ix)};
+        const std::string_view ws_after{next_trailing_whitespace()};
+        return {file_ix_, ws_before, bgn_ix, text, ws_after, at_line};
     }
 
     [[nodiscard]] auto is_eos() const -> bool {
@@ -484,20 +468,6 @@ class tokenizer final {
         }
 
         return ch;
-    }
-
-    // the text up to the next delimiter, e.g. 'abc+d' gives 'abc', a delimiter
-    // at the start gives an empty text
-    [[nodiscard]] auto next_token_str() -> std::string_view {
-        const size_t bgn_ix{char_ix_};
-        const size_t delimiter{src_.find_first_of(delimiters_, char_ix_)};
-
-        char_ix_ =
-            delimiter == std::string_view::npos ? src_.size() : delimiter;
-
-        const size_t len{char_ix_ - bgn_ix};
-
-        return src_.substr(bgn_ix, len);
     }
 
     // the next line's indentation and comments belong to the next token, the
@@ -561,12 +531,31 @@ class tokenizer final {
         return {};
     }
 
+    // a copy of this tokenizer past the whitespace and comments, for a look
+    // at what follows them
+    [[nodiscard]] auto past_whitespace() const -> tokenizer {
+        tokenizer probe{*this};
+
+        std::ignore = probe.next_whitespace();
+
+        return probe;
+    }
+
     [[nodiscard]] auto peek_char() const -> char {
         return is_eos() ? '\0' : src_.at(char_ix_);
     }
 
     // reads a character the caller has no use for
     auto skip_char() -> void { std::ignore = next_char(); }
+
+    // moves to the next delimiter, e.g. past the 'abc' of 'abc+d'; stays at a
+    // delimiter
+    auto skip_to_delimiter() -> void {
+        const size_t delimiter{src_.find_first_of(delimiters_, char_ix_)};
+
+        char_ix_ =
+            delimiter == std::string_view::npos ? src_.size() : delimiter;
+    }
 
     // the newline is left for 'next_whitespace' so it counts the line
     // e.g. the rest of '# c\n' is '# c'

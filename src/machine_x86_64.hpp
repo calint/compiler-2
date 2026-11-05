@@ -84,8 +84,8 @@ class machine_x86_64 final : public machine {
     //
 
     // the instructions of a 'rep stosb' or 'rep movsb' with its setup: a zero
-    // or a copy of more parts than this takes is emitted with it, a zero
-    // takes a store per part, a copy a load and a store ('part_count')
+    // or a copy whose parts take more is emitted with it ('takes_rep_form'), a
+    // zero takes a store per part, a copy a load and a store ('part_count')
     static constexpr size_t rep_form_instructions_{4};
 
     // note: measured on the tests, 'roome' and zeroes and copies of 1 to 128
@@ -271,11 +271,14 @@ class machine_x86_64 final : public machine {
         // the frame size and the displacement, all in the 64-bit immediate,
         // since 'cmp' takes only 32 bits; an absolute address reaches beyond
         // the 2 GiB of 'rip' relative ones
-        assembler_.instruction(
-            indent, op::mov, to_argument(last_base),
-            assembler_x86_64::immediate::of_qword_expression(
-                std::format("{} - {} - {}", variables_end_label_,
-                            frame_size_label, frame_address.displacement())));
+        const std::string last_base_expression{
+            std::format("{} - {} - {}", variables_end_label_, frame_size_label,
+                        frame_address.displacement()),
+        };
+
+        assembler_.instruction(indent, op::mov, to_argument(last_base),
+                               assembler_x86_64::immediate::of_qword_expression(
+                                   last_base_expression));
 
         // note: signed, the highest base is negative when the frame size and
         //       the displacement pass the address of 'vars.end'; addresses and
@@ -321,10 +324,14 @@ class machine_x86_64 final : public machine {
 
         const size_t parts{part_count(size_bytes)};
 
-        constexpr std::array<std::string_view, 3> named{"rsi", "rdi", "rcx"};
+        constexpr std::array<std::string_view, 3> rep_registers{
+            "rsi",
+            "rdi",
+            "rcx",
+        };
 
         // note: 2 because a part is a load and a store
-        if (takes_rep_form(2 * parts, named)) {
+        if (takes_rep_form(2 * parts, rep_registers)) {
             copy_with_rep_movsb(src_loc_tk, indent, dst, size_bytes,
                                 [&](const operand& pointer) -> void {
                                     lea(src_loc_tk, indent, pointer, src);
@@ -632,8 +639,11 @@ class machine_x86_64 final : public machine {
 
         const size_t parts{part_count(size_bytes)};
 
-        constexpr std::array<std::string_view, 3> rep_registers{"rax", "rdi",
-                                                                "rcx"};
+        constexpr std::array<std::string_view, 3> rep_registers{
+            "rax",
+            "rdi",
+            "rcx",
+        };
 
         if (takes_rep_form(parts, rep_registers)) {
             const operation_scope named{*this};
@@ -765,7 +775,6 @@ class machine_x86_64 final : public machine {
         }
     }
 
-    // 'read' and 'write' are system calls, the sector functions routines
     auto emit_multiply(const token& src_loc_tk, const size_t indent,
                        const operand& product, const operand& factor,
                        const factor_use use, const runtime_check& check)
@@ -846,6 +855,7 @@ class machine_x86_64 final : public machine {
         mov(src_loc_tk, indent, product, reg);
     }
 
+    // 'read' and 'write' are system calls, the sector functions routines
     auto emit_target_call(const token& src_loc_tk, const size_t indent,
                           const target_call function, const operand& result)
         -> void override {
@@ -988,10 +998,12 @@ class machine_x86_64 final : public machine {
             return;
         }
 
-        assembler_.jcc(indent, failed,
-                       line_failure_label(handler.symbol(),
-                                          src_loc_tk.file_index(),
-                                          src_loc_tk.at_line()));
+        const std::string line_label{
+            line_failure_label(handler.symbol(), src_loc_tk.file_index(),
+                               src_loc_tk.at_line()),
+        };
+
+        assembler_.jcc(indent, failed, line_label);
     }
 
     // the built-in integer type of 'size_bytes'
@@ -1346,10 +1358,13 @@ class machine_x86_64 final : public machine {
         assembler_.instruction(1, op::mov, "rax", "rbp");
         assembler_.comment(1, "convert to string");
 
+        const std::string newline_address{
+            std::format("num_buffer + {}", newline_offset),
+        };
+
         assembler_.instruction(
             1, op::mov, "rdi",
-            assembler_x86_64::immediate::of_qword_expression(
-                std::format("num_buffer + {}", newline_offset)));
+            assembler_x86_64::immediate::of_qword_expression(newline_address));
 
         assembler_.instruction(
             1, op::mov, assembler_x86_64::memory::of_base("rdi", size_byte_),
@@ -1377,10 +1392,13 @@ class machine_x86_64 final : public machine {
         assembler_.instruction(1, op::mov, "rsi", "rdi");
 
         // the length is the end of the buffer minus the first digit
+        const std::string buffer_end{
+            std::format("num_buffer + {}", number_buffer_size_bytes),
+        };
+
         assembler_.instruction(
             1, op::mov, "rdx",
-            assembler_x86_64::immediate::of_qword_expression(
-                std::format("num_buffer + {}", number_buffer_size_bytes)));
+            assembler_x86_64::immediate::of_qword_expression(buffer_end));
 
         assembler_.instruction(1, op::sub, "rdx", "rdi");
         assembler_.instruction(1, op::mov, "rdi", stderr_descriptor_);
@@ -1959,10 +1977,9 @@ class machine_x86_64 final : public machine {
     // the parts 'for_each_part' takes from qwords down, e.g. 3 for 13 B: a
     // qword, a dword and a byte
     [[nodiscard]] static auto part_count(const size_t size_bytes) -> size_t {
+        const size_t qword_count{size_bytes / size_qword_};
         const size_t tail_bytes{size_bytes % size_qword_};
-
-        return size_bytes / size_qword_ +
-               static_cast<size_t>(std::popcount(tail_bytes));
+        return qword_count + static_cast<size_t>(std::popcount(tail_bytes));
     }
 
     [[nodiscard]] static auto register_sum(const std::string_view base,

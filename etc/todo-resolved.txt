@@ -1,6 +1,27 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] hard: design review series 2, round 78 (2026-11-05, user: go in a
+    loop and do qa; A a design review of the front end, C the AGENTS rules
+    the linters miss in the backend, B a bug hunt away from the bulk code)
+    => done (2026-11-05): pure refactors, listings and errors of every test
+       equal on both targets; A1 'tokenizer::past_whitespace' is the one
+       probe past the whitespace ('next_token_position',
+       'peek_char_after_whitespace', 'peek_operator',
+       'assert_not_at_delimiter' with one probe instead of three), A2
+       'tokenizer::finish_token' builds the four tokens, 'next_token_str' ->
+       'skip_to_delimiter'; A3 the header of 'parse_lookahead.hpp' names the
+       patterns, not an incomplete list; A4 includes '<cassert>',
+       '<cstddef>', '<tuple>'; A5 two comments reflowed; C1 C2 the comments of
+       'rep_form_instructions_' and 'unroll_threshold_bytes_' name the form
+       choice of round 76; C3 the comment of 'emit_target_call' back on it;
+       C4 'copy_block' names its array 'rep_registers'; C5-C10 nested calls
+       split into named steps; C11-C14 the two clang-tidy errors of HEAD;
+       C16 the note of 'plan_known_loop' names both thresholds; C15 (user) a
+       class holding the backend as a member names it as with 'tc':
+       'const machine& x{machine_.get()};', 'toc.hpp' and
+       'register_report.hpp', AGENTS; skipped: A6 a 'term_kind' of its own
+       for '[' without a type (3 conditions against one more kind)
 [x] hard: design review series 2, round 77 (2026-11-04, user: continue; a
     hunter of the choice of form by free registers of round 76)
     => done (2026-11-04): nothing found; no program accepted by round 74 or

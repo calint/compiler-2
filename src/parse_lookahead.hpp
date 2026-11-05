@@ -6,13 +6,13 @@
 // literal and 'show<' a generic call; 'builtin_value_type' gives the type of
 // the value of a built-in; the name after a '.' is decided by
 // 'stmt_identifier::is_method_name', a function head by 'func_head'; the
-// rejections that run before a parse would misread
-// ('assert_no_surplus_argument', 'assert_not_string_argument',
-// 'assert_no_value_operator', 'assert_no_operator_after_array') and the shape
-// predicates ('continues_expression', 'is_zero_value',
-// 'is_whole_generic_call', 'is_array_literal_value', 'is_record_value')
+// rejections that run before a parse would misread ('assert_*') and the
+// predicates of the shape of what follows ('continues_*', 'is_*',
+// 'starts_value')
 
 #include <algorithm>
+#include <cassert>
+#include <cstddef>
 #include <cstdint>
 #include <format>
 #include <optional>
@@ -199,10 +199,10 @@ enum class term_kind : uint8_t {
 }
 
 // what 'tk', with 'tz' after it, denotes where a value or a statement starts;
-// the rules of hiding: a variable, a parameter or a constant
-// hides a user type and a generic function of its name, a call 'f(...)'
-// still calls the function; built-in types, built-in functions and keywords
-// are reserved names, nothing hides them
+// the rules of hiding: a variable, a parameter or a constant hides a user type
+// and a generic function of its name, a call 'f(...)' still calls the
+// function; built-in types, built-in functions and keywords are reserved
+// names, nothing hides them
 [[nodiscard]] inline auto classify_term(const toc& tc, const token& tk,
                                         const tokenizer& tz) -> term_kind {
 
