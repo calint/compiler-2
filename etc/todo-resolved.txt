@@ -1,6 +1,16 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: unused includes (2026-11-05, user: 'machine_rv32i.hpp' had one,
+    check the other files and add the check to the lint)
+    => done (2026-11-05): 'misc-include-cleaner', run on each header alone,
+       found four more ('<optional>' in 'assembler_x86_64.hpp',
+       'ident_info.hpp' in 'expr_type_impl.hpp', 'assembler.hpp' in
+       'machine_x86_64.hpp', '<memory>' in 'stmt_call.hpp'), removed;
+       'clang-tidy.sh' runs the check on each header, since it checks only
+       the file clang-tidy runs on ('main.cpp' before), and the config sets
+       'MissingIncludes: false' (106 names are used through another header);
+       an unused include now fails 'clang-tidy.sh', about 25 s more
 [x] hard: coverage cleanup: every line that is not 'std::unreachable()' is
     reached by a test, or becomes an 'assert' or 'std::unreachable()'
     => left: 'main.cpp' 'generated source differs' (a defect of the compiler, not
