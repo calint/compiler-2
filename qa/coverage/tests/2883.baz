@@ -1,0 +1,5 @@
+# an error in a file included through another lists the includes
+
+include "include/via.baz"
+
+func main() { }

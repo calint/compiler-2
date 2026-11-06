@@ -1,0 +1,4 @@
+
+2879.baz:5:9: 'foo' takes an array, e.g. 'foo arr {...}'; 'e', 'i' and 'n' are given
+    foo e in arr {
+        ^

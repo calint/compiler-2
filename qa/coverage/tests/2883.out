@@ -1,0 +1,10 @@
+
+include/bad.baz:2:5: 'x' not found
+    x = 1
+    ^
+include/via.baz:1:9: included from
+include "bad.baz"
+        ^~~~~~~~~
+2883.baz:3:9: included from
+include "include/via.baz"
+        ^~~~~~~~~~~~~~~~~

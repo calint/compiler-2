@@ -1,4 +1,4 @@
 
-0772.baz:3:11: generic parameter 'T' of a function must have the kind 'type', e.g. 'T type'
+0772.baz:3:11: a generic function has only type parameters, write 'T type'
 func make<T>(n) res {
           ^

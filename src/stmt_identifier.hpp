@@ -932,15 +932,24 @@ class stmt_identifier final : public statement {
 
         const std::string source{statement::trimmed_source(*this)};
 
+        const int64_t minimum{
+            constant_arith::signed_minimum(dst_type.size_bits()),
+        };
+
+        const int64_t maximum{-(minimum + 1)};
+
         throw compile_error{
-            tok(), std::format("constant {} does not fit {}, use '{}(...)'",
+            tok(), std::format("constant {} does not fit {} ({} to {}), "
+                               "'{}(...)' wraps it",
                                in_quotes(source), in_quotes(dst_type.name()),
-                               dst_type.name())};
+                               minimum, maximum, dst_type.name())};
     }
 
-    // 'ps.x' does not mean 'ps[0].x'
+    // 'ps.x' does not mean 'ps[0].x'; a name that is no field of the element,
+    // e.g. the 'length' of 'a.length', likely asks for the size
     auto assert_element_selected(const ident_info& prefix,
-                                 const token& src_loc_tk) const -> void {
+                                 const token& src_loc_tk,
+                                 const token& field_tk) const -> void {
 
         if (elems_.back().index) {
             return;
@@ -950,7 +959,18 @@ class stmt_identifier final : public statement {
             return;
         }
 
-        throw_unindexed_array(src_loc_tk, dotted_path_);
+        if (prefix.type_ref().has_field(field_tk.text())) {
+            throw_unindexed_array(src_loc_tk, dotted_path_);
+        }
+
+        const std::string length_call{
+            std::format("array_length({})", dotted_path_),
+        };
+
+        throw compile_error{src_loc_tk,
+                            std::format("array {} must be indexed, or use {}",
+                                        in_quotes(dotted_path_),
+                                        in_quotes(length_call))};
     }
 
     // where only an array is expected, the path does not end at a method,

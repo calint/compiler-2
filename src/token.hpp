@@ -190,6 +190,11 @@ class token final {
         return start_ix_ + text_.size();
     }
 
+    // a marker right after this token, e.g. where a missing '=' goes
+    [[nodiscard]] auto end_position() const -> token {
+        return position(file_index(), end_index(), at_line());
+    }
+
     [[nodiscard]] auto file_index() const -> size_t { return file_ix_; }
 
     // no word was read here: the source ends or a delimiter follows

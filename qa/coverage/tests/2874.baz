@@ -1,0 +1,6 @@
+# an increment is rejected at its operator
+
+func main() {
+    var x = 1
+    x++
+}

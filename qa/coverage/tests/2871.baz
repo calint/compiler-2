@@ -1,0 +1,5 @@
+# a statement that ends with a semicolon is reported at the semicolon
+
+func main() {
+    var x = 3;
+}

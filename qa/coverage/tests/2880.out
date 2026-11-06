@@ -1,0 +1,4 @@
+
+2880.baz:6:13: array 'a' must be indexed, or use 'array_length(a)'
+    var x = a.length
+            ^

@@ -87,7 +87,7 @@ func foz(arg mut []) {
 
 func mut str.input() {
     var nbytes = read(0, self.data)
-    # read is built-in function that operates on file descriptors
+    # `read` is a built-in function that operates on file descriptors
     # it has 2 more optional arguments: count and start index
     self.len = i8(nbytes - 1)
 }
@@ -255,7 +255,7 @@ func main() {
     array_copy(arr, arr1, 4)
     var eq = arrays_equal(arr[1], arr1[1], 3)
     # type `bool` is built-in and deduced from expression type
-    # `arrays_equal` is built-in function comparing source and destination
+    # `arrays_equal` is a built-in function comparing source and destination
     assert(eq)
 
     arr1[2] = -1

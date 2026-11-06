@@ -7021,3 +7021,49 @@ SRC=2852 && COMPERR
 # a comment on the last line without a line end after a global, which the
 # listing comment of the global holds
 SRC=2860 && EXP=2 && RUN
+
+# a variable without an initializer at the end of its line, reported at the
+# end of its name
+SRC=2870 && COMPERR
+
+# a statement that ends with a semicolon
+SRC=2871 && COMPERR
+
+# a value after 'return'
+SRC=2872 && COMPERR
+
+# a compound assignment
+SRC=2873 && COMPERR
+
+# an increment
+SRC=2874 && COMPERR
+
+# a '!' before a condition
+SRC=2875 && COMPERR
+
+# '&&' between conditions
+SRC=2876 && COMPERR
+
+# '||' between conditions
+SRC=2877 && COMPERR
+
+# 'noinline' before 'func'
+SRC=2878 && COMPERR
+
+# 'foo e in arr'
+SRC=2879 && COMPERR
+
+# 'a.length' on an array of integers
+SRC=2880 && COMPERR
+
+# an instance literal that names its fields
+SRC=2881 && COMPERR
+
+# a wider variable for a narrower parameter
+SRC=2882 && COMPERR
+
+# an error in a file included through another lists the includes
+SRC=2883 && COMPERR
+
+# a statement after 'return' on its line and an 'else' after it are accepted
+SRC=2884 && EXP=2 && RUN

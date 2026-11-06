@@ -1,0 +1,11 @@
+# a wider variable for a narrower parameter is rejected with a conversion
+# hint
+
+func f(a i16) res i16 {
+    res = a
+}
+
+func main() {
+    var x = 5
+    var y = f(x)
+}

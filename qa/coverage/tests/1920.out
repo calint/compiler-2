@@ -1,4 +1,4 @@
 
-1920.baz:7:13: generic type 'box' is not a function, name an instance first, e.g. 'type str = box<...>'
+1920.baz:7:13: generic type 'box' is not a function, name an instance first, e.g. 'type my_box = box<...>'
     var b = box(1)
             ^~~

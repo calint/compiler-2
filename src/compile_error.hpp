@@ -345,8 +345,8 @@ inline constexpr std::string_view missing_close_paren_text{
 [[nodiscard]] inline auto instance_hint(const std::string_view name)
     -> std::string {
 
-    return std::format("name an instance first, e.g. 'type str = {}<...>'",
-                       name);
+    return std::format("name an instance first, e.g. 'type my_{} = {}<...>'",
+                       name, name);
 }
 
 // a value of the type 'got' where the type 'expected' is needed

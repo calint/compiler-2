@@ -1868,19 +1868,41 @@ class builtin_roles final {
     }
 };
 
-// a word that cannot be a name, e.g. '$x'
-[[nodiscard]] inline auto invalid_name_message(const std::string_view name)
-    -> std::string {
+// e.g. the ';' of 'var x = 3;', which the tokenizer reads as part of the word
+// before it
+inline auto throw_if_ends_with_semicolon(const token& src_loc_tk) -> void {
+    if (not src_loc_tk.text().ends_with(';')) {
+        return;
+    }
 
-    return std::format("{} is not a valid name, a name starts with a letter "
-                       "or '_' and has only letters, digits and '_'",
-                       in_quotes(name));
+    const token semicolon_tk{
+        token::position(src_loc_tk.file_index(), src_loc_tk.end_index() - 1,
+                        src_loc_tk.at_line()),
+    };
+
+    throw compile_error{semicolon_tk, "statements end at the line, remove ';'"};
+}
+
+// a word that cannot be a name, e.g. '$x'
+[[noreturn]] inline auto throw_invalid_name(const token& src_loc_tk,
+                                            const std::string_view name)
+    -> void {
+
+    throw_if_ends_with_semicolon(src_loc_tk);
+
+    throw compile_error{
+        src_loc_tk,
+        std::format("{} is not a valid name, a name starts with a letter "
+                    "or '_' and has only letters, digits and '_'",
+                    in_quotes(name))};
 }
 
 // a word that starts like a number but is none, e.g. '0x' or '12_000'
 [[noreturn]] inline auto throw_unparsed_number(const token& src_loc_tk,
                                                const std::string_view text)
     -> void {
+
+    throw_if_ends_with_semicolon(src_loc_tk);
 
     throw compile_error{
         src_loc_tk, std::format("cannot parse constant {}", in_quotes(text))};
@@ -1948,7 +1970,7 @@ class ident_resolver final {
 
         // e.g. the '$' of 'var x = $', which no definition can name
         if (not is_identifier(ident)) {
-            throw compile_error{src_loc_tk, invalid_name_message(ident)};
+            throw_invalid_name(src_loc_tk, ident);
         }
 
         throw compile_error{src_loc_tk,
@@ -3477,7 +3499,7 @@ class toc final {
         }
 
         if (not is_identifier(name_tk.text())) {
-            throw compile_error{name_tk, invalid_name_message(name_tk.text())};
+            throw_invalid_name(name_tk, name_tk.text());
         }
 
         if (std::ranges::contains(reserved_names::keywords, name_tk.text())) {

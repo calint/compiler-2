@@ -1,0 +1,4 @@
+
+2871.baz:4:14: statements end at the line, remove ';'
+    var x = 3;
+             ^

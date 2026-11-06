@@ -1,0 +1,7 @@
+# the values of an instance literal do not name their fields
+
+type point {x, y}
+
+func main() {
+    var p = point{x: 1, y: 2}
+}

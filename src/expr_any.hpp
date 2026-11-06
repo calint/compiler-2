@@ -615,8 +615,15 @@ class expr_any final : public statement {
         // e.g. 'i8[]{1, 2}' for an 'i8' array field is '{1, 2}' and 'i8[4]'
         // is '{}'
         if (typing == literal_typing::from_destination) {
-            throw_known_literal_type(tz, literal_tk, value_kind::array, tp,
-                                     std::format("{}[]", literal_type.name()));
+            const std::optional<size_t> length{destination_.length()};
+
+            const std::string length_text{
+                length ? std::format("{}", *length) : "",
+            };
+
+            throw_known_literal_type(
+                tz, literal_tk, value_kind::array, tp,
+                std::format("{}[{}]", literal_type.name(), length_text));
         }
 
         // note: only a declaration names the array type, its size is the one

@@ -1,4 +1,4 @@
 
-1962.baz:6:14: 'box<...>' is not a generic argument, name an instance first, e.g. 'type str = box<...>'
+1962.baz:6:14: 'box<...>' is not a generic argument, name an instance first, e.g. 'type my_box = box<...>'
 type s = box<box<i8>>
              ^~~

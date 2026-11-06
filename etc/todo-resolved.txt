@@ -1,6 +1,21 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] hard: quality round 124 (2026-11-06, user: qa until it is great; AS the
+    proposals of the newcomer review of round 123)
+    => done (2026-11-06): messages for what a newcomer writes, no verdict
+       changed: a declaration without initializer at the end of its name
+       ('var x = i32'), a ';' at the end of a statement, 'return a', '+=',
+       '++', '!', '&&', '||', 'func' after 'noinline', 'foo e in arr',
+       'a.length' (or 'array_length(a)'), 'point{x: 1}', a constant that
+       does not fit with its range and that the conversion wraps, the
+       conversion hint of a wider argument, generic parameters of a
+       function, the size of a sized destination, the index of 'foo', and
+       "included from" lines after an error in an included file (tests 2870
+       to 2884, 64 '.out' files); the README: requirements, the panic
+       message and the exit codes, the sd card file, a pointer to the
+       tutorial and the names of 'foo'; not done: a caret over a whole path
+       (no single place decides it)
 [x] hard: quality round 123 (2026-11-06, user: qa until it is great; AR
     hunt of rounds 121 and 122, AQ newcomer review)
     => done (2026-11-06): AR1 round 122 AM15 made the branch of

@@ -2804,11 +2804,26 @@ class stmt_call final : public statement {
                                   const stmt_def_func_param& param,
                                   const type& arg_type) -> void {
 
+        const type& param_type{param.get_type()};
+
+        // e.g. an 'i64' variable for an 'i32' parameter, a converted value is
+        // passed like 'a + 1'
+        const bool is_narrowing{
+            param.is_read_only() and not param.is_array() and
+                param_type.is_integer() and arg_type.is_integer() and
+                arg_type.size_bits() > param_type.size_bits(),
+        };
+
+        const std::string hint{
+            is_narrowing ? std::format(", use '{}(...)'", param_type.name())
+                         : "",
+        };
+
         throw compile_error{
             arg.tok(),
-            std::format("expected type {} for parameter {}, got {}",
-                        in_quotes(param.get_type().name()),
-                        in_quotes(param.name()), in_quotes(arg_type.name()))};
+            std::format("expected type {} for parameter {}, got {}{}",
+                        in_quotes(param_type.name()), in_quotes(param.name()),
+                        in_quotes(arg_type.name()), hint)};
     }
 
     // the type as written, with the type it is bound to when that differs,

@@ -82,7 +82,7 @@ class stmt_def_dat final : public statement {
   public:
     stmt_def_dat(toc& tc, const token src_loc_tk, tokenizer& tz)
         : statement{src_loc_tk}, name_tk_{read_name(tc, tz)},
-          equals_tk_{initializer_declaration::read_equals(tz, "dat")},
+          equals_tk_{initializer_declaration::read_equals(tz, "dat", name_tk_)},
           declaration_{tc, tz, name_tk_, name_in_initializer::hidden},
           initializer_{declaration_.parse_value(tc, tz)},
           root_elem_{fold_data(tc, declaration_.type_ref(), initializer_)} {

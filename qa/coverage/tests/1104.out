@@ -1,4 +1,4 @@
 
-1104.baz:5:9: the destination gives the type 'i64[]', write '{...}'
+1104.baz:5:9: the destination gives the type 'i64[2]', write '{...}'
     a = []{3, 4}
         ^

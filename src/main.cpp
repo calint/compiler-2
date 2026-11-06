@@ -203,7 +203,8 @@ options:
                       extension followed by -MACHINE.bin)
   --sdcard=FILE       x86_64 and rv32i sd card image that 'sector_read' and
                       'sector_write' open at run time, relative to the working
-                      directory of the program (default: {8})
+                      directory of the program, it must exist and hold the
+                      sector (default: {8})
   --nopt              no jump optimizations
   --versions=KEPT     of two versions of the same code keep the smaller
                       (default), or for testing the first or the last
@@ -861,6 +862,20 @@ auto print_call_frames(const source_files& files,
     }
 }
 
+// the includes that loaded the file 'file_ix', the last one in the main file
+auto print_include_chain(const source_files& files, size_t file_ix) -> void {
+    const source_locations locations{files};
+
+    while (const std::optional<source_span>& at{files.included_at(file_ix)}) {
+        std::println(stderr, "{}: included from", locations.for_error(*at));
+
+        print_source_line(files.text(at->file_ix), at->start_index,
+                          at->end_index);
+
+        file_ix = at->file_ix;
+    }
+}
+
 // an error without a place is a problem of the whole program, reported at the
 // main file
 auto print_source_error(const source_files& files,
@@ -882,6 +897,8 @@ auto print_source_error(const source_files& files,
                  printable(message));
 
     print_source_line(src, shown.start_index, shown.end_index);
+
+    print_include_chain(files, where->file_ix);
 }
 
 // the message of the error at its source line, the inlined calls and generic
@@ -970,7 +987,7 @@ default_binary_file_name(const std::string_view src_file_name,
         };
 
         files.add(std::string{src_file_name},
-                  source_files::read_file(src_file_name));
+                  source_files::read_file(src_file_name), std::nullopt);
 
         const std::string binary{
             opts.binary_file_name

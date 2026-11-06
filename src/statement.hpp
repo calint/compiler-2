@@ -516,7 +516,7 @@ class statement {
         }
 
         if (info.read_only_why() == read_only_cause::foo_counter) {
-            return std::format(", {} is the counter of 'foo'", in_quotes(root));
+            return std::format(", {} is the index of 'foo'", in_quotes(root));
         }
 
         assert(info.read_only_why() == read_only_cause::foo_length);

@@ -1,4 +1,4 @@
 
-0811.baz:9:21: expected type 'i16' for parameter 'a', got 'i32'
+0811.baz:9:21: expected type 'i16' for parameter 'a', got 'i32', use 'i16(...)'
     var b = id<i16>(a)
                     ^

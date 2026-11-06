@@ -88,7 +88,7 @@ inline stmt_identifier::stmt_identifier(toc& tc, token tk, tokenizer& tz,
             break;
         }
 
-        assert_element_selected(prefix, tk);
+        assert_element_selected(prefix, tk, field->name_tk);
         assert_not_method_call(prefix, tz, field->name_tk);
 
         elem_delims_tk_.emplace_back(field->dot_tk);

@@ -130,18 +130,20 @@ class initializer_declaration final {
         return constant;
     }
 
-    // the '=' before the initializer, 'keyword' names the definition in the
-    // example
+    // the '=' after 'name_tk', 'keyword' names the definition in the
+    // example; the error is at the end of the name, the next token can be on
+    // another line
     [[nodiscard]] static auto read_equals(tokenizer& tz,
-                                          const std::string_view keyword)
-        -> token {
+                                          const std::string_view keyword,
+                                          const token& name_tk) -> token {
 
         // e.g. 'var x == 1', a comparison is not the '=' of an initializer
         if (not tz.is_lone_equals_next()) {
             throw compile_error{
-                tz, std::format("expected '=' followed by an initializer, "
-                                "e.g. '{} x = i32(0)'",
-                                keyword)};
+                name_tk.end_position(),
+                std::format("expected '=' followed by an initializer, "
+                            "e.g. '{} x = i32'",
+                            keyword)};
         }
 
         return tz.seen_char_token('=');
@@ -538,7 +540,9 @@ inline auto make_stmt_def_var(toc& tc, const token tk, tokenizer& tz)
     // 'var a = [2]{}' would read as an index
     const tokenizer at_name{tz};
 
-    const token equals_tk{initializer_declaration::read_equals(tz, tk.text())};
+    const token equals_tk{
+        initializer_declaration::read_equals(tz, tk.text(), name_tk),
+    };
 
     const initializer_declaration declaration{
         tc,

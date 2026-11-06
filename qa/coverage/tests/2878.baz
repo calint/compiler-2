@@ -1,0 +1,7 @@
+# 'noinline' before 'func' is rejected, it comes after
+
+noinline func f() { }
+
+func main() {
+    f()
+}

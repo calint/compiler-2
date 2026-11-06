@@ -1,0 +1,4 @@
+
+2873.baz:5:7: '+=' is not supported, assign the result, e.g. 'x = x + 1'
+    x += 1
+      ^

@@ -53,6 +53,11 @@ the binary image itself.
   * always on: compile time rejection of calls and assignments where the
     value may read the destination under another name (aliasing), and of
     arguments that may share storage when a parameter is `mut`
+  * a failed check prints `panic: NAME`, with `line` `panic: NAME at
+    FILE:LINE`, and exits with the code of the check: `bounds` 255, `frame
+    overflow` 254, `division` 253, `shift` 252, `overlap` 251, `stack
+    overflow` 250, `overflow` 249; a failed `sector_read` or `sector_write`
+    prints `panic: sd card` and exits with 248
 * keywords: `func`, `noinline`, `mut`, `type`, `dat`, `var`, `let`, `foo`,
   `loop`, `if`, `else`, `continue`, `break`, `return`, `self`, `and`, `or`,
   `not`, `true`, `false`, `include`
@@ -66,11 +71,14 @@ the binary image itself.
   character as `\xNN`
 * built-in functions: `array_copy`, `array_length`, `arrays_equal`, `read`,
   `write`, `sector_read`, `sector_write`, `exit`, `int`, `i8`, `i16`, `i32`, `i64`
-* read and write sectors from and to file on `x86_64` and `rv32i`
+* read and write sectors from and to file on `x86_64` and `rv32i`, the file
+  (`--sdcard`) must exist and hold the sector
 * read and write sectors from and to sd card on fpga hardware using `rv32i-fpga`
 
 ## Howto
 
+* requirements: `clang++` (C++26), `nasm`, `ld`, `llvm-mc`, `ld.lld`,
+  `qemu-riscv32`, `qemu-system-riscv32`
 * [`./make.sh`](make.sh) compiles the compiler then compiles and runs
   [`prog.baz`](prog.baz), `./make.sh build` only compiles the compiler
 * [`./run.sh`](run.sh) `[options] [NAME.baz]` compiles, assembles and runs
@@ -89,6 +97,9 @@ the binary image itself.
   * `./run.sh myprogram.baz --target=rv32i-qemu --stack=0x20000`
 * [`etc/tutorial.baz`](etc/tutorial.baz) is a tour of the language from the
   easiest to the most difficult concepts
+  * generics, type aliases, the zero value `{}`, `let` and `foo arr, count`
+    are explained there; inside `foo` the names `e`, `i` and `n` hide outer
+    names
 * [`qa/coverage/test-all.sh`](qa/coverage/test-all.sh) runs the tests, coverage
   report in `qa/coverage/report/`
 * neovim (lazyvim, see [`etc/nvim/tree-sitter-baz/`](etc/nvim/tree-sitter-baz/))

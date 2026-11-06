@@ -8,10 +8,12 @@
 // function is defined before its use, so the entry points are last: read from
 // the bottom
 
+#include <algorithm>
 #include <cassert>
 #include <cstdint>
 #include <format>
 #include <memory>
+#include <string>
 #include <string_view>
 #include <utility>
 #include <variant>
@@ -19,6 +21,7 @@
 #include "compile_error.hpp"
 #include "constant_parser.hpp"
 #include "decouple.hpp"
+#include "operand.hpp"
 #include "parse_lookahead.hpp"
 #include "stmt_assign_var.hpp"
 #include "stmt_builtin_array_copy.hpp"
@@ -142,6 +145,43 @@ inline auto parse_builtin(toc& tc, tokenizer& tz, const token& tk,
                                                   *converted, tz);
 }
 
+// e.g. the 'a' of 'return a', a value on the line of the 'return' that no
+// statement starts with; a statement may follow, e.g. 'g()' in
+// 'if x return g()'
+inline auto assert_return_without_value(const tokenizer& tz,
+                                        const token& return_tk) -> void {
+
+    tokenizer probe{tz};
+
+    const token tk{probe.next_token()};
+
+    if (tk.at_line() != return_tk.at_line()) {
+        return;
+    }
+
+    const bool is_literal{
+        tk.is_number() or tk.is_string() or
+            tk.is_text(reserved_names::true_value) or
+            tk.is_text(reserved_names::false_value),
+    };
+
+    // note: a name that is not followed by what a statement continues with,
+    //       e.g. the 'a' of 'a + b' but not of 'a = b', 'f(a)' or 'p.x = 1'
+
+    const bool is_lone_name{
+        is_identifier(tk.text()) and
+            not std::ranges::contains(reserved_names::keywords, tk.text()) and
+            not probe.is_lone_equals_next() and
+            not std::string_view{"(.[<"}.contains(
+                probe.peek_char_after_whitespace()),
+    };
+
+    if (is_literal or is_lone_name) {
+        throw compile_error{tk, "'return' takes no value, assign the result, "
+                                "e.g. 'res = a'"};
+    }
+}
+
 // a statement that starts with a keyword, null otherwise
 inline auto parse_keyword_statement(toc& tc, tokenizer& tz, const token tk)
     -> std::unique_ptr<statement> {
@@ -169,6 +209,7 @@ inline auto parse_keyword_statement(toc& tc, tokenizer& tz, const token tk)
     }
 
     if (tk.is_text("return")) {
+        assert_return_without_value(tz, tk);
         return std::make_unique<stmt_return>(tk);
     }
 
@@ -296,6 +337,48 @@ inline auto parse_call_or_identifier(toc& tc, tokenizer& tz, const token& tk,
     return std::make_unique<stmt_identifier>(std::move(ident));
 }
 
+// e.g. the '+=' of 'x += 1' or the '++' of 'x++', after the destination
+// 'dst', which baz writes as an assignment
+inline auto assert_not_compound_assignment(const tokenizer& tz,
+                                           const statement& dst) -> void {
+
+    if (tz.peek_operator().empty()) {
+        return;
+    }
+
+    tokenizer probe{tz};
+
+    const token op_tk{probe.seen_operator()};
+    const token after_tk{probe.next_token_position()};
+    const char after{probe.peek_char_after_whitespace()};
+
+    const bool is_adjacent{after_tk.start_index() == op_tk.end_index()};
+
+    const bool is_compound{
+        binary_operator_of(op_tk.text()).has_value() and after == '=',
+    };
+
+    const bool is_step{
+        (op_tk.is_text("+") or op_tk.is_text("-")) and
+            after == op_tk.text().front(),
+    };
+
+    if (not is_adjacent or not(is_compound or is_step)) {
+        return;
+    }
+
+    const std::string name{statement::trimmed_source(dst)};
+    const std::string written{std::format("{}{}", op_tk.text(), after)};
+
+    const std::string example{
+        std::format("{} = {} {} 1", name, name, op_tk.text()),
+    };
+
+    throw compile_error{
+        op_tk, std::format("{} is not supported, assign the result, e.g. {}",
+                           in_quotes(written), in_quotes(example))};
+}
+
 // a statement that starts with a name: a call as in an expression, e.g.
 // 'f(x)', 'point.at(1, 2)' or 'lst.add(x)', otherwise an assignment
 inline auto parse_name_statement(toc& tc, tokenizer& tz, const token tk,
@@ -330,6 +413,8 @@ inline auto parse_name_statement(toc& tc, tokenizer& tz, const token tk,
         return std::make_unique<stmt_assign_var>(tc, tz, std::move(dst),
                                                  equals_tk);
     }
+
+    assert_not_compound_assignment(tz, dst);
 
     // at the name, the next token can be on a later line
     throw compile_error{
@@ -367,6 +452,13 @@ inline auto parse_operand(toc& tc, tokenizer& tz, unary_ops uops,
         (tk.is_none() and is_default_array_literal(tz))) {
 
         throw_literal_not_operand(tk, "an array literal");
+    }
+
+    // e.g. the '!' of '!x', not the '!=' of a comparison
+    if (tk.is_none() and tz.peek_operator().empty() and
+        tz.peek_char_after_whitespace() == '!') {
+
+        throw compile_error{tk, "'!' is not an operator, use 'not'"};
     }
 
     if (tk.is_none()) {
@@ -468,6 +560,12 @@ inline auto parse_statement(toc& tc, tokenizer& tz, const token tk)
     if (tk.is_text("include")) {
         throw compile_error{
             tk, "'include' must be before the definitions of the file"};
+    }
+
+    // e.g. 'noinline func f()', the C order
+    if (tk.is_text("noinline")) {
+        throw compile_error{
+            tk, "'noinline' comes after 'func', e.g. 'func noinline f()'"};
     }
 
     throw compile_error{

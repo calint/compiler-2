@@ -1,0 +1,4 @@
+
+2877.baz:6:10: '||' is not an operator, use 'or'
+    if x || y exit(1)
+         ^

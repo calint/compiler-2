@@ -603,4 +603,11 @@ class expr_type final : public statement {
             .covered{std::move(covered)},
         });
     }
+
+    //
+    // statics
+    //
+
+    // a field value of 'parse_fields' is not written with the field's name
+    static auto assert_field_unnamed(const tokenizer& tz) -> void;
 };

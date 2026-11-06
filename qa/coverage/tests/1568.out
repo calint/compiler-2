@@ -1,4 +1,4 @@
 
-1568.baz:7:10: 'box<...>' is not a type, name an instance first, e.g. 'type str = box<...>'
+1568.baz:7:10: 'box<...>' is not a type, name an instance first, e.g. 'type my_box = box<...>'
 func f(b box<i8>) {}
          ^~~

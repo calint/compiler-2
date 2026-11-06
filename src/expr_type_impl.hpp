@@ -138,6 +138,8 @@ inline auto expr_type::parse_fields(toc& tc, tokenizer& tz) -> void {
                                in_quotes(tp.name()));
         },
         [&](const size_t index) -> void {
+            assert_field_unnamed(tz);
+
             const type_field& tf{flds.at(index)};
 
             // the value is parsed as the type of the field, so a nested
@@ -146,6 +148,21 @@ inline auto expr_type::parse_fields(toc& tc, tokenizer& tz) -> void {
                 tc, tz, tf.type_ref(), literal_typing::from_destination,
                 tf.shape));
         });
+}
+
+// e.g. the 'x:' of 'point{x: 1, y: 2}', a value names no field
+inline auto expr_type::assert_field_unnamed(const tokenizer& tz) -> void {
+    tokenizer probe{tz};
+
+    const token name_tk{probe.next_token()};
+
+    if (not name_tk.is_word() or not probe.is_next_char_token(':')) {
+        return;
+    }
+
+    throw compile_error{
+        name_tk,
+        "fields are given in order, without names, e.g. 'point{1, 2}'"};
 }
 
 // the special members need the complete 'expr_any'

@@ -351,7 +351,8 @@ class program final {
             throw compile_error{path_tk, e.what()};
         }
 
-        return files_.get().add(path.string(), std::move(text));
+        return files_.get().add(path.string(), std::move(text),
+                                source_span::at(path_tk));
     }
 
     [[nodiscard]] auto opened_file(const size_t file_ix) const -> open_file {

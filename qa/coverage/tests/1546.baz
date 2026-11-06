@@ -1,4 +1,4 @@
-# a 'return' takes no value, the value after it is not a statement
+# a 'return' takes no value
 func f() res {
     res = 1
     return 2

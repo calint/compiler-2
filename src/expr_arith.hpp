@@ -500,8 +500,12 @@ class expr_arith final : public statement {
             // e.g. the '-' of 'a + b - c'
             precedence = next_precedence;
 
+            const token op_tk{tz.seen_operator()};
+
+            assert_not_doubled_logical(tz, op_tk);
+
             ops_.push_back({
-                .tk{tz.seen_operator()},
+                .tk{op_tk},
                 .op{*next_op},
             });
 
@@ -1176,6 +1180,32 @@ class expr_arith final : public statement {
         }
 
         throw compile_error{src_loc_tk, "divisor must not be zero"};
+    }
+
+    // e.g. the '&&' of 'a && b', which would read as '&' and an operand '&'
+    static auto assert_not_doubled_logical(const tokenizer& tz,
+                                           const token& op_tk) -> void {
+
+        const bool is_and{op_tk.is_text("&")};
+
+        if (not is_and and not op_tk.is_text("|")) {
+            return;
+        }
+
+        const bool is_adjacent{
+            tz.next_token_position().start_index() == op_tk.end_index(),
+        };
+
+        if (not is_adjacent or
+            tz.peek_char_after_whitespace() != op_tk.text().front()) {
+
+            return;
+        }
+
+        throw compile_error{op_tk,
+                            std::format("{} is not an operator, use {}",
+                                        in_quotes(is_and ? "&&" : "||"),
+                                        in_quotes(is_and ? "and" : "or"))};
     }
 
     // an operand of an operator is a number: an instance is not, and a

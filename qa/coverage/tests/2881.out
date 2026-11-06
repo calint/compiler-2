@@ -1,0 +1,4 @@
+
+2881.baz:6:19: fields are given in order, without names, e.g. 'point{1, 2}'
+    var p = point{x: 1, y: 2}
+                  ^

@@ -1,0 +1,14 @@
+# a statement after 'return' on its line follows the 'if', as does 'else'
+
+func g() { }
+
+func f(a) res {
+    res = 1
+    if a == 1 return g()
+    if a == 2 return else res = 2
+}
+
+func main() {
+    var y = f(3)
+    exit(y)
+}

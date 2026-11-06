@@ -1,0 +1,4 @@
+
+2878.baz:3:1: 'noinline' comes after 'func', e.g. 'func noinline f()'
+noinline func f() { }
+^~~~~~~~

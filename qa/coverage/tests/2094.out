@@ -1,4 +1,4 @@
 
-2094.baz:10:7: expected type 'i8' for parameter 'a', got 'i32'
+2094.baz:10:7: expected type 'i8' for parameter 'a', got 'i32', use 'i8(...)'
     f(x, 3)
       ^

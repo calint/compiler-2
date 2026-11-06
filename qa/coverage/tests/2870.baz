@@ -1,0 +1,7 @@
+# a variable without an initializer at the end of its line is reported at
+# the end of its name, not at the next line
+
+func main() {
+    var x
+    x = 3
+}

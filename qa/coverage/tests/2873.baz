@@ -1,0 +1,6 @@
+# a compound assignment is rejected at its operator
+
+func main() {
+    var x = 1
+    x += 1
+}

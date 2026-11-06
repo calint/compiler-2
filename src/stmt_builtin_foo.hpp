@@ -35,8 +35,7 @@ class stmt_builtin_foo final : public statement {
 
   public:
     stmt_builtin_foo(toc& tc, const token src_loc_tk, tokenizer& tz)
-        : statement{src_loc_tk},
-          ident_{stmt_identifier::parse_whole_array(tc, tz)},
+        : statement{src_loc_tk}, ident_{parse_array(tc, tz)},
           count_{parse_count(tc, tz)}, code_{parse_code(tc, tz)} {}
 
     //
@@ -272,7 +271,7 @@ class stmt_builtin_foo final : public statement {
                     static_cast<int64_t>(array_len - 1), counter_type)) {
 
                 const std::string message{
-                    std::format("counter 'i' of 'foo' over {} elements does "
+                    std::format("index 'i' of 'foo' over {} elements does "
                                 "not fit {}, give a count",
                                 array_len, in_quotes(counter_type.name())),
                 };
@@ -391,6 +390,24 @@ class stmt_builtin_foo final : public statement {
     //
     // statics
     //
+
+    // the array after 'foo'; e.g. 'foo e in arr' names the element, which
+    // 'foo' gives
+    [[nodiscard]] static auto parse_array(toc& tc, tokenizer& tz)
+        -> stmt_identifier {
+
+        tokenizer probe{tz};
+
+        const token first_tk{probe.next_token()};
+
+        if (first_tk.is_word() and probe.is_next_word_token("in")) {
+            throw compile_error{first_tk,
+                                "'foo' takes an array, e.g. 'foo arr {...}'; "
+                                "'e', 'i' and 'n' are given"};
+        }
+
+        return stmt_identifier::parse_whole_array(tc, tz);
+    }
 
     // e.g. 'foo arr, len' visits the first 'len' elements
     [[nodiscard]] static auto parse_count(toc& tc, tokenizer& tz)

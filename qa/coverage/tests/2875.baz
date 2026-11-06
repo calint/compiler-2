@@ -1,0 +1,6 @@
+# a '!' before a condition is rejected, 'not' negates
+
+func main() {
+    var x = true
+    if !x exit(1)
+}

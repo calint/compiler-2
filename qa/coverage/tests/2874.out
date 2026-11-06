@@ -1,0 +1,4 @@
+
+2874.baz:5:6: '++' is not supported, assign the result, e.g. 'x = x + 1'
+    x++
+     ^

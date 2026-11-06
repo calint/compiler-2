@@ -53,6 +53,11 @@ the binary image itself.
   * always on: compile time rejection of calls and assignments where the
     value may read the destination under another name (aliasing), and of
     arguments that may share storage when a parameter is `mut`
+  * a failed check prints `panic: NAME`, with `line` `panic: NAME at
+    FILE:LINE`, and exits with the code of the check: `bounds` 255, `frame
+    overflow` 254, `division` 253, `shift` 252, `overlap` 251, `stack
+    overflow` 250, `overflow` 249; a failed `sector_read` or `sector_write`
+    prints `panic: sd card` and exits with 248
 * keywords: `func`, `noinline`, `mut`, `type`, `dat`, `var`, `let`, `foo`,
   `loop`, `if`, `else`, `continue`, `break`, `return`, `self`, `and`, `or`,
   `not`, `true`, `false`, `include`
@@ -66,11 +71,14 @@ the binary image itself.
   character as `\xNN`
 * built-in functions: `array_copy`, `array_length`, `arrays_equal`, `read`,
   `write`, `sector_read`, `sector_write`, `exit`, `int`, `i8`, `i16`, `i32`, `i64`
-* read and write sectors from and to file on `x86_64` and `rv32i`
+* read and write sectors from and to file on `x86_64` and `rv32i`, the file
+  (`--sdcard`) must exist and hold the sector
 * read and write sectors from and to sd card on fpga hardware using `rv32i-fpga`
 
 ## Howto
 
+* requirements: `clang++` (C++26), `nasm`, `ld`, `llvm-mc`, `ld.lld`,
+  `qemu-riscv32`, `qemu-system-riscv32`
 * [`./make.sh`](make.sh) compiles the compiler then compiles and runs
   [`prog.baz`](prog.baz), `./make.sh build` only compiles the compiler
 * [`./run.sh`](run.sh) `[options] [NAME.baz]` compiles, assembles and runs
@@ -89,6 +97,9 @@ the binary image itself.
   * `./run.sh myprogram.baz --target=rv32i-qemu --stack=0x20000`
 * [`etc/tutorial.baz`](etc/tutorial.baz) is a tour of the language from the
   easiest to the most difficult concepts
+  * generics, type aliases, the zero value `{}`, `let` and `foo arr, count`
+    are explained there; inside `foo` the names `e`, `i` and `n` hide outer
+    names
 * [`qa/coverage/test-all.sh`](qa/coverage/test-all.sh) runs the tests, coverage
   report in `qa/coverage/report/`
 * neovim (lazyvim, see [`etc/nvim/tree-sitter-baz/`](etc/nvim/tree-sitter-baz/))
@@ -130,7 +141,8 @@ options:
                       extension followed by -MACHINE.bin)
   --sdcard=FILE       x86_64 and rv32i sd card image that 'sector_read' and
                       'sector_write' open at run time, relative to the working
-                      directory of the program (default: sdcard.img)
+                      directory of the program, it must exist and hold the
+                      sector (default: sdcard.img)
   --nopt              no jump optimizations
   --versions=KEPT     of two versions of the same code keep the smaller
                       (default), or for testing the first or the last
@@ -188,10 +200,10 @@ examples:
 ```text
 Language                     files          blank        comment           code
 -------------------------------------------------------------------------------
-C/C++ Header                    64           9168           6884          26762
-C++                              1            191             92            764
+C/C++ Header                    64           9239           6919          26937
+C++                              1            196             93            775
 -------------------------------------------------------------------------------
-SUM:                            65           9359           6976          27526
+SUM:                            65           9435           7012          27712
 -------------------------------------------------------------------------------
 ```
 
@@ -292,7 +304,7 @@ func foz(arg mut []) {
 
 func mut str.input() {
     var nbytes = read(0, self.data)
-    # read is built-in function that operates on file descriptors
+    # `read` is a built-in function that operates on file descriptors
     # it has 2 more optional arguments: count and start index
     self.len = i8(nbytes - 1)
 }
@@ -460,7 +472,7 @@ func main() {
     array_copy(arr, arr1, 4)
     var eq = arrays_equal(arr[1], arr1[1], 3)
     # type `bool` is built-in and deduced from expression type
-    # `arrays_equal` is built-in function comparing source and destination
+    # `arrays_equal` is a built-in function comparing source and destination
     assert(eq)
 
     arr1[2] = -1

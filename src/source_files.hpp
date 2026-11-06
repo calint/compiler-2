@@ -12,6 +12,7 @@
 #include <fstream>
 #include <functional>
 #include <ios>
+#include <optional>
 #include <string>
 #include <string_view>
 #include <system_error>
@@ -67,6 +68,9 @@ class source_files final {
         std::string text;
         // see 'absolute_path', 'relative_name' is built from it
         std::filesystem::path absolute;
+        // the path of the 'include' that loaded the file, none for the main
+        // file
+        std::optional<source_span> included_at;
     };
 
     std::deque<file> files_;
@@ -78,14 +82,17 @@ class source_files final {
         return files_.at(file_ix).absolute;
     }
 
-    // returns the index of the file
-    auto add(std::string name, std::string text) -> size_t {
+    // returns the index of the file, 'included_at' is none for the main file
+    auto add(std::string name, std::string text,
+             const std::optional<source_span> included_at) -> size_t {
+
         std::filesystem::path absolute{absolute_path(name)};
 
         files_.push_back({
             .name{std::move(name)},
             .text{std::move(text)},
             .absolute{std::move(absolute)},
+            .included_at{included_at},
         });
 
         return files_.size() - 1;
@@ -108,6 +115,13 @@ class source_files final {
     }
 
     [[nodiscard]] auto count() const -> size_t { return files_.size(); }
+
+    // the path of the 'include' that loaded the file, none for the main file
+    [[nodiscard]] auto included_at(const size_t file_ix) const
+        -> const std::optional<source_span>& {
+
+        return files_.at(file_ix).included_at;
+    }
 
     [[nodiscard]] auto name(const size_t file_ix) const -> std::string_view {
         return files_.at(file_ix).name;

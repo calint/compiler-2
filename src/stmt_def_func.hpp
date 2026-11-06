@@ -311,9 +311,8 @@ struct func_head {
 
                 throw compile_error{
                     param.name_tk,
-                    std::format("generic parameter {} of a function must "
-                                "have the kind 'type', e.g. '{} type'",
-                                in_quotes(param.name_tk.text()),
+                    std::format("a generic function has only type "
+                                "parameters, write '{} type'",
                                 param.name_tk.text())};
             }
 
