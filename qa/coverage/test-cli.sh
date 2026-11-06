@@ -246,6 +246,17 @@ CLI_FILE_ERRORS() {
     [[ $exit_code -eq 1 ]]
     [[ ! -s gen.s ]]
     grep -Fq "cannot write file '/dev/full'" err
+    # a message that cannot be written still exits with 1, the help too
+    set +e
+    "$BIN" --help >/dev/full 2>err
+    exit_code=$?
+    set -e
+    [[ $exit_code -eq 1 ]]
+    set +e
+    "$BIN" missing-source.baz >gen.s 2>/dev/full
+    exit_code=$?
+    set -e
+    [[ $exit_code -eq 1 ]]
     # a source is read up to its size limit
     set +e
     "$BIN" /dev/zero >gen.s 2>err
@@ -408,6 +419,10 @@ CLI_CONTROL_BYTE_FILE_NAME() {
     printf 'func main() {\n    var a = i8[2]\n    var i = 3\n    a[i] = 1\n}\n' >"$name"
     "$BIN" --checks=upper,line "$name" >gen.s 2>err
     nasm -w+error -f elf64 gen.s -o gen.o
+    # the panic message escapes the line end like the messages do
+    ld -s -T "$SCRIPT_DIR/../../baz.ld" -o gen gen.o
+    ./gen >out 2>&1 || true
+    grep -Fq 'panic: bounds at gen\x0aname.baz:4' out
     "$BIN" --target=rv32i --bin=gen-rv32i.bin --checks=upper,line "$name" >gen.s 2>err
     llvm-mc -triple=riscv32 -mattr=-m,-a,-f,-d,-c -filetype=obj gen.s -o gen.o
     # the locations of the register report name the file, also escaped
@@ -417,7 +432,23 @@ CLI_CONTROL_BYTE_FILE_NAME() {
     "$BIN" --report=registers "$name" >gen.s 2>err
     grep -Fq 'gen\x0aname.baz:' gen.s
     grep -q '^; name.baz' gen.s && exit 1
-    rm -f "$name" gen-lib.baz gen.o
+    rm -f "$name" gen-lib.baz gen.o gen
+    echo ok
+}
+
+CLI_INCLUDE_THROUGH_LINK() {
+    echo -n "cli include through a symbolic link: "
+    # a '..' after a link to a directory is the parent of the link's target,
+    # as the file system resolves it
+    rm -rf gen-link-dir gen-link
+    mkdir -p gen-link-dir/sub
+    printf 'func three() res {\n    res = 3\n}\n' >gen-link-dir/gen-lib.baz
+    printf 'include "../gen-lib.baz"\n\nfunc main() {\n    exit(three())\n}\n' \
+        >gen-link-dir/sub/gen-main.baz
+    ln -s gen-link-dir/sub gen-link
+    "$BIN" gen-link/gen-main.baz >gen.s 2>err
+    grep -Fq '[../gen-lib.baz:2:5] res = 3' gen.s
+    rm -rf gen-link-dir gen-link
     echo ok
 }
 
@@ -910,6 +941,7 @@ CLI_UNINSTANTIATED_GENERICS
 CLI_COMMENT_LOCATIONS
 CLI_INSTANCE_COMMENT
 CLI_CONTROL_BYTE_FILE_NAME
+CLI_INCLUDE_THROUGH_LINK
 CLI_VERSIONS
 CLI_PADDING_ZERO
 CLI_PADDING_ZERO_BY_TARGET

@@ -1,6 +1,19 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] hard: design review series 2, round 114 (2026-11-06, user: keep going;
+    Z the driver, its options, the reports and 'include')
+    => done (2026-11-06): Z1 a message that cannot be written ('--help'
+       to /dev/full, stderr closed) aborted the compiler from inside its
+       error handlers (exit 134), 'main' returns 1 on 'std::system_error';
+       Z2 an 'include' with '..' after a symbolic link to a directory was
+       resolved lexically and opened another file than the file system
+       names (a wrong file compiled without a message), the joined path is
+       opened as it is ('identity_path' still reads a file once); an error
+       in an included file names the path as joined; Z3 the run-time panic
+       message printed the bytes of a file name raw, it is 'printable' as
+       the other messages; tests in 'test-cli.sh'; every option at its
+       limits, the reports and the includes otherwise right
 [x] hard: design review series 2, round 113 (2026-11-06, user: keep going;
     Y deduction after round 112)
     => done (2026-11-06): Y1 round 112 X1 tested the '{' before the whole

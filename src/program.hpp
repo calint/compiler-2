@@ -442,12 +442,13 @@ class program final {
             std::make_unique<stmt_include>(include_tk, file.tz),
         };
 
-        // relative to the directory of the file with the 'include'
+        // relative to the directory of the file with the 'include', as the
+        // file system resolves it: a '..' after a symbolic link to a
+        // directory is the parent of the link's target
         const std::filesystem::path path{
-            (std::filesystem::path{files_.get().name(file.parsed.file_ix)}
-                 .parent_path() /
-             include->file_name())
-                .lexically_normal(),
+            std::filesystem::path{files_.get().name(file.parsed.file_ix)}
+                    .parent_path() /
+                include->file_name(),
         };
 
         const token path_tk{include->path_token()};

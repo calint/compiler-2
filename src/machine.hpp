@@ -1774,13 +1774,14 @@ class machine {
         return lines;
     }
 
-    // e.g. 'panic: bounds at prog.baz:', the line follows
+    // e.g. 'panic: bounds at prog.baz:', the line follows; the name is
+    // escaped as in the compiler's messages, so the message stays one line
     [[nodiscard]] auto failure_message(const std::string_view name,
                                        const size_t file_ix) const
         -> std::string {
 
         return std::format("{} at {}:", panic_message(name),
-                           locations_.relative_name(file_ix));
+                           printable(locations_.relative_name(file_ix)));
     }
 
     // the label a failed check at 'src_loc_tk' jumps to, 'handler' marked

@@ -1041,11 +1041,17 @@ auto main(const int argc, const char** const argv) -> int {
     // a counted view of a pointer is a span that the compiler accepts as safe
     const std::span<const char*> args{std::views::counted(argv, argc)};
 
-    options opts{};
+    // a message that cannot be written, e.g. to a full or closed stderr,
+    // throws from 'std::print'; the exit code still tells the failure
+    try {
+        options opts{};
 
-    if (const std::optional<int> exit_code{parse_options(args, opts)}) {
-        return *exit_code;
+        if (const std::optional<int> exit_code{parse_options(args, opts)}) {
+            return *exit_code;
+        }
+
+        return compile_file(opts);
+    } catch (const std::system_error&) {
+        return 1;
     }
-
-    return compile_file(opts);
 }
