@@ -252,6 +252,12 @@ CLI_FILE_ERRORS() {
     exit_code=$?
     set -e
     [[ $exit_code -eq 1 ]]
+    # a help shorter than a block is still checked, e.g. a closed stdout
+    set +e
+    "$BIN" --help 1>&- 2>err
+    exit_code=$?
+    set -e
+    [[ $exit_code -eq 1 ]]
     set +e
     "$BIN" missing-source.baz >gen.s 2>/dev/full
     exit_code=$?
@@ -448,7 +454,26 @@ CLI_INCLUDE_THROUGH_LINK() {
     ln -s gen-link-dir/sub gen-link
     "$BIN" gen-link/gen-main.baz >gen.s 2>err
     grep -Fq '[../gen-lib.baz:2:5] res = 3' gen.s
-    rm -rf gen-link-dir gen-link
+    # the listing and the panic name the file opened, not the one that the
+    # path names without the link
+    printf 'func three() res {\n    res = 4\n}\n' >gen-lib.baz
+    printf 'func three() res {\n    var a = i8[2]\n    var i = 3\n    a[i] = 1\n    res = 3\n}\n' \
+        >gen-link-dir/gen-lib.baz
+    printf 'include "gen-link/../gen-lib.baz"\n\nfunc main() {\n    exit(three())\n}\n' \
+        >gen-main.baz
+    "$BIN" --checks=upper,line gen-main.baz >gen.s 2>err
+    grep -Fq '[gen-link-dir/gen-lib.baz:5:5] res = 3' gen.s
+    grep -Fq 'panic: bounds at gen-link-dir/gen-lib.baz:' gen.s
+    # a chain of includes across directories keeps its paths short: the
+    # error names 'gen-link-dir/gen-c.baz', not 'gen-link-dir/sub/../gen-c.baz'
+    printf 'include "sub/gen-b.baz"\n' >gen-link-dir/gen-a.baz
+    printf 'include "../gen-c.baz"\n' >gen-link-dir/sub/gen-b.baz
+    printf 'func f() res {\n    res = nope\n}\n' >gen-link-dir/gen-c.baz
+    printf 'include "gen-link-dir/gen-a.baz"\n\nfunc main() {\n    exit(f())\n}\n' \
+        >gen-main.baz
+    "$BIN" gen-main.baz >gen.s 2>err && exit 1
+    grep -Fq 'gen-link-dir/gen-c.baz:2:11:' err
+    rm -rf gen-link-dir gen-link gen-lib.baz gen-main.baz
     echo ok
 }
 

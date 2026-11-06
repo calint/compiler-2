@@ -445,10 +445,18 @@ class program final {
         // relative to the directory of the file with the 'include', as the
         // file system resolves it: a '..' after a symbolic link to a
         // directory is the parent of the link's target
-        const std::filesystem::path path{
+        const std::filesystem::path joined{
             std::filesystem::path{files_.get().name(file.parsed.file_ix)}
                     .parent_path() /
                 include->file_name(),
+        };
+
+        // the shorter form when it names the same file, so that a chain of
+        // includes across directories does not grow its paths
+        const std::filesystem::path normal{joined.lexically_normal()};
+
+        const std::filesystem::path path{
+            identity_path(normal) == identity_path(joined) ? normal : joined,
         };
 
         const token path_tk{include->path_token()};

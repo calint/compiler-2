@@ -6,6 +6,7 @@
 #include <cassert>
 #include <charconv>
 #include <cstddef>
+#include <cstdio>
 #include <exception>
 #include <filesystem>
 #include <format>
@@ -683,9 +684,15 @@ auto print_option_error(const std::string_view message) -> void {
         for (const char* const argument : args | std::views::drop(1)) {
             const std::string_view arg{argument};
 
+            // note: the flush reports a write that stdio buffered, e.g. to a
+            //       closed stdout
+
             if (arg == "--help" or arg == "-h") {
                 print_help(args.at(0));
-                return 0;
+
+                const bool written{std::fflush(stdout) == 0};
+
+                return written ? 0 : 1;
             }
 
             parse_option(arg, opts);

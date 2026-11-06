@@ -1,6 +1,20 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] hard: design review series 2, round 115 (2026-11-06, user: keep going;
+    AA the fixes of round 114)
+    => done (2026-11-06): AA1 after a '..' through a link the listing, the
+       register report and the panic named the file that the text of the
+       path names, not the one opened ('relative_name' normalized
+       lexically); 'source_files' stores the absolute path of each file
+       once, its directory resolved ('absolute_path'), also faster; AA2 a
+       joined include path grew with every include across directories
+       until a long chain passed the path limit; the normal form is kept
+       when it names the same file ('identity_path'), so the names of
+       round 113 come back and only a path through a link keeps its '..';
+       AA3 '--help' to a closed stdout exited 0, the help is flushed and a
+       failed write exits 1; tests in 'test-cli.sh'; Z3 right on every
+       target
 [x] hard: design review series 2, round 114 (2026-11-06, user: keep going;
     Z the driver, its options, the reports and 'include')
     => done (2026-11-06): Z1 a message that cannot be written ('--help'

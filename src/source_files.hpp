@@ -14,6 +14,7 @@
 #include <ios>
 #include <string>
 #include <string_view>
+#include <system_error>
 #include <utility>
 
 #include "compile_error.hpp"
@@ -64,16 +65,27 @@ class source_files final {
     struct file {
         std::string name;
         std::string text;
+        // see 'absolute_path', 'relative_name' is built from it
+        std::filesystem::path absolute;
     };
 
     std::deque<file> files_;
 
   public:
+    [[nodiscard]] auto absolute(const size_t file_ix) const
+        -> const std::filesystem::path& {
+
+        return files_.at(file_ix).absolute;
+    }
+
     // returns the index of the file
     auto add(std::string name, std::string text) -> size_t {
+        std::filesystem::path absolute{absolute_path(name)};
+
         files_.push_back({
             .name{std::move(name)},
             .text{std::move(text)},
+            .absolute{std::move(absolute)},
         });
 
         return files_.size() - 1;
@@ -92,6 +104,30 @@ class source_files final {
     //
     // statics
     //
+
+    // e.g. '/w/include/x.baz' of 'lib/../include/x.baz' run from '/w'; the
+    // directory as the file system resolves it, as the file was opened: a
+    // '..' after a symbolic link to a directory is the parent of the link's
+    // target; the file keeps its own name
+    [[nodiscard]] static auto absolute_path(const std::string_view name)
+        -> std::filesystem::path {
+
+        const std::filesystem::path path{
+            std::filesystem::absolute(std::filesystem::path{name}),
+        };
+
+        std::error_code error;
+
+        const std::filesystem::path dir{
+            std::filesystem::weakly_canonical(path.parent_path(), error),
+        };
+
+        if (error) {
+            return path.lexically_normal();
+        }
+
+        return dir / path.filename();
+    }
 
     [[nodiscard]] static auto read_file(const std::string_view file_name)
         -> std::string {
@@ -205,12 +241,10 @@ class source_locations final {
         -> std::string {
 
         const std::filesystem::path main_dir{
-            absolute_path(files_.get().name(0)).parent_path(),
+            files_.get().absolute(0).parent_path(),
         };
 
-        const std::filesystem::path src_path{
-            absolute_path(files_.get().name(file_ix)),
-        };
+        const std::filesystem::path& src_path{files_.get().absolute(file_ix)};
 
         return src_path.lexically_relative(main_dir).string();
     }
@@ -234,17 +268,5 @@ class source_locations final {
 
         return std::format("{}{}{}", src_loc_tk.at_line(), separator,
                            column(src_loc_tk));
-    }
-
-    //
-    // statics
-    //
-
-    // e.g. '/w/include/x.baz' of 'lib/../include/x.baz' run from '/w'
-    [[nodiscard]] static auto absolute_path(const std::string_view name)
-        -> std::filesystem::path {
-
-        return std::filesystem::absolute(std::filesystem::path{name})
-            .lexically_normal();
     }
 };
