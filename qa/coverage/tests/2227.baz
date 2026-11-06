@@ -1,0 +1,7 @@
+# an array literal reached into where an instance is expected
+type pt { x, y }
+
+func main() {
+    var p = pt
+    p = pt[2]{}[0]
+}

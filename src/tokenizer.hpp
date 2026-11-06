@@ -350,6 +350,10 @@ class tokenizer final {
 
         const token literal_tk{finish_token(ws_before, at_line, bgn_ix)};
 
+        // an unsupported escape is reported before the length, as in a
+        // string, e.g. the '\X' of '\X41' and the '\q' of 'a\q'
+        assert_escapes_supported(literal_tk);
+
         // checked where it is read like a string, also in a generic body that
         // no instance parses
         std::ignore =
@@ -399,14 +403,7 @@ class tokenizer final {
 
         const token string_tk{finish_token(ws_before, at_line, bgn_ix)};
 
-        if (const std::optional<token> escape_tk{
-                string_tk.unsupported_escape(),
-            }) {
-
-            throw compile_error{*escape_tk,
-                                std::format("unsupported escape {}",
-                                            in_quotes(escape_tk->text()))};
-        }
+        assert_escapes_supported(string_tk);
 
         return string_tk;
     }
@@ -610,6 +607,22 @@ class tokenizer final {
 
         if (tk.is_none() and not is_eos()) {
             skip_char();
+        }
+    }
+
+    //
+    // statics
+    //
+
+    // the escapes of the string or character literal 'literal_tk' decode
+    static auto assert_escapes_supported(const token& literal_tk) -> void {
+        if (const std::optional<token> escape_tk{
+                literal_tk.unsupported_escape(),
+            }) {
+
+            throw compile_error{*escape_tk,
+                                std::format("unsupported escape {}",
+                                            in_quotes(escape_tk->text()))};
         }
     }
 };

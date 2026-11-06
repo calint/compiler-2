@@ -6856,3 +6856,6 @@ SRC=2225 && COMPERR
 
 # a constructor call reached into where an array is expected
 SRC=2226 && COMPERR
+
+# an array literal reached into where an instance is expected
+SRC=2227 && COMPERR

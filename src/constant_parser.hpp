@@ -80,10 +80,6 @@ class constant_parser final {
             return static_cast<unsigned char>(body.at(0));
         }
 
-        // an unsupported escape is reported before the length, as in a
-        // string, e.g. the '\X' of '\X41' and the '\q' of 'a\q'
-        assert_escapes_supported(src_loc_tk, str);
-
         // e.g. 'ab'
         if (not body.starts_with('\\')) {
             throw_not_one_byte(src_loc_tk, str);
@@ -94,7 +90,9 @@ class constant_parser final {
 
         const std::optional<char> decoded{token::escape_at(body, 0).decoded};
 
-        // note: 'assert_escapes_supported' rejected an escape without a byte
+        // note: the tokenizer rejected an unsupported escape
+        //       ('tokenizer::assert_escapes_supported')
+
         assert(decoded);
 
         // e.g. '\n\n'
@@ -156,51 +154,6 @@ class constant_parser final {
     //
     // statics
     //
-
-    // the escapes of the character literal 'str' at 'src_loc_tk' decode
-    static auto assert_escapes_supported(const token& src_loc_tk,
-                                         const std::string_view str) -> void {
-
-        const std::string_view body{str.substr(1, str.size() - 2)};
-        // note: 1 and -2 because the literal is between the quotes
-
-        size_t i{};
-
-        while (i < body.size()) {
-            if (body.at(i) != '\\') {
-                ++i;
-                continue;
-            }
-
-            const size_t escape_size{
-                1 + token::escape_length(body.substr(i + 1)),
-            };
-            // note: 1 + for the backslash before the escape
-
-            if (token::escape_at(body, i).decoded) {
-                i += escape_size;
-                continue;
-            }
-
-            // note: the tokenizer checks a literal as it reads it, so
-            //       'src_loc_tk' is the literal
-
-            assert(src_loc_tk.is_text(str));
-
-            const size_t backslash_index{src_loc_tk.start_index() + 1 + i};
-            // note: +1 because the body follows the opening quote
-
-            const std::string_view escape_text{body.substr(i, escape_size)};
-
-            const token escape_tk{
-                token::synthetic(src_loc_tk.file_index(), escape_text,
-                                 backslash_index, src_loc_tk.at_line()),
-            };
-
-            throw compile_error{escape_tk, std::format("unsupported escape {}",
-                                                       in_quotes(escape_text))};
-        }
-    }
 
     // e.g. '0x1f' and '0b101'
     [[nodiscard]] static auto has_base_prefix(const std::string_view str)

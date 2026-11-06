@@ -57,6 +57,11 @@ inline expr_type::expr_type(toc& tc, tokenizer& tz, const type& tp,
     if (tm == term_kind::array_literal or
         (tok().is_none() and is_default_array_literal(tz))) {
 
+        // e.g. 'p = point[2]{}[0]', as for a number destination
+        if (is_literal_reached_into(tm, tz)) {
+            throw_literal_not_operand(tok(), "an array literal");
+        }
+
         throw_array_literal_mismatch(tc, tok(), tp);
     }
 

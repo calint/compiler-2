@@ -1,4 +1,4 @@
 
-1982.baz:11:26: a call of 'point.at' is not an array
+1982.baz:11:32: a call of 'point.at' is not an array
     var n = array_length(point.at(1, 2))
-                         ^~~~~
+                               ^~

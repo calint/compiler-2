@@ -1139,9 +1139,9 @@ class stmt_identifier final : public statement {
     }
 
     // a term that starts no array where an array is expected, after an array
-    // literal and a call of a function were reported: a type, a conversion, a
-    // built-in call or a function, e.g. the 'point' of 'point{1, 2}' or the
-    // 'i8' of 'i8(1)'
+    // literal and a call of a function or a constructor were reported: a
+    // type, a conversion, a built-in call or a function, e.g. the 'point' of
+    // 'point{1, 2}' or the 'i8' of 'i8(1)'
     static auto assert_not_type_or_call(const toc& tc, const token& tk,
                                         const term_kind tm) -> void {
 
@@ -1262,7 +1262,8 @@ class stmt_identifier final : public statement {
         };
     }
 
-    // the same for a call of a method of 'array', e.g. 'p.mk().a'
+    // a call of a method of 'array' where an array is expected, parsed as in
+    // 'assert_no_call', e.g. the 'p.m().a' of 'array_length(p.m().a)'
     [[noreturn]] static auto throw_method_call_not_array(toc& tc,
                                                          const tokenizer& tz,
                                                          stmt_identifier array)

@@ -1,6 +1,20 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] hard: design review series 2, round 98 (2026-11-06, user: loop of design
+    review and bug hunt, commit and tag each round; A review of rounds 94 to
+    97, B cross-file design)
+    => done (2026-11-06): no crash; P1 a call where an array is expected is
+       named and located by its parsed callee ('point.m<i8>' in 2026, 1982
+       at 'at'); P2 an array literal reached into where an instance is
+       expected, 'p = pt[2]{}[0]', gets the "not an operand here" message
+       (test 2227); P3 the escapes of a character literal are checked by
+       'tokenizer::assert_escapes_supported' as those of a string
+       ('token::quoted_body'), the copy in 'constant_parser' removed; P4
+       the comments of 'throw_method_call_not_array' and
+       'assert_not_type_or_call'; B no finding (B1 merge of the literal
+       messages, B2 'record' names to 'instance', B3 index-only reads in
+       'assert_not_written_later' not done: churn or a special case)
 [x] hard: design review series 2, round 97 (2026-11-05, user: continue in a
     loop; O review of round 96)
     => done (2026-11-05): no bug; O1 a constructor call where an array is

@@ -239,7 +239,7 @@ class token final {
     // byte; a backslash before a line end is dropped with the line end, so
     // the string continues on the next line
     [[nodiscard]] auto string_bytes() const -> std::string {
-        const std::string_view body{string_body()};
+        const std::string_view body{quoted_body()};
 
         std::string bytes;
 
@@ -272,10 +272,10 @@ class token final {
 
     [[nodiscard]] auto text() const -> std::string_view { return text_; }
 
-    // the first unsupported escape of a string token, as 'decode_escape'
-    // rejects it, located at its backslash, e.g. '\q'
+    // the first unsupported escape of a string or character token, as
+    // 'decode_escape' rejects it, located at its backslash, e.g. '\q'
     [[nodiscard]] auto unsupported_escape() const -> std::optional<token> {
-        const std::string_view body{string_body()};
+        const std::string_view body{quoted_body()};
 
         size_t line{at_line_};
         for (size_t i{}; i < body.size(); ++i) {
@@ -387,9 +387,9 @@ class token final {
     }
 
   private:
-    // the text of a string literal between its quotes
-    [[nodiscard]] auto string_body() const -> std::string_view {
-        assert(is_string() and text_.size() >= 2);
+    // the text of a string or character literal between its quotes
+    [[nodiscard]] auto quoted_body() const -> std::string_view {
+        assert(text_.size() >= 2);
 
         return text_.substr(1, text_.size() - 2);
         // note: 1 and -2 because the quotes are at both ends

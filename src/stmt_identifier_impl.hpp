@@ -187,7 +187,7 @@ inline auto stmt_identifier::assert_no_call(toc& tc, const tokenizer& tz,
                                                 nullptr),
     };
 
-    throw_call_not_array(tk, call->callee().name());
+    throw_call_not_array(call->callee_name_token(), call->callee().name());
 }
 
 inline auto stmt_identifier::throw_method_call_not_array(toc& tc,
@@ -195,20 +195,14 @@ inline auto stmt_identifier::throw_method_call_not_array(toc& tc,
                                                          stmt_identifier array)
     -> void {
 
-    const token name_tk{array.method_name_token()};
-
-    // a call is named like its callee in the other call messages, e.g.
-    // 'point.m' of 'p.m()'
-    const std::string method_name{
-        method_name_of(array.get_type().name(), name_tk.text()),
-    };
-
     tokenizer call_tz{tz};
 
     // note: the parse of the call rejects what follows it as for a value
     const stmt_call call{tc, unary_ops{}, std::move(array), call_tz, nullptr};
 
-    throw_call_not_array(name_tk, method_name);
+    // a call is named like its callee in the other call messages, e.g.
+    // 'point.m' of 'p.m()' or 'point.g<i8>' of 'p.g<i8>()'
+    throw_call_not_array(call.callee_name_token(), call.callee().name());
 }
 
 inline auto
