@@ -7,7 +7,6 @@
 #include <memory>
 #include <optional>
 #include <ostream>
-#include <set>
 #include <string>
 #include <system_error>
 #include <utility>
@@ -402,11 +401,6 @@ class program final {
     // files are a stack, not nested calls, so an include is no level of the
     // nesting limit
     auto parse_files() -> void {
-        // the identities of the loaded files, the main file first
-        std::set<std::filesystem::path> loaded_paths{
-            identity_path(files_.get().name(0)),
-        };
-
         std::vector<open_file> open_files;
         open_files.push_back(opened_file(0));
 
@@ -421,7 +415,7 @@ class program final {
             }
 
             const std::optional<size_t> loaded_ix{
-                parse_include(file, tk, loaded_paths),
+                parse_include(file, tk),
             };
 
             if (loaded_ix) {
@@ -433,9 +427,7 @@ class program final {
     // a file is loaded once, a later 'include' of it, also from a file it
     // includes, changes nothing; the loaded file, none when it was loaded
     // before
-    [[nodiscard]] auto
-    parse_include(open_file& file, const token& include_tk,
-                  std::set<std::filesystem::path>& loaded_paths)
+    [[nodiscard]] auto parse_include(open_file& file, const token& include_tk)
         -> std::optional<size_t> {
 
         std::unique_ptr<stmt_include> include{
@@ -451,21 +443,13 @@ class program final {
                 include->file_name(),
         };
 
-        // the shorter form when it names the same file, so that a chain of
-        // includes across directories does not grow its paths
-        const std::filesystem::path normal{joined.lexically_normal()};
-
-        const std::filesystem::path path{
-            identity_path(normal) == identity_path(joined) ? normal : joined,
-        };
+        const std::filesystem::path path{include_path(joined)};
 
         const token path_tk{include->path_token()};
 
         file.parsed.statements.emplace_back(std::move(include));
 
-        const bool is_new{loaded_paths.insert(identity_path(path)).second};
-
-        if (not is_new) {
+        if (files_.get().contains(path)) {
             return std::nullopt;
         }
 
@@ -559,18 +543,41 @@ class program final {
         x.emit_read_only_constants(tc.data().constants());
     }
 
-    // the path that tells loaded files apart; a file without a canonical
-    // path, e.g. '/dev/stdin' of a pipe, is known by its own, a file that
-    // cannot be read is reported when it is loaded
-    [[nodiscard]] static auto identity_path(const std::filesystem::path& name)
+    // the shorter form when it names the same file; else, after a symbolic
+    // link to a directory and a '..', the directory as the file system
+    // resolves it, so that a chain of includes does not grow its paths; a
+    // path that does not name a file or cannot be resolved stays as it is,
+    // its open tells why or reads the file the file system names
+    [[nodiscard]] static auto include_path(const std::filesystem::path& joined)
         -> std::filesystem::path {
 
         std::error_code error;
 
-        const std::filesystem::path path{
-            std::filesystem::weakly_canonical(name, error),
+        if (std::filesystem::equivalent(joined.lexically_normal(), joined,
+                                        error)) {
+
+            return joined.lexically_normal();
+        }
+
+        if (not std::filesystem::exists(joined, error)) {
+            return joined;
+        }
+
+        const std::filesystem::path dir{
+            std::filesystem::weakly_canonical(joined.parent_path(), error),
         };
 
-        return error ? name.lexically_normal() : path;
+        if (error) {
+            return joined;
+        }
+
+        // note: relative stays relative, as the other names of the files
+        if (joined.is_absolute()) {
+            return dir / joined.filename();
+        }
+
+        const std::filesystem::path resolved{dir / joined.filename()};
+
+        return resolved.lexically_proximate(std::filesystem::current_path());
     }
 };

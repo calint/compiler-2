@@ -960,21 +960,6 @@ default_binary_file_name(const std::string_view src_file_name,
     return std::format("{}-{}.bin", path.string(), target.text);
 }
 
-// 'path' names one of the files, also through another path
-[[nodiscard]] auto is_source_file(const std::string_view path,
-                                  const source_files& files) -> bool {
-
-    for (size_t i{}; i < files.count(); ++i) {
-        std::error_code ec;
-
-        if (std::filesystem::equivalent(path, files.name(i), ec)) {
-            return true;
-        }
-    }
-
-    return false;
-}
-
 [[nodiscard]] auto compile_file(const options& opts) -> int {
     source_files files;
 
@@ -1008,7 +993,7 @@ default_binary_file_name(const std::string_view src_file_name,
         program prg{*backend, builtins, files, opts.vars_size_bytes, checks};
 
         // the image would replace a source file, the parse read the includes
-        if (opts.target->writes_image and is_source_file(binary, files)) {
+        if (opts.target->writes_image and files.contains(binary)) {
             throw option_error{std::format("invalid --bin: {} is a source file",
                                            in_quotes(binary))};
         }

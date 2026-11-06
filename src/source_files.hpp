@@ -91,6 +91,22 @@ class source_files final {
         return files_.size() - 1;
     }
 
+    // 'path' names one of the files, also through another path; a path that
+    // names no file names none of them
+    [[nodiscard]] auto contains(const std::filesystem::path& path) const
+        -> bool {
+
+        for (const file& loaded : files_) {
+            std::error_code error;
+
+            if (std::filesystem::equivalent(path, loaded.name, error)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     [[nodiscard]] auto count() const -> size_t { return files_.size(); }
 
     [[nodiscard]] auto name(const size_t file_ix) const -> std::string_view {

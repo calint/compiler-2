@@ -473,6 +473,33 @@ CLI_INCLUDE_THROUGH_LINK() {
         >gen-main.baz
     "$BIN" gen-main.baz >gen.s 2>err && exit 1
     grep -Fq 'gen-link-dir/gen-c.baz:2:11:' err
+    # also after a link: the error names 'gen-link-dir/sub/gen-d.baz', not
+    # 'gen-link/../sub/gen-d.baz'
+    printf 'include "sub/gen-d.baz"\n' >gen-link-dir/gen-c.baz
+    printf 'func f() res {\n    res = nope\n}\n' >gen-link-dir/sub/gen-d.baz
+    printf 'include "gen-link/gen-b.baz"\n\nfunc main() {\n    exit(f())\n}\n' \
+        >gen-main.baz
+    "$BIN" gen-main.baz >gen.s 2>err && exit 1
+    grep -Fq 'gen-link-dir/sub/gen-d.baz:2:11:' err
+    # a path through a file names no file, as the file system says
+    printf 'include "gen-lib.baz/../gen-lib.baz"\n' >gen-main.baz
+    "$BIN" gen-main.baz >gen.s 2>err && exit 1
+    grep -Fq "cannot open file 'gen-lib.baz/../gen-lib.baz'" err
+    # the file system resolves the link also where a directory above the
+    # working directory cannot be searched
+    mkdir -p gen-perm/dir/sub/x
+    ln -s sub/x gen-perm/dir/link
+    printf 'include "link/../lib.baz"\ninclude "lib.baz"\n\nfunc main() {\n    exit(three() + four())\n}\n' \
+        >gen-perm/dir/main.baz
+    printf 'func four() res {\n    res = 4\n}\n' >gen-perm/dir/lib.baz
+    printf 'func three() res {\n    res = 3\n}\n' >gen-perm/dir/sub/lib.baz
+    set +e
+    (cd gen-perm/dir && chmod a-x .. && "$BIN" main.baz >gen.s 2>err)
+    exit_code=$?
+    set -e
+    chmod a+x gen-perm
+    [[ $exit_code -eq 0 ]]
+    rm -rf gen-perm
     rm -rf gen-link-dir gen-link gen-lib.baz gen-main.baz
     echo ok
 }

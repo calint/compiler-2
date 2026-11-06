@@ -1,6 +1,21 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] hard: design review series 2, round 116 (2026-11-06, user: keep going;
+    AB include paths as a whole against round 113 and 115)
+    => done (2026-11-06): AB2 'f.baz/../f.baz' through a regular file was
+       compiled ('weakly_canonical' stops at "not a directory"), AB3 names
+       still grew along a chain after a link, AB4 with a directory above
+       the working directory not searchable the joined and the normal path
+       fell back to one lexical identity, so a wrong file was compiled or a
+       valid one taken as read; 'program::include_path' keeps the normal
+       form when it is 'equivalent' to the joined path, else the directory
+       resolved, else the joined path, and a file is read once when
+       'source_files::contains' finds an 'equivalent' file (the set of
+       identities and 'identity_path' removed, the '--bin' guard uses it
+       too); AB1 a link to a directory is named by its target in listings
+       and panics, so a name does not depend on how a file was reached;
+       tests in 'test-cli.sh'
 [x] hard: design review series 2, round 115 (2026-11-06, user: keep going;
     AA the fixes of round 114)
     => done (2026-11-06): AA1 after a '..' through a link the listing, the
