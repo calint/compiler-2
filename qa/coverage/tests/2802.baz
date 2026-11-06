@@ -1,0 +1,13 @@
+# a constant index of the last element that fits below the 4 GiB that rv32i
+# addresses is accepted on an unsized array parameter of records, the next
+# is out of bounds of any size; x86_64 addresses more
+
+type block {a i8[0x100000]}
+
+func f(a block[]) res i8 {
+    res = a[0xffe].a[1]
+    res = a[0xfff].a[1]
+}
+
+func main() {
+}

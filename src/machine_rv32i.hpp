@@ -329,9 +329,9 @@ class machine_rv32i : public machine {
         .reference{"2f"},
     };
 
-    // the tests of a run-time check that fail to 'handler', see 'fail_if': a
-    // check of one test branches to the handler, more share one jump to it,
-    // which a far handler grows once
+    // the tests of a run-time check that fail to 'handler' or pass it, see
+    // 'fail_if' and 'pass_if': a check of one test branches to the handler,
+    // more share one jump to it, which a far handler grows once
     struct failure_tests {
         failure_tests(const failure_handler& handler_in, const size_t count)
             : handler{handler_in}, remaining{count}, shared{count > 1} {}
@@ -1146,16 +1146,25 @@ class machine_rv32i : public machine {
             scope.protect(*range.count);
         }
 
+        // an index of 32 bits is below 2^31 and never reaches a count of 2^31
+        // or more, a negative one is left to the lower check
+        const bool upper_compared{
+            plan.upper and
+                (range.count or
+                 range.array_count <=
+                     static_cast<size_t>(std::numeric_limits<int32_t>::max())),
+        };
+
         size_t test_count{plan.sign_tested.size()};
 
-        if (plan.upper) {
+        if (upper_compared) {
             ++test_count;
         }
 
-        // an end of a range not checked below is also tested to fit 32 bits
-        // ('upper_bound_top')
-        if (plan.upper and range.count and not plan.lower_checked) {
-            ++test_count;
+        // an end of a range not checked below first fails below the minimum
+        // and passes when negative ('upper_bound_top')
+        if (upper_compared and range.count and not plan.lower_checked) {
+            test_count += 2;
         }
 
         failure_tests tests{bounds_failure_, test_count};
@@ -1166,6 +1175,13 @@ class machine_rv32i : public machine {
         }
 
         if (not plan.upper) {
+            return;
+        }
+
+        if (not upper_compared) {
+            comment(src_loc_tk, indent,
+                    "upper bound: a 32-bit index is below the count");
+
             return;
         }
 
@@ -1905,18 +1921,22 @@ class machine_rv32i : public machine {
 
         assembler_.li(indent, limit.register_name(), range.array_count);
 
-        // unchecked below, a negative index or end is compared signed and
-        // passes, it is left to the lower check as on x86_64
+        // unchecked below, a negative index is compared signed and passes, it
+        // is left to the lower check as on x86_64; the end of a range is
+        // compared unsigned, 'upper_bound_top' passed a negative one
+        const bool compared_unsigned{lower_checked or range.count};
+
         if (range.allow_end) {
             fail_if(src_loc_tk, indent, tests,
-                    lower_checked ? op::bltu : op::blt, limit.register_name(),
-                    top);
+                    compared_unsigned ? op::bltu : op::blt,
+                    limit.register_name(), top);
 
             return;
         }
 
-        fail_if(src_loc_tk, indent, tests, lower_checked ? op::bgeu : op::bge,
-                top, limit.register_name());
+        fail_if(src_loc_tk, indent, tests,
+                compared_unsigned ? op::bgeu : op::bge, top,
+                limit.register_name());
     }
 
     // accesses widen after the first only when a start inside a word was
@@ -3097,6 +3117,19 @@ class machine_rv32i : public machine {
                                true);
     }
 
+    // a test that passes the check branches past the shared jump to the
+    // handler, a later test ends the check
+    auto pass_if(const size_t indent, failure_tests& tests, const op passed,
+                 const std::string_view rs1, const std::string_view rs2)
+        -> void {
+
+        assert(tests.shared and tests.remaining > 1);
+
+        --tests.remaining;
+
+        assembler_.branch(indent, passed, rs1, rs2, check_passed_.reference);
+    }
+
     // a register holding the result after the saved registers are restored
     auto preserved_helper_result(const token& src_loc_tk, const size_t indent,
                                  const operand& result,
@@ -3370,10 +3403,12 @@ class machine_rv32i : public machine {
             return top;
         }
 
-        // the sign and carry bits form the high word of the widened sum; an
-        // end that is not its sign extension does not fit 32 bits and fails,
-        // as the overflow check of x86_64 does, a negative end that fits is
-        // left to the lower check
+        // the sign and carry bits form the high word of the widened sum, the
+        // exact end is 'high * 2^32 + top' with 'top' unsigned: an end below
+        // the minimum of 32 bits fails, as the overflow check of x86_64 does,
+        // a negative end that fits passes and is left to the lower check, a
+        // high word of zero leaves the unsigned compare of 'top' with the
+        // limit, which may be 2^31 or more
         const operand high{
             alloc_scratch_register(src_loc_tk, indent, default_type()),
         };
@@ -3392,10 +3427,16 @@ class machine_rv32i : public machine {
         assembler_.add(indent, high.register_name(), high.register_name(),
                        limit.register_name());
 
+        // note: a carry needs a negative operand, so the high word is not
+        //       positive and the end below 2^32; below the minimum the high
+        //       word is less than the sign of 'top'
+
         assembler_.srai(indent, limit.register_name(), top, sign_shift_);
 
-        fail_if(src_loc_tk, indent, tests, op::bne, high.register_name(),
+        fail_if(src_loc_tk, indent, tests, op::blt, high.register_name(),
                 limit.register_name());
+
+        pass_if(indent, tests, op::blt, high.register_name(), "zero");
 
         return top;
     }

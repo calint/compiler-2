@@ -1,0 +1,11 @@
+# '--checks=upper' alone on an array of 2^31 or more elements passes the
+# indexes below its count; rv32i compared the count as a negative number
+
+func main() {
+    var a = i8[0x80000010]
+    var i = 5
+    var j = 0x7fffffff
+    a[i] = 1
+    a[j] = 2
+    exit(a[i] + a[j])
+}

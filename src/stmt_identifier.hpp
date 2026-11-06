@@ -6,7 +6,6 @@
 #include <cstdint>
 #include <format>
 #include <functional>
-#include <limits>
 #include <memory>
 #include <optional>
 #include <ostream>
@@ -53,54 +52,60 @@
 //                            because they need 'stmt_identifier'
 //
 
-// a constant index out of bounds is always a bug; an unsized array parameter
-// without a length rejects a negative index and one whose element ends past
-// the signed 64-bit range; 'allow_end' accepts the end, where a range
-// of a zero count starts
-inline auto assert_constant_index(const ident_info& array_info,
-                                  const token& index_tk,
-                                  const std::string_view array_name,
-                                  const int64_t index, const bool allow_end)
-    -> void {
+// the most elements an array of 'array_info' holds: its length, or for an
+// unsized array parameter the most that fit below the storage the target
+// addresses, 'max_storage_bytes', which no array reaches
+[[nodiscard]] inline auto longest_array_len(const ident_info& array_info,
+                                            const size_t max_storage_bytes)
+    -> size_t {
 
     const std::optional<size_t> array_len{array_info.array_len()};
 
-    if (not array_len and index < 0) {
-        throw compile_error{index_tk,
-                            std::format("index {} is negative", index)};
+    if (array_len) {
+        return *array_len;
     }
 
-    // note: no storage reaches past the signed 64-bit range of an address
-    //       offset, so an element that ends past it is out of bounds of
-    //       every array
+    return (max_storage_bytes - 1) / array_info.type_ref().size_bytes();
+}
 
-    if (not array_len and
-        std::cmp_greater_equal(index, std::numeric_limits<int64_t>::max() /
-                                          array_info.type_ref().size_bytes())) {
+// a constant index out of bounds is always a bug; an unsized array parameter
+// rejects a negative index and one past the longest array of its elements;
+// 'allow_end' accepts the end, where a range of a zero count starts
+inline auto assert_constant_index(const ident_info& array_info,
+                                  const token& index_tk,
+                                  const std::string_view array_name,
+                                  const int64_t index, const bool allow_end,
+                                  const size_t max_storage_bytes) -> void {
 
-        throw compile_error{
-            index_tk, std::format("index {} is out of bounds for array {} of "
-                                  "any size",
-                                  index, in_quotes(array_name))};
-    }
-
-    if (not array_len) {
-        return;
-    }
+    const size_t longest_len{longest_array_len(array_info, max_storage_bytes)};
 
     const bool is_past_end{
-        allow_end ? std::cmp_greater(index, *array_len)
-                  : std::cmp_greater_equal(index, *array_len),
+        allow_end ? std::cmp_greater(index, longest_len)
+                  : std::cmp_greater_equal(index, longest_len),
     };
 
     if (index >= 0 and not is_past_end) {
         return;
     }
 
-    throw compile_error{
-        index_tk,
-        std::format("index {} is out of bounds for array {} of size {}", index,
-                    in_quotes(array_name), *array_len)};
+    const std::optional<size_t> array_len{array_info.array_len()};
+
+    if (array_len) {
+        throw compile_error{
+            index_tk,
+            std::format("index {} is out of bounds for array {} of size {}",
+                        index, in_quotes(array_name), *array_len)};
+    }
+
+    if (index < 0) {
+        throw compile_error{index_tk,
+                            std::format("index {} is negative", index)};
+    }
+
+    throw compile_error{index_tk,
+                        std::format("index {} is out of bounds for array {} of "
+                                    "any size",
+                                    index, in_quotes(array_name))};
 }
 
 // the constant range of a bulk operation, 'count' elements from 'start', e.g.
@@ -137,34 +142,17 @@ inline auto assert_constant_range(const ident_info& array_info,
     // a start at the end is the empty range of a zero count
     if (has_constant_start) {
         assert_constant_index(array_info, *range.start_tk, range.array_name,
-                              *range.start, true);
+                              *range.start, true, max_storage_bytes);
     }
 
-    const std::optional<size_t> array_len{array_info.array_len()};
-
-    // note: every array is smaller than the storage the target addresses,
-    //       so a count that fills it is past the end of every array
-
-    if (not array_len and
-        std::cmp_greater(range.count, (max_storage_bytes - 1) /
-                                          array_info.type_ref().size_bytes())) {
-
-        throw compile_error{
-            range.count_tk,
-            std::format("{} is past the end of array {} of any size",
-                        range.count_text, in_quotes(range.array_name))};
-    }
-
-    if (not array_len) {
-        return;
-    }
+    const size_t longest_len{longest_array_len(array_info, max_storage_bytes)};
 
     // note: a start computed at run time that passes its bounds check is not
     //       negative, so at most the whole array remains
 
     const size_t remaining{
-        range.start ? *array_len - static_cast<size_t>(*range.start)
-                    : *array_len,
+        range.start ? longest_len - static_cast<size_t>(*range.start)
+                    : longest_len,
     };
 
     if (std::cmp_less_equal(range.count, remaining)) {
@@ -176,11 +164,17 @@ inline auto assert_constant_range(const ident_info& array_info,
                            : std::string{},
     };
 
-    throw compile_error{
-        range.count_tk,
-        std::format("{}{} is past the end of array {} of size {}",
-                    range.count_text, from_index, in_quotes(range.array_name),
-                    *array_len)};
+    const std::optional<size_t> array_len{array_info.array_len()};
+
+    const std::string array_size{
+        array_len ? std::format("size {}", *array_len)
+                  : std::string{"any size"},
+    };
+
+    throw compile_error{range.count_tk,
+                        std::format("{}{} is past the end of array {} of {}",
+                                    range.count_text, from_index,
+                                    in_quotes(range.array_name), array_size)};
 }
 
 class expr_any;

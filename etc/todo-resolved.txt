@@ -1,6 +1,22 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] hard: design review series 2, round 120 (2026-11-06, user: continue;
+    AI the limits of the targets and the bare-metal layout)
+    => done (2026-11-06): AI2 a constant index or start on an unsized array
+       parameter was checked against the signed 64-bit range while round
+       119 checks a count against the storage the target addresses; one
+       bound for both ('longest_array_len'), start plus count checked,
+       tests 2800 to 2802; AI1 (since round 100 D2) on rv32i an upper check
+       without the lower one failed every access of an array of 2^31 or
+       more elements (the limit read negative by a signed compare): an
+       index of such an array gets no compare (a 32-bit index is below the
+       count), the end of a range is compared unsigned after its high word
+       (fails below -2^31, passes when negative, else exact), one more
+       instruction per upper-only range check, +184 B over 23 tests on
+       rv32i; tests 2810 to 2812, 'CLI_LONG_ARRAY_UPPER_BOUND'; every other
+       backend assert on sizes and offsets not reachable, the bare-metal
+       layout and the frame check right at their limits
 [x] hard: design review series 2, round 119 (2026-11-06, user: continue;
     AG the fixes of round 118, AH noinline calls and their frames)
     => done (2026-11-06): AG1 round 118 AE1 compared a count with

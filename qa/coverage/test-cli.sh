@@ -597,8 +597,27 @@ CLI_LONG_ARRAY_LOWER_BOUND() {
     "$BIN" --target=rv32i --bin=gen-rv32i.bin --vars=0x90000000 \
         --checks=upper,lower gen-long.baz >gen.s 2>err
     [[ ! -s err ]]
-    grep -Eq '^ +blt t0, zero, 1f$' gen.s
+    grep -Eq '^ +blt t0, zero, baz_bounds_panic$' gen.s
     rm -f gen-long.baz
+    echo ok
+}
+
+# compiled only, the fpga cannot hold the arrays; under '--checks=upper' alone
+# an index of 32 bits is not compared with a count of 2^31 or more, and the
+# end of a range is compared unsigned after a negative high word passed
+CLI_LONG_ARRAY_UPPER_BOUND() {
+    echo -n "cli rv32i upper bound of an array past 2^31 elements: "
+    local fpga=(--target=rv32i-fpga --bin=gen-rv32i.bin --memory=0xfffff000
+        --stack=48 --vars=0x80000040 --checks=upper)
+    "$BIN" "${fpga[@]}" 2810.baz >gen.s 2>err
+    [[ ! -s err ]]
+    [[ $(grep -c 'upper bound: a 32-bit index is below the count$' gen.s) -eq 4 ]]
+    grep -Eq '^ +li t[0-9], 2147483664$' gen.s && exit 1
+    "$BIN" "${fpga[@]}" 2811.baz >gen.s 2>err
+    [[ ! -s err ]]
+    [[ $(grep -Ec '^ +blt t[0-9], zero, 2f$' gen.s) -eq 3 ]]
+    [[ $(grep -Ec '^ +bgeu t[0-9], t[0-9], 2f$' gen.s) -eq 3 ]]
+    rm -f gen-rv32i.bin
     echo ok
 }
 
@@ -1015,6 +1034,7 @@ CLI_REGISTER_REPORT
 CLI_ADDRESS_RANGE
 CLI_FAR_INDEXED_ELEMENT
 CLI_LONG_ARRAY_LOWER_BOUND
+CLI_LONG_ARRAY_UPPER_BOUND
 CLI_NO_EXIT_ROUTINE
 CLI_SOURCE_LINE_ENDS
 CLI_ERROR_LINE_BYTES

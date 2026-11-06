@@ -176,8 +176,10 @@ stmt_identifier::assert_constant_indexes_in_bounds(const toc& tc) const
         // note: 'assert_constant_indexes' rejected a run-time index
         assert(value);
 
-        assert_constant_index(*step.info, index.tok(), step.path, *value,
-                              false);
+        const machine& x{tc.machine()};
+
+        assert_constant_index(*step.info, index.tok(), step.path, *value, false,
+                              x.max_storage_bytes());
     });
 }
 
@@ -234,8 +236,11 @@ inline auto stmt_identifier::narrow_to_element(const toc& tc,
     // the checks that use the accessed bytes would report an unknown
     // element first, e.g. a result that may be unset
     if (constant_index) {
+        const machine& x{tc.machine()};
+
         assert_constant_index(array_info, elem.index_expr().tok(), dotted_path_,
-                              *constant_index, reach == path_reach::to_end);
+                              *constant_index, reach == path_reach::to_end,
+                              x.max_storage_bytes());
     }
 
     const std::optional<size_t> array_len{array_info.array_len()};
@@ -459,8 +464,12 @@ inline auto stmt_identifier::path_address::indexed_element(
     };
 
     if (constant_index) {
+        const toc& tc{tc_.get()};
+        const machine& x{tc.machine()};
+
         assert_constant_index(cur_info, cur_elem.index_expr().tok(), path,
-                              *constant_index, request.is_range);
+                              *constant_index, request.is_range,
+                              x.max_storage_bytes());
 
         // note: the caller checks the range from a constant start
         assert(not request.start_register);

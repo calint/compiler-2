@@ -1,0 +1,19 @@
+# '--checks=upper' alone on an array of 2^31 or more elements passes the
+# ranges that end at 2^31 or more but within its count, the last at its end;
+# rv32i failed every end of 2^31 or more
+
+func main() {
+    var a = i8[0x80000010]
+    var b = i8[0x11]
+    var i = 0x7ffffff0
+    var c = 0x10
+    a[0x7ffffff5] = 3
+    array_copy(a[i], b, c)
+    var s = b[5]
+    b[0x10] = 4
+    i = 0x7fffffff
+    c = 0x11
+    array_copy(b, a[i], c)
+    array_copy(a[i], b, c)
+    exit(s + b[0x10])
+}

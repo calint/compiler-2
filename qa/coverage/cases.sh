@@ -6972,3 +6972,25 @@ SRC=2760 && COMPERR
 
 # the same at the 4 GiB of rv32i, one record less is accepted
 if [[ $MACHINE != x86_64 ]]; then SRC=2761 && COMPERR; fi
+
+# a constant index whose element ends past the storage the target addresses,
+# on an unsized array parameter
+SRC=2800 && COMPERR
+
+# a constant start and count past the 4 GiB of rv32i, one element less is
+# accepted
+if [[ $MACHINE != x86_64 ]]; then SRC=2801 && COMPERR; fi
+
+# a constant index past the 4 GiB of rv32i on an unsized array parameter of
+# records, one element less is accepted
+if [[ $MACHINE != x86_64 ]]; then SRC=2802 && COMPERR; fi
+
+# '--checks=upper' alone passes the indexes of an array of 2^31 or more
+# elements; rv32i-fpga cannot hold the array (listing in 'test-cli.sh')
+if [[ $MACHINE == x86_64 || $MACHINE == rv32i ]]; then SRC=2810 && EXP=3 && OPTS="--vars=0x80000040 --checks=upper" RUN; fi
+
+# the same for ranges that end at 2^31 or more within the count
+if [[ $MACHINE == x86_64 || $MACHINE == rv32i ]]; then SRC=2811 && EXP=7 && OPTS="--vars=0x80000040 --checks=upper" RUN; fi
+
+# a range that ends one element past the count fails
+if [[ $MACHINE == x86_64 || $MACHINE == rv32i ]]; then SRC=2812 && EXP=255 && OPTS="--vars=0x80000040 --checks=upper" RUN_ERR; fi

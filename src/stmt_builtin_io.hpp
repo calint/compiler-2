@@ -290,9 +290,11 @@ class stmt_builtin_io final : public statement {
         // of 0 may start at the end
         if (not count) {
             if (start_arg != nullptr and start) {
+                const machine& x{tc.machine()};
+
                 assert_constant_index(buffer_info, start_arg->tok(),
-                                      buffer.ident->dotted_path(), *start,
-                                      true);
+                                      buffer.ident->dotted_path(), *start, true,
+                                      x.max_storage_bytes());
             }
 
             return;
