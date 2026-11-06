@@ -1,6 +1,15 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] hard: round 136 (2026-11-07, user: all night; BS regressions over
+    rounds 104 to 135)
+    => done (2026-11-07): the build of round 103 (8c84e1a9) against HEAD:
+       the suite on three targets with its options and with
+       '--checks=noub' (13248 compiles each), 4099 generated programs of
+       eight fuzzers (16396 compiles), roome in 1506 sessions; every
+       difference is a fix an entry names (2600 2601 T1, 2720 2721 AE1, 2740
+       AF1, 2760 2761 AG1, 2800-2802 AI2, 2810 2811 AI1), no program changed
+       its result otherwise, no regression
 [x] hard: round 135 (2026-11-07, user: all night; BT a check of the
     examples of the documents)
     => done (2026-11-07): 'qa/lint/check-doc-examples.py' (in check-all.sh,
