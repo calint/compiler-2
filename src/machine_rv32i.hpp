@@ -65,8 +65,6 @@
 class machine_rv32i : public machine {
     using op = assembler_rv32i::op;
 
-    using section = assembler_rv32i::section;
-
     static constexpr size_t variables_base_past_vars_bytes_{2032};
 
     // note: the largest multiple of 16 an 'addi' immediate holds, 'vars'
@@ -1130,36 +1128,6 @@ class machine_rv32i : public machine {
     //
     // overridden methods
     //
-
-    // e.g. 's0 + t0 * 4 + 28' of a variable at a run-time index
-    [[nodiscard]] auto address_text(const operand& address) const
-        -> std::string override {
-
-        // note: variables and frames are addressed from a base register
-        assert(not address.base_register().empty());
-
-        std::string text{address.base_register()};
-
-        if (not address.index_register().empty()) {
-            text += std::format(" + {}", address.index_register());
-
-            if (address.scale() != 1) {
-                text += std::format(" * {}", address.scale());
-            }
-        }
-
-        if (address.displacement() < 0) {
-            const uint64_t magnitude{
-                uint64_t{} - static_cast<uint64_t>(address.displacement()),
-            };
-
-            text += std::format(" - {}", magnitude);
-        } else if (address.displacement() > 0) {
-            text += std::format(" + {}", address.displacement());
-        }
-
-        return text;
-    }
 
     // the operation scope frees its temporaries before the end comment
     auto emit_bounds_check(const token& src_loc_tk, const size_t indent,

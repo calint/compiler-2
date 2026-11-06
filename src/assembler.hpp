@@ -23,12 +23,10 @@
 // including the data directives and sections, so 'machine' writes the data
 // layout once
 //
-// sections: 'machine' asks for the four it writes ('begin_data_section',
-// 'begin_read_only_section', 'begin_text_section',
-// 'begin_variables_section'); a subclass maps them onto its own 'section'
-// enum, which also has what only it uses (the x86_64 '.bss' of its number
-// buffer), and the rv32i image is indexed by it; every 'switch_section' calls
-// 'set_code_section', since sizes and entries count only in code
+// sections: 'switch_section' starts one of 'section', a subclass writes its
+// directive ('add_section_directive') and the rv32i image is indexed by it;
+// sizes and entries count only in code, so the x86_64 '.bss' of its number
+// buffer, which only that target has, calls 'set_code_section' itself
 //
 // jump optimizations done by 'optimize_jumps', in x86_64 and rv32i syntax:
 //
@@ -65,6 +63,10 @@ class assembler {
   public:
     // 'optimized' applies the jump optimizations listed above the class
     enum class jump_mode : uint8_t { as_emitted, optimized };
+
+    // in the order of the rv32i image; the variables are zeroed when defined,
+    // so a target need not store them in its image
+    enum class section : uint8_t { text, rodata, data, variables };
 
   protected:
     struct jump_info {
@@ -112,10 +114,6 @@ class assembler {
         size_t instruction_count{};
     };
 
-  protected:
-    // a branch mnemonic and its inverse
-    using mnemonic_pair = std::pair<std::string_view, std::string_view>;
-
   private:
     // the lines from 'first_line' up to 'end_line' are a body of noinline
     // 'function'
@@ -147,17 +145,6 @@ class assembler {
     //
 
     virtual auto align(const size_t size_bytes) -> void = 0;
-
-    virtual auto begin_data_section() -> void = 0;
-
-    virtual auto begin_read_only_section() -> void = 0;
-
-    // the code section, e.g. back after the data of a failure handler
-    virtual auto begin_text_section() -> void = 0;
-
-    // the variables are zeroed when defined, so a target need not store them
-    // in its image
-    virtual auto begin_variables_section() -> void = 0;
 
     virtual auto comment(const size_t indent, const std::string_view text)
         -> void = 0;
@@ -321,6 +308,12 @@ class assembler {
                 changed = optimize_jump(index, labels, referenced) or changed;
             }
         }
+    }
+
+    // e.g. back to the code after the data of a failure handler
+    auto switch_section(const section which) -> void {
+        set_code_section(which == section::text);
+        add_section_directive(which);
     }
 
   protected:
@@ -497,29 +490,13 @@ class assembler {
         }
     }
 
-    // the other mnemonic of the pair holding 'mnemonic'
-    [[nodiscard]] static auto
-    paired_mnemonic(const std::span<const mnemonic_pair> pairs,
-                    const std::string_view mnemonic) -> std::string_view {
-
-        for (const auto& [first, second] : pairs) {
-            if (mnemonic == first) {
-                return second;
-            }
-
-            if (mnemonic == second) {
-                return first;
-            }
-        }
-
-        // the branches the optimizer inverts are all paired
-        std::unreachable();
-    }
-
   private:
     //
     // virtual methods
     //
+
+    // the line that starts 'which'
+    virtual auto add_section_directive(section which) -> void = 0;
 
     // the code size of one instruction in the target's unit
     [[nodiscard]] virtual auto instruction_size() const -> size_t = 0;

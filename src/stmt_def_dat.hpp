@@ -91,7 +91,7 @@ class stmt_def_dat final : public statement {
 
         // register the data without emitting output so it is available
         // during subsequent parsing
-        tc.add_dat(*this, make_var_info());
+        tc.add_dat(*this, declaration_.declared_var());
     }
 
     // 'toc' keeps the address of the definition
@@ -121,7 +121,7 @@ class stmt_def_dat final : public statement {
 
         x.comment(tok(), indent, statement::trimmed_source(*this));
 
-        tc.add_var(indent, make_var_info(), var_kind::dat);
+        tc.add_var(indent, declaration_.declared_var(), var_kind::dat);
 
         // note: the compile of a 'var' checks the elements of a condition
         //       after the one that decides it, so does this
@@ -142,11 +142,6 @@ class stmt_def_dat final : public statement {
     }
 
   private:
-    [[nodiscard]] auto make_var_info() const -> var_info {
-        return initializer_declaration::make_var_info(
-            name_tk_, declaration_.type_ref(), declaration_.shape());
-    }
-
     //
     // statics
     //

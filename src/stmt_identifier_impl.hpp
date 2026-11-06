@@ -65,8 +65,7 @@ inline stmt_identifier::stmt_identifier(toc& tc, token tk, tokenizer& tz,
 
     // a path of elements, e.g. 'rooms[i].entities[j].name'
     while (true) {
-        assert_indexable(prefix, tz, tk);
-        parse_element(tc, tz, tk, fld);
+        parse_element(tc, tz, tk, fld, prefix);
 
         const path_continuation next{read_continuation(tc, tz, prefix)};
 
@@ -277,8 +276,8 @@ inline auto stmt_identifier::narrow_to_element(const toc& tc,
 
 inline auto stmt_identifier::parse_element(toc& tc, tokenizer& tz,
                                            const token& tk,
-                                           const type_field* const fld)
-    -> void {
+                                           const type_field* const fld,
+                                           const ident_info& prefix) -> void {
 
     // e.g. the '[i]' of 'rooms[i]', none for 'name'
     const std::optional<token> open_bracket_tk{tz.is_next_char_token('[')};
@@ -291,6 +290,11 @@ inline auto stmt_identifier::parse_element(toc& tc, tokenizer& tz,
         });
 
         return;
+    }
+
+    // the '[' of an element needs an array
+    if (not prefix.is_array()) {
+        throw_not_indexable(tk, dotted_path_);
     }
 
     std::unique_ptr<expr_any> index_expr{

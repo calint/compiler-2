@@ -11,6 +11,7 @@
 #include <span>
 #include <string_view>
 #include <utility>
+#include <variant>
 #include <vector>
 
 #include "generics.hpp"
@@ -29,12 +30,11 @@
 // reading order:
 //
 //   'type_fields'            the braces, fields and delimiters of a body
-//   'comment_type_layout'    the layout comment of a plain type and an alias
 //   'generic_type_use'       the generic type named after an '='
-//   'stmt_def_type'          a plain type, 'type point { x, y }'
 //   'stmt_def_type_generic'  a generic definition, kept as text
 //   'type_instantiator'      makes the instance of a generic type
-//   'stmt_def_type_alias'    'type str = text<8>', an instance
+//   'stmt_def_type'          a plain type, 'type point { x, y }', or an
+//                            alias, 'type str = text<8>', an instance
 //   'make_stmt_def_type'     reads the name and picks the statement (last in
 //                            the file, it uses the others)
 //
@@ -133,26 +133,6 @@ class type_fields final {
     }
 };
 
-// the field layout of the type 'tp' as comments
-inline auto comment_type_layout(toc& tc, const size_t indent, const token& tk,
-                                const type& tp) -> void {
-
-    machine& x{tc.machine()};
-
-    x.comment(tk, indent, "{} : {} B    fields:", tp.name(), tp.size_bytes());
-
-    x.comment(tk, indent, "{:>10} : {:>7} : {:>7} : {:>7} : {:>10}", "name",
-              "offset", "size", "array?", "array size");
-
-    for (const type_field& f : tp.fields()) {
-        x.comment(tk, indent, "{:>10} : {:>7} : {:>7} : {:>7} : {:>10}", f.name,
-                  f.offset, f.size_bytes, f.is_array() ? "yes" : "no",
-                  f.shape.length() ? std::format("{}", *f.shape.length()) : "");
-    }
-
-    x.comment({}, 0, "");
-}
-
 // the generic type a definition names after its '=', e.g. '= list<i8, size>'
 // of 'type text<size> = list<i8, size>' or '= text<8>' of 'type str =
 // text<8>'
@@ -160,6 +140,15 @@ struct generic_type_use {
     token equals_tk;
     token name_tk;
     generic_arg_tokens args{};
+
+    auto source_to(std::ostream& os) const -> void {
+        equals_tk.source_to(os);
+        name_tk.source_to(os);
+
+        for (const token& t : args.list_tks) {
+            t.source_to(os);
+        }
+    }
 
     //
     // statics
@@ -253,48 +242,6 @@ struct generic_type_use {
         }
 
         return generic_arg_tokens::parse(tz, *open_tk, true);
-    }
-};
-
-// e.g. 'type point { x, y }'
-class stmt_def_type final : public statement {
-    token name_tk_;
-    type_fields fields_;
-    type type_;
-
-  public:
-    stmt_def_type(toc& tc, const token tk, const token name_tk, tokenizer& tz)
-        : statement{tk}, name_tk_{name_tk},
-          fields_{tc, tz, name_tk_, name_tk_} {
-
-        fields_.add_to(type_, name_tk_);
-
-        tc.add_type(name_tk_, type_);
-    }
-
-    // 'toc' keeps the address of the type
-    stmt_def_type(const stmt_def_type&) = delete;
-    stmt_def_type(stmt_def_type&&) = delete;
-    auto operator=(const stmt_def_type&) -> stmt_def_type& = delete;
-    auto operator=(stmt_def_type&&) -> stmt_def_type& = delete;
-
-    ~stmt_def_type() override = default;
-
-    //
-    // overridden methods
-    //
-
-    auto source_to(std::ostream& os) const -> void override {
-        statement::source_to(os);
-        name_tk_.source_to(os);
-        fields_.source_to(os);
-    }
-
-    auto compile(toc& tc, const size_t indent,
-                 [[maybe_unused]] const destination& dst) const
-        -> void override {
-
-        comment_type_layout(tc, indent, tok(), type_);
     }
 };
 
@@ -555,29 +502,39 @@ class type_instantiator final {
     }
 };
 
-// e.g. 'type str = text<127>', an instance of a generic type
-class stmt_def_type_alias final : public statement {
+// e.g. 'type point { x, y }', or the alias 'type str = text<127>', an
+// instance of a generic type
+class stmt_def_type final : public statement {
     token name_tk_;
+    // the fields of a plain type, or the '= text<127>' of an alias
+    std::variant<type_fields, generic_type_use> definition_;
     type type_;
-    // e.g. '= text<127>' of 'type str = text<127>'
-    generic_type_use generic_;
 
   public:
-    stmt_def_type_alias(toc& tc, const token tk, const token name_tk,
-                        tokenizer& tz)
-        : statement{tk}, name_tk_{name_tk},
-          generic_{generic_type_use::parse(tc, tz, "the alias that names it")} {
+    stmt_def_type(toc& tc, const token tk, const token name_tk,
+                  std::variant<type_fields, generic_type_use> definition)
+        : statement{tk}, name_tk_{name_tk}, definition_{std::move(definition)} {
 
-        type_instantiator::instantiate(tc, name_tk_, generic_, type_);
+        if (const generic_type_use* const generic{
+                std::get_if<generic_type_use>(&definition_),
+            }) {
+
+            type_instantiator::instantiate(tc, name_tk_, *generic, type_);
+            return;
+        }
+
+        std::get<type_fields>(definition_).add_to(type_, name_tk_);
+
+        tc.add_type(name_tk_, type_);
     }
 
     // 'toc' keeps the address of the type
-    stmt_def_type_alias(const stmt_def_type_alias&) = delete;
-    stmt_def_type_alias(stmt_def_type_alias&&) = delete;
-    auto operator=(const stmt_def_type_alias&) -> stmt_def_type_alias& = delete;
-    auto operator=(stmt_def_type_alias&&) -> stmt_def_type_alias& = delete;
+    stmt_def_type(const stmt_def_type&) = delete;
+    stmt_def_type(stmt_def_type&&) = delete;
+    auto operator=(const stmt_def_type&) -> stmt_def_type& = delete;
+    auto operator=(stmt_def_type&&) -> stmt_def_type& = delete;
 
-    ~stmt_def_type_alias() override = default;
+    ~stmt_def_type() override = default;
 
     //
     // overridden methods
@@ -586,19 +543,33 @@ class stmt_def_type_alias final : public statement {
     auto source_to(std::ostream& os) const -> void override {
         statement::source_to(os);
         name_tk_.source_to(os);
-        generic_.equals_tk.source_to(os);
-        generic_.name_tk.source_to(os);
 
-        for (const token& t : generic_.args.list_tks) {
-            t.source_to(os);
-        }
+        std::visit(
+            [&os](const auto& definition) -> void { definition.source_to(os); },
+            definition_);
     }
 
+    // the field layout of the type as comments
     auto compile(toc& tc, const size_t indent,
                  [[maybe_unused]] const destination& dst) const
         -> void override {
 
-        comment_type_layout(tc, indent, tok(), type_);
+        machine& x{tc.machine()};
+
+        x.comment(tok(), indent, "{} : {} B    fields:", type_.name(),
+                  type_.size_bytes());
+
+        x.comment(tok(), indent, "{:>10} : {:>7} : {:>7} : {:>7} : {:>10}",
+                  "name", "offset", "size", "array?", "array size");
+
+        for (const type_field& f : type_.fields()) {
+            x.comment(
+                tok(), indent, "{:>10} : {:>7} : {:>7} : {:>7} : {:>10}",
+                f.name, f.offset, f.size_bytes, f.is_array() ? "yes" : "no",
+                f.shape.length() ? std::format("{}", *f.shape.length()) : "");
+        }
+
+        x.comment({}, 0, "");
     }
 };
 
@@ -618,7 +589,8 @@ inline auto make_stmt_def_type(toc& tc, const token tk, tokenizer& tz)
 
     // e.g. 'type point { x, y }'
     if (next == '{') {
-        return std::make_unique<stmt_def_type>(tc, tk, name_tk, tz);
+        return std::make_unique<stmt_def_type>(
+            tc, tk, name_tk, type_fields{tc, tz, name_tk, name_tk});
     }
 
     // e.g. 'type text<size> = list<i8, size>'
@@ -628,7 +600,9 @@ inline auto make_stmt_def_type(toc& tc, const token tk, tokenizer& tz)
 
     // e.g. 'type str = text<127>'
     if (tz.is_lone_equals_next()) {
-        return std::make_unique<stmt_def_type_alias>(tc, tk, name_tk, tz);
+        return std::make_unique<stmt_def_type>(
+            tc, tk, name_tk,
+            generic_type_use::parse(tc, tz, "the alias that names it"));
     }
 
     throw compile_error{tz, "expected '{' to begin declaration of type"};

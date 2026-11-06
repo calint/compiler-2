@@ -65,9 +65,6 @@ class assembler_x86_64 final : public assembler {
     // suffixes of 'jcc' and 'setcc'
     enum class condition : uint8_t { e, ne, l, le, g, ge, a, b, s, ae, o };
 
-    // 'variables' is the uninitialized section after the data
-    enum class section : uint8_t { text, rodata, data, bss, variables };
-
     // '[symbol + displacement]' or '[base + index * scale + displacement]',
     // zero 'size_bytes' leaves the width to the other operand
     struct memory {
@@ -174,22 +171,6 @@ class assembler_x86_64 final : public assembler {
         add_text(std::format("align {}", size_bytes));
     }
 
-    auto begin_data_section() -> void override {
-        switch_section(section::data);
-    }
-
-    auto begin_read_only_section() -> void override {
-        switch_section(section::rodata);
-    }
-
-    auto begin_text_section() -> void override {
-        switch_section(section::text);
-    }
-
-    auto begin_variables_section() -> void override {
-        switch_section(section::variables);
-    }
-
     auto comment(const size_t indent, const std::string_view text)
         -> void override {
 
@@ -244,6 +225,13 @@ class assembler_x86_64 final : public assembler {
     //
     // class methods
     //
+
+    // the number buffer, apart from the variables that 'baz.ld' places right
+    // after the data
+    auto begin_bss_section() -> void {
+        set_code_section(false);
+        add_text("section .bss");
+    }
 
     auto bits64() -> void { add_text("bits 64"); }
 
@@ -312,13 +300,6 @@ class assembler_x86_64 final : public assembler {
                                     condition_suffix(cc), argument_text(dst)));
     }
 
-    // sizes only count in code, so code must be in the text section
-    auto switch_section(const section which) -> void {
-        set_code_section(which == section::text);
-
-        add_text(std::string{section_directive(which)});
-    }
-
     // writes the lines as they are, nasm resolves the jump distances
     auto write(std::ostream& os) const -> void {
         assert(not is_capturing());
@@ -330,11 +311,83 @@ class assembler_x86_64 final : public assembler {
         }
     }
 
+  private:
+    //
+    // overridden methods
+    //
+
+    auto add_section_directive(const section which) -> void override {
+        // indexed by 'section'
+        constexpr auto directives{
+            std::to_array<std::string_view>({
+                "section .text",
+                "section .rodata",
+                "section .data",
+                "section .bss.vars nobits alloc write",
+            }),
+        };
+
+        static_assert(directives.size() ==
+                      std::to_underlying(section::variables) + 1);
+
+        add_text(std::string{directives.at(std::to_underlying(which))});
+    }
+
+    // every instruction counts as one
+    [[nodiscard]] auto instruction_size() const -> size_t override { return 1; }
+
+    [[nodiscard]] auto
+    inverse_branch_mnemonic(const std::string_view mnemonic) const
+        -> std::string_view override {
+
+        // a branch mnemonic and its inverse
+        using mnemonic_pair = std::pair<std::string_view, std::string_view>;
+
+        constexpr std::array<mnemonic_pair, 7> pairs{
+            {
+                {"je", "jne"},
+                {"jg", "jle"},
+                {"jge", "jl"},
+                {"jo", "jno"},
+                {"ja", "jbe"},
+                {"jb", "jae"},
+                {"js", "jns"},
+            },
+        };
+
+        for (const auto& [first, second] : pairs) {
+            if (mnemonic == first) {
+                return second;
+            }
+
+            if (mnemonic == second) {
+                return first;
+            }
+        }
+
+        // the branches the optimizer inverts are all paired
+        std::unreachable();
+    }
+
+    [[nodiscard]] auto unconditional_jump_mnemonic() const
+        -> std::string_view override {
+
+        return "jmp";
+    }
+
+    //
+    // class methods
+    //
+
+    auto add_instruction(std::string text) -> void {
+        add_line(std::move(text), instruction_size());
+    }
+
     //
     // statics
     //
 
-    // the text between the brackets, also used in comments
+    // the text between the brackets
     [[nodiscard]] static auto address_text(const memory& address)
         -> std::string {
 
@@ -371,51 +424,6 @@ class assembler_x86_64 final : public assembler {
 
         return memory_text;
     }
-
-  private:
-    //
-    // overridden methods
-    //
-
-    // every instruction counts as one
-    [[nodiscard]] auto instruction_size() const -> size_t override { return 1; }
-
-    [[nodiscard]] auto
-    inverse_branch_mnemonic(const std::string_view mnemonic) const
-        -> std::string_view override {
-
-        constexpr std::array<mnemonic_pair, 7> pairs{
-            {
-                {"je", "jne"},
-                {"jg", "jle"},
-                {"jge", "jl"},
-                {"jo", "jno"},
-                {"ja", "jbe"},
-                {"jb", "jae"},
-                {"js", "jns"},
-            },
-        };
-
-        return paired_mnemonic(pairs, mnemonic);
-    }
-
-    [[nodiscard]] auto unconditional_jump_mnemonic() const
-        -> std::string_view override {
-
-        return "jmp";
-    }
-
-    //
-    // class methods
-    //
-
-    auto add_instruction(std::string text) -> void {
-        add_line(std::move(text), instruction_size());
-    }
-
-    //
-    // statics
-    //
 
     [[nodiscard]] static auto argument_text(const argument& value)
         -> std::string {
@@ -566,26 +574,6 @@ class assembler_x86_64 final : public assembler {
         static_assert(infos.size() == op_count_);
 
         return infos.at(std::to_underlying(code));
-    }
-
-    [[nodiscard]] static auto section_directive(const section which)
-        -> std::string_view {
-
-        // indexed by 'section'
-        constexpr auto directives{
-            std::to_array<std::string_view>({
-                "section .text",
-                "section .rodata",
-                "section .data",
-                "section .bss",
-                "section .bss.vars nobits alloc write",
-            }),
-        };
-
-        static_assert(directives.size() ==
-                      std::to_underlying(section::variables) + 1);
-
-        return directives.at(std::to_underlying(which));
     }
 
     [[nodiscard]] static auto size_specifier(const size_t size_bytes)

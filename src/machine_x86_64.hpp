@@ -52,8 +52,6 @@ class machine_x86_64 final : public machine {
 
     using condition = assembler_x86_64::condition;
 
-    using section = assembler_x86_64::section;
-
     static constexpr size_t size_qword_{assembler_x86_64::size_qword};
     static constexpr size_t size_dword_{assembler_x86_64::size_dword};
     static constexpr size_t size_word_{assembler_x86_64::size_word};
@@ -666,12 +664,6 @@ class machine_x86_64 final : public machine {
     // overridden methods
     //
 
-    [[nodiscard]] auto address_text(const operand& address) const
-        -> std::string override {
-
-        return assembler_x86_64::address_text(to_address(address));
-    }
-
     auto emit_bounds_check(const token& src_loc_tk, const size_t indent,
                            const bounds_range& range, const bounds_plan& plan)
         -> void override {
@@ -874,7 +866,7 @@ class machine_x86_64 final : public machine {
         assembler_.instruction(1, op::mov, "rdi", stderr_descriptor_);
         assembler_.instruction(1, op::syscall);
         exit(token{}, 1, qword_register("rbx"));
-        assembler_.switch_section(section::bss);
+        assembler_.begin_bss_section();
         assembler_.label(0, "num_buffer");
         assembler_.reserve(number_buffer_size_bytes);
         assembler_.switch_section(section::text);
@@ -1923,7 +1915,7 @@ class machine_x86_64 final : public machine {
         }
     }
 
-    // the address without a width, as 'lea' and comments take it
+    // the address without a width, as 'lea' takes it
     [[nodiscard]] static auto to_address(const operand& value)
         -> assembler_x86_64::memory {
 

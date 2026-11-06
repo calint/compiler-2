@@ -88,8 +88,6 @@ class assembler_rv32i final : public assembler {
         ret,
     };
 
-    enum class section : uint8_t { text, rodata, data, bss };
-
   private:
     // a number, or a symbol resolved once addresses are known
     struct immediate {
@@ -245,7 +243,7 @@ class assembler_rv32i final : public assembler {
                                 zero_fill, alignment, section_start, constant>;
 
     static constexpr size_t section_count_{
-        std::to_underlying(section::bss) + 1,
+        std::to_underlying(section::variables) + 1,
     };
 
     struct line_position {
@@ -309,22 +307,6 @@ class assembler_rv32i final : public assembler {
                    alignment{
                        .size_bytes{size_bytes},
                    });
-    }
-
-    auto begin_data_section() -> void override {
-        switch_section(section::data);
-    }
-
-    auto begin_read_only_section() -> void override {
-        switch_section(section::rodata);
-    }
-
-    auto begin_text_section() -> void override {
-        switch_section(section::text);
-    }
-
-    auto begin_variables_section() -> void override {
-        switch_section(section::bss);
     }
 
     auto comment(const size_t indent, const std::string_view text)
@@ -662,14 +644,14 @@ class assembler_rv32i final : public assembler {
         load(indent, op::lw, rd, std::move(offset), base);
     }
 
-    // the address after the bss section, valid once jumps are resolved
+    // the address after the variables, valid once jumps are resolved
     [[nodiscard]] auto memory_end_address() const -> size_t {
         assert(jumps_resolved_);
 
         const image_layout image{layout_image()};
-        const size_t bss{section_index(section::bss)};
+        const size_t variables{section_index(section::variables)};
 
-        return image.bases.at(bss) + image.sizes.at(bss);
+        return image.bases.at(variables) + image.sizes.at(variables);
     }
 
     auto mv(const size_t indent, const std::string_view rd,
@@ -857,16 +839,6 @@ class assembler_rv32i final : public assembler {
         store(indent, op::sw, src, std::move(offset), base);
     }
 
-    // sizes only count in code, so code must be in the text section
-    auto switch_section(const section which) -> void {
-        set_code_section(which == section::text);
-
-        add_record(std::string{section_directive(which)}, 0,
-                   section_start{
-                       .which{which},
-                   });
-    }
-
     // 'binary' receives the sections as one image from address zero, the
     // text follows only when the image was written, so a failing build
     // writes nothing
@@ -975,6 +947,13 @@ class assembler_rv32i final : public assembler {
     // overridden methods
     //
 
+    auto add_section_directive(const section which) -> void override {
+        add_record(std::string{section_directive(which)}, 0,
+                   section_start{
+                       .which{which},
+                   });
+    }
+
     // pseudo instructions count as the ones they expand to
     [[nodiscard]] auto instruction_size() const -> size_t override {
         return one_instruction_bytes;
@@ -1013,10 +992,13 @@ class assembler_rv32i final : public assembler {
         add_line(std::move(text), code_size, index);
     }
 
-    // bss is not part of the image, so it may only reserve zero bytes
-    auto assert_bss_uninitialized(const image_layout& image) const -> void {
+    // the variables are not part of the image, so they may only reserve zero
+    // bytes
+    auto assert_variables_uninitialized(const image_layout& image) const
+        -> void {
+
         for (size_t index{}; index < lines().size(); ++index) {
-            if (image.positions.at(index).which != section::bss) {
+            if (image.positions.at(index).which != section::variables) {
                 continue;
             }
 
@@ -1215,8 +1197,8 @@ class assembler_rv32i final : public assembler {
         return data_size_bytes(*data);
     }
 
-    // sections follow each other in the order text, rodata, data, bss from
-    // address zero, like a linker script listing them in that order
+    // sections follow each other in the order text, rodata, data, variables
+    // from address zero, like a linker script listing them in that order
     [[nodiscard]] auto layout_image() const -> image_layout {
         image_layout image{};
         image.positions.reserve(lines().size());
@@ -1356,9 +1338,9 @@ class assembler_rv32i final : public assembler {
         const image_layout image{layout_image()};
         const symbol_table symbols{collect_symbols(image)};
 
-        assert_bss_uninitialized(image);
+        assert_variables_uninitialized(image);
 
-        // bss follows the image in memory with unspecified content
+        // the variables follow the image in memory with unspecified content
         size_t written{};
         for (const section which :
              {section::text, section::rodata, section::data}) {

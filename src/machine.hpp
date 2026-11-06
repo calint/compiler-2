@@ -488,6 +488,8 @@ class machine {
     using failure_lines = std::map<size_t, std::set<size_t>>;
 
   protected:
+    using section = assembler::section;
+
     // the result of a comparison of two arrays, 'alignment' is the alignment
     // known for both
     struct equality_request {
@@ -911,7 +913,7 @@ class machine {
         assembler& output{target_assembler()};
 
         output.add_separator_newline();
-        output.begin_data_section();
+        output.switch_section(section::data);
         output.align(target_.data_alignment);
         output.label(0, data_label_);
     }
@@ -1228,7 +1230,7 @@ class machine {
 
         assembler& output{target_assembler()};
 
-        output.begin_read_only_section();
+        output.switch_section(section::rodata);
         for (const read_only_constant& s : constants) {
             // note: a byte alignment needs no directive
             if (target_.string_alignment > 1) {
@@ -1421,7 +1423,7 @@ class machine {
 
         output.label(0, data_end_label_);
         output.add_separator_newline();
-        output.begin_variables_section();
+        output.switch_section(section::variables);
         output.align(target_.data_alignment);
         output.label(0, variables_label_);
         output.reserve(size_bytes);
@@ -1557,10 +1559,6 @@ class machine {
     //
     // virtual methods
     //
-
-    // a memory operand as the comments show it, e.g. 'rbp + 8'
-    [[nodiscard]] virtual auto address_text(const operand& address) const
-        -> std::string = 0;
 
     // the compares and branches of 'check_bounds' after its plan, between the
     // begin and end comments: the sign tests, then the upper compare
@@ -1997,6 +1995,37 @@ class machine {
     // statics
     //
 
+    // a memory operand as the comments show it, e.g. 'rbp + 8' or
+    // 's0 + t0 * 4 + 28' of a variable at a run-time index
+    [[nodiscard]] static auto address_text(const operand& address)
+        -> std::string {
+
+        // note: variables and frames are addressed from a base register
+        assert(not address.base_register().empty());
+
+        std::string text{address.base_register()};
+
+        if (not address.index_register().empty()) {
+            text += std::format(" + {}", address.index_register());
+
+            if (address.scale() != 1) {
+                text += std::format(" * {}", address.scale());
+            }
+        }
+
+        if (address.displacement() < 0) {
+            const uint64_t magnitude{
+                uint64_t{} - static_cast<uint64_t>(address.displacement()),
+            };
+
+            text += std::format(" - {}", magnitude);
+        } else if (address.displacement() > 0) {
+            text += std::format(" + {}", address.displacement());
+        }
+
+        return text;
+    }
+
     // zero clears, one needs no code, minus one negates and a power of two is a
     // shift, only the other factors need a multiplication
     [[nodiscard]] static auto classify_factor(const uint64_t bits,
@@ -2232,14 +2261,14 @@ class machine {
 
         assembler& output{target_assembler()};
 
-        output.begin_read_only_section();
+        output.switch_section(section::rodata);
         output.label(0, message_label);
 
         // note: a backslash or a control byte of a path is written as an
         //       escape of the target's string directive
 
         output.string_data(message);
-        output.begin_text_section();
+        output.switch_section(section::text);
     }
 
     // the handlers that the code branches to, see 'mark_used'; before

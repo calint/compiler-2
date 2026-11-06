@@ -1022,27 +1022,6 @@ struct check_options {
     [[nodiscard]] auto is_bounds() const -> bool {
         return bounds_upper or bounds_lower;
     }
-
-    [[nodiscard]] auto overflow_options() const -> machine::runtime_check {
-        return runtime(overflow);
-    }
-
-    [[nodiscard]] auto shift_options() const -> machine::runtime_check {
-        return runtime(shift);
-    }
-
-  private:
-    //
-    // statics
-    //
-
-    [[nodiscard]] static auto runtime(const bool enabled)
-        -> machine::runtime_check {
-
-        return {
-            .enabled{enabled},
-        };
-    }
 };
 
 // what the compile used, for the report
@@ -3319,7 +3298,9 @@ class toc final {
             return {};
         }
 
-        return checks_.overflow_options();
+        return {
+            .enabled{checks_.overflow},
+        };
     }
 
     // a 'break' leaves the innermost 'loop' or 'foo', whose end is then

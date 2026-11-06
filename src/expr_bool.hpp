@@ -871,10 +871,14 @@ class expr_bool_op final : public statement {
 
         assert(not expr_info.is_const());
 
+        const machine::runtime_check overflow_check{
+            .enabled{tc.checks().overflow},
+        };
+
         // e.g. 'a', '-a[i]'
-        return ident->compile_value_operand(
-            tc, indent, expr.tok(), expr_info, expr_info.type_ref(),
-            tc.checks().overflow_options(), held);
+        return ident->compile_value_operand(tc, indent, expr.tok(), expr_info,
+                                            expr_info.type_ref(),
+                                            overflow_check, held);
     }
 
     // memory is compared, so a constant has nothing to compare

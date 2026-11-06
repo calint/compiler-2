@@ -1415,7 +1415,9 @@ class expr_arith final : public statement {
 
         if (family == operator_family::shift) {
             x.shift(src_loc_tk, indent, op, dst.operand(), value,
-                    tc.checks().shift_options());
+                    {
+                        .enabled{tc.checks().shift},
+                    });
 
             return;
         }

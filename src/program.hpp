@@ -239,10 +239,8 @@ class program final {
 
     // a file whose includes are being parsed, see 'parse_files'
     struct open_file {
-        size_t file_ix{};
         tokenizer tz;
-        // its includes, then its definitions
-        std::vector<std::unique_ptr<statement>> parsed;
+        parsed_file parsed;
     };
 
     std::reference_wrapper<source_files> files_;
@@ -362,9 +360,12 @@ class program final {
                                              files_.get().text(file_ix));
 
         return {
-            .file_ix{file_ix},
             .tz{file_ix, files_.get().text(file_ix)},
-            .parsed{},
+            .parsed{
+                .file_ix{file_ix},
+                .statements{},
+                .end_tk{},
+            },
         };
     }
 
@@ -383,15 +384,15 @@ class program final {
             // a name is seen only after its definition, see
             // 'definition_order'
             tc_.begin_definition();
-            file.parsed.emplace_back(parse_definition(tc_, file.tz, tk));
+
+            file.parsed.statements.emplace_back(
+                parse_definition(tc_, file.tz, tk));
+
             tk = file.tz.next_token();
         }
 
-        parsed_files_.push_back({
-            .file_ix{file.file_ix},
-            .statements{std::move(file.parsed)},
-            .end_tk{tk},
-        });
+        file.parsed.end_tk = tk;
+        parsed_files_.push_back(std::move(file.parsed));
     }
 
     // the includes of a file come before its definitions, so an included
@@ -443,7 +444,7 @@ class program final {
 
         // relative to the directory of the file with the 'include'
         const std::filesystem::path path{
-            (std::filesystem::path{files_.get().name(file.file_ix)}
+            (std::filesystem::path{files_.get().name(file.parsed.file_ix)}
                  .parent_path() /
              include->file_name())
                 .lexically_normal(),
@@ -451,7 +452,7 @@ class program final {
 
         const token path_tk{include->path_token()};
 
-        file.parsed.emplace_back(std::move(include));
+        file.parsed.statements.emplace_back(std::move(include));
 
         const bool is_new{loaded_paths.insert(identity_path(path)).second};
 

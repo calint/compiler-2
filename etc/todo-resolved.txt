@@ -1,6 +1,25 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] hard: design review series 2, round 107 (2026-11-06, user: keep going
+    until no simplifications are left; P the items across files left by
+    rounds 104 to 106, N generics, built-ins, types, 'var', 'dat' and
+    'program', O identifiers, parse, tokenizer and driver)
+    => done (2026-11-06): a pure refactor, the listings of every test equal;
+       P1 one 'assembler::section' (text, rodata, data, variables), a
+       non-virtual 'switch_section' and one 'add_section_directive', the
+       four 'begin_*_section' virtuals removed, rv32i 'bss' named
+       'variables'; P2 one 'machine::address_text' for comments; P3
+       'paired_mnemonic' in x86_64; P4 'check_options' without its three
+       spellings of 'enabled'; N1 'stmt_def_type' and 'stmt_def_type_alias'
+       one class; N2 'initializer_declaration::declared_var'; N3 'open_file'
+       holds a 'parsed_file'; O1 'assert_not_method' decides and reports,
+       'is_method_call' removed; O2 the first '[' of an element checked in
+       'parse_element', 'assert_indexable' removed; not done: the continue
+       label derived from the loop end (ties how a loop ends to where it
+       continues), a helper for the three loop names of 'foo' (they differ
+       in five of seven fields), the one lexer and the deduction by a trial
+       parse (open items); about 140 lines fewer
 [x] hard: design review series 2, round 106 (2026-11-06, user: keep going
     until no simplifications are left; J compile context and functions, K
     rv32i, L machine and x86_64, M arithmetic, conditions and control flow,

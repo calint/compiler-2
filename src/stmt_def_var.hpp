@@ -67,6 +67,19 @@ class initializer_declaration final {
         assert(not shape_.is_length_unknown());
     }
 
+    // the variable the definition declares, a 'var' or a 'dat'
+    [[nodiscard]] auto declared_var() const -> var_info {
+        return {
+            .name{name_tk_.text()},
+            .type_ptr{type_},
+            .src_loc_tk{name_tk_},
+            .shape{shape_},
+            .read_only_why{},
+            .placement{},
+            .foo_array{},
+        };
+    }
+
     // the value at the deduced type and size
     [[nodiscard]] auto parse_value(toc& tc, tokenizer& tz) const -> expr_any {
         // note: set by the parse, which throws when it fails
@@ -115,22 +128,6 @@ class initializer_declaration final {
         }
 
         return constant;
-    }
-
-    // a variable, a 'var' or a 'dat', named by 'name_tk'
-    [[nodiscard]] static auto
-    make_var_info(const token& name_tk, const type& tp, const array_shape shape)
-        -> var_info {
-
-        return {
-            .name{name_tk.text()},
-            .type_ptr{&tp},
-            .src_loc_tk{name_tk},
-            .shape{shape},
-            .read_only_why{},
-            .placement{},
-            .foo_array{},
-        };
     }
 
     // the '=' before the initializer, 'keyword' names the definition in the
@@ -301,8 +298,7 @@ class initializer_declaration final {
 
         const toc::scope_entry block{tc, scope::initializer()};
 
-        tc.add_var(0, make_var_info(name_tk_, type_ref(), shape_),
-                   var_kind::var);
+        tc.add_var(0, declared_var(), var_kind::var);
 
         parse();
     }
@@ -425,14 +421,10 @@ class stmt_def_var final : public statement {
   public:
     // 'at_name' is the tokenizer after the name, where the destination
     // continues
-    stmt_def_var(toc& tc, const token tk, const token name_tk,
-                 tokenizer at_name, const token equals_tk,
+    stmt_def_var(toc& tc, const token tk, tokenizer at_name,
+                 const token equals_tk,
                  const initializer_declaration& declaration, expr_any value)
-        : statement{tk},
-          declared_{
-              initializer_declaration::make_var_info(
-                  name_tk, declaration.type_ref(), declaration.shape()),
-          },
+        : statement{tk}, declared_{declaration.declared_var()},
           assign_var_{
               declare_and_assign(tc, declared_, at_name, equals_tk,
                                  std::move(value)),
@@ -568,6 +560,6 @@ inline auto make_stmt_def_var(toc& tc, const token tk, tokenizer& tz)
                                                 std::move(value), *constant);
     }
 
-    return std::make_unique<stmt_def_var>(tc, tk, name_tk, at_name, equals_tk,
+    return std::make_unique<stmt_def_var>(tc, tk, at_name, equals_tk,
                                           declaration, std::move(value));
 }

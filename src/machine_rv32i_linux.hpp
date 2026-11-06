@@ -13,8 +13,6 @@
 // and transfer the sectors of the image file, the operating system stops a
 // program that overflows the stack
 class machine_rv32i_linux final : public machine_rv32i {
-    using section = assembler_rv32i::section;
-
     // the numbers of the generic linux table, 'asm-generic/unistd.h'
     static constexpr int syscall_read_{63};
     static constexpr int syscall_write_{64};

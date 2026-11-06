@@ -600,26 +600,6 @@ class stmt_identifier final : public statement {
     auto assert_count_in_bounds(const toc& tc, const token& count_tk,
                                 const int64_t count) const -> void;
 
-    // where only an array is expected, the path does not end at a method or
-    // its call, e.g. 'array_length(a.m)'
-    auto assert_not_method(const toc& tc, const tokenizer& tz) const -> void {
-        if (not method_) {
-            return;
-        }
-
-        // note: a call of the method was reported ('parse_array_argument')
-
-        assert(not is_method_call(tc, tz));
-
-        const std::string method_path{
-            std::format("{}.{}", dotted_path_, method_->name_tk.text()),
-        };
-
-        throw compile_error{method_->name_tk,
-                            std::format("{} is a method, not an array",
-                                        in_quotes(method_path))};
-    }
-
     // a read of the result needs the bytes it reaches assigned, the whole
     // array after a run-time index
     auto assert_set_before_read(const assignment_flow& flow) const -> void {
@@ -750,22 +730,6 @@ class stmt_identifier final : public statement {
         return std::ranges::any_of(elems_, [](const ident_elem& e) -> bool {
             return e.index.has_value();
         });
-    }
-
-    // the path ends at a call of a method, e.g. 'p.m()' or 'p.m<i8>()'
-    [[nodiscard]] auto is_method_call(const toc& tc, const tokenizer& tz) const
-        -> bool {
-
-        if (not method_) {
-            return false;
-        }
-
-        const char next{tz.peek_char_after_whitespace()};
-
-        return next == '(' or
-               (next == '<' and
-                tc.generics().has_func(method_name_of(
-                    get_type().name(), method_->name_tk.text())));
     }
 
     [[nodiscard]] auto is_method_receiver() const -> bool {
@@ -924,14 +888,6 @@ class stmt_identifier final : public statement {
 
         stmt_identifier array{tc, tk, tz, path_reach::to_end};
 
-        // e.g. 'p.m()', named like its callee in the other call messages
-        if (array.is_method_call(tc, tz)) {
-            throw_call_not_array(
-                array.method_name_token(),
-                method_name_of(array.get_type().name(),
-                               array.method_name_token().text()));
-        }
-
         array.assert_not_method(tc, tz);
 
         assert_no_operator_after_array(tz);
@@ -989,13 +945,33 @@ class stmt_identifier final : public statement {
         throw_unindexed_array(src_loc_tk, dotted_path_);
     }
 
-    // the '[' of an element needs an array
-    auto assert_indexable(const ident_info& prefix, const tokenizer& tz,
-                          const token& src_loc_tk) const -> void {
-
-        if (tz.peek_char_after_whitespace() == '[' and not prefix.is_array()) {
-            throw_not_indexable(src_loc_tk, dotted_path_);
+    // where only an array is expected, the path does not end at a method or
+    // its call: a call, e.g. 'p.m()' or 'p.m<i8>()', is named like its callee
+    // in the other call messages, a method as the path, e.g. the 'a.m' of
+    // 'array_length(a.m)'
+    auto assert_not_method(const toc& tc, const tokenizer& tz) const -> void {
+        if (not method_) {
+            return;
         }
+
+        const token& name_tk{method_->name_tk};
+
+        const std::string callee{
+            method_name_of(get_type().name(), name_tk.text()),
+        };
+
+        const char next{tz.peek_char_after_whitespace()};
+
+        if (next == '(' or (next == '<' and tc.generics().has_func(callee))) {
+            throw_call_not_array(name_tk, callee);
+        }
+
+        const std::string method_path{
+            std::format("{}.{}", dotted_path_, name_tk.text()),
+        };
+
+        throw compile_error{name_tk, std::format("{} is a method, not an array",
+                                                 in_quotes(method_path))};
     }
 
     // walks the elements from the root: the root resolved, then each field
@@ -1072,8 +1048,9 @@ class stmt_identifier final : public statement {
     }
 
     // a path element with an optional '[index]', 'fld' the field it names
+    // and 'prefix' what the path up to it resolves to
     auto parse_element(toc& tc, tokenizer& tz, const token& tk,
-                       const type_field* fld) -> void;
+                       const type_field* fld, const ident_info& prefix) -> void;
 
     // the path is an array only while its last element is not indexed
     auto resolve_type(const ident_info& info) -> void {
