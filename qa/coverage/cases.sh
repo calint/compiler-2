@@ -6895,3 +6895,15 @@ SRC=2251 && EXP=249 && OPTS="--checks=overflow,line" RUN_ERR
 
 # --checks=overflow,line: a difference with a positive operand in a register
 SRC=2252 && EXP=249 && OPTS="--checks=overflow,line" RUN_ERR
+
+# a carriage return alone on the last line of the file is shown
+SRC=2260 && COMPERR
+
+# a carriage return at the end of the file is shown
+SRC=2261 && COMPERR
+
+# an overlong character, a surrogate and a lead byte past U+10FFFF are escaped
+SRC=2262 && COMPERR
+
+# a C1 control character is escaped in a message
+SRC=2263 && COMPERR

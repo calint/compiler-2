@@ -1,0 +1,3 @@
+# a carriage return at the end of the file is shown
+
+func main() {}

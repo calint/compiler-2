@@ -1088,7 +1088,11 @@ auto print_source_line(const std::string_view src, const size_t start_index,
     const size_t line_bgn{located.begin};
     std::string_view line{located.text};
 
-    if (line.ends_with('\r')) {
+    // a carriage return without a line feed after it is the lone one of the
+    // error, 'assert_source_well_formed', and stays shown
+    const bool has_line_feed{line_bgn + line.size() < src.size()};
+
+    if (has_line_feed and line.ends_with('\r')) {
         line.remove_suffix(1);
         // note: 1 for the carriage return of a crlf line end
     }

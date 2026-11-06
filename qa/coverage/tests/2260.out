@@ -1,0 +1,4 @@
+
+2260.baz:4:1: a carriage return is not followed by a line feed
+\x0d
+^~~~

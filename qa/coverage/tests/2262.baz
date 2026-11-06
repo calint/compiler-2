@@ -1,0 +1,7 @@
+# an overlong character, a surrogate and a lead byte past U+10FFFF are
+# escaped in a message
+
+func main() {
+    var a = i8
+    a = bÀ€í €õ€€€
+}

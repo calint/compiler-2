@@ -1,5 +1,6 @@
 #pragma once
 
+#include <array>
 #include <cassert>
 #include <cstddef>
 #include <cstdint>
@@ -167,9 +168,32 @@ class compile_error final : public std::exception {
     return byte < ' ' or byte == '\x7f';
 }
 
+// a code point of 'continuation_count' continuation bytes is in their
+// shortest form, no surrogate and not past U+10FFFF, as UTF-8 requires
+[[nodiscard]] inline auto is_well_formed_utf8(const uint32_t code_point,
+                                              const size_t continuation_count)
+    -> bool {
+
+    constexpr std::array<uint32_t, 4> shortest_from{0, 0x80, 0x800, 0x10000};
+
+    // note: indexed by the continuation count, a code point below the entry
+    //       has a shorter form
+
+    constexpr uint32_t first_surrogate{0xd800};
+    constexpr uint32_t last_surrogate{0xdfff};
+    constexpr uint32_t last_code_point{0x10ffff};
+
+    const bool is_surrogate{
+        code_point >= first_surrogate and code_point <= last_surrogate,
+    };
+
+    return code_point >= shortest_from.at(continuation_count) and
+           code_point <= last_code_point and not is_surrogate;
+}
+
 // the bytes of the whole UTF-8 character at 'index' of 'text', 0 for a
-// control byte or a byte that starts no whole character, e.g. a lone
-// continuation byte or a truncated character
+// control character or a byte that starts no whole character, e.g. a lone
+// continuation byte, a truncated or an overlong character
 [[nodiscard]] inline auto shown_char_size(const std::string_view text,
                                           const size_t index) -> size_t {
 
@@ -193,10 +217,35 @@ class compile_error final : public std::exception {
         return 0;
     }
 
+    constexpr uint32_t payload_bits{0x3f};
+    constexpr uint32_t payload_shift{6};
+
+    uint32_t code_point{lead_byte & (payload_bits >> continuation_count)};
+    // note: a lead byte of 'n' continuations has '6 - n' payload bits
+
     for (size_t i{1}; i <= continuation_count; ++i) {
-        if (not token::is_utf8_continuation(text.at(index + i))) {
+        const char continuation{text.at(index + i)};
+
+        if (not token::is_utf8_continuation(continuation)) {
             return 0;
         }
+
+        const uint32_t byte{static_cast<unsigned char>(continuation)};
+
+        code_point = (code_point << payload_shift) | (byte & payload_bits);
+    }
+
+    if (not is_well_formed_utf8(code_point, continuation_count)) {
+        return 0;
+    }
+
+    // the C1 controls, e.g. U+009B that a terminal reads as the start of a
+    // control sequence, are escaped as the control bytes are
+    constexpr uint32_t first_c1_control{0x80};
+    constexpr uint32_t last_c1_control{0x9f};
+
+    if (code_point >= first_c1_control and code_point <= last_c1_control) {
+        return 0;
     }
 
     return 1 + continuation_count;

@@ -1,0 +1,4 @@
+# a carriage return alone on the last line of the file is shown
+
+func main() {}
+

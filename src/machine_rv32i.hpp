@@ -409,7 +409,7 @@ class machine_rv32i : public machine {
     };
 
     // the scratch of a far jump to code that does not return, a failure
-    // handler or the exit routine: it reads only 'a0' and 'sp', so the
+    // handler or the exit routine: it reads no scratch register, so the
     // register is dead there
     static constexpr std::string_view no_return_jump_register_{"t0"};
 

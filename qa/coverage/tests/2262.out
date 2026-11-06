@@ -1,0 +1,4 @@
+
+2262.baz:6:9: 'b\xc0\x80\xed\xa0\x80\xf5\x80\x80\x80' is not a valid name, a name starts with a letter or '_' and has only letters, digits and '_'
+    a = b\xc0\x80\xed\xa0\x80\xf5\x80\x80\x80
+        ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

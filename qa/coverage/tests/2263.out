@@ -1,0 +1,4 @@
+
+2263.baz:5:9: 'b\xc2\x9b' is not a valid name, a name starts with a letter or '_' and has only letters, digits and '_'
+    a = b\xc2\x9b
+        ^~~~~~~~~

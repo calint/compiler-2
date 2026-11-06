@@ -1,6 +1,17 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] hard: design review series 2, round 102 (2026-11-06, user: loop of
+    design review and bug hunt; G hunt of round 100, H review of the patch
+    of round 101)
+    => done (2026-11-06): D1, D2 matched the earlier code in about 5100
+       programs on qemu and the fpga emulator; G1 a lone carriage return at
+       the end of the file failed an assert in 'print_source_line', which
+       took it for the one of a crlf line end (tests 2260, 2261); G2 an
+       overlong character, a surrogate and a lead byte past U+10FFFF passed
+       'printable' as raw bytes ('is_well_formed_utf8', test 2262), and the
+       C1 controls are escaped as the control bytes (test 2263); G3 the
+       comment of 'no_return_jump_register_'; H went into round 101
 [x] hard: design review series 2, round 101 (2026-11-06, user: loop of
     design review and bug hunt; F1 of round 100)
     => done (2026-11-06): a far jump on rv32i with no free scratch register
