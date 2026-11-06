@@ -266,7 +266,6 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
     register ('mov r15, [..]; lea rsi, [..]; add rsi, r15' instead of 'add
     rsi, qword [..]'); 'arrays_equal' takes no start, its indexed operand is
     one 'lea' (2026-11-06)
-[ ] medium: x86 register utilization: 0109.baz, 0082.baz, 0104.baz
 [ ] medium: rv32i: a constant above 16 bytes stored at an address inside a word
     loops bytes ('store_bytes') because the constant is word aligned and the
     destination is not
