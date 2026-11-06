@@ -6911,3 +6911,6 @@ SRC=2263 && COMPERR
 # --checks=upper,line: failed checks in two files, an entry of the handler per
 # file
 SRC=2380 && EXP=255 && OPTS="--checks=upper,line" RUN_ERR
+
+# a value called where an array is expected is reported as for any call
+SRC=2430 && COMPERR

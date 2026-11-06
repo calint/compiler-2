@@ -1,0 +1,7 @@
+# a value called where an array is expected is reported as for any call: not
+# a function, not a call that is not an array
+
+func main() {
+    var n = 2
+    var r = array_length(n(1))
+}

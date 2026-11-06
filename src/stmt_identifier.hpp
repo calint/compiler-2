@@ -1136,6 +1136,12 @@ class stmt_identifier final : public statement {
                 std::format("an instance literal of {}", in_quotes(tk.text())));
         }
 
+        // a call names a function, e.g. not the value 'a' of 'a(1)', as for a
+        // call elsewhere
+        if (tm == term_kind::call) {
+            std::ignore = tc.get_func_or_throw(tk, tk.text());
+        }
+
         if (tm == term_kind::call or tm == term_kind::generic_call or
             tm == term_kind::conversion or tm == term_kind::builtin_function) {
 

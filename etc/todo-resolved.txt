@@ -1,6 +1,15 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] hard: design review series 2, round 105 (2026-11-06, user: keep going
+    until no simplifications are left; H hunt of the front end of round 104,
+    I hunt of its backend and driver)
+    => done (2026-11-06): no regression of a verdict, an exit code, a
+       listing or an aliasing verdict in about 5000 programs against the
+       code before round 104 on every target; H1 a call where an array is
+       expected looks its callee up first, so 'n(1)' with 'n' a value says
+       "'n' is a value, not a function" and a missing callee "not found",
+       as in every other place (2216, 2225, test 2430); I no finding
 [x] hard: design review series 2, round 104 (2026-11-06, user: simplify
     the design with more reviewers at once, major refactoring is ok; A
     expressions, B parse, C calls, D compile context, E backend, F
