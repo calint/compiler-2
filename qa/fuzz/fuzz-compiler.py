@@ -284,10 +284,11 @@ def first_diagnostic(text):
     return text[match.start():].split("\n")[0] if match else text.strip()[:100]
 
 
-# a target limit or a difference of the default integer type is not a finding
+# a target limit or a difference of the default integer type is not a finding,
+# e.g. an index past the longest array of an unsized parameter ('of any size')
 EXPECTED_DIFFERENCE = re.compile(
     r"overflows the type|scratch registers|cannot allocate register|always used by the operation|simplify the expression|runs out of registers|does not end at compile time|RV32I|shift count must be|'i64'|i64|out of range|too large|too many|does not fit|smaller than a sector|"
-    r"exceeds|capacity|memory|beyond")
+    r"exceeds|capacity|memory|beyond|of any size")
 # the diagnostics that have no place in the source
 NO_LOCATION = re.compile(r"function 'main' not found")
 

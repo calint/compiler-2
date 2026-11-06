@@ -488,6 +488,10 @@ class stmt_identifier final : public statement {
 
         const operand op{get_lea_operand(tc, indent, src_info, held)};
 
+        // the copy protects the address registers until it reads them, then
+        // may load the value into one of them
+        held.release();
+
         x.copy_value(tok(), indent, dst.operand(), op);
 
         get_unary_ops().compile(x, indent, tok(), dst.operand(),

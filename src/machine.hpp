@@ -563,6 +563,19 @@ class machine {
             pool.restore_unavailable(saved_mask_);
         }
 
+        // the registers of the address 'src' that were free when the scope
+        // began and that 'dst' does not use: the caller has given them up, so
+        // they are dead once 'src' is read, e.g. the index of 'b[j]' in
+        // 'a[i] = b[j]'
+        [[nodiscard]] auto consumed_registers(const operand& dst,
+                                              const operand& src) const
+            -> uint32_t {
+
+            const uint32_t address{machine_.registers_mask(src)};
+            const uint32_t kept{saved_mask_ | machine_.registers_mask(dst)};
+            return src.is_memory() ? address & ~kept : 0;
+        }
+
         // the registers of 'value' are not picked for scratch until the scope
         // ends
         auto protect(const operand& value) -> void {
@@ -872,6 +885,18 @@ class machine {
         return target_.address_size_bytes;
     }
 
+    // a register for a value loaded from an address: the first in the
+    // scratch order that is free or one of the address registers 'consumed',
+    // see 'operation_scope::consumed_registers'
+    [[nodiscard]] auto alloc_load_register(const token& src_loc_tk,
+                                           const size_t indent,
+                                           const type& type_ref,
+                                           const uint32_t consumed) -> operand {
+
+        return alloc_scratch_register_from(src_loc_tk, indent, type_ref,
+                                           consumed);
+    }
+
     // a register that an instruction or the calling convention fixes, held
     // until 'free_named_register'
     [[nodiscard]] auto
@@ -888,24 +913,7 @@ class machine {
                                               const size_t indent,
                                               const type& type_ref) -> operand {
 
-        const std::optional<std::string_view> register_name{
-            first_unused_scratch_register(),
-        };
-
-        if (not register_name) {
-            throw out_of_registers_error(src_loc_tk);
-        }
-
-        comment(src_loc_tk, indent, "allocate scratch register -> {}",
-                *register_name);
-
-        push_allocation(src_loc_tk, indent, *register_name,
-                        register_pool::holder_kind::scratch);
-
-        state_.max_scratch_registers = std::max(
-            state_.max_scratch_registers, state_.registers.scratch_count());
-
-        return make_register_operand(*register_name, type_ref);
+        return alloc_scratch_register_from(src_loc_tk, indent, type_ref, 0);
     }
 
     // starts the data section, after the code and every routine it uses
@@ -1806,14 +1814,17 @@ class machine {
                                   src_loc_tk.at_line());
     }
 
-    // the first register in the scratch order of the backend that is free,
-    // none when all are held
-    [[nodiscard]] auto first_unused_scratch_register() const
+    // the first register in the scratch order of the backend that is free or
+    // in 'consumed', none when all are held
+    [[nodiscard]] auto
+    first_unused_scratch_register(const uint32_t consumed = 0) const
         -> std::optional<std::string_view> {
 
         for (const std::string_view register_name : scratch_registers()) {
-            if (not state_.registers.is_unavailable(
-                    register_mask(register_name))) {
+            const uint32_t mask{register_mask(register_name)};
+
+            if ((consumed & mask) != 0 or
+                not state_.registers.is_unavailable(mask)) {
 
                 return register_name;
             }
@@ -1904,6 +1915,20 @@ class machine {
 
     [[nodiscard]] auto registers() const -> const register_pool& {
         return state_.registers;
+    }
+
+    // the registers 'value' names, its base and index when it is in memory
+    [[nodiscard]] auto registers_mask(const operand& value) const -> uint32_t {
+        if (value.is_register()) {
+            return register_mask(value.register_name());
+        }
+
+        if (value.is_memory()) {
+            return register_mask(value.base_register()) |
+                   register_mask(value.index_register());
+        }
+
+        return 0;
     }
 
     // the registers a 'noinline' call saves: the allocated ones but the
@@ -2140,6 +2165,35 @@ class machine {
     //
     // class methods
     //
+
+    // the first register in the scratch order that is free or in 'consumed',
+    // registers the operation protects but no one holds
+    [[nodiscard]] auto
+    alloc_scratch_register_from(const token& src_loc_tk, const size_t indent,
+                                const type& type_ref, const uint32_t consumed)
+        -> operand {
+
+        const std::optional<std::string_view> register_name{
+            first_unused_scratch_register(consumed),
+        };
+
+        if (not register_name) {
+            throw out_of_registers_error(src_loc_tk);
+        }
+
+        comment(src_loc_tk, indent, "allocate scratch register -> {}",
+                *register_name);
+
+        state_.registers.unprotect(consumed & register_mask(*register_name));
+
+        push_allocation(src_loc_tk, indent, *register_name,
+                        register_pool::holder_kind::scratch);
+
+        state_.max_scratch_registers = std::max(
+            state_.max_scratch_registers, state_.registers.scratch_count());
+
+        return make_register_operand(*register_name, type_ref);
+    }
 
     // the register of the count that 'read' and 'write' return, not allocated
     // again when an argument register holds it

@@ -1,6 +1,82 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: low priority: the check of a function that nothing calls
+    ('stmt_def_func::check_body') gives other verdicts than a call: an
+    inlined function without parameters that needs more registers than a
+    noinline body has is rejected uncalled and accepted called (H-3, 16 on
+    x86_64); 'func f() res { res = f() }' is accepted uncalled and rejected
+    called (H-4, the result alone excuses the recursion)
+    => decided (2026-10-21): an uncalled function that errors should be
+       removed by the user, so the strict verdict is fine; if it changes:
+       check an uncalled inlined function with every register free, as a
+       caller at the top of 'main' gives, and excuse call-dependent errors
+       only when the function takes arguments
+    => done (2026-11-06, todo audit AV12): no difference left; H-4 is
+       rejected uncalled as called ("recursion of inlined function 'f' is
+       nested deeper than 64 calls", the hybrid fix of round 54); H-3: a
+       body 'res = g0 + (g1 + (... g13))' is accepted and one more operand
+       rejected alike uncalled, called from 'main', called inside an
+       expression and as a noinline body on x86_64
+[x] hard: low priority: 'stmt_call' has three modes (function, method,
+    constructor) told apart by empty tokens and three constructors that
+    repeat the same steps
+    => done: the '(' check is one helper, now 'read_open_paren'
+    => no 'call_kind' enum: the dot tokens are needed to reproduce the source,
+       an enum would be a second source of truth for what they already say
+    => left: a class per mode, only if the compile paths differ enough
+    => done (2026-11-06, todo audit AV20): the modes are the optional
+       members 'method_dot_tk_' and 'constructor_', not empty tokens, and
+       the three constructors share 'assert_call_in_func', 'resolve_callee'
+       and 'parse_arguments'; the class per mode had no trigger
+[-] hard: low priority: questionable: 'statement' has 20 virtuals whose
+    defaults are 'std::unreachable()' plus 'is_*' tests; a closed set of node
+    kinds as 'std::variant' with visitors would drop the defaults but costs
+    indirection, compile time and a visitor change per node kind; every
+    statement also parses, reproduces source, compiles and takes part in the
+    flow analysis (four concerns in one class); only if the next features
+    keep adding virtuals
+    => 2026-10-19: 24 -> 20 by the design clarity item, which weighed the
+       'std::variant' and rejected it, see 'etc/todo-resolved.txt'
+    => discarded (2026-11-06, todo audit AV22): its condition went the
+       other way, 'statement' has 12 virtuals, 2 of them with a
+       'std::unreachable()' default ('compile', 'visit_operands'), and one
+       'is_*' test ('is_computed')
+[x] medium: low priority: code after an unconditional 'exit' elsewhere than the
+    end of 'main' is generated, e.g. after a constant false 'assert'
+    => done (2026-11-06, todo audit AV33): a statement after an 'exit' in
+       the same path is rejected ("statement is not reached, the path before
+       it does not continue"), and nothing is generated after an inlined
+       constant false 'assert' in 'main', in a loop or in a noinline body
+       (the uncalled body is not emitted)
+[-] hard: 'func object(self : object inout, pos, vel, color)' called when 'var o
+    : object = {...}'
+    => discarded (2026-11-06, todo audit AV58): superseded by named
+       constructors ('func object.at(x, y, color i32) self', called as 'var
+       o = object.at(1, 2, 3)', README); '{...}' stays the literal that
+       zeroes the fields it does not name
+[-] hard: one pass compiler that compiles in the constructor, 'constructor(os
+    data, os code, indent)'
+    => discarded (2026-11-06, todo audit AV67): the design compiles a node
+       more than once after the parse: two versions keep the smaller
+       ('toc::emit_most_efficient'), dry runs check bodies without their
+       calls ('stmt_def_func::check_body') and a noinline body is compiled
+       per array lengths, which a compile in the constructor cannot do
+[x] hard: round 127 (2026-11-06, user: keep going; items of etc/todo.txt:
+    AX the register items 255 and 258, AW item 239)
+    => done (2026-11-06): AX1 rv32i: an address of an unscaled index and a
+       large displacement gathers its terms in the result register, the
+       upper part first, as x86_64 does ('lower_address'), one register
+       fewer; AX2 a copy from memory to memory loads into a source address
+       register the front end freed before the copy
+       ('operation_scope::consumed_registers', 'alloc_load_register',
+       'register_pool::unprotect'; a caller that frees early does not read
+       the operand after); no instruction count changes, the peak of live
+       registers drops in 36 x86_64 and 19 rv32i tests, none rises; AW
+       item 239 not done: about +150 lines and two downcast virtuals on
+       'statement' (against W6) for about 0.2 % of the instructions; AV
+       audit of the 72 open items: stale descriptions re-measured, done
+       and superseded items moved here
 [x] hard: quality round 126 (2026-11-06, user: qa until it is great; AU a
     final assessment)
     => done (2026-11-06): AU no bug, wrong result, flaky test or wrong

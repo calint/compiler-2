@@ -110,6 +110,16 @@ class register_pool final {
     [[nodiscard]] auto unavailable_mask() const -> uint32_t {
         return unavailable_;
     }
+
+    // the protected registers of 'mask' may be allocated, none is allocated
+    auto unprotect(const uint32_t mask) -> void {
+        assert(std::ranges::none_of(
+            allocations_, [&](const allocation& allocated) -> bool {
+                return (mask & (uint32_t{1} << allocated.index)) != 0;
+            }));
+
+        unavailable_ &= ~mask;
+    }
 };
 
 // the inlined calls being compiled and the busiest use of registers so far,

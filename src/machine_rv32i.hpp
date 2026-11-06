@@ -757,9 +757,11 @@ class machine_rv32i : public machine {
         operand value{dst};
 
         if (not dst.is_register()) {
-            value = src.is_register() ? src
-                                      : alloc_scratch_register(
-                                            src_loc_tk, indent, default_type());
+            value =
+                src.is_register()
+                    ? src
+                    : alloc_load_register(src_loc_tk, indent, default_type(),
+                                          scope.consumed_registers(dst, src));
         }
 
         load_into(src_loc_tk, indent, value, src);
@@ -3053,6 +3055,17 @@ class machine_rv32i : public machine {
         if (index.empty()) {
             assembler_.lui(indent, result_name, upper);
             assembler_.add(indent, result_name, result_name, base);
+            return operand::mem(result_name, {}, 1, low, address.type_ref());
+        }
+
+        // a result apart from the register inputs gathers the terms itself,
+        // upper part first, so the upper part takes no register of its own
+        if (upper != 0 and address.scale() == 1 and result_name != base and
+            result_name != index) {
+
+            assembler_.lui(indent, result_name, upper);
+            assembler_.add(indent, result_name, result_name, base);
+            assembler_.add(indent, result_name, result_name, index);
             return operand::mem(result_name, {}, 1, low, address.type_ref());
         }
 

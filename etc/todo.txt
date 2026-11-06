@@ -11,8 +11,10 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
     bug hunt round 6 S2): each limit holds alone, parse nesting 128 per body
     and 256 inlined scopes, but the compile walk nests them, up to about
     126 x 124 expression levels; e.g. 100 functions each 100 parentheses
-    deep crash with the default 8 MiB stack, the deepest chain the limits
-    allow compiles with 16 MiB in 47 s
+    deep ('res = ((f(x) + 1) + 1)...') crash the '-O0' build with the
+    default 8 MiB stack; the '-O3' build compiles them in 18 s and the
+    deepest chain the limits allow (127 x 124) in 45 s with 8 MiB, and
+    crashes with 6 MiB (2026-11-06)
     => fix: run the compile on a thread with a fixed stack sized for the
        bound (64 MiB, headroom for the asan build); a test that crashes at
        HEAD; rejected: a third limit on the compile depth (a new concept,
@@ -35,8 +37,9 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
 [ ] medium: the compile time of nested inlined calls with an indexed
     argument doubles per level: 'inline_call::compile_with_address_choice'
     compiles each such body in two versions, and a nested call inside each
-    version again (a valid 'r(ps[gi], n - 1)' that 'main' calls with depth 8
-    takes 345 ms on rv32i-fpga, depth 14 23 s; the expanded recursion of a
+    version again (a valid 'res = r(ps[gi], n - 1)' that 'main' calls takes
+    on rv32i-fpga 31 ms at depth 8, 460 ms at 12 and 1.8 s at 14,
+    2026-11-06; the expanded recursion of a
     body check since round 54 A1 reaches it too, e.g. 12 -> 678 ms);
     'expr_arith' avoids it for calls in a list; either fix changes listings
     (design review series 2, round 54 A2)
@@ -45,21 +48,26 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
        (a parameter read more than once gets a register) without a second
        compile; both narrow the version optimization, so measure
 [ ] easy: low priority: the compile time of a value of a huge type grows
-    with its bytes where it is a result, a constructor or '{}' (about 9 ns
-    per byte, a field of 64 MiB 0.6 s; bug hunt round 1 K3.1)
+    with its bytes where it is a result or a constructor on rv32i (bug hunt
+    round 1 K3.1): 'machine_rv32i::zero' takes about 0.5 ns per byte, a
+    field of 64 MiB 33 ms, of 256 MiB 115 ms; x86_64 does not grow (2 ms);
+    '{}' alone does not grow (2026-11-06)
 [p] easy: low priority: 'source_files::contains' compares a path with every
     loaded file by 'std::filesystem::equivalent' (two stats each), so 2000
     included files take 2.8 s against 0.15 s before round 116 (round 117
-    AC4); a fix stores the identity of a file ('st_dev', 'st_ino' of
-    'stat') once and compares integers, it adds '<sys/stat.h>', the first
-    POSIX header of 'src/' (a user decision); a set of canonical paths would
-    miss hard links and pipes
+    AC4; 0.85 s in '/tmp' on 2026-11-06, mostly in the kernel); a fix
+    stores the identity of a file ('st_dev', 'st_ino' of 'stat') once and
+    compares integers, it adds '<sys/stat.h>', the first POSIX header of
+    'src/' (a user decision); a set of canonical paths would miss hard links
+    and pipes
     => pending (2026-11-06, user): kept for later
-[ ] easy: low priority: an include of '/proc/self/fd/0' or a main file
-    '/dev/fd/0' is named in the listing by the process id
-    ('/proc/883346/fd/0', round 117 AC2) since the names follow the resolved
-    directory (round 116 AB1); accept and document, or resolve only up to
-    the last '..' (names then depend on the spelling again)
+[ ] easy: low priority: an include of '/proc/self/fd/0' is named by the
+    process id, '/proc/714319/fd/0' in the messages and the same path
+    relative to the working directory in the listing (round 117 AC2),
+    since the names follow the resolved directory (round 116 AB1); a main
+    file '/dev/fd/0' keeps its name in the messages and is '0' in the
+    listing; accept and document, or resolve only up to the last '..'
+    (names then depend on the spelling again)
 [ ] easy: user decision: a number with a leading zero is decimal ('010' is
     10, round 123 AQ7), a C programmer expects 8: document it in the README,
     or reject a leading zero
@@ -96,17 +104,6 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
        "called from" frames of the chain; type arguments are named types, so
        the instances are finite and need no limit of their own
     => the nesting counter moved into 'toc' (2026-10-21, ARCH-4)
-[p] easy: low priority: the check of a function that nothing calls
-    ('stmt_def_func::check_body') gives other verdicts than a call: an
-    inlined function without parameters that needs more registers than a
-    noinline body has is rejected uncalled and accepted called (H-3, 16 on
-    x86_64); 'func f() res { res = f() }' is accepted uncalled and rejected
-    called (H-4, the result alone excuses the recursion)
-    => decided (2026-10-21): an uncalled function that errors should be
-       removed by the user, so the strict verdict is fine; if it changes:
-       check an uncalled inlined function with every register free, as a
-       caller at the top of 'main' gives, and excuse call-dependent errors
-       only when the function takes arguments
 [ ] medium: low priority: code skipped by a condition known at the parse in
     a function with an unsized array parameter is never checked against the
     length a call gives (round 92 J1): 'if false { res = x[5] }' in
@@ -139,7 +136,8 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
     the instruction counts first (phase R4b, plan 1 rejected alternative 2)
 [ ] medium: low priority: a conversion to a narrower type of an argument
     with '<<' computes the argument at its own width and narrows it, one
-    copy more (0589 'i8(1 << 7)', 1226 on rv32i); a '<<' by a count below
+    copy more (1226 'exit(i8(a << n) + b + 5)': rv32i 'sll t0, t0, t1; mv
+    a0, t0', x86_64 'sal r15, cl; mov dil, r15b'); a '<<' by a count below
     the narrower width keeps its low bits when narrowed, e.g. a constant
     count ('keeps_low_bits', an optimization)
 [ ] medium: fuzzers cover every construct of 'etc/tutorial.baz', then a
@@ -207,32 +205,18 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
        (covers a noinline callee only); caution: an argument with a call in
        its index, e.g. 'v[g(1)]', builds the frame of 'g' at the same next
        frame address, so an early write is overwritten
-[ ] hard: noinline calls: cost of the call protocol (x86_64, no checks, every
-    function but 'main' noinline: 4117 instructions against 4467 all inline;
-    the call protocol is 68% of the reachable code, about 11 instructions per
-    call, with the 'frame' check 9 more)
-    => the 'frame' check is 9 instructions at every call (298 calls): one
-       check per body or per chain of calls
-    => 'lea r11, [rX]' that is a 'mov'
+[ ] hard: noinline calls: cost of the call protocol (roome, x86_64, no
+    checks, 2026-11-06: every function but 'main' noinline 6035
+    instructions against 10139 all inline and 5815 as written; 331 calls,
+    655 'push' and 655 'pop'; measured 2026-10-07 with a smaller roome: 4117
+    against 4467, the call protocol 68% of the reachable code, about 11
+    instructions per call)
+    => the 'frame' check is 3 instructions at every call ('mov; cmp; jl',
+       +994 over the 331 calls): one check per body or per chain of calls
+    => 'lea r11, [rX]' that is a 'mov' (60 sites)
     => the saved registers of a call that the callee does not use
     => the other slots in registers: see the resolved item for the numbers
-[p] hard: low priority: 'stmt_call' has three modes (function, method,
-    constructor) told apart by empty tokens and three constructors that
-    repeat the same steps
-    => done: the '(' check is one helper, now 'read_open_paren'
-    => no 'call_kind' enum: the dot tokens are needed to reproduce the source,
-       an enum would be a second source of truth for what they already say
-    => left: a class per mode, only if the compile paths differ enough
 [ ] medium: instrumentation of the maximum heap and stack use of the compiler
-[p] hard: low priority: questionable: 'statement' has 20 virtuals whose
-    defaults are 'std::unreachable()' plus 'is_*' tests; a closed set of node
-    kinds as 'std::variant' with visitors would drop the defaults but costs
-    indirection, compile time and a visitor change per node kind; every
-    statement also parses, reproduces source, compiles and takes part in the
-    flow analysis (four concerns in one class); only if the next features
-    keep adding virtuals
-    => 2026-10-19: 24 -> 20 by the design clarity item, which weighed the
-       'std::variant' and rejected it, see 'etc/todo-resolved.txt'
 --------------------------------------------------------------------------------
 2. machine operations: fewer instructions, largest gain first
 --------------------------------------------------------------------------------
@@ -242,10 +226,17 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
     1 / li 0; beq'
     => when the callee body is one 'res = <bool expr>', compile it with the
        caller's branch labels; any other shape keeps the register
+    => set aside (2026-11-06, round 127 AW): about +150 lines and two
+       downcast virtuals on 'statement' (against W6) for about 118
+       instructions on x86_64 (0.19 %) and 80 on rv32i (0.1 %); if
+       reopened, design it with the item of a runtime bool argument of an
+       inline function, both need a condition-shaped binding
 [ ] medium: rv32i: the same high part is built twice in one statement
     ('self.start = self.end': 'lui; add; lh; lui; add; sh'); done within one
-    machine operation; left: 't.len = t.end - t.start' (6 instructions
-    instead of 2), 'read'/'write' index plus 'a1'
+    machine operation; left: 't.len = t.end - t.start' at an offset above
+    2 KiB is 12 instructions that build the high part three times ('t.len =
+    t.end', then 't.len - t.start'), where 6 would do, 'read'/'write' index
+    plus 'a1'
     => option 1, backend cache: remember 'register R holds s0 + upper U',
        invalidate on reallocation, label, branch and write; also covers
        'read'/'write'
@@ -255,16 +246,26 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
 [ ] medium: rv32i: the index register is freed after the load, so a large
     displacement takes a third temporary ('add t1, s0, t0; lui t2, 37; add
     t1, t1, t2; lb t1, -1536(t1)' where t0 is dead after the first 'add')
+    => partly done (2026-11-06, round 127 AX1): an unscaled index gathers
+       the terms in the result register, upper part first; left: a scaled
+       index, and a result that is the index register, still take a
+       temporary for the upper part
 [ ] medium: a memory to memory copy loads into a new register while the source
     address registers are dead (x86 'mov r13w, word [r15 + r14]' could load
     into r14; rv32i uses t0-t5 where 3 suffice)
+    => partly done (2026-11-06, round 127 AX2): the value of a copy loads
+       into a source address register the front end freed
+       ('operation_scope::consumed_registers'); left: record copies done as
+       block copies (rv32i 'c[i] = d[j]' uses t0-t4) and other copy sites
 [ ] medium: rv32i: an inline 'self' or parameter address pushes
-    'arrays_equal' past t0-t6 into s1 (unverified since design round 21 A.8,
-    which removed 'inline_call::compile_with_result_address_register'; the
-    x86 case is gone, the address stays '[rbp + r15 + 504]')
+    'arrays_equal' past t0-t6 into s1 and s2, verified 2026-11-06: 'main'
+    calling 'rs[gi].has(gi)' whose body is 'self.ns[j].equals(self.n)' with
+    'arrays_equal(self.data, o.data, self.len)'; the x86 case is gone, the
+    address stays '[rbp + r15 + 504]'
 [ ] medium: x86: a 'read'/'write' address with a run-time offset uses a scratch
-    register ('mov r14, [..]; lea rsi, [..]; add rsi, r14' instead of 'add
-    rsi, qword [..]'); same for the 'arrays_equal' destination
+    register ('mov r15, [..]; lea rsi, [..]; add rsi, r15' instead of 'add
+    rsi, qword [..]'); 'arrays_equal' takes no start, its indexed operand is
+    one 'lea' (2026-11-06)
 [ ] medium: x86 register utilization: 0109.baz, 0082.baz, 0104.baz
 [ ] medium: rv32i: a constant above 16 bytes stored at an address inside a word
     loops bytes ('store_bytes') because the constant is word aligned and the
@@ -274,8 +275,6 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
 [ ] medium: evaluate BMI2 variable-count shifts (shlx/shrx/sarx),
     'machine_x86_64::shift'
 [ ] medium: reorder locals by alignment, largest first, to reduce padding
-[ ] medium: low priority: code after an unconditional 'exit' elsewhere than the
-    end of 'main' is generated, e.g. after a constant false 'assert'
 [ ] medium: low priority: the scaled index goes into a new register instead of
     reusing the dead index register ('slli t1, t0, 2' instead of 'slli t0,
     t0, 2'); saves no instruction, the frontend would have to mark index
@@ -285,15 +284,18 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
     => an assembler peephole could drop adjacent identical pairs on the same
        operand, also across a store and reload
 [ ] hard: an operand is loaded into a scratch register then copied to where the
-    next operation needs it ('lw t2; addi a0, t2, 0' before a divide call
-    instead of 'lw a0', 107 rv32i sites; x86 'mov rax, r13' before 'cqo', 113)
+    next operation needs it ('lw t0; mv a0, t0' before a helper call instead
+    of 'lw a0', 179 rv32i sites; x86 'mov rax, r15' before 'cqo', 89; the
+    listings of the 2227 tests without options, 2026-11-06)
 [ ] hard: a helper, 'idiv' or syscall result is copied out of its fixed
-    register before the next operation ('addi t2, a1, 0; sub t1, t1, t2'
-    instead of 'sub t1, t1, a1', 257 rv32i sites; x86 'mov r13, rdx' after
-    'idiv', 113); the operand side is the item above
+    register before the next operation ('mv t0, a0' right after a helper
+    call, 328 rv32i sites; x86 'mov r15, rax' or 'mov r15, rdx' right after
+    'idiv', 124; same listings as the item above); the operand side is the
+    item above
 [ ] hard: a value is loaded again right after it was stored ('sw t0, 28(s1)'
-    then 'lw t0, 28(s1)', 574 sites); needs to know which register still holds
-    a variable between statements
+    then 'lw t0, 28(s1)', 289 rv32i sites in the listings of the items
+    above); needs to know which register still holds a variable between
+    statements
 [ ] hard: multiply/divide helper chains ('r = a * b * c * d') pass the value
     through memory or a scratch register between the calls; needs register
     targeting for helper operands
@@ -320,13 +322,15 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
     is "cannot deduce 'T'" (2100; design review series 2, round 67 B5)
 [ ] easy: variable argument count in read/write might be confusing, consider
     requiring all arguments
-[ ] medium: 'size_of' for fields
+[ ] medium: a 'size_of' built-in for types and fields; none exists today
+    ('array_length' is the only size built-in, an old 'size_of' was removed)
 [ ] medium: a way to tell the compiler to align variables on 4, 8, 16 etc
     boundaries
 [ ] medium: 'break' exits the current block instead of just the loop?
 [ ] medium: consider not allowing single statement blocks
 [o] hard: fuzzing: extend 'qa/fuzz' ('qa/fuzz/README.md' lists the fuzzers)
-    => next: rv32i and rv32i-qemu runs in the differential fuzzers, generics
+    => next: rv32i and rv32i-qemu runs in the differential fuzzers (they
+       run x86_64 and rv32i-fpga), generics
        and methods of generic types in 'fuzz-programs.py', input for programs
        that 'read', a coverage guided harness of the parser (libFuzzer), the
        fuzzers in 'test-all.sh' with a short run
@@ -338,7 +342,8 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
        => cause: 'source_locations::column' searches back to the previous
           newline for every comment, quadratic in the length of a line;
           32000 terms of '+' on one line take 2.84 s, one per line 0.29 s
-          (-O3)
+          (-O3; 3.05 s and 0.26 s on 2026-11-06, 92% in
+          'source_locations::column', also without a source comment)
        => fix (tried, reverted): 'source_files' keeps the index where each
           line begins, 'source_files::column' finds the line by binary search
           and replaces 'column_for_char_index' in 'main.cpp'; one line of
@@ -376,7 +381,8 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
        plain methods are unchecked too (bug hunt round 4 P3.4): generic
        types keep no record of their instances, unlike
        'instantiated_funcs_'
-[ ] hard: string type ('var str = "hello world"', 'str.len')
+[ ] hard: string type ('str.len'); today 'var s = "hello"' declares an
+    'i8[5]' and 'array_length(s)' is its length, 's.len' is rejected
 [ ] hard: strings as sources of 'arrays_equal' and 'array_copy'
     => parse a string token or identifier as the source, treated as 'i8'; the
        string length is the array count (a constant count above it is a
@@ -394,8 +400,6 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
     i_start)'
 [ ] hard: 'foo arr1, arr2, ... { e1 = e2 }' with injected variables 'e1', 'e2'
     for the current elements
-[ ] hard: 'func object(self : object inout, pos, vel, color)' called when 'var o
-    : object = {...}'
 [ ] hard: --checks=noub: a partial 'read'/'write' can end inside a record and
     the start argument cannot resume there; for elements larger than 1 byte,
     repeat the syscall until the current record is complete so line input
@@ -408,10 +412,6 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
 [ ] hard: UB detection: conservative rejections: a write through a runtime index
     covers nothing, 'array_copy' into a result is not an assignment, 'foo'
     bodies do not count as assigning
-    => a constant index into an array parameter, whose length is unknown at
-       the parse, is a run-time step of its path, so 'swap(s[0], s[1])' and
-       'ps[0] = {ps[1].y, ps[1].x}' are rejected (bug hunt round 5 Q2-1); a
-       constant step needs a flag "bytes unknown" next to 'is_exact_access'
 [ ] hard: UB detection: accept partial results when the caller's destination is
     already initialized (call-site coverage summary); a body that sets only
     'res.pos.y' is "may return without setting its result 'res'"
@@ -422,11 +422,10 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
 [ ] hard: a two-phase top level, the signatures of all definitions first and
     then the bodies, for use before definition and mutual recursion
     (docs 7.2)
-[ ] hard: 'func f(p : point copy)' copies point to the callee stack
+[ ] hard: a parameter that copies its argument to the callee's storage
+    (old syntax 'func f(p : point copy)'); arguments are references today
 [ ] hard: function definitions in functions
 [ ] hard: a var type that can be viewed from enclosing functions
-[ ] hard: one pass compiler that compiles in the constructor, 'constructor(os
-    data, os code, indent)'
 [ ] hard: float and double
 [ ] hard: avx512 operations
 [ ] hard: limited integration with C functions from stdlib, declaring external
