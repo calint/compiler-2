@@ -1,0 +1,6 @@
+# a carriage return without a line feed ends no comment
+
+func main() {
+    # no early exit    exit(1)
+    exit(0)
+}

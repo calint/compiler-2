@@ -304,25 +304,28 @@ CLI_SOURCE_LINE_ENDS() {
     sed 's/^    /\t/' 0841.baz >gen-tab.baz
     "$BIN" gen-tab.baz >gen.s 2>err && exit 1
     grep -q $'^\t   ^$' err
-    # a carriage return inside a character literal is shown in the listing
+    # a carriage return without a line feed is rejected, also in a
+    # character literal, and shown escaped
     printf "func main() {\r\n    var c = '\r'\r\n    exit(c)\r\n}\r\n" \
         >gen-crlf.baz
-    "$BIN" gen-crlf.baz >gen.s 2>err
-    grep -Fq "var c = '\\x0d'" gen.s
+    "$BIN" gen-crlf.baz >gen.s 2>err && exit 1
+    grep -Fq "a carriage return is not followed by a line feed" err
+    grep -Fq "var c = '\\x0d'" err
     rm -f gen-crlf.baz gen-tab.baz
     echo ok
 }
 
-# invalid UTF-8 and DEL before the error column: a lead byte without its
-# continuation and an invalid lead byte take one column, DEL the four of
-# '\x7f'
+# invalid UTF-8 and DEL in the error mark: a lead byte without its
+# continuation, an invalid lead byte and DEL are escaped and take the four
+# columns of their '\xNN'
 CLI_ERROR_LINE_BYTES() {
     echo -n "cli error line with invalid UTF-8 and DEL: "
     printf 'func main() {\n    var s = "\xc3A\xc3\xc3\xf8\x7f\xc3\xa9" + y\n}\n' \
         >gen-bytes.baz
     "$BIN" gen-bytes.baz >gen.s 2>err && exit 1
     grep -Fq '\x7f' err
-    grep -Fxq '            ^~~~~~~~~~~~' err
+    grep -Fq '"\xc3A\xc3\xc3\xf8\x7f' err
+    grep -Fxq '            ^~~~~~~~~~~~~~~~~~~~~~~~' err
     # a DEL in a name is neither a letter nor a digit
     printf 'func main() {\n    var a\x7f = 1\n}\n' >gen-bytes.baz
     "$BIN" gen-bytes.baz >gen.s 2>err && exit 1
@@ -482,7 +485,7 @@ CLI_LONG_ARRAY_LOWER_BOUND() {
     "$BIN" --target=rv32i --bin=gen-rv32i.bin --vars=0x90000000 \
         --checks=upper,lower gen-long.baz >gen.s 2>err
     [[ ! -s err ]]
-    grep -Eq '^ +bltz t0, 1f$' gen.s
+    grep -Eq '^ +blt t0, zero, 1f$' gen.s
     rm -f gen-long.baz
     echo ok
 }

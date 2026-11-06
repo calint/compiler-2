@@ -1,0 +1,6 @@
+# a byte outside a whole UTF-8 character is escaped in a message
+
+func main() {
+    var a = i8
+    a = bÿ
+}

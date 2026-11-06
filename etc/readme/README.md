@@ -33,6 +33,7 @@ the binary image itself.
     is a compile error also without the checks
   * `frame`: non-inlined function frame capacity at runtime
   * `division`: division by zero and `MIN / -1`, also of `%`, at runtime; a
+    constant `MIN / -1` is a compile error, of `i64` also without the check; a
     constant zero divisor is a compile error also without the check
   * `shift`: shift count outside the type width at runtime, bits shifted out
     by `<<` are discarded; a constant count outside the width is a compile
@@ -44,9 +45,10 @@ the binary image itself.
     `rv32i-fpga`), the other targets run in an operating system that stops a
     program that overflows the stack
   * `overflow`: signed overflow of `+`, `-`, `*` and unary `-` at the width of
-    the destination at runtime, a constant expression that overflows is
-    rejected at compile time, the arithmetic of an explicit conversion such as
-    `i8(a + b)` still wraps
+    the destination, or of the first operand where there is none (`a + a > 0`),
+    at runtime, a constant expression that overflows is rejected at compile
+    time, the arithmetic of an explicit conversion such as `i8(a + b)` still
+    wraps
   * always on: compile time rejection of calls and assignments where the
     value may read the destination under another name (aliasing), and of
     arguments that may share storage when a parameter is `mut`
@@ -179,10 +181,10 @@ examples:
 ```text
 Language                     files          blank        comment           code
 -------------------------------------------------------------------------------
-C/C++ Header                    65           9122           6779          26650
-C++                              1            235             97            864
+C/C++ Header                    65           9223           6848          26898
+C++                              1            221             90            831
 -------------------------------------------------------------------------------
-SUM:                            66           9357           6876          27514
+SUM:                            66           9444           6938          27729
 -------------------------------------------------------------------------------
 ```
 
@@ -320,8 +322,8 @@ func object.at(x, y, color i32) self {
 let yes = 1
 let no = 0
 let maybe = -1
-# constants can be declared in any scope and shadow outer declarations, not a
-# parameter or the result in the body of its function
+# constants can be declared in any scope and shadow outer declarations, a
+# parameter or the result only in a block inside the body of its function
 
 # non-inlined functions are called with the same type and aliasing rules as
 # inlined functions

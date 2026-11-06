@@ -248,8 +248,6 @@ auto print_source_error(const source_files& files,
 auto print_source_line(std::string_view src, size_t start_index,
                        size_t end_index) -> void;
 
-[[nodiscard]] auto is_escaped_in_line(char ch) -> bool;
-
 [[nodiscard]] auto printable_line(std::string_view line) -> std::string;
 
 [[nodiscard]] auto display_columns(std::string_view text) -> size_t;
@@ -1051,47 +1049,30 @@ auto print_source_error(const source_files& files,
     };
 }
 
-// the columns a terminal shows: the continuation bytes a lead byte announces
-// are part of its character, any other one is shown as a replacement
-// character, a control byte as its escape
+// the columns a terminal shows for 'text', which holds no tab: one for each
+// character of what 'printable' shows
 [[nodiscard]] auto display_columns(const std::string_view text) -> size_t {
-    constexpr size_t escape_columns{4};
-    // note: 4 for the '\xNN' that 'printable_line' shows
+    const std::string shown{printable(text)};
 
-    size_t columns{};
-    size_t continuations_left{};
-
-    for (const char ch : text) {
-        if (continuations_left != 0 and token::is_utf8_continuation(ch)) {
-            --continuations_left;
-            continue;
-        }
-
-        columns += is_escaped_in_line(ch) ? escape_columns : 1;
-        continuations_left = token::utf8_continuation_count(ch);
-    }
-
-    return columns;
+    return static_cast<size_t>(
+        std::ranges::count_if(shown, [](const char ch) -> bool {
+            return not token::is_utf8_continuation(ch);
+        }));
 }
 
-// a tab stays in a shown line so that the mark lines up, the other control
-// bytes are escaped
-[[nodiscard]] auto is_escaped_in_line(const char ch) -> bool {
-    return is_control_char(ch) and ch != '\t';
-}
-
-// the line as 'printable' shows it, with its tabs
-[[nodiscard]] auto printable_line(const std::string_view line) -> std::string {
+// the line as 'printable' shows it, with its tabs so that the mark lines up
+[[nodiscard]] auto printable_line(std::string_view line) -> std::string {
     std::string result;
 
-    for (const char ch : line) {
-        if (is_escaped_in_line(ch)) {
-            result += printable(std::string_view{&ch, 1});
-            continue;
-        }
+    for (size_t tab{line.find('\t')}; tab != std::string_view::npos;
+         tab = line.find('\t')) {
 
-        result.push_back(ch);
+        result += printable(line.substr(0, tab));
+        result += '\t';
+        line.remove_prefix(tab + 1);
     }
+
+    result += printable(line);
 
     return result;
 }

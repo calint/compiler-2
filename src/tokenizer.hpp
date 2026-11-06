@@ -321,6 +321,51 @@ class tokenizer final {
         return src_.substr(begin_ix, char_ix_ - begin_ix);
     }
 
+    //
+    // statics
+    //
+
+    // the source of file 'file_ix' has no bytes that an editor shows other
+    // than the tokenizer reads them: a byte order mark, which hides in the
+    // first token, and a carriage return without a line feed, which ends a
+    // line on screen but not a comment
+    static auto assert_source_well_formed(const size_t file_ix,
+                                          const std::string_view src) -> void {
+
+        constexpr std::string_view byte_order_mark{"\xef\xbb\xbf"};
+
+        if (src.starts_with(byte_order_mark)) {
+            const token mark_tk{
+                token::synthetic(file_ix, byte_order_mark, 0, 1),
+            };
+
+            throw compile_error{mark_tk, "the source starts with a byte order "
+                                         "mark, save it without one"};
+        }
+
+        size_t line{1};
+
+        for (size_t i{}; i < src.size(); ++i) {
+            if (src.at(i) == '\n') {
+                ++line;
+                continue;
+            }
+
+            const bool is_lone_carriage_return{
+                src.at(i) == '\r' and not src.substr(i + 1).starts_with('\n'),
+            };
+
+            if (is_lone_carriage_return) {
+                const token cr_tk{
+                    token::synthetic(file_ix, src.substr(i, 1), i, line),
+                };
+
+                throw compile_error{
+                    cr_tk, "a carriage return is not followed by a line feed"};
+            }
+        }
+    }
+
   private:
     // the opening quote has been read, the text keeps both quotes so it
     // resolves like a numeric constant, e.g. 'a' or '\n'

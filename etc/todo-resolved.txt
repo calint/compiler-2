@@ -1,6 +1,37 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] hard: design review series 2, round 100 (2026-11-06, user: loop of
+    design review and bug hunt, more reviewers at once; R source bytes, C
+    no-UB hunt, D backend design, E README against the compiler, F verdicts
+    across options)
+    => done (2026-11-06): R1 R2 went into round 99; R3 a byte outside a
+       whole UTF-8 character is shown as '\xNN' in a message, as a control
+       byte, so a message is valid UTF-8 ('shown_char_size', 'printable';
+       'printable_line' and 'display_columns' follow from 'printable', the
+       mark under such a byte is four columns; 1135, 1174, 2025, 2231,
+       2232, test 2236); R4 a carriage return without a line feed is
+       rejected, it ended a '#' comment on screen but not in the tokenizer,
+       and a byte order mark at the start of a file gets its own message
+       (user decision; 'tokenizer::assert_source_well_formed' once per file,
+       tests 2233 to 2235; test-cli: a raw carriage return in a character
+       literal is now rejected, '\r' stays); R5 the width of wide
+       characters under the mark not done (a width table); E1 to E3 the
+       README on constants hiding a parameter, a constant 'MIN / -1' and the
+       width of an overflow without a destination, E4 regenerated; E
+       observation on the "with 'let'" register message wrong, 'let' binds
+       a run-time value too; F2 a body check's recursion ended by '--vars'
+       not changed: '--vars' is a limit the guarantee does not cover and
+       the fix scans the scopes at every allocation; F1 the far jump
+       without a free register on rv32i whose verdict depends on '--nopt'
+       is round 101; D1 a failed check on rv32i branches to its handler, or
+       with the line to a stub per line as on x86_64 ('failure_target' and
+       'line_failure_label' in 'machine', 'branch_to_failure', 'fail_if'
+       for a check of more tests; 'end_check', 'branch_on_negative'
+       removed), rv32i code 3.05 % smaller over the tests, 4.2 % with
+       '--checks=noub', x86_64 byte-identical (tests 2250 to 2252); D2 the
+       upper bound alone compares signed on rv32i as on x86_64, roome with
+       '--checks=upper' 4.4 % smaller
 [x] hard: design review series 2, round 99 (2026-11-06, user: loop of design
     review and bug hunt; Q hunt of round 98)
     => done (2026-11-06): no regression of round 98; Q1 a non-ASCII

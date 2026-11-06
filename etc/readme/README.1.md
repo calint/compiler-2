@@ -33,6 +33,7 @@ the binary image itself.
     is a compile error also without the checks
   * `frame`: non-inlined function frame capacity at runtime
   * `division`: division by zero and `MIN / -1`, also of `%`, at runtime; a
+    constant `MIN / -1` is a compile error, of `i64` also without the check; a
     constant zero divisor is a compile error also without the check
   * `shift`: shift count outside the type width at runtime, bits shifted out
     by `<<` are discarded; a constant count outside the width is a compile
@@ -44,9 +45,10 @@ the binary image itself.
     `rv32i-fpga`), the other targets run in an operating system that stops a
     program that overflows the stack
   * `overflow`: signed overflow of `+`, `-`, `*` and unary `-` at the width of
-    the destination at runtime, a constant expression that overflows is
-    rejected at compile time, the arithmetic of an explicit conversion such as
-    `i8(a + b)` still wraps
+    the destination, or of the first operand where there is none (`a + a > 0`),
+    at runtime, a constant expression that overflows is rejected at compile
+    time, the arithmetic of an explicit conversion such as `i8(a + b)` still
+    wraps
   * always on: compile time rejection of calls and assignments where the
     value may read the destination under another name (aliasing), and of
     arguments that may share storage when a parameter is `mut`

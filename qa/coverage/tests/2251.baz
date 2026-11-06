@@ -1,0 +1,9 @@
+# --checks=overflow,line: a sum with a negative operand in a register fails
+# below the minimum of 'i32' and passes at it
+func main() {
+    var a = i32(-2147483647)
+    var b = i32(-1)
+    var c = a + b
+    var d = c + b
+    exit(d)
+}

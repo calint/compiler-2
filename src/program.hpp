@@ -358,6 +358,9 @@ class program final {
     }
 
     [[nodiscard]] auto opened_file(const size_t file_ix) const -> open_file {
+        tokenizer::assert_source_well_formed(file_ix,
+                                             files_.get().text(file_ix));
+
         return {
             .file_ix{file_ix},
             .tz{file_ix, files_.get().text(file_ix)},

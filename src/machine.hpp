@@ -1607,6 +1607,20 @@ class machine {
                            locations_.relative_name(file_ix));
     }
 
+    // the label a failed check at 'src_loc_tk' jumps to, 'handler' marked
+    // used: the handler, or with the line the stub of the line, which loads
+    // the line for the entry of the handler for the file
+    [[nodiscard]] auto failure_target(const failure_handler& handler,
+                                      const token& src_loc_tk) -> std::string {
+
+        if (not mark_failure(handler, src_loc_tk)) {
+            return std::string{handler.label};
+        }
+
+        return line_failure_label(handler.symbol(), src_loc_tk.file_index(),
+                                  src_loc_tk.at_line());
+    }
+
     // the first register in the scratch order of the backend that is free,
     // none when all are held
     [[nodiscard]] auto first_unused_scratch_register() const
@@ -1872,6 +1886,20 @@ class machine {
         }
 
         return static_cast<uint64_t>(value.immediate());
+    }
+
+    // a location in the main file has no file index, so the label stays the
+    // same for a program of one file
+    [[nodiscard]] static auto line_failure_label(const std::string_view name,
+                                                 const size_t file_ix,
+                                                 const size_t line)
+        -> std::string {
+
+        if (file_ix == 0) {
+            return std::format("baz_{}_line_{}", name, line);
+        }
+
+        return std::format("baz_{}_f{}_line_{}", name, file_ix, line);
     }
 
     // 4 and 8 bytes are read as signed so a value that fits a signed 32-bit

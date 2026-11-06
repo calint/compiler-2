@@ -1,0 +1,3 @@
+﻿# a byte order mark at the start of the source is rejected
+
+func main() {}

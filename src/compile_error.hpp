@@ -167,20 +167,62 @@ class compile_error final : public std::exception {
     return byte < ' ' or byte == '\x7f';
 }
 
-// a control byte as '\xNN', so a message that quotes the source stays on its
-// line
+// the bytes of the whole UTF-8 character at 'index' of 'text', 0 for a
+// control byte or a byte that starts no whole character, e.g. a lone
+// continuation byte or a truncated character
+[[nodiscard]] inline auto shown_char_size(const std::string_view text,
+                                          const size_t index) -> size_t {
+
+    const char lead{text.at(index)};
+    const unsigned char lead_byte{static_cast<unsigned char>(lead)};
+
+    if (is_control_char(lead)) {
+        return 0;
+    }
+
+    constexpr unsigned char first_non_ascii{0x80};
+
+    if (lead_byte < first_non_ascii) {
+        return 1;
+    }
+
+    const size_t continuation_count{token::utf8_continuation_count(lead)};
+
+    if (continuation_count == 0 or index + continuation_count >= text.size()) {
+
+        return 0;
+    }
+
+    for (size_t i{1}; i <= continuation_count; ++i) {
+        if (not token::is_utf8_continuation(text.at(index + i))) {
+            return 0;
+        }
+    }
+
+    return 1 + continuation_count;
+}
+
+// a control byte or a byte outside a whole UTF-8 character as '\xNN', so a
+// message that quotes the source stays on its line and is valid UTF-8
 [[nodiscard]] inline auto printable(const std::string_view text)
     -> std::string {
 
     std::string result;
 
-    for (const char ch : text) {
-        if (is_control_char(ch)) {
-            result += std::format("\\x{:02x}", static_cast<unsigned char>(ch));
+    size_t i{};
+
+    while (i < text.size()) {
+        const size_t size{shown_char_size(text, i)};
+
+        if (size == 0) {
+            const unsigned char byte{static_cast<unsigned char>(text.at(i))};
+            result += std::format("\\x{:02x}", byte);
+            ++i;
             continue;
         }
 
-        result.push_back(ch);
+        result += text.substr(i, size);
+        i += size;
     }
 
     return result;

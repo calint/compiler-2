@@ -995,17 +995,9 @@ class machine_x86_64 final : public machine {
                            const condition failed,
                            const failure_handler& handler) -> void {
 
-        if (not mark_failure(handler, src_loc_tk)) {
-            assembler_.jcc(indent, failed, handler.label);
-            return;
-        }
+        const std::string target{failure_target(handler, src_loc_tk)};
 
-        const std::string line_label{
-            line_failure_label(handler.symbol(), src_loc_tk.file_index(),
-                               src_loc_tk.at_line()),
-        };
-
-        assembler_.jcc(indent, failed, line_label);
+        assembler_.jcc(indent, failed, target);
     }
 
     // the built-in integer type of 'size_bytes'
@@ -1904,20 +1896,6 @@ class machine_x86_64 final : public machine {
                 offset += w;
             }
         }
-    }
-
-    // a location in the main file has no file index, so the label stays the
-    // same for a program of one file
-    [[nodiscard]] static auto line_failure_label(const std::string_view name,
-                                                 const size_t file_ix,
-                                                 const size_t line)
-        -> std::string {
-
-        if (file_ix == 0) {
-            return std::format("baz_{}_line_{}", name, line);
-        }
-
-        return std::format("baz_{}_f{}_line_{}", name, file_ix, line);
     }
 
     // the qwords, then the remaining dword, word and byte

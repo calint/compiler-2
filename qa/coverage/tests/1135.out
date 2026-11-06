@@ -1,4 +1,4 @@
 
-1135.baz:4:10: '©' is not a valid name, a name starts with a letter or '_' and has only letters, digits and '_'
-    exit(©)
-         ^
+1135.baz:4:10: '\xa9' is not a valid name, a name starts with a letter or '_' and has only letters, digits and '_'
+    exit(\xa9)
+         ^~~~

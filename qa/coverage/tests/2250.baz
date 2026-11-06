@@ -1,0 +1,9 @@
+# --checks=upper,line: each failing line has a stub of its own that loads the
+# line, the check that fails reports its own
+func main() {
+    var a = i8[4]
+    var i = 3
+    a[i] = 1
+    var j = i + 1
+    a[j] = 2
+}

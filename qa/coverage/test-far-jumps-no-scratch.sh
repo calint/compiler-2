@@ -4,10 +4,10 @@
 # and that a branch the jump optimizer inverts takes the scratch register of
 # the jump it replaces: a 'break' out of a 1.08 MiB loop body 13 'foo' deep,
 # compiled with and without the jump optimizer and executed under qemu; and
-# that the far jump to a failure handler keeps the line in a0: a bounds check
-# 12 'foo' deep panics at its line, also 13 deep where the check holds the
-# last free registers; and an 'exit' 14 'foo' deep reaches the shared exit
-# routine on every rv32i target
+# that the far branch to a failure handler reaches the stub of its line: a
+# bounds check 12 'foo' deep panics at its line, also 13 deep where the check
+# holds the last free registers; and an 'exit' 14 'foo' deep reaches the shared
+# exit routine on every rv32i target
 #
 # the body takes minutes to compile with the coverage build, so the check is a
 # script of its own

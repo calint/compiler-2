@@ -6874,3 +6874,24 @@ SRC=2231 && COMPERR
 
 # an escape quotes the continuation bytes its lead byte announces
 SRC=2232 && COMPERR
+
+# a byte order mark at the start of the source is rejected
+SRC=2233 && COMPERR
+
+# a carriage return without a line feed ends no comment
+SRC=2234 && COMPERR
+
+# a carriage return without a line feed in a string
+SRC=2235 && COMPERR
+
+# a byte outside a whole UTF-8 character is escaped in a message
+SRC=2236 && COMPERR
+
+# --checks=upper,line: a stub per failing line, the check names its own line
+SRC=2250 && EXP=255 && OPTS="--checks=upper,line" RUN_ERR
+
+# --checks=overflow,line: a sum with a negative operand in a register
+SRC=2251 && EXP=249 && OPTS="--checks=overflow,line" RUN_ERR
+
+# --checks=overflow,line: a difference with a positive operand in a register
+SRC=2252 && EXP=249 && OPTS="--checks=overflow,line" RUN_ERR
