@@ -18,7 +18,7 @@ PROGRAMS="${2:-5000}"
 SEED="${3:-1}"
 JOBS="${4:-$(nproc)}"
 
-TMP="$(mktemp -d /tmp/fuzz-alias.XXXXXX)"
+TMP="$(mktemp -d -t fuzz-alias.XXXXXX)"
 trap 'rm -rf "$TMP"' EXIT
 
 echo "alias fuzz: path comparison, $JOBS jobs from seed $SEED"

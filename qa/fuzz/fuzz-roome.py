@@ -1,14 +1,15 @@
 #!/usr/bin/env python3
 # session fuzzer of the example application 'roome/src/main.baz'
 #
-# builds roome for x86_64 and rv32i-fpga with '--checks=noub,line', mutates the
-# sessions of 'roome/qa/roome.in' (commands, arguments, line editing escapes,
-# very long lines, NUL and non-ASCII bytes) and runs them on both:
+# builds roome for x86_64, rv32i-fpga and rv32i with '--checks=noub,line',
+# mutates the sessions of 'roome/qa/roome.in' (commands, arguments, line editing
+# escapes, very long lines, NUL and non-ASCII bytes) and runs them on x86_64
+# and rv32i-fpga, every other one also on rv32i (rv32i-qemu has no sd card):
 #
 #   roome-panic    a check of 'noub' fired
 #   roome-signal   a signal ended the program
 #   roome-cpu      the emulator stopped on an illegal instruction or address
-#   roome-diff     the two targets wrote different bytes or ended differently
+#   roome-diff     a target wrote other bytes than x86_64 or ended differently
 #   roome-timeout  no end in time
 #
 # usage: fuzz-roome.py [count] [seed] [jobs]
@@ -25,6 +26,7 @@ SESSION = os.path.join(fl.ROOT, "roome", "qa", "roome.in")
 BUILD = os.path.join(fl.HERE, "build")
 X86 = os.path.join(BUILD, "roome-x86")
 IMAGE = os.path.join(BUILD, "roome-fpga.bin")
+RV32I = os.path.join(BUILD, "roome-rv32i.elf")
 # the size of the sd card images of a session, as in 'roome/qa/test.sh'
 SDCARD_SIZE_BYTES = 1 << 20
 NASTY = [b"\x00", b"\x1b[A", b"\x1b[D", b"\x1b[3~", b"\x7f", b"\x08", b"\xff",
@@ -50,6 +52,15 @@ def build():
                           os.devnull)
     if c.returncode:
         sys.exit("roome does not compile for rv32i-fpga: " + c.stderr)
+    asm = os.path.join(BUILD, "roome-rv32i.s")
+    image = os.path.join(BUILD, "roome-rv32i.bin")
+    c = fl.compile_source(fl.COMPILER, ROOME,
+                          ["--target=rv32i", "--bin=" + image] + options, asm)
+    if c.returncode:
+        sys.exit("roome does not compile for rv32i: " + c.stderr)
+    exe, problem = fl.assemble_rv32i(asm, image, BUILD, "roome-rv32i")
+    if problem:
+        sys.exit(f"roome for rv32i: {problem[0]} {problem[1]}")
 
 
 def words_of(lines):
@@ -134,10 +145,19 @@ def fuzz_one(args):
         r86 = fl.run([X86], 10, cwd=work, stdin_bytes=data)
         rf = fl.run([fl.EMULATOR, IMAGE, sdcard_fpga], 10,
                     stdin_bytes=data + b"\x04")
+        outcomes = [("fpga", fl.outcome_fpga(rf))]
+        if index % 2 == 0:
+            # the rv32i program opens 'sdcard.img' in its working directory too
+            work_rv32i = os.path.join(work, "rv32i")
+            os.mkdir(work_rv32i)
+            with open(os.path.join(work_rv32i, "sdcard.img"), "wb") as f:
+                f.truncate(SDCARD_SIZE_BYTES)
+            rv = fl.run([fl.QEMU_USER, RV32I], 10, cwd=work_rv32i,
+                        stdin_bytes=data)
+            outcomes.append(("rv32i", fl.outcome_x86(rv)))
     o86 = fl.outcome_x86(r86)
-    ofpga = fl.outcome_fpga(rf)
     text = data.decode("latin-1")
-    for target, o in (("x86", o86), ("fpga", ofpga)):
+    for target, o in [("x86", o86)] + outcomes:
         if o.kind == "panic":
             found.append(("roome-panic", f"{target} {o.code} {o.detail}",
                           r86.stderr[-300:] if target == "x86" else ""))
@@ -147,11 +167,12 @@ def fuzz_one(args):
             found.append(("roome-cpu", f"{target} {o.detail}"[:60], ""))
         elif o.kind == "timeout":
             found.append(("roome-timeout", target, ""))
-    if o86.finished() and ofpga.finished() and not o86.same(ofpga):
-        found.append(("roome-diff", f"{o86.kind}/{o86.code} vs "
-                      f"{ofpga.kind}/{ofpga.code} output "
-                      f"{o86.stdout == ofpga.stdout}",
-                      f"x86 {o86}\nfpga {ofpga}"))
+    for target, o in outcomes:
+        if o86.finished() and o.finished() and not o86.same(o):
+            found.append(("roome-diff", f"{o86.kind}/{o86.code} vs "
+                          f"{target} {o.kind}/{o.code} output "
+                          f"{o86.stdout == o.stdout}",
+                          f"x86 {o86}\n{target} {o}"))
     return text, found
 
 

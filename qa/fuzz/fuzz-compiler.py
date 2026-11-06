@@ -11,12 +11,16 @@
 #   compiler-hang     no result in time
 #   bad-diagnostic    a rejected source without a 'file:line:column: message'
 #   empty-output      an accepted source without code
-#   invalid-asm       the assembler rejects the code of x86_64
-#   link-failure      the linker rejects the object of x86_64
+#   invalid-asm       the assembler rejects the code of x86_64 or rv32i
+#   link-failure      the linker rejects the object of x86_64 or rv32i
+#   image-mismatch    the image of rv32i differs from its assembled listing
 #   ub-signal         a program compiled with the checks of 'noub' ends with
-#                     SIGSEGV, SIGFPE, SIGILL, SIGBUS or SIGABRT
+#                     SIGSEGV, SIGFPE, SIGILL, SIGBUS or SIGABRT (x86_64,
+#                     rv32i)
 #   cpu-error         a program compiled with 'noub' stops the emulator
-#   diff-target       x86_64 and rv32i-fpga end differently (code or output)
+#   diff-target       x86_64 and an rv32i target end differently (code or
+#                     output): rv32i-fpga and one of rv32i and rv32i-qemu
+#                     ('fuzzlib.with_rotated')
 #   diff-nopt         '--nopt' ends differently than the optimized program
 #   diff-checks       a program that ends normally under 'noub' ends
 #                     differently without checks
@@ -265,13 +269,13 @@ def classify_compile(c, source):
     return None
 
 
-def seed_differs(seed_text, options, work):
+def seed_differs(seed_text, options, work, rv32i_target):
     # the seed alone is accepted on one target and rejected on the other, e.g.
     # a test of a documented difference, so its mutants are not findings
     path = os.path.join(work, "seed.baz")
     write_source(path, seed_text)
     rejected = []
-    for target in ["x86_64", "rv32i-fpga"]:
+    for target in ["x86_64", rv32i_target]:
         c = fl.compile_source(fl.COMPILER, path,
                               ["--target=" + target] + options,
                               os.path.join(work, "seed.s"))
@@ -288,7 +292,7 @@ def first_diagnostic(text):
 # e.g. an index past the longest array of an unsized parameter ('of any size')
 EXPECTED_DIFFERENCE = re.compile(
     r"overflows the type|scratch registers|cannot allocate register|always used by the operation|simplify the expression|runs out of registers|does not end at compile time|RV32I|shift count must be|'i64'|i64|out of range|too large|too many|does not fit|smaller than a sector|"
-    r"exceeds|capacity|memory|beyond|of any size")
+    r"exceeds|capacity|memory|beyond|of any size|has no sd card")
 # the diagnostics that have no place in the source
 NO_LOCATION = re.compile(r"function 'main' not found")
 
@@ -311,7 +315,8 @@ def fuzz_one(args):
         path = os.path.join(work, "f.baz")
         write_source(path, text)
         options = checks_options(rnd)
-        noub = "--checks=noub" in options or "--checks=noub,line" in options
+        run = Run(text, seed_text, path, options, work)
+        noub = run.noub
         asan = fl.COMPILER_ASAN
 
         c, x86, problem = fl.run_x86(asan, path, options, work)
@@ -329,7 +334,7 @@ def fuzz_one(args):
             elif not c2.returncode:
                 message = first_diagnostic(c.stderr).split(": ", 1)[-1]
                 if not EXPECTED_DIFFERENCE.search(c.stderr) and not seed_differs(
-                        seed_text, options, work):
+                        seed_text, options, work, "rv32i-fpga"):
                     findings.append(("accept-diff", "rv32i accepts, x86 rejects: "
                                      + re.sub(r"\d+", "N", message[:90]),
                                      c.stderr[-500:]))
@@ -349,37 +354,9 @@ def fuzz_one(args):
             findings.append(("ub-signal", f"{x86.detail} recursion={recursion}",
                              str(x86)))
 
-        c2, rv = fl.run_fpga(asan, path, options, work)
-        finding = classify_compile(c2, text)
-        if finding:
-            findings.append(finding + (c2.stderr[-3000:],))
-        elif c2.returncode:
-            message = first_diagnostic(c2.stderr).split(": ", 1)[-1]
-            if not EXPECTED_DIFFERENCE.search(c2.stderr) and not seed_differs(
-                    seed_text, options, work):
-                findings.append(("accept-diff", "x86 accepts, rv32i rejects: "
-                                 + re.sub(r"[\d']+", "N", message[:90]),
-                                 c2.stderr[-500:]))
-        else:
-            if noub and rv.kind in ("cpu-error", "emulator-signal"):
-                findings.append(("cpu-error", rv.detail[:60], str(rv)))
-            if noub and x86.finished() and rv.finished():
-                stats["compared"] += 1
-                same = x86.code == rv.code and (
-                    x86.stdout == rv.stdout
-                    or is_default_width_output(x86.stdout, rv.stdout))
-                # the default integer is 32 bits on rv32i, 64 on x86_64: a
-                # value or a shift count that fits 64 bits panics on rv32i
-                # only, x86_64 goes on and may panic later on another check
-                width = rv.kind == "panic" and x86.code != rv.code and \
-                    rv.code in (fl.PANIC_CODE["overflow"], fl.PANIC_CODE["shift"])
-                foreign = FOREIGN_WRITE.search(text) or FOREIGN_READ.search(text)
-                if not same and not stack_difference(x86, rv) and not width \
-                        and not foreign:
-                    findings.append(("diff-target",
-                                     f"{bucket(x86)} vs {bucket(rv)} "
-                                     f"output {x86.stdout == rv.stdout}",
-                                     f"x86 {x86}\nfpga {rv}"))
+        # rv32i-fpga and one of the other rv32i targets
+        for target in fl.with_rotated(fl.TARGETS, text)[1:]:
+            compare_rv32i(run, target, x86, findings, stats)
 
         if x86.finished():
             c3, other, p3 = fl.run_x86(asan, path, options + ["--nopt"], work, "n")
@@ -415,14 +392,77 @@ def fuzz_one(args):
     return text, findings, stats
 
 
+class Run:
+    # the mutant of a seed and how it is built
+    def __init__(self, text, seed_text, path, options, work):
+        self.text = text
+        self.seed_text = seed_text
+        self.path = path
+        self.options = options
+        self.work = work
+        self.noub = "--checks=noub" in options or \
+            "--checks=noub,line" in options
+
+
+def compare_rv32i(run, target, x86, findings, stats):
+    # builds and runs the mutant on an rv32i 'target', compares it with the
+    # outcome 'x86' of x86_64
+    c, rv, problem = fl.run_target(fl.COMPILER_ASAN, run.path, run.options,
+                                   run.work, target, "r")
+    finding = classify_compile(c, run.text)
+    if finding:
+        findings.append(finding + (c.stderr[-3000:],))
+        return
+    if c.returncode:
+        message = first_diagnostic(c.stderr).split(": ", 1)[-1]
+        if not EXPECTED_DIFFERENCE.search(c.stderr) and not seed_differs(
+                run.seed_text, run.options, run.work, target):
+            findings.append(("accept-diff", f"x86 accepts, {target} rejects: "
+                             + re.sub(r"[\d']+", "N", message[:90]),
+                             c.stderr[-500:]))
+        return
+    if problem:
+        if problem[0] != "skip":
+            findings.append((problem[0], f"{target} {problem[1][:60]}",
+                             problem[1][-1500:]))
+        return
+    if run.noub and rv.kind in ("cpu-error", "emulator-signal"):
+        findings.append(("cpu-error", rv.detail[:60], str(rv)))
+    if run.noub and rv.kind == "signal" and \
+            rv.code in [int(s) for s in fl.CRASH_SIGNALS]:
+        recursion = "noinline" in run.text
+        findings.append(("ub-signal", f"{target} {rv.detail} "
+                         f"recursion={recursion}", str(rv)))
+    if not (run.noub and x86.finished() and rv.finished()):
+        return
+    stats["compared"] += 1
+    same = x86.code == rv.code and (
+        x86.stdout == rv.stdout
+        or is_default_width_output(x86.stdout, rv.stdout))
+    # the default integer is 32 bits on rv32i, 64 on x86_64: a value or a
+    # shift count that fits 64 bits panics on rv32i only, x86_64 goes on and
+    # may panic later on another check
+    width = rv.kind == "panic" and x86.code != rv.code and \
+        rv.code in (fl.PANIC_CODE["overflow"], fl.PANIC_CODE["shift"])
+    foreign = target in fl.UART_TARGETS and (
+        FOREIGN_WRITE.search(run.text) or FOREIGN_READ.search(run.text))
+    if not same and not stack_difference(x86, rv) and not width \
+            and not foreign:
+        findings.append(("diff-target",
+                         f"{target} {bucket(x86)} vs {bucket(rv)} "
+                         f"output {x86.stdout == rv.stdout}",
+                         f"x86 {x86}\n{target} {rv}"))
+
+
 def bucket(outcome):
     # panics keep their code, normal exits are told apart from them only
     return f"panic {outcome.code}" if outcome.kind == "panic" else \
         f"{outcome.kind}"
 
 
-# the uart of rv32i-fpga takes every file descriptor: a write to another one
-# than 1 shows only there and fails on x86_64, which may change the exit too
+# the uart of rv32i-qemu and rv32i-fpga takes every file descriptor: a write
+# to another one than 1 shows only there and fails on x86_64, which may change
+# the exit too
 FOREIGN_WRITE = re.compile(r"write\(\s*(?!1\s*,)")
 # and a read from another one than 0 fails on x86_64 and reads the uart there
 FOREIGN_READ = re.compile(r"read\(\s*(?!0\s*,)")
@@ -444,7 +484,8 @@ def is_default_width_output(x86_stdout, rv_stdout):
 def stack_difference(x86, rv):
     # recursion that is too deep ends differently on the targets
     stack = (250, 254)
-    return (x86.kind == "signal" or rv.code in stack or x86.code in stack)
+    return (x86.kind == "signal" or rv.kind == "signal" or rv.code in stack
+            or x86.code in stack)
 
 
 def main():

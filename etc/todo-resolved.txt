@@ -1,6 +1,18 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] hard: round 129 (2026-11-06, user: all night; BE the fuzzers on every
+    target)
+    => done (2026-11-06): the differential fuzzers also run rv32i (qemu user
+       mode, with the image checked against llvm's) and rv32i-qemu (qemu
+       system), one of them per program chosen from its text so a seed
+       repeats ('fuzzlib.with_rotated', 'run_target', 'FUZZ_TARGETS'),
+       'fuzz-constructs.py' on all four targets, 'fuzz-options.py' runs
+       the rv32i builds, roome sessions on rv32i too; 'fuzz-all.sh' checks
+       its tools and gives the run its own TMPDIR, removed on exit; about
+       23 % longer; no finding on the new targets; BF hunt of rounds 127
+       and 128 (register freeing, unary chains, phased constant stores on
+       every target, about 1300 seeds with a model) no finding
 [x] hard: round 128 (2026-11-06, user: all night, bugs, review, refactor
     for the final product; BA design, BB whole-language hunt, BC generics,
     BD rv32i items, BE fuzzers)

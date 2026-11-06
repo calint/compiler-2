@@ -13,7 +13,8 @@
 # value is one call is rejected when the call uses the destination. the model
 # applies the same rules and runs an accepted program left to right; each
 # program is built with every function inlined and again with every function
-# 'noinline', on both targets, all must agree with the model:
+# 'noinline', on the targets of 'fuzzlib.with_rotated', all must agree with the
+# model:
 #
 #   effects-mismatch  a build ends differently from the model
 #   effects-reject    a build rejects a program the model accepts, or rejects
@@ -445,7 +446,7 @@ def expected_of(statements):
 
 def judge(work, source, expected):
     found = []
-    for target in fl.TARGETS:
+    for target in fl.with_rotated(fl.TARGETS, source):
         got = fl.build_and_run(work, source, target, ("--checks=noub",))
         if expected[0] == "reject":
             if got[0] == "compile" and REJECTIONS[expected[1]] in got[1]:

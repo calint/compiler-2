@@ -17,11 +17,12 @@
 #                                                     see fuzz-alias.sh
 #
 # generates random programs of these kinds, models each program exactly in
-# python and compares what the compiled program does on x86_64 and rv32i-fpga
-# (i64 only on x86_64) under '--checks=noub': a program that the model runs to
-# the end must exit with the modeled value, a program the model stops with a
-# panic must panic with the same kind, a program that the model rejects must be
-# rejected by the compiler
+# python and compares what the compiled program does on x86_64, rv32i-fpga and
+# one of rv32i and rv32i-qemu ('fuzzlib.with_rotated'; i64 only on x86_64)
+# under '--checks=noub': a program that the model runs to the end must exit
+# with the modeled value, a program the model stops with a panic must panic
+# with the same kind, a program that the model rejects must be rejected by the
+# compiler
 #
 # scenarios: arith (i8 .. i64), widen (mixed widths), arrays (nested arrays and
 # records), calls (recursion and array parameters), deep (unbounded recursion)
@@ -1397,7 +1398,7 @@ def main():
             counts = tally.setdefault(program.name, [0, 0, 0])
             counts[0 if expected[0] == "exit" else
                    1 if expected[0] == "panic" else 2] += 1
-            for target in program.targets:
+            for target in fl.with_rotated(program.targets, source):
                 if program.name == "indexes":
                     INT[0] = "i64" if target == "x86_64" else "i32"
                     try:

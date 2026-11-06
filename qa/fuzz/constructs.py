@@ -10,12 +10,13 @@
 import re
 
 ASSERT = "func assert(ok bool) { if not ok exit(1) }\n"
-BOTH = ("x86_64", "rv32i-fpga")
+# the programs are few, each runs on every target
+EVERY_TARGET = ("x86_64", "rv32i", "rv32i-qemu", "rv32i-fpga")
 
 
 class Construct:
     def __init__(self, name, pattern, main, files=None, stdout=b"",
-                 targets=BOTH, stdin=b"", options=(), gate=True):
+                 targets=EVERY_TARGET, stdin=b"", options=(), gate=True):
         self.name = name
         # a regular expression or a function of the text of a program
         self.pattern = pattern if callable(pattern) \

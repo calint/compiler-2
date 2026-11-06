@@ -10,7 +10,8 @@
 #   option-hang       no result in time
 #   option-message    a rejection without a message
 #   option-wrong      an accepted combination whose program does not end with
-#                     the expected exit code
+#                     the expected exit code, on any of the four targets
+#   invalid-asm, link-failure, image-mismatch  see fuzz-compiler.py
 #   option-cpu        an accepted rv32i-fpga image stops the emulator, unless
 #                     '--memory' is larger than the memory of the emulator
 #
@@ -184,6 +185,19 @@ def run_accepted(work, path, options, target, fpga, expected, name, description,
         if exe:
             o = fl.outcome_x86(fl.run([exe], fl.RUN_TIMEOUT))
             judge(o, expected, name, options, description, found)
+    elif target == "rv32i" and os.path.exists(image):
+        assembly = os.path.join(work, "f.s")
+        # the listing may be longer than the output kept of the run above
+        fl.compile_source(fl.COMPILER_ASAN, path, options, assembly, cwd=work)
+        exe, problem = fl.assemble_rv32i(assembly, image, work, "f")
+        if problem and problem[0] != "skip":
+            found.append((problem[0], description[:100], problem[1][-800:]))
+        if exe:
+            o = fl.outcome_x86(fl.run([fl.QEMU_USER, exe], fl.RUN_TIMEOUT))
+            judge(o, expected, name, options, description, found)
+    elif target == "rv32i-qemu" and os.path.exists(image):
+        o = fl.outcome_fpga(fl.run(fl.QEMU_SYSTEM + [image], fl.RUN_TIMEOUT))
+        judge(o, expected, name, options, description, found)
     elif fpga and os.path.exists(image):
         r = fl.run([fl.EMULATOR, image, os.devnull], fl.RUN_TIMEOUT)
         o = fl.outcome_fpga(r)

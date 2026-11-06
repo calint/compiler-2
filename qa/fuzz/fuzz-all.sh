@@ -1,17 +1,35 @@
 #!/bin/sh
 # runs every fuzzer of this directory, see 'README.md'
-# usage: fuzz-all.sh [scale] [seed]
+# usage: [FUZZ_TARGETS=all] fuzz-all.sh [scale] [seed]
 # 'scale' multiplies the number of programs of each fuzzer (default 1, about
-# 10 minutes), 'seed' makes a run repeatable
+# 10 minutes), 'seed' makes a run repeatable, the run prints it first; the
+# programs run on x86_64, rv32i-fpga and one of rv32i and rv32i-qemu, with
+# 'FUZZ_TARGETS=all' on all four, see 'fuzzlib.with_rotated'; 'fuzz-ub.sh
+# --mutants' on the first two
 set -eu
 cd "$(dirname "$0")"
 
 scale=${1:-1}
 seed=${2:-$(date +%s)}
+echo "=== fuzz-all.sh $scale $seed"
 
+for tool in nasm ld llvm-mc ld.lld llvm-objcopy qemu-riscv32 \
+    qemu-system-riscv32; do
+    command -v "$tool" >/dev/null || {
+        echo "fuzz-all.sh: '$tool' is missing" >&2
+        exit 1
+    }
+done
 [ -x ../../baz ] || ../../make.sh build
 [ -x ../../fpga-emulator/osqa ] || ../../fpga-emulator/make.sh
 ./build-asan.sh
+
+# the work directories of the fuzzers, also those of a run that is stopped;
+# the findings stay in 'findings/'
+TMPDIR=$(mktemp -d -t fuzz-all.XXXXXX)
+export TMPDIR
+trap 'rm -rf -- "$TMPDIR"' EXIT
+trap 'exit 130' INT TERM HUP
 
 status=0
 run() {

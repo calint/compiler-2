@@ -14,6 +14,14 @@ ROOT = os.path.abspath(os.path.join(HERE, "..", ".."))
 COMPILER = os.path.join(ROOT, "baz")
 COMPILER_ASAN = os.path.join(HERE, "build", "baz-asan")
 EMULATOR = os.path.join(ROOT, "fpga-emulator", "osqa")
+# the runners of rv32i and rv32i-qemu, as in 'qa/coverage/test-coverage.sh'
+QEMU_USER = "qemu-riscv32"
+QEMU_SYSTEM = ["qemu-system-riscv32", "-machine", "virt", "-bios", "none",
+               "-display", "none", "-serial", "stdio", "-monitor", "none",
+               "-kernel"]
+RV32I_MC = ["llvm-mc", "-triple=riscv32", "-mattr=-m,-a,-f,-d,-c",
+            "-filetype=obj"]
+RV32I_IMAGE_LD = os.path.join(ROOT, "qa", "coverage", "rv32i-image.ld")
 # FUZZ_FINDINGS keeps the findings of a run apart from earlier ones
 FINDINGS = os.environ.get("FUZZ_FINDINGS", os.path.join(HERE, "findings"))
 TESTS = os.path.join(ROOT, "qa", "coverage", "tests")
@@ -328,6 +336,84 @@ def outcome_fpga(result):
     return Outcome("exit", result.returncode, result.stdout)
 
 
+def assemble_rv32i(assembly, image, work, name):
+    # links the program for qemu user mode and checks that the image of the
+    # built-in assembler has the bytes llvm assembles from the listing
+    obj = os.path.join(work, name + ".o")
+    exe = os.path.join(work, name + ".elf")
+    linked_image = os.path.join(work, name + "-llvm.elf")
+    llvm_image = os.path.join(work, name + "-llvm.bin")
+    steps = (
+        (RV32I_MC + [assembly, "-o", obj], "invalid-asm"),
+        (["ld.lld", "-m", "elf32lriscv", "-e", "_start", "-o", exe, obj],
+         "link-failure"),
+        (["ld.lld", "-m", "elf32lriscv", "-T", RV32I_IMAGE_LD, "-e", "_start",
+          "-o", linked_image, obj], "link-failure"),
+        (["llvm-objcopy", "-O", "binary", linked_image, llvm_image],
+         "link-failure"),
+    )
+    for command, category in steps:
+        r = run(command, 60, file_size=1 << 30)
+        # a tool that is stopped by a limit says nothing about the code
+        if r.timed_out or r.signal:
+            return None, ("skip", "")
+        if r.returncode:
+            return None, (category, r.stderr)
+    with open(image, "rb") as f, open(llvm_image, "rb") as g:
+        if f.read() != g.read():
+            return None, ("image-mismatch",
+                          "the image differs from the assembled listing")
+    return exe, None
+
+
+def run_rv32i(compiler, path, options, work, name="f", stdin=b""):
+    # compile for rv32i and run under qemu user mode, which ends like x86_64:
+    # a panic on standard error, a crash as a signal
+    assembly = os.path.join(work, name + ".s")
+    image = os.path.join(work, name + "-rv32i.bin")
+    c = compile_source(compiler, path,
+                       ["--target=rv32i", "--bin=" + image] + options,
+                       assembly)
+    if c.returncode or c.timed_out:
+        return c, None, None
+    exe, problem = assemble_rv32i(assembly, image, work, name)
+    if problem:
+        return c, None, problem
+    r = run([QEMU_USER, exe], RUN_TIMEOUT, stdin_bytes=stdin)
+    return c, outcome_x86(r), None
+
+
+def run_qemu(compiler, path, options, work, name="f", stdin=b""):
+    # compile for rv32i-qemu and run in a qemu system, which ends like
+    # rv32i-fpga: a panic on the uart; the uart takes the input like
+    # 'run_fpga'
+    image = os.path.join(work, name + "-qemu.bin")
+    c = compile_source(compiler, path,
+                       ["--target=rv32i-qemu", "--bin=" + image] + options,
+                       os.devnull)
+    if c.returncode or c.timed_out:
+        return c, None
+    r = run(QEMU_SYSTEM + [image], RUN_TIMEOUT,
+            stdin_bytes=stdin + b"\x04" * 64)
+    return c, outcome_fpga(r)
+
+
+def run_target(compiler, path, options, work, target, name="f", stdin=b""):
+    # compile for 'target' and run: (compile result, outcome, problem), the
+    # outcome None when the compile failed, the problem of the assembler or
+    # linker of x86_64 and rv32i else None
+    if target == "x86_64":
+        return run_x86(compiler, path, options, work, name, stdin)
+    if target == "rv32i":
+        return run_rv32i(compiler, path, options, work, name, stdin)
+    if target == "rv32i-qemu":
+        c, o = run_qemu(compiler, path, options, work, name, stdin)
+        return c, o, None
+    assert target == "rv32i-fpga"
+    c, o = run_fpga(compiler, path, options, work, name + ".bin", stdin)
+    return c, o, None
+
+
 def run_fpga(compiler, path, options, work, name="f.bin", stdin=b""):
     # compile for rv32i-fpga and run in the emulator: (compile result, outcome)
     # the uart takes the input followed by end of transmission bytes, each read at
@@ -412,10 +498,30 @@ class Findings:
 
 
 # the targets and the option lists that the model fuzzers build every program
-# with
+# with; 'with_rotated' adds one of 'ROTATED_TARGETS'
 TARGETS = ("x86_64", "rv32i-fpga")
+# the other rv32i targets, one per program; 'FUZZ_TARGETS=all' runs every
+# program on both, 'FUZZ_TARGETS=fixed' on neither
+ROTATED_TARGETS = ("rv32i", "rv32i-qemu")
+# the targets whose console is a uart, see the differences of 'README.md'
+UART_TARGETS = ("rv32i-qemu", "rv32i-fpga")
 OPTION_LISTS = (("--checks=noub",), ("--checks=noub", "--nopt"),
                 ("--checks=noub,line",))
+
+
+def with_rotated(targets, source):
+    # 'targets' and, when they have 'rv32i-fpga', one of 'ROTATED_TARGETS'
+    # chosen by the text of the program, so that a seed repeats the run
+    if "rv32i-fpga" not in targets or \
+            os.environ.get("FUZZ_TARGETS") == "fixed":
+        return tuple(targets)
+    if os.environ.get("FUZZ_TARGETS") == "all":
+        return tuple(targets) + ROTATED_TARGETS
+    # note: 'split_include' takes the same hash modulo 3, each target gets
+    #       programs split and whole since 2 and 3 are coprime
+    digest = int(hashlib.sha1(source.encode("latin-1", "replace"))
+                 .hexdigest(), 16)
+    return tuple(targets) + (ROTATED_TARGETS[digest % 2],)
 
 
 # the first line of a program that 'split_include' split
@@ -455,12 +561,8 @@ def build_and_run(work, source, target, options, stdin=b"",
     path = os.path.join(work, "f.baz")
     with open(path, "w") as f:
         f.write(split_include(work, source))
-    options = list(options)
-    if target == "x86_64":
-        c, o, problem = run_x86(compiler, path, options, work, stdin=stdin)
-    else:
-        c, o = run_fpga(compiler, path, options, work, stdin=stdin)
-        problem = None
+    c, o, problem = run_target(compiler, path, list(options), work, target,
+                               stdin=stdin)
     if c.timed_out:
         return ("compile-hang", "")
     if c.returncode:
@@ -474,12 +576,14 @@ def build_and_run(work, source, target, options, stdin=b"",
 
 def judge(work, source, expected, stdin=b"", targets=TARGETS,
           option_lists=OPTION_LISTS, prefix="model"):
-    # builds the program for every target and option list, returns the
-    # findings (category, key, detail) of the builds that did not end with
-    # the 'expected' ('exit', code, stdout)
+    # builds the program for every target and option list, a rotated target
+    # with the first list only, returns the findings (category, key, detail)
+    # of the builds that did not end with the 'expected' ('exit', code,
+    # stdout)
     found = []
-    for target in targets:
-        for options in option_lists:
+    for target in with_rotated(targets, source):
+        lists = option_lists if target in targets else option_lists[:1]
+        for options in lists:
             got = build_and_run(work, source, target, options, stdin)
             if got == expected:
                 continue

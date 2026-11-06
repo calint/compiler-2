@@ -11,12 +11,13 @@
 #   gen-reject    a generated program is rejected (the generator or the
 #                 compiler is wrong)
 #   gen-panic     a check fires in a program without undefined behavior
-#   diff-target   x86_64 and rv32i-fpga end differently
+#   diff-target   x86_64 and an rv32i target end differently: rv32i-fpga and
+#                 one of rv32i and rv32i-qemu ('fuzzlib.with_rotated')
 #   diff-nopt     '--nopt' ends differently
 #   diff-checks   the program without checks ends differently
 #   diff-line     '--checks=noub,line' ends differently
 #   cpu-error     the emulator stops
-#   ub-signal     a signal ends the program
+#   ub-signal     a signal ends the program (x86_64, rv32i)
 #   compiler-crash, compiler-hang, invalid-asm, link-failure  see fuzz-compiler.py
 #
 # usage: fuzz-programs.py [count] [seed] [jobs] [compiler]
@@ -462,20 +463,9 @@ def fuzz_one(args):
             found.append(("gen-panic", x86.detail, str(x86)))
         if x86.kind == "signal":
             found.append(("ub-signal", x86.detail, str(x86)))
-        c2, rv = fl.run_fpga(compiler, path, base, work)
-        if c2.returncode:
-            sanitizer = any(t in c2.stderr for t in fl.SANITIZER_TEXT)
-            kindname = "compiler-crash" if sanitizer or c2.returncode in fl.SANITIZER_EXIT else "gen-reject"
-            if kindname == "gen-reject" and fl.out_of_registers(c2.stderr):
-                return source, found, stats
-            found.append((kindname, "rv32i " + (fl.signature(c2.stderr) if sanitizer else c2.stderr.strip().split("\n")[0][-60:]),
-                          c2.stderr[-1500:]))
-        elif rv is not None:
-            if rv.kind in ("cpu-error", "emulator-signal"):
-                found.append(("cpu-error", rv.detail[:60], str(rv)))
-            if x86.finished() and rv.finished() and not x86.same(rv):
-                found.append(("diff-target", f"{x86.kind} vs {rv.kind}",
-                              f"x86 {x86}\nfpga {rv}"))
+        # rv32i-fpga and one of the other rv32i targets
+        for target in fl.with_rotated(fl.TARGETS, source)[1:]:
+            compare_rv32i(compiler, path, base, work, target, x86, found)
         variants = [("diff-nopt", base + ["--nopt"]),
                     ("diff-checks", []),
                     ("diff-line", ["--checks=noub,line"])]
@@ -493,6 +483,32 @@ def fuzz_one(args):
     finally:
         shutil.rmtree(work, ignore_errors=True)
     return source, found, stats
+
+
+def compare_rv32i(compiler, path, options, work, target, x86, found):
+    # builds and runs the program on an rv32i 'target', compares it with the
+    # outcome 'x86' of x86_64
+    c, rv, problem = fl.run_target(compiler, path, options, work, target)
+    if c.returncode:
+        sanitizer = any(t in c.stderr for t in fl.SANITIZER_TEXT)
+        kindname = "compiler-crash" if sanitizer or c.returncode in fl.SANITIZER_EXIT else "gen-reject"
+        if kindname == "gen-reject" and fl.out_of_registers(c.stderr):
+            return
+        found.append((kindname, f"{target} " + (fl.signature(c.stderr) if sanitizer else c.stderr.strip().split("\n")[0][-60:]),
+                      c.stderr[-1500:]))
+        return
+    if problem:
+        if problem[0] != "skip":
+            found.append((problem[0], f"{target} {problem[1][:60]}",
+                          problem[1][-1500:]))
+        return
+    if rv.kind in ("cpu-error", "emulator-signal"):
+        found.append(("cpu-error", rv.detail[:60], str(rv)))
+    if rv.kind == "signal":
+        found.append(("ub-signal", f"{target} {rv.detail}", str(rv)))
+    if x86.finished() and rv.finished() and not x86.same(rv):
+        found.append(("diff-target", f"{target} {x86.kind} vs {rv.kind}",
+                      f"x86 {x86}\n{target} {rv}"))
 
 
 # the findings of the generator are kept as 'gen-' categories, e.g.

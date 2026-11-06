@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 # one small program per construct of 'etc/tutorial.baz', see 'constructs.py'
 #
-# every program ends with exit code 0 and the bytes of the model on both
-# targets, with and without checks and without optimization. a program of
+# every program ends with exit code 0 and the bytes of the model on every
+# target, with and without checks and without optimization. a program of
 # the rejected list must be rejected on the line that ends with '# error'.
-# the tutorial itself must run to the end
+# the tutorial itself must run to the end (but on rv32i-qemu, which has no sd
+# card)
 #
 #   construct-mismatch   a build ends differently from the model
 #   construct-reject     a valid program is rejected
@@ -36,16 +37,6 @@ def write_files(work, files):
     return os.path.join(work, "main.baz")
 
 
-def build(work, main, target, options, stdin=b""):
-    # (compile result, outcome, problem)
-    if target == "x86_64":
-        return fl.run_x86(fl.COMPILER_ASAN, main, list(options), work,
-                         stdin=stdin)
-    c, o = fl.run_fpga(fl.COMPILER_ASAN, main, list(options), work,
-                       stdin=stdin)
-    return c, o, None
-
-
 def check_valid(work, construct, found):
     main = write_files(work, construct.files)
     source = construct.files["main.baz"]
@@ -54,7 +45,8 @@ def check_valid(work, construct, found):
         for options in OPTION_LISTS:
             options = list(options) + list(construct.options)
             key = f"{construct.name} {target} {' '.join(options)}"
-            c, o, problem = build(work, main, target, options, construct.stdin)
+            c, o, problem = fl.run_target(fl.COMPILER_ASAN, main, options,
+                                          work, target, stdin=construct.stdin)
             if c.timed_out:
                 found.append(("compiler-hang", key, "timeout"))
             elif c.returncode:
@@ -95,10 +87,12 @@ def check_rejected(work, construct, found):
 def check_tutorial(work, found):
     expected = fl.Outcome("exit", 0, TUTORIAL_STDOUT)
     source = open(TUTORIAL).read()
-    for target in fl.TARGETS:
+    # note: the tutorial reads a sector, rv32i-qemu has no sd card
+    for target in [t for t in cs.EVERY_TARGET if t != "rv32i-qemu"]:
         for options in OPTION_LISTS:
             key = f"tutorial {target} {' '.join(options)}"
-            c, o, problem = build(work, TUTORIAL, target, options)
+            c, o, problem = fl.run_target(fl.COMPILER_ASAN, TUTORIAL,
+                                          list(options), work, target)
             if c.returncode or c.timed_out:
                 found.append(("construct-reject", key, c.stderr[:300]))
             elif problem:

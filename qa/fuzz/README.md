@@ -2,7 +2,21 @@
 
 Fuzzers of the compiler and of the programs it builds. Every fuzzer prints the
 first example of each finding and keeps it in `findings/` (ignored by git).
-`fuzz-all.sh [scale] [seed]` runs them all.
+`fuzz-all.sh [scale] [seed]` runs them all and prints the seed first, the same
+seed and scale repeat the run; its work directories are in a temporary
+directory that is removed at the end, also of a run that is stopped.
+
+## Targets
+
+A program that the fuzzers run is built for x86_64 (nasm, native), rv32i-fpga
+(the emulator `fpga-emulator/osqa`) and, by a hash of its text, one of rv32i
+(llvm-mc, qemu user mode) and rv32i-qemu (qemu system with a uart), the
+commands of `qa/coverage/test-coverage.sh`; `FUZZ_TARGETS=all` builds it for
+all four, `FUZZ_TARGETS=fixed` for the first two (`with_rotated` in
+`fuzzlib.py`). A model fuzzer builds a program with several option lists for
+the first two, with the first list for the third. The image the compiler writes for
+rv32i must have the bytes llvm assembles from the listing (`image-mismatch`).
+`fuzz-constructs.py` runs every program on all four targets.
 
 ## Undefined behavior of a baz program
 
@@ -20,15 +34,15 @@ operation.
 
 | script | what it does |
 | --- | --- |
-| `fuzz-constructs.py`, `constructs.py` | one small program with a known result per construct of the tutorial (and a program with an error per rejection rule, reported on the line of the mistake), the tutorial itself, on both targets and with and without checks |
+| `fuzz-constructs.py`, `constructs.py` | one small program with a known result per construct of the tutorial (and a program with an error per rejection rule, reported on the line of the mistake), the tutorial itself, on every target and with and without checks |
 | `fuzz-coverage.py` | runs the generators without the compiler and fails when a construct of `constructs.py` is never emitted by any of them |
 | `fuzz-night.sh [hours] [seed]` | `fuzz-all.sh` in rounds with new seeds and growing scale until the stop time, lists the new findings, log in `findings/night.log` |
-| `fuzz-ub.py` | python model of arithmetic, widths, shifts, arrays, indexes and counts of every width, arrays as parameters, one expression in many contexts (argument, index, count, divisor, shift count, comparison, result), a wider later element that must be rejected or exact, calls and recursion against x86_64 and rv32i-fpga |
+| `fuzz-ub.py` | python model of arithmetic, widths, shifts, arrays, indexes and counts of every width, arrays as parameters, one expression in many contexts (argument, index, count, divisor, shift count, comparison, result), a wider later element that must be rejected or exact, calls and recursion against the targets |
 | `fuzz-exprs.py` | python model of nested expressions (unary, conversions, comparisons, `and`/`or`/`not` with short circuit, constants, loops); with `FUZZ_SPELLING=1` each typed value is spelled as a constant and as a variable, both programs must end alike |
 | `fuzz-data.py` | python model of user types (records, nested arrays, `bool`), `dat` and `var` initializers (partial, strings, characters), `let` constants and read-only variables with shadowing, constant expressions, copies, `==` and `!=` of records and arrays, `foo`, `array_copy`, `arrays_equal`, `write` of a part of an array |
 | `fuzz-flow.py` | python model of `if` / `else if` / `else`, `loop` with `break` and `continue`, blocks that shadow, `exit`, functions with a result, early `return`, `noinline` |
-| `fuzz-calls.py` | python model of inlined and `noinline` functions whose body reads and writes `res` in many shapes (`res = (p + res) * 3`, `res = 3 - res`, ...) called as a variable, an assignment, an argument, an index, a shift count, a divisor, an operand of a comparison, a condition, the count of `array_copy`, inside another call, with the checks, with and without `--nopt`, on both targets |
-| `fuzz-effects.py` | python model of calls that write globals, a field of a global record and `mut` arguments next to the other operands of the same statement (arguments, a list of `+` and `-`, the sides of a comparison, a value written in parts, an assignment to a global the value writes): evaluation left to right, the rejections of evaluation order, of parts written before and of shared storage, each program with every function inlined and with every function `noinline`, on both targets |
+| `fuzz-calls.py` | python model of inlined and `noinline` functions whose body reads and writes `res` in many shapes (`res = (p + res) * 3`, `res = 3 - res`, ...) called as a variable, an assignment, an argument, an index, a shift count, a divisor, an operand of a comparison, a condition, the count of `array_copy`, inside another call, with the checks, with and without `--nopt`, on the targets |
+| `fuzz-effects.py` | python model of calls that write globals, a field of a global record and `mut` arguments next to the other operands of the same statement (arguments, a list of `+` and `-`, the sides of a comparison, a value written in parts, an assignment to a global the value writes): evaluation left to right, the rejections of evaluation order, of parts written before and of shared storage, each program with every function inlined and with every function `noinline`, on the targets |
 | `fuzz-methods.py` | python model of records with nested records and arrays, `mut` methods, methods that only read `self` (also on a `let` receiver), a method named like a field, constructors, `noinline` functions that take a record, functions that return one, calls on variables, fields and array elements |
 | `fuzz-generics.py` | python model of generic types with constants and types, aliases, methods that see the constants, generic functions with type arguments given and deduced |
 | `fuzz-reject.py` | programs that break a rule of the tutorial (write a `let` or a constant, narrowing, unassigned result, aliasing, constant index, repeated name, `break` outside a loop, ...) must be rejected on the line of the mistake, the twin without the mistake must be accepted |
@@ -36,7 +50,7 @@ operation.
 | `fuzz-programs.py` | valid random programs of functions, methods, records, arrays, `foo`, loops, recursion: no model, every build must end the same and without a panic |
 | `fuzz-compiler.py` | mutations of the sources in `qa/coverage/tests` into the sanitizer build of the compiler: crashes, hangs, rejections without a position, invalid assembly, signals from programs compiled with `noub`, differences between targets, `--nopt`, checks and `--reproduce-source` |
 | `fuzz-options.py` | the command line: sizes, check lists, targets, odd files |
-| `fuzz-roome.py` | mutated sessions of `roome/src/main.baz` on both targets |
+| `fuzz-roome.py` | mutated sessions of `roome/src/main.baz` on x86_64 and rv32i-fpga, every other one also on rv32i |
 | `fuzz-alias.sh` | the alias check against a brute force of the bytes |
 | `fuzz-ub.sh --mutants` | the check of the checks: turns off one check at a time and requires a mismatch of `fuzz-ub.py` |
 | `fuzz-reduce.py`, `fuzz-reduce-roome.py` | shrink a finding |
@@ -78,7 +92,8 @@ an included file (`split_include` in `fuzzlib.py`).
   as many bytes as fit; each read at the end of the input takes one end of
   transmission byte; a carriage return reads as a newline
 - a sector past the end of the card panics `sd card` on x86_64 and rv32i,
-  rv32i-fpga does not detect it; rv32i-qemu has no sd card
+  rv32i-fpga does not detect it; rv32i-qemu has no sd card, a program that
+  reads or writes a sector is rejected there, the tutorial too
 - a very long expression compiles in more than linear time
 - nasm 3.02 may stall ("unable to find valid values for all labels") on x86_64
   code with many jumps near the short jump limit, e.g. with

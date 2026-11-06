@@ -15,9 +15,10 @@
 # ('T(lit)', 'T(K)' of a 'let K', 'K' of a 'let K = T(lit)', an inlined
 # parameter bound to one) and once
 # as a variable (a 'var', an inlined or noinline parameter bound to one). both
-# must end alike on both targets, with and without the overflow check: the
-# same exit code, the same panic or both rejected; a constant overflow or
-# zero divisor rejected at compile time equals the panic at run time
+# must end alike on every target they run on, with and without the overflow
+# check: the same exit code, the same panic or both rejected; a constant
+# overflow or zero divisor rejected at compile time equals the panic at run
+# time
 #
 # usage: [FUZZ_CHECKS=noub] [FUZZ_SPELLING=1] fuzz-exprs.py [count] [seed]
 #        [jobs]
@@ -558,7 +559,7 @@ def fuzz_spelling(args):
     found = []
     kind = "exit"
     try:
-        for target in fl.TARGETS:
+        for target in fl.with_rotated(fl.TARGETS, constant_source):
             for options in SPELLING_OPTIONS:
                 constant = run_target(work, constant_source, target, options)
                 variable = run_target(work, variable_source, target, options)
@@ -603,7 +604,7 @@ def fuzz_one(args):
     work = tempfile.mkdtemp(prefix="fuzze-")
     found = []
     try:
-        for target in program.targets:
+        for target in fl.with_rotated(program.targets, source):
             got = run_target(work, source, target, ["--checks=" + CHECKS])
             if not matches(expected, got) and not (
                     alternative and expected[0] == "compile"
@@ -623,12 +624,8 @@ def run_target(work, source, target, options):
     path = os.path.join(work, "f.baz")
     with open(path, "w") as f:
         f.write(source)
-    options = list(options)
-    if target == "x86_64":
-        c, o, problem = fl.run_x86(fl.COMPILER, path, options, work)
-    else:
-        c, o = fl.run_fpga(fl.COMPILER, path, options, work)
-        problem = None
+    c, o, problem = fl.run_target(fl.COMPILER, path, list(options), work,
+                                  target)
     if c.timed_out:
         return ("timeout", "")
     if c.returncode:

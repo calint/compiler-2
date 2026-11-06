@@ -21,6 +21,11 @@ missed=0
 # the mismatches of a mutant are expected, they are not findings
 FUZZ_FINDINGS=$(mktemp -d)
 export FUZZ_FINDINGS
+# a check is the same on every rv32i target, x86_64 and rv32i-fpga suffice
+FUZZ_TARGETS=fixed
+export FUZZ_TARGETS
+trap 'rm -rf -- "$FUZZ_FINDINGS"' EXIT
+trap 'exit 130' INT TERM HUP
 # check turned off, scenario that must catch it, number of programs
 while read -r checks scenario count; do
     # caught only by a mismatch, a fuzzer that fails otherwise caught nothing
@@ -51,5 +56,4 @@ done <<EOF
 -overlap indexes 300
 -frame,-stack deep 10
 EOF
-rm -rf -- "$FUZZ_FINDINGS"
 exit $missed

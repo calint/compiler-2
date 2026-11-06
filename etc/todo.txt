@@ -143,7 +143,7 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
     a0, t0', x86_64 'sal r15, cl; mov dil, r15b'); a '<<' by a count below
     the narrower width keeps its low bits when narrowed, e.g. a constant
     count ('keeps_low_bits', an optimization)
-[ ] medium: fuzzers cover every construct of 'etc/tutorial.baz', then a
+[o] medium: fuzzers cover every construct of 'etc/tutorial.baz', then a
     night-long run
     => 1. 'fuzz-constructs.py': lists the constructs of the tutorial (tokens,
        built-ins, forms such as 'foo A, N', 'int(x)', 'int[N]', '0b', char
@@ -186,6 +186,17 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
        compared with the compiler by programs in round 79 E, later doc edits
        checked); left for the user: 1 'test-all.sh', 'test-fpga.sh', 4 the
        night run (not started, user)
+    => state 2026-11-06 (round 128): the differential fuzzers ran x86_64
+       and rv32i-fpga only (round 127 audit); now every program also runs
+       on one of rv32i (qemu user mode, with the image compared to llvm's)
+       and rv32i-qemu (qemu system), chosen by a hash of its text
+       ('fuzzlib.with_rotated', 'FUZZ_TARGETS=all' for both); constructs on
+       all four, roome every other session on rv32i; 'fuzz-all.sh' prints
+       its seed, the run repeats from it, its temporary files are removed
+       also when stopped; left: the night run (user); the quadratic column
+       cost of the audit (32000 terms on one line take 3 s) is the README
+       difference "a very long expression compiles in more than linear
+       time", not a fuzzer gap
 [ ] medium: x86_64: a call with many indexed arguments in a noinline body
     runs out of registers where rv32i accepts it (2026-10-26, user: medium):
     the body reaches its array parameter through its address, and x86_64
