@@ -1,0 +1,11 @@
+# a whole array followed by '{' tells no type parameter, it is rejected as
+# unindexed as in a call without type parameters
+
+func first<T type>(x T) res int {
+    res = 1
+}
+
+func main() {
+    var a = i8[4]
+    exit(first(a{}))
+}

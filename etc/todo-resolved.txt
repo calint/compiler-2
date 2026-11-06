@@ -1,6 +1,15 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] hard: design review series 2, round 113 (2026-11-06, user: keep going;
+    Y deduction after round 112)
+    => done (2026-11-06): Y1 round 112 X1 tested the '{' before the whole
+       array, so 'first(a{})' with an array 'a' said "expected ')'"
+       instead of "array 'a' must be indexed"; the '{' is tested after the
+       array check, test 2690; X1 and X2 otherwise as intended in 18900
+       programs against the code before them; no other argument shape
+       tells a type that differs from 'var v = <argument>' beyond the
+       documented ones
 [x] hard: design review series 2, round 112 (2026-11-06, user: keep going;
     X deduction after round 111 W1)
     => done (2026-11-06): no regression of W1 in 6192 programs (86 argument

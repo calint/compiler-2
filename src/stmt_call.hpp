@@ -249,22 +249,20 @@ struct generic_call {
 
         const stmt_identifier ident{tc, tk, tz};
 
-        // e.g. not the 'point' of 'point{1, 2}' with 'var point = 1' or the
-        // 'v' of 'v{}', which the parse of the argument reports
-        const bool is_braced{
-            tz.peek_char_after_whitespace() == '{',
-        };
-
-        if (ident.is_method_receiver() or continues_expression(tz) or
-            is_braced) {
-
+        if (ident.is_method_receiver() or continues_expression(tz)) {
             return nullptr;
         }
 
-        // e.g. 'a' of 'f(a)' for 'a i8[4]', which is not of the element type,
-        // as in a call without type parameters
+        // e.g. 'a' of 'f(a)' or 'f(a{})' for 'a i8[4]', which is not of the
+        // element type, as in a call without type parameters
         if (ident.is_array()) {
             throw_unindexed_array(ident.tok(), ident.dotted_path());
+        }
+
+        // e.g. not the 'point' of 'point{1, 2}' with 'var point = 1' or the
+        // 'v' of 'v{}', which the parse of the argument reports
+        if (tz.peek_char_after_whitespace() == '{') {
+            return nullptr;
         }
 
         return named_argument_type(tc, ident);

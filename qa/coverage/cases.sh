@@ -6950,3 +6950,7 @@ SRC=2680 && COMPERR
 # a method called on its type tells no type parameter, it is rejected as in a
 # call without type parameters
 SRC=2681 && COMPERR
+
+# a whole array followed by '{' tells no type parameter, it is rejected as
+# unindexed as in a call without type parameters
+SRC=2690 && COMPERR
