@@ -9,7 +9,10 @@
        eight fuzzers (16396 compiles), roome in 1506 sessions; every
        difference is a fix an entry names (2600 2601 T1, 2720 2721 AE1, 2740
        AF1, 2760 2761 AG1, 2800-2802 AI2, 2810 2811 AI1), no program changed
-       its result otherwise, no regression
+       its result otherwise, no regression; BO (round 132) a fuzz campaign
+       of 2 h 23 min (fuzz-whole 5000 programs on every target, fuzz-all at
+       scale 3 and 4, ub, effects, generics and compiler at five times
+       their counts): no finding
 [x] hard: round 135 (2026-11-07, user: all night; BT a check of the
     examples of the documents)
     => done (2026-11-07): 'qa/lint/check-doc-examples.py' (in check-all.sh,
