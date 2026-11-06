@@ -182,6 +182,10 @@ class assembler_x86_64 final : public assembler {
         switch_section(section::rodata);
     }
 
+    auto begin_text_section() -> void override {
+        switch_section(section::text);
+    }
+
     auto begin_variables_section() -> void override {
         switch_section(section::variables);
     }

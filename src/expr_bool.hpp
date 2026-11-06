@@ -261,14 +261,14 @@ class expr_bool_op final : public statement {
 
         const comparison_side lhs{side_of(tc, lhs_)};
 
-        if (comparison_ and not lhs.folded) {
+        if (not lhs.folded) {
             return std::nullopt;
         }
 
         const std::optional<bool> constant{
             comparison_ ? constant_comparison(lhs, comparison_->op,
                                               side_of(tc, comparison_->rhs))
-                        : constant_shorthand(lhs),
+                        : lhs.folded->value != 0,
         };
 
         if (not constant) {
@@ -443,7 +443,24 @@ class expr_bool_op final : public statement {
 
         assert(lhs_.get_type().is_bool());
 
-        resolve_cmp_shorthand(tc, indent, side_of(tc, lhs_), action);
+        machine& x{tc.machine()};
+
+        machine::held_registers held{x, tok(), indent};
+
+        const operand value{
+            truth_test_operand(tc, indent, side_of(tc, lhs_), action, held),
+        };
+
+        // a 'bool' already holds 0 or 1, a copy is shorter than evaluating the
+        // shorthand as '!= 0'
+        if (is_bool_copy(action)) {
+            x.copy_value(tok(), indent, action.destination, value);
+            return;
+        }
+
+        x.compare_and_branch(tok(), indent, value,
+                             operand::imm(0, tc.builtins().default_type()),
+                             action);
     }
 
     [[nodiscard]] auto is_negated() const -> bool { return nots_.is_negated(); }
@@ -499,31 +516,6 @@ class expr_bool_op final : public statement {
         const operand src{right_operand(tc, indent, rhs, held)};
 
         x.compare_and_branch(tok(), indent, dst, src, action);
-    }
-
-    auto resolve_cmp_shorthand(toc& tc, const size_t indent,
-                               const comparison_side& condition,
-                               const machine::comparison_action& action) const
-        -> void {
-
-        machine& x{tc.machine()};
-
-        machine::held_registers held{x, tok(), indent};
-
-        const operand value{
-            truth_test_operand(tc, indent, condition, action, held),
-        };
-
-        // a 'bool' already holds 0 or 1, a copy is shorter than evaluating the
-        // shorthand as '!= 0'
-        if (is_bool_copy(action)) {
-            x.copy_value(tok(), indent, action.destination, value);
-            return;
-        }
-
-        x.compare_and_branch(tok(), indent, value,
-                             operand::imm(0, tc.builtins().default_type()),
-                             action);
     }
 
     // the bytes are compared and the result is branched on as for a shorthand
@@ -810,19 +802,6 @@ class expr_bool_op final : public statement {
 
         return constant_arith::eval_constant(lhs.folded->value, op,
                                              rhs.folded->value);
-    }
-
-    // the value of a shorthand whose operand folds, without the element's
-    // 'not's, empty otherwise
-    [[nodiscard]] static auto
-    constant_shorthand(const comparison_side& condition)
-        -> std::optional<bool> {
-
-        if (not condition.folded) {
-            return std::nullopt;
-        }
-
-        return condition.folded->value != 0;
     }
 
     // a side that folded as an immediate: a typed constant at its own type,

@@ -35,8 +35,8 @@
 //
 //   registers    'machine' allocates them, here the order
 //                'scratch_registers_' and the roles in 'rv32i_target'
-//   addresses    'lower_address', 'lower_address_offset': an operand into a
-//                base register and a 12-bit offset
+//   addresses    'lower_address': an operand into a base register and a
+//                12-bit offset
 //   operations   'binary_operation', 'emit_binary_instruction',
 //                'emit_multiply' through 'multiply_by_shifts_and_adds'
 //                (signed digits), 'shift_by_constant', 'shift_by_register'
@@ -54,8 +54,7 @@
 //                'check_frame_capacity', 'check_stack_capacity', the overflow
 //                checks 'check_negate', 'check_multiply_result',
 //                'emit_checked_add_subtract'
-//   handlers     'emit_panic_message', 'emit_message_data',
-//                'emit_report_line_routine'
+//   handlers     'emit_panic_message', 'emit_report_line_routine'
 //   calls        'emit_call', 'emit_target_call' through 'call_io_routine'
 //   target hooks 'emit_io_call', 'emit_stack_limit_load', and the machine
 //                virtuals 'emit_exit_routine', 'emit_sector_routines',
@@ -1229,15 +1228,6 @@ class machine_rv32i : public machine {
         assembler_.sw(1, "ra", 0, "sp");
     }
 
-    auto emit_message_data(const std::string_view message_label,
-                           const std::string_view message) -> void override {
-
-        assembler_.switch_section(section::rodata);
-        assembler_.label(0, message_label);
-        assembler_.string_data(message);
-        assembler_.switch_section(section::text);
-    }
-
     // a constant factor that 'multiply' did not resolve shifts and adds
     // unless checked, else the helper multiplies
     auto emit_multiply(const token& src_loc_tk, const size_t indent,
@@ -1780,6 +1770,30 @@ class machine_rv32i : public machine {
         copy_value(src_loc_tk, indent, dst, kept);
     }
 
+    // a check named 'name' that fails to the handler when 'failed' holds for
+    // 'value' and 'constant', loaded into a scratch register
+    auto check_against_constant(const token& src_loc_tk, const size_t indent,
+                                const std::string_view name, const op failed,
+                                const std::string_view value,
+                                const int64_t constant,
+                                const failure_handler& handler) -> void {
+
+        comment(src_loc_tk, indent, "{} check begin", name);
+
+        const operation_scope scope{*this};
+
+        const operand constant_register{
+            alloc_scratch_register(src_loc_tk, indent, default_type()),
+        };
+
+        assembler_.li(indent, constant_register.register_name(), constant);
+
+        branch_to_failure(src_loc_tk, indent, failed, value,
+                          constant_register.register_name(), handler);
+
+        comment(src_loc_tk, indent, "{} check end", name);
+    }
+
     // a distance from the source to the destination that is not zero and below
     // the byte count jumps to the failure handler, the copy would overwrite
     // source bytes it has not read yet, the line is passed in 'a0'
@@ -1886,24 +1900,13 @@ class machine_rv32i : public machine {
     auto check_negate(const token& src_loc_tk, const size_t indent,
                       const operand& value, const size_t width_bytes) -> void {
 
-        comment(src_loc_tk, indent, "overflow check begin");
-
-        const operation_scope scope{*this};
-
-        const operand minimum{
-            alloc_scratch_register(src_loc_tk, indent, default_type()),
-        };
-
-        const int64_t minimum_value{
+        const int64_t minimum{
             constant_arith::signed_minimum(width_bytes * bits_per_byte),
         };
 
-        assembler_.li(indent, minimum.register_name(), minimum_value);
-
-        branch_to_failure(src_loc_tk, indent, op::beq, value.register_name(),
-                          minimum.register_name(), overflow_failure_);
-
-        comment(src_loc_tk, indent, "overflow check end");
+        check_against_constant(src_loc_tk, indent, "overflow", op::beq,
+                               value.register_name(), minimum,
+                               overflow_failure_);
     }
 
     // a count below zero or not below the width jumps to the failure handler,
@@ -1912,20 +1915,11 @@ class machine_rv32i : public machine {
                            const operand& amount, const type& dst_type)
         -> void {
 
-        comment(src_loc_tk, indent, "shift check begin");
+        const int64_t width_bits{static_cast<int64_t>(dst_type.size_bits())};
 
-        const operation_scope scope{*this};
-
-        const operand limit{
-            alloc_scratch_register(src_loc_tk, indent, default_type()),
-        };
-
-        assembler_.li(indent, limit.register_name(), dst_type.size_bits());
-
-        branch_to_failure(src_loc_tk, indent, op::bgeu, amount.register_name(),
-                          limit.register_name(), shift_failure_);
-
-        comment(src_loc_tk, indent, "shift check end");
+        check_against_constant(src_loc_tk, indent, "shift", op::bgeu,
+                               amount.register_name(), width_bits,
+                               shift_failure_);
     }
 
     auto check_upper_bound(const token& src_loc_tk, const size_t indent,
@@ -2433,7 +2427,7 @@ class machine_rv32i : public machine {
                 alloc_scratch_register(src_loc_tk, indent, default_type()),
             };
 
-            load_second_operand(src_loc_tk, indent, second, src, constant);
+            load_operand(src_loc_tk, indent, second, src, constant);
 
             emit_checked_with_one_register(src_loc_tk, indent, instruction,
                                            second, value, constant);
@@ -2832,8 +2826,8 @@ class machine_rv32i : public machine {
             return;
         }
 
-        assembler_.branch(indent, inverse_branch(failed), rs1, rs2,
-                          check_passed_.reference);
+        assembler_.branch(indent, assembler_rv32i::inverse_branch(failed), rs1,
+                          rs2, check_passed_.reference);
 
         assembler_.label(indent, check_failed_.name);
         jump_to_failure(src_loc_tk, indent, tests.handler.get());
@@ -3011,6 +3005,20 @@ class machine_rv32i : public machine {
         std::unreachable();
     }
 
+    // 'src' into the register 'dst', the immediate 'constant' when it is
+    // known
+    auto load_operand(const token& src_loc_tk, const size_t indent,
+                      const operand& dst, const operand& src,
+                      const std::optional<int32_t> constant) -> void {
+
+        if (constant.has_value()) {
+            assembler_.li(indent, dst.register_name(), *constant);
+            return;
+        }
+
+        copy_value(src_loc_tk, indent, dst, src);
+    }
+
     // a register holding 'address'
     [[nodiscard]] auto load_pointer(const token& src_loc_tk,
                                     const size_t indent, const operand& address)
@@ -3025,20 +3033,6 @@ class machine_rv32i : public machine {
         return pointer;
     }
 
-    // the second operand of a checked sum or difference into the register
-    // 'dst', the immediate 'constant' when it is known
-    auto load_second_operand(const token& src_loc_tk, const size_t indent,
-                             const operand& dst, const operand& src,
-                             const std::optional<int32_t> constant) -> void {
-
-        if (constant.has_value()) {
-            assembler_.li(indent, dst.register_name(), *constant);
-            return;
-        }
-
-        copy_value(src_loc_tk, indent, dst, src);
-    }
-
     // lower base + index * scale + displacement to register + signed 12-bit
     // offset
     [[nodiscard]] auto lower_address(const token& src_loc_tk,
@@ -3048,21 +3042,35 @@ class machine_rv32i : public machine {
 
         validate_address(address);
 
-        // no index: encode the offset directly or materialize base + offset
-        if (address.index_register().empty()) {
-            return lower_address_without_index(src_loc_tk, indent, address,
-                                               dst);
+        const std::string& base{address.base_register()};
+        const std::string& index{address.index_register()};
+
+        const uint32_t upper{
+            assembler_rv32i::upper_part(address.displacement()),
+        };
+
+        const int32_t low{assembler_rv32i::lower_part(address.displacement())};
+
+        // no upper part: the memory instruction handles the entire offset
+        if (index.empty() and upper == 0) {
+            return operand::mem(base, {}, 1, low, address.type_ref());
         }
 
-        // indexed memory operand: [base + index * scale + displacement];
-        // combine the register terms before applying the displacement
         const operand result{
             address_result_register(src_loc_tk, indent, address, dst),
         };
 
-        const std::string& base{address.base_register()};
-        const std::string& index{address.index_register()};
         const std::string& result_name{result.register_name()};
+
+        // only the upper part; the memory instruction adds the low
+        if (index.empty()) {
+            assembler_.lui(indent, result_name, upper);
+            assembler_.add(indent, result_name, result_name, base);
+            return operand::mem(result_name, {}, 1, low, address.type_ref());
+        }
+
+        // indexed memory operand: [base + index * scale + displacement];
+        // combine the register terms before applying the displacement
 
         // unit scale: one add combines the register inputs, even when the
         // result aliases either
@@ -3076,66 +3084,18 @@ class machine_rv32i : public machine {
             assembler_.add(indent, result_name, result_name, base);
         }
 
-        return lower_address_offset(src_loc_tk, indent, address, result);
-    }
+        if (upper != 0) {
+            const operation_scope scope{*this};
 
-    [[nodiscard]] auto lower_address_offset(const token& src_loc_tk,
-                                            const size_t indent,
-                                            const operand& address,
-                                            const operand& result) -> operand {
+            const operand displacement{
+                alloc_scratch_register(src_loc_tk, indent, default_type()),
+            };
 
-        const int64_t offset{address.displacement()};
+            assembler_.lui(indent, displacement.register_name(), upper);
 
-        const std::string& result_name{result.register_name()};
-
-        const uint32_t upper{assembler_rv32i::upper_part(offset)};
-        const int32_t low{assembler_rv32i::lower_part(offset)};
-
-        // no upper part: the memory instruction handles the entire offset
-        if (upper == 0) {
-            return operand::mem(result_name, {}, 1, low, address.type_ref());
+            assembler_.add(indent, result_name, result_name,
+                           displacement.register_name());
         }
-
-        const operation_scope scope{*this};
-
-        const operand displacement{
-            alloc_scratch_register(src_loc_tk, indent, default_type()),
-        };
-
-        assembler_.lui(indent, displacement.register_name(), upper);
-
-        assembler_.add(indent, result_name, result_name,
-                       displacement.register_name());
-
-        return operand::mem(result_name, {}, 1, low, address.type_ref());
-    }
-
-    [[nodiscard]] auto
-    lower_address_without_index(const token& src_loc_tk, const size_t indent,
-                                const operand& address, const operand& dst)
-        -> operand {
-
-        const std::string& base{address.base_register()};
-        const int64_t offset{address.displacement()};
-
-        const uint32_t upper{assembler_rv32i::upper_part(offset)};
-        const int32_t low{assembler_rv32i::lower_part(offset)};
-
-        // no upper part: the memory instruction handles the entire offset
-        if (upper == 0) {
-            return operand::mem(base, {}, 1, low, address.type_ref());
-        }
-
-        const operand result{
-            address_result_register(src_loc_tk, indent, address, dst),
-        };
-
-        const std::string& result_name{result.register_name()};
-
-        // only the upper part; the memory instruction adds the low
-        assembler_.lui(indent, result_name, upper);
-
-        assembler_.add(indent, result_name, result_name, base);
 
         return operand::mem(result_name, {}, 1, low, address.type_ref());
     }
@@ -3276,12 +3236,7 @@ class machine_rv32i : public machine {
             alloc_scratch_register(src_loc_tk, indent, default_type()),
         };
 
-        if (constant.has_value()) {
-            assembler_.li(indent, right.register_name(), *constant);
-            return right;
-        }
-
-        copy_value(src_loc_tk, indent, right, src);
+        load_operand(src_loc_tk, indent, right, src, constant);
 
         return right;
     }
@@ -4092,30 +4047,6 @@ class machine_rv32i : public machine {
         }
 
         return std::bit_cast<int32_t>(static_cast<uint32_t>(*bits));
-    }
-
-    // the branch taken exactly when 'code' is not, of the branches of
-    // 'fail_if'
-    [[nodiscard]] static auto inverse_branch(const op code) -> op {
-        constexpr std::array<std::pair<op, op>, 3> pairs{
-            {
-                {op::beq, op::bne},
-                {op::blt, op::bge},
-                {op::bltu, op::bgeu},
-            },
-        };
-
-        for (const auto& [taken, inverse] : pairs) {
-            if (code == taken) {
-                return inverse;
-            }
-
-            if (code == inverse) {
-                return taken;
-            }
-        }
-
-        std::unreachable();
     }
 
     [[nodiscard]] static auto

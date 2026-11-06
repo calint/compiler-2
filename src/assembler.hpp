@@ -23,12 +23,12 @@
 // including the data directives and sections, so 'machine' writes the data
 // layout once
 //
-// sections: 'machine' asks for the three it writes ('begin_data_section',
-// 'begin_read_only_section', 'begin_variables_section'); a subclass maps them
-// onto its own 'section' enum, which also has the code section and what only
-// it uses (the x86_64 '.bss' of its number buffer), and the rv32i image is
-// indexed by it; every 'switch_section' calls 'set_code_section', since sizes
-// and entries count only in code
+// sections: 'machine' asks for the four it writes ('begin_data_section',
+// 'begin_read_only_section', 'begin_text_section',
+// 'begin_variables_section'); a subclass maps them onto its own 'section'
+// enum, which also has what only it uses (the x86_64 '.bss' of its number
+// buffer), and the rv32i image is indexed by it; every 'switch_section' calls
+// 'set_code_section', since sizes and entries count only in code
 //
 // jump optimizations done by 'optimize_jumps', in x86_64 and rv32i syntax:
 //
@@ -151,6 +151,9 @@ class assembler {
     virtual auto begin_data_section() -> void = 0;
 
     virtual auto begin_read_only_section() -> void = 0;
+
+    // the code section, e.g. back after the data of a failure handler
+    virtual auto begin_text_section() -> void = 0;
 
     // the variables are zeroed when defined, so a target need not store them
     // in its image

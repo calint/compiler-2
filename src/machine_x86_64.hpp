@@ -711,20 +711,6 @@ class machine_x86_64 final : public machine {
         assembler_.instruction(1, op::syscall);
     }
 
-    auto emit_message_data(const std::string_view message_label,
-                           const std::string_view message) -> void override {
-
-        assembler_.switch_section(section::rodata);
-        assembler_.label(0, message_label);
-
-        // note: a backslash or a control byte of a path is written as an
-        //       escape of a nasm string
-
-        assembler_.string_data(message);
-
-        assembler_.switch_section(section::text);
-    }
-
     auto emit_multiply(const token& src_loc_tk, const size_t indent,
                        const operand& product, const operand& factor,
                        const factor_use use, const runtime_check& check)

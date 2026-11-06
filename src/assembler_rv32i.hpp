@@ -319,6 +319,10 @@ class assembler_rv32i final : public assembler {
         switch_section(section::rodata);
     }
 
+    auto begin_text_section() -> void override {
+        switch_section(section::text);
+    }
+
     auto begin_variables_section() -> void override {
         switch_section(section::bss);
     }
@@ -899,6 +903,29 @@ class assembler_rv32i final : public assembler {
         return fits(value, immediate_min, immediate_max);
     }
 
+    // the branch taken exactly when 'code' is not
+    [[nodiscard]] static auto inverse_branch(const op code) -> op {
+        constexpr std::array<std::pair<op, op>, 3> pairs{
+            {
+                {op::beq, op::bne},
+                {op::blt, op::bge},
+                {op::bltu, op::bgeu},
+            },
+        };
+
+        for (const auto& [taken, inverse] : pairs) {
+            if (code == taken) {
+                return inverse;
+            }
+
+            if (code == inverse) {
+                return taken;
+            }
+        }
+
+        std::unreachable();
+    }
+
     // the size of the expansion that 'write_code' encodes, so the layout and
     // the image agree
     [[nodiscard]] static auto li_value_size_bytes(const int64_t value)
@@ -957,15 +984,7 @@ class assembler_rv32i final : public assembler {
     inverse_branch_mnemonic(const std::string_view mnemonic) const
         -> std::string_view override {
 
-        constexpr std::array<mnemonic_pair, 3> pairs{
-            {
-                {"beq", "bne"},
-                {"blt", "bge"},
-                {"bltu", "bgeu"},
-            },
-        };
-
-        return paired_mnemonic(pairs, mnemonic);
+        return info(inverse_branch(find_op(mnemonic))).mnemonic;
     }
 
     [[nodiscard]] auto unconditional_jump_mnemonic() const
@@ -1065,18 +1084,21 @@ class assembler_rv32i final : public assembler {
 
         assert(compared != nullptr);
 
+        // note: not kept in the record, the optimizer may invert the mnemonic
+        const op code{find_op(jump.mnemonic)};
+
         if (reach_form == jump_reach::branch) {
             return {
-                branch_word(find_op(jump.mnemonic), compared->rs1,
-                            compared->rs2, target - address),
+                branch_word(code, compared->rs1, compared->rs2,
+                            target - address),
             };
         }
 
-        const std::string_view inverted{inverse_branch_mnemonic(jump.mnemonic)};
+        const op inverted{inverse_branch(code)};
 
         // the inverted branch skips the jump that follows it
         std::vector<uint32_t> words{
-            branch_word(find_op(inverted), compared->rs1, compared->rs2,
+            branch_word(inverted, compared->rs1, compared->rs2,
                         static_cast<int64_t>(l.code_size)),
         };
 

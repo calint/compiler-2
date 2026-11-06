@@ -35,14 +35,11 @@ class stmt_if final : public statement {
         // 'lead_in' was read before
         branch(toc& tc, tokenizer& tz,
                const std::optional<else_if_tokens>& lead_in)
-            : lead{lead_in}, ws_tk{tz.next_whitespace_token()},
-              condition{parse_condition(tc, tz)},
+            : lead{lead_in}, condition{parse_condition(tc, tz)},
               constant_at_parse{condition.constant_value(tc)}, code{tc, tz} {}
 
         // none for the first branch, kept to reproduce the source
         std::optional<else_if_tokens> lead;
-        // the whitespace before the condition
-        token ws_tk;
         expr_bool condition;
         // the value of the condition known where the 'if' is written, e.g.
         // from literals and constants, empty when it depends on the run or on
@@ -56,7 +53,6 @@ class stmt_if final : public statement {
                 lead->if_tk.source_to(os);
             }
 
-            ws_tk.source_to(os);
             condition.source_to(os);
             code.source_to(os);
         }
@@ -71,23 +67,18 @@ class stmt_if final : public statement {
         // statics
         //
 
-        // an empty token where the condition starts, 'ws_tk' holds the
-        // whitespace before it; a '{' there means the condition is missing,
-        // e.g. 'if {x = 1}'
-        [[nodiscard]] static auto condition_start(tokenizer& tz) -> token {
+        // the condition holds the whitespace before it; a '{' there means
+        // the condition is missing, e.g. 'if {x = 1}'
+        [[nodiscard]] static auto parse_condition(toc& tc, tokenizer& tz)
+            -> expr_bool {
+
             const token ws_tk{tz.next_whitespace_token()};
 
             if (tz.peek_char_after_whitespace() == '{') {
                 throw compile_error{tz, "expected a condition before '{'"};
             }
 
-            return ws_tk;
-        }
-
-        [[nodiscard]] static auto parse_condition(toc& tc, tokenizer& tz)
-            -> expr_bool {
-
-            expr_bool condition{tc, condition_start(tz), tz};
+            expr_bool condition{tc, ws_tk, tz};
 
             condition.assert_boolean_operands();
 

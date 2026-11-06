@@ -1,6 +1,24 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] hard: design review series 2, round 106 (2026-11-06, user: keep going
+    until no simplifications are left; J compile context and functions, K
+    rv32i, L machine and x86_64, M arithmetic, conditions and control flow,
+    each file read line by line)
+    => done (2026-11-06): a pure refactor, the listings of every test equal;
+       J no change (every table and name has users); K1 one inverse-branch
+       table ('assembler_rv32i::inverse_branch'), K2 one 'lower_address',
+       K3 'check_against_constant', K4 'load_operand'; L1
+       'emit_message_data' one body in 'machine' with
+       'assembler::begin_text_section', L2 to L5 functions of one caller
+       folded ('mark_failure', 'finish_registers', 'finish_output',
+       'assert_registers_free', 'reserve_frame_base', 'release_frame_base',
+       'start_output'); M1 'constant_value' returns early for any element
+       whose left side does not fold, M2 'compile_shorthand' folded, M3
+       'stmt_if::branch' without 'ws_tk'; not done: the in-place compile of
+       'expr_arith' (an optimization, +1628 B on rv32i without it), one
+       expansion of grown jumps for the listing and the image; about 110
+       lines fewer
 [x] hard: design review series 2, round 105 (2026-11-06, user: keep going
     until no simplifications are left; H hunt of the front end of round 104,
     I hunt of its backend and driver)
