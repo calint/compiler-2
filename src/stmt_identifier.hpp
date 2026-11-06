@@ -964,7 +964,7 @@ class stmt_identifier final : public statement {
         }
 
         const std::string length_call{
-            std::format("array_length({})", dotted_path_),
+            std::format("array_length({})", path_text()),
         };
 
         throw compile_error{src_loc_tk,

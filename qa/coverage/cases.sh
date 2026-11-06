@@ -7067,3 +7067,9 @@ SRC=2883 && COMPERR
 
 # a statement after 'return' on its line and an 'else' after it are accepted
 SRC=2884 && EXP=2 && RUN
+
+# a 'foo' body that assigns a variable 'in'
+SRC=2890 && EXP=6 && RUN
+
+# the length hint for an array in an indexed element
+SRC=2891 && COMPERR

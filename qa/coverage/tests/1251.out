@@ -2,12 +2,12 @@
 include/say.baz:3:11: register rdi is always used by the operation at 1251.baz:7:13 and is needed here too, compute the operand that needs it with 'let' before that operation
     res = write(1, text)
           ^~~~~
-1251.baz:3:9: included from
-include "include/say.baz"
-        ^~~~~~~~~~~~~~~~~
 1251.baz:7:19: called from 'say(text)'
     var k = write(say(text) - 2, text)
                   ^~~
+1251.baz:3:9: included from
+include "include/say.baz"
+        ^~~~~~~~~~~~~~~~~
 
 register use at the failure: 3 of 14 registers live, 3 named by instructions
 

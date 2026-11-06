@@ -897,8 +897,6 @@ auto print_source_error(const source_files& files,
                  printable(message));
 
     print_source_line(src, shown.start_index, shown.end_index);
-
-    print_include_chain(files, where->file_ix);
 }
 
 // the message of the error at its source line, the inlined calls and generic
@@ -909,6 +907,11 @@ auto print_compiler_error(const source_files& files, const compile_error& error)
     print_source_error(files, error.where, error.msg);
 
     print_call_frames(files, error.call_frames);
+
+    // after the calls, so that a call frame does not read as an include
+    if (error.where) {
+        print_include_chain(files, error.where->file_ix);
+    }
 
     if (not error.detail.empty()) {
         std::println(stderr, "\n{}", error.detail);

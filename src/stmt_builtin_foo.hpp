@@ -392,7 +392,7 @@ class stmt_builtin_foo final : public statement {
     //
 
     // the array after 'foo'; e.g. 'foo e in arr' names the element, which
-    // 'foo' gives
+    // 'foo' gives, but the body of 'foo arr in = e' assigns a variable 'in'
     [[nodiscard]] static auto parse_array(toc& tc, tokenizer& tz)
         -> stmt_identifier {
 
@@ -400,7 +400,12 @@ class stmt_builtin_foo final : public statement {
 
         const token first_tk{probe.next_token()};
 
-        if (first_tk.is_word() and probe.is_next_word_token("in")) {
+        const bool is_element_named{
+            first_tk.is_word() and probe.is_next_word_token("in") and
+                probe.next_token().is_word(),
+        };
+
+        if (is_element_named) {
             throw compile_error{first_tk,
                                 "'foo' takes an array, e.g. 'foo arr {...}'; "
                                 "'e', 'i' and 'n' are given"};

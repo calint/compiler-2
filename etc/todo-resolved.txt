@@ -1,6 +1,17 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] hard: quality round 125 (2026-11-06, user: qa until it is great; AT hunt
+    of the messages of round 124)
+    => done (2026-11-06): AT1 the 'foo e in arr' hint rejected a valid body
+       that assigns a variable 'in' ('foo arr in = in + e'): only 'word in
+       word' is reported, test 2890; AT2 the 'array_length' hint dropped
+       the index of an element ('ps.arr' for 'ps[1].arr.length'): it uses
+       the path as written, test 2891; AT3 the "included from" lines print
+       after the "called from" frames; AT4 the ';' message holds in every
+       position ("';' is not used, a statement ends at the line"); no verdict
+       or listing differed from round 123 in the suite and about 5000
+       generated programs
 [x] hard: quality round 124 (2026-11-06, user: qa until it is great; AS the
     proposals of the newcomer review of round 123)
     => done (2026-11-06): messages for what a newcomer writes, no verdict

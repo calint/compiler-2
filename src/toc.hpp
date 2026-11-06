@@ -1880,7 +1880,8 @@ inline auto throw_if_ends_with_semicolon(const token& src_loc_tk) -> void {
                         src_loc_tk.at_line()),
     };
 
-    throw compile_error{semicolon_tk, "statements end at the line, remove ';'"};
+    throw compile_error{semicolon_tk,
+                        "';' is not used, a statement ends at the line"};
 }
 
 // a word that cannot be a name, e.g. '$x'

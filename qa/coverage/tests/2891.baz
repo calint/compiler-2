@@ -1,0 +1,9 @@
+# the length hint for an array reached through an indexed element keeps the
+# index
+
+type room {doors i32[4]}
+
+func main() {
+    var rooms = room[2]
+    var n = rooms[1].doors.length
+}
