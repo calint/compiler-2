@@ -1,7 +1,8 @@
 #!/bin/sh
 # runs every 'check-*.py' of this directory: the design rules that are not
 # compiler warnings, e.g. the include layers, the quoting of messages, the
-# names of the README and a test for each compile error
+# names of the README, a test for each compile error and the examples of the
+# documentation, which need the built '../../baz'
 # usage: qa/lint/check-all.sh
 # exits 1 after the first check that fails
 set -eu

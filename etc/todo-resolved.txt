@@ -1,6 +1,16 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] hard: round 135 (2026-11-07, user: all night; BT a check of the
+    examples of the documents)
+    => done (2026-11-07): 'qa/lint/check-doc-examples.py' (in check-all.sh,
+       about 0.6 s): the baz blocks of the README sources and of
+       etc/docs/README.md compile, a quoted message or error output matches,
+       inline 'X' is rejected on TARGET claims, the commented compile errors
+       of the tutorial fail at their line, every panic exit code of the
+       README has a probe, the tutorial and prog.baz run; 28 checked, 53
+       skipped with a reason ('-v'); the quoted message at
+       etc/docs/README.md 1223 corrected; check-all.sh needs the built baz
 [x] hard: round 134 (2026-11-06, user: all night; BR the constructs of
     fuzz-whole.py)
     => done (2026-11-06): fuzz-whole.py emits 80 of the 81 constructs (64
