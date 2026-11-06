@@ -7017,3 +7017,7 @@ SRC=2851 && COMPERR
 # an escape of a lead byte that an ASCII byte follows quotes the lead byte
 # alone
 SRC=2852 && COMPERR
+
+# a comment on the last line without a line end after a global, which the
+# listing comment of the global holds
+SRC=2860 && EXP=2 && RUN

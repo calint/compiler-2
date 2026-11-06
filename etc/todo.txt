@@ -57,6 +57,13 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
     ('/proc/883346/fd/0', round 117 AC2) since the names follow the resolved
     directory (round 116 AB1); accept and document, or resolve only up to
     the last '..' (names then depend on the spelling again)
+[ ] easy: user decision: a number with a leading zero is decimal ('010' is
+    10, round 123 AQ7), a C programmer expects 8: document it in the README,
+    or reject a leading zero
+[ ] easy: user decision (own prose): the README calls the result "return"
+    ('methods can have a "return"', '"return" must be assigned on every
+    path') next to the keyword 'return'; the tutorial and the messages say
+    "result" (round 123 AQ9)
 [ ] medium: low priority: one lexer (round 23 C.3, D1-4): 'one_line_source'
     ('statement.hpp') scans the source text of a statement again for the
     comments of the listing; 'source_to' writing through a 'source_sink' with
