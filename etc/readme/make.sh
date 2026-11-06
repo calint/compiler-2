@@ -17,6 +17,8 @@ fi
 
 OUT="$(mktemp ../../README.md.XXXXXX)"
 trap 'rm -f "$OUT"' EXIT
+# note: a shell such as dash runs no EXIT trap on a signal without this
+trap 'exit 1' INT TERM
 
 cat README.1.md >"$OUT"
 # run from the root so the usage shows the path used in the examples

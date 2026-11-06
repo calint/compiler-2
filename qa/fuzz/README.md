@@ -20,7 +20,9 @@ writes for rv32i must have the bytes llvm assembles from the listing
 there that times out where x86_64 ends is a difference. `fuzz-constructs.py`
 runs every program on all four targets, `fuzz-reject.py` on the first two,
 `fuzz-options.py` on the target of its options, `fuzz-roome.py` as its table
-row says.
+row says, `fuzz-whole.py` each variant of a program on its targets with
+`--checks=noub`, on one of them with another option list and on one without
+checks.
 
 ## Undefined behavior of a baz program
 
@@ -52,6 +54,7 @@ operation.
 | `fuzz-reject.py` | programs that break a rule of the tutorial (write a `let` or a constant, narrowing, unassigned result, aliasing, constant index, repeated name, `break` outside a loop, ...) must be rejected on the line of the mistake, the twin without the mistake must be accepted |
 | `fuzz-io.py` | python model of `read` and `write` with count and start index on strings, `dat`, variables and array fields |
 | `fuzz-programs.py` | valid random programs of functions, methods, records, arrays, `foo`, loops, recursion: no model, every build must end the same and without a panic |
+| `fuzz-whole.py` | python model of the whole language in one program: records with nested arrays, generic types and functions, methods, constructors, `mut` and unsized array parameters, recursion, `foo` with a count, loops, shadowing blocks, conversions, every operator, `let`, `dat`, `array_copy`, `arrays_equal`, `write`; the output and the exit code or the first panic, for a default integer of 64 and of 32 bits, compared with every function inlined, every function `noinline` and a mix, with `--nopt`, `--versions`, `--checks=noub,line`, `--reproduce-source` and without checks |
 | `fuzz-compiler.py` | mutations of the sources in `qa/coverage/tests` into the sanitizer build of the compiler: crashes, hangs, rejections without a position, invalid assembly, signals from programs compiled with `noub`, differences between targets, `--nopt`, checks and `--reproduce-source` |
 | `fuzz-options.py` | the command line: sizes, check lists, targets, odd files |
 | `fuzz-roome.py` | mutated sessions of `roome/src/main.baz` on x86_64 and rv32i-fpga, every other one also on rv32i |

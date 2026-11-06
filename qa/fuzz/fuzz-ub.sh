@@ -10,7 +10,10 @@ cd "$(dirname "$0")"
 # the sanitizer build that 'fuzzlib' runs, 'fuzzlib.assert_fresh' stops a
 # stale one
 [ -x build/baz-asan ] || ./build-asan.sh
-[ -x ../../fpga-emulator/osqa ] || ../../fpga-emulator/make.sh
+# rebuilt when missing or older than a source
+if [ ! -x ../../fpga-emulator/osqa ] || [ -n "$(find ../../fpga-emulator/src -newer ../../fpga-emulator/osqa -print -quit)" ]; then
+    ../../fpga-emulator/make.sh
+fi
 
 if [ "${1:-}" != "--mutants" ]; then
     ./fuzz-ub.py "$@"

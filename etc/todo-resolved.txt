@@ -1,6 +1,20 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] hard: round 131 (2026-11-06, user: all night; BL hunt of round 130, BM
+    the whole-language fuzzer, BN backend readability)
+    => done (2026-11-06): BL no compiler difference from round 130 (suite,
+       10000 error mutants, 12000 name lookups, links); BL1 the fuzz scripts
+       rebuild the fpga emulator when a source is newer, BL2 'make.sh' takes
+       the version only from its own '.git', BL3 'run.sh' shows its
+       arguments quoted, BL4 'etc/readme/make.sh' traps INT and TERM; BM
+       'qa/fuzz/fuzz-whole.py' (round 130 BB): random programs of every
+       feature with a model interpreter on every target, in fuzz-all.sh at
+       200 per scale (about 2 minutes), proven to fail with a broken model;
+       BN the headers and comments of 'machine_rv32i.hpp' and
+       'machine_x86_64.hpp' after rounds 100 to 130 ('store_bytes',
+       'check_upper_bound', the per-line stubs, 'report_line_register'),
+       'check_divisor' with 'pass_if', listings equal
 [x] hard: round 130 (2026-11-06, user: all night; BB whole-language hunt,
     BG review of the fuzzers of round 129, BI compile time, BJ and BK
     release readiness)

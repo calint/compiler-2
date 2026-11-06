@@ -114,7 +114,11 @@ fi
 SANITIZERS="$ASAN$MSAN$TSAN"
 
 # the version '--version' prints, the tag and commit of the build
-VERSION="$(git describe --tags --always --dirty 2>/dev/null || echo unknown)"
+# note: a copy without '.git' inside another repository is not described by it
+VERSION=unknown
+if [ -e .git ]; then
+    VERSION="$(git describe --tags --always --dirty 2>/dev/null || echo unknown)"
+fi
 VERSION_DEF="-DBAZ_VERSION=\"$VERSION\""
 
 CMD="$CC src/main.cpp -o baz $DBG $OPT $RTTI $CF $CW $SANITIZERS $PROF $VERSION_DEF"

@@ -51,8 +51,8 @@ struct target_call_names {
 struct routine_labels {
     // ends the program with the code in 'exit_code_register'
     std::string_view exit;
-    // prints the line in 'line' and exits with the code in 'exit_code', see
-    // 'emit_failure_handler'
+    // prints the line in 'report_line_register' and exits with the code in
+    // 'report_exit_code_register', see 'emit_failure_handler'
     std::string_view report_line;
     std::string_view sector_read;
     std::string_view sector_write;

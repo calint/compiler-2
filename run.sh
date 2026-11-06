@@ -42,9 +42,10 @@ esac
 SEP="--------------------------------------------------------------------------------"
 echo "$SEP"
 printf './baz --checks=noub,line --report=registers'
-# without arguments 'printf' would still write one space
+# quoted so the shown command can be copied; without arguments 'printf'
+# would still write one space
 if [ $# -gt 0 ]; then
-    printf ' %s' "$@"
+    printf " '%s'" "$@"
 fi
 printf '\n'
 # a '--checks' in the arguments replaces the default one

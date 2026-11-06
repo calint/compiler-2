@@ -21,7 +21,10 @@ for tool in nasm ld llvm-mc ld.lld llvm-objcopy qemu-riscv32 \
     }
 done
 [ -x ../../baz ] || ../../make.sh build
-[ -x ../../fpga-emulator/osqa ] || ../../fpga-emulator/make.sh
+# rebuilt when missing or older than a source
+if [ ! -x ../../fpga-emulator/osqa ] || [ -n "$(find ../../fpga-emulator/src -newer ../../fpga-emulator/osqa -print -quit)" ]; then
+    ../../fpga-emulator/make.sh
+fi
 ./build-asan.sh
 
 # the work directories of the fuzzers, also those of a run that is stopped;
@@ -52,6 +55,7 @@ run ./fuzz-generics.py $((300 * scale)) "$seed"
 run ./fuzz-reject.py $((600 * scale)) "$seed"
 run ./fuzz-io.py $((300 * scale)) "$seed"
 run ./fuzz-programs.py $((500 * scale)) "$seed"
+run ./fuzz-whole.py $((200 * scale)) "$seed"
 run ./fuzz-compiler.py $((3000 * scale)) "$seed"
 run ./fuzz-options.py $((3000 * scale)) "$seed"
 run ./fuzz-roome.py $((3000 * scale)) "$seed"

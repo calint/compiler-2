@@ -44,7 +44,8 @@
 //                jumps to its handler, all but the frame check with a stub
 //                per line for '--checks=line'
 //   handlers     'emit_panic_message', 'emit_report_line_routine'
-//   calls        'emit_call', the system call 'io_syscall', the shared exit
+//   calls        'emit_call', 'emit_target_call' through the system call
+//                'io_syscall' or 'call_sector_routine', the shared exit
 //                routine 'emit_exit_routine', the sector routines
 //                'emit_sector_routines'
 class machine_x86_64 final : public machine {

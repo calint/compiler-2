@@ -47,13 +47,18 @@
 //   memory       'zero', 'copy_block', 'memory_equal'
 //                through 'walk_known_size' for a known size,
 //                'walk_runtime_count' for a run-time count
-//                (see the note before 'local_label')
+//                (see the note before 'local_label'); 'store_bytes' as
+//                immediates or a copy of a constant ('copy_from_starts')
 //   comparisons  'compare_and_branch', 'emit_comparison_branch'
-//   checks       'emit_bounds_check', 'check_divisor', 'check_fits_width',
-//                'check_shift_count', 'check_copy_overlap',
-//                'check_frame_capacity', 'check_stack_capacity', the overflow
-//                checks 'check_negate', 'check_multiply_result',
-//                'emit_checked_add_subtract'
+//   checks       'emit_bounds_check' with 'check_upper_bound',
+//                'check_divisor', 'check_fits_width', 'check_shift_count',
+//                'check_copy_overlap', 'check_frame_capacity',
+//                'check_stack_capacity', the overflow checks 'check_negate',
+//                'check_multiply_result', 'emit_checked_add_subtract'; a
+//                failed test branches to its handler, all but the frame and
+//                stack checks with a stub per line for '--checks=line'
+//                ('branch_to_failure'), tests of one check share a jump
+//                ('failure_tests', 'fail_if', 'pass_if')
 //   handlers     'emit_panic_message', 'emit_report_line_routine'
 //   calls        'emit_call', 'emit_target_call' through 'call_io_routine'
 //   target hooks 'emit_io_call', 'emit_stack_limit_load', and the machine
@@ -282,8 +287,8 @@ class machine_rv32i : public machine {
         std::string_view reference;
     };
 
-    // the local labels of the bulk operations, the run-time checks use the
-    // two below, other operations define theirs where they use them
+    // the local labels of the bulk operations, the run-time checks have
+    // theirs below, other operations define theirs where they use them
     static constexpr local_label chunk_loop_{
         .name{"1"},
         .reference{"1b"},
@@ -315,7 +320,8 @@ class machine_rv32i : public machine {
 
     // the labels of a run-time check of more than one test
     // ('failure_tests'): the failing tests branch to the jump to the handler
-    // at 'check_failed_', the passing ones past it to 'check_passed_'
+    // at 'check_failed_', or back to it at 'check_failed_before_', the
+    // passing ones past it to 'check_passed_'
     static constexpr local_label check_failed_{
         .name{"1"},
         .reference{"1f"},
@@ -1771,7 +1777,7 @@ class machine_rv32i : public machine {
 
     // a distance from the source to the destination that is not zero and below
     // the byte count jumps to the failure handler, the copy would overwrite
-    // source bytes it has not read yet, the line is passed in 'a0'
+    // source bytes it has not read yet
     auto check_copy_overlap(const token& src_loc_tk, const size_t indent,
                             const operand& src, const operand& dst,
                             const operand& count_bytes) -> void {
@@ -1804,8 +1810,7 @@ class machine_rv32i : public machine {
     }
 
     // jumps to the failure handler when the divisor in 'a1' is zero or the
-    // dividend in 'a0' is the minimum of its width and the divisor is -1, the
-    // line is passed in 'a0'
+    // dividend in 'a0' is the minimum of its width and the divisor is -1
     auto check_divisor(const token& src_loc_tk, const size_t indent,
                        const size_t dividend_size_bytes) -> void {
 
@@ -1817,14 +1822,14 @@ class machine_rv32i : public machine {
 
         comment(src_loc_tk, indent, "zero divisor");
 
-        failure_tests tests{division_failure_, 2};
+        failure_tests tests{division_failure_, 3};
 
         fail_if(src_loc_tk, indent, tests, op::beq, "a1", "zero");
 
         comment(src_loc_tk, indent, "minimum divided by -1 overflows");
 
         assembler_.li(indent, "a2", -1);
-        assembler_.bne(indent, "a1", "a2", check_passed_.reference);
+        pass_if(indent, tests, op::bne, "a1", "a2");
         assembler_.li(indent, "a2", minimum);
 
         fail_if(src_loc_tk, indent, tests, op::beq, "a0", "a2");
@@ -1885,7 +1890,7 @@ class machine_rv32i : public machine {
     }
 
     // a count below zero or not below the width jumps to the failure handler,
-    // a negative count is a large unsigned one, the line is passed in 'a0'
+    // a negative count is a large unsigned one
     auto check_shift_count(const token& src_loc_tk, const size_t indent,
                            const operand& amount, const type& dst_type)
         -> void {
@@ -1897,6 +1902,8 @@ class machine_rv32i : public machine {
                                shift_failure_);
     }
 
+    // fails when the checked value or the end of a range reaches the array
+    // count, with 'allow_end' when it passes it
     auto check_upper_bound(const token& src_loc_tk, const size_t indent,
                            const bounds_range& range, const bool lower_checked,
                            failure_tests& tests) -> void {
@@ -2675,10 +2682,10 @@ class machine_rv32i : public machine {
         assembler_.ret(1);
     }
 
-    // multiplies the magnitudes by shift and add, a carry out of the
-    // sum, the multiplicand losing its top bit while multiplier bits
-    // remain or a magnitude above the range of the sign leaves the flag
-    // in 'a1' set, the sign is applied last
+    // multiplies the magnitudes by shift and add, a carry out of the sum, the
+    // multiplicand losing its top bit while multiplier bits remain or a
+    // magnitude above the range of the sign leaves the flag in 'a1' set, the
+    // sign is applied last
     auto emit_multiply_checked_body() -> void {
         // 'lui' of 2^31
         constexpr int sign_bit_upper{0x80000};
@@ -3862,8 +3869,8 @@ class machine_rv32i : public machine {
         return width;
     }
 
-    // 'copy_block' of a constant takes 'la' and a load and a store for each of
-    // its 'copy_part_count' parts, counted as unrolled up to
+    // the copy of a constant ('copy_from_starts') takes 'la' and a load and a
+    // store for each of its 'copy_part_count' parts, counted as unrolled up to
     // 'immediates_threshold_bytes_'
     [[nodiscard]] static auto
     are_immediates_smaller(const std::span<const byte_part> parts,
