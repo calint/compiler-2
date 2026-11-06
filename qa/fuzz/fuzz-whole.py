@@ -3,9 +3,11 @@
 # user types with nested arrays and records, generic types and functions (type
 # arguments given and deduced), methods, constructors, inlined and 'noinline'
 # functions with 'mut' and unsized array parameters, bounded recursion, 'foo'
-# with a count, 'loop' with 'break' and 'continue', 'if' chains, shadowing
-# blocks, conversions between widths, every operator, 'let', 'dat', globals,
-# 'array_copy', 'arrays_equal', 'write' and a printed trace of values
+# with a count and nested, 'loop' with 'break' and 'continue', 'if' chains,
+# shadowing blocks, conversions between widths, every operator, literals in
+# decimal, hex and binary, 'let', 'dat', globals, 'array_copy',
+# 'arrays_equal', 'write' and a printed trace of values, 'read' of one line of
+# input at the top of 'main'
 #
 # python runs the same program (an interpreter of its tree) and gives the
 # output and the exit code, or the first panic under '--checks=noub', for a
@@ -79,9 +81,10 @@ class Arr:
 
 class UArr:
     # an unsized array parameter, also the array field of a generic seen
-    # from its methods
-    def __init__(self, elem):
+    # from its methods; 'bare' writes an array of 'int' as '[]'
+    def __init__(self, elem, bare=False):
         self.elem = elem
+        self.bare = bare
 
     def __eq__(self, other):
         return isinstance(other, UArr) and self.elem == other.elem
@@ -90,6 +93,8 @@ class UArr:
         return hash(("uarr",))
 
     def text(self):
+        if self.bare and self.elem == "int":
+            return "[]"
         return f"{type_text(self.elem)}[]"
 
 
@@ -164,15 +169,18 @@ class Expr:
 
 
 class Lit(Expr):
-    def __init__(self, v, hexa=False):
+    # 'radix' 16 or 2 writes a value that is not negative as '0x' or '0b'
+    def __init__(self, v, radix=10):
         self.v = v
         self.const = True
         self.unary = v < 0
-        self.hexa = hexa
+        self.radix = radix
 
     def text(self):
-        if self.hexa and self.v >= 0:
+        if self.radix == 16 and self.v >= 0:
             return hex(self.v)
+        if self.radix == 2 and self.v >= 0:
+            return bin(self.v)
         return str(self.v)
 
 
@@ -382,6 +390,19 @@ class Zero(Expr):
         return type_text(self.typ) if self.named else "{}"
 
 
+class Input(Expr):
+    # 'read(0, path, cnt, start)', 'cnt' and 'start' None when left out
+    def __init__(self, path, cnt, start):
+        self.path = path
+        self.cnt = cnt
+        self.start = start
+
+    def text(self):
+        args = [self.path.text()] + [x.text() for x in (self.cnt, self.start)
+                                     if x is not None]
+        return f"read(0, {', '.join(args)})"
+
+
 class StrLit(Expr):
     def __init__(self, text):
         self.text_ = text
@@ -451,6 +472,7 @@ class Show(Stmt):
 
 
 class WriteS(Stmt):
+    # 'cnt' and 'start' None when left out
     def __init__(self, path, cnt, start):
         self.path = path
         self.cnt = cnt
@@ -537,10 +559,11 @@ def stmt_lines(s, indent):
     if isinstance(s, CallS):
         return [f"{pad}{s.call.text()}"]
     if isinstance(s, Show):
-        return [f"{pad}show({s.value.text()})"]
+        return [f"{pad}show({s.value.text()}) # trace"]
     if isinstance(s, WriteS):
-        return [f"{pad}write(1, {s.path.text()}, {s.cnt.text()}, "
-                f"{s.start.text()})"]
+        args = [s.path.text()] + [x.text() for x in (s.cnt, s.start)
+                                  if x is not None]
+        return [f"{pad}write(1, {', '.join(args)})"]
     if isinstance(s, Copy):
         return [f"{pad}array_copy({s.src.text()}, {s.dst.text()}, "
                 f"{s.cnt.text()})"]
@@ -640,6 +663,8 @@ class Model:
         self.out = bytearray()
         self.steps = 0
         self.globals = {}
+        # what the reads have not taken of the input
+        self.input = program.stdin
 
     def w(self, t):
         return bits_of(t, self.intw)
@@ -727,7 +752,23 @@ class Model:
             return len(self.resolve(e.path, frame).get())
         if isinstance(e, Call):
             return self.call(e, frame)
+        if isinstance(e, Input):
+            return self.read_input(e, frame)
         raise ValueError(e)
+
+    def read_input(self, e, frame):
+        # note: a read on a uart returns one line, on a file as many bytes as
+        #       fit; the input is one line that fits in the first read
+        arr = self.resolve(e.path, frame).get()
+        cnt = len(arr) if e.cnt is None else self.ev(e.cnt, "int", True, frame)
+        start = 0 if e.start is None else self.ev(e.start, "int", True, frame)
+        if cnt < 0 or start < 0 or start + cnt > len(arr):
+            raise Panic("bounds")
+        got = self.input
+        assert len(got) <= cnt
+        self.input = b""
+        arr[start:start + len(got)] = list(got)
+        return len(got)
 
     def binary(self, op, a, b, bits, checked):
         if op in "+-*":
@@ -929,8 +970,10 @@ class Model:
             self.out += f"{v}\n".encode()
         elif isinstance(s, WriteS):
             arr = self.resolve(s.path, frame).get()
-            cnt = self.ev(s.cnt, "int", True, frame)
-            start = self.ev(s.start, "int", True, frame)
+            cnt = len(arr) if s.cnt is None else \
+                self.ev(s.cnt, "int", True, frame)
+            start = 0 if s.start is None else \
+                self.ev(s.start, "int", True, frame)
             if cnt < 0 or start < 0 or start + cnt > len(arr):
                 raise Panic("bounds")
             self.out += bytes(x & 255 for x in arr[start:start + cnt])
@@ -970,6 +1013,8 @@ class Program:
         self.functions = []
         self.main = None
         self.head = []
+        # the input, one line
+        self.stdin = b""
 
 
 class Ctx:
@@ -984,6 +1029,8 @@ class Ctx:
         self.readonly = set()
         self.in_foo_global = False
         self.consts = {}
+        # the length of the array of the innermost 'foo', None when unknown
+        self.foo_n = None
 
     def lookup(self, name):
         for s in reversed(self.scopes):
@@ -1008,6 +1055,11 @@ class Gen:
         self.globals = {}
         self.in_index = 0
         self.const_args = rnd.random() < 0.5
+        self.reads = 0
+        # note: a uart gives the end of transmission to a read of 'fuzzlib'
+        #       at the end of the input, a few reads do not use them up
+        self.p.stdin = ("".join(rnd.choice("abcxyz") for _ in
+                                range(rnd.randint(0, 6))) + "\n").encode()
 
     def name(self, prefix):
         self.names += 1
@@ -1049,14 +1101,20 @@ class Gen:
 
     def gen_generics(self):
         rnd = self.rnd
-        # 'type gN<c, A type> { a A, b i16[c], k i8 }', instances by aliases
+        # 'type gN<c, A type> { a A, b i16[c], k i8 }' or with the type
+        # parameter first, instances by aliases
         base = self.name("g")
-        self.p.head.append(f"type {base}<c, A type> {{ a A, b i16[c], k i8 }}")
+        type_first = self.chance(0.5)
+
+        def args(c, a):
+            return f"<{a}, {c}>" if type_first else f"<{c}, {a}>"
+        self.p.head.append(f"type {base}{args('c', 'A type')} "
+                           "{ a A, b i16[c], k i8 }")
         self.generic_bases.append(base)
         derived = None
         if self.chance(0.5):
             derived = self.name("gd")
-            self.p.head.append(f"type {derived}<c> = {base}<c, i8>")
+            self.p.head.append(f"type {derived}<c> = {base}{args('c', 'i8')}")
         aliases = []
         for _ in range(rnd.randint(1, 3)):
             c = rnd.randint(2, 5)
@@ -1069,7 +1127,7 @@ class Gen:
                 # note: a type argument may be an instance of the same generic
                 a_t = rnd.choice(list(INTS) + self.records[:1] + aliases)
                 self.p.head.append(
-                    f"type {name} = {base}<{c}, {type_text(a_t)}>")
+                    f"type {name} = {base}{args(c, type_text(a_t))}")
                 bases = [base]
             rec = Rec(name, [("a", a_t), ("b", Arr("i16", c)), ("k", "i8")],
                       bases, {"c": c})
@@ -1221,6 +1279,11 @@ class Gen:
 
     def index(self, ctx, t, array_path, index_ok):
         rnd = self.rnd
+        if index_ok and ctx.foo_n is not None and isinstance(t, Arr) and \
+                t.n >= ctx.foo_n and rnd.random() < 0.3:
+            # note: the 'i' of a 'foo' is below the length of its array
+            k = rnd.randint(0, t.n - ctx.foo_n)
+            return Bin("+", Read(Path("i", [], "int")), Lit(k))
         if isinstance(t, Arr) and (not index_ok or rnd.random() < 0.6):
             return Lit(rnd.randrange(t.n))
         if not index_ok:
@@ -1262,7 +1325,8 @@ class Gen:
         hi = {"i8": 100, "i16": 3000, "i32": 100000, "int": 100000}[t]
         v = rnd.choice([0, 1, 2, 3, -1, 7, rnd.randint(-hi, hi),
                         rnd.randint(0, 20)])
-        return Lit(v, hexa=rnd.random() < 0.1)
+        r = rnd.random()
+        return Lit(v, radix=16 if r < 0.1 else 2 if r < 0.17 else 10)
 
     # the kinds of integer expression and their weights, inner nodes first
     EXPRS = (("bin", 40), ("un", 8), ("conv", 10), ("call", 14),
@@ -1692,7 +1756,8 @@ class Gen:
     # the kinds of statement and their weights
     KINDS = (("var", 18), ("assign", 20), ("if", 8), ("loop", 6), ("foo", 6),
              ("call", 8), ("show", 12), ("copy", 4), ("write", 2),
-             ("block", 3), ("jump", 3), ("return", 2), ("exit", 0.1))
+             ("block", 3), ("jump", 3), ("return", 2), ("exit", 0.1),
+             ("read", 1))
 
     def stmt(self, ctx, depth):
         rnd = self.rnd
@@ -1728,6 +1793,9 @@ class Gen:
             if cond is None:
                 return None
             return [If([(cond, [Simple("return")])], None)]
+        if kind == "read" and ctx.fn is None and depth == 3 and \
+                self.reads < 3:
+            return self.read_stmt(ctx)
         if kind == "exit" and ctx.fn is None and depth == 3:
             cond = self.cond(ctx)
             if cond is None:
@@ -1739,7 +1807,8 @@ class Gen:
         # a block that starts with a constant or a variable named like an
         # outer one, of another type
         rnd = self.rnd
-        outer = [v for v in ctx.visible() if v.name[0] in "vk" and
+        outer = [v for v in ctx.visible() if (v.name[0] in "vk" or
+                                              v.name.startswith("s8")) and
                  v.name not in ctx.readonly]
         ctx.scopes.append({})
         head = []
@@ -1806,6 +1875,8 @@ class Gen:
         let = rnd.random() < 0.15
         if r < 0.5:
             t = rnd.choice(INTS)
+            if t == "i8":
+                name = self.name("s8")
             if rnd.random() < 0.3 and t != "int":
                 inner = rnd.choice(INTS)
                 x = self.int_expr(ctx, inner, True, 2)
@@ -1837,8 +1908,13 @@ class Gen:
         if r < 0.75:
             t = Arr(rnd.choice(INTS + tuple(self.records)),
                     rnd.randint(1, 5))
-            if rnd.random() < 0.5 or not is_int(t.elem):
+            if rnd.random() < 0.5:
                 e = Zero(t, True)
+            elif not is_int(t.elem):
+                elems = [self.record_value(ctx, t.elem, set(), False) or
+                         Zero(t.elem, False)
+                         for _ in range(rnd.randint(1, t.n))]
+                e = Lit2(t, elems, True)
             else:
                 elems = [self.value_for(ctx, t.elem, set(), 0)
                          for _ in range(rnd.randint(1, min(t.n, 6)))]
@@ -1995,10 +2071,10 @@ class Gen:
         return [decl, LoopS(head + body)]
 
     def foo_stmt(self, ctx, depth):
-        p = self.path(ctx, lambda u: isinstance(u, (Arr, UArr)))
+        # note: a 'foo' inside another hides its 'e', 'i' and 'n', the outer
+        #       'e' is not the array of the inner one since the body names it
+        p = self.path(ctx, lambda u: isinstance(u, (Arr, UArr)), avoid=("e",))
         if p is None:
-            return None
-        if ctx.lookup("e") is not None:
             return None
         cnt = None
         if self.chance(0.4) or (isinstance(p.typ, Arr) and p.typ.n > 16):
@@ -2019,9 +2095,12 @@ class Gen:
         ctx.hidden.add(p.root)
         was = ctx.in_foo_global
         ctx.in_foo_global = was or root.is_global
+        outer_n = ctx.foo_n
+        ctx.foo_n = p.typ.n if isinstance(p.typ, Arr) else None
         ctx.loops += 1
         body = self.block(ctx, 3, depth - 1)
         ctx.loops -= 1
+        ctx.foo_n = outer_n
         ctx.in_foo_global = was
         ctx.hidden.discard(p.root)
         ctx.scopes.pop()
@@ -2083,6 +2162,10 @@ class Gen:
         if p is None:
             return None
         n = min(p.typ.n, 12)
+        if p.typ.n <= 16 and self.chance(0.3):
+            # the whole array or a count from its start
+            cnt = Lit(self.rnd.randint(0, n)) if self.chance(0.5) else None
+            return [WriteS(p, cnt, None)]
         start = self.rnd.randint(0, n)
         cnt = self.rnd.randint(0, n - start)
         if self.chance(0.3):
@@ -2095,6 +2178,33 @@ class Gen:
                     mask *= 2
                 return [WriteS(p, Bin("&", x, Lit(mask - 1)), Lit(start))]
         return [WriteS(p, Lit(cnt), Lit(start))]
+
+    def read_stmt(self, ctx):
+        # 'var gN = read(0, ...)' at the top of 'main', each runs once: the
+        # first takes the line, the others get 0
+        rnd = self.rnd
+        need = len(self.p.stdin)
+        out = []
+        p = self.path(ctx, lambda u: isinstance(u, Arr) and u.elem == "i8"
+                      and u.n >= need, writable=True)
+        if p is None:
+            t = Arr("i8", rnd.randint(need, 12))
+            name = self.name("v")
+            self.declare(ctx, name, t, True)
+            out.append(VarDecl(name, Zero(t, True), t))
+            p = Path(name, [], t)
+        self.reads += 1
+        r = rnd.random()
+        if r < 0.3:
+            e = Input(p, None, None)
+        elif r < 0.6:
+            e = Input(p, Lit(rnd.randint(need, p.typ.n)), None)
+        else:
+            start = rnd.randint(0, p.typ.n - need)
+            e = Input(p, Lit(rnd.randint(need, p.typ.n - start)), Lit(start))
+        name = self.name("g")
+        self.declare(ctx, name, "int", True)
+        return out + [VarDecl(name, e, "int")]
 
     # functions
 
@@ -2119,7 +2229,7 @@ class Gen:
         if r < 0.65:
             return "bool"
         if r < 0.8:
-            return UArr(rnd.choice(INTS))
+            return UArr(rnd.choice(INTS), bare=self.chance(0.7))
         if r < 0.85:
             return UArr(rnd.choice(self.records))
         return rnd.choice(self.records)
@@ -2181,7 +2291,8 @@ class Gen:
             fn.kind = "generic"
             fn.owner_base = base
             fn.tparams = ["T"]
-            fn.short = self.name("gf")
+            # note: one of each per program
+            fn.short = "fill" if kind == "gfunc" else "make"
             ctx.consts = {}
         for _ in range(rnd.randint(0, 3)):
             pname = self.name("p")
@@ -2305,8 +2416,9 @@ class Gen:
                     visit_expr(s.value)
                 elif isinstance(s, WriteS):
                     visit_expr(Read(s.path))
-                    visit_expr(s.cnt)
-                    visit_expr(s.start)
+                    for x in (s.cnt, s.start):
+                        if x is not None:
+                            visit_expr(x)
                 elif isinstance(s, Copy):
                     visit_expr(Read(s.src))
                     visit_expr(Read(s.dst))
@@ -2390,14 +2502,14 @@ FOLDED = ("divisor must not be zero", "shift count must be", "out of bounds",
           "past the end", "overflow", "is negative", "has no value")
 
 
-def build(work, source, target, options):
+def build(work, source, target, options, stdin):
     # what the program did: ('exit' or 'panic', code, stdout),
     # ('compiler-crash', stderr), ('compile', stderr) or how it did not end
     path = os.path.join(work, "f.baz")
     with open(path, "w") as f:
         f.write(fl.split_include(work, source))
     c, o, problem = fl.run_target(fl.COMPILER_ASAN, path, options, work,
-                                  target)
+                                  target, stdin=stdin)
     if c.timed_out:
         return ("compiler-hang", "")
     if c.returncode:
@@ -2413,7 +2525,7 @@ def build(work, source, target, options):
     return (o.kind, o.code, o.stdout)
 
 
-def judge(work, source, expected, variant, rnd, const_args, counts):
+def judge(work, source, expected, variant, rnd, const_args, counts, stdin):
     # builds one variant of the program, returns the findings
     targets = fl.with_rotated(fl.TARGETS, source)
     runs = [(target, ("--checks=noub",)) for target in targets]
@@ -2425,7 +2537,7 @@ def judge(work, source, expected, variant, rnd, const_args, counts):
     for target, options in runs:
         options = list(options) + [VARS]
         want = expected[64 if target == "x86_64" else 32]
-        got = build(work, source, target, options)
+        got = build(work, source, target, options, stdin)
         # a tool stopped by a limit says nothing about the code
         if got == want or got[0] == "skip":
             continue
@@ -2476,13 +2588,17 @@ def fuzz_one(args):
     counts = {expected[64][0]: 1}
     work = tempfile.mkdtemp(prefix="fuzzw-")
     try:
-        for variant, noinline in (("inline", False), ("noinline", True),
-                                  ("mixed", "mixed")):
+        # note: 'fuzz-coverage.py' sees the first variant, the mixed one has
+        #       both kinds of function
+        for variant, noinline in (("mixed", "mixed"), ("inline", False),
+                                  ("noinline", True)):
             source = program_text(program, noinline)
             found = judge(work, source, expected, variant, rnd,
-                          gen.const_args, counts)
+                          gen.const_args, counts, program.stdin)
             # note: a finding keeps the text of the variant that found it
             if found:
+                found = [(category, key, f"{detail}\ninput {program.stdin!r}")
+                         for category, key, detail in found]
                 return source, found, counts
     finally:
         shutil.rmtree(work, ignore_errors=True)
@@ -2511,6 +2627,7 @@ def main():
         rnd = random.Random(int(sys.argv[2]) * 1000003 + int(sys.argv[3]))
         program = Gen(rnd).generate()
         print(program_text(program, "--noinline" in sys.argv))
+        print("input", program.stdin, file=sys.stderr)
         for intw in (64, 32):
             try:
                 print(intw, Model(program, intw).run(), file=sys.stderr)

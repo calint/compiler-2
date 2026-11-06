@@ -1,6 +1,16 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] hard: round 134 (2026-11-06, user: all night; BR the constructs of
+    fuzz-whole.py)
+    => done (2026-11-06): fuzz-whole.py emits 80 of the 81 constructs (64
+       before): comments, '0b'/'0x' literals, the first element's width,
+       '[i + k]' in a 'foo', nested 'foo', 'write' of a whole array and of a
+       count, 'read' of a scripted line on every target, unsized 'mut'
+       arrays, named literals of record arrays, generic parameter orders;
+       'conversion-i64' stays with fuzz-exprs and fuzz-ub (rv32i rejects
+       'i64'); three broken models caught; 200 programs with a new seed 0
+       mismatches
 [x] hard: round 133 (2026-11-06, user: all night; BQ readability of
     'toc.hpp' and 'stmt_call.hpp')
     => done (2026-11-06): comments that had moved with the formatter or
