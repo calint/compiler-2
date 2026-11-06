@@ -1,6 +1,15 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] hard: design review series 2, round 103 (2026-11-06, user: loop of
+    design review and bug hunt; I hunt of rounds 101 and 102)
+    => done (2026-11-06): no bug; the landings of round 101 matched llvm's
+       image on every rv32i target with and without '--nopt', and
+       'shown_char_size' a strict decoder on 738 million inputs; I1
+       'test-far-jumps-no-scratch.sh' runs three borrowing branches of an
+       'and' that share one landing; bidi controls and a literal '\x' in
+       the source left as they are (a message stays on its line and is
+       valid UTF-8); the loop ends
 [x] hard: design review series 2, round 102 (2026-11-06, user: loop of
     design review and bug hunt; G hunt of round 100, H review of the patch
     of round 101)

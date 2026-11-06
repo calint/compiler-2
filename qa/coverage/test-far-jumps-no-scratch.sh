@@ -1,14 +1,15 @@
 #!/bin/bash
-# checks that an rv32i jump beyond 1 MiB with no scratch register free
-# borrows one: a loop nested 14 deep with a body of 1.08 MiB, compiled with
-# and without the jump optimizer, executed under qemu and its image compared
-# with llvm's; and that a branch the jump optimizer inverts takes the scratch
-# register of the jump it replaces: a 'break' out of a 1.08 MiB loop body 13
-# 'foo' deep, compiled with and without the jump optimizer and executed under
-# qemu; and that the far branch to a failure handler reaches the stub of its
-# line: a bounds check 12 'foo' deep panics at its line, also 13 deep where
-# the check holds the last free registers; and an 'exit' 14 'foo' deep
-# reaches the shared exit routine on every rv32i target
+# checks that an rv32i jump beyond 1 MiB with no scratch register free borrows
+# one: a loop nested 14 deep with a body of 1.08 MiB, compiled with and without
+# the jump optimizer, executed under qemu and its image compared with llvm's;
+# three borrowing branches of an 'and' share one landing; and that a branch the
+# jump optimizer inverts takes the scratch register of the jump it replaces: a
+# 'break' out of a 1.08 MiB loop body 13 'foo' deep, compiled with and without
+# the jump optimizer and executed under qemu; and that the far branch to a
+# failure handler reaches the stub of its line: a bounds check 12 'foo' deep
+# panics at its line, also 13 deep where the check holds the last free
+# registers; and an 'exit' 14 'foo' deep reaches the shared exit routine on
+# every rv32i target
 #
 # the body takes minutes to compile with the coverage build, so the check is a
 # script of its own
@@ -80,6 +81,53 @@ ld.lld -m elf32lriscv -T "$SCRIPT_DIR/rv32i-image.ld" -e _start -o far.elf \
 llvm-objcopy -O binary far.elf image.bin
 cmp -s image.bin far.bin
 echo ok
+
+# writes 'and.baz': 14 'foo' deep the three branches of an 'and' to the end of
+# its 1.08 MiB body borrow 't0' and share one landing, and the end of the body
+# of the 'or', which runs, falls through the landing after it
+python3 - <<'EOF'
+depth = 14
+source = [
+    "func main() {",
+    "    var a = []{1, 2}",
+    "    var x = 100",
+    "    var z = 0",
+    "    var w = 0",
+    "    var v = 0",
+]
+for level in range(depth):
+    source.append("    " * (level + 1) + "foo a {")
+source.append("        w = z - 1")
+source.append("        v = z - 2")
+source.append("        if z == 0 and w == 0 and v == 0 {")
+source.append("            x = x + 1\n" * 90000 + "        }")
+source.append("        if z == 0 or w == 0 {")
+source.append("            x = x + 1\n" * 90000 + "        }")
+source.append("        z = z + 1")
+for level in reversed(range(1, depth)):
+    source.append("    " * (level + 1) + "}")
+source.append("        e = e + 1")
+source.append("    }")
+source.append("    exit(x + z + a[0] * 10 + a[1])")
+source.append("}")
+open("and.baz", "w").write("\n".join(source) + "\n")
+EOF
+
+for optimize in "" "--nopt"; do
+    echo -n "far jumps sharing a landing rv32i $optimize: "
+    "$BIN" and.baz --target=rv32i --bin=and.bin $optimize >and.s
+    [[ $(grep -c "jump \.Lbaz_landing\.if\.[0-9.]*\.end, t0" and.s) -ge 3 ]]
+    llvm-mc -triple=riscv32 -mattr=-m,-a,-f,-d,-c -filetype=obj and.s -o and.o
+    ld.lld -m elf32lriscv -e _start -o and and.o
+    set +e
+    timeout -k 1s 60s qemu-riscv32 ./and
+    status=$?
+    set -e
+    # note: 155 is the low byte of 'x + z + a[0] * 10 + a[1]',
+    #       100 + 180000 + 16384 + 23
+    [[ $status -eq 155 ]]
+    echo ok
+done
 
 # 'cnt' is a run-time count, so the compare of 'x > 2' holds the last free
 # registers and only the jump of 'break' after it has a scratch register
