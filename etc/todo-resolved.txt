@@ -1,6 +1,16 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] hard: quality round 126 (2026-11-06, user: qa until it is great; AU a
+    final assessment)
+    => done (2026-11-06): AU no bug, wrong result, flaky test or wrong
+       statement of the documents (build, suites twice, 5 sources read, 30
+       tests and 24 statements verified, 20 programs on both targets); AU3
+       the size of a type at the limit reads "it must be smaller than the N
+       B the target addresses" (1720, 1721); AU4 1861 without its unused
+       locals; left: ignored files in the tree (qa/perf, '*-rv32i.bin' of
+       the tests, root strays, qa/fuzz/findings) and the tracked copy
+       etc/readme/README.md for the user
 [x] hard: quality round 125 (2026-11-06, user: qa until it is great; AT hunt
     of the messages of round 124)
     => done (2026-11-06): AT1 the 'foo e in arr' hint rejected a valid body
