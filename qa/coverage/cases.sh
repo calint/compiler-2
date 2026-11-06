@@ -2242,13 +2242,13 @@ SRC=0701 && EXP=255 && OPTS="--vars=0x10000 --checks=lower" RUN_ERR
 SRC=0702 && EXP=0 && OPTS="--vars=0x10000 --checks=lower" RUN_ERR
 
 # a global passed to a non-inline function that also names it shares storage
-SRC=0703 && OPTS="--vars=0x40000 --checks=upper,lower,line" COMPERR
+SRC=0703 && COMPERR
 
 # a constant passed to a mut parameter cannot be written
 SRC=0704 && COMPERR
 
 # an error in a method body names the method call
-SRC=0705 && OPTS="--vars=0x40000 --checks=upper,lower,line" COMPERR
+SRC=0705 && COMPERR
 
 # a constant element decides a boolean list passed to an inline function
 SRC=0706 && EXP=2 && RUN
@@ -2400,13 +2400,13 @@ SRC=0753 && EXP=5 && RUN
 SRC=0754 && EXP=21 && RUN
 
 # a global reaches a global named by a callee through two non-inline calls
-SRC=0755 && OPTS="--vars=0x40000 --checks=upper,lower,line" COMPERR
+SRC=0755 && COMPERR
 
 # a recursive non-inline call is checked once
 SRC=0756 && EXP=0 && RUN
 
 # an indexed argument may be the array element a non-inline body names
-SRC=0757 && OPTS="--vars=0x40000 --checks=upper,lower,line" COMPERR
+SRC=0757 && COMPERR
 
 # a type or array initializer without '{}' is the same as with an empty '{}'
 SRC=0758 && EXP=0 && RUN
@@ -2758,7 +2758,7 @@ SRC=0869 && COMPERR
 SRC=0870 && COMPERR
 
 # a result that may share storage with an argument is rejected on every target
-SRC=0871 && OPTS="--vars=0x40000 --checks=upper,lower,line" COMPERR
+SRC=0871 && COMPERR
 
 # a delimiter where a definition should start is rejected
 SRC=0872 && COMPERR
@@ -2965,26 +2965,26 @@ SRC=0941 && COMPERR
 
 # arrays of different element sizes that overlap are assumed to reach the
 # same bytes
-SRC=0942 && OPTS="--vars=0x40000 --checks=upper,lower,line" COMPERR
+SRC=0942 && COMPERR
 
 # the aliasing is made inside the body of the function that passes a
 # parameter and a global that name the same data
-SRC=0943 && OPTS="--vars=0x40000 --checks=upper,lower,line" COMPERR
+SRC=0943 && COMPERR
 
 # the same for non-inlined functions, the aliasing is made inside the body of
 # the function that passes a parameter and a global
-SRC=0944 && OPTS="--vars=0x40000 --checks=upper,lower,line" COMPERR
+SRC=0944 && COMPERR
 
 # the element 'e' of a 'foo' is passed to a function that reads the array,
 # which can be the element itself
-SRC=0945 && OPTS="--vars=0x40000 --checks=upper,lower,line" COMPERR
+SRC=0945 && COMPERR
 
 # the same for a non-inlined function
 SRC=0946 && COMPERR
 
 # a call result is written into the element 'e' of a 'foo' and the function
 # reads the array, which can be the element itself
-SRC=0947 && OPTS="--vars=0x40000 --checks=upper,lower,line" COMPERR
+SRC=0947 && COMPERR
 
 # the element 'e' of a 'foo' is passed to a function that reads another
 # array, which is accepted
@@ -3016,7 +3016,7 @@ SRC=0954 && EXP=0 && RUN
 
 # two run-time indexes in a path, the read is of the same field of an element
 # that both indexes can select
-SRC=0955 && OPTS="--vars=0x40000 --checks=upper,lower,line" COMPERR
+SRC=0955 && COMPERR
 
 # two run-time indexes in a path, the read is of another field of the
 # elements, which is accepted
@@ -3028,7 +3028,7 @@ SRC=0957 && EXP=0 && RUN
 
 # the destination has two run-time indexes and the read one, the read is of
 # the same field that the destination can select
-SRC=0958 && OPTS="--vars=0x40000 --checks=upper,lower,line" COMPERR
+SRC=0958 && COMPERR
 
 # the destination has one run-time index and the read two, the fields in the
 # elements are different, which is accepted
@@ -4550,20 +4550,19 @@ SRC=1398 && COMPERR
 SRC=1399 && EXP=0 && RUN
 SRC=1400 && COMPERR
 
-# a part read under another name of the destination: a parameter, inline and
-# noinline, the element of a 'foo', and a local that hides the global
-SRC=1401 && OPTS="--vars=0x40000 --checks=upper,lower,line" COMPERR
-SRC=1402 && OPTS="--vars=0x40000 --checks=upper,lower,line" COMPERR
+# a part read under another name of the destination: a parameter, rejected as
+# storage that may be shared, the element of a 'foo', and a local that hides
+# the global
+SRC=1401 && COMPERR
 SRC=1403 && COMPERR
 SRC=1404 && EXP=0 && RUN
 
-# a part read under another name of the destination: while it is computed,
-# inline and noinline, not written yet and already written, rejected as storage
-# that may be shared
-SRC=1405 && OPTS="--vars=0x40000 --checks=upper,lower,line" COMPERR
-SRC=1406 && OPTS="--vars=0x40000 --checks=upper,lower,line" COMPERR
-SRC=1407 && OPTS="--vars=0x40000 --checks=upper,lower,line" COMPERR
-SRC=1408 && OPTS="--vars=0x40000 --checks=upper,lower,line" COMPERR
+# a value read under another name of the destination, the element of a 'foo':
+# while it is computed, once, and a part not written yet; a noinline parameter
+# is rejected as storage that may be shared
+SRC=1405 && EXP=0 && RUN
+SRC=1406 && EXP=0 && RUN
+SRC=1407 && EXP=0 && RUN
 SRC=1409 && COMPERR
 SRC=1410 && COMPERR
 
@@ -7014,3 +7013,7 @@ SRC=2850 && COMPERR
 
 # an escape of a lead byte that the end of the literal cuts short
 SRC=2851 && COMPERR
+
+# an escape of a lead byte that an ASCII byte follows quotes the lead byte
+# alone
+SRC=2852 && COMPERR

@@ -142,10 +142,10 @@ class one_line_source final {
 
         const size_t newline{text.find('\n', begin)};
 
-        // note: a comment on the last line has no line end
-        if (newline == std::string_view::npos) {
-            return text.size();
-        }
+        // note: a comment in the source of a node is followed by more of the
+        //       node on a later line, so it has a line end
+
+        assert(newline != std::string_view::npos);
 
         return newline + 1;
         // note: +1 because the line end belongs to the comment

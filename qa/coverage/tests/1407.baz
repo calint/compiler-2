@@ -1,16 +1,12 @@
 # a part of a value may read under another name a part of the destination
-# that is not written yet
-# the call is rejected: the function uses the global the call passes it
+# that is not written yet: 'e.y' is read before 'g[1].x' is written
 
 type point {x, y}
 
-var g = point{3, 5}
-
-func f(p mut point) {
-    p = {g.y, 1}
-}
-
 func main() {
-    f(g)
-    exit(g.x - 5)
+    var g = point[2]{{3, 5}, {7, 9}}
+    foo g {
+        g[1] = {e.y, 1}
+    }
+    exit(g[1].x - 1)
 }

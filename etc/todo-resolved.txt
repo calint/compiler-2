@@ -1,6 +1,22 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] hard: quality round 122 (2026-11-06, user: qa until it is great; AP
+    the proposals of round 121 AM)
+    => done (2026-11-06): AM8 the aliasing tests that no longer reached
+       what their header named: 0705 reaches its body error again, 1405 to
+       1407 test the 'e' of a 'foo' (the only alias a call has left), 1402
+       and 1408 removed as copies of 1409 and 1403, the headers of 0942
+       0945 0947 0955 0958 1401 say what is tested; AM9 every program of
+       test-coverage.sh runs under 'timeout --foreground 10'; AM13
+       compare-listings.sh also compares rv32i-qemu and rv32i-fpga; AM14
+       'i8[int]' says "'int' is a type, an array size is a constant number"
+       ('stmt_array_size::assert_size_not_type', 1604); AM15
+       'comment_end' and 'operand_path' assert what no input reaches, the
+       branch of 'escape_length' is reachable and tested (2852); AM10 the
+       profiles of a coverage run in eight pools ('%8m'); AQ1 to AQ3 (round
+       123 newcomer review) the tutorial named a generic type 'list' that
+       does not exist and said a wider element is always an error
 [x] hard: quality round 121 (2026-11-06, user: more threads doing qa,
     code reviews, bug hunts, documentation; AK documents, AL style, AO
     messages, AM the qa)

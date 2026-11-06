@@ -1,7 +1,6 @@
 # aliasing: arrays of different element sizes that overlap are assumed to
 # reach the same bytes
-# the value is computed before the destination is written
-# the call is rejected: the function uses the global the call passes it
+# the call is rejected: the method reads the global the receiver is part of
 
 type entity {
     vals i32[3],

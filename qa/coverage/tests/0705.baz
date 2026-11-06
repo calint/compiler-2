@@ -1,5 +1,4 @@
 # an error in a method body names the method call
-# the call is rejected: the function uses the global the call passes it
 
 type point {
     x,
@@ -14,5 +13,5 @@ func point.bad(v) {
 
 func main() {
     var p = point{1, 2}
-    p.bad(g.y)
+    p.bad(1)
 }

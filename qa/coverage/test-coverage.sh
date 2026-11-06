@@ -132,7 +132,9 @@ if [[ -n "$VERSION_OPTS" && -n "${UPDATE:-}" ]]; then
     exit 1
 fi
 
-export LLVM_PROFILE_FILE="$SCRIPT_DIR/$MACHINE-%p.profraw"
+# the runs merge their counts into a pool of 8 profiles per build instead of
+# writing one each, the merged report is the same
+export LLVM_PROFILE_FILE="$SCRIPT_DIR/$MACHINE-%8m.profraw"
 
 if [[ $MACHINE == rv32i-fpga && ! -x ${FPGA_EMULATOR[0]} ]]; then
     "$FPGA_EMULATOR_DIR/make.sh"
@@ -191,6 +193,11 @@ run_uart() {
     { cat; printf '\x04\x04'; } | "$@"
 }
 
+# a program that runs longer is stopped and exits with 124; '--foreground'
+# keeps it in the process group of the script, so ctrl-c stops it too
+# note: 10 s is about 30 times the slowest case, 0.3 s under qemu user mode
+PROGRAM_TIMEOUT=(timeout --foreground 10)
+
 # sets 'PROGRAM_COMMAND' to the command that runs the program of the target
 program_command() {
     case "$MACHINE" in
@@ -199,6 +206,7 @@ program_command() {
     rv32i-qemu) PROGRAM_COMMAND=("${QEMU_SYSTEM[@]}") ;;
     rv32i-fpga) PROGRAM_COMMAND=("${FPGA_EMULATOR[@]}") ;;
     esac
+    PROGRAM_COMMAND=("${PROGRAM_TIMEOUT[@]}" "${PROGRAM_COMMAND[@]}")
 }
 
 execute_program() {

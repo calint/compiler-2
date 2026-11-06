@@ -144,7 +144,7 @@ func sized_types() {
     var wide = int(small)
     assert(wide == -56)
     # 'int(x)' converts to the default type, 'int' also names that type, e.g.
-    # 'int[4]' and 'list<int, 8>'
+    # 'int[4]' and 'pair<int, int>', see 'generics'
 
 #   small = wide
 #   compile error because the value might not fit, narrowing must be
@@ -160,6 +160,8 @@ func sized_types() {
     # a narrower element is widened to that width, a wider one is a compile
     # error until it is converted, e.g. 'small + i8(wide)', or until the first
     # element is widened, e.g. 'int(small) + wide'
+    # assigned to a wider variable it is computed at that width instead,
+    # 'wide = small + wide' needs no conversion
 
 #   sum = wide
 #   compile error because 'wide' is an 'int' and 'sum' an 'i8'
@@ -760,7 +762,7 @@ type small_large = pair<small, large>
 type deck<capacity> = buffer<capacity>
 type small_deck = deck<4>
 # a generic type can be based on another and pass on, rename or fix its
-# parameters, e.g. 'type text<capacity> = list<i8, capacity>'; an instance has
+# parameters, e.g. 'type with_int<A type> = pair<A, int>'; an instance has
 # the fields and the methods of the base
 
 func mut deck.take() res {

@@ -1,9 +1,10 @@
 #!/bin/bash
 # compares two builds of the compiler over every case of 'cases.sh': each case
-# is compiled with its options and with '--checks=noub' for x86_64 and rv32i,
-# and the listing, the error output, the exit code and the rv32i image of the
-# two builds must be equal; the refactor check of AGENTS.md, e.g. a build of
-# HEAD against the build of the working tree
+# is compiled with its options and with '--checks=noub' for every target, the
+# uart targets for their input and output routines, and the listing, the error
+# output, the exit code and the rv32i image of the two builds must be equal;
+# the refactor check of AGENTS.md, e.g. a build of HEAD against the build of
+# the working tree
 #
 # usage: compare-listings.sh BASE_BAZ NEW_BAZ
 #   prints the cases that differ and their count, exits 1 when any differs
@@ -37,11 +38,11 @@ grep -vE '^ *#' cases.sh | grep -oE 'SRC=[0-9]+[^;]*' | while read -r line; do
     printf '%s\t%s\n' "$src" "$options"
 done | sort -u >"$WORK/jobs"
 
-# compiles one case with both builds for both targets and both option sets
+# compiles one case with both builds for every target and both option sets
 compare_case() {
     local src=$1
     local options=$2
-    for target in x86_64 rv32i; do
+    for target in x86_64 rv32i rv32i-qemu rv32i-fpga; do
         for opts in "$options" "--checks=noub"; do
             local dir
             dir=$(mktemp -d "$WORK/case.XXXXXX")

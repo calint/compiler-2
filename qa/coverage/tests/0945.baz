@@ -1,7 +1,6 @@
 # aliasing: the element 'e' of a 'foo' is passed to a function that reads
 # the array, which can be the element itself
-# the value is computed before the destination is written
-# the call is rejected: the function uses the global the call passes it
+# the call is rejected: the function reads the array the argument is part of
 
 dat g = i32[4]{ 1, 2, 3, 4 }
 

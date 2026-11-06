@@ -1,0 +1,6 @@
+# an escape of a lead byte that an ASCII byte follows quotes the lead byte
+# alone, the ASCII byte stays data
+
+func main() {
+    var s = "\ÃA"
+}

@@ -73,6 +73,16 @@ class stmt_array_size final : public statement {
     auto check_where_written(const toc& tc) const -> void;
 
     [[nodiscard]] auto has_value() const -> bool { return value_ != nullptr; }
+
+  private:
+    //
+    // statics
+    //
+
+    // a type alone is no size, e.g. the 'int' of 'i8[int]' or of
+    // 'i8[int{2}]', not of the conversion 'i8[int(2)]'
+    static auto assert_size_not_type(const toc& tc, const tokenizer& tz)
+        -> void;
 };
 
 // the value of an initializer, an argument or a field, parsed at the type of
@@ -233,9 +243,10 @@ class expr_any final : public statement {
 
     // a single value or the copy of an array, e.g. the 'a' of 'var b = a'
     [[nodiscard]] auto operand_path() const -> const stmt_identifier* override {
-        if (not std::holds_alternative<single_value>(form_)) {
-            return nullptr;
-        }
+        // note: an array literal is written by its elements, nothing asks it
+        //       for a path
+
+        assert(std::holds_alternative<single_value>(form_));
 
         return element(0).operand_path();
     }
@@ -1237,6 +1248,8 @@ inline stmt_array_size::stmt_array_size(toc& tc, tokenizer& tz)
         return;
     }
 
+    assert_size_not_type(tc, tz);
+
     value_ = std::make_unique<expr_any>(tc, tz, tc.builtins().default_type(),
                                         literal_typing::from_destination);
 
@@ -1292,4 +1305,20 @@ inline auto stmt_array_size::array_size() const -> size_t {
     assert(value_);
 
     return static_cast<size_t>(folded_);
+}
+
+inline auto stmt_array_size::assert_size_not_type(const toc& tc,
+                                                  const tokenizer& tz) -> void {
+
+    tokenizer probe{tz};
+
+    const token tk{probe.next_token()};
+
+    if (not is_bare_builtin_type(tc, tk, probe)) {
+        return;
+    }
+
+    throw compile_error{
+        tk, std::format("{} is a type, an array size is a constant number",
+                        in_quotes(tk.text()))};
 }

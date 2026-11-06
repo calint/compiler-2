@@ -1,14 +1,10 @@
 # a value that reads another name of the destination once is computed in the
 # destination
-# the call is rejected: the function uses the global the call passes it
-
-var g = 3
-
-func f(p) {
-    g = p + 1
-}
 
 func main() {
-    f(g)
-    exit(g - 4)
+    var g = i32[4]{1, 2, 3, 4}
+    foo g {
+        g[3] = e + 1
+    }
+    exit(g[3] - 5)
 }

@@ -1,15 +1,11 @@
 # a value read under another name of the destination while it is computed
-# goes through a scratch register: 'g' would be written before 'p' is read
+# goes through a scratch register: 'g[3]' would be written before 'e' is read
 # again
-# the call is rejected: the function uses the global the call passes it
-
-var g = 3
-
-func f(p) {
-    g = p * 2 + p
-}
 
 func main() {
-    f(g)
-    exit(g - 9)
+    var g = i32[4]{1, 2, 3, 4}
+    foo g {
+        g[3] = e * 2 + e
+    }
+    exit(g[3] - 27)
 }

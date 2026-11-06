@@ -1,7 +1,6 @@
 # aliasing: the destination has two run-time indexes and the read one, the
 # read is of the same field that the destination can select
-# the value is computed before the destination is written
-# the call is rejected: the function uses the global the call passes it
+# the call is rejected: the function reads the global the argument is part of
 
 type item {
     f i32,
