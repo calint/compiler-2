@@ -7,7 +7,8 @@
 # shadowing blocks, conversions between widths, every operator, literals in
 # decimal, hex and binary, 'let', 'dat', globals, 'array_copy',
 # 'arrays_equal', 'write' and a printed trace of values, 'read' of one line of
-# input at the top of 'main'
+# input at the top of 'main'. the '%' that keeps most indices and counts in
+# bounds is computed by a 'let' before its statement ('Gen.hoist')
 #
 # python runs the same program (an interpreter of its tree) and gives the
 # output and the exit code, or the first panic under '--checks=noub', for a
@@ -1054,6 +1055,9 @@ class Gen:
         self.generic_bases = []
         self.globals = {}
         self.in_index = 0
+        # the 'let' statements that go before the statement being generated,
+        # None where an expression cannot be hoisted
+        self.hoisted = None
         self.const_args = rnd.random() < 0.5
         self.reads = 0
         # note: a uart gives the end of transmission to a read of 'fuzzlib'
@@ -1301,10 +1305,24 @@ class Gen:
                 return Bin("&", x, Lit(mask - 1))
             if rnd.random() < 0.9:
                 x = Bin("&", x, Lit(0x7fff))
-            return Bin("%", x, Lit(t.n))
+            return self.hoist(Bin("%", x, Lit(t.n)))
         if rnd.random() < 0.9:
             x = Bin("&", x, Lit(0x7fff))
-        return Bin("%", x, ALen(array_path))
+        return self.hoist(Bin("%", x, ALen(array_path)))
+
+    def hoist(self, e):
+        # the '%' of an index or a count goes to a 'let' before the statement
+        # but in a few: on x86_64 the division holds 'rax' and 'rdx', which
+        # the rest of an expression or a 'write' often needs too and runs out
+        # of registers (README chapter 8 item 3)
+        if self.hoisted is None or e.const or self.chance(0.05):
+            return e
+        name = self.name("h")
+        # note: the index is an 'int', a 'let' would take the type of its
+        #       first element
+        self.hoisted.append(VarDecl(name, Conv("int", e, "int"), "int",
+                                    let=True))
+        return Read(Path(name, [], "int"))
 
     # integer expressions of type 't'
 
@@ -1492,7 +1510,7 @@ class Gen:
         if x is None:
             return Lit(0)
         if self.chance(0.8):
-            return Bin("%", Bin("&", x, Lit(0x7fff)), Lit(n + 1))
+            return self.hoist(Bin("%", Bin("&", x, Lit(0x7fff)), Lit(n + 1)))
         return Bin("&", x, Lit(3))
 
     # calls
@@ -1742,12 +1760,15 @@ class Gen:
 
     def stmts(self, ctx, budget, depth):
         out = []
+        outer = self.hoisted
         while budget > 0:
+            self.hoisted = []
             s = self.stmt(ctx, depth)
             if s is None:
                 continue
-            out += s
+            out += self.hoisted + s
             budget -= len(s)
+        self.hoisted = outer
         return out
 
     def declare(self, ctx, name, t, writable):
@@ -1827,7 +1848,12 @@ class Gen:
                 # note: the initializer cannot read the name it declares
                 was_hidden = name in ctx.hidden
                 ctx.hidden.add(name)
+                # note: a 'let' before the block would not see the constant
+                #       of its head
+                hoisted = self.hoisted
+                self.hoisted = None
                 e = self.int_expr(ctx, t, True, 1)
+                self.hoisted = hoisted
                 if not was_hidden:
                     ctx.hidden.discard(name)
                 if e is not None and not (e.const and t != "int"):
@@ -2081,9 +2107,10 @@ class Gen:
             if isinstance(p.typ, Arr):
                 cnt = self.count_expr(ctx, p.typ)
             else:
-                cnt = Bin("%", self.int_expr(ctx, "int", True, 0,
-                                             nonconst=True, calls=False)
-                          or Lit(1), ALen(p)) if self.chance(0.5) else Lit(0)
+                x = self.int_expr(ctx, "int", True, 0, nonconst=True,
+                                  calls=False) or Lit(1)
+                cnt = self.hoist(Bin("%", x, ALen(p))) if self.chance(0.5) \
+                    else Lit(0)
         root = ctx.lookup(p.root) or self.globals.get(p.root)
         writable = root.writable and p.root not in ctx.readonly and \
             self.global_ok(ctx, root, True)

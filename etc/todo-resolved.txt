@@ -1,6 +1,14 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] hard: round 137 (2026-11-07, user: all night; BV the programs of
+    fuzz-whole.py that ran out of registers)
+    => done (2026-11-07): 14 % of its programs were rejected for registers
+       (documented, chapter 8 item 3), nearly all from the '%' that keeps
+       an index or count in bounds next to an x86_64 division or 'write'
+       ('rax', 'rdx'); that '%' goes into a 'let hN = int(...)' before the
+       statement ('Gen.hoist'), 5 % stay inline; 2 % rejected now, 0
+       mismatches, coverage 80 of 81 kept
 [x] hard: round 136 (2026-11-07, user: all night; BS regressions over
     rounds 104 to 135)
     => done (2026-11-07): the build of round 103 (8c84e1a9) against HEAD:
