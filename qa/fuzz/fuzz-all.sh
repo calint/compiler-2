@@ -19,7 +19,9 @@ run() {
     "$@" || status=1
 }
 
-run ./fuzz-coverage.py 100 "$seed"
+# the coverage of the generators is checked with its own fixed seed, so a
+# rare construct does not fail the run by chance
+run ./fuzz-coverage.py 100
 run ./fuzz-constructs.py "$scale" "$seed"
 run ./fuzz-ub.py $((200 * scale)) "$seed"
 run ./fuzz-exprs.py $((3000 * scale)) "$seed"

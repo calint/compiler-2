@@ -446,7 +446,7 @@ CLI_INCLUDE_THROUGH_LINK() {
     echo -n "cli include through a symbolic link: "
     # a '..' after a link to a directory is the parent of the link's target,
     # as the file system resolves it
-    rm -rf gen-link-dir gen-link
+    rm -rf gen-link-dir gen-link gen-e.baz
     mkdir -p gen-link-dir/sub
     printf 'func three() res {\n    res = 3\n}\n' >gen-link-dir/gen-lib.baz
     printf 'include "../gen-lib.baz"\n\nfunc main() {\n    exit(three())\n}\n' \
@@ -481,6 +481,33 @@ CLI_INCLUDE_THROUGH_LINK() {
         >gen-main.baz
     "$BIN" gen-main.baz >gen.s 2>err && exit 1
     grep -Fq 'gen-link-dir/sub/gen-d.baz:2:11:' err
+    # the includes of a file reached by a '..' after a link are relative to
+    # the directory it was opened from, also where a file of that name next
+    # to the link is the same file: 'gen-link/../gen-e.baz' is
+    # 'gen-link-dir/gen-e.baz', its 'gen-lib.baz' 'gen-link-dir/gen-lib.baz'
+    printf 'include "gen-lib.baz"\n' >gen-link-dir/gen-e.baz
+    printf 'include "gen-link/../gen-e.baz"\n\nfunc main() {\n    exit(three())\n}\n' \
+        >gen-main.baz
+    ln gen-link-dir/gen-e.baz gen-e.baz
+    "$BIN" gen-main.baz >gen.s 2>err
+    grep -Fq '[gen-link-dir/gen-lib.baz:5:5] res = 3' gen.s
+    rm gen-e.baz
+    ln -s gen-link-dir/gen-e.baz gen-e.baz
+    "$BIN" gen-main.baz >gen.s 2>err
+    grep -Fq '[gen-link-dir/gen-lib.baz:5:5] res = 3' gen.s
+    rm gen-e.baz
+    # a link to its own directory does not grow the paths of a chain past
+    # the limit of links in one path
+    ln -s . gen-link-dir/self
+    local i
+    for i in {1..41}; do
+        printf 'include "self/gen-s%d.baz"\n' $((i + 1)) >gen-link-dir/gen-s$i.baz
+    done
+    # note: 41 links, Linux follows at most 40 in one path
+    printf 'func f() res {\n    res = 3\n}\n' >gen-link-dir/gen-s42.baz
+    printf 'include "gen-link-dir/gen-s1.baz"\n\nfunc main() {\n    exit(f())\n}\n' \
+        >gen-main.baz
+    "$BIN" gen-main.baz >gen.s 2>err
     # a path through a file names no file, as the file system says
     printf 'include "gen-lib.baz/../gen-lib.baz"\n' >gen-main.baz
     "$BIN" gen-main.baz >gen.s 2>err && exit 1
@@ -500,7 +527,7 @@ CLI_INCLUDE_THROUGH_LINK() {
     chmod a+x gen-perm
     [[ $exit_code -eq 0 ]]
     rm -rf gen-perm
-    rm -rf gen-link-dir gen-link gen-lib.baz gen-main.baz
+    rm -rf gen-link-dir gen-link gen-e.baz gen-lib.baz gen-main.baz
     echo ok
 }
 

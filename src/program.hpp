@@ -543,21 +543,16 @@ class program final {
         x.emit_read_only_constants(tc.data().constants());
     }
 
-    // the shorter form when it names the same file; else, after a symbolic
-    // link to a directory and a '..', the directory as the file system
-    // resolves it, so that a chain of includes does not grow its paths; a
-    // path that does not name a file or cannot be resolved stays as it is,
-    // its open tells why or reads the file the file system names
+    // the directory as the file system resolves it, also after a symbolic
+    // link to a directory and a '..', so that a chain of includes does not
+    // grow its paths and the includes of the file are relative to the
+    // directory it was opened from; a path that does not name a file or
+    // cannot be resolved stays as it is, its open tells why or reads the file
+    // the file system names
     [[nodiscard]] static auto include_path(const std::filesystem::path& joined)
         -> std::filesystem::path {
 
         std::error_code error;
-
-        if (std::filesystem::equivalent(joined.lexically_normal(), joined,
-                                        error)) {
-
-            return joined.lexically_normal();
-        }
 
         if (not std::filesystem::exists(joined, error)) {
             return joined;

@@ -1,6 +1,19 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] hard: design review series 2, round 117 (2026-11-06, user: keep going;
+    AC include paths after round 116)
+    => done (2026-11-06): AC1 the normal form kept when it named the same
+       file put the includes of a hard or symbolic link to a file in the
+       directory of the link ('d/../f.baz' read the 'g.baz' next to the
+       link); every include that exists is named by its directory resolved,
+       the 'equivalent' step removed; AC3 a link to its own directory no
+       longer grows the names of a chain ('lib/lib/lib/...' failed at 41
+       links); tests in 'test-cli.sh'; AC2 an include of '/proc/self/fd/0'
+       is named by the process id (names follow the resolved directory) and
+       AC4 the read-once check is quadratic in the files (2000 files 2.8 s)
+       are items of etc/todo.txt; 'fuzz-all.sh' runs 'fuzz-coverage.py'
+       with its fixed seed (a rare construct failed a run by chance)
 [x] hard: design review series 2, round 116 (2026-11-06, user: keep going;
     AB include paths as a whole against round 113 and 115)
     => done (2026-11-06): AB2 'f.baz/../f.baz' through a regular file was

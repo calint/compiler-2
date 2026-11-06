@@ -44,6 +44,19 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
 [ ] easy: low priority: the compile time of a value of a huge type grows
     with its bytes where it is a result, a constructor or '{}' (about 9 ns
     per byte, a field of 64 MiB 0.6 s; bug hunt round 1 K3.1)
+[p] easy: low priority: 'source_files::contains' compares a path with every
+    loaded file by 'std::filesystem::equivalent' (two stats each), so 2000
+    included files take 2.8 s against 0.15 s before round 116 (round 117
+    AC4); a fix stores the identity of a file ('st_dev', 'st_ino' of
+    'stat') once and compares integers, it adds '<sys/stat.h>', the first
+    POSIX header of 'src/' (a user decision); a set of canonical paths would
+    miss hard links and pipes
+    => pending (2026-11-06, user): kept for later
+[ ] easy: low priority: an include of '/proc/self/fd/0' or a main file
+    '/dev/fd/0' is named in the listing by the process id
+    ('/proc/883346/fd/0', round 117 AC2) since the names follow the resolved
+    directory (round 116 AB1); accept and document, or resolve only up to
+    the last '..' (names then depend on the spelling again)
 [ ] medium: low priority: one lexer (round 23 C.3, D1-4): 'one_line_source'
     ('statement.hpp') scans the source text of a statement again for the
     comments of the listing; 'source_to' writing through a 'source_sink' with
