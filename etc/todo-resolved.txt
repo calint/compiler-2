@@ -1,6 +1,16 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] hard: design review series 2, round 110 (2026-11-06, user: keep going;
+    V names that meet in one scope or table, after round 109 T1)
+    => done (2026-11-06): V1 a type parameter named like a generic type of
+       the program was not seen as a type parameter ('toc::type_param_named'
+       skipped every name that 'generics_' knows, meant for the receiver
+       entry only): a local of its name was accepted and a 'foo' in a
+       generic function hid it; the entry of the receiver is marked
+       ('type_table::add_receiver', 'is_type_param'), tests 2640 to 2642;
+       about 200 other pairs of names rejected at the definition or hidden
+       as documented
 [x] hard: design review series 2, round 109 (2026-11-06, user: keep going;
     S the no-UB guarantee on the code of rounds 104 to 107, T the front end
     by a grammar and mutations, U roome, io and programs of medium size)

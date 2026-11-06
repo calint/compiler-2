@@ -655,6 +655,9 @@ class type_table final {
         const type* type_ptr{};
         // see 'definition_order'
         size_t definition{};
+        // the generic type of a method naming its instance, see
+        // 'is_type_param'
+        bool is_receiver{};
     };
 
     lut<entry> entries_;
@@ -671,6 +674,7 @@ class type_table final {
                          .src_loc_tk{src_loc_tk},
                          .type_ptr{&tpe},
                          .definition{order_.get().current()},
+                         .is_receiver{},
                      });
     }
 
@@ -680,6 +684,7 @@ class type_table final {
                                             .src_loc_tk{},
                                             .type_ptr{&tpe},
                                             .definition{},
+                                            .is_receiver{},
                                         });
     }
 
@@ -687,15 +692,14 @@ class type_table final {
     auto add_param(const token& src_loc_tk, const std::string_view name,
                    const type& tpe) -> void {
 
-        // note: it hides a type of that name, see 'find'
+        put_param(src_loc_tk, name, tpe, false);
+    }
 
-        assert(not is_param(name));
+    // e.g. 'list' names 'str' in a method of 'str', 'type str = list<...>'
+    auto add_receiver(const token& src_loc_tk, const std::string_view name,
+                      const type& tpe) -> void {
 
-        params_.back().put(std::string{name}, {
-                                                  .src_loc_tk{src_loc_tk},
-                                                  .type_ptr{&tpe},
-                                                  .definition{},
-                                              });
+        put_param(src_loc_tk, name, tpe, true);
     }
 
     // the parameters of an enclosing instance are hidden until 'exit_params'
@@ -731,6 +735,15 @@ class type_table final {
         return not params_.empty() and params_.back().has(name);
     }
 
+    // a type parameter of the innermost instance being parsed, not the
+    // generic type of a method, which names its instance like a type name does
+    [[nodiscard]] auto is_type_param(const std::string_view name) const
+        -> bool {
+
+        return is_param(name) and
+               not params_.back().get_const_ref(name).is_receiver;
+    }
+
     [[nodiscard]] auto src_loc_tk_of(const std::string_view name) const
         -> const token& {
 
@@ -744,6 +757,21 @@ class type_table final {
         }
 
         return entries_.get_const_ref(name);
+    }
+
+    auto put_param(const token& src_loc_tk, const std::string_view name,
+                   const type& tpe, const bool is_receiver) -> void {
+
+        // note: it hides a type of that name, see 'find'
+
+        assert(not is_param(name));
+
+        params_.back().put(std::string{name}, {
+                                                  .src_loc_tk{src_loc_tk},
+                                                  .type_ptr{&tpe},
+                                                  .definition{},
+                                                  .is_receiver{is_receiver},
+                                              });
     }
 };
 
@@ -2604,8 +2632,8 @@ class toc final {
                 tc_.generics().get_type(instance.generic_name),
             };
 
-            tc_.types_.add_param(generic.src_loc_tk, instance.generic_name,
-                                 *instance.type_ptr);
+            tc_.types_.add_receiver(generic.src_loc_tk, instance.generic_name,
+                                    *instance.type_ptr);
 
             add_args(instance.type_args());
         }
@@ -3390,7 +3418,7 @@ class toc final {
 
         assert(not is_compiling_);
 
-        if (not types_.is_param(name) or generics_.exists_type(name)) {
+        if (not types_.is_type_param(name)) {
             return nullptr;
         }
 

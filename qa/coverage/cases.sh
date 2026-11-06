@@ -6922,3 +6922,15 @@ SRC=2600 && COMPERR
 # a type parameter of a method is not named like the type of the method, also
 # when no instance is made
 SRC=2601 && COMPERR
+
+# a type parameter named like a generic type names its argument: a local of
+# its name is rejected as for any type parameter
+SRC=2640 && COMPERR
+
+# a 'foo' in a method does not declare 'e' while the type parameter 'e' of the
+# generic type of the method names a type, also when 'e' names a generic type
+SRC=2641 && COMPERR
+
+# the generic type of a method names its instance like a type name does, so a
+# 'foo' in the method may declare 'e' when the generic type is 'e'
+SRC=2642 && EXP=7 && RUN

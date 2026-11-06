@@ -1,0 +1,24 @@
+# a 'foo' in a method does not declare 'e' while the type parameter 'e' of the
+# generic type of the method names a type, also when 'e' names a generic type
+
+type e<n> {
+    v i8[n],
+}
+
+type box<e type, n> {
+    v e[n],
+}
+
+func box.sum() res int {
+    res = 0
+    foo self.v {
+        res = res + e
+    }
+}
+
+type b4 = box<i8, 4>
+
+func main() {
+    var b = b4
+    exit(b.sum())
+}
