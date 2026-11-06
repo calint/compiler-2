@@ -1,6 +1,15 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] hard: round 133 (2026-11-06, user: all night; BQ readability of
+    'toc.hpp' and 'stmt_call.hpp')
+    => done (2026-11-06): comments that had moved with the formatter or
+       described another design ('toc::add_const',
+       'generic_scope::add_receiver', 'find_storage_location', the header of
+       'scope_stack', the file map of toc.hpp, 'scope::name_',
+       'generic_call::value_type', 'max_scope_count_', the modes "each set
+       by one function"), 'argument_indexes' named 'deducing_args'; about 45
+       'e.g.' examples compiled and right; listings equal
 [x] hard: round 132 (2026-11-06, user: all night; BP the judgment calls of
     round 131 BN)
     => done (2026-11-06): rv32i 'upper_bound_test_count' next to

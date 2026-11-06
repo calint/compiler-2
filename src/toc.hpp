@@ -54,6 +54,8 @@
 //                   ('name_meaning'), the target of 'break' ('loop_target')
 //   'storage_layout' where variables are placed and how much storage is used
 //   'builtin_roles' the types the front end needs by role
+//   name errors     'throw_invalid_name', 'throw_unparsed_number' and
+//                   'throw_if_ends_with_semicolon' before them
 //   'ident_resolver' resolves one name by 'lookup'
 //   'definition_checks' the errors of a name defined twice
 //   'toc'           the facade the statements use, owns all of the above and
@@ -328,7 +330,7 @@ class scope final {
         loop_reach reach;
     };
 
-    // optional name
+    // the function name or the loop label, empty for a block
     std::string_view name_;
 
     // the bytes of variable storage this scope uses
@@ -1093,8 +1095,8 @@ struct name_meaning {
     }
 };
 
-// the scopes being compiled, from the root scope that holds the globals to the
-// innermost one
+// the scopes being parsed or compiled, from the root scope that holds the
+// globals to the innermost one
 class scope_stack final {
     std::vector<scope> scopes_;
     size_t max_scope_count_{};
@@ -1732,8 +1734,8 @@ class storage_layout final {
     }
 
     // a local starts after the storage in use of the nearest scope with a
-    // frame and of the scopes inside it, other variables start at the
-    // variables base
+    // frame and of the scopes inside it, any other variable after the dats
+    // and the variables in use
     [[nodiscard]] auto find_storage_location() const -> storage_location {
         const std::vector<scope>& scopes{scopes_.get().all()};
         size_t local_size_bytes{};
@@ -2424,7 +2426,7 @@ class definition_checks final {
 // with the constant count ('dry_run_scope') and set to those of the kept
 // version by 'emit_most_efficient'
 //
-// the modes a node does not see, each set in one place and read elsewhere:
+// the modes a node does not see, each set by one function and read elsewhere:
 //
 //   'is_compiling_'           set by 'begin_compile'; read by 'scope_entry'
 //                             and 'add_var' (storage and comments)
@@ -2649,7 +2651,8 @@ class toc final {
 
         // a method of an instance of a generic type sees the generic type as
         // the instance and its type arguments, e.g. 'list' names 'str' and 'T'
-        // names 'i8'; its constants are in the scope of the body
+        // names 'i8'; its constants are in the block of this scope, the
+        // compile adds them to the body ('stmt_def_func::add_constants')
         auto add_receiver(const generic_type_instance& instance) -> void {
             const generic_type_info& generic{
                 tc_.generics().get_type(instance.generic_name),
@@ -2702,7 +2705,8 @@ class toc final {
         scopes_.back().add_binding(binding);
     }
 
-    // e.g. the packed elements of a constant '{...}' initializer
+    // a constant of the innermost scope, e.g. a 'let' that folds or a
+    // constant argument of a generic instance; commented only while compiling
     auto add_const(const token& src_loc_tk, const size_t indent,
                    const std::string_view name, const folded_value& constant)
         -> void {

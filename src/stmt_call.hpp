@@ -155,7 +155,7 @@ struct generic_call {
     // were taken from
     struct deduction {
         std::vector<const type*> type_args;
-        std::vector<size_t> argument_indexes;
+        std::vector<size_t> deducing_args;
     };
 
   public:
@@ -192,7 +192,7 @@ struct generic_call {
             };
 
             type_args = std::move(deduced.type_args);
-            deducing_args = std::move(deduced.argument_indexes);
+            deducing_args = std::move(deduced.deducing_args);
         } else {
             const generic_arg_tokens args{
                 generic_arg_tokens::parse(tz, *open_tk, false),
@@ -420,7 +420,7 @@ struct generic_call {
                 arg_type = argument_type(tc, arg_tz, *source.param_index);
 
                 if (arg_type != nullptr) {
-                    deduced.argument_indexes.push_back(*source.param_index);
+                    deduced.deducing_args.push_back(*source.param_index);
                 }
             }
 
@@ -473,8 +473,8 @@ struct generic_call {
     }
 
     // the type of an instance literal, a constructor call or a call of a
-    // function, 'tk' is its first token and 'tz' is after it; 'tz' ends after
-    // the value when it names a type
+    // built-in or of a function, 'tk' is its first token and 'tz' is after
+    // it; 'tz' ends after the value when it names a type
     // note: an argument is parsed at the type of its parameter, so it is read
     //       here without a parse, unlike a 'var' initializer, see
     //       'initializer_declaration::deduce_from_initializer'
@@ -746,7 +746,7 @@ class inline_call final {
         std::vector<param_binding> arguments;
     };
 
-    // a scope being compiled: a block, a loop or a function body
+    // the most scopes open at once: blocks, loops and function bodies
     static constexpr size_t max_scope_count_{256};
 
     // an inlined recursion ends at compile time when a constant argument
@@ -1298,7 +1298,7 @@ class inline_call final {
         return error;
     }
 
-    // e.g. [s0 + t0 * 4 + 28] but not [t1 + 28]
+    // e.g. '[s0 + t0 * 4 + 28]' but not '[t1 + 28]'
     [[nodiscard]] static auto is_indexed_reference(const param_binding& binding)
         -> bool {
 
