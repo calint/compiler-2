@@ -1,6 +1,18 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] hard: design review series 2, round 108 (2026-11-06, user: keep going
+    until no simplifications are left; Q hunt of rounds 106 and 107, R
+    sweep of the design as a whole)
+    => done (2026-11-06): no change to the compiler; Q no difference against
+       8b261268 on every target in the tests, their mutations and the
+       programs reaching the refactored branches; R no design-level
+       simplification worth doing: the one lexer (about -70 for about 60
+       signatures) and the deduction by a trial parse (a language change)
+       stay open with the reasons in etc/todo.txt; the two flow analyses,
+       the passes and the 'toc' mutators each serve a guarantee or the
+       facade rule; test-versions and the fuzzers on rounds 106, 107 clean;
+       the simplification loop ends
 [x] hard: design review series 2, round 107 (2026-11-06, user: keep going
     until no simplifications are left; P the items across files left by
     rounds 104 to 106, N generics, built-ins, types, 'var', 'dat' and

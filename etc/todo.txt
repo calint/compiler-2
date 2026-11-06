@@ -51,10 +51,17 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
     (-150 +25, about 60 'source_to' signatures change); with it D1-6
     'stmt_identifier::dotted_path_' derived from 'elems_' (-3); listings and
     '--reproduce-source' of every test equal
+    => not done (2026-11-06, round 108): the sink needs its own collapsing,
+       trimming and continuations (about 40 lines), so about -70 net for
+       about 60 changed signatures; 'one_line_source' is a leaf
 [ ] medium: low priority: generic deduction by a trial parse like 'var'
     (drops the token shapes of 'value_type', about 70 lines); messages of
     malformed arguments may change (design review 2026-10-23 E.5, optional,
     lower confidence; round 14 F.3 kept the two deductions apart)
+    => not done (2026-11-06, round 108): about -70 to -100 lines, but
+       deducing as 'var' accepts 'same(s + 1, t)' and gives a literal
+       argument the default type ('x = same(1, t)' with an 'i8' 'x' becomes
+       a narrowing error): a language decision, not a simplification
 [p] medium: low priority: generic function instances: the nesting limit
     counts the depth of the first use of an instance (H-2): its body is
     parsed inside the parse of that use, e.g. a body nested 70 levels used
