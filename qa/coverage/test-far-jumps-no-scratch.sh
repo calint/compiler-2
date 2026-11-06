@@ -1,13 +1,14 @@
 #!/bin/bash
-# checks the diagnostic of an rv32i jump beyond 1 MiB when no scratch register
-# is free for its far form: a loop nested 14 deep with a body of 1.08 MiB;
-# and that a branch the jump optimizer inverts takes the scratch register of
-# the jump it replaces: a 'break' out of a 1.08 MiB loop body 13 'foo' deep,
-# compiled with and without the jump optimizer and executed under qemu; and
-# that the far branch to a failure handler reaches the stub of its line: a
-# bounds check 12 'foo' deep panics at its line, also 13 deep where the check
-# holds the last free registers; and an 'exit' 14 'foo' deep reaches the shared
-# exit routine on every rv32i target
+# checks that an rv32i jump beyond 1 MiB with no scratch register free
+# borrows one: a loop nested 14 deep with a body of 1.08 MiB, compiled with
+# and without the jump optimizer, executed under qemu and its image compared
+# with llvm's; and that a branch the jump optimizer inverts takes the scratch
+# register of the jump it replaces: a 'break' out of a 1.08 MiB loop body 13
+# 'foo' deep, compiled with and without the jump optimizer and executed under
+# qemu; and that the far branch to a failure handler reaches the stub of its
+# line: a bounds check 12 'foo' deep panics at its line, also 13 deep where
+# the check holds the last free registers; and an 'exit' 14 'foo' deep
+# reaches the shared exit routine on every rv32i target
 #
 # the body takes minutes to compile with the coverage build, so the check is a
 # script of its own
@@ -34,27 +35,50 @@ WORK="$(mktemp -d)"
 trap 'rm -rf "$WORK"' EXIT
 cd "$WORK"
 
+# writes 'far.baz': 14 'foo' deep no register is free, so the jumps over and
+# back around the 1.08 MiB body borrow 't0', which holds the pointer of the
+# outer 'foo' that 'e = e + 1' writes through
 python3 - <<'EOF'
 depth = 14
-source = ["dat a = []{1, 2}", "func main() {", "    var x = 100"]
+source = ["func main() {", "    var a = []{1, 2}", "    var x = 100"]
 for level in range(depth):
     source.append("    " * (level + 1) + "foo a {")
 source.append("        x = x + i")
 source.append("        if x == 0 {")
 source.append("            x = x + 1\n" * 90000 + "        }")
-for level in reversed(range(depth)):
+for level in reversed(range(1, depth)):
     source.append("    " * (level + 1) + "}")
+source.append("        e = e + 1")
+source.append("    }")
+source.append("    exit(x + a[0] * 10 + a[1])")
 source.append("}")
 open("far.baz", "w").write("\n".join(source) + "\n")
 EOF
 
-echo -n "far jumps without scratch register rv32i: "
-set +e
-"$BIN" far.baz --target=rv32i --bin=far.bin >far.s 2>err
-status=$?
-set -e
-[[ $status -ne 0 ]]
-grep -q "exceeds 1 MiB and no scratch register is free" err
+for optimize in "" "--nopt"; do
+    echo -n "far jumps without scratch register rv32i $optimize: "
+    "$BIN" far.baz --target=rv32i --bin=far.bin $optimize >far.s
+    grep -q "sw t0, -4(sp)" far.s
+    grep -q "^\.Lbaz_landing\.foo" far.s
+    llvm-mc -triple=riscv32 -mattr=-m,-a,-f,-d,-c -filetype=obj far.s -o far.o
+    ld.lld -m elf32lriscv -e _start -o far far.o
+    set +e
+    timeout -k 1s 60s qemu-riscv32 ./far
+    status=$?
+    set -e
+    # note: 123 is the low byte of 'x + a[0] * 10 + a[1]', 100 + 8192 + 23
+    [[ $status -eq 123 ]]
+    echo ok
+done
+
+# the built-in assembler writes the bytes llvm assembles from the listing
+echo -n "far jumps without scratch register image rv32i-fpga: "
+"$BIN" far.baz --target=rv32i-fpga --bin=far.bin >far.s
+llvm-mc -triple=riscv32 -mattr=-m,-a,-f,-d,-c -filetype=obj far.s -o far.o
+ld.lld -m elf32lriscv -T "$SCRIPT_DIR/rv32i-image.ld" -e _start -o far.elf \
+    far.o
+llvm-objcopy -O binary far.elf image.bin
+cmp -s image.bin far.bin
 echo ok
 
 # 'cnt' is a run-time count, so the compare of 'x > 2' holds the last free

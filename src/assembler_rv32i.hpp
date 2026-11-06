@@ -23,11 +23,15 @@
 #include <vector>
 
 #include "assembler.hpp"
-#include "compile_error.hpp"
 
 // buffers rv32i output until every label has an offset, then grows the jumps
 // that cannot reach their targets, writes the assembly source and, from the
 // same structured lines, a flat binary image
+//
+// a far jump needs a register; when none is free it borrows 't0', saved in
+// the word below 'sp', and jumps to a landing before its target that restores
+// it, so code size never rejects a program; the landing is the code of the
+// label's line, which code falling through skips with a 'j'
 //
 // registers are passed by name, as backend operands hold them, and the
 // encoded fields follow the instruction formats of the rv32i specification
@@ -126,6 +130,9 @@ class assembler_rv32i final : public assembler {
         jal,
         // 'jump target, scratch' anywhere in the 32-bit address space
         far,
+        // 'sw t0, -4(sp)' and 'jump landing, t0' anywhere when no register is
+        // free, the landing before the target restores 't0'
+        borrowed,
     };
 
     // how the operands are written and encoded
@@ -169,6 +176,20 @@ class assembler_rv32i final : public assembler {
 
     static constexpr uint8_t zero_register_{};
     static constexpr uint8_t return_address_register_{1};
+    static constexpr uint8_t stack_pointer_register_{2};
+    // 't0', the register a far jump borrows when none is free
+    static constexpr uint8_t borrowed_register_{5};
+    // the borrowed register is kept in the word below 'sp'
+    static constexpr int64_t borrowed_slot_offset_{-4};
+
+    // note: below 'sp' nothing is live and no handler runs; the jumps that
+    //       leave code with a lowered 'sp' do not return and take 't0', so a
+    //       borrowing jump lands at its own 'sp'; '--checks=stack' keeps
+    //       'leaf_stack_bytes' below 'sp' free
+
+    // a 'j' over the landing for code falling through and the 'lw' that
+    // restores the borrowed register
+    static constexpr size_t landing_size_bytes_{8};
 
     // the 6 bit immediate of the compressed 'c.li'
     static constexpr int64_t compressed_immediate_min_{-32};
@@ -1006,10 +1027,11 @@ class assembler_rv32i final : public assembler {
 
             const line_position& position{image.positions.at(index)};
 
+            // a landing comes before its label
             const int64_t address{
                 static_cast<int64_t>(
                     image.bases.at(section_index(position.which)) +
-                    position.offset),
+                    position.offset + l.code_size),
             };
 
             if (is_numeric(l.label)) {
@@ -1077,6 +1099,10 @@ class assembler_rv32i final : public assembler {
             return encode_jump(l, line_index, address, symbols);
         }
 
+        if (not l.label.empty()) {
+            return landing_words();
+        }
+
         const instruction* const ins{std::get_if<instruction>(record_of(l))};
 
         assert(ins != nullptr);
@@ -1084,29 +1110,20 @@ class assembler_rv32i final : public assembler {
         return encode_instruction(*ins, line_index, address, symbols);
     }
 
-    auto grow(line& l) const -> void {
-        const jump_info& jump{*l.jump};
+    // 'target' is the line of the jump's label, a borrowed register adds the
+    // landing to it
+    auto grow(line& l, line& target) const -> void {
+        const jump_reach grown{grown_reach(l)};
 
-        const jump_reach grown{
-            reach(l) == jump_reach::branch ? jump_reach::jal : jump_reach::far,
-        };
-
-        if (grown == jump_reach::far and jump.scratch.empty()) {
-            throw unlocated_error{std::format(
-                "jump to {} exceeds 1 MiB and no scratch register is free",
-                in_quotes(jump.target))};
+        if (grown == jump_reach::borrowed) {
+            target.code_size = landing_size_bytes_;
         }
 
         const size_t skip_bytes{
-            is_conditional(jump) ? one_instruction_bytes : 0,
+            is_conditional(*l.jump) ? one_instruction_bytes : 0,
         };
 
-        const size_t jump_bytes{
-            grown == jump_reach::far ? two_instructions_bytes
-                                     : one_instruction_bytes,
-        };
-
-        l.code_size = skip_bytes + jump_bytes;
+        l.code_size = skip_bytes + jump_size_bytes(grown);
     }
 
     [[nodiscard]] auto grow_out_of_reach(
@@ -1126,17 +1143,40 @@ class assembler_rv32i final : public assembler {
 
             assert(target != labels.end());
 
-            if (reaches(l, image.positions.at(index).offset,
-                        image.positions.at(target->second).offset)) {
+            line& target_line{lines().at(target->second)};
 
+            // a landing comes before its label
+            const size_t target_offset{
+                image.positions.at(target->second).offset +
+                    target_line.code_size,
+            };
+
+            if (reaches(l, image.positions.at(index).offset, target_offset)) {
                 continue;
             }
 
-            grow(l);
+            grow(l, target_line);
             grown = true;
         }
 
         return grown;
+    }
+
+    [[nodiscard]] auto grown_reach(const line& l) const -> jump_reach {
+        const jump_reach current{reach(l)};
+
+        if (current == jump_reach::branch) {
+            return jump_reach::jal;
+        }
+
+        // note: the far forms reach every address, so they do not grow
+        assert(current == jump_reach::jal);
+
+        if (l.jump->scratch.empty()) {
+            return jump_reach::borrowed;
+        }
+
+        return jump_reach::far;
     }
 
     [[nodiscard]] auto image_size_bytes(const line& l) const -> size_t {
@@ -1227,7 +1267,11 @@ class assembler_rv32i final : public assembler {
             return jump_reach::jal;
         }
 
-        return jump_reach::far;
+        if (l.code_size == skip_bytes + two_instructions_bytes) {
+            return jump_reach::far;
+        }
+
+        return jump_reach::borrowed;
     }
 
     [[nodiscard]] auto reaches(const line& l, const size_t source_offset,
@@ -1320,6 +1364,11 @@ class assembler_rv32i final : public assembler {
             return;
         }
 
+        if (not l.label.empty() and l.code_size != 0) {
+            write_landing(os, l);
+            return;
+        }
+
         if (not l.jump or l.code_size == one_instruction_bytes) {
             std::println(os, "{}", l.text);
             return;
@@ -1348,9 +1397,25 @@ class assembler_rv32i final : public assembler {
     auto write_long_jump(std::ostream& os, const std::string_view indent,
                          const line& l) const -> void {
 
-        if (reach(l) == jump_reach::far) {
+        const jump_reach form{reach(l)};
+
+        if (form == jump_reach::far) {
             std::println(os, "{}jump {}, {}", indent, l.jump->target,
                          l.jump->scratch);
+
+            return;
+        }
+
+        if (form == jump_reach::borrowed) {
+            const std::string_view borrowed{
+                register_names.at(borrowed_register_),
+            };
+
+            std::println(os, "{}sw {}, {}(sp)", indent, borrowed,
+                         borrowed_slot_offset_);
+
+            std::println(os, "{}jump {}, {}", indent,
+                         landing_label(l.jump->target), borrowed);
 
             return;
         }
@@ -1422,6 +1487,30 @@ class assembler_rv32i final : public assembler {
 
         return (value + alignment_bytes - 1) / alignment_bytes *
                alignment_bytes;
+    }
+
+    // 'distance' is from the store to the target, the jump enters the landing
+    // at its 'lw', the instruction before the target
+    [[nodiscard]] static auto borrowed_jump(const int64_t distance)
+        -> std::vector<uint32_t> {
+
+        std::vector<uint32_t> words{
+            encode_store(info(op::sw).encoding, stack_pointer_register_,
+                         borrowed_register_, borrowed_slot_offset_),
+        };
+
+        // note: the store comes before the 'auipc' and the 'lw' before the
+        //       target
+
+        const int64_t landing_distance{
+            distance - static_cast<int64_t>(two_instructions_bytes),
+        };
+
+        std::ranges::copy(pc_relative(jalr_encoding_, zero_register_,
+                                      borrowed_register_, landing_distance),
+                          std::back_inserter(words));
+
+        return words;
     }
 
     [[nodiscard]] static auto branch_word(const op code, const uint8_t first,
@@ -1844,6 +1933,38 @@ class assembler_rv32i final : public assembler {
         return std::string{mnemonic};
     }
 
+    // the size of a jump of 'reach_form' without the skip of a conditional
+    [[nodiscard]] static auto jump_size_bytes(const jump_reach reach_form)
+        -> size_t {
+
+        if (reach_form == jump_reach::jal) {
+            return one_instruction_bytes;
+        }
+
+        if (reach_form == jump_reach::far) {
+            return two_instructions_bytes;
+        }
+
+        assert(reach_form == jump_reach::borrowed);
+
+        return two_instructions_bytes + one_instruction_bytes;
+    }
+
+    [[nodiscard]] static auto landing_label(const std::string_view target)
+        -> std::string {
+
+        return std::format(".Lbaz_landing.{}", target);
+    }
+
+    // a 'j' to the label right after the landing, then the restore
+    [[nodiscard]] static auto landing_words() -> std::vector<uint32_t> {
+        return {
+            encode_jal(zero_register_, landing_size_bytes_),
+            encode_immediate(info(op::lw).encoding, borrowed_register_,
+                             stack_pointer_register_, borrowed_slot_offset_),
+        };
+    }
+
     // the sequence 'li' expands to
     [[nodiscard]] static auto load_immediate(const uint8_t rd,
                                              const int64_t value)
@@ -1904,6 +2025,10 @@ class assembler_rv32i final : public assembler {
         if (reach_form == jump_reach::far) {
             return pc_relative(jalr_encoding_, zero_register_,
                                number_of(jump.scratch), distance);
+        }
+
+        if (reach_form == jump_reach::borrowed) {
+            return borrowed_jump(distance);
         }
 
         return {encode_jal(zero_register_, distance)};
@@ -2022,6 +2147,20 @@ class assembler_rv32i final : public assembler {
             write_value(os, static_cast<uint64_t>(value),
                         data.element_size_bytes);
         }
+    }
+
+    // the landing of a borrowed register before the label of 'l'
+    static auto write_landing(std::ostream& os, const line& l) -> void {
+        const std::string indent{indentation(1)};
+
+        std::println(os, "{}j {}", indent, l.label);
+        std::println(os, "{}:", landing_label(l.label));
+
+        std::println(os, "{}lw {}, {}(sp)", indent,
+                     register_names.at(borrowed_register_),
+                     borrowed_slot_offset_);
+
+        std::println(os, "{}", l.text);
     }
 
     // little endian regardless of the host

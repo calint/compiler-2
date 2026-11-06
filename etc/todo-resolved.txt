@@ -1,6 +1,20 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] hard: design review series 2, round 101 (2026-11-06, user: loop of
+    design review and bug hunt; F1 of round 100)
+    => done (2026-11-06): a far jump on rv32i with no free scratch register
+       was rejected, so the code size and with it '--nopt' decided the
+       verdict; it now borrows 't0': 'sw t0, -4(sp)', a jump to a landing
+       before the target that restores it ('lw t0, -4(sp)'), behind a 'j'
+       for code that falls through, one landing per target, its bytes the
+       size of the target's label line ('assembler_rv32i'); nothing below
+       'sp' is live across a jump and 'sp' is the same at the jump and the
+       landing; code accepted before is byte-identical;
+       'test-far-jumps-no-scratch.sh' runs the case with and without
+       '--nopt' and catches a bad restore; H (round 102 review of the
+       patch) found it correct, the note on 'sp' reworded and the backward
+       landing pinned in the test
 [x] hard: design review series 2, round 100 (2026-11-06, user: loop of
     design review and bug hunt, more reviewers at once; R source bytes, C
     no-UB hunt, D backend design, E README against the compiler, F verdicts
