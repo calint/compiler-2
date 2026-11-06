@@ -1,0 +1,26 @@
+# a constant above 16 bytes stored at each position within a word is copied
+# from read-only data that starts at the same position
+
+func assert(err, ok bool) { if not ok exit(err) }
+
+type at1 { h i8, text i8[19] }
+type at2 { h i16, text i8[22] }
+type at3 { h i8[3], text i8[17] }
+
+dat expected = "abcdefghijklmnopqrstuv"
+
+func main() {
+    var p = at1
+    p.h = 1
+    p.text = "abcdefghijklmnopqrs"
+    assert(1, p.h == 1 and arrays_equal(p.text, expected, 19))
+    var q = at2
+    q.h = 2
+    q.text = "abcdefghijklmnopqrstuv"
+    assert(2, q.h == 2 and arrays_equal(q.text, expected, 22))
+    var r = at3
+    r.h = "xyz"
+    r.text = "abcdefghijklmnopq"
+    assert(3, r.h[2] == 'z' and arrays_equal(r.text, expected, 17))
+    exit(0)
+}

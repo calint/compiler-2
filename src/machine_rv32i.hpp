@@ -650,15 +650,6 @@ class machine_rv32i : public machine {
                     const size_t size_bytes, const size_t alignment)
         -> void override {
 
-        if (size_bytes == 0) {
-            return;
-        }
-
-        // note: a constant count is within its array, and an array is within
-        //       the 32-bit address range
-
-        assert(size_bytes <= std::numeric_limits<uint32_t>::max());
-
         // the pointers of a loop advance together, unrolled accesses can
         // follow where each address is within its word
         const std::array<access_start, 2> starts{
@@ -666,32 +657,7 @@ class machine_rv32i : public machine {
             start_of(dst, alignment),
         };
 
-        const operation_scope scope{*this, dst, src};
-
-        const operand value{
-            alloc_scratch_register(src_loc_tk, indent, default_type()),
-        };
-
-        const std::array<operand, 2> addresses{src, dst};
-
-        const auto access{
-            [&](const size_t width, const std::span<const operand> at) -> void {
-                copy_access(indent, value, width, at.front(), at.back());
-            },
-        };
-
-        // direct offsets avoid two pointer temporaries for ordinary small
-        // copies
-        walk_known_size(
-            {
-                .src_loc_tk{src_loc_tk},
-                .indent{indent},
-                .verb{"copy"},
-                .addresses{addresses},
-                .starts{starts},
-                .access{access},
-            },
-            size_bytes, is_copy_unrolled(size_bytes));
+        copy_from_starts(src_loc_tk, indent, dst, src, size_bytes, starts);
     }
 
     auto copy_elements(const token& src_loc_tk, const size_t indent,
@@ -930,11 +896,14 @@ class machine_rv32i : public machine {
     }
 
     // few bytes are stored with immediates when that takes no more code than
-    // loading them from read-only data
-    auto store_bytes(const token& src_loc_tk, const size_t indent,
-                     const std::string_view bytes, const operand& dst,
-                     const size_t alignment,
-                     const std::function_ref<std::string()> add_constant)
+    // loading them from read-only data; the read-only constant starts as far
+    // into a word as 'dst', so its copy takes words also at an address inside
+    // a word
+    auto store_bytes(
+        const token& src_loc_tk, const size_t indent,
+        const std::string_view bytes, const operand& dst,
+        const size_t alignment,
+        const std::function_ref<std::string(std::string_view)> add_constant)
         -> void override {
 
         const operation_scope scope{*this, dst};
@@ -948,9 +917,9 @@ class machine_rv32i : public machine {
 
         const std::vector<byte_part> parts{split_bytes(bytes, dst_start)};
 
-        // the word aligned constant is copied with the alignment 'width', so
-        // its parts can be narrower than the stored immediates
-        const std::array<access_start, 2> copy_starts{
+        // the copy is estimated with the alignment 'width', so its parts can
+        // be narrower than the stored immediates
+        const std::array<access_start, 2> estimated_starts{
             access_start{
                 .alignment{width},
                 .phase{},
@@ -958,8 +927,13 @@ class machine_rv32i : public machine {
             dst_start,
         };
 
+        // note: estimated with the word parts of the copy below, a copy inside
+        //       a word won where it was a longer loop or saved less code than
+        //       its read-only data took ('are_immediates_smaller' counts code
+        //       and an unrolled copy)
+
         const size_t copy_part_count{
-            aligned_part_count(bytes.size(), copy_starts),
+            aligned_part_count(bytes.size(), estimated_starts),
         };
 
         if (are_immediates_smaller(parts, bytes.size(), copy_part_count)) {
@@ -975,12 +949,27 @@ class machine_rv32i : public machine {
             alloc_scratch_register(src_loc_tk, indent, default_type()),
         };
 
-        assembler_.la(indent, pointer.register_name(), add_constant());
+        // note: read-only constants are word aligned, the zero bytes before
+        //       the constant bring its first byte to the phase of 'dst'
 
-        const operand constant{memory_at(pointer)};
+        const std::string laid_out{
+            std::string(dst_start.phase, '\0') + std::string{bytes},
+        };
 
-        // read-only constants are word aligned so 'dst' limits the width
-        copy_block(src_loc_tk, indent, dst, constant, bytes.size(), width);
+        assembler_.la(indent, pointer.register_name(), add_constant(laid_out));
+
+        const std::array<access_start, 2> copy_starts{
+            access_start{
+                .alignment{word_size_bytes_},
+                .phase{dst_start.phase},
+            },
+            dst_start,
+        };
+
+        const operand constant{offset_by(memory_at(pointer), dst_start.phase)};
+
+        copy_from_starts(src_loc_tk, indent, dst, constant, bytes.size(),
+                         copy_starts);
     }
 
     auto unary(const token& src_loc_tk, const size_t indent,
@@ -2212,6 +2201,50 @@ class machine_rv32i : public machine {
 
         assembler_.store(indent, store_op(width), value.register_name(),
                          to.displacement(), to.base_register());
+    }
+
+    // 'copy_block' where 'starts' tells where 'src' and then 'dst' are within
+    // a word
+    auto copy_from_starts(const token& src_loc_tk, const size_t indent,
+                          const operand& dst, const operand& src,
+                          const size_t size_bytes,
+                          const std::array<access_start, 2>& starts) -> void {
+
+        if (size_bytes == 0) {
+            return;
+        }
+
+        // note: a constant count is within its array, and an array is within
+        //       the 32-bit address range
+
+        assert(size_bytes <= std::numeric_limits<uint32_t>::max());
+
+        const operation_scope scope{*this, dst, src};
+
+        const operand value{
+            alloc_scratch_register(src_loc_tk, indent, default_type()),
+        };
+
+        const std::array<operand, 2> addresses{src, dst};
+
+        const auto access{
+            [&](const size_t width, const std::span<const operand> at) -> void {
+                copy_access(indent, value, width, at.front(), at.back());
+            },
+        };
+
+        // direct offsets avoid two pointer temporaries for ordinary small
+        // copies
+        walk_known_size(
+            {
+                .src_loc_tk{src_loc_tk},
+                .indent{indent},
+                .verb{"copy"},
+                .addresses{addresses},
+                .starts{starts},
+                .access{access},
+            },
+            size_bytes, is_copy_unrolled(size_bytes));
     }
 
     // run-time count: the addresses are pointer registers and 'count' is a

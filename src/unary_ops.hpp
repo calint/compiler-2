@@ -35,15 +35,14 @@ class unary_ops final {
 
     unary_ops() = default;
 
-    // applies the ops to 'dst', the innermost first
+    // applies the ops to 'dst', the innermost first, without the pairs that
+    // cancel, see 'applied_ops'
     auto compile(machine& x, const size_t indent, const token& src_loc_tk,
                  const operand& dst, const machine::runtime_check& check) const
         -> void {
 
-        for (const spelled_operator<arithmetic_operator>& o :
-             ops_ | std::views::reverse) {
-
-            x.unary(src_loc_tk, indent, o.op, dst, check);
+        for (const arithmetic_operator op : applied_ops(check)) {
+            x.unary(src_loc_tk, indent, op, dst, check);
         }
     }
 
@@ -80,6 +79,34 @@ class unary_ops final {
     }
 
   private:
+    // the ops in the order they apply, an op cancelling the same op applied
+    // just before it, e.g. '-~~-a' applies none; under the overflow check a
+    // negation pair stays, the first traps on the minimum
+    [[nodiscard]] auto applied_ops(const machine::runtime_check& check) const
+        -> std::vector<arithmetic_operator> {
+
+        std::vector<arithmetic_operator> applied;
+
+        for (const spelled_operator<arithmetic_operator>& o :
+             ops_ | std::views::reverse) {
+
+            const bool cancels{
+                not applied.empty() and applied.back() == o.op and
+                    (o.op == arithmetic_operator::complement or
+                     not check.enabled),
+            };
+
+            if (cancels) {
+                applied.pop_back();
+                continue;
+            }
+
+            applied.push_back(o.op);
+        }
+
+        return applied;
+    }
+
     // the ops applied to 'value', the innermost first; a negation of
     // 'overflow_minimum', the most negative value of the width, which has no
     // positive counterpart, is an error at that negation

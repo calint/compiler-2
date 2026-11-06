@@ -857,13 +857,14 @@ class machine {
                        const operand& count, const runtime_check& check)
         -> void = 0;
 
-    // stores constant 'bytes', 'add_constant' returns the read-only data label
-    // and is called only when the bytes are not stored with immediates
-    virtual auto
-    store_bytes(const token& src_loc_tk, const size_t indent,
-                const std::string_view bytes, const operand& dst,
-                const size_t alignment,
-                const std::function_ref<std::string()> add_constant)
+    // stores constant 'bytes', 'add_constant' adds the read-only data the
+    // backend lays them out in and returns its label; it is called only when
+    // the bytes are not stored with immediates
+    virtual auto store_bytes(
+        const token& src_loc_tk, const size_t indent,
+        const std::string_view bytes, const operand& dst,
+        const size_t alignment,
+        const std::function_ref<std::string(std::string_view)> add_constant)
         -> void = 0;
 
     virtual auto unary(const token& src_loc_tk, const size_t indent,

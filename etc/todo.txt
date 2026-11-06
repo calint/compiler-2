@@ -75,6 +75,9 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
     ('methods can have a "return"', '"return" must be assigned on every
     path') next to the keyword 'return'; the tutorial and the messages say
     "result" (round 123 AQ9)
+[ ] easy: low priority: 'id(true)' does not deduce 'T = bool' while 'let kb
+    = true' then 'id(kb)' does (round 128 BC): README 2.10.2 counts every
+    literal as telling nothing; option: let 'true' and 'false' tell 'bool'
 [ ] medium: low priority: one lexer (round 23 C.3, D1-4): 'one_line_source'
     ('statement.hpp') scans the source text of a statement again for the
     comments of the listing; 'source_to' writing through a 'source_sink' with
@@ -243,6 +246,12 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
     => option 2, frontend: 'expr_arith::compile' asks the machine for one base
        register for the memory operands of a statement; several files (plan
        and go-ahead first)
+    => option 1 set aside (2026-11-06, round 128 BD): a load overwrites its
+       address register, so the cache saves nothing in 't.len = t.end -
+       t.start'; on the listings at most 44 of 1084 'lui; add' pairs repeat
+       in a register that still holds them (88 instructions, 0.1 %, none in
+       roome), against a cache that version capture, labels, calls and every
+       register write must keep right
 [ ] medium: rv32i: the index register is freed after the load, so a large
     displacement takes a third temporary ('add t1, s0, t0; lui t2, 37; add
     t1, t1, t2; lb t1, -1536(t1)' where t0 is dead after the first 'add')
@@ -266,11 +275,6 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
     register ('mov r15, [..]; lea rsi, [..]; add rsi, r15' instead of 'add
     rsi, qword [..]'); 'arrays_equal' takes no start, its indexed operand is
     one 'lea' (2026-11-06)
-[ ] medium: rv32i: a constant above 16 bytes stored at an address inside a word
-    loops bytes ('store_bytes') because the constant is word aligned and the
-    destination is not
-    => lay the constant out from the destination's position within a word,
-       needs the frontend 'add_constant' callback to pad it
 [ ] medium: evaluate BMI2 variable-count shifts (shlx/shrx/sarx),
     'machine_x86_64::shift'
 [ ] medium: reorder locals by alignment, largest first, to reduce padding
@@ -278,10 +282,21 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
     reusing the dead index register ('slli t1, t0, 2' instead of 'slli t0,
     t0, 2'); saves no instruction, the frontend would have to mark index
     registers it owns (etc/codegen-inefficiencies.baz)
+    => measured (2026-11-06, round 128 BD): of the scaled index sites in
+       the listings 142 are loads, whose address goes into the load's own
+       register (a freed index is already reused, 'consumed_registers'), 37
+       are stores, where the index is still held by the front end; saves a
+       register only, not an instruction
 [ ] medium: low priority: self-cancelling unary ops are all emitted ('--a',
     '~~a', '-(-a)' give two 'neg'/'not')
     => an assembler peephole could drop adjacent identical pairs on the same
        operand, also across a store and reload
+    => partly done (2026-11-06, round 128 BD): a pair of the same op of one
+       operand cancels ('unary_ops::applied_ops'), '--a', '~~a' and
+       '-~~-a'; a negation pair stays under the overflow check, where the
+       first negation of the minimum panics; left: '-(-a)', the ops of a
+       parenthesized list and of its element, and ops across an inlined
+       call ('~inv(x)' of a body 'res = ~x')
 [ ] hard: an operand is loaded into a scratch register then copied to where the
     next operation needs it ('lw t0; mv a0, t0' before a helper call instead
     of 'lw a0', 179 rv32i sites; x86 'mov rax, r15' before 'cqo', 89; the

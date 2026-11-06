@@ -538,14 +538,15 @@ class machine_x86_64 final : public machine {
 
     // an immediate store is one instruction without a register while a copy
     // needs a load and a store for each qword
-    auto store_bytes(const token& src_loc_tk, const size_t indent,
-                     const std::string_view bytes, const operand& dst,
-                     [[maybe_unused]] const size_t alignment,
-                     const std::function_ref<std::string()> add_constant)
+    auto store_bytes(
+        const token& src_loc_tk, const size_t indent,
+        const std::string_view bytes, const operand& dst,
+        [[maybe_unused]] const size_t alignment,
+        const std::function_ref<std::string(std::string_view)> add_constant)
         -> void override {
 
         if (bytes.size() > immediate_store_threshold_bytes_) {
-            const std::string label{add_constant()};
+            const std::string label{add_constant(bytes)};
 
             // rip-relative label addresses need no address register
             copy_with_rep_movsb(

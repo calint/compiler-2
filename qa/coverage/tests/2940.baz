@@ -1,0 +1,8 @@
+# an alias names a generic type with arguments, not a plain type
+
+type point {x, y}
+
+type place = point
+
+func main() {
+}

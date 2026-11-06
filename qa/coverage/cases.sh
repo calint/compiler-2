@@ -5207,7 +5207,8 @@ SRC=1652 && DIFF
 SRC=1653 && EXP=8 && RUN
 
 # two strings with the same bytes share one read-only constant, however their
-# escapes spell them; above 16 B a string is copied from read-only data
+# escapes spell them; above 16 B a string is copied from read-only data, each
+# starts a word as rv32i lays a constant out from where in a word it is stored
 SRC=1654 && DIFF
 
 # a statement after an 'if' whose every branch returns is not reached
@@ -7073,3 +7074,18 @@ SRC=2890 && EXP=6 && RUN
 
 # the length hint for an array in an indexed element
 SRC=2891 && COMPERR
+
+# pairs of the same unary op cancel, '--' of the minimum gives the minimum
+SRC=2892 && EXP=0 && RUN
+
+# --checks=overflow: a negation pair still panics at the minimum
+SRC=2893 && EXP=249 && OPTS="--checks=overflow" RUN_ERR
+
+# a constant above 16 bytes stored at each position within a word
+SRC=2894 && EXP=0 && RUN
+
+# an alias names a generic type with arguments, not a plain type
+SRC=2940 && COMPERR
+
+# a generic type is based on a generic type, not on a built-in type
+SRC=2941 && COMPERR

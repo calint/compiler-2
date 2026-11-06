@@ -1,6 +1,28 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] hard: round 128 (2026-11-06, user: all night, bugs, review, refactor
+    for the final product; BA design, BB whole-language hunt, BC generics,
+    BD rv32i items, BE fuzzers)
+    => done (2026-11-06): BA no design change clears the bar (no clones,
+       no layer leaks, the two reachability walks differ on purpose); BD1
+       self-cancelling unary ops dropped at the compile ('~~' always, '--'
+       without the overflow check; 'applied_ops'), tests 2892, 2893; BD4
+       below; BD2 and BD3 skipped with reasons in their items; BC1 an alias
+       of a type that is not generic says "expected a generic type after
+       '='", tests 2940, 2941; 'id(true)' deducing 'bool' an item of
+       etc/todo.txt
+[x] medium: rv32i: a constant above 16 bytes stored at an address inside a word
+    loops bytes ('store_bytes') because the constant is word aligned and the
+    destination is not
+    => lay the constant out from the destination's position within a word,
+       needs the frontend 'add_constant' callback to pad it
+    => done (2026-11-06, round 128 BD): 'add_constant' takes the bytes the
+       backend lays out, rv32i puts zero bytes before the constant up to the
+       phase of the destination and copies words after a head; the choice of
+       immediates keeps its estimate; a copy grows by 4 to 8 instructions and
+       the data by up to 3 bytes (and one constant per phase), a loop of
+       N bytes runs about N / 4 iterations instead of N
 [-] medium: x86 register utilization: 0109.baz, 0082.baz, 0104.baz
     => discarded (2026-11-06, user): it names no defect; the register
        peaks of the tests are measured since round 127

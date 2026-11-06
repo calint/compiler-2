@@ -172,7 +172,7 @@ struct generic_type_use {
             throw compile_error{name_tk, "expected a generic type after '='"};
         }
 
-        assert_generic_type(tc, name_tk, user);
+        assert_generic_type(tc, tz, name_tk, user);
 
         generic_arg_tokens args{read_generic_args(tz, name_tk)};
 
@@ -208,11 +208,21 @@ struct generic_type_use {
     }
 
     // e.g. 'text' of 'type str = text<8>', 'user' is what must come after the
-    // generic type
-    static auto assert_generic_type(const toc& tc, const token& generic_tk,
+    // generic type; 'tz' is after 'generic_tk'
+    static auto assert_generic_type(const toc& tc, const tokenizer& tz,
+                                    const token& generic_tk,
                                     const std::string_view user) -> void {
 
         if (tc.types().has(generic_tk.text())) {
+            // e.g. 'type p = point', an alias of a type that is not generic
+            if (tz.peek_char_after_whitespace() != '<') {
+                throw compile_error{
+                    generic_tk,
+                    std::format(
+                        "expected a generic type after '=', {} is not generic",
+                        in_quotes(generic_tk.text()))};
+            }
+
             throw_not_generic(generic_tk, "type", generic_tk.text());
         }
 
