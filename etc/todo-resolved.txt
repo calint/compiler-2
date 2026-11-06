@@ -1,9 +1,9 @@
 --------------------------------------------------------------------------------
-[ ] open   [o] ongoing   [-] medium: x86 register utilization: 0109.baz, 0082.baz, 0104.baz
+[ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
+--------------------------------------------------------------------------------
+[-] medium: x86 register utilization: 0109.baz, 0082.baz, 0104.baz
     => discarded (2026-11-06, user): it names no defect; the register
        peaks of the tests are measured since round 127
-[x] done   [-] discarded with reasoning   [p] pending
---------------------------------------------------------------------------------
 [x] easy: low priority: the check of a function that nothing calls
     ('stmt_def_func::check_body') gives other verdicts than a call: an
     inlined function without parameters that needs more registers than a
