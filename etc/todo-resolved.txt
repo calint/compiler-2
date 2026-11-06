@@ -76,7 +76,8 @@
        item 239 not done: about +150 lines and two downcast virtuals on
        'statement' (against W6) for about 0.2 % of the instructions; AV
        audit of the 72 open items: stale descriptions re-measured, done
-       and superseded items moved here
+       and superseded items moved here; 'fuzz-compiler.py' counts an index
+       past the longest array ('of any size') as a target limit
 [x] hard: quality round 126 (2026-11-06, user: qa until it is great; AU a
     final assessment)
     => done (2026-11-06): AU no bug, wrong result, flaky test or wrong
