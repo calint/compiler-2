@@ -674,10 +674,10 @@ main:
     cmp r14, 4
     jae baz_bounds_line_246
 ;   [prog.baz:246:23] bounds check end
-;   [prog.baz:246:19] allocate scratch register -> r13
-    mov r13d, dword [rbp + r14 * 4 + 424]
-    mov dword [rbp + r15 * 4 + 424], r13d
-;   [prog.baz:246:19] free scratch register r13
+;   [prog.baz:246:19] free scratch register r14
+;   [prog.baz:246:19] allocate scratch register -> r14
+    mov r14d, dword [rbp + r14 * 4 + 424]
+    mov dword [rbp + r15 * 4 + 424], r14d
 ;   [prog.baz:246:19] free scratch register r14
 ;   [prog.baz:246:5] free scratch register r15
 ;   [prog.baz:247:5] assert(arr[1] == 2)
@@ -2918,10 +2918,10 @@ func.factorial:
 ;   [prog.baz:180:13] n
 ;   [prog.baz:180:13] allocate scratch register -> r15
     mov r15, qword [rbx + 8]
-;   [prog.baz:180:13] allocate scratch register -> r14
-    mov r14, qword [r15]
-    mov qword [rbx + 16], r14
-;   [prog.baz:180:13] free scratch register r14
+;   [prog.baz:180:13] free scratch register r15
+;   [prog.baz:180:13] allocate scratch register -> r15
+    mov r15, qword [r15]
+    mov qword [rbx + 16], r15
 ;   [prog.baz:180:13] free scratch register r15
 ;   [prog.baz:180:17] m - 1
 ;   [prog.baz:180:17] src: folded constant '- 1'
@@ -2966,8 +2966,8 @@ func.factorial:
 ;   [prog.baz:182:11] n
 ;   [prog.baz:182:11] allocate scratch register -> r13
     mov r13, qword [rbx + 8]
-    mov r14, qword [r13]
 ;   [prog.baz:182:11] free scratch register r13
+    mov r14, qword [r13]
 ;   [prog.baz:182:15] r14 * partial
 ;   [prog.baz:182:15] src: operand
     imul r14, qword [rbx + 24]
@@ -2999,10 +2999,10 @@ func.print_num:
 ;   [prog.baz:140:13] num
 ;   [prog.baz:140:13] allocate scratch register -> r15
     mov r15, qword [rbx]
-;   [prog.baz:140:13] allocate scratch register -> r14
-    mov r14, qword [r15]
-    mov qword [rbx + 32], r14
-;   [prog.baz:140:13] free scratch register r14
+;   [prog.baz:140:13] free scratch register r15
+;   [prog.baz:140:13] allocate scratch register -> r15
+    mov r15, qword [r15]
+    mov qword [rbx + 32], r15
 ;   [prog.baz:140:13] free scratch register r15
 ;   [prog.baz:141:5] var is_negative = false
 ;   [prog.baz:141:9] is_negative: bool (1 B @ [rbx + 40])
@@ -3176,10 +3176,10 @@ func.print_num:
         cmp r14, 20
         jae baz_bounds_line_167
 ;       [prog.baz:167:30] bounds check end
-;       [prog.baz:167:26] allocate scratch register -> r13
-        mov r13b, byte [rbx + r14 + 8]
-        mov byte [rbx + r15 + 8], r13b
-;       [prog.baz:167:26] free scratch register r13
+;       [prog.baz:167:26] free scratch register r14
+;       [prog.baz:167:26] allocate scratch register -> r14
+        mov r14b, byte [rbx + r14 + 8]
+        mov byte [rbx + r15 + 8], r14b
 ;       [prog.baz:167:26] free scratch register r14
 ;       [prog.baz:167:9] free scratch register r15
 ;       [prog.baz:168:9] write_pos = write_pos + 1

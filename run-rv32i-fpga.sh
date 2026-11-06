@@ -19,7 +19,8 @@ cd "$(dirname "$0")"
 IMAGE="${1:-prog-rv32i-fpga.bin}"
 
 EMULATOR=fpga-emulator/osqa
-if [ ! -x "$EMULATOR" ]; then
+# rebuilt when missing or older than a source
+if [ ! -x "$EMULATOR" ] || [ -n "$(find fpga-emulator/src -newer "$EMULATOR" -print -quit)" ]; then
     fpga-emulator/make.sh
 fi
 

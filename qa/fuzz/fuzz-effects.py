@@ -461,14 +461,16 @@ def judge(work, source, expected):
             found.append(("effects-accept", f"{target} {expected[1]}",
                           f"expected a rejection '{expected[1]}', got {got}"))
             continue
-        if got == expected:
+        # a tool stopped by a limit says nothing about the code
+        if got == expected or got[0] == "skip":
             continue
         if got[0] == "compile":
             message = got[1].strip().splitlines()[0] if got[1] else ""
             found.append(("effects-reject",
                           f"{target} {message.split(': ', 1)[-1]}",
                           f"expected {expected}, got {got}"))
-        elif got[0] in ("compile-hang", "invalid-asm", "link-failure"):
+        elif got[0] in ("compile-hang", "invalid-asm", "link-failure",
+                        "image-mismatch"):
             found.append((got[0] if got[0] != "compile-hang"
                           else "compiler-hang", target, str(got)))
         else:

@@ -52,6 +52,17 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
     round 1 K3.1): 'machine_rv32i::zero' takes about 0.5 ns per byte, a
     field of 64 MiB 33 ms, of 256 MiB 115 ms; x86_64 does not grow (2 ms);
     '{}' alone does not grow (2026-11-06)
+[ ] easy: low priority: compile time: a body check ('stmt_def_func::check_body',
+    a dry run) builds the listing comments it discards, about half of the
+    comment work: comments are about 27 % of roome's instructions
+    ('statement::trimmed_source' 13 %, 'source_locations::for_comment'
+    12 %), the dry runs 55 %; the checks of a chain of inlined calls expand
+    each body, quadratic in the depth (120 levels 0.26 s, bounded by 256
+    scopes) (2026-11-06)
+    => fix if wanted: 'machine::comment' returns at once inside
+       'emit_discarded' (a depth counter), the callers still render the
+       source; or the comment text is built only when kept (a callback),
+       many call sites
 [p] easy: low priority: 'source_files::contains' compares a path with every
     loaded file by 'std::filesystem::equivalent' (two stats each), so 2000
     included files take 2.8 s against 0.15 s before round 116 (round 117
@@ -78,6 +89,14 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
 [ ] easy: low priority: 'id(true)' does not deduce 'T = bool' while 'let kb
     = true' then 'id(kb)' does (round 128 BC): README 2.10.2 counts every
     literal as telling nothing; option: let 'true' and 'false' tell 'bool'
+[ ] easy: user decision: no LICENSE at the root and the README names none
+    (only fpga-emulator/LICENSE, Apache-2.0); choose one, a LICENSE file and
+    one README line (round 130 BJ11)
+[ ] easy: user decision: third-party pages are tracked:
+    etc/notes/x86-64-reference.pdf, 'etc/notes/CS107 Guide to x86-64.html',
+    'etc/notes/NASM x64 Assembly.html', 'etc/from/Hello, world!.html',
+    'etc/from/nasm x86 Assembly.html'; keep, or replace by links (round 130
+    BJ11)
 [ ] medium: low priority: one lexer (round 23 C.3, D1-4): 'one_line_source'
     ('statement.hpp') scans the source text of a statement again for the
     comments of the listing; 'source_to' writing through a 'source_sink' with
@@ -194,9 +213,8 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
        all four, roome every other session on rv32i; 'fuzz-all.sh' prints
        its seed, the run repeats from it, its temporary files are removed
        also when stopped; left: the night run (user); the quadratic column
-       cost of the audit (32000 terms on one line take 3 s) is the README
-       difference "a very long expression compiles in more than linear
-       time", not a fuzzer gap
+       cost of the audit (32000 terms on one line take 3 s) was not a fuzzer
+       gap, it is fixed (see 'etc/todo-resolved.txt', 2026-11-06)
 [ ] medium: x86_64: a call with many indexed arguments in a noinline body
     runs out of registers where rv32i accepts it (2026-10-26, user: medium):
     the body reaches its array parameter through its address, and x86_64
@@ -361,18 +379,6 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
        fuzzers in 'test-all.sh' with a short run
     => 'fuzz-programs.py' has no model: wrong code that both targets share
        is seen only through 'fuzz-exprs.py'
-    => medium: a very long expression compiles in more than linear time (8000
-       terms of '+' take 3 s in the debug build, 16000 negations on rv32i with
-       '--checks=noub' take 11 s)
-       => cause: 'source_locations::column' searches back to the previous
-          newline for every comment, quadratic in the length of a line;
-          32000 terms of '+' on one line take 2.84 s, one per line 0.29 s
-          (-O3; 3.05 s and 0.26 s on 2026-11-06, 92% in
-          'source_locations::column', also without a source comment)
-       => fix (tried, reverted): 'source_files' keeps the index where each
-          line begins, 'source_files::column' finds the line by binary search
-          and replaces 'column_for_char_index' in 'main.cpp'; one line of
-          32000 terms then takes 0.28 s, 64000 terms 0.53 s, same assembly
 [ ] medium: --checks=overflow: rv32i multiply: loop on the operand with fewer
     significant bits (swap) in '.Lbaz_multiply_checked' and
     '.Lbaz_multiply'; a constant factor under the check always calls the

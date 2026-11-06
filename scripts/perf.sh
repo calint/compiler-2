@@ -1,6 +1,8 @@
 #!/bin/sh
 set -eu
 cd "$(dirname "$0")"
+# the build directory is not tracked
+mkdir -p ../build
 cd ../build
 rm -rf ./*
 cmake ..

@@ -22,6 +22,7 @@ fail() {
 tree-sitter generate >"$LOG" 2>&1 || fail
 tree-sitter test >"$LOG" 2>&1 || fail
 cc -o baz.so -shared src/parser.c -I./node_modules/tree-sitter/lib/include -fPIC >"$LOG" 2>&1 || fail
+mkdir -p ~/.local/share/nvim/site/parser ~/.local/share/nvim/site/queries/baz
 mv -f baz.so ~/.local/share/nvim/site/parser/
 cp queries/highlights.scm ~/.local/share/nvim/site/queries/baz/highlights.scm
 # symbols for aerial.nvim

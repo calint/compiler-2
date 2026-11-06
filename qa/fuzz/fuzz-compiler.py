@@ -327,7 +327,9 @@ def fuzz_one(args):
         if c.returncode:
             stats["rejected"] += 1
             # the other target must give a diagnostic too
-            c2, _ = fl.run_fpga(asan, path, options, work)
+            c2 = fl.compile_source(asan, path,
+                                   ["--target=rv32i-fpga"] + options,
+                                   os.devnull)
             finding = classify_compile(c2, text)
             if finding:
                 findings.append(finding + (c2.stderr[-3000:],))
@@ -433,6 +435,10 @@ def compare_rv32i(run, target, x86, findings, stats):
         recursion = "noinline" in run.text
         findings.append(("ub-signal", f"{target} {rv.detail} "
                          f"recursion={recursion}", str(rv)))
+    # note: a crash in the qemu system traps without end, it times out
+    if run.noub and x86.finished() and rv.kind == "timeout":
+        findings.append(("diff-target", f"{target} {bucket(x86)} vs timeout",
+                         f"x86 {x86}\n{target} {rv}"))
     if not (run.noub and x86.finished() and rv.finished()):
         return
     stats["compared"] += 1

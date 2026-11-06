@@ -8,15 +8,19 @@ directory that is removed at the end, also of a run that is stopped.
 
 ## Targets
 
-A program that the fuzzers run is built for x86_64 (nasm, native), rv32i-fpga
-(the emulator `fpga-emulator/osqa`) and, by a hash of its text, one of rv32i
-(llvm-mc, qemu user mode) and rv32i-qemu (qemu system with a uart), the
-commands of `qa/coverage/test-coverage.sh`; `FUZZ_TARGETS=all` builds it for
-all four, `FUZZ_TARGETS=fixed` for the first two (`with_rotated` in
+A program that a differential fuzzer runs is built for x86_64 (nasm, native),
+rv32i-fpga (the emulator `fpga-emulator/osqa`) and, by a hash of its text, one
+of rv32i (llvm-mc, qemu user mode) and rv32i-qemu (qemu system with a uart),
+the commands of `qa/coverage/test-coverage.sh`; `FUZZ_TARGETS=all` builds it
+for all four, `FUZZ_TARGETS=fixed` for the first two (`with_rotated` in
 `fuzzlib.py`). A model fuzzer builds a program with several option lists for
-the first two, with the first list for the third. The image the compiler writes for
-rv32i must have the bytes llvm assembles from the listing (`image-mismatch`).
-`fuzz-constructs.py` runs every program on all four targets.
+the first two, with the first list for the third. The image the compiler
+writes for rv32i must have the bytes llvm assembles from the listing
+(`image-mismatch`). A crash in the qemu system traps without end, so a run
+there that times out where x86_64 ends is a difference. `fuzz-constructs.py`
+runs every program on all four targets, `fuzz-reject.py` on the first two,
+`fuzz-options.py` on the target of its options, `fuzz-roome.py` as its table
+row says.
 
 ## Undefined behavior of a baz program
 
@@ -94,7 +98,6 @@ an included file (`split_include` in `fuzzlib.py`).
 - a sector past the end of the card panics `sd card` on x86_64 and rv32i,
   rv32i-fpga does not detect it; rv32i-qemu has no sd card, a program that
   reads or writes a sector is rejected there, the tutorial too
-- a very long expression compiles in more than linear time
 - nasm 3.02 may stall ("unable to find valid values for all labels") on x86_64
   code with many jumps near the short jump limit, e.g. with
   `--checks=noub,line`; the code has no size that depends on a label, the

@@ -506,6 +506,10 @@ def compare_rv32i(compiler, path, options, work, target, x86, found):
         found.append(("cpu-error", rv.detail[:60], str(rv)))
     if rv.kind == "signal":
         found.append(("ub-signal", f"{target} {rv.detail}", str(rv)))
+    # note: a crash in the qemu system traps without end, it times out
+    if x86.finished() and rv.kind == "timeout":
+        found.append(("diff-target", f"{target} {x86.kind} vs timeout",
+                      f"x86 {x86}\n{target} {rv}"))
     if x86.finished() and rv.finished() and not x86.same(rv):
         found.append(("diff-target", f"{target} {x86.kind} vs {rv.kind}",
                       f"x86 {x86}\n{target} {rv}"))

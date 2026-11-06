@@ -289,8 +289,8 @@ main:
     mov r14, qword [rbp + 440]
     cmp r14, 4
     jae baz_bounds_line_246
-    mov r13d, dword [rbp + r14 * 4 + 424]
-    mov dword [rbp + r15 * 4 + 424], r13d
+    mov r14d, dword [rbp + r14 * 4 + 424]
+    mov dword [rbp + r15 * 4 + 424], r14d
     cmp.247.12:
     cmp dword [rbp + 428], 2
     sete r15b
@@ -1266,8 +1266,8 @@ func.factorial:
         ret
     if.178.5.end:
     mov r15, qword [rbx + 8]
-    mov r14, qword [r15]
-    mov qword [rbx + 16], r14
+    mov r15, qword [r15]
+    mov qword [rbx + 16], r15
     dec qword [rbx + 16]
     jo baz_overflow_line_180
     mov r15, strict qword vars.end - size.func.factorial - 32
@@ -1294,8 +1294,8 @@ func.print_num:
     mov qword [rbx + 16], 0
     mov dword [rbx + 24], 0
     mov r15, qword [rbx]
-    mov r14, qword [r15]
-    mov qword [rbx + 32], r14
+    mov r15, qword [r15]
+    mov qword [rbx + 32], r15
     mov byte [rbx + 40], 0
     if.145.5:
     cmp.145.8:
@@ -1360,8 +1360,8 @@ func.print_num:
         mov r14, qword [rbx + 48]
         cmp r14, 20
         jae baz_bounds_line_167
-        mov r13b, byte [rbx + r14 + 8]
-        mov byte [rbx + r15 + 8], r13b
+        mov r14b, byte [rbx + r14 + 8]
+        mov byte [rbx + r15 + 8], r14b
         inc qword [rbx + 56]
         jo baz_overflow_line_168
         inc qword [rbx + 48]

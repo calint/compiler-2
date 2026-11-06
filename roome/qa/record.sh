@@ -8,7 +8,8 @@ DIR="$(cd "$(dirname "$0")" && pwd)"
 cd "$DIR/../.."
 
 EMULATOR=fpga-emulator/osqa
-if [[ ! -x $EMULATOR ]]; then
+# rebuilt when missing or older than a source
+if [[ ! -x $EMULATOR || -n "$(find fpga-emulator/src -newer "$EMULATOR" -print -quit)" ]]; then
     fpga-emulator/make.sh
 fi
 

@@ -22,5 +22,8 @@ echo test roome
 roome/qa/test.sh
 echo compile prog
 ./run.sh
+echo codegen listings
+./baz --target=rv32i etc/codegen-inefficiencies.baz >etc/codegen-inefficiencies.s
+grep -v -e '^[[:space:]]*#' -e '^[[:space:]]*$' etc/codegen-inefficiencies.s >etc/codegen-inefficiencies-without-comments.s
 echo make readme
 etc/readme/make.sh

@@ -145,7 +145,8 @@ def fuzz_one(args):
         r86 = fl.run([X86], 10, cwd=work, stdin_bytes=data)
         rf = fl.run([fl.EMULATOR, IMAGE, sdcard_fpga], 10,
                     stdin_bytes=data + b"\x04")
-        outcomes = [("fpga", fl.outcome_fpga(rf))]
+        # (target, outcome, the text of a panic on standard error)
+        outcomes = [("fpga", fl.outcome_fpga(rf), "")]
         if index % 2 == 0:
             # the rv32i program opens 'sdcard.img' in its working directory too
             work_rv32i = os.path.join(work, "rv32i")
@@ -154,20 +155,20 @@ def fuzz_one(args):
                 f.truncate(SDCARD_SIZE_BYTES)
             rv = fl.run([fl.QEMU_USER, RV32I], 10, cwd=work_rv32i,
                         stdin_bytes=data)
-            outcomes.append(("rv32i", fl.outcome_x86(rv)))
+            outcomes.append(("rv32i", fl.outcome_x86(rv), rv.stderr))
     o86 = fl.outcome_x86(r86)
     text = data.decode("latin-1")
-    for target, o in [("x86", o86)] + outcomes:
+    for target, o, stderr in [("x86", o86, r86.stderr)] + outcomes:
         if o.kind == "panic":
             found.append(("roome-panic", f"{target} {o.code} {o.detail}",
-                          r86.stderr[-300:] if target == "x86" else ""))
+                          stderr[-300:]))
         elif o.kind in ("signal", "emulator-signal"):
             found.append(("roome-signal", f"{target} {o.detail}", ""))
         elif o.kind == "cpu-error":
             found.append(("roome-cpu", f"{target} {o.detail}"[:60], ""))
         elif o.kind == "timeout":
             found.append(("roome-timeout", target, ""))
-    for target, o in outcomes:
+    for target, o, _ in outcomes:
         if o86.finished() and o.finished() and not o86.same(o):
             found.append(("roome-diff", f"{o86.kind}/{o86.code} vs "
                           f"{target} {o.kind}/{o.code} output "

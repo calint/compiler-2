@@ -383,21 +383,6 @@ def run_rv32i(compiler, path, options, work, name="f", stdin=b""):
     return c, outcome_x86(r), None
 
 
-def run_qemu(compiler, path, options, work, name="f", stdin=b""):
-    # compile for rv32i-qemu and run in a qemu system, which ends like
-    # rv32i-fpga: a panic on the uart; the uart takes the input like
-    # 'run_fpga'
-    image = os.path.join(work, name + "-qemu.bin")
-    c = compile_source(compiler, path,
-                       ["--target=rv32i-qemu", "--bin=" + image] + options,
-                       os.devnull)
-    if c.returncode or c.timed_out:
-        return c, None
-    r = run(QEMU_SYSTEM + [image], RUN_TIMEOUT,
-            stdin_bytes=stdin + b"\x04" * 64)
-    return c, outcome_fpga(r)
-
-
 def run_target(compiler, path, options, work, target, name="f", stdin=b""):
     # compile for 'target' and run: (compile result, outcome, problem), the
     # outcome None when the compile failed, the problem of the assembler or
@@ -406,26 +391,27 @@ def run_target(compiler, path, options, work, target, name="f", stdin=b""):
         return run_x86(compiler, path, options, work, name, stdin)
     if target == "rv32i":
         return run_rv32i(compiler, path, options, work, name, stdin)
-    if target == "rv32i-qemu":
-        c, o = run_qemu(compiler, path, options, work, name, stdin)
-        return c, o, None
-    assert target == "rv32i-fpga"
-    c, o = run_fpga(compiler, path, options, work, name + ".bin", stdin)
+    c, o = run_uart(compiler, path, options, work, target, name, stdin)
     return c, o, None
 
 
-def run_fpga(compiler, path, options, work, name="f.bin", stdin=b""):
-    # compile for rv32i-fpga and run in the emulator: (compile result, outcome)
-    # the uart takes the input followed by end of transmission bytes, each read at
-    # the end of the input takes one
-    image = os.path.join(work, name)
+def run_uart(compiler, path, options, work, target, name, stdin):
+    # compile for rv32i-qemu or rv32i-fpga and run the image in a qemu system
+    # or the emulator, a panic ends on the uart: (compile result, outcome)
+    # the uart takes the input followed by end of transmission bytes, each
+    # read at the end of the input takes one
+    assert target in UART_TARGETS
+    image = os.path.join(work, f"{name}-{target}.bin")
     c = compile_source(compiler, path,
-                       ["--target=rv32i-fpga", "--bin=" + image] + options,
+                       ["--target=" + target, "--bin=" + image] + options,
                        os.devnull)
     if c.returncode or c.timed_out:
         return c, None
-    r = run([EMULATOR, image, os.devnull], RUN_TIMEOUT,
-            stdin_bytes=stdin + b"\x04" * 64)
+    if target == "rv32i-qemu":
+        command = QEMU_SYSTEM + [image]
+    else:
+        command = [EMULATOR, image, os.devnull]
+    r = run(command, RUN_TIMEOUT, stdin_bytes=stdin + b"\x04" * 64)
     return c, outcome_fpga(r)
 
 
@@ -585,7 +571,8 @@ def judge(work, source, expected, stdin=b"", targets=TARGETS,
         lists = option_lists if target in targets else option_lists[:1]
         for options in lists:
             got = build_and_run(work, source, target, options, stdin)
-            if got == expected:
+            # a tool stopped by a limit says nothing about the code
+            if got == expected or got[0] == "skip":
                 continue
             # the registers of the target are used up, a limit of the
             # language and not a defect; e.g. the check of a function without
@@ -600,7 +587,7 @@ def judge(work, source, expected, stdin=b"", targets=TARGETS,
                 key = f"{target} {message.split(': ', 1)[-1]}"
             elif got[0] == "compile-hang":
                 category = "compiler-hang"
-            elif got[0] in ("invalid-asm", "link-failure"):
+            elif got[0] in ("invalid-asm", "link-failure", "image-mismatch"):
                 category = got[0]
             else:
                 category = f"{prefix}-mismatch"

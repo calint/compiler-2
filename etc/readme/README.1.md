@@ -77,14 +77,17 @@ the binary image itself.
 
 ## Howto
 
-* requirements: `clang++` (C++26), `nasm`, `ld`, `llvm-mc`, `ld.lld`,
-  `qemu-riscv32`, `qemu-system-riscv32`
+* requirements: `clang++` 23 or later (tested with 23.1), `nasm`, `ld`,
+  `llvm-mc`, `ld.lld`, `qemu-riscv32`, `qemu-system-riscv32`, `g++` (C++23)
+  for the fpga emulator of `rv32i-fpga`; the tests need `python3` and
+  `llvm-objcopy`, the coverage report `llvm-profdata` and `llvm-cov`
 * [`./make.sh`](make.sh) compiles the compiler then compiles and runs
   [`prog.baz`](prog.baz), `./make.sh build` only compiles the compiler
 * [`./run.sh`](run.sh) `[options] [NAME.baz]` compiles, assembles and runs
   `NAME.baz` (default: `prog.baz`) with
   `--checks=noub,line --report=registers`, the options are passed to `baz`
-  after them, a `--checks` replaces the default one
+  after them, a `--checks` replaces the default one; `NAME.baz` is relative
+  to the repository root (`run.sh` changes to it first)
   * compiles to `NAME.s` and writes `NAME-without-comments.s`
   * builds and runs depending on `--target`
     * `x86_64` (default): assembles `NAME.o`, links `NAME`, runs natively
@@ -95,6 +98,7 @@ the binary image itself.
       assembled or linked), runs on the fpga soft core emulator
   * `./run.sh myprogram.baz --checks=upper,line`
   * `./run.sh myprogram.baz --target=rv32i-qemu --stack=0x20000`
+* `baz` exits with 0 on success and 1 on an error
 * [`etc/tutorial.baz`](etc/tutorial.baz) is a tour of the language from the
   easiest to the most difficult concepts
   * generics, type aliases, the zero value `{}`, `let` and `foo arr, count`

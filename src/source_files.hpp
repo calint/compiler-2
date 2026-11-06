@@ -12,11 +12,13 @@
 #include <fstream>
 #include <functional>
 #include <ios>
+#include <iterator>
 #include <optional>
 #include <string>
 #include <string_view>
 #include <system_error>
 #include <utility>
+#include <vector>
 
 #include "compile_error.hpp"
 #include "token.hpp"
@@ -49,25 +51,18 @@ struct source_line {
     };
 }
 
-// the column is 1-based, at a line end the one after its last character
-[[nodiscard]] inline auto
-column_for_char_index(const size_t char_index_in_source,
-                      const std::string_view src) -> size_t {
-
-    assert(char_index_in_source <= src.size());
-
-    return char_index_in_source - line_at(src, char_index_in_source).begin + 1;
-    // note: +1 because the columns start at 1
-}
-
 // the source files of a program, the first is the main file; the text stays
 // where it is when files are added, tokens refer to it
 class source_files final {
     struct file {
         std::string name;
         std::string text;
-        // see 'absolute_path', 'relative_name' is built from it
+        // see 'absolute_path', the relative names are built from it
         std::filesystem::path absolute;
+        // see 'relative_name'
+        std::string relative_name;
+        // the index where each line begins, the first is 0
+        std::vector<size_t> line_begins;
         // the path of the 'include' that loaded the file, none for the main
         // file
         std::optional<source_span> included_at;
@@ -76,26 +71,50 @@ class source_files final {
     std::deque<file> files_;
 
   public:
-    [[nodiscard]] auto absolute(const size_t file_ix) const
-        -> const std::filesystem::path& {
-
-        return files_.at(file_ix).absolute;
-    }
-
     // returns the index of the file, 'included_at' is none for the main file
     auto add(std::string name, std::string text,
              const std::optional<source_span> included_at) -> size_t {
 
         std::filesystem::path absolute{absolute_path(name)};
 
+        const std::filesystem::path main_dir{
+            files_.empty() ? absolute.parent_path()
+                           : files_.front().absolute.parent_path(),
+        };
+
+        std::string relative_name{
+            absolute.lexically_relative(main_dir).string(),
+        };
+
+        std::vector<size_t> line_begins{line_begins_of(text)};
+
         files_.push_back({
             .name{std::move(name)},
             .text{std::move(text)},
             .absolute{std::move(absolute)},
+            .relative_name{std::move(relative_name)},
+            .line_begins{std::move(line_begins)},
             .included_at{included_at},
         });
 
         return files_.size() - 1;
+    }
+
+    // the column is 1-based, at a line end the one after its last character
+    [[nodiscard]] auto column(const size_t file_ix, const size_t char_ix) const
+        -> size_t {
+
+        const file& src{files_.at(file_ix)};
+
+        assert(char_ix <= src.text.size());
+
+        // note: the first line begins at 0, a line begins at or before any
+        // index
+
+        const auto after{std::ranges::upper_bound(src.line_begins, char_ix)};
+
+        return char_ix - *std::prev(after) + 1;
+        // note: +1 because the columns start at 1
     }
 
     // 'path' names one of the files, also through another path; a path that
@@ -127,6 +146,15 @@ class source_files final {
         return files_.at(file_ix).name;
     }
 
+    // the file relative to the directory of the main file, e.g.
+    // 'include/x.baz', so the text does not depend on where the compiler was
+    // run from or how the main file was named
+    [[nodiscard]] auto relative_name(const size_t file_ix) const
+        -> std::string_view {
+
+        return files_.at(file_ix).relative_name;
+    }
+
     [[nodiscard]] auto text(const size_t file_ix) const -> std::string_view {
         return files_.at(file_ix).text;
     }
@@ -145,6 +173,22 @@ class source_files final {
         };
 
         return resolved_path(path);
+    }
+
+    // the index where each line of 'text' begins
+    [[nodiscard]] static auto line_begins_of(const std::string_view text)
+        -> std::vector<size_t> {
+
+        std::vector<size_t> begins{0};
+
+        size_t line_end{text.find('\n')};
+
+        while (line_end != std::string_view::npos) {
+            begins.push_back(line_end + 1);
+            line_end = text.find('\n', line_end + 1);
+        }
+
+        return begins;
     }
 
     [[nodiscard]] static auto read_file(const std::string_view file_name)
@@ -229,11 +273,11 @@ class source_locations final {
     [[nodiscard]] auto for_error(const source_span& where) const
         -> std::string {
 
-        const std::string_view src{files_.get().text(where.file_ix)};
+        const source_files& files{files_.get()};
 
-        return std::format(
-            "{}:{}:{}", printable(files_.get().name(where.file_ix)), where.line,
-            column_for_char_index(where.start_index, src));
+        return std::format("{}:{}:{}", printable(files.name(where.file_ix)),
+                           where.line,
+                           files.column(where.file_ix, where.start_index));
     }
 
     // the location in the main file has no file name, a label stays the same
@@ -273,19 +317,11 @@ class source_locations final {
             text(src_loc_tk, ':'));
     }
 
-    // the file relative to the directory of the main file, e.g.
-    // 'include/x.baz', so the text does not depend on where the compiler was
-    // run from or how the main file was named
+    // see 'source_files::relative_name'
     [[nodiscard]] auto relative_name(const size_t file_ix) const
-        -> std::string {
+        -> std::string_view {
 
-        const std::filesystem::path main_dir{
-            files_.get().absolute(0).parent_path(),
-        };
-
-        const std::filesystem::path& src_path{files_.get().absolute(file_ix)};
-
-        return src_path.lexically_relative(main_dir).string();
+        return files_.get().relative_name(file_ix);
     }
 
     [[nodiscard]] auto source_of(const token& src_loc_tk) const
@@ -296,9 +332,8 @@ class source_locations final {
 
   private:
     [[nodiscard]] auto column(const token& src_loc_tk) const -> size_t {
-        return column_for_char_index(
-            src_loc_tk.start_index(),
-            files_.get().text(src_loc_tk.file_index()));
+        return files_.get().column(src_loc_tk.file_index(),
+                                   src_loc_tk.start_index());
     }
 
     // 'line' and 'column' of the token, 'separator' between them

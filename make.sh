@@ -16,8 +16,6 @@ CW="-Weverything \
     -Wno-lifetime-safety-invalidation \
 "
 
-#CC="g++ -std=c++23"
-#CW="-Wall -Wextra -Wpedantic -Wconversion -Wsign-conversion -Wshadow"
 CF="-Wfatal-errors -Werror"
 DBG=-g
 OPT=-O0
@@ -43,6 +41,21 @@ TSAN_FLAGS="-fsanitize=thread \
   -fno-omit-frame-pointer"
 
 PROF_FLAGS="-fprofile-instr-generate -fcoverage-mapping"
+
+usage() {
+    echo "usage: $0 [asan|msan|tsan] [prof] [-O3] [build]"
+    echo ""
+    echo "sanitizers (choose one option):"
+    echo "  asan - AddressSanitizer + UndefinedBehaviorSanitizer"
+    echo "  msan - uninitialized memory, needs a libc++ built with msan and"
+    echo "         '-stdlib=libc++' (with its paths) added to CC, else false reports"
+    echo "  tsan - data races, for multi-threaded code"
+    echo ""
+    echo "options:"
+    echo "  prof  - enable profiling/coverage"
+    echo "  -O3   - optimize for faster execution"
+    echo "  build - build only, don't run"
+}
 
 # Parse parameters
 ASAN=
@@ -74,19 +87,13 @@ for arg in "$@"; do
     -O3)
         OPT=-O3
         ;;
+    -h | --help)
+        usage
+        exit 0
+        ;;
     *)
-        echo "unknown parameter: $arg"
-        echo "usage: $0 [asan|msan|tsan] [prof] [-O3] [build]"
-        echo ""
-        echo "sanitizers (choose one option):"
-        echo "  asan - AddressSanitizer + UndefinedBehaviorSanitizer"
-        echo "  msan - uninitialized memory, requires special build"
-        echo "  tsan - data races, for multi-threaded code"
-        echo ""
-        echo "options:"
-        echo "  prof  - enable profiling/coverage"
-        echo "  -O3   - optimize for faster execution"
-        echo "  build - build only, don't run"
+        echo "unknown parameter: $arg" >&2
+        usage >&2
         exit 1
         ;;
     esac
@@ -99,14 +106,18 @@ SANITIZER_COUNT=0
 [ -n "$TSAN" ] && SANITIZER_COUNT=$((SANITIZER_COUNT + 1))
 
 if [ $SANITIZER_COUNT -gt 1 ]; then
-    echo "Error: Cannot combine multiple sanitizers (asan/msan/tsan)"
-    echo "Use only one at a time"
+    echo "Error: Cannot combine multiple sanitizers (asan/msan/tsan)" >&2
+    echo "Use only one at a time" >&2
     exit 1
 fi
 
 SANITIZERS="$ASAN$MSAN$TSAN"
 
-CMD="$CC src/main.cpp -o baz $DBG $OPT $RTTI $CF $CW $SANITIZERS $PROF"
+# the version '--version' prints, the tag and commit of the build
+VERSION="$(git describe --tags --always --dirty 2>/dev/null || echo unknown)"
+VERSION_DEF="-DBAZ_VERSION=\"$VERSION\""
+
+CMD="$CC src/main.cpp -o baz $DBG $OPT $RTTI $CF $CW $SANITIZERS $PROF $VERSION_DEF"
 echo "$CMD"
 $CMD
 

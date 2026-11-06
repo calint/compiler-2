@@ -253,6 +253,15 @@ CLI_FILE_ERRORS() {
     exit_code=$?
     set -e
     [[ $exit_code -eq 1 ]]
+    # the version is the tag and commit of the build, written like the help
+    "$BIN" --version >gen.s 2>err
+    grep -Eq '^baz [^ ]+$' gen.s
+    set +e
+    "$BIN" --version >/dev/full 2>err
+    exit_code=$?
+    set -e
+    [[ $exit_code -eq 1 ]]
+    grep -Fq "cannot write the version to stdout" err
     # a help shorter than a block is still checked, e.g. a closed stdout
     set +e
     "$BIN" --help 1>&- 2>err

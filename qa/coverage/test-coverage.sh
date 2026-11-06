@@ -136,8 +136,11 @@ fi
 # writing one each, the merged report is the same
 export LLVM_PROFILE_FILE="$SCRIPT_DIR/$MACHINE-%8m.profraw"
 
-if [[ $MACHINE == rv32i-fpga && ! -x ${FPGA_EMULATOR[0]} ]]; then
-    "$FPGA_EMULATOR_DIR/make.sh"
+# the emulator is rebuilt when missing or older than a source
+if [[ $MACHINE == rv32i-fpga ]]; then
+    if [[ ! -x ${FPGA_EMULATOR[0]} || -n "$(find "$FPGA_EMULATOR_DIR/src" -newer "${FPGA_EMULATOR[0]}" -print -quit)" ]]; then
+        "$FPGA_EMULATOR_DIR/make.sh"
+    fi
 fi
 
 cd "$SCRIPT_DIR/tests"

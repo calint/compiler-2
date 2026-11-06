@@ -44,6 +44,14 @@
 #include "toc.hpp"
 #include "type.hpp"
 
+// the version '--version' prints; 'make.sh' defines 'BAZ_VERSION' from 'git
+// describe', other builds do not
+#ifdef BAZ_VERSION
+constexpr std::string_view baz_version{BAZ_VERSION};
+#else
+constexpr std::string_view baz_version{"unknown"};
+#endif
+
 namespace {
 // the sizes of '--vars', '--stack' and '--memory' are multiples of their
 // alignment, the stack one keeps sp 16-byte aligned and the memory one is what
@@ -210,6 +218,7 @@ options:
                       (default), or for testing the first or the last
   --reproduce-source  check that the source written back from the parse
                       matches the input, else write it to diff.baz
+  --version           the version of the compiler
   --help, -h          this help
 
 reports:
@@ -675,6 +684,19 @@ auto print_option_error(const std::string_view message) -> void {
     std::println(stderr, "use --help for usage information");
 }
 
+// 0 when 'what' written to stdout reached it, else 1 with a message
+// note: the flush reports a write that stdio buffered, e.g. to a closed
+//       stdout
+[[nodiscard]] auto flushed_stdout(const std::string_view what) -> int {
+    if (std::fflush(stdout) == 0) {
+        return 0;
+    }
+
+    std::println(stderr, "error: cannot write {} to stdout", what);
+
+    return 1;
+}
+
 // the exit code when the program should stop instead of compiling
 [[nodiscard]] auto parse_options(const std::span<const char*> args,
                                  options& opts) -> std::optional<int> {
@@ -685,13 +707,12 @@ auto print_option_error(const std::string_view message) -> void {
 
             if (arg == "--help" or arg == "-h") {
                 print_help(args.at(0));
+                return flushed_stdout("the help");
+            }
 
-                // note: the flush reports a write that stdio buffered, e.g.
-                //       to a closed stdout
-
-                const bool written{std::fflush(stdout) == 0};
-
-                return written ? 0 : 1;
+            if (arg == "--version") {
+                std::println("baz {}", baz_version);
+                return flushed_stdout("the version");
             }
 
             parse_option(arg, opts);

@@ -1,4 +1,8 @@
 #!/bin/sh
+# compiles, assembles and runs a baz program
+# usage: run.sh [options] [NAME.baz]
+# NAME.baz is relative to the repository root since the script changes to it
+# first, the options are passed to 'baz'
 set -eu
 cd "$(dirname "$0")"
 
@@ -37,8 +41,11 @@ esac
 
 SEP="--------------------------------------------------------------------------------"
 echo "$SEP"
-printf './baz --checks=noub,line'
-printf ' %s' "$@"
+printf './baz --checks=noub,line --report=registers'
+# without arguments 'printf' would still write one space
+if [ $# -gt 0 ]; then
+    printf ' %s' "$@"
+fi
 printf '\n'
 # a '--checks' in the arguments replaces the default one
 ./baz --checks=noub,line --report=registers "$@" >"$ASM"

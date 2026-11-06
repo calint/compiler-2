@@ -1,6 +1,52 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] hard: round 130 (2026-11-06, user: all night; BB whole-language hunt,
+    BG review of the fuzzers of round 129, BI compile time, BJ and BK
+    release readiness)
+    => done (2026-11-06): BB no finding in about 17000 programs of every
+       feature with a model on three targets (its generator kept for
+       qa/fuzz); BG1 a hang on rv32i-qemu was not a difference in
+       fuzz-programs and fuzz-compiler, BG2 fuzz-options ignored a signal or
+       a timeout, BG3 one 'run_uart' for qemu and the fpga, BG4 'skip' and
+       'image-mismatch' reported as they are, BG5 the rv32i panic text of
+       roome, BG6 the README of the fuzzers (each proven with a compiler
+       broken on purpose); BI a line-start index for columns
+       ('source_files::column'), the relative name of a file stored once,
+       'lut' a vector with a hash index (the discard of 2026-10-21 reversed:
+       measured, simpler), roome 12 to 15 % fewer instructions, long lines
+       and many names linear, listings equal; BJ the README requirements,
+       'make.sh -h' and its errors on stderr, 'run.sh' shows the command it
+       runs, 'mkdir -p' in two scripts; BK clang 23 or later, the msan
+       note, 'etc/readme/README.md' untracked and 'etc/readme/make.sh'
+       writes README.md through a temp file after checking its tools, the
+       outputs of 'run.sh etc/tutorial.baz' ignored, 'run.sh' paths
+       relative to the repository root and the exit codes in the Howto, the
+       fpga emulator rebuilt when its sources are newer, the codegen
+       listings regenerated in 'prepare-for-commit.sh'; '--version' prints
+       the 'git describe' of the build, '--help' and '--version' report a
+       failed write; LICENSE and the third-party pages are items for the
+       user
+[x] medium: a very long expression compiles in more than linear time (part
+    of the [o] fuzzing item: 8000 terms of '+' take 3 s in the debug build,
+    16000 negations on rv32i with '--checks=noub' take 11 s)
+    => cause: 'source_locations::column' searched back to the previous
+       newline for every comment, quadratic in the length of a line (32000
+       terms on one line 3.05 s against 0.26 s one per line, 92 % in
+       'source_locations::column'); a profile of roome and synthetic inputs
+       also found 'lut' searched linearly (8000 variables of one scope
+       1.4 s, 16000 3.7 s; 8000 types 0.31 s) and 'relative_name' rebuilt
+       for every listing comment (about 20 % of roome)
+    => done (2026-11-06): 'source_files' keeps the index where each line
+       begins ('line_begins_of'), 'source_files::column' finds the line by
+       binary search and replaces 'column_for_char_index'; it keeps the
+       name relative to the main file ('source_files::relative_name')
+       instead of building it per comment; 'lut' finds a name by a hash
+       index; listings unchanged; one line of 32000 terms 0.12 s, 8000
+       variables 0.12 s, 16000 negations on rv32i 0.32 s (2.44 s before),
+       roome about 12 % (x86_64) and 14 % (rv32i-fpga) fewer instructions;
+       the [-] decision of 2026-10-21 (not worth a second code path) is
+       reversed: both are simpler than the code they replace
 [x] hard: round 129 (2026-11-06, user: all night; BE the fuzzers on every
     target)
     => done (2026-11-06): the differential fuzzers also run rv32i (qemu user

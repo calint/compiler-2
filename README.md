@@ -77,14 +77,17 @@ the binary image itself.
 
 ## Howto
 
-* requirements: `clang++` (C++26), `nasm`, `ld`, `llvm-mc`, `ld.lld`,
-  `qemu-riscv32`, `qemu-system-riscv32`
+* requirements: `clang++` 23 or later (tested with 23.1), `nasm`, `ld`,
+  `llvm-mc`, `ld.lld`, `qemu-riscv32`, `qemu-system-riscv32`, `g++` (C++23)
+  for the fpga emulator of `rv32i-fpga`; the tests need `python3` and
+  `llvm-objcopy`, the coverage report `llvm-profdata` and `llvm-cov`
 * [`./make.sh`](make.sh) compiles the compiler then compiles and runs
   [`prog.baz`](prog.baz), `./make.sh build` only compiles the compiler
 * [`./run.sh`](run.sh) `[options] [NAME.baz]` compiles, assembles and runs
   `NAME.baz` (default: `prog.baz`) with
   `--checks=noub,line --report=registers`, the options are passed to `baz`
-  after them, a `--checks` replaces the default one
+  after them, a `--checks` replaces the default one; `NAME.baz` is relative
+  to the repository root (`run.sh` changes to it first)
   * compiles to `NAME.s` and writes `NAME-without-comments.s`
   * builds and runs depending on `--target`
     * `x86_64` (default): assembles `NAME.o`, links `NAME`, runs natively
@@ -95,6 +98,7 @@ the binary image itself.
       assembled or linked), runs on the fpga soft core emulator
   * `./run.sh myprogram.baz --checks=upper,line`
   * `./run.sh myprogram.baz --target=rv32i-qemu --stack=0x20000`
+* `baz` exits with 0 on success and 1 on an error
 * [`etc/tutorial.baz`](etc/tutorial.baz) is a tour of the language from the
   easiest to the most difficult concepts
   * generics, type aliases, the zero value `{}`, `let` and `foo arr, count`
@@ -148,6 +152,7 @@ options:
                       (default), or for testing the first or the last
   --reproduce-source  check that the source written back from the parse
                       matches the input, else write it to diff.baz
+  --version           the version of the compiler
   --help, -h          this help
 
 reports:
@@ -200,10 +205,10 @@ examples:
 ```text
 Language                     files          blank        comment           code
 -------------------------------------------------------------------------------
-C/C++ Header                    64           9239           6919          26937
-C++                              1            196             93            775
+C/C++ Header                    64           9278           6957          27053
+C++                              1            198             97            793
 -------------------------------------------------------------------------------
-SUM:                            65           9435           7012          27712
+SUM:                            65           9476           7054          27846
 -------------------------------------------------------------------------------
 ```
 
@@ -944,8 +949,8 @@ main:
     mov r14, qword [rbp + 440]
     cmp r14, 4
     jae baz_bounds_line_246
-    mov r13d, dword [rbp + r14 * 4 + 424]
-    mov dword [rbp + r15 * 4 + 424], r13d
+    mov r14d, dword [rbp + r14 * 4 + 424]
+    mov dword [rbp + r15 * 4 + 424], r14d
     cmp.247.12:
     cmp dword [rbp + 428], 2
     sete r15b
@@ -1921,8 +1926,8 @@ func.factorial:
         ret
     if.178.5.end:
     mov r15, qword [rbx + 8]
-    mov r14, qword [r15]
-    mov qword [rbx + 16], r14
+    mov r15, qword [r15]
+    mov qword [rbx + 16], r15
     dec qword [rbx + 16]
     jo baz_overflow_line_180
     mov r15, strict qword vars.end - size.func.factorial - 32
@@ -1949,8 +1954,8 @@ func.print_num:
     mov qword [rbx + 16], 0
     mov dword [rbx + 24], 0
     mov r15, qword [rbx]
-    mov r14, qword [r15]
-    mov qword [rbx + 32], r14
+    mov r15, qword [r15]
+    mov qword [rbx + 32], r15
     mov byte [rbx + 40], 0
     if.145.5:
     cmp.145.8:
@@ -2015,8 +2020,8 @@ func.print_num:
         mov r14, qword [rbx + 48]
         cmp r14, 20
         jae baz_bounds_line_167
-        mov r13b, byte [rbx + r14 + 8]
-        mov byte [rbx + r15 + 8], r13b
+        mov r14b, byte [rbx + r14 + 8]
+        mov byte [rbx + r15 + 8], r14b
         inc qword [rbx + 56]
         jo baz_overflow_line_168
         inc qword [rbx + 48]
@@ -2912,10 +2917,10 @@ main:
     cmp r14, 4
     jae baz_bounds_line_246
 ;   [prog.baz:246:23] bounds check end
-;   [prog.baz:246:19] allocate scratch register -> r13
-    mov r13d, dword [rbp + r14 * 4 + 424]
-    mov dword [rbp + r15 * 4 + 424], r13d
-;   [prog.baz:246:19] free scratch register r13
+;   [prog.baz:246:19] free scratch register r14
+;   [prog.baz:246:19] allocate scratch register -> r14
+    mov r14d, dword [rbp + r14 * 4 + 424]
+    mov dword [rbp + r15 * 4 + 424], r14d
 ;   [prog.baz:246:19] free scratch register r14
 ;   [prog.baz:246:5] free scratch register r15
 ;   [prog.baz:247:5] assert(arr[1] == 2)
@@ -5156,10 +5161,10 @@ func.factorial:
 ;   [prog.baz:180:13] n
 ;   [prog.baz:180:13] allocate scratch register -> r15
     mov r15, qword [rbx + 8]
-;   [prog.baz:180:13] allocate scratch register -> r14
-    mov r14, qword [r15]
-    mov qword [rbx + 16], r14
-;   [prog.baz:180:13] free scratch register r14
+;   [prog.baz:180:13] free scratch register r15
+;   [prog.baz:180:13] allocate scratch register -> r15
+    mov r15, qword [r15]
+    mov qword [rbx + 16], r15
 ;   [prog.baz:180:13] free scratch register r15
 ;   [prog.baz:180:17] m - 1
 ;   [prog.baz:180:17] src: folded constant '- 1'
@@ -5204,8 +5209,8 @@ func.factorial:
 ;   [prog.baz:182:11] n
 ;   [prog.baz:182:11] allocate scratch register -> r13
     mov r13, qword [rbx + 8]
-    mov r14, qword [r13]
 ;   [prog.baz:182:11] free scratch register r13
+    mov r14, qword [r13]
 ;   [prog.baz:182:15] r14 * partial
 ;   [prog.baz:182:15] src: operand
     imul r14, qword [rbx + 24]
@@ -5237,10 +5242,10 @@ func.print_num:
 ;   [prog.baz:140:13] num
 ;   [prog.baz:140:13] allocate scratch register -> r15
     mov r15, qword [rbx]
-;   [prog.baz:140:13] allocate scratch register -> r14
-    mov r14, qword [r15]
-    mov qword [rbx + 32], r14
-;   [prog.baz:140:13] free scratch register r14
+;   [prog.baz:140:13] free scratch register r15
+;   [prog.baz:140:13] allocate scratch register -> r15
+    mov r15, qword [r15]
+    mov qword [rbx + 32], r15
 ;   [prog.baz:140:13] free scratch register r15
 ;   [prog.baz:141:5] var is_negative = false
 ;   [prog.baz:141:9] is_negative: bool (1 B @ [rbx + 40])
@@ -5414,10 +5419,10 @@ func.print_num:
         cmp r14, 20
         jae baz_bounds_line_167
 ;       [prog.baz:167:30] bounds check end
-;       [prog.baz:167:26] allocate scratch register -> r13
-        mov r13b, byte [rbx + r14 + 8]
-        mov byte [rbx + r15 + 8], r13b
-;       [prog.baz:167:26] free scratch register r13
+;       [prog.baz:167:26] free scratch register r14
+;       [prog.baz:167:26] allocate scratch register -> r14
+        mov r14b, byte [rbx + r14 + 8]
+        mov byte [rbx + r15 + 8], r14b
 ;       [prog.baz:167:26] free scratch register r14
 ;       [prog.baz:167:9] free scratch register r15
 ;       [prog.baz:168:9] write_pos = write_pos + 1

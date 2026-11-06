@@ -10,7 +10,8 @@
 #   option-hang       no result in time
 #   option-message    a rejection without a message
 #   option-wrong      an accepted combination whose program does not end with
-#                     the expected exit code, on any of the four targets
+#                     the expected exit code (also a signal or a timeout), on
+#                     any of the four targets
 #   invalid-asm, link-failure, image-mismatch  see fuzz-compiler.py
 #   option-cpu        an accepted rv32i-fpga image stops the emulator, unless
 #                     '--memory' is larger than the memory of the emulator
@@ -227,12 +228,17 @@ def small_memory(options):
 
 
 def judge(outcome, expected, name, options, description, found):
-    if not outcome.finished():
+    # a signal or a timeout is wrong too, a crash in the qemu system traps
+    # without end
+    if outcome.kind == "output-limit":
         return
     if outcome.kind == "exit" and outcome.code == expected:
         return
     if outcome.kind == "panic" and outcome.code in (250, 254) and \
             small_memory(options):
+        return
+    # with the frame or stack check turned off a small memory may overflow
+    if outcome.kind in ("signal", "timeout") and small_memory(options):
         return
     found.append(("option-wrong", f"{name} {outcome.kind} {outcome.code}"
                   f" {[o for o in options if o.startswith('--target')]}",
