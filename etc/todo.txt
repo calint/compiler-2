@@ -6,7 +6,7 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
 --------------------------------------------------------------------------------
 1. clean up
 --------------------------------------------------------------------------------
-[ ] medium: a chain of distinct inlined functions with deeply nested
+[p] medium: a chain of distinct inlined functions with deeply nested
     expressions overflows the compiler's stack (segfault on both targets,
     bug hunt round 6 S2): each limit holds alone, parse nesting 128 per body
     and 256 inlined scopes, but the compile walk nests them, up to about
@@ -17,6 +17,9 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
        bound (64 MiB, headroom for the asan build); a test that crashes at
        HEAD; rejected: a third limit on the compile depth (a new concept,
        a counter at every expression kind)
+    => pending (2026-11-06, user): the thread needs '<pthread.h>', the first
+       POSIX header of 'src/', kept for later with the item of
+       'source_files::contains'
 [ ] easy: low priority: a block on the line after a declaration whose
     initializer ends with a type is parsed as a literal of that type (bug
     hunt round 9 W2-1): 'var a = i8[2]' then '{ f() }' on the next lines is
