@@ -1,6 +1,18 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] hard: design review series 2, round 111 (2026-11-06, user: keep going;
+    W the generic scopes as a whole after round 110 V1)
+    => done (2026-11-06): W1 a deduction from an argument took a type the
+       argument does not have: a whole array told its element type
+       ('first(a)' made 'first<i8>'), a call result reached into told the
+       type of the call ('twice(mk().x + 1)'); the error of that instance
+       hid the one of the argument; an argument tells its type only when it
+       is a whole value ('is_whole_argument' with 'is_reached_into', a whole
+       array rejected as unindexed), tests 2660, 2661; not changed: a
+       deduction from the destination makes the instance before a suffix is
+       checked (README 2.10.4.2); nesting, recursion, instance identity and
+       the receiver of round 110 found right
 [x] hard: design review series 2, round 110 (2026-11-06, user: keep going;
     V names that meet in one scope or table, after round 109 T1)
     => done (2026-11-06): V1 a type parameter named like a generic type of

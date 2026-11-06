@@ -6934,3 +6934,11 @@ SRC=2641 && COMPERR
 # the generic type of a method names its instance like a type name does, so a
 # 'foo' in the method may declare 'e' when the generic type is 'e'
 SRC=2642 && EXP=7 && RUN
+
+# a whole array tells no type parameter, it is rejected as in a call without
+# type parameters
+SRC=2660 && COMPERR
+
+# a call result reached into tells no type parameter, it is rejected as in a
+# call without type parameters
+SRC=2661 && COMPERR

@@ -222,9 +222,10 @@ struct generic_call {
     // the type of the argument at 'index' when it is a variable, a field, an
     // element or a typed constant, or the value it makes names its type:
     // 'point{1, 2}', 'point.at(1, 2)' or 'mk(1, 2)', otherwise null; an
-    // argument that no operator continues is whole, e.g. 'a' of 'f(a 2)', the
-    // parse of the call reports what follows it. 'tz' is after the '(', it
-    // ends after the argument when the argument tells its type
+    // argument that no operator continues and no '.' or '[' reaches into is
+    // whole, e.g. 'a' of 'f(a 2)', the parse of the call reports what follows
+    // it. 'tz' is after the '(', it ends after the argument when the argument
+    // tells its type
     [[nodiscard]] static auto argument_type(toc& tc, tokenizer& tz,
                                             const size_t index) -> const type* {
 
@@ -249,6 +250,12 @@ struct generic_call {
 
         if (ident.is_method_receiver() or continues_expression(tz)) {
             return nullptr;
+        }
+
+        // e.g. 'a' of 'f(a)' for 'a i8[4]', which is not of the element type,
+        // as in a call without type parameters
+        if (ident.is_array()) {
+            throw_unindexed_array(ident.tok(), ident.dotted_path());
         }
 
         return named_argument_type(tc, ident);
@@ -461,8 +468,12 @@ struct generic_call {
                                          const token& tk, const term_kind tm)
         -> const type* {
 
+        // e.g. not the 'mk()' of 'mk().x + 1', which the parse of the
+        // argument reports
         const auto is_whole_argument{
-            [&] -> bool { return not continues_expression(tz); },
+            [&] -> bool {
+                return not continues_expression(tz) and not is_reached_into(tz);
+            },
         };
 
         // e.g. 'point{1, 2}', a missing '}' is left to the parse of the

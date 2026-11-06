@@ -1,0 +1,11 @@
+# a whole array tells no type parameter: it is rejected as in a call without
+# type parameters, not made an instance of its element type
+
+func first<T type>(x T) res int {
+    res = x.len
+}
+
+func main() {
+    var a = i8[4]
+    exit(first(a))
+}
