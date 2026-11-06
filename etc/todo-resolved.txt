@@ -1,6 +1,19 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] hard: design review series 2, round 99 (2026-11-06, user: loop of design
+    review and bug hunt; Q hunt of round 98)
+    => done (2026-11-06): no regression of round 98; Q1 a non-ASCII
+       character after a backslash was quoted by its first byte, an invalid
+       UTF-8 message; 'token::escape_length' takes the character with its
+       continuation bytes ('is_utf8_continuation') and 'decode_escape'
+       rejects an escape of more than one byte (tests 2228, 2229); Q2 an
+       escape holding a quote printed without quotes is 'in_quotes' by
+       design; R1 (round 100 hunt) the escape takes only the continuation
+       bytes its lead byte announces, so a byte after an ASCII escape stays
+       data ('"\t\xa3"' in a Latin-1 source, tests 2230 to 2232); R2
+       'utf8_continuation_count' and 'is_utf8_continuation' are statics of
+       'token', the copies in 'main.cpp' removed
 [x] hard: design review series 2, round 98 (2026-11-06, user: loop of design
     review and bug hunt, commit and tag each round; A review of rounds 94 to
     97, B cross-file design)

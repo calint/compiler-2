@@ -1,0 +1,7 @@
+# a byte after an escape that does not continue a UTF-8 character is data
+
+dat s = "\t£\\°"
+
+func main() {
+    exit(array_length(s))
+}

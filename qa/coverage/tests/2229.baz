@@ -1,0 +1,6 @@
+# a non-ASCII character after a backslash in a character literal
+
+func main() {
+    var c = i8
+    c = '\é'
+}

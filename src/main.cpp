@@ -248,10 +248,6 @@ auto print_source_error(const source_files& files,
 auto print_source_line(std::string_view src, size_t start_index,
                        size_t end_index) -> void;
 
-[[nodiscard]] auto is_utf8_continuation(char ch) -> bool;
-
-[[nodiscard]] auto utf8_continuation_count(char ch) -> size_t;
-
 [[nodiscard]] auto is_escaped_in_line(char ch) -> bool;
 
 [[nodiscard]] auto printable_line(std::string_view line) -> std::string;
@@ -1055,37 +1051,6 @@ auto print_source_error(const source_files& files,
     };
 }
 
-// the bytes after the first one of a multi-byte UTF-8 character
-[[nodiscard]] auto is_utf8_continuation(const char ch) -> bool {
-    constexpr unsigned char first{0x80};
-    constexpr unsigned char last{0xBF};
-
-    const unsigned char byte{static_cast<unsigned char>(ch)};
-
-    return byte >= first and byte <= last;
-}
-
-// the continuation bytes that the lead byte 'ch' of a UTF-8 character
-// announces, 0 for any other byte
-[[nodiscard]] auto utf8_continuation_count(const char ch) -> size_t {
-    constexpr unsigned char first_lead_of_two{0xC0};
-    constexpr unsigned char first_lead_of_three{0xE0};
-    constexpr unsigned char first_lead_of_four{0xF0};
-    constexpr unsigned char first_invalid_lead{0xF8};
-
-    const unsigned char byte{static_cast<unsigned char>(ch)};
-
-    if (byte < first_lead_of_two or byte >= first_invalid_lead) {
-        return 0;
-    }
-
-    if (byte < first_lead_of_three) {
-        return 1;
-    }
-
-    return byte < first_lead_of_four ? 2 : 3;
-}
-
 // the columns a terminal shows: the continuation bytes a lead byte announces
 // are part of its character, any other one is shown as a replacement
 // character, a control byte as its escape
@@ -1097,13 +1062,13 @@ auto print_source_error(const source_files& files,
     size_t continuations_left{};
 
     for (const char ch : text) {
-        if (continuations_left != 0 and is_utf8_continuation(ch)) {
+        if (continuations_left != 0 and token::is_utf8_continuation(ch)) {
             --continuations_left;
             continue;
         }
 
         columns += is_escaped_in_line(ch) ? escape_columns : 1;
-        continuations_left = utf8_continuation_count(ch);
+        continuations_left = token::utf8_continuation_count(ch);
     }
 
     return columns;

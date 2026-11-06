@@ -6859,3 +6859,18 @@ SRC=2226 && COMPERR
 
 # an array literal reached into where an instance is expected
 SRC=2227 && COMPERR
+
+# a non-ASCII character after a backslash is quoted whole
+SRC=2228 && COMPERR
+
+# the same in a character literal
+SRC=2229 && COMPERR
+
+# a byte after an escape that does not continue a UTF-8 character is data
+SRC=2230 && EXP=4 && RUN
+
+# a byte after an escape in a character literal is a second byte
+SRC=2231 && COMPERR
+
+# an escape quotes the continuation bytes its lead byte announces
+SRC=2232 && COMPERR

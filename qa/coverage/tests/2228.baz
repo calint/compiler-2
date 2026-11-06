@@ -1,0 +1,5 @@
+# a non-ASCII character after a backslash is quoted whole
+
+func main() {
+    var s = "a\éb"
+}

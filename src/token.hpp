@@ -351,12 +351,42 @@ class token final {
         };
     }
 
-    // the characters after a backslash that make up its escape: a hex escape
-    // spans the 'x' and two digits, any other one character
+    // the bytes after a backslash that make up its escape: a hex escape spans
+    // the 'x' and two digits, any other one character with the continuation
+    // bytes its UTF-8 lead byte announces, so a message quotes it whole and a
+    // byte after an ASCII escape stays data, e.g. '\é'
     [[nodiscard]] static auto escape_length(const std::string_view escape)
         -> size_t {
 
-        return escape.starts_with('x') ? 3UZ : 1UZ;
+        // note: a backslash is always followed by a character, the tokenizer
+        //       reads it with the backslash
+
+        assert(not escape.empty());
+
+        if (escape.starts_with('x')) {
+            return 3;
+        }
+
+        const size_t announced{utf8_continuation_count(escape.front())};
+
+        size_t size{1};
+        while (size <= announced and size < escape.size() and
+               is_utf8_continuation(escape.at(size))) {
+
+            ++size;
+        }
+
+        return size;
+    }
+
+    // a byte of a UTF-8 sequence after its first, '10xxxxxx'
+    [[nodiscard]] static auto is_utf8_continuation(const char ch) -> bool {
+        const unsigned char byte{static_cast<unsigned char>(ch)};
+
+        constexpr unsigned char top_bits{0xc0};
+        constexpr unsigned char continuation{0x80};
+
+        return (byte & top_bits) == continuation;
     }
 
     // a marker at 'index' with empty text and whitespace
@@ -386,6 +416,27 @@ class token final {
         return {file_ix, "", index, text, "", line};
     }
 
+    // the continuation bytes that the lead byte 'ch' of a UTF-8 character
+    // announces, 0 for any other byte
+    [[nodiscard]] static auto utf8_continuation_count(const char ch) -> size_t {
+        constexpr unsigned char first_lead_of_two{0xC0};
+        constexpr unsigned char first_lead_of_three{0xE0};
+        constexpr unsigned char first_lead_of_four{0xF0};
+        constexpr unsigned char first_invalid_lead{0xF8};
+
+        const unsigned char byte{static_cast<unsigned char>(ch)};
+
+        if (byte < first_lead_of_two or byte >= first_invalid_lead) {
+            return 0;
+        }
+
+        if (byte < first_lead_of_three) {
+            return 1;
+        }
+
+        return byte < first_lead_of_four ? 2 : 3;
+    }
+
   private:
     // the text of a string or character literal between its quotes
     [[nodiscard]] auto quoted_body() const -> std::string_view {
@@ -410,10 +461,10 @@ class token final {
             // note: 1 because the digits follow the 'x'
         }
 
-        // note: a backslash is always followed by a character, which
-        //       'escape_length' takes whole when it is not an 'x'
-
-        assert(escape.size() == 1);
+        // a character of more than one byte is no escape, e.g. '\é'
+        if (escape.size() != 1) {
+            return std::nullopt;
+        }
 
         switch (escape.at(0)) {
         case '0':

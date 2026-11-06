@@ -1,0 +1,5 @@
+# an escape quotes the continuation bytes its lead byte announces
+
+func main() {
+    var s = "\Ã©©"
+}
