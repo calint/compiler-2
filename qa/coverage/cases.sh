@@ -6914,3 +6914,11 @@ SRC=2380 && EXP=255 && OPTS="--checks=upper,line" RUN_ERR
 
 # a value called where an array is expected is reported as for any call
 SRC=2430 && COMPERR
+
+# a type parameter of a method is not named like the generic type of the
+# method, which names the instance in the method
+SRC=2600 && COMPERR
+
+# a type parameter of a method is not named like the type of the method, also
+# when no instance is made
+SRC=2601 && COMPERR

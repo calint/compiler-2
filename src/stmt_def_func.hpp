@@ -1620,6 +1620,12 @@ class stmt_def_func_generic final : public statement {
             tc.definitions().assert_generic_param_apart(
                 param_tk, name_tk, head.method ? "method" : "function");
 
+            // e.g. 'box' of 'func box.f<box type>()', the receiver type
+            if (head.method) {
+                tc.definitions().assert_generic_param_apart(
+                    param_tk, head.name_tk, "type");
+            }
+
             for (const generic_signature_param& param : signature.params) {
                 tc.definitions().assert_generic_param_apart(
                     param_tk, param.name_tk, "parameter");

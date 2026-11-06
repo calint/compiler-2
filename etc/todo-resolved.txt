@@ -1,6 +1,19 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] hard: design review series 2, round 109 (2026-11-06, user: keep going;
+    S the no-UB guarantee on the code of rounds 104 to 107, T the front end
+    by a grammar and mutations, U roome, io and programs of medium size)
+    => done (2026-11-06): S no finding in about 5300 programs with a model on
+       every target, inline and noinline, '--nopt' and both versions; U no
+       finding (roome in 30 builds, io on four targets, seven programs with
+       a model); T1 (before round 104) a type parameter of a method named
+       like the type of the method failed an assert in
+       'type_table::add_param' for a generic receiver and got a wrong
+       message for a plain one; it is rejected at the definition as for a
+       function and a generic type ('assert_generic_signature', tests 2600,
+       2601); the compile time of 16000 'else if' branches (5.5 s) left as
+       it is
 [x] hard: design review series 2, round 108 (2026-11-06, user: keep going
     until no simplifications are left; Q hunt of rounds 106 and 107, R
     sweep of the design as a whole)

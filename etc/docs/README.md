@@ -820,9 +820,9 @@ its 'self'.
 #### 2.10.1 Definition
 
 Each type parameter has the kind 'type'. It may not be a keyword, a built-in
-name, the name of the function, of another generic parameter, of a generic
-parameter of the receiver, of a parameter or of the result; it hides a global
-of its name (1.3).
+name, the name of the function, of the type of a method, of another generic
+parameter, of a generic parameter of the receiver, of a parameter or of the
+result; it hides a global of its name (1.3).
 
 So that a call can omit the type arguments, the definition keeps the declared
 types of its parameters and its result ('generic_signature'), and a call looks
