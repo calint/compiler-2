@@ -118,21 +118,19 @@ inline auto expr_type::parse_fields(toc& tc, tokenizer& tz) -> void {
 
     const std::span<const type_field> flds{tp.fields()};
 
-    // the value is parsed as the type of the field, so a nested '{...}' is
-    // another 'expr_type'
-    list.close_brace_tk = parse_braced_items(
-        tz, list.delims_tk,
-        full_list{
-            .capacity{flds.size()},
-            .too_many{
-                std::format("too many fields for type {}",
-                            in_quotes(tp.name())),
-            },
-            .unclosed{
-                std::format("expected '}}' to close the value of type {}",
-                            in_quotes(tp.name())),
-            },
+    const full_list full{
+        .capacity{flds.size()},
+        .too_many{
+            std::format("too many fields for type {}", in_quotes(tp.name())),
         },
+        .unclosed{
+            std::format("expected '}}' to close the value of type {}",
+                        in_quotes(tp.name())),
+        },
+    };
+
+    list.close_brace_tk = parse_braced_items(
+        tz, list.delims_tk, full,
         [&](const size_t index) -> std::string {
             return std::format("expected ',' followed by a value for field {} "
                                "in type {}",
@@ -142,6 +140,8 @@ inline auto expr_type::parse_fields(toc& tc, tokenizer& tz) -> void {
         [&](const size_t index) -> void {
             const type_field& tf{flds.at(index)};
 
+            // the value is parsed as the type of the field, so a nested
+            // '{...}' is another 'expr_type'
             list.exprs.emplace_back(std::make_unique<expr_any>(
                 tc, tz, tf.type_ref(), literal_typing::from_destination,
                 tf.shape));

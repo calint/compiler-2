@@ -1,4 +1,4 @@
 # type fields require delimiters
 
-type x { a b }
+type x { a i8 b i8 }
 func main() {}

@@ -3,7 +3,6 @@
 #include <cassert>
 #include <cstddef>
 #include <cstdint>
-#include <format>
 #include <optional>
 #include <ostream>
 #include <utility>
@@ -394,20 +393,16 @@ class stmt_builtin_convert final : public statement {
 
         expr_arith arg{tc, tz};
 
+        // e.g. the '>' of 'int(a > 2)', a 'bool' converts but a condition
+        // is stored first, also of arrays and instances
+        expr_arith::assert_no_condition_next(tz);
+
         // e.g. the 'ps' of 'int(ps)', reported as an array, not by its type
         assert_not_whole_array(arg);
 
         if (not arg.get_type().is_builtin()) {
-            throw compile_error{
-                arg.tok(),
-                std::format("cannot convert a value of type {}",
-                            in_quotes(arg.get_type().name())),
-            };
+            throw_not_a_number(arg.tok(), arg.get_type().name());
         }
-
-        // e.g. the '>' of 'int(a > 2)', a 'bool' converts but a condition
-        // is stored first
-        expr_arith::assert_no_condition_next(tz);
 
         assert_no_surplus_argument(tz, type_tk.text(), 1);
 

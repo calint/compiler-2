@@ -1,4 +1,4 @@
-# dotted function names are rejected
+# a method call on a name that is not defined is rejected
 
 func main() {
     object.method()

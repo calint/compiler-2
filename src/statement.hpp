@@ -385,9 +385,7 @@ class statement {
         }
 
         if (tc.types().has(type_tk.text())) {
-            throw compile_error{type_tk,
-                                std::format("{} is a type, not a generic type",
-                                            in_quotes(type_tk.text()))};
+            throw_not_generic(type_tk, "type", type_tk.text());
         }
 
         // e.g. an unknown name or the type parameter 'T' of 'x T<3>'

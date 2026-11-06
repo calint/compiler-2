@@ -1,4 +1,4 @@
 
-0178.baz:3:10: type 'y' not found
-func f(x y) {}
-         ^
+0178.baz:3:13: expected ',' or ')' after parameter 'x'
+func f(x i8 y i8) {}
+            ^

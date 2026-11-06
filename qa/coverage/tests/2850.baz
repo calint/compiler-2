@@ -1,0 +1,6 @@
+# a lead byte at the end of a quoted name, without the continuation bytes it
+# announces, is escaped in a message
+
+func main() {
+    var b√ = 1
+}

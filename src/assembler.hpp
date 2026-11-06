@@ -496,7 +496,7 @@ class assembler {
     //
 
     // the line that starts 'which'
-    virtual auto add_section_directive(section which) -> void = 0;
+    virtual auto add_section_directive(const section which) -> void = 0;
 
     // the code size of one instruction in the target's unit
     [[nodiscard]] virtual auto instruction_size() const -> size_t = 0;

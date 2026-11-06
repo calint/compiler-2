@@ -963,7 +963,8 @@ class assembler_rv32i final : public assembler {
     inverse_branch_mnemonic(const std::string_view mnemonic) const
         -> std::string_view override {
 
-        return info(inverse_branch(find_op(mnemonic))).mnemonic;
+        const op inverse{inverse_branch(find_op(mnemonic))};
+        return info(inverse).mnemonic;
     }
 
     [[nodiscard]] auto unconditional_jump_mnemonic() const

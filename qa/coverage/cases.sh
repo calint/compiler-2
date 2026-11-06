@@ -509,7 +509,7 @@ SRC=0162 && COMPERR
 # source and destination array sizes must match
 SRC=0163 && COMPERR
 
-# array initializer cannot fill a scalar field
+# an array field initializer must have the size of the field
 SRC=0164 && COMPERR
 
 # array initializers require commas
@@ -521,7 +521,7 @@ SRC=0166 && COMPERR
 # invalid comparison operator is rejected
 SRC=0167 && COMPERR
 
-# boolean operators require valid operands
+# 'and' and 'or' are not mixed without parentheses
 SRC=0168 && COMPERR
 
 # array_length requires an array argument
@@ -551,7 +551,7 @@ SRC=0176 && COMPERR
 # continue is only valid inside a loop
 SRC=0177 && COMPERR
 
-# function parameters require a type delimiter
+# function parameters require a delimiter
 SRC=0178 && COMPERR
 
 # type fields require a name
@@ -638,7 +638,7 @@ SRC=0205 && COMPERR
 # scalar indexing is rejected
 SRC=0206 && COMPERR
 
-# array index expression requires a closing bracket
+# an index requires an expression
 SRC=0207 && COMPERR
 
 # conditional expression requires a closing parenthesis
@@ -1012,7 +1012,7 @@ SRC=0331 && EXP=0 && RUN
 # valid index returned by a function
 SRC=0332 && EXP=0 && RUN
 
-# zero-length array must reject index zero
+# a zero-length array is rejected at its size, so it has no index zero
 SRC=0333 && COMPERR
 
 # valid two-byte element scaling
@@ -1072,7 +1072,7 @@ SRC=0351 && COMPERR
 # scalar values cannot initialize array fields
 SRC=0352 && COMPERR
 
-# dotted function names are rejected
+# a method call on a name that is not defined is rejected
 SRC=0353 && COMPERR
 
 # array_copy handles a byte remainder
@@ -3414,7 +3414,7 @@ SRC=1078 && EXP=3 && RUN
 SRC=1079 && COMPERR
 
 # a constructor with type parameters of a generic type is rejected at its
-# 'self', with the alias that made the instance
+# 'self', the error names the method as written
 SRC=1080 && COMPERR
 
 # an empty string right before the '}' that ends a generic body does not hide
@@ -4260,8 +4260,8 @@ SRC=1314 && COMPERR
 # 'exit' assigned to an instance is rejected, it does not return a value
 SRC=1315 && COMPERR
 
-# the count of 'read' assigned to an array is rejected like any value of a
-# built-in type, the source must be an array
+# the count of 'read' assigned to an array is rejected as a call, the source
+# must be an array
 SRC=1316 && COMPERR
 
 # a condition in parentheses compared with a 'bool' is rejected at its
@@ -4846,6 +4846,11 @@ SRC=1541 && COMPERR
 SRC=1542 && COMPERR
 SRC=1543 && COMPERR
 SRC=1544 && COMPERR
+
+# the same of instances and of arrays, at the comparison before the kind of the
+# operand
+SRC=2840 && COMPERR
+SRC=2841 && COMPERR
 
 # an 'if' without a condition is reported as such
 SRC=1545 && COMPERR
@@ -6973,6 +6978,9 @@ SRC=2760 && COMPERR
 # the same at the 4 GiB of rv32i, one record less is accepted
 if [[ $MACHINE != x86_64 ]]; then SRC=2761 && COMPERR; fi
 
+# the same source on x86_64, which addresses more, is accepted
+if [[ $MACHINE == x86_64 ]]; then SRC=2761 && EXP=0 && RUN; fi
+
 # a constant index whose element ends past the storage the target addresses,
 # on an unsized array parameter
 SRC=2800 && COMPERR
@@ -6981,9 +6989,15 @@ SRC=2800 && COMPERR
 # accepted
 if [[ $MACHINE != x86_64 ]]; then SRC=2801 && COMPERR; fi
 
+# the same source on x86_64, which addresses more, is accepted
+if [[ $MACHINE == x86_64 ]]; then SRC=2801 && EXP=0 && RUN; fi
+
 # a constant index past the 4 GiB of rv32i on an unsized array parameter of
 # records, one element less is accepted
 if [[ $MACHINE != x86_64 ]]; then SRC=2802 && COMPERR; fi
+
+# the same source on x86_64, which addresses more, is accepted
+if [[ $MACHINE == x86_64 ]]; then SRC=2802 && EXP=0 && RUN; fi
 
 # '--checks=upper' alone passes the indexes of an array of 2^31 or more
 # elements; rv32i-fpga cannot hold the array (listing in 'test-cli.sh')
@@ -6994,3 +7008,9 @@ if [[ $MACHINE == x86_64 || $MACHINE == rv32i ]]; then SRC=2811 && EXP=7 && OPTS
 
 # a range that ends one element past the count fails
 if [[ $MACHINE == x86_64 || $MACHINE == rv32i ]]; then SRC=2812 && EXP=255 && OPTS="--vars=0x80000040 --checks=upper" RUN_ERR; fi
+
+# a lead byte at the end of a quoted name is escaped in a message
+SRC=2850 && COMPERR
+
+# an escape of a lead byte that the end of the literal cuts short
+SRC=2851 && COMPERR

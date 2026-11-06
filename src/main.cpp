@@ -294,8 +294,6 @@ template <class Row, size_t row_count>
     return *found;
 }
 
-// the option functions throw 'option_error'
-
 // the backend checks the stack against the memory without knowing which was
 // given, a default stack that does not fit is the memory's error
 auto check_default_stack_fits(const options& opts) -> void {

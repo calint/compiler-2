@@ -1,4 +1,4 @@
-# array initializer cannot fill a scalar field
+# an array field initializer must have the size of the field
 
 type small { data i8[2] }
 func main() {

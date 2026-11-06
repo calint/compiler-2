@@ -1918,9 +1918,9 @@ class ident_resolver final {
         if (meaning.is_variable() and
             scopes_.get().at(meaning.scope_index).is_initializer()) {
 
-            throw compile_error{src_loc_tk,
-                                std::format("use of uninitialized variable {}",
-                                            in_quotes(ident))};
+            throw compile_error{
+                src_loc_tk, std::format("variable {} is read before it is set",
+                                        in_quotes(ident))};
         }
 
         const ident_info id_info{resolve_or_empty(src_loc_tk, ident)};

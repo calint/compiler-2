@@ -35,6 +35,10 @@ if [[ $status -eq 124 ]]; then
     echo "roome: rv32i-fpga timeout, does roome.in end with 'go home'?"
     exit 1
 fi
+if [[ $status -ne 0 ]]; then
+    echo "roome: rv32i-fpga exit code $status, expected 0"
+    exit 1
+fi
 
 cp "$WORK/diff" "$DIR/actual.out"
 
@@ -62,6 +66,10 @@ timeout 10 "$WORK/roome-x86_64" <"$DIR/roome.in" >"$WORK/x86_64.out" || status=$
 
 if [[ $status -eq 124 ]]; then
     echo "roome: x86_64 timeout, does roome.in end with 'go home'?"
+    exit 1
+fi
+if [[ $status -ne 0 ]]; then
+    echo "roome: x86_64 exit code $status, expected 0"
     exit 1
 fi
 

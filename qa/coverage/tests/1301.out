@@ -1,4 +1,4 @@
 
-1301.baz:6:17: use of uninitialized variable 'k'
+1301.baz:6:17: variable 'k' is read before it is set
         let k = k + 1
                 ^

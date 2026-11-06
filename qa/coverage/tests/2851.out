@@ -1,0 +1,4 @@
+
+2851.baz:5:14: unsupported escape '\\xe2\x82'
+    var s = "\\xe2\x82"
+             ^~~~~~~~~

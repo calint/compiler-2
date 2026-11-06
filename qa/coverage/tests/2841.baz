@@ -1,0 +1,7 @@
+# a comparison of arrays in a conversion is reported at the comparison, not as
+# an array that is not indexed
+func main() {
+    var a = i8[2]
+    var b = i8[2]
+    var n = int(a == b)
+}

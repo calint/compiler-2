@@ -1,4 +1,4 @@
-# function parameters require a type delimiter
+# function parameters require a delimiter
 
-func f(x y) {}
+func f(x i8 y i8) {}
 func main() {}

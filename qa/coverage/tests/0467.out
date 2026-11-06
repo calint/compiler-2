@@ -1,4 +1,4 @@
 
-0467.baz:4:19: use of uninitialized variable 'p'
+0467.baz:4:19: variable 'p' is read before it is set
     var p = point{p.y, 2}
                   ^

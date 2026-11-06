@@ -1,6 +1,6 @@
-# zero-length array must reject index zero
+# a zero-length array is rejected at its size, so it has no index zero
 
 func main() {
-    var values = i8[]{}
+    var values = i8[0]
     values[0] = 1
 }

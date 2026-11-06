@@ -1,0 +1,9 @@
+# a comparison of instances in a conversion is reported at the comparison, not
+# as an instance that does not convert
+type point {x, y}
+
+func main() {
+    var p = point{1, 2}
+    var q = point{1, 2}
+    var n = int(p == q)
+}

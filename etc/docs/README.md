@@ -188,7 +188,11 @@ Invariants the code relies on:
    ('initializer_declaration::trial_parse'). A generic definition is kept as
    text and parsed again for each instance ('generics.hpp'). A function checks
    when parsed that every path through it sets its result
-   ('stmt_def_func::assert_sets_result', 'ub_assigned.hpp').
+   ('stmt_def_func::assert_sets_result', 'ub_assigned.hpp'). An included
+   file is named by its directory as the file system resolves it
+   ('program::include_path'), so listings and messages name the file that
+   was opened, and it is read once, also when reached through another path
+   or a link ('source_files::contains').
 
 2. compile ('program::build'): the statements are walked again with a fresh
    scope stack in 'toc'. Global variables and data are declared again, then
@@ -206,7 +210,9 @@ Invariants the code relies on:
 
 3. output ('machine::finish', then 'report_renderer', then 'write_assembly'):
    the buffered lines get their jumps optimized, on rv32i the jumps that do
-   not reach their targets grow ('assembler_rv32i::resolve_jumps'), the report
+   not reach their targets grow ('assembler_rv32i::resolve_jumps'; one
+   without a free scratch register borrows 't0', restored at a landing
+   before the target, so '--nopt' decides no verdict), the report
    is added as comments, the assembly is written, the rv32i targets also write
    the binary image.
 
@@ -349,7 +355,9 @@ program does not depend on inlining.
 2. What a body lacks without a call is the length of an unsized array
    parameter ('ident_info::is_length_unknown') and the arguments:
    - the rules that need the length are left to the calls: 's[7]' and
-     'array_copy(s, d, 2)' are accepted, 's[-1]' is not; the 'n' of a 'foo' over
+     'array_copy(s, d, 2)' are accepted, 's[-1]' is not, nor a constant index,
+     start or count whose elements end past the storage the target addresses
+     ('longest_array_len', 2800 to 2802); the 'n' of a 'foo' over
      such a parameter is a read-only variable there and in the parse, not a
      constant; a 'let' whose value folds only at a call is a constant there,
      e.g. 'let m = n', so 's[m]' past the end is rejected like 's[n]'
@@ -480,7 +488,11 @@ func.NAME..L.C a body inlined by the call at L:C, '.end'
 func.NAME      a noinline body, 'func.NAME..len.4' for array lengths,
                'size.func.NAME' its frame size; 'f<i8>' is 'f..i8'
 baz_NAME       a failure handler, and a routine of the x86_64 runtime,
-               e.g. 'baz_bounds_panic'
+               e.g. 'baz_bounds_panic'; with '--checks=line' a stub per
+               line ('line_failure_label') enters the handler of its file
+               ('failure_entry_label'), e.g. baz_bounds_line_9, in an
+               included file baz_bounds_f1_line_9, and
+               baz_bounds_panic_file_0; its message is baz_NAME_message
 .Lbaz_NAME     a routine of the rv32i runtime; numbered, a jump target
                inside one operation, e.g. '.Lbaz_equal.0' on x86_64 and
                '.Lbaz_jump.0' on rv32i
@@ -639,7 +651,12 @@ compile (7.8), 'main.cpp' prints it with its frames.
    functions. An error that ends a dry run is a 'source' one, so none of them
    drops it.
 3. A file that cannot be read is an 'unlocated_error', which
-   'program::load_file' locates at its 'include'.
+   'program::load_file' locates at its 'include'. A file that starts with a
+   byte order mark or has a carriage return without a line feed is rejected
+   when it is loaded ('tokenizer::assert_source_well_formed').
+4. A message stays on its line and is valid UTF-8: a control byte or a byte
+   outside a whole UTF-8 character of the message, the quoted source line,
+   a file name, also in a run-time panic, is shown as '\xNN' ('printable').
 
 ## 2. Generic types: how 'type' with parameters becomes real types
 
@@ -907,6 +924,12 @@ order. The examples use 'make' and 'same' from the start of 2.10 and a type
       same(s + 1, t)          an expression, not the whole argument
       same(s.get(), t)        a method call
       ```
+
+   An argument that is no value tells nothing either and is rejected as in
+   a call without type parameters, not made an instance: a whole array
+   ("array 'a' must be indexed", 2660, 2690), a call result reached into
+   (2661), a value that hides a type before '{' (2680) and a method called
+   on its type (2681).
 
    A missing argument is rejected: 'same()' gives "expected argument 1
    ('a')".
@@ -1197,7 +1220,7 @@ type point {x, y}
 
 var x = x + 1                  the variable is not set while its value is
                                computed: its bytes are read, none are
-                               assigned => "use of uninitialized variable"
+                               assigned => "variable is read before it is set"
 
 func point.at(x) self {        a constructor must assign every field: it
     self.x = x                 assigns the bytes of 'x', not those of 'y'
@@ -1638,8 +1661,8 @@ by the next statement ('etc/todo.txt' section 2).
 
 A call is checked against its callee while it is parsed: the type arguments
 of a generic call are deduced from its arguments, and an argument of a 'mut'
-parameter must be writable. The grammar uses the names too: 'point{' is a
-record literal only when 'point' is a type, 'f<' a generic call only when 'f'
+parameter must be writable. The grammar uses the names too: 'point{' is an
+instance literal only when 'point' is a type, 'f<' a generic call only when 'f'
 is a generic function, 'T.at' a constructor only when 'T' names a type (1.2).
 So a statement parses in its constructor and declares names in 'toc' as it
 goes. It keeps every token with its whitespace and comments: the source is
@@ -1923,6 +1946,8 @@ What depends on the target is listed here, nothing else does:
    'arrays_equal' needs the 'rdi' that 'exit' holds
 4. the limits of a target: '--vars' and the memory it addresses, which a
    type stays below, e.g. a field 'i8[0x100000000]' is rejected on rv32i,
+   and so does a constant index or count on an unsized array parameter,
+   e.g. 'arrays_equal(a, b, 0x1000)' of 1 MiB records (2761, 2801, 2802),
    the depth of noinline calls that fits in '--vars' before 'frame' stops
    it, since a frame holds an address for each parameter and the result,
    8 B on x86_64 and 4 B on rv32i, and a deep noinline recursion, which
@@ -1972,7 +1997,7 @@ constants out of range, and the code the run-time checks.
 | a value written in parts reading a part written before it | 'p = {p.y, p.x}', 'q = {{1}, q.a[3]}', 'g = {7, gx()}' | rejected ('stmt_assign_var', the 'write_plan' of 'expr_type.hpp', 3.7) | always | 1608-1612, 1634, 1635, 1644 |
 | evaluation order | 'f(arr[i], h(i))', 'i == h(i)' with 'h' writing 'i' | evaluation is left to right; an argument, a side of a comparison or a bulk or io argument that a call in a later one may write is rejected ('assert_not_written_later'), an arithmetic list reads each operand at its place; a destination that the value reads, also through a call, is written last ('reaches_destination'), 3.1 | always | 1636-1639, 1641, 1642, 1676; accepted: 1630-1633, 1640, 1643, 1678, 1702 |
 | narrowing | 'b = w' with 'b' an 'i8' and 'w' an 'i16' | rejected ('statement::assert_not_narrowed' through 'compile_checked' and 'fold_checked'); a conversion such as 'i8(w)' wraps on purpose (1.7) | always | 0725, 0856, 0865, 1016, 1017, 1019, 1021, 1022 |
-| a constant out of range | 'a[9]' of 'a = i8[4]', 'x / 0', 'x << 70' | rejected ('assert_constant_index' for an index, 'expr_arith::assert_constant_operand' for a divisor or a shift count, at a fold and at a constant step, 1.7) | always | 0305, 0306, 0750-0752, 1118, 1119 |
+| a constant out of range | 'a[9]' of 'a = i8[4]', 'x / 0', 'x << 70' | rejected ('assert_constant_index' for an index, 'assert_constant_range' for the range of a bulk or io built-in, 'expr_arith::assert_constant_operand' for a divisor or a shift count, at a fold and at a constant step, 1.7) | always | 0305, 0306, 0750-0752, 1118, 1119, 2760, 2800-2802 |
 | a constant expression that overflows | '0x7fffffffffffffff + 1' | rejected ('fold'), else it wraps | 'overflow' | 0995, 1002, 1010 |
 | array index out of bounds | 'a[i]' | run time ('machine::check_bounds' from 'stmt_identifier::compile_checked_index', the range of a bulk operation or an io built-in ('bulk_operands', 'stmt_builtin_io') and the count of a 'foo') | 'upper', 'lower' | 0302, 0303, 0307-0309, 0626, 0627, 1355 |
 | division by zero and 'MIN / -1', also of '%' | 'a / b' | run time ('machine::divide' from 'expr_arith::emit_operation', not for a constant divisor other than -1); a constant 'MIN / -1' is rejected ('fold'), the 64-bit one also without the check, it has no value | 'division' | 0965-0968, 1775-1777 |

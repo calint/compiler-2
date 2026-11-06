@@ -1,4 +1,4 @@
-# the same as 870 in a noinline function, the message is the same
+# the same as 863 in a noinline function, the message is the same
 func noinline same(x i8, y i16) res bool { res = x == y }
 
 func main() {

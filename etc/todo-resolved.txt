@@ -1,6 +1,26 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] hard: quality round 121 (2026-11-06, user: more threads doing qa,
+    code reviews, bug hunts, documentation; AK documents, AL style, AO
+    messages, AM the qa)
+    => done (2026-11-06): AK the design document and the README after
+       rounds 98 to 120 (limits of constant indexes and counts, failure
+       labels, accepted source bytes, escaped messages, includes, the
+       borrowed far jump, deduction); AL the style of every line changed
+       since round 103 (named steps, comments next to their code, one
+       'e.g.'), a floating comment and a local declared before its branch;
+       AO messages unified: 'int(a == b)' as a comparison for every operand
+       kind (round 118 AE2, tests 2840, 2841), an instance "is not a
+       number", a type "is not generic", a call result "is not an operand
+       here", "variable 'x' is read before it is set" (25 '.out' files);
+       AM test-coverage.sh reads no stdin of its runner (the "cat:
+       /dev/stdin" lines and a hang on an open pipe), profiles of 'CLI' per
+       process, roome/qa/test.sh checks the exit code, 0175 0178 0200 0333
+       reach the check they name, headers of 0164 0168 0207 0353 0864 1080
+       1316 corrected, 2761 2801 2802 run on x86_64, tests 2850, 2851 for
+       UTF-8 branches; AJ the bounds checks as a whole, about 230000 cases
+       on three targets against a model of the rule, no finding
 [x] hard: design review series 2, round 120 (2026-11-06, user: continue;
     AI the limits of the targets and the bare-metal layout)
     => done (2026-11-06): AI2 a constant index or start on an unsized array

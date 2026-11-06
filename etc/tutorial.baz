@@ -703,8 +703,8 @@ func non_inlined() {
     assert(add_all(arr) == 6)
     assert(factorial(n - 2) == 6)
     assert(sum({ 3, 4 }) == 7)
-    # an argument can be an expression, a constant or a record literal, it is
-    # evaluated into a temporary of the parameter's type before the call
+    # an argument can be an expression, a constant or an instance literal, it
+    # is evaluated into a temporary of the parameter's type before the call
     # a function that nothing calls is not emitted
 
     # '--checks=frame' checks at run time that the frames of non-inlined calls

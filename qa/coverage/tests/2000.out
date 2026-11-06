@@ -1,4 +1,4 @@
 
-2000.baz:5:13: use of uninitialized variable 'b'
+2000.baz:5:13: variable 'b' is read before it is set
     var b = b == 1
             ^

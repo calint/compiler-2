@@ -1,4 +1,4 @@
 
-1845.baz:3:11: 'i8' is a type, not a generic type
+1845.baz:3:11: type 'i8' is not generic, it takes no type arguments
 type h {a i8<2>}
           ^~

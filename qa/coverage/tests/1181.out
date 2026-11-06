@@ -1,4 +1,4 @@
 
-1181.baz:7:17: use of uninitialized variable 'point'
+1181.baz:7:17: variable 'point' is read before it is set
     var point = point[2]{{1, 2}}
                 ^~~~~

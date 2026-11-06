@@ -213,9 +213,7 @@ struct generic_type_use {
                                     const std::string_view user) -> void {
 
         if (tc.types().has(generic_tk.text())) {
-            throw compile_error{generic_tk,
-                                std::format("{} is a type, not a generic type",
-                                            in_quotes(generic_tk.text()))};
+            throw_not_generic(generic_tk, "type", generic_tk.text());
         }
 
         if (not tc.generics().has_type(generic_tk.text())) {

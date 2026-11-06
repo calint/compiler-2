@@ -447,8 +447,10 @@ class expr_bool_op final : public statement {
 
         machine::held_registers held{x, tok(), indent};
 
+        const comparison_side condition{side_of(tc, lhs_)};
+
         const operand value{
-            truth_test_operand(tc, indent, side_of(tc, lhs_), action, held),
+            truth_test_operand(tc, indent, condition, action, held),
         };
 
         // a 'bool' already holds 0 or 1, a copy is shorter than evaluating the
@@ -600,10 +602,8 @@ class expr_bool_op final : public statement {
             return;
         }
 
-        throw compile_error{
-            side.tok(),
-            std::format("store {} in a variable before comparing it",
-                        in_quotes(statement::trimmed_source(side)))};
+        throw_literal_not_operand(side.tok(),
+                                  in_quotes(statement::trimmed_source(side)));
     }
 
     // a '=' or '!' that is not part of a comparison, e.g. 'if a = b', is an

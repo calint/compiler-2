@@ -1,4 +1,4 @@
 
-0902.baz:4:15: cannot convert a value of type 'point'
+0902.baz:4:15: an instance of 'point' is not a number
     var t=i32(s)
               ^

@@ -3033,13 +3033,12 @@ class machine_rv32i : public machine {
         const std::string& base{address.base_register()};
         const std::string& index{address.index_register()};
 
-        const uint32_t upper{
-            assembler_rv32i::upper_part(address.displacement()),
-        };
+        const int64_t offset{address.displacement()};
+        const uint32_t upper{assembler_rv32i::upper_part(offset)};
+        const int32_t low{assembler_rv32i::lower_part(offset)};
 
-        const int32_t low{assembler_rv32i::lower_part(address.displacement())};
-
-        // no upper part: the memory instruction handles the entire offset
+        // no index and no upper part: the memory instruction handles the
+        // entire offset
         if (index.empty() and upper == 0) {
             return operand::mem(base, {}, 1, low, address.type_ref());
         }

@@ -439,8 +439,8 @@ enum class term_kind : uint8_t {
     return skip_literal(after_literal) and is_reached_into(after_literal);
 }
 
-// a literal has no storage, e.g. 'literal' is "an array literal" or "an
-// instance literal of 'point'"
+// a literal or a call result has no storage, e.g. 'literal' is "an array
+// literal", "an instance literal of 'point'" or "'mk()'"
 [[noreturn]] inline auto
 throw_literal_not_operand(const token& tk, const std::string_view literal)
     -> void {

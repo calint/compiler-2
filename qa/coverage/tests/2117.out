@@ -1,4 +1,4 @@
 
-2117.baz:12:10: store 'point.at(1, 2)' in a variable before comparing it
+2117.baz:12:10: 'point.at(1, 2)' is not an operand here, store it in a variable first
     show(point.at(1, 2) == point.at(1, 2))
          ^

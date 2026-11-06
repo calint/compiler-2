@@ -267,7 +267,7 @@ class expr_any final : public statement {
 
     // the size of an array form: the length of the destination, else the size
     // the literal gives, e.g. 3 of 'i8[]{1, 2, 3}'; empty when neither gives
-    // one, e.g. a copy to an unsized destination
+    // one, as for a copy to an unsized destination
     [[nodiscard]] auto array_count() const -> std::optional<size_t> {
         if (const std::optional<size_t> length{destination_.length()}) {
             return length;

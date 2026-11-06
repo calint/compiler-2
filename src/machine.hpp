@@ -1694,8 +1694,6 @@ class machine {
     auto emit_failure_handler(const failure_handler& handler) -> void {
         assembler& output{target_assembler()};
 
-        const std::string label_name{handler.symbol()};
-
         if (not reports_line(handler)) {
             const std::string message_label{
                 std::format("{}_message", handler.label),
@@ -1713,6 +1711,8 @@ class machine {
 
             return;
         }
+
+        const std::string label_name{handler.symbol()};
 
         const operand line_register{
             make_register_operand(target_.report_line_register, default_type()),

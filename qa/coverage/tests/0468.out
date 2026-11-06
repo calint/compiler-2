@@ -1,4 +1,4 @@
 
-0468.baz:4:13: use of uninitialized variable 'p'
+0468.baz:4:13: variable 'p' is read before it is set
     var p = p
             ^

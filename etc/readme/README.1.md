@@ -30,7 +30,8 @@ the binary image itself.
     a check off after the others are applied, e.g. `--checks=noub,-division`
   * `upper`, `lower`: array bounds at runtime; a constant index outside the
     array or a constant count that is negative or passes the end of the array
-    is a compile error also without the checks
+    is a compile error also without the checks, on an unsized array parameter
+    when it passes the longest array the target addresses
   * `frame`: non-inlined function frame capacity at runtime
   * `division`: division by zero and `MIN / -1`, also of `%`, at runtime; a
     constant `MIN / -1` is a compile error, of `i64` also without the check; a
@@ -56,7 +57,13 @@ the binary image itself.
   `loop`, `if`, `else`, `continue`, `break`, `return`, `self`, `and`, `or`,
   `not`, `true`, `false`, `include`
 * `include "lib.baz"` at the top of a file adds the definitions of another file
-  where it is, relative to the including file, each file once
+  where it is, relative to the directory of the including file as the file
+  system resolves it (a `..` after a link to a directory is the parent of its
+  target), each file once, also when reached through another path or a link
+* a source file has `\n` or `\r\n` line ends, a carriage return without a
+  line feed and a byte order mark are rejected; strings and comments take
+  any other byte, a message shows a control byte or a byte outside a UTF-8
+  character as `\xNN`
 * built-in functions: `array_copy`, `array_length`, `arrays_equal`, `read`,
   `write`, `sector_read`, `sector_write`, `exit`, `int`, `i8`, `i16`, `i32`, `i64`
 * read and write sectors from and to file on `x86_64` and `rv32i`

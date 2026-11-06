@@ -140,6 +140,10 @@ fi
 
 cd "$SCRIPT_DIR/tests"
 
+# a program gets input only from the '.in' file of its case, not from the
+# terminal, pipe or socket the script was started with
+exec </dev/null
+
 rm -f gen.s out err
 # a crash under qemu would write a core file 'qemu_gen_*.core'
 ulimit -c 0
@@ -184,11 +188,7 @@ assemble_and_link() {
 # the uart has no end of input, so ctrl-d ends it like at a terminal and a
 # second one ends a last line without newline
 run_uart() {
-    local input=/dev/stdin
-    if [[ -t 0 ]]; then
-        input=/dev/null
-    fi
-    { cat "$input"; printf '\x04\x04'; } | "$@"
+    { cat; printf '\x04\x04'; } | "$@"
 }
 
 # sets 'PROGRAM_COMMAND' to the command that runs the program of the target

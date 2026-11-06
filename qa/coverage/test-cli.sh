@@ -17,7 +17,8 @@ export LLVM_PROFILE_FILE="$SCRIPT_DIR/cli-%p.profraw"
 CLI() {
     echo -n "cli $1: "
     set +e
-    LLVM_PROFILE_FILE="$SCRIPT_DIR/cli-$1.profraw" "$BIN" "$1" "${@:3}" >/dev/null 2>err
+    # note: '%p' since cases share their first argument, e.g. '--checks=noub'
+    LLVM_PROFILE_FILE="$SCRIPT_DIR/cli-$1-%p.profraw" "$BIN" "$1" "${@:3}" >/dev/null 2>err
     local exit_code=$?
     set -e
 

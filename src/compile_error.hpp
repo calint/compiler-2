@@ -388,7 +388,8 @@ throw_parentheses_group_nothing(const token& open_paren_tk,
 }
 
 // type arguments to a callee that takes none, e.g. the '<' of 'f<i8>(1)';
-// 'kind' names the callee, e.g. "function" or "constructor"
+// 'kind' is how the message names the callee: "function", "method",
+// "constructor" or "built-in function"
 [[noreturn]] inline auto throw_not_generic(const token& src_loc_tk,
                                            const std::string_view kind,
                                            const std::string_view name)

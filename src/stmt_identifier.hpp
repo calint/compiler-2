@@ -953,10 +953,9 @@ class stmt_identifier final : public statement {
         throw_unindexed_array(src_loc_tk, dotted_path_);
     }
 
-    // where only an array is expected, the path does not end at a method or
-    // its call: a call, e.g. 'p.m()' or 'p.m<i8>()', is named like its callee
-    // in the other call messages, a method as the path, e.g. the 'a.m' of
-    // 'array_length(a.m)'
+    // where only an array is expected, the path does not end at a method,
+    // e.g. the 'a.m' of 'array_length(a.m)', or its call, which is named like
+    // its callee in the other call messages
     auto assert_not_method(const toc& tc, const tokenizer& tz) const -> void {
         if (not method_) {
             return;

@@ -1,4 +1,4 @@
-# array index expression requires a closing bracket
+# an index requires an expression
 
 func main() {
     var x = i8[2]
