@@ -1,6 +1,17 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] hard: design review series 2, round 119 (2026-11-06, user: continue;
+    AG the fixes of round 118, AH noinline calls and their frames)
+    => done (2026-11-06): AG1 round 118 AE1 compared a count with
+       'storage_limits::max_size_bytes', not with the storage the target
+       addresses: rv32i still failed an assert in 'copy_block' and
+       'memory_equal' for elements of more than a byte, x86_64 accepted
+       counts past 2^47; 'assert_constant_range' takes the target's
+       'max_storage_bytes' ('toc::machine() const'), tests 2760, 2761;
+       AF1, AD1, AD2 as documented against the code before them; AH no
+       finding (calls, records of odd sizes, frames of 4 KiB, frame and
+       stack checks at the predicted depth, generics, versions)
 [x] hard: design review series 2, round 118 (2026-11-06, user: continue in
     a loop, design review, change, bug hunt; AD design of the code of
     rounds 109 to 117, AE types and data layout, AF control flow)

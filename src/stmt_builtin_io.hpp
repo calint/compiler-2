@@ -298,6 +298,8 @@ class stmt_builtin_io final : public statement {
             return;
         }
 
+        const machine& x{tc.machine()};
+
         assert_constant_range(
             buffer_info,
             {
@@ -317,7 +319,8 @@ class stmt_builtin_io final : public statement {
                         : std::format("a sector of {} elements", *count),
                 },
                 .array_name{buffer.ident->dotted_path()},
-            });
+            },
+            x.max_storage_bytes());
     }
 
     // a sector is a whole number of elements and fits in the array

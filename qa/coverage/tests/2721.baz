@@ -1,6 +1,6 @@
-# a constant count of elements whose bytes pass the storage limit is past the
-# end of an unsized array parameter of any size, also in code skipped at the
-# parse; x86_64 only, rv32i rejects the constant itself
+# a constant count of elements whose bytes reach the storage the target
+# addresses is past the end of an unsized array parameter of any size, also in
+# code skipped at the parse; x86_64 only, rv32i rejects the constant itself
 
 type point {
     x i64,

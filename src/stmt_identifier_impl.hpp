@@ -188,6 +188,8 @@ inline auto stmt_identifier::assert_count_in_bounds(const toc& tc,
 
     const ident_info array_info{resolve_path(tc)};
 
+    const machine& x{tc.machine()};
+
     assert_constant_range(
         array_info,
         {
@@ -201,7 +203,8 @@ inline auto stmt_identifier::assert_count_in_bounds(const toc& tc,
             .count_tk{count_tk},
             .count_text{std::format("count {}", count)},
             .array_name{dotted_path_},
-        });
+        },
+        x.max_storage_bytes());
 }
 
 inline auto stmt_identifier::constant_start_index(const toc& tc) const

@@ -3290,6 +3290,10 @@ class toc final {
 
     [[nodiscard]] auto machine() -> ::machine& { return machine_.get(); }
 
+    [[nodiscard]] auto machine() const -> const ::machine& {
+        return machine_.get();
+    }
+
     // the variable declared last in this scope, e.g. a 'let' variable once
     // its initializer is parsed
     auto make_var_read_only(const std::string_view name,

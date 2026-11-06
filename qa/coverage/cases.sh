@@ -6958,10 +6958,17 @@ SRC=2681 && COMPERR
 # unindexed as in a call without type parameters
 SRC=2690 && COMPERR
 
-# a constant count past the storage limit of an unsized array parameter, in a
-# function checked without its calls
+# a constant count past the storage the target addresses of an unsized array
+# parameter, in a function checked without its calls
 if [[ $MACHINE == x86_64 ]]; then SRC=2720 && COMPERR; fi
 
-# a constant count of records past the storage limit of an unsized array
-# parameter, in code skipped at the parse
+# a constant count of records past the storage the target addresses of an
+# unsized array parameter, in code skipped at the parse
 if [[ $MACHINE == x86_64 ]]; then SRC=2721 && COMPERR; fi
+
+# a constant count of records that fill the storage the target addresses, on
+# an unsized array parameter
+SRC=2760 && COMPERR
+
+# the same at the 4 GiB of rv32i, one record less is accepted
+if [[ $MACHINE != x86_64 ]]; then SRC=2761 && COMPERR; fi

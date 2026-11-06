@@ -122,9 +122,10 @@ struct constant_range {
 
 // a constant range is known to be negative or to pass the end of the array,
 // e.g. 5 in 'array_copy(a, b, 5)' of 'a = i8[4]'; a run-time one is left to
-// the bounds check at run time
+// the bounds check at run time; 'max_storage_bytes' is the target's
 inline auto assert_constant_range(const ident_info& array_info,
-                                  const constant_range& range) -> void {
+                                  const constant_range& range,
+                                  const size_t max_storage_bytes) -> void {
 
     if (range.count < 0) {
         throw compile_error{range.count_tk,
@@ -141,11 +142,11 @@ inline auto assert_constant_range(const ident_info& array_info,
 
     const std::optional<size_t> array_len{array_info.array_len()};
 
-    // note: no array holds more bytes than the storage limit, so a count
-    //       past it is past the end of every array
+    // note: every array is smaller than the storage the target addresses,
+    //       so a count that fills it is past the end of every array
 
     if (not array_len and
-        std::cmp_greater(range.count, storage_limits::max_size_bytes /
+        std::cmp_greater(range.count, (max_storage_bytes - 1) /
                                           array_info.type_ref().size_bytes())) {
 
         throw compile_error{
