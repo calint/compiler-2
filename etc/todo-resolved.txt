@@ -1,6 +1,16 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] hard: design review series 2, round 112 (2026-11-06, user: keep going;
+    X deduction after round 111 W1)
+    => done (2026-11-06): no regression of W1 in 6192 programs (86 argument
+       shapes, 18 call forms, 4 contexts) against the code before it; X1 an
+       identifier followed by '{' told its own type ('first(point{1, 2})'
+       with a value 'point'), it tells none, test 2680; X2 a '.' call on a
+       type told the type also when the name is no constructor
+       ('first(point.get())', 'point.zz(1)', 'i8.at(1)'), it tells it only
+       for a constructor, test 2681; not changed: a call whose own
+       arguments are wrong tells its declared type (README 2.10.4.2)
 [x] hard: design review series 2, round 111 (2026-11-06, user: keep going;
     W the generic scopes as a whole after round 110 V1)
     => done (2026-11-06): W1 a deduction from an argument took a type the

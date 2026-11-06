@@ -6942,3 +6942,11 @@ SRC=2660 && COMPERR
 # a call result reached into tells no type parameter, it is rejected as in a
 # call without type parameters
 SRC=2661 && COMPERR
+
+# a value that hides a type tells no type parameter before a '{', the literal
+# is rejected as in a call without type parameters
+SRC=2680 && COMPERR
+
+# a method called on its type tells no type parameter, it is rejected as in a
+# call without type parameters
+SRC=2681 && COMPERR

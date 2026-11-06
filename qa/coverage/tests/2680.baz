@@ -1,0 +1,13 @@
+# a value that hides a type tells no type parameter before a '{', the literal
+# is rejected as in a call without type parameters
+
+type point {x i8, y}
+
+func first<T type>(x T) res int {
+    res = x.len
+}
+
+func main() {
+    var point = i8(1)
+    exit(first(point{1, 2}))
+}

@@ -222,10 +222,11 @@ struct generic_call {
     // the type of the argument at 'index' when it is a variable, a field, an
     // element or a typed constant, or the value it makes names its type:
     // 'point{1, 2}', 'point.at(1, 2)' or 'mk(1, 2)', otherwise null; an
-    // argument that no operator continues and no '.' or '[' reaches into is
-    // whole, e.g. 'a' of 'f(a 2)', the parse of the call reports what follows
-    // it. 'tz' is after the '(', it ends after the argument when the argument
-    // tells its type
+    // argument that no operator continues, no '.' or '[' reaches into and no
+    // '{' follows is whole, e.g. 'a' of 'f(a 2)', the parse of the call
+    // reports what follows it; 'point.m()' tells a type only when 'm' is a
+    // constructor. 'tz' is after the '(', it ends after the argument when the
+    // argument tells its type
     [[nodiscard]] static auto argument_type(toc& tc, tokenizer& tz,
                                             const size_t index) -> const type* {
 
@@ -248,7 +249,15 @@ struct generic_call {
 
         const stmt_identifier ident{tc, tk, tz};
 
-        if (ident.is_method_receiver() or continues_expression(tz)) {
+        // e.g. not the 'point' of 'point{1, 2}' with 'var point = 1' or the
+        // 'v' of 'v{}', which the parse of the argument reports
+        const bool is_braced{
+            tz.peek_char_after_whitespace() == '{',
+        };
+
+        if (ident.is_method_receiver() or continues_expression(tz) or
+            is_braced) {
+
             return nullptr;
         }
 
@@ -483,12 +492,13 @@ struct generic_call {
             return is_whole_argument() ? &tc.get_type_or_throw(tk) : nullptr;
         }
 
-        // e.g. 'point.at(1, 2)'
+        // e.g. 'point.at(1, 2)', not the method 'point.m()' or 'point.zz(1)',
+        // which the parse of the argument reports
         if (tm == term_kind::constructor_call) {
             std::ignore = tz.seen_char_token('.');
 
             // the type names the result, the constructor, e.g. 'at', does not
-            std::ignore = tz.next_token();
+            const token ctor_tk{tz.next_token()};
 
             if (not tz.is_next_char_token('(')) {
                 return nullptr;
@@ -496,7 +506,19 @@ struct generic_call {
 
             tz.skip_to_close_paren();
 
-            return is_whole_argument() ? &tc.get_type_or_throw(tk) : nullptr;
+            const type& result_type{tc.get_type_or_throw(tk)};
+
+            const std::string ctor_name{
+                method_name_of(result_type.name(), ctor_tk.text()),
+            };
+
+            const bool is_constructor{
+                tc.funcs().has(ctor_name) and
+                    tc.get_func_or_throw(ctor_tk, ctor_name).is_constructor(),
+            };
+
+            return is_constructor and is_whole_argument() ? &result_type
+                                                          : nullptr;
         }
 
         // e.g. 'read(0, buf)', the value of a built-in
