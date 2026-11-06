@@ -115,23 +115,19 @@ class stmt_builtin_foo final : public statement {
         if (limit.is_immediate() and limit.immediate() == 0) {
             tc.check_skipped(
                 [&] -> void { code_.compile(tc, indent, destination{}); });
+        } else {
+            skip_empty_loop(tc, indent, limit, end_label);
 
-            tc.join_loop();
+            x.label(indent, loop_label);
+            code_.compile(tc, indent, destination{});
+            x.label(indent + 1, toc::continue_label(loop_label));
 
-            return;
+            advance_iteration(tc, indent + 2, reg_iter, counter,
+                              array_info.type_ref().size_bytes(), limit,
+                              loop_label);
+
+            x.label(indent, end_label);
         }
-
-        skip_empty_loop(tc, indent, limit, end_label);
-
-        x.label(indent, loop_label);
-        code_.compile(tc, indent, destination{});
-        x.label(indent + 1, toc::continue_label(loop_label));
-
-        advance_iteration(tc, indent + 2, reg_iter, counter,
-                          array_info.type_ref().size_bytes(), limit,
-                          loop_label);
-
-        x.label(indent, end_label);
 
         tc.join_loop();
 

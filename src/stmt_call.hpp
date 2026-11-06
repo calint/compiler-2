@@ -239,9 +239,16 @@ struct generic_call {
         const term_kind tm{classify_term(tc, tk, tz)};
 
         // e.g. 'mk()' hidden by 'let mk = 5' is still a call, its result
-        // tells the type
+        // tells the type; not the 'mk()' of 'mk().x + 1', which the parse of
+        // the argument reports
         if (tm != term_kind::value) {
-            return value_type(tc, tz, tk, tm);
+            const type* const made_type{value_type(tc, tz, tk, tm)};
+
+            if (continues_expression(tz) or is_reached_into(tz)) {
+                return nullptr;
+            }
+
+            return made_type;
         }
 
         // note: read from the copy to find where the argument ends and its
@@ -466,8 +473,8 @@ struct generic_call {
     }
 
     // the type of an instance literal, a constructor call or a call of a
-    // function that is the whole argument, 'tk' is its first token and 'tz' is
-    // after it
+    // function, 'tk' is its first token and 'tz' is after it; 'tz' ends after
+    // the value when it names a type
     // note: an argument is parsed at the type of its parameter, so it is read
     //       here without a parse, unlike a 'var' initializer, see
     //       'initializer_declaration::deduce_from_initializer'
@@ -475,19 +482,11 @@ struct generic_call {
                                          const token& tk, const term_kind tm)
         -> const type* {
 
-        // e.g. not the 'mk()' of 'mk().x + 1', which the parse of the
-        // argument reports
-        const auto is_whole_argument{
-            [&] -> bool {
-                return not continues_expression(tz) and not is_reached_into(tz);
-            },
-        };
-
         // e.g. 'point{1, 2}', a missing '}' is left to the parse of the
         // argument
         if (tm == term_kind::record_literal) {
             std::ignore = tz.skip_braced_block();
-            return is_whole_argument() ? &tc.get_type_or_throw(tk) : nullptr;
+            return &tc.get_type_or_throw(tk);
         }
 
         // e.g. 'point.at(1, 2)', not the method 'point.m()' or 'point.zz(1)',
@@ -515,8 +514,7 @@ struct generic_call {
                     tc.get_func_or_throw(ctor_tk, ctor_name).is_constructor(),
             };
 
-            return is_constructor and is_whole_argument() ? &result_type
-                                                          : nullptr;
+            return is_constructor ? &result_type : nullptr;
         }
 
         // e.g. 'read(0, buf)', the value of a built-in
@@ -529,7 +527,7 @@ struct generic_call {
 
             tz.skip_to_close_paren();
 
-            return is_whole_argument() ? builtin_type : nullptr;
+            return builtin_type;
         }
 
         // e.g. 'mk(1, 2)', a generic function has no return type before it is
@@ -545,10 +543,11 @@ struct generic_call {
             tc.get_func_or_throw(tk, tk.text()).result_type(),
         };
 
-        return is_whole_argument() and
-                       not return_type.is_same(tc.builtins().void_type())
-                   ? &return_type
-                   : nullptr;
+        if (return_type.is_same(tc.builtins().void_type())) {
+            return nullptr;
+        }
+
+        return &return_type;
     }
 
     // the types between '<' and '>', one per type parameter, e.g. 'name' of

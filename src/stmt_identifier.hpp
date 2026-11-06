@@ -141,6 +141,19 @@ inline auto assert_constant_range(const ident_info& array_info,
 
     const std::optional<size_t> array_len{array_info.array_len()};
 
+    // note: no array holds more bytes than the storage limit, so a count
+    //       past it is past the end of every array
+
+    if (not array_len and
+        std::cmp_greater(range.count, storage_limits::max_size_bytes /
+                                          array_info.type_ref().size_bytes())) {
+
+        throw compile_error{
+            range.count_tk,
+            std::format("{} is past the end of array {} of any size",
+                        range.count_text, in_quotes(range.array_name))};
+    }
+
     if (not array_len) {
         return;
     }

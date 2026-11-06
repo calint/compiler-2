@@ -5651,6 +5651,9 @@ SRC=1781 && EXP=5 && RUN
 # a 'foo' count that never returns ends the path
 SRC=1782 && EXP=5 && RUN
 
+# a 'foo' whose array is not reached ends the path, also with a count of 0
+SRC=2740 && EXP=5 && RUN
+
 # an inlined recursion ended by a condition that never returns
 SRC=1783 && EXP=3 && RUN
 
@@ -6954,3 +6957,11 @@ SRC=2681 && COMPERR
 # a whole array followed by '{' tells no type parameter, it is rejected as
 # unindexed as in a call without type parameters
 SRC=2690 && COMPERR
+
+# a constant count past the storage limit of an unsized array parameter, in a
+# function checked without its calls
+if [[ $MACHINE == x86_64 ]]; then SRC=2720 && COMPERR; fi
+
+# a constant count of records past the storage limit of an unsized array
+# parameter, in code skipped at the parse
+if [[ $MACHINE == x86_64 ]]; then SRC=2721 && COMPERR; fi

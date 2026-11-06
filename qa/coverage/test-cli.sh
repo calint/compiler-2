@@ -526,6 +526,8 @@ CLI_INCLUDE_THROUGH_LINK() {
     set -e
     chmod a+x gen-perm
     [[ $exit_code -eq 0 ]]
+    # the listing names the file opened, not 'lib.baz' as a lexical '..' does
+    grep -Fq '[link/../lib.baz:2:5] res = 3' gen-perm/dir/gen.s
     rm -rf gen-perm
     rm -rf gen-link-dir gen-link gen-e.baz gen-lib.baz gen-main.baz
     echo ok

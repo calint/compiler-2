@@ -1,0 +1,4 @@
+
+2721.baz:12:26: count 576460752303423488 is past the end of array 'a' of any size
+        array_copy(a, b, 0x800000000000000)
+                         ^

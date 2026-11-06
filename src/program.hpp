@@ -543,12 +543,10 @@ class program final {
         x.emit_read_only_constants(tc.data().constants());
     }
 
-    // the directory as the file system resolves it, also after a symbolic
-    // link to a directory and a '..', so that a chain of includes does not
-    // grow its paths and the includes of the file are relative to the
-    // directory it was opened from; a path that does not name a file or
-    // cannot be resolved stays as it is, its open tells why or reads the file
-    // the file system names
+    // the directory as the file system resolves it ('resolved_path'), so
+    // that a chain of includes does not grow its paths and the includes of
+    // the file are relative to the directory it was opened from; a path that
+    // does not name a file stays as it is, its open tells why
     [[nodiscard]] static auto include_path(const std::filesystem::path& joined)
         -> std::filesystem::path {
 
@@ -558,20 +556,16 @@ class program final {
             return joined;
         }
 
-        const std::filesystem::path dir{
-            std::filesystem::weakly_canonical(joined.parent_path(), error),
-        };
+        // note: relative stays relative, as the other names of the files; a
+        //       relative path that was not resolved is returned as it is
 
-        if (error) {
-            return joined;
-        }
-
-        // note: relative stays relative, as the other names of the files
         if (joined.is_absolute()) {
-            return dir / joined.filename();
+            return source_files::resolved_path(joined);
         }
 
-        const std::filesystem::path resolved{dir / joined.filename()};
+        const std::filesystem::path resolved{
+            source_files::resolved_path(joined),
+        };
 
         return resolved.lexically_proximate(std::filesystem::current_path());
     }

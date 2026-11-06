@@ -1,6 +1,24 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] hard: design review series 2, round 118 (2026-11-06, user: continue in
+    a loop, design review, change, bug hunt; AD design of the code of
+    rounds 109 to 117, AE types and data layout, AF control flow)
+    => done (2026-11-06): AD1 the rule of a whole argument applied once in
+       'generic_call::argument_type'; AD2 one 'source_files::resolved_path'
+       for the names and the includes, and F1 with a directory above the
+       working directory not searchable a listing named another file
+       ('lexically_normal' fallback of 'absolute_path'); AD3 a note moved;
+       AE1 (before round 104) a constant count of 'arrays_equal' or
+       'array_copy' on an unsized array parameter in a body compiled
+       without lengths failed an assert in 'product_storage_size' on
+       x86_64; 'assert_constant_range' rejects a count past the storage
+       limit when the length is unknown, tests 2720, 2721; AF1 (before round
+       104) a 'foo' with a count of 0 returned early and left the path
+       reached after an array expression that leaves ('foo bs[stop(k)].a,
+       0'), so code after it was compiled with a call's constants; test
+       2740; AE2 the messages of 'int(a == b)' for records and arrays an
+       item of etc/todo.txt
 [x] hard: design review series 2, round 117 (2026-11-06, user: keep going;
     AC include paths after round 116)
     => done (2026-11-06): AC1 the normal form kept when it named the same

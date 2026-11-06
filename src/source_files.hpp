@@ -121,10 +121,8 @@ class source_files final {
     // statics
     //
 
-    // e.g. '/w/include/x.baz' of 'lib/../include/x.baz' run from '/w'; the
-    // directory as the file system resolves it, as the file was opened: a
-    // '..' after a symbolic link to a directory is the parent of the link's
-    // target; the file keeps its own name
+    // e.g. '/w/include/x.baz' of 'lib/../include/x.baz' run from '/w', see
+    // 'resolved_path'
     [[nodiscard]] static auto absolute_path(const std::string_view name)
         -> std::filesystem::path {
 
@@ -132,17 +130,7 @@ class source_files final {
             std::filesystem::absolute(std::filesystem::path{name}),
         };
 
-        std::error_code error;
-
-        const std::filesystem::path dir{
-            std::filesystem::weakly_canonical(path.parent_path(), error),
-        };
-
-        if (error) {
-            return path.lexically_normal();
-        }
-
-        return dir / path.filename();
+        return resolved_path(path);
     }
 
     [[nodiscard]] static auto read_file(const std::string_view file_name)
@@ -183,6 +171,27 @@ class source_files final {
         }
 
         return contents;
+    }
+
+    // the directory as the file system resolves it, as the file was opened:
+    // a '..' after a symbolic link to a directory is the parent of the link's
+    // target; the file keeps its own name; a directory that cannot be
+    // resolved, e.g. below one that cannot be searched, stays as it is, a
+    // lexical '..' could name another file
+    [[nodiscard]] static auto resolved_path(const std::filesystem::path& path)
+        -> std::filesystem::path {
+
+        std::error_code error;
+
+        const std::filesystem::path dir{
+            std::filesystem::weakly_canonical(path.parent_path(), error),
+        };
+
+        if (error) {
+            return path;
+        }
+
+        return dir / path.filename();
     }
 };
 
