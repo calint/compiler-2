@@ -1232,21 +1232,14 @@ class assembler_rv32i final : public assembler {
             offset += image_size_bytes(l);
         }
 
-        const size_t text{section_index(section::text)};
-        const size_t rodata{section_index(section::rodata)};
-        const size_t data{section_index(section::data)};
-        const size_t bss{section_index(section::bss)};
+        for (size_t index{1}; index < section_count_; ++index) {
+            const size_t previous_end{
+                image.bases.at(index - 1) + image.sizes.at(index - 1),
+            };
 
-        image.bases.at(rodata) =
-            align_up(image.sizes.at(text), image.alignments.at(rodata));
-
-        image.bases.at(data) =
-            align_up(image.bases.at(rodata) + image.sizes.at(rodata),
-                     image.alignments.at(data));
-
-        image.bases.at(bss) =
-            align_up(image.bases.at(data) + image.sizes.at(data),
-                     image.alignments.at(bss));
+            image.bases.at(index) =
+                align_up(previous_end, image.alignments.at(index));
+        }
 
         return image;
     }

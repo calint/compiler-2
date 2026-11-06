@@ -387,6 +387,19 @@ throw_parentheses_group_nothing(const token& open_paren_tk,
                                                 in_quotes(keyword_tk.text()))};
 }
 
+// type arguments to a callee that takes none, e.g. the '<' of 'f<i8>(1)';
+// 'kind' names the callee, e.g. "function" or "constructor"
+[[noreturn]] inline auto throw_not_generic(const token& src_loc_tk,
+                                           const std::string_view kind,
+                                           const std::string_view name)
+    -> void {
+
+    throw compile_error{
+        src_loc_tk,
+        std::format("{} {} is not generic, it takes no type arguments", kind,
+                    in_quotes(name))};
+}
+
 // a user type where a number is needed, e.g. the 'p' of 'p + 1'
 [[noreturn]] inline auto throw_not_a_number(const token& src_loc_tk,
                                             const std::string_view type_name)

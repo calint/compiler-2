@@ -1,4 +1,4 @@
 
-2213.baz:10:27: store the result of 'mk' in a variable before reading a field or calling a method of it
+2213.baz:10:23: a call of 'mk' is not an array
     exit(array_length(mk().a))
-                          ^
+                      ^~

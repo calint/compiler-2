@@ -53,25 +53,11 @@ inline expr_type::expr_type(toc& tc, tokenizer& tz, const type& tp,
                             tc.get_type_or_throw(tok()).name());
     }
 
-    // e.g. 'p = i8[2]{1, 2}' or 'p = [2]{1, 2}', as for a number destination
-    if (tm == term_kind::array_literal or
-        (tok().is_none() and is_default_array_literal(tz))) {
+    // e.g. 'p = i8[2]{1, 2}', as for a number destination
+    assert_not_array_literal(tc, tz, tok(), tm, tp);
 
-        // e.g. 'p = point[2]{}[0]', as for a number destination
-        if (is_literal_reached_into(tm, tz)) {
-            throw_literal_not_operand(tok(), "an array literal");
-        }
-
-        throw_array_literal_mismatch(tc, tok(), tp);
-    }
-
-    // note: compared by type, a type parameter names the type of its argument
     if (is_typed_literal) {
-        const type& named_type{tc.get_type_or_throw(tok())};
-
-        if (not named_type.is_same(tp)) {
-            throw_type_mismatch(tok(), tp.name(), named_type.name());
-        }
+        assert_names_type(tc, tok(), tp);
     }
 
     // e.g. 'point{1, 2}' for a field of type 'point' is '{1, 2}'
@@ -132,40 +118,37 @@ inline auto expr_type::parse_fields(toc& tc, tokenizer& tz) -> void {
 
     const std::span<const type_field> flds{tp.fields()};
 
-    while (not read_close_brace(tz)) {
-        // each field adds one expression, e.g. the 'x' and the 'y' of '{x, y}'
-        const size_t index{list.exprs.size()};
-
-        if (index == flds.size()) {
-            list.close_brace_tk = read_full_list_end(
-                tz, list.delims_tk,
+    // the value is parsed as the type of the field, so a nested '{...}' is
+    // another 'expr_type'
+    list.close_brace_tk = parse_braced_items(
+        tz, list.delims_tk,
+        full_list{
+            .capacity{flds.size()},
+            .too_many{
                 std::format("too many fields for type {}",
                             in_quotes(tp.name())),
+            },
+            .unclosed{
                 std::format("expected '}}' to close the value of type {}",
-                            in_quotes(tp.name())));
+                            in_quotes(tp.name())),
+            },
+        },
+        [&](const size_t index) -> std::string {
+            return std::format("expected ',' followed by a value for field {} "
+                               "in type {}",
+                               in_quotes(flds.at(index).name),
+                               in_quotes(tp.name()));
+        },
+        [&](const size_t index) -> void {
+            const type_field& tf{flds.at(index)};
 
-            break;
-        }
-
-        const type_field& tf{flds.at(index)};
-
-        if (index > 0) {
-            read_field_delimiter(tz, tf);
-
-            // a trailing ',' lets each field end its line the same way
-            if (read_close_brace(tz)) {
-                break;
-            }
-        }
-
-        // the value is parsed as the type of the field, so a nested '{...}'
-        // is another 'expr_type'
-        list.exprs.emplace_back(std::make_unique<expr_any>(
-            tc, tz, tf.type_ref(), literal_typing::from_destination, tf.shape));
-    }
+            list.exprs.emplace_back(std::make_unique<expr_any>(
+                tc, tz, tf.type_ref(), literal_typing::from_destination,
+                tf.shape));
+        });
 }
 
-// the special members need the complete 'stmt_call'
+// the special members need the complete 'expr_any'
 inline expr_type::expr_type(expr_type&&) noexcept = default;
 inline expr_type::~expr_type() = default;
 
@@ -210,7 +193,7 @@ inline auto expr_type::parse_copy_source(toc& tc, tokenizer& tz,
         return;
     }
 
-    value_.emplace<expr_path>(
+    value_ = std::make_unique<expr_path>(
         std::move(*std::get<std::unique_ptr<stmt_identifier>>(parsed)));
 
     const stmt_identifier& ident{*operand_path()};
@@ -226,15 +209,11 @@ inline auto expr_type::parse_copy_source(toc& tc, tokenizer& tz,
 }
 
 inline auto expr_type::copy_or_call() const -> const statement* {
-    if (const expr_path* const path{std::get_if<expr_path>(&value_)}) {
-        return path;
-    }
-
-    const std::unique_ptr<stmt_call>* const call{
-        std::get_if<std::unique_ptr<stmt_call>>(&value_),
+    const std::unique_ptr<statement>* const value{
+        std::get_if<std::unique_ptr<statement>>(&value_),
     };
 
-    return call != nullptr ? call->get() : nullptr;
+    return value != nullptr ? value->get() : nullptr;
 }
 
 inline auto expr_type::source_to(std::ostream& os) const -> void {

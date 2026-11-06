@@ -1,5 +1,5 @@
 # a call of a generic method where an array is expected is named like its
-# callee instance: 'point.m<i8>', not 'p.m'
+# method: 'point.m', not 'p.m'
 type point { x, y }
 
 func point.m<T type>(v T) res T {

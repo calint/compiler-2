@@ -1,6 +1,37 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] hard: design review series 2, round 104 (2026-11-06, user: simplify
+    the design with more reviewers at once, major refactoring is ok; A
+    expressions, B parse, C calls, D compile context, E backend, F
+    assemblers and driver, each owning its files, G the items across them)
+    => done (2026-11-06): A1 one loop for braced lists ('parse_braced_items',
+       'full_list'), A2 'expr_any::array_count' derived, A3
+       'assert_not_array_literal', A4 'assert_names_type', A5 an instance
+       value is a copy or a call as one 'statement'; B1 an argument where an
+       array is expected is rejected at its first token when it starts no
+       path ('assert_term_starts_path'), the parse of a call on a copy of
+       the tokenizer of rounds 95 to 98 removed, the messages name the
+       callee as written (17 '.out' files), B2 one message for a literal
+       without storage, B3 a step of an access path is a range, B4
+       'skip_literal'; C1 'named_argument_type' for the deduction and the
+       parameter check, 'call_limits' folded into 'inline_call'; D1
+       'one_line_source' in one pass, D2 'variable_comments' folded into
+       'toc', D3 'is_in_frame'; E1 the exit and the routines of a target in
+       'machine' ('routine_labels', 'emit_no_return_jump',
+       'emit_used_routines'), E2 one 'emit_failure_handler' (message labels
+       named after their handler, rv32i 0.1 % smaller, test 2380); F1 the
+       forward declarations of 'main.cpp' removed (a move), F2
+       'aligned_fill' walks 'printable_line', F3 one loop for the image
+       sections, F4 'run_rv32i' in 'test-far-jumps-no-scratch.sh'; G
+       'fold_element' removed, 'is_literal_reached_into' without the term,
+       'throw_not_generic', the branch no input reaches in
+       'call_site::is_inside_call' an assert; 'stmt_break' and
+       'stmt_continue' are one 'stmt_loop_jump' (user decision); not done:
+       'evaluate_constant' kept (reads better), the break end passed to
+       'join_loop' (design of 2026-10-25), generic deduction by a trial
+       parse (open item); 'alias-path-fuzz.cpp' has its own step kinds
+       after B3; about 340 lines fewer
 [x] hard: design review series 2, round 103 (2026-11-06, user: loop of
     design review and bug hunt; I hunt of rounds 101 and 102)
     => done (2026-11-06): no bug; the landings of round 101 matched llvm's

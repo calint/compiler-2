@@ -139,9 +139,6 @@ class expr_any final : public statement {
     // what the destination gives, e.g. an array parameter 's[]' is an array
     // of unknown length, its argument gives the length when it is compiled
     array_shape destination_;
-    // the size of an array form: the length of the destination, else the size
-    // the literal gives, e.g. 3 of 'i8[]{1, 2, 3}'; empty until known
-    std::optional<size_t> array_count_;
     form_variant form_;
 
   public:
@@ -151,7 +148,6 @@ class expr_any final : public statement {
     expr_any(toc& tc, tokenizer& tz, const type& tp,
              const literal_typing typing, const array_shape destination = {})
         : statement{tz.next_whitespace_token()}, destination_{destination},
-          array_count_{destination.length()},
           form_{parse_form(tc, tz, tp, typing)} {
 
         set_type(tp);
@@ -269,9 +265,26 @@ class expr_any final : public statement {
     // class methods
     //
 
-    // empty when neither the destination nor the literal gives the size
+    // the size of an array form: the length of the destination, else the size
+    // the literal gives, e.g. 3 of 'i8[]{1, 2, 3}'; empty when neither gives
+    // one, e.g. a copy to an unsized destination
     [[nodiscard]] auto array_count() const -> std::optional<size_t> {
-        return array_count_;
+        if (const std::optional<size_t> length{destination_.length()}) {
+            return length;
+        }
+
+        if (const string_array* const str{std::get_if<string_array>(&form_)}) {
+            return str->string_tk.string_bytes().size();
+        }
+
+        const element_list* const list{std::get_if<element_list>(&form_)};
+
+        if (list == nullptr) {
+            return std::nullopt;
+        }
+
+        // note: a list without a written size has braces
+        return written_size(*list).value_or(list->elements.size());
     }
 
     // where an array is written: its element type, its '[' when the type is
@@ -379,15 +392,6 @@ class expr_any final : public statement {
         return 1;
     }
 
-    // the element 'index' folded and checked, empty when it is computed at
-    // run time, e.g. 'maybe == 33' with 'maybe' a constant folds
-    [[nodiscard]] auto fold_element(const toc& tc, const size_t index,
-                                    const value_use& use) const
-        -> std::optional<folded_value> {
-
-        return element(index).fold_checked(tc, use);
-    }
-
     [[nodiscard]] auto is_array() const -> bool {
         return destination_.is_array();
     }
@@ -408,8 +412,8 @@ class expr_any final : public statement {
                      write_plan& plan) const -> void {
 
         // empty when the size is not known
-        const std::optional<size_t> array_count{
-            destination_.is_length_unknown() ? unsized_count : array_count_,
+        const std::optional<size_t> dst_count{
+            destination_.is_length_unknown() ? unsized_count : array_count(),
         };
 
         // the parse checked that the source of an array copy is an array,
@@ -418,14 +422,14 @@ class expr_any final : public statement {
             plan_element(tc, 0, at, plan);
 
             if (is_array()) {
-                assert_whole_array_copy_fits(tc, array_count);
+                assert_whole_array_copy_fits(tc, dst_count);
             }
 
             return;
         }
 
         if (const string_array* const str{std::get_if<string_array>(&form_)}) {
-            plan_string(str->string_tk, at, array_count, plan);
+            plan_string(str->string_tk, at, dst_count, plan);
             return;
         }
 
@@ -436,18 +440,18 @@ class expr_any final : public statement {
         const size_t count{element_count()};
 
         // the parser could not check the size of an unsized destination
-        if (array_count and count > *array_count) {
-            throw compile_error{element(*array_count).tok(),
-                                too_many_elements(*array_count)};
+        if (dst_count and count > *dst_count) {
+            throw compile_error{element(*dst_count).tok(),
+                                too_many_elements(*dst_count)};
         }
 
         plan_elements(tc, std::get<element_list>(form_), at, plan);
 
-        if (not array_count) {
+        if (not dst_count) {
             return;
         }
 
-        plan_remaining_elements(tok(), at, count, *array_count, plan);
+        plan_remaining_elements(tok(), at, count, *dst_count, plan);
     }
 
     // where a literal written without a size gives one, e.g. the '[' of
@@ -528,7 +532,7 @@ class expr_any final : public statement {
             // e.g. '{300}' for 'i8' is rejected as when stored alone
             const std::optional<int64_t> value{
                 folded_value::value_of(
-                    fold_element(tc, index, tc.use_at(element_type))),
+                    element(index).fold_checked(tc, tc.use_at(element_type))),
             };
 
             if (not value) {
@@ -604,74 +608,17 @@ class expr_any final : public statement {
                                      std::format("{}[]", literal_type.name()));
         }
 
-        if (not prefix.size.has_value()) {
-            return prefix;
-        }
-
-        const size_t count{prefix.size.array_size()};
-
         // note: only a declaration names the array type, its size is the one
         //       of this literal
 
-        assert(not array_count_ or *array_count_ == count);
-
-        array_count_ = count;
+        assert(not prefix.size.has_value() or not destination_.length() or
+               *destination_.length() == prefix.size.array_size());
 
         return prefix;
     }
 
-    // the elements between the braces, e.g. '1, 2, 3' of '{1, 2, 3}'
-    auto parse_braced_elements(toc& tc, tokenizer& tz, const type& tp,
-                               element_list& list) -> void {
-
-        std::optional<token> close_brace_tk{tz.is_next_char_token('}')};
-
-        while (not close_brace_tk) {
-            // a list of a known length ends when it is full
-            if (array_count_ and list.elements.size() == *array_count_) {
-                close_brace_tk = read_full_list_end(
-                    tz, list.delims_tk, too_many_elements(*array_count_),
-                    std::format("expected '}}' to close the array of size {}",
-                                *array_count_));
-
-                break;
-            }
-
-            if (not list.elements.empty()) {
-                read_element_delimiter(tz, tp, list);
-
-                // a trailing ',' lets each element end its line the same way
-                close_brace_tk = tz.is_next_char_token('}');
-
-                if (close_brace_tk) {
-                    break;
-                }
-            }
-
-            // note: the whitespace is read first, the initializers run in
-            //       order
-
-            // the array gives the type of its elements
-            list.elements.push_back({
-                .ws_tk{tz.next_whitespace_token()},
-                .value{
-                    parse_variant(tc, tz, tp, literal_typing::from_destination),
-                },
-            });
-
-            close_brace_tk = tz.is_next_char_token('}');
-        }
-
-        list.close_brace_tk = close_brace_tk;
-
-        if (not array_count_) {
-            array_count_ = list.elements.size();
-        }
-    }
-
-    // the form 'destination_' calls for; an array form sets 'array_count_'
-    // note: called by the constructor after 'destination_' and
-    //       'array_count_' are made
+    // the form 'destination_' calls for
+    // note: called by the constructor after 'destination_' is made
     [[nodiscard]] auto parse_form(toc& tc, tokenizer& tz, const type& tp,
                                   const literal_typing typing) -> form_variant {
 
@@ -688,8 +635,8 @@ class expr_any final : public statement {
         if (tz.peek_char_after_whitespace() == '"') {
             const token string_tk{tz.next_token()};
 
-            array_count_ = string_array_count(tc.builtins().i8(), string_tk, tp,
-                                              array_count_);
+            assert_string_fits(tc.builtins().i8(), string_tk, tp,
+                               destination_.length());
 
             return string_array{
                 .string_tk{string_tk},
@@ -735,7 +682,12 @@ class expr_any final : public statement {
         };
 
         if (open_brace_tk) {
-            parse_braced_elements(tc, tz, tp, list);
+            const std::optional<size_t> length{
+                destination_.length() ? destination_.length()
+                                      : written_size(list),
+            };
+
+            parse_braced_elements(tc, tz, tp, length, list);
         }
 
         return list;
@@ -934,9 +886,7 @@ class expr_any final : public statement {
         // instance literal, which the comparison rejects
         const term_kind tm{classify_term(tc, tk, tz)};
 
-        if (tm == term_kind::record_literal and
-            is_literal_reached_into(tm, tz)) {
-
+        if (tm == term_kind::record_literal and is_literal_reached_into(tz)) {
             throw_literal_not_operand(
                 tk,
                 std::format("an instance literal of {}", in_quotes(tk.text())));
@@ -948,23 +898,9 @@ class expr_any final : public statement {
             throw_type_mismatch(tk, tp.name(), tc.get_type_or_throw(tk).name());
         }
 
-        // an array literal, e.g. 'x = i8[2]{1, 2}' or 'x = [2]{1, 2}' for an
-        // 'i8' 'x', like an instance literal; an operand or a compared literal
-        // is rejected as an operand
-        const bool is_array_literal{
-            tm == term_kind::array_literal or
-                (tk.is_none() and is_default_array_literal(tz)),
-        };
-
-        if (is_array_literal and is_literal_reached_into(tm, tz)) {
-            throw_literal_not_operand(tk, "an array literal");
-        }
-
-        if (is_array_literal and
-            (not tp.is_bool() or is_array_literal_value(tz))) {
-
-            throw_array_literal_mismatch(tc, tk, tp);
-        }
+        // e.g. 'x = i8[2]{1, 2}' or 'x = [2]{1, 2}' for an 'i8' 'x', like an
+        // instance literal
+        assert_not_array_literal(tc, tz, tk, tm, tp);
     }
 
     // a number destination takes a number: not a 'bool', 'int(b)' converts
@@ -999,6 +935,34 @@ class expr_any final : public statement {
             std::format("expected type {}, got 'bool', use '{}(...)'",
                         in_quotes(tp.name()), tp.name()),
         };
+    }
+
+    // a string fills only an 'i8' array, one of 'array_count' when known
+    static auto assert_string_fits(const type& string_element_type,
+                                   const token& string_tk,
+                                   const type& element_type,
+                                   const std::optional<size_t> array_count)
+        -> void {
+
+        const size_t size_bytes{string_tk.string_bytes().size()};
+
+        if (not element_type.is_same(string_element_type)) {
+            throw compile_error{
+                string_tk, std::format("a string fills only an array of "
+                                       "{}, not an array of {}",
+                                       in_quotes(string_element_type.name()),
+                                       in_quotes(element_type.name()))};
+        }
+
+        // note: an empty string that would give a declaration its size is
+        //       rejected there, e.g. 'var s = ""' ('initializer_declaration')
+
+        if (not array_count or size_bytes <= *array_count) {
+            return;
+        }
+
+        throw compile_error{string_tk,
+                            string_overflows(size_bytes, *array_count)};
     }
 
     // e.g. the '.x' of 'i8{}.x', as of '1.x'; 'tz' is after the value
@@ -1075,6 +1039,47 @@ class expr_any final : public statement {
         }
     }
 
+    // the elements between the braces, e.g. '1, 2, 3' of '{1, 2, 3}'; a list
+    // of a known length ends when it is full
+    static auto parse_braced_elements(toc& tc, tokenizer& tz, const type& tp,
+                                      const std::optional<size_t> length,
+                                      element_list& list) -> void {
+
+        std::optional<full_list> full;
+
+        if (length) {
+            full = full_list{
+                .capacity{*length},
+                .too_many{too_many_elements(*length)},
+                .unclosed{
+                    std::format("expected '}}' to close the array of size {}",
+                                *length),
+                },
+            };
+        }
+
+        list.close_brace_tk = parse_braced_items(
+            tz, list.delims_tk, full,
+            [&tp]([[maybe_unused]] const size_t index) -> std::string {
+                return std::format(
+                    "expected ',' followed by a value of type {}",
+                    in_quotes(tp.name()));
+            },
+            [&]([[maybe_unused]] const size_t index) -> void {
+                // note: the whitespace is read first, the initializers run in
+                //       order
+
+                // the array gives the type of its elements
+                list.elements.push_back({
+                    .ws_tk{tz.next_whitespace_token()},
+                    .value{
+                        parse_variant(tc, tz, tp,
+                                      literal_typing::from_destination),
+                    },
+                });
+            });
+    }
+
     // e.g. 'var x = i8' is 'var x = i8(0)' and 'var b = bool' is
     // 'var b = false'
     [[nodiscard]] static auto
@@ -1091,15 +1096,7 @@ class expr_any final : public statement {
         }
 
         if (typing == literal_typing::from_destination) {
-            // note: compared by type, a type parameter names the type of
-            //       its argument
-
-            const type& named_type{tc.get_type_or_throw(tk)};
-
-            if (not named_type.is_same(tp)) {
-                throw_type_mismatch(tk, tp.name(), named_type.name());
-            }
-
+            assert_names_type(tc, tk, tp);
             throw_known_type(tk, tp.name(), "{}");
         }
 
@@ -1194,51 +1191,7 @@ class expr_any final : public statement {
             std::make_unique<expr_zero>(tp, open_brace_tk, close_brace_tk));
     }
 
-    static auto read_element_delimiter(tokenizer& tz, const type& tp,
-                                       element_list& list) -> void {
-
-        const token delimiter_tk{
-            tz.expect_char_token(
-                ',', std::format("expected ',' followed by a value of type {}",
-                                 in_quotes(tp.name()))),
-        };
-
-        list.delims_tk.emplace_back(delimiter_tk);
-    }
-
-    // the size of an 'i8' array that a string fills: 'array_count', or the
-    // size of the string when the destination gives none
-    [[nodiscard]] static auto
-    string_array_count(const type& string_element_type, const token& string_tk,
-                       const type& element_type,
-                       const std::optional<size_t> array_count) -> size_t {
-
-        const size_t size_bytes{string_tk.string_bytes().size()};
-
-        if (not element_type.is_same(string_element_type)) {
-            throw compile_error{
-                string_tk, std::format("a string fills only an array of "
-                                       "{}, not an array of {}",
-                                       in_quotes(string_element_type.name()),
-                                       in_quotes(element_type.name()))};
-        }
-
-        // note: an empty string that would give a declaration its size is
-        //       rejected there, e.g. 'var s = ""' ('initializer_declaration')
-
-        if (not array_count) {
-            return size_bytes;
-        }
-
-        if (size_bytes > *array_count) {
-            throw compile_error{string_tk,
-                                string_overflows(size_bytes, *array_count)};
-        }
-
-        return *array_count;
-    }
-
-    // the parse checks a string for a known length ('string_array_count'),
+    // the parse checks a string for a known length ('assert_string_fits'),
     // the plan one for an unsized destination ('plan_string')
     [[nodiscard]] static auto string_overflows(const size_t size_bytes,
                                                const size_t array_count)
@@ -1249,13 +1202,25 @@ class expr_any final : public statement {
     }
 
     // the parse checks a list of a known length when it is full
-    // ('read_full_list_end'), the plan one of an unsized destination, whose
+    // ('parse_braced_items'), the plan one of an unsized destination, whose
     // length the call gives
     [[nodiscard]] static auto too_many_elements(const size_t array_count)
         -> std::string {
 
         return std::format("too many elements for array of size {}",
                            array_count);
+    }
+
+    // the size the prefix of a list gives, e.g. the 4 of 'i8[4]{1, 2}', empty
+    // for 'i8[]{1, 2}' and '{1, 2}'
+    [[nodiscard]] static auto written_size(const element_list& list)
+        -> std::optional<size_t> {
+
+        if (not list.prefix or not list.prefix->size.has_value()) {
+            return std::nullopt;
+        }
+
+        return list.prefix->size.array_size();
     }
 };
 

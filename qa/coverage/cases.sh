@@ -6907,3 +6907,7 @@ SRC=2262 && COMPERR
 
 # a C1 control character is escaped in a message
 SRC=2263 && COMPERR
+
+# --checks=upper,line: failed checks in two files, an entry of the handler per
+# file
+SRC=2380 && EXP=255 && OPTS="--checks=upper,line" RUN_ERR

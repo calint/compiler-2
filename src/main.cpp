@@ -170,345 +170,6 @@ struct value_option {
     void (*apply)(std::string_view value, options& opts){};
 };
 
-// the exit code when the program should stop instead of compiling
-[[nodiscard]] auto parse_options(const std::span<const char*> args,
-                                 options& opts) -> std::optional<int>;
-
-// the option functions throw 'option_error'
-auto check_target_reads(const options& opts) -> void;
-
-auto check_default_stack_fits(const options& opts) -> void;
-
-auto parse_option(const std::string_view arg, options& opts) -> void;
-
-// the appliers of the options with a value store the value in 'opts'
-auto apply_vars(std::string_view value, options& opts) -> void;
-auto apply_stack(std::string_view value, options& opts) -> void;
-auto apply_memory(std::string_view value, options& opts) -> void;
-auto apply_target(std::string_view value, options& opts) -> void;
-auto apply_checks(std::string_view value, options& opts) -> void;
-auto apply_report(std::string_view value, options& opts) -> void;
-auto apply_bin(std::string_view value, options& opts) -> void;
-auto apply_sdcard(std::string_view value, options& opts) -> void;
-auto apply_versions(std::string_view value, options& opts) -> void;
-
-auto print_help(const char* const program_name) -> void;
-
-[[nodiscard]] auto compile_file(const options& opts) -> int;
-
-[[nodiscard]] auto make_target_options(const options& opts,
-                                       const std::string& binary)
-    -> machine::target_options;
-
-auto print_compiler_error(const source_files& files, const compile_error& error)
-    -> void;
-
-auto check_reproduced_source(const program& prg, const source_files& files)
-    -> void;
-
-[[nodiscard]] auto parse_size_bytes(const std::string_view text,
-                                    const std::string_view option,
-                                    const size_t alignment) -> size_t;
-
-[[nodiscard]] auto parse_checks(const std::string_view checks) -> check_options;
-
-[[nodiscard]] auto checks_named(const std::string_view name,
-                                const std::string_view written)
-    -> std::vector<bool check_options::*>;
-
-[[nodiscard]] auto parse_reports(const std::string_view reports)
-    -> report_options;
-
-[[nodiscard]] auto
-default_binary_file_name(const std::string_view src_file_name,
-                         const target_name& target) -> std::string;
-
-// 'path' names one of the files, also through another path
-[[nodiscard]] auto is_source_file(const std::string_view path,
-                                  const source_files& files) -> bool;
-
-auto print_option_error(const std::string_view message) -> void;
-
-auto print_unlocated_error(const std::string_view message) -> void;
-
-auto print_call_frames(const source_files& files,
-                       std::span<const compile_error::call_frame> frames)
-    -> void;
-
-[[nodiscard]] auto trimmed_line_at(std::string_view src, size_t index)
-    -> std::string_view;
-
-auto print_source_error(const source_files& files,
-                        const std::optional<source_span>& where,
-                        std::string_view message) -> void;
-
-[[nodiscard]] auto located_in_text(std::string_view src,
-                                   const source_span& where) -> source_span;
-
-auto print_source_line(std::string_view src, size_t start_index,
-                       size_t end_index) -> void;
-
-[[nodiscard]] auto printable_line(std::string_view line) -> std::string;
-
-[[nodiscard]] auto display_columns(std::string_view text) -> size_t;
-
-[[nodiscard]] auto aligned_fill(std::string_view text, char fill)
-    -> std::string;
-} // namespace
-
-auto main(const int argc, const char** const argv) -> int {
-    // a counted view of a pointer is a span that the compiler accepts as safe
-    const std::span<const char*> args{std::views::counted(argv, argc)};
-
-    options opts{};
-
-    if (const std::optional<int> exit_code{parse_options(args, opts)}) {
-        return *exit_code;
-    }
-
-    return compile_file(opts);
-}
-
-namespace {
-[[nodiscard]] auto parse_options(const std::span<const char*> args,
-                                 options& opts) -> std::optional<int> {
-
-    try {
-        for (const char* const argument : args | std::views::drop(1)) {
-            const std::string_view arg{argument};
-
-            if (arg == "--help" or arg == "-h") {
-                print_help(args.at(0));
-                return 0;
-            }
-
-            parse_option(arg, opts);
-        }
-
-        // note: after the loop because '--target' may follow the options
-        check_target_reads(opts);
-        check_default_stack_fits(opts);
-    } catch (const option_error& e) {
-        print_option_error(e.what());
-        return 1;
-    }
-
-    return std::nullopt;
-}
-
-// the backend checks the stack against the memory without knowing which was
-// given, a default stack that does not fit is the memory's error
-auto check_default_stack_fits(const options& opts) -> void {
-    if (not opts.memory_size_bytes or opts.stack_size_bytes or
-        *opts.memory_size_bytes >= default_stack_size_bytes) {
-
-        return;
-    }
-
-    throw option_error{
-        std::format("invalid --memory: {} B is smaller than the default stack "
-                    "of {} B, give a smaller --stack",
-                    *opts.memory_size_bytes, default_stack_size_bytes)};
-}
-
-// the 'text' of each row of a table joined by ', ', e.g. 'upper, lower, line'
-// note: by value, a filtered view is not iterated through a const reference
-template <std::ranges::input_range Names>
-[[nodiscard]] auto joined_texts(Names names) -> std::string {
-    std::string texts;
-
-    for (const auto& name : names) {
-        if (not texts.empty()) {
-            texts += ", ";
-        }
-
-        texts += name.text;
-    }
-
-    return texts;
-}
-
-// the row of 'rows' whose 'text' is 'value'; the message of an unknown one
-// names 'option' and lists the rows as the supported 'kind'
-template <class Row, size_t row_count>
-[[nodiscard]] auto named_row(const std::array<Row, row_count>& rows,
-                             const std::string_view value,
-                             const std::string_view option,
-                             const std::string_view kind) -> const Row& {
-
-    const auto found{std::ranges::find(rows, value, &Row::text)};
-
-    if (found == rows.end()) {
-        throw option_error{
-            std::format("invalid {}: {}, supported {} are: {}", option,
-                        in_quotes(value), kind, joined_texts(rows)),
-        };
-    }
-
-    return *found;
-}
-
-// an option of the target rows, e.g. '--stack' and 'reads_stack'
-struct target_option {
-    std::string_view name;
-    bool target_name::* reads{};
-    bool given{};
-};
-
-auto check_target_reads(const options& opts) -> void {
-    const std::array<target_option, 3> target_options{
-        target_option{
-            .name{"--stack"},
-            .reads{&target_name::reads_stack},
-            .given{opts.stack_size_bytes.has_value()},
-        },
-        target_option{
-            .name{"--memory"},
-            .reads{&target_name::reads_memory},
-            .given{opts.memory_size_bytes.has_value()},
-        },
-        target_option{
-            .name{"--sdcard"},
-            .reads{&target_name::reads_sd_card},
-            .given{opts.sd_card_file_name.has_value()},
-        },
-    };
-
-    const target_name& chosen{*opts.target};
-
-    for (const target_option& option : target_options) {
-        if (not option.given or chosen.*option.reads) {
-            continue;
-        }
-
-        const auto reads{
-            [&option](const target_name& name) -> bool {
-                return name.*option.reads;
-            },
-        };
-
-        const std::string readers{
-            joined_texts(target_names | std::views::filter(reads)),
-        };
-
-        throw option_error{
-            std::format("invalid {}: target {} does not read it, the targets "
-                        "that do are: {}",
-                        option.name, in_quotes(chosen.text), readers)};
-    }
-}
-
-// e.g. '0x40000' of '--vars=0x40000'
-[[nodiscard]] auto option_value(const std::string_view arg,
-                                const std::string_view name)
-    -> std::optional<std::string_view> {
-
-    if (not arg.starts_with(name)) {
-        return std::nullopt;
-    }
-
-    return arg.substr(name.size());
-}
-
-auto parse_option(const std::string_view arg, options& opts) -> void {
-    constexpr std::array<value_option, 9> value_options{
-        value_option{.name{"--vars="}, .apply{apply_vars}},
-        value_option{.name{"--stack="}, .apply{apply_stack}},
-        value_option{.name{"--memory="}, .apply{apply_memory}},
-        value_option{.name{"--target="}, .apply{apply_target}},
-        value_option{.name{"--checks="}, .apply{apply_checks}},
-        value_option{.name{"--report="}, .apply{apply_report}},
-        value_option{.name{"--bin="}, .apply{apply_bin}},
-        value_option{.name{"--sdcard="}, .apply{apply_sdcard}},
-        value_option{.name{"--versions="}, .apply{apply_versions}},
-    };
-
-    for (const value_option& option : value_options) {
-        if (const std::optional<std::string_view> value{
-                option_value(arg, option.name),
-            }) {
-
-            option.apply(*value, opts);
-            return;
-        }
-    }
-
-    if (arg == "--nopt") {
-        opts.optimize_jumps = false;
-        return;
-    }
-
-    if (arg == "--reproduce-source") {
-        opts.reproduce_source = true;
-        return;
-    }
-
-    if (arg.starts_with('-')) {
-        throw option_error{std::format("unknown option: {}", in_quotes(arg))};
-    }
-
-    if (opts.src_file_name) {
-        throw option_error{std::format("more than one source file: {} and {}",
-                                       in_quotes(*opts.src_file_name),
-                                       in_quotes(arg))};
-    }
-
-    opts.src_file_name = arg;
-}
-
-auto apply_vars(const std::string_view value, options& opts) -> void {
-    opts.vars_size_bytes = parse_size_bytes(value, "--vars", vars_alignment);
-}
-
-auto apply_stack(const std::string_view value, options& opts) -> void {
-    opts.stack_size_bytes = parse_size_bytes(value, "--stack", stack_alignment);
-}
-
-auto apply_memory(const std::string_view value, options& opts) -> void {
-    opts.memory_size_bytes =
-        parse_size_bytes(value, "--memory", memory_alignment);
-}
-
-auto apply_target(const std::string_view value, options& opts) -> void {
-    opts.target = &named_row(target_names, value, "--target", "targets");
-}
-
-auto apply_checks(const std::string_view value, options& opts) -> void {
-    opts.checks = parse_checks(value);
-}
-
-auto apply_report(const std::string_view value, options& opts) -> void {
-    opts.reports = parse_reports(value);
-}
-
-// 'option' is named in the error message
-[[nodiscard]] auto parse_file_name(const std::string_view text,
-                                   const std::string_view option)
-    -> std::string_view {
-
-    if (text.empty()) {
-        throw option_error{std::format("invalid {}: empty file name", option)};
-    }
-
-    return text;
-}
-
-auto apply_bin(const std::string_view value, options& opts) -> void {
-    opts.binary_file_name = parse_file_name(value, "--bin");
-}
-
-auto apply_sdcard(const std::string_view value, options& opts) -> void {
-    opts.sd_card_file_name = parse_file_name(value, "--sdcard");
-}
-
-auto apply_versions(const std::string_view value, options& opts) -> void {
-    const kept_version_name& row{
-        named_row(kept_version_names, value, "--versions", "values"),
-    };
-
-    opts.kept_version = row.kind;
-}
-
 // the text of '--help', which the readme usage section pastes; the format
 // arguments are listed in 'print_help'
 constexpr std::string_view usage_format{
@@ -595,136 +256,120 @@ auto print_help(const char* const program_name) -> void {
                default_sd_card_file_name, default_src_file_name);
 }
 
-[[nodiscard]] auto compile_file(const options& opts) -> int {
-    source_files files;
+// the 'text' of each row of a table joined by ', ', e.g. 'upper, lower, line'
+// note: by value, a filtered view is not iterated through a const reference
+template <std::ranges::input_range Names>
+[[nodiscard]] auto joined_texts(Names names) -> std::string {
+    std::string texts;
 
-    // the machine and the program refer to them
-    const builtin_type_set builtins;
-
-    try {
-        const std::string_view src_file_name{
-            opts.src_file_name.value_or(default_src_file_name),
-        };
-
-        files.add(std::string{src_file_name},
-                  source_files::read_file(src_file_name));
-
-        const std::string binary{
-            opts.binary_file_name
-                ? std::string{*opts.binary_file_name}
-                : default_binary_file_name(src_file_name, *opts.target),
-        };
-
-        const std::unique_ptr<machine> backend{
-            opts.target->make(builtins, files,
-                              make_target_options(opts, binary)),
-        };
-
-        // the checks the target cannot honor are off, e.g. x86_64 has no
-        // stack bound
-        check_options checks{opts.checks};
-        checks.stack = checks.stack and backend->is_stack_bounded();
-
-        program prg{*backend, builtins, files, opts.vars_size_bytes, checks};
-
-        // the image would replace a source file, the parse read the includes
-        if (opts.target->writes_image and is_source_file(binary, files)) {
-            throw option_error{std::format("invalid --bin: {} is a source file",
-                                           in_quotes(binary))};
+    for (const auto& name : names) {
+        if (not texts.empty()) {
+            texts += ", ";
         }
 
-        if (opts.reproduce_source) {
-            check_reproduced_source(prg, files);
-        }
-
-        prg.build(std::cout);
-
-        // e.g. a full disk, the listing is incomplete
-        std::cout.flush();
-
-        if (not std::cout) {
-            throw unlocated_error{"cannot write the assembly to stdout"};
-        }
-    } catch (const compile_error& e) {
-        print_compiler_error(files, e);
-        return 1;
-    } catch (const unlocated_error& e) {
-        print_unlocated_error(e.what());
-        return 1;
-    } catch (const option_error& e) {
-        print_option_error(e.what());
-        return 1;
-    } catch (const std::exception& e) {
-        // a defect of the compiler, the input is not at fault
-        std::println(stderr, "\ninternal error: {}", e.what());
-        return 1;
+        texts += name.text;
     }
 
-    return 0;
+    return texts;
 }
 
-// the options of the backend, '--bin' resolved to 'binary'
-[[nodiscard]] auto make_target_options(const options& opts,
-                                       const std::string& binary)
-    -> machine::target_options {
+// the row of 'rows' whose 'text' is 'value'; the message of an unknown one
+// names 'option' and lists the rows as the supported 'kind'
+template <class Row, size_t row_count>
+[[nodiscard]] auto named_row(const std::array<Row, row_count>& rows,
+                             const std::string_view value,
+                             const std::string_view option,
+                             const std::string_view kind) -> const Row& {
 
-    return {
-        .jumps{
-            opts.optimize_jumps ? assembler::jump_mode::optimized
-                                : assembler::jump_mode::as_emitted,
+    const auto found{std::ranges::find(rows, value, &Row::text)};
+
+    if (found == rows.end()) {
+        throw option_error{
+            std::format("invalid {}: {}, supported {} are: {}", option,
+                        in_quotes(value), kind, joined_texts(rows)),
+        };
+    }
+
+    return *found;
+}
+
+// the option functions throw 'option_error'
+
+// the backend checks the stack against the memory without knowing which was
+// given, a default stack that does not fit is the memory's error
+auto check_default_stack_fits(const options& opts) -> void {
+    if (not opts.memory_size_bytes or opts.stack_size_bytes or
+        *opts.memory_size_bytes >= default_stack_size_bytes) {
+
+        return;
+    }
+
+    throw option_error{
+        std::format("invalid --memory: {} B is smaller than the default stack "
+                    "of {} B, give a smaller --stack",
+                    *opts.memory_size_bytes, default_stack_size_bytes)};
+}
+
+// an option of the target rows, e.g. '--stack' and 'reads_stack'
+struct target_option {
+    std::string_view name;
+    bool target_name::* reads{};
+    bool given{};
+};
+
+auto check_target_reads(const options& opts) -> void {
+    const std::array<target_option, 3> target_options{
+        target_option{
+            .name{"--stack"},
+            .reads{&target_name::reads_stack},
+            .given{opts.stack_size_bytes.has_value()},
         },
-        .kept{opts.kept_version},
-        .register_report{opts.reports.registers},
-        .sd_card_file_name{
-            std::string{
-                opts.sd_card_file_name.value_or(default_sd_card_file_name),
-            },
+        target_option{
+            .name{"--memory"},
+            .reads{&target_name::reads_memory},
+            .given{opts.memory_size_bytes.has_value()},
         },
-        .binary_file_name{binary},
-        .stack_size_bytes{
-            opts.stack_size_bytes.value_or(default_stack_size_bytes),
+        target_option{
+            .name{"--sdcard"},
+            .reads{&target_name::reads_sd_card},
+            .given{opts.sd_card_file_name.has_value()},
         },
-        .memory_size_bytes{
-            opts.memory_size_bytes.value_or(default_memory_size_bytes),
-        },
-        .reports_line{opts.checks.reports_line},
     };
-}
 
-// the message of the error at its source line, the inlined calls and generic
-// instances it was found through and what else is known about it
-auto print_compiler_error(const source_files& files, const compile_error& error)
-    -> void {
+    const target_name& chosen{*opts.target};
 
-    print_source_error(files, error.where, error.msg);
-
-    print_call_frames(files, error.call_frames);
-
-    if (not error.detail.empty()) {
-        std::println(stderr, "\n{}", error.detail);
-    }
-}
-
-// the source written back from the parsed program equals the input, file by
-// file; a difference is a defect of the compiler, written to 'diff.baz'
-auto check_reproduced_source(const program& prg, const source_files& files)
-    -> void {
-
-    for (size_t file_ix{}; file_ix < files.count(); ++file_ix) {
-        std::ostringstream reproduced_source;
-        prg.source_to(file_ix, reproduced_source);
-
-        if (files.text(file_ix) == reproduced_source.view()) {
+    for (const target_option& option : target_options) {
+        if (not option.given or chosen.*option.reads) {
             continue;
         }
 
-        std::ofstream diff_file{"diff.baz"};
-        diff_file << reproduced_source.view();
+        const auto reads{
+            [&option](const target_name& name) -> bool {
+                return name.*option.reads;
+            },
+        };
 
-        throw std::logic_error{
-            std::format("generated source differs, see 'diff {} diff.baz'",
-                        files.name(file_ix))};
+        const std::string readers{
+            joined_texts(target_names | std::views::filter(reads)),
+        };
+
+        throw option_error{
+            std::format("invalid {}: target {} does not read it, the targets "
+                        "that do are: {}",
+                        option.name, in_quotes(chosen.text), readers)};
     }
+}
+
+// e.g. '0x40000' of '--vars=0x40000'
+[[nodiscard]] auto option_value(const std::string_view arg,
+                                const std::string_view name)
+    -> std::optional<std::string_view> {
+
+    if (not arg.starts_with(name)) {
+        return std::nullopt;
+    }
+
+    return arg.substr(name.size());
 }
 
 // decimal or 0x hexadecimal, 'option' is named in the error messages
@@ -772,6 +417,18 @@ auto check_reproduced_source(const program& prg, const source_files& files)
     }
 
     return parsed_size_bytes;
+}
+
+// 'option' is named in the error message
+[[nodiscard]] auto parse_file_name(const std::string_view text,
+                                   const std::string_view option)
+    -> std::string_view {
+
+    if (text.empty()) {
+        throw option_error{std::format("invalid {}: empty file name", option)};
+    }
+
+    return text;
 }
 
 // each '--report' replaces the earlier ones, empty parts are ignored like
@@ -842,6 +499,38 @@ static_assert([] -> bool {
         });
 }());
 
+// the checks 'name' turns on, e.g. every no-UB check for 'noub';
+// 'written' is the option as given, for the error
+[[nodiscard]] auto checks_named(const std::string_view name,
+                                const std::string_view written)
+    -> std::vector<bool check_options::*> {
+
+    if (name == "noub") {
+        std::vector<bool check_options::*> members;
+
+        for (const check_name& check : check_names) {
+            if (check.is_ub) {
+                members.push_back(check.member);
+            }
+        }
+
+        return members;
+    }
+
+    const auto* const found{
+        std::ranges::find(check_names, name, &check_name::text),
+    };
+
+    if (found == check_names.end()) {
+        throw option_error{
+            std::format("invalid --checks: {}, supported checks are: {}, "
+                        "noub, each with a '+' or '-' prefix",
+                        in_quotes(written), joined_texts(check_names))};
+    }
+
+    return {found->member};
+}
+
 // each '--checks' replaces the earlier ones, empty parts are ignored, 'name'
 // and '+name' enable a check, '-name' disables it after all enables, so the
 // order in the list does not matter
@@ -887,60 +576,97 @@ static_assert([] -> bool {
     return parsed;
 }
 
-// the checks 'name' turns on, e.g. every no-UB check for 'noub';
-// 'written' is the option as given, for the error
-[[nodiscard]] auto checks_named(const std::string_view name,
-                                const std::string_view written)
-    -> std::vector<bool check_options::*> {
+// the appliers of the options with a value store the value in 'opts'
+auto apply_vars(const std::string_view value, options& opts) -> void {
+    opts.vars_size_bytes = parse_size_bytes(value, "--vars", vars_alignment);
+}
 
-    if (name == "noub") {
-        std::vector<bool check_options::*> members;
+auto apply_stack(const std::string_view value, options& opts) -> void {
+    opts.stack_size_bytes = parse_size_bytes(value, "--stack", stack_alignment);
+}
 
-        for (const check_name& check : check_names) {
-            if (check.is_ub) {
-                members.push_back(check.member);
-            }
-        }
+auto apply_memory(const std::string_view value, options& opts) -> void {
+    opts.memory_size_bytes =
+        parse_size_bytes(value, "--memory", memory_alignment);
+}
 
-        return members;
-    }
+auto apply_target(const std::string_view value, options& opts) -> void {
+    opts.target = &named_row(target_names, value, "--target", "targets");
+}
 
-    const auto* const found{
-        std::ranges::find(check_names, name, &check_name::text),
+auto apply_checks(const std::string_view value, options& opts) -> void {
+    opts.checks = parse_checks(value);
+}
+
+auto apply_report(const std::string_view value, options& opts) -> void {
+    opts.reports = parse_reports(value);
+}
+
+auto apply_bin(const std::string_view value, options& opts) -> void {
+    opts.binary_file_name = parse_file_name(value, "--bin");
+}
+
+auto apply_sdcard(const std::string_view value, options& opts) -> void {
+    opts.sd_card_file_name = parse_file_name(value, "--sdcard");
+}
+
+auto apply_versions(const std::string_view value, options& opts) -> void {
+    const kept_version_name& row{
+        named_row(kept_version_names, value, "--versions", "values"),
     };
 
-    if (found == check_names.end()) {
-        throw option_error{
-            std::format("invalid --checks: {}, supported checks are: {}, "
-                        "noub, each with a '+' or '-' prefix",
-                        in_quotes(written), joined_texts(check_names))};
-    }
-
-    return {found->member};
+    opts.kept_version = row.kind;
 }
 
-// keeps the directory so the image lands next to its source
-[[nodiscard]] auto
-default_binary_file_name(const std::string_view src_file_name,
-                         const target_name& target) -> std::string {
+auto parse_option(const std::string_view arg, options& opts) -> void {
+    constexpr std::array<value_option, 9> value_options{
+        value_option{.name{"--vars="}, .apply{apply_vars}},
+        value_option{.name{"--stack="}, .apply{apply_stack}},
+        value_option{.name{"--memory="}, .apply{apply_memory}},
+        value_option{.name{"--target="}, .apply{apply_target}},
+        value_option{.name{"--checks="}, .apply{apply_checks}},
+        value_option{.name{"--report="}, .apply{apply_report}},
+        value_option{.name{"--bin="}, .apply{apply_bin}},
+        value_option{.name{"--sdcard="}, .apply{apply_sdcard}},
+        value_option{.name{"--versions="}, .apply{apply_versions}},
+    };
 
-    std::filesystem::path path{src_file_name};
-    path.replace_extension();
-    return std::format("{}-{}.bin", path.string(), target.text);
-}
+    for (const value_option& option : value_options) {
+        if (const std::optional<std::string_view> value{
+                option_value(arg, option.name),
+            }) {
 
-[[nodiscard]] auto is_source_file(const std::string_view path,
-                                  const source_files& files) -> bool {
-
-    for (size_t i{}; i < files.count(); ++i) {
-        std::error_code ec;
-
-        if (std::filesystem::equivalent(path, files.name(i), ec)) {
-            return true;
+            option.apply(*value, opts);
+            return;
         }
     }
 
-    return false;
+    if (arg == "--nopt") {
+        opts.optimize_jumps = false;
+        return;
+    }
+
+    if (arg == "--reproduce-source") {
+        opts.reproduce_source = true;
+        return;
+    }
+
+    if (arg.starts_with('-')) {
+        throw option_error{std::format("unknown option: {}", in_quotes(arg))};
+    }
+
+    if (opts.src_file_name) {
+        throw option_error{std::format("more than one source file: {} and {}",
+                                       in_quotes(*opts.src_file_name),
+                                       in_quotes(arg))};
+    }
+
+    opts.src_file_name = arg;
+}
+
+// a user error without a place in the source, e.g. a file that cannot be read
+auto print_unlocated_error(const std::string_view message) -> void {
+    std::println(stderr, "error: {}", printable(message));
 }
 
 // every command line error ends with the same hint
@@ -949,34 +675,31 @@ auto print_option_error(const std::string_view message) -> void {
     std::println(stderr, "use --help for usage information");
 }
 
-// a user error without a place in the source, e.g. a file that cannot be read
-auto print_unlocated_error(const std::string_view message) -> void {
-    std::println(stderr, "error: {}", printable(message));
-}
+// the exit code when the program should stop instead of compiling
+[[nodiscard]] auto parse_options(const std::span<const char*> args,
+                                 options& opts) -> std::optional<int> {
 
-// the inlined calls and generic instances the error was found through,
-// innermost first
-auto print_call_frames(const source_files& files,
-                       const std::span<const compile_error::call_frame> frames)
-    -> void {
+    try {
+        for (const char* const argument : args | std::views::drop(1)) {
+            const std::string_view arg{argument};
 
-    const source_locations locations{files};
+            if (arg == "--help" or arg == "-h") {
+                print_help(args.at(0));
+                return 0;
+            }
 
-    for (const compile_error::call_frame& frame : frames) {
-        const source_span& where{frame.where};
-        const std::string_view src{files.text(where.file_ix)};
-
-        // the source line shows a call that is the whole line
-        if (frame.text == trimmed_line_at(src, where.start_index)) {
-            std::println(stderr, "{}: {}", locations.for_error(where),
-                         frame.reason);
-        } else {
-            std::println(stderr, "{}: {} {}", locations.for_error(where),
-                         frame.reason, in_quotes(printable(frame.text)));
+            parse_option(arg, opts);
         }
 
-        print_source_line(src, where.start_index, where.end_index);
+        // note: after the loop because '--target' may follow the options
+        check_target_reads(opts);
+        check_default_stack_fits(opts);
+    } catch (const option_error& e) {
+        print_option_error(e.what());
+        return 1;
     }
+
+    return std::nullopt;
 }
 
 // the line of the character at 'index' without its surrounding whitespace
@@ -993,29 +716,6 @@ auto print_call_frames(const source_files& files,
     assert(first != std::string_view::npos);
 
     return line.substr(first, line.find_last_not_of(whitespace) - first + 1);
-}
-
-// an error without a place is a problem of the whole program, reported at the
-// main file
-auto print_source_error(const source_files& files,
-                        const std::optional<source_span>& where,
-                        const std::string_view message) -> void {
-
-    if (not where) {
-        std::println(stderr, "\n{}: {}", printable(files.name(0)),
-                     printable(message));
-
-        return;
-    }
-
-    const source_locations locations{files};
-    const std::string_view src{files.text(where->file_ix)};
-    const source_span shown{located_in_text(src, *where)};
-
-    std::println(stderr, "\n{}: {}", locations.for_error(shown),
-                 printable(message));
-
-    print_source_line(src, shown.start_index, shown.end_index);
 }
 
 // an error at the end of the source is shown after its last character that
@@ -1049,17 +749,6 @@ auto print_source_error(const source_files& files,
     };
 }
 
-// the columns a terminal shows for 'text', which holds no tab: one for each
-// character of what 'printable' shows
-[[nodiscard]] auto display_columns(const std::string_view text) -> size_t {
-    const std::string shown{printable(text)};
-
-    return static_cast<size_t>(
-        std::ranges::count_if(shown, [](const char ch) -> bool {
-            return not token::is_utf8_continuation(ch);
-        }));
-}
-
 // the line as 'printable' shows it, with its tabs so that the mark lines up
 [[nodiscard]] auto printable_line(std::string_view line) -> std::string {
     std::string result;
@@ -1073,6 +762,24 @@ auto print_source_error(const source_files& files,
     }
 
     result += printable(line);
+
+    return result;
+}
+
+// 'fill' under each character of 'text' as 'printable_line' shows it, a tab
+// stays a tab so that what follows lines up
+[[nodiscard]] auto aligned_fill(const std::string_view text, const char fill)
+    -> std::string {
+
+    std::string result;
+
+    for (const char ch : printable_line(text)) {
+        if (ch == '\t') {
+            result += '\t';
+        } else if (not token::is_utf8_continuation(ch)) {
+            result += fill;
+        }
+    }
 
     return result;
 }
@@ -1124,23 +831,221 @@ auto print_source_line(const std::string_view src, const size_t start_index,
     std::println(stderr, "{}\n{}{}", printable_line(line), padding, mark);
 }
 
-// 'fill' under each column of 'text' as a terminal shows it, a tab stays a
-// tab so that what follows lines up
-[[nodiscard]] auto aligned_fill(std::string_view text, const char fill)
-    -> std::string {
+// the inlined calls and generic instances the error was found through,
+// innermost first
+auto print_call_frames(const source_files& files,
+                       const std::span<const compile_error::call_frame> frames)
+    -> void {
 
-    std::string result;
+    const source_locations locations{files};
 
-    for (size_t tab{text.find('\t')}; tab != std::string_view::npos;
-         tab = text.find('\t')) {
+    for (const compile_error::call_frame& frame : frames) {
+        const source_span& where{frame.where};
+        const std::string_view src{files.text(where.file_ix)};
 
-        result.append(display_columns(text.substr(0, tab)), fill);
-        result += '\t';
-        text.remove_prefix(tab + 1);
+        // the source line shows a call that is the whole line
+        if (frame.text == trimmed_line_at(src, where.start_index)) {
+            std::println(stderr, "{}: {}", locations.for_error(where),
+                         frame.reason);
+        } else {
+            std::println(stderr, "{}: {} {}", locations.for_error(where),
+                         frame.reason, in_quotes(printable(frame.text)));
+        }
+
+        print_source_line(src, where.start_index, where.end_index);
+    }
+}
+
+// an error without a place is a problem of the whole program, reported at the
+// main file
+auto print_source_error(const source_files& files,
+                        const std::optional<source_span>& where,
+                        const std::string_view message) -> void {
+
+    if (not where) {
+        std::println(stderr, "\n{}: {}", printable(files.name(0)),
+                     printable(message));
+
+        return;
     }
 
-    result.append(display_columns(text), fill);
+    const source_locations locations{files};
+    const std::string_view src{files.text(where->file_ix)};
+    const source_span shown{located_in_text(src, *where)};
 
-    return result;
+    std::println(stderr, "\n{}: {}", locations.for_error(shown),
+                 printable(message));
+
+    print_source_line(src, shown.start_index, shown.end_index);
+}
+
+// the message of the error at its source line, the inlined calls and generic
+// instances it was found through and what else is known about it
+auto print_compiler_error(const source_files& files, const compile_error& error)
+    -> void {
+
+    print_source_error(files, error.where, error.msg);
+
+    print_call_frames(files, error.call_frames);
+
+    if (not error.detail.empty()) {
+        std::println(stderr, "\n{}", error.detail);
+    }
+}
+
+// the options of the backend, '--bin' resolved to 'binary'
+[[nodiscard]] auto make_target_options(const options& opts,
+                                       const std::string& binary)
+    -> machine::target_options {
+
+    return {
+        .jumps{
+            opts.optimize_jumps ? assembler::jump_mode::optimized
+                                : assembler::jump_mode::as_emitted,
+        },
+        .kept{opts.kept_version},
+        .register_report{opts.reports.registers},
+        .sd_card_file_name{
+            std::string{
+                opts.sd_card_file_name.value_or(default_sd_card_file_name),
+            },
+        },
+        .binary_file_name{binary},
+        .stack_size_bytes{
+            opts.stack_size_bytes.value_or(default_stack_size_bytes),
+        },
+        .memory_size_bytes{
+            opts.memory_size_bytes.value_or(default_memory_size_bytes),
+        },
+        .reports_line{opts.checks.reports_line},
+    };
+}
+
+// the source written back from the parsed program equals the input, file by
+// file; a difference is a defect of the compiler, written to 'diff.baz'
+auto check_reproduced_source(const program& prg, const source_files& files)
+    -> void {
+
+    for (size_t file_ix{}; file_ix < files.count(); ++file_ix) {
+        std::ostringstream reproduced_source;
+        prg.source_to(file_ix, reproduced_source);
+
+        if (files.text(file_ix) == reproduced_source.view()) {
+            continue;
+        }
+
+        std::ofstream diff_file{"diff.baz"};
+        diff_file << reproduced_source.view();
+
+        throw std::logic_error{
+            std::format("generated source differs, see 'diff {} diff.baz'",
+                        files.name(file_ix))};
+    }
+}
+
+// keeps the directory so the image lands next to its source
+[[nodiscard]] auto
+default_binary_file_name(const std::string_view src_file_name,
+                         const target_name& target) -> std::string {
+
+    std::filesystem::path path{src_file_name};
+    path.replace_extension();
+    return std::format("{}-{}.bin", path.string(), target.text);
+}
+
+// 'path' names one of the files, also through another path
+[[nodiscard]] auto is_source_file(const std::string_view path,
+                                  const source_files& files) -> bool {
+
+    for (size_t i{}; i < files.count(); ++i) {
+        std::error_code ec;
+
+        if (std::filesystem::equivalent(path, files.name(i), ec)) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+[[nodiscard]] auto compile_file(const options& opts) -> int {
+    source_files files;
+
+    // the machine and the program refer to them
+    const builtin_type_set builtins;
+
+    try {
+        const std::string_view src_file_name{
+            opts.src_file_name.value_or(default_src_file_name),
+        };
+
+        files.add(std::string{src_file_name},
+                  source_files::read_file(src_file_name));
+
+        const std::string binary{
+            opts.binary_file_name
+                ? std::string{*opts.binary_file_name}
+                : default_binary_file_name(src_file_name, *opts.target),
+        };
+
+        const std::unique_ptr<machine> backend{
+            opts.target->make(builtins, files,
+                              make_target_options(opts, binary)),
+        };
+
+        // the checks the target cannot honor are off, e.g. x86_64 has no
+        // stack bound
+        check_options checks{opts.checks};
+        checks.stack = checks.stack and backend->is_stack_bounded();
+
+        program prg{*backend, builtins, files, opts.vars_size_bytes, checks};
+
+        // the image would replace a source file, the parse read the includes
+        if (opts.target->writes_image and is_source_file(binary, files)) {
+            throw option_error{std::format("invalid --bin: {} is a source file",
+                                           in_quotes(binary))};
+        }
+
+        if (opts.reproduce_source) {
+            check_reproduced_source(prg, files);
+        }
+
+        prg.build(std::cout);
+
+        // e.g. a full disk, the listing is incomplete
+        std::cout.flush();
+
+        if (not std::cout) {
+            throw unlocated_error{"cannot write the assembly to stdout"};
+        }
+    } catch (const compile_error& e) {
+        print_compiler_error(files, e);
+        return 1;
+    } catch (const unlocated_error& e) {
+        print_unlocated_error(e.what());
+        return 1;
+    } catch (const option_error& e) {
+        print_option_error(e.what());
+        return 1;
+    } catch (const std::exception& e) {
+        // a defect of the compiler, the input is not at fault
+        std::println(stderr, "\ninternal error: {}", e.what());
+        return 1;
+    }
+
+    return 0;
 }
 } // namespace
+
+auto main(const int argc, const char** const argv) -> int {
+    // a counted view of a pointer is a span that the compiler accepts as safe
+    const std::span<const char*> args{std::views::counted(argv, argc)};
+
+    options opts{};
+
+    if (const std::optional<int> exit_code{parse_options(args, opts)}) {
+        return *exit_code;
+    }
+
+    return compile_file(opts);
+}

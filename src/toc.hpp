@@ -56,7 +56,6 @@
 //   'builtin_roles' the types the front end needs by role
 //   'ident_resolver' resolves one name by 'lookup'
 //   'definition_checks' the errors of a name defined twice
-//   'variable_comments' the comment of where a variable is stored
 //   'toc'           the facade the statements use, owns all of the above and
 //                   'generic_registry', 'definition_order' ('generics.hpp')
 //                   and 'source_locations' ('source_files.hpp'); a method of
@@ -1483,10 +1482,10 @@ class scope_stack final {
 // target limits; the size in use is the sum of what the scopes hold
 class storage_layout final {
     // where the next variable is placed: 'next_offset_bytes' counts from the
-    // base of the frame of the scope 'scope_index' or, when it is empty, from
-    // 'dat'
+    // base of the frame of the nearest scope with one or, outside a frame,
+    // from 'dat'
     struct storage_location {
-        std::optional<size_t> scope_index;
+        bool is_in_frame{};
         size_t next_offset_bytes{};
     };
 
@@ -1558,7 +1557,7 @@ class storage_layout final {
 
         const size_t offset_bytes{next_offset_bytes + padding_bytes};
 
-        if (location.scope_index) {
+        if (location.is_in_frame) {
             stored.offset = address_offset(offset_bytes);
 
             const ::machine& x{machine_.get()};
@@ -1612,7 +1611,7 @@ class storage_layout final {
     // a scope with a frame is compiled; the frames do not nest, a noinline
     // body is compiled after the body that calls it
     auto begin_frame() -> void {
-        assert(not find_storage_location().scope_index);
+        assert(not find_storage_location().is_in_frame);
 
         max_frame_size_bytes_ = 0;
     }
@@ -1623,7 +1622,7 @@ class storage_layout final {
 
     // asked inside a noinline body, which has a frame
     [[nodiscard]] auto max_frame_size_bytes() const -> size_t {
-        assert(find_storage_location().scope_index);
+        assert(find_storage_location().is_in_frame);
 
         return max_frame_size_bytes_;
     }
@@ -1642,7 +1641,7 @@ class storage_layout final {
             align_storage_size(location.next_offset_bytes, frame_alignment),
         };
 
-        if (location.scope_index) {
+        if (location.is_in_frame) {
             return operand::mem(x.frame_base_register(), {}, 1,
                                 address_offset(aligned_offset_bytes),
                                 address_type);
@@ -1740,14 +1739,14 @@ class storage_layout final {
 
             if (scp.has_frame()) {
                 return {
-                    .scope_index{i - 1},
+                    .is_in_frame{true},
                     .next_offset_bytes{local_size_bytes},
                 };
             }
         }
 
         return {
-            .scope_index{},
+            .is_in_frame{},
             .next_offset_bytes{dats_and_vars_size_bytes()},
         };
     }
@@ -2350,55 +2349,6 @@ class definition_checks final {
     }
 };
 
-// the comment in the output that tells where a variable is stored
-class variable_comments final {
-    std::reference_wrapper<::machine> machine_;
-    std::reference_wrapper<const ident_resolver> resolver_;
-
-  public:
-    variable_comments(::machine& backend, const ident_resolver& resolver)
-        : machine_{backend}, resolver_{resolver} {}
-
-    // the resolved name shows where the variable is stored
-    auto comment(const token& src_loc_tk, const size_t indent,
-                 const var_info& var) const -> void {
-
-        const ident_info name_info{resolver_.get().resolve_var(var)};
-
-        std::string text{
-            std::format("{}: {}", var.name, name_info.type_ref().name()),
-        };
-
-        if (const std::optional<size_t> length{var.shape.length()}) {
-            text += std::format("[{}]", *length);
-        }
-
-        // the iterator 'e' is memory at its register, the counter 'i' is the
-        // register
-        const std::optional<operand> reg{register_of(var.placement)};
-
-        ::machine& x{machine_.get()};
-
-        if (reg) {
-            x.comment(src_loc_tk, indent, "{} ({})", text,
-                      reg->register_name());
-
-            return;
-        }
-
-        if (holds_address(var.placement)) {
-            x.comment_held_address(src_loc_tk, indent, text,
-                                   name_info.operand());
-
-            return;
-        }
-
-        x.comment_variable(src_loc_tk, indent, text,
-                           name_info.value_size_bytes(src_loc_tk),
-                           name_info.operand());
-    }
-};
-
 // the context of every node: the names, their storage, the machine and the
 // phase; the program is parsed first ('is_compiling_' false: the names are
 // declared without storage and without comments), then compiled
@@ -2476,7 +2426,6 @@ class toc final {
     definition_checks definitions_;
     builtin_roles builtins_;
     ident_resolver resolver_;
-    variable_comments var_comments_;
     storage_layout storage_;
     check_options checks_{};
     // above zero inside 'dry_run': a noinline body a call asks for is only
@@ -2704,7 +2653,6 @@ class toc final {
           definitions_{scopes_, funcs_, types_, generics_, locations_},
           builtins_{backend, builtins},
           resolver_{scopes_, backend, funcs_, generics_, builtins_},
-          var_comments_{backend, resolver_},
           storage_{backend, scopes_, data_, vars_capacity_bytes},
           checks_{checks} {
 
@@ -2901,7 +2849,7 @@ class toc final {
         record_if_global(var.name);
 
         if (is_compiling_) {
-            var_comments_.comment(src_loc_tk, indent, declared);
+            comment_var(src_loc_tk, indent, declared);
         }
     }
 
@@ -3560,6 +3508,46 @@ class toc final {
             std::format("type {} of {} B is too large, the target addresses "
                         "{} B",
                         in_quotes(tpe.name()), tpe.size_bytes(), max_bytes)};
+    }
+
+    // the comment in the output that tells where a variable is stored, the
+    // resolved name shows it
+    auto comment_var(const token& src_loc_tk, const size_t indent,
+                     const var_info& var) -> void {
+
+        const ident_info name_info{resolver_.resolve_var(var)};
+
+        std::string text{
+            std::format("{}: {}", var.name, name_info.type_ref().name()),
+        };
+
+        if (const std::optional<size_t> length{var.shape.length()}) {
+            text += std::format("[{}]", *length);
+        }
+
+        // the iterator 'e' is memory at its register, the counter 'i' is the
+        // register
+        const std::optional<operand> reg{register_of(var.placement)};
+
+        ::machine& x{machine()};
+
+        if (reg) {
+            x.comment(src_loc_tk, indent, "{} ({})", text,
+                      reg->register_name());
+
+            return;
+        }
+
+        if (holds_address(var.placement)) {
+            x.comment_held_address(src_loc_tk, indent, text,
+                                   name_info.operand());
+
+            return;
+        }
+
+        x.comment_variable(src_loc_tk, indent, text,
+                           name_info.value_size_bytes(src_loc_tk),
+                           name_info.operand());
     }
 
     [[nodiscard]] auto compile_state_now() const -> compile_state {

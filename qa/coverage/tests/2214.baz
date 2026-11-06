@@ -1,5 +1,5 @@
-# a field of a call's result as an array argument, the result is stored
-# first
+# a field of a call's result as an array argument, rejected at the
+# call
 type pt { x, a i8[3] }
 
 func mk() res pt {

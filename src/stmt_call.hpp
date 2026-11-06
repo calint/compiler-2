@@ -40,10 +40,10 @@
 //   'stmt_call'       parses the call, prints its source and hands it to one
 //                     of the compilers (last in the file, it uses the others)
 //   'missing_argument_text', 'missing_delimiter_text',
-//   'throw_not_array_argument', 'parse_array_parameter_argument'
+//   'throw_not_array_argument', 'named_argument_type',
+//   'parse_array_parameter_argument'
 //                     free, first, 'generic_call' and 'stmt_call' use them
 //   'generic_call'    the instance of a generic function that the call names
-//   'call_limits'     how deep the compile of calls nests
 //   'call_site'       what compiling the call needs of it
 //   'inline_call'     compiles the body of the function in place
 //   'noinline_call'   passes addresses to the body that is emitted once
@@ -101,6 +101,22 @@
     throw compile_error{
         src_loc_tk, std::format("{} is not an array, parameter {} takes one",
                                 in_quotes(source), in_quotes(param))};
+}
+
+// the type that a variable, a field, an element or a typed constant passed
+// as an argument has, null for an untyped constant, e.g. 'k' of 'let k = 5',
+// which like a literal takes the type of its parameter
+[[nodiscard]] inline auto named_argument_type(const toc& tc,
+                                              const stmt_identifier& ident)
+    -> const type* {
+
+    const ident_info info{make_ident_info(tc, ident)};
+
+    if (info.is_const() and not info.constant().is_typed()) {
+        return nullptr;
+    }
+
+    return &info.type_ref();
 }
 
 // the whole array the array parameter 'param' takes, read as the array of a
@@ -235,14 +251,7 @@ struct generic_call {
             return nullptr;
         }
 
-        const ident_info info{make_ident_info(tc, ident)};
-
-        // e.g. 'k' of 'let k = 5' does not tell its type, like a literal
-        if (info.is_const() and not info.constant().is_typed()) {
-            return nullptr;
-        }
-
-        return &info.type_ref();
+        return named_argument_type(tc, ident);
     }
 
     // the argument at 'index' parsed without a type, as the initializer of a
@@ -545,82 +554,6 @@ struct generic_call {
     }
 };
 
-// the limits on how deep the compile of calls nests, each a recursion of the
-// compiler: the scopes being compiled and the inlined calls of one function in
-// each other; the errors are located at the call 'call_tk'
-class call_limits final {
-  public:
-    // a scope being compiled: a block, a loop or a function body
-    static constexpr size_t max_scope_count{256};
-
-    // an inlined recursion ends at compile time when a constant argument
-    // makes its condition fold, otherwise it would expand without end
-    static constexpr size_t max_inlined_nesting{64};
-
-    //
-    // statics
-    //
-
-    // the inlined recursions of 'func' and the scopes are within their limits
-    static auto assert_inline_nesting(toc& tc, const token& call_tk,
-                                      const stmt_def_func& func) -> void {
-
-        // e.g. a recursion that a constant argument ends too late or never
-        if (tc.scopes().inlined_nesting(func.name()) >= max_inlined_nesting) {
-            throw inlining_limit_error(
-                call_tk,
-                std::format("recursion of inlined function {} is nested "
-                            "deeper than {} calls, declare it 'noinline'",
-                            in_quotes(func.name()), max_inlined_nesting));
-        }
-
-        if (tc.scopes().count() < max_scope_count) {
-            return;
-        }
-
-        throw inlining_limit_error(
-            call_tk,
-            std::format("inlined calls and blocks are nested too deep, the "
-                        "limit is {} scopes, declare a function 'noinline'",
-                        max_scope_count));
-    }
-
-    // an inlined recursion that runs out of registers, whether or not a
-    // constant argument would end it
-    [[nodiscard]] static auto recursion_error(const token& call_tk,
-                                              const stmt_def_func& func)
-        -> compile_error {
-
-        compile_error error{
-            call_tk,
-            std::format("recursion of inlined function {} runs out of "
-                        "registers before it ends at compile time, declare "
-                        "it 'noinline'",
-                        in_quotes(func.name())),
-        };
-
-        error.kind = compile_error::error_kind::out_of_registers;
-
-        return error;
-    }
-
-  private:
-    //
-    // statics
-    //
-
-    // the call is too deep to inline, e.g. a recursion that does not end at
-    // compile time
-    [[nodiscard]] static auto inlining_limit_error(const token& call_tk,
-                                                   std::string message)
-        -> compile_error {
-
-        compile_error error{call_tk, std::move(message)};
-        error.kind = compile_error::error_kind::inlining_limit;
-        return error;
-    }
-};
-
 // what compiling a call needs of it, 'stmt_call' makes it for each compile
 struct call_site {
     // the name of a function or method, the type of a constructor call; the
@@ -747,9 +680,10 @@ struct call_site {
         // note: a recursive call is checked inside its own body, so an error
         //       can be located after the call
 
-        if (not e.where) {
-            return false;
-        }
+        // note: an error in a body is at a token of its source; only a missing
+        //       'main' and the registers the backend holds have no place
+
+        assert(e.where);
 
         return e.where->file_ix == begin_tk.file_index() and
                e.where->start_index >= begin_tk.start_index() and
@@ -762,8 +696,9 @@ struct call_site {
 //
 // the steps:
 //
-//   0. 'compile_within_limits': the nesting limits ('call_limits'), or
-//      'check_recursion' in the check of a body that takes from a call
+//   0. 'compile_within_limits': the limits on how deep the compile of
+//      calls nests, each a recursion of the compiler, or 'check_recursion'
+//      in the check of a body that takes from a call
 //   1. 'compile': a result narrower than the operand it widens into is
 //      computed in a register and widened ('compile_widened'), a block holds
 //      the temporaries of the call
@@ -780,6 +715,13 @@ class inline_call final {
         std::optional<param_binding> result;
         std::vector<param_binding> arguments;
     };
+
+    // a scope being compiled: a block, a loop or a function body
+    static constexpr size_t max_scope_count_{256};
+
+    // an inlined recursion ends at compile time when a constant argument
+    // makes its condition fold, otherwise it would expand without end
+    static constexpr size_t max_inlined_nesting_{64};
 
     call_site call_{};
 
@@ -891,7 +833,7 @@ class inline_call final {
     auto compile_within_limits(toc& tc, const size_t indent,
                                const destination& dst) const -> void {
 
-        call_limits::assert_inline_nesting(tc, call_.name_tk, *call_.func);
+        assert_inline_nesting(tc);
 
         const bool is_recursion{
             tc.scopes().inlined_nesting(call_.func->name()) != 0,
@@ -906,11 +848,36 @@ class inline_call final {
                 throw;
             }
 
-            throw call_limits::recursion_error(call_.name_tk, *call_.func);
+            throw recursion_error();
         }
     }
 
   private:
+    // the inlined recursions of the callee and the scopes are within their
+    // limits
+    auto assert_inline_nesting(const toc& tc) const -> void {
+        const std::string_view name{call_.func->name()};
+
+        // e.g. a recursion that a constant argument ends too late or never
+        if (tc.scopes().inlined_nesting(name) >= max_inlined_nesting_) {
+            throw inlining_limit_error(
+                call_.name_tk,
+                std::format("recursion of inlined function {} is nested "
+                            "deeper than {} calls, declare it 'noinline'",
+                            in_quotes(name), max_inlined_nesting_));
+        }
+
+        if (tc.scopes().count() < max_scope_count_) {
+            return;
+        }
+
+        throw inlining_limit_error(
+            call_.name_tk,
+            std::format("inlined calls and blocks are nested too deep, the "
+                        "limit is {} scopes, declare a function 'noinline'",
+                        max_scope_count_));
+    }
+
     // the bindings of the arguments of the inlined body, in their order
     [[nodiscard]] auto bind_arguments(toc& tc, const size_t indent,
                                       machine::held_registers& held) const
@@ -1150,6 +1117,22 @@ class inline_call final {
             });
     }
 
+    // an inlined recursion that runs out of registers, whether or not a
+    // constant argument would end it
+    [[nodiscard]] auto recursion_error() const -> compile_error {
+        compile_error error{
+            call_.name_tk,
+            std::format("recursion of inlined function {} runs out of "
+                        "registers before it ends at compile time, declare "
+                        "it 'noinline'",
+                        in_quotes(call_.func->name())),
+        };
+
+        error.kind = compile_error::error_kind::out_of_registers;
+
+        return error;
+    }
+
     //
     // statics
     //
@@ -1272,6 +1255,17 @@ class inline_call final {
         }
 
         return param_binding::make_name(name, dst.bound_info(), dst.text());
+    }
+
+    // the call is too deep to inline, e.g. a recursion that does not end at
+    // compile time
+    [[nodiscard]] static auto inlining_limit_error(const token& call_tk,
+                                                   std::string message)
+        -> compile_error {
+
+        compile_error error{call_tk, std::move(message)};
+        error.kind = compile_error::error_kind::inlining_limit;
+        return error;
     }
 
     // e.g. [s0 + t0 * 4 + 28] but not [t1 + 28]
@@ -1893,10 +1887,7 @@ class stmt_call final : public statement {
         if (not tc.generics().has_func(name) and
             tz.peek_char_after_whitespace() == '<') {
 
-            throw compile_error{
-                tok(), std::format("method {} is not generic, it takes no "
-                                   "type arguments",
-                                   in_quotes(name))};
+            throw_not_generic(tok(), "method", name);
         }
 
         const std::vector<size_t> deducing_args{
@@ -1920,11 +1911,8 @@ class stmt_call final : public statement {
         // e.g. 'point.at<i8>(1, 2)', the '<' is not an operator after a
         // constructor name
         if (tz.peek_char_after_whitespace() == '<') {
-            throw compile_error{
-                callee_name_token(),
-                std::format("constructor {} is not generic, it takes no type "
-                            "arguments",
-                            in_quotes(callee().name()))};
+            throw_not_generic(callee_name_token(), "constructor",
+                              callee().name());
         }
 
         parse_arguments(tc, tz, "constructor name", {});
@@ -2068,14 +2056,10 @@ class stmt_call final : public statement {
             return;
         }
 
-        const ident_info info{make_ident_info(tc, *ident)};
+        const type* const arg_type{named_argument_type(tc, *ident)};
 
-        if (info.is_const() and not info.constant().is_typed()) {
-            return;
-        }
-
-        if (not info.type_ref().is_same(param.get_type())) {
-            throw_parameter_type_mismatch(arg, param, info);
+        if (arg_type != nullptr and not arg_type->is_same(param.get_type())) {
+            throw_parameter_type_mismatch(arg, param, *arg_type);
         }
     }
 
@@ -2788,13 +2772,13 @@ class stmt_call final : public statement {
     [[noreturn]] static auto
     throw_parameter_type_mismatch(const expr_any& arg,
                                   const stmt_def_func_param& param,
-                                  const ident_info& info) -> void {
+                                  const type& arg_type) -> void {
 
         throw compile_error{
-            arg.tok(), std::format("expected type {} for parameter {}, got {}",
-                                   in_quotes(param.get_type().name()),
-                                   in_quotes(param.name()),
-                                   in_quotes(info.type_ref().name()))};
+            arg.tok(),
+            std::format("expected type {} for parameter {}, got {}",
+                        in_quotes(param.get_type().name()),
+                        in_quotes(param.name()), in_quotes(arg_type.name()))};
     }
 
     // the type as written, with the type it is bound to when that differs,

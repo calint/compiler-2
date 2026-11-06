@@ -1,4 +1,4 @@
 
-2217.baz:14:31: store the result of 'gm<i8>' in a variable before reading a field or calling a method of it
+2217.baz:14:23: a call of 'gm' is not an array
     exit(array_length(gm<i8>().a))
-                              ^
+                      ^~

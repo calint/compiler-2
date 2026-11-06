@@ -1,4 +1,4 @@
 
-2218.baz:15:28: store the result of 'pt.m' in a variable before reading a field or calling a method of it
+2218.baz:15:25: a call of 'pt.m' is not an array
     exit(array_length(p.m().a))
-                           ^
+                        ^

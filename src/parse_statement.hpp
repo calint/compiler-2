@@ -21,7 +21,6 @@
 #include "decouple.hpp"
 #include "parse_lookahead.hpp"
 #include "stmt_assign_var.hpp"
-#include "stmt_break.hpp"
 #include "stmt_builtin_array_copy.hpp"
 #include "stmt_builtin_array_length.hpp"
 #include "stmt_builtin_arrays_equal.hpp"
@@ -30,7 +29,6 @@
 #include "stmt_builtin_foo.hpp"
 #include "stmt_builtin_io.hpp"
 #include "stmt_call.hpp"
-#include "stmt_continue.hpp"
 #include "stmt_def_dat.hpp"
 #include "stmt_def_func.hpp"
 #include "stmt_def_type.hpp"
@@ -38,6 +36,7 @@
 #include "stmt_identifier.hpp"
 #include "stmt_if.hpp"
 #include "stmt_loop.hpp"
+#include "stmt_loop_jump.hpp"
 #include "stmt_return.hpp"
 #include "toc.hpp"
 #include "token.hpp"
@@ -72,10 +71,7 @@ inline auto parse_builtin(toc& tc, tokenizer& tz, const token& tk,
 
     // a built-in is not generic, e.g. 'read<i8>(0, buf)'
     if (fn != nullptr and next == '<') {
-        throw compile_error{
-            tk, std::format("built-in function {} is not generic, it takes no "
-                            "type arguments",
-                            in_quotes(tk.text()))};
+        throw_not_generic(tk, "built-in function", tk.text());
     }
 
     // checked before where it may stand, e.g. a lone 'exit' or the
@@ -168,12 +164,8 @@ inline auto parse_keyword_statement(toc& tc, tokenizer& tz, const token tk)
         throw compile_error{tk, "'else' without 'if'"};
     }
 
-    if (tk.is_text("break")) {
-        return std::make_unique<stmt_break>(tc, tk);
-    }
-
-    if (tk.is_text("continue")) {
-        return std::make_unique<stmt_continue>(tc, tk);
+    if (tk.is_text("break") or tk.is_text("continue")) {
+        return std::make_unique<stmt_loop_jump>(tc, tk);
     }
 
     if (tk.is_text("return")) {
@@ -250,10 +242,7 @@ inline auto assert_value_or_call(const toc& tc, const tokenizer& tz,
     // reading the '<' as an operator; a variable or a constant of that name is
     // an operand of '<'
     if (tm == term_kind::function_name and next == '<') {
-        throw compile_error{
-            tk, std::format("function {} is not generic, it takes no type "
-                            "arguments",
-                            in_quotes(tk.text()))};
+        throw_not_generic(tk, "function", tk.text());
     }
 
     // e.g. the 'f' of 'x = f + 1', also of a generic function

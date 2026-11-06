@@ -3,7 +3,7 @@
 #include <algorithm>
 #include <cassert>
 #include <cstddef>
-#include <cstdint>
+#include <limits>
 #include <string>
 #include <vector>
 
@@ -11,30 +11,26 @@
 // different variables or their paths select different fields or different
 // constant elements
 
-// one step of the path from a root variable to what is accessed: a field, a
-// constant range of indexes or a run-time index, e.g. 'es[1].items[i]' is the
-// range of the one index 1, a field and a run-time index. an index always
-// follows a field or the root variable; a longer range is e.g. the elements a
-// literal zeroes or those from the start of a bulk operand on
+// one step of the path from a root variable to what is accessed: a field or
+// the range of indexes it selects, e.g. 'es[1].items[i]' is the range of the
+// one index 1, a field and a run-time index, which may select any element.
+// a field is the range of its offset alone, so two steps overlap when their
+// ranges do; an index always follows a field or the root variable; a longer
+// range is e.g. the elements a literal zeroes or those from the start of a
+// bulk operand on
 struct path_step {
-    enum class kind_type : uint8_t {
-        field,
-        index_range,
-        run_time_index,
-    };
-
-    kind_type kind{};
+    bool is_field{};
 
     // the offset of a field in its parent, which identifies the field, or the
     // first index of a range
-    size_t number{};
+    size_t first{};
 
-    // the index after the last of a range
-    size_t range_end{};
+    // after the offset of a field or the last index of a range
+    size_t end{};
 
     [[nodiscard]] auto is_same(const path_step& other) const -> bool {
-        return kind == other.kind and number == other.number and
-               range_end == other.range_end;
+        return is_field == other.is_field and first == other.first and
+               end == other.end;
     }
 };
 
@@ -44,11 +40,14 @@ struct path_step {
 struct access_path {
     std::vector<path_step> steps;
 
+    // the end of the range of a run-time index, past every element
+    static constexpr size_t run_time_end{std::numeric_limits<size_t>::max()};
+
     auto add_field(const size_t offset) -> void {
         steps.push_back({
-            .kind{path_step::kind_type::field},
-            .number{offset},
-            .range_end{},
+            .is_field{true},
+            .first{offset},
+            .end{offset + 1},
         });
     }
 
@@ -62,20 +61,14 @@ struct access_path {
         assert(first < end);
 
         steps.push_back({
-            .kind{path_step::kind_type::index_range},
-            .number{first},
-            .range_end{end},
+            .is_field{},
+            .first{first},
+            .end{end},
         });
     }
 
-    // an element of the array at a run-time index
-    auto add_run_time_index() -> void {
-        steps.push_back({
-            .kind{path_step::kind_type::run_time_index},
-            .number{},
-            .range_end{},
-        });
-    }
+    // an element of the array at a run-time index, any of them
+    auto add_run_time_index() -> void { add_index_range(0, run_time_end); }
 
     // the path of something inside the object this path names, 'suffix' is
     // relative to that object
@@ -92,7 +85,7 @@ struct access_path {
     // the element is not known at compile time, e.g. 'ps[i].x'
     [[nodiscard]] auto has_run_time_index() const -> bool {
         return std::ranges::any_of(steps, [](const path_step& step) -> bool {
-            return step.kind == path_step::kind_type::run_time_index;
+            return not step.is_field and step.end == run_time_end;
         });
     }
 
@@ -119,30 +112,10 @@ struct access_path {
             // note: an index follows a field, so steps at the same position
             //       are both fields or both indexes
 
-            assert((lhs_step.kind == path_step::kind_type::field) ==
-                   (rhs_step.kind == path_step::kind_type::field));
+            assert(lhs_step.is_field == rhs_step.is_field);
 
-            if (lhs_step.kind == path_step::kind_type::run_time_index or
-                rhs_step.kind == path_step::kind_type::run_time_index) {
-
-                // note: a run-time index may select any element
-                continue;
-            }
-
-            // note: fields never overlap, so a different offset is a
-            //       different field
-
-            if (lhs_step.kind == path_step::kind_type::field) {
-                if (lhs_step.number != rhs_step.number) {
-                    return false;
-                }
-
-                continue;
-            }
-
-            // ranges are disjoint when no index is in both
-            if (lhs_step.range_end <= rhs_step.number or
-                rhs_step.range_end <= lhs_step.number) {
+            if (lhs_step.end <= rhs_step.first or
+                rhs_step.end <= lhs_step.first) {
 
                 return false;
             }

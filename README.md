@@ -181,10 +181,10 @@ examples:
 ```text
 Language                     files          blank        comment           code
 -------------------------------------------------------------------------------
-C/C++ Header                    65           9223           6848          26898
-C++                              1            221             90            831
+C/C++ Header                    64           9182           6871          26827
+C++                              1            193             90            768
 -------------------------------------------------------------------------------
-SUM:                            66           9444           6938          27729
+SUM:                            65           9375           6961          27595
 -------------------------------------------------------------------------------
 ```
 
@@ -2021,13 +2021,13 @@ size.func.print_num equ 64
 baz_frame_overflow:
     mov rax, 1
     mov rdi, 2
-    lea rsi, [msg_frame_overflow]
+    lea rsi, [baz_frame_overflow_message]
     mov rdx, 23
     syscall
     mov rdi, 254
     jmp baz_exit
 section .rodata
-msg_frame_overflow:
+baz_frame_overflow_message:
 db `\npanic: frame overflow\n`
 section .text
 baz_overlap_line_250:
@@ -2038,13 +2038,13 @@ baz_overlap_line_384:
 baz_overlap_panic_file_0:
     mov rax, 1
     mov rdi, 2
-    lea rsi, [msg_overlap_file_0]
+    lea rsi, [baz_overlap_panic_file_0_message]
     mov rdx, 28
     syscall
     mov rbx, 251
     jmp baz_report_line
 section .rodata
-msg_overlap_file_0:
+baz_overlap_panic_file_0_message:
 db `\npanic: overlap at prog.baz:`
 section .text
 baz_overflow_line_55:
@@ -2106,13 +2106,13 @@ baz_overflow_line_407:
 baz_overflow_panic_file_0:
     mov rax, 1
     mov rdi, 2
-    lea rsi, [msg_overflow_file_0]
+    lea rsi, [baz_overflow_panic_file_0_message]
     mov rdx, 29
     syscall
     mov rbx, 249
     jmp baz_report_line
 section .rodata
-msg_overflow_file_0:
+baz_overflow_panic_file_0_message:
 db `\npanic: overflow at prog.baz:`
 section .text
 baz_bounds_line_96:
@@ -2147,12 +2147,12 @@ baz_bounds_line_274:
 baz_bounds_panic_file_0:
     mov rax, 1
     mov rdi, 2
-    lea rsi, [msg_bounds_file_0]
+    lea rsi, [baz_bounds_panic_file_0_message]
     mov rdx, 27
     syscall
     mov rbx, 255
 section .rodata
-msg_bounds_file_0:
+baz_bounds_panic_file_0_message:
 db `\npanic: bounds at prog.baz:`
 section .text
 baz_report_line:
@@ -5456,13 +5456,13 @@ baz_frame_overflow:
 ;    print message to stderr
     mov rax, 1
     mov rdi, 2
-    lea rsi, [msg_frame_overflow]
+    lea rsi, [baz_frame_overflow_message]
     mov rdx, 23
     syscall
     mov rdi, 254
     jmp baz_exit
 section .rodata
-msg_frame_overflow:
+baz_frame_overflow_message:
 db `\npanic: frame overflow\n`
 section .text
 ; overlap failure handler (--checks=overlap)
@@ -5475,13 +5475,13 @@ baz_overlap_panic_file_0:
 ;    print message to stderr
     mov rax, 1
     mov rdi, 2
-    lea rsi, [msg_overlap_file_0]
+    lea rsi, [baz_overlap_panic_file_0_message]
     mov rdx, 28
     syscall
     mov rbx, 251
     jmp baz_report_line
 section .rodata
-msg_overlap_file_0:
+baz_overlap_panic_file_0_message:
 db `\npanic: overlap at prog.baz:`
 section .text
 ; overflow failure handler (--checks=overflow)
@@ -5545,13 +5545,13 @@ baz_overflow_panic_file_0:
 ;    print message to stderr
     mov rax, 1
     mov rdi, 2
-    lea rsi, [msg_overflow_file_0]
+    lea rsi, [baz_overflow_panic_file_0_message]
     mov rdx, 29
     syscall
     mov rbx, 249
     jmp baz_report_line
 section .rodata
-msg_overflow_file_0:
+baz_overflow_panic_file_0_message:
 db `\npanic: overflow at prog.baz:`
 section .text
 ; bounds failure handler (--checks=upper or --checks=lower)
@@ -5588,12 +5588,12 @@ baz_bounds_panic_file_0:
 ;    print message to stderr
     mov rax, 1
     mov rdi, 2
-    lea rsi, [msg_bounds_file_0]
+    lea rsi, [baz_bounds_panic_file_0_message]
     mov rdx, 27
     syscall
     mov rbx, 255
 section .rodata
-msg_bounds_file_0:
+baz_bounds_panic_file_0_message:
 db `\npanic: bounds at prog.baz:`
 section .text
 baz_report_line:

@@ -1385,13 +1385,13 @@ size.func.print_num equ 64
 baz_frame_overflow:
     mov rax, 1
     mov rdi, 2
-    lea rsi, [msg_frame_overflow]
+    lea rsi, [baz_frame_overflow_message]
     mov rdx, 23
     syscall
     mov rdi, 254
     jmp baz_exit
 section .rodata
-msg_frame_overflow:
+baz_frame_overflow_message:
 db `\npanic: frame overflow\n`
 section .text
 baz_overlap_line_250:
@@ -1402,13 +1402,13 @@ baz_overlap_line_384:
 baz_overlap_panic_file_0:
     mov rax, 1
     mov rdi, 2
-    lea rsi, [msg_overlap_file_0]
+    lea rsi, [baz_overlap_panic_file_0_message]
     mov rdx, 28
     syscall
     mov rbx, 251
     jmp baz_report_line
 section .rodata
-msg_overlap_file_0:
+baz_overlap_panic_file_0_message:
 db `\npanic: overlap at prog.baz:`
 section .text
 baz_overflow_line_55:
@@ -1470,13 +1470,13 @@ baz_overflow_line_407:
 baz_overflow_panic_file_0:
     mov rax, 1
     mov rdi, 2
-    lea rsi, [msg_overflow_file_0]
+    lea rsi, [baz_overflow_panic_file_0_message]
     mov rdx, 29
     syscall
     mov rbx, 249
     jmp baz_report_line
 section .rodata
-msg_overflow_file_0:
+baz_overflow_panic_file_0_message:
 db `\npanic: overflow at prog.baz:`
 section .text
 baz_bounds_line_96:
@@ -1511,12 +1511,12 @@ baz_bounds_line_274:
 baz_bounds_panic_file_0:
     mov rax, 1
     mov rdi, 2
-    lea rsi, [msg_bounds_file_0]
+    lea rsi, [baz_bounds_panic_file_0_message]
     mov rdx, 27
     syscall
     mov rbx, 255
 section .rodata
-msg_bounds_file_0:
+baz_bounds_panic_file_0_message:
 db `\npanic: bounds at prog.baz:`
 section .text
 baz_report_line:

@@ -1,4 +1,4 @@
 
-2226.baz:11:31: store the result of 'pt.at' in a variable before reading a field or calling a method of it
+2226.baz:11:23: 'pt' is a type, not an array
     exit(array_length(pt.at(1).a))
-                              ^
+                      ^~

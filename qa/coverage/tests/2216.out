@@ -1,4 +1,4 @@
 
-2216.baz:4:23: function 'nope' not found
+2216.baz:4:23: a call of 'nope' is not an array
     exit(array_length(nope().a))
                       ^~~~

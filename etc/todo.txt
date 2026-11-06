@@ -50,8 +50,7 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
     a one-line mode drops comments and collapses whitespace per token
     (-150 +25, about 60 'source_to' signatures change); with it D1-6
     'stmt_identifier::dotted_path_' derived from 'elems_' (-3); listings and
-    '--reproduce-source' of every test equal; the forward declarations of
-    'main.cpp' (D2-4 4.3) dropped, a move only
+    '--reproduce-source' of every test equal
 [ ] medium: low priority: generic deduction by a trial parse like 'var'
     (drops the token shapes of 'value_type', about 70 lines); messages of
     malformed arguments may change (design review 2026-10-23 E.5, optional,

@@ -1,4 +1,4 @@
 
-2224.baz:12:26: 'box<...>' is not a generic argument, name an instance first, e.g. 'type str = box<...>'
+2224.baz:12:23: a call of 'gn' is not an array
     exit(array_length(gn<box<i8>>().a))
-                         ^~~
+                      ^~

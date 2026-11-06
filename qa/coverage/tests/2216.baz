@@ -1,5 +1,5 @@
 # a call reached into where an array is expected, of a function that is
-# not defined
+# not defined, rejected at the call before its callee is looked up
 func main() {
     exit(array_length(nope().a))
 }

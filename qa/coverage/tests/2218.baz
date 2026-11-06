@@ -1,5 +1,5 @@
-# a method call reached into where an array is expected, the result is
-# stored first
+# a method call reached into where an array is expected, rejected at the
+# call
 type pt { x, a i8[3] }
 
 func gm<T type>() res pt {

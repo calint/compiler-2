@@ -9,6 +9,7 @@
 #include <algorithm>
 #include <array>
 #include <cstddef>
+#include <cstdint>
 #include <cstdio>
 #include <memory>
 #include <random>
@@ -35,9 +36,12 @@ struct node {
     size_t length{};
 };
 
+// what a step of an access selects, as the brute force sees it
+enum class step_kind : uint8_t { field, fixed_index, run_time_index };
+
 // one step of an access with what the brute force needs
 struct eval_step {
-    path_step::kind_type kind{};
+    step_kind kind{};
     size_t offset{};     // field offset or constant index
     size_t elem_bytes{}; // size of an element
     size_t length{};     // elements of the array
@@ -105,7 +109,7 @@ class generator {
 
                 result.path.add_field(f.offset);
                 result.steps.push_back({
-                    .kind{path_step::kind_type::field},
+                    .kind{step_kind::field},
                     .offset{f.offset},
                 });
 
@@ -168,7 +172,7 @@ class generator {
 
             result.path.add_fixed_index(index);
             result.steps.push_back({
-                .kind{path_step::kind_type::index_range},
+                .kind{step_kind::fixed_index},
                 .offset{index},
                 .elem_bytes{array.elem->size_bytes},
                 .length{array.length},
@@ -179,7 +183,7 @@ class generator {
 
         result.path.add_run_time_index();
         result.steps.push_back({
-            .kind{path_step::kind_type::run_time_index},
+            .kind{step_kind::run_time_index},
             .elem_bytes{array.elem->size_bytes},
             .length{array.length},
         });
@@ -194,9 +198,9 @@ auto starts_of(const access& acc) -> std::vector<size_t> {
         std::vector<size_t> next;
 
         for (const size_t start : starts) {
-            if (step.kind == path_step::kind_type::field) {
+            if (step.kind == step_kind::field) {
                 next.push_back(start + step.offset);
-            } else if (step.kind == path_step::kind_type::index_range) {
+            } else if (step.kind == step_kind::fixed_index) {
                 next.push_back(start + (step.offset * step.elem_bytes));
             } else {
                 for (size_t k{}; k < step.length; ++k) {

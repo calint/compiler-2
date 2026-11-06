@@ -46,6 +46,18 @@ struct target_call_names {
     std::string_view result;
 };
 
+// the routines of every target, emitted after the code when it uses them, see
+// 'emit_used_routines'
+struct routine_labels {
+    // ends the program with the code in 'exit_code_register'
+    std::string_view exit;
+    // prints the line in 'line' and exits with the code in 'exit_code', see
+    // 'emit_failure_handler'
+    std::string_view report_line;
+    std::string_view sector_read;
+    std::string_view sector_write;
+};
+
 // the facts of a target that the shared code and the front end read, one
 // table per backend; a target that differs passes a copy with its change,
 // e.g. the qemu machine has no sd card
@@ -86,6 +98,11 @@ struct target_description {
     // the registers of the arguments and the result of 'read', 'write', the
     // sector functions and 'exit'
     target_call_names target_calls{};
+    routine_labels routines{};
+    // the registers a failure that reports its line passes the line and the
+    // exit code to 'routine_labels::report_line' in
+    std::string_view report_line_register;
+    std::string_view report_exit_code_register;
 };
 
 // what the front end emits through, and what every target shares: the
@@ -467,10 +484,10 @@ class machine {
         other,
     };
 
-  protected:
     // the lines of the failures in each file, with '--checks=line'
     using failure_lines = std::map<size_t, std::set<size_t>>;
 
+  protected:
     // the result of a comparison of two arrays, 'alignment' is the alignment
     // known for both
     struct equality_request {
@@ -807,9 +824,6 @@ class machine {
                    const std::function_ref<void(const operand&)> emit_count,
                    const address_emitter& lhs, const address_emitter& rhs,
                    const equality_request& request) -> void = 0;
-
-    virtual auto exit(const token& src_loc_tk, const size_t indent,
-                      const operand& exit_code) -> void = 0;
 
     // compares 'size_bytes' at the addresses 'lhs' and 'rhs', whose registers
     // the caller holds, and puts 1 into the destination of the request when
@@ -1243,6 +1257,20 @@ class machine {
         target_assembler().end_body();
     }
 
+    // the exit routine is shared, an exit is a jump to it
+    auto exit(const token& src_loc_tk, const size_t indent,
+              const operand& exit_code) -> void {
+
+        const operand code{
+            make_register_operand(exit_code_register(), default_type()),
+        };
+
+        copy_value(src_loc_tk, indent, code, exit_code);
+
+        emit_no_return_jump(indent, target_.routines.exit);
+        mark_used(target_.routines.exit);
+    }
+
     // the register 'exit' takes its code in when the code is computed
     [[nodiscard]] auto exit_code_register() const -> std::string_view {
         return target_.target_calls.arguments.front();
@@ -1518,13 +1546,16 @@ class machine {
     // the entry of the program, e.g. its section and '_start'
     virtual auto emit_entry() -> void = 0;
 
-    // prints 'panic: NAME' of 'handler', with the line when 'reports_line'
-    virtual auto emit_failure_handler(const failure_handler& handler)
-        -> void = 0;
+    // the routine at 'routine_labels::exit'
+    virtual auto emit_exit_routine() -> void = 0;
 
     // the code at the start of a 'noinline' body after the frame base is
     // reserved, none by default; 'return_function' is its exit
     virtual auto emit_frame_entry() -> void {}
+
+    // the text of a message in read-only data
+    virtual auto emit_message_data(const std::string_view message_label,
+                                   const std::string_view message) -> void = 0;
 
     // a multiplication that 'multiply' did not resolve: a run-time factor, a
     // constant one that is not zero, one, minus one or a power of two, or a
@@ -1534,17 +1565,67 @@ class machine {
                                const factor_use use, const runtime_check& check)
         -> void = 0;
 
+    // a jump to a handler or a routine that does not return, so the registers
+    // are dead at the target
+    virtual auto emit_no_return_jump(const size_t indent,
+                                     const std::string_view target) -> void = 0;
+
+    // writes 'message' at 'message_label' to stderr, for the failure handlers,
+    // which run after all allocations
+    virtual auto emit_panic_message(const std::string_view message_label,
+                                    const std::string_view message) -> void = 0;
+
+    // the routine at 'routine_labels::report_line', which a handler that
+    // reports the line jumps to
+    virtual auto emit_report_line_routine() -> void = 0;
+
+    // the routines at 'routine_labels::sector_read' and 'sector_write', each
+    // only when it is used; only a target that 'has_sd_card' is asked
+    virtual auto emit_sector_routines([[maybe_unused]] const bool read_used,
+                                      [[maybe_unused]] const bool write_used)
+        -> void {
+
+        std::unreachable();
+    }
+
     // the call of 'call_target', its arguments in their registers
     virtual auto emit_target_call(const token& src_loc_tk, const size_t indent,
                                   const target_call function,
                                   const operand& result) -> void = 0;
 
+    // the routines of the target besides 'routine_labels' that the code
+    // marked used, before the sector routines and 'exit', which they may use,
+    // none by default
+    virtual auto emit_target_routines() -> void {}
+
     // the setup a target needs before 'main', none by default
     virtual auto emit_target_setup() -> void {}
 
-    // the helpers and routines that the code marked used; a routine may mark
-    // another one it calls, see 'emit_runtime'
-    virtual auto emit_used_routines() -> void = 0;
+    // the routines that the code marked used; a routine may mark another one
+    // it calls, see 'emit_runtime'
+    virtual auto emit_used_routines() -> void {
+        const routine_labels& routines{target_.routines};
+
+        if (is_used(routines.report_line)) {
+            emit_report_line_routine();
+        }
+
+        emit_target_routines();
+
+        const bool is_read_used{is_used(routines.sector_read)};
+        const bool is_write_used{is_used(routines.sector_write)};
+
+        if (is_read_used or is_write_used) {
+            emit_sector_routines(is_read_used, is_write_used);
+        }
+
+        // note: after the routines that may use 'exit', e.g. the report of a
+        //       line
+
+        if (is_used(routines.exit)) {
+            emit_exit_routine();
+        }
+    }
 
     // the variables base register gets its address, after it is reserved
     virtual auto emit_variables_base_load() -> void = 0;
@@ -1581,6 +1662,78 @@ class machine {
 
     [[nodiscard]] auto builtins() const -> const builtin_type_set& {
         return builtins_.get();
+    }
+
+    // the handler of a check: without the line it prints 'panic: NAME' and
+    // exits; with it, one stub per failure location loads the line and enters
+    // the entry of its file, which prints 'panic: NAME at FILE:', loads the
+    // exit code and enters the shared line report
+    auto emit_failure_handler(const failure_handler& handler) -> void {
+        assembler& output{target_assembler()};
+
+        const std::string label_name{handler.symbol()};
+
+        if (not reports_line(handler)) {
+            const std::string message_label{
+                std::format("{}_message", handler.label),
+            };
+
+            const std::string message{
+                std::format("{}\n", panic_message(handler.name)),
+            };
+
+            output.label(0, handler.label);
+            emit_panic_message(message_label, message);
+            exit(token{}, 1, operand::imm(handler.exit_code, default_type()));
+
+            emit_message_data(message_label, message);
+
+            return;
+        }
+
+        const operand line_register{
+            make_register_operand(target_.report_line_register, default_type()),
+        };
+
+        const operand code_register{
+            make_register_operand(target_.report_exit_code_register,
+                                  default_type()),
+        };
+
+        const operand exit_code{
+            operand::imm(handler.exit_code, default_type()),
+        };
+
+        for (const auto& [file_ix, lines] : failure_lines_of(handler.label)) {
+            const std::string entry_label{
+                failure_entry_label(handler.label, file_ix),
+            };
+
+            for (const size_t line : lines) {
+                output.label(0, line_failure_label(label_name, file_ix, line));
+
+                const operand line_value{
+                    operand::imm(static_cast<int64_t>(line), default_type()),
+                };
+
+                copy_value(token{}, 1, line_register, line_value);
+                emit_no_return_jump(1, entry_label);
+            }
+
+            const std::string message_label{
+                std::format("{}_message", entry_label),
+            };
+
+            const std::string message{failure_message(handler.name, file_ix)};
+
+            output.label(0, entry_label);
+            emit_panic_message(message_label, message);
+            copy_value(token{}, 1, code_register, exit_code);
+            emit_no_return_jump(1, target_.routines.report_line);
+            mark_used(target_.routines.report_line);
+
+            emit_message_data(message_label, message);
+        }
     }
 
     // the lines of the failures of 'routine' by the file they are in

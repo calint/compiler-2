@@ -1,9 +1,8 @@
 #pragma once
 
 // the members of 'stmt_identifier' that use its index expressions, an
-// 'expr_any', or a 'stmt_call' where an array is expected:
-// 'stmt_identifier.hpp' only declares 'expr_any', so that the expressions,
-// which 'expr_any.hpp' includes, can include it
+// 'expr_any': 'stmt_identifier.hpp' only declares 'expr_any', so that the
+// expressions, which 'expr_any.hpp' includes, can include it
 
 #include <cassert>
 #include <cstddef>
@@ -22,7 +21,6 @@
 #include "ident_info.hpp"
 #include "operand.hpp"
 #include "statement.hpp"
-#include "stmt_call.hpp"
 #include "stmt_identifier.hpp"
 #include "toc.hpp"
 #include "token.hpp"
@@ -162,47 +160,6 @@ inline auto stmt_identifier::assert_constant_indexes(
                         "constant, every element has the same length",
                         in_quotes(what))};
     }
-}
-
-inline auto stmt_identifier::assert_no_call(toc& tc, const tokenizer& tz,
-                                            const token& tk, const term_kind tm)
-    -> void {
-
-    const bool is_constructor{tm == term_kind::constructor_call};
-
-    if (tm != term_kind::call and tm != term_kind::generic_call and
-        not is_constructor) {
-
-        return;
-    }
-
-    tokenizer call_tz{tz};
-
-    // note: the parse of the call rejects what follows it as for a value
-    const std::unique_ptr<const stmt_call> call{
-        is_constructor
-            ? std::make_unique<const stmt_call>(constructor_call_tag{}, tc,
-                                                unary_ops{}, tk, call_tz)
-            : std::make_unique<const stmt_call>(tc, unary_ops{}, tk, call_tz,
-                                                nullptr),
-    };
-
-    throw_call_not_array(call->callee_name_token(), call->callee().name());
-}
-
-inline auto stmt_identifier::throw_method_call_not_array(toc& tc,
-                                                         const tokenizer& tz,
-                                                         stmt_identifier array)
-    -> void {
-
-    tokenizer call_tz{tz};
-
-    // note: the parse of the call rejects what follows it as for a value
-    const stmt_call call{tc, unary_ops{}, std::move(array), call_tz, nullptr};
-
-    // a call is named like its callee in the other call messages, e.g.
-    // 'point.m' of 'p.m()' or 'point.g<i8>' of 'p.g<i8>()'
-    throw_call_not_array(call.callee_name_token(), call.callee().name());
 }
 
 inline auto

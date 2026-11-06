@@ -36,6 +36,18 @@ WORK="$(mktemp -d)"
 trap 'rm -rf "$WORK"' EXIT
 cd "$WORK"
 
+# assembles and links 'NAME.s' to 'NAME', runs it under qemu and sets
+# 'status' to its exit code, its error output is in 'err'
+run_rv32i() {
+    llvm-mc -triple=riscv32 -mattr=-m,-a,-f,-d,-c -filetype=obj "$1.s" \
+        -o "$1.o"
+    ld.lld -m elf32lriscv -e _start -o "$1" "$1.o"
+    set +e
+    timeout -k 1s 60s qemu-riscv32 "./$1" 2>err
+    status=$?
+    set -e
+}
+
 # writes 'far.baz': 14 'foo' deep no register is free, so the jumps over and
 # back around the 1.08 MiB body borrow 't0', which holds the pointer of the
 # outer 'foo' that 'e = e + 1' writes through
@@ -61,12 +73,7 @@ for optimize in "" "--nopt"; do
     "$BIN" far.baz --target=rv32i --bin=far.bin $optimize >far.s
     grep -q "sw t0, -4(sp)" far.s
     grep -q "^\.Lbaz_landing\.foo" far.s
-    llvm-mc -triple=riscv32 -mattr=-m,-a,-f,-d,-c -filetype=obj far.s -o far.o
-    ld.lld -m elf32lriscv -e _start -o far far.o
-    set +e
-    timeout -k 1s 60s qemu-riscv32 ./far
-    status=$?
-    set -e
+    run_rv32i far
     # note: 123 is the low byte of 'x + a[0] * 10 + a[1]', 100 + 8192 + 23
     [[ $status -eq 123 ]]
     echo ok
@@ -117,12 +124,7 @@ for optimize in "" "--nopt"; do
     echo -n "far jumps sharing a landing rv32i $optimize: "
     "$BIN" and.baz --target=rv32i --bin=and.bin $optimize >and.s
     [[ $(grep -c "jump \.Lbaz_landing\.if\.[0-9.]*\.end, t0" and.s) -ge 3 ]]
-    llvm-mc -triple=riscv32 -mattr=-m,-a,-f,-d,-c -filetype=obj and.s -o and.o
-    ld.lld -m elf32lriscv -e _start -o and and.o
-    set +e
-    timeout -k 1s 60s qemu-riscv32 ./and
-    status=$?
-    set -e
+    run_rv32i and
     # note: 155 is the low byte of 'x + z + a[0] * 10 + a[1]',
     #       100 + 180000 + 16384 + 23
     [[ $status -eq 155 ]]
@@ -157,12 +159,7 @@ EOF
 for optimize in "" "--nopt"; do
     echo -n "far jumps inverted branch rv32i $optimize: "
     "$BIN" far.baz --target=rv32i --bin=far.bin $optimize >far.s
-    llvm-mc -triple=riscv32 -mattr=-m,-a,-f,-d,-c -filetype=obj far.s -o far.o
-    ld.lld -m elf32lriscv -e _start -o far far.o
-    set +e
-    timeout -k 1s 60s qemu-riscv32 ./far
-    status=$?
-    set -e
+    run_rv32i far
     # note: 62 is the low byte of 'x * 10 + y', 3 * 10 + 180000
     [[ $status -eq 62 ]]
     echo ok
@@ -197,12 +194,7 @@ echo -n "far jumps to failure handler with line rv32i: "
 generate_line 12
 "$BIN" line.baz --target=rv32i --checks=upper,lower,line --bin=line.bin \
     >line.s
-llvm-mc -triple=riscv32 -mattr=-m,-a,-f,-d,-c -filetype=obj line.s -o line.o
-ld.lld -m elf32lriscv -e _start -o line line.o
-set +e
-timeout -k 1s 60s qemu-riscv32 ./line 2>err
-status=$?
-set -e
+run_rv32i line
 [[ $status -eq 255 ]]
 # note: line 18 because the check follows the 5 lines of the head and the 12
 #       lines of 'foo'
@@ -215,12 +207,7 @@ echo -n "far jumps to failure handler with line, no register free rv32i: "
 generate_line 13
 "$BIN" line.baz --target=rv32i --checks=upper,lower,line --bin=line.bin \
     >line.s
-llvm-mc -triple=riscv32 -mattr=-m,-a,-f,-d,-c -filetype=obj line.s -o line.o
-ld.lld -m elf32lriscv -e _start -o line line.o
-set +e
-timeout -k 1s 60s qemu-riscv32 ./line 2>err
-status=$?
-set -e
+run_rv32i line
 [[ $status -eq 255 ]]
 # note: line 19 because the check follows the 5 lines of the head and the 13
 #       lines of 'foo'
@@ -252,11 +239,6 @@ for target in rv32i rv32i-qemu rv32i-fpga; do
 done
 echo -n "far jump to exit routine rv32i run: "
 "$BIN" exit.baz --target=rv32i --bin=exit.bin >exit.s
-llvm-mc -triple=riscv32 -mattr=-m,-a,-f,-d,-c -filetype=obj exit.s -o exit.o
-ld.lld -m elf32lriscv -e _start -o exit exit.o
-set +e
-timeout -k 1s 60s qemu-riscv32 ./exit
-status=$?
-set -e
+run_rv32i exit
 [[ $status -eq 7 ]]
 echo ok

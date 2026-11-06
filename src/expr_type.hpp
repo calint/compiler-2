@@ -1,8 +1,10 @@
 #pragma once
 
+#include <cassert>
 #include <cstddef>
 #include <cstdint>
 #include <format>
+#include <functional>
 #include <memory>
 #include <optional>
 #include <ostream>
@@ -34,10 +36,12 @@
 //
 //   'literal_typing'         whether a literal names its type
 //   'value_kind'             an instance or an array, named in the messages
-//   'throw_known_type', 'assert_value_ends', 'throw_known_literal_type',
-//   'throw_array_literal_mismatch', 'read_full_list_end'
+//   'throw_known_type', 'assert_names_type', 'assert_value_ends',
+//   'throw_known_literal_type', 'assert_not_array_literal'
 //                            the messages of a value its destination does
-//                            not take, the end of a full list
+//                            not take
+//   'full_list', 'parse_braced_items'
+//                            the items of a list in braces
 //   'part_step', 'part_location'
 //                            a part of a destination, a field or an element
 //   'value_write', 'bytes_write', 'zero_fill', 'write_comment', 'write_step',
@@ -65,6 +69,20 @@ enum class value_kind : uint8_t { instance, array };
     throw compile_error{
         type_tk, std::format("the destination gives the type {}, write {}",
                              in_quotes(type_name), in_quotes(value))};
+}
+
+// the type named at 'type_tk' is 'tp', the type of the destination
+// note: compared by type, a type parameter names the type of its argument
+inline auto assert_names_type(const toc& tc, const token& type_tk,
+                              const type& tp) -> void {
+
+    const type& named_type{tc.get_type_or_throw(type_tk)};
+
+    if (named_type.is_same(tp)) {
+        return;
+    }
+
+    throw_type_mismatch(type_tk, tp.name(), named_type.name());
 }
 
 // 'kind' of 'tp' written at 'value_tk' is not continued, e.g. the '+' of
@@ -124,29 +142,87 @@ throw_known_literal_type(const tokenizer& tz, const token& type_tk,
     throw_known_type(type_tk, type_name, is_zero ? "{}" : "{...}");
 }
 
-// an array literal where a single value of 'tp' is expected; 'element_tk' is
-// its element type, none for the default type, e.g. the '[2]' of 'p = [2]'
-[[noreturn]] inline auto throw_array_literal_mismatch(const toc& tc,
-                                                      const token& element_tk,
-                                                      const type& tp) -> void {
+// an array literal at 'tk' of kind 'tm' where a single value of 'tp' is
+// expected, also one reached into, e.g. 'p = [2]{1, 2}' or
+// 'p = point[2]{}[0]'; a condition may compare one, which the comparison
+// rejects as an operand
+inline auto assert_not_array_literal(const toc& tc, const tokenizer& tz,
+                                     const token& tk, const term_kind tm,
+                                     const type& tp) -> void {
 
-    const type& element_type{
-        element_tk.is_none() ? tc.builtins().default_type()
-                             : tc.get_type_or_throw(element_tk),
+    const bool is_array_literal{
+        tm == term_kind::array_literal or
+            (tk.is_none() and is_default_array_literal(tz)),
     };
 
-    throw_type_mismatch(element_tk, tp.name(),
+    if (not is_array_literal) {
+        return;
+    }
+
+    if (is_literal_reached_into(tz)) {
+        throw_literal_not_operand(tk, "an array literal");
+    }
+
+    if (tp.is_bool() and not is_array_literal_value(tz)) {
+        return;
+    }
+
+    // e.g. the 'i8' of 'p = i8[2]{1, 2}', none for the default type of
+    // 'p = [2]{1, 2}'
+    const type& element_type{
+        tk.is_none() ? tc.builtins().default_type() : tc.get_type_or_throw(tk),
+    };
+
+    throw_type_mismatch(tk, tp.name(),
                         std::format("{}[]", element_type.name()));
 }
 
-// the '}' that ends a list of values that is full, after a trailing ',' that
-// is appended to 'delims_tk'; a value after the ',' is 'too_many', anything
-// else 'unclosed', e.g. the '3' of '{1, 2, 3}' or the ')' of '{1, 2)'
-[[nodiscard]] inline auto read_full_list_end(tokenizer& tz,
-                                             std::vector<token>& delims_tk,
-                                             std::string too_many,
-                                             std::string unclosed) -> token {
+// a list in braces that holds at most 'capacity' items and the messages when
+// it is full: a value after a trailing ',' is 'too_many', anything else
+// 'unclosed', e.g. the '3' of '{1, 2, 3}' or the ')' of '{1, 2)'
+struct full_list {
+    size_t capacity{};
+    std::string too_many;
+    std::string unclosed;
+};
 
+// the items of a list in braces after its '{' and the delimiters between
+// them, appended to 'delims_tk', up to the '}' it returns; 'full' is none
+// when the list has no capacity; 'parse_item' parses the item at an index
+// and 'delimiter_error' is the message of a missing ',' before it; a
+// trailing ',' lets each item end its line the same way
+[[nodiscard]] inline auto
+parse_braced_items(tokenizer& tz, std::vector<token>& delims_tk,
+                   const std::optional<full_list>& full,
+                   const std::function_ref<std::string(size_t)> delimiter_error,
+                   const std::function_ref<void(size_t)> parse_item) -> token {
+
+    for (size_t index{}; not full or index < full->capacity; ++index) {
+        // an item after the first follows a ',', a '}' ends the list without
+        // one
+        const bool has_delimiter{
+            index > 0 and tz.peek_char_after_whitespace() != '}',
+        };
+
+        if (has_delimiter) {
+            delims_tk.emplace_back(
+                tz.expect_char_token(',', delimiter_error(index)));
+        }
+
+        if (const std::optional<token> close_brace_tk{
+                tz.is_next_char_token('}'),
+            }) {
+
+            return *close_brace_tk;
+        }
+
+        parse_item(index);
+    }
+
+    // note: only a full list leaves the loop
+    assert(full);
+
+    // a full list ends with its '}', after a trailing ',' too
     const std::optional<token> delimiter_tk{tz.is_next_char_token(',')};
 
     if (delimiter_tk) {
@@ -162,10 +238,10 @@ throw_known_literal_type(const tokenizer& tz, const token& type_tk,
 
     // the error is at the value that is too much
     if (delimiter_tk and starts_value(tz)) {
-        throw compile_error{tz, std::move(too_many)};
+        throw compile_error{tz, full->too_many};
     }
 
-    throw compile_error{tz, std::move(unclosed)};
+    throw compile_error{tz, full->unclosed};
 }
 
 // a step from a destination to a part of it: the field 'field', or the
@@ -435,7 +511,9 @@ class expr_type final : public statement {
         token close_brace_tk;
     };
 
-    std::variant<field_list, expr_path, std::unique_ptr<stmt_call>> value_;
+    // a literal, or the copy or the call that is the value, an 'expr_path'
+    // or a 'stmt_call'
+    std::variant<field_list, std::unique_ptr<statement>> value_;
 
   public:
     // parses 'expr_any' items and creates the 'stmt_call' or 'expr_path'; the
@@ -444,7 +522,7 @@ class expr_type final : public statement {
               const literal_typing typing);
 
     // a 'unique_ptr' of a class that is incomplete here needs
-    // the special members where 'stmt_call' is complete
+    // the special members where 'expr_any' is complete
 
     expr_type(expr_type&&) noexcept;
 
@@ -524,33 +602,5 @@ class expr_type final : public statement {
             },
             .covered{std::move(covered)},
         });
-    }
-
-    // the '}' that ends the fields, when it is the next character, e.g. the '}'
-    // of '{x, y}'
-    [[nodiscard]] auto read_close_brace(tokenizer& tz) -> bool {
-        const std::optional<token> close_brace_tk{tz.is_next_char_token('}')};
-
-        if (not close_brace_tk) {
-            return false;
-        }
-
-        std::get<field_list>(value_).close_brace_tk = *close_brace_tk;
-
-        return true;
-    }
-
-    // the ',' before the value of the field 'next', e.g. the ',' of '{x, y}'
-    // before the value of 'y'
-    auto read_field_delimiter(tokenizer& tz, const type_field& next) -> void {
-        const token delimiter_tk{
-            tz.expect_char_token(
-                ',', std::format("expected ',' followed by a value for field "
-                                 "{} in type {}",
-                                 in_quotes(next.name),
-                                 in_quotes(get_type().name()))),
-        };
-
-        std::get<field_list>(value_).delims_tk.emplace_back(delimiter_tk);
     }
 };

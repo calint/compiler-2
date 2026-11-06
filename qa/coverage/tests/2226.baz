@@ -1,5 +1,5 @@
-# a constructor call reached into where an array is expected, the result
-# is stored first
+# a constructor call reached into where an array is expected, rejected at
+# its type
 type pt { x, a i8[3] }
 
 func pt.at(v) self {

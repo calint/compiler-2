@@ -43,7 +43,7 @@
 //   helpers      '.Lbaz_multiply', '.Lbaz_multiply_checked' and
 //                '.Lbaz_divide' for 'mul' and 'div',
 //                'helper_specs_', 'call_arithmetic_helper',
-//                'emit_arithmetic_helpers'
+//                'emit_target_routines'
 //   memory       'zero', 'copy_block', 'memory_equal'
 //                through 'walk_known_size' for a known size,
 //                'walk_runtime_count' for a run-time count
@@ -54,14 +54,13 @@
 //                'check_frame_capacity', 'check_stack_capacity', the overflow
 //                checks 'check_negate', 'check_multiply_result',
 //                'emit_checked_add_subtract'
-//   handlers     'emit_failure_handler', 'emit_line_failure',
-//                'emit_panic_message', 'emit_message_data',
+//   handlers     'emit_panic_message', 'emit_message_data',
 //                'emit_report_line_routine'
 //   calls        'emit_call', 'emit_target_call' through 'call_io_routine'
-//   target hooks 'emit_io_call', 'emit_exit_routine',
-//                'emit_stack_limit_load', 'emit_sector_routines', and the
-//                machine virtuals 'emit_target_setup', 'emit_used_routines'
-//                and 'finish_target';
+//   target hooks 'emit_io_call', 'emit_stack_limit_load', and the machine
+//                virtuals 'emit_exit_routine', 'emit_sector_routines',
+//                'emit_target_routines', 'emit_target_setup' and
+//                'finish_target';
 //                the protected section is what the targets build on
 //   output       'write_assembly' writes the text and the image
 class machine_rv32i : public machine {
@@ -209,7 +208,7 @@ class machine_rv32i : public machine {
         "ra", "a0", "a1", "a2", "a3", "a4", "a5", "a6",
     };
 
-    // in the order 'emit_arithmetic_helpers' emits them
+    // in the order 'emit_target_routines' emits them
     static constexpr auto helper_specs_{
         std::to_array<helper_spec>({
             {
@@ -832,17 +831,6 @@ class machine_rv32i : public machine {
         compare_runtime_count(src_loc_tk, indent, bulk, request);
     }
 
-    // the exit routine is shared, an exit is a jump to it
-    auto exit(const token& src_loc_tk, const size_t indent,
-              const operand& exit_code) -> void override {
-
-        copy_value(src_loc_tk, indent, operand::reg("a0", default_type()),
-                   exit_code);
-
-        assembler_.resolved_jump(indent, exit_label_, no_return_jump_register_);
-        mark_used(exit_label_);
-    }
-
     // known size: the addresses are memory operands, small sizes unrolled and
     // larger ones in a loop; the result of the request is 1 when every access
     // matched, 0 at the first mismatch, its 'inverted' swaps them
@@ -1131,7 +1119,10 @@ class machine_rv32i : public machine {
     };
     // the routine a program calls to exit, the target defines it
     static constexpr std::string_view exit_label_{".Lbaz_exit"};
-    // the sector routines, see 'emit_sector_routines'
+    // the sector routines, see 'emit_sector_routines': a routine takes the
+    // sector in 'a0', the address in 'a1' and the size in 'a2', returns
+    // through 'a7', which it may change, and changes only 'a0' and
+    // 'io_routine_clobbered_' else
     static constexpr std::string_view sector_read_label_{".Lbaz_sector_read"};
     static constexpr std::string_view sector_write_label_{
         ".Lbaz_sector_write",
@@ -1232,67 +1223,19 @@ class machine_rv32i : public machine {
         assembler_.add_separator_newline();
     }
 
-    // the handler of a check that prints 'panic: NAME' then exits with its
-    // code; with the line, one entry per file prints 'panic: NAME at FILE:'
-    // and the line number in 's2', which the stub of each line loads
-    auto emit_failure_handler(const failure_handler& handler) -> void override {
-        const std::string_view name{handler.name};
-        const std::string_view handler_label{handler.label};
-
-        const std::string label_name{handler.symbol()};
-
-        if (reports_line(handler)) {
-            const failure_lines lines_by_file{failure_lines_of(handler_label)};
-
-            for (const size_t file_ix : lines_by_file | std::views::keys) {
-
-                const std::string entry_label{
-                    failure_entry_label(handler_label, file_ix),
-                };
-
-                for (const size_t line : lines_by_file.at(file_ix)) {
-                    assembler_.label(
-                        0, line_failure_label(label_name, file_ix, line));
-
-                    assembler_.li(1, "s2", line);
-
-                    assembler_.resolved_jump(1, entry_label,
-                                             no_return_jump_register_);
-                }
-
-                assembler_.label(0, entry_label);
-
-                const std::string message_label{
-                    std::format(".Lbaz_{}_message_{}", label_name, file_ix),
-                };
-
-                const std::string message{failure_message(name, file_ix)};
-
-                emit_line_failure(message_label, message, handler.exit_code);
-            }
-
-            return;
-        }
-
-        const std::string message_label{
-            std::format(".Lbaz_{}_message", label_name),
-        };
-
-        assembler_.label(0, handler_label);
-
-        const std::string message{std::format("{}\n", panic_message(name))};
-
-        emit_panic_message(message_label, message);
-
-        exit(token{}, 1, operand::imm(handler.exit_code, default_type()));
-
-        emit_message_data(message_label, message);
-    }
-
     // a 'noinline' body saves the return address below 'sp'
     auto emit_frame_entry() -> void override {
         assembler_.addi(1, "sp", "sp", -frame_save_bytes_);
         assembler_.sw(1, "ra", 0, "sp");
+    }
+
+    auto emit_message_data(const std::string_view message_label,
+                           const std::string_view message) -> void override {
+
+        assembler_.switch_section(section::rodata);
+        assembler_.label(0, message_label);
+        assembler_.string_data(message);
+        assembler_.switch_section(section::text);
     }
 
     // a constant factor that 'multiply' did not resolve shifts and adds
@@ -1330,6 +1273,78 @@ class machine_rv32i : public machine {
                                operand::reg("a0", default_type()), check);
     }
 
+    // a far jump takes 'no_return_jump_register_'
+    auto emit_no_return_jump(const size_t indent, const std::string_view target)
+        -> void override {
+
+        assembler_.resolved_jump(indent, target, no_return_jump_register_);
+    }
+
+    auto emit_panic_message(const std::string_view message_label,
+                            const std::string_view message) -> void override {
+
+        assembler_.li(1, "a0", stderr_descriptor_);
+        assembler_.la(1, "a1", message_label);
+        assembler_.li(1, "a2", message.size());
+        emit_io_call(1, target_call::write);
+    }
+
+    // writes the line number of 's2' in decimal, then exits with the code in
+    // 's3': each power of ten of '.Lbaz_decimal_places' gives a digit by
+    // repeated subtraction, leading zeros are skipped and the last place always
+    // writes its digit
+    auto emit_report_line_routine() -> void override {
+        constexpr int digit_zero{'0'};
+        constexpr int newline{'\n'};
+
+        assembler_.label(0, report_line_label_);
+        assembler_.addi(1, "sp", "sp", -line_digits_bytes_);
+        assembler_.mv(1, "a1", "sp");
+        assembler_.li(1, "a2", 0);
+        assembler_.la(1, "t0", decimal_places_label_);
+        assembler_.label(0, "1");
+        assembler_.lw(1, "t1", 0, "t0");
+        assembler_.li(1, "t2", 0);
+        assembler_.label(0, "2");
+        assembler_.bltu(1, "s2", "t1", "3f");
+        assembler_.sub(1, "s2", "s2", "t1");
+        assembler_.addi(1, "t2", "t2", 1);
+        assembler_.j(1, "2b");
+        assembler_.label(0, "3");
+        assembler_.or_op(1, "t3", "a2", "t2");
+        assembler_.bnez(1, "t3", "4f");
+        assembler_.li(1, "t3", 1);
+        assembler_.bne(1, "t1", "t3", "5f");
+        assembler_.label(0, "4");
+        assembler_.addi(1, "t2", "t2", digit_zero);
+        assembler_.sb(1, "t2", 0, "a1");
+        assembler_.addi(1, "a1", "a1", 1);
+        assembler_.addi(1, "a2", "a2", 1);
+        assembler_.label(0, "5");
+        assembler_.addi(1, "t0", "t0", word_size_bytes_);
+        assembler_.li(1, "t3", 1);
+        assembler_.bne(1, "t1", "t3", "1b");
+        assembler_.li(1, "t2", newline);
+        assembler_.sb(1, "t2", 0, "a1");
+        assembler_.addi(1, "a2", "a2", 1);
+        assembler_.mv(1, "a1", "sp");
+        assembler_.li(1, "a0", stderr_descriptor_);
+        emit_io_call(1, target_call::write);
+
+        exit(token{}, 1, make_register_operand("s3", default_type()));
+
+        constexpr std::array<int64_t, 10> decimal_places{
+            1000000000, 100000000, 10000000, 1000000, 100000,
+            10000,      1000,      100,      10,      1,
+        };
+
+        assembler_.switch_section(section::rodata);
+        assembler_.align(word_size_bytes_);
+        assembler_.label(0, decimal_places_label_);
+        assembler_.data(word_size_bytes_, decimal_places);
+        assembler_.switch_section(section::text);
+    }
+
     // 'read' and 'write' are system calls or routines of the target, see
     // 'emit_io_call'; the sector functions are routines with the sector in
     // 'a0' where 'read' has the descriptor, there is no result
@@ -1354,26 +1369,16 @@ class machine_rv32i : public machine {
         }
     }
 
-    // unused routines contribute no code
-    auto emit_used_routines() -> void override {
-        if (is_used(report_line_label_)) {
-            emit_report_line_routine();
-        }
+    // the arithmetic helpers
+    auto emit_target_routines() -> void override {
+        for (const helper_spec& spec : helper_specs_) {
+            // unused helpers contribute no code
+            if (not is_used(spec.label)) {
+                continue;
+            }
 
-        emit_arithmetic_helpers();
-
-        const bool is_read_used{is_used(sector_read_label_)};
-        const bool is_write_used{is_used(sector_write_label_)};
-
-        if (is_read_used or is_write_used) {
-            emit_sector_routines(is_read_used, is_write_used);
-        }
-
-        // note: after the routines that may use 'exit', e.g. the division by
-        //       zero
-
-        if (is_used(exit_label_)) {
-            emit_exit_routine();
+            assembler_.label(0, spec.label);
+            emit_helper_body(spec.routine);
         }
     }
 
@@ -1429,27 +1434,12 @@ class machine_rv32i : public machine {
     // virtual methods
     //
 
-    // '.Lbaz_exit' ends the program with the exit code in 'a0'
-    virtual auto emit_exit_routine() -> void = 0;
-
     // the call of 'read' or 'write': 'a0' is the descriptor and receives the
     // byte count, 'a1' is the address, 'a2' the count and 'a7' is reserved;
     // an override may change the registers after 'a2' in the allocation
     // order, see 'call_io_routine'
     virtual auto emit_io_call(const size_t indent, const target_call function)
         -> void = 0;
-
-    // the routines that the calls of 'sector_read' and 'sector_write' jump
-    // to, each only when it is used; a routine takes the sector in 'a0', the
-    // address in 'a1' and the size in 'a2', returns through 'a7', which it
-    // may change, and changes only 'a0' and 'io_routine_clobbered_' else;
-    // only a target that 'has_sd_card' is asked
-    virtual auto emit_sector_routines([[maybe_unused]] const bool read_used,
-                                      [[maybe_unused]] const bool write_used)
-        -> void {
-
-        std::unreachable();
-    }
 
     // loads the lowest address the stack may reach into the register 'reg',
     // only a target that 'is_stack_bounded' is asked
@@ -1553,6 +1543,14 @@ class machine_rv32i : public machine {
                 .arguments{"a0", "a1", "a2"},
                 .result{"a0"},
             },
+            .routines{
+                .exit{exit_label_},
+                .report_line{report_line_label_},
+                .sector_read{sector_read_label_},
+                .sector_write{sector_write_label_},
+            },
+            .report_line_register{"s2"},
+            .report_exit_code_register{"s3"},
         };
     }
 
@@ -2293,18 +2291,6 @@ class machine_rv32i : public machine {
         store_low_bits(src_loc_tk, indent, rebased(dst, src_at), value);
     }
 
-    auto emit_arithmetic_helpers() -> void {
-        for (const helper_spec& spec : helper_specs_) {
-            // unused helpers contribute no code
-            if (not is_used(spec.label)) {
-                continue;
-            }
-
-            assembler_.label(0, spec.label);
-            emit_helper_body(spec.routine);
-        }
-    }
-
     // applies 'instruction' to 'left' with an immediate when it fits
     auto emit_binary_instruction(const token& src_loc_tk, const size_t indent,
                                  const op instruction, const operand& src,
@@ -2656,31 +2642,6 @@ class machine_rv32i : public machine {
                        swapped ? left.register_name() : right.register_name());
     }
 
-    // prints 'message' and the line number in 's2', then exits with 'exit_code'
-    // through the line report routine
-    auto emit_line_failure(const std::string_view message_label,
-                           const std::string_view message, const int exit_code)
-        -> void {
-
-        assembler_.li(1, "s3", exit_code);
-        emit_panic_message(message_label, message);
-
-        assembler_.j(1, report_line_label_);
-        mark_used(report_line_label_);
-
-        emit_message_data(message_label, message);
-    }
-
-    // the text of a message in read-only data
-    auto emit_message_data(const std::string_view message_label,
-                           const std::string_view message) -> void {
-
-        assembler_.switch_section(section::rodata);
-        assembler_.label(0, message_label);
-        assembler_.string_data(message);
-        assembler_.switch_section(section::text);
-    }
-
     auto emit_multiply_body() -> void {
         assembler_.mv(1, "a2", "a0");
         assembler_.li(1, "a0", 0);
@@ -2742,73 +2703,6 @@ class machine_rv32i : public machine {
         assembler_.label(0, "5");
         assembler_.li(1, "a1", 1);
         assembler_.ret(1);
-    }
-
-    // writes 'message' at 'message_label' to stderr, shared by the failure
-    // handlers
-    auto emit_panic_message(const std::string_view message_label,
-                            const std::string_view message) -> void {
-
-        assembler_.li(1, "a0", stderr_descriptor_);
-        assembler_.la(1, "a1", message_label);
-        assembler_.li(1, "a2", message.size());
-        emit_io_call(1, target_call::write);
-    }
-
-    // writes the line number of 's2' in decimal, then exits with the code in
-    // 's3': each power of ten of '.Lbaz_decimal_places' gives a digit by
-    // repeated subtraction, leading zeros are skipped and the last place always
-    // writes its digit
-    auto emit_report_line_routine() -> void {
-        constexpr int digit_zero{'0'};
-        constexpr int newline{'\n'};
-
-        assembler_.label(0, report_line_label_);
-        assembler_.addi(1, "sp", "sp", -line_digits_bytes_);
-        assembler_.mv(1, "a1", "sp");
-        assembler_.li(1, "a2", 0);
-        assembler_.la(1, "t0", decimal_places_label_);
-        assembler_.label(0, "1");
-        assembler_.lw(1, "t1", 0, "t0");
-        assembler_.li(1, "t2", 0);
-        assembler_.label(0, "2");
-        assembler_.bltu(1, "s2", "t1", "3f");
-        assembler_.sub(1, "s2", "s2", "t1");
-        assembler_.addi(1, "t2", "t2", 1);
-        assembler_.j(1, "2b");
-        assembler_.label(0, "3");
-        assembler_.or_op(1, "t3", "a2", "t2");
-        assembler_.bnez(1, "t3", "4f");
-        assembler_.li(1, "t3", 1);
-        assembler_.bne(1, "t1", "t3", "5f");
-        assembler_.label(0, "4");
-        assembler_.addi(1, "t2", "t2", digit_zero);
-        assembler_.sb(1, "t2", 0, "a1");
-        assembler_.addi(1, "a1", "a1", 1);
-        assembler_.addi(1, "a2", "a2", 1);
-        assembler_.label(0, "5");
-        assembler_.addi(1, "t0", "t0", word_size_bytes_);
-        assembler_.li(1, "t3", 1);
-        assembler_.bne(1, "t1", "t3", "1b");
-        assembler_.li(1, "t2", newline);
-        assembler_.sb(1, "t2", 0, "a1");
-        assembler_.addi(1, "a2", "a2", 1);
-        assembler_.mv(1, "a1", "sp");
-        assembler_.li(1, "a0", stderr_descriptor_);
-        emit_io_call(1, target_call::write);
-
-        exit(token{}, 1, make_register_operand("s3", default_type()));
-
-        constexpr std::array<int64_t, 10> decimal_places{
-            1000000000, 100000000, 10000000, 1000000, 100000,
-            10000,      1000,      100,      10,      1,
-        };
-
-        assembler_.switch_section(section::rodata);
-        assembler_.align(word_size_bytes_);
-        assembler_.label(0, decimal_places_label_);
-        assembler_.data(word_size_bytes_, decimal_places);
-        assembler_.switch_section(section::text);
     }
 
     // the result replaces the value in 'loaded', a partial sum goes through a
@@ -2992,7 +2886,7 @@ class machine_rv32i : public machine {
 
         const std::string target{failure_target(handler, src_loc_tk)};
 
-        assembler_.resolved_jump(indent, target, no_return_jump_register_);
+        emit_no_return_jump(indent, target);
     }
 
     // the clobbered registers that hold a live value, 'live' is the mask of

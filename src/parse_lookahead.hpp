@@ -385,23 +385,28 @@ enum class term_kind : uint8_t {
            not continues_expression(tz);
 }
 
+// skips the literal at 'probe': an optional '[...]', then an optional
+// '{...}', e.g. the '[2]{1, 2}' of '[2]{1, 2} == a'; false when one does not
+// end
+[[nodiscard]] inline auto skip_literal(tokenizer& probe) -> bool {
+    if (probe.peek_char_after_whitespace() == '[' and
+        not probe.skip_enclosed('[', ']')) {
+
+        return false;
+    }
+
+    return probe.peek_char_after_whitespace() != '{' or
+           probe.skip_braced_block();
+}
+
 // an array literal that is not an operand of a condition, e.g. 'i8[2]{1, 2}'
 // or '[2] + 1', not '[2]{1, 2} == a'; 'tz' is at its '['
 // note: a literal that does not end is parsed as a whole, which reports it
 [[nodiscard]] inline auto is_array_literal_value(const tokenizer& tz) -> bool {
     tokenizer after_literal{tz};
 
-    if (not after_literal.skip_enclosed('[', ']')) {
-        return true;
-    }
-
-    if (after_literal.peek_char_after_whitespace() == '{' and
-        not after_literal.skip_braced_block()) {
-
-        return true;
-    }
-
-    return not continues_condition(after_literal);
+    return not skip_literal(after_literal) or
+           not continues_condition(after_literal);
 }
 
 // a user type alone or an instance literal that is not an operand of a
@@ -410,21 +415,14 @@ enum class term_kind : uint8_t {
 [[nodiscard]] inline auto is_record_value(const term_kind tm,
                                           const tokenizer& tz) -> bool {
 
-    if (tm == term_kind::record_type) {
-        return not continues_condition(tz);
-    }
-
-    if (tm != term_kind::record_literal) {
+    if (tm != term_kind::record_type and tm != term_kind::record_literal) {
         return false;
     }
 
     tokenizer after_literal{tz};
 
-    if (not after_literal.skip_braced_block()) {
-        return true;
-    }
-
-    return not continues_condition(after_literal);
+    return not skip_literal(after_literal) or
+           not continues_condition(after_literal);
 }
 
 // a literal ends where 'tz' is and a field or an element of it is named, e.g.
@@ -436,27 +434,9 @@ enum class term_kind : uint8_t {
 
 // an array or instance literal at 'tz' that is reached into, e.g.
 // 'pt{1, 2}.x'; 'tz' is after the type name of a typed literal
-[[nodiscard]] inline auto is_literal_reached_into(const term_kind tm,
-                                                  const tokenizer& tz) -> bool {
-
+[[nodiscard]] inline auto is_literal_reached_into(const tokenizer& tz) -> bool {
     tokenizer after_literal{tz};
-
-    const bool has_size{
-        tm == term_kind::array_literal or
-            after_literal.peek_char_after_whitespace() == '[',
-    };
-
-    if (has_size and not after_literal.skip_enclosed('[', ']')) {
-        return false;
-    }
-
-    if (after_literal.peek_char_after_whitespace() == '{' and
-        not after_literal.skip_braced_block()) {
-
-        return false;
-    }
-
-    return is_reached_into(after_literal);
+    return skip_literal(after_literal) and is_reached_into(after_literal);
 }
 
 // a literal has no storage, e.g. 'literal' is "an array literal" or "an

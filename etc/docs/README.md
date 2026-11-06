@@ -108,8 +108,8 @@ read by its header comments and class maps first.
    ub_order.hpp                read: the order checks, a read against the
                                writes before it in the order the code runs
                                (3.1 to 3.5)
-7. stmt_if.hpp, stmt_loop.hpp, stmt_break.hpp, stmt_continue.hpp,
-   stmt_return.hpp, stmt_builtin_foo.hpp
+7. stmt_if.hpp, stmt_loop.hpp, stmt_loop_jump.hpp, stmt_return.hpp,
+   stmt_builtin_foo.hpp
                                read: control flow, the simplest nodes; 'foo'
                                loops over an array
 8. stmt_def_var.hpp, stmt_def_dat.hpp, stmt_assign_var.hpp
@@ -1715,7 +1715,7 @@ Cost:
    must add the same to 'toc' each time (1.4), and the compile time multiplies
    along nested choices (5.2)
 5. an inlined body holds the registers of its caller (1.8), and the limits of
-   inlined calls ('call_limits', e.g. 64 levels of an inlined recursion) depend
+   inlined calls ('inline_call', e.g. 64 levels of an inlined recursion) depend
    on the caller
 
 ### 7.6 'toc' is one facade over the tables
