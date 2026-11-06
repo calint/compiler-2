@@ -105,6 +105,7 @@ class machine_rv32i : public machine {
     // stores run faster than the loop's 3 instructions per word, the cap only
     // bounds the code size
     static constexpr size_t zero_unroll_threshold_parts_{16};
+    // see 'target_description::max_padding_gaps_zeroed_one_by_one'
     static constexpr size_t max_padding_gaps_zeroed_one_by_one_{8};
 
     // note: a gap takes one to three stores, the whole instance a store per
@@ -409,6 +410,9 @@ class machine_rv32i : public machine {
     static constexpr std::string_view decimal_places_label_{
         ".Lbaz_decimal_places",
     };
+    // the line and the exit code a handler passes to 'report_line_label_'
+    static constexpr std::string_view report_line_register_{"s2"};
+    static constexpr std::string_view report_exit_code_register_{"s3"};
 
     // the scratch of a far jump to code that does not return, a failure
     // handler or the exit routine: it reads no scratch register, so the
@@ -1155,13 +1159,7 @@ class machine_rv32i : public machine {
         size_t test_count{plan.sign_tested.size()};
 
         if (upper_compared) {
-            ++test_count;
-        }
-
-        // an end of a range not checked below first fails below the minimum
-        // and passes when negative ('upper_bound_top')
-        if (upper_compared and range.count and not plan.lower_checked) {
-            test_count += 2;
+            test_count += upper_bound_test_count(range, plan.lower_checked);
         }
 
         failure_tests tests{bounds_failure_, test_count};
@@ -1260,10 +1258,10 @@ class machine_rv32i : public machine {
         emit_io_call(1, target_call::write);
     }
 
-    // writes the line number of 's2' in decimal, then exits with the code in
-    // 's3': each power of ten of '.Lbaz_decimal_places' gives a digit by
-    // repeated subtraction, leading zeros are skipped and the last place always
-    // writes its digit
+    // writes the line number of 'report_line_register_' in decimal, then exits
+    // with the code in 'report_exit_code_register_': each power of ten of
+    // '.Lbaz_decimal_places' gives a digit by repeated subtraction, leading
+    // zeros are skipped and the last place always writes its digit
     auto emit_report_line_routine() -> void override {
         constexpr int digit_zero{'0'};
         constexpr int newline{'\n'};
@@ -1277,8 +1275,8 @@ class machine_rv32i : public machine {
         assembler_.lw(1, "t1", 0, "t0");
         assembler_.li(1, "t2", 0);
         assembler_.label(0, "2");
-        assembler_.bltu(1, "s2", "t1", "3f");
-        assembler_.sub(1, "s2", "s2", "t1");
+        assembler_.bltu(1, report_line_register_, "t1", "3f");
+        assembler_.sub(1, report_line_register_, report_line_register_, "t1");
         assembler_.addi(1, "t2", "t2", 1);
         assembler_.j(1, "2b");
         assembler_.label(0, "3");
@@ -1302,7 +1300,8 @@ class machine_rv32i : public machine {
         assembler_.li(1, "a0", stderr_descriptor_);
         emit_io_call(1, target_call::write);
 
-        exit(token{}, 1, make_register_operand("s3", default_type()));
+        exit(token{}, 1,
+             make_register_operand(report_exit_code_register_, default_type()));
 
         constexpr std::array<int64_t, 10> decimal_places{
             1000000000, 100000000, 10000000, 1000000, 100000,
@@ -1520,8 +1519,8 @@ class machine_rv32i : public machine {
                 .sector_read{sector_read_label_},
                 .sector_write{sector_write_label_},
             },
-            .report_line_register{"s2"},
-            .report_exit_code_register{"s3"},
+            .report_line_register{report_line_register_},
+            .report_exit_code_register{report_exit_code_register_},
         };
     }
 
@@ -4492,6 +4491,20 @@ class machine_rv32i : public machine {
         }
 
         return op::lbu;
+    }
+
+    // the 'fail_if' and 'pass_if' of 'check_upper_bound'
+    [[nodiscard]] static auto upper_bound_test_count(const bounds_range& range,
+                                                     const bool lower_checked)
+        -> size_t {
+
+        // before the compare, an end of a range not checked below fails below
+        // the minimum and passes when negative ('upper_bound_top')
+        if (range.count and not lower_checked) {
+            return 3;
+        }
+
+        return 1;
     }
 
     static auto validate_address(const operand& address) -> void {

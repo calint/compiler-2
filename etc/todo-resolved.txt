@@ -1,6 +1,15 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] hard: round 132 (2026-11-06, user: all night; BP the judgment calls of
+    round 131 BN)
+    => done (2026-11-06): rv32i 'upper_bound_test_count' next to
+       'check_upper_bound' gives the tests of the upper check, so
+       'emit_bounds_check' no longer adds a bare 2; the registers of the
+       line report are named once per backend ('report_line_register_',
+       'report_exit_code_register_') for the target description and the
+       routine; 'max_padding_gaps_zeroed_one_by_one_' points to its field;
+       listings equal
 [x] hard: round 131 (2026-11-06, user: all night; BL hunt of round 130, BM
     the whole-language fuzzer, BN backend readability)
     => done (2026-11-06): BL no compiler difference from round 130 (suite,

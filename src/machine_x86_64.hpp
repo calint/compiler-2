@@ -74,6 +74,9 @@ class machine_x86_64 final : public machine {
     static constexpr std::string_view sector_write_label_{"baz_sector_write"};
     // the routine that the handlers with a line jump to
     static constexpr std::string_view report_line_label_{"baz_report_line"};
+    // the line and the exit code a handler passes to 'report_line_label_'
+    static constexpr std::string_view report_line_register_{"rbp"};
+    static constexpr std::string_view report_exit_code_register_{"rbx"};
     // the routine an exit jumps to with the exit code in 'rdi'
     static constexpr std::string_view exit_label_{"baz_exit"};
 
@@ -100,6 +103,7 @@ class machine_x86_64 final : public machine {
     // up to this many qwords single compares cost less than loading 'rcx'
     static constexpr size_t threshold_for_repe_cmpsq_count_{2};
 
+    // see 'target_description::max_padding_gaps_zeroed_one_by_one'
     static constexpr size_t max_padding_gaps_zeroed_one_by_one_{4};
 
     // note: a gap takes one to three stores, the whole instance a store per
@@ -807,7 +811,8 @@ class machine_x86_64 final : public machine {
         assembler_.instruction(1, op::syscall);
     }
 
-    // prints the line number in 'rbp' and exits with the code in 'rbx'
+    // prints the line number in 'report_line_register_' and exits with the
+    // code in 'report_exit_code_register_'
     auto emit_report_line_routine() -> void override {
         assembler_.label(0, report_line_label_);
 
@@ -818,8 +823,13 @@ class machine_x86_64 final : public machine {
         constexpr size_t number_buffer_size_bytes{21};
         constexpr size_t newline_offset{number_buffer_size_bytes - 1};
 
-        assembler_.comment(1, "line number is in 'rbp'");
-        assembler_.instruction(1, op::mov, "rax", "rbp");
+        const std::string line_comment{
+            std::format("line number is in {}",
+                        in_quotes(report_line_register_)),
+        };
+
+        assembler_.comment(1, line_comment);
+        assembler_.instruction(1, op::mov, "rax", report_line_register_);
         assembler_.comment(1, "convert to string");
 
         const std::string newline_address{
@@ -867,7 +877,7 @@ class machine_x86_64 final : public machine {
         assembler_.instruction(1, op::sub, "rdx", "rdi");
         assembler_.instruction(1, op::mov, "rdi", stderr_descriptor_);
         assembler_.instruction(1, op::syscall);
-        exit(token{}, 1, qword_register("rbx"));
+        exit(token{}, 1, qword_register(report_exit_code_register_));
         assembler_.begin_bss_section();
         assembler_.label(0, "num_buffer");
         assembler_.reserve(number_buffer_size_bytes);
@@ -1124,8 +1134,9 @@ class machine_x86_64 final : public machine {
         branch_to_failure(src_loc_tk, indent, condition::o, overflow_failure_);
     }
 
-    // a reported line goes through the stub of its line, which sets 'rbp' for
-    // the handler, so a passing check keeps 'rbp' and loads nothing
+    // a reported line goes through the stub of its line, which sets
+    // 'report_line_register_' for the handler, so a passing check keeps it and
+    // loads nothing
     auto branch_to_failure(const token& src_loc_tk, const size_t indent,
                            const condition failed,
                            const failure_handler& handler) -> void {
@@ -1981,8 +1992,8 @@ class machine_x86_64 final : public machine {
                 .sector_read{sector_read_label_},
                 .sector_write{sector_write_label_},
             },
-            .report_line_register{"rbp"},
-            .report_exit_code_register{"rbx"},
+            .report_line_register{report_line_register_},
+            .report_exit_code_register{report_exit_code_register_},
         };
     }
 };
