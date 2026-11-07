@@ -605,8 +605,10 @@ class generic_registry final {
         methods_.push_back(info);
     }
 
-    auto add_type(const std::string_view name, generic_type_info info) -> void {
-        types_.put(std::string{name}, std::move(info));
+    // under the name of its 'src_loc_tk'
+    auto add_type(generic_type_info info) -> void {
+        std::string name{info.src_loc_tk.text()};
+        types_.put(std::move(name), std::move(info));
     }
 
     auto add_type_instance(generic_type_instance instance) -> void {

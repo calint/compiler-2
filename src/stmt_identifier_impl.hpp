@@ -100,7 +100,7 @@ inline stmt_identifier::stmt_identifier(toc& tc, token tk, tokenizer& tz,
 
         fld = &field_of(prefix, tok().text(), tk);
         prefix = prefix.field(*fld);
-        narrow_to_field(parent_type, *fld, tk);
+        narrow_to_field(parent_type, *fld);
     }
 
     // note: a function name is rejected before a path is parsed

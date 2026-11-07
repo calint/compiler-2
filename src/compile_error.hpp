@@ -134,11 +134,9 @@ class compile_error final : public std::exception {
 
     error_kind kind{error_kind::source};
 
-    auto add_call_frame(const token& call_tk, std::string text,
-                        std::string reason = "called from") -> void {
-
+    auto add_call_frame(const token& call_tk, std::string text) -> void {
         call_frames.push_back(
-            call_frame::at(call_tk, std::move(text), std::move(reason)));
+            call_frame::at(call_tk, std::move(text), "called from"));
     }
 
     // see 'error_kind'

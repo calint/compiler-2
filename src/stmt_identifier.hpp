@@ -1065,14 +1065,14 @@ class stmt_identifier final : public statement {
     // a field covers its trailing padding so that assigning every field
     // assigns the whole instance; the last field keeps the padding after the
     // instance that holds it, like the last element
-    auto narrow_to_field(const type& parent_type, const type_field& fld,
-                         const token& name_tk) -> void {
+    auto narrow_to_field(const type& parent_type, const type_field& fld)
+        -> void {
 
         access_path_.add_field(fld.offset);
 
         const size_t field_end{
-            parent_type.next_field_offset(name_tk, name_tk.text())
-                .value_or(accessed_bytes_.size_bytes),
+            parent_type.next_field_offset(fld).value_or(
+                accessed_bytes_.size_bytes),
         };
 
         narrow_accessed_bytes(fld.offset, field_end - fld.offset);

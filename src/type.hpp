@@ -7,6 +7,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <format>
+#include <iterator>
 #include <limits>
 #include <optional>
 #include <span>
@@ -292,7 +293,21 @@ class type final {
                              const std::string_view name) const
         -> const type_field& {
 
-        return fields_.at(field_index(src_loc_tk, name));
+        for (const type_field& fld : fields_) {
+            if (fld.name == name) {
+                return fld;
+            }
+        }
+
+        // e.g. the 'x' of 'b.x' with 'b' a 'bool'
+        if (is_builtin()) {
+            throw compile_error{src_loc_tk, std::format("type {} has no fields",
+                                                        in_quotes(name_))};
+        }
+
+        throw compile_error{src_loc_tk,
+                            std::format("field {} not found in type {}",
+                                        in_quotes(name), in_quotes(name_))};
     }
 
     [[nodiscard]] auto fields() const -> std::span<const type_field> {
@@ -322,20 +337,26 @@ class type final {
 
     [[nodiscard]] auto name() const -> const std::string& { return name_; }
 
-    // where the padding after the field ends: at the next field, none for
-    // the last field
-    [[nodiscard]] auto
-    next_field_offset(const token& src_loc_tk,
-                      const std::string_view field_name) const
+    // where the padding after 'fld', a field of this type, ends: at the next
+    // field, none for the last field
+    [[nodiscard]] auto next_field_offset(const type_field& fld) const
         -> std::optional<size_t> {
 
-        const size_t i{field_index(src_loc_tk, field_name)};
+        const auto it{
+            std::ranges::find(
+                fields_, &fld,
+                [](const type_field& f) -> const type_field* { return &f; }),
+        };
 
-        if (i + 1 == fields_.size()) {
+        assert(it != fields_.end());
+
+        const auto next{std::next(it)};
+
+        if (next == fields_.end()) {
             return std::nullopt;
         }
 
-        return fields_.at(i + 1).offset;
+        return next->offset;
     }
 
     // the bytes that no field covers, between the data ranges and after the
@@ -428,27 +449,6 @@ class type final {
         }
 
         return ranges;
-    }
-
-    [[nodiscard]] auto field_index(const token& src_loc_tk,
-                                   const std::string_view name) const
-        -> size_t {
-
-        for (size_t i{}; i < fields_.size(); ++i) {
-            if (fields_.at(i).name == name) {
-                return i;
-            }
-        }
-
-        // e.g. the 'x' of 'b.x' with 'b' a 'bool'
-        if (is_builtin()) {
-            throw compile_error{src_loc_tk, std::format("type {} has no fields",
-                                                        in_quotes(name_))};
-        }
-
-        throw compile_error{src_loc_tk,
-                            std::format("field {} not found in type {}",
-                                        in_quotes(name), in_quotes(name_))};
     }
 
     //

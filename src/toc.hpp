@@ -690,18 +690,16 @@ class type_table final {
                                         });
     }
 
-    // e.g. 'T' names 'i8' in an instance of 'func f<T type>()'
-    auto add_param(const token& src_loc_tk, const std::string_view name,
-                   const type& tpe) -> void {
-
-        put_param(src_loc_tk, name, tpe, false);
+    // e.g. 'T' names 'i8' in an instance of 'func f<T type>()', 'name_tk'
+    // is the parameter
+    auto add_param(const token& name_tk, const type& tpe) -> void {
+        put_param(name_tk, tpe, false);
     }
 
-    // e.g. 'list' names 'str' in a method of 'str', 'type str = list<...>'
-    auto add_receiver(const token& src_loc_tk, const std::string_view name,
-                      const type& tpe) -> void {
-
-        put_param(src_loc_tk, name, tpe, true);
+    // e.g. 'list' names 'str' in a method of 'str', 'type str = list<...>',
+    // 'name_tk' is the name of the generic type
+    auto add_receiver(const token& name_tk, const type& tpe) -> void {
+        put_param(name_tk, tpe, true);
     }
 
     // the parameters of an enclosing instance are hidden until 'exit_params'
@@ -761,19 +759,20 @@ class type_table final {
         return entries_.get_const_ref(name);
     }
 
-    auto put_param(const token& src_loc_tk, const std::string_view name,
-                   const type& tpe, const bool is_receiver) -> void {
+    auto put_param(const token& name_tk, const type& tpe,
+                   const bool is_receiver) -> void {
 
         // note: it hides a type of that name, see 'find'
 
-        assert(not is_param(name));
+        assert(not is_param(name_tk.text()));
 
-        params_.back().put(std::string{name}, {
-                                                  .src_loc_tk{src_loc_tk},
-                                                  .type_ptr{&tpe},
-                                                  .definition{},
-                                                  .is_receiver{is_receiver},
-                                              });
+        params_.back().put(std::string{name_tk.text()},
+                           {
+                               .src_loc_tk{name_tk},
+                               .type_ptr{&tpe},
+                               .definition{},
+                               .is_receiver{is_receiver},
+                           });
     }
 };
 
@@ -1948,7 +1947,7 @@ class ident_resolver final {
                                         in_quotes(ident))};
         }
 
-        const ident_info id_info{resolve_or_empty(src_loc_tk, ident)};
+        const ident_info id_info{resolve_or_empty(src_loc_tk, ident, meaning)};
 
         if (not id_info.is_empty()) {
             return id_info;
@@ -2092,12 +2091,11 @@ class ident_resolver final {
     }
 
     [[nodiscard]] auto resolve_or_empty(const token& src_loc_tk,
-                                        const std::string_view ident) const
+                                        const std::string_view ident,
+                                        const name_meaning& meaning) const
         -> ident_info {
 
         assert(not ident.empty());
-
-        const name_meaning meaning{scopes_.get().lookup(ident)};
 
         if (not meaning.is_value()) {
             return resolve_literal_or_empty(src_loc_tk, ident);
@@ -2642,8 +2640,7 @@ class toc final {
         auto add_args(const std::span<const generic_arg> args) -> void {
             for (const generic_arg& arg : args) {
                 if (arg.is_type()) {
-                    tc_.types_.add_param(arg.param_tk, arg.param_tk.text(),
-                                         arg.type_ref());
+                    tc_.types_.add_param(arg.param_tk, arg.type_ref());
                 } else {
                     // note: a constant argument is always written
                     assert(arg.arg_tk);
@@ -2662,8 +2659,8 @@ class toc final {
                 tc_.generics().get_type(instance.generic_name),
             };
 
-            tc_.types_.add_receiver(generic.src_loc_tk, instance.generic_name,
-                                    *instance.type_ptr);
+            // note: a generic type is registered under its 'src_loc_tk'
+            tc_.types_.add_receiver(generic.src_loc_tk, *instance.type_ptr);
 
             add_args(instance.type_args());
         }
@@ -2796,13 +2793,11 @@ class toc final {
         generics_.add_method(method);
     }
 
-    auto add_generic_type(const std::string_view name, generic_type_info info)
-        -> void {
-
+    auto add_generic_type(generic_type_info info) -> void {
         assert(not is_compiling_);
 
         // note: the name was checked by 'assert_type_not_defined'
-        generics_.add_type(name, std::move(info));
+        generics_.add_type(std::move(info));
     }
 
     auto add_generic_type_instance(generic_type_instance instance) -> void {

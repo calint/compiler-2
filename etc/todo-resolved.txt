@@ -1,6 +1,22 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] hard: round 143 (2026-11-07, user: keep going until no issues are
+    found; CQ expressions, constants, operands and built-ins, CR toc,
+    generics, tokenizer, token, type, registers, main, CS fuzz campaign)
+    => done (2026-11-07): CQ 'expr_arith::fold' without its shortcut for
+       one name or literal, which the general fold computes the same;
+       'is_division' and 'is_shift' without the 'is_binary' guard no step
+       reaches; CR 'compile_error::add_call_frame' without the 'reason' no
+       caller passed; 'type_table::add_param' and 'add_receiver' take the
+       name token alone; 'ident_resolver::resolve_or_empty' takes the
+       meaning 'resolve' looked up (one lookup per name); CR1
+       'type::next_field_offset' of the field itself, 'field_index' folded
+       into 'field', 'narrow_to_field' without its token; CR2 a generic type
+       registered under the text of its 'src_loc_tk'; CR3 'parse_character'
+       through 'escape_at' alone, 'escape_length' private, 'token::escape'
+       public as the result of 'escape_at'; not done: CQ1-CQ9 and CR4-CR6
+       (line-neutral, lateral or outside the guarantee); listings unchanged
 [x] hard: round 142 (2026-11-07, user: keep going until no issues are
     found; CM hunt of 'remove_reloads', CO statements, parse and program,
     CP hunt of round 141)

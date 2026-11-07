@@ -611,11 +611,6 @@ class expr_arith final : public statement {
     [[nodiscard]] auto fold(const toc& tc, const value_use& use) const
         -> std::optional<folded_value> override {
 
-        // e.g. 'k' or '-k'
-        if (not is_computed()) {
-            return exprs_.front()->fold(tc, use);
-        }
-
         const type& width_type{use.width_ref()};
 
         const std::optional<folded_value> first{
@@ -1482,11 +1477,11 @@ class expr_arith final : public statement {
         return constant_arith::apply_operation(lhs, op, rhs, width_type);
     }
 
+    // note: asked of the operators after the first element, which are binary
     [[nodiscard]] static auto is_division(const arithmetic_operator op)
         -> bool {
 
-        return is_binary(op) and
-               traits_of(op).family == operator_family::divide;
+        return traits_of(op).family == operator_family::divide;
     }
 
     // a lone negation folds into add/sub: 'a - -b' is 'a + b'
@@ -1497,8 +1492,9 @@ class expr_arith final : public statement {
                src.operand_path()->get_unary_ops().is_only_negated();
     }
 
+    // note: asked of the operators after the first element, which are binary
     [[nodiscard]] static auto is_shift(const arithmetic_operator op) -> bool {
-        return is_binary(op) and traits_of(op).family == operator_family::shift;
+        return traits_of(op).family == operator_family::shift;
     }
 
     // a register or memory location, neither computed nor constant

@@ -292,15 +292,14 @@ class stmt_def_type_generic final : public statement {
             generic_type_use::parse(tc, tz, "the type based on it"),
         };
 
-        tc.add_generic_type(name_tk_.text(),
-                            {
-                                .src_loc_tk{name_tk_},
-                                .params{std::move(params)},
-                                .fields_tk{std::nullopt},
-                                .base_tk{base.name_tk},
-                                .base_arg_tks{std::move(base.args.arg_tks)},
-                                .definition{tc.current_definition()},
-                            });
+        tc.add_generic_type({
+            .src_loc_tk{name_tk_},
+            .params{std::move(params)},
+            .fields_tk{std::nullopt},
+            .base_tk{base.name_tk},
+            .base_arg_tks{std::move(base.args.arg_tks)},
+            .definition{tc.current_definition()},
+        });
 
         // e.g. 'text<size> = list<i8, size>'
         generic_text_ = tz.text_after(tok());
@@ -331,15 +330,14 @@ class stmt_def_type_generic final : public statement {
                                 "expected '{' to begin declaration of type"};
         }
 
-        tc.add_generic_type(name_tk_.text(),
-                            {
-                                .src_loc_tk{name_tk_},
-                                .params{std::move(params)},
-                                .fields_tk{tz.cur_position_token()},
-                                .base_tk{std::nullopt},
-                                .base_arg_tks{},
-                                .definition{tc.current_definition()},
-                            });
+        tc.add_generic_type({
+            .src_loc_tk{name_tk_},
+            .params{std::move(params)},
+            .fields_tk{tz.cur_position_token()},
+            .base_tk{std::nullopt},
+            .base_arg_tks{},
+            .definition{tc.current_definition()},
+        });
 
         // e.g. 'text<capacity> { items i8[capacity] }'
         generic_text_ = tz.skip_braced_block_after(tok());

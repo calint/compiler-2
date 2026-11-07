@@ -166,6 +166,7 @@ class token final {
     std::string_view ws_right_;
     size_t at_line_{};
 
+  public:
     // what a backslash in string or character text starts, see 'escape_at'
     struct escape {
         // the characters after the backslash
@@ -175,7 +176,6 @@ class token final {
         bool is_continuation{};
     };
 
-  public:
     token(const size_t file_ix, const std::string_view ws_left,
           const size_t start_ix, const std::string_view text,
           const std::string_view ws_right, const size_t at_line)
@@ -356,34 +356,6 @@ class token final {
         };
     }
 
-    // the bytes after a backslash that make up its escape: a hex escape spans
-    // the 'x' and two digits, any other one character with the continuation
-    // bytes its UTF-8 lead byte announces, so a message quotes it whole and a
-    // byte after an ASCII escape stays data, e.g. '\é'
-    [[nodiscard]] static auto escape_length(const std::string_view escape)
-        -> size_t {
-
-        // note: a backslash is always followed by a character, the tokenizer
-        //       reads it with the backslash
-
-        assert(not escape.empty());
-
-        if (escape.starts_with('x')) {
-            return 3;
-        }
-
-        const size_t announced{utf8_continuation_count(escape.front())};
-
-        size_t size{1};
-        while (size <= announced and size < escape.size() and
-               is_utf8_continuation(escape.at(size))) {
-
-            ++size;
-        }
-
-        return size;
-    }
-
     // a byte of a UTF-8 sequence after its first, '10xxxxxx'
     [[nodiscard]] static auto is_utf8_continuation(const char ch) -> bool {
         const unsigned char byte{static_cast<unsigned char>(ch)};
@@ -532,6 +504,34 @@ class token final {
         }
 
         return static_cast<char>(decoded);
+    }
+
+    // the bytes after a backslash that make up its escape: a hex escape spans
+    // the 'x' and two digits, any other one character with the continuation
+    // bytes its UTF-8 lead byte announces, so a message quotes it whole and a
+    // byte after an ASCII escape stays data, e.g. '\é'
+    [[nodiscard]] static auto escape_length(const std::string_view escape)
+        -> size_t {
+
+        // note: a backslash is always followed by a character, the tokenizer
+        //       reads it with the backslash
+
+        assert(not escape.empty());
+
+        if (escape.starts_with('x')) {
+            return 3;
+        }
+
+        const size_t announced{utf8_continuation_count(escape.front())};
+
+        size_t size{1};
+        while (size <= announced and size < escape.size() and
+               is_utf8_continuation(escape.at(size))) {
+
+            ++size;
+        }
+
+        return size;
     }
 };
 
