@@ -462,7 +462,7 @@ class expr_any final : public statement {
             return;
         }
 
-        plan_remaining_elements(tok(), at, count, *dst_count, plan);
+        plan_remaining_elements(at, count, *dst_count, plan);
     }
 
     // where a literal written without a size gives one, e.g. the '[' of
@@ -781,8 +781,7 @@ class expr_any final : public statement {
 
     // unlisted elements are zero like unlisted fields, the first
     // 'listed_count' of the array at 'at' are written
-    auto plan_remaining_elements(const token& src_loc_tk,
-                                 const part_location& at,
+    auto plan_remaining_elements(const part_location& at,
                                  const size_t listed_count,
                                  const size_t array_count,
                                  write_plan& plan) const -> void {
@@ -803,7 +802,7 @@ class expr_any final : public statement {
             .at{at},
             .action{
                 zero_fill{
-                    .src_loc_tk{src_loc_tk},
+                    .src_loc_tk{tok()},
                     .comment{
                         std::format("zero remaining elements: {} * {} B = "
                                     "{} B",
@@ -858,7 +857,7 @@ class expr_any final : public statement {
             return;
         }
 
-        plan_remaining_elements(string_tk, at, size_bytes, *array_count, plan);
+        plan_remaining_elements(at, size_bytes, *array_count, plan);
     }
 
     // the element at 'index' when it is an 'expr_type', null otherwise

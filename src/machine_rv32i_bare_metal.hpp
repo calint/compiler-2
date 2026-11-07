@@ -10,7 +10,8 @@
 #include "machine_rv32i.hpp"
 
 // runs the flat image without an operating system, the targets supply the
-// stack setup, the uart access and how the program ends
+// memory size, the stack setup, the uart access, the sector routines where
+// there is a card and how the program ends
 class machine_rv32i_bare_metal : public machine_rv32i {
     static constexpr int newline_{'\n'};
     static constexpr int carriage_return_{'\r'};

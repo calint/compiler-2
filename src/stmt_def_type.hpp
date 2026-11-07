@@ -260,11 +260,45 @@ class stmt_def_type_generic final : public statement {
     std::string_view generic_text_;
 
   public:
+    // the text after 'type' is kept for 'source_to' and for the aliases, errors
+    // in it are found when an alias parses it
     stmt_def_type_generic(toc& tc, const token tk, const token name_tk,
                           tokenizer& tz)
         : statement{tk}, name_tk_{name_tk} {
 
-        define_generic(tc, tz);
+        // e.g. 'capacity' of '<capacity>'
+        std::vector<generic_param> params{generic_param::parse(tz)};
+
+        for (const generic_param& param : params) {
+            tc.assert_valid_unqualified_name(param.name_tk);
+
+            tc.definitions().assert_generic_param_apart(param.name_tk, name_tk_,
+                                                        "generic type");
+        }
+
+        // e.g. 'type text<size> = list<i8, size>'
+        if (tz.is_lone_equals_next()) {
+            define_based_generic(tc, tz, std::move(params));
+            return;
+        }
+
+        // the fields follow the parameters
+        if (tz.peek_char_after_whitespace() != '{') {
+            throw compile_error{tz,
+                                "expected '{' to begin declaration of type"};
+        }
+
+        tc.add_generic_type({
+            .src_loc_tk{name_tk_},
+            .params{std::move(params)},
+            .fields_tk{tz.cur_position_token()},
+            .base_tk{std::nullopt},
+            .base_arg_tks{},
+            .definition{tc.current_definition()},
+        });
+
+        // e.g. 'text<capacity> { items i8[capacity] }'
+        generic_text_ = tz.skip_braced_block_after(tok());
     }
 
     //
@@ -304,44 +338,6 @@ class stmt_def_type_generic final : public statement {
         // e.g. 'text<size> = list<i8, size>'
         generic_text_ = tz.text_after(tok());
     }
-
-    // the text after 'type' is kept for 'source_to' and for the aliases, errors
-    // in it are found when an alias parses it
-    auto define_generic(toc& tc, tokenizer& tz) -> void {
-        // e.g. 'capacity' of '<capacity>'
-        std::vector<generic_param> params{generic_param::parse(tz)};
-
-        for (const generic_param& param : params) {
-            tc.assert_valid_unqualified_name(param.name_tk);
-
-            tc.definitions().assert_generic_param_apart(param.name_tk, name_tk_,
-                                                        "generic type");
-        }
-
-        // e.g. 'type text<size> = list<i8, size>'
-        if (tz.is_lone_equals_next()) {
-            define_based_generic(tc, tz, std::move(params));
-            return;
-        }
-
-        // the fields follow the parameters
-        if (tz.peek_char_after_whitespace() != '{') {
-            throw compile_error{tz,
-                                "expected '{' to begin declaration of type"};
-        }
-
-        tc.add_generic_type({
-            .src_loc_tk{name_tk_},
-            .params{std::move(params)},
-            .fields_tk{tz.cur_position_token()},
-            .base_tk{std::nullopt},
-            .base_arg_tks{},
-            .definition{tc.current_definition()},
-        });
-
-        // e.g. 'text<capacity> { items i8[capacity] }'
-        generic_text_ = tz.skip_braced_block_after(tok());
-    }
 };
 
 // makes the type that an alias names, an instance of a generic type, e.g.
@@ -351,8 +347,7 @@ class stmt_def_type_generic final : public statement {
 // 'instantiate' are:
 //
 //   1. resolve the arguments of '= text<8>', 'size' of 'text' is 8
-//   2. follow the bases ('has_base', 'base_instance'), 'text<8>' then
-//      'list<i8, 8>'
+//   2. follow the bases ('base_instance'), 'text<8>' then 'list<i8, 8>'
 //   3. parse the fields of 'list' as those of 'str' ('parse_root_fields')
 //   4. add 'str' and make the methods of 'list<i8, 8>' and 'text<8>', see
 //      'func_instantiator'
@@ -395,8 +390,11 @@ class type_instantiator final {
         };
 
         try {
-            while (has_base(tc, instances.back())) {
-                instances.push_back(base_instance(tc, instances.back()));
+            while (std::optional<generic_type_instance> base{
+                base_instance(tc, instances.back()),
+            }) {
+
+                instances.push_back(std::move(*base));
             }
 
             // step 3
@@ -426,17 +424,18 @@ class type_instantiator final {
 
     // the base of 'instance', its argument tokens naming the parameters of
     // 'instance', e.g. 'list<i8, 8>' for 'text<8>' with
-    // 'type text<size> = list<i8, size>'
+    // 'type text<size> = list<i8, size>'; none for the root, e.g. 'list'
     [[nodiscard]] static auto
     base_instance(toc& tc, const generic_type_instance& instance)
-        -> generic_type_instance {
+        -> std::optional<generic_type_instance> {
 
         const generic_type_info& generic{
             tc.generics().get_type(instance.generic_name),
         };
 
-        // note: only a type with a base asks, see 'has_base'
-        assert(generic.base_tk);
+        if (not generic.base_tk) {
+            return std::nullopt;
+        }
 
         const token& base_tk{*generic.base_tk};
 
@@ -463,22 +462,12 @@ class type_instantiator final {
                 .inside(instance.trace),
         };
 
-        return {
+        return generic_type_instance{
             .generic_name{base_tk.text()},
             .type_ptr{instance.type_ptr},
             .args{std::move(base_args)},
             .trace{trace},
         };
-    }
-
-    // e.g. 'text' has the base 'list', 'list' has none
-    [[nodiscard]] static auto has_base(const toc& tc,
-                                       const generic_type_instance& instance)
-        -> bool {
-
-        return tc.generics()
-            .get_type(instance.generic_name)
-            .base_tk.has_value();
     }
 
     // the fields are those of the generic definition, parsed again with its

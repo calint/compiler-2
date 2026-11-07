@@ -10,7 +10,7 @@
 #include "machine_rv32i.hpp"
 
 // the rv32i target on linux in qemu user mode: system calls read, write, exit
-// and transfer the sectors of the image file, the operating system stops a
+// and transfer the sectors of the sd card image, the operating system stops a
 // program that overflows the stack
 class machine_rv32i_linux final : public machine_rv32i {
     // the numbers of the generic linux table, 'asm-generic/unistd.h'

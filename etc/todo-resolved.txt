@@ -1,6 +1,17 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] hard: round 166 (2026-11-07, user: continue the loop; EP the rv32i
+    targets, EQ type definitions and type expressions)
+    => done (2026-11-07): EQ 'type_instantiator::base_instance' gives none
+       for the root, so 'has_base' and its assert are removed,
+       'stmt_def_type_generic::define_generic', of one caller, part of the
+       constructor, 'expr_any::plan_remaining_elements' takes its token
+       from 'tok()'; EP no duplication between the rv32i targets to remove,
+       the class comments of 'machine_rv32i_bare_metal' (memory size and
+       sector routines), 'machine_rv32i_fpga' (the sd card) and
+       'machine_rv32i_linux' (the sd card image) complete; listings and
+       errors equal
 [x] hard: round 165 (2026-11-07, user: continue the loop; EN the compile
     time UB detection, EO source files and the program driver)
     => done (2026-11-07): EN 'statement::reads_name', of one caller, a
