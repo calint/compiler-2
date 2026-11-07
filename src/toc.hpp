@@ -1289,7 +1289,7 @@ class scope_stack final {
 
     auto push(scope scp) -> void {
         scopes_.push_back(std::move(scp));
-        track_scope_count();
+        max_scope_count_ = std::max(scopes_.size(), max_scope_count_);
     }
 
     [[nodiscard]] auto reach_state_now() const -> reach_state {
@@ -1479,10 +1479,6 @@ class scope_stack final {
 
         return {};
     }
-
-    auto track_scope_count() -> void {
-        max_scope_count_ = std::max(scopes_.size(), max_scope_count_);
-    }
 };
 
 // where the variables are placed, after the dats that 'data_table' placed: the
@@ -1586,10 +1582,6 @@ class storage_layout final {
         // note: a dry run puts the peak back ('restore_peaks')
         max_body_vars_size_bytes_ =
             std::max(used_vars_size_bytes(), max_body_vars_size_bytes_);
-    }
-
-    auto assert_released() const -> void {
-        assert(used_vars_size_bytes() == 0);
     }
 
     // the declaration that makes the data and variables reach what the target
@@ -2430,8 +2422,8 @@ class definition_checks final {
 //
 // the modes a node does not see, each set by one function and read elsewhere:
 //
-//   'is_compiling_'           set by 'begin_compile'; read by 'scope_entry'
-//                             and 'add_var' (storage and comments)
+//   'is_compiling_'           set by 'begin_compile'; read by 'scope_entry',
+//                             'add_var' and 'add_const' (storage and comments)
 //   'dry_run_depth_'          set by 'dry_run_scope'; read by
 //                             'add_noinline_body' (a body to check, not emit)
 //   'scope::is_without_call'  set by 'stmt_def_func::check_body',
@@ -2903,9 +2895,8 @@ class toc final {
     }
 
     auto assert_released() const -> void {
+        // note: the scopes hold the storage in use, see 'storage_layout'
         assert(scopes_.is_empty());
-
-        storage_.assert_released();
     }
 
     // a name of a type, function, variable, constant, data or parameter, which
@@ -2948,8 +2939,6 @@ class toc final {
         assert(not is_compiling_);
         assert(scopes_.is_empty());
 
-        // note: the parse declared the names without storage
-        storage_.assert_released();
         scopes_.set_max_scope_count(0);
 
         // note: the parse compiles no call

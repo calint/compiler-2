@@ -1367,7 +1367,9 @@ path: a chain of inlined calls each passing a new indexed argument, e.g. the
 cost 0.17% of the rv32i code of the tests (175164 to 175460 instructions, with
 their options and with '--checks=noub'), 1 instruction less on x86_64, and 10
 of the 7086 of roome on rv32i-fpga (decided 2026-11-07). '--versions=nested'
-measures every choice again, for the smaller code at that compile time.
+measures every choice again, also of a list with calls, which round 152
+compiled in place without versions, for the smaller code at that compile
+time: tests 1716 and 2055 take about 12 s and 45 s with it.
 
 The padding of an instance is zeroed gap by gap or as the whole instance by a
 gap count that each backend measured once ('machine::zero_padding'): an

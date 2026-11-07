@@ -1,6 +1,19 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] hard: round 154 (2026-11-07, user: continue in a loop; DV regressions
+    of the nested versions of round 153, DW 'toc')
+    => done (2026-11-07): DV no difference in result, panic or acceptance
+       between the default, 'nested', 'first', 'last' and the round 152
+       build (about 9000 generated programs and an acceptance sweep of 1728
+       programs in five forms on three targets); 'nested' measures lists
+       with calls too since round 153, so tests 1716 and 2055 compile in
+       about 12 s and 45 s with it: their comments and docs 5.2 say so; DW
+       'storage_layout::assert_released' removed (the
+       scopes hold the storage in use and both callers asserted them
+       empty), 'scope_stack::track_scope_count' part of 'push', the class
+       comment names 'add_const' as a reader of 'is_compiling_'; listings
+       equal
 [x] hard: round 153 (2026-11-07, user: continue the loop, keep it simple, a
     todo fix needs clearance; DT the todo item below, DU aliasing)
     => done (2026-11-07): DT the item below (user cleared, with the option
