@@ -2638,8 +2638,8 @@ class toc final {
 
         // a method of an instance of a generic type sees the generic type as
         // the instance and its type arguments, e.g. 'list' names 'str' and 'T'
-        // names 'i8'; its constants are in the block of this scope, the
-        // compile adds them to the body ('stmt_def_func::add_constants')
+        // names 'i8'; its constants are not added here, the body adds them
+        // where it is parsed and compiled ('stmt_def_func::add_constants')
         auto add_receiver(const generic_type_instance& instance) -> void {
             const generic_type_info& generic{
                 tc_.generics().get_type(instance.generic_name),

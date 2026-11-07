@@ -53,32 +53,25 @@ class constant_arith final {
         const uint64_t lhs_bits{static_cast<uint64_t>(lhs)};
         const uint64_t rhs_bits{static_cast<uint64_t>(rhs)};
 
+        uint64_t bits{};
+
         if (op == arithmetic_operator::add) {
-            return wrap_to_width(static_cast<int64_t>(lhs_bits + rhs_bits),
-                                 width_type);
+            bits = lhs_bits + rhs_bits;
+        } else if (op == arithmetic_operator::subtract) {
+            bits = lhs_bits - rhs_bits;
+        } else if (op == arithmetic_operator::multiply) {
+            bits = lhs_bits * rhs_bits;
+        } else if (op == arithmetic_operator::bit_and) {
+            bits = lhs_bits & rhs_bits;
+        } else if (op == arithmetic_operator::bit_or) {
+            bits = lhs_bits | rhs_bits;
+        } else {
+            assert(op == arithmetic_operator::bit_xor);
+
+            bits = lhs_bits ^ rhs_bits;
         }
 
-        if (op == arithmetic_operator::subtract) {
-            return wrap_to_width(static_cast<int64_t>(lhs_bits - rhs_bits),
-                                 width_type);
-        }
-
-        if (op == arithmetic_operator::multiply) {
-            return wrap_to_width(static_cast<int64_t>(lhs_bits * rhs_bits),
-                                 width_type);
-        }
-
-        if (op == arithmetic_operator::bit_and) {
-            return static_cast<int64_t>(lhs_bits & rhs_bits);
-        }
-
-        if (op == arithmetic_operator::bit_or) {
-            return static_cast<int64_t>(lhs_bits | rhs_bits);
-        }
-
-        assert(op == arithmetic_operator::bit_xor);
-
-        return static_cast<int64_t>(lhs_bits ^ rhs_bits);
+        return wrap_to_width(static_cast<int64_t>(bits), width_type);
     }
 
     // true when the quotient is outside the width, e.g. -128 / -1 of an 'i8'

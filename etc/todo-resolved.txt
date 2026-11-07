@@ -1,6 +1,18 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] hard: round 173 (2026-11-08, user: continue all night; EY generics,
+    access paths and unary ops, EZ bulk operands, constants and the register
+    pool)
+    => done (2026-11-08): EY 'generic_param::ends_parameters' uses
+       'expect_char_token' as 'generic_arg_tokens::parse' does, the comment
+       of 'toc::generic_scope::add_receiver' says the body adds the
+       constants; EZ 'argument_emitters' reads the constant count once and
+       keeps one flag for checked ranges, 'constant_parser::base_of' gives
+       the base of a literal once, 'constant_arith::combine' wraps every
+       result to the width; kept: a 'signed_maximum' for the two places that
+       compute the largest value, the one in 'machine' would include
+       'constant_arith.hpp' for a line; listings, images and errors equal
 [x] hard: round 172 (2026-11-08, user: continue all night; EW
     'stmt_identifier', EX 'expr_arith')
     => done (2026-11-08): EX 'assert_divisor_not_zero',

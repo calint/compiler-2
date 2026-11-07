@@ -16,6 +16,8 @@
 // the literals and their values as the tokenizer keeps their text: a number,
 // a character, 'true' and 'false'
 class constant_parser final {
+    static constexpr int decimal_base_{10};
+
   public:
     // the value of a literal, 'is_bool' for 'true' and 'false'
     struct literal {
@@ -114,18 +116,10 @@ class constant_parser final {
             return parse_character(src_loc_tk, str);
         }
 
-        constexpr int decimal_base{10};
-        constexpr int hex_base{16};
-        constexpr int binary_base{2};
-
-        int base{decimal_base};
+        const int base{base_of(str)};
         std::string_view digits{str};
 
-        if (has_base_prefix(str)) {
-            const bool is_hex{str.at(1) == 'x' or str.at(1) == 'X'};
-            // note: 1 is the letter after the '0' of the prefix
-
-            base = is_hex ? hex_base : binary_base;
+        if (base != decimal_base_) {
             digits.remove_prefix(2);
             // note: 2 for the '0x' or '0b' prefix
         }
@@ -157,12 +151,20 @@ class constant_parser final {
     // statics
     //
 
-    // e.g. '0x1f' and '0b101'
-    [[nodiscard]] static auto has_base_prefix(const std::string_view str)
-        -> bool {
+    // the base the prefix gives, e.g. 16 for '0x1f' and 2 for '0b101'
+    [[nodiscard]] static auto base_of(const std::string_view str) -> int {
+        constexpr int hex_base{16};
+        constexpr int binary_base{2};
 
-        return str.starts_with("0x") or str.starts_with("0X") or
-               str.starts_with("0b") or str.starts_with("0B");
+        if (str.starts_with("0x") or str.starts_with("0X")) {
+            return hex_base;
+        }
+
+        if (str.starts_with("0b") or str.starts_with("0B")) {
+            return binary_base;
+        }
+
+        return decimal_base_;
     }
 
     // the tokenizer keeps the quotes in the text of a character literal

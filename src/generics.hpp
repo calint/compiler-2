@@ -86,16 +86,14 @@ struct generic_param {
             return true;
         }
 
-        const std::optional<token> delimiter_tk{tz.is_next_char_token(',')};
+        const token delimiter_tk{
+            tz.expect_char_token(',',
+                                 std::format("expected ',' or '>' after "
+                                             "generic parameter {}",
+                                             in_quotes(param.name_tk.text()))),
+        };
 
-        if (not delimiter_tk) {
-            throw compile_error{tz,
-                                std::format("expected ',' or '>' after generic "
-                                            "parameter {}",
-                                            in_quotes(param.name_tk.text()))};
-        }
-
-        tz.assert_no_trailing_delimiter(*delimiter_tk, '>',
+        tz.assert_no_trailing_delimiter(delimiter_tk, '>',
                                         "generic parameters");
 
         return false;

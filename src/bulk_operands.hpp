@@ -55,25 +55,28 @@ class bulk_operands final {
     // argument runs first, e.g. the call of 'array_copy(a[k], b[f()], 4)'
     class argument_emitters final {
         // a run-time start, held in a register from before the walk of its
-        // address until the walk has returned and its range is checked
+        // address until the walk has returned and the ranges are checked
         struct held_start {
             std::optional<operand> start;
             bool is_walked{};
-            bool is_checked{};
         };
 
         const bulk_operands& operands_;
         toc& tc_;
         size_t indent_{};
         const token& src_loc_tk_;
+        // none for a run-time count
+        std::optional<int64_t> constant_count_;
         // the start of the first and of the second array
         std::array<held_start, 2> starts_{};
+        bool are_ranges_checked_{};
 
       public:
         argument_emitters(const bulk_operands& operands, toc& tc,
                           const size_t indent, const token& src_loc_tk)
             : operands_{operands}, tc_{tc}, indent_{indent},
-              src_loc_tk_{src_loc_tk} {}
+              src_loc_tk_{src_loc_tk},
+              constant_count_{operands.count().constant_value(tc)} {}
 
         argument_emitters(const argument_emitters&) = delete;
         argument_emitters(argument_emitters&&) = delete;
@@ -108,7 +111,7 @@ class bulk_operands final {
                 // note: a constant count checked the ranges after the second
                 //       address, e.g. for the overlap check of 'array_copy'
 
-                if (operands_.count().constant_value(tc_)) {
+                if (constant_count_) {
                     return;
                 }
 
@@ -124,11 +127,8 @@ class bulk_operands final {
         // a constant count checks the ranges once the second address is
         // built, where a run-time count is computed
         [[nodiscard]] auto second() -> machine::address_emitter {
-            const bool checks_ranges{
-                operands_.count().constant_value(tc_).has_value(),
-            };
-
-            return address_of(operands_.second(), starts_.at(1), checks_ranges);
+            return address_of(operands_.second(), starts_.at(1),
+                              constant_count_.has_value());
         }
 
       private:
@@ -200,19 +200,16 @@ class bulk_operands final {
                     return false;
                 }
 
-                const std::optional<int64_t> count{
-                    operands_.count().constant_value(tc_),
-                };
-
                 // note: a constant count is at most the length, rejected at
                 //       compile time otherwise
 
-                assert(count and *count >= 0 and
-                       std::cmp_less_equal(*count, array_count));
+                assert(constant_count_ and *constant_count_ >= 0 and
+                       std::cmp_less_equal(*constant_count_, array_count));
 
                 machine::bounds_range range{
                     machine::bounds_range::up_to(
-                        *start, array_count - static_cast<size_t>(*count)),
+                        *start,
+                        array_count - static_cast<size_t>(*constant_count_)),
                 };
 
                 range.start_lower_checked = true;
@@ -270,9 +267,7 @@ class bulk_operands final {
             std::ignore = check_range(operands_.second(), starts_.at(1).start,
                                       count_register, count_lower_checked);
 
-            for (held_start& held : starts_) {
-                held.is_checked = true;
-            }
+            are_ranges_checked_ = true;
         }
 
         // frees the starts that are walked and checked from the top, outside
@@ -280,12 +275,16 @@ class bulk_operands final {
         // first start is under the registers of the first address and is
         // freed after it
         auto free_done_starts() -> void {
+            if (not are_ranges_checked_) {
+                return;
+            }
+
             for (held_start& held : std::views::reverse(starts_)) {
                 if (not held.start) {
                     continue;
                 }
 
-                if (not held.is_walked or not held.is_checked) {
+                if (not held.is_walked) {
                     return;
                 }
 
