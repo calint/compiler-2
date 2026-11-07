@@ -1,6 +1,14 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] hard: round 168 (2026-11-07, user: continue all night; ES the rv32i
+    assembler)
+    => done (2026-11-07): ES the encodings of 'addi', 'lui' and 'slli' read
+       from 'info' (their constants repeated its rows), 'section_count_' in
+       'assembler' for both targets, 'immediate::checked_number', of one
+       caller, part of the constructor, 'encode_upper' and 'reaches' use
+       'lui_shift' and 'fits', the rv32i section directives checked against
+       'section_count_' as on x86_64; listings, images and errors equal
 [x] hard: round 167 (2026-11-07, user: continue and do the recommended all
     night, decisions as todo items; EP's 'openat' proposal)
     => done (2026-11-07): the rv32i linux sector routine no longer sets the

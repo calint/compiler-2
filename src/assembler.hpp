@@ -153,6 +153,11 @@ class assembler {
     optimization_counts optimizations_{};
     std::vector<body> bodies_;
 
+  protected:
+    static constexpr size_t section_count_{
+        std::to_underlying(section::variables) + 1,
+    };
+
   public:
     assembler() = default;
     assembler(const assembler&) = delete;

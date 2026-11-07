@@ -370,8 +370,7 @@ class assembler_x86_64 final : public assembler {
             }),
         };
 
-        static_assert(directives.size() ==
-                      std::to_underlying(section::variables) + 1);
+        static_assert(directives.size() == section_count_);
 
         add_text(std::string{directives.at(std::to_underlying(which))});
     }

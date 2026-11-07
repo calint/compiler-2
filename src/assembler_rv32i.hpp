@@ -94,7 +94,10 @@ class assembler_rv32i final : public assembler {
         // numbers of any integer type keep call sites free of casts
         template <std::integral integral_t>
         explicit(false) immediate(const integral_t value)
-            : number{checked_number(value)} {}
+            : number{static_cast<int64_t>(value)} {
+
+            assert(std::in_range<int64_t>(value));
+        }
 
         immediate() = default;
 
@@ -102,20 +105,6 @@ class assembler_rv32i final : public assembler {
         std::string symbol;
         // a symbol subtracted from 'symbol', e.g. a frame size from 'vars.end'
         std::string subtracted;
-
-      private:
-        //
-        // statics
-        //
-
-        template <std::integral integral_t>
-        [[nodiscard]] static auto checked_number(const integral_t value)
-            -> int64_t {
-
-            assert(std::in_range<int64_t>(value));
-
-            return static_cast<int64_t>(value);
-        }
     };
 
     // starts the comment of a line, the text before it is code
@@ -157,7 +146,7 @@ class assembler_rv32i final : public assembler {
         std::string_view mnemonic;
         form operands{};
         // opcode and function bits, the base instruction's for pseudos; zero
-        // for 'li', 'la', 'j' and 'call', which encode from the named constants
+        // for 'li', 'la', 'j' and 'call', which expand to other instructions
         uint32_t encoding{};
         // pseudo branches such as 'bgtz' swap the base branch's operands
         bool swapped{};
@@ -165,12 +154,10 @@ class assembler_rv32i final : public assembler {
 
     static constexpr size_t op_count_{std::to_underlying(op::ret) + 1};
 
-    static constexpr uint32_t addi_encoding_{0x00000013};
-    static constexpr uint32_t lui_encoding_{0x00000037};
+    // the base instructions without a row in 'info'
     static constexpr uint32_t auipc_encoding_{0x00000017};
     static constexpr uint32_t jal_encoding_{0x0000006f};
     static constexpr uint32_t jalr_encoding_{0x00000067};
-    static constexpr uint32_t slli_encoding_{0x00001013};
 
     static constexpr uint8_t zero_register_{};
     static constexpr uint8_t return_address_register_{1};
@@ -241,10 +228,6 @@ class assembler_rv32i final : public assembler {
 
     using record = std::variant<instruction, jump_registers, data_values,
                                 zero_fill, alignment, section_start, constant>;
-
-    static constexpr size_t section_count_{
-        std::to_underlying(section::variables) + 1,
-    };
 
     struct line_position {
         section which{};
@@ -1451,11 +1434,11 @@ class assembler_rv32i final : public assembler {
         const jump_reach form{reach(l)};
 
         if (form == jump_reach::branch) {
-            return distance >= branch_min_ and distance <= branch_max_;
+            return fits(distance, branch_min_, branch_max_);
         }
 
         if (form == jump_reach::jal) {
-            return distance >= jal_min_ and distance <= jal_max_;
+            return fits(distance, jal_min_, jal_max_);
         }
 
         // 'auipc' and 'jalr' reach any address of the 32-bit address space
@@ -1796,7 +1779,8 @@ class assembler_rv32i final : public assembler {
         }
 
         if (operands == form::load_address) {
-            return pc_relative(addi_encoding_, ins.rd, ins.rd, value - address);
+            return pc_relative(info(op::addi).encoding, ins.rd, ins.rd,
+                               value - address);
         }
 
         if (operands == form::move) {
@@ -1857,7 +1841,7 @@ class assembler_rv32i final : public assembler {
                                            const uint8_t rd,
                                            const uint32_t upper) -> uint32_t {
 
-        const uint32_t imm_31_12{(upper & upper_mask_) << 12U};
+        const uint32_t imm_31_12{(upper & upper_mask_) << lui_shift};
 
         return encoding | imm_31_12 |
                register_fields(rd, zero_register_, zero_register_);
@@ -2148,9 +2132,11 @@ class assembler_rv32i final : public assembler {
             std::bit_cast<int32_t>(static_cast<uint32_t>(value)),
         };
 
+        const uint32_t addi_encoding{info(op::addi).encoding};
+
         if (fits_immediate(number)) {
             return {
-                encode_immediate(addi_encoding_, rd, zero_register_, number),
+                encode_immediate(addi_encoding, rd, zero_register_, number),
             };
         }
 
@@ -2171,15 +2157,15 @@ class assembler_rv32i final : public assembler {
                      compressed_immediate_max_)) {
 
                 return {
-                    encode_immediate(addi_encoding_, rd, zero_register_,
+                    encode_immediate(addi_encoding, rd, zero_register_,
                                      shifted),
-                    encode_immediate(slli_encoding_, rd, rd, shift),
+                    encode_immediate(info(op::slli).encoding, rd, rd, shift),
                 };
             }
         }
 
         const uint32_t upper{
-            encode_upper(lui_encoding_, rd, upper_part(value)),
+            encode_upper(info(op::lui).encoding, rd, upper_part(value)),
         };
 
         const int32_t lower{lower_part(value)};
@@ -2188,7 +2174,7 @@ class assembler_rv32i final : public assembler {
             return {upper};
         }
 
-        return {upper, encode_immediate(addi_encoding_, rd, rd, lower)};
+        return {upper, encode_immediate(addi_encoding, rd, rd, lower)};
     }
 
     [[nodiscard]] static auto long_jump(const jump_reach reach_form,
@@ -2285,12 +2271,17 @@ class assembler_rv32i final : public assembler {
     [[nodiscard]] static auto section_directive(const section which)
         -> std::string_view {
 
-        constexpr std::array<std::string_view, section_count_> directives{
-            ".text",
-            ".section .rodata",
-            ".data",
-            ".bss",
+        // indexed by 'section'
+        constexpr auto directives{
+            std::to_array<std::string_view>({
+                ".text",
+                ".section .rodata",
+                ".data",
+                ".bss",
+            }),
         };
+
+        static_assert(directives.size() == section_count_);
 
         return directives.at(section_index(which));
     }
