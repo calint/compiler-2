@@ -1,6 +1,25 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] hard: round 142 (2026-11-07, user: keep going until no issues are
+    found; CM hunt of 'remove_reloads', CO statements, parse and program,
+    CP hunt of round 141)
+    => done (2026-11-07): CM no wrong removal (every listing difference of
+       the suite on three targets with five option sets, and of 10800
+       generated compiles with 103630 removals, is a load right after the
+       store it reads back; results equal, rv32i-fpga images equal to
+       llvm's, fuzz-all); CM1 the expected '0006.rv32i.diff' and
+       '0006.rv32i-qemu.diff' that round 140 left stale (the per-step checks
+       run x86_64 and rv32i-fpga only); CO 'func_head' checks the receiver
+       '.' once ('read_method', 'read_receiver' removed),
+       'constructor_result_type' inlined, 'frame_scope' marks a body without
+       array lengths as without call so 'check_noinline_body' runs in the
+       scope of 'emit_noinline_body'; not done: CO1-CO8 (a few lines each,
+       or not pure: the order of errors of a generic signature); CP no
+       finding (the builds of rounds 140 and 141 on 12373 sources, the
+       suite, roome and 23 fuzzer runs, each with 15 option lists on four
+       targets: listings, errors, exit codes and images equal; asan on 2500
+       sources); listings unchanged
 [x] hard: round 141 (2026-11-07, user: keep going until no issues are
     found; CK conversions hunt, CL backend design, CN 'ident_info' address
     kind)

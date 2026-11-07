@@ -174,14 +174,13 @@ struct func_head {
         head.name = head.name_tk.text();
 
         // a receiver names a type, e.g. 'point' of 'func point.at()', which
-        // 'read_method_name' checks
+        // 'read_method' checks
         if (not head.open_paren_tk and tz.peek_char_after_whitespace() == '.') {
             toc::assert_valid_name(head.name_tk);
+            head.read_method(tc, tz);
         } else {
             tc.assert_valid_unqualified_name(head.name_tk);
         }
-
-        head.read_receiver(tc, tz);
 
         // e.g. 'func tokenizer.to<T type>()' or 'func text.to<T type>()'
         if (not head.open_paren_tk and tz.peek_char_after_whitespace() == '<') {
@@ -200,12 +199,13 @@ struct func_head {
         return not open_paren_tk and next != '.' and next != '<';
     }
 
-    // 'name_tk' is the receiver: a type, whose method gets an implicit first
-    // parameter 'self' and whose constructor builds a 'self', or a generic
-    // type, whose instances get the method; the name of a method of a type
-    // is that of the type it names, e.g. 'str.print' where 'text' names 'str'
-    auto read_method_name(const toc& tc, tokenizer& tz, const token& dot_tk)
-        -> void {
+    // e.g. '.add(' of 'func list.add(x)', the '(' if it follows; 'name_tk'
+    // is the receiver: a type, whose method gets an implicit first parameter
+    // 'self' and whose constructor builds a 'self', or a generic type, whose
+    // instances get the method; the name of a method of a type is that of the
+    // type it names, e.g. 'str.print' where 'text' names 'str'
+    auto read_method(const toc& tc, tokenizer& tz) -> void {
+        const token dot_tk{tz.seen_char_token('.')};
 
         // null for the 'text' of 'func text.print()'; in an instance 'text'
         // names a type
@@ -237,6 +237,7 @@ struct func_head {
         };
 
         name = method_name_of(type_name, method_name_tk.text());
+        open_paren_tk = tz.is_next_char_token('(');
     }
 
     // 'keyword' before the name, e.g. 'noinline', then the next word is read
@@ -257,22 +258,6 @@ struct func_head {
     // a word, the name or a modifier before it, and the '(' if it follows
     auto read_name(tokenizer& tz) -> void {
         name_tk = tz.next_token();
-        open_paren_tk = tz.is_next_char_token('(');
-    }
-
-    // e.g. 'func list.add(x)'
-    auto read_receiver(const toc& tc, tokenizer& tz) -> void {
-        if (open_paren_tk) {
-            return;
-        }
-
-        const std::optional<token> dot_tk{tz.is_next_char_token('.')};
-
-        if (not dot_tk) {
-            return;
-        }
-
-        read_method_name(tc, tz, *dot_tk);
         open_paren_tk = tz.is_next_char_token('(');
     }
 
@@ -672,15 +657,7 @@ class stmt_def_func final : public statement {
         assert(not is_inlined());
         assert(array_lengths.size() == array_param_count());
 
-        scope body_scope{frame_scope(array_lengths)};
-
-        // without array parameters the body takes nothing from a call, it is
-        // checked as it is emitted, as 'main' is ('check_function_bodies')
-        if (array_lengths.empty()) {
-            body_scope.mark_without_call(false);
-        }
-
-        const toc::scope_entry body{tc, std::move(body_scope)};
+        const toc::scope_entry body{tc, frame_scope(array_lengths)};
 
         machine& x{tc.machine()};
 
@@ -978,21 +955,22 @@ class stmt_def_func final : public statement {
         code_.compile(tc, indent, destination{});
     }
 
-    // e.g. 'func point.at(x, y) self' builds a 'point'
-    // 'result' is the 'self' of a constructor
-    [[nodiscard]] auto constructor_result_type(const func_result& result) const
-        -> const type& {
-
-        head_.assert_constructor_result(result.name_tk, result.type_tk);
-        return head_.receiver_type();
-    }
-
     // the scope of the body in a frame of its own, entered before the frame
-    // base and the slot register are taken
+    // base and the slot register are taken; without array lengths a noinline
+    // body takes nothing from a call, it is checked as it is emitted, as
+    // 'main' is ('check_function_bodies'), 'check_body' marks what it takes
     [[nodiscard]] auto
     frame_scope(const std::span<const size_t> array_lengths) const -> scope {
 
-        return scope::noinline_func(name(), body_call_path(array_lengths));
+        scope body_scope{
+            scope::noinline_func(name(), body_call_path(array_lengths)),
+        };
+
+        if (array_lengths.empty()) {
+            body_scope.mark_without_call(false);
+        }
+
+        return body_scope;
     }
 
     // a method of a type, a constructor builds its 'self' instead; the
@@ -1063,9 +1041,11 @@ class stmt_def_func final : public statement {
             return;
         }
 
-        // 'self' names the value a constructor builds
+        // 'self' names the value a constructor builds, e.g. 'func
+        // point.at(x, y) self' builds a 'point'
         if (result_->is_self()) {
-            set_type(constructor_result_type(*result_));
+            head_.assert_constructor_result(result_->name_tk, result_->type_tk);
+            set_type(head_.receiver_type());
             return;
         }
 

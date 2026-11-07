@@ -2437,9 +2437,9 @@ class definition_checks final {
 //   'dry_run_depth_'          set by 'dry_run_scope'; read by
 //                             'add_noinline_body' (a body to check, not emit)
 //   'scope::is_without_call'  set by 'stmt_def_func::check_body',
-//                             'emit_noinline_body' without array lengths and
-//                             'scope::main_func'; read for the innermost
-//                             function by 'check_skipped'
+//                             'stmt_def_func::frame_scope' without array
+//                             lengths and 'scope::main_func'; read for the
+//                             innermost function by 'check_skipped'
 //   'scope::takes_from_call'  set by 'stmt_def_func::check_body'; read for
 //                             any function by 'stmt_call::compile' through
 //                             'scope_stack::is_in_body_taking_from_call'
