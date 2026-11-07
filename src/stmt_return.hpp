@@ -26,7 +26,7 @@ class stmt_return final : public statement {
 
         machine& x{tc.machine()};
 
-        x.comment(tok(), indent, statement::trimmed_source(*this));
+        comment_source(x, indent);
 
         const scope& func_scp{tc.scopes().current_func_scope()};
 

@@ -62,7 +62,7 @@ class stmt_assign_var final : public statement {
 
         machine& x{tc.machine()};
 
-        x.comment(tok(), indent, statement::trimmed_source(*this));
+        comment_source(x, indent);
 
         const std::optional<storage_path> dst_storage{
             stmt_ident_.storage(tc),

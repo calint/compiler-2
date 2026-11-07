@@ -56,7 +56,7 @@ class stmt_builtin_array_length final : public statement {
 
         machine& x{tc.machine()};
 
-        x.comment(tok(), indent, statement::trimmed_source(*this));
+        comment_source(x, indent);
 
         // note: a narrower destination is rejected by 'assert_not_narrowed'
         //       or the argument check of a conversion, a 'bool' by its

@@ -33,7 +33,7 @@ class stmt_loop_jump final : public statement {
 
         machine& x{tc.machine()};
 
-        x.comment(tok(), indent, statement::trimmed_source(*this));
+        comment_source(x, indent);
 
         const std::optional<loop_target> loop{tc.scopes().innermost_loop()};
 

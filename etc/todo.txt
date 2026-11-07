@@ -39,17 +39,6 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
     round 1 K3.1): 'machine_rv32i::zero' takes about 0.5 ns per byte, a
     field of 64 MiB 33 ms, of 256 MiB 115 ms; x86_64 does not grow (2 ms);
     '{}' alone does not grow (2026-11-06)
-[ ] easy: low priority: compile time: a body check ('stmt_def_func::check_body',
-    a dry run) builds the listing comments it discards, about half of the
-    comment work: comments are about 27 % of roome's instructions
-    ('statement::trimmed_source' 13 %, 'source_locations::for_comment'
-    12 %), the dry runs 55 %; the checks of a chain of inlined calls expand
-    each body, quadratic in the depth (120 levels 0.26 s, bounded by 256
-    scopes) (2026-11-06)
-    => fix if wanted: 'machine::comment' returns at once inside
-       'emit_discarded' (a depth counter), the callers still render the
-       source; or the comment text is built only when kept (a callback),
-       many call sites
 [p] easy: low priority: 'source_files::contains' compares a path with every
     loaded file by 'std::filesystem::equivalent' (two stats each), so 2000
     included files take 2.8 s against 0.15 s before round 116 (round 117

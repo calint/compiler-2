@@ -134,7 +134,7 @@ class stmt_builtin_io final : public statement {
 
         machine& x{tc.machine()};
 
-        x.comment(tok(), indent, statement::trimmed_source(*this));
+        comment_source(x, indent);
 
         x.call_target(
             tok(), indent, io_.function,

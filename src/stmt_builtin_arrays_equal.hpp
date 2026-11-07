@@ -49,7 +49,7 @@ class stmt_builtin_arrays_equal final : public statement {
 
         machine& x{tc.machine()};
 
-        x.comment(tok(), indent, statement::trimmed_source(*this));
+        comment_source(x, indent);
 
         const type& element_type{operands_.check(tc)};
 

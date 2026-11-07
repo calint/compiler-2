@@ -132,7 +132,7 @@ struct target_description {
 //                  'call_target', 'return_function', 'exit'
 //   checks         'check_bounds', 'check_frame_capacity',
 //                  'check_stack_capacity'
-//   versions       'emit_most_efficient', 'emit_discarded'
+//   versions       'emit_most_efficient', 'emit_discarded', 'is_discarding'
 //   comments       'comment', 'comment_binding', 'comment_variable',
 //                  'comment_held_address'
 //   target         'default_type', 'address_size_bytes',
@@ -303,7 +303,8 @@ class machine {
     };
 
   private:
-    // what compiling a version of code changes in the machine
+    // what compiling a version of code changes in the machine, and the
+    // discarding mode, which 'version_scope' puts back with it
     struct version_state {
         // the indexes are those of the names of the backend, see
         // 'register_index_of'
@@ -315,6 +316,8 @@ class machine {
         // the routines, helpers and failure handlers the code uses, by label;
         // emitted after the code, see 'mark_used'
         std::set<std::string, std::less<>> used_routines;
+        // inside 'emit_discarded': nothing is kept, so no comment is built
+        bool is_discarded{};
     };
 
     // saved before a version and put back after it, see 'version_scope'
@@ -1101,6 +1104,10 @@ class machine {
     auto comment(const token& src_loc_tk, const size_t indent,
                  const std::string_view text) -> void {
 
+        if (state_.is_discarded) {
+            return;
+        }
+
         const std::string line{printable(text)};
 
         if (src_loc_tk.at_line() == 0) {
@@ -1117,6 +1124,10 @@ class machine {
     auto comment(const token& src_loc_tk, const size_t indent,
                  const std::format_string<args_t...> format, args_t&&... args)
         -> void {
+
+        if (state_.is_discarded) {
+            return;
+        }
 
         const std::string text{
             std::format(format, std::forward<args_t>(args)...),
@@ -1199,6 +1210,8 @@ class machine {
                         const discarded_code code) -> void {
 
         const version_scope discarded{*this};
+
+        state_.is_discarded = true;
 
         if (code == discarded_code::body) {
             state_.registers = noinline_body_pool();
@@ -1369,6 +1382,11 @@ class machine {
 
     [[nodiscard]] auto has_sd_card() const -> bool {
         return target_.has_sd_card;
+    }
+
+    // inside 'emit_discarded', also in a version inside it
+    [[nodiscard]] auto is_discarding() const -> bool {
+        return state_.is_discarded;
     }
 
     [[nodiscard]] auto is_stack_bounded() const -> bool {

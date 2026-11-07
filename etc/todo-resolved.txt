@@ -1,6 +1,26 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] hard: round 157 (2026-11-07, user: continue in a loop; DY the todo item
+    below)
+    => done (2026-11-07): DY the item below (user cleared); listings equal
+[x] easy: low priority: compile time: a body check ('stmt_def_func::check_body',
+    a dry run) builds the listing comments it discards, about half of the
+    comment work: comments are about 27 % of roome's instructions
+    ('statement::trimmed_source' 13 %, 'source_locations::for_comment'
+    12 %), the dry runs 55 %; the checks of a chain of inlined calls expand
+    each body, quadratic in the depth (120 levels 0.26 s, bounded by 256
+    scopes) (2026-11-06)
+    => fix if wanted: 'machine::comment' returns at once inside
+       'emit_discarded' (a depth counter), the callers still render the
+       source; or the comment text is built only when kept (a callback),
+       many call sites
+    => done (2026-11-07, round 157 DY, user cleared): 'machine::comment'
+       returns at once while 'version_state::is_discarded' ('emit_discarded'
+       sets it, 'version_scope' puts it back; 'toc::dry_run_depth_'
+       removed), 'statement::comment_source' skips rendering the source at
+       the 12 sites; roome compiles in 22.8 % (x86_64) and 22.6 %
+       (rv32i-fpga) fewer instructions, the suite 2.2 %; listings equal
 [x] hard: round 156 (2026-11-07, user: continue in a loop; EA the built-in
     statements)
     => done (2026-11-07): EA 'stmt_builtin_foo::skip_empty_loop' without

@@ -473,7 +473,7 @@ class stmt_identifier final : public statement {
 
         machine& x{tc.machine()};
 
-        x.comment(tok(), indent, statement::trimmed_source(*this));
+        comment_source(x, indent);
 
         const ident_info src_info{make_scalar_ident_info(tc, *this)};
 

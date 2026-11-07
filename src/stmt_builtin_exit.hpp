@@ -36,7 +36,7 @@ class stmt_builtin_exit final : public statement {
 
         machine& x{tc.machine()};
 
-        x.comment(tok(), indent, statement::trimmed_source(*this));
+        comment_source(x, indent);
 
         const operand exit_code{
             x.alloc_named_register(tok(), indent, x.exit_code_register(),

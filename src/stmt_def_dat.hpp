@@ -119,7 +119,7 @@ class stmt_def_dat final : public statement {
 
         machine& x{tc.machine()};
 
-        x.comment(tok(), indent, statement::trimmed_source(*this));
+        comment_source(x, indent);
 
         tc.add_var(indent, declaration_.declared_var(), var_kind::dat);
 

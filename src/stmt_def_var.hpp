@@ -386,7 +386,7 @@ class stmt_def_const final : public statement {
 
         machine& x{tc.machine()};
 
-        x.comment(tok(), indent, statement::trimmed_source(*this));
+        comment_source(x, indent);
 
         // note: the names it folds from are constants wherever it is
         //       compiled, a name that is a constant only with a call is a
@@ -459,7 +459,7 @@ class stmt_def_var final : public statement {
 
         machine& x{tc.machine()};
 
-        x.comment(tok(), indent, statement::trimmed_source(*this));
+        comment_source(x, indent);
 
         // a 'let' whose value folds only in this compile is a constant here,
         // e.g. 'let m = n' in a 'foo' over an unsized array parameter at a

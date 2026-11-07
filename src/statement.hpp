@@ -310,6 +310,15 @@ class statement {
     //       complete
     [[nodiscard]] auto bare_path() const -> const stmt_identifier*;
 
+    // the source as a listing comment, not rendered in discarded code
+    auto comment_source(machine& x, const size_t indent) const -> void {
+        if (x.is_discarding()) {
+            return;
+        }
+
+        x.comment(tok(), indent, trimmed_source(*this));
+    }
+
     // the compile of a value that must fit 'dst', checked like 'fold_checked'
     auto compile_checked(toc& tc, const size_t indent,
                          const destination& dst) const -> void {

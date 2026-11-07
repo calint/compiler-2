@@ -2424,8 +2424,9 @@ class definition_checks final {
 //
 //   'is_compiling_'           set by 'begin_compile'; read by 'scope_entry',
 //                             'add_var' and 'add_const' (storage and comments)
-//   'dry_run_depth_'          set by 'dry_run_scope'; read by
-//                             'add_noinline_body' (a body to check, not emit)
+//   'machine::is_discarding'  set by 'machine::emit_discarded' ('dry_run');
+//                             read by 'add_noinline_body' (a body to check,
+//                             not emit)
 //   'scope::is_without_call'  set by 'stmt_def_func::frame_scope' without
 //                             array lengths and 'scope::main_func'; read for
 //                             the innermost function by 'check_skipped'
@@ -2454,9 +2455,6 @@ class toc final {
     ident_resolver resolver_;
     storage_layout storage_;
     check_options checks_{};
-    // above zero inside 'dry_run': a noinline body a call asks for is only
-    // checked ('add_noinline_body')
-    size_t dry_run_depth_{};
     // false while the program is parsed: the names are declared without
     // storage and without comments
     bool is_compiling_{};
@@ -2475,9 +2473,7 @@ class toc final {
     };
 
     // what a dry run changes in 'toc' is put back when it ends, also when an
-    // error unwinds: the 'compile_state' and the read-only constants; while it
-    // lives a noinline body that a call asks for is only checked, see
-    // 'add_noinline_body'
+    // error unwinds: the 'compile_state' and the read-only constants
     class dry_run_scope final {
         toc& tc_;
         compile_state kept_state_{};
@@ -2486,10 +2482,7 @@ class toc final {
       public:
         explicit dry_run_scope(toc& tc)
             : tc_{tc}, kept_state_{tc.compile_state_now()},
-              kept_constant_count_{tc.data_.constant_count()} {
-
-            ++tc_.dry_run_depth_;
-        }
+              kept_constant_count_{tc.data_.constant_count()} {}
 
         dry_run_scope(const dry_run_scope&) = delete;
         dry_run_scope(dry_run_scope&&) = delete;
@@ -2497,7 +2490,6 @@ class toc final {
         auto operator=(dry_run_scope&&) -> dry_run_scope& = delete;
 
         ~dry_run_scope() {
-            --tc_.dry_run_depth_;
             tc_.restore_compile_state(kept_state_);
             tc_.data_.resize_constants(kept_constant_count_);
         }
@@ -2807,7 +2799,9 @@ class toc final {
 
         assert(is_compiling_);
 
-        if (dry_run_depth_ != 0) {
+        const ::machine& x{machine()};
+
+        if (x.is_discarding()) {
             noinline_worklist_.add_checked_body(func, std::move(array_lengths),
                                                 call_tk,
                                                 std::move(call_source));
