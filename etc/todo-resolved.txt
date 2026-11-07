@@ -1,6 +1,17 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] hard: round 159 (2026-11-07, user: continue the loop; ED sizes and
+    ranges at their limits, EE 'main.cpp')
+    => done (2026-11-07): ED no finding (offsets past the rv32i 12-bit
+       immediates and past 2^31 on x86_64, arrays of 2^31 and 2^32 elements
+       and more, byte counts at the limits, the frame and stack checks at
+       their boundaries, exit codes, long strings, 407 compiles near the
+       address space limits; the same results on every target outside
+       chapter 8); docs 8 item 4 names x86_64 variables larger than the
+       host can map, which link and fail at start; EE 'option_value', of
+       one caller, part of 'parse_option'; the usage of '--vars' and
+       '--memory' says a nonzero multiple; listings equal
 [x] hard: round 158 (2026-11-07, user: continue in a loop; EB the io
     built-ins, EC its sector fix)
     => done (2026-11-07): EB two target differences on a card of 2 TiB or

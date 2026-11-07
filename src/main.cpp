@@ -198,13 +198,13 @@ options:
                         --memory), fails when code, data, variables and stack
                         do not fit
   --vars=SIZE         variable storage in bytes, decimal or 0x hex, must be a
-                      multiple of {1} (default: {2})
+                      nonzero multiple of {1} (default: {2})
   --stack=SIZE        rv32i-qemu and rv32i-fpga stack in bytes, decimal or 0x
                       hex, must be a multiple of {3}, at least {7} and at
                       most the memory of the target (default: {4})
   --memory=SIZE       rv32i-fpga memory in bytes, decimal or 0x hex, must be a
-                      multiple of {5} (default: {6}), the emulator is
-                      built for the default
+                      nonzero multiple of {5} (default: {6}), the
+                      emulator is built for the default
   --checks=LIST       comma separated checks, replaces earlier --checks
   --report=LIST       comma separated reports after the code, replaces earlier
                       --report
@@ -370,18 +370,6 @@ auto check_target_reads(const options& opts) -> void {
                         "that do are: {}",
                         option.name, in_quotes(chosen.text), readers)};
     }
-}
-
-// e.g. '0x40000' of '--vars=0x40000'
-[[nodiscard]] auto option_value(const std::string_view arg,
-                                const std::string_view name)
-    -> std::optional<std::string_view> {
-
-    if (not arg.starts_with(name)) {
-        return std::nullopt;
-    }
-
-    return arg.substr(name.size());
 }
 
 // decimal or 0x hexadecimal, 'option' is named in the error messages
@@ -644,11 +632,10 @@ auto parse_option(const std::string_view arg, options& opts) -> void {
     };
 
     for (const value_option& option : value_options) {
-        if (const std::optional<std::string_view> value{
-                option_value(arg, option.name),
-            }) {
-
-            option.apply(*value, opts);
+        if (arg.starts_with(option.name)) {
+            // e.g. '0x40000' of '--vars=0x40000'
+            const std::string_view value{arg.substr(option.name.size())};
+            option.apply(value, opts);
             return;
         }
     }
