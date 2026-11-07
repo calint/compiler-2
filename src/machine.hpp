@@ -149,7 +149,8 @@ struct target_description {
 class machine {
   public:
     // which of two versions of the same code 'emit_most_efficient' keeps: the
-    // smaller, or to test the other version too, the first or the last
+    // smaller, also inside a version with 'nested', or to test the other
+    // version too, the first or the last
     enum class kept_version : uint8_t { smaller, nested, first, last };
 
     // a built-in the target provides as a system call or a routine
@@ -1060,13 +1061,6 @@ class machine {
             .lower_checked{options.lower},
         };
 
-        // e.g. a start that the walk of its address checked, under
-        // '--checks=lower' alone
-        if (plan.sign_tested.empty() and not plan.upper) {
-            comment(src_loc_tk, indent, "bounds check end");
-            return;
-        }
-
         emit_bounds_check(src_loc_tk, indent, range, plan);
 
         comment(src_loc_tk, indent, "bounds check end");
@@ -1606,7 +1600,9 @@ class machine {
     //
 
     // the compares and branches of 'check_bounds' after its plan, between the
-    // begin and end comments: the sign tests, then the upper compare
+    // begin and end comments: the sign tests, then the upper compare; none
+    // for an empty plan, e.g. a start that the walk of its address checked,
+    // under '--checks=lower' alone
     virtual auto emit_bounds_check(const token& src_loc_tk, const size_t indent,
                                    const bounds_range& range,
                                    const bounds_plan& plan) -> void = 0;
@@ -1745,8 +1741,10 @@ class machine {
     // the handler of a check: without the line it prints 'panic: NAME' and
     // exits; with it, one stub per failure location loads the line and enters
     // the entry of its file, which prints 'panic: NAME at FILE:', loads the
-    // exit code and enters the shared line report
+    // exit code and enters the shared line report; its comment above it
     auto emit_failure_handler(const failure_handler& handler) -> void {
+        comment({}, 0, handler.comment);
+
         assembler& output{target_assembler()};
 
         if (not reports_line(handler)) {
@@ -2089,8 +2087,7 @@ class machine {
         return text;
     }
 
-    // zero clears, one needs no code, minus one negates and a power of two is a
-    // shift, only the other factors need a multiplication
+    // the kind of the factor 'bits' at 'width_bits', see 'multiply'
     [[nodiscard]] static auto classify_factor(const uint64_t bits,
                                               const size_t width_bits)
         -> constant_factor {
@@ -2376,8 +2373,6 @@ class machine {
             // note: only a bounded stack is checked, see 'is_stack_bounded'
             assert(handler.label != stack_overflow_failure_.label or
                    is_stack_bounded());
-
-            comment({}, 0, handler.comment);
 
             emit_failure_handler(handler);
         }

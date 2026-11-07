@@ -1,6 +1,14 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] hard: round 169 (2026-11-07, user: continue all night; ET 'machine')
+    => done (2026-11-07): ET 'check_bounds' without its case of an empty
+       plan, for which both backends emit nothing (the comment of
+       'emit_bounds_check' says so), the comment of 'kept_version' names
+       'nested', the comment of 'classify_factor' refers to 'multiply'
+       instead of repeating its rule; 'emit_failure_handler' writes the
+       comment of the handler, which three callers wrote before it;
+       listings, images and errors equal
 [x] hard: round 168 (2026-11-07, user: continue all night; ES the rv32i
     assembler)
     => done (2026-11-07): ES the encodings of 'addi', 'lui' and 'slli' read
