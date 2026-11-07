@@ -522,25 +522,20 @@ class stmt_def_func final : public statement {
     // 'inline_call::check_recursion'); an inlined result is the destination
     // of the call, checked here through an address
     auto check_body(toc& tc) const -> void {
-        const bool takes_from_call{
-            array_param_count() != 0 or
-                (is_inlined() and (not params_.empty() or has_result())),
-        };
-
         try {
             tc.dry_run(
                 [&] -> void {
-                    scope body_scope{frame_scope({})};
-
-                    body_scope.mark_without_call(takes_from_call);
-
-                    const toc::scope_entry body{tc, std::move(body_scope)};
+                    const toc::scope_entry body{tc, frame_scope({})};
 
                     std::ignore = compile_in_frame(tc, 0, {});
                 },
                 machine::discarded_code::body);
         } catch (compile_error& e) {
-            add_instance_trace(e);
+            // the frames of what made the instance, see 'func_instance::trace'
+            if (instance_) {
+                instance_->trace.add_to(e);
+            }
+
             throw;
         }
     }
@@ -760,13 +755,6 @@ class stmt_def_func final : public statement {
         }
     }
 
-    // the frames of what made the instance, see 'func_instance::trace'
-    auto add_instance_trace(compile_error& e) const -> void {
-        if (instance_) {
-            instance_->trace.add_to(e);
-        }
-    }
-
     // located at the method name for diagnostics
     auto add_self_param() -> void {
         // note: a method has its name after the '.'
@@ -956,9 +944,11 @@ class stmt_def_func final : public statement {
     }
 
     // the scope of the body in a frame of its own, entered before the frame
-    // base and the slot register are taken; without array lengths a noinline
-    // body takes nothing from a call, it is checked as it is emitted, as
-    // 'main' is ('check_function_bodies'), 'check_body' marks what it takes
+    // base and the slot register are taken; without array lengths the body
+    // is compiled without a call: a noinline body without array parameters,
+    // checked as it is emitted, as 'main' is ('check_function_bodies'), or
+    // 'check_body', whose body takes from a call the array lengths, or the
+    // bindings of an inlined function
     [[nodiscard]] auto
     frame_scope(const std::span<const size_t> array_lengths) const -> scope {
 
@@ -967,7 +957,12 @@ class stmt_def_func final : public statement {
         };
 
         if (array_lengths.empty()) {
-            body_scope.mark_without_call(false);
+            const bool takes_from_call{
+                array_param_count() != 0 or
+                    (is_inlined() and (not params_.empty() or has_result())),
+            };
+
+            body_scope.mark_without_call(takes_from_call);
         }
 
         return body_scope;

@@ -1,6 +1,12 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] hard: round 155 (2026-11-07, user: continue in a loop; DX
+    'stmt_def_func')
+    => done (2026-11-07): DX 'frame_scope' sets the marks of a body
+       compiled without a call once ('check_body' set them a second time),
+       'add_instance_trace', of one caller, part of 'check_body'; listings
+       equal
 [x] hard: round 154 (2026-11-07, user: continue in a loop; DV regressions
     of the nested versions of round 153, DW 'toc')
     => done (2026-11-07): DV no difference in result, panic or acceptance

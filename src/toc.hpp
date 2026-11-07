@@ -2426,11 +2426,11 @@ class definition_checks final {
 //                             'add_var' and 'add_const' (storage and comments)
 //   'dry_run_depth_'          set by 'dry_run_scope'; read by
 //                             'add_noinline_body' (a body to check, not emit)
-//   'scope::is_without_call'  set by 'stmt_def_func::check_body',
-//                             'stmt_def_func::frame_scope' without array
-//                             lengths and 'scope::main_func'; read for the
-//                             innermost function by 'check_skipped'
-//   'scope::takes_from_call'  set by 'stmt_def_func::check_body'; read for
+//   'scope::is_without_call'  set by 'stmt_def_func::frame_scope' without
+//                             array lengths and 'scope::main_func'; read for
+//                             the innermost function by 'check_skipped'
+//   'scope::takes_from_call'  set by 'stmt_def_func::frame_scope' for
+//                             'stmt_def_func::check_body'; read for
 //                             any function by 'stmt_call::compile' through
 //                             'scope_stack::is_in_body_taking_from_call'
 class toc final {
