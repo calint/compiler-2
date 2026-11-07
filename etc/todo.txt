@@ -17,6 +17,11 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
     0x8000'0000 for qemu, 0 for the fpga), so 'emit_target_setup' and
     'emit_stack_limit_load' move to 'machine_rv32i_bare_metal' and both
     qemu overrides go; changes the qemu layout and listings
+[ ] easy: messages (round 175 FC): 'f(pt{1, 2})' to a 'mut' parameter says
+    to write '{...}', which then fails as not a variable; 'a == {1, 2}' gets
+    the generic "expected a constant, a name or a call" ('a == {}' has its
+    own); 'point[2]' with a value 'point' hiding the type says it is not an
+    array, not that the value hides the type
 [p] easy: user decision (2026-11-07, round 162 EK): add the control flow
     generators '/tmp/r162-ek-work/flowx.py' (structured programs against a
     model, far jumps with a narrowed reach build) and 'borrow2.py' (far

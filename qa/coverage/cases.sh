@@ -7107,3 +7107,6 @@ if [[ $MACHINE == x86_64 ]]; then SRC=4102 && COMPERR; fi
 
 # a character literal after 'return' is a value as a number is
 SRC=4600 && COMPERR
+
+# a constructor called through a value that hides its type names the value
+SRC=4800 && COMPERR

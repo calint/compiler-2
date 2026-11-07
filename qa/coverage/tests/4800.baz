@@ -1,0 +1,14 @@
+# a constructor called through a value that hides its type names the value
+type point { x, y }
+
+func point.at(x) self {
+    self.x = x
+    self.y = 0
+}
+
+dat point = point{ 1, 2 }
+
+func main() {
+    var q = point.at(5)
+    exit(q.x)
+}

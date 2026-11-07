@@ -380,15 +380,7 @@ class program final {
     // the definitions after the includes, 'tk' is the first of them; the
     // statements of the file follow those of the files it included
     auto parse_definitions(open_file& file, token tk) -> void {
-        while (true) {
-            if (tk.is_none()) {
-                // a delimiter is not a token, only the end of the source ends
-                // the definitions
-                file.tz.assert_not_at_delimiter();
-
-                break;
-            }
-
+        while (not tk.is_none()) {
             // a name is seen only after its definition, see
             // 'definition_order'
             tc_.begin_definition();
@@ -398,6 +390,10 @@ class program final {
 
             tk = file.tz.next_token();
         }
+
+        // a delimiter is not a token, only the end of the source ends the
+        // definitions
+        file.tz.assert_not_at_delimiter();
 
         file.parsed.end_tk = tk;
         parsed_files_.push_back(std::move(file.parsed));
@@ -523,7 +519,6 @@ class program final {
         //       is read on every pass
 
         for (size_t i{}; i < tc.noinline_worklist().emitted_body_count(); ++i) {
-
             const noinline_body body{
                 tc.noinline_worklist().emitted_body_at(i),
             };

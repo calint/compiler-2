@@ -2176,6 +2176,17 @@ class stmt_call final : public statement {
         if (not tc.generics().has_func(name) and
             tc.get_func_or_throw(tok(), name).is_constructor()) {
 
+            // e.g. 'point.at(1)' after 'dat point = point{}', the value hides
+            // the type, 'point.at(...)' is what was written
+            if (tc.types().has(receiver.dotted_path())) {
+                throw compile_error{
+                    receiver.tok(),
+                    std::format("{} names a value here, which hides the "
+                                "type {}",
+                                in_quotes(receiver.dotted_path()),
+                                in_quotes(receiver.dotted_path()))};
+            }
+
             throw compile_error{
                 tok(), std::format("{} is a constructor, call it as '{}(...)'",
                                    in_quotes(name), name)};

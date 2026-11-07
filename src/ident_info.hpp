@@ -409,7 +409,6 @@ struct value_use {
 // where 'compile' writes a value: nowhere for a statement, a register, or the
 // storage that a name of the source resolves to, e.g. 'p.x'; it is not changed
 // after it is made, a field or an element of it is a destination of its own
-
 class destination final {
     // e.g. a scratch register that an expression is computed in
     struct held_register {

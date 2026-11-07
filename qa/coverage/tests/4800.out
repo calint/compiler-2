@@ -1,0 +1,4 @@
+
+4800.baz:12:13: 'point' names a value here, which hides the type 'point'
+    var q = point.at(5)
+            ^~~~~

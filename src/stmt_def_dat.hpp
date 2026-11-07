@@ -194,7 +194,15 @@ class stmt_def_dat final : public statement {
             x.comment(str->src_loc_tk, 0, "{}[{}]", tp.name(),
                       str->array_count);
 
-            compile_data_string(x, tp, *str);
+            const std::string bytes{str->src_loc_tk.string_bytes()};
+
+            // note: the parse rejected a string longer than its array
+            assert(bytes.size() <= str->array_count);
+
+            x.emit_string_data(bytes);
+
+            compile_zero_elements(x, str->src_loc_tk, tp,
+                                  str->array_count - bytes.size());
 
             return;
         }
@@ -251,21 +259,6 @@ class stmt_def_dat final : public statement {
 
         x.comment(record.src_loc_tk, 0, "zero {}: {} B", what, remaining_bytes);
         x.emit_zero_data(remaining_bytes);
-    }
-
-    // e.g. 'dat greeting = "hello"'
-    static auto compile_data_string(machine& x, const type& tp,
-                                    const elem::string& str) -> void {
-
-        const std::string bytes{str.src_loc_tk.string_bytes()};
-
-        // note: the parse rejected a string longer than its array
-        assert(bytes.size() <= str.array_count);
-
-        x.emit_string_data(bytes);
-
-        compile_zero_elements(x, str.src_loc_tk, tp,
-                              str.array_count - bytes.size());
     }
 
     // the elements after the listed ones are zero, as in a 'var'

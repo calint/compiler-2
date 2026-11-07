@@ -1,6 +1,16 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] hard: round 175 (2026-11-08, user: continue all night; FB less reviewed
+    files, FC loops, data, include, definitions and zero values)
+    => done (2026-11-08): FC a constructor called through a value that hides
+       its type ('point.at(5)' after 'dat point = ...') said to call it as
+       'point.at(...)', it now says the value hides the type, as 'point{'
+       does (test 4800); FB 'program::parse_definitions' loops while a
+       token is left, 'compile_data_string', of one caller, part of
+       'compile_data_rec'; FC found no wrong result, crash or UB in loops,
+       'dat', include, 'var' and zero values; listings, images and errors
+       equal but for test 4800
 [x] hard: round 174 (2026-11-08, user: continue all night; FA fuzz campaign)
     => done (2026-11-08): FA ran fuzz-all on all targets at scale 3 and 6
        (seeds 17401, 17402), flowx and borrow2 on narrowed-reach builds,
