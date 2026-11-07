@@ -1,6 +1,19 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] hard: round 146 (2026-11-07, user: continue the loop; DE regressions of
+    round 145, DF a codegen todo item)
+    => done (2026-11-07): DE no finding (2800 generated programs heavy in
+       '/', '%' and '*' against the round 144 build on three targets and
+       three option lists, 21883 runs and 3318 equal rejections; the model
+       fuzzers, two on the asan build); DF 'remove_copies' (rv32i), after
+       'remove_reloads': a 'mv' is removed when the reads of its register,
+       up to the instruction that writes it, can take its source, with no
+       entered label, jump, call or write of the source in between; the
+       suite listings 357 rv32i instructions shorter (186 of 471 copies of a
+       helper result), roome 3; report line 'removed register copies';
+       x86_64 unchanged ('fold_copy' a 'todo:', its lines are text and its
+       two-operand forms take no other source)
 [x] hard: round 145 (2026-11-07, user: continue the loop; DB documents
     against behavior after rounds 138 to 144 and compile time, DC x86_64
     fixed registers, DA a codegen todo item)

@@ -983,6 +983,52 @@ class assembler_rv32i final : public assembler {
                    });
     }
 
+    // note: the reads of 'copied' up to the instruction that writes it take
+    //       'source', which holds the same value: no line in between writes
+    //       'source', jumps or calls, and the block has no entry, so no other
+    //       path reaches them and no line after them reads the copy
+
+    auto fold_copy(const std::span<line> block) -> bool override {
+        const instruction* const copy{
+            std::get_if<instruction>(record_of(block.front())),
+        };
+
+        if (copy == nullptr or copy->code != op::mv or copy->rd == copy->rs1) {
+            return false;
+        }
+
+        // note: no code copies into 'zero', whose reads stay zero
+        assert(copy->rd != zero_register_);
+
+        const uint8_t copied{copy->rd};
+        const uint8_t source{copy->rs1};
+
+        const std::optional<size_t> end{
+            copy_end(block.subspan(1), copied, source),
+        };
+
+        if (not end.has_value()) {
+            return false;
+        }
+
+        for (line& l : block.subspan(1, *end + 1)) {
+            if (l.code_size == 0 or not l.record) {
+                continue;
+            }
+
+            instruction& ins{std::get<instruction>(records_.at(*l.record))};
+
+            if (replace_source(ins, copied, source)) {
+                l.text = std::string{leading_whitespace(l.text)} +
+                         instruction_text(ins);
+            }
+        }
+
+        remove(block.front());
+
+        return true;
+    }
+
     // pseudo instructions count as the ones they expand to
     [[nodiscard]] auto instruction_size() const -> size_t override {
         return one_instruction_bytes;
@@ -1119,16 +1165,47 @@ class assembler_rv32i final : public assembler {
             return nullptr;
         }
 
-        const form operands{info(ins->code).operands};
+        return computes(info(ins->code).operands) ? ins : nullptr;
+    }
 
-        const bool computes{
-            operands == form::registers or operands == form::immediate or
-                operands == form::shift or operands == form::upper or
-                operands == form::load or operands == form::load_immediate or
-                operands == form::load_address or operands == form::move,
-        };
+    // the index in 'lines' of the instruction that writes register 'copied',
+    // none when one before it writes 'source', jumps or calls
+    [[nodiscard]] auto copy_end(const std::span<const line> lines,
+                                const uint8_t copied,
+                                const uint8_t source) const
+        -> std::optional<size_t> {
 
-        return computes ? ins : nullptr;
+        for (size_t index{}; index < lines.size(); ++index) {
+            const line& l{lines.at(index)};
+
+            if (l.code_size == 0) {
+                continue;
+            }
+
+            const instruction* const ins{
+                std::get_if<instruction>(record_of(l)),
+            };
+
+            if (ins == nullptr) {
+                return std::nullopt;
+            }
+
+            const form operands{info(ins->code).operands};
+
+            if (operands == form::store) {
+                continue;
+            }
+
+            if (not computes(operands) or ins->rd == source) {
+                return std::nullopt;
+            }
+
+            if (ins->rd == copied) {
+                return index;
+            }
+        }
+
+        return std::nullopt;
     }
 
     // the forms 'write_line' writes for the jump's grown size
@@ -1606,6 +1683,15 @@ class assembler_rv32i final : public assembler {
         }
 
         return encode_branch(details.encoding, first, second, offset);
+    }
+
+    // the forms that write register 'rd' from their operands only, e.g. a load
+    // or an 'add'
+    [[nodiscard]] static auto computes(const form operands) -> bool {
+        return operands == form::registers or operands == form::immediate or
+               operands == form::shift or operands == form::upper or
+               operands == form::load or operands == form::load_immediate or
+               operands == form::load_address or operands == form::move;
     }
 
     [[nodiscard]] static auto data_directive(const size_t element_size_bytes)
@@ -2155,6 +2241,39 @@ class assembler_rv32i final : public assembler {
         const uint32_t rs1_field{uint32_t{rs1} << 15U};
         const uint32_t rs2_field{uint32_t{rs2} << 20U};
         return rd_field | rs1_field | rs2_field;
+    }
+
+    // replaces register 'from' by 'to' where 'ins', of a form that 'computes'
+    // or stores, reads it; true when it did
+    [[nodiscard]] static auto replace_source(instruction& ins,
+                                             const uint8_t from,
+                                             const uint8_t to) -> bool {
+
+        const form operands{info(ins.code).operands};
+
+        const bool reads_rs1{
+            operands == form::registers or operands == form::immediate or
+                operands == form::shift or operands == form::load or
+                operands == form::store or operands == form::move,
+        };
+
+        const bool reads_rs2{
+            operands == form::registers or operands == form::store,
+        };
+
+        bool replaced{};
+
+        if (reads_rs1 and ins.rs1 == from) {
+            ins.rs1 = to;
+            replaced = true;
+        }
+
+        if (reads_rs2 and ins.rs2 == from) {
+            ins.rs2 = to;
+            replaced = true;
+        }
+
+        return replaced;
     }
 
     [[nodiscard]] static auto section_directive(const section which)

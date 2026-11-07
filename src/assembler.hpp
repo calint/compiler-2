@@ -68,6 +68,17 @@
 //     mov r15, qword [rbp + 8]          lw t0, -2032(s0)
 //   to
 //     mov qword [rbp + 8], r15          sw t0, -2032(s0)
+//
+// copies removed by 'remove_copies', after 'remove_reloads', on rv32i: the
+// reads of a copied register take the source until an instruction writes the
+// register, with no such label, jump, call or write of the source in between:
+//
+//                                       mv t0, a0
+//                                       sw t0, -2016(s0)
+//                                       addi t0, t0, 1
+//   to
+//                                       sw a0, -2016(s0)
+//                                       addi t0, a0, 1
 class assembler {
   public:
     // 'optimized' applies the jump optimizations listed above the class
@@ -113,6 +124,7 @@ class assembler {
         size_t same_target_branches{};
         size_t inverted_branches{};
         size_t removed_reloads{};
+        size_t removed_copies{};
     };
 
     // the bodies of one noinline function, valid once jumps are resolved
@@ -292,9 +304,9 @@ class assembler {
         return optimizations_;
     }
 
-    // the jump optimizations unless '--nopt', then 'remove_reloads'; neither
-    // changes a label or a line that is not a jump, so the labels and the
-    // labels named outside jumps are found once
+    // the jump optimizations unless '--nopt', then 'remove_reloads' and
+    // 'remove_copies'; none changes a label or names one outside a jump, so
+    // the labels and the labels named outside jumps are found once
     auto optimize(const bool is_jumps_optimized) -> void {
         assert(captures_.empty());
 
@@ -310,7 +322,12 @@ class assembler {
             optimize_jumps(labels, named);
         }
 
-        remove_reloads(referenced_labels(labels, named));
+        const std::unordered_set<std::string_view> referenced{
+            referenced_labels(labels, named),
+        };
+
+        remove_reloads(referenced);
+        remove_copies(referenced);
     }
 
     // e.g. back to the code after the data of a failure handler
@@ -521,6 +538,10 @@ class assembler {
 
     // the line that starts 'which'
     virtual auto add_section_directive(const section which) -> void = 0;
+
+    // folds the copy that starts 'block' into the lines after it, see above
+    // the class; false when the first line is no copy or the copy is kept
+    virtual auto fold_copy(std::span<line> block) -> bool = 0;
 
     // the code size of one instruction in the target's unit
     [[nodiscard]] virtual auto instruction_size() const -> size_t = 0;
@@ -740,6 +761,34 @@ class assembler {
         }
 
         return referenced;
+    }
+
+    // removes a copy whose reads can take its source, see above the class
+    auto remove_copies(const std::unordered_set<std::string_view>& referenced)
+        -> void {
+
+        // the lines from a copy up to 'end' run without an entry
+        size_t end{lines_.size()};
+        for (size_t index{lines_.size()}; index > 0; --index) {
+            const size_t first{index - 1};
+
+            if (is_enterable(lines_.at(first), referenced)) {
+                end = first;
+                continue;
+            }
+
+            if (lines_.at(first).code_size == 0) {
+                continue;
+            }
+
+            const std::span<line> block{
+                std::span{lines_}.subspan(first, end - first),
+            };
+
+            if (fold_copy(block)) {
+                ++optimizations_.removed_copies;
+            }
+        }
     }
 
     // removes a load that reads back into the register what the instruction

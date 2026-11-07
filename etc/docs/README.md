@@ -44,6 +44,7 @@ machine.hpp      one virtual method per operation the front end needs,
   |              machine_rv32i_qemu.hpp and machine_rv32i_fpga.hpp
   v
 assembler.hpp    buffers the lines, optimizes the jumps, removes reloads
+                 and on rv32i register copies
                  assembler_x86_64.hpp: nasm text
                  assembler_rv32i.hpp: llvm assembler text and the flat
                  binary image of the rv32i targets
@@ -211,11 +212,14 @@ Invariants the code relies on:
 3. output ('machine::finish', then 'report_renderer', then 'write_assembly'):
    the buffered lines get their jumps optimized (not with '--nopt'), a load
    right after a store of its register to the same address is removed, also
-   with '--nopt' ('assembler::remove_reloads'), on rv32i the jumps that do not
-   reach their targets grow ('assembler_rv32i::resolve_jumps'; one without a
-   free scratch register borrows 't0', restored at a landing before the
-   target, so '--nopt' decides no verdict), the report is added as comments,
-   the assembly is written, the rv32i targets also write the binary image.
+   with '--nopt' ('assembler::remove_reloads'), on rv32i a register copy is
+   removed when its reads up to the next write of the register in straight
+   code can take the source ('assembler::remove_copies') and the jumps that
+   do not reach their targets grow ('assembler_rv32i::resolve_jumps'; one
+   without a free scratch register borrows 't0', restored at a landing before
+   the target, so '--nopt' decides no verdict), the report is added as
+   comments, the assembly is written, the rv32i targets also write the binary
+   image.
 
 ### 1.3 Names during compile: scopes and bindings
 
@@ -451,9 +455,9 @@ call that gives 'x' 4 elements is accepted (etc/todo.txt).
 ### 1.6 Reports
 
 After the code, as comments: noinline functions, uninstantiated generics, jump
-optimizations and removed reloads, usage ('report_renderer' in 'program.hpp'),
-and with '--report=registers' the use of registers at the busiest point
-('register_report.hpp').
+optimizations, removed reloads and copies, usage ('report_renderer' in
+'program.hpp'), and with '--report=registers' the use of registers at the
+busiest point ('register_report.hpp').
 
 The usage entries:
 
@@ -1657,7 +1661,9 @@ depends on code not compiled yet, both are compiled and measured (chapter 5).
 
 Cost: no optimization across statements, e.g. a value stored and loaded again
 into another register by the next statement; only a load into the register
-just stored is removed ('assembler::remove_reloads'; 'etc/todo.txt' section 2).
+just stored is removed ('assembler::remove_reloads'; 'etc/todo.txt' section 2)
+and, on rv32i, a register copy whose reads can take its source
+('assembler::remove_copies').
 
 ### 7.2 A node parses itself and keeps every token
 

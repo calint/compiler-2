@@ -731,14 +731,12 @@ func.print_num:
         # [codegen-inefficiencies.baz:54:27] src: expression
         # [codegen-inefficiencies.baz:54:27] allocate scratch register -> t2
         # [codegen-inefficiencies.baz:54:27] n
-        lw t2, 24(s1)
+        lw a0, 24(s1)
         # [codegen-inefficiencies.baz:54:31] t2 % 10
         # [codegen-inefficiencies.baz:54:31] src: folded constant '% 10'
-        mv a0, t2
         li a1, 10
         call .Lbaz_divide
-        mv t2, a1
-        sub t1, t1, t2
+        sub t1, t1, a1
         # [codegen-inefficiencies.baz:54:27] free scratch register t2
         # [codegen-inefficiencies.baz:54:18] allocate scratch register -> t2
         add t2, s1, t0
@@ -747,7 +745,7 @@ func.print_num:
         # [codegen-inefficiencies.baz:54:18] free scratch register t1
         # [codegen-inefficiencies.baz:54:9] free scratch register t0
         # [codegen-inefficiencies.baz:55:9] n = n / 10
-        # [codegen-inefficiencies.baz:55:13] kept the first of two versions of 5 and 7 instructions, the smaller
+        # [codegen-inefficiencies.baz:55:13] kept the first of two versions of 5 and 6 instructions, the smaller
         # [codegen-inefficiencies.baz:55:13] n
         # [codegen-inefficiencies.baz:55:17] n / 10
         # [codegen-inefficiencies.baz:55:17] src: folded constant '/ 10'
@@ -835,16 +833,17 @@ vars.end:
 # free named register s0
 
 #           noinline functions:
-#                    print_num: 1 body, 1 call, 40 instructions, no reuse
+#                    print_num: 1 body, 1 call, 38 instructions, no reuse
 #
 #   removed jumps to next code: 12
 #    removed unreachable jumps: 0
 # removed same target branches: 0
 # inverted branches over jumps: 2
 # removed reloads after stores: 4
+#      removed register copies: 1
 # max scratch registers in use: 4
 #            max scopes in use: 7
 #                     dat size: 0 B
 #              dat var padding: 0 B
 #           max body vars size: 364 B
-#                 instructions: 254
+#                 instructions: 252

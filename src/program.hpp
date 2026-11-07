@@ -186,6 +186,10 @@ class report_renderer final {
                     .name{"removed reloads after stores"},
                     .value{std::format("{}", counts.removed_reloads)},
                 },
+                {
+                    .name{"removed register copies"},
+                    .value{std::format("{}", counts.removed_copies)},
+                },
             },
         };
     }

@@ -291,12 +291,10 @@ func.print_num:
         addi t0, t0, -1
         sw t0, 28(s1)
         li t1, 48
-        lw t2, 24(s1)
-        mv a0, t2
+        lw a0, 24(s1)
         li a1, 10
         call .Lbaz_divide
-        mv t2, a1
-        sub t1, t1, t2
+        sub t1, t1, a1
         add t2, s1, t0
         sb t1, 4(t2)
         lw a0, 24(s1)

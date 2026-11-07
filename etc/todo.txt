@@ -340,6 +340,20 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
     call, 328 rv32i sites; x86 'mov r15, rax' or 'mov r15, rdx' right after
     'idiv', 124; same listings as the item above); the operand side is the
     item above
+    => partly done (2026-11-07, round 146): on rv32i the reads of a register
+       copy up to the next write of the register take the source when no
+       entry, jump, call or write of the source is in between
+       ('remove_copies' of the assembler, after 'remove_reloads', counted in
+       the report); in the listings of the 852 suite tests that compile with
+       the default options, the copies right after a helper call 471 -> 285
+       (rv32i-fpga 473 -> 285, rv32i-qemu 472 -> 285), all copies 357
+       instructions shorter, roome 3 rv32i; left: a copy kept while 'a0'
+       takes the next helper argument (rv32i 202), a copy read across a
+       referenced label or a jump (76), x86_64 (191: its lines are text, and
+       the two-address 'imul r15, ...' or a store or 'add [m], r15' after the
+       copy needs the register dead after the read, which the freeing of
+       scratch registers does not tell: some are freed before their last
+       read)
 [ ] hard: a value is loaded again right after it was stored ('sw t0, 28(s1)'
     then 'lw t0, 28(s1)', 289 rv32i sites in the listings of the items
     above); needs to know which register still holds a variable between

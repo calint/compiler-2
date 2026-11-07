@@ -377,6 +377,13 @@ class assembler_x86_64 final : public assembler {
         add_text(std::string{directives.at(std::to_underlying(which))});
     }
 
+    // todo: the lines are text, a copy is folded once they are structured
+    auto fold_copy([[maybe_unused]] const std::span<line> block)
+        -> bool override {
+
+        return false;
+    }
+
     // every instruction counts as one
     [[nodiscard]] auto instruction_size() const -> size_t override { return 1; }
 
