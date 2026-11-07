@@ -1,6 +1,14 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] hard: round 177 (2026-11-08, user: continue all night; FF the nasm
+    stall that fuzz-whole found in round 176)
+    => done (2026-11-08): the listing is valid, 'nasm -O1' assembles it and
+       the program is right; nasm 3.02 sizes a forward jump with the
+       target's address of the previous pass and lets jumps shrink, two
+       forward jumps swap sizes every pass; the item of 2026-10-26 notes
+       it; the fuzzer change is a pending decision in 'etc/todo.txt'; no
+       code changed
 [x] hard: round 176 (2026-11-08, user: continue all night; FD 'tk' and
     'src_loc_tk', FE the tokenizer, '--reproduce-source' and the command line)
     => done (2026-11-08): FE a hex escape cut inside a UTF-8 character
@@ -4927,7 +4935,9 @@
     sizes oscillate, reduce with 'fuzz-reduce.py'
     => discarded (2026-10-26, user: document it): the listing is valid,
        'nasm -O1' assembles it and the program is right; nasm's '-Ox' jump
-       sizing does not settle; README 8.3 names it
+       sizing does not settle; README 8.3 names it; round 177 FF: a
+       '--checks=noub' listing of fuzz-whole stalls the same way
+       ('invalid-asm-8063c7ca94'), a cycle of two forward jumps
 [x] easy: 'qa/coverage/test-arena.py' large offset runtime: its panic harness
     jumps to 'baz_bounds_panic', which a program compiled with
     '--checks=line' does not define (the handler is under the labels of its

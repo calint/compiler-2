@@ -22,6 +22,11 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
     the generic "expected a constant, a name or a call" ('a == {}' has its
     own); 'point[2]' with a value 'point' hiding the type says it is not an
     array, not that the value hides the type
+[p] easy: user decision (2026-11-08, round 177 FF): the fuzzers count a
+    nasm stall ("unable to find valid values for all labels", README 8.3) as
+    'invalid-asm'; 'fuzzlib.assemble_x86' could retry with 'nasm -O1' and
+    count it as 'nasm-stall' (about 10 lines, no listing change); forward
+    jumps written 'near' always settle but grow '.text' 10.4%
 [p] easy: user decision (2026-11-07, round 162 EK): add the control flow
     generators '/tmp/r162-ek-work/flowx.py' (structured programs against a
     model, far jumps with a narrowed reach build) and 'borrow2.py' (far
