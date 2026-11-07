@@ -103,26 +103,6 @@ class arith_steps final {
         merged.folded_source += s.folded_source;
     }
 
-    // the constant that leaves a value unchanged
-    [[nodiscard]] static auto identity_of(const arithmetic_operator op)
-        -> int64_t {
-
-        const std::optional<int64_t> identity{traits_of(op).identity};
-
-        // note: asked of a regroupable operator
-        assert(identity);
-
-        return *identity;
-    }
-
-    // two operators of one run: equal, or '+' and '-'
-    [[nodiscard]] static auto is_same_run_op(const arithmetic_operator a,
-                                             const arithmetic_operator b)
-        -> bool {
-
-        return a == b or (is_additive(a) and is_additive(b));
-    }
-
     // pass 3: a subtracted or negated first element needs a negation so the
     // merged constant of an additive list leads instead, a zero constant adds
     // nothing so negating in place is shorter
@@ -199,11 +179,12 @@ class arith_steps final {
     merge_regroupable_constants(const std::span<const step> steps,
                                 const type& width_type) -> std::vector<step> {
 
-        // a dividend or a divisor is a run of its own
+        // a dividend or a divisor is a run of its own; '+' and '-' share one
         const auto same_run{
             [](const step& a, const step& b) -> bool {
                 return is_regroupable(a.op) and is_regroupable(b.op) and
-                       is_same_run_op(a.op, b.op);
+                       (a.op == b.op or
+                        (is_additive(a.op) and is_additive(b.op)));
             },
         };
 
@@ -234,10 +215,16 @@ class arith_steps final {
             return;
         }
 
+        // the constant that leaves a value unchanged
+        const std::optional<int64_t> identity{traits_of(op).identity};
+
+        // note: every regroupable operator has one
+        assert(identity);
+
         step constant{
             .op{op},
             .element{},
-            .value{identity_of(op)},
+            .value{identity},
             .folded_source{},
         };
 
@@ -315,7 +302,8 @@ class arith_steps final {
 //   ops:      +       -
 //
 // same-precedence operations stay flat; higher-precedence operations become
-// nested lists
+// nested lists; a lower-precedence operation ends a nested list and continues
+// its parent, e.g. 'a * b + c' is one list
 //
 // note: a list is computed left to right in its destination; a nested list,
 //       a destination that a later element reads, or a measured shorter
@@ -722,13 +710,14 @@ class expr_arith final : public statement {
 
         const step& last{steps.back()};
 
-        // note: 2 steps are the least with something to add the constant to
-
-        if (steps.size() < 2 or not arith_steps::is_merged(last) or
+        if (not arith_steps::is_merged(last) or
             last.op != arithmetic_operator::add) {
 
             return std::nullopt;
         }
+
+        // note: a list of constants folds before, so an element precedes
+        assert(steps.size() >= 2);
 
         compile_steps(tc, indent, dst,
                       std::span{steps}.first(steps.size() - 1));
@@ -1139,25 +1128,28 @@ class expr_arith final : public statement {
                                         const int64_t value,
                                         const type& width_type) -> void {
 
-        if (is_division(op)) {
-            assert_divisor_not_zero(src_loc_tk, value);
+        // a zero divisor traps on every target, so a constant one is an error
+        // like a constant index out of bounds, e.g. 'x / 0' or 'x % (2 - 2)'
+        if (is_division(op) and value == 0) {
+            throw compile_error{src_loc_tk, "divisor must not be zero"};
         }
 
-        if (is_shift(op)) {
-            assert_shift_count_fits(src_loc_tk, value, width_type);
-        }
-    }
-
-    // a zero divisor traps on every target, so a constant one is an error like
-    // a constant index out of bounds, e.g. 'x / 0' or 'x % (2 - 2)'
-    static auto assert_divisor_not_zero(const token& src_loc_tk,
-                                        const int64_t divisor) -> void {
-
-        if (divisor != 0) {
+        if (not is_shift(op)) {
             return;
         }
 
-        throw compile_error{src_loc_tk, "divisor must not be zero"};
+        // the targets shift differently by a count outside the width, so a
+        // constant one is an error, e.g. 'x << 8' of an 'i8'
+        const size_t width_bits{width_type.size_bits()};
+
+        if (value >= 0 and std::cmp_less(value, width_bits)) {
+            return;
+        }
+
+        throw compile_error{
+            src_loc_tk,
+            std::format("shift count must be 0 to {} for {}-bit values",
+                        width_bits - 1, width_bits)};
     }
 
     // e.g. the '&&' of 'a && b', which would read as '&' and an operand '&'
@@ -1219,24 +1211,6 @@ class expr_arith final : public statement {
             std::format("a 'bool' is not an arithmetic operand, convert it, "
                         "e.g. 'int({})'",
                         converted)};
-    }
-
-    // the targets shift differently by a count outside the width, so a
-    // constant one is an error, e.g. 'x << 8' of an 'i8'
-    static auto assert_shift_count_fits(const token& src_loc_tk,
-                                        const int64_t count,
-                                        const type& width_type) -> void {
-
-        const size_t width_bits{width_type.size_bits()};
-
-        if (count >= 0 and std::cmp_less(count, width_bits)) {
-            return;
-        }
-
-        throw compile_error{
-            src_loc_tk,
-            std::format("shift count must be 0 to {} for {}-bit values",
-                        width_bits - 1, width_bits)};
     }
 
     // the operand in a scratch register that the operation may overwrite
@@ -1471,21 +1445,17 @@ class expr_arith final : public statement {
     [[nodiscard]] static auto is_negated_operand(const toc& tc,
                                                  const statement& src) -> bool {
 
-        return is_stored_value(tc, src) and
-               src.operand_path()->get_unary_ops().is_only_negated();
+        // a register or memory location, neither computed nor constant
+        const stmt_identifier* const ident{src.operand_path()};
+
+        return ident != nullptr and
+               not make_ident_info(tc, *ident).is_const() and
+               ident->get_unary_ops().is_only_negated();
     }
 
     // note: asked of the operators after the first element, which are binary
     [[nodiscard]] static auto is_shift(const arithmetic_operator op) -> bool {
         return traits_of(op).family == operator_family::shift;
-    }
-
-    // a register or memory location, neither computed nor constant
-    [[nodiscard]] static auto is_stored_value(const toc& tc,
-                                              const statement& src) -> bool {
-
-        const stmt_identifier* const ident{src.operand_path()};
-        return ident != nullptr and not make_ident_info(tc, *ident).is_const();
     }
 
     // an element or a parenthesized sub-expression: '-a' vs '-(a + b)'

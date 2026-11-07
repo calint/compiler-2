@@ -33,11 +33,9 @@
 // a path of names, fields and indexes, or a literal; the types and functions
 // below in reading order:
 //
-//   'assert_constant_index', 'constant_range',
+//   'longest_array_len', 'assert_constant_index', 'constant_range',
 //   'assert_constant_range'  the constant checks of an index and a range
 //   'throw_call_not_array'   a call where an array is expected
-//   'throw_result_not_stored'
-//                            a field or a method of a call's result
 //   'lea_request'            what a caller asks of the address of a path
 //   'stmt_identifier'        the path node; its members that use 'expr_any'
 //                            are in 'stmt_identifier_impl.hpp'
@@ -197,19 +195,6 @@ class stmt_identifier;
                                                 in_quotes(callee))};
 }
 
-// a field or a method of a call's result, e.g. the '.' of 'mk().x' at
-// 'at_dot'; a result has no storage to reach into
-[[noreturn]] inline auto throw_result_not_stored(const tokenizer& at_dot,
-                                                 const std::string_view callee)
-    -> void {
-
-    throw compile_error{at_dot,
-                        std::format("store the result of {} in a variable "
-                                    "before reading a field or calling a "
-                                    "method of it",
-                                    in_quotes(callee))};
-}
-
 // what a caller asks of the address of an identifier
 struct lea_request {
     // the path starts a range, its last index may be the end; false for an
@@ -232,9 +217,7 @@ struct lea_request {
 // reaches ('accessed_bytes_', the whole array after a run-time index), the
 // compile resolves the root again in the current scopes, steps the fields and
 // builds one memory operand ('compile_lea', see 'etc/docs/README.md' chapter
-// 6); a path that names a constant has no storage; the members that use
-// 'expr_any' (the constructor, the element parse, the index steps of the walk)
-// are in 'stmt_identifier_impl.hpp'
+// 6); a path that names a constant has no storage
 class stmt_identifier final : public statement {
     // what an indexed path reaches: the element, or from it to the end of
     // the array, e.g. the 'g[1]' of 'array_copy(s, g[1], 3)'

@@ -340,7 +340,6 @@ inline auto stmt_identifier::path_address::add_index(const ident_elem& cur_elem,
     -> operand {
 
     toc& tc{tc_.get()};
-    const size_t indent{indent_};
 
     const token& index_tk{cur_elem.index_expr().tok()};
 
@@ -349,14 +348,15 @@ inline auto stmt_identifier::path_address::add_index(const ident_elem& cur_elem,
     if (not index_register_) {
         // index expressions are parsed with the default type
         index_register_ = held_.get().alloc_scratch_register(
-            index_tk, indent, tc.builtins().default_type());
+            index_tk, indent_, tc.builtins().default_type());
     }
 
     const operand& index_register{*index_register_};
 
     int64_t addend_elements{
-        compile_checked_index(tc, indent, cur_elem.index_expr(), index_register,
-                              cur_info.shape(), request.is_range),
+        compile_checked_index(tc, indent_, cur_elem.index_expr(),
+                              index_register, cur_info.shape(),
+                              request.is_range),
     };
 
     machine& x{tc.machine()};
@@ -367,7 +367,8 @@ inline auto stmt_identifier::path_address::add_index(const ident_elem& cur_elem,
 
         assert(addend_elements == 0);
 
-        x.copy_value(index_tk, indent, *request.start_register, index_register);
+        x.copy_value(index_tk, indent_, *request.start_register,
+                     index_register);
     }
 
     const size_t element_size_bytes{cur_info.type_ref().size_bytes()};
@@ -377,16 +378,16 @@ inline auto stmt_identifier::path_address::add_index(const ident_elem& cur_elem,
     if (not fits_address_offset(address.displacement(), addend_elements,
                                 element_size_bytes)) {
 
-        x.comment(index_tk, indent, "index constant {} is added",
+        x.comment(index_tk, indent_, "index constant {} is added",
                   addend_elements);
 
         x.add_subtract(
-            index_tk, indent, arithmetic_operator::add, index_register,
+            index_tk, indent_, arithmetic_operator::add, index_register,
             operand::imm(addend_elements, tc.builtins().default_type()));
 
         addend_elements = 0;
     } else if (addend_elements != 0) {
-        x.comment(index_tk, indent,
+        x.comment(index_tk, indent_,
                   "index constant {} goes into the displacement",
                   addend_elements);
     }
@@ -396,7 +397,7 @@ inline auto stmt_identifier::path_address::add_index(const ident_elem& cur_elem,
     const bool is_encodable_scale{x.can_lower_index_scale(element_size_bytes)};
 
     if (not is_encodable_scale) {
-        x.scale_index(index_tk, indent, index_register, element_size_bytes);
+        x.scale_index(index_tk, indent_, index_register, element_size_bytes);
     }
 
     return operand::mem(address.base_register(), index_register.register_name(),

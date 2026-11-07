@@ -1,6 +1,20 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] hard: round 172 (2026-11-08, user: continue all night; EW
+    'stmt_identifier', EX 'expr_arith')
+    => done (2026-11-08): EX 'assert_divisor_not_zero',
+       'assert_shift_count_fits', 'is_stored_value', 'is_same_run_op' and
+       'identity_of', of one caller each, part of their callers; a list
+       with a merged last step has two steps or more, so
+       'compile_without_trailing_addend' asserts it instead of testing it;
+       the class comment says a lower-precedence operator ends a nested
+       list; EW 'throw_result_not_stored', of one caller, part of
+       'stmt_call::assert_result_not_accessed', the map of
+       'stmt_identifier.hpp' names 'longest_array_len' and the class
+       comment no longer repeats the file header, 'path_address::add_index'
+       reads 'indent_' as its other methods do; listings, images and errors
+       equal
 [x] hard: round 171 (2026-11-07, user: continue all night; EV the x86_64
     backend)
     => done (2026-11-07): EV 'assembler_x86_64::instruction_text' writes a
