@@ -1,6 +1,19 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] hard: round 144 (2026-11-07, user: keep going until no issues are
+    found; CS fuzz campaign, CT regressions over rounds 138 to 143)
+    => done (2026-11-07): CS no finding (fuzz-all at scale 3 on every
+       target, seed 14301, every stage 0 mismatches and every mutant
+       caught; fuzz-whole 1500 programs on four targets; fuzz-exprs 30000,
+       fuzz-data 2000, fuzz-calls 2500 on four targets, seeds 14302-14305);
+       CT no regression (the builds of round 137 and HEAD on the suite of
+       four targets with seven option lists, 62496 compiles each: exit codes
+       and errors equal, listings differ only by removed reloads, report
+       lines and far branches that the shorter code brings in range; 2809
+       fuzzer sources with 14 option lists each; asan); the loop ends: the
+       hunts of rounds 138 to 144 found no compiler bug, the design reviews
+       are down to changes of a few lines
 [x] hard: round 143 (2026-11-07, user: keep going until no issues are
     found; CQ expressions, constants, operands and built-ins, CR toc,
     generics, tokenizer, token, type, registers, main, CS fuzz campaign)
