@@ -1,6 +1,21 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] hard: round 151 (2026-11-07, user: continue the loop; DP regressions of
+    the conversion change of round 150, DQ the code versions)
+    => done (2026-11-07): DP no finding (7500 generated conversion programs
+       against a model and the round 149 build, x86_64 and the rv32i
+       targets, under 'noub', 'shift', with '--nopt' and without checks;
+       fuzz-exprs, fuzz-ub, fuzz-whole); DQ 'machine::emit_most_efficient'
+       compiles the first version without a catch, so its error propagates and the
+       second, which holds the first's registers and more, is not compiled
+       ('unavailable_version' and its exception pointer removed); listings
+       and errors equal, also with '--versions=first' and '=last'; measured
+       and not done: the argument of a conversion to a narrower memory
+       destination as two versions (in the destination, through a scratch
+       register) saves 287 instructions of each rv32i suite, 160 of them
+       in test 0594, and none in roome, a version site for 0.16 % (as A.8
+       of 2026-10-26)
 [x] hard: round 150 (2026-11-07, user: continue the loop; DN types and
     value conversions, DO crashes reachable from input)
     => done (2026-11-07): DO no finding (about 750000 compiles of mutated

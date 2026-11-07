@@ -1421,12 +1421,13 @@ scratch version past '--vars', or an inlined recursion that runs out of
 registers in one version only. The error carries a kind other than 'source'
 ('compile_error::error_kind'), which is set where the error is made. The
 second version holds the registers of the first and more, so only the second
-runs out alone; when the first runs out, its error is reported. Any other
-error is an error of the program and ends the compile. An error of discarded
-code is a 'source' error ('toc::dry_run'), so a version never drops it; the
-check of a body starts from the registers of a noinline body, which do not
-depend on the code around it, and skipped code from the registers held where
-it stands, as if it ran ('machine::discarded_code').
+runs out alone; when the first runs out, its error is reported and the second
+is not compiled. Any other error is an error of the program and ends the
+compile. An error of discarded code is a 'source' error ('toc::dry_run'), so a
+version never drops it; the check of a body starts from the registers of a
+noinline body, which do not depend on the code around it, and skipped code
+from the registers held where it stands, as if it ran
+('machine::discarded_code').
 
 What a failed version entered must be left when its error unwinds:
 

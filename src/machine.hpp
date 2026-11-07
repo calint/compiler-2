@@ -470,16 +470,10 @@ class machine {
         std::vector<failure_location> failures;
     };
 
-    // a version that fails with an error that depends on the code compiled,
-    // e.g. running out of registers, is not available, its error is kept to
-    // be thrown when the other version fails too
-    struct unavailable_version {
-        std::exception_ptr error;
-        // what it ran out of, for the comment of the choice
-        std::string_view resource;
-    };
-
-    using version_result = std::expected<compiled_version, unavailable_version>;
+    // a version, or when it fails with an error that depends on the code
+    // compiled what it ran out of, e.g. "registers", for the comment of the
+    // choice
+    using version_result = std::expected<compiled_version, std::string_view>;
 
     // the version 'emit_most_efficient' keeps and the comment of why
     struct version_choice {
@@ -1224,25 +1218,22 @@ class machine {
                         const std::function_ref<void()> emit_first,
                         const std::function_ref<void()> emit_second) -> bool {
 
-        assembler& output{target_assembler()};
-
-        version_result first{compile_version(emit_first)};
-        version_result second{compile_version(emit_second)};
-
         // note: the second version of each caller holds the registers of the
         //       first and one more, with the same storage and inlining depth
         //       ('expr_arith' through a scratch register, 'stmt_call' with
-        //       address registers), so it fails where the first fails
+        //       address registers), so it fails where the first fails and the
+        //       error of the first ends the choice
 
-        if (not first) {
-            std::rethrow_exception(first.error().error);
-        }
+        compiled_version first{compile_version(emit_first)};
+        version_result second{compile_available_version(emit_second)};
 
         const version_choice choice{choose_version(first, second)};
 
         comment(src_loc_tk, indent, choice.comment);
 
-        compiled_version& kept{choice.keeps_first ? *first : *second};
+        assembler& output{target_assembler()};
+
+        compiled_version& kept{choice.keeps_first ? first : *second};
 
         state_ = std::move(kept.end_state);
         failure_locations_.append_range(kept.failures);
@@ -2253,13 +2244,11 @@ class machine {
         }
     }
 
-    // of two versions, the first available, the one to keep and why, e.g.
-    // 'kept the second of two versions of 4 and 3 instructions, the smaller'
-    [[nodiscard]] auto choose_version(const version_result& first,
+    // of two versions, the one to keep and why, e.g. 'kept the second of two
+    // versions of 4 and 3 instructions, the smaller'
+    [[nodiscard]] auto choose_version(const compiled_version& first,
                                       const version_result& second) const
         -> version_choice {
-
-        assert(first);
 
         if (not second) {
             return {
@@ -2267,14 +2256,14 @@ class machine {
                 .comment{
                     std::format("kept the first of two versions, the second "
                                 "runs out of {}",
-                                second.error().resource),
+                                second.error()),
                 },
             };
         }
 
         const assembler& output{target_assembler()};
 
-        const size_t first_count{output.instruction_count_of(first->lines)};
+        const size_t first_count{output.instruction_count_of(first.lines)};
         const size_t second_count{output.instruction_count_of(second->lines)};
 
         bool keeps_first{first_count <= second_count};
@@ -2301,36 +2290,40 @@ class machine {
         };
     }
 
-    // the lines of 'emit' with the state they end in, compiled from the
-    // current state, which is put back
-    [[nodiscard]] auto compile_version(const std::function_ref<void()> emit)
+    // 'compile_version', or what it ran out of when it fails with an error
+    // that depends on the code compiled
+    [[nodiscard]] auto
+    compile_available_version(const std::function_ref<void()> emit)
         -> version_result {
 
-        const version_scope version{*this};
-
         try {
-            assembler::captured_lines lines{target_assembler().capture(emit)};
-
-            return compiled_version{
-                .lines{std::move(lines)},
-                .end_state{state_},
-                .failures{version.added_failures()},
-            };
+            return compile_version(emit);
         } catch (const compile_error& e) {
             // note: every kind but 'source' depends on the code compiled, the
-            //       other version may not reach it
+            //       first version did not reach it
 
             if (not e.is_limit()) {
                 throw;
             }
 
-            const unavailable_version unavailable{
-                .error{std::current_exception()},
-                .resource{exhausted_resource(e.kind)},
-            };
-
-            return std::unexpected{unavailable};
+            return std::unexpected{exhausted_resource(e.kind)};
         }
+    }
+
+    // the lines of 'emit' with the state they end in, compiled from the
+    // current state, which is put back
+    [[nodiscard]] auto compile_version(const std::function_ref<void()> emit)
+        -> compiled_version {
+
+        const version_scope version{*this};
+
+        assembler::captured_lines lines{target_assembler().capture(emit)};
+
+        return {
+            .lines{std::move(lines)},
+            .end_state{state_},
+            .failures{version.added_failures()},
+        };
     }
 
     // the text of a message in read-only data, then back to the code
@@ -2648,7 +2641,7 @@ class machine {
             return "variable storage";
         }
 
-        // note: 'compile_version' passes only a limit
+        // note: 'compile_available_version' passes only a limit
         assert(kind == compile_error::error_kind::inlining_limit);
 
         return "inlined call levels";
