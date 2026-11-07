@@ -57,7 +57,9 @@ class source_files final {
     struct file {
         std::string name;
         std::string text;
-        // see 'absolute_path', the relative names are built from it
+        // the absolute path, its directory resolved ('resolved_path'), e.g.
+        // '/w/include/x.baz' of 'lib/../include/x.baz' run from '/w'; the
+        // relative names are built from it
         std::filesystem::path absolute;
         // see 'relative_name'
         std::string relative_name;
@@ -75,7 +77,11 @@ class source_files final {
     auto add(std::string name, std::string text,
              const std::optional<source_span> included_at) -> size_t {
 
-        std::filesystem::path absolute{absolute_path(name)};
+        const std::filesystem::path given{
+            std::filesystem::absolute(std::filesystem::path{name}),
+        };
+
+        std::filesystem::path absolute{resolved_path(given)};
 
         const std::filesystem::path main_dir{
             files_.empty() ? absolute.parent_path()
@@ -162,18 +168,6 @@ class source_files final {
     //
     // statics
     //
-
-    // e.g. '/w/include/x.baz' of 'lib/../include/x.baz' run from '/w', see
-    // 'resolved_path'
-    [[nodiscard]] static auto absolute_path(const std::string_view name)
-        -> std::filesystem::path {
-
-        const std::filesystem::path path{
-            std::filesystem::absolute(std::filesystem::path{name}),
-        };
-
-        return resolved_path(path);
-    }
 
     // the index where each line of 'text' begins
     [[nodiscard]] static auto line_begins_of(const std::string_view text)
@@ -331,16 +325,15 @@ class source_locations final {
     }
 
   private:
-    [[nodiscard]] auto column(const token& src_loc_tk) const -> size_t {
-        return files_.get().column(src_loc_tk.file_index(),
-                                   src_loc_tk.start_index());
-    }
-
     // 'line' and 'column' of the token, 'separator' between them
     [[nodiscard]] auto text(const token& src_loc_tk, const char separator) const
         -> std::string {
 
-        return std::format("{}{}{}", src_loc_tk.at_line(), separator,
-                           column(src_loc_tk));
+        const size_t column{
+            files_.get().column(src_loc_tk.file_index(),
+                                src_loc_tk.start_index()),
+        };
+
+        return std::format("{}{}{}", src_loc_tk.at_line(), separator, column);
     }
 };

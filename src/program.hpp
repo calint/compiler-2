@@ -443,9 +443,7 @@ class program final {
             std::make_unique<stmt_include>(include_tk, file.tz),
         };
 
-        // relative to the directory of the file with the 'include', as the
-        // file system resolves it: a '..' after a symbolic link to a
-        // directory is the parent of the link's target
+        // relative to the directory of the file with the 'include'
         const std::filesystem::path joined{
             std::filesystem::path{files_.get().name(file.parsed.file_ix)}
                     .parent_path() /

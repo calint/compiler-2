@@ -46,7 +46,6 @@
 //                            what a value names when it is a place
 //   'statement::visit_call_effects', 'visit_operand_reads',
 //   'statement::visit_reads', 'statement::assert_result_not_read',
-//   'statement::reads_name',
 //   'statement::bare_path'
 //                            the operand walks of 'statement', defined here
 //                            because they need 'stmt_identifier'
@@ -1376,17 +1375,6 @@ inline auto statement::assert_result_not_read(const assignment_flow& flow) const
     visit_reads([&flow](const stmt_identifier& read) -> void {
         read.assert_set_before_read(flow);
     });
-}
-
-// a path such as 'p.y' reads its root variable
-inline auto statement::reads_name(const std::string_view var) const -> bool {
-    bool is_read{};
-
-    visit_reads([&var, &is_read](const stmt_identifier& read) -> void {
-        is_read = is_read or read.tok().is_text(var);
-    });
-
-    return is_read;
 }
 
 inline auto statement::bare_path() const -> const stmt_identifier* {

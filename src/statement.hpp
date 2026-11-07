@@ -179,8 +179,8 @@ class stmt_identifier;
 //                  'assert_result_not_read', a leaf lists none;
 //                  'visit_reads' and 'visit_call_effects' walk the
 //                  operands, 'stmt_identifier' adds its own read,
-//                  'stmt_call' and 'stmt_builtin_io' what the call writes,
-//                  'stmt_call' its callee
+//                  'stmt_call' what its callee reads and writes,
+//                  'stmt_builtin_io' the buffer it fills
 //   a value        'fold': 'expr_zero', 'expr_bool', 'stmt_identifier',
 //                  'stmt_builtin_array_length' and 'stmt_builtin_convert',
 //                  forwarded by 'expr_arith' and 'expr_any';
@@ -358,9 +358,6 @@ class statement {
     [[nodiscard]] auto is_computed() const -> bool {
         return operand_path() == nullptr;
     }
-
-    // a path rooted at the name 'var' is read ('stmt_identifier.hpp')
-    [[nodiscard]] auto reads_name(std::string_view var) const -> bool;
 
     auto set_type(const type& tp) -> void { type_ = &tp; }
 

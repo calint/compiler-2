@@ -1,6 +1,16 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] hard: round 165 (2026-11-07, user: continue the loop; EN the compile
+    time UB detection, EO source files and the program driver)
+    => done (2026-11-07): EN 'statement::reads_name', of one caller, a
+       lambda of 'reaches_destination' in 'ub_order.hpp' (docs 9), the
+       class comment of 'statement' says what 'visit_call_effects' gives
+       for a call and for an io built-in, the map of 'ident_info.hpp' names
+       'var_address'; EO 'source_files::absolute_path' and
+       'source_locations::column', of one caller each, part of their
+       callers, the comment of 'parse_include' no longer restates how a
+       path resolves; listings and errors equal
 [x] hard: round 164 (2026-11-07, user: continue the loop; the fix EL of
     round 163 proposed)
     => done (2026-11-07): 'assert_return_without_value' takes a literal as

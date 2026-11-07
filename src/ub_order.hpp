@@ -50,13 +50,22 @@
                                               const statement& st,
                                               const destination& dst) -> bool {
 
+    bool is_read{};
+
+    if (dst.is_named_register()) {
+        // a path such as 'p.y' reads its root variable
+        st.visit_reads([&](const stmt_identifier& read) -> void {
+            is_read = is_read or read.tok().is_text(dst.text());
+        });
+
+        return is_read;
+    }
+
     const std::optional<storage_path> dst_storage{dst.storage()};
 
     if (not dst_storage) {
-        return dst.is_named_register() and st.reads_name(dst.text());
+        return false;
     }
-
-    bool is_read{};
 
     st.visit_reads([&](const stmt_identifier& read) -> void {
         if (read.may_reach(tc, *dst_storage)) {

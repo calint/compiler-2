@@ -7,6 +7,7 @@
 //   'in_storage', 'at_address_register', 'in_value_register',
 //   'var_placement'    where a variable lives
 //   'var_info'         what a variable is declared as
+//   'var_address'      what the operand of a variable is
 //   'ident_info'       what a name resolves to
 //   'value_use'        the width a value is used at
 //   'destination'      where 'compile' writes a value
