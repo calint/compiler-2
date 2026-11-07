@@ -1,6 +1,17 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] hard: round 178 (2026-11-08, user: continue all night; FG types and
+    the compile time UB files, FH the documents against behavior)
+    => done (2026-11-08): FH the 'return' hint said "assign the result" in
+       a function without one, it says "a result is assigned"; the docs
+       name the comment of a version kept unmeasured inside a version and
+       that discarded code writes no comments; FG 'reaches_destination'
+       sets its flag one way, the header of 'parse_lookahead.hpp' names
+       the call result of 'throw_literal_not_operand'; FH found the other
+       claims true; the README listings and 'prog.s' are refreshed by
+       'scripts/prepare-for-commit.sh'; listings, images and errors equal
+       but for the 'return' message (tests 1546, 2872, 4600, 4901)
 [x] hard: round 177 (2026-11-08, user: continue all night; FF the nasm
     stall that fuzz-whole found in round 176)
     => done (2026-11-08): the listing is valid, 'nasm -O1' assembles it and

@@ -1,4 +1,4 @@
 
-1546.baz:4:12: 'return' takes no value, assign the result, e.g. 'res = a'
+1546.baz:4:12: 'return' takes no value, a result is assigned, e.g. 'res = a'
     return 2
            ^

@@ -181,8 +181,8 @@ inline auto assert_return_without_value(const tokenizer& tz,
     };
 
     if (is_literal or is_lone_name or is_operator_first) {
-        throw compile_error{tk, "'return' takes no value, assign the result, "
-                                "e.g. 'res = a'"};
+        throw compile_error{tk, "'return' takes no value, a result is "
+                                "assigned, e.g. 'res = a'"};
     }
 }
 

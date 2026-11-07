@@ -306,6 +306,10 @@ the longer of two versions after both are measured:
    instructions is kept with the state it ended in, e.g. with and without a
    scratch register, see 5.3
 
+Discarded code writes no listing comments ('machine::comment' returns while
+'version_state::is_discarded' is set), so a dry run does not render the
+source it would quote; a version writes them, its lines may be kept.
+
 What dropped code changed is put back by its owner, also when an error
 unwinds it:
 
@@ -524,6 +528,8 @@ allocate scratch register -> r15, free scratch register r15
                        the registers a step holds
 kept the second of two versions of 6 and 4 instructions, the smaller
                        the version kept of code compiled two ways (5)
+kept the first of two versions, inside a version
+                       a choice inside a version, not measured (5.2)
 ```
 
 The variables the compiler adds are named by the byte offset of the call in

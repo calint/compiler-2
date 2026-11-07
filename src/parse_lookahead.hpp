@@ -8,7 +8,8 @@
 // 'stmt_identifier::is_method_name', a function head by 'func_head'; the
 // rejections that run before a parse would misread ('assert_*') and the
 // predicates of the shape of what follows ('continues_*', 'is_*',
-// 'starts_value'); 'throw_literal_not_operand' words a literal reached into
+// 'starts_value'); 'throw_literal_not_operand' words a literal or a call
+// result used where only storage is an operand
 
 #include <algorithm>
 #include <cassert>

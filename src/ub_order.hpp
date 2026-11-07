@@ -68,15 +68,11 @@
     }
 
     st.visit_reads([&](const stmt_identifier& read) -> void {
-        if (read.may_reach(tc, *dst_storage)) {
-            is_read = true;
-        }
+        is_read = is_read or read.may_reach(tc, *dst_storage);
     });
 
     st.visit_call_effects(tc, [&](const call_effect& effect) -> void {
-        if (effect.storage.may_overlap(*dst_storage)) {
-            is_read = true;
-        }
+        is_read = is_read or effect.storage.may_overlap(*dst_storage);
     });
 
     return is_read;
