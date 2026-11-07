@@ -1,6 +1,14 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] hard: round 179 (2026-11-08, user: continue all night; FI pathological
+    input: deep nesting, large input, names like mnemonics and labels)
+    => done (2026-11-08): no wrong result or crash; nesting stops at its
+       limits with an error, long chains are linear, names like mnemonics,
+       registers and generated labels assemble on both targets; the cubic
+       memory of generic base chains and the quadratic tables are todo
+       items, the first a user decision as its fix adds code; no code
+       changed
 [x] hard: round 178 (2026-11-08, user: continue all night; FG types and
     the compile time UB files, FH the documents against behavior)
     => done (2026-11-08): FH the 'return' hint said "assign the result" in

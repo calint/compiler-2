@@ -22,6 +22,20 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
     the generic "expected a constant, a name or a call" ('a == {}' has its
     own); 'point[2]' with a value 'point' hiding the type says it is not an
     array, not that the value hides the type
+[p] medium: user decision (2026-11-08, round 179 FI): generic type base
+    chains ('type dI<k> = dI-1<k>') take cubic memory: 'generic_trace::inside'
+    copies every outer frame into each level and each instance and method
+    keeps a copy; 400 levels with 400 aliases take 3.0 GB, 10000 levels
+    9.7 GB; a linked trace (one frame and a 'shared_ptr' to the outer)
+    makes copies O(1) (70 MB, 20 MB), about 40 lines with a loop destructor
+    so that freeing a deep chain does not overflow the stack; the patch is
+    '/tmp/r179-fi-work/generic-trace.diff'
+[ ] easy: compile time quadratic in table sizes (round 179 FI), far above
+    real programs: 'data_table::get_dat' (128000 dats 9.9 s),
+    'data_table::add_constant' (64000 strings 6.0 s), 'assembler::summary_of'
+    and 'noinline_worklist::add_once'/'contains' (128000 noinline functions
+    27 s); an 'unordered_map' index next to each vector would make them
+    linear
 [p] easy: user decision (2026-11-08, round 177 FF): the fuzzers count a
     nasm stall ("unable to find valid values for all labels", README 8.3) as
     'invalid-asm'; 'fuzzlib.assemble_x86' could retry with 'nasm -O1' and
