@@ -20,8 +20,8 @@
 enum class block_braces : uint8_t { optional, required };
 
 // a scope of statements, '{...}' or one statement without braces; its
-// declarations end with it, in 'toc' and in the definite-assignment walk,
-// and each block is one level of the parse nesting limit
+// declarations end with it, and each block is one level of the parse nesting
+// limit
 class stmt_block final : public statement {
     // none for one statement without braces
     std::optional<token> open_brace_tk_;

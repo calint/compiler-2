@@ -1,6 +1,19 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] hard: round 162 (2026-11-07, user: continue the loop; EJ the statement
+    classes, EK control flow)
+    => done (2026-11-07): EK no finding (about 25000 generated programs of
+       nested 'if', 'loop' and 'foo' with 'break', 'continue', 'return' and
+       'exit' in inlined and noinline functions against a model, 170000
+       builds on four targets with '--nopt' and '--versions', and with the
+       rv32i reach narrowed so that every jump form and the borrowed
+       register of far jumps occur; the images match llvm-mc); EJ
+       'stmt_loop::compile' ends its loop like
+       'stmt_builtin_foo': the back branch and the end label inside the
+       scope, 'join_loop' last, without the block that ended the scope
+       before it; the comment of 'stmt_block' no longer names the
+       definite-assignment walk, which has no block scope; listings equal
 [x] hard: round 161 (2026-11-07, user: continue the loop; EH output
     independent of the run, EI errors and register reports)
     => done (2026-11-07): EH no finding (the unordered containers are only

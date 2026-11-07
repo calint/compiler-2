@@ -38,21 +38,19 @@ class stmt_loop final : public statement {
         const std::string label{tc.create_unique_label(tok(), "loop")};
         x.label(indent, label);
 
-        {
-            const toc::scope_entry loop{
-                tc,
-                scope::loop(label, loop_end::at_break, label),
-            };
+        const toc::scope_entry loop{
+            tc,
+            scope::loop(label, loop_end::at_break, label),
+        };
 
-            code_.compile(tc, indent, destination{});
-
-            // the end is reached only by a 'break' that is compiled, the parse
-            // rejects code after a loop without one
-            tc.join_loop();
-        }
+        code_.compile(tc, indent, destination{});
 
         x.branch(indent, label);
         x.label(indent, toc::end_label(label));
+
+        // the end is reached only by a 'break' that is compiled, the parse
+        // rejects code after a loop without one
+        tc.join_loop();
     }
 
     auto trace_assignment(assignment_flow& flow) const -> void override {
