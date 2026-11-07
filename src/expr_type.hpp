@@ -188,7 +188,7 @@ struct full_list {
 
 // the items of a list in braces after its '{' and the delimiters between
 // them, appended to 'delims_tk', up to the '}' it returns; 'full' is none
-// when the list has no capacity; 'parse_item' parses the item at an index
+// when the length is not known; 'parse_item' parses the item at an index
 // and 'delimiter_error' is the message of a missing ',' before it; a
 // trailing ',' lets each item end its line the same way
 [[nodiscard]] inline auto
@@ -539,7 +539,11 @@ class expr_type final : public statement {
 
     auto source_to(std::ostream& os) const -> void override;
 
-    [[nodiscard]] auto operand_path() const -> const stmt_identifier* override;
+    // a copy is of its source, e.g. the 'p' of 'q = p'
+    [[nodiscard]] auto operand_path() const -> const stmt_identifier* override {
+        const statement* const value{copy_or_call()};
+        return value != nullptr ? value->operand_path() : nullptr;
+    }
 
     // a copy or a call reads its source instead of the '{...}' items
     auto visit_operands(const operand_visitor visitor) const -> void override;
@@ -567,7 +571,13 @@ class expr_type final : public statement {
 
   private:
     // the copy or the call that is the value, null for a literal
-    [[nodiscard]] auto copy_or_call() const -> const statement*;
+    [[nodiscard]] auto copy_or_call() const -> const statement* {
+        const std::unique_ptr<statement>* const value{
+            std::get_if<std::unique_ptr<statement>>(&value_),
+        };
+
+        return value != nullptr ? value->get() : nullptr;
+    }
 
     // creates the 'stmt_call' or 'expr_path'
     auto parse_copy_source(toc& tc, tokenizer& tz, const term_kind tm) -> void;
@@ -609,6 +619,19 @@ class expr_type final : public statement {
     // statics
     //
 
-    // a field value of 'parse_fields' is not written with the field's name
-    static auto assert_field_unnamed(const tokenizer& tz) -> void;
+    // a field value of 'parse_fields' names no field, e.g. the 'x:' of
+    // 'point{x: 1, y: 2}'
+    static auto assert_field_unnamed(const tokenizer& tz) -> void {
+        tokenizer probe{tz};
+
+        const token name_tk{probe.next_token()};
+
+        if (not name_tk.is_word() or not probe.is_next_char_token(':')) {
+            return;
+        }
+
+        throw compile_error{
+            name_tk,
+            "fields are given in order, without names, e.g. 'point{1, 2}'"};
+    }
 };

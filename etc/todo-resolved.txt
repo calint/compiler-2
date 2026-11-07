@@ -1,6 +1,18 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] hard: round 139 (2026-11-07, user: continue the loop, more threads;
+    CC limits hunt, CF design of 'ub_*', 'expr_type*', 'access_path.hpp',
+    'decouple.hpp')
+    => done (2026-11-07): CC no finding (nesting to the limits, 100000-term
+       chains, 3000 fields and locals, 2000 functions, storage options from
+       0 to 2^64, 2^31-element arrays, constants at type extremes in about
+       60000 cases, 100000-character names, asan); CF1 'decouple.hpp' no
+       longer declares 'stmt_call'; CF2 'copy_or_call', 'operand_path' and
+       'assert_field_unnamed' in 'expr_type.hpp', the impl file holds what
+       uses 'expr_any' or 'stmt_call'; CF3 one 'assert_value_ends' in the
+       'expr_type' constructor; CF4 'parse_braced_items' comment; CF6
+       ('storage_path::is_same' for one user) not done; listings unchanged
 [x] medium: aliasing: 'destination' as a variant '{none, reg, storage}';
     the storage part is done ('std::optional<stored_name>', the kind follows
     from the members, 'ident_info.hpp'), the operand still sits outside it

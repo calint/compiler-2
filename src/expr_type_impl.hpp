@@ -95,14 +95,13 @@ inline expr_type::expr_type(toc& tc, tokenizer& tz, const type& tp,
     // e.g. 'p = pt', the token is empty at '{x, y}'
     if (not tok().is_none() and not is_typed_literal) {
         parse_copy_source(tc, tz, tm);
-        assert_value_ends(tz, tok(), value_kind::instance, tp);
-        return;
+    } else {
+        // e.g. the '(' of 'q = (p)' or the '-' of 'q = -p'
+        assert_no_value_operator(tz, instance_text);
+
+        parse_fields(tc, tz);
     }
 
-    // e.g. the '(' of 'q = (p)' or the '-' of 'q = -p'
-    assert_no_value_operator(tz, instance_text);
-
-    parse_fields(tc, tz);
     assert_value_ends(tz, tok(), value_kind::instance, tp);
 }
 
@@ -148,21 +147,6 @@ inline auto expr_type::parse_fields(toc& tc, tokenizer& tz) -> void {
                 tc, tz, tf.type_ref(), literal_typing::from_destination,
                 tf.shape));
         });
-}
-
-// e.g. the 'x:' of 'point{x: 1, y: 2}', a value names no field
-inline auto expr_type::assert_field_unnamed(const tokenizer& tz) -> void {
-    tokenizer probe{tz};
-
-    const token name_tk{probe.next_token()};
-
-    if (not name_tk.is_word() or not probe.is_next_char_token(':')) {
-        return;
-    }
-
-    throw compile_error{
-        name_tk,
-        "fields are given in order, without names, e.g. 'point{1, 2}'"};
 }
 
 // the special members need the complete 'expr_any'
@@ -225,14 +209,6 @@ inline auto expr_type::parse_copy_source(toc& tc, tokenizer& tz,
     }
 }
 
-inline auto expr_type::copy_or_call() const -> const statement* {
-    const std::unique_ptr<statement>* const value{
-        std::get_if<std::unique_ptr<statement>>(&value_),
-    };
-
-    return value != nullptr ? value->get() : nullptr;
-}
-
 inline auto expr_type::source_to(std::ostream& os) const -> void {
     if (const statement* const value{copy_or_call()}) {
         value->source_to(os);
@@ -254,12 +230,6 @@ inline auto expr_type::source_to(std::ostream& os) const -> void {
     source_delimited_to(os, exprs, list.delims_tk);
 
     list.close_brace_tk.source_to(os);
-}
-
-// a copy is of its source, e.g. the 'p' of 'q = p'
-inline auto expr_type::operand_path() const -> const stmt_identifier* {
-    const statement* const value{copy_or_call()};
-    return value != nullptr ? value->operand_path() : nullptr;
 }
 
 // e.g. '{1, 2}' writes the fields in order, then zeroes the unlisted fields

@@ -4,8 +4,8 @@
 //   - the parse functions that 'stmt_block' and 'expr_arith' call, which
 //     make the statements of a block and the elements of an expression,
 //     defined in 'parse_statement.hpp', which includes every statement
-//   - the classes 'expr_type' holds, 'stmt_call' and 'expr_any', whose
-//     headers include 'expr_type.hpp'; its members that use them are in
+//   - the class 'expr_type' holds, 'expr_any', whose header includes
+//     'expr_type.hpp'; its members that use it or 'stmt_call' are in
 //     'expr_type_impl.hpp'
 
 #include <memory>
@@ -15,7 +15,6 @@
 class toc;
 class tokenizer;
 class statement;
-class stmt_call;
 class expr_any;
 class type;
 class unary_ops;
