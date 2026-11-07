@@ -138,6 +138,10 @@
 - Do not split large headers; helper classes go near their user in the same
   file; ask before adding a source file.
 - One consistency topic at a time across all sources.
+- A todo item whose solution complicates the code is not done: note why in
+  the item and go to the next.
+- Before fixing a todo item, ask the user with the proposed fix and its
+  measurements, and send the notification "need clearance for todo item".
 - Todo items one by one; resolved or discarded ones move to the top of
   `etc/todo-resolved.txt` below its legend (`[x]`, `=> done (date): ...`).
 - Done means: built, focused tests run, clang-tidy and `qa/lint/check-all.sh`

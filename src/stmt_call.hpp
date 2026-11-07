@@ -745,8 +745,8 @@ struct call_site {
 //   2. 'compile_with_bindings': the bindings of the result and the arguments
 //      ('make_bindings'), an instance literal or a call result argument is
 //      made in a temporary, an indexed argument may get its address in a
-//      register ('compile_with_address_choice',
-//      'compile_body_with_address_registers')
+//      register, the shorter of two versions
+//      ('compile_body_with_address_registers')
 //   3. 'compile_body': the body in place with the bindings
 //      ('stmt_def_func::compile_inlined')
 class inline_call final {
@@ -824,47 +824,6 @@ class inline_call final {
         };
 
         tc.dry_run(compile_first_level, machine::discarded_code::here);
-    }
-
-    auto compile(toc& tc, const size_t indent, const destination& dst) const
-        -> void {
-
-        if (call_.func->has_result() and
-            call_site::result_type_differs(dst, *call_.func)) {
-            // note: a narrower integer, see 'stmt_call::assert_result_type'
-
-            compile_widened(tc, indent, dst);
-            return;
-        }
-
-        // a result the body passes to a 'mut' parameter needs storage, a
-        // register destination gets it through a temporary of the call
-        const bool has_result_temporary{
-            dst.is_register() and call_.func->uses().is_result_passed_as_mut(),
-        };
-
-        // a block holds the temporaries of the call
-        // note: a block is a scope, which counts toward the nesting limit and
-        //       the 'max scopes in use' report, so a call without temporaries
-        //       enters none
-        std::optional<toc::scope_entry> temporaries;
-
-        if (has_argument_temporary() or has_result_temporary) {
-            temporaries.emplace(tc, scope::block());
-        }
-
-        if (not has_result_temporary) {
-            compile_with_bindings(tc, indent, dst);
-            return;
-        }
-
-        const destination result{call_.add_result_temporary(tc, indent)};
-
-        compile_with_bindings(tc, indent, result);
-
-        machine& x{tc.machine()};
-
-        x.copy_value(call_.tk, indent, dst.operand(), result.operand());
     }
 
     // the call within the nesting limits; a recursion that does not end at
@@ -952,6 +911,47 @@ class inline_call final {
         return arguments;
     }
 
+    auto compile(toc& tc, const size_t indent, const destination& dst) const
+        -> void {
+
+        if (call_.func->has_result() and
+            call_site::result_type_differs(dst, *call_.func)) {
+            // note: a narrower integer, see 'stmt_call::assert_result_type'
+
+            compile_widened(tc, indent, dst);
+            return;
+        }
+
+        // a result the body passes to a 'mut' parameter needs storage, a
+        // register destination gets it through a temporary of the call
+        const bool has_result_temporary{
+            dst.is_register() and call_.func->uses().is_result_passed_as_mut(),
+        };
+
+        // a block holds the temporaries of the call
+        // note: a block is a scope, which counts toward the nesting limit and
+        //       the 'max scopes in use' report, so a call without temporaries
+        //       enters none
+        std::optional<toc::scope_entry> temporaries;
+
+        if (has_argument_temporary() or has_result_temporary) {
+            temporaries.emplace(tc, scope::block());
+        }
+
+        if (not has_result_temporary) {
+            compile_with_bindings(tc, indent, dst);
+            return;
+        }
+
+        const destination result{call_.add_result_temporary(tc, indent)};
+
+        compile_with_bindings(tc, indent, result);
+
+        machine& x{tc.machine()};
+
+        x.copy_value(call_.tk, indent, dst.operand(), result.operand());
+    }
+
     // the arguments bound as for the body, which is not compiled, e.g. an
     // inlined recursion that the check of a body that takes from a call does
     // not expand ('inline_call::check_recursion')
@@ -1036,34 +1036,6 @@ class inline_call final {
         x.free_scratch_register(call_.tk, indent, result);
     }
 
-    // note: the body is compiled in two versions and the one with the least
-    //       code is kept
-    //
-    //       1. bindings use the indexed addresses as they are, e.g.
-    //          '[s0 + t0 * 4 + 28]'
-    //       2. each indexed address goes once into a new register, the
-    //          displacement included, e.g. '[t1]'
-    //
-    //       rv32i has no base + index addressing, so in version 1 every
-    //       access adds base and index again; a register pays off only when
-    //       the body accesses the argument more than once, which is only
-    //       known after compiling the body
-    //
-    //       the argument registers are shared by all versions, so they are
-    //       freed after the choice by 'compile_with_bindings'
-
-    auto compile_with_address_choice(toc& tc, const size_t indent,
-                                     const call_bindings& bindings) const
-        -> void {
-
-        tc.emit_most_efficient(
-            call_.tk, indent,
-            [&] -> void { compile_body(tc, indent, bindings); },
-            [&] -> void {
-                compile_body_with_address_registers(tc, indent, bindings);
-            });
-    }
-
     auto compile_with_bindings(toc& tc, const size_t indent,
                                const destination& dst) const -> void {
 
@@ -1087,15 +1059,36 @@ class inline_call final {
             return;
         }
 
-        compile_with_address_choice(tc, indent, bindings);
+        // note: the body is compiled in two versions and the one with the
+        //       least code is kept
+        //
+        //       1. bindings use the indexed addresses as they are, e.g.
+        //          '[s0 + t0 * 4 + 28]'
+        //       2. each indexed address goes once into a new register, the
+        //          displacement included, e.g. '[t1]'
+        //
+        //       rv32i has no base + index addressing, so in version 1 every
+        //       access adds base and index again; a register pays off only
+        //       when the body accesses the argument more than once, which is
+        //       only known after compiling the body
+        //
+        //       the argument registers are shared by both versions, so 'held'
+        //       frees them after the choice
+
+        tc.emit_most_efficient(
+            call_.tk, indent,
+            [&] -> void { compile_body(tc, indent, bindings); },
+            [&] -> void {
+                compile_body_with_address_registers(tc, indent, bindings);
+            });
     }
 
     [[nodiscard]] auto has_argument_temporary() const -> bool {
         return std::ranges::any_of(
-            std::views::iota(size_t{}, call_.places.size()),
-            [this](const size_t i) -> bool {
-                return is_temporary(call_.places.at(i),
-                                    call_.func->params().at(i));
+            std::views::zip(call_.places, call_.func->params()),
+            [](const auto& pair) -> bool {
+                const auto& [arg_place, param]{pair};
+                return is_temporary(arg_place, param);
             });
     }
 
@@ -1372,18 +1365,12 @@ class noinline_call final {
     auto compile(toc& tc, const size_t indent, const destination& dst) const
         -> void {
 
-        const bool has_temporaries{
-            has_result_temporary(dst, *call_.func) or
-                std::ranges::any_of(call_.places,
-                                    [](const std::optional<place>& p) -> bool {
-                                        return not p;
-                                    }),
-        };
-
         // a block holds the temporaries of the call
         std::optional<toc::scope_entry> temporaries;
 
-        if (has_temporaries) {
+        if (has_argument_temporary() or
+            has_result_temporary(dst, *call_.func)) {
+
             temporaries.emplace(tc, scope::block());
         }
 
@@ -1505,6 +1492,14 @@ class noinline_call final {
         // a register that holds a value of the caller is not lost
         x.call_function(call_.tk, indent, call_.func->body_label(array_lengths),
                         frame_address, register_address(dst, arguments));
+    }
+
+    // a value without storage, e.g. a literal or an expression, is passed in
+    // a temporary
+    [[nodiscard]] auto has_argument_temporary() const -> bool {
+        return std::ranges::any_of(
+            call_.places,
+            [](const std::optional<place>& p) -> bool { return not p; });
     }
 
     // the slots of the callee frame at 'frame_address' get the addresses of

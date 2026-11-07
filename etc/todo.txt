@@ -35,7 +35,7 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
        ambiguity (forbids a block after a declaration), '{}' required before
        a block (against the omitted '{}' style), no bare blocks (a feature)
 [ ] medium: the compile time of nested inlined calls with an indexed
-    argument doubles per level: 'inline_call::compile_with_address_choice'
+    argument doubles per level: 'inline_call::compile_with_bindings'
     compiles each such body in two versions, and a nested call inside each
     version again (a valid 'res = r(ps[gi], n - 1)' that 'main' calls takes
     on rv32i-fpga 31 ms at depth 8, 460 ms at 12 and 1.8 s at 14,
