@@ -28,7 +28,6 @@
     sh zero, -2010(s0)
     sb zero, -2008(s0)
 === 37:     ps[i].text = "hi\n"
-    lw t0, -1988(s0)
     slli t1, t0, 3
     add t1, t1, s0
     li t2, 104

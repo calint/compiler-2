@@ -218,10 +218,6 @@ class assignment_flow final {
     // the result is assigned these bytes
     auto assign(const byte_range bytes) -> void { assigned_.add(bytes); }
 
-    [[nodiscard]] auto assigned() const -> const assigned_bytes& {
-        return assigned_;
-    }
-
     // a path that never reaches the next statement cannot narrow a merge
     auto end_path() -> void {
         assigned_ = assigned_bytes::full(assigned_.size_bytes());
@@ -229,6 +225,11 @@ class assignment_flow final {
     }
 
     [[nodiscard]] auto is_reachable() const -> bool { return is_reachable_; }
+
+    // the result has these bytes assigned on every path reaching here
+    [[nodiscard]] auto is_set(const byte_range bytes) const -> bool {
+        return assigned_.covers(bytes);
+    }
 
     auto record_break() -> void {
         // the first break sets the coverage, later ones narrow it

@@ -8,6 +8,7 @@
 #include <format>
 #include <functional>
 #include <limits>
+#include <optional>
 #include <ostream>
 #include <print>
 #include <span>
@@ -15,6 +16,7 @@
 #include <string_view>
 #include <utility>
 #include <variant>
+#include <vector>
 
 #include "assembler.hpp"
 
@@ -156,6 +158,17 @@ class assembler_x86_64 final : public assembler {
 
     static constexpr size_t op_count_{std::to_underlying(op::cmpsq) + 1};
 
+    // a 'mov' between a register and memory, which 'is_reload' compares
+    struct memory_move {
+        std::string register_name;
+        // the operand with its width, e.g. 'word [rbp + 2]'
+        std::string address;
+        size_t size_bytes{};
+        bool stores{};
+    };
+
+    std::vector<memory_move> moves_;
+
   public:
     // the widths of the operands
     static constexpr size_t size_qword{8};
@@ -266,9 +279,20 @@ class assembler_x86_64 final : public assembler {
 
         assert(info(code).operand_count == 2);
 
-        add_instruction(std::format("{}{} {}, {}", indentation(indent),
-                                    info(code).mnemonic, argument_text(dst),
-                                    argument_text(src)));
+        std::string text{
+            std::format("{}{} {}, {}", indentation(indent), info(code).mnemonic,
+                        argument_text(dst), argument_text(src)),
+        };
+
+        std::optional<memory_move> move{memory_move_of(code, dst, src)};
+
+        if (not move) {
+            add_instruction(std::move(text));
+            return;
+        }
+
+        moves_.push_back(std::move(*move));
+        add_line(std::move(text), instruction_size(), moves_.size() - 1);
     }
 
     auto jcc(const size_t indent, const condition cc,
@@ -367,6 +391,24 @@ class assembler_x86_64 final : public assembler {
 
         // the branches the optimizer inverts are all paired
         std::unreachable();
+    }
+
+    // a 32-bit load clears the upper half, which the register need not hold
+    // clear, and an address without a width takes the register's
+    [[nodiscard]] auto is_reload(const line& store, const line& load) const
+        -> bool override {
+
+        if (not store.record or not load.record) {
+            return false;
+        }
+
+        const memory_move& stored{moves_.at(*store.record)};
+        const memory_move& loaded{moves_.at(*load.record)};
+
+        return stored.stores and not loaded.stores and
+               stored.size_bytes != 0 and stored.size_bytes != size_dword and
+               stored.register_name == loaded.register_name and
+               stored.address == loaded.address;
     }
 
     [[nodiscard]] auto unconditional_jump_mnemonic() const
@@ -574,6 +616,48 @@ class assembler_x86_64 final : public assembler {
         static_assert(infos.size() == op_count_);
 
         return infos.at(std::to_underlying(code));
+    }
+
+    // a 'mov' between a register and memory, else empty
+    [[nodiscard]] static auto memory_move_of(const op code, const argument& dst,
+                                             const argument& src)
+        -> std::optional<memory_move> {
+
+        if (code != op::mov) {
+            return std::nullopt;
+        }
+
+        const std::string_view* const dst_register{
+            std::get_if<std::string_view>(&dst),
+        };
+
+        const memory* const src_memory{std::get_if<memory>(&src)};
+
+        if (dst_register != nullptr and src_memory != nullptr) {
+            return memory_move{
+                .register_name{*dst_register},
+                .address{argument_text(src)},
+                .size_bytes{src_memory->size_bytes},
+                .stores{false},
+            };
+        }
+
+        const memory* const dst_memory{std::get_if<memory>(&dst)};
+
+        const std::string_view* const src_register{
+            std::get_if<std::string_view>(&src),
+        };
+
+        if (dst_memory != nullptr and src_register != nullptr) {
+            return memory_move{
+                .register_name{*src_register},
+                .address{argument_text(dst)},
+                .size_bytes{dst_memory->size_bytes},
+                .stores{true},
+            };
+        }
+
+        return std::nullopt;
     }
 
     [[nodiscard]] static auto size_specifier(const size_t size_bytes)

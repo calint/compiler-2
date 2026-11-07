@@ -336,6 +336,13 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
     then 'lw t0, 28(s1)', 289 rv32i sites in the listings of the items
     above); needs to know which register still holds a variable between
     statements
+    => partly done (2026-11-07, round 140): 'assembler::remove_reloads'
+       drops the load of the register just stored to the same address when
+       no entered label is between (rv32i 'sw'/'lw', x86_64 qword, word and
+       byte 'mov'); left: narrower rv32i loads and x86_64 dword or 'movsx',
+       which extend (rv32i 'sb'/'lb' 194, 'sh'/'lh' 188, x86_64 dword 98
+       and byte 'movsx' 23 sites), a load into another register (rv32i 184,
+       x86_64 qword 151), and a reload after a jumped-to label
 [ ] hard: multiply/divide helper chains ('r = a * b * c * d') pass the value
     through memory or a scratch register between the calls; needs register
     targeting for helper operands
@@ -439,7 +446,9 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
     => test with 'DIFFINP2' input split inside a record
 [ ] hard: UB detection: conservative rejections: a write through a runtime index
     covers nothing, 'array_copy' into a result is not an assignment, 'foo'
-    bodies do not count as assigning
+    bodies do not count as assigning, a call argument reads its whole path
+    when its destination is written in parts ('p = {7, gy(p)}' is rejected
+    while 'p = {7, p.y}' is accepted, round 140 CI)
 [ ] hard: UB detection: accept partial results when the caller's destination is
     already initialized (call-site coverage summary); a body that sets only
     'res.pos.y' is "may return without setting its result 'res'"

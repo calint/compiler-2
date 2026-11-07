@@ -640,9 +640,16 @@ struct call_site {
                    },
                    var_kind::var);
 
+        const ident_info info{tc.resolve_declared(tk, name)};
+
         return destination::of_name(
-            tc.resolve_declared(tk, name), name,
-            tc.storage_of(name, access_path::whole_variable()));
+            info,
+            {
+                .address{info.operand()},
+                .is_final_address{info.is_address_by_call()},
+                .storage{tc.storage_of(name, access_path::whole_variable())},
+                .text{name},
+            });
     }
 
     // a variable of the current block that holds the argument at 'index',

@@ -182,6 +182,10 @@ class report_renderer final {
                     .name{"inverted branches over jumps"},
                     .value{std::format("{}", counts.inverted_branches)},
                 },
+                {
+                    .name{"removed reloads of stored values"},
+                    .value{std::format("{}", counts.removed_reloads)},
+                },
             },
         };
     }

@@ -59,6 +59,14 @@
 // a label between the two jumps of the last three rules stops the rule only
 // when it is in code and a line names it, e.g. a jump or a call, or when it
 // is numeric, e.g. '1:' named by '1b'
+//
+// reloads removed by 'remove_reloads', after the jump optimizations; such a
+// label in between keeps the load:
+//
+//     mov qword [rbp + 8], r15          sw t0, -2032(s0)
+//     mov r15, qword [rbp + 8]          lw t0, -2032(s0)
+//   to
+//     mov qword [rbp + 8], r15          sw t0, -2032(s0)
 class assembler {
   public:
     // 'optimized' applies the jump optimizations listed above the class
@@ -103,6 +111,7 @@ class assembler {
         size_t unreachable_jumps{};
         size_t same_target_branches{};
         size_t inverted_branches{};
+        size_t removed_reloads{};
     };
 
     // the bodies of one noinline function, valid once jumps are resolved
@@ -310,6 +319,41 @@ class assembler {
         }
     }
 
+    // removes a load that reads back into the register what the instruction
+    // before it stored, see above the class
+    auto remove_reloads() -> void {
+        assert(captures_.empty());
+
+        const std::unordered_map<std::string_view, size_t> labels{
+            label_lines(),
+        };
+
+        const std::unordered_set<std::string_view> referenced{
+            referenced_labels(labels, labels_named_outside_jumps(labels)),
+        };
+
+        // the instruction executed right before 'l', none at an entry
+        const line* previous{};
+        for (line& l : lines_) {
+            if (is_enterable(l, referenced)) {
+                previous = nullptr;
+                continue;
+            }
+
+            if (l.code_size == 0) {
+                continue;
+            }
+
+            if (previous != nullptr and is_reload(*previous, l)) {
+                remove(l);
+                ++optimizations_.removed_reloads;
+                continue;
+            }
+
+            previous = &l;
+        }
+    }
+
     // e.g. back to the code after the data of a failure handler
     auto switch_section(const section which) -> void {
         set_code_section(which == section::text);
@@ -505,6 +549,11 @@ class assembler {
     [[nodiscard]] virtual auto
     inverse_branch_mnemonic(std::string_view mnemonic) const
         -> std::string_view = 0;
+
+    // 'load' leaves every register as it is after 'store', the instruction
+    // before it
+    [[nodiscard]] virtual auto is_reload(const line& store,
+                                         const line& load) const -> bool = 0;
 
     // every other jump is a conditional branch
     [[nodiscard]] virtual auto unconditional_jump_mnemonic() const

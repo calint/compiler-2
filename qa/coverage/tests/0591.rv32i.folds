@@ -4,7 +4,6 @@
     li t0, 5
     sw t0, -2024(s0)
 === 21:     arr[3] = arr[2] + 1 # folds
-    lw t0, -2024(s0)
     addi t0, t0, 1
     sw t0, -2020(s0)
 === 26:     shapes[1].pts[two].y = 7 # folds
@@ -14,7 +13,6 @@
     li t0, 3
     sb t0, -1988(s0)
 === 33:     shapes[i].pts[1].x = 9 # folds
-    lw t0, -1960(s0)
     slli t1, t0, 3
     sub t0, t1, t0
     slli t0, t0, 2

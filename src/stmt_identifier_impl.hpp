@@ -459,12 +459,13 @@ inline auto stmt_identifier::path_address::indexed_element(
     const ident_info& cur_info, const lea_request& request,
     const operand& address) -> operand {
 
+    const toc& tc{tc_.get()};
+
     const std::optional<int64_t> constant_index{
-        cur_elem.index_expr().constant_value(tc_),
+        cur_elem.index_expr().constant_value(tc),
     };
 
     if (constant_index) {
-        const toc& tc{tc_.get()};
         const machine& x{tc.machine()};
 
         assert_constant_index(cur_info, cur_elem.index_expr().tok(), path,

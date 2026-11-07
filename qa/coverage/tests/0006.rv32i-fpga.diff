@@ -23,7 +23,7 @@
 < # inverted branches over jumps: 0
 ---
 > # inverted branches over jumps: 1
-195c189
+196c190
 < #                 instructions: 50
 ---
 > #                 instructions: 44

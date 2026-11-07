@@ -53,7 +53,7 @@
     const std::optional<storage_path> dst_storage{dst.storage()};
 
     if (not dst_storage) {
-        return dst.is_named() and st.reads_name(dst.text());
+        return dst.is_named_register() and st.reads_name(dst.text());
     }
 
     bool is_read{};

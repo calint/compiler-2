@@ -406,6 +406,10 @@ class destination final {
     // e.g. a scratch register that an expression is computed in
     struct held_register {
         ::operand reg;
+        // a name, of the source or a call temporary, e.g. the result of an
+        // inlined call bound to a register; a register the compiler allocated
+        // has none
+        bool is_named{};
     };
 
     // what a name in storage resolved to and the root variable and the path
@@ -427,12 +431,8 @@ class destination final {
     // its arithmetic wraps on purpose, see 'as_wrapping'; otherwise the
     // overflow check is as '--checks' asks
     bool wraps_{};
-    // a name, of the source or a call temporary, e.g. the result of an
-    // inlined call bound to a register; a register the compiler allocated has
-    // none
-    bool is_named_{};
 
-    // what a resolved name adds when it is the destination of an assignment
+    // what a resolved name adds as a destination, see 'of_name'
     struct name_parts {
         ::operand address;
         bool is_final_address{};
@@ -517,7 +517,12 @@ class destination final {
         return std::holds_alternative<std::monostate>(place_);
     }
 
-    [[nodiscard]] auto is_named() const -> bool { return is_named_; }
+    // a register that holds a name, see 'held_register'; a stored
+    // destination is always named
+    [[nodiscard]] auto is_named_register() const -> bool {
+        const held_register* const held{std::get_if<held_register>(&place_)};
+        return held != nullptr and held->is_named;
+    }
 
     [[nodiscard]] auto is_register() const -> bool {
         return std::holds_alternative<held_register>(place_);
@@ -581,22 +586,8 @@ class destination final {
     // statics
     //
 
-    // a name resolved as 'info' with its 'storage', at the operand of 'info',
-    // e.g. a temporary
-    [[nodiscard]] static auto of_name(const ident_info& info,
-                                      const std::string_view name,
-                                      std::optional<storage_path> storage)
-        -> destination {
-
-        return of_name(info, {
-                                 .address{info.operand()},
-                                 .is_final_address{info.is_address_by_call()},
-                                 .storage{std::move(storage)},
-                                 .text{std::string{name}},
-                             });
-    }
-
-    // a name resolved as 'info', e.g. the destination of an assignment
+    // a name resolved as 'info', e.g. the destination of an assignment or a
+    // call temporary
     [[nodiscard]] static auto of_name(const ident_info& info, name_parts parts)
         -> destination {
 
@@ -619,11 +610,13 @@ class destination final {
             // note: a name in a register has no address to keep
             assert(parts.address.is_register() and not parts.is_final_address);
 
-            result.place_ = held_register{std::move(parts.address)};
+            result.place_ = held_register{
+                .reg{std::move(parts.address)},
+                .is_named{true},
+            };
         }
 
         result.text_ = std::move(parts.text);
-        result.is_named_ = true;
 
         return result;
     }
@@ -633,7 +626,12 @@ class destination final {
         assert(reg.is_register());
 
         destination result;
-        result.place_ = held_register{reg};
+
+        result.place_ = held_register{
+            .reg{reg},
+            .is_named{},
+        };
+
         result.text_ = reg.register_name();
 
         return result;

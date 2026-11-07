@@ -205,10 +205,10 @@ examples:
 ```text
 Language                     files          blank        comment           code
 -------------------------------------------------------------------------------
-C/C++ Header                    64           9278           6957          27053
+C/C++ Header                    64           9322           7001          27202
 C++                              1            198             97            793
 -------------------------------------------------------------------------------
-SUM:                            65           9476           7054          27846
+SUM:                            65           9520           7098          27995
 -------------------------------------------------------------------------------
 ```
 
@@ -5721,6 +5721,7 @@ vars.end:
 ;    removed unreachable jumps: 2
 ; removed same target branches: 0
 ; inverted branches over jumps: 7
+; removed reloads of stored values: 0
 ; max scratch registers in use: 4
 ;            max scopes in use: 10
 ;                     dat size: 376 B

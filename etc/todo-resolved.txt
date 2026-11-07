@@ -1,6 +1,28 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] hard: round 140 (2026-11-07, user: keep going until no issues are
+    found; CD hunt of round 138, CI no-UB control flow, CH measured codegen
+    item, CJ 'destination' and 'stmt_identifier' follow-ups)
+    => done (2026-11-07): CD no finding (listings of HEAD and round 138 over
+       1500 generated programs and 11207 fuzzer compiles equal, fuzz-all,
+       asan); CI no finding (60000 definite-assignment programs with an
+       oracle checked against a compiler without 'assert_set_at_return',
+       probes on both targets), the conservative call-argument rejection
+       added to the todo; CH 'assembler::remove_reloads' after the jump
+       optimizations removes a load of the register the instruction before
+       it stored to the same address unless a label execution can enter is
+       between: rv32i 'sw'/'lw' (not from 'zero', the device registers),
+       x86_64 qword, word and byte 'mov' (a dword load clears the upper
+       half); counted in the report; the listings rv32i -832 instructions
+       (1.06 %), roome -16, x86_64 -203 (0.37 %), roome -5; the far-jump
+       tests take 135000 statements for 1.08 MiB; the other four items
+       measured: register choice only, or 88 instructions (round 128); CJ
+       'is_named' in 'held_register' ('is_named_register'), the 3-argument
+       'destination::of_name' folded into 'call_info::add_temporary',
+       'assignment_flow::is_set' replaces 'assigned', 'is_array_element'
+       where 'stmt_identifier' repeated it; CJ1 (one kind for
+       'holds_address' and 'is_address_by_call') next
 [x] hard: round 139 (2026-11-07, user: continue the loop, more threads;
     CC limits hunt, CF design of 'ub_*', 'expr_type*', 'access_path.hpp',
     'decouple.hpp')

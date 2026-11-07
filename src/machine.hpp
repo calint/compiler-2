@@ -1295,8 +1295,8 @@ class machine {
     }
 
     // releases the variables base and asserts that the registers are
-    // balanced, optimizes the jumps, then the target's last steps; called once
-    // at the end of the compile pass
+    // balanced, optimizes the jumps, removes the reloads, then the target's
+    // last steps; called once at the end of the compile pass
     auto finish() -> void {
         release_named_register(token{}, 0, variables_base_register());
 
@@ -1309,6 +1309,8 @@ class machine {
         if (options_.jumps == assembler::jump_mode::optimized) {
             output.optimize_jumps();
         }
+
+        output.remove_reloads();
 
         finish_target();
     }

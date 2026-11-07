@@ -967,6 +967,33 @@ class assembler_rv32i final : public assembler {
         return info(inverse).mnemonic;
     }
 
+    // a narrower load extends the value, which the register need not hold
+    [[nodiscard]] auto is_reload(const line& store, const line& load) const
+        -> bool override {
+
+        const instruction* const stored{
+            std::get_if<instruction>(record_of(store)),
+        };
+
+        const instruction* const loaded{
+            std::get_if<instruction>(record_of(load)),
+        };
+
+        if (stored == nullptr or loaded == nullptr) {
+            return false;
+        }
+
+        // note: device registers are addressed from 'zero', reading one need
+        //       not give what was written
+
+        return stored->code == op::sw and loaded->code == op::lw and
+               stored->rs1 != zero_register_ and stored->rs1 == loaded->rs1 and
+               stored->rs2 == loaded->rd and
+               stored->value.number == loaded->value.number and
+               stored->value.symbol == loaded->value.symbol and
+               stored->value.subtracted == loaded->value.subtracted;
+    }
+
     [[nodiscard]] auto unconditional_jump_mnemonic() const
         -> std::string_view override {
 

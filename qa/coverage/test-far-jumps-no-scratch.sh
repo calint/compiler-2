@@ -58,7 +58,7 @@ for level in range(depth):
     source.append("    " * (level + 1) + "foo a {")
 source.append("        x = x + i")
 source.append("        if x == 0 {")
-source.append("            x = x + 1\n" * 90000 + "        }")
+source.append("            x = x + 1\n" * 135000 + "        }")
 for level in reversed(range(1, depth)):
     source.append("    " * (level + 1) + "}")
 source.append("        e = e + 1")
@@ -107,9 +107,9 @@ for level in range(depth):
 source.append("        w = z - 1")
 source.append("        v = z - 2")
 source.append("        if z == 0 and w == 0 and v == 0 {")
-source.append("            x = x + 1\n" * 90000 + "        }")
+source.append("            x = x + 1\n" * 135000 + "        }")
 source.append("        if z == 0 or w == 0 {")
-source.append("            x = x + 1\n" * 90000 + "        }")
+source.append("            x = x + 1\n" * 135000 + "        }")
 source.append("        z = z + 1")
 for level in reversed(range(1, depth)):
     source.append("    " * (level + 1) + "}")
@@ -125,9 +125,9 @@ for optimize in "" "--nopt"; do
     "$BIN" and.baz --target=rv32i --bin=and.bin $optimize >and.s
     [[ $(grep -c "jump \.Lbaz_landing\.if\.[0-9.]*\.end, t0" and.s) -ge 3 ]]
     run_rv32i and
-    # note: 155 is the low byte of 'x + z + a[0] * 10 + a[1]',
-    #       100 + 180000 + 16384 + 23
-    [[ $status -eq 155 ]]
+    # note: 43 is the low byte of 'x + z + a[0] * 10 + a[1]',
+    #       100 + 270000 + 16384 + 23
+    [[ $status -eq 43 ]]
     echo ok
 done
 
@@ -148,7 +148,7 @@ for level in range(depth):
 source.append("        loop {")
 source.append("            x = x + 1")
 source.append("            if x > 2 break")
-source.append("            y = y + 1\n" * 90000 + "        }")
+source.append("            y = y + 1\n" * 135000 + "        }")
 for level in reversed(range(depth)):
     source.append("    " * (level + 1) + "}")
 source.append("    exit(x * 10 + y)")
@@ -160,8 +160,8 @@ for optimize in "" "--nopt"; do
     echo -n "far jumps inverted branch rv32i $optimize: "
     "$BIN" far.baz --target=rv32i --bin=far.bin $optimize >far.s
     run_rv32i far
-    # note: 62 is the low byte of 'x * 10 + y', 3 * 10 + 180000
-    [[ $status -eq 62 ]]
+    # note: 206 is the low byte of 'x * 10 + y', 3 * 10 + 270000
+    [[ $status -eq 206 ]]
     echo ok
 done
 
@@ -181,7 +181,7 @@ source = [
 for level in range(depth):
     source.append("    " * (level + 1) + "foo a {")
 source.append("        y = b[k]")
-source.append("        y = y + 1\n" * 90000)
+source.append("        y = y + 1\n" * 135000)
 for level in reversed(range(depth)):
     source.append("    " * (level + 1) + "}")
 source.append("    exit(y)")
@@ -225,7 +225,7 @@ source.append("        x = x + i")
 source.append("        if x == 0 { exit(3) }")
 for level in reversed(range(depth)):
     source.append("    " * (level + 1) + "}")
-source.append("    x = x + 1\n" * 90000)
+source.append("    x = x + 1\n" * 135000)
 source.append("    exit(7)")
 source.append("}")
 open("exit.baz", "w").write("\n".join(source) + "\n")

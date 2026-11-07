@@ -27,8 +27,9 @@ WORK="$(mktemp -d)"
 trap 'rm -rf "$WORK"' EXIT
 cd "$WORK"
 
-# writes 'far.baz': each 'pad = pad + 1' is 12 bytes, so 700 needs 'j' and
-# 90000 needs 'jump' for the jumps of 'foo', 'if', 'break' and 'continue'
+# writes 'far.baz': each 'pad = pad + 1' is 8 bytes (its load is a removed
+# reload of the store before it), so 1050 needs 'j' and 135000 needs 'jump'
+# for the jumps of 'foo', 'if', 'break' and 'continue'
 generate_foo() {
     python3 - "$@" <<'EOF'
 import sys
@@ -72,9 +73,9 @@ assemble_and_run() {
 }
 
 if [[ ${1:-} == short ]]; then
-    generate_foo 700
+    generate_foo 1050
 else
-    generate_foo 700 90000
+    generate_foo 1050 135000
 fi
 for optimize in "" "--nopt"; do
     echo -n "far jumps foo rv32i $optimize: "

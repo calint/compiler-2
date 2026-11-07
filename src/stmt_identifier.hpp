@@ -615,7 +615,7 @@ class stmt_identifier final : public statement {
     // a read of the result needs the bytes it reaches assigned, the whole
     // array after a run-time index
     auto assert_set_before_read(const assignment_flow& flow) const -> void {
-        if (not names_result_ or flow.assigned().covers(accessed_bytes_)) {
+        if (not names_result_ or flow.is_set(accessed_bytes_)) {
             return;
         }
 
@@ -769,8 +769,8 @@ class stmt_identifier final : public statement {
     }
 
     // this path may reach bytes of 'target', e.g. 'e.x' in a 'foo ps' reaches
-    // the field 'x' of any element of 'ps'; a constant or a
-    // value in a register reaches none
+    // the field 'x' of any element of 'ps'; a constant or a value in a register
+    // reaches none
     [[nodiscard]] auto may_reach(const toc& tc,
                                  const storage_path& target) const -> bool {
 
@@ -955,7 +955,7 @@ class stmt_identifier final : public statement {
                                  const token& src_loc_tk,
                                  const token& field_tk) const -> void {
 
-        if (elems_.back().index) {
+        if (is_array_element()) {
             return;
         }
 
@@ -1087,7 +1087,7 @@ class stmt_identifier final : public statement {
     auto resolve_type(const ident_info& info) -> void {
         set_type(info.type_ref());
 
-        if (elems_.back().index.has_value()) {
+        if (is_array_element()) {
             return;
         }
 
