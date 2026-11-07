@@ -1002,11 +1002,9 @@ class inline_call final {
             ident_info& bound{binding.info};
 
             const operand address{
-                x.alloc_scratch_register(call_.tk, indent,
-                                         tc.builtins().address()),
+                held.alloc_scratch_register(call_.tk, indent,
+                                            tc.builtins().address()),
             };
-
-            held.add(address);
 
             x.comment(call_.tk, indent, "address of parameter {}",
                       in_quotes(binding.from));
@@ -1234,13 +1232,10 @@ class inline_call final {
                                                 folded->value);
         }
 
-        machine& x{tc.machine()};
-
         const operand reg{
-            x.alloc_scratch_register(arg.tok(), indent, param.get_type()),
+            held.alloc_scratch_register(arg.tok(), indent, param.get_type()),
         };
 
-        held.add(reg);
         arg.compile(tc, indent, destination::of_register(reg));
 
         return param_binding::make_register(param.name(), reg,

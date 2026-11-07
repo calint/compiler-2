@@ -72,11 +72,9 @@ class stmt_builtin_foo final : public statement {
         machine::held_registers held{x, tok(), indent};
 
         const operand reg_iter{
-            x.alloc_scratch_register(ident_.tok(), indent,
-                                     tc.builtins().address()),
+            held.alloc_scratch_register(ident_.tok(), indent,
+                                        tc.builtins().address()),
         };
-
-        held.add(reg_iter);
 
         x.comment(ident_.tok(), indent, "initialize iterator e");
 
@@ -289,14 +287,12 @@ class stmt_builtin_foo final : public statement {
             return operand::imm(*value, tc.builtins().default_type());
         }
 
-        machine& x{tc.machine()};
-
         const operand reg_count{
-            x.alloc_scratch_register(count.tok(), indent,
-                                     tc.builtins().default_type()),
+            held.alloc_scratch_register(count.tok(), indent,
+                                        tc.builtins().default_type()),
         };
 
-        held.add(reg_count);
+        machine& x{tc.machine()};
 
         x.comment(count.tok(), indent, "count {}",
                   statement::trimmed_source(count));
@@ -317,7 +313,7 @@ class stmt_builtin_foo final : public statement {
                             const operand& reg_iter,
                             machine::held_registers& held) const -> operand {
 
-        machine& x{tc.machine()};
+        const machine& x{tc.machine()};
 
         const bool counter_in_memory{x.foo_counter_in_memory()};
 
@@ -330,11 +326,9 @@ class stmt_builtin_foo final : public statement {
         }
 
         const operand reg_counter{
-            x.alloc_scratch_register(tok(), indent,
-                                     tc.builtins().default_type()),
+            held.alloc_scratch_register(tok(), indent,
+                                        tc.builtins().default_type()),
         };
-
-        held.add(reg_counter);
 
         add_loop_names(tc, indent, array_info, at_address_register{reg_iter},
                        in_value_register{reg_counter});

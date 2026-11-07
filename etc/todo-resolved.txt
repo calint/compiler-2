@@ -1,6 +1,20 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] hard: round 149 (2026-11-07, user: continue the loop; DL regressions of
+    the x86_64 division check, DM the register and operand layer)
+    => done (2026-11-07): DL no finding (1800 generated programs of '/' and
+       '%' on every width with the minimum and -1 biased in, against the
+       model on x86_64 and rv32i-fpga and against the round 147 build under
+       four check lists; the listings differ only in the division check);
+       DM 'operation_scope::alloc_load_register' allocates the load register
+       and names the consumed registers of its scope in one step, rv32i
+       'compare_and_branch', 'compare_memory' and 'compare_runtime_count'
+       open one scope that protects what two nested scopes did,
+       'machine::protect_register' and 'machine::registers' removed (the
+       backends ask 'is_register_unavailable'),
+       'held_registers::alloc_scratch_register' allocates and holds in one
+       call at the ten front-end sites; listings equal
 [x] hard: round 148 (2026-11-07, user: continue the loop; DJ a result
     independent of target, inlining and optimization, DK 'machine_x86_64'
     and 'machine')

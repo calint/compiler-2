@@ -1482,10 +1482,10 @@ class machine_x86_64 final : public machine {
         const operation_scope scope{*this};
 
         const operand reg{
-            alloc_load_register(
+            scope.alloc_load_register(
                 src_loc_tk, indent,
                 builtin_type_for_size_bytes(dst_op.type_ref().size_bytes()),
-                scope.consumed_registers(dst_op, src_op)),
+                dst_op, src_op),
         };
 
         mov(src_loc_tk, indent, reg, src_op);
@@ -1732,8 +1732,7 @@ class machine_x86_64 final : public machine {
         const bool is_held{
             std::ranges::any_of(named,
                                 [&](const std::string_view name) -> bool {
-                                    return registers().is_unavailable(
-                                        register_mask(name));
+                                    return is_register_unavailable(name);
                                 }),
         };
 

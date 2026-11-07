@@ -336,10 +336,8 @@ class stmt_identifier final : public statement {
             std::optional<operand> target{fold_register(address)};
 
             if (not target) {
-                target = x.alloc_scratch_register(src_loc_tk_, indent_,
-                                                  tc.builtins().address());
-
-                held_.get().add(*target);
+                target = held_.get().alloc_scratch_register(
+                    src_loc_tk_, indent_, tc.builtins().address());
             }
 
             x.address_of(src_loc_tk_, indent_, *target, address);
@@ -390,14 +388,12 @@ class stmt_identifier final : public statement {
 
             toc& tc{tc_.get()};
 
-            machine& x{tc.machine()};
-
             const operand address_register{
-                x.alloc_scratch_register(src_loc_tk_, indent_,
-                                         tc.builtins().address()),
+                held_.get().alloc_scratch_register(src_loc_tk_, indent_,
+                                                   tc.builtins().address()),
             };
 
-            held_.get().add(address_register);
+            machine& x{tc.machine()};
 
             x.copy_value(src_loc_tk_, indent_, address_register,
                          operand::mem(address_slot, tc.builtins().address()));
@@ -684,13 +680,12 @@ class stmt_identifier final : public statement {
 
         const operand storage{get_lea_operand(tc, indent, info, held)};
 
-        machine& x{tc.machine()};
-
         const operand reg{
-            x.alloc_scratch_register(src_loc_tk, indent, register_type),
+            held.alloc_scratch_register(src_loc_tk, indent, register_type),
         };
 
-        held.add(reg);
+        machine& x{tc.machine()};
+
         x.copy_value(src_loc_tk, indent, reg, storage);
         get_unary_ops().compile(x, indent, src_loc_tk, reg, overflow_check);
 

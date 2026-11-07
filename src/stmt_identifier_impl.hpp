@@ -344,16 +344,12 @@ inline auto stmt_identifier::path_address::add_index(const ident_elem& cur_elem,
 
     const token& index_tk{cur_elem.index_expr().tok()};
 
-    machine& x{tc.machine()};
-
     // a register kept by an earlier fold is reused since the fold already
     // consumed its value
     if (not index_register_) {
         // index expressions are parsed with the default type
-        index_register_ = x.alloc_scratch_register(
+        index_register_ = held_.get().alloc_scratch_register(
             index_tk, indent, tc.builtins().default_type());
-
-        held_.get().add(*index_register_);
     }
 
     const operand& index_register{*index_register_};
@@ -362,6 +358,8 @@ inline auto stmt_identifier::path_address::add_index(const ident_elem& cur_elem,
         compile_checked_index(tc, indent, cur_elem.index_expr(), index_register,
                               cur_info.shape(), request.is_range),
     };
+
+    machine& x{tc.machine()};
 
     if (request.start_register) {
         // note: a start is copied only under bounds checks, which compile the

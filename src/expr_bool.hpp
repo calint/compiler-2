@@ -770,14 +770,11 @@ class expr_bool_op final : public statement {
                                                  machine::held_registers& held)
         -> operand {
 
-        machine& x{tc.machine()};
-
         // the operand is computed at the width of its first element
         const operand reg{
-            x.alloc_scratch_register(expr.tok(), indent, expr.get_type()),
+            held.alloc_scratch_register(expr.tok(), indent, expr.get_type()),
         };
 
-        held.add(reg);
         expr.compile_checked(tc, indent + 1, destination::of_register(reg));
 
         return reg;

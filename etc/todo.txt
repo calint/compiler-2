@@ -290,7 +290,7 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
     into r14; rv32i uses t0-t5 where 3 suffice)
     => partly done (2026-11-06, round 127 AX2): the value of a copy loads
        into a source address register the front end freed
-       ('operation_scope::consumed_registers'); left: record copies done as
+       ('operation_scope::alloc_load_register'); left: record copies done as
        block copies (rv32i 'c[i] = d[j]' uses t0-t4) and other copy sites
 [ ] medium: rv32i: an inline 'self' or parameter address pushes
     'arrays_equal' past t0-t6 into s1 and s2, verified 2026-11-06: 'main'
@@ -310,7 +310,7 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
     registers it owns (etc/codegen-inefficiencies.baz)
     => measured (2026-11-06, round 128 BD): of the scaled index sites in
        the listings 142 are loads, whose address goes into the load's own
-       register (a freed index is already reused, 'consumed_registers'), 37
+       register (a freed index is already reused, 'alloc_load_register'), 37
        are stores, where the index is still held by the front end; saves a
        register only, not an instruction
 [ ] medium: low priority: self-cancelling unary ops are all emitted ('--a',

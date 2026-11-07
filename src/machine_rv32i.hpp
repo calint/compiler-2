@@ -547,14 +547,13 @@ class machine_rv32i : public machine {
         comment(src_loc_tk, indent, "stack capacity check end");
     }
 
-    // the operation scopes end on return, before the caller frees its registers
+    // the operation scope ends on return, before the caller frees its registers
     auto compare_and_branch(const token& src_loc_tk, const size_t indent,
                             const operand& lhs, const operand& rhs,
                             const comparison_action& action) -> void override {
 
-        const operation_scope destination_scope{*this, action.destination};
-
-        const operation_scope scope{*this, lhs, rhs};
+        operation_scope scope{*this, lhs, rhs};
+        scope.protect(action.destination);
 
         assert_scalar(lhs.type_ref());
         assert_scalar(rhs.type_ref());
@@ -695,11 +694,10 @@ class machine_rv32i : public machine {
         operand value{dst};
 
         if (not dst.is_register()) {
-            value =
-                src.is_register()
-                    ? src
-                    : alloc_load_register(src_loc_tk, indent, default_type(),
-                                          scope.consumed_registers(dst, src));
+            value = src.is_register()
+                        ? src
+                        : scope.alloc_load_register(src_loc_tk, indent,
+                                                    default_type(), dst, src);
         }
 
         load_into(src_loc_tk, indent, value, src);
@@ -785,9 +783,8 @@ class machine_rv32i : public machine {
 
         const operand& result{request.dst};
 
-        const operation_scope operand_scope{*this, rhs, lhs};
-
-        const operation_scope result_scope{*this, result};
+        operation_scope scope{*this, rhs, lhs};
+        scope.protect(result);
 
         const std::array<operand, 2> in_use{lhs, rhs};
 
@@ -1420,10 +1417,10 @@ class machine_rv32i : public machine {
         //       needs, in the allocation order, so they are free whenever the
         //       call is made
 
-        assert(std::ranges::none_of(
-            io_routine_clobbered_, [&](const std::string_view name) -> bool {
-                return registers().is_unavailable(register_mask(name));
-            }));
+        assert(std::ranges::none_of(io_routine_clobbered_,
+                                    [&](const std::string_view name) -> bool {
+                                        return is_register_unavailable(name);
+                                    }));
 
         assembler_.call(indent, label, "a7");
         mark_used(label);
@@ -1673,7 +1670,7 @@ class machine_rv32i : public machine {
             throw out_of_registers_error(src_loc_tk);
         }
 
-        const operation_scope scope{*this, dst, source};
+        operation_scope scope{*this, dst, source};
 
         const helper_spec& spec{helper_spec_of(routine)};
 
@@ -1690,7 +1687,7 @@ class machine_rv32i : public machine {
         // the arguments, the checks and the restore use these by name, so no
         // scratch register is one of them
         for (const std::string_view name : spec.clobbers) {
-            protect_register(name);
+            scope.protect(make_register_operand(name, default_type()));
         }
 
         // note: variables and frames are based on 's0' and 's1', and the save
@@ -2017,9 +2014,8 @@ class machine_rv32i : public machine {
         const operand& right{bulk.pointer(1)};
         const operand& count{bulk.count()};
 
-        const operation_scope operand_scope{*this, right, left};
-
-        const operation_scope result_scope{*this, result};
+        operation_scope scope{*this, right, left};
+        scope.protect(result);
 
         const std::array<operand, 3> in_use{left, right, count};
 
@@ -2907,7 +2903,7 @@ class machine_rv32i : public machine {
             };
 
             const bool is_live{
-                registers().is_unavailable(register_mask(name)),
+                is_register_unavailable(name),
             };
 
             if (is_live and not is_destination) {
