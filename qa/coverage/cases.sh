@@ -7104,3 +7104,6 @@ if [[ $MACHINE != rv32i-qemu ]]; then SRC=4101 && SDCARD=2T DIFF; fi
 
 # a sector led by an 'i32' is computed at 'i32', an 'i64' in it is narrowed
 if [[ $MACHINE == x86_64 ]]; then SRC=4102 && COMPERR; fi
+
+# a character literal after 'return' is a value as a number is
+SRC=4600 && COMPERR

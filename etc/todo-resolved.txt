@@ -1,6 +1,11 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] hard: round 164 (2026-11-07, user: continue the loop; the fix EL of
+    round 163 proposed)
+    => done (2026-11-07): 'assert_return_without_value' takes a literal as
+       'constant_parser::is_literal' does, so 'return 'a'' gets the message
+       of 'return 1' instead of "expected a statement" (test 4600)
 [x] hard: round 163 (2026-11-07, user: continue the loop; EL the tokenizer
     and parse helpers, EM values of records and arrays)
     => done (2026-11-07): EM no finding (14000 generated programs of

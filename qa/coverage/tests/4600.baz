@@ -1,0 +1,9 @@
+# a character literal after 'return' is a value as a number is
+func f() res i8 {
+    res = 'b'
+    return 'a'
+}
+
+func main() {
+    exit(f())
+}

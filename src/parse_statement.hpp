@@ -159,11 +159,7 @@ inline auto assert_return_without_value(const tokenizer& tz,
         return;
     }
 
-    const bool is_literal{
-        tk.is_number() or tk.is_string() or
-            tk.is_text(reserved_names::true_value) or
-            tk.is_text(reserved_names::false_value),
-    };
+    const bool is_literal{tk.is_string() or constant_parser::is_literal(tk)};
 
     // note: a name that is not followed by what a statement continues with,
     //       e.g. the 'a' of 'a + b' but not of 'a = b', 'f(a)' or 'p.x = 1'
