@@ -1,6 +1,18 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] hard: round 176 (2026-11-08, user: continue all night; FD 'tk' and
+    'src_loc_tk', FE the tokenizer, '--reproduce-source' and the command line)
+    => done (2026-11-08): FE a hex escape cut inside a UTF-8 character
+       ('"\x4é"') was quoted with a broken byte and a caret too long,
+       'token::escape_length' takes the rest of the character (test 4900);
+       'return -1', 'return (1)', 'return ~x' and 'return not b' get the
+       hint that 'return 1' gets (test 4901); FD the token parameter that
+       is only a source location is 'src_loc_tk' in 'stmt_def_const',
+       'stmt_def_func', 'expr_bool' and 'stmt_def_type', 'tk' where its text
+       is read; fuzz-whole found invalid x86_64 assembly (nasm does not
+       settle the jump sizes) that round 175 also emits, see round 177;
+       listings, images and errors equal but for tests 4900 and 4901
 [x] hard: round 175 (2026-11-08, user: continue all night; FB less reviewed
     files, FC loops, data, include, definitions and zero values)
     => done (2026-11-08): FC a constructor called through a value that hides

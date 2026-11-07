@@ -518,8 +518,21 @@ class token final {
 
         assert(not escape.empty());
 
+        // a hex escape that ends inside a UTF-8 character takes the rest of
+        // it, e.g. '\x4é'; hex digits are ASCII, a decodable one never does
         if (escape.starts_with('x')) {
-            return 3;
+            constexpr unsigned char first_non_ascii{0x80};
+
+            size_t size{3};
+            while (size < escape.size() and
+                   static_cast<unsigned char>(escape.at(size - 1)) >=
+                       first_non_ascii and
+                   is_utf8_continuation(escape.at(size))) {
+
+                ++size;
+            }
+
+            return size;
         }
 
         const size_t announced{utf8_continuation_count(escape.front())};

@@ -1,0 +1,11 @@
+# a value after 'return' that starts with an operator, a '(' or 'not' is
+# reported as a value
+
+func f() res int {
+    res = 1
+    return -1
+}
+
+func main() {
+    exit(f())
+}

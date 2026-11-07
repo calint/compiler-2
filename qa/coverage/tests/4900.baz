@@ -1,0 +1,5 @@
+# a hex escape that ends inside a UTF-8 character quotes the character whole
+
+func main() {
+    var s = "\x4é"
+}

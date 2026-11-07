@@ -1,0 +1,4 @@
+
+4901.baz:6:12: 'return' takes no value, assign the result, e.g. 'res = a'
+    return -1
+           ^

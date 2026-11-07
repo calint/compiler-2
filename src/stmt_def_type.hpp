@@ -262,9 +262,9 @@ class stmt_def_type_generic final : public statement {
   public:
     // the text after 'type' is kept for 'source_to' and for the aliases, errors
     // in it are found when an alias parses it
-    stmt_def_type_generic(toc& tc, const token tk, const token name_tk,
+    stmt_def_type_generic(toc& tc, const token src_loc_tk, const token name_tk,
                           tokenizer& tz)
-        : statement{tk}, name_tk_{name_tk} {
+        : statement{src_loc_tk}, name_tk_{name_tk} {
 
         // e.g. 'capacity' of '<capacity>'
         std::vector<generic_param> params{generic_param::parse(tz)};
@@ -506,9 +506,10 @@ class stmt_def_type final : public statement {
     type type_;
 
   public:
-    stmt_def_type(toc& tc, const token tk, const token name_tk,
+    stmt_def_type(toc& tc, const token src_loc_tk, const token name_tk,
                   std::variant<type_fields, generic_type_use> definition)
-        : statement{tk}, name_tk_{name_tk}, definition_{std::move(definition)} {
+        : statement{src_loc_tk}, name_tk_{name_tk},
+          definition_{std::move(definition)} {
 
         if (const generic_type_use* const generic{
                 std::get_if<generic_type_use>(&definition_),
@@ -569,7 +570,7 @@ class stmt_def_type final : public statement {
 };
 
 // reads the name and makes the statement of the kind that follows it
-inline auto make_stmt_def_type(toc& tc, const token tk, tokenizer& tz)
+inline auto make_stmt_def_type(toc& tc, const token src_loc_tk, tokenizer& tz)
     -> std::unique_ptr<statement> {
 
     const token name_tk{tz.next_token()};
@@ -585,18 +586,19 @@ inline auto make_stmt_def_type(toc& tc, const token tk, tokenizer& tz)
     // e.g. 'type point { x, y }'
     if (next == '{') {
         return std::make_unique<stmt_def_type>(
-            tc, tk, name_tk, type_fields{tc, tz, name_tk, name_tk});
+            tc, src_loc_tk, name_tk, type_fields{tc, tz, name_tk, name_tk});
     }
 
     // e.g. 'type text<size> = list<i8, size>'
     if (next == '<') {
-        return std::make_unique<stmt_def_type_generic>(tc, tk, name_tk, tz);
+        return std::make_unique<stmt_def_type_generic>(tc, src_loc_tk, name_tk,
+                                                       tz);
     }
 
     // e.g. 'type str = text<127>'
     if (tz.is_lone_equals_next()) {
         return std::make_unique<stmt_def_type>(
-            tc, tk, name_tk,
+            tc, src_loc_tk, name_tk,
             generic_type_use::parse(tc, tz, "the alias that names it"));
     }
 

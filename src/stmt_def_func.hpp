@@ -461,9 +461,9 @@ class stmt_def_func final : public statement {
     // a function of the user code, or an instance of a generic definition,
     // e.g. 'tokenizer.to<name>' or 'str.print', see 'func_instantiator';
     // 'tz' is after 'head'
-    stmt_def_func(toc& tc, const token tk, const func_head& head, tokenizer& tz,
-                  std::optional<func_instance> instance)
-        : statement{tk}, head_{head}, instance_{std::move(instance)} {
+    stmt_def_func(toc& tc, const token src_loc_tk, const func_head& head,
+                  tokenizer& tz, std::optional<func_instance> instance)
+        : statement{src_loc_tk}, head_{head}, instance_{std::move(instance)} {
 
         // note: a generic definition is a 'stmt_def_func_generic', a head
         //       with type parameters is read here only for an instance
@@ -1500,9 +1500,9 @@ class stmt_def_func_generic final : public statement {
 
   public:
     // 'tz' is after the head
-    stmt_def_func_generic(toc& tc, const token tk, const func_head& head,
-                          tokenizer& tz)
-        : statement{tk} {
+    stmt_def_func_generic(toc& tc, const token src_loc_tk,
+                          const func_head& head, tokenizer& tz)
+        : statement{src_loc_tk} {
 
         // note: the signature is checked before the definition, a method
         //       definition makes the instances of the types already defined,
@@ -1511,13 +1511,14 @@ class stmt_def_func_generic final : public statement {
         const generic_signature signature{read_signature(tc, head, tz)};
 
         if (head.is_generic_type_method()) {
-            func_instantiator::define_method(tc, tk, head, signature);
+            func_instantiator::define_method(tc, src_loc_tk, head, signature);
         } else {
-            func_instantiator::define_func(
-                tc, tk, head, signature, std::nullopt, tc.current_definition());
+            func_instantiator::define_func(tc, src_loc_tk, head, signature,
+                                           std::nullopt,
+                                           tc.current_definition());
         }
 
-        generic_text_ = tz.skip_braced_block_after(tk);
+        generic_text_ = tz.skip_braced_block_after(src_loc_tk);
     }
 
     //
@@ -1699,7 +1700,7 @@ class stmt_def_func_generic final : public statement {
 };
 
 // reads the head and makes the statement of the kind that follows it
-inline auto make_stmt_def_func(toc& tc, const token tk, tokenizer& tz)
+inline auto make_stmt_def_func(toc& tc, const token src_loc_tk, tokenizer& tz)
     -> std::unique_ptr<statement> {
 
     const func_head head{func_head::read(tc, tz)};
@@ -1715,9 +1716,11 @@ inline auto make_stmt_def_func(toc& tc, const token tk, tokenizer& tz)
 
     // e.g. 'func text.print()' or 'func tokenizer.to<T type>()'
     if (head.is_generic()) {
-        return std::make_unique<stmt_def_func_generic>(tc, tk, head, tz);
+        return std::make_unique<stmt_def_func_generic>(tc, src_loc_tk, head,
+                                                       tz);
     }
 
     // e.g. 'func f(x)' or 'func list.add(x)'
-    return std::make_unique<stmt_def_func>(tc, tk, head, tz, std::nullopt);
+    return std::make_unique<stmt_def_func>(tc, src_loc_tk, head, tz,
+                                           std::nullopt);
 }

@@ -172,7 +172,15 @@ inline auto assert_return_without_value(const tokenizer& tz,
                 probe.peek_char_after_whitespace()),
     };
 
-    if (is_literal or is_lone_name) {
+    // e.g. the '-' of 'return -1', no statement starts with an operator, a
+    // '(' or 'not'
+    const bool is_operator_first{
+        tk.is_text("not") or
+            (tk.is_none() and std::string_view{"-~("}.contains(
+                                  probe.peek_char_after_whitespace())),
+    };
+
+    if (is_literal or is_lone_name or is_operator_first) {
         throw compile_error{tk, "'return' takes no value, assign the result, "
                                 "e.g. 'res = a'"};
     }

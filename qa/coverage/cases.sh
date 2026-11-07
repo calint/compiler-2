@@ -7110,3 +7110,9 @@ SRC=4600 && COMPERR
 
 # a constructor called through a value that hides its type names the value
 SRC=4800 && COMPERR
+
+# a hex escape that ends inside a UTF-8 character quotes the character whole
+SRC=4900 && COMPERR
+
+# a value after 'return' that starts with an operator is reported as a value
+SRC=4901 && COMPERR

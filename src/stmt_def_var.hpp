@@ -358,10 +358,10 @@ class stmt_def_const final : public statement {
   public:
     // the constant is declared during the parse so later statements can name
     // it, e.g. as an array size
-    stmt_def_const(toc& tc, const token tk, const token name_tk,
+    stmt_def_const(toc& tc, const token src_loc_tk, const token name_tk,
                    const token equals_tk, const type& tp, expr_any initializer,
                    const folded_value& constant)
-        : statement{tk}, name_tk_{name_tk}, equals_tk_{equals_tk},
+        : statement{src_loc_tk}, name_tk_{name_tk}, equals_tk_{equals_tk},
           initializer_{std::move(initializer)}, constant_{constant} {
 
         set_type(tp);
