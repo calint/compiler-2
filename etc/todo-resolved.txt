@@ -1,6 +1,14 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] hard: round 156 (2026-11-07, user: continue in a loop; EA the built-in
+    statements)
+    => done (2026-11-07): EA 'stmt_builtin_foo::skip_empty_loop' without
+       its case of no count (the limit is then the immediate length, which
+       the next check takes), 'stmt_builtin_io::sector_element_count', of
+       one caller, part of 'constant_count'; listings equal; kept: a copy
+       of 0 bytes is a no-op in the backends, moving it to 'array_copy'
+       would give 'machine::copy_block' a precondition for 2 lines
 [x] hard: round 155 (2026-11-07, user: continue in a loop; DX
     'stmt_def_func')
     => done (2026-11-07): DX 'frame_scope' sets the marks of a body

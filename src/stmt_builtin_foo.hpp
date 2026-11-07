@@ -358,16 +358,16 @@ class stmt_builtin_foo final : public statement {
     auto skip_empty_loop(toc& tc, const size_t indent, const operand& limit,
                          const std::string_view end_label) const -> void {
 
-        if (not count_) {
-            return;
-        }
-
-        // note: a constant count is not negative, see 'compile_limit', and
-        //       one of 0 skips the body in 'compile'
+        // note: a constant limit is the length or a constant count, which is
+        //       not negative, see 'compile_limit', and one of 0 skips the body
+        //       in 'compile'
 
         if (limit.is_immediate()) {
             return;
         }
+
+        // note: a limit in a register is a run-time count
+        assert(count_);
 
         machine& x{tc.machine()};
 

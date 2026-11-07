@@ -450,7 +450,7 @@ class stmt_builtin_io final : public statement {
     // the count argument, else the elements of the array or of one sector,
     // empty when the count is computed at run time or the array length is
     // not known
-    [[nodiscard]] auto constant_count(toc& tc,
+    [[nodiscard]] auto constant_count(const toc& tc,
                                       const ident_info& buffer_info) const
         -> std::optional<int64_t> {
 
@@ -459,7 +459,14 @@ class stmt_builtin_io final : public statement {
         }
 
         if (io_.is_sector) {
-            return static_cast<int64_t>(sector_element_count(tc, buffer_info));
+            const machine& x{tc.machine()};
+
+            const size_t element_size_bytes{
+                buffer_info.type_ref().size_bytes(),
+            };
+
+            return static_cast<int64_t>(x.sector_size_bytes() /
+                                        element_size_bytes);
         }
 
         const std::optional<size_t> array_len{buffer_info.array_len()};
@@ -620,12 +627,5 @@ class stmt_builtin_io final : public statement {
             io_function::min_arg_count(),
             io.max_arg_count(),
         };
-    }
-
-    [[nodiscard]] static auto
-    sector_element_count(toc& tc, const ident_info& buffer_info) -> size_t {
-
-        const machine& x{tc.machine()};
-        return x.sector_size_bytes() / buffer_info.type_ref().size_bytes();
     }
 };
