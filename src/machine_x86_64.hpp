@@ -39,9 +39,9 @@
 //   comparisons  'compare_and_branch', 'store_condition', 'memory_equal'
 //   checks       'emit_bounds_check' with 'test_sign' and
 //                'check_upper_bound', 'check_divisor', 'check_shift_count',
-//                'check_copy_overlap', 'check_frame_capacity', the overflow
-//                checks 'branch_on_overflow' and 'check_byte_product', each
-//                jumps to its handler, all but the frame check with a stub
+//                'check_copy_overlap', 'emit_frame_capacity_check', the
+//                overflow checks 'branch_on_overflow' and 'check_byte_product',
+//                each jumps to its handler, all but the frame check with a stub
 //                per line for '--checks=line'
 //   handlers     'emit_panic_message', 'emit_report_line_routine'
 //   calls        'emit_call', 'emit_target_call' through the system call
@@ -247,54 +247,6 @@ class machine_x86_64 final : public machine {
         assembler_.jmp(indent, target);
     }
 
-    auto check_frame_capacity(const token& src_loc_tk, const size_t indent,
-                              const operand& frame_address,
-                              const std::string_view frame_size_label)
-        -> void override {
-
-        assert(frame_address.is_memory());
-        assert(frame_address.index_register().empty());
-        // note: the frame follows the storage in use from the base
-        assert(frame_address.displacement() >= 0);
-
-        comment(src_loc_tk, indent, "frame capacity check begin");
-
-        comment(src_loc_tk, indent,
-                "callee storage starts after the caller's storage ({})",
-                address_text(frame_address));
-
-        const operation_scope scope{*this};
-
-        const operand last_base{
-            alloc_scratch_register(src_loc_tk, indent, default_type()),
-        };
-
-        // the highest base at which the frame fits: the end of 'vars' less
-        // the frame size and the displacement, all in the 64-bit immediate,
-        // since 'cmp' takes only 32 bits; an absolute address reaches beyond
-        // the 2 GiB of 'rip' relative ones
-        const std::string last_base_expression{
-            std::format("{} - {} - {}", variables_end_label_, frame_size_label,
-                        frame_address.displacement()),
-        };
-
-        assembler_.instruction(indent, op::mov, to_argument(last_base),
-                               assembler_x86_64::immediate::of_qword_expression(
-                                   last_base_expression));
-
-        // note: signed, the highest base is negative when the frame size and
-        //       the displacement pass the address of 'vars.end'; addresses and
-        //       sizes stay below 2^47, so nothing wraps
-
-        assembler_.instruction(indent, op::cmp, to_argument(last_base),
-                               frame_address.base_register());
-
-        branch_to_failure(src_loc_tk, indent, condition::l,
-                          frame_overflow_failure_);
-
-        comment(src_loc_tk, indent, "frame capacity check end");
-    }
-
     auto compare_and_branch(const token& src_loc_tk, const size_t indent,
                             const operand& lhs, const operand& rhs,
                             const comparison_action& action) -> void override {
@@ -420,10 +372,8 @@ class machine_x86_64 final : public machine {
                    const size_t element_size_bytes,
                    const std::function_ref<void(const operand&)> emit_count,
                    const address_emitter& lhs, const address_emitter& rhs,
-                   const equality_request& request) -> void override {
-
-        // note: 'arrays_equal' is the only caller, its result is not inverted
-        assert(not request.inverted);
+                   [[maybe_unused]] const size_t alignment, const operand& dst)
+        -> void override {
 
         const operation_scope bulk{*this};
 
@@ -438,7 +388,7 @@ class machine_x86_64 final : public machine {
 
         assembler_.instruction(indent, op::repe_cmpsb);
 
-        store_condition(src_loc_tk, indent, condition::e, request.dst);
+        store_condition(src_loc_tk, indent, condition::e, dst);
     }
 
     auto memory_equal(const token& src_loc_tk, const size_t indent,
@@ -704,9 +654,44 @@ class machine_x86_64 final : public machine {
 
     // ends the program with the exit code in 'rdi'
     auto emit_exit_routine() -> void override {
-        assembler_.label(0, exit_label_);
         assembler_.instruction(1, op::mov, "rax", syscall_exit_);
         assembler_.instruction(1, op::syscall);
+    }
+
+    auto emit_frame_capacity_check(const token& src_loc_tk, const size_t indent,
+                                   const operand& frame_address,
+                                   const std::string_view frame_size_label)
+        -> void override {
+
+        // note: the frame follows the storage in use from the base
+        assert(frame_address.displacement() >= 0);
+
+        const operand last_base{
+            alloc_scratch_register(src_loc_tk, indent, default_type()),
+        };
+
+        // the highest base at which the frame fits: the end of 'vars' less
+        // the frame size and the displacement, all in the 64-bit immediate,
+        // since 'cmp' takes only 32 bits; an absolute address reaches beyond
+        // the 2 GiB of 'rip' relative ones
+        const std::string last_base_expression{
+            std::format("{} - {} - {}", variables_end_label_, frame_size_label,
+                        frame_address.displacement()),
+        };
+
+        assembler_.instruction(indent, op::mov, to_argument(last_base),
+                               assembler_x86_64::immediate::of_qword_expression(
+                                   last_base_expression));
+
+        // note: signed, the highest base is negative when the frame size and
+        //       the displacement pass the address of 'vars.end'; addresses and
+        //       sizes stay below 2^47, so nothing wraps
+
+        assembler_.instruction(indent, op::cmp, to_argument(last_base),
+                               frame_address.base_register());
+
+        branch_to_failure(src_loc_tk, indent, condition::l,
+                          frame_overflow_failure_);
     }
 
     auto emit_multiply(const token& src_loc_tk, const size_t indent,
@@ -814,8 +799,6 @@ class machine_x86_64 final : public machine {
     // prints the line number in 'report_line_register_' and exits with the
     // code in 'report_exit_code_register_'
     auto emit_report_line_routine() -> void override {
-        assembler_.label(0, report_line_label_);
-
         constexpr int newline{'\n'};
         constexpr int decimal_base{10};
         // the 20 digits of a 64-bit number and a newline, the digits are

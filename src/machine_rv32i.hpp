@@ -52,7 +52,7 @@
 //   comparisons  'compare_and_branch', 'emit_comparison_branch'
 //   checks       'emit_bounds_check' with 'check_upper_bound',
 //                'check_divisor', 'check_fits_width', 'check_shift_count',
-//                'check_copy_overlap', 'check_frame_capacity',
+//                'check_copy_overlap', 'emit_frame_capacity_check',
 //                'check_stack_capacity', the overflow checks 'check_negate',
 //                'check_multiply_result', 'emit_checked_add_subtract'; a
 //                failed test branches to its handler, all but the frame and
@@ -404,6 +404,8 @@ class machine_rv32i : public machine {
         bool left_is_result{};
     };
 
+    // the routine a program calls to exit, the target emits its body
+    static constexpr std::string_view exit_label_{".Lbaz_exit"};
     // the shared tail of the handlers that report a line, and its powers of
     // ten
     static constexpr std::string_view report_line_label_{".Lbaz_report_line"};
@@ -503,46 +505,6 @@ class machine_rv32i : public machine {
         -> void override {
 
         assembler_.resolved_jump(indent, target, far_jump_register());
-    }
-
-    auto check_frame_capacity(const token& src_loc_tk, const size_t indent,
-                              const operand& frame_address,
-                              const std::string_view frame_size_label)
-        -> void override {
-
-        assert(frame_address.is_memory());
-        assert(frame_address.index_register().empty());
-
-        comment(src_loc_tk, indent, "frame capacity check begin");
-
-        comment(src_loc_tk, indent,
-                "callee storage starts after the caller's storage ({})",
-                address_text(frame_address));
-
-        const operation_scope scope{*this};
-
-        const operand start{
-            alloc_scratch_register(src_loc_tk, indent, default_type()),
-        };
-
-        const operand last_start{
-            alloc_scratch_register(src_loc_tk, indent, default_type()),
-        };
-
-        address_of(src_loc_tk, indent, start, frame_address);
-
-        // the highest start at which the frame fits, compared unsigned since
-        // an address can be 2 GiB or more
-        // note: a frame fits in '--vars' when compiled, so the end of 'vars'
-        //       less the frame size does not wrap
-        assembler_.la(indent, last_start.register_name(), variables_end_label_,
-                      frame_size_label);
-
-        branch_to_failure(src_loc_tk, indent, op::bltu,
-                          last_start.register_name(), start.register_name(),
-                          frame_overflow_failure_);
-
-        comment(src_loc_tk, indent, "frame capacity check end");
     }
 
     // a call saves the registers allocated now, the registers of the arguments
@@ -777,10 +739,8 @@ class machine_rv32i : public machine {
                    const size_t element_size_bytes,
                    const std::function_ref<void(const operand&)> emit_count,
                    const address_emitter& lhs, const address_emitter& rhs,
-                   const equality_request& request) -> void override {
-
-        // note: 'arrays_equal' is the only caller, its result is not inverted
-        assert(not request.inverted);
+                   const size_t alignment, const operand& dst)
+        -> void override {
 
         const operation_scope bulk_scope{*this};
 
@@ -794,7 +754,7 @@ class machine_rv32i : public machine {
 
         {
             // scaling the count must not pick the result registers
-            const operation_scope scope{*this, request.dst};
+            const operation_scope scope{*this, dst};
 
             comment(src_loc_tk, indent,
                     "{}: elements to bytes ({} bytes/element)",
@@ -803,7 +763,7 @@ class machine_rv32i : public machine {
             scale_index(src_loc_tk, indent, bulk.count(), element_size_bytes);
         }
 
-        compare_runtime_count(src_loc_tk, indent, bulk, request);
+        compare_runtime_count(src_loc_tk, indent, bulk, alignment, dst);
     }
 
     // known size: the addresses are memory operands, small sizes unrolled and
@@ -1115,8 +1075,6 @@ class machine_rv32i : public machine {
     static constexpr size_t register_bits_{
         std::numeric_limits<uint32_t>::digits,
     };
-    // the routine a program calls to exit, the target defines it
-    static constexpr std::string_view exit_label_{".Lbaz_exit"};
     // the sector routines, see 'emit_sector_routines': a routine takes the
     // sector in 'a0', the address in 'a1' and the size in 'a2', returns
     // through 'a7', which it may change, and changes only 'a0' and
@@ -1201,6 +1159,33 @@ class machine_rv32i : public machine {
         assembler_.add_separator_newline();
     }
 
+    auto emit_frame_capacity_check(const token& src_loc_tk, const size_t indent,
+                                   const operand& frame_address,
+                                   const std::string_view frame_size_label)
+        -> void override {
+
+        const operand start{
+            alloc_scratch_register(src_loc_tk, indent, default_type()),
+        };
+
+        const operand last_start{
+            alloc_scratch_register(src_loc_tk, indent, default_type()),
+        };
+
+        address_of(src_loc_tk, indent, start, frame_address);
+
+        // the highest start at which the frame fits, compared unsigned since
+        // an address can be 2 GiB or more
+        // note: a frame fits in '--vars' when compiled, so the end of 'vars'
+        //       less the frame size does not wrap
+        assembler_.la(indent, last_start.register_name(), variables_end_label_,
+                      frame_size_label);
+
+        branch_to_failure(src_loc_tk, indent, op::bltu,
+                          last_start.register_name(), start.register_name(),
+                          frame_overflow_failure_);
+    }
+
     // a 'noinline' body saves the return address below 'sp'
     auto emit_frame_entry() -> void override {
         assembler_.addi(1, "sp", "sp", -frame_save_bytes_);
@@ -1266,7 +1251,6 @@ class machine_rv32i : public machine {
         constexpr int digit_zero{'0'};
         constexpr int newline{'\n'};
 
-        assembler_.label(0, report_line_label_);
         assembler_.addi(1, "sp", "sp", -line_digits_bytes_);
         assembler_.mv(1, "a1", "sp");
         assembler_.li(1, "a2", 0);
@@ -2026,15 +2010,15 @@ class machine_rv32i : public machine {
     }
 
     // run-time count: the addresses are pointer registers and 'count' is a
-    // byte count, the result is as for 'memory_equal'
+    // byte count, 'result' is 1 when every access matched, else 0
     auto compare_runtime_count(const token& src_loc_tk, const size_t indent,
                                const bulk_operation& bulk,
-                               const equality_request& request) -> void {
+                               const size_t alignment, const operand& result)
+        -> void {
 
         const operand& left{bulk.pointer(0)};
         const operand& right{bulk.pointer(1)};
         const operand& count{bulk.count()};
-        const operand& result{request.dst};
 
         const operation_scope operand_scope{*this, right, left};
 
@@ -2069,11 +2053,10 @@ class machine_rv32i : public machine {
                     .count{count},
                     .access{access},
                 },
-                bulk.checked_starts(), request.alignment);
+                bulk.checked_starts(), alignment);
         }
 
-        write_compare_result(src_loc_tk, indent, result, registers,
-                             request.inverted);
+        write_compare_result(src_loc_tk, indent, result, registers, false);
     }
 
     // 'source' in a register of the comparison width

@@ -2046,6 +2046,11 @@ class ident_resolver final {
             return ident_info::make_register(in_register->reg);
         }
 
+        const var_address address{
+            holds_address(var.placement) ? var_address::held
+                                         : var_address::storage,
+        };
+
         const ::machine& x{machine_.get()};
 
         return ident_info::make_var(
@@ -2055,9 +2060,8 @@ class ident_resolver final {
                     memory_at(var.placement, x.variables_base_register(),
                               *var.type_ptr),
                 },
-                .is_address_by_call{},
+                .address{address},
                 .shape{var.shape},
-                .holds_address{holds_address(var.placement)},
                 .read_only_why{var.read_only_why},
             });
     }

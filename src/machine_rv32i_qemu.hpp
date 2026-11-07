@@ -41,7 +41,6 @@ class machine_rv32i_qemu final : public machine_rv32i_bare_metal {
     auto emit_exit_routine() -> void override {
         assembler_rv32i& output{assembler()};
 
-        output.label(0, exit_label_);
         output.slli(1, "a0", "a0", finisher_code_shift_);
         output.li(1, "t0", finisher_pass_);
         output.or_op(1, "a0", "a0", "t0");

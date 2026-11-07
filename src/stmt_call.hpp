@@ -642,11 +642,14 @@ struct call_site {
 
         const ident_info info{tc.resolve_declared(tk, name)};
 
+        // note: a declared variable resolves to its storage
+        assert(not info.is_address_by_call());
+
         return destination::of_name(
             info,
             {
                 .address{info.operand()},
-                .is_final_address{info.is_address_by_call()},
+                .is_final_address{},
                 .storage{tc.storage_of(name, access_path::whole_variable())},
                 .text{name},
             });

@@ -172,6 +172,17 @@ struct var_info {
     }
 };
 
+// what the operand of a variable is
+enum class var_address : uint8_t {
+    // the storage of the variable
+    storage,
+    // the storage that holds the address of the variable, see 'in_storage'
+    held,
+    // an address an inlined call computed, e.g. '[rbp + r15 * 8 + 16]' for
+    // the argument 'rooms[i]'
+    by_call,
+};
+
 // what a name resolves to: nothing, a constant, a register or storage, with
 // the type of the last element of its path, e.g. that of 'x' for 'p.x'; what
 // else is known depends on the kind and is in its part, the accessors give
@@ -180,11 +191,8 @@ class ident_info final {
     // a variable or the storage that an argument names
     struct var_part {
         ::operand operand;
-        // the operand is an address an inlined call computed, e.g.
-        // '[rbp + r15 * 8 + 16]' for the argument 'rooms[i]'
-        bool is_address_by_call{};
+        var_address address{};
         array_shape shape;
-        bool holds_address{};
         read_only_cause read_only_why{};
     };
 
@@ -220,8 +228,7 @@ class ident_info final {
         ident_info result{*this};
         var_part& var{std::get<var_part>(result.part_)};
         var.operand = address;
-        var.is_address_by_call = true;
-        var.holds_address = false;
+        var.address = var_address::by_call;
         return result;
     }
 
@@ -251,12 +258,12 @@ class ident_info final {
 
     [[nodiscard]] auto holds_address() const -> bool {
         const var_part* const var{std::get_if<var_part>(&part_)};
-        return var != nullptr and var->holds_address;
+        return var != nullptr and var->address == var_address::held;
     }
 
     [[nodiscard]] auto is_address_by_call() const -> bool {
         const var_part* const var{std::get_if<var_part>(&part_)};
-        return var != nullptr and var->is_address_by_call;
+        return var != nullptr and var->address == var_address::by_call;
     }
 
     [[nodiscard]] auto is_array() const -> bool { return shape().is_array(); }

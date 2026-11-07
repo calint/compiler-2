@@ -1,6 +1,26 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] hard: round 141 (2026-11-07, user: keep going until no issues are
+    found; CK conversions hunt, CL backend design, CN 'ident_info' address
+    kind)
+    => done (2026-11-07): CK no finding (27000 programs of a conversion
+       model: lists, conversions at the wider width, comparisons, indexes,
+       arguments, both targets with every option set, i64 on x86_64); CL1
+       'check_frame_capacity' in 'machine' (the asserts, the comments and the
+       scope), the backends supply 'emit_frame_capacity_check' as
+       'check_bounds' does with 'emit_bounds_check'; CL2 the labels of the
+       exit and line report routines emitted once by 'emit_used_routines'
+       (six copies); CL3 'equal_elements' takes the alignment and the
+       destination, its always false 'inverted' removed; CL4
+       'alloc_load_register' protected; not done: CL5 bare metal's routines
+       through 'emit_target_routines' and CL6 one sd card handler in
+       'machine' (each reorders the listing), CL7 sector labels from
+       'call_target' (small gain), CL8 target-gated virtuals kept; CN one
+       'var_address' kind ('storage', 'held', 'by_call') replaces the flags
+       'holds_address' and 'is_address_by_call' of 'ident_info::var_part'
+       and their impossible pair; 'call_info::add_temporary' passes no final
+       address, asserted; listings unchanged
 [x] hard: round 140 (2026-11-07, user: keep going until no issues are
     found; CD hunt of round 138, CI no-UB control flow, CH measured codegen
     item, CJ 'destination' and 'stmt_identifier' follow-ups)

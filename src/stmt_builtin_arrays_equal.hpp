@@ -81,12 +81,8 @@ class stmt_builtin_arrays_equal final : public statement {
         }
 
         x.equal_elements(tok(), indent, element_type.size_bytes(), emit.count(),
-                         emit.first(), emit.second(),
-                         {
-                             .alignment{element_type.alignment()},
-                             .dst{dst.operand()},
-                             .inverted{},
-                         });
+                         emit.first(), emit.second(), element_type.alignment(),
+                         dst.operand());
     }
 
     auto visit_operands(const operand_visitor visitor) const -> void override {

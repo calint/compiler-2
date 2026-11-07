@@ -780,15 +780,6 @@ class machine {
     virtual auto branch(const size_t indent, const std::string_view target)
         -> void = 0;
 
-    // jumps to the frame overflow handler when the callee frame at
-    // 'frame_address' does not fit in the variables; 'frame_size_label' is the
-    // assembler constant of its size, defined after the body
-    virtual auto check_frame_capacity(const token& src_loc_tk,
-                                      const size_t indent,
-                                      const operand& frame_address,
-                                      const std::string_view frame_size_label)
-        -> void = 0;
-
     // jumps to the stack overflow handler when a noinline call, made with the
     // registers allocated now, does not fit in the stack; only a target that
     // 'is_stack_bounded' is asked
@@ -838,7 +829,7 @@ class machine {
                    const size_t element_size_bytes,
                    const std::function_ref<void(const operand&)> emit_count,
                    const address_emitter& lhs, const address_emitter& rhs,
-                   const equality_request& request) -> void = 0;
+                   const size_t alignment, const operand& dst) -> void = 0;
 
     // compares 'size_bytes' at the addresses 'lhs' and 'rhs', whose registers
     // the caller holds, and puts 1 into the destination of the request when
@@ -884,18 +875,6 @@ class machine {
 
     [[nodiscard]] auto address_size_bytes() const -> size_t {
         return target_.address_size_bytes;
-    }
-
-    // a register for a value loaded from an address: the first in the
-    // scratch order that is free or one of the address registers 'consumed',
-    // see 'operation_scope::consumed_registers'
-    [[nodiscard]] auto alloc_load_register(const token& src_loc_tk,
-                                           const size_t indent,
-                                           const type& type_ref,
-                                           const uint32_t consumed) -> operand {
-
-        return alloc_scratch_register_from(src_loc_tk, indent, type_ref,
-                                           consumed);
     }
 
     // a register that an instruction or the calling convention fixes, held
@@ -1081,6 +1060,33 @@ class machine {
         emit_bounds_check(src_loc_tk, indent, range, plan);
 
         comment(src_loc_tk, indent, "bounds check end");
+    }
+
+    // jumps to the frame overflow handler when the callee frame at
+    // 'frame_address' does not fit in the variables; 'frame_size_label' is the
+    // assembler constant of its size, defined after the body
+    auto check_frame_capacity(const token& src_loc_tk, const size_t indent,
+                              const operand& frame_address,
+                              const std::string_view frame_size_label) -> void {
+
+        assert(frame_address.is_memory());
+        assert(frame_address.index_register().empty());
+
+        comment(src_loc_tk, indent, "frame capacity check begin");
+
+        comment(src_loc_tk, indent,
+                "callee storage starts after the caller's storage ({})",
+                address_text(frame_address));
+
+        // note: the scratch registers of the check are freed after the end
+        //       comment
+
+        const operation_scope scope{*this};
+
+        emit_frame_capacity_check(src_loc_tk, indent, frame_address,
+                                  frame_size_label);
+
+        comment(src_loc_tk, indent, "frame capacity check end");
     }
 
     // synthetic tokens and standalone backend calls have no source location;
@@ -1584,8 +1590,16 @@ class machine {
     // the entry of the program, e.g. its section and '_start'
     virtual auto emit_entry() -> void = 0;
 
-    // the routine at 'routine_labels::exit'
+    // the routine at 'routine_labels::exit', after its label
     virtual auto emit_exit_routine() -> void = 0;
+
+    // the compare and branch of 'check_frame_capacity', between its begin and
+    // end comments
+    virtual auto
+    emit_frame_capacity_check(const token& src_loc_tk, const size_t indent,
+                              const operand& frame_address,
+                              const std::string_view frame_size_label)
+        -> void = 0;
 
     // the code at the start of a 'noinline' body after the frame base is
     // reserved, none by default; 'return_function' is its exit
@@ -1609,8 +1623,8 @@ class machine {
     virtual auto emit_panic_message(const std::string_view message_label,
                                     const std::string_view message) -> void = 0;
 
-    // the routine at 'routine_labels::report_line', which a handler that
-    // reports the line jumps to
+    // the routine at 'routine_labels::report_line', after its label, which a
+    // handler that reports the line jumps to
     virtual auto emit_report_line_routine() -> void = 0;
 
     // the routines at 'routine_labels::sector_read' and 'sector_write', each
@@ -1641,6 +1655,7 @@ class machine {
         const routine_labels& routines{target_.routines};
 
         if (is_used(routines.report_line)) {
+            label(0, routines.report_line);
             emit_report_line_routine();
         }
 
@@ -1657,6 +1672,7 @@ class machine {
         //       line
 
         if (is_used(routines.exit)) {
+            label(0, routines.exit);
             emit_exit_routine();
         }
     }
@@ -1693,6 +1709,18 @@ class machine {
     //
     // class methods
     //
+
+    // a register for a value loaded from an address: the first in the
+    // scratch order that is free or one of the address registers 'consumed',
+    // see 'operation_scope::consumed_registers'
+    [[nodiscard]] auto alloc_load_register(const token& src_loc_tk,
+                                           const size_t indent,
+                                           const type& type_ref,
+                                           const uint32_t consumed) -> operand {
+
+        return alloc_scratch_register_from(src_loc_tk, indent, type_ref,
+                                           consumed);
+    }
 
     [[nodiscard]] auto builtins() const -> const builtin_type_set& {
         return builtins_.get();

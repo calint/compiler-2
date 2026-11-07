@@ -64,7 +64,6 @@ class machine_rv32i_fpga final : public machine_rv32i_bare_metal {
     auto emit_exit_routine() -> void override {
         assembler_rv32i& output{assembler()};
 
-        output.label(0, exit_label_);
         output.label(0, "1");
         output.ebreak(1);
         output.j(1, "1b");
