@@ -20,7 +20,11 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
 [p] easy: user decision (2026-11-07, round 162 EK): add the control flow
     generators '/tmp/r162-ek-work/flowx.py' (structured programs against a
     model, far jumps with a narrowed reach build) and 'borrow2.py' (far
-    jumps that borrow 't0') to 'qa/fuzz'; they are in '/tmp' until then
+    jumps that borrow 't0') to 'qa/fuzz'; they are in '/tmp' until then;
+    round 174 FA: both need a narrowed-reach build (FA used macros on
+    'assembler_rv32i::reaches', in '/tmp/r174-fa-work'; a hidden debug option
+    is the other way), and 'flowx.py' with 'FX_PAD' must skip or cap programs
+    larger than rv32i-fpga memory
 [p] easy: user decision (2026-11-07, round 154 DV): test 2055 nests 20
     noinline calls in a list, about 45 s with '--versions=nested', which
     'test-versions.sh' runs (about 2 minutes with 1716); 14 levels take

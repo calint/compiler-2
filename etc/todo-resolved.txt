@@ -1,6 +1,13 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] hard: round 174 (2026-11-08, user: continue all night; FA fuzz campaign)
+    => done (2026-11-08): FA ran fuzz-all on all targets at scale 3 and 6
+       (seeds 17401, 17402), flowx and borrow2 on narrowed-reach builds,
+       and the fuzzers with the option lists noub+nested, noub+nested+nopt,
+       none, '--nopt' and '--versions=nested': no mismatch, every mutant
+       caught; one flowx finding was a program larger than rv32i-fpga
+       memory, rejected as it should be; no code changed
 [x] hard: round 173 (2026-11-08, user: continue all night; EY generics,
     access paths and unary ops, EZ bulk operands, constants and the register
     pool)
