@@ -117,13 +117,16 @@
   they share `gen.s`); the linters; for a pure refactor, the listings and
   errors of every test on x86_64 and rv32i compared with a build of HEAD
   (`qa/coverage/compare-listings.sh BASE_BAZ NEW_BAZ`).
+- When the listings change, also `--target=rv32i` and `--target=rv32i-qemu`
+  (one after the other): some tests have expected files of their own for
+  them.
 - Per phase or behavior change, also `test-far-jumps.sh`,
   `test-far-jumps-no-scratch.sh`, `test-versions.sh`, `roome/qa/test.sh`, the
   asan build and the fuzzers (in a bug hunt round: asan and fuzzers once, at
   the end of the round).
 - Run each check once per round; do not edit sources while a check runs.
 - `UPDATE=1` with `test-coverage.sh` writes expected `.out` files; run it for
-  both targets and review the diff.
+  every target whose run differs and review the diff.
 - After a change to `roome/src/main.baz`, run `roome/qa/test.sh`.
 
 ## Process
