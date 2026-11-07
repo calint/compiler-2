@@ -109,8 +109,9 @@ class compile_error final : public std::exception {
     };
 
     // a token without a place gives an error without one like 'file_level'
-    compile_error(const token& src_loc_tk, std::string message)
-        : msg{std::move(message)} {
+    compile_error(const token& src_loc_tk, std::string message,
+                  const error_kind kind_in = error_kind::source)
+        : msg{std::move(message)}, kind{kind_in} {
 
         if (src_loc_tk.at_line() != 0) {
             where = source_span::at(src_loc_tk);

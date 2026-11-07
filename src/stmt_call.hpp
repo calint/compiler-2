@@ -859,22 +859,26 @@ class inline_call final {
 
         // e.g. a recursion that a constant argument ends too late or never
         if (tc.scopes().inlined_nesting(name) >= max_inlined_nesting_) {
-            throw inlining_limit_error(
+            throw compile_error{
                 call_.name_tk,
                 std::format("recursion of inlined function {} is nested "
                             "deeper than {} calls, declare it 'noinline'",
-                            in_quotes(name), max_inlined_nesting_));
+                            in_quotes(name), max_inlined_nesting_),
+                compile_error::error_kind::inlining_limit,
+            };
         }
 
         if (tc.scopes().count() < max_scope_count_) {
             return;
         }
 
-        throw inlining_limit_error(
+        throw compile_error{
             call_.name_tk,
             std::format("inlined calls and blocks are nested too deep, the "
                         "limit is {} scopes, declare a function 'noinline'",
-                        max_scope_count_));
+                        max_scope_count_),
+            compile_error::error_kind::inlining_limit,
+        };
     }
 
     // the bindings of the arguments of the inlined body, in their order
@@ -1151,17 +1155,14 @@ class inline_call final {
     // an inlined recursion that runs out of registers, whether or not a
     // constant argument would end it
     [[nodiscard]] auto recursion_error() const -> compile_error {
-        compile_error error{
+        return {
             call_.name_tk,
             std::format("recursion of inlined function {} runs out of "
                         "registers before it ends at compile time, declare "
                         "it 'noinline'",
                         in_quotes(call_.func->name())),
+            compile_error::error_kind::out_of_registers,
         };
-
-        error.kind = compile_error::error_kind::out_of_registers;
-
-        return error;
     }
 
     //
@@ -1280,17 +1281,6 @@ class inline_call final {
         }
 
         return param_binding::make_name(name, dst.bound_info(), dst.text());
-    }
-
-    // the call is too deep to inline, e.g. a recursion that does not end at
-    // compile time
-    [[nodiscard]] static auto inlining_limit_error(const token& call_tk,
-                                                   std::string message)
-        -> compile_error {
-
-        compile_error error{call_tk, std::move(message)};
-        error.kind = compile_error::error_kind::inlining_limit;
-        return error;
     }
 
     // e.g. '[s0 + t0 * 4 + 28]' but not '[t1 + 28]'

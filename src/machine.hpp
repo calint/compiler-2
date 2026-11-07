@@ -1940,14 +1940,9 @@ class machine {
     [[nodiscard]] auto out_of_registers_error(const token& src_loc_tk) const
         -> compile_error {
 
-        compile_error error{
-            register_error(src_loc_tk,
-                           "out of scratch registers, simplify the expression"),
-        };
-
-        error.kind = compile_error::error_kind::out_of_registers;
-
-        return error;
+        return register_error(
+            src_loc_tk, "out of scratch registers, simplify the expression",
+            compile_error::error_kind::out_of_registers);
     }
 
     // the mask of the register 'name' in the pool, 0 for text that names no
@@ -2557,8 +2552,10 @@ class machine {
     // an error that the registers ran out or are held by a value, with how the
     // registers are used by each frame and what a 'noinline' frame would give;
     // defined in 'register_report.hpp'
-    [[nodiscard]] auto register_error(const token& src_loc_tk,
-                                      std::string message) const
+    [[nodiscard]] auto
+    register_error(const token& src_loc_tk, std::string message,
+                   compile_error::error_kind kind =
+                       compile_error::error_kind::source) const
         -> compile_error;
 
     // an error that the register 'name', which an instruction or a built-in
@@ -2589,21 +2586,16 @@ class machine {
         };
 
         if (allocated.holder == register_pool::holder_kind::scratch) {
-            compile_error error{
-                register_error(
-                    src_loc_tk,
-                    std::format("cannot allocate register {} because it holds "
-                                "a scratch value allocated at {}, compute a "
-                                "part of the expression with 'let' before it",
-                                name, holder_location)),
-            };
-
             // note: which register a scratch value takes depends on how many
             //       are live, as running out of them does
 
-            error.kind = compile_error::error_kind::out_of_registers;
-
-            return error;
+            return register_error(
+                src_loc_tk,
+                std::format("cannot allocate register {} because it holds a "
+                            "scratch value allocated at {}, compute a part of "
+                            "the expression with 'let' before it",
+                            name, holder_location),
+                compile_error::error_kind::out_of_registers);
         }
 
         return register_error(

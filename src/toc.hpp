@@ -1819,11 +1819,11 @@ class storage_layout final {
                       "storage, see '--vars'";
         }
 
-        compile_error error{src_loc_tk, std::move(message)};
-
-        error.kind = compile_error::error_kind::out_of_storage;
-
-        return error;
+        return {
+            src_loc_tk,
+            std::move(message),
+            compile_error::error_kind::out_of_storage,
+        };
     }
 };
 

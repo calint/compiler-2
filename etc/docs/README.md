@@ -636,7 +636,8 @@ The front end holds registers, the backend names and picks them
 
 An error is a 'compile_error' ('compile_error.hpp') at the token that caused it,
 or where the next token starts when a token is missing. The first error ends the
-compile (7.8), 'main.cpp' prints it with its frames.
+compile (7.8), 'main.cpp' prints it with its frames and then its 'detail', e.g.
+the register use at the failure that 'machine::register_error' adds.
 
 1. Frames: the code that led to an error adds itself while the error unwinds
    through it: an inlined call adds "called from" with its source, the

@@ -1,6 +1,21 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] hard: round 161 (2026-11-07, user: continue the loop; EH output
+    independent of the run, EI errors and register reports)
+    => done (2026-11-07): EH no finding (the unordered containers are only
+       looked up, the sorts total or stable; the suite compiled four ways
+       by path, working directory, address layout and environment, and by
+       the -O3, -O0 and asan builds: listings, images and exit codes equal,
+       messages differ only in naming included files by the working
+       directory, as designed; valgrind over 746 compiles clean); EI
+       'register_peak_lines', of one caller, part of
+       'peak_report', 'report_lines' gives the lines of a report so its
+       callers keep no text, 'wrapped_lines' appends the parts of each
+       line; listings and errors equal; an error is made with its kind
+       ('compile_error' and 'machine::register_error' take it) at the five
+       places that set it after making it, 'inline_call::inlining_limit_error'
+       removed; docs 1.9 names the 'detail' of an error
 [x] hard: round 160 (2026-11-07, user: continue the loop; EF 'expr_bool',
     EG generics and methods)
     => done (2026-11-07): EG no finding (3100 generic programs against

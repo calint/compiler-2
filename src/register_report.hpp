@@ -205,10 +205,11 @@ class register_reporter final {
         : machine_{backend}, trace_{backend.state_.trace} {}
 
     // see 'machine::register_error', the registers held now
-    [[nodiscard]] auto make_error(const token& src_loc_tk,
-                                  std::string message) const -> compile_error {
+    [[nodiscard]] auto make_error(const token& src_loc_tk, std::string message,
+                                  const compile_error::error_kind kind) const
+        -> compile_error {
 
-        compile_error error{src_loc_tk, std::move(message)};
+        compile_error error{src_loc_tk, std::move(message), kind};
 
         // the lines of text of the message of an error are not longer than
         // this, the rows of its tables may be
@@ -218,13 +219,10 @@ class register_reporter final {
 
         const register_pool& pool{x.state_.registers};
 
-        const std::string text{
-            make_register_report("register use at the failure",
-                                 pool.allocations(), trace_.get().frames())
-                .text(),
+        const std::vector<std::string> lines{
+            report_lines("register use at the failure", pool.allocations(),
+                         trace_.get().frames()),
         };
-
-        const std::vector<std::string> lines{split_lines(text)};
 
         for (const std::string& part : wrapped_lines(lines, max_detail_width)) {
             error.detail += error.detail.empty() ? "" : "\n";
@@ -237,10 +235,23 @@ class register_reporter final {
     // the use of registers at the busiest point of the build, as lines after
     // the code when asked for, else none
     [[nodiscard]] auto peak_report() const -> std::vector<std::string> {
+        if (not trace_.get().is_enabled()) {
+            return {};
+        }
+
+        const register_trace::peak_use& peak{trace_.get().peak()};
+
+        std::vector<std::string> lines{
+            report_lines("register use at the peak", peak.allocations,
+                         peak.frames),
+        };
+
+        lines.append_range(peak_note_lines(peak.frames));
+        lines.append_range(callee_lines());
+        lines.append_range(noinline_call_lines());
+
         // room for the comment marker and a space of the assembly output
         constexpr size_t max_line_width{78};
-
-        const std::vector<std::string> lines{register_peak_lines()};
 
         return wrapped_lines(lines, max_line_width);
     }
@@ -306,42 +317,6 @@ class register_reporter final {
         return uses;
     }
 
-    // what each frame of 'frames' holds of the 'allocations'
-    [[nodiscard]] auto make_register_report(
-        const std::string_view heading,
-        const std::span<const register_pool::allocation> allocations,
-        const std::vector<register_trace::frame>& frames) const
-        -> register_use_report {
-
-        std::vector<register_use_report::frame_use> uses{frame_uses(frames)};
-        size_t named{};
-
-        for (const register_pool::allocation& allocated : allocations) {
-            if (not register_trace::is_listed(allocated)) {
-                continue;
-            }
-
-            assert(allocated.frame < uses.size());
-
-            uses.at(allocated.frame)
-                .registers.push_back(register_text(allocated));
-
-            if (allocated.holder == register_pool::holder_kind::named) {
-                ++named;
-            }
-        }
-
-        const machine& x{machine_.get()};
-
-        return {
-            .heading{heading},
-            .register_total{x.scratch_register_count(allocations)},
-            .noinline_register_total{x.noinline_body_register_count()},
-            .named_count{named},
-            .frames{std::move(uses)},
-        };
-    }
-
     // the registers that the calls of each function with a body of its own save
     [[nodiscard]] auto noinline_call_lines() const -> std::vector<std::string> {
         if (trace_.get().noinline_uses().empty()) {
@@ -396,28 +371,6 @@ class register_reporter final {
         };
     }
 
-    [[nodiscard]] auto register_peak_lines() const -> std::vector<std::string> {
-        if (not trace_.get().is_enabled()) {
-            return {};
-        }
-
-        const register_trace::peak_use& peak{trace_.get().peak()};
-
-        const std::string text{
-            make_register_report("register use at the peak", peak.allocations,
-                                 peak.frames)
-                .text(),
-        };
-
-        std::vector<std::string> lines{split_lines(text)};
-
-        lines.append_range(peak_note_lines(peak.frames));
-        lines.append_range(callee_lines());
-        lines.append_range(noinline_call_lines());
-
-        return lines;
-    }
-
     // e.g. 'r15 153:13' or 'rax 153:31 (named)'
     [[nodiscard]] auto
     register_text(const register_pool::allocation& allocated) const
@@ -430,6 +383,44 @@ class register_reporter final {
                            allocated.holder == register_pool::holder_kind::named
                                ? " (named)"
                                : "");
+    }
+
+    // what each frame of 'frames' holds of the 'allocations', as lines of text
+    [[nodiscard]] auto
+    report_lines(const std::string_view heading,
+                 const std::span<const register_pool::allocation> allocations,
+                 const std::vector<register_trace::frame>& frames) const
+        -> std::vector<std::string> {
+
+        std::vector<register_use_report::frame_use> uses{frame_uses(frames)};
+        size_t named{};
+
+        for (const register_pool::allocation& allocated : allocations) {
+            if (not register_trace::is_listed(allocated)) {
+                continue;
+            }
+
+            assert(allocated.frame < uses.size());
+
+            uses.at(allocated.frame)
+                .registers.push_back(register_text(allocated));
+
+            if (allocated.holder == register_pool::holder_kind::named) {
+                ++named;
+            }
+        }
+
+        const machine& x{machine_.get()};
+
+        const register_use_report report{
+            .heading{heading},
+            .register_total{x.scratch_register_count(allocations)},
+            .noinline_register_total{x.noinline_body_register_count()},
+            .named_count{named},
+            .frames{std::move(uses)},
+        };
+
+        return split_lines(report.text());
     }
 
     //
@@ -504,9 +495,7 @@ class register_reporter final {
         std::vector<std::string> parts;
 
         for (const std::string& line : lines) {
-            for (std::string& part : wrapped(line, width)) {
-                parts.push_back(std::move(part));
-            }
+            parts.append_range(wrapped(line, width));
         }
 
         return parts;
@@ -515,10 +504,12 @@ class register_reporter final {
 
 // declared in 'machine'
 inline auto machine::register_error(const token& src_loc_tk,
-                                    std::string message) const
+                                    std::string message,
+                                    const compile_error::error_kind kind) const
     -> compile_error {
 
-    return register_reporter{*this}.make_error(src_loc_tk, std::move(message));
+    return register_reporter{*this}.make_error(src_loc_tk, std::move(message),
+                                               kind);
 }
 
 // declared in 'machine'
