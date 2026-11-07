@@ -63,8 +63,7 @@
 //   calls        'emit_call', 'emit_target_call' through 'call_io_routine'
 //   target hooks 'emit_io_call', 'emit_stack_limit_load', and the machine
 //                virtuals 'emit_exit_routine', 'emit_sector_routines',
-//                'emit_target_routines', 'emit_target_setup' and
-//                'finish_target';
+//                'emit_target_setup' and 'finish_target';
 //                the protected section is what the targets build on
 //   output       'write_assembly' writes the text and the image
 class machine_rv32i : public machine {
@@ -1520,19 +1519,6 @@ class machine_rv32i : public machine {
     // class methods
     //
 
-    // the destination holds the computed address when that keeps its inputs
-    [[nodiscard]] auto address_result_register(const token& src_loc_tk,
-                                               const size_t indent,
-                                               const operand& address,
-                                               const operand& dst) -> operand {
-
-        if (can_reuse_address_destination(address, dst)) {
-            return dst;
-        }
-
-        return alloc_scratch_register(src_loc_tk, indent, default_type());
-    }
-
     auto advance(const size_t indent, const operand& pointer,
                  const size_t size_bytes) -> void {
 
@@ -2358,13 +2344,12 @@ class machine_rv32i : public machine {
         emit_less_than(indent, operation, result, left, right, immediate);
 
         // 'slt' answers '<', against a threshold '>' and '>=' are its
-        // complement, with swapped registers '>=' and '<=' are
+        // complement
         const bool complement{
             immediate.has_value()
                 ? (operation == comparison_operator::greater_equal or
                    operation == comparison_operator::greater)
-                : (operation == comparison_operator::greater_equal or
-                   operation == comparison_operator::less_equal),
+                : complements_less_than(operation),
         };
 
         if (complement) {
@@ -2543,8 +2528,7 @@ class machine_rv32i : public machine {
         const bool swapped{swaps_operands(operation)};
 
         const bool branch_on_greater_equal{
-            inverted != (operation == comparison_operator::greater_equal or
-                         operation == comparison_operator::less_equal),
+            inverted != complements_less_than(operation),
         };
 
         emit_branch(indent, branch_on_greater_equal ? op::bge : op::blt,
@@ -3076,8 +3060,12 @@ class machine_rv32i : public machine {
             return operand::mem(base, {}, 1, low, address.type_ref());
         }
 
+        // the destination holds the computed address when that keeps its
+        // inputs
         const operand result{
-            address_result_register(src_loc_tk, indent, address, dst),
+            can_reuse_address_destination(address, dst)
+                ? dst
+                : alloc_scratch_register(src_loc_tk, indent, default_type()),
         };
 
         const std::string& result_name{result.register_name()};
@@ -3982,6 +3970,15 @@ class machine_rv32i : public machine {
             memory_end_address, assembler_rv32i::address_space_bytes)};
     }
 
+    // only 'slt' and 'blt' exist: 'x >= y' is the complement of 'x < y' and,
+    // with 'swaps_operands', 'x <= y' of 'y < x'
+    [[nodiscard]] static auto
+    complements_less_than(const comparison_operator operation) -> bool {
+
+        return operation == comparison_operator::greater_equal or
+               operation == comparison_operator::less_equal;
+    }
+
     // what a loop of 'width' byte accesses does, e.g. 'copy 4-byte words'
     [[nodiscard]] static auto describe_loop(const std::string_view verb,
                                             const size_t width) -> std::string {
@@ -4215,31 +4212,9 @@ class machine_rv32i : public machine {
         return digits;
     }
 
-    // the value as a register of 'value_type' holds it: truncated to the width,
-    // then sign-extended unless it is a bool
-    [[nodiscard]] static auto narrow_constant(const int32_t constant,
-                                              const type& value_type)
-        -> int32_t {
-
-        const size_t bits{value_type.size_bits()};
-
-        const uint32_t mask{
-            std::numeric_limits<uint32_t>::max() >> (register_bits_ - bits),
-        };
-
-        uint32_t value{static_cast<uint32_t>(constant) & mask};
-
-        if (not value_type.is_bool() and
-            (value & (uint32_t{1} << (bits - 1))) != 0) {
-
-            value |= ~mask;
-        }
-
-        return std::bit_cast<int32_t>(value);
-    }
-
-    // a constant 'value' as a register of 'width_type' holds it, e.g. the
-    // right side of a comparison at the width of the left side
+    // a constant 'value' as a register of 'width_type' holds it, truncated to
+    // the width and sign extended, e.g. the right side of a comparison at the
+    // width of the left side
     [[nodiscard]] static auto narrowed_immediate(const operand& value,
                                                  const type& width_type)
         -> std::optional<int32_t> {
@@ -4250,7 +4225,16 @@ class machine_rv32i : public machine {
             return std::nullopt;
         }
 
-        return narrow_constant(*constant, width_type);
+        const int64_t wrapped{
+            constant_arith::wrap_to_width(*constant, width_type),
+        };
+
+        // note: no conversion makes a 'bool', so a 'bool' constant is 0 or 1,
+        //       which the sign extension keeps
+
+        assert(not width_type.is_bool() or wrapped == 0 or wrapped == 1);
+
+        return static_cast<int32_t>(wrapped);
     }
 
     // whether the result may have bits outside the destination width: a sum

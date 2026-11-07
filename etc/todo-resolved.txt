@@ -1,6 +1,23 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] hard: round 170 (2026-11-07, user: continue all night; ER regressions
+    since round 144, EU 'machine_rv32i')
+    => done (2026-11-07): ER no regression (about 130000 generated programs
+       of every fuzz generator and the control flow generators of round 162
+       compiled by the builds of rounds 144 and 166 on four targets with
+       their option lists, the suite on four targets with six option lists,
+       53688 pairs, and roome: only the intended differences, and nine
+       programs that x86_64 rejected for 'rdx' under 'noub' now compile,
+       from round 150); EU 'narrowed_immediate' wraps with
+       'constant_arith::wrap_to_width' instead of 'narrow_constant' (a
+       'bool' constant is 0 or 1), 'complements_less_than' decides the
+       complement of less-than for branches and boolean results,
+       'address_result_register', of one caller, part of 'lower_address',
+       the class comment lists 'emit_target_routines' as a helper only;
+       listings, images and errors equal; fuzz-all reported one mutant of a
+       test that loops 2^31 times, which the emulators do not finish in the
+       time limit (also with the round 169 build)
 [x] hard: round 169 (2026-11-07, user: continue all night; ET 'machine')
     => done (2026-11-07): ET 'check_bounds' without its case of an empty
        plan, for which both backends emit nothing (the comment of
