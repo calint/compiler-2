@@ -157,6 +157,21 @@ class machine_x86_64 final : public machine {
     // note: in order of likelihood they are not used by name, 'rsi', 'rdi'
     //       and 'rcx' last since 'rep movsb' and 'repe cmpsb' need all three
 
+    // the registers of 'rep movsb' and 'repe cmpsb': the source, the
+    // destination and the byte count
+    static constexpr std::array<std::string_view, 3> bulk_registers_{
+        "rsi",
+        "rdi",
+        "rcx",
+    };
+
+    // the registers of 'rep stosb': the byte, the destination and the count
+    static constexpr std::array<std::string_view, 3> stosb_registers_{
+        "rax",
+        "rdi",
+        "rcx",
+    };
+
     // numbers the local labels of a memory compare, a division check and a
     // copy overlap check, each kind with its own prefix
     size_t local_label_count_{};
@@ -281,14 +296,8 @@ class machine_x86_64 final : public machine {
 
         const size_t parts{part_count(size_bytes)};
 
-        constexpr std::array<std::string_view, 3> rep_registers{
-            "rsi",
-            "rdi",
-            "rcx",
-        };
-
         // note: 2 because a part is a load and a store
-        if (takes_rep_form(2 * parts, rep_registers)) {
+        if (takes_rep_form(2 * parts, bulk_registers_)) {
             copy_with_rep_movsb(src_loc_tk, indent, dst, size_bytes,
                                 [&](const operand& pointer) -> void {
                                     lea(src_loc_tk, indent, pointer, src);
@@ -590,18 +599,12 @@ class machine_x86_64 final : public machine {
 
         const size_t parts{part_count(size_bytes)};
 
-        constexpr std::array<std::string_view, 3> rep_registers{
-            "rax",
-            "rdi",
-            "rcx",
-        };
-
-        if (takes_rep_form(parts, rep_registers)) {
+        if (takes_rep_form(parts, stosb_registers_)) {
             const operation_scope named{*this};
 
-            reserve_named_register(src_loc_tk, indent, "rax");
-            reserve_named_register(src_loc_tk, indent, "rdi");
-            reserve_named_register(src_loc_tk, indent, "rcx");
+            for (const std::string_view name : stosb_registers_) {
+                reserve_named_register(src_loc_tk, indent, name);
+            }
 
             const operand al{sized_register("rax", size_byte_)};
             emit_op(src_loc_tk, indent, op::xor_op, al, al);
@@ -1108,14 +1111,16 @@ class machine_x86_64 final : public machine {
         return std::in_range<int32_t>(value.displacement());
     }
 
-    // the registers of 'rep movsb' and 'repe cmpsb', freed by the
-    // 'operation_scope' of the caller
+    // reserves 'bulk_registers_', freed by the 'operation_scope' of the
+    // caller, and returns the count register
     [[nodiscard]] auto begin_bulk(const token& src_loc_tk, const size_t indent)
         -> operand {
 
-        reserve_named_register(src_loc_tk, indent, "rsi");
-        reserve_named_register(src_loc_tk, indent, "rdi");
-        return alloc_named_register(src_loc_tk, indent, "rcx", default_type());
+        for (const std::string_view name : bulk_registers_) {
+            reserve_named_register(src_loc_tk, indent, name);
+        }
+
+        return qword_register("rcx");
     }
 
     // jumps to the overflow failure handler when the instruction before set
@@ -1377,18 +1382,6 @@ class machine_x86_64 final : public machine {
                                to_argument(src));
     }
 
-    // the low part of the source is used, so a narrower destination needs no
-    // extension
-    auto emit_narrowing_op(const size_t indent, const op code,
-                           const operand& dst_op, const operand& src_op)
-        -> void {
-
-        assert(dst_op.is_register() or src_op.is_register());
-
-        emit(indent, code, dst_op,
-             sized_operand(src_op, dst_op.type_ref().size_bytes()));
-    }
-
     // matches the widths of the operands with scratch registers and sign
     // extension, and lowers addresses x86 cannot encode
     auto emit_op(const token& src_loc_tk, const size_t indent, const op code,
@@ -1440,7 +1433,11 @@ class machine_x86_64 final : public machine {
             return;
         }
 
-        emit_narrowing_op(indent, code, dst_op, src_op);
+        assert(dst_op.is_register() or src_op.is_register());
+
+        // the low part of the source is used, so a narrower destination needs
+        // no extension
+        emit(indent, code, dst_op, sized_operand(src_op, dst_size_bytes));
     }
 
     // idiv takes the divisor as a qword register or memory operand and the
@@ -1566,19 +1563,6 @@ class machine_x86_64 final : public machine {
                                to_address(lowered));
     }
 
-    auto load_bulk_addresses(const token& src_loc_tk, const size_t indent,
-                             const address_emitter& to_rsi,
-                             const address_emitter& to_rdi) -> void {
-
-        to_rsi(std::nullopt, [&](const operand& address) -> void {
-            lea(src_loc_tk, indent, qword_register("rsi"), address);
-        });
-
-        to_rdi(std::nullopt, [&](const operand& address) -> void {
-            lea(src_loc_tk, indent, qword_register("rdi"), address);
-        });
-    }
-
     // the bulk registers of 'rep movsb' and 'repe cmpsb': 'rcx' the count in
     // bytes, 'rsi' the address of 'to_rsi' and 'rdi' that of 'to_rdi'
     auto load_bulk_registers(
@@ -1589,7 +1573,14 @@ class machine_x86_64 final : public machine {
 
         const operand count{begin_bulk(src_loc_tk, indent)};
 
-        load_bulk_addresses(src_loc_tk, indent, to_rsi, to_rdi);
+        to_rsi(std::nullopt, [&](const operand& address) -> void {
+            lea(src_loc_tk, indent, qword_register("rsi"), address);
+        });
+
+        to_rdi(std::nullopt, [&](const operand& address) -> void {
+            lea(src_loc_tk, indent, qword_register("rdi"), address);
+        });
+
         emit_count(count);
 
         scale_index(src_loc_tk, indent, count, element_size_bytes);

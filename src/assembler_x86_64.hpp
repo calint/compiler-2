@@ -27,6 +27,25 @@
 // below, not text, so an encoder like the rv32i one can be added
 // (etc/todo.txt, on hold)
 class assembler_x86_64 final : public assembler {
+    // starts the comment of a line, the text before it is code
+    static constexpr std::string_view comment_marker_{";"};
+
+    struct op_info {
+        std::string_view mnemonic;
+        size_t operand_count{};
+    };
+
+    // a 'mov' between a register and memory, which 'is_reload' compares
+    struct memory_move {
+        std::string register_name;
+        // the operand with its width, e.g. 'word [rbp + 2]'
+        std::string address;
+        size_t size_bytes{};
+        bool stores{};
+    };
+
+    std::vector<memory_move> moves_;
+
   public:
     // 'and', 'or', 'xor' and 'not' are c++ operator names
     enum class op : uint8_t {
@@ -147,29 +166,6 @@ class assembler_x86_64 final : public assembler {
     // a register by name, memory or an immediate
     using argument = std::variant<std::string_view, memory, immediate>;
 
-  private:
-    // starts the comment of a line, the text before it is code
-    static constexpr std::string_view comment_marker_{";"};
-
-    struct op_info {
-        std::string_view mnemonic;
-        size_t operand_count{};
-    };
-
-    static constexpr size_t op_count_{std::to_underlying(op::cmpsq) + 1};
-
-    // a 'mov' between a register and memory, which 'is_reload' compares
-    struct memory_move {
-        std::string register_name;
-        // the operand with its width, e.g. 'word [rbp + 2]'
-        std::string address;
-        size_t size_bytes{};
-        bool stores{};
-    };
-
-    std::vector<memory_move> moves_;
-
-  public:
     // the widths of the operands
     static constexpr size_t size_qword{8};
     static constexpr size_t size_dword{4};
@@ -280,8 +276,8 @@ class assembler_x86_64 final : public assembler {
         assert(info(code).operand_count == 2);
 
         std::string text{
-            std::format("{}{} {}, {}", indentation(indent), info(code).mnemonic,
-                        argument_text(dst), argument_text(src)),
+            indentation(indent) +
+                instruction_text(code, argument_text(dst), argument_text(src)),
         };
 
         std::optional<memory_move> move{memory_move_of(code, dst, src)};
@@ -333,7 +329,7 @@ class assembler_x86_64 final : public assembler {
 
         load->register_name = rd;
 
-        replace_text(*last, std::format("mov {}, {}", rd, load->address));
+        replace_text(*last, instruction_text(op::mov, rd, load->address));
     }
 
     auto setcc(const size_t indent, const condition cc, const argument& dst)
@@ -658,9 +654,18 @@ class assembler_x86_64 final : public assembler {
             }),
         };
 
-        static_assert(infos.size() == op_count_);
+        static_assert(infos.size() == std::to_underlying(op::cmpsq) + 1);
 
         return infos.at(std::to_underlying(code));
+    }
+
+    // a two-operand instruction without its indentation
+    [[nodiscard]] static auto instruction_text(const op code,
+                                               const std::string_view dst,
+                                               const std::string_view src)
+        -> std::string {
+
+        return std::format("{} {}, {}", info(code).mnemonic, dst, src);
     }
 
     // a 'mov' between a register and memory, else empty

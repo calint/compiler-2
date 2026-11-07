@@ -1,6 +1,15 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] hard: round 171 (2026-11-07, user: continue all night; EV the x86_64
+    backend)
+    => done (2026-11-07): EV 'assembler_x86_64::instruction_text' writes a
+       two-operand instruction for 'instruction' and 'move_consumed' (which
+       wrote 'mov' by hand), the registers of the rep forms
+       ('bulk_registers_', 'stosb_registers_') decide both the form and
+       what is reserved, 'load_bulk_addresses' and 'emit_narrowing_op', of
+       one caller each, part of their callers, 'op_count_' inlined in its
+       one 'static_assert'; listings, images and errors equal
 [x] hard: round 170 (2026-11-07, user: continue all night; ER regressions
     since round 144, EU 'machine_rv32i')
     => done (2026-11-07): ER no regression (about 130000 generated programs
