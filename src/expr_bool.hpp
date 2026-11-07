@@ -208,8 +208,8 @@ class expr_bool_op final : public statement {
     // 'branch_on_true', nowhere when 'target' is empty; an 'and' element and
     // the last element of any list branch when false, an 'or' element before
     // the last when true; 'inverted' is the inversion of the list, 'joined_by'
-    // its connective after the inversion; the result is known when the
-    // expression evaluated at compile time
+    // its connective after the inversion; returns the value after 'inverted'
+    // when the element folds, empty when the run decides it
     [[nodiscard]] auto
     compile_branch(toc& tc, const size_t indent, const std::string_view target,
                    const bool branch_on_true, const bool inverted,
@@ -1256,7 +1256,7 @@ class expr_bool final : public statement {
                           const branch_targets& targets, const bool inverted,
                           const operand& dst) const -> std::optional<bool> {
 
-        const bool is_or{is_or_list() != inverted};
+        const bool is_or{joined_by(inverted) == connective::logical_or};
 
         if (const expr_bool* const nested_expr{
                 std::get_if<expr_bool>(&bools_.at(expr_index)),
@@ -1305,29 +1305,17 @@ class expr_bool final : public statement {
             is_stored_only ? std::string_view{} : targets.if_true,
         };
 
-        if (const expr_bool* const nested_expr{
-                std::get_if<expr_bool>(&bools_.back()),
-            }) {
-
-            const std::optional<bool> const_eval{
-                nested_expr->compile_with_label(tc, indent, targets, inverted,
-                                                dst),
-            };
-
-            // the nested list already emitted its final branch
-            if (not const_eval) {
-                return std::nullopt;
-            }
-
-            return resolve_last_constant(tc, indent, *const_eval, if_true,
-                                         inverted, has_runtime_element);
-        }
-
-        const expr_bool_op& expr{std::get<expr_bool_op>(bools_.back())};
+        const expr_bool* const nested_expr{
+            std::get_if<expr_bool>(&bools_.back()),
+        };
 
         const std::optional<bool> const_eval{
-            expr.compile_branch(tc, indent, if_false, false, inverted,
-                                joined_by(inverted), dst),
+            nested_expr != nullptr
+                ? nested_expr->compile_with_label(tc, indent, targets, inverted,
+                                                  dst)
+                : std::get<expr_bool_op>(bools_.back())
+                      .compile_branch(tc, indent, if_false, false, inverted,
+                                      joined_by(inverted), dst),
         };
 
         if (const_eval) {
@@ -1335,7 +1323,9 @@ class expr_bool final : public statement {
                                          inverted, has_runtime_element);
         }
 
-        if (is_stored_only) {
+        // a nested list has emitted its final branch, a stored value branches
+        // nowhere
+        if (nested_expr != nullptr or is_stored_only) {
             return std::nullopt;
         }
 
@@ -1425,11 +1415,11 @@ class expr_bool final : public statement {
     }
 
     // a constant false ends an 'and' list and a constant true ends an 'or'
-    // list; 'inverted' turns one into the other, see De Morgan's laws
+    // list, joined as after 'inverted'
     [[nodiscard]] auto is_short_circuit(const bool const_eval,
                                         const bool inverted) const -> bool {
 
-        return const_eval == (is_or_list() != inverted);
+        return const_eval == (joined_by(inverted) == connective::logical_or);
     }
 
     // the connective of the list after 'inverted', see De Morgan's laws
@@ -1535,11 +1525,7 @@ class expr_bool final : public statement {
         const std::string_view jmp_to_if_true, const bool inverted,
         const bool has_runtime_element) const -> std::optional<bool> {
 
-        if (not has_runtime_element) {
-            return const_eval;
-        }
-
-        if (is_short_circuit(const_eval, inverted)) {
+        if (not has_runtime_element or is_short_circuit(const_eval, inverted)) {
             return const_eval;
         }
 

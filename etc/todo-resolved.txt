@@ -1,6 +1,18 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] hard: round 160 (2026-11-07, user: continue the loop; EF 'expr_bool',
+    EG generics and methods)
+    => done (2026-11-07): EG no finding (3100 generic programs against
+       their hand-specialized twins and 600 all-inline against all-noinline
+       on x86_64 and rv32i-fpga with '--nopt', '--versions' and 'noub',
+       samples on rv32i and rv32i-qemu; the suite rewritten with generic
+       types and functions gives the same code); EF 'compile_last_element'
+       one path for a nested list and a comparison, the connective of an
+       inverted list decided only by 'joined_by', two early returns of
+       'resolve_last_constant' one, the comment of
+       'expr_bool_op::compile_branch' says it returns the value after the
+       inversion; listings equal
 [x] hard: round 159 (2026-11-07, user: continue the loop; ED sizes and
     ranges at their limits, EE 'main.cpp')
     => done (2026-11-07): ED no finding (offsets past the rv32i 12-bit
