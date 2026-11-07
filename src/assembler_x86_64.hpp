@@ -333,8 +333,7 @@ class assembler_x86_64 final : public assembler {
 
         load->register_name = rd;
 
-        last->text = std::format("{}mov {}, {}", leading_whitespace(last->text),
-                                 rd, load->address);
+        replace_text(*last, std::format("mov {}, {}", rd, load->address));
     }
 
     auto setcc(const size_t indent, const condition cc, const argument& dst)

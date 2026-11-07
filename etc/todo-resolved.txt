@@ -1,6 +1,22 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] hard: round 147 (2026-11-07, user: continue the loop of design
+    simplification and bug hunt; DG regressions of 'remove_copies', DH the
+    assembler optimizations, DI 'machine_rv32i')
+    => done (2026-11-07): DG no finding (12000 generated programs heavy in
+       helper calls against the round 145 build on the three rv32i targets
+       and four option lists, 2180895 copies removed; fuzz-all with the
+       image check against llvm-mc); DH 'move_consumed' and
+       'remove_copies' are not redundant (rv32i alone 1014 and 505, together
+       1673 instructions of the suite; the operand producer before a call
+       is retargeted only where the machine knows the register is dead),
+       the line text rebuilt by 'replace_text', the rv32i record found by
+       'instruction_of', a dead check in 'fold_copy' an assert, the comment
+       of 'optimization_counts' names 'optimize'; DI the comment on the
+       registers 'call_arithmetic_helper' protects says why (the arguments,
+       checks and restore name them), 'live_clobbered' reads which
+       registers are in use itself; listings equal
 [x] hard: round 146 (2026-11-07, user: continue the loop; DE regressions of
     round 145, DF a codegen todo item)
     => done (2026-11-07): DE no finding (2800 generated programs heavy in

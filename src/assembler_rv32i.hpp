@@ -679,8 +679,7 @@ class assembler_rv32i final : public assembler {
             return;
         }
 
-        last->text = std::string{leading_whitespace(last->text)} +
-                     instruction_text(*producer);
+        replace_text(*last, instruction_text(*producer));
     }
 
     auto mv(const size_t indent, const std::string_view rd,
@@ -989,9 +988,7 @@ class assembler_rv32i final : public assembler {
     //       path reaches them and no line after them reads the copy
 
     auto fold_copy(const std::span<line> block) -> bool override {
-        const instruction* const copy{
-            std::get_if<instruction>(record_of(block.front())),
-        };
+        const instruction* const copy{instruction_of(block.front())};
 
         if (copy == nullptr or copy->code != op::mv or copy->rd == copy->rs1) {
             return false;
@@ -1012,15 +1009,17 @@ class assembler_rv32i final : public assembler {
         }
 
         for (line& l : block.subspan(1, *end + 1)) {
-            if (l.code_size == 0 or not l.record) {
+            if (l.code_size == 0) {
                 continue;
             }
 
-            instruction& ins{std::get<instruction>(records_.at(*l.record))};
+            instruction* const ins{instruction_of(l)};
 
-            if (replace_source(ins, copied, source)) {
-                l.text = std::string{leading_whitespace(l.text)} +
-                         instruction_text(ins);
+            // note: 'copy_end' passed only instructions
+            assert(ins != nullptr);
+
+            if (replace_source(*ins, copied, source)) {
+                replace_text(l, instruction_text(*ins));
             }
         }
 
@@ -1046,13 +1045,8 @@ class assembler_rv32i final : public assembler {
     [[nodiscard]] auto is_reload(const line& store, const line& load) const
         -> bool override {
 
-        const instruction* const stored{
-            std::get_if<instruction>(record_of(store)),
-        };
-
-        const instruction* const loaded{
-            std::get_if<instruction>(record_of(load)),
-        };
+        const instruction* const stored{instruction_of(store)};
+        const instruction* const loaded{instruction_of(load)};
 
         if (stored == nullptr or loaded == nullptr) {
             return false;
@@ -1154,12 +1148,11 @@ class assembler_rv32i final : public assembler {
     [[nodiscard]] auto computing_instruction(const line* const l,
                                              const uint8_t rd) -> instruction* {
 
-        if (l == nullptr or not l->record) {
+        if (l == nullptr) {
             return nullptr;
         }
 
-        record& structured{records_.at(*l->record)};
-        instruction* const ins{std::get_if<instruction>(&structured)};
+        instruction* const ins{instruction_of(*l)};
 
         if (ins == nullptr or ins->rd != rd) {
             return nullptr;
@@ -1182,9 +1175,7 @@ class assembler_rv32i final : public assembler {
                 continue;
             }
 
-            const instruction* const ins{
-                std::get_if<instruction>(record_of(l)),
-            };
+            const instruction* const ins{instruction_of(l)};
 
             if (ins == nullptr) {
                 return std::nullopt;
@@ -1269,7 +1260,7 @@ class assembler_rv32i final : public assembler {
             return landing_words();
         }
 
-        const instruction* const ins{std::get_if<instruction>(record_of(l))};
+        const instruction* const ins{instruction_of(l)};
 
         assert(ins != nullptr);
 
@@ -1357,6 +1348,21 @@ class assembler_rv32i final : public assembler {
         }
 
         return data_size_bytes(*data);
+    }
+
+    // none for a line without a record or with another record, e.g. a jump
+    [[nodiscard]] auto instruction_of(const line& l) const
+        -> const instruction* {
+
+        return std::get_if<instruction>(record_of(l));
+    }
+
+    [[nodiscard]] auto instruction_of(const line& l) -> instruction* {
+        if (not l.record) {
+            return nullptr;
+        }
+
+        return std::get_if<instruction>(&records_.at(*l.record));
     }
 
     // sections follow each other in the order text, rodata, data, variables

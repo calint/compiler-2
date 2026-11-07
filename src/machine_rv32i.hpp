@@ -1675,24 +1675,21 @@ class machine_rv32i : public machine {
 
         const operation_scope scope{*this, dst, source};
 
-        const uint32_t live{registers().unavailable_mask()};
-
         const helper_spec& spec{helper_spec_of(routine)};
 
         mark_used(spec.label);
-
-        const std::span<const std::string_view> clobbered{spec.clobbers};
 
         // note: not 'machine::with_saved_registers': the live registers
         //       include the operands the scope protects, and the saved ones
         //       are restored before the result reaches a memory destination
 
         const std::vector<std::string_view> saved{
-            live_clobbered(live, clobbered, dst),
+            live_clobbered(spec.clobbers, dst),
         };
 
-        // staging registers must survive the helper call
-        for (const std::string_view name : clobbered) {
+        // the arguments, the checks and the restore use these by name, so no
+        // scratch register is one of them
+        for (const std::string_view name : spec.clobbers) {
             protect_register(name);
         }
 
@@ -2895,11 +2892,10 @@ class machine_rv32i : public machine {
         emit_no_return_jump(indent, target);
     }
 
-    // the clobbered registers that hold a live value, 'live' is the mask of
-    // the registers in use
+    // the clobbered registers that hold a live value, an allocated or a
+    // protected one
     [[nodiscard]] auto
-    live_clobbered(const uint32_t live,
-                   const std::span<const std::string_view> clobbered,
+    live_clobbered(const std::span<const std::string_view> clobbered,
                    const operand& dst) const -> std::vector<std::string_view> {
 
         std::vector<std::string_view> saved;
@@ -2910,7 +2906,11 @@ class machine_rv32i : public machine {
                 dst.is_register() and dst.register_name() == name,
             };
 
-            if ((live & register_mask(name)) != 0 and not is_destination) {
+            const bool is_live{
+                registers().is_unavailable(register_mask(name)),
+            };
+
+            if (is_live and not is_destination) {
                 saved.push_back(name);
             }
         }

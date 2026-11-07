@@ -117,7 +117,7 @@ class assembler {
     // lines that 'capture' kept apart, added where 'append' is called
     using captured_lines = std::vector<line>;
 
-    // changes made by 'optimize_jumps' and 'remove_reloads'
+    // changes made by 'optimize'
     struct optimization_counts {
         size_t jumps_to_next{};
         size_t unreachable_jumps{};
@@ -531,6 +531,11 @@ class assembler {
         l.removed = true;
     }
 
+    // the instruction of 'l' changed to 'text', the indentation kept
+    static auto replace_text(line& l, const std::string_view text) -> void {
+        l.text = std::format("{}{}", leading_whitespace(l.text), text);
+    }
+
   private:
     //
     // virtual methods
@@ -625,7 +630,7 @@ class assembler {
         jump.mnemonic = inverse_branch_mnemonic(jump.mnemonic);
         jump.target = removed.target;
         jump.scratch = removed.scratch;
-        l.text = std::string{leading_whitespace(l.text)} + format_jump(jump);
+        replace_text(l, format_jump(jump));
     }
 
     // labels named by lines other than jumps, e.g. calls, addresses and
