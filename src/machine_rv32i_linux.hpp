@@ -116,11 +116,14 @@ class machine_rv32i_linux final : public machine_rv32i {
         output.li(1, "a0", current_directory);
         output.la(1, "a1", sd_card_name_label_);
         output.li(1, "a2", read_write);
-        output.li(1, "a3", 0);
+
+        // note: without 'O_CREAT' linux ignores the mode in 'a3', which keeps
+        //       the address of the card data, and a system call changes only
+        //       'a0'
+
         output.li(1, "a7", syscall_openat_);
         output.ecall(1);
         output.bltz(1, "a0", sd_card_failure_.label);
-        output.la(1, "a3", sd_card_label_);
         output.sw(1, "a0", descriptor_offset, "a3");
         // 'llseek' writes the size of the file at 'a3'
         output.li(1, "a1", 0);

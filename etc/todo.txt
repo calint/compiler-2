@@ -6,6 +6,29 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
 --------------------------------------------------------------------------------
 1. clean up
 --------------------------------------------------------------------------------
+[p] easy: user decision (2026-11-07, round 166 EQ): parameters named like a
+    member function shadow it ('array_count' in 'expr_any':
+    'assert_whole_array_copy_fits', 'plan_remaining_elements',
+    'plan_string', 'assert_string_fits'); AGENTS.md asks '_in' for a
+    parameter that shadows a member: does that cover member functions? if
+    so, one consistency topic across all sources
+[p] medium: user decision (2026-11-07, round 166 EP): rv32i-qemu could put
+    its stack below the end of RAM like rv32i-fpga (memory start
+    0x8000'0000 for qemu, 0 for the fpga), so 'emit_target_setup' and
+    'emit_stack_limit_load' move to 'machine_rv32i_bare_metal' and both
+    qemu overrides go; changes the qemu layout and listings
+[p] easy: user decision (2026-11-07, round 162 EK): add the control flow
+    generators '/tmp/r162-ek-work/flowx.py' (structured programs against a
+    model, far jumps with a narrowed reach build) and 'borrow2.py' (far
+    jumps that borrow 't0') to 'qa/fuzz'; they are in '/tmp' until then
+[p] easy: user decision (2026-11-07, round 154 DV): test 2055 nests 20
+    noinline calls in a list, about 45 s with '--versions=nested', which
+    'test-versions.sh' runs (about 2 minutes with 1716); 14 levels take
+    about 1.5 s but guard less of the default compile time
+[p] easy: user decision (2026-11-07, round 165 EN): 'toc::record_use' takes a
+    'use_kind' and turns it into a bool, 'stmt_call::record_uses_of_call'
+    turns a bool back into a 'use_kind'; passing the bool removes the enum
+    and both conversions, with bare 'true'/'false' at two call sites
 [p] medium: a chain of distinct inlined functions with deeply nested
     expressions overflows the compiler's stack (segfault on both targets,
     bug hunt round 6 S2): each limit holds alone, parse nesting 128 per body
@@ -48,6 +71,12 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
     'src/' (a user decision); a set of canonical paths would miss hard links
     and pipes
     => pending (2026-11-06, user): kept for later
+    => proposal (2026-11-07, round 165 EO, user decision): each loaded file
+       keeps its size, a new path reads its size once (one stat) and calls
+       'equivalent' only for loaded files of that size, for all when no
+       size can be read (a pipe); standard C++ only; a file whose size
+       changes during the compile is loaded twice (a duplicate definition
+       error); not measured
 [ ] easy: low priority: an include of '/proc/self/fd/0' is named by the
     process id, '/proc/714319/fd/0' in the messages and the same path
     relative to the working directory in the listing (round 117 AC2),

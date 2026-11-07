@@ -1,6 +1,13 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] hard: round 167 (2026-11-07, user: continue and do the recommended all
+    night, decisions as todo items; EP's 'openat' proposal)
+    => done (2026-11-07): the rv32i linux sector routine no longer sets the
+       mode of 'openat' (ignored without 'O_CREAT') and keeps the card data
+       address in 'a3' across the call, 3 instructions fewer where sectors
+       are used; decisions for the user added to etc/todo.txt as pending
+       items
 [x] hard: round 166 (2026-11-07, user: continue the loop; EP the rv32i
     targets, EQ type definitions and type expressions)
     => done (2026-11-07): EQ 'type_instantiator::base_instance' gives none
