@@ -40,8 +40,8 @@
 // 'plan_scratch_type', the first row that matches:
 //   1   a list narrower than T: at T, in 't' when it is as wide as T, else
 //       in a scratch register of T
-//   2   't' has the argument's type or the argument keeps its low bits, and
-//       no checked shift is narrowed: in 't'
+//   2   't' has the argument's type or the argument keeps its low bits: in
+//       't'
 //   3a  an argument at least as wide as T, or a single operand without unary
 //       ops: in a scratch register of the argument's type
 //   3b  a narrower single operand with unary ops, e.g. 'i16(-g())': as row 1
@@ -141,12 +141,7 @@ class stmt_builtin_convert final : public statement {
     }
 
     // the builtin computes its own width before the destination narrows it
-    [[nodiscard]] auto
-    keeps_low_bits([[maybe_unused]] const width_change change) const
-        -> bool override {
-
-        return true;
-    }
+    [[nodiscard]] auto keeps_low_bits() const -> bool override { return true; }
 
     auto visit_operands(const operand_visitor visitor) const -> void override {
         visitor({
@@ -169,7 +164,7 @@ class stmt_builtin_convert final : public statement {
 
         const machine::runtime_check uops_check{tc.overflow_options(target)};
 
-        const type* const scratch_type{plan_scratch_type(tc, target)};
+        const type* const scratch_type{plan_scratch_type(target)};
 
         if (scratch_type != nullptr) {
             compile_in_scratch(tc, indent, target, uops, uops_check,
@@ -313,12 +308,10 @@ class stmt_builtin_convert final : public statement {
 
     // the type of the scratch register the argument is computed in, null
     // when it is computed in the target
-    [[nodiscard]] auto plan_scratch_type(const toc& tc,
-                                         const destination& target) const
+    [[nodiscard]] auto plan_scratch_type(const destination& target) const
         -> const type* {
 
         const size_t type_size_bytes{get_type().size_bytes()};
-        const size_t target_size_bytes{target.type_ref().size_bytes()};
         const type& arg_type{argument().get_type()};
 
         // a narrower argument is computed at the width of the type, where its
@@ -330,31 +323,19 @@ class stmt_builtin_convert final : public statement {
             return plan_at_type(target);
         }
 
-        // computed in the target, the argument is at its width
-        const bool is_narrowed{target_size_bytes < arg_type.size_bytes()};
-
-        const bool keeps_low_bits{
-            argument().keeps_low_bits(is_narrowed ? width_change::narrowed
-                                                  : width_change::widened),
-        };
-
-        // a shift count is checked against the width the shift is computed
-        // at, which a narrower target would lower
-        const bool narrows_checked_shift{tc.checks().shift and is_narrowed};
+        // note: a narrower argument here is a single operand, the first
+        //       check took every narrower list
 
         // the target is at most as wide as the type, the store at its width
         // does the truncation; that is right when the low bits of the
         // argument do not depend on its high bits or nothing is converted
-        if ((keeps_low_bits or target.type_ref().is_same(arg_type)) and
-            not narrows_checked_shift) {
+        if (argument().keeps_low_bits() or
+            target.type_ref().is_same(arg_type)) {
 
             return nullptr;
         }
 
-        // note: a narrower argument here is a single operand, the first
-        //       check took every narrower list
-
-        // '/', '%', '>>' and calls are computed at the argument's width, a
+        // '/', '%', shifts and calls are computed at the argument's width, a
         // call's result must also have its declared type
         if (arg_type.size_bytes() >= type_size_bytes or
             argument().single_operand().get_unary_ops().is_empty()) {

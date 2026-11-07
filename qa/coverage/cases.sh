@@ -7089,3 +7089,7 @@ SRC=2940 && COMPERR
 
 # a generic type is based on a generic type, not on a built-in type
 SRC=2941 && COMPERR
+
+# --checks=shift: a narrowing conversion without a shift is computed in its
+# destination, the shift of an inner conversion is checked at its width
+SRC=3500 && EXP=9 && OPTS="--vars=0x40000 --checks=shift" RUN

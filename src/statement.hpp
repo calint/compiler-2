@@ -3,7 +3,6 @@
 #include <algorithm>
 #include <cassert>
 #include <cstddef>
-#include <cstdint>
 #include <format>
 #include <iterator>
 #include <optional>
@@ -30,8 +29,6 @@
 //
 //   'one_line_source'  the source of a node on one line, for the comments of
 //                      the listing
-//   'width_change'     the width an expression is computed at compared with
-//                      its own
 //   'statement'        the base of every node
 
 // the source text of a statement on one line, for the comments of the output
@@ -158,9 +155,6 @@ class one_line_source final {
     }
 };
 
-// the width an expression is computed at compared with its own
-enum class width_change : uint8_t { narrowed, widened };
-
 class stmt_identifier;
 
 // a node of the program: it parses itself in its constructor, writes its
@@ -260,12 +254,8 @@ class statement {
     // compiles again with its arguments ('stmt_identifier.hpp')
     [[nodiscard]] virtual auto has_call() const -> bool;
 
-    // true when computing at the width that 'change' gives keeps the low bits
-    [[nodiscard]] virtual auto
-    keeps_low_bits([[maybe_unused]] const width_change change) const -> bool {
-
-        return false;
-    }
+    // true when computing the value at another width keeps its low bits
+    [[nodiscard]] virtual auto keeps_low_bits() const -> bool { return false; }
 
     // the identifier a value is when it is one name or literal, its unary ops
     // included, e.g. 'x', '-x', 'p.a[i]' or '3', not 'x + 1', 'f(x)' or '{}';

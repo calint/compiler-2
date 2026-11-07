@@ -1,6 +1,20 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] hard: round 150 (2026-11-07, user: continue the loop; DN types and
+    value conversions, DO crashes reachable from input)
+    => done (2026-11-07): DO no finding (about 750000 compiles of mutated
+       tests and roome sources, mostly on the asan build: structural
+       mutations, name clashes over 28 definition kinds, whole-corpus
+       transformations, constant folding at the limits, odd bytes, long
+       lines and files, includes, options; no crash, assert, sanitizer
+       report, hang or error without a location); DN a conversion's
+       argument is computed in a narrower destination whenever it keeps its
+       low bits, also under '--checks=shift' (no '<<' keeps them, so the
+       shift check needs no rule of its own), 'width_change' removed (a
+       wider destination only meets a single operand); listings change
+       under '--checks=noub' only, 127 compiles of 33 cases, x86_64 15
+       instructions fewer, each rv32i target 22 more; test 3500
 [x] hard: round 149 (2026-11-07, user: continue the loop; DL regressions of
     the x86_64 division check, DM the register and operand layer)
     => done (2026-11-07): DL no finding (1800 generated programs of '/' and

@@ -667,29 +667,22 @@ class expr_arith final : public statement {
         };
     }
 
-    // '/', '%' and '>>' read the high bits of their operands; narrowed, a
-    // '<<' by a count not below the narrower width is defined only at the
-    // wider one; widened, a '<<' count has the narrower type, so where it is
-    // defined it is below that width
-    [[nodiscard]] auto keeps_low_bits(const width_change change) const
-        -> bool override {
-
+    // '/', '%' and '>>' read the high bits of their operands; a '<<' count
+    // is checked against the width it is computed at, and a count not below
+    // a narrower width is defined only at the wider one
+    [[nodiscard]] auto keeps_low_bits() const -> bool override {
         for (const spelled_operator<arithmetic_operator>& spelled : ops_) {
             const arithmetic_operator o{spelled.op};
 
-            if (traits_of(o).reads_high_bits) {
-                return false;
-            }
-
-            if (o == arithmetic_operator::shift_left and
-                change == width_change::narrowed) {
+            if (traits_of(o).reads_high_bits or
+                o == arithmetic_operator::shift_left) {
 
                 return false;
             }
         }
 
         for (const std::unique_ptr<statement>& e : exprs_) {
-            if (not e->keeps_low_bits(change)) {
+            if (not e->keeps_low_bits()) {
                 return false;
             }
         }

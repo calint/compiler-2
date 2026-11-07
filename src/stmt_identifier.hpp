@@ -548,12 +548,7 @@ class stmt_identifier final : public statement {
     }
 
     // the low bytes are at the start address of the storage
-    [[nodiscard]] auto
-    keeps_low_bits([[maybe_unused]] const width_change change) const
-        -> bool override {
-
-        return true;
-    }
+    [[nodiscard]] auto keeps_low_bits() const -> bool override { return true; }
 
     [[nodiscard]] auto operand_path() const -> const stmt_identifier* override {
         return this;
