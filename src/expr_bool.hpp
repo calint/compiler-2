@@ -1443,13 +1443,11 @@ class expr_bool final : public statement {
         // the list is located at its '(', which keeps the whitespace before it
         const token pos_tk{tz.next_token_position()};
 
-        const std::optional<token> open_paren_tk{tz.is_next_char_token('(')};
-
         // note: 'is_list_next' saw the '('
-        assert(open_paren_tk);
+        const token open_paren_tk{tz.seen_char_token('(')};
 
         bools_.emplace_back(std::in_place_type<expr_bool>, tc, pos_tk, tz,
-                            std::move(nots), *open_paren_tk);
+                            std::move(nots), open_paren_tk);
     }
 
     // the operands are joined by 'and' or by 'or', not by both, e.g.

@@ -1,6 +1,20 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] hard: round 163 (2026-11-07, user: continue the loop; EL the tokenizer
+    and parse helpers, EM values of records and arrays)
+    => done (2026-11-07): EM no finding (14000 generated programs of
+       records and arrays with padding against a byte model: copies, '==',
+       'arrays_equal', literals, constructors, results, re-declarations in
+       loops, a byte dump through a sector, in three inline forms with six
+       option lists on four targets; the model catches a disabled
+       'zero_result_padding'); the comment of test 0669 says a constructor
+       result has its padding zeroed; EL 'is_literal_value' the one body of
+       'is_array_literal_value' and 'is_record_value', two hand-written
+       'seen_char_token' replaced by it, 'tokenizer::is_unary_operator_next',
+       of one caller, replaced by 'unary_operator_of(tz.peek_operator())',
+       'peek_char_after_whitespace' says it gives '\0' at the end; listings
+       and errors equal
 [x] hard: round 162 (2026-11-07, user: continue the loop; EJ the statement
     classes, EK control flow)
     => done (2026-11-07): EK no finding (about 25000 generated programs of

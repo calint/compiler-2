@@ -1,5 +1,5 @@
-# '==' compares the bytes of the fields, the padding of an instance is not
-# compared: a constructor leaves the padding as the storage held it
+# '==' compares the bytes of instances: a constructor result has its padding
+# zeroed whatever the storage held
 
 func assert(err, ok bool) { if not ok exit(err) }
 

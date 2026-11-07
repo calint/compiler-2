@@ -76,14 +76,8 @@ inline auto assert_no_surplus_argument(const tokenizer& tz,
     // no argument
     if (count != 0) {
         tokenizer probe{tz};
-
-        const std::optional<token> delimiter_tk{
-            probe.is_next_char_token(','),
-        };
-
-        assert(delimiter_tk);
-
-        probe.assert_no_trailing_delimiter(*delimiter_tk, ')', "a call");
+        const token delimiter_tk{probe.seen_char_token(',')};
+        probe.assert_no_trailing_delimiter(delimiter_tk, ')', "a call");
     }
 
     throw compile_error{tz, argument_count_text(name, count, count)};
@@ -125,7 +119,7 @@ inline auto assert_no_value_operator(const tokenizer& tz,
             tz, std::format("parentheses make a value, not {}", what)};
     }
 
-    if (tz.is_unary_operator_next()) {
+    if (unary_operator_of(tz.peek_operator())) {
         throw compile_error{
             tz, std::format("a unary operator makes a value, not {}", what)};
     }
@@ -399,10 +393,11 @@ enum class term_kind : uint8_t {
            probe.skip_braced_block();
 }
 
-// an array literal that is not an operand of a condition, e.g. 'i8[2]{1, 2}'
-// or '[2] + 1', not '[2]{1, 2} == a'; 'tz' is at its '['
+// the literal at 'tz', see 'skip_literal', is not an operand of a condition,
+// e.g. 'i8[2]{1, 2}' or '[2] + 1', not '[2]{1, 2} == a'; 'tz' is after the
+// type name of a typed literal
 // note: a literal that does not end is parsed as a whole, which reports it
-[[nodiscard]] inline auto is_array_literal_value(const tokenizer& tz) -> bool {
+[[nodiscard]] inline auto is_literal_value(const tokenizer& tz) -> bool {
     tokenizer after_literal{tz};
 
     return not skip_literal(after_literal) or
@@ -411,18 +406,11 @@ enum class term_kind : uint8_t {
 
 // a user type alone or an instance literal that is not an operand of a
 // condition, e.g. 'point' or 'point{1, 2} + 1', not 'point{1, 2} == p'
-// note: a literal that does not end is parsed as a whole, which reports it
 [[nodiscard]] inline auto is_record_value(const term_kind tm,
                                           const tokenizer& tz) -> bool {
 
-    if (tm != term_kind::record_type and tm != term_kind::record_literal) {
-        return false;
-    }
-
-    tokenizer after_literal{tz};
-
-    return not skip_literal(after_literal) or
-           not continues_condition(after_literal);
+    return (tm == term_kind::record_type or tm == term_kind::record_literal) and
+           is_literal_value(tz);
 }
 
 // a literal ends where 'tz' is and a field or an element of it is named, e.g.

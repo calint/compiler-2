@@ -324,15 +324,15 @@ class initializer_declaration final {
         }
 
         if (is_default_array_literal(tz)) {
-            return is_array_literal_value(tz) ? &tc.builtins().default_type()
-                                              : nullptr;
+            return is_literal_value(tz) ? &tc.builtins().default_type()
+                                        : nullptr;
         }
 
         const token tk{tz.next_token()};
 
         const bool is_literal{
             classify_term(tc, tk, tz) == term_kind::array_literal and
-                is_array_literal_value(tz),
+                is_literal_value(tz),
         };
 
         tz.put_back_token(tk);

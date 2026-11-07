@@ -178,11 +178,6 @@ class tokenizer final {
         return tk;
     }
 
-    // a prefix operator follows, e.g. the '-' of '-x'
-    [[nodiscard]] auto is_unary_operator_next() const -> bool {
-        return unary_operator_of(peek_operator()).has_value();
-    }
-
     // e.g. '  # note\n  x = 1' gives the token 'x' with the whitespace and
     // comment before it
     [[nodiscard]] auto next_token() -> token {
@@ -216,7 +211,7 @@ class tokenizer final {
     }
 
     // the character after the whitespace, comments and newlines included,
-    // without reading
+    // without reading; '\0' at the end of the source
     [[nodiscard]] auto peek_char_after_whitespace() const -> char {
         return past_whitespace().peek_char();
     }

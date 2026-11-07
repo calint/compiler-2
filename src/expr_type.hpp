@@ -163,7 +163,7 @@ inline auto assert_not_array_literal(const toc& tc, const tokenizer& tz,
         throw_literal_not_operand(tk, "an array literal");
     }
 
-    if (tp.is_bool() and not is_array_literal_value(tz)) {
+    if (tp.is_bool() and not is_literal_value(tz)) {
         return;
     }
 
