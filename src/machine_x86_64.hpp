@@ -19,7 +19,6 @@
 #include <vector>
 
 #include "assembler_x86_64.hpp"
-#include "constant_arith.hpp"
 #include "machine.hpp"
 #include "operand.hpp"
 #include "token.hpp"
@@ -1234,16 +1233,12 @@ class machine_x86_64 final : public machine {
     }
 
     // a zero divisor and the minimum of the dividend width divided by -1 jump
-    // to the failure handler, the dividend is sign extended in 'rax'
+    // to the failure handler, the dividend is in 'rax'
     auto check_divisor(const token& src_loc_tk, const size_t indent,
                        const operand& divisor, const size_t dividend_size_bytes)
         -> void {
 
-        const int64_t minimum{
-            constant_arith::signed_minimum(dividend_size_bytes * bits_per_byte),
-        };
-
-        const std::string not_minimum{
+        const std::string not_minus_one{
             std::format(".Lbaz_division.{}", local_label_count_++),
         };
 
@@ -1257,11 +1252,17 @@ class machine_x86_64 final : public machine {
         comment(src_loc_tk, indent, "minimum divided by -1 overflows");
 
         cmp(src_loc_tk, indent, divisor, immediate(-1));
-        assembler_.jcc(indent, condition::ne, not_minimum);
-        mov(src_loc_tk, indent, qword_register("rdx"), immediate(minimum));
-        cmp(src_loc_tk, indent, qword_register("rax"), qword_register("rdx"));
-        branch_to_failure(src_loc_tk, indent, condition::e, division_failure_);
-        assembler_.label(indent, not_minimum);
+        assembler_.jcc(indent, condition::ne, not_minus_one);
+
+        // note: a compare with 1 overflows only for the minimum of the width,
+        //       so the minimum needs no immediate, which takes a register for
+        //       a qword
+
+        emit_op(src_loc_tk, indent, op::cmp,
+                sized_register("rax", dividend_size_bytes), immediate(1));
+
+        branch_to_failure(src_loc_tk, indent, condition::o, division_failure_);
+        assembler_.label(indent, not_minus_one);
 
         comment(src_loc_tk, indent, "division check end");
     }
@@ -1444,39 +1445,32 @@ class machine_x86_64 final : public machine {
         emit_narrowing_op(indent, code, dst_op, src_op);
     }
 
-    // idiv takes the divisor as a qword register or memory operand, 'rax'
-    // holds the dividend, 'rdx' is free until it is extended
+    // idiv takes the divisor as a qword register or memory operand and the
+    // dividend in 'rax', which 'cqo' extends into 'rdx'
     auto emit_signed_divide(const token& src_loc_tk, const size_t indent,
                             const operand& divisor, const runtime_check& check,
                             const size_t dividend_size_bytes) -> void {
 
-        if (not divisor.is_immediate() and
-            divisor.type_ref().size_bytes() == size_qword_) {
-
-            if (check.enabled) {
-                check_divisor(src_loc_tk, indent, divisor, dividend_size_bytes);
-            }
-
-            assembler_.instruction(indent, op::cqo);
-            emit_unary(src_loc_tk, indent, op::idiv, divisor);
-
-            return;
-        }
-
         const operation_scope scope{*this};
 
-        const operand scratch_reg{
-            alloc_scratch_register(src_loc_tk, indent, default_type()),
-        };
+        operand qword_divisor{divisor};
 
-        mov(src_loc_tk, indent, scratch_reg, divisor);
+        if (divisor.is_immediate() or
+            divisor.type_ref().size_bytes() != size_qword_) {
+
+            qword_divisor =
+                alloc_scratch_register(src_loc_tk, indent, default_type());
+
+            mov(src_loc_tk, indent, qword_divisor, divisor);
+        }
 
         if (check.enabled) {
-            check_divisor(src_loc_tk, indent, scratch_reg, dividend_size_bytes);
+            check_divisor(src_loc_tk, indent, qword_divisor,
+                          dividend_size_bytes);
         }
 
         assembler_.instruction(indent, op::cqo);
-        emit_unary(src_loc_tk, indent, op::idiv, scratch_reg);
+        emit_unary(src_loc_tk, indent, op::idiv, qword_divisor);
     }
 
     // the source goes through a register of the destination width, which
@@ -1669,12 +1663,6 @@ class machine_x86_64 final : public machine {
         }
 
         assert(value.is_memory());
-
-        if (value.type_ref().is_builtin() and
-            value.type_ref().size_bytes() == size_bytes) {
-
-            return value;
-        }
 
         return operand::mem(value, sized_type);
     }

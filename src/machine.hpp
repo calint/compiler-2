@@ -579,12 +579,7 @@ class machine {
         // the registers of 'value' are not picked for scratch until the scope
         // ends
         auto protect(const operand& value) -> void {
-            if (value.is_register()) {
-                machine_.protect_register(value.register_name());
-            } else if (value.is_memory()) {
-                machine_.protect_register(value.base_register());
-                machine_.protect_register(value.index_register());
-            }
+            machine_.state_.registers.protect(machine_.registers_mask(value));
         }
     };
 

@@ -1,6 +1,19 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] hard: round 148 (2026-11-07, user: continue the loop; DJ a result
+    independent of target, inlining and optimization, DK 'machine_x86_64'
+    and 'machine')
+    => done (2026-11-07): DJ no finding (30000 generated programs of i8,
+       i16 and i32 in three inline forms, 14 runs each under
+       '--checks=noub' on x86_64 and the three rv32i targets, with '--nopt'
+       and '--versions'; stdout, exit code and panic kind equal, no target
+       accepting what another rejects); DK the x86_64 division check
+       compares the dividend at its width with 1 and branches on overflow
+       instead of loading the minimum into 'rdx' (one instruction fewer per
+       checked division, 182 in the x86_64 suite), 'emit_signed_divide' one
+       path, 'sized_operand' without a case the general one covers,
+       'operation_scope::protect' uses 'registers_mask'
 [x] hard: round 147 (2026-11-07, user: continue the loop of design
     simplification and bug hunt; DG regressions of 'remove_copies', DH the
     assembler optimizations, DI 'machine_rv32i')
