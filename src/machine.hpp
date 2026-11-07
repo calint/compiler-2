@@ -1312,11 +1312,7 @@ class machine {
 
         assembler& output{target_assembler()};
 
-        if (options_.jumps == assembler::jump_mode::optimized) {
-            output.optimize_jumps();
-        }
-
-        output.remove_reloads();
+        output.optimize(options_.jumps == assembler::jump_mode::optimized);
 
         finish_target();
     }

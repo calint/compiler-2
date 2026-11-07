@@ -317,6 +317,26 @@ class assembler_x86_64 final : public assembler {
                          });
     }
 
+    // copies qword register 'rs' to 'rd' where 'rs' is written before it is
+    // read again: the qword load just added, when it loads 'rs', loads 'rd'
+    // instead
+    auto move_consumed(const size_t indent, const std::string_view rd,
+                       const std::string_view rs) -> void {
+
+        line* const last{last_instruction()};
+        memory_move* const load{qword_load(last, rs)};
+
+        if (load == nullptr) {
+            instruction(indent, op::mov, rd, rs);
+            return;
+        }
+
+        load->register_name = rd;
+
+        last->text = std::format("{}mov {}, {}", leading_whitespace(last->text),
+                                 rd, load->address);
+    }
+
     auto setcc(const size_t indent, const condition cc, const argument& dst)
         -> void {
 
@@ -423,6 +443,26 @@ class assembler_x86_64 final : public assembler {
 
     auto add_instruction(std::string text) -> void {
         add_line(std::move(text), instruction_size());
+    }
+
+    // the load of 'l' when it is a qword 'mov' into 'register_name', else
+    // none
+    [[nodiscard]] auto qword_load(const line* const l,
+                                  const std::string_view register_name)
+        -> memory_move* {
+
+        if (l == nullptr or not l->record) {
+            return nullptr;
+        }
+
+        memory_move& move{moves_.at(*l->record)};
+
+        const bool loads{
+            not move.stores and move.size_bytes == size_qword and
+                move.register_name == register_name,
+        };
+
+        return loads ? &move : nullptr;
     }
 
     //

@@ -2982,7 +2982,20 @@ class machine_rv32i : public machine {
         // note: 'call_arithmetic_helper' rejects a source in 'a0'
         assert(not source.uses_register("a0"));
 
-        copy_value(src_loc_tk, indent, first_argument, first_value);
+        // note: a register 'first_value' is the destination of the helper,
+        //       which receives the result after the call
+
+        const bool consumed{
+            first_value.is_register() and
+                not source.uses_register(first_value.register_name()),
+        };
+
+        if (consumed) {
+            assembler_.move_consumed(indent, "a0", first_value.register_name());
+        } else {
+            copy_value(src_loc_tk, indent, first_argument, first_value);
+        }
+
         copy_value(src_loc_tk, indent, second_argument, source);
     }
 

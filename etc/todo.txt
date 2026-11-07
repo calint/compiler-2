@@ -327,6 +327,14 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
     next operation needs it ('lw t0; mv a0, t0' before a helper call instead
     of 'lw a0', 179 rv32i sites; x86 'mov rax, r15' before 'cqo', 89; the
     listings of the 2227 tests without options, 2026-11-06)
+    => partly done (2026-11-07, round 145): a copy of the destination
+       register into 'a0' before a helper call (rv32i) or into 'rax' before
+       'cqo' (x86_64, a qword destination) retargets the instruction just
+       before it that computes the register ('move_consumed' of both
+       assemblers), no label in between; the suite listings 424 rv32i and 99
+       x86_64 instructions shorter, roome 1 rv32i; left: an operand computed
+       before the other operand, e.g. 'a * (b + c)' (rv32i 62 'lw' sites), a
+       saved register in between ('sw', 29), x86_64 'imul' producers (13)
 [ ] hard: a helper, 'idiv' or syscall result is copied out of its fixed
     register before the next operation ('mv t0, a0' right after a helper
     call, 328 rv32i sites; x86 'mov r15, rax' or 'mov r15, rdx' right after

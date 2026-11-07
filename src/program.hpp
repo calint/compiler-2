@@ -183,7 +183,7 @@ class report_renderer final {
                     .value{std::format("{}", counts.inverted_branches)},
                 },
                 {
-                    .name{"removed reloads of stored values"},
+                    .name{"removed reloads after stores"},
                     .value{std::format("{}", counts.removed_reloads)},
                 },
             },

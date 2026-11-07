@@ -117,12 +117,11 @@
     mov r15, rdx
     mov qword [rbp + 16], r15
 === 74:     d = b * -1 * -1 / one # folds
-    mov r15, qword [rbp + 8]
-    mov qword [rbp + 16], r15
-    mov rax, qword [rbp + 16]
+    mov rax, qword [rbp + 8]
     cqo
     idiv qword [rbp]
-    mov qword [rbp + 16], rax
+    mov r15, rax
+    mov qword [rbp + 16], r15
 === 76:     d = b / 1 / 1 # folds
     mov r15, qword [rbp + 8]
     mov qword [rbp + 16], r15
@@ -159,13 +158,12 @@
     mov r15, rax
     mov qword [rbp + 16], r15
 === 86:     d = b / (1 + 1) # folds
-    mov r15, qword [rbp + 8]
-    mov qword [rbp + 16], r15
-    mov rax, qword [rbp + 16]
-    mov r15, 2
+    mov rax, qword [rbp + 8]
+    mov r14, 2
     cqo
-    idiv r15
-    mov qword [rbp + 16], rax
+    idiv r14
+    mov r15, rax
+    mov qword [rbp + 16], r15
 === 88:     d = b << (1 + 1) # folds
     mov r15, qword [rbp + 8]
     mov qword [rbp + 16], r15
@@ -175,13 +173,12 @@
     mov qword [rbp + 16], r15
     sar qword [rbp + 16], 2
 === 92:     d = b % (2 * 2) # folds
-    mov r15, qword [rbp + 8]
-    mov qword [rbp + 16], r15
-    mov rax, qword [rbp + 16]
-    mov r15, 4
+    mov rax, qword [rbp + 8]
+    mov r14, 4
     cqo
-    idiv r15
-    mov qword [rbp + 16], rdx
+    idiv r14
+    mov r15, rdx
+    mov qword [rbp + 16], r15
 === 96:     d = -(2 + 3) # folds
     mov qword [rbp + 16], -5
 === 98:     d = ~(1 + 1) # folds

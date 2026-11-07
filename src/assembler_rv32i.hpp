@@ -654,6 +654,35 @@ class assembler_rv32i final : public assembler {
         return image.bases.at(variables) + image.sizes.at(variables);
     }
 
+    // copies 'rs' to 'rd' where 'rs' is written before it is read again: the
+    // instruction just added, when it computes 'rs', computes 'rd' instead
+    auto move_consumed(const size_t indent, const std::string_view rd,
+                       const std::string_view rs) -> void {
+
+        if (rd == rs) {
+            return;
+        }
+
+        line* const last{last_instruction()};
+        instruction* const producer{computing_instruction(last, number_of(rs))};
+
+        if (producer == nullptr) {
+            mv(indent, rd, rs);
+            return;
+        }
+
+        producer->rd = number_of(rd);
+
+        // e.g. a helper result copied out then back: 'mv t0, a0', 'mv a0, t0'
+        if (producer->code == op::mv and producer->rs1 == producer->rd) {
+            remove(*last);
+            return;
+        }
+
+        last->text = std::string{leading_whitespace(last->text)} +
+                     instruction_text(*producer);
+    }
+
     auto mv(const size_t indent, const std::string_view rd,
             const std::string_view rs) -> void {
 
@@ -1072,6 +1101,34 @@ class assembler_rv32i final : public assembler {
         }
 
         return symbols;
+    }
+
+    // the instruction of 'l' when it computes only register 'rd' from its
+    // operands, e.g. a load or an 'add', else none
+    [[nodiscard]] auto computing_instruction(const line* const l,
+                                             const uint8_t rd) -> instruction* {
+
+        if (l == nullptr or not l->record) {
+            return nullptr;
+        }
+
+        record& structured{records_.at(*l->record)};
+        instruction* const ins{std::get_if<instruction>(&structured)};
+
+        if (ins == nullptr or ins->rd != rd) {
+            return nullptr;
+        }
+
+        const form operands{info(ins->code).operands};
+
+        const bool computes{
+            operands == form::registers or operands == form::immediate or
+                operands == form::shift or operands == form::upper or
+                operands == form::load or operands == form::load_immediate or
+                operands == form::load_address or operands == form::move,
+        };
+
+        return computes ? ins : nullptr;
     }
 
     // the forms 'write_line' writes for the jump's grown size

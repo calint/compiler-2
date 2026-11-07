@@ -28,63 +28,60 @@ main:
     sw zero, 0(t0)
     addi t0, t0, 4
     bne t0, t1, 1b
-    cmp.69.12:
+    cmp.68.12:
         lw t1, -2012(s0)
         addi t1, t1, 2
     xori t0, t1, 5
     sltiu t0, t0, 1
-    bool.69.12.end:
-    func.assert..69.5:
-        if.26.24.69.5:
-        cmp.26.27.69.5:
-        bne t0, zero, if.26.24.69.5.end
-        if.26.24.69.5.code:
+    bool.68.12.end:
+    func.assert..68.5:
+        if.28.24.68.5:
+        cmp.28.27.68.5:
+        bne t0, zero, if.28.24.68.5.end
+        if.28.24.68.5.code:
             li a0, 1
             j .Lbaz_exit
-        if.26.24.69.5.end:
+        if.28.24.68.5.end:
+    func.assert..68.5.end:
+    func.assert..69.5:
+        if.28.24.69.5:
+        cmp.28.27.69.5:
+        if.28.24.69.5.end:
     func.assert..69.5.end:
-    func.assert..70.5:
-        if.26.24.70.5:
-        cmp.26.27.70.5:
-        if.26.24.70.5.end:
-    func.assert..70.5.end:
     li t0, 2
     sw t0, -2024(s0)
-    cmp.73.12:
-    lw t0, -2024(s0)
+    cmp.72.12:
     xori t0, t0, 2
     sltiu t0, t0, 1
-    bool.73.12.end:
-    func.assert..73.5:
-        if.26.24.73.5:
-        cmp.26.27.73.5:
-        bne t0, zero, if.26.24.73.5.end
-        if.26.24.73.5.code:
+    bool.72.12.end:
+    func.assert..72.5:
+        if.28.24.72.5:
+        cmp.28.27.72.5:
+        bne t0, zero, if.28.24.72.5.end
+        if.28.24.72.5.code:
             li a0, 1
             j .Lbaz_exit
-        if.26.24.73.5.end:
-    func.assert..73.5.end:
+        if.28.24.72.5.end:
+    func.assert..72.5.end:
     li t0, 74
     sw t0, -1988(s0)
-    cmp.76.12:
-    lw t0, -1988(s0)
+    cmp.75.12:
     xori t0, t0, 74
     sltiu t0, t0, 1
-    bool.76.12.end:
-    func.assert..76.5:
-        if.26.24.76.5:
-        cmp.26.27.76.5:
-        bne t0, zero, if.26.24.76.5.end
-        if.26.24.76.5.code:
+    bool.75.12.end:
+    func.assert..75.5:
+        if.28.24.75.5:
+        cmp.28.27.75.5:
+        bne t0, zero, if.28.24.75.5.end
+        if.28.24.75.5.code:
             li a0, 1
             j .Lbaz_exit
-        if.26.24.76.5.end:
-    func.assert..76.5.end:
+        if.28.24.75.5.end:
+    func.assert..75.5.end:
     li t0, 65518
     sw t0, -1944(s0)
     li t0, 1
     sw t0, -1724(s0)
-    lw t0, -1724(s0)
     lw t1, -1724(s0)
     slli t1, t1, 2
     add t1, t1, s0
@@ -116,13 +113,13 @@ main:
     sub t0, zero, t0
     sw t0, -1708(s0)
     lw t0, -1724(s0)
-    func.inv..98.21:
+    func.inv..97.21:
         slli t1, t0, 2
         add t1, t1, s0
         lw t1, -2032(t1)
         xori t1, t1, -1
         sw t1, -1704(s0)
-    func.inv..98.21.end:
+    func.inv..97.21.end:
     lw t0, -1704(s0)
     xori t0, t0, -1
     sw t0, -1704(s0)
@@ -131,36 +128,36 @@ main:
     slli t2, t0, 2
     add t2, t2, s0
     sw t1, -2028(t2)
-    cmp.103.12:
+    cmp.102.12:
     lw t0, -2032(s0)
     xori t0, t0, 1
     sltiu t0, t0, 1
-    bool.103.12.end:
-    func.assert..103.5:
-        if.26.24.103.5:
-        cmp.26.27.103.5:
-        bne t0, zero, if.26.24.103.5.end
-        if.26.24.103.5.code:
+    bool.102.12.end:
+    func.assert..102.5:
+        if.28.24.102.5:
+        cmp.28.27.102.5:
+        bne t0, zero, if.28.24.102.5.end
+        if.28.24.102.5.code:
             li a0, 1
             j .Lbaz_exit
-        if.26.24.103.5.end:
-    func.assert..103.5.end:
-    cmp.105.14:
+        if.28.24.102.5.end:
+    func.assert..102.5.end:
+    cmp.104.14:
     lw t0, -2032(s0)
     xori t0, t0, 1
     sltiu t0, t0, 1
     sb t0, -1700(s0)
-    bool.105.14.end:
-    func.assert..106.5:
-        if.26.24.106.5:
-        cmp.26.27.106.5:
+    bool.104.14.end:
+    func.assert..105.5:
+        if.28.24.105.5:
+        cmp.28.27.105.5:
         lbu t0, -1700(s0)
-        bne t0, zero, if.26.24.106.5.end
-        if.26.24.106.5.code:
+        bne t0, zero, if.28.24.105.5.end
+        if.28.24.105.5.code:
             li a0, 1
             j .Lbaz_exit
-        if.26.24.106.5.end:
-    func.assert..106.5.end:
+        if.28.24.105.5.end:
+    func.assert..105.5.end:
     lw t0, -2032(s0)
     slli t1, t0, 2
     add t0, t1, t0
@@ -175,19 +172,19 @@ main:
     slli t1, t0, 2
     sub t0, t1, t0
     slli t0, t0, 2
-    func.object.at..114.14:
-        func.point.at..38.16.114.14:
+    func.object.at..113.14:
+        func.point.at..40.16.113.14:
             add t1, s0, t0
             li t2, 2
             sw t2, -2004(t1)
             add t1, s0, t0
             li t2, 74
             sw t2, -2000(t1)
-        func.point.at..38.16.114.14.end:
+        func.point.at..40.16.113.14.end:
         add t1, s0, t0
         li t2, 16777215
         sw t2, -1996(t1)
-    func.object.at..114.14.end:
+    func.object.at..113.14.end:
     sb zero, -1699(s0)
     sh zero, -1698(s0)
     sw zero, -1696(s0)
@@ -199,7 +196,7 @@ main:
     sw t0, -1676(s0)
     lw t0, -1708(s0)
     sw t0, -1672(s0)
-    cmp.119.12:
+    cmp.118.12:
         lw t0, -1712(s0)
         lw t1, -1676(s0)
         bne t0, t1, 5f
@@ -211,16 +208,16 @@ main:
         5:
         li t0, 0
         6:
-    bool.119.12.end:
-    func.assert..119.5:
-        if.26.24.119.5:
-        cmp.26.27.119.5:
-        bne t0, zero, if.26.24.119.5.end
-        if.26.24.119.5.code:
+    bool.118.12.end:
+    func.assert..118.5:
+        if.28.24.118.5:
+        cmp.28.27.118.5:
+        bne t0, zero, if.28.24.118.5.end
+        if.28.24.118.5.code:
             li a0, 1
             j .Lbaz_exit
-        if.26.24.119.5.end:
-    func.assert..119.5.end:
+        if.28.24.118.5.end:
+    func.assert..118.5.end:
     addi t1, s0, -1948
     addi t2, s0, -1980
     addi t3, t1, 32
@@ -234,46 +231,46 @@ main:
     sw t0, -1668(s0)
     addi s1, s0, -1668
     call func.print_num
-    cmp.126.12:
+    cmp.125.12:
     lb t0, -1699(s0)
+    sltiu t0, t0, 1
+    bool.125.12.end:
+    func.assert..125.5:
+        if.28.24.125.5:
+        cmp.28.27.125.5:
+        bne t0, zero, if.28.24.125.5.end
+        if.28.24.125.5.code:
+            li a0, 1
+            j .Lbaz_exit
+        if.28.24.125.5.end:
+    func.assert..125.5.end:
+    cmp.126.12:
+    lb t0, -1716(s0)
     sltiu t0, t0, 1
     bool.126.12.end:
     func.assert..126.5:
-        if.26.24.126.5:
-        cmp.26.27.126.5:
-        bne t0, zero, if.26.24.126.5.end
-        if.26.24.126.5.code:
+        if.28.24.126.5:
+        cmp.28.27.126.5:
+        bne t0, zero, if.28.24.126.5.end
+        if.28.24.126.5.code:
             li a0, 1
             j .Lbaz_exit
-        if.26.24.126.5.end:
+        if.28.24.126.5.end:
     func.assert..126.5.end:
     cmp.127.12:
-    lb t0, -1716(s0)
-    sltiu t0, t0, 1
-    bool.127.12.end:
-    func.assert..127.5:
-        if.26.24.127.5:
-        cmp.26.27.127.5:
-        bne t0, zero, if.26.24.127.5.end
-        if.26.24.127.5.code:
-            li a0, 1
-            j .Lbaz_exit
-        if.26.24.127.5.end:
-    func.assert..127.5.end:
-    cmp.128.12:
     lw t0, -1712(s0)
     xori t0, t0, -1
     sltiu t0, t0, 1
-    bool.128.12.end:
-    func.assert..128.5:
-        if.26.24.128.5:
-        cmp.26.27.128.5:
-        bne t0, zero, if.26.24.128.5.end
-        if.26.24.128.5.code:
+    bool.127.12.end:
+    func.assert..127.5:
+        if.28.24.127.5:
+        cmp.28.27.127.5:
+        bne t0, zero, if.28.24.127.5.end
+        if.28.24.127.5.code:
             li a0, 1
             j .Lbaz_exit
-        if.26.24.128.5.end:
-    func.assert..128.5.end:
+        if.28.24.127.5.end:
+    func.assert..127.5.end:
     li a0, 0
     j .Lbaz_exit
 func.print_num:
@@ -289,11 +286,10 @@ func.print_num:
     sw t0, 24(s1)
     li t0, 20
     sw t0, 28(s1)
-    loop.46.5:
+    loop.48.5:
         lw t0, 28(s1)
         addi t0, t0, -1
         sw t0, 28(s1)
-        lw t0, 28(s1)
         li t1, 48
         lw t2, 24(s1)
         mv a0, t2
@@ -307,13 +303,13 @@ func.print_num:
         li a1, 10
         call .Lbaz_divide
         sw a0, 24(s1)
-        if.57.9:
-        cmp.57.12:
+        if.56.9:
+        cmp.56.12:
         lw t0, 24(s1)
-        bne t0, zero, loop.46.5
-        if.57.9.code:
-        if.57.9.end:
-    loop.46.5.end:
+        bne t0, zero, loop.48.5
+        if.56.9.code:
+        if.56.9.end:
+    loop.48.5.end:
     li a0, 1
     addi a1, s1, 4
     li a2, 20

@@ -13,493 +13,490 @@ _start:
 la s0, vars
 addi s0, s0, 2032
 
-# [codegen-inefficiencies.baz:20:1] point : 8 B    fields:
-# [codegen-inefficiencies.baz:20:1]       name :  offset :    size :  array? : array size
-# [codegen-inefficiencies.baz:20:1]          x :       0 :       4 :      no :           
-# [codegen-inefficiencies.baz:20:1]          y :       4 :       4 :      no :           
-#
-# [codegen-inefficiencies.baz:22:1] object : 12 B    fields:
+# [codegen-inefficiencies.baz:22:1] point : 8 B    fields:
 # [codegen-inefficiencies.baz:22:1]       name :  offset :    size :  array? : array size
-# [codegen-inefficiencies.baz:22:1]        pos :       0 :       8 :      no :           
-# [codegen-inefficiencies.baz:22:1]      color :       8 :       4 :      no :           
+# [codegen-inefficiencies.baz:22:1]          x :       0 :       4 :      no :           
+# [codegen-inefficiencies.baz:22:1]          y :       4 :       4 :      no :           
 #
-# [codegen-inefficiencies.baz:24:1] world : 32 B    fields:
+# [codegen-inefficiencies.baz:24:1] object : 12 B    fields:
 # [codegen-inefficiencies.baz:24:1]       name :  offset :    size :  array? : array size
-# [codegen-inefficiencies.baz:24:1]  locations :       0 :      32 :     yes :          8
+# [codegen-inefficiencies.baz:24:1]        pos :       0 :       8 :      no :           
+# [codegen-inefficiencies.baz:24:1]      color :       8 :       4 :      no :           
+#
+# [codegen-inefficiencies.baz:26:1] world : 32 B    fields:
+# [codegen-inefficiencies.baz:26:1]       name :  offset :    size :  array? : array size
+# [codegen-inefficiencies.baz:26:1]  locations :       0 :      32 :     yes :          8
 #
 #
 main:
-    # [codegen-inefficiencies.baz:63:5] var x = 1
-    # [codegen-inefficiencies.baz:63:9] x: i32 (4 B @ [s0 - 2032])
-    # [codegen-inefficiencies.baz:63:9] x = 1
-    # [codegen-inefficiencies.baz:63:13] x = 1
-    # [codegen-inefficiencies.baz:63:13] src: folded constant '1'
-    # [codegen-inefficiencies.baz:63:13] allocate scratch register -> t0
+    # [codegen-inefficiencies.baz:62:5] var x = 1
+    # [codegen-inefficiencies.baz:62:9] x: i32 (4 B @ [s0 - 2032])
+    # [codegen-inefficiencies.baz:62:9] x = 1
+    # [codegen-inefficiencies.baz:62:13] x = 1
+    # [codegen-inefficiencies.baz:62:13] src: folded constant '1'
+    # [codegen-inefficiencies.baz:62:13] allocate scratch register -> t0
     li t0, 1
     sw t0, -2032(s0)
-    # [codegen-inefficiencies.baz:63:13] free scratch register t0
-    # [codegen-inefficiencies.baz:64:5] var arr = i32[4]{}
-    # [codegen-inefficiencies.baz:64:9] arr: i32[4] (16 B @ [s0 - 2028])
-    # [codegen-inefficiencies.baz:64:9] arr = i32[4]{}
-    # [codegen-inefficiencies.baz:64:15] zero remaining elements: 4 * 4 B = 16 B
+    # [codegen-inefficiencies.baz:62:13] free scratch register t0
+    # [codegen-inefficiencies.baz:63:5] var arr = i32[4]{}
+    # [codegen-inefficiencies.baz:63:9] arr: i32[4] (16 B @ [s0 - 2028])
+    # [codegen-inefficiencies.baz:63:9] arr = i32[4]{}
+    # [codegen-inefficiencies.baz:63:15] zero remaining elements: 4 * 4 B = 16 B
     sw zero, -2028(s0)
     sw zero, -2024(s0)
     sw zero, -2020(s0)
     sw zero, -2016(s0)
-    # [codegen-inefficiencies.baz:65:5] var arr3 = []{ 3, 5 }
-    # [codegen-inefficiencies.baz:65:9] arr3: i32[2] (8 B @ [s0 - 2012])
-    # [codegen-inefficiencies.baz:65:9] arr3 = []{ 3, 5 }
-    # [codegen-inefficiencies.baz:65:18] allocate scratch register -> t0
+    # [codegen-inefficiencies.baz:64:5] var arr3 = []{ 3, 5 }
+    # [codegen-inefficiencies.baz:64:9] arr3: i32[2] (8 B @ [s0 - 2012])
+    # [codegen-inefficiencies.baz:64:9] arr3 = []{ 3, 5 }
+    # [codegen-inefficiencies.baz:64:18] allocate scratch register -> t0
     li t0, 3
     sw t0, -2012(s0)
     li t0, 5
     sw t0, -2008(s0)
-    # [codegen-inefficiencies.baz:65:18] free scratch register t0
-    # [codegen-inefficiencies.baz:66:5] var o3 = object[2]{}
-    # [codegen-inefficiencies.baz:66:9] o3: object[2] (24 B @ [s0 - 2004])
-    # [codegen-inefficiencies.baz:66:9] o3 = object[2]{}
-    # [codegen-inefficiencies.baz:66:14] zero remaining elements: 2 * 12 B = 24 B
+    # [codegen-inefficiencies.baz:64:18] free scratch register t0
+    # [codegen-inefficiencies.baz:65:5] var o3 = object[2]{}
+    # [codegen-inefficiencies.baz:65:9] o3: object[2] (24 B @ [s0 - 2004])
+    # [codegen-inefficiencies.baz:65:9] o3 = object[2]{}
+    # [codegen-inefficiencies.baz:65:14] zero remaining elements: 2 * 12 B = 24 B
     sw zero, -2004(s0)
     sw zero, -2000(s0)
     sw zero, -1996(s0)
     sw zero, -1992(s0)
     sw zero, -1988(s0)
     sw zero, -1984(s0)
-    # [codegen-inefficiencies.baz:67:5] var worlds = world[8]{}
-    # [codegen-inefficiencies.baz:67:9] worlds: world[8] (256 B @ [s0 - 1980])
-    # [codegen-inefficiencies.baz:67:9] worlds = world[8]{}
-    # [codegen-inefficiencies.baz:67:18] zero remaining elements: 8 * 32 B = 256 B
-    # [codegen-inefficiencies.baz:67:18] zero loop of 4-byte accesses: start word aligned
-    # [codegen-inefficiencies.baz:67:18] allocate scratch register -> t0
+    # [codegen-inefficiencies.baz:66:5] var worlds = world[8]{}
+    # [codegen-inefficiencies.baz:66:9] worlds: world[8] (256 B @ [s0 - 1980])
+    # [codegen-inefficiencies.baz:66:9] worlds = world[8]{}
+    # [codegen-inefficiencies.baz:66:18] zero remaining elements: 8 * 32 B = 256 B
+    # [codegen-inefficiencies.baz:66:18] zero loop of 4-byte accesses: start word aligned
+    # [codegen-inefficiencies.baz:66:18] allocate scratch register -> t0
     addi t0, s0, -1980
-    # [codegen-inefficiencies.baz:67:18] allocate scratch register -> t1
-    # [codegen-inefficiencies.baz:67:18] zero 4-byte words
+    # [codegen-inefficiencies.baz:66:18] allocate scratch register -> t1
+    # [codegen-inefficiencies.baz:66:18] zero 4-byte words
     addi t1, t0, 256
     1:
     sw zero, 0(t0)
     addi t0, t0, 4
     bne t0, t1, 1b
-    # [codegen-inefficiencies.baz:67:18] free scratch register t1
-    # [codegen-inefficiencies.baz:67:18] free scratch register t0
-    # [codegen-inefficiencies.baz:69:5] assert(arr3[0] + 2 == 3 + 0 + 2)
-    # [codegen-inefficiencies.baz:69:12] allocate scratch register -> t0
-    # [codegen-inefficiencies.baz:69:12] ? arr3[0] + 2 == 3 + 0 + 2
-    cmp.69.12:
-    # [codegen-inefficiencies.baz:69:12] allocate scratch register -> t1
-        # [codegen-inefficiencies.baz:69:12] arr3[0]
+    # [codegen-inefficiencies.baz:66:18] free scratch register t1
+    # [codegen-inefficiencies.baz:66:18] free scratch register t0
+    # [codegen-inefficiencies.baz:68:5] assert(arr3[0] + 2 == 3 + 0 + 2)
+    # [codegen-inefficiencies.baz:68:12] allocate scratch register -> t0
+    # [codegen-inefficiencies.baz:68:12] ? arr3[0] + 2 == 3 + 0 + 2
+    cmp.68.12:
+    # [codegen-inefficiencies.baz:68:12] allocate scratch register -> t1
+        # [codegen-inefficiencies.baz:68:12] arr3[0]
         lw t1, -2012(s0)
-        # [codegen-inefficiencies.baz:69:12] t1 + 2
-        # [codegen-inefficiencies.baz:69:12] src: folded constant '+ 2'
+        # [codegen-inefficiencies.baz:68:12] t1 + 2
+        # [codegen-inefficiencies.baz:68:12] src: folded constant '+ 2'
         addi t1, t1, 2
-    # [codegen-inefficiencies.baz:69:27] src: folded constant '3 + 0 + 2'
+    # [codegen-inefficiencies.baz:68:27] src: folded constant '3 + 0 + 2'
     xori t0, t1, 5
     sltiu t0, t0, 1
-    # [codegen-inefficiencies.baz:69:12] free scratch register t1
-    bool.69.12.end:
-    # [codegen-inefficiencies.baz:26:6] assert(ok bool)
-    func.assert..69.5:
-        # [codegen-inefficiencies.baz:69:5] bind ok -> t0
-        if.26.24.69.5:
-        # [codegen-inefficiencies.baz:26:27] ? shorthand: not ok
-        cmp.26.27.69.5:
-        bne t0, zero, if.26.24.69.5.end
-        if.26.24.69.5.code:
-            # [codegen-inefficiencies.baz:26:34] exit(1)
-            # [codegen-inefficiencies.baz:26:34] allocate named register a0
-            # [codegen-inefficiencies.baz:26:39] a0 = 1
-            # [codegen-inefficiencies.baz:26:39] src: folded constant '1'
+    # [codegen-inefficiencies.baz:68:12] free scratch register t1
+    bool.68.12.end:
+    # [codegen-inefficiencies.baz:28:6] assert(ok bool)
+    func.assert..68.5:
+        # [codegen-inefficiencies.baz:68:5] bind ok -> t0
+        if.28.24.68.5:
+        # [codegen-inefficiencies.baz:28:27] ? shorthand: not ok
+        cmp.28.27.68.5:
+        bne t0, zero, if.28.24.68.5.end
+        if.28.24.68.5.code:
+            # [codegen-inefficiencies.baz:28:34] exit(1)
+            # [codegen-inefficiencies.baz:28:34] allocate named register a0
+            # [codegen-inefficiencies.baz:28:39] a0 = 1
+            # [codegen-inefficiencies.baz:28:39] src: folded constant '1'
             li a0, 1
             j .Lbaz_exit
-            # [codegen-inefficiencies.baz:26:34] free named register a0
-        if.26.24.69.5.end:
+            # [codegen-inefficiencies.baz:28:34] free named register a0
+        if.28.24.68.5.end:
+    func.assert..68.5.end:
+        # [codegen-inefficiencies.baz:68:5] free scratch register t0
+    # [codegen-inefficiencies.baz:69:5] assert(array_length(arr3) == 2)
+    # [codegen-inefficiencies.baz:28:6] assert(ok bool)
+    func.assert..69.5:
+        # [codegen-inefficiencies.baz:69:5] bind ok -> 1
+        if.28.24.69.5:
+        # [codegen-inefficiencies.baz:28:27] ? shorthand: not ok
+        cmp.28.27.69.5:
+        # [codegen-inefficiencies.baz:28:31] const eval to false
+        if.28.24.69.5.end:
     func.assert..69.5.end:
-        # [codegen-inefficiencies.baz:69:5] free scratch register t0
-    # [codegen-inefficiencies.baz:70:5] assert(array_length(arr3) == 2)
-    # [codegen-inefficiencies.baz:26:6] assert(ok bool)
-    func.assert..70.5:
-        # [codegen-inefficiencies.baz:70:5] bind ok -> 1
-        if.26.24.70.5:
-        # [codegen-inefficiencies.baz:26:27] ? shorthand: not ok
-        cmp.26.27.70.5:
-        # [codegen-inefficiencies.baz:26:31] const eval to false
-        if.26.24.70.5.end:
-    func.assert..70.5.end:
-    # [codegen-inefficiencies.baz:72:5] arr[1] = 2
-    # [codegen-inefficiencies.baz:72:14] arr[1] = 2
-    # [codegen-inefficiencies.baz:72:14] src: folded constant '2'
-    # [codegen-inefficiencies.baz:72:14] allocate scratch register -> t0
+    # [codegen-inefficiencies.baz:71:5] arr[1] = 2
+    # [codegen-inefficiencies.baz:71:14] arr[1] = 2
+    # [codegen-inefficiencies.baz:71:14] src: folded constant '2'
+    # [codegen-inefficiencies.baz:71:14] allocate scratch register -> t0
     li t0, 2
     sw t0, -2024(s0)
-    # [codegen-inefficiencies.baz:72:14] free scratch register t0
-    # [codegen-inefficiencies.baz:73:5] assert(arr[1] == 2)
-    # [codegen-inefficiencies.baz:73:12] allocate scratch register -> t0
-    # [codegen-inefficiencies.baz:73:12] ? arr[1] == 2
-    cmp.73.12:
-    lw t0, -2024(s0)
+    # [codegen-inefficiencies.baz:71:14] free scratch register t0
+    # [codegen-inefficiencies.baz:72:5] assert(arr[1] == 2)
+    # [codegen-inefficiencies.baz:72:12] allocate scratch register -> t0
+    # [codegen-inefficiencies.baz:72:12] ? arr[1] == 2
+    cmp.72.12:
     xori t0, t0, 2
     sltiu t0, t0, 1
-    bool.73.12.end:
-    # [codegen-inefficiencies.baz:26:6] assert(ok bool)
-    func.assert..73.5:
-        # [codegen-inefficiencies.baz:73:5] bind ok -> t0
-        if.26.24.73.5:
-        # [codegen-inefficiencies.baz:26:27] ? shorthand: not ok
-        cmp.26.27.73.5:
-        bne t0, zero, if.26.24.73.5.end
-        if.26.24.73.5.code:
-            # [codegen-inefficiencies.baz:26:34] exit(1)
-            # [codegen-inefficiencies.baz:26:34] allocate named register a0
-            # [codegen-inefficiencies.baz:26:39] a0 = 1
-            # [codegen-inefficiencies.baz:26:39] src: folded constant '1'
+    bool.72.12.end:
+    # [codegen-inefficiencies.baz:28:6] assert(ok bool)
+    func.assert..72.5:
+        # [codegen-inefficiencies.baz:72:5] bind ok -> t0
+        if.28.24.72.5:
+        # [codegen-inefficiencies.baz:28:27] ? shorthand: not ok
+        cmp.28.27.72.5:
+        bne t0, zero, if.28.24.72.5.end
+        if.28.24.72.5.code:
+            # [codegen-inefficiencies.baz:28:34] exit(1)
+            # [codegen-inefficiencies.baz:28:34] allocate named register a0
+            # [codegen-inefficiencies.baz:28:39] a0 = 1
+            # [codegen-inefficiencies.baz:28:39] src: folded constant '1'
             li a0, 1
             j .Lbaz_exit
-            # [codegen-inefficiencies.baz:26:34] free named register a0
-        if.26.24.73.5.end:
-    func.assert..73.5.end:
-        # [codegen-inefficiencies.baz:73:5] free scratch register t0
-    # [codegen-inefficiencies.baz:75:5] o3[1].pos.y = 74
-    # [codegen-inefficiencies.baz:75:19] o3[1].pos.y = 74
-    # [codegen-inefficiencies.baz:75:19] src: folded constant '74'
-    # [codegen-inefficiencies.baz:75:19] allocate scratch register -> t0
+            # [codegen-inefficiencies.baz:28:34] free named register a0
+        if.28.24.72.5.end:
+    func.assert..72.5.end:
+        # [codegen-inefficiencies.baz:72:5] free scratch register t0
+    # [codegen-inefficiencies.baz:74:5] o3[1].pos.y = 74
+    # [codegen-inefficiencies.baz:74:19] o3[1].pos.y = 74
+    # [codegen-inefficiencies.baz:74:19] src: folded constant '74'
+    # [codegen-inefficiencies.baz:74:19] allocate scratch register -> t0
     li t0, 74
     sw t0, -1988(s0)
-    # [codegen-inefficiencies.baz:75:19] free scratch register t0
-    # [codegen-inefficiencies.baz:76:5] assert(o3[1].pos.y == 74)
-    # [codegen-inefficiencies.baz:76:12] allocate scratch register -> t0
-    # [codegen-inefficiencies.baz:76:12] ? o3[1].pos.y == 74
-    cmp.76.12:
-    lw t0, -1988(s0)
+    # [codegen-inefficiencies.baz:74:19] free scratch register t0
+    # [codegen-inefficiencies.baz:75:5] assert(o3[1].pos.y == 74)
+    # [codegen-inefficiencies.baz:75:12] allocate scratch register -> t0
+    # [codegen-inefficiencies.baz:75:12] ? o3[1].pos.y == 74
+    cmp.75.12:
     xori t0, t0, 74
     sltiu t0, t0, 1
-    bool.76.12.end:
-    # [codegen-inefficiencies.baz:26:6] assert(ok bool)
-    func.assert..76.5:
-        # [codegen-inefficiencies.baz:76:5] bind ok -> t0
-        if.26.24.76.5:
-        # [codegen-inefficiencies.baz:26:27] ? shorthand: not ok
-        cmp.26.27.76.5:
-        bne t0, zero, if.26.24.76.5.end
-        if.26.24.76.5.code:
-            # [codegen-inefficiencies.baz:26:34] exit(1)
-            # [codegen-inefficiencies.baz:26:34] allocate named register a0
-            # [codegen-inefficiencies.baz:26:39] a0 = 1
-            # [codegen-inefficiencies.baz:26:39] src: folded constant '1'
+    bool.75.12.end:
+    # [codegen-inefficiencies.baz:28:6] assert(ok bool)
+    func.assert..75.5:
+        # [codegen-inefficiencies.baz:75:5] bind ok -> t0
+        if.28.24.75.5:
+        # [codegen-inefficiencies.baz:28:27] ? shorthand: not ok
+        cmp.28.27.75.5:
+        bne t0, zero, if.28.24.75.5.end
+        if.28.24.75.5.code:
+            # [codegen-inefficiencies.baz:28:34] exit(1)
+            # [codegen-inefficiencies.baz:28:34] allocate named register a0
+            # [codegen-inefficiencies.baz:28:39] a0 = 1
+            # [codegen-inefficiencies.baz:28:39] src: folded constant '1'
             li a0, 1
             j .Lbaz_exit
-            # [codegen-inefficiencies.baz:26:34] free named register a0
-        if.26.24.76.5.end:
-    func.assert..76.5.end:
-        # [codegen-inefficiencies.baz:76:5] free scratch register t0
-    # [codegen-inefficiencies.baz:78:5] worlds[1].locations[1] = 0xffee
-    # [codegen-inefficiencies.baz:78:30] worlds[1].locations[1] = 65518
-    # [codegen-inefficiencies.baz:78:30] src: folded constant '0xffee'
-    # [codegen-inefficiencies.baz:78:30] allocate scratch register -> t0
+            # [codegen-inefficiencies.baz:28:34] free named register a0
+        if.28.24.75.5.end:
+    func.assert..75.5.end:
+        # [codegen-inefficiencies.baz:75:5] free scratch register t0
+    # [codegen-inefficiencies.baz:77:5] worlds[1].locations[1] = 0xffee
+    # [codegen-inefficiencies.baz:77:30] worlds[1].locations[1] = 65518
+    # [codegen-inefficiencies.baz:77:30] src: folded constant '0xffee'
+    # [codegen-inefficiencies.baz:77:30] allocate scratch register -> t0
     li t0, 65518
     sw t0, -1944(s0)
-    # [codegen-inefficiencies.baz:78:30] free scratch register t0
-    # [codegen-inefficiencies.baz:84:5] var ix = 1
-    # [codegen-inefficiencies.baz:84:9] ix: i32 (4 B @ [s0 - 1724])
-    # [codegen-inefficiencies.baz:84:9] ix = 1
-    # [codegen-inefficiencies.baz:84:14] ix = 1
-    # [codegen-inefficiencies.baz:84:14] src: folded constant '1'
-    # [codegen-inefficiencies.baz:84:14] allocate scratch register -> t0
+    # [codegen-inefficiencies.baz:77:30] free scratch register t0
+    # [codegen-inefficiencies.baz:83:5] var ix = 1
+    # [codegen-inefficiencies.baz:83:9] ix: i32 (4 B @ [s0 - 1724])
+    # [codegen-inefficiencies.baz:83:9] ix = 1
+    # [codegen-inefficiencies.baz:83:14] ix = 1
+    # [codegen-inefficiencies.baz:83:14] src: folded constant '1'
+    # [codegen-inefficiencies.baz:83:14] allocate scratch register -> t0
     li t0, 1
     sw t0, -1724(s0)
-    # [codegen-inefficiencies.baz:84:14] free scratch register t0
-    # [codegen-inefficiencies.baz:85:5] arr[ix + 1] = arr[ix]
-    # [codegen-inefficiencies.baz:85:9] allocate scratch register -> t0
-    # [codegen-inefficiencies.baz:85:9] set array index
-    # [codegen-inefficiencies.baz:85:9] ix
-    lw t0, -1724(s0)
-    # [codegen-inefficiencies.baz:85:9] index constant 1 goes into the displacement
-    # [codegen-inefficiencies.baz:85:19] arr[ix]
-    # [codegen-inefficiencies.baz:85:23] allocate scratch register -> t1
-    # [codegen-inefficiencies.baz:85:23] set array index
-    # [codegen-inefficiencies.baz:85:23] ix
+    # [codegen-inefficiencies.baz:83:14] free scratch register t0
+    # [codegen-inefficiencies.baz:84:5] arr[ix + 1] = arr[ix]
+    # [codegen-inefficiencies.baz:84:9] allocate scratch register -> t0
+    # [codegen-inefficiencies.baz:84:9] set array index
+    # [codegen-inefficiencies.baz:84:9] ix
+    # [codegen-inefficiencies.baz:84:9] index constant 1 goes into the displacement
+    # [codegen-inefficiencies.baz:84:19] arr[ix]
+    # [codegen-inefficiencies.baz:84:23] allocate scratch register -> t1
+    # [codegen-inefficiencies.baz:84:23] set array index
+    # [codegen-inefficiencies.baz:84:23] ix
     lw t1, -1724(s0)
-    # [codegen-inefficiencies.baz:85:19] free scratch register t1
-    # [codegen-inefficiencies.baz:85:19] allocate scratch register -> t1
+    # [codegen-inefficiencies.baz:84:19] free scratch register t1
+    # [codegen-inefficiencies.baz:84:19] allocate scratch register -> t1
     slli t1, t1, 2
     add t1, t1, s0
     lw t1, -2028(t1)
-    # [codegen-inefficiencies.baz:85:19] allocate scratch register -> t2
+    # [codegen-inefficiencies.baz:84:19] allocate scratch register -> t2
     slli t2, t0, 2
     add t2, t2, s0
     sw t1, -2024(t2)
-    # [codegen-inefficiencies.baz:85:19] free scratch register t2
-    # [codegen-inefficiencies.baz:85:19] free scratch register t1
-    # [codegen-inefficiencies.baz:85:5] free scratch register t0
-    # [codegen-inefficiencies.baz:86:5] worlds[ix].locations[1] = 0xffee
-    # [codegen-inefficiencies.baz:86:12] allocate scratch register -> t0
-    # [codegen-inefficiencies.baz:86:12] set array index
-    # [codegen-inefficiencies.baz:86:12] ix
+    # [codegen-inefficiencies.baz:84:19] free scratch register t2
+    # [codegen-inefficiencies.baz:84:19] free scratch register t1
+    # [codegen-inefficiencies.baz:84:5] free scratch register t0
+    # [codegen-inefficiencies.baz:85:5] worlds[ix].locations[1] = 0xffee
+    # [codegen-inefficiencies.baz:85:12] allocate scratch register -> t0
+    # [codegen-inefficiencies.baz:85:12] set array index
+    # [codegen-inefficiencies.baz:85:12] ix
     lw t0, -1724(s0)
-    # [codegen-inefficiencies.baz:86:31] worlds[ix].locations[1] = 65518
-    # [codegen-inefficiencies.baz:86:31] src: folded constant '0xffee'
-    # [codegen-inefficiencies.baz:86:31] allocate scratch register -> t1
+    # [codegen-inefficiencies.baz:85:31] worlds[ix].locations[1] = 65518
+    # [codegen-inefficiencies.baz:85:31] src: folded constant '0xffee'
+    # [codegen-inefficiencies.baz:85:31] allocate scratch register -> t1
     slli t1, t0, 5
     add t1, t1, s0
-    # [codegen-inefficiencies.baz:86:31] allocate scratch register -> t2
+    # [codegen-inefficiencies.baz:85:31] allocate scratch register -> t2
     li t2, 65518
     sw t2, -1976(t1)
-    # [codegen-inefficiencies.baz:86:31] free scratch register t2
-    # [codegen-inefficiencies.baz:86:31] free scratch register t1
-    # [codegen-inefficiencies.baz:86:5] free scratch register t0
-    # [codegen-inefficiencies.baz:88:5] var a = -x
-    # [codegen-inefficiencies.baz:88:9] a: i32 (4 B @ [s0 - 1720])
-    # [codegen-inefficiencies.baz:88:9] a = -x
-    # [codegen-inefficiencies.baz:88:13] kept the second of two versions of 5 and 3 instructions, the smaller
-    # [codegen-inefficiencies.baz:88:13] allocate scratch register -> t0
-    # [codegen-inefficiencies.baz:88:14] -x
+    # [codegen-inefficiencies.baz:85:31] free scratch register t2
+    # [codegen-inefficiencies.baz:85:31] free scratch register t1
+    # [codegen-inefficiencies.baz:85:5] free scratch register t0
+    # [codegen-inefficiencies.baz:87:5] var a = -x
+    # [codegen-inefficiencies.baz:87:9] a: i32 (4 B @ [s0 - 1720])
+    # [codegen-inefficiencies.baz:87:9] a = -x
+    # [codegen-inefficiencies.baz:87:13] kept the second of two versions of 5 and 3 instructions, the smaller
+    # [codegen-inefficiencies.baz:87:13] allocate scratch register -> t0
+    # [codegen-inefficiencies.baz:87:14] -x
     lw t0, -2032(s0)
     sub t0, zero, t0
     sw t0, -1720(s0)
-    # [codegen-inefficiencies.baz:88:13] free scratch register t0
-    # [codegen-inefficiencies.baz:89:5] a = ~x
-    # [codegen-inefficiencies.baz:89:9] kept the second of two versions of 5 and 3 instructions, the smaller
-    # [codegen-inefficiencies.baz:89:9] allocate scratch register -> t0
-    # [codegen-inefficiencies.baz:89:10] ~x
+    # [codegen-inefficiencies.baz:87:13] free scratch register t0
+    # [codegen-inefficiencies.baz:88:5] a = ~x
+    # [codegen-inefficiencies.baz:88:9] kept the second of two versions of 5 and 3 instructions, the smaller
+    # [codegen-inefficiencies.baz:88:9] allocate scratch register -> t0
+    # [codegen-inefficiencies.baz:88:10] ~x
     lw t0, -2032(s0)
     xori t0, t0, -1
     sw t0, -1720(s0)
-    # [codegen-inefficiencies.baz:89:9] free scratch register t0
-    # [codegen-inefficiencies.baz:91:5] var b = i8(0)
-    # [codegen-inefficiencies.baz:91:9] b: i8 (1 B @ [s0 - 1716])
-    # [codegen-inefficiencies.baz:91:9] b = i8(0)
-    # [codegen-inefficiencies.baz:91:13] b = 0
-    # [codegen-inefficiencies.baz:91:13] src: folded constant 'i8(0)'
+    # [codegen-inefficiencies.baz:88:9] free scratch register t0
+    # [codegen-inefficiencies.baz:90:5] var b = i8(0)
+    # [codegen-inefficiencies.baz:90:9] b: i8 (1 B @ [s0 - 1716])
+    # [codegen-inefficiencies.baz:90:9] b = i8(0)
+    # [codegen-inefficiencies.baz:90:13] b = 0
+    # [codegen-inefficiencies.baz:90:13] src: folded constant 'i8(0)'
     sb zero, -1716(s0)
-    # [codegen-inefficiencies.baz:92:5] b = i8(x - 1)
-    # [codegen-inefficiencies.baz:92:9] b = i8(x - 1)
-    # [codegen-inefficiencies.baz:92:9] = expression
-    # [codegen-inefficiencies.baz:92:12] kept the first of two versions of 5 and 7 instructions, the smaller
-    # [codegen-inefficiencies.baz:92:12] x
-    # [codegen-inefficiencies.baz:92:12] allocate scratch register -> t0
+    # [codegen-inefficiencies.baz:91:5] b = i8(x - 1)
+    # [codegen-inefficiencies.baz:91:9] b = i8(x - 1)
+    # [codegen-inefficiencies.baz:91:9] = expression
+    # [codegen-inefficiencies.baz:91:12] kept the first of two versions of 5 and 7 instructions, the smaller
+    # [codegen-inefficiencies.baz:91:12] x
+    # [codegen-inefficiencies.baz:91:12] allocate scratch register -> t0
     lw t0, -2032(s0)
     sb t0, -1716(s0)
-    # [codegen-inefficiencies.baz:92:12] free scratch register t0
-    # [codegen-inefficiencies.baz:92:12] b - 1
-    # [codegen-inefficiencies.baz:92:12] src: folded constant '- 1'
-    # [codegen-inefficiencies.baz:92:12] allocate scratch register -> t0
+    # [codegen-inefficiencies.baz:91:12] free scratch register t0
+    # [codegen-inefficiencies.baz:91:12] b - 1
+    # [codegen-inefficiencies.baz:91:12] src: folded constant '- 1'
+    # [codegen-inefficiencies.baz:91:12] allocate scratch register -> t0
     lb t0, -1716(s0)
     addi t0, t0, -1
     sb t0, -1716(s0)
-    # [codegen-inefficiencies.baz:92:12] free scratch register t0
-    # [codegen-inefficiencies.baz:94:5] var p1 = point{-x, -a}
-    # [codegen-inefficiencies.baz:94:9] p1: point (8 B @ [s0 - 1712])
-    # [codegen-inefficiencies.baz:94:9] p1 = point{-x, -a}
-    # [codegen-inefficiencies.baz:94:20] copy field 'x'
-    # [codegen-inefficiencies.baz:94:20] kept the second of two versions of 5 and 3 instructions, the smaller
-    # [codegen-inefficiencies.baz:94:20] allocate scratch register -> t0
-    # [codegen-inefficiencies.baz:94:21] -x
+    # [codegen-inefficiencies.baz:91:12] free scratch register t0
+    # [codegen-inefficiencies.baz:93:5] var p1 = point{-x, -a}
+    # [codegen-inefficiencies.baz:93:9] p1: point (8 B @ [s0 - 1712])
+    # [codegen-inefficiencies.baz:93:9] p1 = point{-x, -a}
+    # [codegen-inefficiencies.baz:93:20] copy field 'x'
+    # [codegen-inefficiencies.baz:93:20] kept the second of two versions of 5 and 3 instructions, the smaller
+    # [codegen-inefficiencies.baz:93:20] allocate scratch register -> t0
+    # [codegen-inefficiencies.baz:93:21] -x
     lw t0, -2032(s0)
     sub t0, zero, t0
     sw t0, -1712(s0)
-    # [codegen-inefficiencies.baz:94:20] free scratch register t0
-    # [codegen-inefficiencies.baz:94:24] copy field 'y'
-    # [codegen-inefficiencies.baz:94:24] kept the second of two versions of 5 and 3 instructions, the smaller
-    # [codegen-inefficiencies.baz:94:24] allocate scratch register -> t0
-    # [codegen-inefficiencies.baz:94:25] -a
+    # [codegen-inefficiencies.baz:93:20] free scratch register t0
+    # [codegen-inefficiencies.baz:93:24] copy field 'y'
+    # [codegen-inefficiencies.baz:93:24] kept the second of two versions of 5 and 3 instructions, the smaller
+    # [codegen-inefficiencies.baz:93:24] allocate scratch register -> t0
+    # [codegen-inefficiencies.baz:93:25] -a
     lw t0, -1720(s0)
     sub t0, zero, t0
     sw t0, -1708(s0)
-    # [codegen-inefficiencies.baz:94:24] free scratch register t0
-    # [codegen-inefficiencies.baz:98:5] var inverted = ~inv(arr[ix - 1])
-    # [codegen-inefficiencies.baz:98:9] inverted: i32 (4 B @ [s0 - 1704])
-    # [codegen-inefficiencies.baz:98:9] inverted = ~inv(arr[ix - 1])
-    # [codegen-inefficiencies.baz:98:21] inverted = ~inv(arr[ix - 1])
-    # [codegen-inefficiencies.baz:98:21] = expression
-    # [codegen-inefficiencies.baz:98:21] ~inv(arr[ix - 1])
-    # [codegen-inefficiencies.baz:98:29] allocate scratch register -> t0
-    # [codegen-inefficiencies.baz:98:29] set array index
-    # [codegen-inefficiencies.baz:98:29] ix
+    # [codegen-inefficiencies.baz:93:24] free scratch register t0
+    # [codegen-inefficiencies.baz:97:5] var inverted = ~inv(arr[ix - 1])
+    # [codegen-inefficiencies.baz:97:9] inverted: i32 (4 B @ [s0 - 1704])
+    # [codegen-inefficiencies.baz:97:9] inverted = ~inv(arr[ix - 1])
+    # [codegen-inefficiencies.baz:97:21] inverted = ~inv(arr[ix - 1])
+    # [codegen-inefficiencies.baz:97:21] = expression
+    # [codegen-inefficiencies.baz:97:21] ~inv(arr[ix - 1])
+    # [codegen-inefficiencies.baz:97:29] allocate scratch register -> t0
+    # [codegen-inefficiencies.baz:97:29] set array index
+    # [codegen-inefficiencies.baz:97:29] ix
     lw t0, -1724(s0)
-    # [codegen-inefficiencies.baz:98:29] index constant -1 goes into the displacement
-    # [codegen-inefficiencies.baz:98:21] kept the first of two versions of 5 and 6 instructions, the smaller
-    # [codegen-inefficiencies.baz:28:6] inv(i i32) res i32
-    func.inv..98.21:
-        # [codegen-inefficiencies.baz:98:21] bind res -> inverted
-        # [codegen-inefficiencies.baz:98:21] bind i -> arr[ix - 1] (address: s0 + t0 * 4 - 2032)
-        # [codegen-inefficiencies.baz:29:5] res = ~i
-        # [codegen-inefficiencies.baz:29:11] kept the second of two versions of 7 and 5 instructions, the smaller
-        # [codegen-inefficiencies.baz:29:11] allocate scratch register -> t1
-        # [codegen-inefficiencies.baz:29:12] ~i
+    # [codegen-inefficiencies.baz:97:29] index constant -1 goes into the displacement
+    # [codegen-inefficiencies.baz:97:21] kept the first of two versions of 5 and 6 instructions, the smaller
+    # [codegen-inefficiencies.baz:30:6] inv(i i32) res i32
+    func.inv..97.21:
+        # [codegen-inefficiencies.baz:97:21] bind res -> inverted
+        # [codegen-inefficiencies.baz:97:21] bind i -> arr[ix - 1] (address: s0 + t0 * 4 - 2032)
+        # [codegen-inefficiencies.baz:31:5] res = ~i
+        # [codegen-inefficiencies.baz:31:11] kept the second of two versions of 7 and 5 instructions, the smaller
+        # [codegen-inefficiencies.baz:31:11] allocate scratch register -> t1
+        # [codegen-inefficiencies.baz:31:12] ~i
         slli t1, t0, 2
         add t1, t1, s0
         lw t1, -2032(t1)
         xori t1, t1, -1
         sw t1, -1704(s0)
-        # [codegen-inefficiencies.baz:29:11] free scratch register t1
-    func.inv..98.21.end:
-        # [codegen-inefficiencies.baz:98:21] free scratch register t0
-    # [codegen-inefficiencies.baz:98:21] allocate scratch register -> t0
+        # [codegen-inefficiencies.baz:31:11] free scratch register t1
+    func.inv..97.21.end:
+        # [codegen-inefficiencies.baz:97:21] free scratch register t0
+    # [codegen-inefficiencies.baz:97:21] allocate scratch register -> t0
     lw t0, -1704(s0)
     xori t0, t0, -1
     sw t0, -1704(s0)
-    # [codegen-inefficiencies.baz:98:21] free scratch register t0
-    # [codegen-inefficiencies.baz:99:5] arr[ix] = inverted
-    # [codegen-inefficiencies.baz:99:9] allocate scratch register -> t0
-    # [codegen-inefficiencies.baz:99:9] set array index
-    # [codegen-inefficiencies.baz:99:9] ix
+    # [codegen-inefficiencies.baz:97:21] free scratch register t0
+    # [codegen-inefficiencies.baz:98:5] arr[ix] = inverted
+    # [codegen-inefficiencies.baz:98:9] allocate scratch register -> t0
+    # [codegen-inefficiencies.baz:98:9] set array index
+    # [codegen-inefficiencies.baz:98:9] ix
     lw t0, -1724(s0)
-    # [codegen-inefficiencies.baz:99:15] inverted
-    # [codegen-inefficiencies.baz:99:15] allocate scratch register -> t1
+    # [codegen-inefficiencies.baz:98:15] inverted
+    # [codegen-inefficiencies.baz:98:15] allocate scratch register -> t1
     lw t1, -1704(s0)
-    # [codegen-inefficiencies.baz:99:15] allocate scratch register -> t2
+    # [codegen-inefficiencies.baz:98:15] allocate scratch register -> t2
     slli t2, t0, 2
     add t2, t2, s0
     sw t1, -2028(t2)
-    # [codegen-inefficiencies.baz:99:15] free scratch register t2
-    # [codegen-inefficiencies.baz:99:15] free scratch register t1
-    # [codegen-inefficiencies.baz:99:5] free scratch register t0
-    # [codegen-inefficiencies.baz:103:5] assert(x == 1)
-    # [codegen-inefficiencies.baz:103:12] allocate scratch register -> t0
-    # [codegen-inefficiencies.baz:103:12] ? x == 1
-    cmp.103.12:
+    # [codegen-inefficiencies.baz:98:15] free scratch register t2
+    # [codegen-inefficiencies.baz:98:15] free scratch register t1
+    # [codegen-inefficiencies.baz:98:5] free scratch register t0
+    # [codegen-inefficiencies.baz:102:5] assert(x == 1)
+    # [codegen-inefficiencies.baz:102:12] allocate scratch register -> t0
+    # [codegen-inefficiencies.baz:102:12] ? x == 1
+    cmp.102.12:
     lw t0, -2032(s0)
     xori t0, t0, 1
     sltiu t0, t0, 1
-    bool.103.12.end:
-    # [codegen-inefficiencies.baz:26:6] assert(ok bool)
-    func.assert..103.5:
-        # [codegen-inefficiencies.baz:103:5] bind ok -> t0
-        if.26.24.103.5:
-        # [codegen-inefficiencies.baz:26:27] ? shorthand: not ok
-        cmp.26.27.103.5:
-        bne t0, zero, if.26.24.103.5.end
-        if.26.24.103.5.code:
-            # [codegen-inefficiencies.baz:26:34] exit(1)
-            # [codegen-inefficiencies.baz:26:34] allocate named register a0
-            # [codegen-inefficiencies.baz:26:39] a0 = 1
-            # [codegen-inefficiencies.baz:26:39] src: folded constant '1'
+    bool.102.12.end:
+    # [codegen-inefficiencies.baz:28:6] assert(ok bool)
+    func.assert..102.5:
+        # [codegen-inefficiencies.baz:102:5] bind ok -> t0
+        if.28.24.102.5:
+        # [codegen-inefficiencies.baz:28:27] ? shorthand: not ok
+        cmp.28.27.102.5:
+        bne t0, zero, if.28.24.102.5.end
+        if.28.24.102.5.code:
+            # [codegen-inefficiencies.baz:28:34] exit(1)
+            # [codegen-inefficiencies.baz:28:34] allocate named register a0
+            # [codegen-inefficiencies.baz:28:39] a0 = 1
+            # [codegen-inefficiencies.baz:28:39] src: folded constant '1'
             li a0, 1
             j .Lbaz_exit
-            # [codegen-inefficiencies.baz:26:34] free named register a0
-        if.26.24.103.5.end:
-    func.assert..103.5.end:
-        # [codegen-inefficiencies.baz:103:5] free scratch register t0
-    # [codegen-inefficiencies.baz:105:5] var eq = x == 1
-    # [codegen-inefficiencies.baz:105:9] eq: bool (1 B @ [s0 - 1700])
-    # [codegen-inefficiencies.baz:105:9] eq = x == 1
-    # [codegen-inefficiencies.baz:105:14] ? x == 1
-    cmp.105.14:
-    # [codegen-inefficiencies.baz:105:14] allocate scratch register -> t0
+            # [codegen-inefficiencies.baz:28:34] free named register a0
+        if.28.24.102.5.end:
+    func.assert..102.5.end:
+        # [codegen-inefficiencies.baz:102:5] free scratch register t0
+    # [codegen-inefficiencies.baz:104:5] var eq = x == 1
+    # [codegen-inefficiencies.baz:104:9] eq: bool (1 B @ [s0 - 1700])
+    # [codegen-inefficiencies.baz:104:9] eq = x == 1
+    # [codegen-inefficiencies.baz:104:14] ? x == 1
+    cmp.104.14:
+    # [codegen-inefficiencies.baz:104:14] allocate scratch register -> t0
     lw t0, -2032(s0)
     xori t0, t0, 1
     sltiu t0, t0, 1
     sb t0, -1700(s0)
-    # [codegen-inefficiencies.baz:105:14] free scratch register t0
-    bool.105.14.end:
-    # [codegen-inefficiencies.baz:106:5] assert(eq)
-    # [codegen-inefficiencies.baz:26:6] assert(ok bool)
-    func.assert..106.5:
-        # [codegen-inefficiencies.baz:106:5] bind ok -> eq
-        if.26.24.106.5:
-        # [codegen-inefficiencies.baz:26:27] ? shorthand: not ok
-        cmp.26.27.106.5:
-        # [codegen-inefficiencies.baz:26:27] allocate scratch register -> t0
+    # [codegen-inefficiencies.baz:104:14] free scratch register t0
+    bool.104.14.end:
+    # [codegen-inefficiencies.baz:105:5] assert(eq)
+    # [codegen-inefficiencies.baz:28:6] assert(ok bool)
+    func.assert..105.5:
+        # [codegen-inefficiencies.baz:105:5] bind ok -> eq
+        if.28.24.105.5:
+        # [codegen-inefficiencies.baz:28:27] ? shorthand: not ok
+        cmp.28.27.105.5:
+        # [codegen-inefficiencies.baz:28:27] allocate scratch register -> t0
         lbu t0, -1700(s0)
-        bne t0, zero, if.26.24.106.5.end
-        # [codegen-inefficiencies.baz:26:27] free scratch register t0
-        if.26.24.106.5.code:
-            # [codegen-inefficiencies.baz:26:34] exit(1)
-            # [codegen-inefficiencies.baz:26:34] allocate named register a0
-            # [codegen-inefficiencies.baz:26:39] a0 = 1
-            # [codegen-inefficiencies.baz:26:39] src: folded constant '1'
+        bne t0, zero, if.28.24.105.5.end
+        # [codegen-inefficiencies.baz:28:27] free scratch register t0
+        if.28.24.105.5.code:
+            # [codegen-inefficiencies.baz:28:34] exit(1)
+            # [codegen-inefficiencies.baz:28:34] allocate named register a0
+            # [codegen-inefficiencies.baz:28:39] a0 = 1
+            # [codegen-inefficiencies.baz:28:39] src: folded constant '1'
             li a0, 1
             j .Lbaz_exit
-            # [codegen-inefficiencies.baz:26:34] free named register a0
-        if.26.24.106.5.end:
-    func.assert..106.5.end:
-    # [codegen-inefficiencies.baz:108:5] a = x * 10
-    # [codegen-inefficiencies.baz:108:9] kept the second of two versions of 7 and 5 instructions, the smaller
-    # [codegen-inefficiencies.baz:108:9] allocate scratch register -> t0
-    # [codegen-inefficiencies.baz:108:9] x
+            # [codegen-inefficiencies.baz:28:34] free named register a0
+        if.28.24.105.5.end:
+    func.assert..105.5.end:
+    # [codegen-inefficiencies.baz:107:5] a = x * 10
+    # [codegen-inefficiencies.baz:107:9] kept the second of two versions of 7 and 5 instructions, the smaller
+    # [codegen-inefficiencies.baz:107:9] allocate scratch register -> t0
+    # [codegen-inefficiencies.baz:107:9] x
     lw t0, -2032(s0)
-    # [codegen-inefficiencies.baz:108:9] t0 * 10
-    # [codegen-inefficiencies.baz:108:9] src: folded constant '* 10'
-    # [codegen-inefficiencies.baz:108:9] allocate scratch register -> t1
+    # [codegen-inefficiencies.baz:107:9] t0 * 10
+    # [codegen-inefficiencies.baz:107:9] src: folded constant '* 10'
+    # [codegen-inefficiencies.baz:107:9] allocate scratch register -> t1
     slli t1, t0, 2
     add t0, t1, t0
     slli t0, t0, 1
-    # [codegen-inefficiencies.baz:108:9] free scratch register t1
+    # [codegen-inefficiencies.baz:107:9] free scratch register t1
     sw t0, -1720(s0)
-    # [codegen-inefficiencies.baz:108:9] free scratch register t0
-    # [codegen-inefficiencies.baz:112:5] a = arr[ix]
-    # [codegen-inefficiencies.baz:112:9] arr[ix]
-    # [codegen-inefficiencies.baz:112:13] allocate scratch register -> t0
-    # [codegen-inefficiencies.baz:112:13] set array index
-    # [codegen-inefficiencies.baz:112:13] ix
+    # [codegen-inefficiencies.baz:107:9] free scratch register t0
+    # [codegen-inefficiencies.baz:111:5] a = arr[ix]
+    # [codegen-inefficiencies.baz:111:9] arr[ix]
+    # [codegen-inefficiencies.baz:111:13] allocate scratch register -> t0
+    # [codegen-inefficiencies.baz:111:13] set array index
+    # [codegen-inefficiencies.baz:111:13] ix
     lw t0, -1724(s0)
-    # [codegen-inefficiencies.baz:112:9] free scratch register t0
-    # [codegen-inefficiencies.baz:112:9] allocate scratch register -> t0
+    # [codegen-inefficiencies.baz:111:9] free scratch register t0
+    # [codegen-inefficiencies.baz:111:9] allocate scratch register -> t0
     slli t0, t0, 2
     add t0, t0, s0
     lw t0, -2028(t0)
     sw t0, -1720(s0)
-    # [codegen-inefficiencies.baz:112:9] free scratch register t0
-    # [codegen-inefficiencies.baz:114:5] o3[ix] = object.at(2, 74, 0xffffff)
-    # [codegen-inefficiencies.baz:114:8] allocate scratch register -> t0
-    # [codegen-inefficiencies.baz:114:8] set array index
-    # [codegen-inefficiencies.baz:114:8] ix
+    # [codegen-inefficiencies.baz:111:9] free scratch register t0
+    # [codegen-inefficiencies.baz:113:5] o3[ix] = object.at(2, 74, 0xffffff)
+    # [codegen-inefficiencies.baz:113:8] allocate scratch register -> t0
+    # [codegen-inefficiencies.baz:113:8] set array index
+    # [codegen-inefficiencies.baz:113:8] ix
     lw t0, -1724(s0)
-    # [codegen-inefficiencies.baz:114:8] allocate scratch register -> t1
+    # [codegen-inefficiencies.baz:113:8] allocate scratch register -> t1
     slli t1, t0, 2
     sub t0, t1, t0
     slli t0, t0, 2
-    # [codegen-inefficiencies.baz:114:8] free scratch register t1
-    # [codegen-inefficiencies.baz:114:14] object.at(2, 74, 0xffffff)
-    # [codegen-inefficiencies.baz:37:6] object.at(x, y, color i32) self
-    func.object.at..114.14:
-        # [codegen-inefficiencies.baz:114:14] bind self -> o3[ix] (address: s0 + t0 - 2004)
-        # [codegen-inefficiencies.baz:114:14] bind x -> 2
-        # [codegen-inefficiencies.baz:114:14] bind y -> 74
-        # [codegen-inefficiencies.baz:114:14] bind color -> 16777215
-        # [codegen-inefficiencies.baz:38:5] self.pos = point.at(x, y)
-        # [codegen-inefficiencies.baz:38:16] point.at(x, y)
-        # [codegen-inefficiencies.baz:32:6] point.at(x, y) self
-        func.point.at..38.16.114.14:
-            # [codegen-inefficiencies.baz:38:16] bind self -> self.pos (address: s0 + t0 - 2004)
-            # [codegen-inefficiencies.baz:38:16] bind x -> 2
-            # [codegen-inefficiencies.baz:38:16] bind y -> 74
-            # [codegen-inefficiencies.baz:33:5] self.x = x
-            # [codegen-inefficiencies.baz:33:14] self.x = 2
-            # [codegen-inefficiencies.baz:33:14] src: folded constant 'x'
-            # [codegen-inefficiencies.baz:33:14] allocate scratch register -> t1
+    # [codegen-inefficiencies.baz:113:8] free scratch register t1
+    # [codegen-inefficiencies.baz:113:14] object.at(2, 74, 0xffffff)
+    # [codegen-inefficiencies.baz:39:6] object.at(x, y, color i32) self
+    func.object.at..113.14:
+        # [codegen-inefficiencies.baz:113:14] bind self -> o3[ix] (address: s0 + t0 - 2004)
+        # [codegen-inefficiencies.baz:113:14] bind x -> 2
+        # [codegen-inefficiencies.baz:113:14] bind y -> 74
+        # [codegen-inefficiencies.baz:113:14] bind color -> 16777215
+        # [codegen-inefficiencies.baz:40:5] self.pos = point.at(x, y)
+        # [codegen-inefficiencies.baz:40:16] point.at(x, y)
+        # [codegen-inefficiencies.baz:34:6] point.at(x, y) self
+        func.point.at..40.16.113.14:
+            # [codegen-inefficiencies.baz:40:16] bind self -> self.pos (address: s0 + t0 - 2004)
+            # [codegen-inefficiencies.baz:40:16] bind x -> 2
+            # [codegen-inefficiencies.baz:40:16] bind y -> 74
+            # [codegen-inefficiencies.baz:35:5] self.x = x
+            # [codegen-inefficiencies.baz:35:14] self.x = 2
+            # [codegen-inefficiencies.baz:35:14] src: folded constant 'x'
+            # [codegen-inefficiencies.baz:35:14] allocate scratch register -> t1
             add t1, s0, t0
-            # [codegen-inefficiencies.baz:33:14] allocate scratch register -> t2
+            # [codegen-inefficiencies.baz:35:14] allocate scratch register -> t2
             li t2, 2
             sw t2, -2004(t1)
-            # [codegen-inefficiencies.baz:33:14] free scratch register t2
-            # [codegen-inefficiencies.baz:33:14] free scratch register t1
-            # [codegen-inefficiencies.baz:34:5] self.y = y
-            # [codegen-inefficiencies.baz:34:14] self.y = 74
-            # [codegen-inefficiencies.baz:34:14] src: folded constant 'y'
-            # [codegen-inefficiencies.baz:34:14] allocate scratch register -> t1
+            # [codegen-inefficiencies.baz:35:14] free scratch register t2
+            # [codegen-inefficiencies.baz:35:14] free scratch register t1
+            # [codegen-inefficiencies.baz:36:5] self.y = y
+            # [codegen-inefficiencies.baz:36:14] self.y = 74
+            # [codegen-inefficiencies.baz:36:14] src: folded constant 'y'
+            # [codegen-inefficiencies.baz:36:14] allocate scratch register -> t1
             add t1, s0, t0
-            # [codegen-inefficiencies.baz:34:14] allocate scratch register -> t2
+            # [codegen-inefficiencies.baz:36:14] allocate scratch register -> t2
             li t2, 74
             sw t2, -2000(t1)
-            # [codegen-inefficiencies.baz:34:14] free scratch register t2
-            # [codegen-inefficiencies.baz:34:14] free scratch register t1
-        func.point.at..38.16.114.14.end:
-        # [codegen-inefficiencies.baz:39:5] self.color = color
-        # [codegen-inefficiencies.baz:39:18] self.color = 16777215
-        # [codegen-inefficiencies.baz:39:18] src: folded constant 'color'
-        # [codegen-inefficiencies.baz:39:18] allocate scratch register -> t1
+            # [codegen-inefficiencies.baz:36:14] free scratch register t2
+            # [codegen-inefficiencies.baz:36:14] free scratch register t1
+        func.point.at..40.16.113.14.end:
+        # [codegen-inefficiencies.baz:41:5] self.color = color
+        # [codegen-inefficiencies.baz:41:18] self.color = 16777215
+        # [codegen-inefficiencies.baz:41:18] src: folded constant 'color'
+        # [codegen-inefficiencies.baz:41:18] allocate scratch register -> t1
         add t1, s0, t0
-        # [codegen-inefficiencies.baz:39:18] allocate scratch register -> t2
+        # [codegen-inefficiencies.baz:41:18] allocate scratch register -> t2
         li t2, 16777215
         sw t2, -1996(t1)
-        # [codegen-inefficiencies.baz:39:18] free scratch register t2
-        # [codegen-inefficiencies.baz:39:18] free scratch register t1
-    func.object.at..114.14.end:
-    # [codegen-inefficiencies.baz:114:5] free scratch register t0
-    # [codegen-inefficiencies.baz:116:5] var buf = i8[20]{}
-    # [codegen-inefficiencies.baz:116:9] buf: i8[20] (20 B @ [s0 - 1699])
-    # [codegen-inefficiencies.baz:116:9] buf = i8[20]{}
-    # [codegen-inefficiencies.baz:116:15] zero remaining elements: 20 * 1 B = 20 B
-    # [codegen-inefficiencies.baz:116:15] zero 1 + 2 + 4 x 4 + 1 B: start 1 B past a word boundary, widest aligned access at each offset
+        # [codegen-inefficiencies.baz:41:18] free scratch register t2
+        # [codegen-inefficiencies.baz:41:18] free scratch register t1
+    func.object.at..113.14.end:
+    # [codegen-inefficiencies.baz:113:5] free scratch register t0
+    # [codegen-inefficiencies.baz:115:5] var buf = i8[20]{}
+    # [codegen-inefficiencies.baz:115:9] buf: i8[20] (20 B @ [s0 - 1699])
+    # [codegen-inefficiencies.baz:115:9] buf = i8[20]{}
+    # [codegen-inefficiencies.baz:115:15] zero remaining elements: 20 * 1 B = 20 B
+    # [codegen-inefficiencies.baz:115:15] zero 1 + 2 + 4 x 4 + 1 B: start 1 B past a word boundary, widest aligned access at each offset
     sb zero, -1699(s0)
     sh zero, -1698(s0)
     sw zero, -1696(s0)
@@ -507,68 +504,68 @@ main:
     sw zero, -1688(s0)
     sw zero, -1684(s0)
     sb zero, -1680(s0)
-    # [codegen-inefficiencies.baz:118:5] var q = p1
-    # [codegen-inefficiencies.baz:118:9] q: point (8 B @ [s0 - 1676])
-    # [codegen-inefficiencies.baz:118:9] q = p1
-    # [codegen-inefficiencies.baz:118:13] allocate scratch register -> t0
+    # [codegen-inefficiencies.baz:117:5] var q = p1
+    # [codegen-inefficiencies.baz:117:9] q: point (8 B @ [s0 - 1676])
+    # [codegen-inefficiencies.baz:117:9] q = p1
+    # [codegen-inefficiencies.baz:117:13] allocate scratch register -> t0
     lw t0, -1712(s0)
     sw t0, -1676(s0)
     lw t0, -1708(s0)
     sw t0, -1672(s0)
-    # [codegen-inefficiencies.baz:118:13] free scratch register t0
-    # [codegen-inefficiencies.baz:119:5] assert(p1 == q)
-    # [codegen-inefficiencies.baz:119:12] allocate scratch register -> t0
-    # [codegen-inefficiencies.baz:119:12] ? p1 == q
-    cmp.119.12:
-        # [codegen-inefficiencies.baz:119:12] p1
-        # [codegen-inefficiencies.baz:119:18] q
-        # [codegen-inefficiencies.baz:119:12] allocate scratch register -> t1
-        # [codegen-inefficiencies.baz:119:12] t0: left value/result, t1: right value
-        # [codegen-inefficiencies.baz:119:12] stop at first mismatch
+    # [codegen-inefficiencies.baz:117:13] free scratch register t0
+    # [codegen-inefficiencies.baz:118:5] assert(p1 == q)
+    # [codegen-inefficiencies.baz:118:12] allocate scratch register -> t0
+    # [codegen-inefficiencies.baz:118:12] ? p1 == q
+    cmp.118.12:
+        # [codegen-inefficiencies.baz:118:12] p1
+        # [codegen-inefficiencies.baz:118:18] q
+        # [codegen-inefficiencies.baz:118:12] allocate scratch register -> t1
+        # [codegen-inefficiencies.baz:118:12] t0: left value/result, t1: right value
+        # [codegen-inefficiencies.baz:118:12] stop at first mismatch
         lw t0, -1712(s0)
         lw t1, -1676(s0)
         bne t0, t1, 5f
         lw t0, -1708(s0)
         lw t1, -1672(s0)
         bne t0, t1, 5f
-        # [codegen-inefficiencies.baz:119:12] all matched or empty: true
+        # [codegen-inefficiencies.baz:118:12] all matched or empty: true
         li t0, 1
         j 6f
         5:
-        # [codegen-inefficiencies.baz:119:12] mismatch: false
+        # [codegen-inefficiencies.baz:118:12] mismatch: false
         li t0, 0
         6:
-        # [codegen-inefficiencies.baz:119:12] free scratch register t1
-    bool.119.12.end:
-    # [codegen-inefficiencies.baz:26:6] assert(ok bool)
-    func.assert..119.5:
-        # [codegen-inefficiencies.baz:119:5] bind ok -> t0
-        if.26.24.119.5:
-        # [codegen-inefficiencies.baz:26:27] ? shorthand: not ok
-        cmp.26.27.119.5:
-        bne t0, zero, if.26.24.119.5.end
-        if.26.24.119.5.code:
-            # [codegen-inefficiencies.baz:26:34] exit(1)
-            # [codegen-inefficiencies.baz:26:34] allocate named register a0
-            # [codegen-inefficiencies.baz:26:39] a0 = 1
-            # [codegen-inefficiencies.baz:26:39] src: folded constant '1'
+        # [codegen-inefficiencies.baz:118:12] free scratch register t1
+    bool.118.12.end:
+    # [codegen-inefficiencies.baz:28:6] assert(ok bool)
+    func.assert..118.5:
+        # [codegen-inefficiencies.baz:118:5] bind ok -> t0
+        if.28.24.118.5:
+        # [codegen-inefficiencies.baz:28:27] ? shorthand: not ok
+        cmp.28.27.118.5:
+        bne t0, zero, if.28.24.118.5.end
+        if.28.24.118.5.code:
+            # [codegen-inefficiencies.baz:28:34] exit(1)
+            # [codegen-inefficiencies.baz:28:34] allocate named register a0
+            # [codegen-inefficiencies.baz:28:39] a0 = 1
+            # [codegen-inefficiencies.baz:28:39] src: folded constant '1'
             li a0, 1
             j .Lbaz_exit
-            # [codegen-inefficiencies.baz:26:34] free named register a0
-        if.26.24.119.5.end:
-    func.assert..119.5.end:
-        # [codegen-inefficiencies.baz:119:5] free scratch register t0
-    # [codegen-inefficiencies.baz:121:5] array_copy(worlds[1].locations, worlds[0].locations, array_length(worlds[0].locations))
-    # [codegen-inefficiencies.baz:121:16] worlds[1].locations
-    # [codegen-inefficiencies.baz:121:37] worlds[0].locations
-    # [codegen-inefficiencies.baz:121:5] allocate scratch register -> t0
-    # [codegen-inefficiencies.baz:121:5] copy loop of 4-byte accesses: addresses word aligned and word aligned
-    # [codegen-inefficiencies.baz:121:5] allocate scratch register -> t1
+            # [codegen-inefficiencies.baz:28:34] free named register a0
+        if.28.24.118.5.end:
+    func.assert..118.5.end:
+        # [codegen-inefficiencies.baz:118:5] free scratch register t0
+    # [codegen-inefficiencies.baz:120:5] array_copy(worlds[1].locations, worlds[0].locations, array_length(worlds[0].locations))
+    # [codegen-inefficiencies.baz:120:16] worlds[1].locations
+    # [codegen-inefficiencies.baz:120:37] worlds[0].locations
+    # [codegen-inefficiencies.baz:120:5] allocate scratch register -> t0
+    # [codegen-inefficiencies.baz:120:5] copy loop of 4-byte accesses: addresses word aligned and word aligned
+    # [codegen-inefficiencies.baz:120:5] allocate scratch register -> t1
     addi t1, s0, -1948
-    # [codegen-inefficiencies.baz:121:5] allocate scratch register -> t2
+    # [codegen-inefficiencies.baz:120:5] allocate scratch register -> t2
     addi t2, s0, -1980
-    # [codegen-inefficiencies.baz:121:5] allocate scratch register -> t3
-    # [codegen-inefficiencies.baz:121:5] copy 4-byte words
+    # [codegen-inefficiencies.baz:120:5] allocate scratch register -> t3
+    # [codegen-inefficiencies.baz:120:5] copy 4-byte words
     addi t3, t1, 32
     1:
     lw t0, 0(t1)
@@ -576,218 +573,217 @@ main:
     addi t1, t1, 4
     addi t2, t2, 4
     bne t1, t3, 1b
-    # [codegen-inefficiencies.baz:121:5] free scratch register t3
-    # [codegen-inefficiencies.baz:121:5] free scratch register t2
-    # [codegen-inefficiencies.baz:121:5] free scratch register t1
-    # [codegen-inefficiencies.baz:121:5] free scratch register t0
-    # [codegen-inefficiencies.baz:124:5] print_num(a)
-    # [codegen-inefficiencies.baz:124:5] address of argument 'a' to parameter 'num'
-    # [codegen-inefficiencies.baz:124:5] allocate scratch register -> t0
+    # [codegen-inefficiencies.baz:120:5] free scratch register t3
+    # [codegen-inefficiencies.baz:120:5] free scratch register t2
+    # [codegen-inefficiencies.baz:120:5] free scratch register t1
+    # [codegen-inefficiencies.baz:120:5] free scratch register t0
+    # [codegen-inefficiencies.baz:123:5] print_num(a)
+    # [codegen-inefficiencies.baz:123:5] address of argument 'a' to parameter 'num'
+    # [codegen-inefficiencies.baz:123:5] allocate scratch register -> t0
     addi t0, s0, -1720
     sw t0, -1668(s0)
-    # [codegen-inefficiencies.baz:124:5] free scratch register t0
-    # [codegen-inefficiencies.baz:124:5] set function frame base
+    # [codegen-inefficiencies.baz:123:5] free scratch register t0
+    # [codegen-inefficiencies.baz:123:5] set function frame base
     addi s1, s0, -1668
     call func.print_num
-    # [codegen-inefficiencies.baz:126:5] assert(buf[0] == 0)
-    # [codegen-inefficiencies.baz:126:12] allocate scratch register -> t0
-    # [codegen-inefficiencies.baz:126:12] ? buf[0] == 0
-    cmp.126.12:
+    # [codegen-inefficiencies.baz:125:5] assert(buf[0] == 0)
+    # [codegen-inefficiencies.baz:125:12] allocate scratch register -> t0
+    # [codegen-inefficiencies.baz:125:12] ? buf[0] == 0
+    cmp.125.12:
     lb t0, -1699(s0)
     sltiu t0, t0, 1
-    bool.126.12.end:
-    # [codegen-inefficiencies.baz:26:6] assert(ok bool)
-    func.assert..126.5:
-        # [codegen-inefficiencies.baz:126:5] bind ok -> t0
-        if.26.24.126.5:
-        # [codegen-inefficiencies.baz:26:27] ? shorthand: not ok
-        cmp.26.27.126.5:
-        bne t0, zero, if.26.24.126.5.end
-        if.26.24.126.5.code:
-            # [codegen-inefficiencies.baz:26:34] exit(1)
-            # [codegen-inefficiencies.baz:26:34] allocate named register a0
-            # [codegen-inefficiencies.baz:26:39] a0 = 1
-            # [codegen-inefficiencies.baz:26:39] src: folded constant '1'
+    bool.125.12.end:
+    # [codegen-inefficiencies.baz:28:6] assert(ok bool)
+    func.assert..125.5:
+        # [codegen-inefficiencies.baz:125:5] bind ok -> t0
+        if.28.24.125.5:
+        # [codegen-inefficiencies.baz:28:27] ? shorthand: not ok
+        cmp.28.27.125.5:
+        bne t0, zero, if.28.24.125.5.end
+        if.28.24.125.5.code:
+            # [codegen-inefficiencies.baz:28:34] exit(1)
+            # [codegen-inefficiencies.baz:28:34] allocate named register a0
+            # [codegen-inefficiencies.baz:28:39] a0 = 1
+            # [codegen-inefficiencies.baz:28:39] src: folded constant '1'
             li a0, 1
             j .Lbaz_exit
-            # [codegen-inefficiencies.baz:26:34] free named register a0
-        if.26.24.126.5.end:
-    func.assert..126.5.end:
-        # [codegen-inefficiencies.baz:126:5] free scratch register t0
-    # [codegen-inefficiencies.baz:127:5] assert(b == 0)
-    # [codegen-inefficiencies.baz:127:12] allocate scratch register -> t0
-    # [codegen-inefficiencies.baz:127:12] ? b == 0
-    cmp.127.12:
+            # [codegen-inefficiencies.baz:28:34] free named register a0
+        if.28.24.125.5.end:
+    func.assert..125.5.end:
+        # [codegen-inefficiencies.baz:125:5] free scratch register t0
+    # [codegen-inefficiencies.baz:126:5] assert(b == 0)
+    # [codegen-inefficiencies.baz:126:12] allocate scratch register -> t0
+    # [codegen-inefficiencies.baz:126:12] ? b == 0
+    cmp.126.12:
     lb t0, -1716(s0)
     sltiu t0, t0, 1
-    bool.127.12.end:
-    # [codegen-inefficiencies.baz:26:6] assert(ok bool)
-    func.assert..127.5:
-        # [codegen-inefficiencies.baz:127:5] bind ok -> t0
-        if.26.24.127.5:
-        # [codegen-inefficiencies.baz:26:27] ? shorthand: not ok
-        cmp.26.27.127.5:
-        bne t0, zero, if.26.24.127.5.end
-        if.26.24.127.5.code:
-            # [codegen-inefficiencies.baz:26:34] exit(1)
-            # [codegen-inefficiencies.baz:26:34] allocate named register a0
-            # [codegen-inefficiencies.baz:26:39] a0 = 1
-            # [codegen-inefficiencies.baz:26:39] src: folded constant '1'
+    bool.126.12.end:
+    # [codegen-inefficiencies.baz:28:6] assert(ok bool)
+    func.assert..126.5:
+        # [codegen-inefficiencies.baz:126:5] bind ok -> t0
+        if.28.24.126.5:
+        # [codegen-inefficiencies.baz:28:27] ? shorthand: not ok
+        cmp.28.27.126.5:
+        bne t0, zero, if.28.24.126.5.end
+        if.28.24.126.5.code:
+            # [codegen-inefficiencies.baz:28:34] exit(1)
+            # [codegen-inefficiencies.baz:28:34] allocate named register a0
+            # [codegen-inefficiencies.baz:28:39] a0 = 1
+            # [codegen-inefficiencies.baz:28:39] src: folded constant '1'
             li a0, 1
             j .Lbaz_exit
-            # [codegen-inefficiencies.baz:26:34] free named register a0
-        if.26.24.127.5.end:
-    func.assert..127.5.end:
-        # [codegen-inefficiencies.baz:127:5] free scratch register t0
-    # [codegen-inefficiencies.baz:128:5] assert(p1.x == -1)
-    # [codegen-inefficiencies.baz:128:12] allocate scratch register -> t0
-    # [codegen-inefficiencies.baz:128:12] ? p1.x == -1
-    cmp.128.12:
+            # [codegen-inefficiencies.baz:28:34] free named register a0
+        if.28.24.126.5.end:
+    func.assert..126.5.end:
+        # [codegen-inefficiencies.baz:126:5] free scratch register t0
+    # [codegen-inefficiencies.baz:127:5] assert(p1.x == -1)
+    # [codegen-inefficiencies.baz:127:12] allocate scratch register -> t0
+    # [codegen-inefficiencies.baz:127:12] ? p1.x == -1
+    cmp.127.12:
     lw t0, -1712(s0)
     xori t0, t0, -1
     sltiu t0, t0, 1
-    bool.128.12.end:
-    # [codegen-inefficiencies.baz:26:6] assert(ok bool)
-    func.assert..128.5:
-        # [codegen-inefficiencies.baz:128:5] bind ok -> t0
-        if.26.24.128.5:
-        # [codegen-inefficiencies.baz:26:27] ? shorthand: not ok
-        cmp.26.27.128.5:
-        bne t0, zero, if.26.24.128.5.end
-        if.26.24.128.5.code:
-            # [codegen-inefficiencies.baz:26:34] exit(1)
-            # [codegen-inefficiencies.baz:26:34] allocate named register a0
-            # [codegen-inefficiencies.baz:26:39] a0 = 1
-            # [codegen-inefficiencies.baz:26:39] src: folded constant '1'
+    bool.127.12.end:
+    # [codegen-inefficiencies.baz:28:6] assert(ok bool)
+    func.assert..127.5:
+        # [codegen-inefficiencies.baz:127:5] bind ok -> t0
+        if.28.24.127.5:
+        # [codegen-inefficiencies.baz:28:27] ? shorthand: not ok
+        cmp.28.27.127.5:
+        bne t0, zero, if.28.24.127.5.end
+        if.28.24.127.5.code:
+            # [codegen-inefficiencies.baz:28:34] exit(1)
+            # [codegen-inefficiencies.baz:28:34] allocate named register a0
+            # [codegen-inefficiencies.baz:28:39] a0 = 1
+            # [codegen-inefficiencies.baz:28:39] src: folded constant '1'
             li a0, 1
             j .Lbaz_exit
-            # [codegen-inefficiencies.baz:26:34] free named register a0
-        if.26.24.128.5.end:
-    func.assert..128.5.end:
-        # [codegen-inefficiencies.baz:128:5] free scratch register t0
-    # [codegen-inefficiencies.baz:132:5] exit(0)
-    # [codegen-inefficiencies.baz:132:5] allocate named register a0
-    # [codegen-inefficiencies.baz:132:10] a0 = 0
-    # [codegen-inefficiencies.baz:132:10] src: folded constant '0'
+            # [codegen-inefficiencies.baz:28:34] free named register a0
+        if.28.24.127.5.end:
+    func.assert..127.5.end:
+        # [codegen-inefficiencies.baz:127:5] free scratch register t0
+    # [codegen-inefficiencies.baz:131:5] exit(0)
+    # [codegen-inefficiencies.baz:131:5] allocate named register a0
+    # [codegen-inefficiencies.baz:131:10] a0 = 0
+    # [codegen-inefficiencies.baz:131:10] src: folded constant '0'
     li a0, 0
     j .Lbaz_exit
-    # [codegen-inefficiencies.baz:132:5] free named register a0
+    # [codegen-inefficiencies.baz:131:5] free named register a0
 #
-# [codegen-inefficiencies.baz:42:15] noinline print_num(num)
+# [codegen-inefficiencies.baz:44:15] noinline print_num(num)
 func.print_num:
 # allocate named register s1
     addi sp, sp, -16
     sw ra, 0(sp)
-    # [codegen-inefficiencies.baz:42:25] num: i32 (address @ [s1])
-    # [codegen-inefficiencies.baz:43:5] var buf = i8[20]{}
-    # [codegen-inefficiencies.baz:43:9] buf: i8[20] (20 B @ [s1 + 4])
-    # [codegen-inefficiencies.baz:43:9] buf = i8[20]{}
-    # [codegen-inefficiencies.baz:43:15] zero remaining elements: 20 * 1 B = 20 B
+    # [codegen-inefficiencies.baz:44:25] num: i32 (address @ [s1])
+    # [codegen-inefficiencies.baz:45:5] var buf = i8[20]{}
+    # [codegen-inefficiencies.baz:45:9] buf: i8[20] (20 B @ [s1 + 4])
+    # [codegen-inefficiencies.baz:45:9] buf = i8[20]{}
+    # [codegen-inefficiencies.baz:45:15] zero remaining elements: 20 * 1 B = 20 B
     sw zero, 4(s1)
     sw zero, 8(s1)
     sw zero, 12(s1)
     sw zero, 16(s1)
     sw zero, 20(s1)
-    # [codegen-inefficiencies.baz:44:5] var n = num
-    # [codegen-inefficiencies.baz:44:9] n: i32 (4 B @ [s1 + 24])
-    # [codegen-inefficiencies.baz:44:9] n = num
-    # [codegen-inefficiencies.baz:44:13] num
-    # [codegen-inefficiencies.baz:44:13] allocate scratch register -> t0
+    # [codegen-inefficiencies.baz:46:5] var n = num
+    # [codegen-inefficiencies.baz:46:9] n: i32 (4 B @ [s1 + 24])
+    # [codegen-inefficiencies.baz:46:9] n = num
+    # [codegen-inefficiencies.baz:46:13] num
+    # [codegen-inefficiencies.baz:46:13] allocate scratch register -> t0
     lw t0, 0(s1)
-    # [codegen-inefficiencies.baz:44:13] free scratch register t0
-    # [codegen-inefficiencies.baz:44:13] allocate scratch register -> t0
+    # [codegen-inefficiencies.baz:46:13] free scratch register t0
+    # [codegen-inefficiencies.baz:46:13] allocate scratch register -> t0
     lw t0, 0(t0)
     sw t0, 24(s1)
-    # [codegen-inefficiencies.baz:44:13] free scratch register t0
-    # [codegen-inefficiencies.baz:45:5] var i = 20
-    # [codegen-inefficiencies.baz:45:9] i: i32 (4 B @ [s1 + 28])
-    # [codegen-inefficiencies.baz:45:9] i = 20
-    # [codegen-inefficiencies.baz:45:13] i = 20
-    # [codegen-inefficiencies.baz:45:13] src: folded constant '20'
-    # [codegen-inefficiencies.baz:45:13] allocate scratch register -> t0
+    # [codegen-inefficiencies.baz:46:13] free scratch register t0
+    # [codegen-inefficiencies.baz:47:5] var i = 20
+    # [codegen-inefficiencies.baz:47:9] i: i32 (4 B @ [s1 + 28])
+    # [codegen-inefficiencies.baz:47:9] i = 20
+    # [codegen-inefficiencies.baz:47:13] i = 20
+    # [codegen-inefficiencies.baz:47:13] src: folded constant '20'
+    # [codegen-inefficiencies.baz:47:13] allocate scratch register -> t0
     li t0, 20
     sw t0, 28(s1)
-    # [codegen-inefficiencies.baz:45:13] free scratch register t0
-    # [codegen-inefficiencies.baz:46:5] loop
-    loop.46.5:
-        # [codegen-inefficiencies.baz:47:9] i = i - 1
-        # [codegen-inefficiencies.baz:47:13] kept the first of two versions of 3 and 3 instructions, the first of equal sizes
-        # [codegen-inefficiencies.baz:47:13] i
-        # [codegen-inefficiencies.baz:47:13] i - 1
-        # [codegen-inefficiencies.baz:47:13] src: folded constant '- 1'
-        # [codegen-inefficiencies.baz:47:13] allocate scratch register -> t0
+    # [codegen-inefficiencies.baz:47:13] free scratch register t0
+    # [codegen-inefficiencies.baz:48:5] loop
+    loop.48.5:
+        # [codegen-inefficiencies.baz:49:9] i = i - 1
+        # [codegen-inefficiencies.baz:49:13] kept the first of two versions of 3 and 3 instructions, the first of equal sizes
+        # [codegen-inefficiencies.baz:49:13] i
+        # [codegen-inefficiencies.baz:49:13] i - 1
+        # [codegen-inefficiencies.baz:49:13] src: folded constant '- 1'
+        # [codegen-inefficiencies.baz:49:13] allocate scratch register -> t0
         lw t0, 28(s1)
         addi t0, t0, -1
         sw t0, 28(s1)
-        # [codegen-inefficiencies.baz:47:13] free scratch register t0
-        # [codegen-inefficiencies.baz:55:9] buf[i] = i8('0' - n % 10)
-        # [codegen-inefficiencies.baz:55:13] allocate scratch register -> t0
-        # [codegen-inefficiencies.baz:55:13] set array index
-        # [codegen-inefficiencies.baz:55:13] i
-        lw t0, 28(s1)
-        # [codegen-inefficiencies.baz:55:18] buf[i] = i8('0' - n % 10)
-        # [codegen-inefficiencies.baz:55:18] = expression
-        # [codegen-inefficiencies.baz:55:18] allocate scratch register -> t1
-        # [codegen-inefficiencies.baz:55:21] t1 = 48
-        # [codegen-inefficiencies.baz:55:21] src: folded constant + '0'
+        # [codegen-inefficiencies.baz:49:13] free scratch register t0
+        # [codegen-inefficiencies.baz:54:9] buf[i] = i8('0' - n % 10)
+        # [codegen-inefficiencies.baz:54:13] allocate scratch register -> t0
+        # [codegen-inefficiencies.baz:54:13] set array index
+        # [codegen-inefficiencies.baz:54:13] i
+        # [codegen-inefficiencies.baz:54:18] buf[i] = i8('0' - n % 10)
+        # [codegen-inefficiencies.baz:54:18] = expression
+        # [codegen-inefficiencies.baz:54:18] allocate scratch register -> t1
+        # [codegen-inefficiencies.baz:54:21] t1 = 48
+        # [codegen-inefficiencies.baz:54:21] src: folded constant + '0'
         li t1, 48
-        # [codegen-inefficiencies.baz:55:27] t1 - n % 10
-        # [codegen-inefficiencies.baz:55:27] src: expression
-        # [codegen-inefficiencies.baz:55:27] allocate scratch register -> t2
-        # [codegen-inefficiencies.baz:55:27] n
+        # [codegen-inefficiencies.baz:54:27] t1 - n % 10
+        # [codegen-inefficiencies.baz:54:27] src: expression
+        # [codegen-inefficiencies.baz:54:27] allocate scratch register -> t2
+        # [codegen-inefficiencies.baz:54:27] n
         lw t2, 24(s1)
-        # [codegen-inefficiencies.baz:55:31] t2 % 10
-        # [codegen-inefficiencies.baz:55:31] src: folded constant '% 10'
+        # [codegen-inefficiencies.baz:54:31] t2 % 10
+        # [codegen-inefficiencies.baz:54:31] src: folded constant '% 10'
         mv a0, t2
         li a1, 10
         call .Lbaz_divide
         mv t2, a1
         sub t1, t1, t2
-        # [codegen-inefficiencies.baz:55:27] free scratch register t2
-        # [codegen-inefficiencies.baz:55:18] allocate scratch register -> t2
+        # [codegen-inefficiencies.baz:54:27] free scratch register t2
+        # [codegen-inefficiencies.baz:54:18] allocate scratch register -> t2
         add t2, s1, t0
         sb t1, 4(t2)
-        # [codegen-inefficiencies.baz:55:18] free scratch register t2
-        # [codegen-inefficiencies.baz:55:18] free scratch register t1
-        # [codegen-inefficiencies.baz:55:9] free scratch register t0
-        # [codegen-inefficiencies.baz:56:9] n = n / 10
-        # [codegen-inefficiencies.baz:56:13] kept the first of two versions of 5 and 7 instructions, the smaller
-        # [codegen-inefficiencies.baz:56:13] n
-        # [codegen-inefficiencies.baz:56:17] n / 10
-        # [codegen-inefficiencies.baz:56:17] src: folded constant '/ 10'
+        # [codegen-inefficiencies.baz:54:18] free scratch register t2
+        # [codegen-inefficiencies.baz:54:18] free scratch register t1
+        # [codegen-inefficiencies.baz:54:9] free scratch register t0
+        # [codegen-inefficiencies.baz:55:9] n = n / 10
+        # [codegen-inefficiencies.baz:55:13] kept the first of two versions of 5 and 7 instructions, the smaller
+        # [codegen-inefficiencies.baz:55:13] n
+        # [codegen-inefficiencies.baz:55:17] n / 10
+        # [codegen-inefficiencies.baz:55:17] src: folded constant '/ 10'
         lw a0, 24(s1)
         li a1, 10
         call .Lbaz_divide
         sw a0, 24(s1)
-        if.57.9:
-        # [codegen-inefficiencies.baz:57:12] ? n == 0
-        cmp.57.12:
-        # [codegen-inefficiencies.baz:57:12] allocate scratch register -> t0
+        if.56.9:
+        # [codegen-inefficiencies.baz:56:12] ? n == 0
+        cmp.56.12:
+        # [codegen-inefficiencies.baz:56:12] allocate scratch register -> t0
         lw t0, 24(s1)
-        bne t0, zero, loop.46.5
-        # [codegen-inefficiencies.baz:57:12] free scratch register t0
-        if.57.9.code:
-            # [codegen-inefficiencies.baz:57:19] break
-        if.57.9.end:
-    loop.46.5.end:
-    # [codegen-inefficiencies.baz:59:5] write(1, buf, 20)
-    # [codegen-inefficiencies.baz:59:5] allocate named register a0
-    # [codegen-inefficiencies.baz:59:5] allocate named register a1
-    # [codegen-inefficiencies.baz:59:5] allocate named register a2
-    # [codegen-inefficiencies.baz:59:11] a0 = 1
-    # [codegen-inefficiencies.baz:59:11] src: folded constant '1'
+        bne t0, zero, loop.48.5
+        # [codegen-inefficiencies.baz:56:12] free scratch register t0
+        if.56.9.code:
+            # [codegen-inefficiencies.baz:56:19] break
+        if.56.9.end:
+    loop.48.5.end:
+    # [codegen-inefficiencies.baz:58:5] write(1, buf, 20)
+    # [codegen-inefficiencies.baz:58:5] allocate named register a0
+    # [codegen-inefficiencies.baz:58:5] allocate named register a1
+    # [codegen-inefficiencies.baz:58:5] allocate named register a2
+    # [codegen-inefficiencies.baz:58:11] a0 = 1
+    # [codegen-inefficiencies.baz:58:11] src: folded constant '1'
     li a0, 1
     addi a1, s1, 4
-    # [codegen-inefficiencies.baz:59:19] a2 = 20
-    # [codegen-inefficiencies.baz:59:19] src: folded constant '20'
+    # [codegen-inefficiencies.baz:58:19] a2 = 20
+    # [codegen-inefficiencies.baz:58:19] src: folded constant '20'
     li a2, 20
-    # [codegen-inefficiencies.baz:59:5] allocate named register a7
+    # [codegen-inefficiencies.baz:58:5] allocate named register a7
     li a7, 64
     ecall
-    # [codegen-inefficiencies.baz:59:5] free named register a7
-    # [codegen-inefficiencies.baz:59:5] free named register a2
-    # [codegen-inefficiencies.baz:59:5] free named register a1
-    # [codegen-inefficiencies.baz:59:5] free named register a0
+    # [codegen-inefficiencies.baz:58:5] free named register a7
+    # [codegen-inefficiencies.baz:58:5] free named register a2
+    # [codegen-inefficiencies.baz:58:5] free named register a1
+    # [codegen-inefficiencies.baz:58:5] free named register a0
     lw ra, 0(sp)
     addi sp, sp, 16
     ret
@@ -839,15 +835,16 @@ vars.end:
 # free named register s0
 
 #           noinline functions:
-#                    print_num: 1 body, 1 call, 41 instructions, no reuse
+#                    print_num: 1 body, 1 call, 40 instructions, no reuse
 #
 #   removed jumps to next code: 12
 #    removed unreachable jumps: 0
 # removed same target branches: 0
 # inverted branches over jumps: 2
+# removed reloads after stores: 4
 # max scratch registers in use: 4
 #            max scopes in use: 7
 #                     dat size: 0 B
 #              dat var padding: 0 B
 #           max body vars size: 364 B
-#                 instructions: 258
+#                 instructions: 254

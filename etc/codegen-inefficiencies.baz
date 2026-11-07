@@ -11,11 +11,13 @@
 #   helper/'idiv'/syscall operands and results copied through a scratch
 #   register, runtime bool argument materialized
 # across statements (register allocation, out of scope for now):
-#   value reloaded right after it was stored
+#   value loaded right after it was stored, into another register (184
+#   sites, 'sw t0, -1724(s0)' then 'lw t1, -1724(s0)' at 'var ix = 1' then
+#   'arr[ix + 1] = arr[ix]') or narrower ('sb'/'lb', 'sh'/'lh', 382 sites)
 #
 # review with: ./baz --target=rv32i etc/codegen-inefficiencies.baz
 #         and: ./baz etc/codegen-inefficiencies.baz
-# etc/codegen-inefficiencies.s: ./baz --target=rv32i-fpga
+# etc/codegen-inefficiencies.s: ./baz --target=rv32i
 
 type point {x, y}
 
@@ -45,9 +47,6 @@ func noinline print_num(num) {
     var i = 20
     loop {
         i = i - 1
-        # across statements: 'sw t0, 28(s1)' above then 'lw t0, 28(s1)' here
-        # (574 sites)
-        #
         # divide call: 'lw t2; addi a0, t2, 0' instead of 'lw a0' (107 sites)
         # and 'addi t2, a1, 0; sub t1, t1, t2' instead of 'sub t1, t1, a1'
         # (257 sites); x86: 'mov rax, r13' before 'cqo' and 'mov r13, rdx'

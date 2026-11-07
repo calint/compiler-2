@@ -2,7 +2,7 @@
 # one small program per construct of 'etc/tutorial.baz', see 'constructs.py'
 #
 # every program ends with exit code 0 and the bytes of the model on every
-# target, with and without checks and without optimization. a program of
+# target, with and without checks and with '--nopt'. a program of
 # the rejected list must be rejected on the line that ends with '# error'.
 # the tutorial itself must run to the end (but on rv32i-qemu, which has no sd
 # card)

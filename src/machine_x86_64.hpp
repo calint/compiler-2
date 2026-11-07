@@ -355,7 +355,19 @@ class machine_x86_64 final : public machine {
         const operation_scope named{*this};
 
         reserve_named_register(src_loc_tk, indent, "rax");
-        mov(src_loc_tk, indent, qword_register("rax"), dst);
+
+        // note: a register 'dst' receives the result after the division
+
+        const bool consumed{
+            dst.is_register() and dst.type_ref().size_bytes() == size_qword_ and
+                (registers_mask(divisor) & registers_mask(dst)) == 0,
+        };
+
+        if (consumed) {
+            assembler_.move_consumed(indent, "rax", dst.register_name());
+        } else {
+            mov(src_loc_tk, indent, qword_register("rax"), dst);
+        }
 
         reserve_named_register(src_loc_tk, indent, "rdx");
 

@@ -3478,7 +3478,7 @@ vars.end:
 ;    removed unreachable jumps: 2
 ; removed same target branches: 0
 ; inverted branches over jumps: 7
-; removed reloads of stored values: 0
+; removed reloads after stores: 0
 ; max scratch registers in use: 4
 ;            max scopes in use: 10
 ;                     dat size: 376 B

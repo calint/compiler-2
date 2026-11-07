@@ -64,8 +64,7 @@
     sw t0, -2024(s0)
 === 54:     d = b * 4 / 2 # folds
     lw t0, -2028(s0)
-    slli t0, t0, 2
-    mv a0, t0
+    slli a0, t0, 2
     li a1, 2
     call .Lbaz_divide
     mv t0, a0
@@ -91,8 +90,7 @@
     lw t0, -2028(s0)
     slli t1, t0, 2
     sub t0, t1, t0
-    slli t0, t0, 1
-    mv a0, t0
+    slli a0, t0, 1
     lw a1, -2032(s0)
     call .Lbaz_divide
     mv t0, a0
@@ -101,54 +99,45 @@
     lw t0, -2028(s0)
     slli t1, t0, 4
     sub t0, t1, t0
-    slli t0, t0, 2
-    mv a0, t0
+    slli a0, t0, 2
     li a1, 6
     call .Lbaz_divide
     mv t0, a0
     sw t0, -2024(s0)
 === 70:     d = 2 * 3 / b # folds
-    li t0, 6
-    sw t0, -2024(s0)
-    lw a0, -2024(s0)
+    li a0, 6
     lw a1, -2028(s0)
     call .Lbaz_divide
-    sw a0, -2024(s0)
+    mv t0, a0
+    sw t0, -2024(s0)
 === 72:     d = b * -13 / 2 / 3 % 4 # folds
     lw t0, -2028(s0)
     slli t1, t0, 2
     sub t1, t1, t0
     slli t1, t1, 2
     add t0, t1, t0
-    sub t0, zero, t0
-    mv a0, t0
+    sub a0, zero, t0
     li a1, 6
     call .Lbaz_divide
-    mv t0, a0
-    mv a0, t0
     li a1, 4
     call .Lbaz_divide
     mv t0, a1
     sw t0, -2024(s0)
 === 74:     d = b * -1 * -1 / one # folds
-    lw t0, -2028(s0)
-    sw t0, -2024(s0)
-    lw a0, -2024(s0)
+    lw a0, -2028(s0)
     lw a1, -2032(s0)
     call .Lbaz_divide
-    sw a0, -2024(s0)
+    mv t0, a0
+    sw t0, -2024(s0)
 === 76:     d = b / 1 / 1 # folds
     lw t0, -2028(s0)
     sw t0, -2024(s0)
 === 80:     d = b * 9 / -1 / 3 # folds
     lw t0, -2028(s0)
     slli t1, t0, 3
-    add t0, t1, t0
-    mv a0, t0
+    add a0, t1, t0
     li a1, -1
     call .Lbaz_divide
-    mv t0, a0
-    mv a0, t0
     li a1, 3
     call .Lbaz_divide
     mv t0, a0
@@ -157,27 +146,21 @@
     lw t0, -2028(s0)
     slli t1, t0, 2
     add t0, t1, t0
-    slli t0, t0, 3
-    mv a0, t0
+    slli a0, t0, 3
     li a1, 2
     call .Lbaz_divide
-    mv t0, a0
-    mv a0, t0
     lw a1, -2032(s0)
     call .Lbaz_divide
-    mv t0, a0
-    mv a0, t0
     li a1, 4
     call .Lbaz_divide
     mv t0, a0
     sw t0, -2024(s0)
 === 86:     d = b / (1 + 1) # folds
-    lw t0, -2028(s0)
-    sw t0, -2024(s0)
-    lw a0, -2024(s0)
+    lw a0, -2028(s0)
     li a1, 2
     call .Lbaz_divide
-    sw a0, -2024(s0)
+    mv t0, a0
+    sw t0, -2024(s0)
 === 88:     d = b << (1 + 1) # folds
     lw t0, -2028(s0)
     slli t0, t0, 2
@@ -187,12 +170,11 @@
     srai t0, t0, 2
     sw t0, -2024(s0)
 === 92:     d = b % (2 * 2) # folds
-    lw t0, -2028(s0)
-    sw t0, -2024(s0)
-    lw a0, -2024(s0)
+    lw a0, -2028(s0)
     li a1, 4
     call .Lbaz_divide
-    sw a1, -2024(s0)
+    mv t0, a1
+    sw t0, -2024(s0)
 === 96:     d = -(2 + 3) # folds
     li t0, -5
     sw t0, -2024(s0)

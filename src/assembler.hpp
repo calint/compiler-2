@@ -10,6 +10,7 @@
 #include <iterator>
 #include <memory>
 #include <optional>
+#include <ranges>
 #include <span>
 #include <string>
 #include <string_view>
@@ -105,7 +106,7 @@ class assembler {
     // lines that 'capture' kept apart, added where 'append' is called
     using captured_lines = std::vector<line>;
 
-    // changes made by 'optimize_jumps'
+    // changes made by 'optimize_jumps' and 'remove_reloads'
     struct optimization_counts {
         size_t jumps_to_next{};
         size_t unreachable_jumps{};
@@ -291,9 +292,10 @@ class assembler {
         return optimizations_;
     }
 
-    // removes jumps that change nothing and turns a branch over a jump into
-    // the inverse branch, repeating because each change can enable another
-    auto optimize_jumps() -> void {
+    // the jump optimizations unless '--nopt', then 'remove_reloads'; neither
+    // changes a label or a line that is not a jump, so the labels and the
+    // labels named outside jumps are found once
+    auto optimize(const bool is_jumps_optimized) -> void {
         assert(captures_.empty());
 
         const std::unordered_map<std::string_view, size_t> labels{
@@ -304,54 +306,11 @@ class assembler {
             labels_named_outside_jumps(labels),
         };
 
-        bool changed{true};
-        while (changed) {
-            changed = false;
-
-            // removed jumps no longer reference their targets
-            const std::unordered_set<std::string_view> referenced{
-                referenced_labels(labels, named),
-            };
-
-            for (size_t index{}; index < lines_.size(); ++index) {
-                changed = optimize_jump(index, labels, referenced) or changed;
-            }
+        if (is_jumps_optimized) {
+            optimize_jumps(labels, named);
         }
-    }
 
-    // removes a load that reads back into the register what the instruction
-    // before it stored, see above the class
-    auto remove_reloads() -> void {
-        assert(captures_.empty());
-
-        const std::unordered_map<std::string_view, size_t> labels{
-            label_lines(),
-        };
-
-        const std::unordered_set<std::string_view> referenced{
-            referenced_labels(labels, labels_named_outside_jumps(labels)),
-        };
-
-        // the instruction executed right before 'l', none at an entry
-        const line* previous{};
-        for (line& l : lines_) {
-            if (is_enterable(l, referenced)) {
-                previous = nullptr;
-                continue;
-            }
-
-            if (l.code_size == 0) {
-                continue;
-            }
-
-            if (previous != nullptr and is_reload(*previous, l)) {
-                remove(l);
-                ++optimizations_.removed_reloads;
-                continue;
-            }
-
-            previous = &l;
-        }
+        remove_reloads(referenced_labels(labels, named));
     }
 
     // e.g. back to the code after the data of a failure handler
@@ -422,6 +381,21 @@ class assembler {
         }
 
         return labels;
+    }
+
+    // the line of the instruction added last, none when a label is after it
+    [[nodiscard]] auto last_instruction() -> line* {
+        for (line& l : std::views::reverse(current_lines())) {
+            if (not l.label.empty()) {
+                return nullptr;
+            }
+
+            if (l.code_size != 0) {
+                return &l;
+            }
+        }
+
+        return nullptr;
     }
 
     [[nodiscard]] auto lines() -> std::vector<line>& { return lines_; }
@@ -532,6 +506,12 @@ class assembler {
         default:
             return std::nullopt;
         }
+    }
+
+    static auto remove(line& l) -> void {
+        l.jump.reset();
+        l.code_size = 0;
+        l.removed = true;
     }
 
   private:
@@ -717,6 +697,27 @@ class assembler {
         return true;
     }
 
+    // removes jumps that change nothing and turns a branch over a jump into
+    // the inverse branch, repeating because each change can enable another
+    auto
+    optimize_jumps(const std::unordered_map<std::string_view, size_t>& labels,
+                   const std::unordered_set<std::string_view>& named) -> void {
+
+        bool changed{true};
+        while (changed) {
+            changed = false;
+
+            // removed jumps no longer reference their targets
+            const std::unordered_set<std::string_view> referenced{
+                referenced_labels(labels, named),
+            };
+
+            for (size_t index{}; index < lines_.size(); ++index) {
+                changed = optimize_jump(index, labels, referenced) or changed;
+            }
+        }
+    }
+
     // a jump target is viewed through the label map because inverting a
     // branch replaces its target string
     [[nodiscard]] auto referenced_labels(
@@ -739,6 +740,33 @@ class assembler {
         }
 
         return referenced;
+    }
+
+    // removes a load that reads back into the register what the instruction
+    // before it stored, see above the class
+    auto remove_reloads(const std::unordered_set<std::string_view>& referenced)
+        -> void {
+
+        // the instruction executed right before 'l', none at an entry
+        const line* previous{};
+        for (line& l : lines_) {
+            if (is_enterable(l, referenced)) {
+                previous = nullptr;
+                continue;
+            }
+
+            if (l.code_size == 0) {
+                continue;
+            }
+
+            if (previous != nullptr and is_reload(*previous, l)) {
+                remove(l);
+                ++optimizations_.removed_reloads;
+                continue;
+            }
+
+            previous = &l;
+        }
     }
 
     //
@@ -833,12 +861,6 @@ class assembler {
     [[nodiscard]] static auto is_symbol_char(const char ch) -> bool {
         return std::isalnum(static_cast<unsigned char>(ch)) != 0 or ch == '_' or
                ch == '.' or ch == '$';
-    }
-
-    static auto remove(line& l) -> void {
-        l.jump.reset();
-        l.code_size = 0;
-        l.removed = true;
     }
 
     [[nodiscard]] static auto

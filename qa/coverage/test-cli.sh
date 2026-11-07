@@ -124,6 +124,20 @@ CLI_BINARY_NAME() {
     echo ok
 }
 
+CLI_RELOADS() {
+    echo -n "cli rv32i reload after a jump to the next line: "
+    # the 'j' to the end of a folded 'if' falls through, removed by the jump
+    # optimizations, so its label no longer keeps the load after the store
+    "$BIN" --target=rv32i --bin=gen-rv32i.bin --nopt 1657.baz >gen.s 2>err
+    [[ ! -s err ]]
+    "$BIN" --target=rv32i --bin=gen-rv32i.bin 1657.baz >out 2>err
+    [[ ! -s err ]]
+    grep -Fq '# removed reloads after stores: 0' gen.s
+    grep -Fq '# removed reloads after stores: 1' out
+    rm -f gen-rv32i.bin
+    echo ok
+}
+
 CLI_JUMP_OPTIMIZATIONS() {
     echo -n "cli x86 jump optimizations: "
     "$BIN" --target=x86_64 --nopt 0437.baz >gen.s 2>err
@@ -1029,6 +1043,7 @@ CLI_TARGETS
 CLI_BINARY_NAME
 CLI_REPRODUCE_SOURCE
 CLI_JUMP_OPTIMIZATIONS
+CLI_RELOADS
 CLI_CHECKS_NOUB
 CLI_CHECKS_LIST
 CLI_FILE_ERRORS

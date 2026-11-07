@@ -1,6 +1,32 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] hard: round 145 (2026-11-07, user: continue the loop; DB documents
+    against behavior after rounds 138 to 144 and compile time, DC x86_64
+    fixed registers, DA a codegen todo item)
+    => done (2026-11-07): DA the copy of the destination register into 'a0'
+       before a helper call (rv32i) or into 'rax' before 'cqo' (x86_64, a
+       qword destination) retargets the instruction just before it that
+       computes the register ('move_consumed'), the suite listings 424 rv32i
+       and 99 x86_64 instructions shorter (todo item partly done); DC no
+       finding (x86_64 fixed registers and rv32i helpers: 28000 checks of
+       7000 generated programs against a model, division, '%' and run-time
+       shifts in 'write', 'array_copy', 'arrays_equal', record copies and
+       noinline arguments, values across system calls); DB1 the report line
+       'removed reloads after stores' fits the 28 columns of the report; DB3
+       etc/docs/README.md names the reload removal (layers, output step,
+       reports, the cost paragraph of 7.1); DB4 etc/codegen-inefficiencies.*
+       regenerated, its fixed reload example removed, the remaining cases
+       named, its listing command rv32i; DB5 fuzz-constructs runs with
+       '--nopt'; DB8 'remove_reloads' scanned the text of every line a
+       second time for label names (4 to 11 % more compile instructions on
+       larger programs): 'assembler::optimize' finds the labels and the
+       labels named outside jumps once for the jump optimizations and
+       'remove_reloads', which change neither; roome compiles in 4.1 % (x86_64) and 3.8 % (rv32i)
+       fewer instructions than round 144; the labels named outside jumps are
+       now found before the jump optimizations, so a label only a removed
+       jump named no longer keeps a reload (24 compiles of the suite, test
+       'CLI_RELOADS')
 [x] hard: round 144 (2026-11-07, user: keep going until no issues are
     found; CS fuzz campaign, CT regressions over rounds 138 to 143)
     => done (2026-11-07): CS no finding (fuzz-all at scale 3 on every
