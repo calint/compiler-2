@@ -7093,3 +7093,14 @@ SRC=2941 && COMPERR
 # --checks=shift: a narrowing conversion without a shift is computed in its
 # destination, the shift of an inner conversion is checked at its width
 SRC=3500 && EXP=9 && OPTS="--vars=0x40000 --checks=shift" RUN
+
+# on rv32i the sector -1 is the last sector 2^32 - 1 of a card of 2 TB, which
+# a count of the sectors in 32 bits would leave out
+if [[ $MACHINE == rv32i || $MACHINE == rv32i-fpga ]]; then SRC=4100 && SDCARD=2T DIFF; fi
+
+# a sector of 32 bits or less is its value modulo 2^32 on every target, the
+# 'i32' and 'i16' sector -2 is the sector 2^32 - 2 of a card of 2 TB
+if [[ $MACHINE != rv32i-qemu ]]; then SRC=4101 && SDCARD=2T DIFF; fi
+
+# a sector led by an 'i32' is computed at 'i32', an 'i64' in it is narrowed
+if [[ $MACHINE == x86_64 ]]; then SRC=4102 && COMPERR; fi

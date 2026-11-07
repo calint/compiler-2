@@ -1852,6 +1852,8 @@ class builtin_roles final {
         return x.default_type();
     }
 
+    [[nodiscard]] auto i32() const -> const type& { return types_.get().i32; }
+
     [[nodiscard]] auto i64() const -> const type& { return types_.get().i64; }
 
     [[nodiscard]] auto i8() const -> const type& { return types_.get().i8; }

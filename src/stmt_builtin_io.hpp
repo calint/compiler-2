@@ -404,7 +404,19 @@ class stmt_builtin_io final : public statement {
         const operand& buffer_reg{args.at(1)};
         const operand& count{args.at(2)};
 
-        args_.at(0).compile(tc, indent, destination::of_register(descriptor));
+        const expr_any& first_arg{args_.at(0)};
+
+        machine& x{tc.machine()};
+
+        // a sector of 32 bits or less is its value modulo 2^32, e.g. 'i32(-2)'
+        // is 2^32 - 2; writing the 32 bit register zero extends it on x86_64
+        const operand first_reg{
+            first_arg.element(0).get_type().size_bytes() <= sizeof(int32_t)
+                ? x.register_view(descriptor, tc.builtins().i32())
+                : descriptor,
+        };
+
+        first_arg.compile(tc, indent, destination::of_register(first_reg));
 
         // the range is checked after the count
         buffer.ident->load_address(tc, indent, tok(), buffer.info, buffer_reg);
@@ -419,8 +431,6 @@ class stmt_builtin_io final : public statement {
 
         check_range_from_start(tc, indent, buffer_reg, count, known_count,
                                buffer_info);
-
-        machine& x{tc.machine()};
 
         // the count becomes the byte count
         x.scale_index(tok(), indent, count,

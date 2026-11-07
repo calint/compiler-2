@@ -1929,7 +1929,10 @@ What depends on the target is listed here, nothing else does:
    width, and an index, computed in it: 'a[i + i]' with 'i' an 'i32' of
    2000000000 panics 'bounds' on x86_64 and 'overflow' on rv32i; a list led
    by a literal has it (1.7): with 'k' an 'i32' of 31, '1 << k < 0' is false
-   on x86_64 and true on rv32i, 'i32(1) << k < 0' is true on both
+   on x86_64 and true on rv32i, 'i32(1) << k < 0' is true on both; a sector
+   of the default type: 'sector_read(-2, b)' reads sector 2^32 - 2 on rv32i
+   and panics 'sd card' on x86_64, a sector of 32 bits or less, e.g.
+   'i32(-2)', is its value modulo 2^32 on both
 2. the types a target has: 'i64' is rejected on rv32i
 3. the number of scratch registers: an expression that runs out of them on one
    target can be accepted on another (7.11), and the run-time checks take

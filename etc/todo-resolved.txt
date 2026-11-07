@@ -1,6 +1,19 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] hard: round 158 (2026-11-07, user: continue in a loop; EB the io
+    built-ins, EC its sector fix)
+    => done (2026-11-07): EB two target differences on a card of 2 TiB or
+       more: rv32i (linux) kept the sector count capped at 2^32 - 1 and
+       rejected the last sector 2^32 - 1, the routine keeps the last sector
+       (test 4100); a negative 'i32' or 'i16' sector was sector 2^32 - 2 on
+       rv32i and panicked on x86_64, EC (user chose it over documenting the
+       difference): a first argument of 'read', 'write', 'sector_read' and
+       'sector_write' led by 32 bits or less is computed in the 32 bit view
+       of its register, so a sector of 32 bits or less is its value modulo
+       2^32 on every target (test 4101), an 'i64' in it is narrowed (test
+       4102); EB otherwise no finding (2800 runs of generated io programs on
+       three targets with '--nopt' and '--versions')
 [x] hard: round 157 (2026-11-07, user: continue in a loop; DY the todo item
     below)
     => done (2026-11-07): DY the item below (user cleared); listings equal

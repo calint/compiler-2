@@ -58,7 +58,7 @@ class machine_rv32i_linux final : public machine_rv32i {
 
     // the registers as 'machine_rv32i::emit_sector_routines' says; an
     // operating system transfers the sectors of the image file: the image file
-    // is opened at the first transfer, its descriptor and sector count kept in
+    // is opened at the first transfer, its descriptor and last sector kept in
     // '.Lbaz_sd_card', a sector past the end, a failed open or a short transfer
     // panics
     auto emit_sector_routines(const bool read_used, const bool write_used)
@@ -69,11 +69,11 @@ class machine_rv32i_linux final : public machine_rv32i {
         constexpr int read_write{2};
         constexpr int seek_end{2};
         // the 64 bit size of the file, the descriptor, -1 until the file is
-        // opened, and the sector count
+        // opened, and the last sector
         constexpr std::array<int64_t, 4> sd_card_words{0, 0, -1, 0};
         constexpr int64_t size_high_offset{4};
         constexpr int64_t descriptor_offset{8};
-        constexpr int64_t count_offset{12};
+        constexpr int64_t last_offset{12};
         // the arguments are kept while the file is opened, 'a5' with the
         // system call is not written there and an 'ecall' changes only 'a0'
         constexpr std::array<std::string_view, 3> saved{"a0", "a1", "a2"};
@@ -134,17 +134,22 @@ class machine_rv32i_linux final : public machine_rv32i {
         output.srli(1, "a4", "a4", sector_shift);
         output.slli(1, "a1", "a0", high_shift);
         output.or_op(1, "a4", "a4", "a1");
-        // an image of 2 TiB or more has more sectors than a sector number
-        // reaches
+        // the sector count is 'a4' and 'a0' above 32 bits, an image without a
+        // whole sector holds none to transfer
         output.srli(1, "a0", "a0", sector_shift);
+        output.or_op(1, "a1", "a4", "a0");
+        output.beqz(1, "a1", sd_card_failure_.label);
+        // the last sector, of an image of 2 TiB or more the last that a
+        // sector number reaches, 2^32 - 1; a count would not fit 32 bits
         output.beqz(1, "a0", "1f");
-        output.li(1, "a4", -1);
+        output.li(1, "a4", 0);
         output.label(0, "1");
-        output.sw(1, "a4", count_offset, "a3");
+        output.addi(1, "a4", "a4", -1);
+        output.sw(1, "a4", last_offset, "a3");
         restore_saved_registers(1, saved);
         output.label(0, "2");
-        output.lw(1, "a4", count_offset, "a3");
-        output.bgeu(1, "a0", "a4", sd_card_failure_.label);
+        output.lw(1, "a4", last_offset, "a3");
+        output.bltu(1, "a4", "a0", sd_card_failure_.label);
         // 'a0' the descriptor, 'a3' and 'a4' the low and high word of the
         // offset
         output.lw(1, "a7", descriptor_offset, "a3");
