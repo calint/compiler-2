@@ -312,21 +312,24 @@ main:
     # [codegen-inefficiencies.baz:97:29] ix
     lw t0, -1724(s0)
     # [codegen-inefficiencies.baz:97:29] index constant -1 goes into the displacement
-    # [codegen-inefficiencies.baz:97:21] kept the first of two versions of 5 and 6 instructions, the smaller
+    # [codegen-inefficiencies.baz:97:21] kept the first of two versions of 7 and 8 instructions, the smaller
     # [codegen-inefficiencies.baz:30:6] inv(i i32) res i32
     func.inv..97.21:
         # [codegen-inefficiencies.baz:97:21] bind res -> inverted
         # [codegen-inefficiencies.baz:97:21] bind i -> arr[ix - 1] (address: s0 + t0 * 4 - 2032)
         # [codegen-inefficiencies.baz:31:5] res = ~i
-        # [codegen-inefficiencies.baz:31:11] kept the second of two versions of 7 and 5 instructions, the smaller
-        # [codegen-inefficiencies.baz:31:11] allocate scratch register -> t1
+        # [codegen-inefficiencies.baz:31:11] kept the first of two versions, inside a version
         # [codegen-inefficiencies.baz:31:12] ~i
+        # [codegen-inefficiencies.baz:31:12] allocate scratch register -> t1
         slli t1, t0, 2
         add t1, t1, s0
         lw t1, -2032(t1)
+        sw t1, -1704(s0)
+        # [codegen-inefficiencies.baz:31:12] free scratch register t1
+        # [codegen-inefficiencies.baz:31:12] allocate scratch register -> t1
         xori t1, t1, -1
         sw t1, -1704(s0)
-        # [codegen-inefficiencies.baz:31:11] free scratch register t1
+        # [codegen-inefficiencies.baz:31:12] free scratch register t1
     func.inv..97.21.end:
         # [codegen-inefficiencies.baz:97:21] free scratch register t0
     # [codegen-inefficiencies.baz:97:21] allocate scratch register -> t0
@@ -839,11 +842,11 @@ vars.end:
 #    removed unreachable jumps: 0
 # removed same target branches: 0
 # inverted branches over jumps: 2
-# removed reloads after stores: 4
+# removed reloads after stores: 5
 #      removed register copies: 1
 # max scratch registers in use: 4
 #            max scopes in use: 7
 #                     dat size: 0 B
 #              dat var padding: 0 B
 #           max body vars size: 364 B
-#                 instructions: 252
+#                 instructions: 253

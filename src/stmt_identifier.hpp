@@ -45,8 +45,8 @@
 //   'assert_not_whole_array', 'make_scalar_ident_info', 'as_place'
 //                            what a value names when it is a place
 //   'statement::visit_call_effects', 'visit_operand_reads',
-//   'statement::has_call', 'statement::visit_reads',
-//   'statement::assert_result_not_read', 'statement::reads_name',
+//   'statement::visit_reads', 'statement::assert_result_not_read',
+//   'statement::reads_name',
 //   'statement::bare_path'
 //                            the operand walks of 'statement', defined here
 //                            because they need 'stmt_identifier'
@@ -1362,16 +1362,6 @@ inline auto visit_operand_reads(const node_operand& operand,
     }
 
     operand.node->visit_reads(reader);
-}
-
-inline auto statement::has_call() const -> bool {
-    bool found{};
-
-    visit_operands([&found](const node_operand& operand) -> void {
-        found = found or operand.node->has_call();
-    });
-
-    return found;
 }
 
 inline auto statement::visit_reads(const read_visitor reader) const -> void {

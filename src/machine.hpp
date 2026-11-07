@@ -150,7 +150,7 @@ class machine {
   public:
     // which of two versions of the same code 'emit_most_efficient' keeps: the
     // smaller, or to test the other version too, the first or the last
-    enum class kept_version : uint8_t { smaller, first, last };
+    enum class kept_version : uint8_t { smaller, nested, first, last };
 
     // a built-in the target provides as a system call or a routine
     enum class target_call : uint8_t {
@@ -1212,11 +1212,24 @@ class machine {
     // other than 'source', e.g. running out of registers, is not kept, when
     // the first does its error is thrown. each version starts from the
     // state before it, the state of the kept one remains; true when the first
-    // is kept, 'toc' keeps its peaks ('toc::emit_most_efficient')
+    // is kept, 'toc' keeps its peaks ('toc::emit_most_efficient'). inside a
+    // version or discarded code only the first is emitted, so nested choices
+    // compile code twice, not twice per level, unless '--versions=nested'
     [[nodiscard]] auto
     emit_most_efficient(const token& src_loc_tk, const size_t indent,
                         const std::function_ref<void()> emit_first,
                         const std::function_ref<void()> emit_second) -> bool {
+
+        assembler& output{target_assembler()};
+
+        if (output.is_capturing() and options_.kept != kept_version::nested) {
+            comment(src_loc_tk, indent,
+                    "kept the first of two versions, inside a version");
+
+            emit_first();
+
+            return true;
+        }
 
         // note: the second version of each caller holds the registers of the
         //       first and one more, with the same storage and inlining depth
@@ -1230,8 +1243,6 @@ class machine {
         const version_choice choice{choose_version(first, second)};
 
         comment(src_loc_tk, indent, choice.comment);
-
-        assembler& output{target_assembler()};
 
         compiled_version& kept{choice.keeps_first ? first : *second};
 
@@ -1549,9 +1560,8 @@ class machine {
             dst_type.padding_gaps(max_gap_count),
         };
 
-        // note: a measured threshold, not 'emit_most_efficient': both forms
-        //       would multiply the versions of the inlined calls around it,
-        //       and an instance with thousands of gaps would cost compile time
+        // note: a measured threshold, not 'emit_most_efficient': an instance
+        //       with thousands of gaps would cost compile time
 
         if (gaps.size() > max_gap_count) {
             comment(src_loc_tk, indent, "zero instance for its padding: {} B",

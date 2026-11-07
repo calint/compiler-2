@@ -148,8 +148,10 @@ options:
                       directory of the program, it must exist and hold the
                       sector (default: sdcard.img)
   --nopt              no jump optimizations
-  --versions=KEPT     of two versions of the same code keep the smaller
-                      (default), or for testing the first or the last
+  --versions=KEPT     of two versions of the same code keep the smaller,
+                      nested choices taking the first (default), the smaller
+                      also of nested choices ('nested', compile time doubles
+                      per level), or for testing the first or the last
   --reproduce-source  check that the source written back from the parse
                       matches the input, else write it to diff.baz
   --version           the version of the compiler

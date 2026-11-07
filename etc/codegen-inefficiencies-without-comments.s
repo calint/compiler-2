@@ -117,6 +117,7 @@ main:
         slli t1, t0, 2
         add t1, t1, s0
         lw t1, -2032(t1)
+        sw t1, -1704(s0)
         xori t1, t1, -1
         sw t1, -1704(s0)
     func.inv..97.21.end:

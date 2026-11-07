@@ -177,10 +177,10 @@ class stmt_identifier;
 //                  'std::unreachable()'): overridden by every value and by
 //                  every node whose 'trace_assignment' checks its reads with
 //                  'assert_result_not_read', a leaf lists none;
-//                  'visit_reads', 'visit_call_effects' and
-//                  'has_call' walk the operands, 'stmt_identifier'
-//                  adds its own read, 'stmt_call' and 'stmt_builtin_io' what
-//                  the call writes, 'stmt_call' its callee
+//                  'visit_reads' and 'visit_call_effects' walk the
+//                  operands, 'stmt_identifier' adds its own read,
+//                  'stmt_call' and 'stmt_builtin_io' what the call writes,
+//                  'stmt_call' its callee
 //   a value        'fold': 'expr_zero', 'expr_bool', 'stmt_identifier',
 //                  'stmt_builtin_array_length' and 'stmt_builtin_convert',
 //                  forwarded by 'expr_arith' and 'expr_any';
@@ -249,10 +249,6 @@ class statement {
 
         return std::nullopt;
     }
-
-    // a call in this node or its operands, which every compile of the node
-    // compiles again with its arguments ('stmt_identifier.hpp')
-    [[nodiscard]] virtual auto has_call() const -> bool;
 
     // true when computing the value at another width keeps its low bits
     [[nodiscard]] virtual auto keeps_low_bits() const -> bool { return false; }

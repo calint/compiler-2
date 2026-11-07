@@ -1,6 +1,36 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] hard: round 153 (2026-11-07, user: continue the loop, keep it simple, a
+    todo fix needs clearance; DT the todo item below, DU aliasing)
+    => done (2026-11-07): DT the item below (user cleared, with the option
+       '--versions=nested'); DU no unsound acceptance (47000 generated
+       programs with records, arrays, globals, methods, 'foo', 'array_copy'
+       and recursion against four aliasing models, inlined, noinline and
+       mixed, on x86_64 and rv32i-fpga with '--nopt' and '--versions');
+       three rejections of programs that cannot alias noted in the todo
+       item on conservative rejections
+[x] medium: the compile time of nested inlined calls with an indexed
+    argument doubles per level: 'inline_call::compile_with_bindings'
+    compiles each such body in two versions, and a nested call inside each
+    version again (a valid 'res = r(ps[gi], n - 1)' that 'main' calls takes
+    on rv32i-fpga 31 ms at depth 8, 460 ms at 12 and 1.8 s at 14,
+    2026-11-06; the expanded recursion of a
+    body check since round 54 A1 reaches it too, e.g. 12 -> 678 ms);
+    'expr_arith' avoids it for calls in a list; either fix changes listings
+    (design review series 2, round 54 A2)
+    => fix if wanted: only the outermost choice measures both versions and
+       nested ones take the first, or the choice is made from 'body_uses'
+       (a parameter read more than once gets a register) without a second
+       compile; both narrow the version optimization, so measure
+    => done (2026-11-07, round 153 DT, user cleared): a choice inside a
+       version or discarded code takes its first version
+       ('machine::emit_most_efficient', 'assembler::is_capturing'), so the
+       code under a choice compiles twice at any depth; the exception of
+       'expr_arith' for lists with calls and 'statement::has_call' removed;
+       depth 20 51 s -> 5 ms; the tests 0.17 % more rv32i instructions
+       (175164 -> 175460), x86_64 1 fewer, roome rv32i-fpga 10 more (7086 ->
+       7096); '--versions=nested' measures every choice as before (user)
 [x] hard: round 152 (2026-11-07, user: continue the loop; DR 'stmt_call',
     DS check lists)
     => done (2026-11-07): DS no finding (about 26000 generated programs,

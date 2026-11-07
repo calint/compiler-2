@@ -2006,8 +2006,6 @@ class stmt_call final : public statement {
                                 tc.overflow_options(dst));
     }
 
-    [[nodiscard]] auto has_call() const -> bool override { return true; }
-
     // the calls in the arguments run first, then the body
     auto visit_call_effects(const toc& tc,
                             const call_effect_visitor visitor) const

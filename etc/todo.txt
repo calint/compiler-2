@@ -34,19 +34,6 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
        or roome puts it on the next line; rejected: an error for the
        ambiguity (forbids a block after a declaration), '{}' required before
        a block (against the omitted '{}' style), no bare blocks (a feature)
-[ ] medium: the compile time of nested inlined calls with an indexed
-    argument doubles per level: 'inline_call::compile_with_bindings'
-    compiles each such body in two versions, and a nested call inside each
-    version again (a valid 'res = r(ps[gi], n - 1)' that 'main' calls takes
-    on rv32i-fpga 31 ms at depth 8, 460 ms at 12 and 1.8 s at 14,
-    2026-11-06; the expanded recursion of a
-    body check since round 54 A1 reaches it too, e.g. 12 -> 678 ms);
-    'expr_arith' avoids it for calls in a list; either fix changes listings
-    (design review series 2, round 54 A2)
-    => fix if wanted: only the outermost choice measures both versions and
-       nested ones take the first, or the choice is made from 'body_uses'
-       (a parameter read more than once gets a register) without a second
-       compile; both narrow the version optimization, so measure
 [ ] easy: low priority: the compile time of a value of a huge type grows
     with its bytes where it is a result or a constructor on rv32i (bug hunt
     round 1 K3.1): 'machine_rv32i::zero' takes about 0.5 ns per byte, a
@@ -471,6 +458,12 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
     bodies do not count as assigning, a call argument reads its whole path
     when its destination is written in parts ('p = {7, gy(p)}' is rejected
     while 'p = {7, p.y}' is accepted, round 140 CI)
+    => more cases (round 153 DU): 'h(a, a)' whose body writes 'a.x'
+       through a call and 'a.y' itself, and a 'foo' over an array whose body
+       never reads 'e', are rejected as sharing storage: the
+       'stmt_identifier' constructor records a read of the whole path it
+       parses; not done, the fix defers that record through 'expr_any' until
+       the call knows the argument is a place, which complicates the parse
 [ ] hard: UB detection: accept partial results when the caller's destination is
     already initialized (call-site coverage summary); a body that sets only
     'res.pos.y' is "may return without setting its result 'res'"

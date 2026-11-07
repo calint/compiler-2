@@ -260,6 +260,11 @@ class assembler {
         return instructions_in(code_size_of(lines));
     }
 
+    // inside 'capture', e.g. a version or discarded code
+    [[nodiscard]] auto is_capturing() const -> bool {
+        return not captures_.empty();
+    }
+
     // nothing is buffered
     [[nodiscard]] auto is_empty() const -> bool { return lines_.empty(); }
 
@@ -378,10 +383,6 @@ class assembler {
 
     // a line that emits no code, e.g. a comment or a directive
     auto add_text(std::string text) -> void { add_line(std::move(text), 0); }
-
-    [[nodiscard]] auto is_capturing() const -> bool {
-        return not captures_.empty();
-    }
 
     [[nodiscard]] auto is_conditional(const jump_info& jump) const -> bool {
         return jump.mnemonic != unconditional_jump_mnemonic();

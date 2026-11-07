@@ -862,15 +862,22 @@ CLI_VERSIONS() {
     grep -Fxq "# max scratch registers in use: 15" gen.s
     "$BIN" --target=rv32i-fpga --bin=gen-rv32i.bin --versions=last 1224.baz >gen.s 2>err
     grep -Fxq "# max scratch registers in use: 29" gen.s
-    # 1679.baz: a call in a value stored to memory compiles in place in both
-    # modes, without a temporary
+    # 1679.baz: a call in a value stored to memory compiles in place without a
+    # temporary, the version through a scratch register holds one across the
+    # call
     "$BIN" --versions=first 1679.baz >gen.s 2>err
     grep -Fxq ";           max body vars size: 16 B" gen.s
     grep -Fxq ";            max scopes in use: 3" gen.s
     "$BIN" --versions=last 1679.baz >gen.s 2>err
-    grep -Fxq ";           max body vars size: 16 B" gen.s
+    grep -Fxq ";           max body vars size: 24 B" gen.s
     "$BIN" --vars=16 1679.baz >gen.s 2>err
     [[ ! -s err ]]
+    # 0110.baz: choices nested in a version take the first unless 'nested'
+    "$BIN" --target=rv32i-fpga --bin=gen-rv32i.bin 0110.baz >gen.s 2>err
+    grep -Fq "kept the first of two versions, inside a version" gen.s
+    "$BIN" --target=rv32i-fpga --bin=gen-rv32i.bin --versions=nested 0110.baz >gen.s 2>err
+    [[ ! -s err ]]
+    ! grep -Fq "inside a version" gen.s
     echo ok
 }
 
@@ -935,7 +942,7 @@ CLI_OPTION_MESSAGES() {
     "$BIN" --report=x 0015.baz >/dev/null 2>err || true
     grep -Fq "', supported reports are: registers" err
     "$BIN" --versions=x 0015.baz >/dev/null 2>err || true
-    grep -Fq "', supported values are: smaller, first, last" err
+    grep -Fq "', supported values are: smaller, nested, first, last" err
     "$BIN" --vars=17 0015.baz >/dev/null 2>err || true
     grep -Fq "error: invalid --vars: '17' is not a multiple of 16" err
     "$BIN" --bin= 0015.baz >/dev/null 2>err || true

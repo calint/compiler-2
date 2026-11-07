@@ -1351,46 +1351,27 @@ counts as the ones it expands to. The shorter is kept, on ties the first; a
 caller passes first the version without an extra register where one of them
 has it ('toc::emit_most_efficient').
 
-### 5.2 Why so many
+### 5.2 Nested choices take the first
 
-A version compiles everything under it, including the choices inside it, so a
-choice in an inlined body is compiled once per version of every choice above
-it. The work is the product of the version counts along a path, not the sum.
+A version compiles everything under it, including the choices inside it. A
+choice inside a version, or inside discarded code such as a dry run, is not
+measured: it emits its first version ('machine::emit_most_efficient'). So the
+code under a choice compiles twice whatever its depth, and the outermost choice
+compares two whole forms: the first version with the first of every choice
+inside, and the second version with the first of every choice inside.
 
-It stays polynomial in the depth when the chain passes the same indexed
-argument on: a version that folds an address into a register gives the body
-an argument that is no longer indexed, so only the version that keeps the
-index passes the choice down.
+Measuring every choice made the work the product of the version counts along a
+path: a chain of inlined calls each passing a new indexed argument, e.g. the
+'res = r(ps[gi], n - 1)' of 'r', doubled per level on rv32i, 1.5 s at depth
+12 and 51 s at depth 20; now 5 ms at either. Taking the first inside a version
+cost 0.17% of the rv32i code of the tests (175164 to 175460 instructions, with
+their options and with '--checks=noub'), 1 instruction less on x86_64, and 10
+of the 7086 of roome on rv32i-fpga (decided 2026-11-07). '--versions=nested'
+measures every choice again, for the smaller code at that compile time.
 
-Choices made for a chain of inlined calls, each passing an indexed argument
-on:
-
-```text
-depth of the chain    0    1    2    3    4    5    6    7    8
-x86_64 choices        1    2    3    4    5    6    7    8    9
-rv32i choices         3    8   15   24   35   48   63   80   99
-```
-
-x86_64 has base + index addressing, so only the assignment chooses, once per
-body. rv32i grows as (n + 1) * (n + 3). The trade is compile time for code
-size: the depth 8 chain compiles in about 13 ms on rv32i against 8 ms on
-x86_64.
-
-It grows exponentially when each level passes a new indexed argument, e.g.
-'r(ps, ps[i + n], i, n - 1)' in the body of 'r': every version of a level has
-an indexed argument to pass down, so on rv32i each level doubles the work. Such
-a recursion 11 levels deep compiles in about 0.4 s on rv32i against 5 ms on
-x86_64; a 'noinline' function compiles its body once.
-
-Not every choice is measured. An expression stored to memory that calls a
-function is compiled in place ('statement::has_call'): measuring it would
-compile the call once per version, the body of an inlined one and the
-arguments of a noinline one, so a chain of such calls, e.g. 'var t = f(x) * 2
-+ x' in each body or 'var r = g(g(g(a) + 1) + 1) + 1' with 'g' noinline,
-would double the work per level. The padding of an instance is zeroed gap by gap
-or as the whole instance by a gap count that each backend measured once
-('machine::zero_padding'): compiling both would multiply the versions above
-it, and an instance with thousands of gaps would cost compile time.
+The padding of an instance is zeroed gap by gap or as the whole instance by a
+gap count that each backend measured once ('machine::zero_padding'): an
+instance with thousands of gaps would cost compile time.
 
 The parse also doubles its work per level in one case. Deducing a type
 argument from a path argument parses the path on a copy of the tokenizer with
@@ -1445,7 +1426,9 @@ own scopes.
 
 Only the kept version runs, so a miscompile in the other one would stay hidden:
 '--versions=first' and '--versions=last' keep that version instead of the
-smaller, and 'qa/coverage/test-versions.sh' runs the cases with each.
+smaller, and 'qa/coverage/test-versions.sh' runs the cases with each. A choice
+inside a version emits its first with either (5.2); the script also runs the
+cases with '--versions=nested', which emits the second where it is smaller.
 
 ## 6. Addresses: how a path such as 'w.rooms[i].items[j].x' becomes an operand
 
@@ -1744,8 +1727,8 @@ Cost:
 3. every function is checked without its calls like a noinline body, and an
    error that needs the arguments of a call ends that check (1.5)
 4. a statement compiles once per inlined call and per version, so its compile
-   must add the same to 'toc' each time (1.4), and the compile time multiplies
-   along nested choices (5.2)
+   must add the same to 'toc' each time (1.4), and a choice inside a version
+   takes the first (5.2)
 5. an inlined body holds the registers of its caller (1.8), and the limits of
    inlined calls ('inline_call', e.g. 64 levels of an inlined recursion) depend
    on the caller
@@ -1785,8 +1768,7 @@ for the same reason three headers define members of an earlier class:
 'tokenizer.hpp' the 'compile_error' of a tokenizer, 'register_report.hpp'
 'machine::register_error' and 'machine::register_peak_report', and
 'stmt_identifier.hpp' the operand walks of 'statement' ('visit_reads',
-'visit_call_effects', 'has_call', 'reads_name',
-'assert_result_not_read') and 'statement::bare_path'. A forward
+'visit_call_effects', 'reads_name', 'assert_result_not_read') and 'statement::bare_path'. A forward
 declaration of a class used only by reference or pointer is the opaque-pointer
 pattern and is also allowed, e.g. 'stmt_def_dat' and 'stmt_def_func' in
 'toc.hpp'.
@@ -1834,9 +1816,9 @@ are compiled and the shorter is kept (chapter 5).
 Rejected: a cost model, which would duplicate the code generator of each
 backend and have to follow every change of it.
 
-Cost: the compile time multiplies along nested choices (5.2); every compile must
-be repeatable (1.4); the state a version changes is saved and put back by its
-owner (5.3).
+Cost: the code under a choice compiles twice, a choice inside it takes the
+first (5.2); every compile must be repeatable (1.4); the state a version
+changes is saved and put back by its owner (5.3).
 
 ### 7.11 The front end holds registers in stack order
 

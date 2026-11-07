@@ -12,7 +12,7 @@
 #   report  merge the profiles into 'report/' and remove them
 #
 # 'UPDATE=1' writes the output of each case as its expected '.out' file
-# 'VERSIONS=first' or 'VERSIONS=last' compiles with that '--versions' and runs
+# 'VERSIONS=first', 'last' or 'nested' compiles with that '--versions' and runs
 # only the cases that run the program, see 'test-versions.sh'
 
 set -e
