@@ -1277,9 +1277,6 @@ class inline_call final {
         // e.g. the scratch register of an expression, or a parameter that
         // stands for one
         if (dst.is_register()) {
-            // note: a register has no address to keep
-            assert(not dst.is_final_address());
-
             return param_binding::make_register(name, dst.operand(),
                                                 dst.text());
         }
@@ -1617,11 +1614,11 @@ class noinline_call final {
                             const std::span<const noinline_arg> arguments)
         -> void {
 
-        // note: 'stmt_call::compile' checked the result, a result that is
-        //       not in memory or is widened goes through a temporary
+        // note: 'stmt_call::compile' checked the result, a result in a
+        //       register or widened goes through a temporary
 
         if (func.has_result()) {
-            assert(dst.operand().is_memory());
+            assert(dst.storage());
             assert(dst.type_ref().is_same(func.result_type()));
 
             // note: an array literal gives its call elements an element
@@ -1644,8 +1641,7 @@ class noinline_call final {
         -> bool {
 
         return func.has_result() and
-               (not dst.operand().is_memory() or
-                call_site::result_type_differs(dst, func));
+               (dst.is_register() or call_site::result_type_differs(dst, func));
     }
 
     // the destination for the result, the argument for a parameter
@@ -1995,6 +1991,14 @@ class stmt_call final : public statement {
             noinline_call{call}.compile(tc, indent, dst);
         }
 
+        // a call statement, its result is not used
+        if (dst.is_empty()) {
+            // note: the parse gives a call statement no operators
+            assert(get_unary_ops().is_empty());
+
+            return;
+        }
+
         // the operators of the call apply to its result where it is used, at
         // the width and with the overflow check of the destination, e.g. the
         // '~' of '~f(x)'
@@ -2210,11 +2214,13 @@ class stmt_call final : public statement {
         std::vector<reference> references;
 
         // none for a destination without storage, e.g. a register
-        if (dst.storage()) {
+        const std::optional<storage_path> dst_storage{dst.storage()};
+
+        if (dst_storage) {
             references.push_back(make_reference(
                 tc, std::nullopt, callee_name_token(),
                 std::format("the result destination {}", in_quotes(dst.text())),
-                *dst.storage()));
+                *dst_storage));
         }
 
         for (size_t i{}; i < args_.size(); ++i) {

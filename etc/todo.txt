@@ -148,9 +148,6 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
     => not done (2026-11-05, round 94): the no-UB guarantee does not need
        it, the code never runs, and a dry run at every call in four kinds
        of skipped code goes against the simplicity goal of AGENTS.md
-[ ] medium: aliasing: 'destination' as a variant '{none, reg, storage}';
-    the storage part is done ('std::optional<stored_name>', the kind follows
-    from the members, 'ident_info.hpp'), the operand still sits outside it
 [ ] medium: low priority: conversions: rows 1 and 2 of
     'stmt_builtin_convert::plan_scratch_type' decide alike at W in one
     predicate, so a list narrower than the type is also measured and computed

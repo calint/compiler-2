@@ -1,6 +1,18 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] medium: aliasing: 'destination' as a variant '{none, reg, storage}';
+    the storage part is done ('std::optional<stored_name>', the kind follows
+    from the members, 'ident_info.hpp'), the operand still sits outside it
+    => done (2026-11-07, round 138): 'std::variant<std::monostate,
+       held_register, stored_name>', the address and 'is_final_address' in
+       'stored_name'; a memory operand without storage, a final address of
+       a register and the operand of nowhere cannot be made; a call
+       statement returns before its operators, 'has_result_temporary' and
+       'assert_call' ask the kind, the result storage of
+       'assert_no_shared_storage' read once; +34 lines (the smaller
+       version, only 'is_final_address' moved, left 'operand()' of nowhere);
+       listings unchanged
 [x] hard: round 137 (2026-11-07, user: all night; BV the programs of
     fuzz-whole.py that ran out of registers)
     => done (2026-11-07): 14 % of its programs were rejected for registers

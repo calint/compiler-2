@@ -401,17 +401,29 @@ struct value_use {
 // where 'compile' writes a value: nowhere for a statement, a register, or the
 // storage that a name of the source resolves to, e.g. 'p.x'; it is not changed
 // after it is made, a field or an element of it is a destination of its own
-// note: the kind follows from the members: storage when 'stored_' is set, a
-//       register when the operand is one, nowhere else
 
 class destination final {
-    ::operand operand_;
+    // e.g. a scratch register that an expression is computed in
+    struct held_register {
+        ::operand reg;
+    };
+
+    // what a name in storage resolved to and the root variable and the path
+    // of it that it names, all stepped with 'field' and 'element'
+    struct stored_name {
+        ::operand address;
+        // the address is final, the name need not be resolved again, e.g. an
+        // indexed element or an address loaded from a slot
+        bool is_final_address{};
+        ident_info info;
+        storage_path storage{};
+    };
+
+    // nowhere for a statement
+    std::variant<std::monostate, held_register, stored_name> place_;
     // the destination as written, for the comments and the diagnostics, e.g.
     // 'w.ps[0]'; a temporary has its name, a register its register
     std::string text_;
-    // the operand is the address, the name need not be resolved again, e.g.
-    // an indexed element or an address loaded from a slot
-    bool is_final_address_{};
     // its arithmetic wraps on purpose, see 'as_wrapping'; otherwise the
     // overflow check is as '--checks' asks
     bool wraps_{};
@@ -419,16 +431,6 @@ class destination final {
     // inlined call bound to a register; a register the compiler allocated has
     // none
     bool is_named_{};
-
-    // what a name in storage resolved to and the root variable and the path
-    // of it that it names, both stepped with 'field' and 'element'
-    struct stored_name {
-        ident_info info;
-        storage_path storage{};
-    };
-
-    // none for a register or nowhere
-    std::optional<stored_name> stored_;
 
     // what a resolved name adds when it is the destination of an assignment
     struct name_parts {
@@ -456,29 +458,30 @@ class destination final {
     // destination: the storage at the address computed for it, or as resolved
     [[nodiscard]] auto bound_info() const -> ident_info {
         // note: a register destination is bound as a register
-        assert(stored_);
+        const stored_name& name{stored()};
 
-        if (is_final_address_) {
-            return stored_->info.at_address(operand_);
+        if (name.is_final_address) {
+            return name.info.at_address(name.address);
         }
 
-        return stored_->info;
+        return name.info;
     }
 
     // the element 'index' of the array, e.g. of an array literal; the type
     // of an array destination is its element type
     [[nodiscard]] auto element(const size_t index) const -> destination {
         // note: an array is in storage
-        assert(stored_);
+        stored_name name{stored()};
 
-        destination result{*this};
-
-        result.operand_.increment_offset(
+        name.address.increment_offset(
             address_offset(index * type_ref().size_bytes()));
 
-        result.is_final_address_ = true;
-        result.stored_->info = stored_->info.as_element();
-        result.stored_->storage.path.add_fixed_index(index);
+        name.is_final_address = true;
+        name.info = name.info.as_element();
+        name.storage.path.add_fixed_index(index);
+
+        destination result{*this};
+        result.place_ = std::move(name);
         result.text_ += std::format("[{}]", index);
 
         return result;
@@ -487,13 +490,14 @@ class destination final {
     // the field 'fld', as the comments name it
     [[nodiscard]] auto field(const type_field& fld) const -> destination {
         // note: a record is in storage
-        assert(stored_);
+        stored_name name{stored()};
+        name.address = operand_at(fld.offset, fld.type_ref());
+        name.is_final_address = true;
+        name.info = name.info.field(fld);
+        name.storage.path.add_field(fld.offset);
 
         destination result{*this};
-        result.operand_ = operand_at(fld.offset, fld.type_ref());
-        result.is_final_address_ = true;
-        result.stored_->info = stored_->info.field(fld);
-        result.stored_->storage.path.add_field(fld.offset);
+        result.place_ = std::move(name);
         result.text_ += std::format(".{}", fld.name);
 
         return result;
@@ -510,55 +514,65 @@ class destination final {
     [[nodiscard]] auto is_array() const -> bool { return shape().is_array(); }
 
     [[nodiscard]] auto is_empty() const -> bool {
-        return not stored_ and not operand_.is_register();
-    }
-
-    [[nodiscard]] auto is_final_address() const -> bool {
-        return is_final_address_;
+        return std::holds_alternative<std::monostate>(place_);
     }
 
     [[nodiscard]] auto is_named() const -> bool { return is_named_; }
 
     [[nodiscard]] auto is_register() const -> bool {
-        return not stored_ and operand_.is_register();
+        return std::holds_alternative<held_register>(place_);
     }
 
-    [[nodiscard]] auto operand() const -> const ::operand& { return operand_; }
+    // the register or the address of the storage
+    [[nodiscard]] auto operand() const -> const ::operand& {
+        if (const held_register* const held{
+                std::get_if<held_register>(&place_),
+            }) {
+
+            return held->reg;
+        }
+
+        return stored().address;
+    }
 
     // 'offset' bytes into the destination as 'value_type', e.g. the padding
     // after a field, which no path names
     [[nodiscard]] auto operand_at(const size_t offset,
                                   const type& value_type) const -> ::operand {
 
-        ::operand result{::operand::mem(operand_, value_type)};
+        ::operand result{::operand::mem(operand(), value_type)};
         result.increment_offset(address_offset(offset));
         return result;
     }
 
     // an unsized one gets its length from the argument
     [[nodiscard]] auto shape() const -> array_shape {
-        return stored_ ? stored_->info.shape() : array_shape{};
+        const stored_name* const name{std::get_if<stored_name>(&place_)};
+        return name != nullptr ? name->info.shape() : array_shape{};
     }
 
     [[nodiscard]] auto storage() const -> std::optional<storage_path> {
-        if (not stored_) {
+        const stored_name* const name{std::get_if<stored_name>(&place_)};
+
+        if (name == nullptr) {
             return std::nullopt;
         }
 
-        return stored_->storage;
+        return name->storage;
     }
 
     [[nodiscard]] auto text() const -> const std::string& { return text_; }
 
     [[nodiscard]] auto type_ref() const -> const type& {
-        if (stored_) {
-            return stored_->info.type_ref();
+        if (const held_register* const held{
+                std::get_if<held_register>(&place_),
+            }) {
+
+            return held->reg.type_ref();
         }
 
         // note: nowhere has no type
-        assert(operand_.is_register());
-
-        return operand_.type_ref();
+        return stored().info.type_ref();
     }
 
     [[nodiscard]] auto wraps() const -> bool { return wraps_; }
@@ -591,18 +605,25 @@ class destination final {
         assert(parts.storage.has_value() == info.is_var());
 
         destination result;
-        result.operand_ = std::move(parts.address);
-        result.text_ = std::move(parts.text);
-
-        result.is_final_address_ = parts.is_final_address;
-        result.is_named_ = true;
 
         if (parts.storage) {
-            result.stored_ = {
+            assert(parts.address.is_memory());
+
+            result.place_ = stored_name{
+                .address{std::move(parts.address)},
+                .is_final_address{parts.is_final_address},
                 .info{info},
                 .storage{std::move(*parts.storage)},
             };
+        } else {
+            // note: a name in a register has no address to keep
+            assert(parts.address.is_register() and not parts.is_final_address);
+
+            result.place_ = held_register{std::move(parts.address)};
         }
+
+        result.text_ = std::move(parts.text);
+        result.is_named_ = true;
 
         return result;
     }
@@ -612,9 +633,18 @@ class destination final {
         assert(reg.is_register());
 
         destination result;
-        result.operand_ = reg;
+        result.place_ = held_register{reg};
         result.text_ = reg.register_name();
 
         return result;
+    }
+
+  private:
+    [[nodiscard]] auto stored() const -> const stored_name& {
+        const stored_name* const name{std::get_if<stored_name>(&place_)};
+
+        assert(name != nullptr);
+
+        return *name;
     }
 };
