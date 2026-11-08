@@ -1,6 +1,18 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] hard: round 188 (2026-11-08, user: overlap tasks and loop until
+    nothing is left to fix; GC 'machine' and the two backends, GE the
+    function and type definitions, GF the tokenizer, tokens and literals,
+    GG generics and access paths)
+    => done (2026-11-08): GC 'machine::offset_by' moves an operand for
+       both backends and 'zero_padding' (three copies), rv32i
+       'is_scalar' part of 'assert_scalar'; GE 'stmt_def_type_generic'
+       keeps no 'name_tk_'; GF the escape parameter is 'after', not the
+       name of 'token::escape', 'parse_character' drops a copy,
+       'line_begins_of' private; GG 'storage_path::extended_by' replaces
+       three copies of a root and an extended path; listings, images and
+       errors equal
 [x] hard: round 187 (2026-11-08, user: overlap tasks and loop until
     nothing is left to fix; GB the reports and listing annotations, GD code
     versions and roome)

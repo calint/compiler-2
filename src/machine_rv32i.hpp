@@ -1322,7 +1322,6 @@ class machine_rv32i : public machine {
     // the arithmetic helpers
     auto emit_target_routines() -> void override {
         for (const helper_spec& spec : helper_specs_) {
-            // unused helpers contribute no code
             if (not is_used(spec.label)) {
                 continue;
             }
@@ -3895,7 +3894,10 @@ class machine_rv32i : public machine {
     //       not available on this target"
 
     static auto assert_scalar([[maybe_unused]] const type& value_type) -> void {
-        assert(is_scalar(value_type));
+        assert(value_type.is_builtin() and
+               (value_type.size_bytes() == byte_size_bytes_ or
+                value_type.size_bytes() == half_size_bytes_ or
+                value_type.size_bytes() == word_size_bytes_));
     }
 
     // aligned hardware requires every access to be within the known alignment:
@@ -4112,13 +4114,6 @@ class machine_rv32i : public machine {
         return assembler_rv32i::register_number(name).has_value();
     }
 
-    [[nodiscard]] static auto is_scalar(const type& value_type) -> bool {
-        return value_type.is_builtin() and
-               (value_type.size_bytes() == byte_size_bytes_ or
-                value_type.size_bytes() == half_size_bytes_ or
-                value_type.size_bytes() == word_size_bytes_);
-    }
-
     // 'x op constant' is 'x': all bits for 'and', zero for the others
     [[nodiscard]] static auto keeps_destination(const op instruction,
                                                 const int32_t constant,
@@ -4242,14 +4237,6 @@ class machine_rv32i : public machine {
     // extended by 'narrowed_immediate' included, stays extended
     [[nodiscard]] static auto needs_normalize(const op instruction) -> bool {
         return instruction == op::add or instruction == op::sub;
-    }
-
-    [[nodiscard]] static auto offset_by(const operand& address,
-                                        const size_t offset) -> operand {
-
-        operand moved{address};
-        moved.increment_offset(address_offset(offset));
-        return moved;
     }
 
     // the loop starts at the widest boundary every start reaches after a head

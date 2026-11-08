@@ -212,7 +212,6 @@ class compile_error final : public std::exception {
     const size_t continuation_count{token::utf8_continuation_count(lead)};
 
     if (continuation_count == 0 or index + continuation_count >= text.size()) {
-
         return 0;
     }
 

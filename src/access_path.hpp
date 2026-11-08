@@ -70,18 +70,6 @@ struct access_path {
     // an element of the array at a run-time index, any of them
     auto add_run_time_index() -> void { add_index_range(0, run_time_end); }
 
-    // the path of something inside the object this path names, 'suffix' is
-    // relative to that object
-    [[nodiscard]] auto extended_by(const access_path& suffix) const
-        -> access_path {
-
-        access_path result{*this};
-
-        result.steps.append_range(suffix.steps);
-
-        return result;
-    }
-
     // the element is not known at compile time, e.g. 'ps[i].x'
     [[nodiscard]] auto has_run_time_index() const -> bool {
         return std::ranges::any_of(steps, [](const path_step& step) -> bool {
@@ -159,13 +147,21 @@ struct storage_path {
     [[nodiscard]] auto any_element(const access_path& suffix) const
         -> storage_path {
 
-        access_path element_path{path};
-        element_path.add_run_time_index();
+        storage_path element{*this};
+        element.path.add_run_time_index();
+        return element.extended_by(suffix);
+    }
 
-        return {
-            .root{root},
-            .path{element_path.extended_by(suffix)},
-        };
+    // the storage of something inside the object this names, 'suffix' is
+    // relative to that object
+    [[nodiscard]] auto extended_by(const access_path& suffix) const
+        -> storage_path {
+
+        storage_path result{*this};
+
+        result.path.steps.append_range(suffix.steps);
+
+        return result;
     }
 
     // true when both may name the same bytes, a read of other bytes or of

@@ -1586,8 +1586,7 @@ class machine {
         }
 
         for (const padding_gap& gap : gaps) {
-            operand gap_dst{dst};
-            gap_dst.increment_offset(address_offset(gap.offset));
+            const operand gap_dst{offset_by(dst, gap.offset)};
 
             comment(src_loc_tk, indent, "zero padding: {} B", gap.size_bytes);
             zero(src_loc_tk, indent, gap_dst, gap.size_bytes, gap.alignment);
@@ -2173,6 +2172,15 @@ class machine {
         }
 
         return std::bit_cast<int64_t>(bits);
+    }
+
+    // the memory operand 'offset' bytes past 'address'
+    [[nodiscard]] static auto offset_by(const operand& address,
+                                        const size_t offset) -> operand {
+
+        operand moved{address};
+        moved.increment_offset(address_offset(offset));
+        return moved;
     }
 
     // e.g. 'panic: bounds'; the newline in front separates it from the output

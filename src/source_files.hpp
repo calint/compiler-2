@@ -115,7 +115,7 @@ class source_files final {
         assert(char_ix <= src.text.size());
 
         // note: the first line begins at 0, a line begins at or before any
-        // index
+        //       index
 
         const auto after{std::ranges::upper_bound(src.line_begins, char_ix)};
 
@@ -168,22 +168,6 @@ class source_files final {
     //
     // statics
     //
-
-    // the index where each line of 'text' begins
-    [[nodiscard]] static auto line_begins_of(const std::string_view text)
-        -> std::vector<size_t> {
-
-        std::vector<size_t> begins{0};
-
-        size_t line_end{text.find('\n')};
-
-        while (line_end != std::string_view::npos) {
-            begins.push_back(line_end + 1);
-            line_end = text.find('\n', line_end + 1);
-        }
-
-        return begins;
-    }
 
     [[nodiscard]] static auto read_file(const std::string_view file_name)
         -> std::string {
@@ -244,6 +228,27 @@ class source_files final {
         }
 
         return dir / path.filename();
+    }
+
+  private:
+    //
+    // statics
+    //
+
+    // the index where each line of 'text' begins
+    [[nodiscard]] static auto line_begins_of(const std::string_view text)
+        -> std::vector<size_t> {
+
+        std::vector<size_t> begins{0};
+
+        size_t line_end{text.find('\n')};
+
+        while (line_end != std::string_view::npos) {
+            begins.push_back(line_end + 1);
+            line_end = text.find('\n', line_end + 1);
+        }
+
+        return begins;
     }
 };
 

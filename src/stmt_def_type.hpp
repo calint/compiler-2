@@ -255,7 +255,6 @@ struct generic_type_use {
 
 // e.g. 'type text<size> = list<i8, size>'
 class stmt_def_type_generic final : public statement {
-    token name_tk_;
     // the text after 'type' of a generic definition, kept for 'source_to'
     std::string_view generic_text_;
 
@@ -264,7 +263,7 @@ class stmt_def_type_generic final : public statement {
     // in it are found when an alias parses it
     stmt_def_type_generic(toc& tc, const token src_loc_tk, const token name_tk,
                           tokenizer& tz)
-        : statement{src_loc_tk}, name_tk_{name_tk} {
+        : statement{src_loc_tk} {
 
         // e.g. 'capacity' of '<capacity>'
         std::vector<generic_param> params{generic_param::parse(tz)};
@@ -272,13 +271,13 @@ class stmt_def_type_generic final : public statement {
         for (const generic_param& param : params) {
             tc.assert_valid_unqualified_name(param.name_tk);
 
-            tc.definitions().assert_generic_param_apart(param.name_tk, name_tk_,
+            tc.definitions().assert_generic_param_apart(param.name_tk, name_tk,
                                                         "generic type");
         }
 
         // e.g. 'type text<size> = list<i8, size>'
         if (tz.is_lone_equals_next()) {
-            define_based_generic(tc, tz, std::move(params));
+            define_based_generic(tc, tz, name_tk, std::move(params));
             return;
         }
 
@@ -289,7 +288,7 @@ class stmt_def_type_generic final : public statement {
         }
 
         tc.add_generic_type({
-            .src_loc_tk{name_tk_},
+            .src_loc_tk{name_tk},
             .params{std::move(params)},
             .fields_tk{tz.cur_position_token()},
             .base_tk{std::nullopt},
@@ -318,7 +317,7 @@ class stmt_def_type_generic final : public statement {
   private:
     // the fields and the methods are those of the base, the arguments of the
     // base are resolved when an alias names this type
-    auto define_based_generic(toc& tc, tokenizer& tz,
+    auto define_based_generic(toc& tc, tokenizer& tz, const token& name_tk,
                               std::vector<generic_param> params) -> void {
 
         // e.g. '= list<i8, size>'
@@ -327,7 +326,7 @@ class stmt_def_type_generic final : public statement {
         };
 
         tc.add_generic_type({
-            .src_loc_tk{name_tk_},
+            .src_loc_tk{name_tk},
             .params{std::move(params)},
             .fields_tk{std::nullopt},
             .base_tk{base.name_tk},

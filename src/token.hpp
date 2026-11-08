@@ -427,23 +427,22 @@ class token final {
     // statics
     //
 
-    // 'escape' is the text after the backslash, e.g. "n" or "x41"
-    // shared by string data and character literals so both accept the same
-    // escapes
-    [[nodiscard]] static auto decode_escape(const std::string_view escape)
+    // 'after' is the escape after the backslash, e.g. "n" or "x41"; shared by
+    // string data and character literals so both accept the same escapes
+    [[nodiscard]] static auto decode_escape(const std::string_view after)
         -> std::optional<char> {
 
-        if (escape.starts_with('x')) {
-            return decode_hex_escape(escape.substr(1));
+        if (after.starts_with('x')) {
+            return decode_hex_escape(after.substr(1));
             // note: 1 because the digits follow the 'x'
         }
 
         // a character of more than one byte is no escape, e.g. '\é'
-        if (escape.size() != 1) {
+        if (after.size() != 1) {
             return std::nullopt;
         }
 
-        switch (escape.at(0)) {
+        switch (after.at(0)) {
         case '0':
             return '\0';
 
@@ -475,7 +474,7 @@ class token final {
         case '\'':
         case '"':
         case '`':
-            return escape.at(0);
+            return after.at(0);
 
         default:
             return std::nullopt;
@@ -510,24 +509,24 @@ class token final {
     // the 'x' and two digits, any other one character with the continuation
     // bytes its UTF-8 lead byte announces, so a message quotes it whole and a
     // byte after an ASCII escape stays data, e.g. '\é'
-    [[nodiscard]] static auto escape_length(const std::string_view escape)
+    [[nodiscard]] static auto escape_length(const std::string_view after)
         -> size_t {
 
         // note: a backslash is always followed by a character, the tokenizer
         //       reads it with the backslash
 
-        assert(not escape.empty());
+        assert(not after.empty());
 
         // a hex escape that ends inside a UTF-8 character takes the rest of
         // it, e.g. '\x4é'; hex digits are ASCII, a decodable one never does
-        if (escape.starts_with('x')) {
+        if (after.starts_with('x')) {
             constexpr unsigned char first_non_ascii{0x80};
 
             size_t size{3};
-            while (size < escape.size() and
-                   static_cast<unsigned char>(escape.at(size - 1)) >=
+            while (size < after.size() and
+                   static_cast<unsigned char>(after.at(size - 1)) >=
                        first_non_ascii and
-                   is_utf8_continuation(escape.at(size))) {
+                   is_utf8_continuation(after.at(size))) {
 
                 ++size;
             }
@@ -535,11 +534,11 @@ class token final {
             return size;
         }
 
-        const size_t announced{utf8_continuation_count(escape.front())};
+        const size_t announced{utf8_continuation_count(after.front())};
 
         size_t size{1};
-        while (size <= announced and size < escape.size() and
-               is_utf8_continuation(escape.at(size))) {
+        while (size <= announced and size < after.size() and
+               is_utf8_continuation(after.at(size))) {
 
             ++size;
         }

@@ -1622,9 +1622,8 @@ class machine_x86_64 final : public machine {
                                    const size_t part_size_bytes,
                                    const size_t offset) const -> operand {
 
-        operand part{sized_operand(address, part_size_bytes)};
-        part.increment_offset(address_offset(offset));
-        return part;
+        const operand part{sized_operand(address, part_size_bytes)};
+        return offset_by(part, offset);
     }
 
     auto mov(const token& src_loc_tk, const size_t indent,

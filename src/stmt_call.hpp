@@ -2705,10 +2705,7 @@ class stmt_call final : public statement {
             visitor({
                 .call_tk{tok()},
                 .name{name},
-                .storage{
-                    .root{target.root},
-                    .path{target.path.extended_by(u.path)},
-                },
+                .storage{target.extended_by(u.path)},
                 .is_write{u.is_written},
             });
         }

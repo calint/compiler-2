@@ -221,10 +221,7 @@ class stmt_assign_var final : public statement {
             }
 
             for (const access_path& part : step.covered) {
-                written.push_back({
-                    .root{dst->root},
-                    .path{dst->path.extended_by(part)},
-                });
+                written.push_back(dst->extended_by(part));
             }
         }
     }

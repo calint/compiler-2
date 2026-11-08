@@ -89,22 +89,20 @@ class constant_parser final {
 
         const token::escape esc{token::escape_at(body, 0)};
 
-        const size_t escape_size{1 + esc.size};
-        // note: 1 + for the backslash before the escape
-
-        const std::optional<char> decoded{esc.decoded};
-
         // note: the tokenizer rejected an unsupported escape
         //       ('tokenizer::assert_escapes_supported')
 
-        assert(decoded);
+        assert(esc.decoded);
+
+        const size_t escape_size{1 + esc.size};
+        // note: 1 + for the backslash before the escape
 
         // e.g. '\n\n'
         if (body.size() > escape_size) {
             throw_not_one_byte(src_loc_tk, str);
         }
 
-        return static_cast<unsigned char>(*decoded);
+        return static_cast<unsigned char>(*esc.decoded);
     }
 
     // e.g. '12', '0x1f', '0b101' and ''a'' have a value, 'x' has none
