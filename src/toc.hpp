@@ -48,7 +48,7 @@
 //   tables          'type_table', 'noinline_worklist' (the noinline bodies to
 //                   emit or only to check), 'function_table'
 //   'data_table'    the dats ('placed_dat') and the read-only constants
-//   options         'check_options', 'usage_statistics'
+//   options, usage  'check_options', 'usage_statistics'
 //   'scope_stack'   the scopes from the globals to the innermost scope and
 //                   'lookup', the one rule of what a name means
 //                   ('name_meaning'), the target of 'break' ('loop_target')
@@ -724,15 +724,10 @@ class type_table final {
                                       entries_.get_const_ref(name).definition));
     }
 
-    // a built-in type name, also one a type parameter does not hide
+    // a built-in type name, no type parameter is named like one
     [[nodiscard]] auto is_builtin(const std::string_view name) const -> bool {
         return entries_.has(name) and
                entries_.get_const_ref(name).type_ptr->is_builtin();
-    }
-
-    // a type parameter of the innermost instance being parsed
-    [[nodiscard]] auto is_param(const std::string_view name) const -> bool {
-        return not params_.empty() and params_.back().has(name);
     }
 
     // a type parameter of the innermost instance being parsed, not the
@@ -757,6 +752,11 @@ class type_table final {
         }
 
         return entries_.get_const_ref(name);
+    }
+
+    // a type parameter of the innermost instance being parsed
+    [[nodiscard]] auto is_param(const std::string_view name) const -> bool {
+        return not params_.empty() and params_.back().has(name);
     }
 
     auto put_param(const token& name_tk, const type& tpe,
@@ -1806,22 +1806,18 @@ class storage_layout final {
                                                   const var_info& var)
         -> compile_error {
 
-        std::string message{
-            std::format("variable {} does not fit in the variable storage, "
-                        "see '--vars'",
-                        in_quotes(var.name)),
-        };
-
         // the name of a temporary is not in the source, the error is at its
         // call
-        if (var.is_temporary()) {
-            message = "a temporary of the call does not fit in the variable "
-                      "storage, see '--vars'";
-        }
+        const std::string what{
+            var.is_temporary()
+                ? "a temporary of the call"
+                : std::format("variable {}", in_quotes(var.name)),
+        };
 
         return {
             src_loc_tk,
-            std::move(message),
+            std::format("{} does not fit in the variable storage, see '--vars'",
+                        what),
             compile_error::error_kind::out_of_storage,
         };
     }
@@ -2378,8 +2374,7 @@ class definition_checks final {
 };
 
 // the context of every node: the names, their storage, the machine and the
-// phase; the program is parsed first ('is_compiling_' false: the names are
-// declared without storage and without comments), then compiled
+// phase; the program is parsed first ('is_compiling_' false), then compiled
 // ('begin_compile'), after which every scope and its storage is released
 // ('assert_released'); the formatter sorts the methods by name, so by phase:
 //
@@ -3674,14 +3669,16 @@ class toc final {
                                    "a string");
     }
 
-    // e.g. 'true', no number
-    if (constant_parser::is_bool_literal(arg_tk.text())) {
+    const std::optional<folded_value> constant{tc.constant_value_of(arg_tk)};
+
+    // e.g. 'true' or 'b' of 'let b = true', no number
+    if (constant_parser::is_bool_literal(arg_tk.text()) or
+        (constant and constant->is_typed() and constant->own_type->is_bool())) {
+
         throw_generic_arg_mismatch(
             arg_tk, generic_name, param_name, "number",
             std::format("the 'bool' constant {}", in_quotes(arg_tk.text())));
     }
-
-    const std::optional<folded_value> constant{tc.constant_value_of(arg_tk)};
 
     if (not constant) {
         throw_generic_arg_mismatch(
@@ -3689,13 +3686,6 @@ class toc final {
             std::format("{}{}",
                         tc.types().has(arg_tk.text()) ? "the type " : "",
                         in_quotes(arg_tk.text())));
-    }
-
-    // e.g. 'b' of 'let b = true', no number like 'true'
-    if (constant->is_typed() and constant->own_type->is_bool()) {
-        throw_generic_arg_mismatch(
-            arg_tk, generic_name, param_name, "number",
-            std::format("the 'bool' constant {}", in_quotes(arg_tk.text())));
     }
 
     return constant->value;

@@ -619,7 +619,7 @@ struct call_site {
     [[nodiscard]] auto add_result_temporary(toc& tc, const size_t indent) const
         -> destination {
 
-        return add_temporary(tc, indent, temporary_result_name(),
+        return add_temporary(tc, indent, temporary_name(tk, "call-result", 0),
                              func->result_type());
     }
 
@@ -661,29 +661,20 @@ struct call_site {
                                                const size_t index) const
         -> destination {
 
+        // note: the name is unique per call and argument, an inlined body
+        //       names it through the binding of its parameter and a call in
+        //       the body has temporaries of its own; each level of an inlined
+        //       recursion declares it again, the binding resolves it in the
+        //       caller's scope
+
         const destination temporary{
-            add_temporary(tc, indent, temporary_argument_name(index),
+            add_temporary(tc, indent, temporary_name(tk, "call-arg", index),
                           func->params().at(index).get_type()),
         };
 
         args.at(index).compile(tc, indent, temporary);
 
         return temporary;
-    }
-
-    // unique per call and argument, an inlined body names it through the
-    // binding of its parameter and a call in the body has temporaries of its
-    // own; each level of an inlined recursion declares it again, the binding
-    // resolves it in the caller's scope
-    [[nodiscard]] auto temporary_argument_name(const size_t index) const
-        -> std::string {
-
-        return temporary_name(tk, "call-arg", index);
-    }
-
-    // the result of a call made in a temporary, see 'add_result_temporary'
-    [[nodiscard]] auto temporary_result_name() const -> std::string {
-        return temporary_name(tk, "call-result", 0);
     }
 
     // the result is written field by field, so its padding is zeroed for
@@ -902,8 +893,7 @@ class inline_call final {
                 };
 
                 arguments.push_back(param_binding::make_name(
-                    param.name(), temporary.bound_info(),
-                    call_.temporary_argument_name(i)));
+                    param.name(), temporary.bound_info(), temporary.text()));
 
                 continue;
             }
@@ -1580,25 +1570,6 @@ class noinline_call final {
         return lengths;
     }
 
-    // a noinline call passes addresses, a value without storage is passed
-    // in a temporary of the parameter's type
-    static auto assert_argument(const ident_info& info,
-                                const stmt_def_func_param& param) -> void {
-
-        // note: a temporary is a variable
-        assert(info.is_var());
-
-        // note: parsing the call rejects an array argument for a non-array
-        //       parameter and the reverse
-
-        assert(info.is_array() == param.is_array());
-
-        // note: 'stmt_call::assert_argument_type' checked a variable, a
-        //       temporary has the type of its parameter
-
-        assert(info.type_ref().is_same(param.get_type()));
-    }
-
     // the callee reaches the result and arguments through their addresses
     static auto assert_call(const destination& dst, const stmt_def_func& func,
                             const std::span<const noinline_arg> arguments)
@@ -1617,10 +1588,25 @@ class noinline_call final {
             assert(not dst.is_array());
         }
 
+        // a value without storage is passed in a temporary of the
+        // parameter's type
         for (const auto [argument, param] :
              std::views::zip(arguments, func.params())) {
 
-            assert_argument(argument.info, param);
+            const ident_info& info{argument.info};
+
+            // note: a temporary is a variable
+            assert(info.is_var());
+
+            // note: parsing the call rejects an array argument for a non-array
+            //       parameter and the reverse
+
+            assert(info.is_array() == param.is_array());
+
+            // note: 'stmt_call::assert_argument_type' checked a variable, a
+            //       temporary has the type of its parameter
+
+            assert(info.type_ref().is_same(param.get_type()));
         }
     }
 

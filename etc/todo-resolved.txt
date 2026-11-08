@@ -1,6 +1,16 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] hard: round 186 (2026-11-08, user: continue the loop, several things
+    at a time; FY 'stmt_call', FZ 'toc', GA 'expr_any' and
+    'stmt_identifier_impl')
+    => done (2026-11-08): FY a temporary argument is bound by its
+       destination's text, 'temporary_argument_name' and
+       'temporary_result_name' gone, 'noinline_call::assert_argument' part
+       of its loop; FZ 'vars_capacity_error' writes its message once,
+       'resolve_const_arg' one bool check, 'type_table::is_param' private,
+       three comments; GA 'check_folded_conditions' loops over the
+       elements; listings, images and errors equal
 [x] hard: round 185 (2026-11-08, user: continue the loop, several things
     at a time; FX the rv32i targets, FR slices and bulk operations, FU
     generics, FW conditions)

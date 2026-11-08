@@ -337,21 +337,8 @@ class expr_any final : public statement {
     // of 'true or a / 0 == 1'; every condition of the value is, also in the
     // elements of a list and in the fields of an instance literal
     auto check_folded_conditions(toc& tc, const size_t indent) const -> void {
-        if (const single_value* const single{
-                std::get_if<single_value>(&form_),
-            }) {
-
-            check_folded_conditions_of(tc, indent, single->value);
-            return;
-        }
-
-        if (const element_list* const list{
-                std::get_if<element_list>(&form_),
-            }) {
-
-            for (const listed_element& element : list->elements) {
-                check_folded_conditions_of(tc, indent, element.value);
-            }
+        for (size_t i{}; i < element_count(); ++i) {
+            check_folded_conditions_of(tc, indent, value_at(i));
         }
     }
 
