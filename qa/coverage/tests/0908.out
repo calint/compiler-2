@@ -1,7 +1,0 @@
-
-include/dup.baz:3:6: function 'add' already defined at include/base.baz:1:6
-func add() {}
-     ^~~
-0908.baz:1:9: included from
-include "include/dup.baz"
-        ^~~~~~~~~~~~~~~~~

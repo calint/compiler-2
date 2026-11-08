@@ -1,7 +1,10 @@
-# dynamic lower-bound read failure
+# parenthesized in-range index
+
+func assert(expr bool) { if not expr exit(1) }
 
 func main() {
     var arr = i8[8]
-    var index = -1
-    var value = arr[index]
+    var index = 3
+    arr[(index + 4)] = 1
+    assert(arr[7] == 1)
 }

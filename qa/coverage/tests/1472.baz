@@ -1,3 +1,6 @@
-# a string where a name is expected, the caret is on the string
-type t<T type> = ""
-func main() {}
+# '{}' is a whole value, no operator follows it
+func main() {
+    var n = 5
+    n = {} + 1
+    exit(n)
+}

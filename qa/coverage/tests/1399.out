@@ -1,0 +1,4 @@
+
+1399.baz:5:9: a unary operator makes a value, not an array
+    a = -a
+        ^

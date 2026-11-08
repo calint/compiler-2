@@ -1,5 +1,6 @@
-# an unsupported escape in a character literal is reported before its
-# length, as in a string
+# an increment is rejected at its operator
+
 func main() {
-    var c = '\X41'
+    var x = 1
+    x++
 }

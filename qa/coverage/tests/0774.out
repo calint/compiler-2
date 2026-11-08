@@ -1,4 +1,4 @@
 
-0774.baz:8:12: 'nothing' is not a generic type, a generic type is defined before the alias that names it
-type str = nothing<4>
-           ^~~~~~~
+0774.baz:8:17: expected a generic argument
+type str = text<>
+                ^

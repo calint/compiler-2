@@ -1,0 +1,13 @@
+# a comparison as the argument of 'array_length' is not an array, as the
+# method of 1440
+type point { x, y }
+
+func point.m() res {
+    res = self.x
+}
+
+func main() {
+    var a = point[4]
+    var n = array_length(a.m < 2)
+    exit(n)
+}

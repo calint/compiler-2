@@ -1,0 +1,4 @@
+
+0276.baz:3:17: expected a constant array size greater than 0
+dat values = i8[-1]
+                ^

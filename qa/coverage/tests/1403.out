@@ -1,4 +1,4 @@
 
-1403.baz:9:23: 'e.x' may have been overwritten in the same statement, use a temporary variable
-        ps[1] = {e.y, e.x}
-                      ^
+1403.baz:4:25: expected '{' to begin block
+func f<T type>(x T) res T
+                        ^

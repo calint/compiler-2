@@ -1,13 +1,13 @@
-# a call of a generic method where an array is expected is named like its
-# method: 'point.m', not 'p.m'
-type point { x, y }
+# a method call followed by '[' in a condition is reported as a call that is
+# not an array, not as a value to compare
 
-func point.m<T type>(v T) res T {
-    res = v
+type point {x, y}
+
+func point.get() res {
+    res = self.x
 }
 
 func main() {
-    var p = point
-    foo p.m<i8>(1) {
-    }
+    var p = point{1, 2}
+    if p.get()[0] == 1 exit(0)
 }

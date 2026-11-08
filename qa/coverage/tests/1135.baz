@@ -1,5 +1,14 @@
-# a token made only of utf-8 continuation bytes is reported with a caret
+# '-noub' does not turn off the rejection of storage that may be shared
+
+type pair {a, b}
+
+var g = pair{1, 2}
+
+func noinline set(v mut) {
+    v = g.b + 1
+}
 
 func main() {
-    exit(©)
+    set(g.b)
+    exit(g.b)
 }

@@ -1,4 +1,4 @@
 
-0190.baz:4:15: the result of 'f' is discarded
-func main() { f() }
-              ^
+0190.baz:3:17: expected ',' followed by a value of type 'i8'
+dat x = i8[2]{1 2}
+                ^

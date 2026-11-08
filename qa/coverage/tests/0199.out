@@ -1,4 +1,4 @@
 
-0199.baz:4:1: expected '{' to begin declaration of type
-func main() {}
-^
+0199.baz:6:16: field 'y' not found in type 'p'
+    var x = p1.y
+               ^

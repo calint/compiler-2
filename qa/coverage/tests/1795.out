@@ -1,4 +1,4 @@
 
-1795.baz:6:1: unexpected '}'
-}
-^
+1795.baz:4:21: divisor must not be zero
+let k = true or 1 / 0 == 1
+                    ^

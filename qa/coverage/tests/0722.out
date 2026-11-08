@@ -1,4 +1,4 @@
 
-0722.baz:4:14: unsupported escape '\x4'
-    var c = '\x4'
-             ^~~
+0722.baz:3:9: 'i64' is not available on this target, use 'i32' or 'int'
+dat d = i64[]{1, 2}
+        ^~~

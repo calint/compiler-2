@@ -1,4 +1,7 @@
-# type declarations require fields
+# unknown field access is rejected
 
-type x
-func main() {}
+type p { x }
+func main() {
+    var p1 = p
+    var x = p1.y
+}

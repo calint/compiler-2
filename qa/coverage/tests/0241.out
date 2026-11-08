@@ -1,4 +1,4 @@
 
-0241.baz:4:18: too many elements for array of size 1
-dat x = p[1]{{1},{2}}
-                 ^
+0241.baz:5:13: expected '(' after function name
+    var z = arrays_equal a,a,1
+            ^~~~~~~~~~~~

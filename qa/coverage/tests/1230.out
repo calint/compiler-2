@@ -1,0 +1,4 @@
+
+1230.baz:8:10: expected type 'i64', got 'bool', use 'i64(...)'
+    exit(nb())
+         ^~

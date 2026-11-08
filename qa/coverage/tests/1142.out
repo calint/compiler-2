@@ -1,4 +1,4 @@
 
-1142.baz:7:9: a call runs only inside a function, not in the initializer of a global
-dat x = f()
+1142.baz:7:9: destination array size 2 does not match source size 3
+    a = b
         ^

@@ -1,25 +1,17 @@
-# the unary ops of a conversion of a constant apply where its value is used,
-# like those of a constant of its type
-let k = -128
-
+# --checks=upper: a range whose start plus count passes the signed maximum is
+# out of bounds also without the lower bound check
 func main() {
-    var y = i16(0)
-    y = -i8(-128)
-    if y != 128 {
-        exit(1)
+    var s = 1
+    loop {
+        var t = s * 2 + 1
+        if t < 0 {
+            break
+        }
+        s = t
     }
-    var w = i16(0)
-    var r = w + -i8(-128)
-    if r != 128 {
-        exit(2)
-    }
-    var s = w + -i8(k)
-    if s != 128 {
-        exit(3)
-    }
-    var t = i16(-i8(-128))
-    if t != 128 {
-        exit(4)
-    }
-    exit(0)
+    var x = i8[4]
+    var y = i8[4]
+    var n = 1
+    array_copy(x[s], y[0], n)
+    exit(7)
 }

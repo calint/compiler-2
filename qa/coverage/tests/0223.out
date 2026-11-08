@@ -1,4 +1,0 @@
-
-0223.baz:3:6: expected '(' after function name
-func f {}
-     ^

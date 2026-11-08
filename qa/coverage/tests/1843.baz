@@ -1,7 +1,12 @@
-# a keyword as a field name is reported where it is read, before an error
-# in a later field
+# an operator after a call result instance: an instance is not a number
 
-type p {true, y qq}
+type left {value}
+
+func mk() res left {
+    res = {}
+}
 
 func main() {
+    var l = left
+    l = mk() + 1
 }

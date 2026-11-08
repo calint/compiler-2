@@ -1,4 +1,0 @@
-
-2601.baz:6:14: generic parameter 'point' is also the name of the type at 6:6, use another name
-func point.f<point type>() res int {
-             ^~~~~

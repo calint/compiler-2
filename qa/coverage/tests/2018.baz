@@ -1,5 +1,7 @@
-# an operator after a statement is quoted whole
-
+# an instance literal followed by an arithmetic operator for a 'bool' is an
+# instance, not a 'bool'
+type point {x i32, y i32}
 func main() {
-    exit(0) == 1
+    var b = true
+    b = point{1, 2} + 1
 }

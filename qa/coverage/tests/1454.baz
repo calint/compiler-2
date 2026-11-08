@@ -1,12 +1,4 @@
-# a path that ends at a method is not an array
-type point { x, y }
-
-func point.m() res {
-    res = self.x
-}
-
-func main() {
-    var a = point[4]
-    var b = point[4]
-    array_copy(a.m, b, 2)
-}
+# a string where a name is expected, the caret is on the string
+type list<T type> {x T}
+func list."" () {}
+func main() {}

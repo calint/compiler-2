@@ -1,8 +1,10 @@
-# a 'bool' is not assigned to an integer result, also in a function never
-# called
+# a constant 'array_copy' count past the end is rejected also in a function
+# that is never called
 
-func f(b bool) res i32 {
-    res = b
+func g() {
+    var a = i8[4]
+    var d = i8[2]
+    array_copy(a, d, 3)
 }
 
 func main() {

@@ -1,12 +1,12 @@
-# without a count the whole array is transferred, an instance array field too
+# an inline result may share storage with an argument
 
-type line { len i8, text i8[3] }
+func add_one(a) res {
+    res = 1
+    res = res + a
+}
 
 func main() {
-    var l = line{3, {0x6f, 0x6b, 10}}
-    var n = write(1, l.text)
-    if n != 3 exit(1)
-    var none = i8[1]
-    n = read(0, none)
-    if n != 0 exit(2)
+    var x = 5
+    x = add_one(x)
+    exit(x)
 }

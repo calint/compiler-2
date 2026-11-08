@@ -1,4 +1,4 @@
 
-1493.baz:4:13: '{}' is the zero value of a typed destination, not an operand
-    if b == {} {
-            ^
+1493.baz:5:16: 'and' makes a condition, which is not an operand here, store it in a 'bool' first
+    var b = (t and f) == f
+               ^~~

@@ -1,10 +1,15 @@
-# a negative constant index is rejected also for an unsized array parameter in
-# a function that is never called
+# the check of a body without its calls rejects a function that runs out of
+# scratch registers there, also where its calls fit: each argument 'v' of
+# 'sum' is loaded from the frame, which the call 'g(3)' folds; rv32i has the
+# registers
+func sum(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11) res {
+    res = a0 + a1 + a2 + a3 + a4 + a5 + a6 + a7 + a8 + a9 + a10 + a11
+}
 
-func last(s i8[]) res i8 {
-    res = s[-1]
+func g(v) res {
+    res = sum(v, v, v, v, v, v, v, v, v, v, v, v)
 }
 
 func main() {
-    exit(0)
+    exit(3)
 }

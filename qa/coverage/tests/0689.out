@@ -1,4 +1,0 @@
-
-0689.baz:14:19: expected a constructor name after '.'
-    var p = point.
-                  ^

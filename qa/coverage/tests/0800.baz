@@ -1,5 +1,7 @@
-# a generic parameter list has at least one parameter
+# a type parameter is not known outside its generic
 
-func f<>() {}
+func f<T type>(x T) {}
 
-func main() {}
+func main() {
+    var y = T
+}

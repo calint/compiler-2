@@ -1,10 +1,14 @@
-# a closer without an opener after a closer and a space in the body of a
-# generic function that no instance parses is quoted as the closer, not as
-# the space before it
+# a method call without a result for an array field is a call that is not
+# an array, as in an argument
 
-func g<T type>(a T) res T {
-    res = f() )
+type point {x, y}
+
+type row {a i8[2]}
+
+func point.clear() {
 }
 
 func main() {
+    var p = point{1, 2}
+    var r = row{p.clear()}
 }

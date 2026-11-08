@@ -1,2 +1,3 @@
-# colon syntax is no longer accepted for variables
-func main() { var value : i32 }
+# array brackets follow the parameter element type
+func helper(values[] i32) {}
+func main() {}

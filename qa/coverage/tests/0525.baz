@@ -1,12 +1,6 @@
-# two by-reference arguments may share storage when one is 'mut'
-
-func add_into(dst mut, src) {
-    dst = dst + src
-    dst = dst + src
-}
+# a comment at the end of the file without a final newline
 
 func main() {
-    var q = 1
-    add_into(q, q)
-    exit(q)
+    exit(0)
 }
+# last line

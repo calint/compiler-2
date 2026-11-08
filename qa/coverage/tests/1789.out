@@ -1,4 +1,4 @@
 
-1789.baz:4:8: 'if' is a keyword
-func f<if>() {
-       ^~
+1789.baz:6:9: unexpected keyword 'loop'
+    x = loop(1)
+        ^~~~

@@ -1,0 +1,12 @@
+# a constant index past the length an unsized array parameter gets from its
+# call, in the argument of 'array_length'
+type r { a i8[3] }
+
+func g(x r[]) res {
+    res = array_length(x[5].a)
+}
+
+func main() {
+    var m = r[4]
+    exit(int(g(m)))
+}

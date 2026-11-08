@@ -1,4 +1,4 @@
 
-1924.baz:10:9: function 'f' has no result
-    p = f()
-        ^
+1924.baz:6:9: expected type 'i8', got 'point'
+    x = point{1, 2}
+        ^~~~~

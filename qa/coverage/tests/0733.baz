@@ -1,7 +1,6 @@
-# an unknown escape in a string constant
-
-dat s = "a\qb"
+# rv32i: 'i64' is not available, a 64-bit variable is wider than a register
 
 func main() {
-    exit(0)
+    var a = i64(6)
+    exit(1)
 }

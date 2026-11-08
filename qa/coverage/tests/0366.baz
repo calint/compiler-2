@@ -1,16 +1,28 @@
-# global variable shadowing in a nested block
+# foo over an array field of an indexed holder array argument
+
+type point { x, y }
+type holder { points point[2] }
+
+dat holders =
+    holder[2]{
+        { { {1, 2}, {3, 4} } },
+        { { {5, 6}, {7, 8} } }
+    }
 
 func assert(x bool) { if not x exit(1) }
 
-var value = 1
+func update(h mut holder[]) {
+    foo h[1].points  {
+        e.y = e.y + 10
+    }
+}
 
 func main() {
-    assert(value == 1)
-    value = 3
-    assert(value == 3)
-    {
-        var value = 2
-        assert(value == 2)
-    }
-    assert(value == 3)
+    update(holders)
+    assert(holders[0].points[0].y == 2)
+    assert(holders[0].points[1].y == 4)
+    assert(holders[1].points[0].x == 5)
+    assert(holders[1].points[0].y == 16)
+    assert(holders[1].points[1].x == 7)
+    assert(holders[1].points[1].y == 18)
 }

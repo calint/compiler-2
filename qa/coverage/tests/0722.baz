@@ -1,5 +1,7 @@
-# a hex escape in a character literal has two digits
+# rv32i: 'i64' is not available, also as the element type of a 'dat'
+
+dat d = i64[]{1, 2}
 
 func main() {
-    var c = '\x4'
+    exit(0)
 }

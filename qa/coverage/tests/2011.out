@@ -1,4 +1,4 @@
 
-2011.baz:12:13: receiver of method 'point.put' cannot be an array
-    var r = a.put(q)
-            ^
+2011.baz:6:15: a comparison makes a condition, which is not an operand here, store it in a 'bool' first
+    p = point == p
+              ^~

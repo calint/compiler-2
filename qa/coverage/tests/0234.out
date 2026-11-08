@@ -1,4 +1,4 @@
 
-0234.baz:3:27: expected a constant, a name or a call
-func main() { var x = 1 + }
-                          ^
+0234.baz:4:18: too many elements for array of size 1
+dat x = p[1]{{1},{2}}
+                 ^

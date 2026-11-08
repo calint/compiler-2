@@ -1,4 +1,7 @@
 
-1579.baz:4:10: constant -'\xff' does not fit 'i8' (-128 to 127), 'i8(...)' wraps it
-    y = -'\xff'
-         ^~~~~~
+1579.baz:3:11: expected type 'i16', got 'i8'
+    res = U
+          ^
+1579.baz:7:13: instantiated by 'f<i8>'
+    var x = f<i8>()
+            ^

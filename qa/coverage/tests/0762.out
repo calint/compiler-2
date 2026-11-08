@@ -1,0 +1,4 @@
+
+0762.baz:3:11: a generic function has only type parameters, write 'T type'
+func make<T>(n) res {
+          ^

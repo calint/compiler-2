@@ -1,7 +1,7 @@
-# an array literal without a type name has the default type which must match
-# the destination
+# data instance initializer requires the type name
 
-func main() {
-    var a = i8[2]
-    a = [2]{1, 2}
-}
+type point { x i16, y i16 }
+
+dat p = { 1, 2 }
+
+func main() {}

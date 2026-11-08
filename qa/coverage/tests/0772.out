@@ -1,4 +1,4 @@
 
-0772.baz:3:11: a generic function has only type parameters, write 'T type'
-func make<T>(n) res {
-          ^
+0772.baz:14:18: expected a generic argument
+    var m = make<>(2)
+                 ^

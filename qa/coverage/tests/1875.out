@@ -1,4 +1,4 @@
 
-1875.baz:9:9: a string fills only an array of 'i8', not an instance of 's'
-    g = "a"
-        ^~~
+1875.baz:7:10: constant expression overflows the type
+    y = ~-k
+         ^

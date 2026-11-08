@@ -1,4 +1,4 @@
 
-1673.baz:5:22: 'i8' is a type, not an array
-    var n = write(1, i8)
-                     ^~
+1673.baz:10:23: source type 'i8' does not match destination type 'i16'
+        array_copy(a, w, 4)
+                      ^

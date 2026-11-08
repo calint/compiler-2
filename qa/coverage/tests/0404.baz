@@ -1,27 +1,52 @@
-# branch coverage: parse_statement recursive assign for non-builtin fields
-# targets compile_assign branch:
-#   if (not tf.type().is_built_in()) e.compile_assign(...)
+# non-inline print_num: repeated calls, local arrays and inline syscall helpers
 
-func assert(err, expr bool) { if not expr exit(err) }
-
-type pair {
-    x,
-    y
+func print(str i8[], len) {
+    write(1, str, len)
 }
 
-type outer {
-    p pair,
-    tag
+func noinline print_num(num) {
+    var buf = i8[20]
+    var n = num
+    var negative = n < 0
+    if not negative n = -n
+
+    var i = 20
+    loop {
+        i = i - 1
+        var ascii = 48 - (n % 10)
+        buf[i] = i8(ascii)
+        n = n / 10
+        if n == 0 break
+    }
+    if negative {
+        i = i - 1
+        buf[i] = 45
+    }
+
+    var count = 20 - i
+    var pos = 0
+    loop {
+        buf[pos] = buf[i]
+        pos = pos + 1
+        i = i + 1
+        if i == 20 break
+    }
+    print(buf, count)
 }
 
 func main() {
-    var data = outer[2]
-    var ix = 1
+    var newline = i8[1]
+    newline[0] = 10
+    var first = 123
+    var second = -2147483648
+    var third = 0
 
-    data[ix] = {{10, 20}, 7}
-
-    assert(1, ix == 1)
-    assert(2, data[1].p.x == 10)
-    assert(3, data[1].p.y == 20)
-    assert(4, data[1].tag == 7)
+    print_num(first)
+    print(newline, 1)
+    print_num(second)
+    print(newline, 1)
+    print_num(third)
+    print(newline, 1)
+    print_num(first)
+    print(newline, 1)
 }

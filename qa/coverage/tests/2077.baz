@@ -1,7 +1,13 @@
-# a whole array converted is rejected where it is parsed, as an array that
-# must be indexed
+# the result of a method call does not tell a type argument, the call names
+# the type
+
+type point { x i8, y i8 }
+
+func point.sum() res i8 { res = self.x + self.y }
+
+func show<T type>(v T) {}
+
 func main() {
-    var bs = bool[2]
-    var n = int(bs)
-    exit(n)
+    var p = point{1, 2}
+    show(p.sum())
 }

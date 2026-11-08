@@ -1,4 +1,4 @@
 
-1151.baz:5:27: index -1 is out of bounds for array 'a' of size 4
-    var n = read(0, a, 1, -1)
-                          ^
+1151.baz:3:15: shift count must be 0 to 63 for 64-bit values
+dat a = 1 << -1
+              ^

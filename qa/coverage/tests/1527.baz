@@ -1,5 +1,7 @@
-# unary operators without a value are not an array size
+# an 'if' without a condition is reported as such
 func main() {
-    var a = i8[-]{1, 2}
-    exit(a[1])
+    var x = 1
+    if {
+        x = 2
+    }
 }

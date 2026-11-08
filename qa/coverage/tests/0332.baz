@@ -1,13 +1,5 @@
-# valid index returned by a function
-
-func assert(expr bool) { if not expr exit(1) }
-
-func get_index() result {
-    result = 7
-}
+# explicit zero-sized variable arrays are invalid
 
 func main() {
-    var values = i8[8]
-    values[get_index()] = 1
-    assert(values[7] == 1)
+    var values = i8[0]
 }

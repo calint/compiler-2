@@ -1,7 +1,4 @@
 
-0864.baz:2:55: 'y' of type 'i16' is wider than 'x' of type 'i8', swap the operands: 'y == x'
-func noinline same(x i8, y i16) res bool { res = x == y }
-                                                      ^
-0864.baz:6:13: called from 'same(b[1], 4)'
-    var r = same(b[1], 4)
-            ^~~~
+0864.baz:3:6: '2' is not a valid name, a name starts with a letter or '_' and has only letters, digits and '_'
+func 2() {
+     ^

@@ -1,6 +1,8 @@
-# read and write take 2 to 4 arguments
+# a constant count is range checked by the lower check alone
 
 func main() {
-    var buf = i8[4]
-    read(0, buf, 1, 0, 9)
+    var a = [4]{1, 2, 3, 4}
+    var b = [4]
+    array_copy(a, b, 2)
+    exit(b[1] - 2)
 }

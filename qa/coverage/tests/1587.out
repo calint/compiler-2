@@ -1,7 +1,4 @@
 
-1587.baz:8:15: argument 1 'res' may share storage with the result destination 'res' (both name 'res'), use a temporary variable for one of them
-    res = add(res, v)
-              ^
-1587.baz:13:13: called from 'twice(x)'
-    x = 1 + twice(x)
-            ^~~~~
+1587.baz:3:16: expected type 'i64', got 'bool', use 'i64(...)'
+    var a = i8[true]
+               ^~~~

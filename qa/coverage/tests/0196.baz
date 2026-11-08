@@ -1,5 +1,4 @@
-# data array initializer requires commas
+# type field array requires a closing bracket
 
-dat x = i8[2]{1 2}
-
+type x { a i8[2 }
 func main() {}

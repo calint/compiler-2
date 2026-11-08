@@ -1,10 +1,19 @@
-# the largest constant shift counts of narrow values
+# a non-inline parameter shares storage with a global only if a caller passes it
+
+var g = 2
+
+func swap_values(x mut, y mut) {
+    var tmp = x
+    x = y
+    y = tmp
+}
+
+func noinline outer(a mut) {
+    swap_values(a, g)
+}
 
 func main() {
-    var c = i8(1)
-    var d = i16(1)
-    c = c << 7
-    d = d << 15
-    d = d >> 15
-    exit(c + d + 130)
+    var v = 1
+    outer(v)
+    exit(v * 10 + g)
 }

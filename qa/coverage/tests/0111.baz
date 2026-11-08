@@ -1,59 +1,32 @@
-# struct array elements passed by value to a function
+# nested function mutation propagation
 
 func assert(expr bool) { if not expr exit(1) }
 
-func print(str i8[], len) {
-    write(1, str, len)
+func mutate_and_return(x mut) res {
+    x = x * 2
+    res = x + 1
 }
 
-func input(str mut i8[], len) nbytes {
-    nbytes = read(0, str, len)
-}
-
-func pn(num) {
-    var buf = i8[20]
-    var n = num
-    var is_negative = false
-
-    if n < 0 {
-        is_negative = true
-        n = -n
-    }
-
-    var i = 20
-    loop {
-        i = i - 1
-        buf[i] = i8(48 + (n % 10))
-        n = n / 10
-        if n == 0 break
-    }
-
-    if is_negative {
-        i = i - 1
-        buf[i] = 45  # '-'
-    }
-
-    write(1, buf, 20 - i, i)
-}
-
-type str {
-    size i8,
-    chars i8[127]
-}
-
-type world {
-    name str,
-    note str
-}
-
-func foozi(w1 world, w2 world){
-    assert(w1.note.size + w2.note.size == 3)
+func mutate_only(x mut i32) {
+    x = 0xff
 }
 
 func main() {
-    var wlds = world[2]
-    wlds[0].note.size = 1
-    wlds[1].note.size = 2
- 
-    foozi(wlds[0], wlds[1])
+    var a = 5
+    var r = mutate_and_return(a)
+    assert(a == 10)  # Verify reference semantics
+    assert(r == 11)
+    
+    var b = i32(100)
+    mutate_only(b)
+    assert(b == 0xff)
+    
+    # Nested function calls with mutations
+    var c = 1
+    # a 'mut' parameter takes a variable, so the inner result is named
+    var e = mutate_and_return(c)
+    var d = mutate_and_return(e)
+    assert(c == 2)
+    assert(e == 6)
+    assert(d == 7)
 }

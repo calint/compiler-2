@@ -1,17 +1,5 @@
-# an error in a method body names the method call
-
-type point {
-    x,
-    y
-}
-
-var g = point{1, 2}
-
-func point.bad(v) {
-    g = {v + self.x, g.x}
-}
+# dat is only allowed in the global scope
 
 func main() {
-    var p = point{1, 2}
-    p.bad(1)
+    dat x = 1
 }

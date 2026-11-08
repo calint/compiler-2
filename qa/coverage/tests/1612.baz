@@ -1,9 +1,12 @@
-# a read of an element that an array of records field zeroed before it
-type pt {x i8, y i8}
-type st {ps pt[2], b i8}
+# a call that writes the destination of the arithmetic it is in keeps the
+# destination unwritten until the value is computed
+var gx = 1
+func gw() res {
+    gx = 10
+    res = 1
+}
 func main() {
-    var q = st
-    q.ps[1].x = 4
-    q = {{{1}}, q.ps[1].x}
-    exit(q.b)
+    var k = 0
+    gx = k + gw()
+    exit(gx)
 }

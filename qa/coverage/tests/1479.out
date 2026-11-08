@@ -1,4 +1,4 @@
 
-1479.baz:2:12: a trailing ',' is not allowed in parameters
-func f(a, b,) {}
-           ^
+1479.baz:4:6: generic method 'buffer.app' already defined at 3:6
+func buffer.app<T type>(x T) {}
+     ^~~~~~

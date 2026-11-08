@@ -1,4 +1,4 @@
 
-1666.baz:5:12: unexpected '!'
-    n = {} ! 1
-           ^
+1666.baz:5:24: 'array_length' takes 1 argument
+    exit(array_length(a, 1))
+                       ^

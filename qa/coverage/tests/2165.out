@@ -1,4 +1,4 @@
 
-2165.baz:4:13: unterminated character literal
-    var c = '\
-            ^
+2165.baz:6:9: an array literal is not an operand here, store it in a variable first
+    p = pt[2]{}[0]
+        ^~

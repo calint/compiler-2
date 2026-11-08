@@ -1,2 +1,4 @@
 
-panic: frame overflow
+1855.baz:5:14: expected a generic argument, name a negative constant with 'let'
+type s = box<-3>
+             ^

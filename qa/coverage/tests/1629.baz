@@ -1,12 +1,13 @@
-# a parameter bound to a computed argument passed on as a name has the type
-# of the parameter it is passed to, also for a 'noinline' function
-func noinline f(x i16) res {
-    res = x
+# a branch whose condition is a constant false does not set the result on a
+# path, an 'else' after a constant true branch never runs
+func f(x) res {
+    if 1 == 2 {
+        res = 1
+    } else if x > 0 {
+        res = 2
+    }
 }
-func g(y i8) res {
-    res = f(y)
-}
+
 func main() {
-    var a = i8(2)
-    exit(g(a + 1))
+    exit(f(1))
 }

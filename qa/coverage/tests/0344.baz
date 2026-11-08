@@ -1,5 +1,7 @@
-# empty string is invalid without an explicit array size
+# scalar values cannot initialize array fields
 
-dat value = ""
-
-func main() {}
+type small { data i8[2] }
+func main() {
+    var value = i8(0)
+    var dst = small{ value }
+}

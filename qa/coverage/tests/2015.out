@@ -1,7 +1,4 @@
 
-2015.baz:14:5: 'foo' declares 'e', which names the type 'point'
-    foo a {
-    ^~~
-2015.baz:10:6: instantiated by
-type pbox = box<point>
-     ^~~~
+2015.baz:8:7: 'var' is a keyword
+    p.var()
+      ^~~

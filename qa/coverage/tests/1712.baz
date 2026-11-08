@@ -1,21 +1,22 @@
-# two arguments that name the same variable are accepted when the parts the
-# body reaches of them are disjoint or only read: 'f' writes 'p.x' and reads
-# 'q.y', inlined and noinline
+# a noinline call computes the address of a place in the order of the
+# arguments: the call in the index of 'v[h()]' reads 'g' before the call in
+# the later argument writes it
+var g = 0
 
-type pt {x, y}
-
-func f(p mut pt, q pt) {
-    p.x = q.y + 1
+func h() res {
+    res = g
 }
 
-func noinline nf(p mut pt, q pt) {
-    p.x = q.y + 2
+func f() res {
+    g = g + 1
+    res = 1
+}
+
+func noinline pick(a, n) res {
+    res = a + n * 0
 }
 
 func main() {
-    var a = pt{1, 2}
-    f(a, a)
-    var b = pt{1, 2}
-    nf(b, b)
-    exit(a.x * 10 + b.x)
+    var v = []{10, 20, 30}
+    exit(pick(v[h()], f()))
 }

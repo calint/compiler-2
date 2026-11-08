@@ -1,4 +1,4 @@
 
-1087.baz:4:27: a 'bool' is not an arithmetic operand, convert it, e.g. 'int(false)'
-dat flags = bool[]{true, ~false}
-                          ^~~~~
+1087.baz:8:14: the destination gives the type 'point', write '{...}'
+    exit(sum(point{1, 2}))
+             ^~~~~

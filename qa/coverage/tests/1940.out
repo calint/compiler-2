@@ -1,7 +1,4 @@
 
-1940.baz:6:11: expected type 'point', got 'seg'
-    res = U{}
-          ^
-1940.baz:10:13: instantiated by 'f<seg>'
-    var p = f<seg>()
-            ^
+1940.baz:5:9: expected type 'point', got 'i8[]'
+    p = i8[2]{1, 2}
+        ^~

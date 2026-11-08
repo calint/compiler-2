@@ -1,7 +1,13 @@
-# a parameter without 'mut' cannot be assigned in a function that is never called
+# a method without 'mut' cannot call a 'mut' method on 'self'
 
-func unused(a) {
-    a = 2
+type tk { start, end }
+
+func mut tk.reset() {
+    self.start = 0
+}
+
+func tk.clear() {
+    self.reset()
 }
 
 func main() {

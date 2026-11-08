@@ -1,0 +1,4 @@
+
+2155.baz:14:23: a call of 'gm' is not an array
+    exit(array_length(gm<i8>().a))
+                      ^~

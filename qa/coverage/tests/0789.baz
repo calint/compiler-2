@@ -1,13 +1,19 @@
-# a parameter of a generic function hides a type of its name
-type name {
-    x,
-}
+# the label of a noinline generic instance does not clash with the label of a
+# noinline method
 
-func f<name type>(x name) res {
-    res = int(x)
-}
+func assert(err, ok bool) { if not ok exit(err) }
+
+type m {x}
+type k {y}
+
+func noinline k.m(v) res { res = v + 1 }
+func noinline kk<T type>(v) res { res = v + 2 }
 
 func main() {
-    var nm = name{4}
-    exit(f(i8(3)) + nm.x)
+    var o = k
+    var v = 1
+    var r = o.m(v)
+    var s = kk<m>(v)
+    assert(1, r == 2)
+    assert(2, s == 3)
 }

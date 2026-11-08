@@ -1,13 +1,26 @@
-# constant evaluation of the last operand of grouped boolean expressions
+# constant identifiers in data initializers
 
 func assert(expr bool) { if not expr exit(1) }
 
-func main() {
-    # test last element in a expr_bool when constant evaluated
-    
-    if (false and true) or true assert(true) else assert(false)
-    if (false or true) and false assert(false) else assert(true)
+let yes = 1
+let no = 0
+let maybe = -1
 
-    if (false and false) or not (true and (true and false)) assert(true) else assert(false)
-    if (false or true) and not (false or (true and true)) assert(false) else assert(true)
+type point { x, y }
+
+dat p1 = point{ yes, maybe }
+
+func main() {
+    assert (p1.x == yes)
+    assert (p1.y == maybe)
+
+    var answer = maybe
+    assert(answer == -1)
+
+    answer = yes
+    assert(answer == 1)
+
+    var p2 = point{ no, yes }
+    assert (p2.x == no)
+    assert (p2.y == yes)
 }

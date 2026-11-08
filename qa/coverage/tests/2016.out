@@ -1,4 +1,4 @@
 
-2016.baz:8:13: function 'g' has no result
-    var x = g().y
-            ^
+2016.baz:5:13: an instance of 'point' is not a number
+    var p = point{1, 2} + 1
+            ^~~~~

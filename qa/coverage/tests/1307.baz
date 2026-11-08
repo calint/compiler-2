@@ -1,9 +1,8 @@
-# a unary operator on an argument of an array parameter of a noinline function
-# is rejected, the parameter takes an array
-func noinline f(x i8[]) {}
+# a global initializer that runs out of scratch registers reports its
+# registers under the frame of the global initializers
+var a = 1
+var r = a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + a)))))))))))))))))))))))))))))
 
 func main() {
-    var a = i8[4]
-    f(~a)
     exit(0)
 }

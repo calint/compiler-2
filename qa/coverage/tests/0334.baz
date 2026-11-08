@@ -1,9 +1,10 @@
-# valid two-byte element scaling
+# a sized dat array without an initializer is zeroed
 
-func assert(expr bool) { if not expr exit(1) }
+dat value = i8[8]
+
+func assert(x bool) { if not x exit(1) }
 
 func main() {
-    var values = i16[2]
-    values[1] = 1
-    assert(values[1] == 1)
+	assert(value[0] == 0)
+	assert(value[7] == 0)
 }

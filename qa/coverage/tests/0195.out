@@ -1,4 +1,4 @@
 
-0195.baz:3:12: expected ']' after array size
-dat x = [2 = {1,2}
-           ^
+0195.baz:3:12: type 'nope' not found
+type x { a nope }
+           ^~~~

@@ -1,30 +1,10 @@
-# a constant list whose first element is a typed constant is compared as a
-# value of its type like the same list of a variable, e.g. 'i16(300) + 1'
-func f(p i16) res {
-    var e = i8(1)
-    if p + 1 <= e {
-        res = 1
-        return
-    }
-    res = 0
-}
+# an operand of an operator is a number, not an instance
+
+type point {x, y}
 
 func main() {
-    var e = i8(1)
-    if i16(300) + 1 <= e {
-        exit(2)
-    }
-    if (i16(300) + 1) * 2 <= e {
-        exit(3)
-    }
-    if -(i16(300) + 1) >= e {
-        exit(4)
-    }
-    if i16(300) + 1 <= i8(1) + 1 {
-        exit(5)
-    }
-    if i8(127) + 1 >= e {
-        exit(6)
-    }
-    exit(f(300))
+    var p = point{5, 2}
+    var y = 1
+    y = y + p
+    exit(y)
 }

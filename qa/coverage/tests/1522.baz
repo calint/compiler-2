@@ -1,12 +1,7 @@
-# a generic body sees only the generic functions defined before it
-func outer<T type>(x T) res T {
-    res = inner<T>(x)
-}
-
-func inner<T type>(x T) res T {
-    res = x
-}
-
+# a value cannot be named like a built-in type, it would hide the type only
+# in some places
 func main() {
-    exit(outer<i32>(2))
+    var i8 = 3
+    var z = i8(300)
+    exit(z)
 }

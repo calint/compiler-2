@@ -1,0 +1,13 @@
+# a constant index past the length an unsized array parameter gets from its
+# call, in an array size, which is folded when parsed
+type r { a i8[3] }
+
+func g(x r[]) res {
+    var q = i8[array_length(x[5].a)]
+    res = array_length(q)
+}
+
+func main() {
+    var m = r[4]
+    exit(int(g(m)))
+}

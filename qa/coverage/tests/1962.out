@@ -1,4 +1,4 @@
 
-1962.baz:6:14: 'box<...>' is not a generic argument, name an instance first, e.g. 'type my_box = box<...>'
-type s = box<box<i8>>
-             ^~~
+1962.baz:9:18: array 'a' must be indexed
+    var b = p == a
+                 ^

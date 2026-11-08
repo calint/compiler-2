@@ -1,13 +1,7 @@
-# a method call followed by '[' in a condition is reported as a call that is
-# not an array, not as a value to compare
+# a call outside a function is reported before its callee is looked up
 
-type point {x, y}
-
-func point.get() res {
-    res = self.x
-}
+var g = nope()
 
 func main() {
-    var p = point{1, 2}
-    if p.get()[0] == 1 exit(0)
+    exit(g)
 }

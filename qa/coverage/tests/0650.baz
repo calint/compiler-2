@@ -1,6 +1,15 @@
-# 'read' cannot fill a 'let' array
+# the element 'e' of 'foo' writes the array, so passing a read-only array on to
+# the function that walks it is rejected at the call
+
+func fill(d mut i8[]) {
+    foo d {
+        e = 1
+    }
+}
+
+func pass(d i8[]) {
+    fill(d)
+}
 
 func main() {
-    let d = i8[]{1, 2}
-    read(0, d)
 }

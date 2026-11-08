@@ -1,4 +1,9 @@
-# an include is only in global scope
+# an instance literal is not an operand of a comparison
+type point {x, y}
+
 func main() {
-    include "include/util.baz"
+    var p = point{1, 2}
+    if p == point{1, 2} {
+        exit(1)
+    }
 }

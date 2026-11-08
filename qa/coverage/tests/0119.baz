@@ -1,9 +1,13 @@
-# constant index past the end is rejected at compile
+# break skips the required result assignment
 
-func assert(expr bool) { if not expr exit(1) }
+func foozi(i) res {
+    loop {
+        if i == 2 break
+        res = i * 2
+        break
+    }
+}
 
 func main() {
-    var arr = i8[8]
-
-    arr[8] = 0x61
+    var x = foozi(2)
 }

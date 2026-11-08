@@ -1,0 +1,15 @@
+# a field of a call's result as an array argument, rejected at the
+# call
+type pt { x, a i8[3] }
+
+func mk() res pt {
+    res = {}
+}
+
+func first(a i8[]) res i8 {
+    res = a[0]
+}
+
+func main() {
+    exit(first(mk().a))
+}

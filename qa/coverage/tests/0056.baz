@@ -1,52 +1,13 @@
-# signed unary results across integer widths
-
-func f1(i) res{
-    res=-i
-}
-
-func f2(i) res{
-    res=-i*2
-}
-
-func f3(i i32) res i32{
-    res=-i*3
-}
-
-func f4(i i16) res i16{
-    res=-i*4
-}
-
-func f5(i i8) res i8{
-    res=-i*4
-}
-
-func f6(i i8) res{
-    res=-i
-}
+# boolean inequality
 
 func main(){
-    var q=f1(1)
-    if not q==-1 exit(1)
+    var b1 = true
+    var b2 = true
+    var b3 = false
     
-    var bt = i8(1)
-    var wd = i16(2)
-    var dd = i32(3)
-    var qd=4
+    if b1!=b2 exit(1)
     
-    var b = f5(bt)
-    if not b==-4 exit(2)
-
-    var w = f4(wd)
-    if not w==-8 exit(3)
-
-    var d = f3(dd)
-    if not d==-9 exit(4)
-
-    q=f2(qd)
-    if not q==-8 exit(5)
-
-    q=f6(b)
-    if not q==4 exit(8)
+    if not b1!=b3 exit(2)
     
     exit(0)
 }

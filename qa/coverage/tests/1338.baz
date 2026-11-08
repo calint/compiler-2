@@ -1,34 +1,25 @@
-# a conversion to a wider type applies the unary ops of a single call at the
-# width of the type
-func g(x i8) res i8 {
-    res = x
-}
-
-func noinline h(x i8) res i8 {
-    res = x
-}
-
-func g16(x i16) res i16 {
-    res = x
+# the unary ops of a conversion of a 'bool' apply at the type of the
+# conversion, e.g. '-i8(b)' is -1 for a true 'b'
+func t() res bool {
+    res = true
 }
 
 func main() {
-    var v = i8(-128)
-    var w = i16(-32768)
-    var a = i16(-g(v))
-    if a != 128 {
+    var b = true
+    var r = -i8(b)
+    if r != -1 {
         exit(1)
     }
-    var b = i16(-h(v))
-    if b != 128 {
+    var s = ~i8(b)
+    if s != -2 {
         exit(2)
     }
-    var c = i32(-g16(w))
-    if c != 32768 {
+    var w = -i16(t())
+    if w != -1 {
         exit(3)
     }
-    var d = i16(i32(-g(v)))
-    if d != 128 {
+    var n = int(t()) + -int(t())
+    if n != 0 {
         exit(4)
     }
     exit(0)

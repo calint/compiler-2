@@ -1,19 +1,13 @@
-# the data is a record, the argument and the read are the same element
-# rejected inlined as well as noinline
+# a noinline body that fits alone is called inside an expression that holds
+# registers, rv32i: the body has its own registers
 
-type world {
-    items[4],
-    count,
-}
-
-dat w = world
-
-func put(x mut) {
-    x = 7 + (100 - w.items[2])
+func noinline f(a i32, b i32) res i32 {
+    res = ((a * b) + ((a * b) + ((a * b) + ((a * b) + ((a * b) + ((a * b) + ((a * b) + ((a * b) + ((a * b) + ((a * b) + ((a * b) + ((a * b) + ((a * b) + ((a * b) + ((a * b) + ((a * b) + ((a * b) + ((a * b) + ((a * b) + ((a * b) + ((a * b) + ((a * b) + ((a * b) + ((a * b) + (a * b)))))))))))))))))))))))))
 }
 
 func main() {
-    w.items[2] = 3
-    put(w.items[2])
-    exit(w.items[2] - 104)
+    var x = i32(1)
+    var y = i32(1)
+    var r = ((x * y) + ((x * y) + ((x * y) + ((x * y) + ((x * y) + ((x * y) + f(x, y)))))))
+    exit(r)
 }

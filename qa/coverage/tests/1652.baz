@@ -1,17 +1,19 @@
-# the buffer of 'write' is computed before the count: the count reads 'n'
-# after the call in the buffer argument wrote it
-type s { buf i8[4], }
-
-var n = 1
-
-func g() res {
-    n = 4
-    res = 0
-}
+# a stored condition whose last element folds stores its value without a
+# branch at its end
 
 func main() {
-    var a = s[2]
-    a[0].buf = {'x', 'y', 'z', '\n'}
-    var k = write(1, a[g()].buf, n)
-    exit(k - 4)
+    var x = 1
+    var b = x < 3 and 1 == 2
+    var c = x < 3 and 1 == 1
+    var d = x > 3 or 1 == 1
+    if b {
+        exit(1)
+    }
+    if not c {
+        exit(2)
+    }
+    if not d {
+        exit(3)
+    }
+    exit(7)
 }

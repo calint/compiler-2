@@ -1,4 +1,2 @@
 
-2182.baz:3:14: an array needs a constant size, e.g. '[4]'
-    var a = []
-             ^
+panic: bounds at include/get.baz:3

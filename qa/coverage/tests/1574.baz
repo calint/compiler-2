@@ -1,11 +1,9 @@
-# a generic parameter hides a global defined after it too, the order of the
-# definitions does not matter
-func f<U type>(x U) res int {
-    res = int(x)
+# a constructor of a generic type has no type parameters, also without an
+# instance of the type
+type box<n> {
+    x i8[n],
 }
 
-var U = 100
+func box.f<T type>() self {}
 
-func main() {
-    exit(f(i8(7)) + U - 100)
-}
+func main() {}

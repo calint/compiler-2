@@ -1,4 +1,4 @@
 
-0613.baz:5:10: expected '=' followed by an initializer, e.g. 'var x = i32'
-    var a[4] i8
-         ^
+0613.baz:15:21: expected argument 1 ('by')
+    var q = p.moved()
+                    ^

@@ -1,6 +1,15 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] hard: round 191 (2026-11-08, user: order the tests and renumber them
+    without gaps; GK the renumbering)
+    => done (2026-11-08): the 2248 tests of 'qa/coverage/tests' are 0001 to
+       2248 in their old order, the cases of 'cases.sh' sorted by number;
+       the files named after a test, the expected outputs, 'cases.sh',
+       'test-cli.sh', the scripts, the docs, 'etc/todo.txt' and source
+       comments use the new numbers; this file keeps the old numbers,
+       'etc/test-renumbering.txt' maps them; the listings, errors and images
+       of the 2262 compile jobs equal the old ones with the names mapped
 [x] hard: round 190 (2026-11-08, user: fix the deduction error order,
     continue the loop; GJ regressions of the change)
     => done (2026-11-08): the deduction item below; listings, images and

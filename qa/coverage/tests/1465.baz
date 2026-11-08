@@ -1,11 +1,6 @@
-# a built-in given type arguments as the source of a copy
-type point {x, y}
+# type arguments do not end with a ','
+type list<T type> {x T}
 
-type obj {pos point}
+type a = list<i8,>
 
-func main() {
-    var a = i8[4]
-    var o = obj
-    o.pos = arrays_equal<i8>(a, a, 4)
-    exit(o.pos.x)
-}
+func main() {}

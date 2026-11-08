@@ -1,16 +1,12 @@
-# a read-only parameter bound to the global the body writes, a part of the
-# value reads the parameter after the global is written
-# the call is rejected: the function writes the global the argument is
+# parentheses around an instance group nothing
 
 type point {x, y}
 
-var g = point{3, 5}
-
-func f(p point) {
-    g = {1, p.x}
-}
-
 func main() {
-    f(g)
-    exit(g.y)
+    var p = point{1, 2}
+    var q = p
+    if (p) == ((q)) {
+        exit(0)
+    }
+    exit(1)
 }

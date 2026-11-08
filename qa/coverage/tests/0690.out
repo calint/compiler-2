@@ -1,4 +1,4 @@
 
-0690.baz:14:19: expected '(' after constructor name
-    var p = point.at
-                  ^~
+0690.baz:4:13: '$' is not a valid name, a name starts with a letter or '_' and has only letters, digits and '_'
+    let t = $
+            ^

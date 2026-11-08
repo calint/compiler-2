@@ -1,8 +1,9 @@
-# a constant count is range checked by the lower check alone
+# adding the most negative value of the width stays an addition
 
 func main() {
-    var a = [4]{1, 2, 3, 4}
-    var b = [4]
-    array_copy(a, b, 2)
-    exit(b[1] - 2)
+    var b = i8(1)
+    b = b + -128
+    var w = i16(1)
+    w = w + -32768
+    exit(b + 128 + w + 32768 - 2)
 }

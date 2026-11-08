@@ -1,2 +1,4 @@
 
-panic: bounds
+0317.baz:4:12: index -1 is negative
+    values[-1] = 1
+           ^

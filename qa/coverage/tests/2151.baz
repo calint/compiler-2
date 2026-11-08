@@ -1,8 +1,11 @@
-# the peak of the use of registers is in a global initializer, outside every
-# function
-var a = 1
-var r = a + (a + (a + a))
+# a field of a call's result where an array is expected, rejected at the
+# call
+type pt { x, a i8[3] }
+
+func mk() res pt {
+    res = {}
+}
 
 func main() {
-    exit(r)
+    exit(array_length(mk().a))
 }

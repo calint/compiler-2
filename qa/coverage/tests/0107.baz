@@ -1,30 +1,59 @@
-# array and struct parameters share nested storage
+# struct array elements passed by value to a function
 
-func assert(expr bool) {
-    if not expr exit(1)
+func assert(expr bool) { if not expr exit(1) }
+
+func print(str i8[], len) {
+    write(1, str, len)
 }
 
-type flags {
-    data i8[8]
+func input(str mut i8[], len) nbytes {
+    nbytes = read(0, str, len)
+}
+
+func pn(num) {
+    var buf = i8[20]
+    var n = num
+    var is_negative = false
+
+    if n < 0 {
+        is_negative = true
+        n = -n
+    }
+
+    var i = 20
+    loop {
+        i = i - 1
+        buf[i] = i8(48 + (n % 10))
+        n = n / 10
+        if n == 0 break
+    }
+
+    if is_negative {
+        i = i - 1
+        buf[i] = 45  # '-'
+    }
+
+    write(1, buf, 20 - i, i)
+}
+
+type str {
+    size i8,
+    chars i8[127]
 }
 
 type world {
-    time,
-    flgs flags[4]
+    name str,
+    note str
 }
 
-func foozi(data mut i8[]) {
-    data[2] = 0x10
-}
-
-func bar(flg mut flags) {
-    flg.data[3] = 0x20
+func foozi(w1 world, w2 world){
+    assert(w1.note.size + w2.note.size == 3)
 }
 
 func main() {
-    var worlds = world[2]
-    foozi(worlds[1].flgs[2].data)
-    bar(worlds[1].flgs[1])
-    assert(worlds[1].flgs[2].data[2] == 0x10)
-    assert(worlds[1].flgs[1].data[3] == 0x20)
+    var wlds = world[2]
+    wlds[0].note.size = 1
+    wlds[1].note.size = 2
+ 
+    foozi(wlds[0], wlds[1])
 }

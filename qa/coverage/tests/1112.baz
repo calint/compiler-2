@@ -1,6 +1,6 @@
-# a unary operator before a character literal inside parentheses, the
-# look-ahead that tells a condition from an operand skips it as one token
-let C = (~'.' << 1)
+# a hexadecimal prefix without digits is a malformed number
+
 func main() {
-    exit(C & 127)
+    var a = 0x
+    exit(a)
 }

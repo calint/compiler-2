@@ -1,9 +1,7 @@
-# valid upper array boundary
-
-func assert(expr bool) { if not expr exit(1) }
+# upper-bound check without lower check
 
 func main() {
     var arr = i8[8]
-    arr[7] = 0x61
-    assert(arr[7] == 0x61)
+    var index = 8
+    arr[index] = 1
 }

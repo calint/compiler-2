@@ -1,4 +1,4 @@
 
-0561.baz:14:5: receiver of method 'list.clear' cannot be an array
-    lists.clear()
-    ^~~~~
+0561.baz:8:29: constant '~32768' does not fit 'i16' (-32768 to 32767), 'i16(...)' wraps it
+dat words = limits{-32768, ~32768}
+                            ^~~~~

@@ -1,4 +1,7 @@
 
-2003.baz:3:22: expected a type name, got a string
-func f<T type>() res "i8" {
-                     ^~~~
+2003.baz:5:26: 'point' is a type, not an array
+    var n = array_length(T)
+                         ^
+2003.baz:9:5: instantiated by 'g<point>'
+    g<point>()
+    ^

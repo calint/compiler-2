@@ -1,4 +1,4 @@
 
-1831.baz:4:10: function may return without setting its result 'res'
-func f() res {
-         ^~~
+1831.baz:5:10: type 'pt' is not generic, it takes no type arguments
+func f(a pt<i8>) {
+         ^~

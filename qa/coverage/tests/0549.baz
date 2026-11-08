@@ -1,10 +1,7 @@
-# an unsized parameter has the size of the argument, which is too small
+# method on a type that does not exist
 
-func fill(dst mut i8[]) {
-    dst = "abc"
+func nosuch.add(value) {
 }
 
 func main() {
-    var small = i8[2]
-    fill(small)
 }

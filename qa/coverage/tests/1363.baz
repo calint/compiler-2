@@ -1,7 +1,14 @@
-# the parse of a generic instance nests in the parse that needs it, so a long
-# chain of them is past the nesting limit, not a crash; an included file is
-# parsed before the file that includes it, so a long chain of them adds no
-# nesting: the script compiles a generated chain of each
+# a conversion of an inlined parameter bound to a constant is wider than a
+# narrower left side like the conversion of a literal
+
+func compared(p i16) res i8 {
+    var e = i8(1)
+    res = 0
+    if e >= i16(p) {
+        res = 1
+    }
+}
+
 func main() {
-    exit(0)
+    exit(int(compared(300)))
 }

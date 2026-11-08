@@ -1,11 +1,18 @@
-# a call that reads the destination of the arithmetic it is in reads it
-# before the statement writes it, also 'noinline'
-var gx = 1
-func noinline gr() res {
-    res = gx
+# the arrays of 'arrays_equal' are computed before the count: the count reads
+# 'n' after the call in an array argument wrote it
+var n = 1
+
+func g() res {
+    n = 3
+    res = 0
 }
+
 func main() {
-    var k = 5
-    gx = k + gr()
-    exit(gx)
+    var a = i8[4]
+    var b = i8[4]
+    b[2] = 5
+    if arrays_equal(a, b[g()], n) {
+        exit(1)
+    }
+    exit(0)
 }

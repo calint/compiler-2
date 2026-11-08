@@ -1,4 +1,4 @@
-# a function in an included file, see 1251
+# a function in an included file, see 1240
 func say(text i8[]) res {
     res = write(1, text)
 }

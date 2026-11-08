@@ -1,24 +1,33 @@
-# complement of an array element result kept in a temporary
+# lea regression: nested field writes through user-type alias with lea path
 
-func assert(code, expr bool) {
-    if not expr exit(code)
+func assert(err, expr bool) { if not expr exit(err) }
+
+type pair {
+    x,
+    y
 }
 
-func inv(i i32) res i32 {
-    res = ~i
+type box {
+    p pair,
+    tag
+}
+
+func set_fields(dst mut box, v, i mut) {
+    i = i + 1
+    dst.p.x = v + i
+    dst.p.y = dst.p.x + 1
+    dst.tag = dst.p.x + dst.p.y
 }
 
 func main() {
-    var arr = i32[4]
+    var boxes = box[2]
 
-    arr[1] = ~2
-    arr[2] = ~arr[1]
-    arr[3] = 1
+    var ix = 0
+    set_fields(boxes[ix], 40, ix)
 
-    var ix = 3
-
-    # note: temporary because the result may share storage with the argument
-    var tmp1 = inv(arr[ix])
-    arr[ix-2] = tmp1
-    assert(1, arr[1] == ~1)
+    assert(1, ix == 1)
+    assert(2, boxes[0].p.x == 41)
+    assert(3, boxes[0].p.y == 42)
+    assert(4, boxes[0].tag == 83)
+    assert(5, boxes[1].tag == 0)
 }

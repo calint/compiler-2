@@ -1,7 +1,0 @@
-
-2640.baz:9:9: 'G' names the type 'i8'
-    var G = 2
-        ^
-2640.baz:14:10: instantiated by 'f<i8>'
-    exit(f<i8>(1))
-         ^

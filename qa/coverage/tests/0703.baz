@@ -1,18 +1,9 @@
-# a global passed to a non-inline function that also names it shares storage
-# the call is rejected: the function uses the global the call passes it
-
-var g = 1
-
-func swap_values(x mut, y mut) {
-    var tmp = x
-    x = y
-    y = tmp
+# an instance value reads the whole destination after writing a field
+type point {x, y}
+func sum(p point) res {
+    res = p.x + p.y
 }
-
-func noinline outer(a mut) {
-    swap_values(a, g)
-}
-
 func main() {
-    outer(g)
+    var p = point{1, 2}
+    p = {2, sum(p)}
 }

@@ -1,0 +1,4 @@
+
+1567.baz:4:9: expected type 'i32', got 'bool'
+    n = bool
+        ^~~~

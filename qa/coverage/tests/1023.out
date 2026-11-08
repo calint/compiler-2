@@ -1,0 +1,4 @@
+
+1023.baz:3:5: 'if' is a keyword
+let if = 1
+    ^~

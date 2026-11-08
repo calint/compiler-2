@@ -1,4 +1,7 @@
 
-1538.baz:3:13: 'i64' is not available on this target, use 'i32' or 'int'
-    var x = i64
-            ^~~
+1538.baz:4:25: generic parameter 'n' of 'list' needs a constant, got 'm'
+type text<k> = list<i8, m>
+                        ^
+1538.baz:8:6: instantiated by
+type str = text<2>
+     ^~~

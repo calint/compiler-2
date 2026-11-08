@@ -1,4 +1,4 @@
 
-1867.baz:3:9: the file name is empty
-include ""
-        ^~
+1867.baz:7:15: a generic argument is one name or constant, not an array
+type b = buf<4[2]>
+              ^

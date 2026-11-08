@@ -1,9 +1,12 @@
-# a path is checked left to right: the constant index past the end is
-# reported before the field after it that the type does not have
+# the range of a run-time start with a constant count is checked after the
+# later arguments, as with a run-time count: the call exits before it
+dat a = i8[5]
 
-type pt { x, y }
+func noinline f() res i32 {
+    exit(7)
+}
 
 func main() {
-    var a = pt[4]
-    exit(a[9].zz)
+    var k = 3
+    array_copy(a[k], a[f()], 4)
 }

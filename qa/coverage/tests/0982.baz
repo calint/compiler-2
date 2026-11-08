@@ -1,5 +1,7 @@
-# --checks=overlap: the destination starts inside the source
+# --checks=overflow: the negation of the minimum of the width panics
+func noinline neg(a i16) res i16 { res = -a }
 func main() {
-    var a = i32[8]
-    array_copy(a, a[1], 3)
+    var a = i16(-32768)
+    var x = neg(a)
+    exit(x)
 }

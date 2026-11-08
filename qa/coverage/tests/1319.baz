@@ -1,8 +1,9 @@
-# a global initializer that runs out of scratch registers reports its
-# registers under the frame of the global initializers
-var a = 1
-var r = a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + a)))))))))))))))))))))))))))))
-
+# a 'not' on the right side of a comparison is rejected, a condition is stored
+# in a 'bool' first
 func main() {
+    var b = true
+    if b == not b {
+        exit(1)
+    }
     exit(0)
 }

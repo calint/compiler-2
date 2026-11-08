@@ -1,4 +1,4 @@
 
-2218.baz:15:25: a call of 'pt.m' is not an array
-    exit(array_length(p.m().a))
-                        ^
+2218.baz:6:10: '||' is not an operator, use 'or'
+    if x || y exit(1)
+         ^

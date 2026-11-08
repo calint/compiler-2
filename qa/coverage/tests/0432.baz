@@ -1,3 +1,3 @@
-# write requires an array, not an address
+# inline function bodies require braces even for one statement
 
-func main() { var n = 0 write(1, n, 1) }
+func main() exit(0)

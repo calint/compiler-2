@@ -1,4 +1,7 @@
 
-2038.baz:6:26: the destination gives the type 'point', write '{}'
-    var l = line{{1, 2}, point{}}
-                         ^~~~~
+2038.baz:9:17: index 4 is out of bounds for array 's' of size 4
+        res = s[m]
+                ^
+2038.baz:15:10: called from 'last(a)'
+    exit(last(a))
+         ^~~~

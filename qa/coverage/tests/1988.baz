@@ -1,9 +1,8 @@
-# a string for a parameter that is not an array
-
-func f(x) res {
-    res = x
-}
+# 'not' where an array goes makes a condition, as for the array of a
+# built-in, e.g. 'foo not a'
 
 func main() {
-    var n = f("a")
+    var b = true
+    var a = i8[2]
+    a = not b
 }

@@ -1,8 +1,11 @@
-# assigning one field does not set the whole result
-type point {x, y}
-func half() res point {
-    res.x = 1
+# a return inside 'foo' skips the result assignment
+func first(values i32[]) res {
+    foo values {
+        return
+    }
+    res = 1
 }
 func main() {
-    var p = half()
+    var values = i32[2]
+    var r = first(values)
 }

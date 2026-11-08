@@ -1,6 +1,10 @@
-# a delimiter where a statement should start is rejected
+# an array is not assigned the result of a call
+
+func one() res i32 {
+    res = 1
+}
 
 func main() {
-    exit(0)
-    |
+    var a = i32[4]
+    a = one()
 }

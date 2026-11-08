@@ -1,6 +1,10 @@
-# a full array literal ends with '}' like an instance value: a missing '}'
-# is not a missing ','
+# a token after an argument before the one that deduces a type is reported
+# as a missing ',', as in a call without type parameters
+func pick<T type>(a, v T) res T {
+    res = v
+}
 
 func main() {
-    var a = i8[2]{1, 2)
+    var y = 2
+    var x = pick(y 1)
 }

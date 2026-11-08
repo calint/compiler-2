@@ -1,13 +1,11 @@
-# a comparison as the argument of 'array_length' is not an array, as the
-# method of 1456
-type point { x, y }
+# a constant start and count whose elements end past the 4 GiB that rv32i
+# addresses are past the end of an unsized array parameter of any size, one
+# element less is accepted; x86_64 addresses more
 
-func point.m() res {
-    res = self.x
+func f(a i32[], b mut i32[]) {
+    array_copy(a[0x1fffffff], b, 0x20000000)
+    array_copy(a[0x20000000], b, 0x20000000)
 }
 
 func main() {
-    var a = point[4]
-    var n = array_length(a.m < 2)
-    exit(n)
 }

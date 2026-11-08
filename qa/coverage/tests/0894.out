@@ -1,4 +1,4 @@
 
-0894.baz:132:1: nesting is too deep, the limit is 128 levels
-{
-^
+0894.baz:3:1: 'include' must be before the definitions of the file
+include "include/base.baz"
+^~~~~~~

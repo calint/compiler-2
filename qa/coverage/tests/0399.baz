@@ -1,25 +1,35 @@
-# lea regression: built-in indexed src/dst aliases and index mutation
+# resolver path: alias chain with lea + indexed user-type argument
 
 func assert(err, expr bool) { if not expr exit(err) }
 
-func mix(dst mut, src mut, ix mut) {
-    ix = ix + 1
-    dst = src + ix
-    src = src + 10
+type point {
+    x,
+    y
+}
+
+type node {
+    p point
+}
+
+type world {
+    nodes node[3]
+}
+
+func bump(a mut node) {
+    a.p.y = a.p.y + 2
 }
 
 func main() {
-    var srcs = [4]{5, 6, 7, 8}
-    var dsts = [4]{0, 0, 0, 0}
+    var worlds = world[2]
 
-    var dst_index = 1
-    var src_index = 2
+    worlds[1].nodes[2].p.y = 7
 
-    mix(dsts[dst_index], srcs[src_index], dst_index)
+    var wi = 1
+    var ni = 2
 
-    assert(1, dst_index == 2)
-    assert(2, dsts[1] == 9)
-    assert(3, srcs[2] == 17)
-    assert(4, dsts[0] == 0)
-    assert(5, dsts[2] == 0)
+    bump(worlds[wi].nodes[ni])
+
+    assert(1, wi == 1)
+    assert(2, ni == 2)
+    assert(3, worlds[1].nodes[2].p.y == 9)
 }

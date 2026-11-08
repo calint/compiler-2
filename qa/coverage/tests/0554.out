@@ -1,4 +1,4 @@
 
-0554.baz:4:15: unsupported escape '\q'
-    var s = "a\qb"
-              ^~
+0554.baz:14:24: expected argument 2 ('dy')
+    var q = p.shifted(1)
+                       ^

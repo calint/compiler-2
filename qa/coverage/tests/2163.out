@@ -1,4 +1,4 @@
 
-2163.baz:4:13: unterminated character literal
-    var c = '\
-            ^
+2163.baz:4:23: function 'nope' not found
+    exit(array_length(nope()[0]))
+                      ^~~~

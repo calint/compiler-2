@@ -1,4 +1,4 @@
 
-0218.baz:3:9: 'nope' not found
-let x = nope
-        ^~~~
+0218.baz:8:10: expected type 'p', got 'q'
+    p1 = q1
+         ^~

@@ -1,19 +1,9 @@
-# the check of a body without its call expands an inlined recursion whose
-# arguments are constants, 'g(2)' does not take them from the call of 'f'
+# an element where an array parameter before a missing argument of a generic
+# call goes is reported before the missing argument, as in the call
 
-func g(n) res {
-    if n == 0 {
-        res = 0
-        return
-    }
-    var a = i8[2]
-    res = a[3 - n] + g(n - 1)
-}
-
-func f(x) res {
-    res = x + g(2)
-}
+func f<T type>(s T[], x T) {}
 
 func main() {
-    exit(0)
+    var a = i8[4]
+    f(a[1])
 }

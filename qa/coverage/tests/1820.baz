@@ -1,8 +1,8 @@
-# a 'dat' past the memory the target addresses is an error before it is
-# placed
+# 'bool' has no conversion, also where the argument deduces a type
 
-dat a = i8[9223372036854775790]
+func f<T type>(x T) {
+}
 
 func main() {
-    exit(1)
+    f(bool(1))
 }

@@ -1,13 +1,11 @@
-# the base of a generic type sees only the constants defined before it
-type list<T type, n> { len, data T[n] }
+# a generic parameter hides a global defined after it too, the order of the
+# definitions does not matter
+func f<U type>(x U) res int {
+    res = int(x)
+}
 
-type text<k> = list<i8, m>
-
-let m = 4
-
-type str = text<2>
+var U = 100
 
 func main() {
-    var s = str
-    exit(s.len)
+    exit(f(i8(7)) + U - 100)
 }

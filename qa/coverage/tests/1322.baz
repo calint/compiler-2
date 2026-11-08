@@ -1,4 +1,8 @@
-# a field whose alignment takes its offset past the storage limit is rejected
-type s {a i8[0x7fffffffffffffef], b i16}
-
-func main() {}
+# an 'array_length' in a conversion's argument narrower than its type is
+# rejected
+func main() {
+    var a = i8[4]
+    var b = i8(4)
+    var c = i8(b * array_length(a))
+    exit(c)
+}

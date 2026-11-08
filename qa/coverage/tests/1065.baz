@@ -1,10 +1,20 @@
-# the base of a generic type gets an argument per parameter
-
-type list<T type, capacity> {
-    array T[capacity],
-    len,
+# a type defined after an alias and before a method of the generic type does
+# not hide the type parameter of the method's instance
+type list<T type> {
+    a T,
 }
 
-type text<capacity> = list<capacity>
+type s = list<i8>
 
-func main() {}
+type T {x}
+
+func list.get() res T {
+    res = T(self.a + 1)
+}
+
+func main() {
+    var l = s
+    l.a = 4
+    var t = T{2}
+    exit(int(l.get()) + t.x)
+}

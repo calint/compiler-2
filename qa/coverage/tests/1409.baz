@@ -1,14 +1,8 @@
-# a noinline body is compiled once and does not see that its parameter names
-# the destination, so the call that passes the global the body uses is
-# rejected
-
-var g = 3
-
-func noinline f(p) {
-    g = p * 2 + p
-}
+# a 'continue' outside a loop is rejected after a branch that is always taken
 
 func main() {
-    f(g)
-    exit(g)
+    if 1 == 1 {
+    } else {
+        continue
+    }
 }

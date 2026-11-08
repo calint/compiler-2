@@ -1,4 +1,4 @@
 
-0628.baz:6:9: cannot assign to read-only 'i', 'i' is the index of 'foo'
-        i = 2
-        ^
+0628.baz:4:19: cannot copy into read-only 'd', parameter 'd' is not declared 'mut'
+    array_copy(s, d, 2)
+                  ^

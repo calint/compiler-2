@@ -1,0 +1,4 @@
+
+1437.baz:6:9: an instance of 'point' is not a number
+    if -p == p {
+        ^

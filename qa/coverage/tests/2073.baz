@@ -1,22 +1,22 @@
-# the check of a body without its call binds the arguments of an inlined
-# recursion it does not expand, 'rs[5].a' past the end of 'rs' of 'f'
+# the check of a body without its calls ends an inlined recursion that a
+# constant argument ends where it runs out of registers: x86_64 runs out at
+# an outer level and accepts, rv32i reaches 'a[5]' at 'k == 1' and rejects
+# (README 8.3)
 
-type row { a i8[4] }
-
-func g(s i8[], rs row[], x) res {
-    if x > 0 {
-        res = g(rs[5].a, rs, x - 1)
+func r(x, k) res {
+    res = 0
+    if k == 0 {
         return
     }
-    res = s[0]
+    var t = x + (x * (x + (x * (x + (x * (x + (x * (x + 1))))))))
+    var a = i8[5]
+    a[6 - k] = 1
+    res = x + (x * (x + (x * (r(x, k - 1) + 1))))
 }
 
 func f(x) res {
-    var rs = row[2]
-    var t = i8[4]
-    res = g(t, rs, x)
+    res = r(x, 2)
 }
 
 func main() {
-    exit(0)
 }

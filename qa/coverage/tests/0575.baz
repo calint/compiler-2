@@ -1,8 +1,19 @@
-# an instance copied from a whole array
+# a trailing comma after the last field of a type
 
-type point { x i32, y i32 }
+func assert(expr bool) {
+    if not expr exit(1)
+}
+
+type point { x i32, y i32, }
+
+type object {
+    pos point,
+    color i32, # the last field
+}
+
 func main() {
-    var ps = point[3]
-    var qs = point[2]
-    qs[0] = ps
+    var o = object{{1, 2}, 3}
+    assert(o.pos.x == 1)
+    assert(o.pos.y == 2)
+    assert(o.color == 3)
 }

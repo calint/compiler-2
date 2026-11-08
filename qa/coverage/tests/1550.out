@@ -1,4 +1,4 @@
 
-1550.baz:9:17: store the result of 'mk' in a variable before reading a field or calling a method of it
-    var z = mk().y
-                ^
+1550.baz:7:10: 'box<...>' is not a type, name an instance first, e.g. 'type my_box = box<...>'
+func f(b box<i8>) {}
+         ^~~

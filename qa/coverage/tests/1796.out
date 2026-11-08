@@ -1,4 +1,4 @@
 
-1796.baz:9:16: 'ps[1].x' is not an array
-    array_copy(ps[1].x, b, 1)
-               ^~
+1796.baz:4:5: 'i8' is a type, not a value
+    i8 = 1
+    ^~

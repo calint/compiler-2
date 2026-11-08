@@ -1,4 +1,4 @@
 
-1927.baz:4:12: expected ')' after the arguments
-    exit(1 2)
-           ^
+1927.baz:10:28: a call of 'point.m' is not an array
+    var n = array_length(p.m())
+                           ^

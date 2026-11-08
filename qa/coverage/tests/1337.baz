@@ -1,15 +1,13 @@
-# a conversion of a 'bool' to 'i8' computes the argument as a 'bool', also a
-# call that returns one
-func t() res bool {
-    res = true
-}
-
-func noinline u() res bool {
-    res = true
+# a constant argument of an inlined call compared is a value of the type of
+# its parameter, its unary ops apply at that type like those of a variable
+func f(p i8) res {
+    if -p != -128 {
+        res = 1
+        return
+    }
+    res = 0
 }
 
 func main() {
-    var b = true
-    var r = i8(t()) + i8(u()) + i8(b)
-    exit(r)
+    exit(f(-128))
 }

@@ -1,0 +1,4 @@
+
+0369.baz:4:9: expected an array
+    foo {}
+        ^

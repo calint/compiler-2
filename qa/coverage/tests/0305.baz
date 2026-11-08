@@ -1,8 +1,7 @@
-# constant outer nested index out of bounds is rejected at compile
-
-type group { values i8[2] }
+# arithmetic underflow
 
 func main() {
-    var groups = group[2]
-    groups[2].values[0] = 1
+    var arr = i8[8]
+    var index = 0
+    arr[index - 1] = 1
 }

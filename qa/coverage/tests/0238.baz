@@ -1,6 +1,9 @@
-# array index expressions require a closing bracket
+# distinct user types cannot be passed to a function
 
+type p { x }
+type q { x }
+func f(x p) {}
 func main() {
-    var x = i8[2]
-    var y = x[0
+    var y = q
+    f(y)
 }

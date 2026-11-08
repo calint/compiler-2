@@ -1,4 +1,4 @@
 
-1955.baz:6:13: an instance literal of 'point' is not an operand here, store it in a variable first
-    var b = point{1, 2} == p
-            ^~~~~
+1955.baz:4:13: a string is not a number, it fills only an array of 'i8'
+    var x = "ab" + 1
+            ^~~~

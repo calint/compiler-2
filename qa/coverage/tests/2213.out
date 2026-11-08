@@ -1,4 +1,4 @@
 
-2213.baz:10:23: a call of 'mk' is not an array
-    exit(array_length(mk().a))
-                      ^~
+2213.baz:5:12: 'return' takes no value, a result is assigned, e.g. 'res = a'
+    return a
+           ^

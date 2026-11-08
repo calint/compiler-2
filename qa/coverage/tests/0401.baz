@@ -1,33 +1,38 @@
-# lea regression: nested field writes through user-type alias with lea path
+# signed byte multiplication: wide results expose missing sign extension
 
 func assert(err, expr bool) { if not expr exit(err) }
 
-type pair {
-    x,
-    y
-}
-
-type box {
-    p pair,
-    tag
-}
-
-func set_fields(dst mut box, v, i mut) {
-    i = i + 1
-    dst.p.x = v + i
-    dst.p.y = dst.p.x + 1
-    dst.tag = dst.p.x + dst.p.y
-}
-
 func main() {
-    var boxes = box[2]
+    var negative = i8(-7)
+    var positive = i8(3)
+    var other_negative = i8(-3)
 
-    var ix = 0
-    set_fields(boxes[ix], 40, ix)
+    var wide = positive * negative
+    assert(1, wide == -21)
+    wide = negative * positive
+    assert(2, wide == -21)
+    wide = negative * other_negative
+    assert(3, wide == 21)
 
-    assert(1, ix == 1)
-    assert(2, boxes[0].p.x == 41)
-    assert(3, boxes[0].p.y == 42)
-    assert(4, boxes[0].tag == 83)
-    assert(5, boxes[1].tag == 0)
+    var narrow = i8(negative * positive)
+    assert(4, narrow == -21)
+    narrow = negative * other_negative
+    assert(5, narrow == 21)
+    narrow = negative * 3
+    assert(6, narrow == -21)
+    narrow = negative * (positive + 0)
+    assert(7, narrow == -21)
+    narrow = negative * -positive
+    assert(8, narrow == 21)
+    narrow = negative * ~positive
+    assert(9, narrow == 28)
+    narrow = negative * (other_negative + 0)
+    assert(10, narrow == 21)
+
+    positive = 100
+    negative = 3
+    narrow = positive * negative
+    assert(11, narrow == 44)
+    narrow = positive * (negative + 0)
+    assert(12, narrow == 44)
 }

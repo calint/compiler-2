@@ -1,10 +1,5 @@
-# an ordering comparison after an instance: an instance is not a number, it
-# compares only by '==' and '!='
-
-type point {x, y}
+# a character that cannot start a name is not looked up as one
 
 func main() {
-    var p = point{1, 2}
-    var q = point{1, 2}
-    q = p < q
+    var x = $
 }

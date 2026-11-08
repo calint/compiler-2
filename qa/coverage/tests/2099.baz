@@ -1,6 +1,7 @@
-# a built-in named as the argument a type argument is deduced from is called:
-# it needs its '('
+# an array literal at the default type is not a number
 
-func show<T type>(v T) {}
-
-func main() { show(array_length) }
+func main() {
+    var x = i8
+    x = [2]{1, 2}
+    exit(x)
+}

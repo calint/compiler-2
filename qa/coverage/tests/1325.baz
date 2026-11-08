@@ -1,4 +1,15 @@
-# a character literal where a definition is expected is reported as written
-'a'
+# a conversion of a 'bool' to 'i8' computes the argument as a 'bool', also a
+# call that returns one
+func t() res bool {
+    res = true
+}
 
-func main() {}
+func noinline u() res bool {
+    res = true
+}
+
+func main() {
+    var b = true
+    var r = i8(t()) + i8(u()) + i8(b)
+    exit(r)
+}

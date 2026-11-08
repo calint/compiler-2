@@ -1,0 +1,4 @@
+
+2170.baz:4:14: unsupported escape '\é'
+    var s = "\é\xa9"
+             ^~

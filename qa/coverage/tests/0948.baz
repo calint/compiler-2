@@ -1,16 +1,28 @@
-# the element 'e' of a 'foo' is passed to a function that reads another
-# array, which is accepted
+# the destination has one run-time index and the read two, the bytes in the
+# elements are different, which is accepted
 
-dat g = i32[4]{ 1, 2, 3, 4 }
-dat h = i32[4]{ 1, 2, 3, 4 }
+type item {
+    f i32,
+    g i32,
+}
 
-func put(x mut i32, k i32) {
-    x = k + (100 - h[3])
+type ent {
+    items item[2],
+    other i32,
+}
+
+dat es = ent[3]
+
+func put(x mut i32, i i32, j i32) {
+    x = 100 - es[i].items[j].f
 }
 
 func main() {
-    foo g {
-        put(e, 10)
-    }
-    if g[0] != 106 exit(1)
+    var k = 0
+    var i = i32(0)
+    var j = i32(1)
+
+    es[0].items[1].f = 7
+    put(es[k].other, i, j)
+    if es[0].other != 93 exit(1)
 }

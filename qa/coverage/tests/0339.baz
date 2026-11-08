@@ -1,6 +1,7 @@
-# an empty array cannot be declared, so its element cannot be accessed
+# boolean values cannot be arithmetic operands
 
 func main() {
-    var values = i8[]{}
-    var value = values[0]
+    var a = false
+    var b = true
+    var c = a + b
 }

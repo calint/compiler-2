@@ -1,6 +1,21 @@
-# an element of a 'let' array cannot be assigned
+# a method that writes its receiver cannot be called on a read-only argument,
+# also in a function inlined into another
+
+type tk { start, end }
+
+func mut tk.reset() {
+    self.start = 0
+}
+
+func clear(t tk) {
+    t.reset()
+}
+
+func run(t tk) {
+    clear(t)
+}
 
 func main() {
-    let a = i8[]{1, 2}
-    a[0] = 3
+    var a = tk{1, 2}
+    run(a)
 }

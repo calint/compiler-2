@@ -1,13 +1,11 @@
-# an inlined 'i8' parameter compared at the width of the left side
-func g(a i8) res i32 {
-    res = {}
-    var b = 3
-    if b == a {
-        res = 2
-    }
-}
+# '--checks=upper' alone on an array of 2^31 or more elements passes the
+# indexes below its count; rv32i compared the count as a negative number
 
 func main() {
-    var y = i8(3)
-    exit(g(y + 0))
+    var a = i8[0x80000010]
+    var i = 5
+    var j = 0x7fffffff
+    a[i] = 1
+    a[j] = 2
+    exit(a[i] + a[j])
 }

@@ -1,4 +1,4 @@
 
-0590.baz:4:13: constant '257' does not fit 'n' of type 'i8'
-    if n == 200 + 57 { exit(1) }
-            ^
+0590.baz:14:19: 'point.sum' is a method, call it on a value of type 'point'
+    var s = point.sum()
+                  ^~~

@@ -1,10 +1,4 @@
 
-2066.baz:10:13: index 2 is out of bounds for array 'a' of size 2
-    res = a[3 - n] + g(n - 1)
-            ^
-2066.baz:10:22: called from 'g(n - 1)'
-    res = a[3 - n] + g(n - 1)
-                     ^
-2066.baz:14:15: called from 'g(2)'
-    res = x + g(2)
-              ^
+2066.baz:8:7: 'a[1]' is not an array, parameter 's' takes one
+    f(a[1])
+      ^

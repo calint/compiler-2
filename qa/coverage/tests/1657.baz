@@ -1,19 +1,9 @@
-# a loop whose 'break' folds away for a constant argument is not left, the
-# code after it is not compiled, nor the code after the call; the parse
-# cannot tell and accepts it
-
-func spin(n) res {
-    res = 0
-    var i = 0
-    loop {
-        i = i + 1
-        if n == 1 break
-        if i == 7 exit(i)
-    }
-    res = 1
-}
+# the buffer of an io built-in is an array where it is parsed, also in a branch
+# that is not compiled
 
 func main() {
-    var r = spin(0)
-    exit(r)
+    var x = 1
+    if 1 == 2 {
+        write(1, x)
+    }
 }

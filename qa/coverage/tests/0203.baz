@@ -1,4 +1,7 @@
-# function parameters require known types
+# == requires matching array sizes
 
-func f(x nope) {}
-func main() {}
+func main() {
+    var a = i8[2]
+    var b = i8[3]
+    var z = a == b
+}

@@ -1,4 +1,0 @@
-
-1576.baz:7:12: function may return without setting its result 'res'
-func get() res message {
-           ^~~

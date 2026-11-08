@@ -1,4 +1,4 @@
 
-1603.baz:12:15: method 'pt.get' is not generic, it takes no type arguments
-    var x = p.get<i8>()
-              ^~~
+1603.baz:5:14: parentheses around a single value group nothing, write 'x'
+    var y = -(x)
+             ^

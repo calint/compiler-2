@@ -1,6 +1,5 @@
-# the same in an initializer
+# a buffer with an operator is not an array, also when it names a 'let'
 func main() {
-    var t = true
-    var f = false
-    var b = (t and f) == f
+    let c = i8[4]
+    var n = read(0, -c)
 }

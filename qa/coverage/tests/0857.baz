@@ -1,17 +1,15 @@
-# the unary operators of a non-inline call apply to its result, in memory and
-# in a register
-func noinline five() res { res = 5 }
+# a method of an alias of a generic type clashes with the generic method of
+# the same name, the generic method is defined first
 
-func noinline yes() res bool { res = true }
-
-func main() {
-    var a = -five()
-    var b = ~five()
-    var c = 10 + -five()
-    var d = not yes()
-    var k = 0
-    if not yes() k = 1000
-    if not not yes() k = k + 1
-    if d k = k + 5000
-    exit(a + b + c + k + 105)
+type text<capacity> {
+    array i8[capacity],
+    len,
 }
+
+func text.size() res { res = capacity }
+
+type str = text<8>
+
+func str.size() res { res = 99 }
+
+func main() {}

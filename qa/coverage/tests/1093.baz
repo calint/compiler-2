@@ -1,10 +1,7 @@
-# a constant argument that does not fit the parameter is rejected, also when
-# it is an expression
-
-func f(v i8) {
-    exit(v)
-}
+# an array literal of the default type assigned names no type either
 
 func main() {
-    f(300 + 1)
+    var a = []{1, 2}
+    a = []{3, 4}
+    exit(a[0])
 }

@@ -1,6 +1,6 @@
-# exit has no value to assign
+# a data constant is not a string
+
+dat x = i32("5")
 
 func main() {
-    var x = 1
-    x = exit(1)
 }

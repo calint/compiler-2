@@ -1,10 +1,8 @@
-# --checks=overflow: the negation of a folded conversion passed to an inlined
-# function overflows the type of the parameter
-func id16(v i16) res i16 {
-    res = v
-}
+# a unary operator applies to a number, not to an instance
+type point {x, y}
 
 func main() {
-    var r = id16(-i16(32768))
-    exit(int(r) & 255)
+    var p = point{1, 2}
+    var q = -p
+    exit(q.x)
 }

@@ -1,13 +1,6 @@
-# folding negation of the minimum constant wraps like the run-time negation
-
-func assert(err, expr bool) { if not expr exit(err) }
-
-let c = -9223372036854775807 - 1
-let d = -c
+# the start is the 4th argument, not an element
 
 func main() {
-    var x = c
-    x = -x
-    assert(1, x == c)
-    assert(2, d == c)
+    var buf = i8[4]
+    var r = write(1, buf[1], 2)
 }

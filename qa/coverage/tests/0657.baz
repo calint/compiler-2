@@ -1,21 +1,11 @@
-# a method that writes its receiver cannot be called on a read-only argument,
-# also in a function inlined into another
+# a constructor builds 'self' so it needs no 'mut'
 
-type tk { start, end }
+type point { x, y }
 
-func mut tk.reset() {
-    self.start = 0
-}
-
-func clear(t tk) {
-    t.reset()
-}
-
-func run(t tk) {
-    clear(t)
+func mut point.at(x, y) self {
+    self.x = x
+    self.y = y
 }
 
 func main() {
-    var a = tk{1, 2}
-    run(a)
 }

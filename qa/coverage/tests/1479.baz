@@ -1,4 +1,6 @@
-# a parameter list does not end with a ','
-func f(a, b,) {}
-
+# a method with type parameters defined twice
+type buffer<c> { a i8[c] }
+func buffer.app<T type>(x T) {}
+func buffer.app<T type>(x T) {}
+type sd = buffer<4>
 func main() {}

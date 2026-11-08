@@ -1,9 +1,13 @@
-# a string for a parameter without a type of a generic function is not a number
+# an array receiver of a generic method whose instance has an error is
+# reported before the instance is made
+type point {x, y}
 
-func f<T type>(a, x T) res T {
-    res = x
+func point.put<U type>(u U) res {
+    res = u.zz
 }
 
 func main() {
-    var n = f("a")
+    var a = point[2]
+    var q = point{1, 2}
+    var r = a.put(q)
 }

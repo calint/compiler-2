@@ -1,7 +1,6 @@
-# an instance literal reached into is not an operand, assigned to a number
-type pt { x, y }
+# an escape of a lead byte that an ASCII byte follows quotes the lead byte
+# alone, the ASCII byte stays data
 
 func main() {
-    var s = 0
-    s = pt{1, 2}.x
+    var s = "\ÃA"
 }

@@ -1,33 +1,7 @@
-# partial array and instance initializers zero-fill the rest
-
-func assert(expr bool) { if not expr exit(1) }
-
-type record { first, second, third, fourth }
+# dynamic upper-bound failure
 
 func main() {
-    {
-        var dirty_values = [4]{ 11, 22, 33, 44 }
-        assert(dirty_values[3] == 44)
-    }
-
-    {
-        var zeroed_values = [4]{ 99 }
-        assert(zeroed_values[0] == 99)
-        assert(zeroed_values[1] == 0)
-        assert(zeroed_values[2] == 0)
-        assert(zeroed_values[3] == 0)
-    }
-
-    {
-        var dirty_record = record{ 1, 2, 3, 4 }
-        assert(dirty_record.fourth == 4)
-    }
-
-    {
-        var zeroed_record = record{ 77 }
-        assert(zeroed_record.first == 77)
-        assert(zeroed_record.second == 0)
-        assert(zeroed_record.third == 0)
-        assert(zeroed_record.fourth == 0)
-    }
+    var arr = i8[8]
+    var index = 8
+    arr[index] = 0x61
 }

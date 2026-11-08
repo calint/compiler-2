@@ -1,10 +1,7 @@
-# parenthesized in-range index
-
-func assert(expr bool) { if not expr exit(1) }
+# signed eight-bit index remains negative
 
 func main() {
     var arr = i8[8]
-    var index = 3
-    arr[(index + 4)] = 1
-    assert(arr[7] == 1)
+    var index = i8(-1)
+    arr[index] = 1
 }

@@ -1,4 +1,0 @@
-
-1741.baz:8:9: array 'cs' must be indexed
-    x = cs
-        ^~

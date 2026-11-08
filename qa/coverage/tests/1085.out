@@ -1,4 +1,4 @@
 
-1085.baz:8:14: a 'bool' is not an arithmetic operand, convert it, e.g. 'int(...)'
-    var b = -is_on()
-             ^~~~~
+1085.baz:7:9: the destination gives the type 'point', write '{...}'
+    p = point{2, 1}
+        ^~~~~

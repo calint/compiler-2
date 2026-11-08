@@ -1,8 +1,6 @@
-# --checks=overflow: a product above the maximum of the width panics
-func noinline mul(a i32, b i32) res i32 { res = a * b }
+# --checks=overflow: the negation of the minimum of a typed constant is rejected
 func main() {
-    var a = i32(65536)
-    var b = i32(32768)
-    var x = mul(a, b)
-    exit(x)
+    var v = i8(0)
+    v = -i8(-128)
+    exit(v)
 }

@@ -1,10 +1,16 @@
-# a 'bool' destination does not take an instance
+# a read-only parameter bound to the global the body writes, a part of the
+# value reads the parameter after the global is written
+# the call is rejected: the function writes the global the argument is
 
 type point {x, y}
 
+var g = point{3, 5}
+
+func f(p point) {
+    g = {1, p.x}
+}
+
 func main() {
-    var p = point{5, 2}
-    var b = false
-    b = p
-    exit(0)
+    f(g)
+    exit(g.y)
 }

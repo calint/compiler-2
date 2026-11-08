@@ -1,4 +1,16 @@
-# a control byte that a message quotes is written as an escape
+# a far frame address of a noinline call is lowered through a scratch
+# register that is not the register of the receiver address
+type point {x, y}
+
+func noinline point.sum() res {
+    res = self.x + self.y
+}
+
 func main() {
-    var x = ab
+    var p = point{1, 2}
+    var big = i8[3000000000]
+    var a = 1
+    # note: the nesting holds every scratch register but the slot register
+    var r = (a * (a + (a * (a + (a * (a + p.sum()))))))
+    exit(r)
 }

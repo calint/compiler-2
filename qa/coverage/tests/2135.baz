@@ -1,0 +1,6 @@
+# an array literal compared into a variable
+func main() {
+    var a = [2]{1, 2}
+    var b = [2]{1, 2} == a
+    exit(b)
+}

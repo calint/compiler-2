@@ -1,4 +1,4 @@
 
-1909.baz:6:5: expected '(' after function name
-    array_length a
-    ^~~~~~~~~~~~
+1909.baz:4:12: expected ')' after the arguments
+    exit(1 2)
+           ^

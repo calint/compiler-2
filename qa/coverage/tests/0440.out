@@ -1,4 +1,4 @@
 
-0440.baz:3:17: expected '{' to begin block
-func main() exit(0)
-                ^
+0440.baz:2:15: expected '{' to begin block
+func helper() : result i32 { result = 1 }
+              ^

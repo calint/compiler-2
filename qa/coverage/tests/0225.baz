@@ -1,9 +1,10 @@
-# distinct user types cannot be assigned
+# unary negation of an array element passes its value to an inlined call
 
-type p { x }
-type q { x }
+func f(x i8) res {
+    res = x + 7
+}
+
 func main() {
-    var q1 = q
-    var p1 = p
-    p1 = q1
+    var a = i8[2]{1, 5}
+    exit(f(-a[1]))
 }

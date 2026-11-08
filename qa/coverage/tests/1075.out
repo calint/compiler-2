@@ -1,4 +1,4 @@
 
-1075.baz:8:13: generic parameter 'T' is also the name of the generic parameter of 'list' at 4:11, use another name
-func list.f<T type>(x T) {}
-            ^
+1075.baz:3:10: a 'bool' is not an arithmetic operand, convert it, e.g. 'int(true)'
+dat d = -true
+         ^~~~

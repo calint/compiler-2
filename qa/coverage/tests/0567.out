@@ -1,4 +1,4 @@
 
-0567.baz:11:19: 'x' of type 'i32' is narrowed to 'i8', use 'i8(...)'
-    var p = pixel{x, 2}
+0567.baz:7:19: 'p' is not an array
+    var l = line{ p }
                   ^

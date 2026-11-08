@@ -1,4 +1,4 @@
 
-1094.baz:6:15: the destination gives the type 'i8[2]', write '{...}'
-    var q = t{i8[]{4, 5}}
-              ^~
+1094.baz:9:22: the destination gives the type 'point', write '{...}'
+    exit(take<point>(point{3, 4}))
+                     ^~~~~

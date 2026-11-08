@@ -1,4 +1,4 @@
 
-1935.baz:4:11: 'exit' takes 1 argument
-    exit(0, zz)
-          ^
+1935.baz:4:9: expected type 'bool', got 'i8[]'
+    b = i8[2]
+        ^~

@@ -1,7 +1,7 @@
-# extreme index exposes NASM overflow
+# signed default-type index remains negative
 
 func main() {
     var arr = i8[8]
-    var index = 9223372036854775807
+    var index = -1
     arr[index] = 1
 }

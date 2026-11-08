@@ -1,12 +1,11 @@
-# the element 'e' of a 'foo' may be the element that is written
+# a generic function without a body does not take the next definition as its
+# body
 
-type point {x, y}
-
-var ps = point[2]{{3, 5}, {7, 9}}
+func f<T type>(x T) res T
+func g() {
+    exit(3)
+}
 
 func main() {
-    foo ps {
-        ps[1] = {e.y, e.x}
-    }
-    exit(ps[1].y)
+    g()
 }

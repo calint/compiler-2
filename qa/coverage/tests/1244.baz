@@ -1,5 +1,6 @@
-# a bare type is not a value before a word operator: 'and'
+# a string where an array is named is rejected at the string
 func main() {
-    var b = bool and true
-    exit(int(b))
+    var b = i8[4]
+    array_copy("abc", b, 3)
+    exit(b[0])
 }

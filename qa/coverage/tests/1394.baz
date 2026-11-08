@@ -1,15 +1,17 @@
-# a call that writes element 0 of an array field of a literal may not read
-# element 0
+# a noinline body that binds a parameter of an inlined call to the global the
+# inlined body writes is rejected at that call, like an inlined body
 
-type point {x, y}
-type t {ps point[2]}
+var g = 3
 
-func mk(v) res point {
-    res = {v, v}
+func h(p) {
+    g = p * 2 + p
+}
+
+func noinline f() {
+    h(g)
 }
 
 func main() {
-    var w = t{{{1, 2}, {3, 4}}}
-    w = {{mk(w.ps[0].x), {5, 6}}}
-    exit(w.ps[0].y)
+    f()
+    exit(g)
 }

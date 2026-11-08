@@ -1,5 +1,18 @@
-# foo requires an array identifier
+# aggregate assignment with an array field
+
+type point { x, y }
+type tagged_points { tag, points point[2] }
+
+func assert(x bool) { if not x exit(1) }
 
 func main() {
-    foo {}
+    var arr = point[2]{ {1, 2}, {3, 4} }
+    var type_inst = tagged_points
+    type_inst = { 7, arr }
+
+    assert(type_inst.tag == 7)
+    assert(type_inst.points[0].x == 1)
+    assert(type_inst.points[0].y == 2)
+    assert(type_inst.points[1].x == 3)
+    assert(type_inst.points[1].y == 4)
 }

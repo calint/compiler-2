@@ -1,4 +1,0 @@
-
-1384.baz:8:9: expected type 'i32', got 'point'
-    y = p
-        ^

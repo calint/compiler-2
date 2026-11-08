@@ -1,34 +1,19 @@
-# rv32i: a remainder keeps its result while loop registers are saved
+# an indexed argument may be the array element a non-inline body names
+# the call is rejected: the function uses the global the call passes it
 
-dat a = []{1, 2}
+var arr = i32[4]
+
+func swap_values(x mut i32, y mut i32) {
+    var tmp = x
+    x = y
+    y = tmp
+}
+
+func noinline outer(a mut i32) {
+    swap_values(a, arr[1])
+}
 
 func main() {
-    var x = 100
-    foo a {
-        foo a {
-            foo a {
-                foo a {
-                    foo a {
-                        foo a {
-                            foo a {
-                                foo a {
-                                    foo a {
-                                        foo a {
-                                            foo a {
-                                                foo a {
-                                                    x = x + 7
-                                                    x = x % (i + 3)
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-    exit(x + 1)
+    var i = 1
+    outer(arr[i])
 }

@@ -1,6 +1,6 @@
-# missing field initializer delimiter is rejected
+# too many data array elements are rejected before parsing the next element
 
-type p { x, y }
+dat values = i8[2]{ 1, 2, 3 }
+
 func main() {
-    var value = p{1 2}
 }

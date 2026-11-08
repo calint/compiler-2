@@ -1,4 +1,2 @@
 
-0178.baz:3:13: expected ',' or ')' after parameter 'x'
-func f(x i8 y i8) {}
-            ^
+0178.baz: function 'main' not found

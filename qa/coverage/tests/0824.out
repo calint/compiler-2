@@ -1,4 +1,4 @@
 
-0824.baz:4:16: an array needs a constant size, e.g. 'i8[4]'
-    var a = i8[]
-               ^
+0824.baz:2:6: 'int' is a built-in type
+type int { value i32 }
+     ^~~

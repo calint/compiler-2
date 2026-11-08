@@ -1,10 +1,9 @@
-# the buffer of a sector function that is an unsized array parameter is
-# checked by its calls, not in a function that is never called
-
-func load(t mut i8[]) {
-    sector_read(1, t)
-}
-
+# a shift by a count not below 32 in the argument of a conversion to 'i32'
+# is computed at 64 bits, where the low bits of the result are zero
 func main() {
-    exit(0)
+    var n = 33
+    var a = 3
+    var d = i32(0)
+    d = i32(a << n)
+    exit(i32(a << n) + d + 7)
 }

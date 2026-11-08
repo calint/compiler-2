@@ -3,7 +3,7 @@
 # 'src/': a quoted identifier with an underscore or a 'scope::name', e.g.
 # 'toc::storage_of' or 'plan_writes'; a quoted baz text without an underscore
 # is not checked; and that each test of the column 'tests' of the catalog
-# (8.1) is a case of 'qa/coverage/cases.sh', e.g. '0302' or '1301-1303'; and
+# (8.1) is a case of 'qa/coverage/cases.sh', e.g. '0295' or '1289-1291'; and
 # that the reading order of 1.1 names every file of 'src/', the built-ins as
 # 'stmt_builtin_*.hpp'
 # usage: qa/lint/check-readme-names.py

@@ -1,6 +1,11 @@
-# a type after the data name is rejected, the initializer gives the type,
-# e.g. 'dat x = i32(0)'
+# foo count larger than the array fails the upper bound check
 
-dat x i32 = 1
-
-func main() {}
+func main() {
+    var arr = []{ 1, 2, 3 }
+    var count = 4
+    var sum = 0
+    foo arr, count {
+        sum = sum + e
+    }
+    exit(sum)
+}

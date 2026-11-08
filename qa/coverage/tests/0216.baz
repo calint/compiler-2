@@ -1,4 +1,4 @@
-# constant declarations require a name
+# a function name not followed by '(' is rejected
 
-let = 1
+func f {}
 func main() {}

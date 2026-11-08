@@ -1,13 +1,10 @@
-# a type parameter of the base gets a type, the error is reported in the
-# definition with the alias that resolved it
+# a surplus written type argument is reported with the count, before the
+# arguments are resolved, like the arguments of a generic type
 
-type list<T type, capacity> {
-    array T[capacity],
-    len,
+func same<T type>(a T, b T) res bool {
+    res = a == b
 }
 
-type text<capacity> = list<capacity, capacity>
-
-type str = text<8>
-
-func main() {}
+func main() {
+    var b = same<i8, 3>(1, 2)
+}

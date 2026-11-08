@@ -1,0 +1,4 @@
+
+2156.baz:15:25: a call of 'pt.m' is not an array
+    exit(array_length(p.m().a))
+                        ^

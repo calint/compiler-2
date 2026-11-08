@@ -1,6 +1,6 @@
-# a '{}' is a whole value, a '!' after it is not an operator
+# a surplus argument of 'array_length' is reported as its argument count
 
 func main() {
-    var n = i8
-    n = {} ! 1
+    var a = i8[4]
+    exit(array_length(a, 1))
 }

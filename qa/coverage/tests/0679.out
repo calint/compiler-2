@@ -1,4 +1,4 @@
 
-0679.baz:3:9: cannot parse constant '1abc'
-let x = 1abc
-        ^~~~
+0679.baz:4:5: expected '(' after function name
+    exit
+    ^~~~

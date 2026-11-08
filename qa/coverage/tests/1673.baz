@@ -1,6 +1,12 @@
-# the buffer of an io built-in is read like the array of 'array_length': a type
-# is not an array
+# the else after a branch that always runs holds the compile rules, e.g. the
+# element types of 'array_copy'
 
 func main() {
-    var n = write(1, i8)
+    var a = i8[4]
+    var w = i16[4]
+    if 1 == 1 {
+        exit(0)
+    } else {
+        array_copy(a, w, 4)
+    }
 }

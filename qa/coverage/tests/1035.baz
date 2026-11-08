@@ -1,7 +1,6 @@
-# a keyword is not a parameter name
-
-func f(loop) {
-}
+# a sector past the end of the sd card image panics
 
 func main() {
+    var bytes = i8[512]
+    sector_read(-1, bytes)
 }

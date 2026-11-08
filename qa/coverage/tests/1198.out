@@ -1,4 +1,4 @@
 
-1198.baz:5:9: expected type 'i64', got 'bool', use 'i64(...)'
-    r = true
-        ^~~~
+1198.baz:6:7: index 9 is out of bounds for array 'a' of size 4
+    a[9] = 1
+      ^

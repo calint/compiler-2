@@ -1,13 +1,10 @@
-# x86_64: '==' of 16 bytes compares with two 'cmpsq' and does not take 'rcx',
-# the count register of 'repe cmpsq': the script prints the lines of the
-# compare that name 'rcx'
-type pt {x, y}
+# a built-in destination takes a number, not an instance
+
+type point {x, y}
 
 func main() {
-    var p = pt{1, 2}
-    var q = pt{1, 2}
-    if p == q {
-        exit(1)
-    }
-    exit(0)
+    var p = point{5, 2}
+    var y = 1
+    y = p
+    exit(y)
 }

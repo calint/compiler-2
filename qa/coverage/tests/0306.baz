@@ -1,8 +1,7 @@
-# constant inner nested index out of bounds is rejected at compile
-
-type group { values i8[2] }
+# extreme index exposes NASM overflow
 
 func main() {
-    var groups = group[2]
-    groups[0].values[2] = 1
+    var arr = i8[8]
+    var index = 9223372036854775807
+    arr[index] = 1
 }

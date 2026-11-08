@@ -1,4 +1,4 @@
 
-0642.baz:9:10: argument 2 'x' may share storage with argument 1 'x' (both name 'x'), use a temporary variable for one of them
-    f(x, x)
-         ^
+0642.baz:11:9: read-only 'x' cannot be passed to a 'mut' parameter, 'x' is declared with 'let'
+    set(x)
+        ^

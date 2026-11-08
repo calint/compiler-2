@@ -1,19 +1,18 @@
-# an inlined count that folds to 0 evaluates the paths as a noinline call does
+# 'self' names a value in a method, so it deduces the type argument of a
+# generic call as a variable does
+type point { x i16, y i16 }
 
-var g = 0
-
-func f(v) r {
-    g = g + 1
-    r = v
+func gid<T type>(v T) res T {
+    res = v
 }
 
-func cp(a i8[], b mut i8[], n) {
-    array_copy(a[f(1)], b, n)
+func point.sum() res {
+    var q = gid(self)
+    var z = gid(self.x)
+    res = q.x + q.y + z
 }
 
 func main() {
-    var a = i8[4]{1, 2, 3, 4}
-    var b = i8[4]
-    cp(a, b, 0)
-    exit(i8(g))
+    var p = point{3, 4}
+    exit(p.sum())
 }

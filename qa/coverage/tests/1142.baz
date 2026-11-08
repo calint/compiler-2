@@ -1,11 +1,12 @@
-# a 'dat' holds constants, a call is made at run time
+# an array assigned an array of another size is rejected also in a function
+# that is never called
 
-func f() res {
-    res = 1
+func copy() {
+    var a = i8[2]
+    var b = i8[3]
+    a = b
 }
 
-dat x = f()
-
 func main() {
-    exit(x)
+    exit(0)
 }

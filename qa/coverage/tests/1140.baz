@@ -1,8 +1,7 @@
-# a 'dat' holds constants, a copy of another array is made at run time
-
-dat a = i8[2]{1, 2}
-dat b = a
+# a negative constant start of 'read' is rejected
 
 func main() {
-    exit(b[0])
+    var a = i8[4]
+    var n = read(0, a, 1, -1)
+    exit(n)
 }

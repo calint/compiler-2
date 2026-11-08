@@ -1,7 +1,7 @@
-# an instance literal for a number is a value of another type
-type point {x i32, y i32}
+# an error in the fields of a generic type names the generic definition
 
-func main() {
-    var x = i8
-    x = point{1, 2}
-}
+type box<T type> { x T y }
+
+type s = box<i8>
+
+func main() {}

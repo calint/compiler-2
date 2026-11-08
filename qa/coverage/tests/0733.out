@@ -1,4 +1,4 @@
 
-0733.baz:3:11: unsupported escape '\q'
-dat s = "a\qb"
-          ^~
+0733.baz:4:13: 'i64' is not available on this target, use 'i32' or 'int'
+    var a = i64(6)
+            ^~~

@@ -1,0 +1,4 @@
+
+0156.baz:3:23: cannot parse constant '0b102'
+func main() { var x = 0b102 }
+                      ^~~~~

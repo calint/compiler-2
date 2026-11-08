@@ -1,5 +1,6 @@
-# exit takes one argument
+# an array field gets its initializer after a delimiter
 
-func main() {
-    exit()
-}
+type p { x, y[2] }
+dat x = p{1 2}
+
+func main() {}

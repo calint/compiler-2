@@ -1,4 +1,0 @@
-
-2032.baz:5:17: unexpected ']'
-    res = (a + 1]
-                ^

@@ -1,16 +1,6 @@
-# a function uses the globals of the functions it calls
-var g = 5
-
-func get() res {
-    res = g
-}
-
-func f() res {
-    res = 1
-    res = res + get()
-}
-
+# a local named like a type hides it, also as a statement
+type point {x, y}
 func main() {
-    g = f()
-    exit(g)
+    var point = 1
+    point{1, 2}
 }

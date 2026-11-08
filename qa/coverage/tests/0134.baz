@@ -1,15 +1,41 @@
-# indexed value inside a function argument expression
+# left shift by array elements, constants and a complemented operand
 
 func assert(expr bool) { if not expr exit(1) }
 
-func fiz(x i32) res i32 {
-    res = x + (x + 1)
+
+func fez(val i32[]) res i32 {
+    res = val[2] << (val[1] + val[1]) 
+}
+
+func foz(x i32, y i32) res i32 {
+    res = x << y 
+}
+
+func fuz(x i32) res i32 {
+    res = x << 3
+}
+
+func faz(x i32, y i32) res i32 {
+    res = x << ~y 
 }
 
 func main() {
-    var arr = i32[4]
-    var ix = 1
-    arr[ix] = 2
-    var c = fiz(1 + arr[ix])
-    assert(c == 7)
+    var values = i32[4]
+    values[1] = 4
+    values[2] = 3
+
+    # note: temporary because the result may share storage with the argument
+    var tmp1 = fez(values)
+    values[0] = tmp1
+    assert(values[0] == 768)
+
+    values[3] = foz(values[2], values[1])
+    assert(values[3] == 48)
+
+    values[0] = fuz(values[1])
+    assert(values[0] == 32)
+
+    var a = i32(-2)
+    values[0] = faz(values[1], a)
+    assert(values[0] == 8)
 }

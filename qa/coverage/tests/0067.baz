@@ -1,23 +1,17 @@
-# arguments with unary values
+# function mutation of caller data
 
 func assert(expr bool) {
     if not expr exit(1)
 }
 
-func foozi(x, y) {
-    assert(x == -2)    # ~1 == 0xfffffffe
-    assert(y == -2)
+func foozi(i mut) {
+    i = 0xfe5e + 1
 }
 
-func fow(x, y) {
-    assert(x == 0)
-    assert(y == 0)
-}
+dat count = 1
 
-func main(){
-    var a = 1
-    foozi(~1, ~a)
-    fow(~-1, ~-a)
-    foozi(a - 3, -2)
-    fow(a - 1, 0)
+func main() {
+    assert(count == 1)
+    foozi(count)
+    assert(count == 0xfe5f)
 }

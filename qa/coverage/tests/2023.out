@@ -1,4 +1,4 @@
 
-2023.baz:4:9: a call of 'i8' is not an array
-    a = i8(1)
-        ^~
+2023.baz:11:19: '1' is not a valid name, a name starts with a letter or '_' and has only letters, digits and '_'
+    var p = point.1(2)
+                  ^

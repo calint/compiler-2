@@ -1,4 +1,4 @@
 
-2209.baz:6:9: an instance literal of 'pt' is not an operand here, store it in a variable first
-    s = pt{1, 2}.x
-        ^~
+2209.baz:5:14: unsupported escape '\\xc3'
+    var s = "\\xc3A"
+             ^~~~~

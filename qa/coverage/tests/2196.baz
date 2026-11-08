@@ -1,13 +1,18 @@
-# a type parameter called like a function with a user type argument
-type point {
-    x,
+# a 'foo' whose array is not reached ends the path, also with a count of 0
+type box {a[4]}
+
+func stop(m) res {
+    if m >= 3 exit(m)
+    res = 0
 }
 
-func f<T type>(p T) res {
-    res = T(5)
+func g(k) {
+    var bs = box[2]
+    foo bs[stop(k)].a, 0 {}
+    bs[0].a[k] = 1
 }
 
 func main() {
-    var p = point{1}
-    exit(f(p))
+    g(5)
+    exit(1)
 }

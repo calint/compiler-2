@@ -1,3 +1,10 @@
-# the end of the file after the last ',' of an array literal
+# a constant count whose bytes reach the storage the target addresses is past
+# the end of an unsized array parameter of any size, also in a function
+# checked without its calls; x86_64 only, rv32i rejects the constant itself
+
+func f(a i8[], b i8[]) res bool {
+    res = arrays_equal(a, b, 9223372036854775807)
+}
+
 func main() {
-    var a = i8[2]{1, 2,
+}

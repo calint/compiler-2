@@ -1,26 +1,21 @@
-# a generic result is deduced from a 'bool' destination, a variable, a field
-# or a parameter
-type flags {on bool}
-
-func zero<T type>() res T {
-    res = {}
-}
-
-func count(v bool) res {
-    res = 1
-    if v {
-        res = 2
-    }
-}
-
+# a constant count with a constant start is checked at compile time, its
+# range is not checked again at run time; a run-time start is checked up to
+# the length in its walk and its range after the count
 func main() {
-    var b = true
-    b = zero()
-    var f = flags{true}
-    f.on = zero()
-    var n = count(zero())
-    if b or f.on {
-        exit(1)
+    var a = i8[]{1, 2, 3, 4}
+    var b = i8[4]
+    var s = 0
+    foo a, 2 {
+        s = s + e
     }
-    exit(n + 4)
+    array_copy(a[1], b, 2)
+    array_copy(a, b, 4)
+    if arrays_equal(a[1], b, 2) {
+        s = s + 1
+    }
+    write(1, b, 2, 1)
+    write(1, a, 2)
+    var i = 1
+    array_copy(a[i], b, 2)
+    exit(s)
 }

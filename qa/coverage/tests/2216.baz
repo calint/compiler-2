@@ -1,5 +1,6 @@
-# a call reached into where an array is expected, of a function that is
-# not defined, reported as for any call
+# a '!' before a condition is rejected, 'not' negates
+
 func main() {
-    exit(array_length(nope().a))
+    var x = true
+    if !x exit(1)
 }

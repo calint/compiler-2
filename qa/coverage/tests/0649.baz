@@ -1,7 +1,15 @@
-# 'array_copy' cannot copy into a 'let' array
+# a read-only argument passed to a function that writes it is rejected at the
+# call, also inside a function that is never called
+
+type tk { start, end }
+
+func mut tk.reset() {
+    self.start = 0
+}
+
+func clear(t tk) {
+    t.reset()
+}
 
 func main() {
-    let d = i8[]{1, 2}
-    var s = i8[]{3, 4}
-    array_copy(s, d, 2)
 }

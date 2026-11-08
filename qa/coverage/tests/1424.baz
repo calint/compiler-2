@@ -1,7 +1,6 @@
-# a 'break' outside a loop is rejected in a branch that is never taken
+# the value of 'array_length' is not used
 
 func main() {
-    if 1 == 2 {
-        break
-    }
+    var a = i8[4]
+    array_length(a)
 }

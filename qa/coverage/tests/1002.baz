@@ -1,6 +1,9 @@
-# --checks=overflow: the negation of the minimum of a typed constant is rejected
+# a write of a count that added to the start passes the maximum of i64 is out of bounds
+
 func main() {
-    var v = i8(0)
-    v = -i8(-128)
-    exit(v)
+    var x = i8[4]
+    var start = i64(2)
+    var count = i64(0x7fffffffffffffff)
+    write(1, x, count, start)
+    exit(0)
 }

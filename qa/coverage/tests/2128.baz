@@ -1,0 +1,12 @@
+# with the shift check, a conversion that narrows and one that does not
+func main() {
+    var x = i16(300)
+    var y = i16(5)
+    var c = i8
+    c = i8(x + y)
+    var w = i16
+    w = i16(y)
+    var v = i16
+    v = -i16(c)
+    exit(c + w + v)
+}

@@ -1,6 +1,14 @@
-# a variable compared in its own initializer is read before it is set, not
-# taken as a 'bool'
+# a constructor called on a value with type arguments is reported as a
+# constructor, not as a method that is not generic
+
+type point {x, y}
+
+func point.at(x, y) self {
+    self.x = x
+    self.y = y
+}
 
 func main() {
-    var b = b == 1
+    var p = point{1, 2}
+    var q = p.at<i8>(1, 2)
 }

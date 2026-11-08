@@ -1,8 +1,11 @@
-# data arrays whose sizes together exceed the signed 64-bit range, the first
-# is past the memory the target addresses
-
-dat a = i8[4611686018427387904]
-dat b = i8[4611686018427387904]
+# a constant shift count beyond the width is rejected, also in code that does
+# not run
 
 func main() {
+    var zero = 0
+    if zero != 0 {
+        var c = 1 << 64
+        exit(c)
+    }
+    exit(7)
 }

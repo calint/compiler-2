@@ -1,5 +1,11 @@
-# a constant left side of a comparison may not truncate either
+# a variable named 'self' is rejected
+
+type point {
+    x,
+    y
+}
+
+# 'self' is reserved
 func main() {
-    var n = i8(1)
-    if 200 + 57 > n { exit(1) }
+    var self = 1
 }

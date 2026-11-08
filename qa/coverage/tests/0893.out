@@ -1,4 +1,7 @@
 
-0893.baz:7:13: function 'check' has no result
-    if 1 == check(true) {
-            ^~~~~
+include/bad.baz:2:5: 'x' not found
+    x = 1
+    ^
+0893.baz:1:9: included from
+include "include/bad.baz"
+        ^~~~~~~~~~~~~~~~~

@@ -1,9 +1,7 @@
-# an argument takes its type from a parameter of a known type
+# every escape of a string literal reaches the output byte for byte
 
-type point { x, y }
-
-func sum(p point) res { res = p.x + p.y }
-
+dat text = "A\0\a\b\t\n\v\f\r\e\"'`\\\x00\x7f\x80\xff\x41B"
 func main() {
-    exit(sum(point{1, 2}))
+    var count = write(1, text, array_length(text))
+    if count != 20 exit(1)
 }

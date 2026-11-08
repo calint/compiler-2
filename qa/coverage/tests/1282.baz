@@ -1,14 +1,8 @@
-# a method of a generic type that nothing calls is checked for each instance
-# like a function that nothing calls: a constant index out of bounds
-type buf<capacity> {
-    data i8[capacity],
-}
-
-type small = buf<4>
-
-func buf.bad() res i8 {
-    res = self.data[9]
-}
-
+# a constant count of 'array_copy' larger than the array is rejected also when
+# the start is computed at run time
 func main() {
+    var a = i8[4]
+    var b = i8[8]
+    var i = 0
+    array_copy(b, a[i], 5)
 }

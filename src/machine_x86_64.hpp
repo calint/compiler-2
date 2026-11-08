@@ -118,7 +118,7 @@ class machine_x86_64 final : public machine {
 
     // note: measured on the tests and 'roome', from 5 the code size is flat
     //       within 1 instruction and below it up to 9 larger; 6 to 8 accept
-    //       what the tests expect, 5 accepts 0726 and from 9 1816 runs out of
+    //       what the tests expect, 5 accepts 0716 and from 9 1798 runs out of
     //       registers
 
     struct register_names {

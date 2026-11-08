@@ -1,14 +1,9 @@
-# the source of 'array_copy' that the call of its count may write is
-# rejected
-var a = i8[4]
-
-func grow() res {
-    a[0] = 1
-    res = 4
-}
-
+# a 'let' of a 'bool' is a constant 'bool', the 'if' folds
 func main() {
-    var b = i8[4]
-    array_copy(a, b, grow())
-    exit(b[0])
+    let b = true
+    let c = not b
+    if c {
+        exit(1)
+    }
+    exit(2)
 }

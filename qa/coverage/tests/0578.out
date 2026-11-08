@@ -1,4 +1,0 @@
-
-0578.baz:5:26: 'ps[1]' is not an array
-    var n = array_length(ps[1])
-                         ^~

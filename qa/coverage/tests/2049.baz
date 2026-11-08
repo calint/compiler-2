@@ -1,13 +1,24 @@
-# a method call without a result where an array is expected is a call that
-# is not an array, as for a plain call or a method with a result
+# the check of a body without its call goes on after an inlined recursion
+# that an unsized array ends, to the 'h(3)' after it
 
-type point {x, y}
+func g(n, s i8[]) res {
+    if n >= array_length(s) {
+        res = 0
+        return
+    }
+    res = s[n] + g(n + 1, s)
+}
 
-func point.clear() {
+func h(k) res {
+    var a = i8[2]
+    res = a[k]
+}
+
+func f(t i8[]) res {
+    res = g(0, t)
+    res = res + h(3)
 }
 
 func main() {
-    var p = point{1, 2}
-    var a = i8[2]
-    a = p.clear()
+    exit(0)
 }

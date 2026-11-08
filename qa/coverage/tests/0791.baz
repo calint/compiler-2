@@ -1,10 +1,5 @@
-# a generic type is not a value
+# a generic parameter is a constant or has the kind 'type'
 
-type text<capacity> {
-    array i8[capacity],
-    len,
-}
+func f<T int>() {}
 
-func main() {
-    var t = text
-}
+func main() {}

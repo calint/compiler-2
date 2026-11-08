@@ -1,5 +1,5 @@
-# an unknown name as an array size cannot be resolved
+# a parenthesized integer as a condition is rejected
 func main() {
-    var a = i8[q]
-    exit(a[0])
+    var n = i32(1)
+    if n == 2 or (n + 0) exit(2)
 }

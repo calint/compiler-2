@@ -1,0 +1,15 @@
+# a unary operator on a parameter that names an indexed element passes its
+# value to an inlined call, like one on the element itself
+func f(x) res {
+    res = x
+}
+
+func h(y) res {
+    res = f(-y)
+}
+
+func main() {
+    var a = [3]{1, 2, -6}
+    var i = 2
+    exit(h(a[i]) + f(-a[0]))
+}

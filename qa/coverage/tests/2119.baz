@@ -1,9 +1,7 @@
-# a user function without a result tells no type argument
-
-func g() {}
-
-func show<T type>(s T) {}
-
+# a constant division with the division check: a quotient that fits and -1
+# as the divisor of a value that is not the minimum
 func main() {
-    show(g())
+    var x = 10 / 2
+    var y = -7 / -1
+    exit(x + y)
 }

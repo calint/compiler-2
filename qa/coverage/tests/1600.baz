@@ -1,5 +1,8 @@
-# the array of a built-in is not a type
-func main() {
-    var a = i8[4]
-    array_copy(i8, a, 1)
+# a type parameter of a method of a generic type is not named like the method
+type box<n> { a i8[n] }
+
+func box.get<get type>(x get) res get {
+    res = x
 }
+
+func main() {}

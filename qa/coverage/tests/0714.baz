@@ -1,5 +1,8 @@
-# dat is only allowed in the global scope
+# an instance value starts with '{'
+
+type point { x, y }
 
 func main() {
-    dat x = 1
+    var q = point{3, 4}
+    q = (1)
 }

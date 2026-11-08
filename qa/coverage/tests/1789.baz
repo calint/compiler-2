@@ -1,8 +1,7 @@
-# a type parameter of a function is a name: a keyword is not one, also
-# without the kind 'type'
-
-func f<if>() {
-}
+# a keyword where a value is expected is reported as one, not as a name that
+# is not found
 
 func main() {
+    var x = 1
+    x = loop(1)
 }

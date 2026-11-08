@@ -1,9 +1,9 @@
-# a parameter type with type arguments is not a type, an instance is named
-# first, like the type of a field
-type box<T type> {
-    v T
+# a type is not an operand, also after an operator
+type point {
+    x,
+    y,
 }
 
-func f(b box<i8>) {}
-
-func main() {}
+func main() {
+    var n = 1 + point
+}

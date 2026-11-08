@@ -1,13 +1,9 @@
-# a 'return' in a branch false at the parse returns without the result set,
-# as in a 'foo' that never runs
+# type arguments after a type that is not generic, as a parameter type
 
-func f() res {
-    if false {
-        return
-    }
-    res = 1
+type pt {x i8}
+
+func f(a pt<i8>) {
 }
 
 func main() {
-    exit(f())
 }

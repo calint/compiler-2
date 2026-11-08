@@ -1,22 +1,13 @@
-# a first element with unary ops that reads the destination is computed in
-# place: it is copied before anything writes, the ops apply after the copy
+# a constant 'bool' argument of a noinline call checks the elements after the
+# one that decides it
 
-func assert(err, ok bool) { if not ok exit(err) }
+func noinline f(b bool) {
+    if b {
+        exit(1)
+    }
+}
 
 func main() {
-    var m = 5
-    m = -m
-    assert(1, m == -5)
-    m = ~m
-    assert(2, m == 4)
-    m = -m + 1
-    assert(3, m == -3)
-    var a = i32[4]{3, 2, -13, 0}
-    var i = 2
-    i = -a[i]
-    assert(4, i == 13)
-    var b = i8(-127)
-    b = -b
-    assert(5, b == 127)
-    exit(0)
+    var a = 1
+    f(true or a / 0 == 1)
 }

@@ -1,34 +1,16 @@
-# truncate a qword to byte word and dword
+# foo over an array of user types
+
+type point { x, y }
+
+dat points = point[3]{ {1, 2}, {3, 4}, {5, 6} }
 
 func assert(x bool) { if not x exit(1) }
 
-func take_byte(value i8) result i8 {
-    result = value
-}
-
-func take_word(value i16) result i16 {
-    result = value
-}
-
-func take_dword(value i32) result i32 {
-    result = value
-}
-
 func main() {
-    var qword = i64(0x12345678)
-    qword = qword << 32
-    var lower = i64(0x9abc)
-    lower = lower << 16
-    lower = lower | 0xdef0
-    qword = qword | lower
-    var qword_byte = i8(qword)
-    var qword_word = i16(qword)
-    var qword_dword = i32(qword)
-    var byte = take_byte(qword_byte)
-    var word = take_word(qword_word)
-    var dword = take_dword(qword_dword)
-
-    assert(byte == -16)          # 0xf0
-    assert(word == -8464)        # 0xdef0
-    assert(dword == -1698898192) # 0x9abcdef0
+    foo points {
+        e.y = e.y + 10
+    }
+    assert(points[0].y == 12)
+    assert(points[1].y == 14)
+    assert(points[2].y == 16)
 }

@@ -1,6 +1,6 @@
-# a sector past the end of the sd card image panics
+# the qemu machine has no sd card
 
 func main() {
     var bytes = i8[512]
-    sector_read(-1, bytes)
+    sector_read(0, bytes)
 }

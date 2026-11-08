@@ -1,8 +1,7 @@
-# 'not' where an array goes makes a condition, as for the array of a
-# built-in, e.g. 'foo not a'
+# a utf-8 continuation byte that no lead byte announces is one column of
+# the padding of the caret, also after a whole character or another one
+
+dat s = "Ã©©€€" x
 
 func main() {
-    var b = true
-    var a = i8[2]
-    a = not b
 }

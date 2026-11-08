@@ -1,4 +1,4 @@
 
-1551.baz:7:11: 'if' is a keyword
-func text.if() {}
-          ^~
+1551.baz:3:13: 'bool' has no conversion, compare instead, e.g. 'x != 0'
+    var b = bool(5)
+            ^~~~

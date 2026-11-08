@@ -1,4 +1,4 @@
 
-1823.baz:3:13: 'true' is a constant, not a function
-    var x = true(1)
-            ^~~~
+1823.baz:4:17: 'a' is a constant, it has no field 'x'
+    var y = 'a'.x
+                ^

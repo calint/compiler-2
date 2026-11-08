@@ -1,10 +1,10 @@
-# a 'bool' converted to an integer is 1 for 'true' and 0 for 'false'
+# the buffer of a sector function that is an unsized array parameter is
+# checked by its calls, not in a function that is never called
+
+func load(t mut i8[]) {
+    sector_read(1, t)
+}
 
 func main() {
-    var b = true
-    var c = false
-    var r = i32(0)
-    r = i32(b)
-    var s = i8(c)
-    exit(r * 2 + s)
+    exit(0)
 }

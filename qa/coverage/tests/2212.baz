@@ -1,4 +1,5 @@
-# an array literal indexed is not an operand, as an initializer
+# a statement that ends with a semicolon is reported at the semicolon
+
 func main() {
-    var s = i8[]{1, 2}[1]
+    var x = 3;
 }

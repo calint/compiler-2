@@ -1,2 +1,4 @@
 
-panic: bounds at 0627.baz:7
+0627.baz:9:5: cannot assign to read-only 'p.x', parameter 'p' is not declared 'mut'
+    p.x = 1
+    ^

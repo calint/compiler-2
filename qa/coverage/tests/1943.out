@@ -1,4 +1,10 @@
 
-1943.baz:6:9: expected type 'point', got 'i8'
-    p = i8
-        ^~
+1943.baz:3:31: expected ',' followed by another field in type 'list'
+type list<T type, n> { a T[n] len }
+                              ^
+1943.baz:5:19: instantiated by 'list<i8, 8>'
+type text<size> = list<i8, size>
+                  ^~~~
+1943.baz:7:6: instantiated by
+type str = text<8>
+     ^~~

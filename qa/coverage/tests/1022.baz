@@ -1,8 +1,5 @@
-# a comparison stored in a variable whose operand has a later element wider than the first is narrowed
+# a keyword is not a variable name
 
 func main() {
-    var small = i8(5)
-    var wide = i16(256)
-    var yes = small + wide > 100
-    exit(int(yes))
+    var not = 1
 }

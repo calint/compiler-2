@@ -1,77 +1,9 @@
-# an expression stored to memory that calls an inlined function: a chain of 16
-# such levels compiles in milliseconds, a choice inside a version takes its
-# first; '--versions=nested' doubles per level, about 12 s
+# a constant index in the argument of 'array_length' is checked against its
+# array like any other
+type holder { v i8[4] }
 
-func f0(x) res {
-    res = x + 1
-}
-func f1(x) res {
-    var t = f0(x) * 2 + x
-    res = t
-}
-func f2(x) res {
-    var t = f1(x) * 2 + x
-    res = t
-}
-func f3(x) res {
-    var t = f2(x) * 2 + x
-    res = t
-}
-func f4(x) res {
-    var t = f3(x) * 2 + x
-    res = t
-}
-func f5(x) res {
-    var t = f4(x) * 2 + x
-    res = t
-}
-func f6(x) res {
-    var t = f5(x) * 2 + x
-    res = t
-}
-func f7(x) res {
-    var t = f6(x) * 2 + x
-    res = t
-}
-func f8(x) res {
-    var t = f7(x) * 2 + x
-    res = t
-}
-func f9(x) res {
-    var t = f8(x) * 2 + x
-    res = t
-}
-func f10(x) res {
-    var t = f9(x) * 2 + x
-    res = t
-}
-func f11(x) res {
-    var t = f10(x) * 2 + x
-    res = t
-}
-func f12(x) res {
-    var t = f11(x) * 2 + x
-    res = t
-}
-func f13(x) res {
-    var t = f12(x) * 2 + x
-    res = t
-}
-func f14(x) res {
-    var t = f13(x) * 2 + x
-    res = t
-}
-func f15(x) res {
-    var t = f14(x) * 2 + x
-    res = t
-}
-func f16(x) res {
-    var t = f15(x) * 2 + x
-    res = t
-}
 func main() {
-    var v = 1
-    var r = 0
-    r = v + f16(v)
-    exit(r >> 12)
+    var hs = holder[2]
+    var s = array_length(hs[2].v)
+    exit(s)
 }

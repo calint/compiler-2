@@ -1,2 +1,4 @@
 
-panic: overflow
+1804.baz:5:18: result 'res' is read before it is set
+    if false and res == 1 {
+                 ^~~

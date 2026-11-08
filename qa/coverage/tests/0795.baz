@@ -1,15 +1,7 @@
-# the argument of a constant parameter is not a type
+# a generic function cannot have the name of a function
 
-type text<capacity> {
-    array i8[capacity],
-    len,
-}
+func f() {}
 
-type name {
-    x,
-}
+func f<T type>() {}
 
-type str = text<name>
-
-func main() {
-}
+func main() {}

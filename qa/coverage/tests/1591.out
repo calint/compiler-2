@@ -1,4 +1,4 @@
 
-1591.baz:6:12: a generic function has only type parameters, write 'm type'
-func box.f<m>() {}
-           ^
+1591.baz:7:15: 'o.i.y' is read but has been overwritten in the same statement, use a temporary variable
+    o = {{1}, o.i.y}
+              ^

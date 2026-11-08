@@ -1,6 +1,6 @@
-# a string cannot exceed the size of its data field
+# unary operations are forbidden on arrays_equal
 
-type p { s i8[2] }
-dat x = p{"abc"}
-
-func main() {}
+func main() {
+    var a = i8[2]
+    var z = -arrays_equal(a,a,1)
+}

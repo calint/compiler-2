@@ -1,8 +1,9 @@
-# a closer that does not close the last open bracket in the body of a generic
-# function without an instance is reported at it, as in a parsed body
+# a wrapping conversion of a bitwise operation on wider operands keeps the
+# low bits, rv32i normalizes the narrow result
 
-func g<T type>(a T) res T {
-    res = (a + 1]
+func main() {
+    var a = i16(0x1234)
+    var b = i16(0x1111)
+    var r = i8(a ^ b)
+    exit(int(r))
 }
-
-func main() {}

@@ -1,4 +1,4 @@
 
-0873.baz:5:5: unexpected '|'
-    |
-    ^
+0873.baz:9:9: a call of 'one' is not an array
+    a = one()
+        ^~~

@@ -1,7 +1,9 @@
-# a 'dat' holds constants, its minimum divided by -1 is rejected under the
-# division check, also the remainder
-dat g = i8[2]{1, i8(-128) % -1}
+# the body of a generic function is skipped to its closing '}' without being
+# parsed; a closer without an opener ends the skip, also with no instance
+
+func g<T type>(a T) res T {
+    res = a)
+}
 
 func main() {
-    exit(g[0])
 }

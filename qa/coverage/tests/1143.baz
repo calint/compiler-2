@@ -1,16 +1,7 @@
-# the aliasing of a noinline call is checked for each field it passes, a call
-# with another field checked before does not stand for it
-
-type pair {a, b}
-
-var g = pair{1, 2}
-
-func noinline set(v mut) {
-    v = g.b + 1
-}
+# 'foo' over an element of an array that is not an array names the element
 
 func main() {
-    set(g.a)
-    set(g.b)
-    exit(g.b)
+    var a = i8[4]
+    foo a[0] {
+    }
 }

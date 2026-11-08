@@ -1,4 +1,0 @@
-
-2882.baz:10:15: expected type 'i16' for parameter 'a', got 'i64', use 'i16(...)'
-    var y = f(x)
-              ^

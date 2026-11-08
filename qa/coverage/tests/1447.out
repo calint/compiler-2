@@ -1,4 +1,4 @@
 
-1447.baz:2:10: function may return without setting its result 'res'
-func f() res {
-         ^~~
+1447.baz:3:5: built-in function 'exit' is not generic, it takes no type arguments
+    exit<i8>(0)
+    ^~~~

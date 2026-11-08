@@ -1,6 +1,6 @@
-# a keyword before a '{' where the result type of a function is expected
-func f() loop {
-}
+# a non-ASCII character after a backslash in a character literal
 
 func main() {
+    var c = i8
+    c = '\é'
 }

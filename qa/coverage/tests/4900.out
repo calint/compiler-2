@@ -1,4 +1,0 @@
-
-4900.baz:4:14: unsupported escape '\x4é'
-    var s = "\x4é"
-             ^~~~

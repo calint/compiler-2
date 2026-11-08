@@ -1,4 +1,4 @@
 
-1934.baz:4:8: expected '{' to begin declaration of type
-type b == box<i8>
-       ^
+1934.baz:4:9: expected type 'i16', got 'i8[]'
+    n = i8[2]{1, 2}
+        ^~

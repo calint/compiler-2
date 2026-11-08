@@ -1,11 +1,19 @@
-# the same for a non-inlined function
+# the same for non-inlined functions, the aliasing is made inside the body of
+# the function that passes a parameter and a global
+# the call is rejected: the function uses the global the call passes it
 
-dat g = i32[4]{ 1, 2, 3, 4 }
+dat g = i32[2]{ 1, 2 }
 
-func noinline f(k i32) res i32 {
-    res = k + (100 - g[3])
+func noinline inner(x mut i32, y i32) {
+    x = 10
+    x = x + y
+}
+
+func noinline outer(a mut i32) {
+    inner(a, g[0])
 }
 
 func main() {
-    g[3] = f(10)
+    outer(g[0])
+    exit(g[0])
 }

@@ -1,6 +1,5 @@
-# a zero-length array is rejected at its size, so it has no index zero
+# explicit zero-sized data arrays are invalid
 
-func main() {
-    var values = i8[0]
-    values[0] = 1
-}
+dat values = i8[0]
+
+func main() {}

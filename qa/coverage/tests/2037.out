@@ -1,4 +1,7 @@
 
-2037.baz:6:9: expected type 'bool', got 'point'
-    b = point{1, 2} + 1
-        ^~~~~
+2037.baz:9:17: index 4 is out of bounds for array 's' of size 4
+        res = s[m]
+                ^
+2037.baz:15:10: called from 'last(a)'
+    exit(last(a))
+         ^~~~

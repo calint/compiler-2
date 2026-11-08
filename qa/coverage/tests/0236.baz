@@ -1,4 +1,10 @@
-# function calls reject a trailing comma
+# == compares indexed i16 values
 
-func f(x) {}
-func main() { f(1,) }
+func assert(x bool) { if not x exit(1) }
+func main() {
+    var a = i16[2]
+    var b = i16[2]
+    a[0] = 3
+    b[0] = 3
+    assert(a[0] == b[0])
+}

@@ -1,4 +1,0 @@
-
-2119.baz:8:10: function 'g' has no result
-    show(g())
-         ^

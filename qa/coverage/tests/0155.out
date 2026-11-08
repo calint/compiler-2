@@ -1,0 +1,4 @@
+
+0155.baz:3:23: cannot parse constant '0x12foo'
+func main() { var x = 0x12foo }
+                      ^~~~~~~

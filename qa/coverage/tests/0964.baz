@@ -1,22 +1,18 @@
-# the element 'e' of a 'foo' over a constant element field is assigned from
-# the same field of an element at a run-time index
-# the value is computed before the destination is written
-
-type item {
-    f i32,
-    g i32,
+# --checks=shift: counts within the width pass the check
+func assert(ok bool) { if not ok exit(1) }
+func noinline shl(a, n) res {
+    res = a << n
 }
-
-type ent {
-    items item[2],
-    other i32,
+func noinline shr(a, n) res {
+    res = a >> n
 }
-
+func noinline shl8(a i8, n i8) res i8 {
+    res = a << n
+}
 func main() {
-    var es = ent[3]
-    var k = 1
-
-    foo es[1].items {
-        e.f = es[k].items[0].f
-    }
+    assert(shl(1, 0) == 1)
+    assert(shl(1, 10) == 1024)
+    assert(shr(-8, 2) == -2)
+    assert(shl8(1, 7) == -128)
+    assert(shr(1024, 10) == 1)
 }

@@ -1,5 +1,11 @@
-# non-inline result wider than its destination is rejected, a narrower one
-# widens
+# copy an i32 scalar and exit with the copied value
 
-func noinline target() result i32 { result = 1 }
-func main() { var result = i16(0) result = target() }
+dat prefix = i8[3]{1, 2, 3}
+dat initial = i32(42)
+dat padding = i8[5]
+
+func main() {
+    var source = initial
+    var destination = source
+    exit(destination)
+}

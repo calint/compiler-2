@@ -1,0 +1,5 @@
+# an unsupported escape after the first byte of a character literal is
+# reported before its length, as in a string
+func main() {
+    var c = 'a\q'
+}

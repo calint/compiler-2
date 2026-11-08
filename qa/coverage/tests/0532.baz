@@ -1,9 +1,5 @@
-# a '#' inside a string is not a comment and a comment needs no space
-
-dat msg = "a # b\n"
+# character literal without a character
 
 func main() {
-    var n = 1#comment directly after a token
-    write(1, msg)
-    exit(n - 1)
+    var c = ''
 }

@@ -1,0 +1,4 @@
+
+0669.baz:4:5: 'exit' takes 1 argument
+    exit()
+    ^~~~

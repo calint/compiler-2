@@ -1,4 +1,4 @@
 
-1274.baz:5:21: a 'bool' is compared only with a 'bool'
-    if true or x == true exit(1)
-                    ^
+1274.baz:6:24: count -1 is negative
+    var n = read(0, a, -1, i)
+                       ^

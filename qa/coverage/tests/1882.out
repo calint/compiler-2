@@ -1,4 +1,4 @@
 
-1882.baz:6:12: generic parameter 'c' of 'w' needs a number, got the 'bool' constant 'true'
-type s = w<true>
-           ^~~~
+1882.baz:6:11: generic parameter 'text' is also the name of the generic type at 6:6, use another name
+type text<text type> = box<text>
+          ^~~~

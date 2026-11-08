@@ -1,7 +1,5 @@
-# an 'else' assignment does not cover an 'if' branch that skips the result
-func pick(i) res {
-    if i == 3 { } else { res = 2 }
-}
+# the variable is copied from itself in its own initializer
+type point {x, y}
 func main() {
-    var y = pick(3)
+    var p = p
 }

@@ -1,4 +1,4 @@
 
-2197.baz:4:13: an array literal is not an operand here, store it in a variable first
-    var b = [2]{1, 2} == a
-            ^
+2197.baz:7:22: count 134217728 is past the end of array 'a' of any size
+    array_copy(a, b, 0x8000000)
+                     ^

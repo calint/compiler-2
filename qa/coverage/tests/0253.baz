@@ -1,6 +1,11 @@
-# fixed-size array assignment may use an empty initializer
+# hexadecimal string escape decoding
+
+func print(str i8[], len) {
+    write(1, str, len)
+}
+
+dat letter = "\x41"
 
 func main() {
-    var a = i8[2]
-    a = {}
+    print(letter, array_length(letter))
 }

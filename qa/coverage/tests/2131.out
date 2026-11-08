@@ -1,4 +1,4 @@
 
-2131.baz:4:17: a string is not a number, it fills only an array of 'i8'
-    var x = 1 + "€😀"
-                ^~~~
+2131.baz:3:25: expected '}' to close the array of size 2
+    var a = i8[2]{1, 2, ]
+                        ^

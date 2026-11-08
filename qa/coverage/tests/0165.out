@@ -1,4 +1,4 @@
 
-0165.baz:3:31: expected ',' followed by a value of type 'i8'
-func main() { var x = i8[2]{1 2} }
-                              ^
+0165.baz:6:28: first type 'i8' does not match second type 'i16'
+    var z = arrays_equal(a,b,1)
+                           ^

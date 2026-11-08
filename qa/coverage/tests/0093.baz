@@ -1,16 +1,27 @@
-# block-local variable shadowing
+# array_copy from an indexed struct element
 
 func assert(expr bool) {
     if not expr exit(1)
 }
 
+func print(str i8[], len) {
+    write(1, str, len)
+}
+
+func input(str mut i8[], len) nbytes {
+    nbytes = read(0, str, len)
+}
+
+type object {
+    size i16
+}
+
 func main() {
-    var x = 1
-    assert(x == 1)
-    loop {
-        var x = 2
-        assert(x == 2)
-        break
-    }
-    assert(x == 1)
+    var objs = object[3]
+    objs[1].size = 2
+
+    array_copy(objs[1], objs, 2)
+
+    assert(objs[0].size == 2)
+    assert(objs[1].size == 0)
 }

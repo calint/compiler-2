@@ -1,0 +1,13 @@
+# a generic type defined after the generic function that uses it
+func make<T type>(n T) res T {
+    var b = box<2>
+    res = n
+}
+
+type box<capacity> {
+    array i8[capacity],
+}
+
+func main() {
+    exit(make(1))
+}

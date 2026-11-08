@@ -1,16 +1,8 @@
-# a method of a generic type with type parameters of its own cannot be a
-# constructor, the error names the method as written
+# rv32i: a constant operand that does not fit the default type is rejected,
+# not folded to its low bits
 
-type list<T type, capacity> {
-    array T[capacity],
-    len,
-}
-
-func list.make<U type>(u U) self {
-    self.len = 0
-}
-
-type str = list<i8, 4>
+let f = 4294967296 + 5
 
 func main() {
+    exit(f)
 }

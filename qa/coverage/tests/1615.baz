@@ -1,13 +1,11 @@
-# a type parameter is not named like its function, also when bound to a user
-# type
-func f<f type>(x f) res f {
-    res = x
+# a call that reads the destination of the arithmetic it is in reads it
+# before the statement writes it, also 'noinline'
+var gx = 1
+func noinline gr() res {
+    res = gx
 }
-
-type p { v }
-
 func main() {
-    var a = p{1}
-    var b = f<p>(a)
-    exit(b.v)
+    var k = 5
+    gx = k + gr()
+    exit(gx)
 }

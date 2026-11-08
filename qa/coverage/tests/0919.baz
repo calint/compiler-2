@@ -1,12 +1,13 @@
-# the value assigned to the element 'e' of a 'foo' reads the array, which can
-# be the element itself
-# the value is computed before the destination is written
+# the argument and the data the function reads are different elements of one
+# array
+
+dat g = i32[4]{ 1, 2, 3, 4 }
+
+func put(x mut i32, k i32) {
+    x = k + (100 - g[3])
+}
 
 func main() {
-    var arr = []{ i32(1), 2, 3, 4 }
-    var k = i32(10)
-    foo arr {
-        e = k + (100 - arr[3])
-    }
-    exit(arr[3] - 106)
+    put(g[0], 10)
+    if g[0] != 106 exit(1)
 }

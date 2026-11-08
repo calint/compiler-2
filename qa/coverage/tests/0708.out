@@ -1,4 +1,4 @@
 
-0708.baz:11:15: read-only 't' cannot be passed to a 'mut' parameter, parameter 't' is not declared 'mut'
-    a.copy_to(t)
-              ^
+0708.baz:3:1: expected a definition ('func', 'type', 'var', 'let' or 'dat'), got 'exit'
+exit(0)
+^~~~

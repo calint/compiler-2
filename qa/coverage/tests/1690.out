@@ -1,4 +1,4 @@
 
-1690.baz:8:13: array 'a' must be indexed
-        n = a
-            ^
+1690.baz:9:27: result 'res' is read before it is set
+    var eq = arrays_equal(res.a[1], b, 3)
+                          ^~~

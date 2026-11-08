@@ -1,4 +1,4 @@
 
-0778.baz:7:15: type 'nothing' not found
-type p = pair<nothing>
-              ^~~~~~~
+0778.baz:3:16: generic parameter 'T' is declared twice
+func f<T type, T type>(x T) {
+               ^

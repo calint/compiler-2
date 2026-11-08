@@ -1,53 +1,23 @@
-# mutable struct parameters, hex and binary literals, complement in nested
-# struct array elements
+# all functions are inlined
 
 func assert(expr bool) {
     if not expr exit(1)
 }
+
+# user types are defined using keyword `type`
+
 type point {x, y}
-type object {pos point, color i32}
-
-# function arguments are equivalent to mutable references
-func foozi(pt mut point) {
-    pt.x = 0b10    # binary value 2
-    pt.y = 0xb     # hex value 11
-}
-
-# default argument type is target-dependent
-func bar(arg mut) {
-    if arg == 0 return
-    arg = 0xff
-}
-
-func inv(i i32) res i32 {
-    res = ~i
-}
-
-# return target is specified as a variable, in this case `res`
-func baz(arg) res {
-    res = arg * 2
-}
+type polygon {nindices, indices i8[8]}
+type object {pos point, pgons polygon[8], color i32}
 
 func main() {
-    var objs = object[23]
-    objs[3].color = ~2
-    assert(objs[3].color == ~2)
+    var o = object[1]
+    o[0].pgons[3].nindices = 4
+    o[0].pgons[3].indices[3] = 7
 
-    objs[1].pos.x = 0xfe55e
-    objs[2].pos.y = 0x808
-    objs[1].pos.y = objs[2].pos.y
-    
-    assert(objs[1].pos.x == 0xfe55e)
-    assert(objs[2].pos.y == 0x808)
-    assert(objs[1].pos.y == 0x808)
+    assert(o[0].pgons[3].indices[3] == 7)
+    assert(o[0].pgons[3].nindices == 4)
 
-    objs[1].color = ~inv(2)
-    assert(objs[1].color == 2)
-
-    var ix = 3
-    objs[ix + 1].color = objs[1].color
-    assert(objs[4].color == 2)
-
-    objs[ix + ix].color = ~3
-    assert(objs[6].color == ~3)
+    o[0].pgons[0].indices[0] = 1
+    assert(o[0].pgons[0].indices[0] == 1)
 }

@@ -1,4 +1,4 @@
 
-2084.baz:8:7: a unary operator makes a value, not an array
-    f(-a)
-      ^
+2084.baz:8:7: function 'array_copy' has no result
+    g(array_copy(a, b, 1))
+      ^~~~~~~~~~

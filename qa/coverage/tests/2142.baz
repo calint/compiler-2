@@ -1,0 +1,13 @@
+# a register that an operation holds is needed by an inlined call that
+# zeroes many parts (x86_64)
+func g(n i64) res i64 {
+    var z = i64[20]
+    z[1] = n
+    var w = z
+    res = w[1]
+}
+
+func main() {
+    var y = 6
+    exit(g(y))
+}

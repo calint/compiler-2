@@ -1,4 +1,4 @@
 
-0612.baz:5:10: expected '=' followed by an initializer, e.g. 'var x = i32'
-    var x i32
-         ^
+0612.baz:6:9: expected type 'i8', got 'i64'
+    a = [2]{1, 2}
+        ^

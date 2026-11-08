@@ -1,4 +1,4 @@
 
-1480.baz:5:8: a trailing ',' is not allowed in a call
-    f(1,)
-       ^
+1480.baz:6:6: method 'sd.app' clashes with the generic method 'buffer.app' defined at 5:6
+func sd.app(x) {}
+     ^~

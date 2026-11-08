@@ -1,4 +1,4 @@
 
-1303.baz:3:17: variable 'k' is read before it is set
-    let k = 1 + k
-                ^
+1303.baz:6:9: function 'exit' has no result
+    p = exit(1)
+        ^~~~

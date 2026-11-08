@@ -1,20 +1,7 @@
-# a generic parameter hides a generic function of its name
-func first<T type>(x T) res T {
-    res = x
-}
-
-type pair<first type> {
-    a first,
-}
-
-func pair.get() res first {
-    res = first(self.a + 1)
-}
-
-type p8 = pair<i8>
+# a built-in name without '(' is reported as a missing '(' wherever it
+# stands, not as a discarded result
 
 func main() {
-    var p = p8
-    p.a = i8(6)
-    exit(int(p.get()) + first(1))
+    var a = i8[2]
+    array_length a
 }

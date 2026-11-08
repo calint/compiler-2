@@ -1,4 +1,0 @@
-
-2225.baz:4:23: function 'nope' not found
-    exit(array_length(nope()[0]))
-                      ^~~~

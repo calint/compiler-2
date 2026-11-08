@@ -1,4 +1,4 @@
 
-0783.baz:10:1: expected ',' or '>' after generic argument '127'
-func main() {
-^
+0783.baz:8:6: type 'text' already defined as a generic type at 3:6
+type text = text<8>
+     ^~~~

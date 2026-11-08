@@ -1,20 +1,11 @@
-# a method name is defined on one level of a generic type and its base
+# a constructor is called as 'point.at(...)', there is no place for type
+# arguments, so a constructor with type parameters is rejected at its 'self'
 
-type list<T type, capacity> {
-    array T[capacity],
-    len,
+type point { x, y }
+
+func point.at<T type>(v T) self {
+    self.x = v
 }
 
-func list.size() res {
-    res = self.len
+func main() {
 }
-
-type text<capacity> = list<i8, capacity>
-
-func text.size() res {
-    res = self.len
-}
-
-type str = text<8>
-
-func main() {}

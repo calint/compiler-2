@@ -1,8 +1,7 @@
-# --checks=overflow: adding 1 to the maximum overflows, also where it is
-# emitted as an increment
+# an instance literal at the start of a statement is not a value
+
+type point {x, y}
 
 func main() {
-    var x = i32(2147483647)
-    x = x + 1
-    exit(0)
+    point{1, 2}
 }

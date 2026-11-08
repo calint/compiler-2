@@ -1,19 +1,6 @@
-# an error in a method of a base names each level from the base to the alias,
-# also for a method defined after the alias
+# a negated 'bool' is not 0 or 1, '-' and '~' are rejected like '+'
 
-type list<T type, capacity> {
-    array T[capacity],
-    len,
+func main() {
+    var t = true
+    var n = -t
 }
-
-type text<capacity> = list<i8, capacity>
-
-type name<n> = text<n>
-
-type short_name = name<4>
-
-func list.first_x() res {
-    res = self.array[0].x
-}
-
-func main() {}

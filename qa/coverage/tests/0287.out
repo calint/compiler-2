@@ -1,4 +1,4 @@
 
-0287.baz:13:10: expected type 'left', got 'right'
-    take(make())
-         ^~~~
+0287.baz:4:24: function 'f' has no result
+func main() { var x = -f() }
+                       ^

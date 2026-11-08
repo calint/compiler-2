@@ -1,24 +1,23 @@
-# comments inside arithmetic expressions and call arguments
-
-func add(a, b) res {
-    res = a + # left operand
-          b   # right operand
-}
+# x86: a nested expression deeper than all fourteen scratch registers
 
 func main() {
-    var x = 1 + # first term
-            2 * # second term
-            3
-    if x != 7 exit(1)
-
-    var y = add(x, # first argument
-                5)
-    if y != 12 exit(2)
-
-    y = ( # opening parenthesis
-        y - 2 # inside parentheses
-    ) * 2
-    if y != 20 exit(3)
-
-    exit(0)
+    var a = 1
+    var b = 2
+    var c = 3
+    var d = 4
+    var e = 5
+    var f = 6
+    var g = 7
+    var h = 8
+    var i = 9
+    var j = 10
+    var k = 11
+    var l = 12
+    var m = 13
+    var n = 14
+    var o = 15
+    var p = 16
+    var q = 17
+    var result = a + (b + (c + (d + (e + (f + (g + (h + (i + (j + (k + (l + (m + (n + (o + (p + q)))))))))))))))
+    exit(result)
 }

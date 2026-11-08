@@ -1,4 +1,4 @@
 
-1092.baz:6:7: constant '4294967296' does not fit 'i32' (-2147483648 to 2147483647), 'i32(...)' wraps it
-    a[4294967296 + 1] = 2
-      ^~~~~~~~~~
+1092.baz:5:9: the destination gives the type 'i8[2]', write '{}'
+    a = i8[2]
+        ^~

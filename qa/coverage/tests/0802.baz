@@ -1,5 +1,11 @@
-# generic parameters are separated by a comma
+# an alias is defined once
 
-func f<T type U type>() {}
+type text<capacity> {
+    array i8[capacity],
+    len,
+}
+
+type str = text<8>
+type str = text<9>
 
 func main() {}

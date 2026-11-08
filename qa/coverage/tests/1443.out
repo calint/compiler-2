@@ -1,0 +1,4 @@
+
+1443.baz:4:9: 'func' can only be in global scope
+        func g() {}
+        ^~~~

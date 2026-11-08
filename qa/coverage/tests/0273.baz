@@ -1,9 +1,8 @@
-# negating a negative size produces a valid array
+# unknown field access is rejected
 
-let n = -1
-func assert(x bool) { if not x exit(1) }
+type point { x }
+
 func main() {
-    var values = i8[-n]
-    values[0] = 7
-    assert(values[0] == 7)
+    var p = point
+    p.y = 1
 }

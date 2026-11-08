@@ -1,4 +1,4 @@
 
-2236.baz:5:9: 'b\xff' is not a valid name, a name starts with a letter or '_' and has only letters, digits and '_'
-    a = b\xff
-        ^~~~~
+2236.baz:7:21: 'k' of type 'i64' is narrowed to 'i32', use 'i32(...)'
+    sector_read(s + k, b)
+                    ^

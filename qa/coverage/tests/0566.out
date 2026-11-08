@@ -1,0 +1,4 @@
+
+0566.baz:7:13: array 'ps' must be indexed
+    qs[0] = ps
+            ^~

@@ -1,4 +1,4 @@
 
-1202.baz:6:12: expected type 'i32', got 'bool', use 'i32(...)'
-    a[1] = b
-           ^
+1202.baz:5:5: 'continue' is not in a loop
+    continue
+    ^~~~~~~~

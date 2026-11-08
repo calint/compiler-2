@@ -1,13 +1,9 @@
-# the result of a method call does not tell a type argument, the call names
-# the type
+# a generic call is not an array
 
-type point { x i8, y i8 }
-
-func point.sum() res i8 { res = self.x + self.y }
-
-func show<T type>(v T) {}
+func zero<T type>() res T {
+    res = {}
+}
 
 func main() {
-    var p = point{1, 2}
-    show(p.sum())
+    exit(array_length(zero<i8>()))
 }

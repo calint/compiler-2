@@ -1,4 +1,4 @@
 
-1715.baz:6:17: constant expression overflows the type
-    let y = x + 1
-                ^
+1715.baz:14:28: an index in the argument of 'array_length' must be a constant, every element has the same length
+    var k = array_length(m[f()].a) + g
+                           ^

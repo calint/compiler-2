@@ -1,6 +1,0 @@
-# an escape of a lead byte that the end of the literal cuts short quotes the
-# bytes there are
-
-func main() {
-    var s = "\â‚"
-}

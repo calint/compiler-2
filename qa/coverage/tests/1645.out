@@ -1,0 +1,4 @@
+
+1645.baz:4:16: unexpected '='
+    var x = i8 = 3
+               ^

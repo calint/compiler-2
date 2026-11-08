@@ -1,4 +1,4 @@
 
-0460.baz:2:14: function may return without setting its result 'res'
-func pick(i) res {
-             ^~~
+0460.baz:4:13: variable 'p' is read before it is set
+    var p = p
+            ^

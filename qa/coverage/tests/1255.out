@@ -1,4 +1,4 @@
 
-1255.baz:4:16: a string is not an argument, it would refer to read-only data
-    array_copy("abc", b, 3)
-               ^~~~~
+1255.baz:4:8: 'n' of type 'i32' is not a 'bool', compare it, e.g. 'n != 0'
+    if n and true exit(2)
+       ^

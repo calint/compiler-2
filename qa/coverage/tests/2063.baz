@@ -1,8 +1,11 @@
-# the overflow of a constant step reports the line of the constant
-
+# the range of a run-time start with a constant count is checked after the
+# later arguments: the division in the second array panics first
 func main() {
-    var a = i32(2147483647)
-    var r = a
-        + 1
-    exit(r)
+    var a = i8[5]
+    var b = i8[5]
+    var k = 3
+    var z = 0
+    if arrays_equal(a[k], b[1 / z], 4) {
+        exit(1)
+    }
 }

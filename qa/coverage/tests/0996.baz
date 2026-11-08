@@ -1,7 +1,8 @@
-# --checks=overflow: a product by a constant that overflows panics
-func noinline triple(a i32) res i32 { res = a * 3 }
+# --checks=overflow: the negation of the minimum of i8 as the subtrahend panics
 func main() {
-    var a = i32(715827883)
-    var x = triple(a)
-    exit(x)
+    var a = i8(-128)
+    var b = i8(3)
+    var c = i8(0)
+    c = b - (-a)
+    exit(c)
 }

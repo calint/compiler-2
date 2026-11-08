@@ -1,8 +1,5 @@
-# 'mut' goes after the parameter name
-
-func f(mut x) {
-}
+# a 'let' needs an initializer
 
 func main() {
-    f(1)
+    let a
 }

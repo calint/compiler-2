@@ -1,13 +1,11 @@
-# parentheses group an operation: a unary operator, a binary operator, a
-# comparison, a 'not' or a connective, also around a whole value
+# an inlined recursion ends at compile time where a constant argument makes its
+# 'return' always taken, the code after it is not compiled
+func count(n) res {
+    res = 0
+    if n > 5 return
+    res = count(n + 1) + 1
+}
+
 func main() {
-    var x = 2
-    var b = true
-    var c = false
-    var y = (-x) + -(x + 1) + (x * 3)
-    if (not b) or (x == 1) or (b and c) {
-        exit(1)
-    }
-    var z = (x + 1)
-    exit(y + z)
+    exit(count(0))
 }

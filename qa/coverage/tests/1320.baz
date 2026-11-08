@@ -1,7 +1,8 @@
-# a field of a global constant is rejected, a constant has no fields
-let N = 3
-
+# an element of a conversion's argument wider than the first element is
+# rejected like outside a conversion
 func main() {
-    var a = N.x
-    exit(a)
+    var a = i8(100)
+    var b = i16(260)
+    var r = i8(a + b / 16)
+    exit(r)
 }

@@ -1,4 +1,4 @@
 
-2167.baz:2:10: 'loop' is a keyword
-func f() loop {
-         ^~~~
+2167.baz:5:10: unsupported escape '\é'
+    c = '\é'
+         ^~

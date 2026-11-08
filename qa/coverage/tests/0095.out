@@ -1,3 +1,4 @@
-hello "world" 
- from 'baz'
-  
+
+0095.baz:8:19: variable 'x' is read before it is set
+    var x = foozi(x)
+                  ^

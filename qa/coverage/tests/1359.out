@@ -1,4 +1,0 @@
-
-1359.baz:3:8: 'exit' is a built-in function
-func f<exit type>(x exit) res {
-       ^~~~

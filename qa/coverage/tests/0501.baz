@@ -1,35 +1,29 @@
-# function names do not clash with registers, assembler keywords or
-# internal labels
+# 'read' and 'write' take an array, an optional element count and an optional
+# start element, like 'pread'/'pwrite'
 
 func assert(err, expr bool) { if not expr exit(err) }
 
-func noinline rax() res { res = 1 }
-func noinline qword() res { res = 2 }
-func noinline byte() res { res = 3 }
-func noinline rel() res { res = 4 }
-func noinline sp() res { res = 5 }
-func noinline data() res { res = 6 }
-func noinline vars() res { res = 7 }
-func noinline _start() res { res = 8 }
-func noinline baz_bounds_panic() res { res = 9 }
+type pair { lo i8, hi i8 }
 
 func main() {
-    var r = rax()
-    assert(1, r == 1)
-    r = qword()
-    assert(2, r == 2)
-    r = byte()
-    assert(3, r == 3)
-    r = rel()
-    assert(4, r == 4)
-    r = sp()
-    assert(5, r == 5)
-    r = data()
-    assert(6, r == 6)
-    r = vars()
-    assert(7, r == 7)
-    r = _start()
-    assert(8, r == 8)
-    r = baz_bounds_panic()
-    assert(9, r == 9)
+    var buf = i8[8]
+    var got = read(0, buf, 6, 2)
+    assert(1, got == 4)
+    assert(2, buf[1] == 0 and buf[2] == 0x61 and buf[5] == 0x64)
+
+    var n = write(1, buf, 4, 2)
+    assert(3, n == 4)
+
+    var words = i16[2]{0x4241, 0x4443}
+    n = write(1, words, 2)
+    assert(4, n == 4)
+
+    var pairs = pair[2]{{0x45, 0x46}, {0x47, 0x48}}
+    var k = 1
+    n = write(1, pairs, k, k)
+    assert(5, n == 2)
+
+    var nl = i8[]{10}
+    n = write(1, nl)
+    assert(6, n == 1)
 }

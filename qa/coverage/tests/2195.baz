@@ -1,4 +1,20 @@
-# an array literal as a statement
+# a constant count of elements whose bytes reach the storage the target
+# addresses is past the end of an unsized array parameter of any size, also in
+# code skipped at the parse; x86_64 only, rv32i rejects the constant itself
+
+type point {
+    x i64,
+    y i64,
+}
+
+func f(a point[], b mut point[]) {
+    if false {
+        array_copy(a, b, 0x800000000000000)
+    }
+}
+
 func main() {
-    i8[]{1}
+    var p = point[2]
+    var q = point[2]
+    f(p, q)
 }

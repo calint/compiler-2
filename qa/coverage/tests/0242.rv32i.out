@@ -1,4 +1,0 @@
-
-0242.baz:5:14: expected type 'p', got 'i32'
-dat x = p[2]{1,2}
-             ^

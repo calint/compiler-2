@@ -1,10 +1,6 @@
-# a string is not a type argument of a generic function
-
-func id<T type>(a T) res T {
-    res = a
-}
-
+# a method of a generic type without '(' is rejected at its definition, the
+# skip of its body would take the next definition
+type text<n> { chars i8[n] }
+func text.print
 func main() {
-    var x = i8(1)
-    var y = id<"i8">(x)
 }

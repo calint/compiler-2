@@ -1,7 +1,6 @@
-# a 'dat' divided by a constant zero is rejected like a 'var'
-
-dat a = 1 / 0
+# a 'dat' in a block is rejected at the 'dat' before its initializer is
+# checked
 
 func main() {
-    exit(0)
+    dat x = 1 / 0
 }

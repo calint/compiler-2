@@ -1,4 +1,7 @@
 
-1537.baz:3:13: 'i64' is not available on this target, use 'i32' or 'int'
-    var a = i64[2]
-            ^~~
+1537.baz:3:33: 'm' not found
+type list<T type> { len, data T[m] }
+                                ^
+1537.baz:7:6: instantiated by
+type str = list<i8>
+     ^~~

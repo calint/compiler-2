@@ -1,9 +1,9 @@
-# a record literal initializes a global variable
+# an array field is not initialized with the name of its element type
 
-type point {x, y}
+type point {x}
 
-var origin = point{1, 2}
+type line {s point[2]}
 
 func main() {
-    exit(origin.x + origin.y)
+    var l = line{point}
 }

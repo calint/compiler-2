@@ -1,8 +1,14 @@
-# 'mut' marks the receiver of a method, a function has none
+# arguments with run-time indexes into one array may share storage
 
-func mut zero() res {
-    res = 0
+func swap_values(x mut, y mut) {
+    var tmp = x
+    x = y
+    y = tmp
 }
 
 func main() {
+    var values = [2]{1, 2}
+    var i = 0
+    var j = 1
+    swap_values(values[i], values[j])
 }

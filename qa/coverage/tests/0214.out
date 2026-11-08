@@ -1,4 +1,4 @@
 
-0214.baz:5:30: expected ',' before argument 3
-    var z = arrays_equal(a,a 1)
-                             ^
+0214.baz:3:9: constant '0x10000000000000000' is out of range
+let x = 0x10000000000000000
+        ^~~~~~~~~~~~~~~~~~~

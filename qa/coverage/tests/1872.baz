@@ -1,12 +1,13 @@
-# a generic function of a type called like a constructor is a method, a
-# constructor is never generic
+# a field read of a call result on the next line gets the same message as on
+# one line
 
-type point {x, y}
+type p {x, y}
 
-func point.gen<T type>(v T) res T {
-    res = v
+func mk() res p {
+    res = {1, 2}
 }
 
 func main() {
-    var z = point.gen(1)
+    var a = mk()
+        .y
 }

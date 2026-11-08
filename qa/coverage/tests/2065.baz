@@ -1,11 +1,9 @@
-# a function nothing calls is held to '--vars' in its check without its
-# calls, as a call of it is
+# the argument of an array parameter before a missing argument of a generic
+# call is read as in the call, not as a value
 
-func noinline big() {
-    var a = i8[300000]
-    a[0] = 1
-}
+func f<T type>(s T[], x T) {}
 
 func main() {
-    exit(3)
+    var a = i8[4]
+    f(-a)
 }

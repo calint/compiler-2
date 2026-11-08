@@ -1,29 +1,26 @@
-# foo passes a user type field to a mutating function
-
-type point { x, y }
-type item { data point }
-
-dat values =
-    item[3]{
-        { {1, 2} },
-        { {3, 4} },
-        { {5, 6} }
-    }
-
-func increment(value mut point) {
-    value.y = value.y + 10
-}
+# struct literal built from structs and a comparison, plus a call
 
 func assert(x bool) { if not x exit(1) }
 
+func baz(arg) res {
+    res = arg * 2
+}
+
+func bazi(i mut) { 
+    i = i * 3
+}
+
+type vector {x, y i32, z i16, w i8}
+type object { pos vector, vel vector, valid bool }
+
 func main() {
-    foo values {
-        increment(e.data)
-    }
-    assert(values[0].data.x == 1)
-    assert(values[0].data.y == 12)
-    assert(values[1].data.x == 3)
-    assert(values[1].data.y == 14)
-    assert(values[2].data.x == 5)
-    assert(values[2].data.y == 16)
+    var p = vector{-1, -2, -3, -4}
+    var p2 = vector{-11, -22, -33, -44}
+    var x = i32(10)
+    var o2 = object{p, p2, x == 10}
+
+    var j = 1
+    var k = baz(j)
+
+    assert(k == 2)
 }

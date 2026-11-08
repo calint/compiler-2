@@ -1,0 +1,4 @@
+
+2149.baz:4:9: an array literal is not an operand here, store it in a variable first
+    s = []{1, 2}[1]
+        ^

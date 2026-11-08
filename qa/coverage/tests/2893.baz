@@ -1,8 +1,0 @@
-# --checks=overflow: a negation pair that a cancelled pair separates still
-# panics at the first negation of the minimum
-func main() {
-    var m = i32(-2147483647)
-    m = m - 1
-    var k = -~~-m
-    exit(k)
-}

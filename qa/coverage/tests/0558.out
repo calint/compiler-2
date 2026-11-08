@@ -1,4 +1,4 @@
 
-0558.baz:3:6: type 'nosuch' not found
-func nosuch.add(value) {
-     ^~~~~~
+0558.baz:11:19: 'x' of type 'i32' is narrowed to 'i8', use 'i8(...)'
+    var p = pixel{x, 2}
+                  ^

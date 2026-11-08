@@ -1,37 +1,9 @@
-# x86: a function name longer than the register report is not wrapped
-func wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww_leaf(v i32[]) res {
-    var a = 1
-    var b = 2
-    var c = 3
-    var d = 4
-    var e = 5
-    var f = 6
-    res = a + (b + (c + (d + (e + (f + v[1])))))
-}
-
-func middle(v i32[]) res {
-    var a = 1
-    var b = 2
-    var c = 3
-    var d = 4
-    var e = 5
-    res = a + (b + (c + (d + (e + wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww_leaf(v)))))
-}
-
-func top(v i32[]) res {
-    var a = 1
-    var b = 2
-    var c = 3
-    var d = 4
-    res = a + (b + (c + (d + middle(v))))
-}
+# a constant argument has the type of its parameter in an inlined function:
+# 'y' is an i16, wider than the i8 'x'
+func same(x i8, y i16) res bool { res = x == y }
 
 func main() {
-    var v = i32[4]{1, 2, 3, 4}
-    var w = v[0]
-    var x = v[1]
-    var y = v[2]
-    var z = v[3]
-    var q = int(w) + (x + (y + (z + top(v))))
-    exit(0)
+    var b = i8[2]
+    var r = same(b[1], 4)
+    exit(int(r))
 }

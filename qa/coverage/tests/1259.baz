@@ -1,12 +1,6 @@
-# a widening conversion inside a narrowing one computes at its own width
-# before it is narrowed
+# a bool compared with an integer literal is rejected
 func main() {
-    var a = i8(20)
-    var c = i8
-    c = i8(i16(a * (a >> 1)))
-    if c != -56 {
-        exit(1)
-    }
-    var d = i8(i16(a * (a / 2)) / 4)
-    exit(d)
+    var b = true
+    var c = b == 1
+    exit(int(c))
 }

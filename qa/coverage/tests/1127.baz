@@ -1,7 +1,9 @@
-# a keyword is not a variable name, 'else = 7' after an 'if' would be read as
-# its 'else'
+# a variable hides a global constant, also where a constant is expected
+
+let m = 3
 
 func main() {
-    var else = 5
-    exit(else)
+    var m = 5
+    var a = i8[m]
+    exit(array_length(a))
 }

@@ -1,24 +1,15 @@
-# the unary ops of a conversion apply at the width the value is used at: a
-# narrower argument widens first, e.g. '-i16(g(v))' of an 'i8' -128 is 128 as
-# for a variable of 'i16', in an assignment and in a comparison, with an
-# inlined and a noinline call
+# a call that writes element 0 of an array field of a literal may not read
+# element 0
 
-func inlined(x i8) res i8 {
-    res = x
-}
+type point {x, y}
+type t {ps point[2]}
 
-func noinline called(x i8) res i8 {
-    res = x
+func mk(v) res point {
+    res = {v, v}
 }
 
 func main() {
-    var v = i8(-128)
-    var r = -i16(inlined(v))
-    if r != 128 {
-        exit(1)
-    }
-    if -int(called(v)) != 128 {
-        exit(2)
-    }
-    exit(0)
+    var w = t{{{1, 2}, {3, 4}}}
+    w = {{mk(w.ps[0].x), {5, 6}}}
+    exit(w.ps[0].y)
 }

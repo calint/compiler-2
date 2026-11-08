@@ -1,14 +1,9 @@
-# a constant is stored at the width of its destination, e.g. the 'i16' 300
-# of 'i8(i16(k))' as 44 and the inlined '-p' of an 'i8' 'p' of -128 as -128
+# an index is a number, not an instance
 
-let k = 300
-
-func negated(p i8) res i8 {
-    res = -p
-}
+type point {x, y}
 
 func main() {
-    var r = i8(i16(k))
-    var n = negated(-128)
-    exit(int(r) + int(n) + 128)
+    var p = point{3, 2}
+    var a = int[4]
+    exit(a[p])
 }

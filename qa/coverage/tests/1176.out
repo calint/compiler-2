@@ -1,4 +1,4 @@
 
-1176.baz:5:13: 'i8' is a type, not a value
-    var b = i8 == 1
-            ^~
+1176.baz:4:5: variable 'x' already defined at 3:5
+let x = 3
+    ^

@@ -1,4 +1,4 @@
 
-0496.baz:4:28: too many elements for array of size 3
-    var r = rec{ {1, 2, 3, 4}, 5 }
-                           ^
+0496.baz:5:18: constant '-c' does not fit 'i8' (-128 to 127), 'i8(...)' wraps it
+func main() { f(-c) }
+                 ^

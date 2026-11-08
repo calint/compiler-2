@@ -1,7 +1,0 @@
-
-2641.baz:14:5: 'foo' declares 'e', which names the type 'i8'
-    foo self.v {
-    ^~~
-2641.baz:19:6: instantiated by
-type b4 = box<i8, 4>
-     ^~

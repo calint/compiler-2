@@ -1,21 +1,9 @@
-# the arrays of 'array_copy' are computed before the count: the call in an
-# array argument reads 'n' before the call in the count writes it
-var n = 0
-
-func h() res {
-    res = n
-}
-
-func f() res {
-    n = n + 1
-    res = 1
-}
+# a whole array of instances as an element of an array literal is rejected as
+# an array that must be indexed
+type cell { tag }
 
 func main() {
-    var a = i8[4]
-    a[0] = 5
-    a[1] = 6
-    var b = i8[4]
-    array_copy(a[h()], b, f())
-    exit(b[0])
+    var cs = cell[3]
+    var a = []{cs, 1}
+    exit(a[1])
 }

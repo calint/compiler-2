@@ -1,4 +1,4 @@
 
-1605.baz:3:16: expected type 'i64', got 'bool', use 'i64(...)'
-    var a = i8[true]
-               ^~~~
+1605.baz:7:10: parentheses around a single value group nothing, write 'f()'
+    exit((f()))
+         ^

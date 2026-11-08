@@ -1,9 +1,10 @@
-# a constant list whose first element is not typed and that holds a typed
-# element is a value of the list's type like the same list of a variable
+# a 'bool' destination does not take an instance
+
+type point {x, y}
+
 func main() {
-    var e = i8(1)
-    if 1 + i16(300) > e {
-        exit(1)
-    }
+    var p = point{5, 2}
+    var b = false
+    b = p
     exit(0)
 }

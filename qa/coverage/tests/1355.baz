@@ -1,17 +1,11 @@
-# --checks=upper: a range whose start plus count passes the signed maximum is
-# out of bounds also without the lower bound check
+# a unary operator applies to a number, not to an instance compared with an
+# instance
+type point {x, y}
+
 func main() {
-    var s = 1
-    loop {
-        var t = s * 2 + 1
-        if t < 0 {
-            break
-        }
-        s = t
+    var p = point{1, 2}
+    if -p == p {
+        exit(1)
     }
-    var x = i8[4]
-    var y = i8[4]
-    var n = 1
-    array_copy(x[s], y[0], n)
-    exit(7)
+    exit(0)
 }

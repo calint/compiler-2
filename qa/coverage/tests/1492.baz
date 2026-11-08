@@ -1,7 +1,8 @@
-# a word operator does not follow '{}' either
+# 'and' in parentheses makes a condition, not an operand of a comparison
 func main() {
-    var c = true
-    var b = false
-    b = {} and c
-    if b exit(1)
+    var t = true
+    var f = false
+    if (t and f) == f {
+        exit(1)
+    }
 }

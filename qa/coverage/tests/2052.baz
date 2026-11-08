@@ -1,14 +1,20 @@
-# the narrow result of a bitwise operation on wider operands is extended
-# before a wider use
+# the check of a body without its call expands an inlined recursion: the
+# constant of 'g(x, 2)' ends it, so 'a[3 - n]' past the end at its second
+# level is rejected also where nothing calls 'f'
+
+func g(x, n) res {
+    if n == 0 {
+        res = 0
+        return
+    }
+    var a = i8[2]
+    res = a[3 - n] + g(x, n - 1)
+}
+
+func f(x) res {
+    res = x + g(x, 2)
+}
 
 func main() {
-    var a = i16(0x0080)
-    var b = i16(0x0100)
-    var k = i32(1000)
-    var r = i32(k + i8(a ^ b))
-    var s = i16(0x7f0f)
-    var t = i16(0x00f0)
-    var u = i32(i8(s | t) + 0)
-    var v = i32(i8(s & 0x0f0f))
-    exit(int(r - 800 + u + 1 + v - 15))
+    exit(0)
 }

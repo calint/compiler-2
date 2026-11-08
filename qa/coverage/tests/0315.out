@@ -1,2 +1,7 @@
 
-panic: bounds at 0315.baz:9
+0315.baz:4:12: index 8 is out of bounds for array 'values' of size 8
+    values[8] = 1
+           ^
+0315.baz:9:5: called from
+    legacy_write(values)
+    ^~~~~~~~~~~~

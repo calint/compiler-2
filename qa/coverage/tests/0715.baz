@@ -1,7 +1,10 @@
-# foo is a builtin iterator and cannot name a function
+# a call result wider than the destination is narrowed explicitly
 
-func foo() {
+func f(x) res {
+    res = x
 }
 
 func main() {
+    var a = i8(1)
+    a = f(1)
 }

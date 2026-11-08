@@ -1,5 +1,8 @@
-# an unsupported escape after the first byte of a character literal is
-# reported before its length, as in a string
+# 'foo' names the array only, the element is given as 'e'
+
 func main() {
-    var c = 'a\q'
+    var arr = []{1, 2, 3}
+    foo e in arr {
+        e = e * 2
+    }
 }

@@ -1,4 +1,2 @@
 
-0512.baz:7:17: 'buf[i]' is not an array, parameter 's' takes one
-    var r = put(buf[i], 5)
-                ^
+panic: bounds at 0512.baz:8

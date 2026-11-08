@@ -1,13 +1,19 @@
-# a function writes a 'mut' parameter and reads the data that the argument
-# names rejected inlined as well as noinline
+# the method writes a field of an element chosen at run time and reads
+# another field of an element, so the bytes are never the same
 
-dat g = i32[4]{ 1, 2, 3, 4 }
+type entity {
+    len i32,
+    name i32,
+}
 
-func put(x mut i32, k i32) {
-    x = k + (100 - g[3])
+dat entities = entity[4]
+
+func mut entity.bump(k i32) {
+    self.len = k + entities[1].name
 }
 
 func main() {
-    put(g[3], 10)
-    exit(g[3] - 106)
+    var i = 2
+    entities[i].bump(1)
+    if entities[2].len != 1 exit(1)
 }

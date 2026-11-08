@@ -1,4 +1,4 @@
 
-0212.baz:5:18: expected ',' before argument 2
-    array_copy(a a,1)
-                 ^
+0212.baz:3:9: 'nope' not found
+let x = nope
+        ^~~~

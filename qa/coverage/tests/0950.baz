@@ -1,20 +1,20 @@
-# the element 'e' of a 'foo' inside the element of another 'foo' reads the
-# same field of the outer array, which can be the element itself the value is
-# computed before the destination is written
+# disjoint elements forwarded through parameters do not share storage
 
-type item {
-    data i32[2],
-    other i32,
+func assert(err, ok bool) { if not ok exit(err) }
+
+func copy_over(dst mut i32, src mut i32) {
+    dst = src
+    src = 0
+}
+
+func forward(a mut i32, b mut i32) {
+    copy_over(a, b)
 }
 
 func main() {
-    var items = item[2]
-    items[0].data[1] = 1
-
-    foo items {
-        foo e.data {
-            e = e + items[0].data[1]
-        }
-    }
-    exit(items[0].data[1] + items[1].data[0] - 4)
+    var arr = i32[4]
+    arr[1] = 7
+    forward(arr[0], arr[1])
+    assert(1, arr[0] == 7)
+    assert(2, arr[1] == 0)
 }

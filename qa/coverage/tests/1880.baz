@@ -1,21 +1,6 @@
-# a generic parameter hides a function of its name defined after it, 'T(...)'
-# in a method converts
-type w<T type> {
-    a T,
-}
-
-type w8 = w<i8>
-
-func w.next() res T {
-    res = T(self.a + 1)
-}
-
-func T(x) res {
-    res = x + 1
-}
+# a built-in type followed by '.' is reported like a user type without that
+# constructor, wherever it stands
 
 func main() {
-    var v = w8
-    v.a = i8(2)
-    exit(int(v.next()) + T(3))
+    var y = i8.x
 }

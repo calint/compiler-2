@@ -1,7 +1,4 @@
 
-0808.baz:4:14: expected a constant array size greater than 0
-    array i8[capacity],
-             ^
-0808.baz:8:6: instantiated by
-type str = text<0>
-     ^~~
+0808.baz:8:13: cannot deduce 'T' of generic function 'same', write 'same<...>'
+    var r = same(1, 2)
+            ^~~~

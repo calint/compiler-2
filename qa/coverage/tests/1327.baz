@@ -1,12 +1,26 @@
-# a call of the wrong type in a field of an instance literal is reported at the
-# call
-type rec {a, b}
-
-func t() res bool {
-    res = true
+# a call in a conversion to a wider type widens like any operand, also
+# negated or complemented
+func g(x i8) res i8 {
+    res = x
 }
 
 func main() {
-    var s = rec{2, t()}
+    var v = i8(-128)
+    var a = i16(g(v))
+    if a != -128 {
+        exit(1)
+    }
+    var b = i16(-g(v))
+    if b != 128 {
+        exit(2)
+    }
+    var c = i16(~g(v))
+    if c != 127 {
+        exit(3)
+    }
+    var d = int(g(v))
+    if d != -128 {
+        exit(4)
+    }
     exit(0)
 }

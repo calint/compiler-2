@@ -1,5 +1,5 @@
-# a generic type based on a generic type that has a base, each level adds
-# methods
+# a generic type based on another declares its parameters in another order
+# than the base, the base arguments are resolved by name
 
 func assert(err, ok bool) { if not ok exit(err) }
 
@@ -13,25 +13,18 @@ func mut list.push(item T) {
     self.len = self.len + 1
 }
 
-type text<capacity> = list<i8, capacity>
+type swapped<capacity, T type> = list<T, capacity>
 
-func text.first() res i8 {
+func swapped.first() res T {
     res = self.array[0]
 }
 
-type name<n> = text<n>
-
-func name.is_long() res bool {
-    res = self.len > 2
-}
-
-type short_name = name<4>
+type ints = swapped<3, int>
 
 func main() {
-    var s = short_name
-    s.push('a')
-    s.push('b')
-    s.push('c')
-    assert(1, s.first() == 'a' and s.is_long())
-    assert(2, array_length(s.array) == 4)
+    var s = ints
+    s.push(100000)
+    s.push(2)
+    assert(1, s.first() == 100000 and s.len == 2)
+    assert(2, array_length(s.array) == 3)
 }

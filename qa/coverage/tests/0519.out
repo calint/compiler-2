@@ -1,2 +1,4 @@
 
-panic: bounds at 0519.baz:8
+0519.baz:15:10: argument 1 'total' may share storage with the global 'total' that 'bump' uses, use a temporary variable for one of them
+    bump(total)
+         ^

@@ -1,13 +1,7 @@
-# the call on the left of the comparison
-type point {x, y}
-
-func mk() res point {
-    res = {1, 2}
+# a character literal is checked where it is read, also in a generic body that
+# no instance parses
+func g<T type>() {
+    var c = 'ab'
 }
 
-func main() {
-    var p = point{1, 2}
-    if mk() != p {
-        exit(1)
-    }
-}
+func main() {}

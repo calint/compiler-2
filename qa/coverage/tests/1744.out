@@ -1,4 +1,2 @@
 
-1744.baz:6:9: array 'a' must be indexed
-    y = a
-        ^
+panic: bounds

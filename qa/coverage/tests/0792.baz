@@ -1,8 +1,5 @@
-# a generic function is not a value
+# generic parameters are separated by a comma
 
-func make<T type>(n) res T {
-}
+func f<T type U type>() {}
 
-func main() {
-    var x = make
-}
+func main() {}

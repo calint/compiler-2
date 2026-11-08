@@ -1,18 +1,19 @@
-# a noinline call computes the address of a place in the order of the
-# arguments: the call in the index of 'v[w()]' writes 'g' before the later
-# argument reads it
+# a constant count of 0 still evaluates both paths: the calls in their
+# indexes run
+
 var g = 0
 
-func w() res {
-    g = 5
-    res = 1
-}
-
-func noinline pick(a, n) res {
-    res = a * 100 + n
+func f(v) r {
+    g = g + 1
+    r = v
 }
 
 func main() {
-    var v = []{10, 20, 30}
-    exit(pick(v[w()], g + 1) % 256)
+    var a = i8[4]{1, 2, 3, 4}
+    var b = i8[4]
+    array_copy(a[f(1)], b, 0)
+    if arrays_equal(a, b[f(2)], 0) {
+        g = g + 10
+    }
+    exit(i8(g))
 }

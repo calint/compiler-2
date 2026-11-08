@@ -1,12 +1,9 @@
-# a generic parameter hides a global variable of its name, 'x U' and 'U(...)'
-# name the type
-var U = 100
-
-func f<U type>(x U) res {
-    var y = U(x + 1)
-    res = int(y)
+# a type parameter of a method of a generic type is checked at the definition,
+# also without an instance of the type
+type box<n> {
+    x i8[n],
 }
 
-func main() {
-    exit(f(i8(7)) + U - 100)
-}
+func box.f<i8 type>() {}
+
+func main() {}

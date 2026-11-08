@@ -1,4 +1,4 @@
 
-1253.baz:2:11: parameter 'x' already defined at 2:8
-func f(x, x) {}
-          ^
+1253.baz:4:8: 'n' of type 'i32' is not a 'bool', compare it, e.g. 'n != 0'
+    if n exit(2)
+       ^

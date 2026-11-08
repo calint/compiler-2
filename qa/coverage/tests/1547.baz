@@ -1,4 +1,6 @@
-# a number followed by '(' is not a call
+# a character literal that does not fit is quoted once in the message, it
+# brings its own quotes
 func main() {
-    var x = 1 (2)
+    var y = i8(0)
+    y = '\xff'
 }

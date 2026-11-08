@@ -1,7 +1,7 @@
-# a keyword where an array is expected is an unexpected keyword, not an
-# unknown name
+# an i/o call in a global initializer is reported as a call before its
+# arguments are read
 
-func main() {
-    var a = i8[2]
-    var n = array_length(else)
-}
+var b = i8[4]
+var x = write(1, b, nope)
+
+func main() {}

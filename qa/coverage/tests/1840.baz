@@ -1,9 +1,8 @@
-# a type wider than the target is reported at the conversion, also where
-# the argument deduces a type
+# type arguments after an unknown name as a parameter type: not a generic
+# type, no hint to name an instance
 
-func f<T type>(x T) {
+func f(x zz<3>) {
 }
 
 func main() {
-    f(i64(1))
 }

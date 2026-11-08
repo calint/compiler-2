@@ -1,6 +1,10 @@
-# --checks=overflow: the negation of a folded constant that is the minimum of i64 is rejected
+# a comparison operand whose later element is wider than the first is narrowed
+
 func main() {
-    var v = i64(0)
-    v = -(i64(64) << 57)
-    exit(v & 127)
+    var small = i8(5)
+    var wide = i16(256)
+    if small + wide > 100 {
+        exit(1)
+    }
+    exit(0)
 }

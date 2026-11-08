@@ -1,4 +1,4 @@
-# an array literal may not have more elements than the array
-func main() {
-    var a = [3]{1, 2, 3, 4}
-}
+# constant argument must fit the parameter type
+
+func f(p i8) { exit(p) }
+func main() { f(200) }

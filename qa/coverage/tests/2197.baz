@@ -1,6 +1,11 @@
-# an array literal compared into a variable
+# a constant count of records that fill the storage the target addresses is
+# past the end of an unsized array parameter of any size, on every target
+
+type block {a i8[0x100000]}
+
+func f(a block[], b mut block[]) {
+    array_copy(a, b, 0x8000000)
+}
+
 func main() {
-    var a = [2]{1, 2}
-    var b = [2]{1, 2} == a
-    exit(b)
 }

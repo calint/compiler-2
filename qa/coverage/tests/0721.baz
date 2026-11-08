@@ -1,5 +1,8 @@
-# a character literal escape has one character
+# a constant count whose bytes would exceed the 32-bit address range is past
+# the end of the array
 
 func main() {
-    var c = '\ab'
+    var a = i32[8]
+    var b = i32[8]
+    array_copy(a, b, 2000000000)
 }

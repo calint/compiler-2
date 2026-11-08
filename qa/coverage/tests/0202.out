@@ -1,4 +1,4 @@
 
-0202.baz:3:17: expected ']' after array size
-type x { a i8[2 }
-                ^
+0202.baz:5:16: expected ')' to close expression
+    if (x == 1 {}
+               ^

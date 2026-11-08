@@ -1,4 +1,7 @@
 
-1501.baz:4:13: parentheses around a single value group nothing, write 'a'
-    var x = (a)
-            ^
+1501.baz:3:11: 'limit' not found
+    res = limit
+          ^~~~~
+1501.baz:9:10: instantiated by 'get<i8>'
+    exit(get<i8>())
+         ^~~

@@ -1,4 +1,4 @@
 
-0238.baz:6:1: expected ']' to close array index expression
-}
-^
+0238.baz:8:7: expected type 'p', got 'q'
+    f(y)
+      ^

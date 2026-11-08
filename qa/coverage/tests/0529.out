@@ -1,0 +1,23 @@
+
+0529.baz:21:93: out of scratch registers, simplify the expression
+    var result = a + (b + (c + (d + (e + (f + (g + (h + (i + (j + (k + (l + (m + (n + (o + (p + q)))))))))))))))
+                                                                                            ^
+
+register use at the failure: 14 of 14 registers live
+
+  held  frame, registers (allocated at)
+    14  main
+          r15 21:23
+          r14 21:28
+          r13 21:33
+          r12 21:38
+          r10 21:43
+          r9 21:48
+          r8 21:53
+          r11 21:58
+          rbx 21:63
+          rdx 21:68
+          rax 21:73
+          rsi 21:78
+          rdi 21:83
+          rcx 21:88

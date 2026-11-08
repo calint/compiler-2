@@ -1,13 +1,5 @@
-# the check of a generic function instance without its calls, which finds
-# an error in code its call folds away, names the call that instantiated it
-func g<T type>(n T) res T {
-    if n == 1 {
-        res = 1
-    } else {
-        res = n / 0
-    }
-}
-
+# a zero value reached into is a constant without fields, assigned
 func main() {
-    exit(g<i8>(1))
+    var a = 0
+    a = {}.x
 }

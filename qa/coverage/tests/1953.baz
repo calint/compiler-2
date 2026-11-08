@@ -1,5 +1,8 @@
-# a whole array literal for a bool is a type mismatch
+# a 'foo' with a ',' and no count before its block is reported at the '{'
+# like an 'if' without a condition
 func main() {
-    var b = true
-    b = i8[2]
+    var a = i8[4]
+    foo a, {
+        e = 1
+    }
 }

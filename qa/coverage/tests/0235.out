@@ -1,4 +1,4 @@
 
-0235.baz:3:21: a trailing ',' is not allowed in a call
-func main() { exit(1,) }
-                    ^
+0235.baz:5:14: expected type 'p', got 'i64'
+dat x = p[2]{1,2}
+             ^

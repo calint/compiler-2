@@ -1,16 +1,23 @@
-# a result discarded inside a function with a result is not written to the
-# caller's destination
+# a backslash at the end of a line continues the string on the next line,
+# leading whitespace of the next line is part of the string
 
-func two() res {
-    res = 2
-}
+dat joined = "ab\
+cd\
+  ef"
 
-func one() res {
-    res = 1
-    two()
-}
+func assert(x bool) { if not x exit(1) }
 
 func main() {
-    var r = one()
-    exit(r)
+    assert(array_length(joined) == 8)
+    assert(joined[0] == 'a')
+    assert(joined[3] == 'd')
+    assert(joined[4] == ' ')
+    assert(joined[5] == ' ')
+    assert(joined[7] == 'f')
+
+    var local = "xy\
+z\n"
+    assert(array_length(local) == 4)
+    assert(local[2] == 'z')
+    assert(local[3] == '\n')
 }

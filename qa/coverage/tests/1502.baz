@@ -1,6 +1,12 @@
-# a local named like a type hides it, also before a value literal
-type point {x, y}
+# a generic body sees only the functions defined before it
+func twice<T type>(x T) res T {
+    res = add(x, x)
+}
+
+func add(a, b) res int {
+    res = a + b
+}
+
 func main() {
-    var point = 1
-    var p = point{1, 2}
+    exit(twice<i32>(2))
 }

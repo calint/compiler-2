@@ -1,8 +1,6 @@
-# two constant arguments are compared with the rules of their parameters' types
-# although the comparison folds
-func same(x i8, y i16) res bool { res = x == y }
+# exit has no value to assign
 
 func main() {
-    var r = same(4, 4)
-    exit(int(r))
+    var x = 1
+    x = exit(1)
 }

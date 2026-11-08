@@ -1,16 +1,12 @@
-# a typed instance literal must name the type of the destination
+# calling a method that does not exist reports the method, not a missing field
 
-type point {
-    x,
-    y
-}
+type point {x, y}
 
-type size {
-    w,
-    h
+func mut point.move(dx) {
+    self.x = self.x + dx
 }
 
 func main() {
-    var p = point{0, 0}
-    p = size{1, 2}
+    var p = point
+    p.jump(1)
 }

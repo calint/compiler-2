@@ -1,24 +1,9 @@
-# a generic function may be named like a type, like a plain function, and is
-# called with deduced or explicit type arguments
-type p {
-    a,
-}
-
-func p<T type>(v T) res {
-    res = v.a + 10
-}
-
-func q<T type>(v mut T) {
-    v.a = v.a + 1
-}
-
-type q {
-    b,
-}
-
+# a read of an element that an array of records field zeroed before it
+type pt {x i8, y i8}
+type st {ps pt[2], b i8}
 func main() {
-    var v = p{5}
-    q(v)
-    q<p>(v)
-    exit(p(v) + p<p>(v))
+    var q = st
+    q.ps[1].x = 4
+    q = {{{1}}, q.ps[1].x}
+    exit(q.b)
 }

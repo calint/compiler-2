@@ -1,8 +1,10 @@
-# type arguments after an unknown name as a parameter type: not a generic
-# type, no hint to name an instance
+# a generic function takes only types, a '-' is not an argument and no hint
+# about constants is given
 
-func f(x zz<3>) {
+func id<T type>(x T) res T {
+    res = x
 }
 
 func main() {
+    var a = id<-1>(1)
 }

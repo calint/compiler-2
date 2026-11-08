@@ -1,12 +1,12 @@
-# an operator after a call result instance: an instance is not a number
+# a generic parameter hides a function of its name, 'T(5)' converts
+func T(x) res {
+    res = x + 1
+}
 
-type left {value}
-
-func mk() res left {
-    res = {}
+func f<T type>(a T) res {
+    res = int(T(5)) + int(a)
 }
 
 func main() {
-    var l = left
-    l = mk() + 1
+    exit(f(i8(1)) + T(10))
 }

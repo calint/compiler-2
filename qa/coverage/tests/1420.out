@@ -1,4 +1,4 @@
 
-1420.baz:9:1: expected '{' to begin block
-func g() {
-^
+1420.baz:5:9: a call runs only inside a function, not in the initializer of a global
+var g = read(0, a)
+        ^~~~

@@ -1,4 +1,4 @@
 
-1208.baz:5:10: expected type 'i64', got 'bool', use 'i64(...)'
-    exit(b)
-         ^
+1208.baz:5:13: index -1 is negative
+    res = s[-1]
+            ^

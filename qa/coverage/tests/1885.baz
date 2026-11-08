@@ -1,9 +1,8 @@
-# an array as an argument of a generic type is rejected, an argument is one
-# name or constant
+# a call of a function without parameters whose ')' is missing is reported
+# as a missing ')', not as a surplus argument
 
-type buf<cap> {
-    a i8[cap]
-}
-type b = buf<4[2]>
+func f() {}
+
 func main() {
+    f(
 }

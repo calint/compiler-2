@@ -1,7 +1,9 @@
-# a constant start that leaves less than a sector of the buffer of
-# 'sector_read' is rejected
+# a 'dat' field divided by a constant zero is rejected like a 'var'
+
+type point {x, y}
+
+dat p = point{1 / 0}
 
 func main() {
-    var a = i8[1024]
-    sector_read(0, a, 600)
+    exit(0)
 }

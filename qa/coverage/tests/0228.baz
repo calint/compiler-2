@@ -1,4 +1,3 @@
-# a missing initializer expression after '=' is rejected
+# a call rejects a trailing comma
 
-func main() { var x = # comment
-}
+func main() { exit(1,) }

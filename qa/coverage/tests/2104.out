@@ -1,4 +1,0 @@
-
-2104.baz:4:15: cannot deduce 'T' of generic function 'show', write 'show<...>'
-func main() { show([1, 2]) }
-              ^~~~

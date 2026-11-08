@@ -1,25 +1,7 @@
-# argument aliasing an array element with 'i8' multiply and complement
+# constant boolean expression folding
 
 func assert(expr bool) { if not expr exit(1) }
 
-func faz(x i8, y i8) res i8 {
-    res = x * y 
-}
-
-func fez(x i8, y i8) res i8 {
-    res = x * ~y 
-}
-
 func main() {
-    var arr = i8[4]
-    var ix = i8(2)
-    arr[ix] = 3
-    var a = faz(arr[ix], ix)
-    assert(a == 6)
-    var b = fez(arr[ix], ix)
-    assert(b == -9)
-    var c = fez(3, ix)
-    assert(c == -9)
-    var d = fez(3, 2)
-    assert(d == -9)
+    if not (false or false or false) assert(true) else assert(false)
 }

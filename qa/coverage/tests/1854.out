@@ -1,4 +1,4 @@
 
-1854.baz:10:16: constructor 'pt.at' is not generic, it takes no type arguments
-    var p = pt.at<i8>(1)
-               ^~
+1854.baz:11:19: 'point.gen' is a method, call it on a value of type 'point'
+    var z = point.gen(1)
+                  ^~~

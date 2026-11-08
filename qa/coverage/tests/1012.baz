@@ -1,10 +1,14 @@
-# the end of a range of two 64 bit values that sum beyond the maximum is out of bounds
+# several 'not' before a parenthesized condition negate it once for each 'not'
 
 func main() {
-    var x = i8[4]
-    var y = i8[4]
-    var start = i64(0x7fffffffffffffff)
-    var count = i64(1)
-    array_copy(x[start], y[0], count)
+    var a = 1
+    var count = 0
+    if not not (a == 1) count = count + 1
+    if not not not (a == 1) count = count + 10
+    if not not (a == 1) and not not (a > 0) count = count + 100
+    if not not not (a < 1 or a > 5) count = count + 1000
+    var b = not not (a == 2)
+    if b count = count + 10000
+    if count != 1101 exit(1)
     exit(0)
 }

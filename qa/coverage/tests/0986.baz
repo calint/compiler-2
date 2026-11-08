@@ -1,12 +1,8 @@
-# --checks=stack: recursion deeper than the stack panics
-func noinline depth(n) res {
-    if n == 0 {
-        res = 0
-        return
-    }
-    res = depth(n - 1) + 1
-}
+# --checks=overflow: an element of a narrow array that grows past its width
 func main() {
-    var d = depth(1000)
-    exit(d - 1000)
+    var arr = i8[4]
+    arr[1] = 127
+    var i = 1
+    arr[i] = arr[i] + 1
+    exit(arr[1])
 }

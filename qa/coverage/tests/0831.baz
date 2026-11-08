@@ -1,8 +1,8 @@
-# an instance of a user type is not a condition, it would be tested as its
-# first field
+# a whole array is not compared with an instance of its element type
 type point { x i32, y i32 }
 
 func main() {
-    var a = point{0, 5}
-    if a exit(1)
+    var a = point[2]
+    var p = point{1, 2}
+    if a == p exit(1)
 }

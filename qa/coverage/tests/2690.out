@@ -1,4 +1,0 @@
-
-2690.baz:10:16: array 'a' must be indexed
-    exit(first(a{}))
-               ^

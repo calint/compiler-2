@@ -1,0 +1,4 @@
+
+0232.baz:4:11: string size 3 overflows array size 2
+dat x = p{"abc"}
+          ^~~~~

@@ -1,0 +1,4 @@
+
+0773.baz:10:1: expected ',' or '>' after generic argument '127'
+func main() {
+^

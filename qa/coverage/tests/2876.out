@@ -1,4 +1,0 @@
-
-2876.baz:6:10: '&&' is not an operator, use 'and'
-    if x && y exit(1)
-         ^

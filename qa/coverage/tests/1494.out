@@ -1,4 +1,4 @@
 
-1494.baz:4:13: character literal 'ab' must contain one byte, e.g. 'a' or '\xe9'
-    var c = 'ab'
-            ^~~~
+1494.baz:6:13: an instance of 'point' is not a number
+    var x = point + 1
+            ^~~~~

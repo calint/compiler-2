@@ -1,4 +1,2 @@
 
-0547.baz:8:18: a string fills only an array of 'i8', not an array of 'i32'
-    var w = wide{"ab"}
-                 ^~~~
+panic: bounds at 0547.baz:7

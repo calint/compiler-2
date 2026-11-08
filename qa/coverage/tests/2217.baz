@@ -1,15 +1,7 @@
-# a generic call reached into where an array is expected, rejected at the
-# call
-type pt { x, a i8[3] }
-
-func gm<T type>() res pt {
-    res = {}
-}
-
-func pt.m() res pt {
-    res = {}
-}
+# '&&' between conditions is rejected, 'and' joins them
 
 func main() {
-    exit(array_length(gm<i8>().a))
+    var x = true
+    var y = false
+    if x && y exit(1)
 }

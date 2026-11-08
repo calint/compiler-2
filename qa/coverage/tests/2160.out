@@ -1,7 +1,4 @@
 
-2160.baz:7:19: divisor must not be zero
-        res = n / 0
-                  ^
-2160.baz:12:10: instantiated by 'g<i8>'
-    exit(g<i8>(1))
-         ^
+2160.baz:4:11: a zero value is a constant, it has no field or element
+    a = {}.x
+          ^

@@ -1,4 +1,4 @@
 
-0881.baz:6:7: expected a statement
-    } "else"
-      ^~~~~~
+0881.baz:7:8: function 'check' has no result
+    if check(true) {
+       ^~~~~

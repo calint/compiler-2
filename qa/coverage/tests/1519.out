@@ -1,7 +1,4 @@
 
-1519.baz:3:11: 'limit' not found
-    res = limit
-          ^~~~~
-1519.baz:9:10: instantiated by 'get<i8>'
-    exit(get<i8>())
-         ^~~
+1519.baz:3:13: 'i64' is not available on this target, use 'i32' or 'int'
+    var a = i64[2]
+            ^~~

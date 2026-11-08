@@ -1,8 +1,8 @@
-# --checks=overflow: a difference below the minimum of the width panics
-func noinline sub(a i32, b i32) res i32 { res = a - b }
+# --checks=overflow: the negation of the minimum of i8 as an operand of '|' panics
 func main() {
-    var a = i32(-2147483648)
-    var b = i32(1)
-    var x = sub(a, b)
-    exit(x)
+    var a = i8(-128)
+    var b = i8(3)
+    var c = i8(0)
+    c = b | (-a)
+    exit(c)
 }

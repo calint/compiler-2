@@ -1,2 +1,4 @@
 
-panic: bounds at 1013.baz:7
+1013.baz:6:5: expected ')' to close expression
+    exit(x)
+    ^~~~

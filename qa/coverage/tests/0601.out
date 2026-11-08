@@ -1,4 +1,4 @@
 
-0601.baz:9:26: result 'self' has the type of the constructor
-func point.at(x, y) self point {
-                         ^~~~~
+0601.baz:4:16: an array needs a constant size, e.g. 'i8[4]'
+    var a = i8[] 1
+               ^

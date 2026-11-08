@@ -1,9 +1,8 @@
-# the variable is passed to the function that initializes it
-type point {x, y}
-func twice(pt point) res point {
-    res.x = pt.x * 2
-    res.y = pt.y * 2
+# a constant index sets only its element
+type pair {cells[2]}
+func make_pair() res pair {
+    res.cells[0] = 5
 }
 func main() {
-    var ps = point[1]{twice(ps[0])}
+    var p = make_pair()
 }

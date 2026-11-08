@@ -1,24 +1,38 @@
-# mixed-width function parameters
+# conditional result assignment
 
-func f1(b i8, w i16, d i32, q) res{
-    res=b+w+d+q
+func f(b bool) res bool{
+    if b res=false else res=true
 }
 
-func f2(b i8, w i16, d i32, q) res{
-    res=b+w+d+q
+func f2(i) res{
+    if i==0 res=4
+    else if i==1 res=5
+    else if i==2 res=6
+    else res=7
 }
 
 func main(){
-    var b = i8(-1)
-    var w = i16(-2)
-    var d = i32(-3)
-    var q=-4
+    var r = f(true)
+    if r exit(1)
 
-    var r=f1(b,w,d,q)
-    if not r==-10 exit(1)
+    r=f(false)
+    if not r exit(2)
     
-    r=f2(b,w,d,q)
-    if not r==-10 exit(2)
+    if 1==2 exit(3)
     
+    if 1==1 r=true else r=false
+    
+    if not r exit(4)
+
+    if 1==2 r=true else r=false
+    
+    if r exit(5)
+
+    if not f2(0)==4 exit(6)
+    if not f2(1)==5 exit(7)
+    if not f2(2)==6 exit(8)
+    if not f2(3)==7 exit(9)
+    
+
     exit(0)
 }

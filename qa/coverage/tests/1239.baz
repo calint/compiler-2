@@ -1,25 +1,11 @@
-# a built-in field of a record literal set from an indexed name reads the
-# indexed element
-type p {x, y}
+# the temporary that holds the result of a call is not named in the error when
+# it does not fit in the variable storage
+func noinline f(x i32) res {
+    res = x
+}
 
 func main() {
-    var arr = [2]{3, 4}
-    var i = 1
-    var r = p{arr[1], 5}
-    if r.x != 4 {
-        exit(1)
-    }
-    r = {arr[i], 6}
-    if r.x != 4 or r.y != 6 {
-        exit(2)
-    }
-    r = {-arr[1], 5}
-    if r.x != -4 {
-        exit(3)
-    }
-    var ps = p[2]
-    ps[0] = {8, 2}
-    ps[1] = {7, 1}
-    var q = p{ps[1].y, ps[0].x}
-    exit(q.x * 10 + q.y)
+    var b = i32[4]
+    b[1] = 2
+    exit(f(b[1]))
 }

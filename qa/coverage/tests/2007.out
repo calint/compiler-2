@@ -1,7 +1,4 @@
 
-2007.baz:6:9: 'U' names the type 'point'
-    var U = 2
-        ^
-2007.baz:11:5: instantiated by 'f<point>'
-    f(p)
-    ^
+2007.baz:11:11: a call of 'point.m' is not an array
+    foo p.m<i8>(1) {
+          ^

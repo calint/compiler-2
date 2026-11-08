@@ -1,38 +1,9 @@
-# x86: a function name that makes a row of the register report longer than
-# the line stays on the row
-func leaf_with_a_name_that_makes_the_report_row_too_long(v i32[]) res {
-    var a = 1
-    var b = 2
-    var c = 3
-    var d = 4
-    var e = 5
-    var f = 6
-    res = a + (b + (c + (d + (e + (f + v[1])))))
-}
-
-func middle(v i32[]) res {
-    var a = 1
-    var b = 2
-    var c = 3
-    var d = 4
-    var e = 5
-    res = a + (b + (c + (d + (e + leaf_with_a_name_that_makes_the_report_row_too_long(v)))))
-}
-
-func top(v i32[]) res {
-    var a = 1
-    var b = 2
-    var c = 3
-    var d = 4
-    res = a + (b + (c + (d + middle(v))))
-}
-
+# a 'let' of a constant list led by a literal that holds a typed constant has
+# the type of the list, it is narrowed like the same 'var'
 func main() {
-    var v = i32[4]{1, 2, 3, 4}
-    var w = v[0]
-    var x = v[1]
-    var y = v[2]
-    var z = v[3]
-    var q = int(w) + (x + (y + (z + top(v))))
-    exit(0)
+    let w = i32(5)
+    let m = 0 + w
+    var z = i8(0)
+    z = m
+    exit(z)
 }

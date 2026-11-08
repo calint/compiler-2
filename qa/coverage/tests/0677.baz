@@ -1,6 +1,7 @@
-# a read-only variable can be initialized from an array of the default type
+# a built-in element of a data definition must be a constant
 
-func main() {
-    let values = []{1, 2}
-    exit(values[1] - 2)
-}
+dat y = 1
+
+dat x = []{y}
+
+func main() {}

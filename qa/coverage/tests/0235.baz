@@ -1,3 +1,7 @@
-# a call rejects a trailing comma
+# user-type fields require structured initializers
 
-func main() { exit(1,) }
+type p { x }
+
+dat x = p[2]{1,2}
+
+func main() {}

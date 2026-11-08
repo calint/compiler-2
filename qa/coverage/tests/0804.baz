@@ -1,15 +1,8 @@
-# a parameter of a generic type hides a type of its name
-type name {x}
+# a function that is not generic takes no type arguments
 
-type box<name type> {
-    a name,
-}
-
-type b8 = box<i8>
+func show(x) {}
 
 func main() {
-    var b = b8
-    b.a = i8(3)
-    var nm = name{4}
-    exit(int(b.a) + nm.x)
+    var a = 1
+    show<i32>(a)
 }

@@ -1,12 +1,6 @@
-# a method without a result as a value is named with its type
-
-type point {x, y}
-
-func mut point.set(a) {
-    self.x = a
-}
+# a ')' after the last element with no value is a missing value, not an
+# element too many
 
 func main() {
-    var p = point{1, 2}
-    var x = p.set(1)
+    var a = i8[2]{1, 2, )
 }

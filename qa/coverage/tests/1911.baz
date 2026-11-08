@@ -1,6 +1,9 @@
-# a comparison as a statement is not read as an assignment
+# a generic call that ends before the argument that deduces a type names the
+# first missing argument, as a call without type parameters does
+func pick<T type>(a, b, v T) res T {
+    res = v
+}
 
 func main() {
-    var n = 1
-    n == 2
+    var x = pick(1)
 }

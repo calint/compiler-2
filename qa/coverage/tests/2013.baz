@@ -1,6 +1,8 @@
-# a 'let' named by '{}' alone has no type to take its zero value from
+# a closer that does not close the last open bracket in the body of a generic
+# function without an instance is reported at it, as in a parsed body
 
-func main() {
-    let k = {}
-    exit(k)
+func g<T type>(a T) res T {
+    res = (a + 1]
 }
+
+func main() {}

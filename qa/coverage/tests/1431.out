@@ -1,4 +1,4 @@
 
-1431.baz:4:16: a string is not a number, it fills only an array of 'i8'
-    var a = i8["4"]
-               ^~~
+1431.baz:2:10: function may return without setting its result 'res'
+func f() res {
+         ^~~

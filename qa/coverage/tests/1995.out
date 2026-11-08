@@ -1,4 +1,7 @@
 
-1995.baz:5:19: an array literal is not an operand here, store it in a variable first
-    array_copy(a, {1, 2}, 2)
-                  ^
+1995.baz:7:5: 'foo' declares 'i', which names the type 'i8'
+    foo a {
+    ^~~
+1995.baz:13:13: instantiated by 'f<i8>'
+    var r = f(i8(1))
+            ^

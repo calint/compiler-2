@@ -1,13 +1,6 @@
-# a type parameter named like its based generic type is rejected at the
-# definition
+# a type defined twice is reported at its name, before its fields
 
-type box<T type> { a T }
+type p {x}
+type p {x p}
 
-type text<text type> = box<text>
-
-func text.f() {}
-
-type s = text<i8>
-
-func main() {
-}
+func main() {}

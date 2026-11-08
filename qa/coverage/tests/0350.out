@@ -1,4 +1,0 @@
-
-0350.baz:9:11: expected type 'left', got 'right'
-    lhs = rhs
-          ^~~

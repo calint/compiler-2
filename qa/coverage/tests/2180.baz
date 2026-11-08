@@ -1,6 +1,7 @@
-# a '$' of a source line that the listing quotes in a comment is part of a
-# symbol for the jump optimizer, as in a label of nasm
+# an overlong character, a surrogate and a lead byte past U+10FFFF are
+# escaped in a message
+
 func main() {
-    var s = "a$b"
-    exit(s[1])
+    var a = i8
+    a = bÀ€í €õ€€€
 }

@@ -1,7 +1,6 @@
-# unknown field access is rejected
+# array_copy requires parentheses
 
-type p { x }
 func main() {
-    var p1 = p
-    var x = p1.y
+    var a = i8[2]
+    array_copy a,a,1
 }

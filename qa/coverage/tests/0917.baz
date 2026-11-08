@@ -1,11 +1,17 @@
-# a constant expression argument is folded at the width of its parameter
+# the read is in a function called by the one that writes the parameter
+# rejected inlined as well as noinline
 
-func second(x i32, y i32) res i32 { res = y }
+dat g = i32[4]{ 1, 2, 3, 4 }
+
+func put(x mut i32, k i32) {
+    x = k + (100 - g[3])
+}
+
+func outer(y mut i32) {
+    put(y, 10)
+}
 
 func main() {
-    var a = i32(3)
-    var p = i32(0)
-    p = second(a, 1000000007 * 1000000)
-    if p != -1523494976 exit(1)
-    exit(0)
+    outer(g[3])
+    exit(g[3] - 106)
 }

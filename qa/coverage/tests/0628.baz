@@ -1,8 +1,11 @@
-# the foo counter 'i' is read-only
+# 'array_copy' cannot copy into an array parameter without 'mut'
+
+func f(d i8[], s i8[]) {
+    array_copy(s, d, 2)
+}
 
 func main() {
-    var arr = []{ 1, 2, 3 }
-    foo arr {
-        i = 2
-    }
+    var a = i8[2]{ 1, 2 }
+    var b = i8[2]{ 3, 4 }
+    f(a, b)
 }

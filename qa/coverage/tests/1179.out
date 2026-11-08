@@ -1,4 +1,0 @@
-
-1179.baz:4:9: 'int' is a built-in type
-    var int = int[2]{1, 2}
-        ^~~

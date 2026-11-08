@@ -1,7 +1,3 @@
-# a generic parameter is declared once
+# an unterminated generic definition
 
-func f<T type, T type>(x T) {
-}
-
-func main() {
-}
+func f<T type>() {

@@ -1,7 +1,10 @@
 
-2073.baz:8:20: index 5 is out of bounds for array 'rs' of size 2
-        res = g(rs[5].a, rs, x - 1)
-                   ^
-2073.baz:17:11: called from 'g(t, rs, x)'
-    res = g(t, rs, x)
+2073.baz:13:7: index 5 is out of bounds for array 'a' of size 5
+    a[6 - k] = 1
+      ^
+2073.baz:14:31: called from 'r(x, k - 1)'
+    res = x + (x * (x + (x * (r(x, k - 1) + 1))))
+                              ^
+2073.baz:18:11: called from 'r(x, 2)'
+    res = r(x, 2)
           ^

@@ -1,8 +1,9 @@
-# a 'dat' cannot be named like a built-in type
+# a 'bool' is not a value for an integer field of a record literal
 
-dat int = int(5)
-dat b = int[2]{3}
+type point { x i32, y i32 }
 
 func main() {
-    exit(int + b[0])
+    var b = true
+    var p = point{b, 2}
+    exit(p.x)
 }

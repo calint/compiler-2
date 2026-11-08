@@ -1,10 +1,9 @@
-# a whole array compared with an instance must be indexed whatever its element
-# type
+# a closer without an opener in the body of a generic function that no
+# instance parses is reported as in a body that is parsed
 
-type point { x, y }
+func g<T type>(a T) res T {
+    res = a]
+}
 
 func main() {
-    var p = point
-    var a = i8[2]
-    var b = p == a
 }

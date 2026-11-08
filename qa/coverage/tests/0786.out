@@ -1,7 +1,4 @@
 
-0786.baz:11:16: 'nothing' not found
-    self.len = nothing
-               ^~~~~~~
-0786.baz:8:6: instantiated by
-type str = text<8>
-     ^~~
+0786.baz:7:18: generic parameter 'T' of 'make' needs a type, got the constant '1'
+    var m = make<1>(2)
+                 ^

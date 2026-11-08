@@ -1,6 +1,5 @@
-# a variable indexed in its own initializer is read before it is set, not
-# taken as a variable of the default type
+# an operator after a statement is quoted whole
 
 func main() {
-    var a = a[0]
+    exit(0) == 1
 }

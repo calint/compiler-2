@@ -1,0 +1,4 @@
+
+1291.baz:3:17: variable 'k' is read before it is set
+    let k = 1 + k
+                ^

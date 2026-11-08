@@ -1,4 +1,0 @@
-
-4600.baz:4:12: 'return' takes no value, a result is assigned, e.g. 'res = a'
-    return 'a'
-           ^~~

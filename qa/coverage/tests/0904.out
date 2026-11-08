@@ -1,7 +1,0 @@
-
-include/bad.baz:2:5: 'x' not found
-    x = 1
-    ^
-0904.baz:1:9: included from
-include "include/bad.baz"
-        ^~~~~~~~~~~~~~~~~

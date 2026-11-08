@@ -1,4 +1,0 @@
-
-2940.baz:5:14: expected a generic type after '=', 'point' is not generic
-type place = point
-             ^~~~~

@@ -1,4 +1,4 @@
 
-0174.baz:4:6: type 'x' already defined at 3:6
-type x { b }
-     ^
+0174.baz:5:13: expected '(' after function name
+    var n = array_length x
+            ^~~~~~~~~~~~

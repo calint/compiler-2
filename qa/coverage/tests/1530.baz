@@ -1,4 +1,9 @@
-# the parameters of a generic function end with ')', checked at the definition
-func f<T type>(a T] {}
+# an unknown function in an argument that a generic call deduces from is
+# reported as a function
+func show<T type>(v T) res T {
+    res = v
+}
 
-func main() {}
+func main() {
+    exit(show(nope(1)))
+}

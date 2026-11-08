@@ -1,4 +1,4 @@
 
-0216.baz:3:5: expected a name
-let = 1
-    ^
+0216.baz:3:6: expected '(' after function name
+func f {}
+     ^

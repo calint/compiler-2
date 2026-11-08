@@ -1,4 +1,0 @@
-
-0693.baz:5:22: 'read' takes 2 to 4 arguments
-    read(0, buf, 1, 0, 9)
-                     ^

@@ -1,4 +1,0 @@
-
-2850.baz:5:9: 'b\xc3' is not a valid name, a name starts with a letter or '_' and has only letters, digits and '_'
-    var b\xc3 = 1
-        ^~~~~

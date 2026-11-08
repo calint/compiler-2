@@ -1,10 +1,12 @@
-# a 'mut' parameter still conflicts with a read-only one
+# a 'let' variable cannot be passed to a 'mut' non-inline parameter
 
-func f(a, b mut) {
-    b = a + 1
+func noinline set(a mut) {
+    a = 1
 }
 
+dat base = 5
+
 func main() {
-    var x = 5
-    f(x, x)
+    let x = base + 0
+    set(x)
 }

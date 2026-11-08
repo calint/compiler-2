@@ -1,10 +1,6 @@
-# unary negation of an array element passes its value to an inlined call
+# a string cannot exceed the size of its data field
 
-func f(x i8) res {
-    res = x + 7
-}
+type p { s i8[2] }
+dat x = p{"abc"}
 
-func main() {
-    var a = i8[2]{1, 5}
-    exit(f(-a[1]))
-}
+func main() {}

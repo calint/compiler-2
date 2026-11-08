@@ -1,9 +1,14 @@
-# a 'let' of a 'bool' is a constant 'bool', the 'if' folds
+# the indexes of a destination are computed before the value: the call in the
+# index writes 'i' before the value reads it
+
+func h(i mut) res {
+    i = i + 1
+    res = 0
+}
+
 func main() {
-    let b = true
-    let c = not b
-    if c {
-        exit(1)
-    }
-    exit(2)
+    var arr = int[4]
+    var i = 5
+    arr[h(i)] = i
+    exit(arr[0])
 }

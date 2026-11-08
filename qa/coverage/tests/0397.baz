@@ -1,31 +1,24 @@
-# regression: stmt_call alias plain variables (is_indexed off)
+# branch coverage: built-in array field assigned from array identifier
+# targets compile_assign branches:
+#   if (tf.is_array and src.is_array_identifier()) validate_array_assignment
+#   if (tf.is_array) { validate_array_assignment; x.copy(...); }
 
 func assert(err, expr bool) { if not expr exit(err) }
 
-func ret_after_inc(i mut) out {
-    i = i + 1
-    out = 77
-}
-
-func store_after_inc(v, slot mut, i mut) {
-    i = i + 1
-    slot = v
+type holder {
+    values[2],
+    tag
 }
 
 func main() {
-    var plain = 0
-    var j = 4
+    var src_values = [2]{31, 32}
+    var holders = holder[2]
 
-    plain = ret_after_inc(j)
+    var ix = 1
+    holders[ix] = {src_values, 9}
 
-    assert(1, j == 5)
-    assert(2, plain == 77)
-
-    var plain2 = 9
-    var k = 2
-
-    store_after_inc(55, plain2, k)
-
-    assert(3, k == 3)
-    assert(4, plain2 == 55)
+    assert(1, ix == 1)
+    assert(2, holders[1].values[0] == 31)
+    assert(3, holders[1].values[1] == 32)
+    assert(4, holders[1].tag == 9)
 }

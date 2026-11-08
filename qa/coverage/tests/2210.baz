@@ -1,6 +1,8 @@
-# an instance literal reached into is not an operand, as an initializer
-type pt { x, y }
+# a comment on the last line without a line end after a global, which the
+# listing comment of the global holds
 
 func main() {
-    var s = pt{1, 2}.x
+    exit(2)
 }
+
+var g = 2 # comment

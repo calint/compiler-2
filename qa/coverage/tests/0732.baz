@@ -1,7 +1,6 @@
-# rv32i: 'i64' is not available, also as the element type of a 'dat'
-
-dat d = i64[]{1, 2}
+# an unsupported escape after a line continuation is located on its own line
 
 func main() {
-    exit(0)
+    var s = "ab\
+cd\qe"
 }

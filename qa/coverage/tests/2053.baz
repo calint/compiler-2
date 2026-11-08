@@ -1,27 +1,20 @@
-# a 'bool' array is an argument of a 'bool' array parameter, inlined and
-# noinline, as an array of numbers is
+# the check of a body without its calls rejects an inlined recursion that an
+# instance drives beside a constant argument: an instance folds at no call, so
+# every call passes the nesting limit, before the narrowing after it
 
-func count(gs bool[]) res {
-    res = 0
-    foo gs {
-        if e {
-            res = res + 1
-        }
-    }
-}
+type point { x, y }
 
-func noinline count_noinline(gs bool[]) res {
-    res = 0
-    foo gs {
-        if e {
-            res = res + 2
-        }
+func f(p point, k) {
+    if p.x <= 0 {
+        return
     }
+    var q = point{p.x - 1, p.y}
+    f(q, 2)
+    var w = i16(300)
+    var b = i8(0)
+    b = w
 }
 
 func main() {
-    var bs = bool[5]
-    bs[1] = true
-    bs[3] = true
-    exit(count(bs) + count_noinline(bs))
+    exit(0)
 }

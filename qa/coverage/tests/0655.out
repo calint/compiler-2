@@ -1,4 +1,4 @@
 
-0655.baz:7:5: cannot assign to read-only 'a', 'a' is declared with 'let'
-    a = 2
-    ^
+0655.baz:6:5: cannot assign to read-only 'self.start', the method is not declared 'mut'
+    self.start = 0
+    ^~~~

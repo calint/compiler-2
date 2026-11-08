@@ -1,12 +1,6 @@
-# an instance data field is checked after its unary operations
-
-type limits {
-    low i16,
-    high i16
-}
-
-dat words = limits{-32768, ~32768}
+# a whole array read as a scalar is not its first element
 
 func main() {
-    exit(words.low)
+    var arr = i32[2]
+    var x = i32(1 + arr)
 }

@@ -1,4 +1,0 @@
-
-0596.baz:9:18: function may return without setting its result 'self'
-func point.at(x) self {
-                 ^~~~

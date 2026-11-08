@@ -1,6 +1,7 @@
-# statement requires an assignment operator
+# an array size of -1 in a field is rejected
 
-func main() {
-    var x = 1
-    x 2
+type person {
+    name i8[-1]
 }
+
+func main() {}

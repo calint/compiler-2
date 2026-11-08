@@ -1,5 +1,9 @@
-# under the division check a constant minimum divided by -1 is rejected
+# the body of a generic type is skipped to its closing '}' without being
+# parsed; a closer without an opener ends the skip, also with no instance
+
+type l<n> {
+    x i8)
+}
+
 func main() {
-    var x = i8(-128) / -1
-    exit(x)
 }

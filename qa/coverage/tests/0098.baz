@@ -1,48 +1,15 @@
-# 'arrays_equal' on input arrays, equal and different prefixes
+# array parameter mutation is visible to the caller
 
 func assert(expr bool) {
     if not expr exit(1)
 }
 
-func print(str i8[], len) {
-    write(1, str, len)
+func arrarg(arg mut []) {
+    arg[1] = 0xfe
 }
-
-func input(str mut i8[], len) nbytes {
-    nbytes = read(0, str, len)
-}
-
-dat ok = "ok\n"
 
 func main() {
-    var word1 = i8[64]
-    var word2 = i8[64]
-
-    print(ok, array_length(ok))
-
-    # expect same word input for both
-    var len1 = input(word1, array_length(word1))
-    print(word1, len1)
-
-    print(ok, array_length(ok))
-
-    var len2 = input(word2, array_length(word2))
-    print(word2, len2)
-  
-    assert(arrays_equal(word1, word2, len1))
-
-    print(ok, array_length(ok))
-
-    # expect not same word input for both
-    len1 = input(word1, array_length(word1))
-    print(word1, len1)
-
-    print(ok, array_length(ok))
- 
-    len2 = input(word2, array_length(word2))
-    print(word2, len2)
- 
-    assert(not arrays_equal(word1, word2, len1))
-
-    print(ok, array_length(ok))
+    var arr = [7]
+    arrarg(arr)
+    assert(arr[1] == 0xfe)
 }

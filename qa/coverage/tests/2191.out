@@ -1,4 +1,4 @@
 
-2191.baz:7:13: expected ')' after the arguments
-    exit(f(1])
-            ^
+2191.baz:12:16: 'point' names a value here, which hides the type 'point'
+    exit(first(point{1, 2}))
+               ^~~~~

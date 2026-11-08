@@ -1,17 +1,11 @@
-# a noinline body that binds a parameter of an inlined call to the global the
-# inlined body writes is rejected at that call, like an inlined body
+# a 'break' outside a loop is rejected whatever the argument of an inlined call
 
-var g = 3
-
-func h(p) {
-    g = p * 2 + p
-}
-
-func noinline f() {
-    h(g)
+func f(a) {
+    if a == 2 {
+        break
+    }
 }
 
 func main() {
-    f()
-    exit(g)
+    f(1)
 }

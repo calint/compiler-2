@@ -1,37 +1,14 @@
-# rv32i: loops nested so deeply that no scratch register is left for a far jump
+# a recursive non-inline call is checked once
 
-dat a = []{1, 2}
+func noinline count_down(n mut) {
+    if n > 0 {
+        n = n - 1
+        count_down(n)
+    }
+}
 
 func main() {
-    var x = 100
-    foo a {
-        foo a {
-            foo a {
-                foo a {
-                    foo a {
-                        foo a {
-                            foo a {
-                                foo a {
-                                    foo a {
-                                        foo a {
-                                            foo a {
-                                                foo a {
-                                                    foo a {
-                                                        foo a {
-                                                            x = x + i
-                                                        }
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-    exit(x + 1)
+    var v = 3
+    count_down(v)
+    exit(v)
 }

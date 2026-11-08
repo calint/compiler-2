@@ -1,10 +1,12 @@
-# an operand of an operator is a number, not an instance
+# a nested instance is written field by field, so a read at a run-time index
+# of a field not yet written is not overwritten
 
-type point {x, y}
+type pt {x, y}
+type ln {a pt, b pt}
 
 func main() {
-    var p = point{5, 2}
-    var y = 1
-    y = y + p
-    exit(y)
+    var ls = ln[2]{{{1, 2}, {3, 4}}, {{5, 6}, {7, 8}}}
+    var i = 1
+    ls[0] = {{1, ls[i].a.y}, {3, 4}}
+    exit(ls[0].a.y - 6)
 }

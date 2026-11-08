@@ -1,4 +1,7 @@
 
-1950.baz:4:18: an array literal is not an operand here, store it in a variable first
-    var b = a == [2]{1, 2}
-                 ^
+1950.baz:7:17: the destination gives the type 'point', write '{}'
+    var s = seg{T}
+                ^
+1950.baz:11:5: instantiated by 'f<point>'
+    f<point>()
+    ^

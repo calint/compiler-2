@@ -1,8 +1,9 @@
-# an element is not an array, the parameter would see the whole array's length
+# a negative 'arrays_equal' count with start elements panics
 
-func put(s i8[], n) res { res = write(1, s, n) }
 func main() {
-    var buf = i8[6]
-    var i = 2
-    var r = put(buf[i], 5)
+    var buf = i8[4]
+    var a = i8[4]
+    var k = 1
+    var n = -1
+    var e = arrays_equal(a[k], buf[k], n)
 }

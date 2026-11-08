@@ -1,12 +1,7 @@
-# an array size is a constant expression, also in a field
-let n = 2
-
-type t {
-    a i8[n * 2 + 1],
-}
-
+# parentheses after a 'not' around a single condition group nothing
 func main() {
-    var a = i8[-(n - 5)]
-    var v = t
-    exit(array_length(a) + array_length(v.a))
+    var b = true
+    if not (b) {
+        exit(1)
+    }
 }

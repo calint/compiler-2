@@ -1,4 +1,4 @@
 
-1604.baz:3:16: 'int' is a type, an array size is a constant number
-    var a = i8[int]
-               ^~~
+1604.baz:4:17: parentheses around a single value group nothing, write '(x + 1)'
+    var y = 2 * ((x + 1))
+                ^

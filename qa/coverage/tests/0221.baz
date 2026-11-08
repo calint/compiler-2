@@ -1,4 +1,4 @@
-# hexadecimal constants must fit in i64
+# a missing initializer expression after '=' is rejected
 
-let x = 0x10000000000000000
-func main() {}
+func main() { var x = # comment
+}

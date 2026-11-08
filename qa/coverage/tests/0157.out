@@ -1,4 +1,4 @@
 
-0157.baz:3:9: unterminated string
-dat x = "unterminated
-        ^
+0157.baz:6:11: destination array size 2 does not match source size 4
+    dst = src
+          ^~~

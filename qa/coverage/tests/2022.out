@@ -1,7 +1,4 @@
 
-2022.baz:5:26: 'point' is a type, not an array
-    var n = array_length(T)
-                         ^
-2022.baz:9:5: instantiated by 'g<point>'
-    g<point>()
-    ^
+2022.baz:11:19: 'var' is a keyword
+    var p = point.var(2)
+                  ^~~

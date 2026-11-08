@@ -1,4 +1,4 @@
 
-0816.baz:7:12: type 'name' is not generic, it takes no type arguments
-type str = name<8>
-           ^~~~
+0816.baz:3:21: expected a parameter name
+func f<T type>(a T, , b) {}
+                    ^

@@ -1,11 +1,10 @@
-# a field of a call's result where an array is expected, rejected at the
-# call
-type pt { x, a i8[3] }
+# a value after 'return' is rejected, the result is assigned
 
-func mk() res pt {
-    res = {}
+func f(a) res {
+    res = 0
+    return a
 }
 
 func main() {
-    exit(array_length(mk().a))
+    var y = f(1)
 }

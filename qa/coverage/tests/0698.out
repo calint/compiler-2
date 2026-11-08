@@ -1,0 +1,4 @@
+
+0698.baz:3:9: 'i8' is a type, not a value
+dat x = i8 + 1
+        ^~

@@ -1,8 +1,5 @@
-# x86: a division in the count of 'write' needs 'rdx', which the call holds
+# a token made only of utf-8 continuation bytes is reported with a caret
 
 func main() {
-    var text = "hello\n"
-    var n = 12
-    var k = write(1, text, n / 2)
-    exit(k)
+    exit(©)
 }

@@ -1,0 +1,4 @@
+
+1293.baz:4:13: a unary operator makes a value, not an array
+    read(0, ~b, 2)
+            ^

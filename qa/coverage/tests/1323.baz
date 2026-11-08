@@ -1,5 +1,8 @@
-# a type whose size rounded up to its alignment passes the storage limit is
-# rejected
-type s {a i16, b i8[0x7fffffffffffffed]}
-
-func main() {}
+# an 'array_length' in a conversion's argument to a wider type is rejected
+# when the first element is narrower than 'array_length'
+func main() {
+    var a = i8[4]
+    var b = i8(4)
+    var c = i16(b + array_length(a))
+    exit(i8(c))
+}

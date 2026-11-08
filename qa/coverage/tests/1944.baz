@@ -1,5 +1,8 @@
-# a built-in type alone for an array is not an array
-func main() {
-    var a = i8[2]
-    a = i8
-}
+# an instance of a generic type as a generic argument is named first, as for
+# a field type
+
+type box<T type> { x T }
+
+type s = box<box<i8>>
+
+func main() {}

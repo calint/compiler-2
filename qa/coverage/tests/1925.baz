@@ -1,9 +1,7 @@
-# a call of a function without a result to an array is a call, not an array,
-# as for an array argument
-
-func f() {}
+# a built-in type alone for an instance is a value of another type
+type point {x i32, y i32}
 
 func main() {
-    var a = i8[2]
-    a = f()
+    var p = point
+    p = i8
 }

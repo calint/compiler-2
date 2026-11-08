@@ -1,4 +1,4 @@
 
-1886.baz:6:15: a comparison makes a condition, which is not an operand here, store it in a 'bool' first
-    var c = x == 1 == true
-              ^~
+1886.baz:9:9: expected ')' after the arguments
+    f(a 2)
+        ^

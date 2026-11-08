@@ -1,4 +1,4 @@
 
-0495.baz:3:26: too many elements for array of size 3
-    var a = [3]{1, 2, 3, 4}
-                         ^
+0495.baz:4:17: constant '200' does not fit 'i8' (-128 to 127), 'i8(...)' wraps it
+func main() { f(200) }
+                ^~~

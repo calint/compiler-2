@@ -1,6 +1,5 @@
-# missing initializer delimiter is rejected
+# a data array initializer is complete without '{}', a scalar after it is
+# unexpected
 
-type p { x, y }
-dat x = p{1 2}
-
-func main() {}
+dat x = i8[2] 1
+func main() { }

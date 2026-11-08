@@ -1,7 +1,6 @@
-# the zero value assigned to a built-in is '{}', not the type name
-
+# a unary operator before a character literal inside parentheses, the
+# look-ahead that tells a condition from an operand skips it as one token
+let C = (~'.' << 1)
 func main() {
-    var n = i8(7)
-    n = i8
-    exit(n)
+    exit(C & 127)
 }

@@ -1,38 +1,16 @@
-# x86: running out of registers in nested inline calls reports who holds them and
-# what a noinline frame would save
-func leaf(v i32[]) res {
-    var a = 1
-    var b = 2
-    var c = 3
-    var d = 4
-    var e = 5
-    var f = 6
-    res = a + (b + (c + (d + (e + (f + v[1])))))
+# generics that are never instantiated are listed in the footer, the types of
+# their signatures and their bodies are not checked
+func untyped<T type>(a b) {
 }
 
-func middle(v i32[]) res {
-    var a = 1
-    var b = 2
-    var c = 3
-    var d = 4
-    var e = 5
-    res = a + (b + (c + (d + (e + leaf(v)))))
+func unknown_result<T type>(a T) res q {
 }
 
-func top(v i32[]) res {
-    var a = 1
-    var b = 2
-    var c = 3
-    var d = 4
-    res = a + (b + (c + (d + middle(v))))
+type list<T type> { items T[4] }
+
+# a method of a generic type without an alias is listed too
+func list.find<U type>(x U) res U {
 }
 
 func main() {
-    var v = i32[4]{1, 2, 3, 4}
-    var w = v[0]
-    var x = v[1]
-    var y = v[2]
-    var z = v[3]
-    var q = int(w) + (x + (y + (z + top(v))))
-    exit(0)
 }

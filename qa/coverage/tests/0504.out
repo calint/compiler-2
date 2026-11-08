@@ -1,4 +1,4 @@
 
-0504.baz:5:18: constant '-c' does not fit 'i8' (-128 to 127), 'i8(...)' wraps it
-func main() { f(-c) }
-                 ^
+0504.baz:7:17: 'buf[i]' is not an array, parameter 's' takes one
+    var r = put(buf[i], 5)
+                ^

@@ -1,15 +1,8 @@
-# a method of a generic type without a body does not take the next definition
-# as its body
+# a global variable is not initialized with a built-in that reads or writes,
+# it would run before 'main'
 
-type buf<c> {
-    x i8[c]
-}
-
-func buf.f()
-func g() {
-    exit(3)
-}
+var a = i8[4]
+var g = read(0, a)
 
 func main() {
-    g()
 }

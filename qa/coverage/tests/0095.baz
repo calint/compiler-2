@@ -1,15 +1,9 @@
-# escaped characters in string data
+# function argument cannot read its own uninitialized caller variable
 
-func assert(expr bool) {
-    if not expr exit(1)
+func foozi(i) res {
+    res = 1
 }
-
-func print(str i8[], len) {
-    write(1, str, len)
-}
-
-dat hello = "hello \"world\" \n from 'baz'\n  "
 
 func main() {
-    print(hello, array_length(hello))
+    var x = foozi(x)
 }

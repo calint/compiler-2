@@ -1,14 +1,7 @@
-# '-noub' does not turn off the rejection of storage that may be shared
+# a 'dat' divided by a constant zero is rejected like a 'var'
 
-type pair {a, b}
-
-var g = pair{1, 2}
-
-func noinline set(v mut) {
-    v = g.b + 1
-}
+dat a = 1 / 0
 
 func main() {
-    set(g.b)
-    exit(g.b)
+    exit(0)
 }

@@ -1,0 +1,6 @@
+# an array parameter with a size
+func f(a[4]) {
+}
+
+func main() {
+}

@@ -1,4 +1,4 @@
 
-0217.baz:3:6: expected '=' followed by an initializer, e.g. 'let x = i32'
-let x 1
-     ^
+0217.baz:3:10: function may return without setting its result 'result'
+func f() result { }
+         ^~~~~~

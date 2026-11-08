@@ -1,22 +1,18 @@
-# a local that hides a global is not the global in the aliasing check of a
-# noinline call, a call with the local checked before does not stand for one
-# with the global
+# a 'let' of the 'array_length' of an unsized array parameter is the length
+# of the argument of each call, inline and noinline
 
-type pair {a, b}
-
-var total = pair{3, 4}
-
-func noinline bump(value mut) {
-    value = total.b + 1
+func f(s i8[]) res {
+    let n = array_length(s)
+    res = n
 }
 
-func bump_global() {
-    bump(total.b)
+func noinline g(s i8[]) res {
+    let n = array_length(s)
+    res = n
 }
 
 func main() {
-    var total = pair{7, 8}
-    bump(total.b)
-    bump_global()
-    exit(total.b)
+    var a = i8[5]
+    var b = i8[7]
+    exit(f(a) + f(b) + g(a) + g(b))
 }

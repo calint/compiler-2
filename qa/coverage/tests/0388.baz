@@ -1,26 +1,31 @@
-# struct literal built from structs and a comparison, plus a call
+# regression: stmt_call alias must pin indexed operand (is_indexed on)
 
-func assert(x bool) { if not x exit(1) }
+func assert(err, expr bool) { if not expr exit(err) }
 
-func baz(arg) res {
-    res = arg * 2
+func ret_after_inc(i mut) out {
+    i = i + 1
+    out = 77
 }
 
-func bazi(i mut) { 
-    i = i * 3
+func store_after_inc(v, slot mut, i mut) {
+    i = i + 1
+    slot = v
 }
-
-type vector {x, y i32, z i16, w i8}
-type object { pos vector, vel vector, valid bool }
 
 func main() {
-    var p = vector{-1, -2, -3, -4}
-    var p2 = vector{-11, -22, -33, -44}
-    var x = i32(10)
-    var o2 = object{p, p2, x == 10}
+    var arr = [3]{10, 20, 30}
 
-    var j = 1
-    var k = baz(j)
+    var ix = 0
+    arr[ix] = ret_after_inc(ix)
 
-    assert(k == 2)
+    assert(1, ix == 1)
+    assert(2, arr[0] == 77)
+    assert(3, arr[1] == 20)
+
+    var ix2 = 1
+    store_after_inc(44, arr[ix2], ix2)
+
+    assert(4, ix2 == 2)
+    assert(5, arr[1] == 44)
+    assert(6, arr[2] == 30)
 }

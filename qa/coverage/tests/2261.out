@@ -1,4 +1,0 @@
-
-2261.baz:3:15: a carriage return is not followed by a line feed
-func main() {}\x0d
-              ^~~~

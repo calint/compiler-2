@@ -1,6 +1,8 @@
-# a comparison of a bool with an integer after an element that decides the
-# condition is rejected
+# a constant negative count of 'read' with a start computed at run time is
+# rejected, like the count of 'array_copy'
 func main() {
-    var x = i32(1)
-    if true or x == true exit(1)
+    var a = i8[4]
+    var i = 1
+    var n = read(0, a, -1, i)
+    exit(n)
 }

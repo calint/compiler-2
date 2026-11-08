@@ -1,4 +1,4 @@
 
-0845.baz:3:12: '5' is not an array
-dat x = t{ 5, 1 }
-           ^
+0845.baz:5:12: 'wide' of type 'i64' is narrowed to 'i8', use 'i8(...)'
+    target(wide + 1)
+           ^~~~

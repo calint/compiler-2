@@ -1,6 +1,5 @@
-# a comment at the end of the file without a final newline
+# character literal with more than one character
 
 func main() {
-    exit(0)
+    var c = 'ab'
 }
-# last line

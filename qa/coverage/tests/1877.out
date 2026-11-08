@@ -1,7 +1,4 @@
 
-1877.baz:9:22: recursion of inlined function 'point.at' runs out of registers before it ends at compile time, declare it 'noinline'
-        self = point.at(x - 1, y)
-                     ^~
-1877.baz:15:13: called from 'point.at(n, 2)'
-    var p = point.at(n, 2)
-            ^~~~~
+1877.baz:6:6: a constructor builds 'self', 'mut' is not needed
+func mut box.mk() self {}
+     ^~~

@@ -1,12 +1,19 @@
-# a folded conversion keeps its type as the first element of an expression
+# the data is a record, the argument and the read are the same element
+# rejected inlined as well as noinline
+
+type world {
+    items[4],
+    count,
+}
+
+dat w = world
+
+func put(x mut) {
+    x = 7 + (100 - w.items[2])
+}
 
 func main() {
-    var x = i32(2147483646)
-    if not (i32(8) + x < 0) exit(1)
-
-    var y = i32(0)
-    y = i32(2147483647) + 1
-    if y != -2147483648 exit(2)
-
-    exit(0)
+    w.items[2] = 3
+    put(w.items[2])
+    exit(w.items[2] - 104)
 }

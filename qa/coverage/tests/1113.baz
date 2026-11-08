@@ -1,7 +1,8 @@
-# a constant 'array_copy' count past the end of the array is rejected
+# x86: a division in the count of 'write' needs 'rdx', which the call holds
 
 func main() {
-    var a = i8[4]
-    var b = i8[4]
-    array_copy(a, b, 5)
+    var text = "hello\n"
+    var n = 12
+    var k = write(1, text, n / 2)
+    exit(k)
 }

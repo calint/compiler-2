@@ -1,5 +1,5 @@
-# a surplus argument of a built-in is reported as the count at its ',',
-# before it is parsed, like that of a function
+# a whole array literal for a bool is a type mismatch
 func main() {
-    exit(0, zz)
+    var b = true
+    b = i8[2]
 }

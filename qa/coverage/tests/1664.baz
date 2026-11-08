@@ -1,7 +1,16 @@
-# a bare user type is a zero instance, a '!' after it is not an operator
+# an instance call result is not a number, at the parse, so also in a
+# branch that folds away
 
-type p { x i8 }
+type point {x, y}
+
+func mk() res point {
+    res = {1, 2}
+}
 
 func main() {
-    var q = p ! 3
+    var n = 1
+    if 1 == 2 {
+        n = mk()
+    }
+    exit(n)
 }

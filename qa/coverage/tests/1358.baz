@@ -1,11 +1,9 @@
-# the parameter of a generic type is a name like the others, not a keyword
-type b<var> {
-    a i8[var]
-}
-
-type c = b<2>
-
+# a constant list whose first element is a typed constant is wider than a
+# narrower left side like the same list of a variable
 func main() {
-    var v = c
-    exit(array_length(v.a))
+    var e = i8(1)
+    if e < i16(300) + 1 {
+        exit(1)
+    }
+    exit(0)
 }

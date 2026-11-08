@@ -1,7 +1,8 @@
-# a type is not an array argument, as for the array of a built-in
-
-func f(s i8[]) {}
+# an operator after the array of a 'foo'
 
 func main() {
-    f(i8)
+    var a = i8[4]
+    foo a + 1 {
+        e = 1
+    }
 }

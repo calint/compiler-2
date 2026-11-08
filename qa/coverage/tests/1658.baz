@@ -1,7 +1,24 @@
-# a 'let' of a typed value is a constant of its type, e.g. an array size
+# a rule that needs no argument holds in a branch that a constant argument of
+# an inlined call folds away
+
+func h(i mut) res {
+    i = i + 1
+    res = 0
+}
+
+func k(a, b) res {
+    res = a + b
+}
+
+func g(n) res {
+    var arr = int[4]
+    var i = 0
+    res = 0
+    if n > 5 {
+        res = k(arr[i], h(i))
+    }
+}
+
 func main() {
-    let k = i8(3)
-    let n = k + 2
-    var a = i8[n]
-    exit(array_length(a))
+    exit(g(3))
 }

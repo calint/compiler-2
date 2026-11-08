@@ -1,6 +1,7 @@
-# a generic type has its body right after its parameters
+# a boolean value is not a name
 
-type list<T type> item { x }
+func true() {
+}
 
 func main() {
 }

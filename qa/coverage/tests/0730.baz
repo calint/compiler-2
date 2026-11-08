@@ -1,38 +1,8 @@
-# rv32i: nested loops hold every scratch register
+# data arrays whose sizes together exceed the signed 64-bit range, the first
+# is past the memory the target addresses
 
-dat a = []{1, 2}
+dat a = i8[4611686018427387904]
+dat b = i8[4611686018427387904]
 
 func main() {
-    var x = 100
-    foo a {
-        foo a {
-            foo a {
-                foo a {
-                    foo a {
-                        foo a {
-                            foo a {
-                                foo a {
-                                    foo a {
-                                        foo a {
-                                            foo a {
-                                                foo a {
-                                                    foo a {
-                                                        foo a {
-                                                            foo a {
-                                                                x = x + i
-                                                            }
-                                                        }
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
 }

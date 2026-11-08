@@ -1,11 +1,5 @@
-# a constant without a type tells no type argument, like a literal
-
-func show<T type>(s T) res T {
-    res = s
-}
-
+# a '\x' escape of two characters that are not both hexadecimal digits
 func main() {
-    let k = 5
-    var r = show(k)
-    exit(r)
+    var c = '\x1g'
+    exit(c)
 }

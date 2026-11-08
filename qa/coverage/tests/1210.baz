@@ -1,11 +1,8 @@
-# a constant that does not fit the variable is rejected also in a function
-# that is never called
-
-func g() {
-    var b = i8(1)
-    b = 300
-}
+# a 'bool' is not an array index, 'int(b)' converts it
 
 func main() {
-    exit(0)
+    var a = i8[4]
+    var b = true
+    a[b] = 1
+    exit(a[1])
 }

@@ -1,9 +1,12 @@
-# a constant count of zero at the end of the array copies nothing, with and
-# without the checks
+# a constant element of an 'i8' array is folded at the width of the element,
+# as an assignment of the same expression is: '(127 + 1) >> 1' is -64
 
 func main() {
-    var a = i8[]{1, 2, 3, 4}
-    var b = i8[4]
-    array_copy(a[4], b[4], 0)
-    exit(b[3])
+    var c = i8[]{(127 + 1) >> 1, 1}
+    var d = i8(0)
+    d = (127 + 1) >> 1
+    if c[0] != d {
+        exit(1)
+    }
+    exit(c[0] + 64)
 }

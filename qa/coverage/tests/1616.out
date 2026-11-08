@@ -1,4 +1,4 @@
 
-1616.baz:2:8: generic parameter 'x' is also the name of the parameter at 2:16, use another name
-func f<x type>(x x) res x {
-       ^
+1616.baz:8:13: the call of 'gx' reaches 'g', which has been written in the same statement, use a temporary variable
+    g = {7, gx()}
+            ^~

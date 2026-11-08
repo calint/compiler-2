@@ -1,4 +1,4 @@
 
-1821.baz:5:23: result 'res' is read before it is set
-    let b = false and res == 1
-                      ^~~
+1821.baz:7:7: 'void' is not a type of a value
+    f(void(1))
+      ^~~~

@@ -1,5 +1,7 @@
-# an instance literal before a deducing argument is followed by ','
-
-type point { x i8, y i8 }
-func g<T type>(a point, b T) {}
-func main() { g(point{1, 2} 3) }
+# an 'array_length' that would fold in a constant list narrower than its type
+# is rejected
+func main() {
+    var a = i8[4]
+    let k = i8(1) + array_length(a)
+    exit(k)
+}

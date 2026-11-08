@@ -1,4 +1,4 @@
 
-0194.baz:4:11: a string fills only an array of 'i8', not an array of 'i16'
-dat x = p{"x"}
-          ^~~
+0194.baz:3:15: expected ',' followed by another field in type 'x'
+type x { a i8 b i8 }
+              ^

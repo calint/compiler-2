@@ -1,8 +1,16 @@
-# type arguments after a type parameter: not a generic type, no hint to name
-# an instance
+# an inlined recursion of a constructor is reported at the constructor name
 
-func f<T type>(x T<3>) {
+type point {x, y}
+
+func point.at(x, y) self {
+    self.x = x
+    self.y = y
+    if x > 0 {
+        self = point.at(x - 1, y)
+    }
 }
 
 func main() {
+    var n = 3
+    var p = point.at(n, 2)
 }

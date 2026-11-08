@@ -1,0 +1,45 @@
+# a generic type with two constants, one a typed constant; a field whose type
+# ends in padding; a field assigned on one path and another on the other; a
+# conversion of a wider argument computed in a scratch register with a '-'
+type box<n, m> { a i8[n], b i8[m] }
+
+func box.size() res {
+    res = n + m
+}
+
+let k = i8(3)
+
+type b2 = box<k, 4>
+
+type inner { x i32, y i8 }
+
+type outer { p inner, z i8 }
+
+func make_outer() res outer {
+    res.p.x = 1
+    res.p.y = 2
+    res.z = 3
+}
+
+type point { x, y }
+
+func make_point(c) res point {
+    if c == 1 {
+        res.x = 1
+    } else {
+        res.y = 2
+    }
+    res.x = 3
+    res.y = res.x + 1
+}
+
+func main() {
+    var b = b2
+    var o = make_outer()
+    var p = make_point(1)
+    var x = i16(600)
+    var y = i16(2)
+    var c = i8
+    c = -i8(x / y)
+    exit(b.size() + o.p.y + o.z + p.x + p.y + c + 44)
+}

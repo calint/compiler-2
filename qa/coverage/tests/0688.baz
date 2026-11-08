@@ -1,5 +1,8 @@
-# a call requires parentheses
+# a field array size is required
+
+type t {
+    a[]
+}
 
 func main() {
-    exit
 }

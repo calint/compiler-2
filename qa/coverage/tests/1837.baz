@@ -1,16 +1,15 @@
-# the error of a branch that runs is reported before that of a later branch
-# that never runs, in source order
+# a frame check whose displacement does not fit 32 bits: 3 GB of variables
+# before a noinline call, the callee frame does not fit, panics
 
-func f(c bool) res {
-    var a = 0
-    if c {
-        a = res
-    } else if false {
-        a = res + 1
-    }
-    res = 1
+func noinline f(x) res {
+    var b = i8[1400000000]
+    b[1399999999] = 7
+    res = x + b[1399999999]
 }
-
 func main() {
-    exit(f(true))
+    var a = i8[3000000000]
+    var r = 0
+    var q = 2
+    r = f(q)
+    exit(r)
 }

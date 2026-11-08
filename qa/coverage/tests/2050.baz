@@ -1,14 +1,20 @@
-# a method call without a result for an array field is a call that is not
-# an array, as in an argument
+# the check of a body without its call expands an inlined recursion that a
+# constant argument ends beside one that does not fold, 'f(x, k + 1)' of the
+# 'f(p, 0)' of 'h(p)' reaches 'a[4]'
 
-type point {x, y}
+func f(x, k) res {
+    var a = i8[4]
+    if k < 6 {
+        res = x + a[k] + f(x, k + 1)
+        return
+    }
+    res = 0
+}
 
-type row {a i8[2]}
-
-func point.clear() {
+func h(p) res {
+    res = f(p, 0)
 }
 
 func main() {
-    var p = point{1, 2}
-    var r = row{p.clear()}
+    exit(0)
 }

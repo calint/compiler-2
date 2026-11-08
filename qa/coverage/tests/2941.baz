@@ -1,6 +1,0 @@
-# a generic type is based on a generic type, not on a built-in type
-
-type wide<T type> = i32
-
-func main() {
-}

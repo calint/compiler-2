@@ -1,85 +1,53 @@
-# division, remainder, and arithmetic precedence
+# short-circuit boolean disjunction
+
+func probe(calls mut, expected_call, value bool) result bool {
+    calls = calls + 1
+    if calls != expected_call exit(90)
+    result = value
+}
 
 func main(){
-    var a=4
+    var a=1
     var b=2
-    var c=a/b
-    if not c==2 exit(1)
-
-    a=3
-    if not a%2==1 exit(2)
-
-    c=1+3%2+1
-    if not c==3 exit(3)
-
-    c=-a/-b
-    if not c==1 exit(4)
-
-    c=-a/b
-    if not c==-1 exit(5)
-
-    var d = 10
-    var e = 3
-    var f = 5
-
-    var g = (d * 2) - ((f + e) / e)
-    if (g != 18) exit(6)
-
-    var h = 17
-    var i = 5
-    var j = 4
-
-    var k = (h % i) * j - (-(i * 2) / (j - 1))
-    if (k != 11) exit(7)
-
-    var l = 20
-    var m = 7
-    var n = 3
-    var o = 2
-
-    var p = l / (m - n) + (o * n * 5) - (-l / (n * o))
-    if (p != 38) exit(8)
-
-    var q = 100
-    var r = 13
-    var s = 6
-    var t = 2
-
-    var u = (q - r) / s - ((r % t + 1) * t) + (-(s / t))
-    if (u != 7) exit(9)
-
-    var v = 20
-    var w = 6
-    var x = 4
-    var y = 3
-    var z = 2
-
-    var aa = v / x * w - y % z + w
-    if (aa != 35) exit(10)
-
-    var bb = 15
-    var cc = -2
-    var dd = 4
-    var ee = 7
+    var c=3
+    var d=4
     
-    var ff = -bb / dd + cc * y % ee
-    if (ff != -9) exit(11)
+    if not (a==0 or (b==1 and c==3) or d==4) exit(1)
 
-    var gg = 40
-    var hh = 12
-    var ii = 5
-    var jj = 3
-    var kk = 8
+    var calls = 0
+    var flag = true
+    var result = flag or probe(calls, 1, false)
+    if not result exit(2)
+    if calls != 0 exit(3)
 
-    var ll = gg - hh / ii * jj + kk % ii * z + jj
-    if (ll != 43) exit(12)
+    flag = false
+    result = flag or probe(calls, 1, true)
+    if not result exit(4)
+    if calls != 1 exit(5)
 
-    var mm = 100
-    var nn = 10
-    var oo = 3
-    var pp = 2
-    var qq = 5
+    calls = 0
+    result = flag or probe(calls, 1, false)
+    if result exit(6)
+    if calls != 1 exit(7)
 
-    var rr = mm / nn - oo * pp + qq % pp + nn
-    if (rr != 15) exit(13)
+    calls = 0
+    result = true or probe(calls, 1, false)
+    if not result exit(8)
+    if calls != 0 exit(9)
+
+    result = false or probe(calls, 1, true)
+    if not result exit(10)
+    if calls != 1 exit(11)
+
+    calls = 0
+    if (probe(calls, 1, false) and probe(calls, 2, true)) or probe(calls, 2, true) {
+        if calls != 2 exit(12)
+    } else exit(13)
+
+    calls = 0
+    result = not (probe(calls, 1, true) or probe(calls, 2, false))
+    if result exit(14)
+    if calls != 1 exit(15)
+
+    exit(0)
 }

@@ -1,6 +1,10 @@
-include "include/util.baz"
-include "include/base.baz"
+# a constant shift count from unary operators is checked like a literal, '~n'
+# is -4
+
+let n = 3
 
 func main() {
-    exit(twice(21))
+    var a = 1
+    a = a << ~n
+    exit(a)
 }

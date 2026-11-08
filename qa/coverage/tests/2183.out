@@ -1,4 +1,4 @@
 
-2183.baz:7:9: an instance literal of 'point' is not an operand here, store it in a variable first
-    b = point{1, 2} == p
-        ^~~~~
+2183.baz:6:26: 'n' is a value, not a function
+    var r = array_length(n(1))
+                         ^

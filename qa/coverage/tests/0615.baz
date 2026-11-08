@@ -1,12 +1,16 @@
-# calling a method that does not exist reports the method, not a missing field
+# a result discarded inside a function with a result is not written to the
+# caller's destination
 
-type point {x, y}
+func two() res {
+    res = 2
+}
 
-func mut point.move(dx) {
-    self.x = self.x + dx
+func one() res {
+    res = 1
+    two()
 }
 
 func main() {
-    var p = point
-    p.jump(1)
+    var r = one()
+    exit(r)
 }

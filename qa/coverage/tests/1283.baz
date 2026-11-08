@@ -1,11 +1,7 @@
-# a constant index out of bounds names the array by its path, like the error
-# about a count
-type q {
-    data i8[4],
-}
-
+# a constant count of 'write' larger than the array is rejected also when the
+# start is computed at run time
 func main() {
-    var v = q
-    v.data[5] = 1
-    exit(v.data[0])
+    var a = i8[4]
+    var i = 0
+    write(1, a, 5, i)
 }

@@ -1,9 +1,12 @@
-# an index is a number, not an instance
+# the element 'e' of a 'foo' may be the element that is written
 
 type point {x, y}
 
+var ps = point[2]{{3, 5}, {7, 9}}
+
 func main() {
-    var p = point{3, 2}
-    var a = int[4]
-    exit(a[p])
+    foo ps {
+        ps[1] = {e.y, e.x}
+    }
+    exit(ps[1].y)
 }

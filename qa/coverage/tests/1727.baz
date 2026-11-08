@@ -1,22 +1,23 @@
-# the buffer of 'write' is computed before the count: the call in the buffer
-# argument reads 'n' before the call in the count writes it
-type s { buf i8[4], }
-
-var n = 0
-
-func h() res {
-    res = n
+# rv32i: an inlined recursion that runs out of registers in one version only
+# keeps the other version, the error of the dropped one does not end the
+# compile
+func r(x, n) res {
+    if n == 0 {
+        res = x
+        return
+    }
+    res = x + r(x + 1, n - 1)
 }
 
-func f() res {
-    n = n + 1
-    res = 2
+func f(v mut, w) {
+    v = w + r(v, 12)
+    v = v + w
 }
 
 func main() {
-    var a = s[2]
-    a[0].buf = {'A', '\n', 0, 0}
-    a[1].buf = {'B', '\n', 0, 0}
-    var k = write(1, a[h()].buf, f())
-    exit(k - 2)
+    var a = []{1, 2, 3, 4}
+    var i = 1
+    var b = a
+    f(a[i], b[i])
+    exit(a[i])
 }

@@ -1,4 +1,0 @@
-
-1628.baz:7:13: expected type 'i16' for parameter 'x', got 'i8'
-    res = f(y)
-            ^

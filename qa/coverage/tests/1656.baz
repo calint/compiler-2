@@ -1,10 +1,10 @@
-# a statement after a 'loop' without 'break' is not reached
+# the buffer of an io built-in is read like the array of 'array_length': a call
+# is not an array
+
+func f() res {
+    res = 1
+}
 
 func main() {
-    var i = 0
-    loop {
-        i = i + 1
-        if i == 5 exit(i)
-    }
-    exit(1)
+    var n = write(1, f())
 }

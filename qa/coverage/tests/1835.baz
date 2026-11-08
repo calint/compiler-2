@@ -1,10 +1,9 @@
-# data of the whole address space leaves no room, the type stays below it
+# a trailing comma in a generic call is reported before the argument that
+# would tell the type
 
-dat a = i8[4294967296]
+func show<T type>(a i8, b T) {
+}
 
 func main() {
-    if a == a {
-        exit(1)
-    }
-    exit(0)
+    show(1,)
 }

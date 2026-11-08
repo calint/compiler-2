@@ -1,0 +1,4 @@
+
+0204.baz:6:9: 'array_length(a)' of type 'i32' is narrowed to 'i8', use 'i8(...)'
+    n = array_length(a)
+        ^~~~~~~~~~~~

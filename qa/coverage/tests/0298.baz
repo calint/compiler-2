@@ -1,13 +1,8 @@
-# dotted field used as an array index
+# constant outer nested index out of bounds is rejected at compile
 
-func assert(expr bool) { if not expr exit(1) }
-
-type position { index }
+type group { values i8[2] }
 
 func main() {
-    var values = [4]
-    var pos = position
-    pos.index = 2
-    values[pos.index] = 7
-    assert(values[2] == 7)
+    var groups = group[2]
+    groups[2].values[0] = 1
 }

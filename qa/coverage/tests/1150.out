@@ -1,4 +1,4 @@
 
-1150.baz:5:17: count -1 is negative
-    write(1, a, -1)
-                ^
+1150.baz:3:14: shift count must be 0 to 63 for 64-bit values
+dat a = 1 << 64
+             ^~

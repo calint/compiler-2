@@ -1,12 +1,16 @@
-# a constant element of an 'i8' array is folded at the width of the element,
-# as an assignment of the same expression is: '(127 + 1) >> 1' is -64
+# the aliasing of a noinline call is checked for each field it passes, a call
+# with another field checked before does not stand for it
+
+type pair {a, b}
+
+var g = pair{1, 2}
+
+func noinline set(v mut) {
+    v = g.b + 1
+}
 
 func main() {
-    var c = i8[]{(127 + 1) >> 1, 1}
-    var d = i8(0)
-    d = (127 + 1) >> 1
-    if c[0] != d {
-        exit(1)
-    }
-    exit(c[0] + 64)
+    set(g.a)
+    set(g.b)
+    exit(g.b)
 }

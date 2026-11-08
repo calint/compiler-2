@@ -1,13 +1,13 @@
-# a noinline call's narrower result alone as the argument of an inlined
-# call widens into a temporary of the parameter, a name would be rejected
-func noinline g() res i8 {
-    res = 1
-}
-
+# a unary operator on a parameter of a noinline function passes its value to an
+# inlined call
 func f(x) res {
     res = x
 }
 
+func noinline g(y) res {
+    res = f(-y)
+}
+
 func main() {
-    exit(f(g()))
+    exit(g(-4))
 }

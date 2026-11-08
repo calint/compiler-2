@@ -1,4 +1,4 @@
 
-2076.baz:6:10: array 'bs' must be indexed
-    n = -bs
-         ^~
+2076.baz:6:20: expected '(' after function name
+func main() { show(array_length) }
+                   ^~~~~~~~~~~~

@@ -1,8 +1,9 @@
-# 'void' is not a type of a value, also where the argument deduces a type
+# a function without a body before a generic type is reported as the missing
+# body, not as type arguments of a result type
 
-func f<T type>(x T) {
-}
+func f()
+
+type box<n> {x i8[n]}
 
 func main() {
-    f(void(1))
 }

@@ -1,9 +1,13 @@
-# a closer without an opener in the body of a generic function that no
-# instance parses is reported as in a body that is parsed
+# a method call on the call of a method without a result is reported as a
+# call without a value
 
-func g<T type>(a T) res T {
-    res = a]
+type pt {x}
+
+func mut pt.clear() {
+    self.x = 0
 }
 
 func main() {
+    var p = pt
+    p.clear().clear()
 }

@@ -1,10 +1,4 @@
 
-include/frame.baz:3:71: divisor must not be zero
-func divide(a) res {                                       res = 10 / a }
-                                                                      ^
-1445.baz:7:13: called from 'divide(0)'
-    var x = divide(0)
-            ^~~~~~
-1445.baz:4:9: included from
-include "include/frame.baz"
-        ^~~~~~~~~~~~~~~~~~~
+1445.baz:3:5: 'include' can only be in global scope
+    include "include/util.baz"
+    ^~~~~~~

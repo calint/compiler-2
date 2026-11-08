@@ -1,8 +1,5 @@
-# a constant in the body of a function that repeats a named result is rejected
-func f() r {
-    let r = 2
-}
-
+# a bool literal compared with an integer variable is rejected
 func main() {
-    exit(f())
+    var x = i8(1)
+    if true == x exit(2)
 }

@@ -1,10 +1,6 @@
-# the start of a sector function is bounds checked with the elements of a
-# sector
+# a sector function name is not a variable name
 
 func main() {
-    var words = i32[200]
-    # the last valid start, the 128 words of a sector end at the end
-    sector_read(0, words, 72)
-    var start = 73
-    sector_read(0, words, start)
+    var sector_write = 3
+    exit(sector_write)
 }

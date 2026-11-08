@@ -1,4 +1,4 @@
 
-1601.baz:5:9: 'f' is a function, not an array
-    foo f {
-        ^
+1601.baz:2:21: result 'self' requires a constructor 'type.name'
+func f<T type>(x T) self {
+                    ^~~~

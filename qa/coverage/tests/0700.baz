@@ -1,7 +1,18 @@
-# read cannot fill a constant
+# nested indexed addresses are folded into the array copy address registers
 
-let c = 5
+type cell {
+    tag,
+    vals[4]
+}
 
 func main() {
-    read(0, c, 1)
+    var cells = cell[3]
+    var out = [4]
+    var i = 1
+    var j = 0
+    var n = 2
+    cells[i].vals[j] = 7
+    array_copy(cells[i].vals[j], out, n)
+    array_copy(out, cells[i].vals[j], n)
+    exit(out[0] - 7)
 }

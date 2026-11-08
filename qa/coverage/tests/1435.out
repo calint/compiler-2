@@ -1,7 +1,4 @@
 
-1435.baz:6:15: index 5 is out of bounds for array 'arr' of size 2
-    res = arr[a]
-              ^
-1435.baz:14:15: called from 'g(5)'
-    var x = f(g(5))
-              ^
+1435.baz:4:21: a unary operator makes a value, not an array
+    var n = read(0, -buf)
+                    ^

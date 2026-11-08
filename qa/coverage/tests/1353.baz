@@ -1,16 +1,8 @@
-# a folded conversion passed to an inlined function is a value of the type of
-# the parameter, its unary ops apply at that type
-func f(p i8) res i16 {
-    res = p
-}
+# a constant named in the 'array_length' of its own initializer is the
+# constant being defined, not an outer array of the same name
+var a = i8[2]
 
 func main() {
-    var r = f(-i8(-128))
-    if r == 128 {
-        exit(1)
-    }
-    if r != -128 {
-        exit(2)
-    }
-    exit(0)
+    let a = array_length(a)
+    exit(a)
 }

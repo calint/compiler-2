@@ -1,11 +1,9 @@
-# a non-inline function reads an array parameter
+# a function name has no fields
 
-func noinline first(values i8[]) res i8 {
-    res = values[0]
+func noop() res {
+    res = 1
 }
 
 func main() {
-    var items = i8[2]{ 7, 8 }
-    var r = first(items)
-    if r != 7 exit(1)
+    var y = noop.x
 }

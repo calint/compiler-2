@@ -1,11 +1,11 @@
-# the arguments of an alias are not empty
+# the argument of a type parameter is not a constant
 
-type text<capacity> {
-    array i8[capacity],
-    len,
+type pair<first type, second type> {
+    a first,
+    b second,
 }
 
-type str = text<>
+type p = pair<1, 2>
 
 func main() {
 }

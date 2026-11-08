@@ -1,10 +1,8 @@
-# an array of bool initialized with conditions gives each label of its own
+# a shift count wider than the value is narrowed, as any operand
+
 func main() {
-    var a = i32(3)
-    var arr = bool[3]{a == 3, a > 7, a != 1}
-    var consts = bool[2]{true, true}
-    if arr[0] and not arr[1] and arr[2] and consts[0] and consts[1] {
-        exit(5)
-    }
+    var x = i16(1)
+    var count = i64(0x100000000)
+    x = x << count
     exit(0)
 }

@@ -1,12 +1,13 @@
-# a type is smaller than what the target addresses, also when no storage of
-# it is allocated: rv32i addresses 4294967296 B, x86_64 accepts the type
-
-type q {a i8[0x100000000]}
-
-func eq(x q, y q) res bool {
-    res = x == y
+# a 'foo' whose count an inlined call folds to 0 skips its body like a branch
+# that folds to false: the division by the count is not checked there
+func f(a [], k) res {
+    res = 5
+    foo a, k {
+        res = res / k
+    }
 }
 
 func main() {
-    exit(0)
+    var a = []{1, 2}
+    exit(f(a, 0))
 }

@@ -1,12 +1,6 @@
-# a constructor call where a built-in takes an array starts with a type, not
-# the call of a function named like the type
-
-type point { x, y }
-
-func point.at(x, y) self {
-    self = {x, y}
-}
+# a variable compared in its own initializer is read before it is set, not
+# taken as a 'bool'
 
 func main() {
-    var n = array_length(point.at(1, 2))
+    var b = b == 1
 }

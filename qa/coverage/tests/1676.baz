@@ -1,5 +1,5 @@
-# a rule that needs no argument holds in a branch that a constant argument of
-# an inlined call folds away
+# the check of a body without its call goes on after an inlined recursion
+# that no constant ends, the code after it is checked
 
 func h(i mut) res {
     i = i + 1
@@ -10,10 +10,18 @@ func k(a, b) res {
     res = a + b
 }
 
+func r(n) res {
+    if n <= 0 {
+        res = 0
+        return
+    }
+    res = r(n - 1)
+}
+
 func g(n) res {
-    var arr = int[4]
+    res = r(n)
+    var arr = [4]
     var i = 0
-    res = 0
     if n > 5 {
         res = k(arr[i], h(i))
     }

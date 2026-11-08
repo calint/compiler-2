@@ -1,4 +1,0 @@
-
-2430.baz:6:26: 'n' is a value, not a function
-    var r = array_length(n(1))
-                         ^

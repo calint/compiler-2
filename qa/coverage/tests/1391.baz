@@ -1,9 +1,10 @@
-# a 'let' of a typed initializer keeps the type, e.g. 'let v = int(5)' is
-# narrowed when stored in an 'i8' like 'let v = i8(5)' would be in an 'i8'
+# a value that reads another name of the destination once is computed in the
+# destination
 
 func main() {
-    let v = int(5)
-    var b = i8(0)
-    b = v
-    exit(int(b))
+    var g = i32[4]{1, 2, 3, 4}
+    foo g {
+        g[3] = e + 1
+    }
+    exit(g[3] - 5)
 }

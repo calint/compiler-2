@@ -1,7 +1,13 @@
-# element access checks a computed index
+# valid index returned by a function
+
+func assert(expr bool) { if not expr exit(1) }
+
+func get_index() result {
+    result = 7
+}
 
 func main() {
     var values = i8[8]
-    var index = 8
-    var value = values[index]
+    values[get_index()] = 1
+    assert(values[7] == 1)
 }

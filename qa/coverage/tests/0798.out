@@ -1,4 +1,7 @@
 
-0798.baz:3:19: expected '}' to close block
-func f<T type>() {
-                  ^
+0798.baz:4:14: expected a constant array size greater than 0
+    array i8[capacity],
+             ^
+0798.baz:8:6: instantiated by
+type str = text<0>
+     ^~~

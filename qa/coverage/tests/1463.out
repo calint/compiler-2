@@ -1,4 +1,4 @@
 
-1463.baz:3:5: built-in function 'exit' is not generic, it takes no type arguments
-    exit<i8>(0)
-    ^~~~
+1463.baz:2:12: a trailing ',' is not allowed in parameters
+func f(a, b,) {}
+           ^

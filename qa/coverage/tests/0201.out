@@ -1,4 +1,4 @@
 
-0201.baz:3:12: type 'nope' not found
-type x { a nope }
-           ^~~~
+0201.baz:6:1: expected a constant, a name or a call
+}
+^

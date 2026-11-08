@@ -1,2 +1,4 @@
 
-panic: frame overflow
+0434.baz:3:12: expected '{' to begin block
+func main()
+           ^

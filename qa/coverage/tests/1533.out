@@ -1,0 +1,4 @@
+
+1533.baz:7:11: 'if' is a keyword
+func text.if() {}
+          ^~

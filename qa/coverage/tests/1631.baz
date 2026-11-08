@@ -1,12 +1,26 @@
-# a call that writes the destination of the arithmetic it is in keeps the
-# destination unwritten until the value is computed, also 'noinline'
-var gx = 1
-func noinline gw() res {
-    gx = 10
+# an 'if' whose every branch returns ends the path; a constant false branch
+# runs no code
+func f(x) res {
     res = 1
+    if x > 0 {
+        return
+    } else {
+        return
+    }
 }
+
+func g() res {
+    res = 3
+    if 1 == 2 {
+        res = 4
+    } else if 2 == 2 {
+        res = 5
+    } else {
+        res = 6
+    }
+}
+
 func main() {
-    var k = 0
-    gx = k + gw()
-    exit(gx)
+    var a = 2
+    exit(f(a) + g())
 }

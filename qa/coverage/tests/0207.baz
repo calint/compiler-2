@@ -1,6 +1,6 @@
-# an index requires an expression
+# array_copy requires a count argument
 
 func main() {
-    var x = i8[2]
-    var y = x[
+    var a = i8[2]
+    array_copy(a,a)
 }

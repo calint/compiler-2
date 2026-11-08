@@ -1,9 +1,24 @@
-# a result named like a parameter is rejected at the result
-func f(x) x {
-    x = 1
+# a block inside the body of a function and the element of a 'foo' may hide
+# a parameter
+func f(x, e) res {
+    {
+        var x = 2
+        res = x
+    }
+    var a = []{4}
+    foo a {
+        res = res + e
+    }
+}
+
+func noinline g(x) res {
+    res = 0
+    if x == 1 {
+        let x = 5
+        res = x
+    }
 }
 
 func main() {
-    var a = f(1)
-    exit(a)
+    exit(f(1, 9) + g(1))
 }

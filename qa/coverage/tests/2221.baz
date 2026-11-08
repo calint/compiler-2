@@ -1,4 +1,7 @@
-# a zero value reached into is a constant without fields
+# a name after an array that no element has is rejected with a hint to the
+# length
+
 func main() {
-    var a = i8{}.x
+    var a = [4]
+    var x = a.length
 }

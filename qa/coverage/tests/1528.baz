@@ -1,5 +1,9 @@
-# a string whose text names a built-in type is a string, not the type
+# a 'return' takes no value
+func f() res {
+    res = 1
+    return 2
+}
+
 func main() {
-    var x = 3
-    x = "i16"
+    exit(f())
 }

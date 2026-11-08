@@ -1,7 +1,34 @@
-# array initializer element types must match
+# mixed width values and indexed addressing
 
-type small { data i16[2] }
-func main() {
-    var src = i8[4]{ 1, 2, 3, 4 }
-    var dst = small{ src }
+func assert(expr bool) { if not expr exit(1) }
+
+func main(){
+    var b8 = i8(-7)
+    var b16 = i16(-11)
+    var b32 = i32(-13)
+    var b64 = -17
+
+    var arr = [8]
+    arr[0] = b8
+    arr[1] = b16
+    arr[2] = b32
+    arr[3] = b64
+
+    assert(arr[0] == -7)
+    assert(arr[1] == -11)
+    assert(arr[2] == -13)
+    assert(arr[3] == -17)
+
+    var ptr = [4]
+    ptr[0] = -1
+    ptr[1] = -2
+    ptr[2] = -3
+    ptr[3] = -4
+
+    var sum = ptr[0] + ptr[1] + ptr[2] + ptr[3]
+    assert(sum == -10)
+
+    var disp = ptr[2] * 3 + arr[3] - arr[0]
+    assert(disp == -19)
+    assert(disp < 0 and disp > -100)
 }

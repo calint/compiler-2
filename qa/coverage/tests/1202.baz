@@ -1,8 +1,10 @@
-# a 'bool' is not assigned to an element of an integer array
+# 'continue' outside a loop is rejected also in a function that is never
+# called
+
+func f() {
+    continue
+}
 
 func main() {
-    var b = true
-    var a = i32[4]
-    a[1] = b
-    exit(a[1])
+    exit(0)
 }

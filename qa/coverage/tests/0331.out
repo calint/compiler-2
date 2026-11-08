@@ -1,0 +1,4 @@
+
+0331.baz:4:20: an empty array needs a size
+    var values = i8[]{}
+                   ^

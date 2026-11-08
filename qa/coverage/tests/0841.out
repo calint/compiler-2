@@ -1,4 +1,43 @@
 
-0841.baz:7:8: an instance of 'point' is not a number
-    if a < b exit(1)
-       ^
+0841.baz:9:21: out of scratch registers, simplify the expression
+    res = a + (b + (c + (d + (e + (f + v[1])))))
+                    ^
+0841.baz:18:35: called from 'wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww_leaf(v)'
+    res = a + (b + (c + (d + (e + wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww_leaf(v)))))
+                                  ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+0841.baz:26:30: called from 'middle(v)'
+    res = a + (b + (c + (d + middle(v))))
+                             ^~~~~~
+0841.baz:35:37: called from 'top(v)'
+    var q = int(w) + (x + (y + (z + top(v))))
+                                    ^~~
+
+register use at the failure: 14 of 14 registers live
+
+  held  frame, registers (allocated at)
+     4  main
+          r15 35:23
+          r14 35:28
+          r13 35:33
+          r12 35:37
+     4  top called at 35:37
+          r10 26:16
+          r9 26:21
+          r8 26:26
+          r11 26:30
+     5  middle called at 26:30
+          rbx 18:16
+          rdx 18:21
+          rax 18:26
+          rsi 18:31
+          rdi 18:35
+     1  wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww_leaf called at 18:35
+          rcx 9:16
+
+these frames are not noinline, making one noinline starts its body with all 13
+registers free and saves the registers held above it around the call:
+
+  held inside  saved at the call  candidate frame
+           10                  4  top
+            6                  8  middle
+            1                 13  wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww_leaf

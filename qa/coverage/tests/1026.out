@@ -1,0 +1,4 @@
+
+1026.baz:5:5: field 'x' already defined at 4:5
+    x,
+    ^

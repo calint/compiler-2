@@ -1,10 +1,9 @@
-# type arguments after a type that is not generic, as a result type
+# a comparison after an instance is a condition, like after a number
 
-type pt {x i8}
-
-func f() res pt<i8> {
-    res = {}
-}
+type point {x, y}
 
 func main() {
+    var p = point{1, 2}
+    var q = point{1, 2}
+    q = p == p
 }

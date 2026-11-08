@@ -1,9 +1,5 @@
-# an alias names a generic type, not a type
+# the parameters of a generic function are read where it is defined
 
-type name {
-    x,
-}
-
-type str = name<8>
+func f<T type>(a T, , b) {}
 
 func main() {}

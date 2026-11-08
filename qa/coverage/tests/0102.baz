@@ -1,15 +1,46 @@
-# array parameter mutation is visible to the caller
+# arrays_equal on nested link arrays
 
 func assert(expr bool) {
     if not expr exit(1)
 }
 
-func arrarg(arg mut []) {
-    arg[1] = 0xfe
+type point {x, y}
+
+type link {
+    pos point,
+    name i8[64],
+    name_len i8,
+    loc i32
+}
+
+type location {
+    name i8[64],
+    links link[8]
+}
+
+type world {
+    time,
+    locations location[7]
+}
+
+func fuz(wld1 mut world, wld2 mut world) {
+    wld1.locations[2].links[1].loc = 0xba
+    wld1.locations[2].links[1].pos.y = 0xab
+    array_copy(
+      wld1.locations[2].links,
+      wld2.locations[0].links,
+      array_length(wld1.locations[2].links)
+    )
 }
 
 func main() {
-    var arr = [7]
-    arrarg(arr)
-    assert(arr[1] == 0xfe)
+    var worlds = world[2]
+    fuz(worlds[0], worlds[1])
+
+    var ok = arrays_equal(
+      worlds[0].locations[2].links,
+      worlds[1].locations[0].links,
+      array_length(worlds[0].locations[2].links)
+    )
+    assert(ok)
 }

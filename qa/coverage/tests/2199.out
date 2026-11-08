@@ -1,4 +1,4 @@
 
-2199.baz:2:10: an array parameter takes arrays of any size, write '[]'
-func f(a[4]) {
-         ^
+2199.baz:7:13: index 2147483647 is out of bounds for array 'a' of any size
+    res = a[0x7fffffff].a[1]
+            ^

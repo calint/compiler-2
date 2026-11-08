@@ -1,10 +1,11 @@
-# 'read' cannot fill an array parameter without 'mut'
+# a field of a 'let' variable cannot be assigned
 
-func f(d i8[]) {
-    read(0, d)
+type point {
+    x,
+    y,
 }
 
 func main() {
-    var a = i8[2]{ 1, 2 }
-    f(a)
+    let p = point{1, 2}
+    p.x = 3
 }

@@ -1,4 +1,4 @@
 
-0740.baz:4:5: data and variables of 4611686018427387904 B reach the 140737488355328 B that the target addresses
-dat a = i8[4611686018427387904]
-    ^
+0740.baz:7:22: shift count must be 0 to 63 for 64-bit values
+        var c = 1 << 64
+                     ^~

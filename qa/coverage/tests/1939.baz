@@ -1,5 +1,6 @@
-# a parameter declared twice in a method of a generic type without an
-# instance
-type box<n> { x }
-func box.f(a, a) { }
-func main() { }
+# an instance literal followed by a connective that starts a 'let' is an
+# operand, as in a condition
+type point {x i32, y i32}
+func main() {
+    let b = point{1, 2} and true
+}

@@ -1,4 +1,4 @@
 
-1826.baz:6:23: divisor must not be zero
-dat d = r{true or 1 / 0 == 1, 2}
-                      ^
+1826.baz:4:12: field 'x' already defined at 4:9
+type p {x, x, y qq}
+           ^

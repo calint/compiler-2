@@ -1,12 +1,13 @@
-# a 'let' variable cannot be written through an inline callee
+# 'array_copy' writes its destination, so passing a read-only array on to the
+# function that copies into it is rejected at the call
 
-func set(a mut) {
-    a = 1
+func copy_to(src i8[], dst mut i8[]) {
+    array_copy(src, dst, 2)
 }
 
-dat base = 5
+func pass(src i8[], dst i8[]) {
+    copy_to(src, dst)
+}
 
 func main() {
-    let x = base + 0
-    set(x)
 }

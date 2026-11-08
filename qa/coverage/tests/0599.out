@@ -1,4 +1,4 @@
 
-0599.baz:14:19: 'point.sum' is a method, call it on a value of type 'point'
-    var s = point.sum()
-                  ^~~
+0599.baz:5:9: expected type 'i8', got 'i16'
+    a = i16[]{1, 2}
+        ^~~

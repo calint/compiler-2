@@ -1,26 +1,13 @@
-# an argument computed into a temporary of the call, an instance literal, is
-# made in the order of the arguments, inlined and noinline: 'inc()' writes
-# 'g' before '{g, 0}' reads it
+# the same for an instance of a generic type, sized by its constant argument
 
-type pt {x, y}
+type w<n> {v i8[n], b i8}
 
-var g = 1
+type big = w<0xffffffff>
 
-func inc() res {
-    g = g + 1
-    res = g
-}
-
-func f(a, p pt) res {
-    res = a * 10 + p.x
-}
-
-func noinline fn(a, p pt) res {
-    res = a * 10 + p.x
+func copy(x mut big, y big) {
+    x = y
 }
 
 func main() {
-    var a = f(inc(), {g, 0})
-    var b = fn(inc(), {g, 0})
-    exit(a + b)
+    exit(0)
 }

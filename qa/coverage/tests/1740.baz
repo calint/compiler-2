@@ -1,10 +1,9 @@
-# a 'dat' after an included file that declares a variable and after a 'let'
-# of an array, the data is placed before the variables in any order
-include "include/counter.baz"
+# the skipped elements of a list in the initializer of a global are checked as
+# in 'main'
 
-let k = i8[]{1, 2}
-dat d = "ab"
+var a = i8[4]
+var g = 1 == 2 and a[9] > 0
 
 func main() {
-    exit(counter + k[1] + d[1])
+    exit(3)
 }

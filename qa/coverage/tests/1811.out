@@ -1,4 +1,4 @@
 
-1811.baz:6:21: array 'a' must be indexed
-    let k = true or a == 1
-                    ^
+1811.baz:6:13: result 'res' is read before it is set
+        a = res
+            ^~~

@@ -1,10 +1,21 @@
-# return skips the required result assignment
+# indexed struct argument is passed by reference
 
-func foozi(i) res {
-    if i == 2 return
-    res = i * 2
+func assert(expr bool) { if not expr exit(1) }
+
+type pair {
+    key i16,
+    value i16
+}
+
+func foozi(kv mut pair) {
+    kv.value = 0x50
 }
 
 func main() {
-    var x = foozi(2)
+    var lut = pair[2]
+    lut[0] = {1, 0x20}
+    lut[1] = {2, 0x40}
+
+    foozi(lut[1])
+    assert(lut[1].value == 0x50)
 }

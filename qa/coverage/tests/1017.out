@@ -1,4 +1,4 @@
 
-1017.baz:6:14: 'count' of type 'i32' is narrowed to 'i8', use 'i8(...)'
-    x = x >> count
-             ^~~~~
+1017.baz:4:35: constant expression overflows the type
+    let x = 4611686018427387904 * 2
+                                  ^

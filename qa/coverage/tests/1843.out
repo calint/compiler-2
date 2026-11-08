@@ -1,4 +1,4 @@
 
-1843.baz:4:9: 'true' is a keyword
-type p {true, y qq}
-        ^~~~
+1843.baz:11:9: an instance of 'left' is not a number
+    l = mk() + 1
+        ^~

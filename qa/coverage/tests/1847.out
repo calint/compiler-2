@@ -1,4 +1,4 @@
 
-1847.baz:5:9: expected an array
-    a = )
-        ^
+1847.baz:8:1: expected '{' to begin block
+func main() {
+^

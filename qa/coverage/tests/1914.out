@@ -1,4 +1,4 @@
 
-1914.baz:6:15: unexpected 'else' in single statement block
-    if a == 1 else {
-              ^~~~
+1914.baz:3:19: 'i8' is a built-in type
+func make<T type>(i8) {
+                  ^~

@@ -1,4 +1,4 @@
 
-2217.baz:14:23: a call of 'gm' is not an array
-    exit(array_length(gm<i8>().a))
-                      ^~
+2217.baz:6:10: '&&' is not an operator, use 'and'
+    if x && y exit(1)
+         ^

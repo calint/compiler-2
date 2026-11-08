@@ -1,4 +1,4 @@
 
-2100.baz:12:5: cannot deduce 'T' of generic function 'show', write 'show<...>'
-    show(p.sum())
-    ^~~~
+2100.baz:8:23: a call of 'zero' is not an array
+    exit(array_length(zero<i8>()))
+                      ^~~~

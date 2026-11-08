@@ -1,5 +1,10 @@
-# a type at the start of a statement is not a value
+# a statement after an 'exit' in a branch false at the parse is not reached
 
 func main() {
-    i8 = 1
+    var a = 1
+    if false {
+        exit(1)
+        a = 2
+    }
+    exit(a)
 }

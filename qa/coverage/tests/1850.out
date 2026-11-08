@@ -1,4 +1,4 @@
 
-1850.baz:5:14: type 'pt' is not generic, it takes no type arguments
-func f() res pt<i8> {
-             ^~
+1850.baz:8:11: a comparison makes a condition, which is not an operand here, store it in a 'bool' first
+    q = p == p
+          ^~

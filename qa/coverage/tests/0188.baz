@@ -1,4 +1,6 @@
-# assignment to a 'let' constant is rejected
+# strings require i8 arrays
 
-let x = 1
-func main() { x = 2 }
+type p { s i16[2] }
+dat x = p{"x"}
+
+func main() {}

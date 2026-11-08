@@ -1,9 +1,7 @@
-# a type parameter bound to 'bool' has no conversion like 'bool'
-func f<T type>(v i8) res i8 {
-    var b = T(v)
-    res = 1
-}
+# the array of a built-in is not a function
+func f() {}
 
 func main() {
-    exit(int(f<bool>(1)))
+    foo f {
+    }
 }

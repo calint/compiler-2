@@ -1,11 +1,9 @@
-# a generic parameter hides a type of its name defined after it
-func f<point type>(x point) res point {
-    res = x
+# a string is not a type name
+
+func f() res "i8" {
+    res = 2
 }
 
-type point {x, y}
-
 func main() {
-    var p = point{3, 4}
-    exit(int(f(i8(2))) + p.y)
+    var r = f()
 }

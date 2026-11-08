@@ -1,16 +1,9 @@
-# a constructor called on a type parameter must exist for its argument
-type point { x i32 }
-
-type list<T type, capacity> { array T[capacity], len }
-
-func mut list.add(x i32) {
-    self.array[self.len] = T.at(x)
-    self.len = self.len + 1
+# a missing argument that would deduce a type parameter is reported as
+# missing, not as a type that cannot be deduced
+func second<T type>(n, v T) res T {
+    res = v
 }
 
-type points = list<point, 4>
-
 func main() {
-    var l = points
-    l.add(1)
+    var b = second(1)
 }

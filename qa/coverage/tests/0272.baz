@@ -1,6 +1,4 @@
-# negative constant array size is rejected
+# duplicate function definitions are rejected
 
-let n = -1
-func main() {
-    var values = i8[n]
-}
+func foozi() {}
+func foozi() {}

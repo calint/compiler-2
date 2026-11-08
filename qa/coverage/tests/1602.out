@@ -1,4 +1,4 @@
 
-1602.baz:3:15: '1' is a constant, it has no field 'x'
-    var x = 1.x
-              ^
+1602.baz:4:13: parentheses around a single value group nothing, write 'x'
+    var y = (x)
+            ^

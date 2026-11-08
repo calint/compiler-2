@@ -1,10 +1,7 @@
-# a condition in parentheses on the right side of a comparison is rejected at
-# its comparison
+# a 'not' in an arithmetic operand is rejected, a condition is stored in a
+# 'bool' first
 func main() {
-    var x = 1
     var b = true
-    if b != (x < 1) {
-        exit(1)
-    }
-    exit(0)
+    var n = int(not b)
+    exit(n)
 }

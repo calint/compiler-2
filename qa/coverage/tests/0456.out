@@ -1,0 +1,4 @@
+
+0456.baz:4:17: result 'res' is read before it is set
+        var y = res
+                ^~~

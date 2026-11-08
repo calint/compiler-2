@@ -1,0 +1,4 @@
+
+2152.baz:14:16: a call of 'mk' is not an array
+    exit(first(mk().a))
+               ^~

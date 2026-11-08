@@ -1,10 +1,12 @@
-# a type parameter for the array of a built-in names the type it is bound to
-type point {x i32, y i32}
+# a constructor name after '.' that is a keyword is reported as where a
+# constructor is defined
 
-func g<T type>() {
-    var n = array_length(T)
+type point {x, y}
+
+func point.at(x) res point {
+    res = {x, 0}
 }
 
 func main() {
-    g<point>()
+    var p = point.var(2)
 }

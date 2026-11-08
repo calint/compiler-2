@@ -1,10 +1,24 @@
-# conjunction with explicit negation
+# mixed-width function parameters
+
+func f1(b i8, w i16, d i32, q) res{
+    res=b+w+d+q
+}
+
+func f2(b i8, w i16, d i32, q) res{
+    res=b+w+d+q
+}
 
 func main(){
-    var a=1
-    var b=2
-    var c=3
-    var d=4
-    if (a==0 and b==2) or (c==0 and d==4) exit(1) # bug: wrong token at construct recursive stmt_if_bool_ops
+    var b = i8(-1)
+    var w = i16(-2)
+    var d = i32(-3)
+    var q=-4
+
+    var r=f1(b,w,d,q)
+    if not r==-10 exit(1)
+    
+    r=f2(b,w,d,q)
+    if not r==-10 exit(2)
+    
     exit(0)
 }

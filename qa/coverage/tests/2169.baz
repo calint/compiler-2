@@ -1,8 +1,6 @@
-# 'false' is not a type argument
-func g<T type>(n T) res T {
-    res = n
-}
+# a byte after an escape in a character literal is a second byte
 
 func main() {
-    exit(g<false>(1))
+    var c = i8
+    c = '\n°'
 }

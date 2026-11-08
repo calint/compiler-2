@@ -1,7 +1,10 @@
-# an array literal at the default type is not a number
+# an array of known length compared with an array parameter of any length
+# in a function that is not called
+func same(b i8[]) res bool {
+    var a = i8[2]
+    res = a == b
+}
 
 func main() {
-    var x = i8
-    x = [2]{1, 2}
-    exit(x)
+    exit(7)
 }

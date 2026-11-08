@@ -1,4 +1,4 @@
 
-1475.baz:11:13: 'mk()' is not an operand here, store it in a variable first
-    if p == mk() {
+1475.baz:4:13: '{}' is the zero value of a typed destination, not an operand
+    if b == {} {
             ^

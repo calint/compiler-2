@@ -1,0 +1,4 @@
+
+2144.baz:4:12: expected '(' after method name
+func point.at {
+           ^~

@@ -1,0 +1,4 @@
+
+0261.baz:4:21: expected '}' to close the array of size 2
+dat x = p[2]{{1},{2}
+                    ^

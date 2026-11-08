@@ -1,11 +1,9 @@
-# a type argument is a type name, an array parameter is written 'a T[]'
-
-func first<T type>(a T[]) res T {
-    res = a[0]
-}
+# a surplus argument of 'arrays_equal' is reported as its argument count
 
 func main() {
-    var buf = i32[4]
-    var x = first<i32[]>(buf)
-    exit(x)
+    var a = i8[4]
+    var b = i8[4]
+    if arrays_equal(a, b, 1, 2) {
+        exit(1)
+    }
 }

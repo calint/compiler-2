@@ -1,10 +1,25 @@
-# '{}' as an argument is a temporary, a zeroed instance
+# 'int' names the default type, also as a type argument and a field type
+type pair { first int, second int }
 
-type p {x, y}
+type list<T type, capacity> {
+    array T[capacity],
+    len int,
+}
 
-func sum(q p) res { res = q.x + q.y }
+type ids = list<int, 4>
+
+func twice(value int) res int {
+    res = value * 2
+}
 
 func main() {
-    var s = sum({})
-    exit(s + 1)
+    var p = pair{1, 2}
+    var numbers = int[3]{4, 5, 6}
+    var id_list = ids
+    id_list.array[0] = twice(p.second)
+    id_list.len = 1
+    if numbers[2] != 6 exit(1)
+    if id_list.array[0] != 4 exit(2)
+    if int(7) != 7 exit(3)
+    exit(0)
 }

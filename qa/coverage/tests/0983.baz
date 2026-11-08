@@ -1,6 +1,11 @@
-# --checks=overlap: the destination starts inside the source, runtime count
+# --checks=overflow,line: the panic reports the line
+func noinline mul(a i32, b i32) res i32 {
+    res = 0
+    res = a * b
+}
 func main() {
-    var a = i32[8]
-    var n = 3
-    array_copy(a, a[1], n)
+    var a = i32(-2147483648)
+    var b = i32(-1)
+    var x = mul(a, b)
+    exit(x)
 }

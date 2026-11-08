@@ -1,4 +1,4 @@
 
-2216.baz:4:23: function 'nope' not found
-    exit(array_length(nope().a))
-                      ^~~~
+2216.baz:5:8: '!' is not an operator, use 'not'
+    if !x exit(1)
+       ^

@@ -1,5 +1,28 @@
-# negative type-level array size is rejected
+# nested returned values build a structure
 
-dat values = i8[-1]
+func assert(expr bool) { if not expr exit(1) }
 
-func main() {}
+type point { x, y }
+type rectangle { top_left point, bottom_right point }
+
+func make_point() result point {
+    result = { 3, 4 }
+}
+
+func scale_point(source point) result point {
+    result.x = source.x * 2
+    result.y = source.y * 3
+}
+
+func make_rectangle() result rectangle {
+    result.top_left = make_point()
+    result.bottom_right = scale_point(result.top_left)
+}
+
+func main() {
+    var rectangle_value = make_rectangle()
+    assert(rectangle_value.top_left.x == 3)
+    assert(rectangle_value.top_left.y == 4)
+    assert(rectangle_value.bottom_right.x == 6)
+    assert(rectangle_value.bottom_right.y == 12)
+}

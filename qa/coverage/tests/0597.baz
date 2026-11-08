@@ -1,16 +1,16 @@
-# reading a field of 'self' before it is assigned is rejected
+# a typed instance literal must name the type of the destination
 
 type point {
     x,
     y
 }
 
-# a constructor must not read 'self' before it is assigned
-func point.at(x) self {
-    self.x = x
-    self.y = self.y + x
+type size {
+    w,
+    h
 }
 
 func main() {
-    var p = point.at(1)
+    var p = point{0, 0}
+    p = size{1, 2}
 }

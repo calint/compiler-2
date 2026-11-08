@@ -1,8 +1,8 @@
-# the result is read inside an 'if' branch before it is set
-func pick(i) res {
-    if i == 3 { var y = res }
-    res = 2
+# a field of the result is read before the result is set
+type point {x, y}
+func origin() res point {
+    res = {res.y, 0}
 }
 func main() {
-    var y = pick(3)
+    var p = origin()
 }

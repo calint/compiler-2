@@ -1,4 +1,4 @@
 
-1668.baz:7:15: unexpected '~'
-    var q = p ~1
-              ^
+1668.baz:4:17: 'i8' takes 1 argument
+    var x = i8(1, 2)
+                ^

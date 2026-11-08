@@ -1,5 +1,12 @@
-# a bare type is a zero value, an '=' after it is not an operator
+# 'arrays_equal' is a 'bool', not a number, at the parse, so also in a
+# branch that folds away
 
 func main() {
-    var x = i8 = 3
+    var a = i8[4]
+    var b = i8[4]
+    var x = 1
+    if 1 == 2 {
+        x = arrays_equal(a, b, 4)
+    }
+    exit(x)
 }

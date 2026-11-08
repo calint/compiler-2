@@ -1,16 +1,12 @@
-# a result read before a later call writes it through a 'mut' parameter is
-# read before the call, like a variable
+# a type is smaller than what the target addresses, also when no storage of
+# it is allocated: rv32i addresses 4294967296 B, x86_64 accepts the type
 
-func inc(x mut) res {
-    x = x + 10
-    res = 1
-}
+type q {a i8[0x100000000]}
 
-func f() res {
-    res = 1
-    res = res + inc(res)
+func eq(x q, y q) res bool {
+    res = x == y
 }
 
 func main() {
-    exit(f())
+    exit(0)
 }

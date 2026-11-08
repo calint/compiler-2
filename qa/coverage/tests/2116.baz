@@ -1,9 +1,8 @@
-# an instance literal that an operator continues tells no type argument
-
-type point {x, y}
-
-func show<T type>(s T) {}
+# 'false' is not a type argument
+func g<T type>(n T) res T {
+    res = n
+}
 
 func main() {
-    show(point{1, 2} == point{1, 2})
+    exit(g<false>(1))
 }

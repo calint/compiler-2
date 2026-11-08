@@ -1,3 +1,6 @@
-# a delimiter after the '=' of an alias is no generic type, the caret is at it
-type p = )
+# a string as the type of a parameter of a generic function is rejected
+# where it is read, also without an instance
+func f<T type>(a "i8") {
+}
+
 func main() {}

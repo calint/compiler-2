@@ -1,1 +1,4 @@
-hi
+
+2201.baz:9:13: index 4095 is out of bounds for array 'a' of any size
+    res = a[0xfff].a[1]
+            ^

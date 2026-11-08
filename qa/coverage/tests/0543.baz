@@ -1,5 +1,11 @@
-# character literal with an unsupported escape
+# a '{...}' initializer of an unsized parameter cannot have more elements than
+# the argument
+
+func fill(dst mut i32[]) {
+    dst = {1, 2, 3}
+}
 
 func main() {
-    var c = '\q'
+    var values = i32[2]{4, 5}
+    fill(values)
 }

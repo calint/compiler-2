@@ -1,5 +1,9 @@
-# a non-inline result can be an operand in an expression, it is read from a
-# temporary
+# a start past the array end panics
 
-func noinline one() res { res = 1 }
-func main() { var x = one() + 1 exit(x) }
+func main() {
+    var buf = i8[4]
+    var a = i8[4]
+    var k = 5
+    var n = 0
+    var r = read(0, buf, n, k)
+}

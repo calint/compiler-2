@@ -1,4 +1,4 @@
 
-0598.baz:15:15: 'point.at' is a constructor, call it as 'point.at(...)'
-    var q = p.at(1, 2)
-              ^~
+0598.baz:5:13: the type of '{...}' is not known, write it before the '{'
+    var p = {1, 2}
+            ^

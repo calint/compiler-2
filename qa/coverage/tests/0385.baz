@@ -1,18 +1,24 @@
-# aggregate assignment with an array field
+# complement of an array element result kept in a temporary
 
-type point { x, y }
-type tagged_points { tag, points point[2] }
+func assert(code, expr bool) {
+    if not expr exit(code)
+}
 
-func assert(x bool) { if not x exit(1) }
+func inv(i i32) res i32 {
+    res = ~i
+}
 
 func main() {
-    var arr = point[2]{ {1, 2}, {3, 4} }
-    var type_inst = tagged_points
-    type_inst = { 7, arr }
+    var arr = i32[4]
 
-    assert(type_inst.tag == 7)
-    assert(type_inst.points[0].x == 1)
-    assert(type_inst.points[0].y == 2)
-    assert(type_inst.points[1].x == 3)
-    assert(type_inst.points[1].y == 4)
+    arr[1] = ~2
+    arr[2] = ~arr[1]
+    arr[3] = 1
+
+    var ix = 3
+
+    # note: temporary because the result may share storage with the argument
+    var tmp1 = inv(arr[ix])
+    arr[ix-2] = tmp1
+    assert(1, arr[1] == ~1)
 }

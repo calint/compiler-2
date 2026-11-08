@@ -1,4 +1,7 @@
 
-1942.baz:6:9: expected type 'i8', got 'point'
-    x = point{1, 2}
-        ^~~~~
+1942.baz:3:24: expected ',' followed by another field in type 'box'
+type box<T type> { x T y }
+                       ^
+1942.baz:5:6: instantiated by
+type s = box<i8>
+     ^

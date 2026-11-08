@@ -1,7 +1,6 @@
-# signed sixteen-bit index remains negative
+# unary negative constant index is rejected at compile
 
 func main() {
-    var arr = i8[8]
-    var index = i16(-1)
-    arr[index] = 1
+    var values = i8[8]
+    values[~0] = 1
 }

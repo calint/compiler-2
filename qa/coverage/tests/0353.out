@@ -1,4 +1,0 @@
-
-0353.baz:4:5: 'object' not found
-    object.method()
-    ^~~~~~

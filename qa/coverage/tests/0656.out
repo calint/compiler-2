@@ -1,4 +1,4 @@
 
-0656.baz:4:5: cannot assign to read-only 'a', parameter 'a' is not declared 'mut'
-    a = 2
-    ^
+0656.baz:10:5: read-only 'self' cannot be the receiver of 'mut' method 'tk.reset', the method is not declared 'mut'
+    self.reset()
+    ^~~~

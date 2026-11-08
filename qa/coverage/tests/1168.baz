@@ -1,6 +1,5 @@
-# a 'dat' in a block is rejected at the 'dat' before its initializer is
-# checked
+# a variable cannot be named 'int', the name of the default type
 
 func main() {
-    dat x = 1 / 0
+    var int = int[2]{1, 2}
 }

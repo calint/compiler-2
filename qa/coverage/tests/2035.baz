@@ -1,6 +1,12 @@
-# an instance literal followed by an arithmetic operator that starts a 'var'
-# is an instance that is not a number, as after '='
-type point {x i32, y i32}
+# a 'foo' without a count over more elements than its counter 'i' can number
+# is rejected; rv32i only, x86_64 holds it
+
 func main() {
-    var p = point{1, 2} + 1
+    var a = i8[0x80000001]
+    foo a {
+        if i < 0 {
+            exit(3)
+        }
+    }
+    exit(0)
 }

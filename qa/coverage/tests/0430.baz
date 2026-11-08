@@ -1,28 +1,17 @@
-# portable read/write with byte counts, errors, and discarded results
+# canonical boolean results passed directly to a register argument
+# inspect from the project root: ./baz qa/coverage/tests/0430.baz --target=x86_64 > gen.s
+# use --target=rv32i for the other backend; omit checks to isolate result emission
+# x86: first arrays_equal ends with sete, second with setne in the argument register
+# no extra result register, normalization, or xor should appear between it and assert
+# rv32i: equality writes 1/0 directly; negation swaps these values without xori
+# assert's own truth test is separate and still needed
+
+func assert(ok bool) { if not ok exit(1) }
 
 func main() {
-    var buffer = i8[16]
-    var count = read(0, buffer, 16)
-    if count != 6 exit(1)
-    var written = write(1, buffer, count)
-    if written != count exit(2)
-    var empty = write(1, buffer, 0)
-    if empty != 0 exit(3)
-    var error = read(-1, buffer, 1)
-    if error != -9 exit(4)
-    error = write(-1, buffer, 1)
-    if error != -9 exit(5)
-    var eof = read(0, buffer, 16)
-    if eof != 0 exit(6)
-    write(1, buffer, 0)
-    read(0, buffer, 0)
-    var sum = 7 + write(1, buffer, 0)
-    if sum != 7 exit(7)
-    var one = 1
-    var zero_byte = 0
-    var calculated = write(one + zero_byte, buffer, one * zero_byte, zero_byte)
-    if calculated != 0 exit(8)
-    var negated = -write(-one, buffer, one)
-    if negated != 9 exit(9)
-    exit(0)
+    var left = i8[2]{1, 2}
+    var right = i8[2]{1, 2}
+    assert(arrays_equal(left, right, 2))
+    right[1] = 3
+    assert(not arrays_equal(left, right, 2))
 }

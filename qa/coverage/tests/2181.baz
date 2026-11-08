@@ -1,7 +1,6 @@
-# a constant division with the division check: a quotient that fits and -1
-# as the divisor of a value that is not the minimum
+# a C1 control character is escaped in a message
+
 func main() {
-    var x = 10 / 2
-    var y = -7 / -1
-    exit(x + y)
+    var a = i8
+    a = b
 }

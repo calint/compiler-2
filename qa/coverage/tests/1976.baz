@@ -1,11 +1,5 @@
-# a call where a built-in takes an array is not an array, a result never is
-# one, so storing it would not make one
-
-func f() res i8 {
-    res = 1
-}
+# an array literal where a built-in takes an array is not an argument
 
 func main() {
-    var a = i8[2]
-    array_copy(a, f(), 1)
+    var n = array_length(i8[2]{1, 2})
 }

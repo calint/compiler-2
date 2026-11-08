@@ -1,0 +1,4 @@
+
+0515.baz:13:18: argument 1 'ps[0]' may share storage with the result destination 'ps[i]' (both name 'ps'), use a temporary variable for one of them
+    ps[i] = swap(ps[0])
+                 ^~

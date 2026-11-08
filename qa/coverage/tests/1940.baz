@@ -1,11 +1,6 @@
-# a type parameter named before an instance names the type it is bound to
-type point {x i32, y i32}
-type seg {a point, b i8}
-
-func f<U type>() res point {
-    res = U{}
-}
-
+# a whole array literal for an instance is a type mismatch
+type point {x i8, y i8}
 func main() {
-    var p = f<seg>()
+    var p = point
+    p = i8[2]{1, 2}
 }

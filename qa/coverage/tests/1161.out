@@ -1,4 +1,4 @@
 
-1161.baz:3:14: shift count must be 0 to 63 for 64-bit values
-dat a = 1 << 64
-             ^~
+1161.baz:8:9: expected type 'point', got 'bool'
+    p = arrays_equal(a, a, 2)
+        ^~~~~~~~~~~~

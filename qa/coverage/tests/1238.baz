@@ -1,11 +1,11 @@
-# the 'n' of a 'foo' over an unsized array parameter cannot be assigned
-func f(s i8[]) {
-    foo s {
-        n = 1
-    }
+# the temporary that holds the argument of a call is not named in the error
+# when it does not fit in the variable storage
+func noinline f(x i32) res i32 {
+    res = x
 }
 
 func main() {
-    var a = i8[4]
-    f(a)
+    var b = i32[4]
+    b[0] = f(b[1] + 1)
+    exit(b[0])
 }

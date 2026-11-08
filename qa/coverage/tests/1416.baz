@@ -1,8 +1,10 @@
-# the path of an 'include' decodes its escapes like any other string, '\x2e'
-# is the '.' of 'util.baz'
+# a string is not a generic argument
 
-include "include/util\x2ebaz"
+type buf<c> {
+    x i8[c]
+}
+
+type b = buf<"4">
 
 func main() {
-    exit(twice(2) - 4)
 }

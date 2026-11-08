@@ -1,12 +1,11 @@
-# a constant index out of bounds is found for the lengths of one call
+# an alias names a generic type
 
-func noinline third(v i32[]) res i32 {
-    res = v[2]
+type text<capacity> {
+    array i8[capacity],
+    len,
 }
 
+type str = nothing<4>
+
 func main() {
-    var a = i32[3]{ 1, 2, 3 }
-    var b = i32[2]{ 1, 2 }
-    var r = third(a)
-    r = third(b)
 }

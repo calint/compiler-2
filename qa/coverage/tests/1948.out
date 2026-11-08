@@ -1,4 +1,4 @@
 
-1948.baz:2:6: 'noinline' is a keyword
-func noinline.m() { }
-     ^~~~~~~~
+1948.baz:9:7: '1' is not an array, parameter 'ps' takes one
+    f(1)
+      ^

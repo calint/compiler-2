@@ -1,4 +1,0 @@
-
-0548.baz:8:11: a string is not an argument, it would refer to read-only data
-    print("hello")
-          ^~~~~~~

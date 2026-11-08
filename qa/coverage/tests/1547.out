@@ -1,4 +1,4 @@
 
-1547.baz:3:13: '1' is a constant, not a function
-    var x = 1 (2)
-            ^
+1547.baz:5:9: constant '\xff' does not fit 'i8' (-128 to 127), 'i8(...)' wraps it
+    y = '\xff'
+        ^~~~~~

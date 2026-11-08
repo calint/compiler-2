@@ -1,4 +1,5 @@
-# void function cannot produce a value
+# data array cannot exceed its declared size
 
-func f() {}
-func main() { var x = f() }
+dat x = i8[1]{1,2}
+
+func main() {}

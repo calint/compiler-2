@@ -1,4 +1,7 @@
 
-0543.baz:4:14: unsupported escape '\q'
-    var c = '\q'
-             ^~
+0543.baz:5:18: too many elements for array of size 2
+    dst = {1, 2, 3}
+                 ^
+0543.baz:10:5: called from
+    fill(values)
+    ^~~~

@@ -1,8 +1,14 @@
-# the fields of a generic type see only the types defined before it
-type pair<T type> { first T, second point }
+# an inlined recursion that ends at compile time but nests too deep is not
+# said to be endless
+func r(v mut, n) {
+    if n != 0 {
+        v = v + 1
+        r(v, n - 1)
+    }
+}
 
-type point { x, y }
-
-type ipair = pair<i32>
-
-func main() {}
+func main() {
+    var v = 0
+    r(v, 100)
+    exit(v)
+}

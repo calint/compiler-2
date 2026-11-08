@@ -1,0 +1,4 @@
+
+2184.baz:8:12: generic parameter 'box' is also the name of the type at 8:6, use another name
+func box.f<box type>(a box) res int {
+           ^~~

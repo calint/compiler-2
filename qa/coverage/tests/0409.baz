@@ -1,38 +1,4 @@
-# signed byte multiplication: wide results expose missing sign extension
+# unary operator on a non-inline call
 
-func assert(err, expr bool) { if not expr exit(err) }
-
-func main() {
-    var negative = i8(-7)
-    var positive = i8(3)
-    var other_negative = i8(-3)
-
-    var wide = positive * negative
-    assert(1, wide == -21)
-    wide = negative * positive
-    assert(2, wide == -21)
-    wide = negative * other_negative
-    assert(3, wide == 21)
-
-    var narrow = i8(negative * positive)
-    assert(4, narrow == -21)
-    narrow = negative * other_negative
-    assert(5, narrow == 21)
-    narrow = negative * 3
-    assert(6, narrow == -21)
-    narrow = negative * (positive + 0)
-    assert(7, narrow == -21)
-    narrow = negative * -positive
-    assert(8, narrow == 21)
-    narrow = negative * ~positive
-    assert(9, narrow == 28)
-    narrow = negative * (other_negative + 0)
-    assert(10, narrow == 21)
-
-    positive = 100
-    negative = 3
-    narrow = positive * negative
-    assert(11, narrow == 44)
-    narrow = positive * (negative + 0)
-    assert(12, narrow == 44)
-}
+func noinline target() result { result = 1 }
+func main() { var result = -target() exit(result + 3) }

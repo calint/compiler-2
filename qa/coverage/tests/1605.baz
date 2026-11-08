@@ -1,4 +1,8 @@
-# an array size is an integer, not a 'bool'
+# parentheses around a single call group nothing
+func f() res {
+    res = 1
+}
+
 func main() {
-    var a = i8[true]
+    exit((f()))
 }

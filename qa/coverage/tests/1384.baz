@@ -1,10 +1,11 @@
-# a built-in destination takes a number, not an instance
+# a destination at a run-time index may be the element that is read, so a
+# field written before the read may have been overwritten
 
 type point {x, y}
 
 func main() {
-    var p = point{5, 2}
-    var y = 1
-    y = p
-    exit(y)
+    var ps = point[2]{{1, 2}, {3, 4}}
+    var i = 1
+    ps[i] = {1, ps[0].x}
+    exit(ps[1].y)
 }

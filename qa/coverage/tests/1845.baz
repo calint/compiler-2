@@ -1,6 +1,5 @@
-# type arguments after a type that is not generic
-
-type h {a i8<2>}
+# the mark under a token that holds a tab reaches the end of the token
 
 func main() {
+    var x = 1 + "a	bcdefgh" + 2
 }

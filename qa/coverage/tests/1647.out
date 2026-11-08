@@ -1,4 +1,4 @@
 
-1647.baz:3:11: function may return without setting its result 'res'
-func f(x) res {
-          ^~~
+1647.baz:5:12: unexpected '='
+    n = {} = 1
+           ^

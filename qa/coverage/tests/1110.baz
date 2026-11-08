@@ -1,7 +1,9 @@
-# 'write' to a descriptor that is not open returns the error, -9 is 'EBADF'
+# a constant count of zero at the end of the array copies nothing, with and
+# without the checks
 
-dat text = "A"
 func main() {
-    var bad = write(-1, text, 1)
-    if bad != -9 exit(1)
+    var a = i8[]{1, 2, 3, 4}
+    var b = i8[4]
+    array_copy(a[4], b[4], 0)
+    exit(b[3])
 }

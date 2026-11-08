@@ -1,9 +1,8 @@
-# only 'i8' arrays take strings
-
-type wide {
-    chars i32[4]
-}
+# a constant 'array_copy' count past the end of the array panics
 
 func main() {
-    var w = wide{"ab"}
+    var a = i8[4]
+    var b = i8[4]
+    var k = 2
+    array_copy(a[k], b[k], 3)
 }

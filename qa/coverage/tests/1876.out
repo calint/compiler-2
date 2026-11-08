@@ -1,4 +1,4 @@
 
-1876.baz:9:16: expected a generic argument
-    var a = id<-1>(1)
-               ^
+1876.baz:3:6: 'mut' requires a method 'type.name'
+func mut f<T type>() {}
+     ^~~

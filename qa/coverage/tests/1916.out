@@ -1,4 +1,4 @@
 
-1916.baz:6:13: an array of 'i8' is not a number
-    var a = i8[2]{1, 2} + 1
-            ^~
+1916.baz:4:8: expected '{' to begin declaration of type
+type b == box<i8>
+       ^

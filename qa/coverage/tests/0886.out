@@ -1,0 +1,4 @@
+
+0886.baz:8:18: 'point' is a type, not an array
+    var l = line{point}
+                 ^~~~~

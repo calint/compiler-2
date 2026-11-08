@@ -1,4 +1,4 @@
 
-1083.baz:5:14: a 'bool' is not an arithmetic operand, convert it, e.g. 'int(t)'
-    var n = -t
-             ^
+1083.baz:6:15: the destination gives the type 'i8[2]', write '{...}'
+    var q = t{i8[]{4, 5}}
+              ^~

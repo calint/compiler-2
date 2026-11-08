@@ -1,4 +1,5 @@
-# function return value is ignored
+# data array initializer requires commas
 
-func f() r { r = 1 }
-func main() { f() }
+dat x = i8[2]{1 2}
+
+func main() {}

@@ -1,8 +1,10 @@
-# --checks=division: the minimum of 'i32' divided by -1 panics
-func noinline div(a i32, b i32) res i32 {
-    res = a / b
+# --checks=shift,line: a count not below the width reports the line
+func noinline shl(a, n) res {
+    res = 0
+    res = a << n
 }
 func main() {
-    var x = div(-2147483647 - 1, -1)
+    var n = 70
+    var x = shl(1, n)
     exit(x)
 }

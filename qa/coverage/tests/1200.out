@@ -1,4 +1,4 @@
 
-1200.baz:5:11: expected type 'i32', got 'bool', use 'i32(...)'
-    res = b
-          ^
+1200.baz:7:22: count 3 is past the end of array 'd' of size 2
+    array_copy(a, d, 3)
+                     ^

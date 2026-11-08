@@ -1,11 +1,15 @@
-# the argument of a type parameter is not a constant
+# a parameter of a generic type hides a type of its name
+type name {x}
 
-type pair<first type, second type> {
-    a first,
-    b second,
+type box<name type> {
+    a name,
 }
 
-type p = pair<1, 2>
+type b8 = box<i8>
 
 func main() {
+    var b = b8
+    b.a = i8(3)
+    var nm = name{4}
+    exit(int(b.a) + nm.x)
 }

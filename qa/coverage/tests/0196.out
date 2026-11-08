@@ -1,4 +1,4 @@
 
-0196.baz:3:17: expected ',' followed by a value of type 'i8'
-dat x = i8[2]{1 2}
+0196.baz:3:17: expected ']' after array size
+type x { a i8[2 }
                 ^

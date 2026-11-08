@@ -1,6 +1,8 @@
-# a byte after an escape in a character literal is a second byte
+# an alias names a generic type with arguments, not a plain type
+
+type point {x, y}
+
+type place = point
 
 func main() {
-    var c = i8
-    c = '\n°'
 }

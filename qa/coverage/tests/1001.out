@@ -1,2 +1,2 @@
 
-panic: overflow
+panic: bounds at 1001.baz:8

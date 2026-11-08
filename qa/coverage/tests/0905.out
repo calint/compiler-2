@@ -1,4 +1,0 @@
-
-0905.baz:3:1: 'include' must be before the definitions of the file
-include "include/base.baz"
-^~~~~~~

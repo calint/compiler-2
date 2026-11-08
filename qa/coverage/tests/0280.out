@@ -1,4 +1,4 @@
 
-0280.baz:7:7: field 'y' not found in type 'point'
-    p.y = 1
-      ^
+0280.baz:13:10: expected type 'left', got 'right'
+    take(make())
+         ^~~~

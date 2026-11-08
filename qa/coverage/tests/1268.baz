@@ -1,5 +1,13 @@
-# a negated integer as a condition is rejected
+# a noinline call's narrower result alone as the argument of an inlined
+# call widens into a temporary of the parameter, a name would be rejected
+func noinline g() res i8 {
+    res = 1
+}
+
+func f(x) res {
+    res = x
+}
+
 func main() {
-    var n = i32(1)
-    if not n exit(2)
+    exit(f(g()))
 }

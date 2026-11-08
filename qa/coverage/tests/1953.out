@@ -1,4 +1,4 @@
 
-1953.baz:4:9: expected type 'bool', got 'i8[]'
-    b = i8[2]
-        ^~
+1953.baz:5:12: expected a count before '{'
+    foo a, {
+           ^

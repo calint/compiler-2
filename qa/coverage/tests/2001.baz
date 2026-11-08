@@ -1,6 +1,13 @@
-# a field of a variable in its own initializer is read before it is set, not
-# a field of the default type
+# an array receiver of a method that is not generic, called with type
+# arguments, is reported at the receiver like that of a generic method
+
+type point {x, y}
+
+func point.get() res {
+    res = self.x
+}
 
 func main() {
-    var p = p.x
+    var a = point[2]
+    var x = a.get<i8>()
 }

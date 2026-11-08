@@ -1,4 +1,28 @@
-# a non-inline argument can be a constant, it is passed in a temporary
+# portable read/write with byte counts, errors, and discarded results
 
-func noinline target(parameter) { exit(parameter) }
-func main() { target(7) }
+func main() {
+    var buffer = i8[16]
+    var count = read(0, buffer, 16)
+    if count != 6 exit(1)
+    var written = write(1, buffer, count)
+    if written != count exit(2)
+    var empty = write(1, buffer, 0)
+    if empty != 0 exit(3)
+    var error = read(-1, buffer, 1)
+    if error != -9 exit(4)
+    error = write(-1, buffer, 1)
+    if error != -9 exit(5)
+    var eof = read(0, buffer, 16)
+    if eof != 0 exit(6)
+    write(1, buffer, 0)
+    read(0, buffer, 0)
+    var sum = 7 + write(1, buffer, 0)
+    if sum != 7 exit(7)
+    var one = 1
+    var zero_byte = 0
+    var calculated = write(one + zero_byte, buffer, one * zero_byte, zero_byte)
+    if calculated != 0 exit(8)
+    var negated = -write(-one, buffer, one)
+    if negated != 9 exit(9)
+    exit(0)
+}

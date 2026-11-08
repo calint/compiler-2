@@ -1,26 +1,11 @@
-# a call in a conversion to a wider type widens like any operand, also
-# negated or complemented
-func g(x i8) res i8 {
-    res = x
+# --checks=overflow: the body of an inlined function called in the argument of
+# a conversion is checked, only the conversion's own arithmetic wraps
+func add8(a i8, b i8) res i8 {
+    res = a + b
 }
 
 func main() {
-    var v = i8(-128)
-    var a = i16(g(v))
-    if a != -128 {
-        exit(1)
-    }
-    var b = i16(-g(v))
-    if b != 128 {
-        exit(2)
-    }
-    var c = i16(~g(v))
-    if c != 127 {
-        exit(3)
-    }
-    var d = int(g(v))
-    if d != -128 {
-        exit(4)
-    }
-    exit(0)
+    var v = i8(100)
+    var r = i16(add8(v, v))
+    exit(int(r))
 }

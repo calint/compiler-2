@@ -1,4 +1,4 @@
 
-0678.baz:4:5: 'exit' takes 1 argument
-    exit()
-    ^~~~
+0678.baz:4:13: expected ',' followed by a value for field 'y' in type 'p'
+dat x = p{1 2}
+            ^

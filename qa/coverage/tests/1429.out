@@ -1,4 +1,10 @@
 
-1429.baz:4:6: 'int' is a built-in type
-func int(a) res {
-     ^~~
+include/frame.baz:3:71: divisor must not be zero
+func divide(a) res {                                       res = 10 / a }
+                                                                      ^
+1429.baz:7:13: called from 'divide(0)'
+    var x = divide(0)
+            ^~~~~~
+1429.baz:4:9: included from
+include "include/frame.baz"
+        ^~~~~~~~~~~~~~~~~~~

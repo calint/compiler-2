@@ -1,9 +1,7 @@
-# a variable hides a global constant, also where a constant is expected
-
-let m = 3
+# a constant start that leaves less than a sector of the buffer of
+# 'sector_read' is rejected
 
 func main() {
-    var m = 5
-    var a = i8[m]
-    exit(array_length(a))
+    var a = i8[1024]
+    sector_read(0, a, 600)
 }

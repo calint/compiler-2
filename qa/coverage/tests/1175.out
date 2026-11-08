@@ -1,4 +1,4 @@
 
-1175.baz:4:15: expected a constant array size greater than 0
-type t { a i8[- 4] }
-              ^
+1175.baz:4:5: constant 'x' already defined at 3:5
+dat x = 4
+    ^

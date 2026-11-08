@@ -1,0 +1,4 @@
+
+2147.baz:6:9: an instance literal of 'pt' is not an operand here, store it in a variable first
+    s = pt{1, 2}.x
+        ^~

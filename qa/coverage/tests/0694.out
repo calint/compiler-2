@@ -1,4 +1,4 @@
 
-0694.baz:4:15: an operator makes a value, not an array
-    read(0, 1 + 2, 1)
-              ^
+0694.baz:17:11: argument 1 'g' may share storage with the global 'g' that 'outer' uses, use a temporary variable for one of them
+    outer(g)
+          ^

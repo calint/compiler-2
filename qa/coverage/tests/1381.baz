@@ -1,12 +1,14 @@
-# the '-' of a conversion to the width of its use overflows there under the
-# overflow check, as for a variable of the type
+# shared storage of two arguments is reported with the arguments as written,
+# indexes included
 
-func noinline called(x i8) res i8 {
-    res = x
+type point {x, y}
+
+func noinline f(a mut, b mut) {
+    a = b + 1
 }
 
 func main() {
-    var v = i8(-128)
-    var r = -i8(called(v))
-    exit(int(r))
+    var ps = point[2]{{1, 2}, {3, 4}}
+    f(ps[0].x, ps[0].x)
+    exit(0)
 }

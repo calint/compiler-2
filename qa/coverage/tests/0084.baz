@@ -1,29 +1,40 @@
-# assignment between user-defined values
+# reads lines into nested struct fields in an array and prints them
 
 func assert(expr bool) {
     if not expr exit(1)
 }
 
-type point {x, y}
+func print(str i8[], len) {
+    write(1, str, len)
+}
 
-type object {color i32, pos point} 
+func input(str mut i8[], len) nbytes {
+    nbytes = read(0, str, len)
+}
+
+type string {
+    len,
+    data i8[64]
+}
+
+type location {
+    name string
+}
 
 func main() {
-    var x = 1
-    var y = 2
+    var locations = location[4]
 
-    var o1 = object{0xff0000, {x * 10, y}}
-    assert(o1.pos.x == 10)
-    assert(o1.pos.y == 2)
-    assert(o1.color == 0xff0000)
-    
-    var p1 = point{-x, -y}
-    o1.pos = p1
-    assert(o1.pos.x == -1)
-    assert(o1.pos.y == -2)
+    var i = 0
+    loop {
+      locations[i].name.len = input(locations[i].name.data, array_length(locations[0].name.data))
+      i = i + 1
+      if i == 4 break
+    }
 
-    var o2 = o1
-    assert(o2.pos.x == -1)
-    assert(o2.pos.y == -2)
-    assert(o2.color == 0xff0000)
+    i = 0
+    loop {
+      print(locations[i].name.data, locations[i].name.len)
+      i = i + 1
+      if i == 4 break
+    }
 }

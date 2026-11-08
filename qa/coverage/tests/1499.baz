@@ -1,7 +1,12 @@
-# a method with type parameters clashes with a method of an alias defined
-# before it
-type buffer<c> { a i8[c] }
-type sd = buffer<4>
-func sd.app(x) {}
-func buffer.app<T type>(x T) {}
-func main() {}
+# a generic call takes the type of a built-in destination for its result
+func make<T type>() res T {
+    res = 100
+}
+
+func main() {
+    var x = i8(0)
+    x = make()
+    var y = i16(0)
+    y = make() + 1
+    exit(x + y - 101)
+}

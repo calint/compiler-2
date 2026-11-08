@@ -1,15 +1,4 @@
-# a result that is a variable the compiler added is not named in the message
-func noinline add(x, y) res {
-    res = x + y
-}
-
-func noinline twice(v) res {
-    res = v
-    res = add(res, v)
-}
-
+# an array size is an integer, not a 'bool'
 func main() {
-    var x = 1
-    x = 1 + twice(x)
-    exit(x)
+    var a = i8[true]
 }

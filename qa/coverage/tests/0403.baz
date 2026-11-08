@@ -1,18 +1,35 @@
-# branch coverage: stmt_identifier bounds check on array without indexing
-# targets compile_effective_address branch:
-#   if (is_last and not reg_size.empty() and curr_info.is_array)
+# non-inline return destinations: nested calls, pointer forwarding and early returns
 
 func assert(err, expr bool) { if not expr exit(err) }
 
+func noinline magnitude(value mut) result {
+    result = value
+    if value < 0 {
+        result = -value
+        return
+    }
+    value = value + 1
+}
+
+func noinline forward(value mut) result {
+    var sentinel = 9876
+    result = magnitude(value)
+    if sentinel != 9876 result = -1
+}
+
 func main() {
-    var src = [4]{1, 2, 3, 4}
-    var dst = [4]{0, 0, 0, 0}
+    var negative = -42
+    var positive = 17
+    var result = 0
+    var sentinel = 1234
 
-    var n = 3
-    array_copy(src, dst, n)
+    result = forward(negative)
+    assert(2, result == 42)
+    assert(3, negative == -42)
+    assert(4, sentinel == 1234)
 
-    assert(1, dst[0] == 1)
-    assert(2, dst[1] == 2)
-    assert(3, dst[2] == 3)
-    assert(4, dst[3] == 0)
+    result = forward(positive)
+    assert(5, result == 17)
+    assert(6, positive == 18)
+    assert(7, sentinel == 1234)
 }

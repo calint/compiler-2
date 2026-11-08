@@ -1,5 +1,12 @@
-# a typed array literal as an operand is rejected like the untyped one
+# a typed literal of a type parameter for an array names the type it is bound
+# to
+type point {x i32, y i32}
+type seg {a point[2], b point}
+
+func f<T type>() {
+    var s = seg{T{1, 2}}
+}
+
 func main() {
-    var x = 1
-    x = 1 + i8[2]{1, 2}
+    f<point>()
 }

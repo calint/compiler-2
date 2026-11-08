@@ -1,6 +1,10 @@
-# an instance field whose size exceeds the signed 64-bit range
+# a range with a runtime start and count when only the upper limit is checked
 
-type big { a i32[4611686018427387904] }
+dat text = "ab\n"
 
 func main() {
+    var n = 2
+    var s = 1
+    write(1, text, n, s)
+    exit(0)
 }

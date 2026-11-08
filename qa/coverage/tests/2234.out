@@ -1,4 +1,1 @@
-
-2234.baz:4:20: a carriage return is not followed by a line feed
-    # no early exit\x0d    exit(1)
-                   ^~~~
+ok

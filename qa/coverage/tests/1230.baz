@@ -1,15 +1,9 @@
-# the check of a body without its calls rejects a function that runs out of
-# scratch registers there, also where its calls fit: each argument 'v' of
-# 'sum' is loaded from the frame, which the call 'g(3)' folds; rv32i has the
-# registers
-func sum(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11) res {
-    res = a0 + a1 + a2 + a3 + a4 + a5 + a6 + a7 + a8 + a9 + a10 + a11
-}
-
-func g(v) res {
-    res = sum(v, v, v, v, v, v, v, v, v, v, v, v)
+# a 'bool' result of a noinline call is not an integer, also when it is
+# given to a register
+func noinline nb() res bool {
+    res = true
 }
 
 func main() {
-    exit(3)
+    exit(nb())
 }

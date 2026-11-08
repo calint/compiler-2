@@ -1,4 +1,4 @@
 
-1582.baz:6:5: cannot assign to constant 'k'
-    k = 2
-    ^
+1582.baz:4:16: 'i8' is a type, not an array
+    array_copy(i8, a, 1)
+               ^~

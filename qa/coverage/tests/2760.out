@@ -1,4 +1,0 @@
-
-2760.baz:7:22: count 134217728 is past the end of array 'a' of any size
-    array_copy(a, b, 0x8000000)
-                     ^

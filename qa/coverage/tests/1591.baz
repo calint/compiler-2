@@ -1,8 +1,9 @@
-# a type parameter of a method of a generic type has the kind 'type'
-type box<n> {
-    x i8[n],
+# a read of a field that a record field literal zeroed before it
+type in {x i8, y i8}
+type out {i in, z i8}
+func main() {
+    var o = out
+    o.i.y = 4
+    o = {{1}, o.i.y}
+    exit(o.z)
 }
-
-func box.f<m>() {}
-
-func main() {}

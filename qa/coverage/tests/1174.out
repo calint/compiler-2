@@ -1,4 +1,4 @@
 
-1174.baz:4:13: expected a definition ('func', 'type', 'var', 'let' or 'dat'), got 'x'
-dat s = "\xa9" x
-               ^
+1174.baz:4:5: constant 'x' already defined at 3:5
+var x = 4
+    ^

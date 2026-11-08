@@ -1,4 +1,7 @@
 
-1502.baz:5:13: 'point' names a value here, which hides the type 'point'
-    var p = point{1, 2}
-            ^~~~~
+1502.baz:3:11: function 'add' not found
+    res = add(x, x)
+          ^~~
+1502.baz:11:10: instantiated by 'twice<i32>'
+    exit(twice<i32>(2))
+         ^~~~~

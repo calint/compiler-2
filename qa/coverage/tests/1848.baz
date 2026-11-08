@@ -1,10 +1,12 @@
-# a result of 1 TiB, its definite assignment is traced by byte ranges
+# a method without a result as a value is named with its type
 
-type huge {a i8[1099511627776]}
+type point {x, y}
 
-func f() res huge {
-    res = {}
+func mut point.set(a) {
+    self.x = a
 }
 
 func main() {
+    var p = point{1, 2}
+    var x = p.set(1)
 }

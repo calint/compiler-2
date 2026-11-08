@@ -1,13 +1,9 @@
-# a field read of a call result on the next line gets the same message as on
-# one line
-
-type p {x, y}
-
-func mk() res p {
-    res = {1, 2}
-}
+# an element is not an array: a second index is reported like an index of a
+# number, not by what follows the element
 
 func main() {
-    var a = mk()
-        .y
+    var a = [2]{1, 2}
+    if a[0][1] == 1 {
+        exit(1)
+    }
 }

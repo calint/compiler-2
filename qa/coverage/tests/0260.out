@@ -1,1 +1,4 @@
-A
+
+0260.baz:5:5: expected '=' for assignment or '(' for function call after 'x'
+    x 2
+    ^

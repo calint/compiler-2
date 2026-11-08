@@ -1,5 +1,4 @@
-hello
-x
-strings longer than 16!
-deeA\"#
-hello
+
+0545.baz:4:15: unsupported escape '\q'
+    var s = "a\qb"
+              ^~

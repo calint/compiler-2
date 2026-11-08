@@ -1,35 +1,5 @@
-# non-inline return destinations: nested calls, pointer forwarding and early returns
+# non-inline result wider than its destination is rejected, a narrower one
+# widens
 
-func assert(err, expr bool) { if not expr exit(err) }
-
-func noinline magnitude(value mut) result {
-    result = value
-    if value < 0 {
-        result = -value
-        return
-    }
-    value = value + 1
-}
-
-func noinline forward(value mut) result {
-    var sentinel = 9876
-    result = magnitude(value)
-    if sentinel != 9876 result = -1
-}
-
-func main() {
-    var negative = -42
-    var positive = 17
-    var result = 0
-    var sentinel = 1234
-
-    result = forward(negative)
-    assert(2, result == 42)
-    assert(3, negative == -42)
-    assert(4, sentinel == 1234)
-
-    result = forward(positive)
-    assert(5, result == 17)
-    assert(6, positive == 18)
-    assert(7, sentinel == 1234)
-}
+func noinline target() result i32 { result = 1 }
+func main() { var result = i16(0) result = target() }

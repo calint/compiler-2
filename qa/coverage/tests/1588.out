@@ -1,4 +1,4 @@
 
-1588.baz:5:7: 'f' takes 0 arguments
-    f(,)
-      ^
+1588.baz:5:16: 'f' is a function, not a value, a call ends with '()'
+    var a = i8[f]
+               ^

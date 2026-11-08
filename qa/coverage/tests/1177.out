@@ -1,4 +1,0 @@
-
-1177.baz:5:13: 'bool' is a type, not a value
-    var b = bool != true
-            ^~~~

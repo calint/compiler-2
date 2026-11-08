@@ -1,16 +1,7 @@
-# a missing first argument of a user type is reported as missing rather than
-# as a malformed instance value
+# data built-in field initialized with braces
 
-type point {
-    x,
-    y
-}
+type point { x i16, y i16 }
 
-func point.moved(by point) res point {
-    res = {self.x + by.x, self.y + by.y}
-}
+dat p = point{ { 1 }, 2 }
 
-func main() {
-    var p = point{1, 2}
-    var q = p.moved()
-}
+func main() {}

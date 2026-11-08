@@ -1,13 +1,7 @@
-# a method that is not generic takes no type arguments
-type pt {
-    x i8,
-}
-
-func pt.get() res i8 {
-    res = self.x
-}
-
+# parentheses after a unary operator around a single name group nothing,
+# the operator applies to the name
 func main() {
-    var p = pt{1}
-    var x = p.get<i8>()
+    var x = 1
+    var y = -(x)
+    exit(y)
 }

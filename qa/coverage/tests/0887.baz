@@ -1,10 +1,11 @@
-# a variable shadows the function of the same name
+# a constant shadows the function of the same name
 
-func n() {
+let f = 8
+
+func f() {
 }
 
 func main() {
-    var n = 5
-    var i = n
-    exit(i)
+    var x = f
+    exit(x)
 }

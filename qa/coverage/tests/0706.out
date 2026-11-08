@@ -1,0 +1,4 @@
+
+0706.baz:3:6: 'foo' is a keyword
+func foo() {
+     ^~~

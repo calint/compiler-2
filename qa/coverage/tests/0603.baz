@@ -1,11 +1,6 @@
-# calling a constructor that the type does not have is rejected
+# a type after the variable name is rejected, the initializer gives the type,
+# e.g. 'var x = i32(0)'
 
-type point {
-    x,
-    y
-}
-
-# the type has no such constructor
 func main() {
-    var p = point.at(1, 2)
+    var x i32
 }

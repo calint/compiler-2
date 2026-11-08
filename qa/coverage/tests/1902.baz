@@ -1,11 +1,8 @@
-# a whole array of instances in a comparison is reported as an array that
-# must be indexed, like an array of numbers
+# a call of a generic type is reported as a generic type, not as an unknown
+# function
 
-type pt {x}
+type box<T type> {x T}
 
 func main() {
-    var ps = pt[2]
-    var q = pt{1}
-    if ps < q {
-    }
+    var b = box(1)
 }

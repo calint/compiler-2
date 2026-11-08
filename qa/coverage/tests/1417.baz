@@ -1,12 +1,10 @@
-# parentheses around an instance group nothing
+# a string is not a type argument of a generic function
 
-type point {x, y}
+func id<T type>(a T) res T {
+    res = a
+}
 
 func main() {
-    var p = point{1, 2}
-    var q = p
-    if (p) == ((q)) {
-        exit(0)
-    }
-    exit(1)
+    var x = i8(1)
+    var y = id<"i8">(x)
 }

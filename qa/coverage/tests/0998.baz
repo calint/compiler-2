@@ -1,8 +1,9 @@
-# --checks=overflow: i64 sum above the maximum
-func noinline add(a i64, b i64) res i64 { res = a + b }
+# a built-in call needs a ',' between the arguments
+dat text = "ab\n"
+
 func main() {
-    var a = i64(9223372036854775807)
-    var b = i64(1)
-    var x = add(a, b)
+    var n = 2
+    var s = 127
+    write(1, text n, s)
     exit(0)
 }

@@ -1,19 +1,12 @@
-# a non-inline parameter shares storage with a global only if a caller passes it
+# a constant index out of bounds is found for the lengths of one call
 
-var g = 2
-
-func swap_values(x mut, y mut) {
-    var tmp = x
-    x = y
-    y = tmp
-}
-
-func noinline outer(a mut) {
-    swap_values(a, g)
+func noinline third(v i32[]) res i32 {
+    res = v[2]
 }
 
 func main() {
-    var v = 1
-    outer(v)
-    exit(v * 10 + g)
+    var a = i32[3]{ 1, 2, 3 }
+    var b = i32[2]{ 1, 2 }
+    var r = third(a)
+    r = third(b)
 }

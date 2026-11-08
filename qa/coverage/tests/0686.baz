@@ -1,7 +1,7 @@
-# a built-in element of a data definition must be a constant
+# a negative constant 'array_copy' count is rejected
 
-dat y = 1
-
-dat x = []{y}
-
-func main() {}
+func main() {
+    var a = [4]{1, 2, 3, 4}
+    var b = [4]
+    array_copy(a, b, -1)
+}

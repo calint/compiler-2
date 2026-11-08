@@ -1,14 +1,8 @@
-# a noinline call in a function that nothing calls checks the body with the
-# lengths of its array arguments
-func noinline f(s i8[]) res {
-    res = s[5]
-}
+# a type parameter of a function is a name: a quote is not part of one, also
+# without the kind 'type'
 
-func g() res {
-    var a = i8[4]
-    res = f(a)
+func f<a"b>() {
 }
 
 func main() {
-    exit(0)
 }

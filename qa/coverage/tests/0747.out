@@ -1,0 +1,4 @@
+
+0747.baz:18:11: argument 1 'arr[i]' may share storage with the global 'arr' that 'outer' uses, use a temporary variable for one of them
+    outer(arr[i])
+          ^

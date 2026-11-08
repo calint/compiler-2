@@ -1,7 +1,16 @@
-# an instance literal followed by an arithmetic operator for a 'bool' is an
-# instance, not a 'bool'
-type point {x i32, y i32}
+# a 'let' of the 'n' of a 'foo' over an unsized array parameter is a constant
+# at an inlined call that gives the length, as 'n' is: 's[m]' past the end is
+# rejected like 's[n]'
+
+func last(s i8[]) res i8 {
+    res = 0
+    foo s {
+        let m = n
+        res = s[m]
+    }
+}
+
 func main() {
-    var b = true
-    b = point{1, 2} + 1
+    var a = i8[4]
+    exit(last(a))
 }

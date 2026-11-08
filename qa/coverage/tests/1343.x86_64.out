@@ -1,0 +1,22 @@
+
+1343.baz:7:76: out of scratch registers, simplify the expression
+    res = (g + (g + (g + (g + (g + (g + (g + (g + (g + (g + (g + (g + (g + g * g) * g) * g) * g) * g) * g) * g) * g) * g) * g) * g) * g) * g)
+                                                                           ^
+
+register use at the failure: 13 of 13 registers live
+
+  held  frame, registers (allocated at)
+    13  f (noinline body)
+          r15 7:5
+          r14 7:17
+          r13 7:22
+          r12 7:27
+          r10 7:32
+          r9 7:37
+          r8 7:42
+          r11 7:47
+          rdx 7:52
+          rax 7:57
+          rsi 7:62
+          rdi 7:67
+          rcx 7:72

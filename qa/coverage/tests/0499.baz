@@ -1,18 +1,37 @@
-# a named constant argument is the caller's constant even when the callee
-# declares a constant with the same name
-let size = 4
-let neg = -3
-func assert(ok bool, code) { if not ok exit(code) }
-func scale(v) res {
-    let size = 10
-    let neg = 100
-    res = v * size + neg
-}
-func main() {
-    assert(scale(size) == 140, 1)
-    assert(scale(neg) == 70, 2)
-    {
-        let size = 7
-        assert(scale(size) == 170, 3)
+# a loop without 'break' is left only by 'return', so the result is set
+
+func assert(err, expr bool) { if not expr exit(err) }
+
+func first_at_least(n) res {
+    var i = 0
+    loop {
+        if i >= n {
+            res = i
+            return
+        }
+        i = i + 1
     }
+}
+
+func noinline ten() res {
+    loop {
+        res = 10
+        return
+    }
+}
+
+# the inner 'break' leaves only the inner loop
+func twenty() res {
+    loop {
+        loop { break }
+        res = 20
+        return
+    }
+}
+
+func main() {
+    assert(1, first_at_least(3) == 3)
+    var r = ten()
+    assert(2, r == 10)
+    assert(3, twenty() == 20)
 }

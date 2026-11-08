@@ -1,5 +1,13 @@
-# an operator after an array literal whose type the destination gives
+# a generic method named without '(' needs its '(' as a plain method
+
+type point { x i32 }
+
+func point.get<T type>() res T {
+    res = {}
+}
+
 func main() {
-    var a = i8[2]{1, 2}
-    a = i8[2]{3, 4} + 1
+    var p = point{1}
+    var x = i8(1)
+    x = p.get
 }

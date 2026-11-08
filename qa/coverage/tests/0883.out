@@ -1,4 +1,4 @@
 
-0883.baz:6:24: '1' is not an array
-    if arrays_equal(a, 1, 2) {
-                       ^
+0883.baz:132:1: nesting is too deep, the limit is 128 levels
+{
+^

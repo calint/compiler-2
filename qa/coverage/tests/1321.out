@@ -1,4 +1,0 @@
-
-1321.baz:4:15: 'M' is a constant, it has no field 'x'
-    var a = M.x
-              ^

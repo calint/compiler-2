@@ -1,8 +1,26 @@
-# a constant count of 'arrays_equal' larger than the arrays is rejected also
-# when both starts are computed at run time
+# a unary operator on a side of a comparison whose address is computed, a
+# parameter naming an element or a field of a noinline record parameter,
+# applies before the comparison
+type point {x, y}
+
+func f(v) res bool {
+    res = 3 == -v
+}
+
+func noinline h(q point) res bool {
+    res = 3 == -q.x
+}
+
 func main() {
-    var a = i8[8]
-    var b = i8[8]
-    var i = 0
-    var e = arrays_equal(a[i], b[i], 9)
+    var a = [2]{5, -3}
+    var i = 1
+    var p = point{-3, 0}
+    var r = 0
+    if f(a[i]) {
+        r = r + 1
+    }
+    if h(p) {
+        r = r + 2
+    }
+    exit(r)
 }

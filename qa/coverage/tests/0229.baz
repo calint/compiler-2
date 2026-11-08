@@ -1,8 +1,4 @@
-# nested user-type array fields must match
+# function calls reject a trailing comma
 
-type p { data i8[2] }
-type q { data i16[2] }
-func main() {
-    var q1 = q
-    var p1 = p{q1.data}
-}
+func f(x) {}
+func main() { f(1,) }

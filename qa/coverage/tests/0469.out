@@ -1,4 +1,4 @@
 
-0469.baz:8:29: variable 'ps' is read before it is set
-    var ps = point[1]{twice(ps[0])}
-                            ^~
+0469.baz:3:18: function may return without setting its result 'res'
+func make_pair() res pair {
+                 ^~~

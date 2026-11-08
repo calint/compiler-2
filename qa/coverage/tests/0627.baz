@@ -1,11 +1,15 @@
-# negative foo count fails the lower bound check
+# a field of a parameter without 'mut' cannot be assigned
+
+type point {
+    x,
+    y,
+}
+
+func f(p point) {
+    p.x = 1
+}
 
 func main() {
-    var arr = []{ 1, 2, 3 }
-    var count = -1
-    var sum = 0
-    foo arr, count {
-        sum = sum + e
-    }
-    exit(sum)
+    var q = point{ 1, 2 }
+    f(q)
 }

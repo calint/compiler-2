@@ -1,4 +1,4 @@
-# the body of a generic function is checked for the type argument of a call
+# the type arguments of a call end with '>'
 
 type name {
     array i8[4],
@@ -6,9 +6,10 @@ type name {
 }
 
 func make<T type>(n) res T {
-    res.size = n
+    res.len = n
+    res.array = {}
 }
 
 func main() {
-    var m = make<name>(2)
+    var m = make<name(2)
 }

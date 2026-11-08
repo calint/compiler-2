@@ -1,8 +1,7 @@
-# --checks=overflow: the negation of a named 64-bit minimum as an element of a
-# narrower array does not fit it
-let m = -9223372036854775807 - 1
-
+# a comparison in parentheses as an arithmetic operand makes a condition, which
+# is not an operand
 func main() {
-    var a = i32[2]{1, -m}
-    exit(a[0])
+    var x = 1
+    x = 1 + (x < 1)
+    exit(x)
 }

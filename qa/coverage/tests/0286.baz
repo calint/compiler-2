@@ -1,11 +1,17 @@
-# nested array and field indexing
-
-type world { locations[2] }
+# indexed struct field receives a function result
 
 func assert(expr bool) { if not expr exit(1) }
 
+type point { x, y }
+type collection { points point[3] }
+
+func make_point() result point {
+    result = { 6, 9 }
+}
+
 func main() {
-    var worlds = world[2]
-    worlds[1].locations[1] = 0xffee
-    assert(worlds[1].locations[1] == 0xffee)
+    var values = collection
+    values.points[2] = make_point()
+    assert(values.points[2].x == 6)
+    assert(values.points[2].y == 9)
 }

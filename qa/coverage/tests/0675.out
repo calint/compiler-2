@@ -1,0 +1,4 @@
+
+0675.baz:8:12: expected a method name after '.'
+func point.
+           ^

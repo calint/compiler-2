@@ -1,4 +1,4 @@
 
-2008.baz:14:7: a call of 'mk' is not an array
-    f(mk())
-      ^~
+2008.baz:6:1: expected '{' to begin block
+type point {x, y}
+^

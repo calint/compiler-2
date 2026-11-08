@@ -1,7 +1,10 @@
-# one-element lower failure without line output
+# negative constant index into an array argument is rejected at compile
+
+func legacy_write(values mut i8[]) {
+    values[-1] = 1
+}
 
 func main() {
-    var arr = i8[1]
-    var index = -1
-    arr[index] = 1
+    var values = i8[8]
+    legacy_write(values)
 }

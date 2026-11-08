@@ -1,9 +1,7 @@
-# boolean values can be copied
-
-func assert(expr bool) { if not expr exit(1) }
+# dynamic lower-bound read failure
 
 func main() {
-    var source = true
-    var copy = source
-    assert(copy)
+    var arr = i8[8]
+    var index = -1
+    var value = arr[index]
 }

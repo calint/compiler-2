@@ -1,11 +1,10 @@
-# foo count larger than the array fails the upper bound check
+# a parameter without 'mut' cannot be assigned
+
+func f(a) {
+    a = 1
+}
 
 func main() {
-    var arr = []{ 1, 2, 3 }
-    var count = 4
-    var sum = 0
-    foo arr, count {
-        sum = sum + e
-    }
-    exit(sum)
+    var x = 5
+    f(x)
 }

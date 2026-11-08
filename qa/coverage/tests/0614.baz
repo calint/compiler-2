@@ -1,10 +1,22 @@
-# an unsized array parameter has no size for a copy in a new variable
+# a call without a result inside a function with a result is a statement, not
+# an assignment to the caller's destination
 
-func f(s i8[]) {
-    var c = s
+type counter {
+    n,
+}
+
+func mut counter.bump() {
+    self.n = self.n + 1
+}
+
+func add_twice(c mut counter) res {
+    c.bump()
+    res = c.n
+    c.bump()
 }
 
 func main() {
-    var a = i8[2]
-    f(a)
+    var c = counter{5}
+    var r = add_twice(c)
+    exit(r + c.n)
 }

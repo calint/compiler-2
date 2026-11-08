@@ -1,5 +1,12 @@
-# a bool compared with an integer in a condition is rejected
+# a constant start of a bulk operation out of bounds names the array by its
+# path, like the error about a count
+type q {
+    data i8[4],
+}
+
 func main() {
-    var b = true
-    if b != 2 exit(2)
+    var v = q
+    var b = i8[4]
+    array_copy(v.data[5], b, 0)
+    exit(b[0])
 }

@@ -1,15 +1,5 @@
-# constant arguments with unary operators are folded before aliasing
+# a non-inline result can be an operand in an expression, it is read from a
+# temporary
 
-func assert(err, expr bool) { if not expr exit(err) }
-
-func pass(x) res { res = x }
-
-let c = 5
-
-func main() {
-    assert(1, pass(~1) == -2)
-    assert(2, pass(~-1) == 0)
-    assert(3, pass(-~1) == 2)
-    assert(4, pass(~c) == -6)
-    assert(5, pass(-c) == -5)
-}
+func noinline one() res { res = 1 }
+func main() { var x = one() + 1 exit(x) }

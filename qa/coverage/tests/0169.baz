@@ -1,6 +1,5 @@
-# array_length requires an array argument
+# array type size requires a closing bracket
 
 func main() {
-    var x = 1
-    var n = array_length(x)
+    var x = i8[2
 }

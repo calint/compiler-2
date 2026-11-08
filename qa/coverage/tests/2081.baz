@@ -1,12 +1,4 @@
-# the range of a run-time start with a constant count is checked after the
-# later arguments, as with a run-time count: the call exits before it
-dat a = i8[5]
+# an array literal tells no type argument
 
-func noinline f() res i32 {
-    exit(7)
-}
-
-func main() {
-    var k = 3
-    array_copy(a[k], a[f()], 4)
-}
+func show<T type>(v T) {}
+func main() { show([1, 2]) }

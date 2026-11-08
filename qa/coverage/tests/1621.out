@@ -1,4 +1,4 @@
 
-1621.baz:5:14: parentheses around a single value group nothing, write 'x'
-    var y = -(x)
-             ^
+1621.baz:9:8: 'i' may be written by the call of 'h' in a later operand, use a temporary variable
+    if i == h(i) exit(1)
+       ^

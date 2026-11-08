@@ -1,9 +1,9 @@
-# the parameter of a generic function is a name like the others, not a
-# built-in function
-func f<exit type>(x exit) res {
-    res = x
-}
-
+# a constant list whose first element is not typed and that holds a typed
+# element is a value of the list's type like the same list of a variable
 func main() {
-    exit(f<i8>(1))
+    var e = i8(1)
+    if 1 + i16(300) > e {
+        exit(1)
+    }
+    exit(0)
 }

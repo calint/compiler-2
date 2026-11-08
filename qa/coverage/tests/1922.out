@@ -1,4 +1,7 @@
 
-1922.baz:8:9: expected ')' after the arguments
-    f(1 2)
-        ^
+1922.baz:6:11: expected type 'point', got 'seg'
+    res = U{}
+          ^
+1922.baz:10:13: instantiated by 'f<seg>'
+    var p = f<seg>()
+            ^

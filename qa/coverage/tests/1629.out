@@ -1,4 +1,4 @@
 
-1629.baz:7:13: expected type 'i16' for parameter 'x', got 'i8'
-    res = f(y)
-            ^
+1629.baz:3:11: function may return without setting its result 'res'
+func f(x) res {
+          ^~~

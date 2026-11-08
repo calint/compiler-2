@@ -1,3 +1,6 @@
-# break is only valid inside a loop
+# arrays_equal arguments require commas
 
-func main() { break }
+func main() {
+    var a = i8[2]
+    var z = arrays_equal(a a,1)
+}

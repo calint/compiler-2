@@ -1,7 +1,10 @@
-# a type parameter is not known outside its generic
+# an array parameter does not tell the type
 
-func f<T type>(x T) {}
+func first<T type>(a T[]) res {
+    res = 0
+}
 
 func main() {
-    var y = T
+    var a = i8[4]
+    var r = first(a)
 }

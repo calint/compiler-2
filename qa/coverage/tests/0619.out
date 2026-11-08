@@ -1,4 +1,4 @@
 
-0619.baz:5:1: expected ')' after the arguments
-func main() {}
-^
+0619.baz:6:9: cannot assign to read-only 'i', 'i' is the index of 'foo'
+        i = 2
+        ^

@@ -1,18 +1,21 @@
-# boolean comparisons and negation
+# function parameters mutate caller variables
+
+func foozi(x mut){
+   x=x+1
+}
+
+func bar(x mut){
+   x=x+1
+   if not x==2 exit(2)
+}
 
 func main(){
-    var bt1 = i8(1)
-    var bt2 = i8(2)
+    var a=0
+    foozi(a)
+    if not a==1 exit(1)
 
-    var b1 = bt1<bt2
-    if not b1 exit(1)
-
-    var b2 = bt1==1
-    b2=not bt2!=0
-    if b2 exit(2)
-
-    bt1=-1+2
-    if not bt1==1 exit(3)
+    bar(a)
+    if not a==2 exit(3)
 
     exit(0)
 }

@@ -1,0 +1,4 @@
+
+1703.baz:5:6: type 'big' of 4294967296 B is too large, it must be smaller than the 4294967296 B the target addresses
+type big = w<0xffffffff>
+     ^~~

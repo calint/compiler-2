@@ -1,12 +1,5 @@
-# the same for a noinline function, the body sets 'res' before it reads 'g'
-var g = 5
-
-func noinline f() res {
-    res = 0
-    res = res + g
-}
-
+# parentheses around an array that is copied group nothing
 func main() {
-    g = f()
-    exit(g)
+    var a = i8[4]
+    var x = (a)
 }

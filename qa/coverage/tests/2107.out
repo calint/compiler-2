@@ -1,4 +1,7 @@
 
-2107.baz:8:7: function 'array_copy' has no result
-    g(array_copy(a, b, 1))
-      ^~~~~~~~~~
+2107.baz:7:19: divisor must not be zero
+        res = n / 0
+                  ^
+2107.baz:12:10: instantiated by 'g<i8>'
+    exit(g<i8>(1))
+         ^

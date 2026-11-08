@@ -1,28 +1,18 @@
-# foo loop variable indexes its data field
+# local array initializes an array of types with array fields
 
-type item { data[2] }
-
-dat values =
-    item[3]{
-        { {1, 2} },
-        { {3, 4} },
-        { {5, 6} }
-    }
-
-func increment(value mut) {
-    value = value + 10
-}
+type point { x, y }
+type holder { points point[2] }
 
 func assert(x bool) { if not x exit(1) }
 
 func main() {
-    foo values {
-        increment(e.data[1])
-    }
-    assert(values[0].data[0] == 1)
-    assert(values[0].data[1] == 12)
-    assert(values[1].data[0] == 3)
-    assert(values[1].data[1] == 14)
-    assert(values[2].data[0] == 5)
-    assert(values[2].data[1] == 16)
+    var local_points = point[2]{ {1, 2}, {3, 4} }
+    var holders = holder[2]{ { local_points }, { local_points } }
+
+    assert(holders[0].points[0].x == 1)
+    assert(holders[0].points[0].y == 2)
+    assert(holders[0].points[1].x == 3)
+    assert(holders[0].points[1].y == 4)
+    assert(holders[1].points[0].x == 1)
+    assert(holders[1].points[1].y == 4)
 }

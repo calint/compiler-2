@@ -1,6 +1,9 @@
-# the signature of 'main' is checked before its body, a write to a parameter
-# is not reported as a write to a parameter that is not 'mut'
+# a path is checked left to right: the constant index past the end is
+# reported before the field after it that the type does not have
 
-func main(x) {
-    x = 1
+type pt { x, y }
+
+func main() {
+    var a = pt[4]
+    exit(a[9].zz)
 }

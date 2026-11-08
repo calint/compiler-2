@@ -1,6 +1,5 @@
-# a missing ',' before an argument a built-in needs is reported like that of
-# a call of a function
+# a conversion for an array is a call, as for the array of a built-in
 func main() {
-    var b = i8[4]
-    var n = read(0 b)
+    var a = i8[2]
+    a = i8(1)
 }

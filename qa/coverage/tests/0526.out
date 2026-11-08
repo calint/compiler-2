@@ -1,4 +1,0 @@
-
-0526.baz:15:10: argument 1 'total' may share storage with the global 'total' that 'bump' uses, use a temporary variable for one of them
-    bump(total)
-         ^

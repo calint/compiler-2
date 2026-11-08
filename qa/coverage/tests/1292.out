@@ -1,0 +1,4 @@
+
+1292.baz:4:14: a unary operator makes a value, not an array
+    write(1, -b)
+             ^

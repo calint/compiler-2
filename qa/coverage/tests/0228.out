@@ -1,4 +1,4 @@
 
-0228.baz:4:1: expected a constant, a name or a call
-}
-^
+0228.baz:3:21: a trailing ',' is not allowed in a call
+func main() { exit(1,) }
+                    ^

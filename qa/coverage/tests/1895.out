@@ -1,4 +1,4 @@
 
-1895.baz:6:6: a constructor builds 'self', 'mut' is not needed
-func mut box.mk() self {}
-     ^~~
+1895.baz:7:10: 'main' is a function, not a value, a call ends with '()'
+    show(main)
+         ^~~~

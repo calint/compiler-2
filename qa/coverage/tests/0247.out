@@ -1,4 +1,4 @@
 
-0247.baz:5:13: array 'a' must be indexed
-    var z = a == 1
-            ^
+0247.baz:4:17: '{}' is not an array, parameter 'x' takes one
+func main() { f({}) }
+                ^

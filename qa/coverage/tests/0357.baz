@@ -1,6 +1,6 @@
-# too many data array elements are rejected before parsing the next element
-
-dat values = i8[2]{ 1, 2, 3 }
+# duplicate constants in one block are rejected
 
 func main() {
+    let x = 1
+    let x = 2
 }

@@ -1,4 +1,4 @@
 
-1791.baz:6:13: variable 'a' does not fit in the variable storage, see '--vars'
-        var a = i8[300000]
-            ^
+1791.baz:4:16: 'if' is a keyword
+func f<T type>(if T) {
+               ^~

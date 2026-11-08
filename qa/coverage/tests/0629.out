@@ -1,4 +1,4 @@
 
-0629.baz:10:14: read-only 'i' cannot be passed to a 'mut' parameter, 'i' is the index of 'foo'
-        skip(i)
-             ^
+0629.baz:4:13: cannot read into read-only 'd', parameter 'd' is not declared 'mut'
+    read(0, d)
+            ^

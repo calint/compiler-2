@@ -1,6 +1,15 @@
-# a string as the type of a parameter of a generic function is rejected
-# where it is read, also without an instance
-func f<T type>(a "i8") {
+# a method called on a type parameter names the type it is bound to
+
+type point {x, y}
+
+func point.get() res {
+    res = self.x
 }
 
-func main() {}
+func mk<T type>() res T {
+    res = T.get()
+}
+
+func main() {
+    var p = mk<point>()
+}

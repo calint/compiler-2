@@ -1,7 +1,4 @@
-# a type name alone followed by an arithmetic operator that starts a 'var' is
-# an instance that is not a number, as in an assignment
-type point {x, y}
-func main() {
-    var p = point{1, 2}
-    var x = point + 1
-}
+# the parameters of a generic function end with ')', checked at the definition
+func f<T type>(a T] {}
+
+func main() {}

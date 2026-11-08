@@ -1,4 +1,4 @@
 
-1866.baz:11:15: function 'point.set' has no result
-    var x = p.set(1)
-              ^~~
+1866.baz:5:25: expected '}' to close the array of size 2
+    var a = i8[2]{1, 2, )
+                        ^

@@ -1,5 +1,34 @@
-# a method call on a name that is not defined is rejected
+# truncate a qword to byte word and dword
+
+func assert(x bool) { if not x exit(1) }
+
+func take_byte(value i8) result i8 {
+    result = value
+}
+
+func take_word(value i16) result i16 {
+    result = value
+}
+
+func take_dword(value i32) result i32 {
+    result = value
+}
 
 func main() {
-    object.method()
+    var qword = i64(0x12345678)
+    qword = qword << 32
+    var lower = i64(0x9abc)
+    lower = lower << 16
+    lower = lower | 0xdef0
+    qword = qword | lower
+    var qword_byte = i8(qword)
+    var qword_word = i16(qword)
+    var qword_dword = i32(qword)
+    var byte = take_byte(qword_byte)
+    var word = take_word(qword_word)
+    var dword = take_dword(qword_dword)
+
+    assert(byte == -16)          # 0xf0
+    assert(word == -8464)        # 0xdef0
+    assert(dword == -1698898192) # 0x9abcdef0
 }

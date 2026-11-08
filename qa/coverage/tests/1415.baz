@@ -1,6 +1,5 @@
-# an operator applied to a whole array names the array, not its element type
+# a string is not a constant array size
 
 func main() {
-    var a = i32[2]
-    a = -a
+    var a = i8["4"]
 }

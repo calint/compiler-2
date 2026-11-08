@@ -1,4 +1,7 @@
 
-1565.baz:5:9: constant '\xff' does not fit 'i8' (-128 to 127), 'i8(...)' wraps it
-    y = '\xff'
-        ^~~~~~
+1565.baz:3:13: 'bool' has no conversion, compare instead, e.g. 'x != 0'
+    var b = T(v)
+            ^
+1565.baz:8:14: instantiated by 'f<bool>'
+    exit(int(f<bool>(1)))
+             ^

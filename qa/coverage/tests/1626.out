@@ -1,4 +1,4 @@
 
-1626.baz:5:8: parentheses around a single value group nothing, write '(b or c)'
-    if ((b or c)) {
-       ^
+1626.baz:9:13: the call of 'gw' reaches 'p', which has been written in the same statement, use a temporary variable
+    p = {1, gw()}
+            ^~

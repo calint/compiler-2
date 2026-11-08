@@ -1,6 +1,0 @@
-# a C1 control character is escaped in a message
-
-func main() {
-    var a = i8
-    a = b
-}

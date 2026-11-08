@@ -1,4 +1,4 @@
 
-1966.baz:9:7: '1' is not an array, parameter 'ps' takes one
-    f(1)
-      ^
+1966.baz:2:10: expected a generic type after '='
+type p = )
+         ^

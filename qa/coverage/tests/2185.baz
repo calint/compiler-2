@@ -1,8 +1,10 @@
-# a lone '=' after a parenthesized operand
-func main() {
-    var x = 1
-    if (x + 1) = 2 {
-        exit(1)
-    }
-    exit(2)
+# a type parameter of a method is not named like the type of the method, also
+# when no instance is made
+
+type point {x, y}
+
+func point.f<point type>() res int {
+    res = 1
 }
+
+func main() {}

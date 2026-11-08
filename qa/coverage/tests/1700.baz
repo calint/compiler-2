@@ -1,15 +1,19 @@
-# a result held in a register that the body passes to a 'mut' parameter of
-# a noinline function keeps the write: it is compiled through a temporary
+# the same through two instances of one generic function: 'f<W2,W1>' cannot
+# call back 'f<W1,W2>' that instantiates it
 
-func noinline bump(x mut) {
-    x = x + 10
-}
+type W1 {v}
 
-func f() res {
-    res = 1
-    bump(res)
+type W2 {v}
+
+func f<A type, B type>(d) res {
+    res = 5
+    if d == 0 {
+        return
+    }
+    var k = f<B, A>(d - 1)
 }
 
 func main() {
-    exit(f())
+    var z = f<W1, W2>(1)
+    exit(z)
 }

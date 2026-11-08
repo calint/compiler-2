@@ -1,16 +1,15 @@
-# indexed values participate in a shift expression
+# indexed value inside a function argument expression
 
 func assert(expr bool) { if not expr exit(1) }
 
-func fiz(x i32, shf i32) res i32 {
-    res = x + x << shf
+func fiz(x i32) res i32 {
+    res = x + (x + 1)
 }
 
 func main() {
     var arr = i32[4]
     var ix = 1
     arr[ix] = 2
-    arr[3] = 3
-    var c = fiz(arr[ix], arr[3])
-    assert(c == 18)
+    var c = fiz(1 + arr[ix])
+    assert(c == 7)
 }

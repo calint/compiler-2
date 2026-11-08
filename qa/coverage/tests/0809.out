@@ -1,4 +1,4 @@
 
-0809.baz:3:12: 'text' is not a generic type, a generic type is defined before the alias that names it
-type str = text<8>
-           ^~~~
+0809.baz:20:21: expected type 'name', got 'str'
+    var r = same(n, s)
+                    ^

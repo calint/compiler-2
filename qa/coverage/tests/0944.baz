@@ -1,19 +1,25 @@
-# the same for non-inlined functions, the aliasing is made inside the body of
-# the function that passes a parameter and a global
-# the call is rejected: the function uses the global the call passes it
+# aliasing: two run-time indexes in a path, the read is of the same field
+# of an element that both indexes can select
+# the call is rejected: the function reads the global the argument is part of
 
-dat g = i32[2]{ 1, 2 }
-
-func noinline inner(x mut i32, y i32) {
-    x = 10
-    x = x + y
+type item {
+    f i32,
 }
 
-func noinline outer(a mut i32) {
-    inner(a, g[0])
+type ent {
+    items item[2],
+}
+
+dat es = ent[3]
+
+func put(x mut i32) {
+    x = 100 - es[0].items[1].f
 }
 
 func main() {
-    outer(g[0])
-    exit(g[0])
+    var i = 0
+    var j = 1
+
+    put(es[i].items[j].f)
+    exit(es[0].items[1].f - 100)
 }

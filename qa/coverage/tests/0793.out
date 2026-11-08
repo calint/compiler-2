@@ -1,4 +1,4 @@
 
-0793.baz:8:6: type 'text' already defined as a generic type at 3:6
-type text = text<8>
-     ^~~~
+0793.baz:3:21: a trailing ',' is not allowed in generic parameters
+type pair<first type, > {
+                    ^

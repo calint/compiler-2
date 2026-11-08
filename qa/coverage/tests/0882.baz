@@ -1,7 +1,9 @@
-# the destination of array_copy is an array
+# a comparison is not made with the call of a function without a result
+
+func check(ok bool) {
+}
 
 func main() {
-    var a = i32[4]
-    var n = 2
-    array_copy(a, 2, n)
+    if 1 == check(true) {
+    }
 }

@@ -1,4 +1,0 @@
-
-0890.baz:3:6: 'true' is a keyword
-func true() {
-     ^~~~

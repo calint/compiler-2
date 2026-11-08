@@ -1,13 +1,7 @@
-# an operand of arithmetic that a call in a later operand writes is read
-# before the call, left to right, also the destination named again
-dat gx = 0
-
-func g() res {
-    gx = gx + 1
-    res = gx
-}
-
+# a 'let' of a typed value is a constant of its type, e.g. an array size
 func main() {
-    gx = gx + g()
-    exit(gx)
+    let k = i8(3)
+    let n = k + 2
+    var a = i8[n]
+    exit(array_length(a))
 }

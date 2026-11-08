@@ -1,4 +1,4 @@
 
-1348.baz:6:24: constant '-m' does not fit 'i32' (-2147483648 to 2147483647), 'i32(...)' wraps it
-    var a = i32[2]{1, -m}
-                       ^
+1348.baz:5:16: a comparison makes a condition, which is not an operand here, store it in a 'bool' first
+    x = 1 + (x < 1)
+               ^

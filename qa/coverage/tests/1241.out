@@ -1,4 +1,4 @@
 
-1241.baz:8:10: expected type 'i64', got 'bool', use 'i64(...)'
-    exit(nb())
-         ^~
+1241.baz:2:11: result 'x' is named like a parameter
+func f(x) x {
+          ^

@@ -1,10 +1,12 @@
-# a path may go on after whitespace and line ends around its '.'
-type item {x, y}
-type world {array item[2]}
+# a generic body sees only the generic functions defined before it
+func outer<T type>(x T) res T {
+    res = inner<T>(x)
+}
+
+func inner<T type>(x T) res T {
+    res = x
+}
+
 func main() {
-    var entities = world
-    entities.array[1].y = 3
-    var a = entities.
-        array  [1] .y
-    exit(a)
+    exit(outer<i32>(2))
 }

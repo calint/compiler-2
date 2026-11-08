@@ -1,4 +1,4 @@
 
-1242.baz:9:12: expected type 'i64', got 'bool', use 'i64(...)'
-    exit(a[nb()])
-           ^~
+1242.baz:2:11: parameter 'x' already defined at 2:8
+func f(x, x) {}
+          ^

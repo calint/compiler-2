@@ -1,0 +1,4 @@
+
+2243.baz:4:18: a '{...}' literal is not an operand here, store it in a variable first
+    var b = a == {1, 2}
+                 ^

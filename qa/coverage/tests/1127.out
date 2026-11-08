@@ -1,4 +1,4 @@
 
-1127.baz:5:9: 'else' is a keyword
-    var else = 5
-        ^~~~
+1127.baz:7:16: 'm' is not a constant
+    var a = i8[m]
+               ^

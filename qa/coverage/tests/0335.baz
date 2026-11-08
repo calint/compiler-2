@@ -1,9 +1,10 @@
-# valid four-byte element scaling
-
-func assert(expr bool) { if not expr exit(1) }
+# assign an empty string to a sized array variable
 
 func main() {
-    var values = i32[2]
-    values[1] = 1
-    assert(values[1] == 1)
+    var value = i8[8]{1, 2, 3, 4, 5, 6, 7, 8}
+    value = ""
+    if value[0] != 0 or value[7] != 0 exit(1)
+    var cleared = i8[8]
+    cleared = ""
+    if cleared[0] != 0 or cleared[7] != 0 exit(2)
 }

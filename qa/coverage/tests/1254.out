@@ -1,4 +1,4 @@
 
-1254.baz:9:11: expected argument 1 ('x')
-    b.put()
-          ^
+1254.baz:6:15: 'n' of type 'i32' is not a 'bool', compare it, e.g. 'n != 0'
+    } else if n {
+              ^

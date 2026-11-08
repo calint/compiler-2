@@ -1,9 +1,13 @@
-# a constant 'let' checks the operands after the one that decides the list
-# like a 'var'
+# a branch false at the parse reads no unset result
+
+func f() res {
+    var a = 0
+    if false {
+        a = res
+    }
+    res = 1
+}
 
 func main() {
-    var a = i8[4]
-    let k = true or a == 1
-    if not k exit(1)
-    exit(0)
+    exit(f())
 }

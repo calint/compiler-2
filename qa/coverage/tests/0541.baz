@@ -1,5 +1,5 @@
-# character literal without a character
+# an empty string cannot give a 'var' array its size
 
 func main() {
-    var c = ''
+    var empty = ""
 }

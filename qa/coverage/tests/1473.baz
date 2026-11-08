@@ -1,4 +1,6 @@
-# a string where a name is expected, the caret is on the string
-type list<T type> {x T}
-type a = ""
-func main() {}
+# '{}' is not an operand
+func main() {
+    var n = 5
+    n = 1 + {}
+    exit(n)
+}

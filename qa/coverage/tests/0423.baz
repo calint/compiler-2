@@ -1,4 +1,3 @@
-# a whole array is passed to a non-inline array parameter
+# read requires a descriptor and an array
 
-func noinline target(parameter[]) {}
-func main() { var items = [2]{} target(items) }
+func main() { read(0) }

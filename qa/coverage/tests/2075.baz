@@ -1,10 +1,10 @@
-# a whole array of instances in arithmetic is rejected as an array that must be
-# indexed, not as an instance
-type pt { x, y }
+# a constructor named as the argument a type argument is deduced from is
+# called: it needs its '('
 
-func main() {
-    var ps = pt[2]
-    var n = 0
-    n = ps + 1
-    exit(n)
-}
+type point { x i8, y i8 }
+
+func point.at(x i8, y i8) self { self = {x, y} }
+
+func show<T type>(v T) {}
+
+func main() { show(point.at) }

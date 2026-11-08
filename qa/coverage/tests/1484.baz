@@ -1,13 +1,6 @@
-# a read of the global in a later statement than the one that sets 'res'
-var g = 5
-
-func f() res {
-    res = 1
-    var x = g
-    res = res + x
-}
-
+# a local named like a type hides it, also before a value literal
+type point {x, y}
 func main() {
-    g = f()
-    exit(g)
+    var point = 1
+    var p = point{1, 2}
 }

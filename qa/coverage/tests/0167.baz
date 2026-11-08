@@ -1,3 +1,5 @@
-# invalid comparison operator is rejected
+# duplicate constant declarations are rejected
 
-func main() { var x = 1 if x ! 1 {} }
+let x = 1
+let x = 2
+func main() {}

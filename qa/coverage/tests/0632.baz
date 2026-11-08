@@ -1,8 +1,14 @@
-# data array initializer with a trailing comma, the element it leaves out is
-# zero
+# a parameter without 'mut' cannot be passed to a 'mut' non-inline parameter
 
-dat a = i16[2]{ 1, }
+func noinline set(a mut) {
+    a = 1
+}
+
+func f(a) {
+    set(a)
+}
 
 func main() {
-    exit(a[0] * 10 + a[1])
+    var x = 5
+    f(x)
 }

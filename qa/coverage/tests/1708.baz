@@ -1,21 +1,24 @@
-# 'arrays_equal' reads 'res.a[1]' to 'res.a[3]' while only 'res.a[1]' is
-# assigned
+# the arrays of 'arrays_equal' are computed before the count: the call in an
+# array argument reads 'n' before the call in the count writes it
+var n = 0
 
-type r {a i8[4]}
+func h() res {
+    res = n
+}
 
-func f() res r {
-    res.a[1] = 0
-    var b = i8[3]
-    var eq = arrays_equal(res.a[1], b, 3)
-    res.a[0] = 0
-    if eq {
-        res.a[0] = 1
-    }
-    res.a[2] = 0
-    res.a[3] = 0
+func f() res {
+    n = n + 1
+    res = 1
 }
 
 func main() {
-    var v = f()
-    exit(v.a[0])
+    var a = i8[4]
+    a[0] = 7
+    var b = i8[4]
+    b[0] = 7
+    b[1] = 8
+    if arrays_equal(a, b[h()], f()) {
+        exit(1)
+    }
+    exit(0)
 }

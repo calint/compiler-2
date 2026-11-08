@@ -1,4 +1,0 @@
-
-1595.baz:3:26: 'a' is not an array
-    var n = array_length('a')
-                         ^~~

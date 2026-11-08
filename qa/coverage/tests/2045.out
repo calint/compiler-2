@@ -1,4 +1,4 @@
 
-2045.baz:12:10: a call of 'point.get' is not an array, it cannot be indexed
-    if p.get()[0] == 1 exit(0)
-         ^~~
+2045.baz:3:9: a call runs only inside a function, not in the initializer of a global
+var g = nope()
+        ^~~~

@@ -1,9 +1,10 @@
-# grouped unary negation
+# unary negation with multiplication precedence
 
 func main(){
-    var a=-(1+2)
-    var b=-(-a+1)
-    if b==-4
+    var a=-1
+    var b=-2
+    var c=1+-a*-b+3*-a
+    if c==6
         exit(0)
     exit(1)
 }

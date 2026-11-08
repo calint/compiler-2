@@ -1,6 +1,6 @@
-# unary operations are forbidden on arrays_equal
+# fixed-size array assignment may use an empty initializer
 
 func main() {
     var a = i8[2]
-    var z = -arrays_equal(a,a,1)
+    a = {}
 }

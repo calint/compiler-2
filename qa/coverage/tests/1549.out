@@ -1,4 +1,4 @@
 
-1549.baz:3:22: a string is not an argument, it would refer to read-only data
-    var n = write(1, "abc")
-                     ^~~~~
+1549.baz:8:7: 'box<...>' is not a type, name an instance first, e.g. 'type my_box = box<...>'
+    w box<i8>,
+      ^~~

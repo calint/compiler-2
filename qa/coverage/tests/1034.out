@@ -1,4 +1,2 @@
 
-1034.baz:3:5: 'if' is a keyword
-let if = 1
-    ^~
+panic: bounds at 1034.baz:9

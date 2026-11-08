@@ -1,7 +1,14 @@
-# a built-in without '(' is rejected as a missing '(', e.g. 'exit' as an
-# operand
+# the body writes 'p.x' and reads 'q.x', which the same argument reaches
+
+type pt {x, y}
+
+func noinline f(p mut pt, q pt) {
+    p.x = 7
+    p.y = q.x
+}
 
 func main() {
-    var y = exit + 0
-    exit(y)
+    var a = pt{1, 2}
+    f(a, a)
+    exit(a.y)
 }

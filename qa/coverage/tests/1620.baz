@@ -1,6 +1,11 @@
-# parentheses around a single name group nothing
+# a side of a comparison that a call on the other side may write is
+# rejected
+func h(i mut) res {
+    i = i + 1
+    res = 0
+}
 func main() {
-    var x = 1
-    var y = (x)
-    exit(y)
+    var i = 0
+    if i == h(i) exit(1)
+    exit(2)
 }

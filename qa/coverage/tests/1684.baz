@@ -1,6 +1,16 @@
-# a surplus argument of 'array_length' is reported as its argument count
+# a result read before a later call writes it through a 'mut' parameter is
+# read before the call, like a variable
+
+func inc(x mut) res {
+    x = x + 10
+    res = 1
+}
+
+func f() res {
+    res = 1
+    res = res + inc(res)
+}
 
 func main() {
-    var a = i8[4]
-    exit(array_length(a, 1))
+    exit(f())
 }

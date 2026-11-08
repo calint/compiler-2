@@ -1,5 +1,4 @@
-# data array cannot exceed its declared size
+# function parameters require known types
 
-dat x = i8[1]{1,2}
-
+func f(x nope) {}
 func main() {}

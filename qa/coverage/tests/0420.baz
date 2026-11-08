@@ -1,5 +1,10 @@
-# a non-inline argument can be a computed expression, it is passed in a
-# temporary
+# write and read an indexed field in a 12-byte instance
 
-func noinline target(parameter) { exit(parameter) }
-func main() { var value = 1 target(value + 1) }
+type record { first i32, second i32, third i32 }
+
+func main() {
+    var records = record[3]{ { 1, 2, 3 }, { 4, 5, 6 }, { 7, 8, 9 } }
+    var index = i32(1)
+    records[index].second = 42
+    exit(records[index].second)
+}

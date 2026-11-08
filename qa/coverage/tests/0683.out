@@ -1,0 +1,4 @@
+
+0683.baz:8:13: 'noop' is a function, not a value, a call ends with '()'
+    var y = noop.x
+            ^~~~

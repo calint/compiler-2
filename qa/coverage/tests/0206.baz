@@ -1,6 +1,6 @@
-# scalar indexing is rejected
+# array_copy arguments require commas
 
 func main() {
-    var x = 1
-    var y = x[0]
+    var a = i8[2]
+    array_copy(a a,1)
 }

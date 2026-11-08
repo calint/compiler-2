@@ -1,4 +1,4 @@
 
-1529.baz:4:21: a unary operator makes a value, not an array
-    var n = read(0, -c)
-                    ^
+1529.baz:3:13: '1' is a constant, not a function
+    var x = 1 (2)
+            ^

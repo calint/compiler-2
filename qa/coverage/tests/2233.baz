@@ -1,3 +1,11 @@
-﻿# a byte order mark at the start of the source is rejected
-
-func main() {}
+# --checks=shift: a conversion to a narrower type of an argument without a
+# shift is computed in its destination, a shift inside an inner conversion
+# is checked against the width of that conversion
+func main() {
+    var a = i16(0x1234)
+    var c = i16(0x0101)
+    var n = i16(3)
+    var r = i8(a + c)
+    var s = i8(i16(a << n) - c)
+    exit(int(r) + int(s) + i8(a ^ c))
+}

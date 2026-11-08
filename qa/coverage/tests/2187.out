@@ -1,4 +1,7 @@
 
-2187.baz:7:9: the destination gives the type 'point', write '{...}'
-    p = point{1, 2
-        ^~~~~
+2187.baz:14:5: 'foo' declares 'e', which names the type 'i8'
+    foo self.v {
+    ^~~
+2187.baz:19:6: instantiated by
+type b4 = box<i8, 4>
+     ^~

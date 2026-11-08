@@ -1,9 +1,8 @@
-# a constructor without a body is reported at what follows its result, like a
-# function without a body
+# a ',' after the last field with no value is a missing '}', not a field too
+# many
 
-type point {x, y}
-
-func point.at(a) self
+type p {x, y}
 
 func main() {
+    var a = p{1, 2,,}
 }

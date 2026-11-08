@@ -1,4 +1,4 @@
 
-1580.baz:3:8: 'a' of type 'i64' is not a 'bool', compare it, e.g. 'a' != 0
-    if 'a' {
-       ^
+1580.baz:4:13: 'int' is a type, not a value
+    if v == int {
+            ^~~

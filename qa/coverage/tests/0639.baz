@@ -1,12 +1,6 @@
-# the element of 'foo' over an array parameter without 'mut' cannot be assigned
-
-func f(d i8[], n) {
-    foo d, n {
-        e = 1
-    }
-}
+# an element of a 'let' array cannot be assigned
 
 func main() {
-    var a = i8[2]{ 1, 2 }
-    f(a, 2)
+    let a = i8[]{1, 2}
+    a[0] = 3
 }

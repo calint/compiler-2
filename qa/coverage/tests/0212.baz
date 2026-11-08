@@ -1,6 +1,4 @@
-# array_copy arguments require commas
+# constant values require known identifiers
 
-func main() {
-    var a = i8[2]
-    array_copy(a a,1)
-}
+let x = nope
+func main() {}

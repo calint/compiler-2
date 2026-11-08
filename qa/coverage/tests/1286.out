@@ -1,4 +1,4 @@
 
-1286.baz:6:24: count -1 is negative
-    var n = read(0, a, -1, i)
-                       ^
+1286.baz:7:28: count 5 is past the end of array 'a' of size 4
+    array_copy(a[i], b[i], 5)
+                           ^

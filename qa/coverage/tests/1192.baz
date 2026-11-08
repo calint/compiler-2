@@ -1,14 +1,8 @@
-# a constant that hides a global does not share storage with the global that
-# the argument names
-
-var g = 1
-
-func f(x mut) {
-    let g = 3
-    x = g + 1
-}
+# a 'bool' is not assigned to a variable initialized with a conversion
 
 func main() {
-    f(g)
-    exit(g)
+    var b = true
+    var r = i32(0)
+    r = b
+    exit(r)
 }

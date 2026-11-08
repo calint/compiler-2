@@ -1,5 +1,5 @@
-# the prefixes '0X' and '0B' are upper case, also in the value of an option,
-# see 'cases.sh'
+# a non-ASCII character after a backslash is quoted whole
+
 func main() {
-    exit(0X1f - 0B11)
+    var s = "a\éb"
 }

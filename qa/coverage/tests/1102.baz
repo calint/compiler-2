@@ -1,7 +1,7 @@
-# the zero value assigned to a 'bool' is '{}', not the type name
+# a constant 'array_copy' count past the end of the array is rejected
 
 func main() {
-    var f = true
-    f = bool
-    exit(0)
+    var a = i8[4]
+    var b = i8[4]
+    array_copy(a, b, 5)
 }

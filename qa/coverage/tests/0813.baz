@@ -1,13 +1,10 @@
-# a method of a generic type is defined once, the instance reports it
+# '{}' as an argument is a temporary, a zeroed instance
 
-type text<capacity> {
-    array i8[capacity],
-    len,
+type p {x, y}
+
+func sum(q p) res { res = q.x + q.y }
+
+func main() {
+    var s = sum({})
+    exit(s + 1)
 }
-
-func text.size() res { res = capacity }
-func text.size() res { res = capacity }
-
-type str = text<8>
-
-func main() {}

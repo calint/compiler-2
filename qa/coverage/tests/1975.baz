@@ -1,15 +1,9 @@
-# a typed constant tells the type of a generic parameter like a variable of
-# its type: 'same(k, k)' is 'same<i8>' for 'let k = i8(3)' as for 'var'
+# a string for a parameter without a type of a generic function is not a number
 
-func same<T type>(a T, b T) res T {
-    res = a + b
+func f<T type>(a, x T) res T {
+    res = x
 }
 
 func main() {
-    let k = i8(3)
-    var r = same(k, k)
-    let w = i16(300)
-    var s = same(w, w)
-    if s != 600 exit(1)
-    exit(r)
+    var n = f("a")
 }

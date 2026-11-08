@@ -1,12 +1,27 @@
-# an inline result may share storage with an argument
+# comments inside initializers, type definitions and parameter lists
 
-func add_one(a) res {
-    res = 1
-    res = res + a
+type point {
+    x, # horizontal
+    y  # vertical
+}
+
+dat primes = []{
+    2, # first
+    3,
+    5  # last
+}
+
+func sum(p point, # the point
+         k) res { # scale
+    res = (p.x + p.y) * k
 }
 
 func main() {
-    var x = 5
-    x = add_one(x)
-    exit(x)
+    var ps = point[2]{
+        {1, 2}, # first point
+        {3, 4}  # second point
+    }
+    var s = sum(ps[1], primes[0])
+    if s != 14 exit(1)
+    exit(0)
 }

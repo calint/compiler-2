@@ -1,2 +1,4 @@
 
-panic: bounds at 0765.baz:4
+0765.baz:8:12: generic type 'text' takes 1 argument, got 2
+type str = text<4, 5>
+           ^~~~

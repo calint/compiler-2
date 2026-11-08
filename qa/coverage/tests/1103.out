@@ -1,4 +1,4 @@
 
-1103.baz:5:9: the destination gives the type 'i8[2]', write '{}'
-    a = i8[2]
-        ^~
+1103.baz:6:25: count 3 from index 2 is past the end of array 'b' of size 4
+    array_copy(a, b[2], 3)
+                        ^

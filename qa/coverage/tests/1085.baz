@@ -1,9 +1,9 @@
-# a unary operator on the 'bool' result of a call is rejected
+# a record literal assigned names no type, the destination gives it
 
-func is_on() res bool {
-    res = true
-}
+type point { x, y }
 
 func main() {
-    var b = -is_on()
+    var p = point{1, 2}
+    p = point{2, 1}
+    exit(p.x)
 }

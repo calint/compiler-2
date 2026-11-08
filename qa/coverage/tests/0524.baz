@@ -1,12 +1,9 @@
-# a non-inline result may share storage with an argument
+# a '#' inside a string is not a comment and a comment needs no space
 
-func noinline add_one(a) res {
-    res = 1
-    res = res + a
-}
+dat msg = "a # b\n"
 
 func main() {
-    var x = 5
-    x = add_one(x)
-    exit(x)
+    var n = 1#comment directly after a token
+    write(1, msg)
+    exit(n - 1)
 }

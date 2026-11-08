@@ -1,9 +1,4 @@
-# a type is not an operand, also after an operator
-type point {
-    x,
-    y,
-}
-
+# an array size that names a type says so
 func main() {
-    var n = 1 + point
+    var a = i8[int]
 }

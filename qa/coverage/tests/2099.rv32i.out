@@ -1,0 +1,4 @@
+
+2099.baz:5:9: expected type 'i8', got 'i32[]'
+    x = [2]{1, 2}
+        ^

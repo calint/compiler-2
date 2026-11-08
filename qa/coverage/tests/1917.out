@@ -1,4 +1,4 @@
 
-1917.baz:7:16: an array of 'i8' is not a number
-    var t = st{"ab" + 1}
-               ^~~~
+1917.baz:4:11: 'exit' takes 1 argument
+    exit(0, zz)
+          ^

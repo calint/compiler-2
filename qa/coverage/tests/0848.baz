@@ -1,14 +1,25 @@
-# a type parameter is deduced from a later argument, nested calls are skipped
-func twice(n) res {
-    res = n * 2
+# instance arguments that are not variables: a literal, a constructor call and
+# a call result, to an inlined and a non-inline function
+type point { x, y }
+
+func point.at(a, b) self {
+    self.x = a
+    self.y = b
 }
 
-func second<T type>(n, v T) res T {
-    res = v
-}
+func mk(a, b) res point { res = { a, b } }
+
+func sum(p point) res { res = p.x + p.y }
+
+func noinline nsum(p point) res { res = p.x + p.y }
 
 func main() {
-    var a = 5
-    var b = second(twice(twice(1)), a)
-    exit(b - 5)
+    var k = 0
+    k = k + sum({ 1, 2 })
+    k = k + sum(point.at(5, 6))
+    k = k + sum(mk(7, 8))
+    k = k + nsum({ 1, 2 })
+    k = k + nsum(point.at(5, 6))
+    k = k + nsum(mk(7, 8))
+    exit(k)
 }

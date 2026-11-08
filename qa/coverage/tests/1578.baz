@@ -1,5 +1,6 @@
-# a statement does not start with 'true' or 'false'
+# a character literal in a message brings its own quotes, also as an argument
+func f(s i8[]) {}
+
 func main() {
-    var b = false
-    true = b
+    f('a')
 }

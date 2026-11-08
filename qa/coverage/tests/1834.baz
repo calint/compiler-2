@@ -1,8 +1,7 @@
-# an array literal is not an argument of an array parameter
-
-func f(s i8[]) {
-}
+# a value called as a function is reported as a value, not as a missing
+# function
 
 func main() {
-    f({1, 2, 3})
+    var x = 1
+    x(1)
 }

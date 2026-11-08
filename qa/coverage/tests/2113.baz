@@ -1,16 +1,5 @@
-# a 'break' in a branch that never runs does not narrow what the breaks of
-# its loop set: 'res' is set at the only 'break' that runs
-
-func f() res i32 {
-    loop {
-        if false {
-            break
-        }
-        res = 3
-        break
-    }
-}
-
+# the prefixes '0X' and '0B' are upper case, also in the value of an option,
+# see 'cases.sh'
 func main() {
-    exit(f())
+    exit(0X1f - 0B11)
 }

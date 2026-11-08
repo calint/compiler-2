@@ -1,30 +1,11 @@
-# structured address scales include non-powers of two and values above 255
-type triple { bytes i8[3] }
-type wide { bytes i8[300] }
-type page { bytes i8[256] }
-func assert(ok bool) { if not ok exit(1) }
-func update(values mut wide[], index) { values[index].bytes[299] = 42 }
-func noinline read_wide(value wide) result i8 { result = value.bytes[299] }
+# the result is read inside a loop before it is set
+func pick(i) res {
+    loop {
+        var y = res
+        break
+    }
+    res = 2
+}
 func main() {
-    var triples = triple[3]
-    var pages = page[3]
-    var values = wide[10]
-    var index = 1
-    triples[index].bytes[2] = 7
-    triples[2] = triples[index]
-    assert(triples[2].bytes[2] == 7)
-    pages[index].bytes[255] = 9
-    pages[2] = pages[index]
-    assert(pages[2].bytes[255] == 9)
-    update(values, index)
-    var result = read_wide(values[index])
-    assert(result == 42)
-    values[2] = values[index]
-    assert(values[2].bytes[299] == 42)
-    array_copy(values[index], values[3], 1)
-    assert(arrays_equal(values[index], values[3], 1))
-    index = 9
-    update(values, index)
-    result = read_wide(values[index])
-    assert(result == 42)
+    var y = pick(3)
 }

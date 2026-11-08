@@ -1,0 +1,4 @@
+
+0891.baz:4:15: an instance of 'point' is not a number
+    var t=i32(s)
+              ^

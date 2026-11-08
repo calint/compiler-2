@@ -1,12 +1,8 @@
-# a constructor name after '.' that is not a valid name is reported as where a
-# constructor is defined
-
-type point {x, y}
-
-func point.at(x) res point {
-    res = {x, 0}
-}
+# parentheses where an array goes make a value, as for the array of a
+# built-in, e.g. 'array_length((a))'
 
 func main() {
-    var p = point.1(2)
+    var a = i8[2]
+    var b = i8[2]
+    b = (a)
 }

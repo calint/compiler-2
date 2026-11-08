@@ -1,14 +1,8 @@
-# a name followed by '(' calls the function, no value is called, so a
-# constant or a variable of that name does not hide it
-
-func f(x) res { res = x }
+# a 'bool' is not assigned to an element of an integer array
 
 func main() {
-    let f = 1
-    var b = f(2) + f
-    if b == 3 {
-        var f = 3
-        b = b + f(4) + f
-    }
-    exit(b)
+    var b = true
+    var a = i32[4]
+    a[1] = b
+    exit(a[1])
 }

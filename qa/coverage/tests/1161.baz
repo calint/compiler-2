@@ -1,7 +1,10 @@
-# a 'dat' shifted by a constant count past the width is rejected like a 'var'
+# 'arrays_equal' assigned to an instance is rejected for its type
 
-dat a = 1 << 64
+type point {x, y}
 
 func main() {
-    exit(0)
+    var a = i8[2]
+    var p = point
+    p = arrays_equal(a, a, 2)
+    exit(p.x)
 }

@@ -1,23 +1,20 @@
-# an instance literal assigns every element of an array-of-instances field
-func assert(ok bool, code) { if not ok exit(code) }
-type point { x, y }
-type box { corners point[2], tag }
+# inline call labels are unique for any function name
+
+func assert(err, expr bool) { if not expr exit(err) }
+
+func cmp() res { res = 1 }
+
+func f() res { res = 2 }
+
+func f_10_11() res {
+    res = f() + 1
+}
+
 func main() {
-    var b = box{ { {1, 2}, {3, 4} }, 5 }
-    assert(b.corners[0].y == 2, 1)
-    assert(b.corners[1].x == 3, 2)
-    assert(b.corners[1].y == 4, 3)
-    assert(b.tag == 5, 4)
-    var bs = box[2]
-    var i = 1
-    bs[i] = { { {6, 7} }, 8 }
-    assert(bs[1].corners[0].y == 7, 5)
-    assert(bs[1].corners[1].x == 0, 6)
-    assert(bs[1].tag == 8, 7)
-    var e = box{ {}, 9 }
-    assert(e.corners[1].y == 0, 8)
-    assert(e.tag == 9, 9)
-    var c = box{ b.corners, 10 }
-    assert(c.corners[1].y == 4, 10)
-    assert(c.tag == 10, 11)
+    if cmp() == 1 {
+        var r = f_10_11()
+        assert(2, r == 3)
+        exit(0)
+    }
+    exit(1)
 }

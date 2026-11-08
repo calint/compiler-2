@@ -1,10 +1,7 @@
-# 'arrays_equal' assigned to an instance is rejected for its type
-
-type point {x, y}
+# a constant named like a variable of the same block is rejected
 
 func main() {
-    var a = i8[2]
-    var p = point
-    p = arrays_equal(a, a, 2)
-    exit(p.x)
+    var d = 5
+    let d = 7
+    exit(d)
 }

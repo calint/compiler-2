@@ -1,5 +1,7 @@
-# a zero value reached into is a constant without fields, assigned
+# the values of an instance literal do not name their fields
+
+type point {x, y}
+
 func main() {
-    var a = 0
-    a = {}.x
+    var p = point{x: 1, y: 2}
 }

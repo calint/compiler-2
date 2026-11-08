@@ -1,6 +1,13 @@
-# parentheses around a parenthesized list group nothing
+# an operand of arithmetic that a call in a later operand writes is read
+# before the call, left to right, also the destination named again
+dat gx = 0
+
+func g() res {
+    gx = gx + 1
+    res = gx
+}
+
 func main() {
-    var x = 1
-    var y = 2 * ((x + 1))
-    exit(y)
+    gx = gx + g()
+    exit(gx)
 }

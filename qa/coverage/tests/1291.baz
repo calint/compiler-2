@@ -1,13 +1,5 @@
-# a unary operator on a parameter of a noinline function passes its value to an
-# inlined call
-func f(x) res {
-    res = x
-}
-
-func noinline g(y) res {
-    res = f(-y)
-}
-
+# a 'let' that reads its own name is rejected as uninitialized, like a 'var'
 func main() {
-    exit(g(-4))
+    let k = 1 + k
+    exit(k)
 }

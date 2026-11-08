@@ -1,4 +1,2 @@
 
-0503.baz:4:17: constant '200' does not fit 'i8' (-128 to 127), 'i8(...)' wraps it
-func main() { f(200) }
-                ^~~
+panic: bounds at 0503.baz:6

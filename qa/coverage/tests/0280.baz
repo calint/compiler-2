@@ -1,8 +1,14 @@
-# unknown field access is rejected
+# incompatible user types cannot be passed
 
-type point { x }
+type left { value }
+type right { value }
+
+func make() result right {
+    result.value = 1
+}
+
+func take(value left) {}
 
 func main() {
-    var p = point
-    p.y = 1
+    take(make())
 }

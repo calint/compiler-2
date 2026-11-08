@@ -1,5 +1,7 @@
-# a string followed by an operator that starts a declaration is an operand,
-# as in an assignment
+# a generic parameter of a function without the kind 'type' is first
+# reported for a name no parameter can have, not with a hint to add 'type'
+
+func f<i8>() {
+}
 func main() {
-    var x = "ab" + 1
 }

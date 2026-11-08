@@ -1,13 +1,17 @@
-# unary negation of data and variables
+# bytes read from input into a data array and printed minus the newline
 
-dat len=2
+dat name="............................................................"
+
+func print(str i8[], len) {
+    write(1, str, len)
+}
+
+func input(str mut i8[], len) nbytes_read {
+    nbytes_read = read(0, str, len)
+}
 
 func main(){
-    var a=-1
-    a=-a
-    var b=-len
-    b=-b
-    if a==1 and b==2
-        exit(0)
-    exit(1)
+    var len=input(name,array_length(name))-1 # remove the \n
+    print(name,len)
+    exit(0)
 }

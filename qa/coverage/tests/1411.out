@@ -1,4 +1,4 @@
 
-1411.baz:9:13: expected type 'i16' for parameter 'b', got 'i8'
-    res = g(a)
-            ^
+1411.baz:7:9: expected a constant array size greater than 0
+        0]
+        ^

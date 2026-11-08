@@ -1,13 +1,9 @@
-# a condition that is false at the parse reads no unset result in the elements
-# after the one that decides it
+# a type wider than the target is reported at the conversion, also where
+# the argument deduces a type
 
-func f() res {
-    if false and res == 1 {
-        exit(3)
-    }
-    res = 2
+func f<T type>(x T) {
 }
 
 func main() {
-    exit(f())
+    f(i64(1))
 }

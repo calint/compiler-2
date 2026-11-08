@@ -1,7 +1,7 @@
-# a constant start of 'write' far past the end of the buffer is rejected, the
-# start and the count are not added
+# an array size reads its unary operators like an expression, whitespace
+# after them included, and a negative size is rejected
+
+type t { a i8[- 4] }
 
 func main() {
-    var a = i8[4]
-    write(1, a, 1, 9223372036854775807)
 }

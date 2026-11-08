@@ -1,17 +1,28 @@
-# complement and negation composition
-
-dat len=-2
-
-func foozi(x) res{
-    res=-x
-}
+# bitwise operators and their precedence
 
 func main(){
-    var a=-1
-    var b=~-foozi(-a)
-    var c=~-len
-    if ~-0b1 != 0 exit(2)
-    if a==-1 and b==~1 and c==~2
-        exit(0)
-    exit(1)
+    var a=2
+    var b=~2
+    var c=a&b
+    if not c==0 exit(1)
+
+    var d=a|b
+    if not d==-1 exit(2)
+    
+    var e=a
+    var f=a^e
+    if not f==0 exit(3)
+    
+    var g=1+(2*a&2+1)
+    if not g==6 exit(4)
+
+    var h=1
+    var i=1
+    var j=~h|i
+    if not j==-1 exit(5)
+
+    var k=1+2*(h&1)
+    if not k==3 exit(6)
+
+    exit(0)
 }

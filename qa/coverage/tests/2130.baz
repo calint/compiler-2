@@ -1,16 +1,7 @@
-# the branches after one that always runs hold the compile rules too, e.g. a
-# noinline call there checks the body with the lengths of its array arguments
-func noinline f(s i8[]) res {
-    res = s[5]
+# the end of the file where the ')' of the arguments is expected
+func f(x) res {
+    res = x
 }
 
 func main() {
-    var a = i8[4]
-    var r = 0
-    if 1 == 1 {
-        r = 1
-    } else if r == 2 {
-        r = f(a)
-    }
-    exit(r)
-}
+    exit(f(1

@@ -1,4 +1,4 @@
 
-1476.baz:10:8: 'mk()' is not an operand here, store it in a variable first
-    if mk() != p {
-       ^
+1476.baz:4:13: character literal 'ab' must contain one byte, e.g. 'a' or '\xe9'
+    var c = 'ab'
+            ^~~~

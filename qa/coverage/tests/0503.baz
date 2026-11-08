@@ -1,4 +1,7 @@
-# constant argument must fit the parameter type
+# the start element plus the count must stay within the array
 
-func f(p i8) { exit(p) }
-func main() { f(200) }
+func main() {
+    var buf = i8[4]
+    var s = 3
+    var r = read(0, buf, 2, s)
+}

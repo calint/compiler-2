@@ -1,4 +1,7 @@
 
-1055.baz:5:13: function 'sector_read' has no result
-    var n = sector_read(0, bytes)
-            ^~~~~~~~~~~
+1055.baz:9:28: generic parameter 'T' of 'list' needs a type, got the constant 'capacity'
+type text<capacity> = list<capacity, capacity>
+                           ^~~~~~~~
+1055.baz:11:6: instantiated by
+type str = text<8>
+     ^~~

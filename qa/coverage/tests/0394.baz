@@ -1,22 +1,35 @@
-# == compares indexed default-type values (true and false paths)
+# lea regression: user-type return assigned to indexed dst from indexed src
 
 func assert(err, expr bool) { if not expr exit(err) }
 
+type pair {
+    x,
+    y
+}
+
+func mk_from(src pair, delta) out pair {
+    out = {src.x + delta, src.y + delta}
+}
+
+func put(dst mut pair, src pair, j mut) {
+    j = j + 1
+    dst = mk_from(src, j)
+}
+
 func main() {
-    var a = [2]
-    var b = [2]
+    var srcs = pair[3]
+    var dsts = pair[3]
 
-    a[0] = 5
-    b[0] = 5
-    a[1] = 9
-    b[1] = 10
+    srcs[0] = {1, 2}
+    srcs[1] = {30, 40}
+    srcs[2] = {5, 6}
 
-    assert(1, a[0] == b[0])
-    assert(2, a[1] != b[1])
+    var j = 1
+    put(dsts[j], srcs[j], j)
 
-    var z = a[1] == b[1]
-    assert(3, not z)
-
-    var y = a[0] == b[0]
-    assert(4, y)
+    assert(1, j == 2)
+    assert(2, dsts[1].x == 32)
+    assert(3, dsts[1].y == 42)
+    assert(4, srcs[1].x == 30)
+    assert(5, srcs[1].y == 40)
 }

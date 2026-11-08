@@ -1,4 +1,4 @@
 
-1793.baz:5:9: unexpected ')'
-    x i8)
-        ^
+1793.baz:6:21: array 'a' must be indexed
+    let k = true or a == 1
+                    ^

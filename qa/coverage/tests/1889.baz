@@ -1,7 +1,5 @@
-# a '<' right after a parameter name ends the parameter, it has no type
+# a parameter list without its ')' is reported at the next keyword
 
-func f(x<T>) {
-}
+func f(a
 
-func main() {
-}
+func main() {}

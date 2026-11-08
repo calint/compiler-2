@@ -1,18 +1,12 @@
-# the type argument of a method is deduced from a variable, not from an
-# expression
+# a generic type is not a type until an alias names an instance
 
 type text<capacity> {
     array i8[capacity],
     len,
 }
 
-type str = text<8>
-
-func mut text.append<T type>(s T) {
-    self.len = self.len + s.len
+func show(t text) {
 }
 
 func main() {
-    var s = str
-    s.append(1)
 }

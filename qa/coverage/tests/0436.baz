@@ -1,36 +1,27 @@
-# name-first return declarations with default, explicit and aggregate types
+# colonless declarations retain default types, arrays and adjacent statements
 
-type pair { first, second }
+type point { x, y i32, values[2] }
+dat text = ": stays in strings"
+dat data = [2]{ 3, 4 }
 func assert(ok bool) { if not ok exit(1) }
-func twice(value) result { result = value * 2 }
-func narrow(value i32) result i32 { result = value + 1 }
-func make_pair(value) result pair { result = { value, value + 1 } }
-func commented(value) result { # default type
-    result = value + 3
-}
-func noinline fact(value) result {
-    result = 1
-    if value <= 1 return
-    var next = value - 1
-    var partial = 0
-    partial = fact(next)
-    result = value * partial
-}
-
+func noinline twice(value i32) result i32 { result = value * 2 }
+func sum(values[]) result { result = values[0] + values[1] }
+func identity(value) result { result = value }
+func fooz(pt mut point) { pt.y = 9 }
 func main() {
-    assert(twice(7) == 14)
-    assert(commented(4) == 7)
-    var small = i32(9)
-    # note: temporary because the result may share storage with the argument
-    var tmp1 = narrow(small)
-    small = tmp1
-    assert(small == 10)
-    var record = make_pair(12)
-    assert(record.first == 12)
-    assert(record.second == 13)
-    var value = 5
-    var result = 0
-    result = fact(value)
-    assert(result == 120)
-    assert(value == 5)
+    var pt = point{ 1, 2, { 3, 4 } }
+    fooz(pt)
+    assert(pt.y == 9)
+    var value = i32(5)
+    var doubled = twice(value)
+    assert(doubled == 10)
+    var numbers = []{ 6, 7 }
+    assert(sum(numbers) == 13)
+    assert(sum(data) == 7)
+    var plain = identity(8)
+    assert(plain == 8)
+    var next = 0
+    next = 3
+    assert(next == 3)
+    assert(text[0] == 58)
 }

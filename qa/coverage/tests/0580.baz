@@ -1,7 +1,185 @@
-# a field of an array is reached through an indexed element
+# constant elements of an arithmetic list fold at compile at the width of the
+# destination and give the same values as the run-time computation
+#
+# 'listing.py folds' checks the instructions of lines marked '# folds'
 
-type point { x i32, y i32 }
+let c = 4
+
+func assert(err, expr bool) { if not expr exit(err) }
+
+func add_three(n) res {
+    res = n + 1 + 2 # folds
+}
+
 func main() {
-    var ps = point[2]
-    ps.x = 1
+    var one = 1
+    var b = 3 + 0 + 2 # folds
+    assert(1, b == 5)
+
+    # constants merged at the end of the list
+    var d = b + 3 + c * 2 # folds
+    assert(2, d == 16)
+    d = 3 + b - 2 # folds
+    assert(3, d == 6)
+    d = b - 3 # folds
+    assert(4, d == 2)
+
+    # a subtracted first run-time element takes the constant first
+    d = 1 - b + 2 # folds
+    assert(5, d == -2)
+    d = 2 - b - 2 # folds
+    assert(6, d == -5)
+    d = 2 - b + one - 2 # folds
+    assert(38, d == -4)
+
+    # a negated first run-time element is subtracted from the constant
+    d = -b + 23 # folds
+    assert(36, d == 18)
+    d = -b + 2 - 2 # folds
+    assert(37, d == -5)
+
+    # the destination read by a later element
+    d = 3 + d # folds
+    assert(7, d == -2)
+
+    # products and bitwise lists
+    d = 2 * b * 3 # folds
+    assert(8, d == 30)
+    d = b & 7 & 13 # folds
+    assert(9, d == 5)
+    d = b | 8 | 16 # folds
+    assert(10, d == 29)
+    d = b ^ 1 ^ 1 # folds
+    assert(11, d == 5)
+    d = b * 4 / 2 # folds
+    assert(12, d == 10)
+
+    # a lower precedence operation continues the list and starts a new run
+    d = b & 1 | 2 | 4 # folds
+    assert(56, d == 7)
+    d = b ^ 2 + 1 # folds
+    assert(57, d == 8)
+    d = b * 2 - 3 + one + 4 # folds
+    assert(58, d == 12)
+
+    # constants merge within a run of '*' and over consecutive divisors
+    d = 2 * b * 3 / one # folds
+    assert(39, d == 30)
+    d = b * 60 / 2 / 3 # folds
+    assert(40, d == 50)
+    d = 2 * 3 / b # folds
+    assert(41, d == 1)
+    d = b * -13 / 2 / 3 % 4 # folds
+    assert(42, d == -2)
+    d = b * -1 * -1 / one # folds
+    assert(43, d == 5)
+    d = b / 1 / 1 # folds
+    assert(44, d == 5)
+
+    # a divisor of -1 or a run-time divisor keeps the divisions apart
+    d = b * 9 / -1 / 3 # folds
+    assert(45, d == -15)
+    d = b * 40 / 2 / one / 4 # folds
+    assert(46, d == 25)
+
+    # constant sub-expressions as operands
+    d = b / (1 + 1) # folds
+    assert(13, d == 2)
+    d = b << (1 + 1) # folds
+    assert(14, d == 20)
+    d = b >> (3 - 1) # folds
+    assert(15, d == 1)
+    d = b % (2 * 2) # folds
+    assert(16, d == 1)
+
+    # unary ops on constant lists
+    d = -(2 + 3) # folds
+    assert(17, d == -5)
+    d = ~(1 + 1) # folds
+    assert(18, d == -3)
+    d = 1 << 3 # folds
+    assert(19, d == 8)
+    d = -16 >> 2 # folds
+    assert(29, d == -4)
+
+    # narrow destinations wrap after each operation
+    var h = i8(100)
+    var e = i8(0)
+    e = (100 + 100) / 2 # folds
+    var e_run = i8(0)
+    e_run = (h + 100) / 2
+    assert(20, e == e_run)
+    assert(21, e == -28)
+    var w = i8(0)
+    w = 100 + 100 # folds
+    assert(22, w == -56)
+    var m = i16(0)
+    m = 300 * 300 # folds
+    var m_factor = i16(300)
+    var m_run = i16(0)
+    m_run = m_factor * 300
+    assert(23, m == m_run)
+    var s8 = i8(0)
+    s8 = 1 << 7 # folds
+    assert(24, s8 == -128)
+    var r8 = i8(0)
+    r8 = (1 << 7) >> 7 # folds
+    assert(30, r8 == -1)
+
+    # divisors merge only while their product fits the width
+    var q8 = i8(100)
+    var q8_apart = i8(0)
+    q8_apart = q8 / 16 / 16 # folds
+    assert(47, q8_apart == 0)
+    var q8_merged = i8(0)
+    q8_merged = q8 / 4 / 8 # folds
+    assert(48, q8_merged == 3)
+    var q8_min = i8(1 << 7)
+    var q8_min_merged = i8(0)
+    q8_min_merged = q8_min / -2 / 64 # folds
+    assert(49, q8_min_merged == 1)
+
+    # inline arguments that are constants fold in the body
+    assert(25, add_three(4) == 7)
+    assert(26, add_three(one) == 4)
+
+    # comparisons with constant lists
+    if 1 + 1 > b { # folds
+        exit(27)
+    }
+    assert(28, 2 * 3 == b + one)
+
+    # a constant left side becomes the immediate of the mirrored comparison
+    if 3 + 3 <= b { # folds
+        exit(50)
+    }
+    if c >= b {
+        exit(51)
+    }
+    if 2 + 3 != b { # folds
+        exit(52)
+    }
+    assert(53, 1 + 4 == b)
+    assert(54, 10 > b and -1 < b)
+    if 25 * 2 > h { # folds
+        exit(55)
+    }
+
+    # comparisons of constant lists evaluate at compile
+    if b < 2 + 2 { # folds
+        exit(31)
+    }
+    if h < 50 + 50 { # folds
+        exit(32)
+    }
+    if 1 + 1 != 2 { # folds
+        exit(33)
+    }
+    if not (2 * 3 == 6 and 1 << 2 == 4) { # folds
+        exit(34)
+    }
+    var f = 1 + 2 == 3
+    assert(35, f)
+
+    exit(0)
 }

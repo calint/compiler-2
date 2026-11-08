@@ -1,4 +1,4 @@
 
-1548.baz:8:15: function 'nope' not found
-    exit(show(nope(1)))
-              ^~~~
+1548.baz:3:6: methods on built-in type 'i8' are not supported
+func i8
+     ^~

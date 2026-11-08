@@ -1,6 +1,8 @@
-# a built-in type is a type, not a value, also before a '{'
+# a type parameter is not named like a parameter, also when bound to a built-in
+func f<x type>(x x) res x {
+    res = x
+}
+
 func main() {
-    var v = 1
-    if v == int {
-    }
+    exit(f<i8>(1))
 }

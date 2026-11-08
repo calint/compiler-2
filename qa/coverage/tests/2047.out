@@ -1,4 +1,10 @@
 
-2047.baz:10:9: 'id' is a function, not a value, a call ends with '()'
-    x = id
-        ^~
+2047.baz:10:13: index 2 is out of bounds for array 'a' of size 2
+    res = a[3 - n] + g(n - 1)
+            ^
+2047.baz:10:22: called from 'g(n - 1)'
+    res = a[3 - n] + g(n - 1)
+                     ^
+2047.baz:14:15: called from 'g(2)'
+    res = x + g(2)
+              ^

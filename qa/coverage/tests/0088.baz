@@ -1,4 +1,4 @@
-# reads lines into nested struct fields in an array and prints them
+# reads lines into nested struct arrays and prints them by stored size
 
 func assert(expr bool) {
     if not expr exit(1)
@@ -12,29 +12,50 @@ func input(str mut i8[], len) nbytes {
     nbytes = read(0, str, len)
 }
 
-type string {
-    len,
-    data i8[64]
+type str_s {
+    size i8,
+    data i8[31]
+}
+
+type str_m {
+    size i8,
+    data i8[63]
+}
+
+type str_l {
+    size i8,
+    data i8[127]
+}
+
+type link {
+    name str_s,
+    to i32
 }
 
 type location {
-    name string
+    name str_s,
+    links link[8]
 }
 
 func main() {
-    var locations = location[4]
-
+    var locations = location[8]
     var i = 0
     loop {
-      locations[i].name.len = input(locations[i].name.data, array_length(locations[0].name.data))
-      i = i + 1
-      if i == 4 break
+        var len = 
+            input(
+                locations[i].name.data,
+                array_length(locations[0].name.data)
+            )
+        locations[i].name.size = i8(len)
+        i = i + 1
+        if len <= 1 or i == array_length(locations) break
     }
-
-    i = 0
+   
+    var j = 0
     loop {
-      print(locations[i].name.data, locations[i].name.len)
-      i = i + 1
-      if i == 4 break
+        if j == i break
+        var size = int(locations[j].name.size)
+        print(locations[j].name.data, size)
+        j = j + 1
     }
 }

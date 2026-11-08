@@ -1,6 +1,10 @@
-# a compared string that starts a declaration is an operand, as in an
-# assignment, not the initializer of an array followed by a comparison
+# a result of a method of a generic type named like a type parameter of the
+# type is rejected at the definition
+
+type box<T type> {x T}
+func box.f() T {
+    T = 1
+}
+type b = box<i8>
 func main() {
-    var a = i8[2]{1, 2}
-    var b = "ab" == a
 }

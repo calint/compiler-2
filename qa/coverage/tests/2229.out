@@ -1,4 +1,2 @@
 
-2229.baz:5:10: unsupported escape '\é'
-    c = '\é'
-         ^~
+panic: overflow

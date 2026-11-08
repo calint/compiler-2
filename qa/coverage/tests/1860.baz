@@ -1,15 +1,15 @@
-# an operator after a copied instance: an instance is not a number
+# a result destination that shares storage with a global the constructor uses
+# is reported at the constructor name
 
-type left {value}
+type point {x, y}
 
-func mk() res left {
-    res = {}
+var g = point{1, 2}
+
+func point.at(x, y) self {
+    self.x = g.x + x
+    self.y = y
 }
 
 func main() {
-    var ll = left
-    var l = left
-    var a = i8[2]
-    var b = i8[2]
-    l = ll + 1
+    g = point.at(1, 2)
 }

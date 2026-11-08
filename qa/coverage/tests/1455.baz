@@ -1,13 +1,5 @@
-# a path that ends at a method is not an array
-type point { x, y }
-
-func point.m() res {
-    res = self.x
-}
-
+# a string where a name is expected, the caret is on the string
+type point {x}
 func main() {
-    var a = point[4]
-    foo a.m {
-        exit(1)
-    }
+    var p = point.""(1)
 }

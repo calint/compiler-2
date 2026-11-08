@@ -1,5 +1,4 @@
-# a statement does not start with a character literal
+# a character literal in a message brings its own quotes
 func main() {
-    var x = 1
-    'a' = x
+    var n = array_length('a')
 }

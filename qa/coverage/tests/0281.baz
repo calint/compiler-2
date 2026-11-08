@@ -1,16 +1,15 @@
-# nested expression deeper than the eight x86 scratch registers r8-r15
+# function returns a constructed value
+
+func assert(expr bool) { if not expr exit(1) }
+
+type point { x, y }
+
+func make_point() res point {
+    res = { 12, -7 }
+}
 
 func main() {
-    var a = 1
-    var b = 2
-    var c = 3
-    var d = 4
-    var e = 5
-    var f = 6
-    var g = 7
-    var h = 8
-    var i = 9
-    var j = 10
-    var result = a + (b + (c + (d + (e + (f + (g + (h + (i + j))))))))
-    if result != 55 exit(1)
+    var point_value = make_point()
+    assert(point_value.x == 12)
+    assert(point_value.y == -7)
 }

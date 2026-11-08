@@ -1,13 +1,8 @@
-# 'arrays_equal' reads 'bl[1]' to 'bl[3]', so 'bl[3]' is not written before
-# the comparison reads it: left to right the arrays are equal
+# a function without a body: the keyword 'func' of the next definition is no
+# result name, the missing '{' is reported at it
+
+func f()
 
 func main() {
-    var bl = bool[4]
-    var c = bool[3]
-    var flag = true
-    bl[3] = flag and arrays_equal(bl[1], c, 3)
-    if bl[3] {
-        exit(1)
-    }
-    exit(2)
+    exit(0)
 }

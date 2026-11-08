@@ -1,14 +1,5 @@
-# a constant shift by a negative count is rejected, also in code that does not
-# run
-
-let n = -1
+# a hex escape in a string has two hex digits
 
 func main() {
-    var zero = 0
-    if zero != 0 {
-        var a = 1 << n
-        var b = 8 >> n
-        exit(a + b)
-    }
-    exit(0)
+    var s = "a\xzzb"
 }

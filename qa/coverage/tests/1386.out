@@ -1,4 +1,4 @@
 
-1386.baz:9:10: expected type 'i64', got 'point'
-    exit(ps[i])
-         ^~
+1386.baz:10:18: 'ls[i].a.x' may have been overwritten in the same statement, use a temporary variable
+    ls[0] = {{1, ls[i].a.x}, {3, 4}}
+                 ^~

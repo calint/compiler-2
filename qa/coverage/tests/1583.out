@@ -1,7 +1,4 @@
 
-1583.baz:3:13: 'bool' has no conversion, compare instead, e.g. 'x != 0'
-    var b = T(v)
-            ^
-1583.baz:8:14: instantiated by 'f<bool>'
-    exit(int(f<bool>(1)))
-             ^
+1583.baz:5:9: 'f' is a function, not an array
+    foo f {
+        ^

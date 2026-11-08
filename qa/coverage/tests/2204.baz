@@ -1,13 +1,10 @@
-# a register that an operation holds is needed by an inlined call that
-# zeroes many parts (x86_64)
-func g(n i64) res i64 {
-    var z = i64[20]
-    z[1] = n
-    var w = z
-    res = w[1]
-}
+# '--checks=upper' alone on an array of 2^31 or more elements fails a range
+# that ends one element past its count
 
 func main() {
-    var y = 6
-    exit(g(y))
+    var a = i8[0x80000010]
+    var b = i8[0x19]
+    var i = 0x7ffffff8
+    var c = 0x19
+    array_copy(a[i], b, c)
 }

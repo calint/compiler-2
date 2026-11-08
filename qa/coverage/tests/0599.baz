@@ -1,15 +1,6 @@
-# calling a method on the type instead of on a value is rejected
-
-type point {
-    x,
-    y
-}
-
-# a method needs a receiver
-func point.sum() res {
-    res = self.x + self.y
-}
+# an array literal must name the element type of the destination
 
 func main() {
-    var s = point.sum()
+    var a = i8[2]
+    a = i16[]{1, 2}
 }

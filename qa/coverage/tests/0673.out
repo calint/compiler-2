@@ -1,0 +1,4 @@
+
+0673.baz:6:18: cannot compare type 'i8' with type 'i16'
+    var z = a == b
+                 ^

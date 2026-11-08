@@ -1,7 +1,7 @@
-# an array field initializer must have the size of the field
+# array_copy requires matching array types
 
-type small { data i8[2] }
 func main() {
-    var src = i8[4]{ 1, 2, 3, 4 }
-    var dst = small{ src }
+    var a = i8[2]
+    var b = i16[2]
+    array_copy(a,b,1)
 }

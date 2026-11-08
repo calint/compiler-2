@@ -1,11 +1,12 @@
-# boolean not applied to arrays_equal
+# array_copy handles a byte remainder
 
 func assert(expr bool) { if not expr exit(1) }
 
 func main() {
-    var src = i8[2]
-    var cmp = i8[2]
-    src[0] = 1
-    cmp[0] = 2
-    assert(not arrays_equal(src, cmp, 2))
+    var source = i8[3]{ 11, 22, 33 }
+    var destination = i8[3]
+    array_copy(source, destination, 3)
+    assert(destination[0] == 11)
+    assert(destination[1] == 22)
+    assert(destination[2] == 33)
 }

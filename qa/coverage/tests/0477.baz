@@ -1,8 +1,7 @@
-# a constant index sets only its element
-type pair {cells[2]}
-func make_pair() res pair {
-    res.cells[0] = 5
-}
+# a runtime index may already have written the element an instance value reads
+type point {x, y}
 func main() {
-    var p = make_pair()
+    var ps = point[2]
+    var i = 0
+    ps[i] = {1, ps[1].x}
 }

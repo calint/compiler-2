@@ -1,28 +1,63 @@
-# array_length follows nested array fields
+# struct array elements passed through two nested function calls
 
-func assert(expr bool) {
-    if not expr exit(1)
+func assert(expr bool) { if not expr exit(1) }
+
+func print(str i8[], len) {
+    write(1, str, len)
 }
 
-type flags {
-    data i8[8]
+func input(str mut i8[], len) nbytes {
+    nbytes = read(0, str, len)
+}
+
+func pn(num) {
+    var buf = i8[20]
+    var n = num
+    var is_negative = false
+
+    if n < 0 {
+        is_negative = true
+        n = -n
+    }
+
+    var i = 20
+    loop {
+        i = i - 1
+        buf[i] = i8(48 + (n % 10))
+        n = n / 10
+        if n == 0 break
+    }
+
+    if is_negative {
+        i = i - 1
+        buf[i] = 45  # '-'
+    }
+
+    write(1, buf, 20 - i, i)
+}
+
+type str {
+    size i8,
+    chars i8[127]
 }
 
 type world {
-    time,
-    flgs flags[4]
+    name str,
+    note str
 }
 
-func foozi(data i8[]) {
-    assert(array_length(data) == 8)
+func foozi(w1 world, w2 world){
+    assert(w1.note.size + w2.note.size == 3)
 }
 
-func bar(flg flags) {
-    assert(array_length(flg.data) == 8)
+func bar(w1 world, w2 world){
+    foozi(w1, w2)
 }
 
 func main() {
-    var worlds = world[2]
-    foozi(worlds[1].flgs[2].data)
-    bar(worlds[1].flgs[1])
+    var wlds = world[2]
+    wlds[0].note.size = 1
+    wlds[1].note.size = 2
+    
+    bar(wlds[0], wlds[1])
 }

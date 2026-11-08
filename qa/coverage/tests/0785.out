@@ -1,7 +1,4 @@
 
-0785.baz:9:16: 'nothing' not found
-    self.len = nothing
-               ^~~~~~~
-0785.baz:12:6: instantiated by
-type str = text<8>
-     ^~~
+0785.baz:12:17: generic parameter 'capacity' of 'text' needs a constant, got the type 'name'
+type str = text<name>
+                ^~~~

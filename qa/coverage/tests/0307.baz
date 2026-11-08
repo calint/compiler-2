@@ -1,7 +1,10 @@
-# arithmetic upper-bound failure
+# out-of-range index returned by a function
+
+func get_index() result {
+    result = 8
+}
 
 func main() {
     var arr = i8[8]
-    var index = 7
-    arr[index + 1] = 1
+    arr[get_index()] = 1
 }

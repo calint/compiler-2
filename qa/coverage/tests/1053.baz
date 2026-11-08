@@ -1,10 +1,10 @@
-# 'sector_read' cannot fill an array parameter without 'mut'
+# the base of a generic type is defined before it
 
-func f(d i8[]) {
-    sector_read(0, d)
+type text<capacity> = list<i8, capacity>
+
+type list<T type, capacity> {
+    array T[capacity],
+    len,
 }
 
-func main() {
-    var bytes = i8[512]
-    f(bytes)
-}
+func main() {}

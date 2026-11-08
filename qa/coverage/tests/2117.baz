@@ -1,13 +1,7 @@
-# a constructor call that an operator continues tells no type argument
-
-type point {x, y}
-
-func point.at(x, y) self {
-    self = {x, y}
-}
-
-func show<T type>(s T) {}
-
+# a program that only writes sectors has no read routine
 func main() {
-    show(point.at(1, 2) == point.at(1, 2))
+    var bytes = i8[512]
+    bytes[0] = 7
+    sector_write(0, bytes)
+    exit(bytes[0])
 }

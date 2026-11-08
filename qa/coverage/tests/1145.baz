@@ -1,7 +1,13 @@
-# an included file of comments only is reproduced by '--reproduce-source'
+# a conversion of a named constant folds: a 'dat' takes it, also negated and
+# as an array element, and a 'var' adds to it at compile time
 
-include "include/comments.baz"
+let N = 4
+
+dat a = i8(N)
+dat b = i8(-N)
+dat c = i8[2]{i8(N)}
 
 func main() {
-    exit(0)
+    var x = i8(N) + 1
+    exit(a - b + c[0] + x)
 }

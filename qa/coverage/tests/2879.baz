@@ -1,8 +1,0 @@
-# 'foo' names the array only, the element is given as 'e'
-
-func main() {
-    var arr = []{1, 2, 3}
-    foo e in arr {
-        e = e * 2
-    }
-}

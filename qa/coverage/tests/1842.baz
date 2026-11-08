@@ -1,10 +1,15 @@
-# an array literal of the default type is not an argument of an array
-# parameter
+# an operator after a copied instance: an instance is not a number
 
-func f(s[]) {
-    exit(s[0])
+type left {value}
+
+func mk() res left {
+    res = {}
 }
 
 func main() {
-    f([3]{1, 2, 3})
+    var ll = left
+    var l = left
+    var a = i8[2]
+    var b = i8[2]
+    l = ll + 1
 }

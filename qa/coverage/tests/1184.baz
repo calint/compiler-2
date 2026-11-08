@@ -1,8 +1,9 @@
-# a global constant named like a global variable is rejected
+# a 'dat' named like a record type hides the type in a later initializer
 
-var x = 4
-let x = 3
+type t {x}
+dat t = t{4}
+dat u = t
 
 func main() {
-    exit(x)
+    exit(u.x)
 }

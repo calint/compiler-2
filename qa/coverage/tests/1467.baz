@@ -1,3 +1,12 @@
-# a string where a name is expected, the caret is on the string
-func f("") {}
-func main() {}
+# the same for a noinline function, the body sets 'res' before it reads 'g'
+var g = 5
+
+func noinline f() res {
+    res = 0
+    res = res + g
+}
+
+func main() {
+    g = f()
+    exit(g)
+}

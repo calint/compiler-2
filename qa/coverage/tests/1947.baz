@@ -1,15 +1,9 @@
-# a generic method call outside a function is rejected before its instance
-# is made, an error in the instance body is not reached
+# a 'bool' that is not an array is reported as not an array, not as a value
+# to convert to the element type
 
-type point {x, y}
-
-func point.get<T type>() res T {
-    res = T{1}
-}
-
-var p = point{1, 2}
-var g = p.get<i8>()
+func f(s i8[]) {}
 
 func main() {
-    exit(g)
+    var b = true
+    f(b)
 }

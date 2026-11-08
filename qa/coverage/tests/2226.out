@@ -1,4 +1,0 @@
-
-2226.baz:11:23: 'pt' is a type, not an array
-    exit(array_length(pt.at(1).a))
-                      ^~

@@ -1,4 +1,4 @@
 
-0644.baz:3:8: 'mut' is a keyword
-func f(mut x) {
-       ^~~
+0644.baz:4:10: expected '=' followed by an initializer, e.g. 'let x = i32'
+    let a
+         ^

@@ -1,4 +1,4 @@
 
-1566.baz:3:6: methods on built-in type 'i8' are not supported
-func i8
-     ^~
+1566.baz:8:13: 'point' is a type, not a function, an instance is made with 'point{...}'
+    var p = point(5)
+            ^~~~~

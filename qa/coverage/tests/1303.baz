@@ -1,5 +1,7 @@
-# a 'let' that reads its own name is rejected as uninitialized, like a 'var'
+# 'exit' assigned to an instance is rejected, it does not return a value
+type point {x, y}
+
 func main() {
-    let k = 1 + k
-    exit(k)
+    var p = point{1, 2}
+    p = exit(1)
 }

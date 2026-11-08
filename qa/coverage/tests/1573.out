@@ -1,0 +1,4 @@
+
+1573.baz:6:12: a generic function has only type parameters, write 'm type'
+func box.f<m>() {}
+           ^

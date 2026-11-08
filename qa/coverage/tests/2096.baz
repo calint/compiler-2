@@ -1,22 +1,9 @@
-# the check of a body without its calls ends an inlined recursion that a
-# constant argument ends where it runs out of registers: x86_64 runs out at
-# an outer level and accepts, rv32i reaches 'a[5]' at 'k == 1' and rejects
-# (README 8.3)
+# a user function without a result tells no type argument
 
-func r(x, k) res {
-    res = 0
-    if k == 0 {
-        return
-    }
-    var t = x + (x * (x + (x * (x + (x * (x + (x * (x + 1))))))))
-    var a = i8[5]
-    a[6 - k] = 1
-    res = x + (x * (x + (x * (r(x, k - 1) + 1))))
-}
+func g() {}
 
-func f(x) res {
-    res = r(x, 2)
-}
+func show<T type>(s T) {}
 
 func main() {
+    show(g())
 }

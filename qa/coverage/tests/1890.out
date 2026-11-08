@@ -1,4 +1,4 @@
 
-1890.baz:12:9: store the result of 'mk' in a variable before reading a field or calling a method of it
-        .y
-        ^
+1890.baz:6:8: 'a[0]' is not an array, it cannot be indexed
+    if a[0][1] == 1 {
+       ^

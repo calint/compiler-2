@@ -1,6 +1,5 @@
-# 'int' is a type name, a type cannot be defined with it
-type int { value i32 }
+# a generic type without a body is rejected where the body should start
+type list<T type> x }
 
 func main() {
-    exit(0)
 }

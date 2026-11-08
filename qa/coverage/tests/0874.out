@@ -1,4 +1,4 @@
 
-0874.baz:5:10: unexpected '|'
-    loop |
-         ^
+0874.baz:9:21: an operator makes a value, not an array
+    var x = first(a + 1)
+                    ^

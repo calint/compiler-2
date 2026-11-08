@@ -1,11 +1,13 @@
-# a 'break' outside a loop is rejected whatever the argument of an inlined call
+# a branch that a constant argument makes false is not compiled, the 'if'
+# guards the division
 
-func f(a) {
-    if a == 2 {
-        break
+func h(a) res {
+    res = 7
+    if a != 0 {
+        res = 100 / a
     }
 }
 
 func main() {
-    f(1)
+    exit(h(0))
 }

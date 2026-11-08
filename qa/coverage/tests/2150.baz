@@ -1,10 +1,4 @@
-# a positive constant of a run-time index whose elements are too far for the
-# displacement is added to the index, the sum is an element
-func noinline at(a i64[], i) res {
-    res = a[i + 2305843009213693952]
-}
-
+# an array literal indexed is not an operand, as an initializer
 func main() {
-    var a = i64[]{1, 7, 3}
-    exit(at(a, -2305843009213693951))
+    var s = i8[]{1, 2}[1]
 }

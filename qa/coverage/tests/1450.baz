@@ -1,14 +1,15 @@
-# a function named like a type is called in an initializer as anywhere else
-type point { x }
-
-func point(a) res {
-    res = a
+# a type argument deduced from the value of a built-in
+func id<T type>(x T) res T {
+    res = x
 }
 
 func main() {
-    var y = point(3)
-    let z = point(4)
-    var p = point
-    p.x = y + z
-    exit(p.x)
+    var a = i8[4]
+    var n = id(array_length(a))
+    var c = id(i8(3))
+    var w = id(write(1, a, 0))
+    var e = id(arrays_equal(a, a, 4))
+    if e {
+        exit(n + c + w)
+    }
 }

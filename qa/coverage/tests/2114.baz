@@ -1,16 +1,6 @@
-# --vars=48: an inlined body runs out of variable storage at its call, where
-# the caller's variables are in use; on rv32i an indexed argument compiles the
-# body in two versions and both run out of variable storage
-
-func f(p i32) res i32 {
-    var t = i32[4]
-    t[1] = p
-    res = t[1] + p
+# a keyword before a '{' where the result type of a function is expected
+func f() loop {
 }
 
 func main() {
-    var a = i32[8]
-    var i = i32(1)
-    var r = f(a[i])
-    exit(r)
 }

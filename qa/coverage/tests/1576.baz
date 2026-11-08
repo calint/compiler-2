@@ -1,15 +1,24 @@
-# 'read' fills its buffer without reading it, the result is set only in part
-type message {
-    count,
-    buf i8[4]
+# a generic function may be named like a type, like a plain function, and is
+# called with deduced or explicit type arguments
+type p {
+    a,
 }
 
-func get() res message {
-    res.count = 1
-    read(0, res.buf)
+func p<T type>(v T) res {
+    res = v.a + 10
+}
+
+func q<T type>(v mut T) {
+    v.a = v.a + 1
+}
+
+type q {
+    b,
 }
 
 func main() {
-    var m = get()
-    exit(m.count)
+    var v = p{5}
+    q(v)
+    q<p>(v)
+    exit(p(v) + p<p>(v))
 }

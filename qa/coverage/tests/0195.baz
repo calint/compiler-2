@@ -1,5 +1,4 @@
-# data array type requires a closing bracket
+# type fields require known types
 
-dat x = [2 = {1,2}
-
+type x { a nope }
 func main() {}

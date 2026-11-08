@@ -1,4 +1,4 @@
 
-1054.baz:4:5: 'sector_read' takes 2 or 3 arguments
-    sector_read(0)
-    ^~~~~~~~~~~
+1054.baz:8:23: generic type 'list' takes 2 arguments, got 1
+type text<capacity> = list<capacity>
+                      ^~~~

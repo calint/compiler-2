@@ -1,24 +1,12 @@
-# the address of a place with a run-time index is held in a register across a
-# later argument that calls a noinline function, and the callee writes through
-# it
-var g = 0
+# the run-time index of an element on the path of a constant count of 0 is
+# checked
 
-func noinline idx() res {
-    res = 2
-}
-
-func noinline k(x) res {
-    g = g + x
-    res = x * 2
-}
-
-func noinline put(a mut, n) {
-    a = a * 10 + n
-}
+type t {a i8[4]}
 
 func main() {
-    var v = []{1, 2, 3}
-    var i = idx()
-    put(v[i], k(4))
-    exit(v[2] + g)
+    var m = t[2]
+    var b = i8[4]
+    var k = 5
+    array_copy(m[k].a, b, 0)
+    exit(3)
 }

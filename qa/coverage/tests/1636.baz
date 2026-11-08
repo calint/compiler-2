@@ -1,16 +1,10 @@
-# an argument that a call in a later argument may write is rejected,
-# evaluation is left to right
-func h(i mut) res {
-    i = i + 1
-    res = 0
-}
-func f(a, b) res {
-    res = a + b
-}
+# two strings with the same bytes share one read-only constant, however their
+# escapes spell them; above 16 B a string is copied from read-only data, each
+# starts a word as rv32i lays a constant out from where in a word it is stored
+
 func main() {
-    var arr = [4]
-    arr[0] = 10
-    arr[1] = 20
-    var i = 0
-    exit(f(arr[i], h(i)))
+    var a = "hello baz world!!!!\n"
+    var b = "\x68ello baz world!!!!\x0a"
+    write(1, a, 20)
+    write(1, b, 20)
 }

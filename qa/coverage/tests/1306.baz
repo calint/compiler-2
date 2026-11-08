@@ -1,9 +1,10 @@
-# a unary operator on an argument of an array parameter is rejected, the
-# parameter takes an array
-func f(x i8[]) {}
-
+# a condition in parentheses on the right side of a comparison is rejected at
+# its comparison
 func main() {
-    var a = i8[4]
-    f(-a)
+    var x = 1
+    var b = true
+    if b != (x < 1) {
+        exit(1)
+    }
     exit(0)
 }

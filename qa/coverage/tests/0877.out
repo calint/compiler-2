@@ -1,4 +1,4 @@
 
-0877.baz:7:9: a call runs only inside a function, not in the initializer of a global
-var g = one()
-        ^~~
+0877.baz:4:1: expected a constant, a name or a call
+)
+^

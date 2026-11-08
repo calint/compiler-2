@@ -1,11 +1,11 @@
-# a trailing ',' after the last listed field of an instance that lists only
-# some, the rest is zeroed
-type point {x, y, z}
-
+# with the overflow check, logic constants wider than an immediate and the
+# subtraction of the immediate minimum
 func main() {
-    var p = point{
-        3,
-        4,
-    }
-    exit(p.x + p.y + p.z)
+    var x = 3000
+    x = x + -2048
+    x = x - -2048
+    var y = x & 4096
+    var z = x | 8192
+    var w = x ^ 8192
+    exit(z - w + y + x - 2998)
 }

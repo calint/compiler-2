@@ -1,10 +1,15 @@
-# a whole array of instances assigned to a number is rejected as an array that
-# must be indexed, before its type is asked
-type cell { tag }
+# lists with run-time elements in the initializers of globals, one with a
+# constant element that does not decide it
+
+var x = 3
+var y = 0
+var both = x > 1 and y < 1
+var either = x < 1 or 1 == 2 or y > 0
 
 func main() {
-    var cs = cell[3]
-    var x = 0
-    x = cs
-    exit(x)
+    if both and not either {
+        exit(3)
+    }
+
+    exit(4)
 }

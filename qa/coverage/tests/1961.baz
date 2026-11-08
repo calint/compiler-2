@@ -1,9 +1,11 @@
-# the root of the bases gives the name in an error of its fields
+# an array of another element type for an array parameter of instances names
+# the parameter, as for numbers
 
-type list<T type, n> { a T[n] len }
+type point { x, y }
 
-type text<size> = list<i8, size>
+func show(ps point[]) {}
 
-type str = text<8>
-
-func main() {}
+func main() {
+    var a = i8[2]
+    show(a)
+}

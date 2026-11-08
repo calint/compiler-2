@@ -1,0 +1,4 @@
+
+0834.baz:3:12: '5' is not an array
+dat x = t{ 5, 1 }
+           ^

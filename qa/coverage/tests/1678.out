@@ -1,0 +1,4 @@
+
+1678.baz:6:13: expected '(' after function name
+    var x = array_copy
+            ^~~~~~~~~~

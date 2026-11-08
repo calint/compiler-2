@@ -1,7 +1,8 @@
-# an array literal of the default type assigned names no type either
+# a constant 'arrays_equal' count past the end of the array is rejected
 
 func main() {
-    var a = []{1, 2}
-    a = []{3, 4}
-    exit(a[0])
+    var a = i8[4]
+    var b = i8[4]
+    var e = arrays_equal(a[1], b, 4)
+    exit(0)
 }

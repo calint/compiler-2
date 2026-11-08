@@ -1,10 +1,12 @@
-# the base of a generic type is defined before it
+# a type parameter of a method of a generic type cannot have the name of a type
+# parameter of the type, the error names the parameter of the type
 
-type text<capacity> = list<i8, capacity>
-
-type list<T type, capacity> {
-    array T[capacity],
-    len,
+type list<T type> {
+    a T,
 }
+
+func list.f<T type>(x T) {}
+
+type s = list<i8>
 
 func main() {}

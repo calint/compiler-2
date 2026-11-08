@@ -1,15 +1,11 @@
-# a method name must be followed by the arguments
+# a scalar data value converted to its type wraps like the conversion in a
+# 'var': 2147483648 is -2147483648 as an 'i32'
 
-type list {
-    count,
-    items[4]
-}
-
-func mut list.clear() {
-    self.count = 0
-}
+dat count = i32(2147483648)
 
 func main() {
-    var lst = list
-    lst.clear = 1
+    if count != -2147483648 {
+        exit(1)
+    }
+    exit(0)
 }

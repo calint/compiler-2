@@ -1,4 +1,4 @@
 
-0200.baz:3:15: expected ',' followed by another field in type 'x'
-type x { a i8 b i8 }
-              ^
+0200.baz:5:13: 'x' is not an array, it cannot be indexed
+    var y = x[0]
+            ^

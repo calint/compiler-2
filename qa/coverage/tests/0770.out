@@ -1,4 +1,4 @@
 
-0770.baz:14:18: type 'nope' not found
-    var m = make<nope>(2)
-                 ^~~~
+0770.baz:17:7: cannot deduce 'T' of generic function 'str.append', write 'append<...>'
+    s.append(1)
+      ^~~~~~

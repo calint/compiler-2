@@ -1,6 +1,16 @@
-# a character literal in a message brings its own quotes, also as an argument
-func f(s i8[]) {}
+# a type parameter of a method of a generic type hides a global defined after
+# it
+type box<n> { a i8[n] }
+
+func box.f<U type>(x U) res U {
+    res = U(x + 1)
+}
+
+type b2 = box<2>
+
+var U = 1
 
 func main() {
-    f('a')
+    var b = b2
+    exit(int(b.f(i8(4))) + U)
 }

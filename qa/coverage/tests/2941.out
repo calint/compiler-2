@@ -1,4 +1,0 @@
-
-2941.baz:3:21: expected a generic type after '=', 'i32' is not generic
-type wide<T type> = i32
-                    ^~~

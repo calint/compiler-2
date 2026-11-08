@@ -1,8 +1,14 @@
-# a constant range start past the end is rejected at compile
+# a constructor result with a written type is rejected
+
+type point {
+    x,
+    y
+}
+
+# the type of a constructor result is not written
+func point.at(x, y) self point {
+    self = {x, y}
+}
 
 func main() {
-    var arr = i32[4]
-    var dst = i32[2]
-    var n = 0
-    array_copy(arr[5], dst, n)
 }

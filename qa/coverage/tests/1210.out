@@ -1,4 +1,4 @@
 
-1210.baz:6:9: constant '300' does not fit 'i8' (-128 to 127), 'i8(...)' wraps it
-    b = 300
-        ^~~
+1210.baz:6:7: expected type 'i64', got 'bool', use 'i64(...)'
+    a[b] = 1
+      ^

@@ -1,0 +1,5 @@
+# a carriage return without a line feed in a string
+
+func main() {
+    var s = "ab"
+}

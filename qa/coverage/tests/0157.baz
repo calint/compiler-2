@@ -1,3 +1,7 @@
-# unterminated string is rejected
+# source and destination array sizes must match
 
-dat x = "unterminated
+func main() {
+    var src = i8[4]{1,2,3,4}
+    var dst = i8[2]
+    dst = src
+}

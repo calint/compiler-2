@@ -1,9 +1,9 @@
-# --checks=division: a zero divisor panics
-func noinline div(a, b) res {
-    res = a / b
+# --checks=shift: a negative count panics
+func noinline shr(a, n) res {
+    res = a >> n
 }
 func main() {
-    var z = 0
-    var x = div(7, z)
+    var n = -1
+    var x = shr(1, n)
     exit(x)
 }

@@ -1,5 +1,10 @@
-# a sector function takes the sector, the buffer and the optional start
+# the base of a generic type gets an argument per parameter
 
-func main() {
-    sector_read(0)
+type list<T type, capacity> {
+    array T[capacity],
+    len,
 }
+
+type text<capacity> = list<capacity>
+
+func main() {}

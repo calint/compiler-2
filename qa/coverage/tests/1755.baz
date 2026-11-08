@@ -1,15 +1,25 @@
-# the padding of a call result is zeroed after the arguments are computed: the
-# whole instance is zeroed for its 5 gaps on x86_64, the argument reads the
-# destination first
+# the bodies that skipped code and unchecked calls ask for are checked and
+# not emitted: an array parameter passed on has no length to check with, a
+# body that fits its arguments is accepted
+func noinline f(s i8[]) res {
+    res = s[3]
+}
 
-type g {a i8, b i16, c i8, d i16, e i8, f i16, h i8, i i16, j i8, k i16}
+func noinline pass(s i8[]) res {
+    res = f(s)
+}
 
-func mk(v i8) res g {
-    res = {v, 2, 3, 4, 5, 6, 7, 8, 9, 10}
+func g() res {
+    var b = i8[8]
+    res = f(b)
 }
 
 func main() {
-    var p = g{42}
-    p = mk(p.a + 1)
-    exit(p.a)
+    var a = i8[4]
+    a[3] = 7
+    var r = 0
+    if 1 == 2 {
+        r = pass(a) + g()
+    }
+    exit(r + f(a))
 }

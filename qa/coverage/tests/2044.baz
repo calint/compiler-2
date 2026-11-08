@@ -1,12 +1,8 @@
-# a call followed by '[' is reported as a call that is not an array, also
-# in an argument, where the '[' was taken for a missing ')'
-
-func mk() res {
-    res = 1
-}
-
-func f(a) {}
+# the overflow of a constant step reports the line of the constant
 
 func main() {
-    f(mk()[0])
+    var a = i32(2147483647)
+    var r = a
+        + 1
+    exit(r)
 }

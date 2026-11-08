@@ -1,0 +1,7 @@
+
+1489.baz:8:11: recursion of inlined function 'f' runs out of registers before it ends at compile time, declare it 'noinline'
+    res = f(n - 1) + 1
+          ^
+1489.baz:12:10: called from 'f(k)'
+    exit(f(k))
+         ^

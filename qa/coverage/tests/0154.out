@@ -1,0 +1,4 @@
+
+0154.baz:3:23: cannot parse constant '123abc'
+func main() { var x = 123abc }
+                      ^~~~~~

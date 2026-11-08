@@ -1,16 +1,15 @@
-# an instance call result is not a number, at the parse, so also in a
-# branch that folds away
+# a result held in a register that the body passes to a 'mut' parameter of
+# a noinline function keeps the write: it is compiled through a temporary
 
-type point {x, y}
+func noinline bump(x mut) {
+    x = x + 10
+}
 
-func mk() res point {
-    res = {1, 2}
+func f() res {
+    res = 1
+    bump(res)
 }
 
 func main() {
-    var n = 1
-    if 1 == 2 {
-        n = mk()
-    }
-    exit(n)
+    exit(f())
 }

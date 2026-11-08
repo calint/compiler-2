@@ -1,4 +1,4 @@
 
-1086.baz:3:10: a 'bool' is not an arithmetic operand, convert it, e.g. 'int(true)'
-dat d = -true
-         ^~~~
+1086.baz:6:31: the destination gives the type 'point', write '{...}'
+    var ps = point[2]{{1, 2}, point{3, 4}}
+                              ^~~~~

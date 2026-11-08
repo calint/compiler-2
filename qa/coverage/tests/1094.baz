@@ -1,8 +1,10 @@
-# an array field takes its type from the record, a literal names none
+# a type argument written makes the parameter type known, so a literal
+# argument names no type, only a deducing argument does
 
-type t { a i8[2] }
+type point { x, y }
+
+func take<T type>(item T) res { res = item.x + item.y }
 
 func main() {
-    var q = t{i8[]{4, 5}}
-    exit(q.a[1])
+    exit(take<point>(point{3, 4}))
 }

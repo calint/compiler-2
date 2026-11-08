@@ -1,44 +1,18 @@
-# nested struct fields
-
-dat fld=42
-dat str="hello world"
-
-type vector{x,y}
-type object{pos vector,vel vector,color}
-
-func f(str i8[], fld){
-    var obj = object{{1,0},{0,0},0}
-    if not obj.pos.x==1 exit(1)
-    obj.pos.x=1
-    obj.pos.y=2
-    obj.vel.x=4
-    obj.vel.y=8
-    obj.color=array_length(str)
-    
-    if not fld==42 exit(2)
-    if not obj.pos.x==1 exit(3)
-    if not obj.pos.y==2 exit(4)
-    if not obj.vel.x==4 exit(5)
-    if not obj.vel.y==8 exit(6)
-    if not obj.color==array_length(str) exit(7)
-}
+# boolean comparisons and negation
 
 func main(){
-    var obj = object{{1,0},{0,0},0}
-    if not obj.pos.x==1 exit(1)
-    obj.pos.x=1
-    obj.pos.y=2
-    obj.vel.x=4
-    obj.vel.y=8
-    obj.color=array_length(str)
-    
-    if not fld==42 exit(2)
-    if not obj.pos.x==1 exit(3)
-    if not obj.pos.y==2 exit(4)
-    if not obj.vel.x==4 exit(5)
-    if not obj.vel.y==8 exit(6)
-    if not obj.color==array_length(str) exit(7)
-    
-    f(str,fld)
+    var bt1 = i8(1)
+    var bt2 = i8(2)
+
+    var b1 = bt1<bt2
+    if not b1 exit(1)
+
+    var b2 = bt1==1
+    b2=not bt2!=0
+    if b2 exit(2)
+
+    bt1=-1+2
+    if not bt1==1 exit(3)
+
     exit(0)
 }

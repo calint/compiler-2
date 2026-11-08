@@ -1,4 +1,4 @@
 
-0441.baz:4:5: expected '{' to begin block
-    return
-    ^
+0441.baz:2:10: expected '=' followed by an initializer, e.g. 'dat x = i32'
+dat value : i32 = 1
+         ^

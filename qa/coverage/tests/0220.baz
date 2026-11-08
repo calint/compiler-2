@@ -1,4 +1,4 @@
-# decimal constants must fit in i64
+# user type initializers must match their fields
 
-let x = 9223372036854775808
-func main() {}
+type p { x }
+func main() { var p1 = p{1,2} }

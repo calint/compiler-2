@@ -1,8 +1,7 @@
-# a global constant named like a 'dat' is rejected
-
-dat x = 4
-let x = 3
+# the literal 'true' is not assigned to an integer variable
 
 func main() {
-    exit(x)
+    var r = 0
+    r = true
+    exit(r)
 }

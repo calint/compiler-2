@@ -1,7 +1,4 @@
 
-2074.baz:8:20: index 5 is out of bounds for array 'rs' of size 2
-        res = g(rs[5], rs, x - 1)
-                   ^
-2074.baz:16:11: called from 'g(rs[0], rs, x)'
-    res = g(rs[0], rs, x)
-          ^
+2074.baz:6:21: expected ',' or '>' after generic argument '1'
+type s = list<i8, 1 << 4>
+                    ^

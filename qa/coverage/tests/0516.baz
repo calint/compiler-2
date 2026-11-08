@@ -1,9 +1,12 @@
-# a start past the array end panics
+# a non-inline result may share storage with an argument
+
+func noinline add_one(a) res {
+    res = 1
+    res = res + a
+}
 
 func main() {
-    var buf = i8[4]
-    var a = i8[4]
-    var k = 5
-    var n = 0
-    var r = read(0, buf, n, k)
+    var x = 5
+    x = add_one(x)
+    exit(x)
 }

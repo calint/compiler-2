@@ -1,4 +1,4 @@
 
-0164.baz:6:22: destination array size 2 does not match source size 4
-    var dst = small{ src }
-                     ^~~
+0164.baz:6:18: source type 'i8' does not match destination type 'i16'
+    array_copy(a,b,1)
+                 ^

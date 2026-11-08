@@ -1,7 +1,4 @@
-# a 'dat' shifted by a negative constant count is rejected like a 'var'
+# a type alias without a generic type after '=' at the end of the file is
+# rejected after the '='
 
-dat a = 1 << -1
-
-func main() {
-    exit(0)
-}
+type str =

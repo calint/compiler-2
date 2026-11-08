@@ -1,0 +1,4 @@
+
+2158.baz:4:15: unsupported escape '\q'
+    var c = 'a\q'
+              ^~

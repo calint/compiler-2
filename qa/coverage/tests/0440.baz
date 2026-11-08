@@ -1,3 +1,3 @@
-# inline function bodies require braces even for one statement
-
-func main() exit(0)
+# colon syntax is no longer accepted for function results
+func helper() : result i32 { result = 1 }
+func main() {}

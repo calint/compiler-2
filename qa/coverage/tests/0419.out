@@ -1,4 +1,0 @@
-
-0419.baz:5:44: 'target()' of type 'i32' is narrowed to 'i16', use 'i16(...)'
-func main() { var result = i16(0) result = target() }
-                                           ^~~~~~

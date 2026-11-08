@@ -1,4 +1,4 @@
 
-2220.baz:4:15: unsupported escape '\q'
-    var c = 'a\q'
-              ^~
+2220.baz:5:9: 'foo' takes an array, e.g. 'foo arr {...}'; 'e', 'i' and 'n' are given
+    foo e in arr {
+        ^

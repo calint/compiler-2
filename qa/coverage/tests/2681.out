@@ -1,4 +1,0 @@
-
-2681.baz:15:22: 'point.get' is a method, call it on a value of type 'point'
-    exit(first(point.get()))
-                     ^~~

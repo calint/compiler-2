@@ -1,8 +1,17 @@
-# 'noinline' is a keyword, not a function name
+# an error in a method body names the method call
 
-func noinline() {
+type point {
+    x,
+    y
+}
+
+var g = point{1, 2}
+
+func point.bad(v) {
+    g = {v + self.x, g.x}
 }
 
 func main() {
-    exit(3)
+    var p = point{1, 2}
+    p.bad(1)
 }

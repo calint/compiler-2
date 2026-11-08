@@ -1,24 +1,33 @@
-# function results of struct type set by field and by literal
+# lea regression: user-type indexed args (non-encodable element size path)
 
-func assert(err, x bool) { if not x exit(err) }
+func assert(err, expr bool) { if not expr exit(err) }
 
-type point {x, y}
-
-func baz(i) res point { 
-    res.x = i * 3
-    res.y = i * 4
+type pair {
+    x,
+    y
 }
 
-func bazi() res point {
-    res = {7, 13}
+func bump(dst mut pair, src mut pair, i mut) {
+    i = i + 1
+    dst = {src.x + i, src.y + i}
+    src = {src.x + 100, src.y + 200}
 }
 
 func main() {
-    var p = baz(2)
-    assert(1, p.x == 6)
-    assert(2, p.y == 8)
+    var srcs = pair[2]
+    var dsts = pair[2]
 
-    p = bazi()
-    assert(3, p.x == 7)
-    assert(4, p.y == 13)
+    srcs[0] = {1, 2}
+    srcs[1] = {10, 20}
+
+    var dst_index = 0
+    var src_index = 1
+
+    bump(dsts[dst_index], srcs[src_index], dst_index)
+
+    assert(1, dst_index == 1)
+    assert(2, dsts[0].x == 11)
+    assert(3, dsts[0].y == 21)
+    assert(4, srcs[1].x == 110)
+    assert(5, srcs[1].y == 220)
 }

@@ -1,4 +1,4 @@
 
-1424.baz:5:9: 'break' is not in a loop
-        break
-        ^~~~~
+1424.baz:5:5: the result of 'array_length' is discarded
+    array_length(a)
+    ^~~~~~~~~~~~

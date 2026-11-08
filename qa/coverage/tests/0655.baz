@@ -1,10 +1,9 @@
-# a 'let' variable cannot be assigned in a function that is never called
+# a method without 'mut' cannot write 'self'
 
-dat base = 1
+type tk { start, end }
 
-func unused() {
-    let a = base + 0
-    a = 2
+func tk.reset() {
+    self.start = 0
 }
 
 func main() {

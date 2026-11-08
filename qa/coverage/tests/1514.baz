@@ -1,8 +1,10 @@
-# a result that an instance of a method may leave unset names the alias that
-# made the instance
-type list<T type> {x T}
-func list.get() res T {
-    var z = 1
+# a type parameter bound to a built-in type converts like the type
+func conv<U type>(v) res U {
+    res = U(v)
 }
-type a = list<i8>
-func main() {}
+
+func main() {
+    var a = i8(0)
+    a = conv<i8>(261)
+    exit(a)
+}

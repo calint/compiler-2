@@ -1,9 +1,6 @@
-# a condition is not the call of a function without a result
-
-func check(ok bool) {
-}
+include "include/util.baz"
+include "include/base.baz"
 
 func main() {
-    if check(true) {
-    }
+    exit(twice(21))
 }

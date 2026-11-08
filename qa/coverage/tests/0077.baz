@@ -1,28 +1,27 @@
-# complements applied to array elements
+# assignment and copying of nested structs
 
 func assert(expr bool) {
     if not expr exit(1)
 }
-
-func inv(i i32) res i32 {
-    res = ~i
-}
+type point {x, y}
+type object {pos point, color i32}
 
 func main() {
-    var arr = i32[4]
+    var o1 = object{{0xe, 0xd}, 0xff0000}
+    var o2 = object{{0, 0}, 0}
+    o2 = o1
+    assert(o2.pos.x == 0xe)
+    assert(o2.pos.y == 0xd)
+    assert(o2.color == 0xff0000)
+    
+    var pt = point{ 0xab, 0xba }
+    o2.pos = pt
+    assert(o2.pos.x == 0xab)
+    assert(o2.pos.y == 0xba)
 
-    arr[1] = ~2
-    arr[2] = ~arr[1]
+    var objs = object[10]
+    objs[1].pos.y = 0xab
 
-    assert(arr[1] == ~2)
-    assert(arr[2] == 2)
-
-    var ix = 3
-    arr[ix] = ~arr[ix - 1]
-    assert(arr[ix] == ~2)
-
-    # note: temporary because the result may share storage with the argument
-    var tmp1 = inv(arr[ix])
-    arr[ix-2] = tmp1
-    assert(arr[ix-2] == 2)
+    objs[2] = objs[1]
+    assert(objs[2].pos.y == objs[1].pos.y)
 }

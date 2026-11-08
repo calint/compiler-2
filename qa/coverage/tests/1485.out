@@ -1,4 +1,4 @@
 
-1485.baz:14:9: the result destination 'g' may share storage with the global 'g' that 'f' uses, use a temporary variable for one of them
-    g = f()
-        ^
+1485.baz:5:5: 'point' names a value here, which hides the type 'point'
+    point{1, 2}
+    ^~~~~

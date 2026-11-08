@@ -1,13 +1,7 @@
-# a constant compared with an inlined constant argument of a narrower
-# parameter is rejected like with a variable of that type
-
-func g(v i8) {
-    if v > 1000 {
-        exit(3)
-    }
-    exit(4)
-}
+# a built-in type name followed by '==' is not a bare type, it is read as a
+# name
 
 func main() {
-    g(5)
+    var b = i8 == 1
+    exit(0)
 }

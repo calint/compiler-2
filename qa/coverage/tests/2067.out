@@ -1,4 +1,0 @@
-
-2067.baz:8:9: a unary operator makes a value, not an instance of 'point'
-    q = -p
-        ^

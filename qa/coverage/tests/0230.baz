@@ -1,11 +1,4 @@
-# == compares indexed byte values
+# function arguments require commas
 
-func assert(x bool) { if not x exit(1) }
-func main() {
-    var a = i8[2]
-    var b = i8[2]
-    a[0] = 1
-    b[0] = 1
-    var z = a[0] == b[0]
-    assert(z)
-}
+func f(x, y) {}
+func main() { f(1 2) }

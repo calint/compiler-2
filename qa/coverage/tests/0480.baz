@@ -1,11 +1,5 @@
-# a return inside 'foo' skips the result assignment
-func first(values i32[]) res {
-    foo values {
-        return
-    }
-    res = 1
-}
+# a comparison may not truncate a constant
 func main() {
-    var values = i32[2]
-    var r = first(values)
+    var n = i8(1)
+    if n == 257 { exit(1) }
 }

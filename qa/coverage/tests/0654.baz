@@ -1,9 +1,9 @@
-# a file level 'let' variable cannot be assigned in a function
+# 'read' cannot fill a read-only array parameter, also in a function that is
+# never called
 
-dat base = 5
-
-let limit = base * 2
+func f(buf i8[]) {
+    read(0, buf)
+}
 
 func main() {
-    limit = 11
 }

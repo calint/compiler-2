@@ -1,11 +1,16 @@
-# a call that reads the destination of the arithmetic it is in reads it
-# before the statement writes it
-var gx = 1
-func gr() res {
-    res = gx
+# the arrays of 'array_copy' are computed before the count: the count reads
+# 'n' after the call in an array argument wrote it
+var n = 1
+
+func g() res {
+    n = 3
+    res = 0
 }
+
 func main() {
-    var k = 5
-    gx = k + gr()
-    exit(gx)
+    var a = i8[4]
+    a[2] = 3
+    var b = i8[4]
+    array_copy(a[g()], b, n)
+    exit(b[2])
 }

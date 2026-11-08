@@ -1,16 +1,20 @@
-# a call result and an argument that are the same field of one variable share
-# storage
+# the method writes a field of an element chosen at run time and reads the
+# same field of another element, which can be the same one
+# rejected inlined as well as noinline
 
-type pair {
-    x,
-    y,
+type entity {
+    len i32,
+    name i32,
 }
 
-func twice(v) res {
-    res = v * 2
+dat entities = entity[4]
+
+func mut entity.bump(k i32) {
+    self.len = k + entities[1].len
 }
 
 func main() {
-    var p = pair
-    p.x = twice(p.x)
+    var i = 1
+    entities[i].bump(1)
+    exit(entities[1].len - 1)
 }

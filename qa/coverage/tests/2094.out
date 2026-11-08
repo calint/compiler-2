@@ -1,4 +1,4 @@
 
-2094.baz:10:7: expected type 'i8' for parameter 'a', got 'i32', use 'i8(...)'
-    f(x, 3)
-      ^
+2094.baz:12:10: 'point.at(1, 2)' is not an operand here, store it in a variable first
+    show(point.at(1, 2) == point.at(1, 2))
+         ^

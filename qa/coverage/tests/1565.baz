@@ -1,6 +1,9 @@
-# a character literal that does not fit is quoted once in the message, it
-# brings its own quotes
+# a type parameter bound to 'bool' has no conversion like 'bool'
+func f<T type>(v i8) res i8 {
+    var b = T(v)
+    res = 1
+}
+
 func main() {
-    var y = i8(0)
-    y = '\xff'
+    exit(int(f<bool>(1)))
 }

@@ -1,6 +1,7 @@
-# the start of a sector function is its 3rd argument, not an element
+# a generic type is based on a generic type, not a type
 
-func main() {
-    var bytes = i8[1024]
-    sector_read(0, bytes[512])
-}
+type point { x, y }
+
+type text<capacity> = point<capacity>
+
+func main() {}

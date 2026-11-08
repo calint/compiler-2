@@ -1,29 +1,6 @@
-# rv32i: 'write' needs 'a1', which is held by a loop register
+# instance fields whose sizes together exceed the signed 64-bit range
 
-dat a = i8[]{65, 10}
+type item { a i32[2305843009213693952], b i32[2305843009213693952] }
 
 func main() {
-    foo a {
-        foo a {
-            foo a {
-                foo a {
-                    foo a {
-                        foo a {
-                            foo a {
-                                foo a {
-                                    foo a {
-                                        foo a {
-                                            foo a {
-                                                write(1, a, 2)
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
 }

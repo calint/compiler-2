@@ -1,7 +1,7 @@
-# a type parameter of a function is a name: a quote is not part of one, also
-# without the kind 'type'
+# a parameter name is checked where it is read, a keyword in a later
+# parameter is reported as one
 
-func f<a"b>() {
+func f(a, mut b i8) {
 }
 
 func main() {

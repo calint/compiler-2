@@ -1,4 +1,15 @@
-# 'bool' has no conversion, a comparison makes a 'bool'
+# a result that is a variable the compiler added is not named in the message
+func noinline add(x, y) res {
+    res = x + y
+}
+
+func noinline twice(v) res {
+    res = v
+    res = add(res, v)
+}
+
 func main() {
-    var b = bool(5)
+    var x = 1
+    x = 1 + twice(x)
+    exit(x)
 }

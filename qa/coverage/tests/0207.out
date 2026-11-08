@@ -1,4 +1,4 @@
 
-0207.baz:6:1: expected a constant, a name or a call
-}
-^
+0207.baz:5:5: 'array_copy' takes 3 arguments
+    array_copy(a,a)
+    ^~~~~~~~~~

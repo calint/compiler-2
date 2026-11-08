@@ -1,12 +1,7 @@
-# --checks=stack: recursion that fits in the stack passes
-func noinline depth(n) res {
-    if n == 0 {
-        res = 0
-        return
-    }
-    res = depth(n - 1) + 1
-}
+# --checks=overflow: a product by a constant that overflows panics
+func noinline triple(a i32) res i32 { res = a * 3 }
 func main() {
-    var d = depth(100)
-    exit(d - 100)
+    var a = i32(715827883)
+    var x = triple(a)
+    exit(x)
 }

@@ -1,20 +1,16 @@
-# the method writes a field of an element chosen at run time and reads the
-# same field of another element, which can be the same one
-# rejected inlined as well as noinline
+# aliasing: the element 'e' of a 'foo' is passed to a function that reads
+# the array, which can be the element itself
+# the call is rejected: the function reads the array the argument is part of
 
-type entity {
-    len i32,
-    name i32,
-}
+dat g = i32[4]{ 1, 2, 3, 4 }
 
-dat entities = entity[4]
-
-func mut entity.bump(k i32) {
-    self.len = k + entities[1].len
+func put(x mut i32, k i32) {
+    x = k + (100 - g[3])
 }
 
 func main() {
-    var i = 1
-    entities[i].bump(1)
-    exit(entities[1].len - 1)
+    foo g {
+        put(e, 10)
+    }
+    exit(g[3] - 106)
 }

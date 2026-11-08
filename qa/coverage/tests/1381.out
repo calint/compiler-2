@@ -1,2 +1,4 @@
 
-panic: overflow
+1381.baz:12:16: argument 2 'ps[0].x' may share storage with argument 1 'ps[0].x' (both name 'ps'), use a temporary variable for one of them
+    f(ps[0].x, ps[0].x)
+               ^

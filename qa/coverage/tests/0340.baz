@@ -1,5 +1,10 @@
-# explicit zero-sized variable arrays are invalid
+# boolean arrays_equal result used in non-boolean arithmetic argument
+
+func take(value i16) {
+}
 
 func main() {
-    var values = i8[0]
+    var src = i8[2]
+    var cmp = i8[2]
+    take(arrays_equal(src, cmp, 2))
 }

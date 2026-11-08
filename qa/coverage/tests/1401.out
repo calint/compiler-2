@@ -1,4 +1,4 @@
 
-1401.baz:14:7: argument 1 'g' may share storage with the global 'g' that 'f' uses, use a temporary variable for one of them
-    f(g)
-      ^
+1401.baz:8:8: parentheses around a single value group nothing, write 'p'
+    if (p) == ((q)) {
+       ^

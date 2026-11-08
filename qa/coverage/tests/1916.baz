@@ -1,7 +1,6 @@
-# an array literal followed by an arithmetic operator that starts a 'var' is
-# an array that is not a number, as in an assignment: the message is at the
-# literal, not "unexpected '+'"
+# a comparison after the name of a type is not read as its '='
 
-func main() {
-    var a = i8[2]{1, 2} + 1
-}
+type box<T type> { x T }
+type b == box<i8>
+
+func main() {}

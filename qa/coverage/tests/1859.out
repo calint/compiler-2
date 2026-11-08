@@ -1,4 +1,7 @@
 
-1859.baz:4:18: 'T' is not a generic type, it takes no type arguments
-func f<T type>(x T<3>) {
-                 ^
+1859.baz:9:22: recursion of inlined function 'point.at' runs out of registers before it ends at compile time, declare it 'noinline'
+        self = point.at(x - 1, y)
+                     ^~
+1859.baz:15:13: called from 'point.at(n, 2)'
+    var p = point.at(n, 2)
+            ^~~~~

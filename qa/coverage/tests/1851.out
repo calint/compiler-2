@@ -1,4 +1,4 @@
 
-1851.baz:5:14: 'box<...>' is not a type, name an instance first, e.g. 'type my_box = box<...>'
-func f() res box<i8> {
-             ^~~
+1851.baz:9:9: an instance of 'point' is not a number
+    q = p < q
+        ^

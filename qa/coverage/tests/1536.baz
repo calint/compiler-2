@@ -1,8 +1,8 @@
-# rv32i: 'i64' is not available, also in a field that is only copied
-type pair {a i64, b i32}
-
+# a constant addend of a run-time index whose bytes pass the 32-bit address
+# range goes into the displacement, addresses wrap at the width of the target
 func main() {
-    var x = pair
-    var y = x
-    exit(y.b)
+    var a = [8]
+    a[0] = 7
+    var i = 0
+    exit(a[(i - 2000000000) + 2000000000])
 }

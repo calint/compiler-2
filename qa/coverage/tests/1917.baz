@@ -1,8 +1,5 @@
-# a string that fills an array, followed by an operator, is an array, which is
-# not a number
-
-type st {s i8[4], n i8}
-
+# a surplus argument of a built-in is reported as the count at its ',',
+# before it is parsed, like that of a function
 func main() {
-    var t = st{"ab" + 1}
+    exit(0, zz)
 }

@@ -1,0 +1,4 @@
+
+0591.baz:9:13: result 'self' requires a constructor 'type.name'
+func make() self {
+            ^~~~

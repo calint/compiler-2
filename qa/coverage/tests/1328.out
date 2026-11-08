@@ -1,4 +1,0 @@
-
-1328.baz:11:13: expected type 'i64', got 'bool', use 'i64(...)'
-    s = {1, t()}
-            ^

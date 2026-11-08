@@ -1,8 +1,10 @@
-# 'bool' has no conversion, also where the argument deduces a type
+# a function without a body before a generic function is reported as the
+# missing body, not as type arguments of a result type
 
-func f<T type>(x T) {
+func f()
+
+func g<T type>(x T) {
 }
 
 func main() {
-    f(bool(1))
 }

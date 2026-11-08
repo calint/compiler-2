@@ -1,9 +1,9 @@
-# a 'dat' field divided by a constant zero is rejected like a 'var'
-
-type point {x, y}
-
-dat p = point{1 / 0}
+# 'array_length' assigned to an array is rejected, the source must be an
+# array
 
 func main() {
-    exit(0)
+    var a = i8[2]
+    var b = i8[2]
+    b = array_length(a)
+    exit(b[0])
 }

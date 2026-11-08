@@ -1,7 +1,12 @@
-# a constant divisor of zero is rejected
+# a 'mut' parameter takes a variable, also when the callee is 'noinline',
+# which would otherwise write a temporary
+
+func noinline bump(x mut) {
+    x = x + 1
+}
 
 func main() {
-    var n = 5
-    var x = n / 0
-    exit(x)
+    var a = 1
+    bump(a + 1)
+    exit(a)
 }

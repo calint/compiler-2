@@ -1,18 +1,31 @@
-# local array initializes an array of types with array fields
-
-type point { x, y }
-type holder { points point[2] }
-
-func assert(x bool) { if not x exit(1) }
+# integers and their unary '~' compared with 0 across scalar widths
 
 func main() {
-    var local_points = point[2]{ {1, 2}, {3, 4} }
-    var holders = holder[2]{ { local_points }, { local_points } }
+    var b8 = i8(-1)
+    if b8 == 0 exit(1)
+    if ~b8 != 0 exit(2)
 
-    assert(holders[0].points[0].x == 1)
-    assert(holders[0].points[0].y == 2)
-    assert(holders[0].points[1].x == 3)
-    assert(holders[0].points[1].y == 4)
-    assert(holders[1].points[0].x == 1)
-    assert(holders[1].points[1].y == 4)
+    var c8 = i8(1)
+    if ~c8 == 0 exit(3)
+
+    var b16 = i16(-1)
+    if b16 == 0 exit(4)
+    if ~b16 != 0 exit(5)
+
+    var c16 = i16(1)
+    if ~c16 == 0 exit(6)
+
+    var b32 = i32(-1)
+    if b32 == 0 exit(7)
+    if ~b32 != 0 exit(8)
+
+    var c32 = i32(1)
+    if ~c32 == 0 exit(9)
+
+    var b64 = -1
+    if b64 == 0 exit(10)
+    if ~b64 != 0 exit(11)
+
+    var c64 = 1
+    if ~c64 == 0 exit(12)
 }

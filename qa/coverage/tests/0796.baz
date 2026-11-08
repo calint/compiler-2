@@ -1,8 +1,7 @@
-# the type argument of a call is not a constant
+# a function cannot have the name of a generic function
 
-func make<T type>(n) res T {
-}
+func f<T type>() {}
 
-func main() {
-    var m = make<1>(2)
-}
+func f() {}
+
+func main() {}

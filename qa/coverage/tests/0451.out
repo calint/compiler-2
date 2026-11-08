@@ -1,4 +1,0 @@
-
-0451.baz:2:11: expected '=' followed by an initializer, e.g. 'dat x = i32'
-dat values i8[] = "x"
-          ^

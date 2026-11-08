@@ -1,11 +1,11 @@
-# a generic call deduced from its argument where an array is expected
-type pt { x, a i8[3] }
+# a wider variable for a narrower parameter is rejected with a conversion
+# hint
 
-func gm<T type>(v T) res pt {
-    res = {}
+func f(a i16) res i16 {
+    res = a
 }
 
 func main() {
-    var n = i8(1)
-    exit(array_length(gm(n)))
+    var x = 5
+    var y = f(x)
 }

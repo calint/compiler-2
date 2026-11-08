@@ -1,9 +1,7 @@
-# panic line from a multiline index
+# one-element upper failure without line output
 
 func main() {
-    var arr = i8[8]
-    var index = -1
-    arr[
-        index
-    ] = 1
+    var arr = i8[1]
+    var index = 1
+    arr[index] = 1
 }

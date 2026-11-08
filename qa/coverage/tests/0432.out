@@ -1,4 +1,4 @@
 
-0432.baz:3:34: 'n' is not an array
-func main() { var n = 0 write(1, n, 1) }
-                                 ^
+0432.baz:3:17: expected '{' to begin block
+func main() exit(0)
+                ^

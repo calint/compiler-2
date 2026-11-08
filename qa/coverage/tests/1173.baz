@@ -1,4 +1,8 @@
-# a type alias without a generic type after '=' at the end of the file is
-# rejected after the '='
+# a global constant named like a global variable is rejected
 
-type str =
+var x = 4
+let x = 3
+
+func main() {
+    exit(x)
+}

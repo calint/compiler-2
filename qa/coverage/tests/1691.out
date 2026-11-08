@@ -1,4 +1,4 @@
 
-1691.baz:10:23: source type 'i8' does not match destination type 'i16'
-        array_copy(a, w, 4)
-                      ^
+1691.baz:13:12: argument 1 'g[3]' may share storage with the global 'g' that 'f' uses, use a temporary variable for one of them
+    exit(f(g[3]))
+           ^

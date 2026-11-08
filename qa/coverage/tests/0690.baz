@@ -1,15 +1,5 @@
-# a constructor call requires parentheses
-
-type point {
-    x,
-    y
-}
-
-func point.at(x, y) self {
-    self.x = x
-    self.y = y
-}
+# a let initializer starting with a symbol is not a constant
 
 func main() {
-    var p = point.at
+    let t = $
 }

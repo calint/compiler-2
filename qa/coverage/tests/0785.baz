@@ -1,15 +1,15 @@
-# an error in a method of a generic type names the alias that needs it
+# the argument of a constant parameter is not a type
 
 type text<capacity> {
     array i8[capacity],
     len,
 }
 
-func mut text.clear() {
-    self.len = nothing
+type name {
+    x,
 }
 
-type str = text<8>
+type str = text<name>
 
 func main() {
 }

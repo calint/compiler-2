@@ -1,12 +1,22 @@
-# array variable assignment
+# == compares indexed default-type values (true and false paths)
 
-func assert(x bool) { if not x exit(1) }
+func assert(err, expr bool) { if not expr exit(err) }
 
 func main() {
-    var source = [3]{ 10, 20, 30 }
-    var destination = [3]
-    destination = source
-    assert(destination[0] == 10)
-    assert(destination[1] == 20)
-    assert(destination[2] == 30)
+    var a = [2]
+    var b = [2]
+
+    a[0] = 5
+    b[0] = 5
+    a[1] = 9
+    b[1] = 10
+
+    assert(1, a[0] == b[0])
+    assert(2, a[1] != b[1])
+
+    var z = a[1] == b[1]
+    assert(3, not z)
+
+    var y = a[0] == b[0]
+    assert(4, y)
 }

@@ -1,10 +1,10 @@
-# a sized dat array without an initializer is zeroed
+# user types with identical fields are still incompatible
 
-dat value = i8[8]
-
-func assert(x bool) { if not x exit(1) }
+type left { value }
+type right { value }
 
 func main() {
-	assert(value[0] == 0)
-	assert(value[7] == 0)
+    var lhs = left
+    var rhs = right
+    lhs = rhs
 }

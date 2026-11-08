@@ -1,13 +1,6 @@
-# an array receiver of a method that is not generic, called with type
-# arguments, is reported at the receiver like that of a generic method
-
-type point {x, y}
-
-func point.get() res {
-    res = self.x
-}
-
+# an array literal with no values whose type the destination gives is written
+# as the zero value '{}'
+type row {a i8[2]}
 func main() {
-    var a = point[2]
-    var x = a.get<i8>()
+    var r = row{i8[2]{}}
 }

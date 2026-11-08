@@ -1,4 +1,4 @@
 
-0657.baz:11:5: read-only 't' cannot be the receiver of 'mut' method 'tk.reset', parameter 't' is not declared 'mut'
-    t.reset()
-    ^
+0657.baz:5:6: a constructor builds 'self', 'mut' is not needed
+func mut point.at(x, y) self {
+     ^~~

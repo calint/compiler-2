@@ -1,7 +1,7 @@
-# boolean values cannot be arithmetic operands
+# unknown field after array indexing is rejected
 
+type point { x }
 func main() {
-    var a = false
-    var b = true
-    var c = a + b
+    var points = point[1]
+    var value = points[0].y
 }

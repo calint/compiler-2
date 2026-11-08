@@ -1,15 +1,6 @@
-# discarding the value built by a constructor is rejected
-
-type point {
-    x,
-    y
-}
-
-# the value built by a constructor must be stored
-func point.at(x, y) self {
-    self = {x, y}
-}
+# an array size after the variable name is rejected, an array literal gives the
+# element type and size, e.g. 'var a = i8[4]{}'
 
 func main() {
-    point.at(1, 2)
+    var a[4] i8
 }

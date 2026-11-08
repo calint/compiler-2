@@ -1,5 +1,10 @@
-# parentheses around an array that is copied group nothing
+# a generic body sees only the globals defined before it, like a plain body
+func get<T type>() res T {
+    res = limit
+}
+
+var limit = 7
+
 func main() {
-    var a = i8[4]
-    var x = (a)
+    exit(get<i8>())
 }

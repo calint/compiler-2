@@ -1,8 +1,10 @@
-# --checks=overflow: the negation of the minimum of i16 as an addend panics
+# a shift count wider than the value in a condition is narrowed
+
 func main() {
-    var a = i16(-32768)
-    var b = i16(3)
-    var c = i16(0)
-    c = b + (-a)
-    exit(c)
+    var a = i8(1)
+    var count = i32(256)
+    if a << count != 0 {
+        exit(1)
+    }
+    exit(0)
 }

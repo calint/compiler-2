@@ -1,14 +1,7 @@
-# an instance is compared as memory, a call result is stored in a variable
-# first
-type point {x, y}
-
-func mk() res point {
-    res = {1, 2}
-}
-
+# '{}' is not an operand of a comparison
 func main() {
-    var p = point{1, 2}
-    if p == mk() {
+    var b = bool
+    if b == {} {
         exit(1)
     }
 }

@@ -1,5 +1,4 @@
-# duplicate constant declarations are rejected
+# type fields require a name
 
-let x = 1
-let x = 2
+type x { , }
 func main() {}

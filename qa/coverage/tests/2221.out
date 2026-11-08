@@ -1,4 +1,4 @@
 
-2221.baz:3:17: a zero value is a constant, it has no field or element
-    var a = i8{}.x
-                ^
+2221.baz:6:13: array 'a' must be indexed, or use 'array_length(a)'
+    var x = a.length
+            ^

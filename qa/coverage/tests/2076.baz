@@ -1,8 +1,6 @@
-# a whole array of 'bool' under a unary operator is rejected as an array that
-# must be indexed, not as a 'bool' to convert
-func main() {
-    var bs = bool[2]
-    var n = 0
-    n = -bs
-    exit(n)
-}
+# a built-in named as the argument a type argument is deduced from is called:
+# it needs its '('
+
+func show<T type>(v T) {}
+
+func main() { show(array_length) }

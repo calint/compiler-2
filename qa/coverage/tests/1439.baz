@@ -1,7 +1,13 @@
-# the value of 'arrays_equal' is not used
+# a path that ends at a method is not an array
+type point { x, y }
+
+func point.m() res {
+    res = self.x
+}
 
 func main() {
-    var a = i8[4]
-    var b = i8[4]
-    arrays_equal(a, b, 4)
+    var a = point[4]
+    foo a.m {
+        exit(1)
+    }
 }

@@ -1,4 +1,4 @@
 
-0454.baz:2:22: expected ',' or ')' after parameter 'values'
-func helper(values[] i32) {}
-                     ^
+0454.baz:2:14: function may return without setting its result 'res'
+func pick(i) res {
+             ^~~

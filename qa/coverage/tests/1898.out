@@ -1,4 +1,4 @@
 
-1898.baz:5:16: type 'i8' has no constructor 'x'
-    var y = i8.x
-               ^
+1898.baz:6:13: an array of 'i8' is not a number
+    var a = i8[2]{1, 2} + 1
+            ^~

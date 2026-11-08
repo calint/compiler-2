@@ -1,4 +1,4 @@
 
-0615.baz:11:7: method 'jump' not found in type 'point'
-    p.jump(1)
-      ^~~~
+0615.baz:10:5: the result of 'two' is discarded
+    two()
+    ^~~

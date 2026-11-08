@@ -1,4 +1,4 @@
 
-0209.baz:6:18: cannot compare arrays of sizes 2 and 3
-    var z = a == b
-                 ^
+0209.baz:3:26: expected ']' after array size
+func main() { var x = [2 = {1,2} }
+                         ^

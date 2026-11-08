@@ -1,9 +1,9 @@
-# the body of a generic type is skipped to its closing '}' without being
-# parsed; a closer that does not close the last open bracket ends the skip
+# a global constant 'let' checks the operands after the one that decides the
+# list like a 'var'
 
-type l<n> {
-    x i8[n
-}
+let k = true or 1 / 0 == 1
 
 func main() {
+    if not k exit(1)
+    exit(0)
 }

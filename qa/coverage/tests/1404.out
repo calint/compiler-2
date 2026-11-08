@@ -1,0 +1,4 @@
+
+1404.baz:9:1: expected '{' to begin block
+func g() {
+^

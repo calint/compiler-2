@@ -1,12 +1,8 @@
-# a nested field written before a read at a run-time index of it may have
-# been overwritten
+# the path of an 'include' decodes its escapes like any other string, '\x2e'
+# is the '.' of 'util.baz'
 
-type pt {x, y}
-type ln {a pt, b pt}
+include "include/util\x2ebaz"
 
 func main() {
-    var ls = ln[2]{{{1, 2}, {3, 4}}, {{5, 6}, {7, 8}}}
-    var i = 1
-    ls[0] = {{1, ls[i].a.x}, {3, 4}}
-    exit(ls[0].a.y)
+    exit(twice(2) - 4)
 }

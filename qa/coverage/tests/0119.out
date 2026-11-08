@@ -1,4 +1,4 @@
 
-0119.baz:8:9: index 8 is out of bounds for array 'arr' of size 8
-    arr[8] = 0x61
-        ^
+0119.baz:3:15: function may return without setting its result 'res'
+func foozi(i) res {
+              ^~~

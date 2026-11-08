@@ -1,4 +1,4 @@
 
-1567.baz:8:7: 'box<...>' is not a type, name an instance first, e.g. 'type my_box = box<...>'
-    w box<i8>,
-      ^~~
+1567.baz:4:9: expected type 'i64', got 'bool'
+    n = bool
+        ^~~~

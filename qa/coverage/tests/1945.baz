@@ -1,12 +1,7 @@
-# a method call where an array is expected is a call, not a method
-type point { x, y }
+# a generic call's type argument names an instance first, as for a field type
 
-func point.m() res {
-    res = self.x
-}
+type box<T type> { x T }
 
-func main() {
-    var p = point
-    var n = array_length(p.m())
-    exit(n)
-}
+func mk<T type>() res T { res = T }
+
+func main() { var b = mk<box<i8>>() }

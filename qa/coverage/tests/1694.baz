@@ -1,32 +1,21 @@
-# the check of a body without its call goes on after an inlined recursion
-# that no constant ends, the code after it is checked
+# two arguments that name the same variable are accepted when the parts the
+# body reaches of them are disjoint or only read: 'f' writes 'p.x' and reads
+# 'q.y', inlined and noinline
 
-func h(i mut) res {
-    i = i + 1
-    res = 0
+type pt {x, y}
+
+func f(p mut pt, q pt) {
+    p.x = q.y + 1
 }
 
-func k(a, b) res {
-    res = a + b
-}
-
-func r(n) res {
-    if n <= 0 {
-        res = 0
-        return
-    }
-    res = r(n - 1)
-}
-
-func g(n) res {
-    res = r(n)
-    var arr = [4]
-    var i = 0
-    if n > 5 {
-        res = k(arr[i], h(i))
-    }
+func noinline nf(p mut pt, q pt) {
+    p.x = q.y + 2
 }
 
 func main() {
-    exit(g(3))
+    var a = pt{1, 2}
+    f(a, a)
+    var b = pt{1, 2}
+    nf(b, b)
+    exit(a.x * 10 + b.x)
 }

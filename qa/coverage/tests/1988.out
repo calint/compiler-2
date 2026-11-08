@@ -1,4 +1,4 @@
 
-1988.baz:8:15: a string is not a number, it fills only an array of 'i8'
-    var n = f("a")
-              ^~~
+1988.baz:7:9: 'not' makes a condition, not an array
+    a = not b
+        ^~~

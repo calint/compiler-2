@@ -1,7 +1,13 @@
-# method on a type that does not exist
+# an instance literal field narrows only with 'i8(...)' etc, also for a plain
+# identifier that is copied directly
 
-func nosuch.add(value) {
+type pixel {
+    shade i8,
+    count
 }
 
 func main() {
+    var x = i32(1)
+    var p = pixel{x, 2}
+    exit(p.shade)
 }

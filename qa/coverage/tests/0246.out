@@ -1,4 +1,0 @@
-
-0246.baz:5:14: a 'bool' is not an arithmetic operand, convert it, e.g. 'int(...)'
-    var z = -arrays_equal(a,a,1)
-             ^~~~~~~~~~~~

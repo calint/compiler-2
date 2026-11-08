@@ -1,6 +1,5 @@
-# a parameter name of a generic function is checked where it is read, also
-# without an instance
-func make<T type>(i8) {
+# an array literal after an operator is not an operand
+func main() {
+    var a = [2]{1, 2}
+    var b = a == [2]{1, 2}
 }
-
-func main() {}

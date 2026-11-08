@@ -1,4 +1,0 @@
-
-0585.baz:3:27: expected a field name
-type point { x i32, y i32,, }
-                          ^

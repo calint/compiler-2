@@ -1,17 +1,20 @@
-# a global passed to a non-inline function that also names it
-
-var total = 3
-
-func add_one(a) res {
-    res = 1
-    res = res + a
-}
-
-func noinline bump(value) {
-    total = add_one(value)
-}
+# x86: division needs 'rdx' while it holds a last resort scratch value
 
 func main() {
-    bump(total)
-    exit(total)
+    var a = 1
+    var b = 2
+    var c = 3
+    var d = 4
+    var e = 5
+    var f = 6
+    var g = 7
+    var h = 8
+    var i = 9
+    var j = 10
+    var k = 11
+    var l = 12
+    var m = 13
+    var n = 14
+    var result = a + (b + (c + (d + (e + (f + (g + (h + (i + (j + (k + (l + (m + (n / 2)))))))))))))
+    exit(result)
 }

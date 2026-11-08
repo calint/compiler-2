@@ -1,4 +1,6 @@
-# type fields require delimiters
+# scalar indexing is rejected
 
-type x { a i8 b i8 }
-func main() {}
+func main() {
+    var x = 1
+    var y = x[0]
+}

@@ -1,6 +1,14 @@
-# a function is declared only in global scope
+# an instance is compared as memory, a call result is stored in a variable
+# first
+type point {x, y}
+
+func mk() res point {
+    res = {1, 2}
+}
+
 func main() {
-    loop {
-        func g() {}
+    var p = point{1, 2}
+    if p == mk() {
+        exit(1)
     }
 }

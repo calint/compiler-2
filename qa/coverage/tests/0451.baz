@@ -1,3 +1,12 @@
-# the old type-after-brackets order is rejected, the initializer gives the type
-dat values i8[] = "x"
-func main() {}
+# negated constants are expressions
+func assert(ok bool) { if not ok exit(1) }
+func main() {
+    var a = not (true == true)
+    assert(not a)
+    var b = not false
+    assert(b)
+    var c = not true
+    assert(not c)
+    var d = not (not true)
+    assert(d)
+}

@@ -1,6 +1,12 @@
-# 'true' and 'false' are of type 'bool' and cannot be arithmetic operands
+# the foo counter 'i' is read-only also through a parameter
+
+func skip(ix mut) {
+    ix = ix + 1
+}
 
 func main() {
-    var n = i32(1)
-    n = n + true
+    var arr = []{ 1, 2, 3 }
+    foo arr {
+        skip(i)
+    }
 }

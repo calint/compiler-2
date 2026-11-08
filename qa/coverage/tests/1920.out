@@ -1,4 +1,4 @@
 
-1920.baz:7:13: generic type 'box' is not a function, name an instance first, e.g. 'type my_box = box<...>'
-    var b = box(1)
-            ^~~
+1920.baz:2:21: result 'a' is named like a parameter
+func f<T type>(a T) a { }
+                    ^

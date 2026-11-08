@@ -1,11 +1,11 @@
-# a destination at a run-time index may be the element that is read, so a
-# field written before the read may have been overwritten
+# a generic parameter hides a type of its name defined after it
+func f<point type>(x point) res point {
+    res = x
+}
 
 type point {x, y}
 
 func main() {
-    var ps = point[2]{{1, 2}, {3, 4}}
-    var i = 1
-    ps[i] = {1, ps[0].x}
-    exit(ps[1].y)
+    var p = point{3, 4}
+    exit(int(f(i8(2))) + p.y)
 }

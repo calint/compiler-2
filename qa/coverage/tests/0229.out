@@ -1,4 +1,4 @@
 
-0229.baz:7:19: expected type 'i8', got 'i16'
-    var p1 = p{q1.data}
-                  ^~~~
+0229.baz:4:18: a trailing ',' is not allowed in a call
+func main() { f(1,) }
+                 ^

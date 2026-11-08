@@ -1,16 +1,6 @@
-# calling a constructor on a value instead of the type is rejected
-
-type point {
-    x,
-    y
-}
-
-# a constructor is called on the type, not on a value
-func point.at(x, y) self {
-    self = {x, y}
-}
+# an untyped variable cannot take its type from '{...}', e.g. 'point{1, 2}'
+# names it
 
 func main() {
-    var p = point
-    var q = p.at(1, 2)
+    var p = {1, 2}
 }

@@ -1,8 +1,9 @@
-# a function without a body: the keyword 'func' of the next definition is no
-# result name, the missing '{' is reported at it
-
-func f()
+# a whole array of instances as an index is rejected as an array that must be
+# indexed
+type cell { tag }
 
 func main() {
-    exit(0)
+    var cs = cell[3]
+    var a = [4]
+    exit(a[cs])
 }

@@ -1,4 +1,4 @@
 
-0609.baz:5:9: the destination gives the type 'i8[2]', write '{...}'
-    a = i8[2]{1, 2}
-        ^~
+0609.baz:4:6: expected '=' followed by an initializer, e.g. 'dat x = i32'
+dat a[4] i8
+     ^

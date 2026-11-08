@@ -1,26 +1,29 @@
-# foo over an indexed array of user types
+# foo passes a user type field to a mutating function
 
 type point { x, y }
-type holder { points point[2] }
+type item { data point }
 
-dat holders =
-    holder[2]{
-        { { {1, 2}, {3, 4} } },
-        { { {5, 6}, {7, 8} } }
+dat values =
+    item[3]{
+        { {1, 2} },
+        { {3, 4} },
+        { {5, 6} }
     }
+
+func increment(value mut point) {
+    value.y = value.y + 10
+}
 
 func assert(x bool) { if not x exit(1) }
 
 func main() {
-    foo holders[1].points {
-        e.y = e.y + 10
+    foo values {
+        increment(e.data)
     }
-    assert(holders[0].points[0].x == 1)
-    assert(holders[0].points[0].y == 2)
-    assert(holders[0].points[1].x == 3)
-    assert(holders[0].points[1].y == 4)
-    assert(holders[1].points[0].x == 5)
-    assert(holders[1].points[0].y == 16)
-    assert(holders[1].points[1].x == 7)
-    assert(holders[1].points[1].y == 18)
+    assert(values[0].data.x == 1)
+    assert(values[0].data.y == 12)
+    assert(values[1].data.x == 3)
+    assert(values[1].data.y == 14)
+    assert(values[2].data.x == 5)
+    assert(values[2].data.y == 16)
 }

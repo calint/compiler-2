@@ -1,4 +1,4 @@
 
-0213.baz:5:5: 'array_copy' takes 3 arguments
-    array_copy(a,a)
-    ^~~~~~~~~~
+0213.baz:3:9: constant '9223372036854775808' is out of range
+let x = 9223372036854775808
+        ^~~~~~~~~~~~~~~~~~~

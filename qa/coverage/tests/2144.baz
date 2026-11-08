@@ -1,0 +1,7 @@
+# a method definition without its '('
+type point {x}
+
+func point.at {
+}
+
+func main() {}

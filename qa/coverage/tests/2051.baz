@@ -1,9 +1,25 @@
-# a wrapping conversion of a bitwise operation on wider operands keeps the
-# low bits, rv32i normalizes the narrow result
+# the check of a body without its call goes on after an inlined recursion
+# that an argument it does not know drives past the nesting limit, to the
+# 'h(3)' after it
+
+func g(n, k) res {
+    if n == 0 {
+        res = k
+        return
+    }
+    res = g(n - 1, k)
+}
+
+func h(k) res {
+    var a = i8[2]
+    res = a[k]
+}
+
+func f(x) res {
+    res = x + g(x, 70)
+    res = res + h(3)
+}
 
 func main() {
-    var a = i16(0x1234)
-    var b = i16(0x1111)
-    var r = i8(a ^ b)
-    exit(int(r))
+    exit(0)
 }

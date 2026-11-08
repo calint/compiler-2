@@ -1,4 +1,7 @@
 
-1952.baz:4:9: expected type 'i16', got 'i8[]'
-    n = i8[2]{1, 2}
-        ^~
+1952.baz:6:17: the destination gives the type 'i8', write '{}'
+    var s = seg{T}
+                ^
+1952.baz:10:5: instantiated by 'f<i8>'
+    f<i8>()
+    ^

@@ -1,5 +1,15 @@
-# string with an unsupported escape
+# arguments of a method are numbered without the receiver
+
+type point {
+    x,
+    y
+}
+
+func point.shifted(dx, dy) res point {
+    res = {self.x + dx, self.y + dy}
+}
 
 func main() {
-    var s = "a\qb"
+    var p = point{1, 2}
+    var q = p.shifted(1)
 }

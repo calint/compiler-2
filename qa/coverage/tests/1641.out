@@ -1,4 +1,4 @@
 
-1641.baz:11:21: 'a' may be written by the call of 'grow' in a later argument, use a temporary variable
-    if arrays_equal(a, b, grow()) {
-                    ^
+1641.baz:5:12: index -1 is out of bounds for array 'a' of size 4
+    exit(a[k])
+           ^

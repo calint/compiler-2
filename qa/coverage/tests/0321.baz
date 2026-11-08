@@ -1,7 +1,10 @@
-# signed thirty-two-bit index remains negative
+# computed inner index in a nested array
+
+type group { values i8[2] }
 
 func main() {
-    var arr = i8[8]
-    var index = i32(-1)
-    arr[index] = 1
+    var groups = group[2]
+    var outer = 0
+    var inner = 2
+    groups[outer].values[inner] = 1
 }

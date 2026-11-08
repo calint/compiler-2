@@ -1,0 +1,4 @@
+
+0152.baz:4:19: too many fields for type 'point'
+dat p = point{ 1, 2 }
+                  ^

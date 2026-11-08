@@ -1,4 +1,4 @@
 
-1794.baz:5:12: unexpected ')'
-    res = a)
-           ^
+1794.baz:5:27: divisor must not be zero
+    let k = false and 1 / 0 == 1
+                          ^

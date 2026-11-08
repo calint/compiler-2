@@ -1,5 +1,8 @@
-# a data conversion needs its closing parenthesis
+# the foo counter 'i' is read-only
 
-dat x = i8(1
-
-func main() {}
+func main() {
+    var arr = []{ 1, 2, 3 }
+    foo arr {
+        i = 2
+    }
+}

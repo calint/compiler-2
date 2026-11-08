@@ -1,12 +1,12 @@
-# an error in the fields of the base names each level that instantiated it
+# an empty string right before the '}' that ends a generic body does not hide
+# that '}' from the skip of the generic text
 
-type list<T type, capacity> {
-    array T[capacity],
-    len,
+func first<T type>(x T) res T {
+    res = x
+    var a = i8[4]
+    a = ""}
+
+func main() {
+    var x = first<int>(7)
+    exit(x)
 }
-
-type text<capacity> = list<i8, capacity>
-
-type str = text<0>
-
-func main() {}

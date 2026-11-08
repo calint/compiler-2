@@ -1,4 +1,4 @@
 
-0805.baz:5:6: function 'f' already defined at 3:6
-func f<T type>() {}
-     ^
+0805.baz:7:13: function 'twice' is not generic, it takes no type arguments
+    var b = twice<i32>(a)
+            ^~~~~

@@ -1,4 +1,0 @@
-
-0101.baz:4:13: variable 'x' is read before it is set
-    var x = x + 1
-            ^

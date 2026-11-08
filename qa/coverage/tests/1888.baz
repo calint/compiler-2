@@ -1,5 +1,5 @@
-# a type cannot contain itself, its fields are read before it is defined
+# a field list without its '}' does not read the next keyword as a type
 
-type p {x p}
-func main() {
-}
+type p { x
+
+func main() {}

@@ -1,6 +1,8 @@
-# a unary operator on the buffer of 'write' is rejected, the buffer is an array
+# the count of 'read' assigned to an array is rejected as a call, the source
+# must be an array
 func main() {
-    var b = i8[4]
-    write(1, -b)
+    var buf = i8[4]
+    var a = int[2]
+    a = read(0, buf, 4)
     exit(0)
 }

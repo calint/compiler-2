@@ -1,0 +1,4 @@
+
+0756.baz:9:19: expected type 'i32' for parameter 'v', got 'i16'
+    var r = first(a)
+                  ^

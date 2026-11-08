@@ -1,7 +1,13 @@
-# an instance argument can be a temporary such as a literal
-type point { x, y }
-func sum(p point) res { res = p.x + p.y }
+# folding negation of the minimum constant wraps like the run-time negation
+
+func assert(err, expr bool) { if not expr exit(err) }
+
+let c = -9223372036854775807 - 1
+let d = -c
+
 func main() {
-    var s = sum({ 1, 2 })
-    exit(s)
+    var x = c
+    x = -x
+    assert(1, x == c)
+    assert(2, d == c)
 }

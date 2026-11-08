@@ -1,4 +1,7 @@
 
-0777.baz:8:12: generic type 'text' needs arguments, e.g. 'text<...>'
-type str = text
-           ^~~~
+0777.baz:4:11: type 'nope' not found
+    array nope[capacity],
+          ^~~~
+0777.baz:8:6: instantiated by
+type str = text<8>
+     ^~~

@@ -1,21 +1,13 @@
-# the value assigned to the element 'e' of a 'foo' over a field reads other
-# bytes of the same variable and the same field
-# the value is computed before the destination is written
+# a call result is written into data that the function reads rejected inlined
+# as well as noinline
 
-type world {
-    array[4],
-    other[4],
-    count,
+dat g = i32[4]{ 1, 2, 3, 4 }
+
+func f(k i32) res i32 {
+    res = k + (100 - g[3])
 }
 
 func main() {
-    var w = world
-    w.array[2] = 5
-    foo w.array {
-        e = e + w.other[2] + w.count
-    }
-    foo w.array {
-        e = e + w.array[2]
-    }
-    exit(w.array[3] - 10)
+    g[3] = f(10)
+    exit(g[3] - 106)
 }

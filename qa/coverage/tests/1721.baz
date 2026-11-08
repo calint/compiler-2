@@ -1,13 +1,10 @@
-# the same for an instance of a generic type, sized by its constant argument
-
-type w<n> {v i8[n], b i8}
-
-type big = w<0xffffffff>
-
-func copy(x mut big, y big) {
-    x = y
-}
-
+# a 'foo' with a constant count of 0 outside an inlined call still checks its
+# body, as a branch that folds to false does
 func main() {
-    exit(0)
+    var a = []{1, 2}
+    var x = 0
+    foo a, 0 {
+        x = a[5]
+    }
+    exit(x)
 }

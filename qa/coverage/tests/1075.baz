@@ -1,12 +1,5 @@
-# a type parameter of a method of a generic type cannot have the name of a type
-# parameter of the type, the error names the parameter of the type
+# a negated 'bool' literal does not initialize a 'dat' of the default type
 
-type list<T type> {
-    a T,
-}
-
-func list.f<T type>(x T) {}
-
-type s = list<i8>
+dat d = -true
 
 func main() {}

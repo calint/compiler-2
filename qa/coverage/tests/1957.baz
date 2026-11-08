@@ -1,6 +1,15 @@
-# an instance literal followed by a connective that starts a 'let' is an
-# operand, as in a condition
-type point {x i32, y i32}
+# a typed constant tells the type of a generic parameter like a variable of
+# its type: 'same(k, k)' is 'same<i8>' for 'let k = i8(3)' as for 'var'
+
+func same<T type>(a T, b T) res T {
+    res = a + b
+}
+
 func main() {
-    let b = point{1, 2} and true
+    let k = i8(3)
+    var r = same(k, k)
+    let w = i16(300)
+    var s = same(w, w)
+    if s != 600 exit(1)
+    exit(r)
 }

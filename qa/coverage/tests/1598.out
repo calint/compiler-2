@@ -1,4 +1,4 @@
 
-1598.baz:4:13: 'int' is a type, not a value
-    if v == int {
-            ^~~
+1598.baz:2:8: generic parameter 'x' is also the name of the parameter at 2:16, use another name
+func f<x type>(x x) res x {
+       ^

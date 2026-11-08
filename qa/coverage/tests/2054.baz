@@ -1,12 +1,22 @@
-# a 'foo' without a count over more elements than its counter 'i' can number
-# is rejected; rv32i only, x86_64 holds it
+# the check of a body without its call binds the arguments of an inlined
+# recursion it does not expand, 'rs[5].a' past the end of 'rs' of 'f'
+
+type row { a i8[4] }
+
+func g(s i8[], rs row[], x) res {
+    if x > 0 {
+        res = g(rs[5].a, rs, x - 1)
+        return
+    }
+    res = s[0]
+}
+
+func f(x) res {
+    var rs = row[2]
+    var t = i8[4]
+    res = g(t, rs, x)
+}
 
 func main() {
-    var a = i8[0x80000001]
-    foo a {
-        if i < 0 {
-            exit(3)
-        }
-    }
     exit(0)
 }

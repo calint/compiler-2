@@ -1,16 +1,7 @@
-# a method call where a function takes an array, its result of another type
-# than the elements
-
-type point {x, y}
-
-func point.get() res bool {
-    res = self.x == 0
-}
-
-func f(s i8[]) {
-}
+# an operator after an instance literal whose type the destination gives
+type point {x i32, y i32}
 
 func main() {
-    var p = point
-    f(p.get())
+    var p = point{1, 2}
+    p = point{3, 4} + 1
 }

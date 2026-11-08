@@ -1,20 +1,15 @@
-# the check of a body without its calls rejects an inlined recursion that an
-# instance drives beside a constant argument: an instance folds at no call, so
-# every call passes the nesting limit, before the narrowing after it
+# the check of a body without its calls rejects an inlined recursion that only
+# a 'mut' argument drives, which folds at no call, so every call passes the
+# nesting limit
 
-type point { x, y }
-
-func f(p point, k) {
-    if p.x <= 0 {
+func r(p mut i32) res i32 {
+    if p == 0 {
+        res = 0
         return
     }
-    var q = point{p.x - 1, p.y}
-    f(q, 2)
-    var w = i16(300)
-    var b = i8(0)
-    b = w
+    p = p - 1
+    res = r(p)
 }
 
 func main() {
-    exit(0)
 }

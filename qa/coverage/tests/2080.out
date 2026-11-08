@@ -1,4 +1,4 @@
 
-2080.baz:8:7: 'not' makes a condition, not an array
-    f(not bs)
-      ^~~
+2080.baz:5:29: expected ',' before argument 2 ('b')
+func main() { g(point{1, 2} 3) }
+                            ^

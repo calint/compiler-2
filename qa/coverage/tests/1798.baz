@@ -1,8 +1,21 @@
-# --checks=overflow: subtracting 1 from the minimum overflows, also where it
-# is emitted as a decrement
+# a constant 'let' in nested loops that hold every scratch register is
+# accepted like a 'var'
 
 func main() {
-    var x = i32(-2147483648)
-    x = x - 1
-    exit(0)
+    var a = i32[2]
+    foo a, a[0] + 1 {
+        foo a, a[0] + 1 {
+            foo a, a[0] + 1 {
+                foo a, a[0] + 1 {
+                    foo a, a[0] + 1 {
+                        foo a, a[0] + 1 {
+                            let k = 3
+                            a[0] = k
+                        }
+                    }
+                }
+            }
+        }
+    }
+    exit(a[0])
 }

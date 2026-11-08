@@ -1,4 +1,4 @@
 
-1184.baz:4:5: variable 'x' already defined at 3:5
-let x = 3
-    ^
+1184.baz:5:9: 't' is not a constant, a 'dat' holds constants
+dat u = t
+        ^

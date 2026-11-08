@@ -1,4 +1,7 @@
 
-1951.baz:4:13: an array literal is not an operand here, store it in a variable first
-    x = 1 + i8[2]{1, 2}
-            ^~
+1951.baz:7:17: 'point' is a type, not an array
+    var s = seg{T{1, 2}}
+                ^
+1951.baz:11:5: instantiated by 'f<point>'
+    f<point>()
+    ^

@@ -1,15 +1,8 @@
-# also for a method defined after the alias
+# the type argument of a call is not a constant
 
-type text<capacity> {
-    array i8[capacity],
-    len,
-}
-
-type str = text<8>
-
-func mut text.clear() {
-    self.len = nothing
+func make<T type>(n) res T {
 }
 
 func main() {
+    var m = make<1>(2)
 }

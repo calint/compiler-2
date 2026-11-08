@@ -1,12 +1,6 @@
-# every check of '--checks=noub' changes the code of this program on
-# rv32i-fpga, see 'CLI_CHECKS_NOUB' of 'test-cli.sh'
-func noinline f(a mut i32[], i, d, s) res {
-    array_copy(a[i], a, 2)
-    res = a[i] / d << s
-    res = res * d + 1
-}
+# a lead byte at the end of a quoted name, without the continuation bytes it
+# announces, is escaped in a message
 
 func main() {
-    var a = i32[8]
-    exit(f(a, 1, 1, 1))
+    var bÃ = 1
 }

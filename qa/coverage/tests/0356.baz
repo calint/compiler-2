@@ -1,5 +1,14 @@
-# empty brace data arrays require a size
+# constants shadow across nested blocks
 
-dat value = i8[]{}
+func assert(x bool) { if not x exit(1) }
 
-func main() {}
+let value = 1
+
+func main() {
+    assert(value == 1)
+    {
+        let value = 2
+        assert(value == 2)
+    }
+    assert(value == 1)
+}

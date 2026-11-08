@@ -1,16 +1,23 @@
-# the check of a body without its calls rejects an inlined recursion whose
-# arguments all fold and that passes the nesting limit, as every call does
+# a copy of 13 B under register pressure: without free registers for the
+# loop rv32i unrolls it; x86_64 runs out of registers before
 
-func g(k i32) {
-    if k == 0 {
-        return
-    }
-    g(k + 1)
+type r { a i8[13] }
+type r7 { a i8[7] }
+
+func mk(x r) res r {
+    res = x
 }
 
-func f(x i32) {
-    g(2)
+func sum(a0 i8, a1 i8, a2 i8, a3 i8, a4 i8, a5 i8, a6 i8, a7 i8, a8 i8, a9 i8, a10 i8, a11 i8, a12 i8, h r) res int {
+    res = a0 + a1 + a2 + a3 + a4 + a5 + a6 + a7 + a8 + a9 + a10 + a11 + a12 + h.a[0]
 }
 
 func main() {
+    var xs = r7[9]
+    var ys = r[3]
+    var i = 1
+    var j = 2
+    ys[i].a[0] = 6
+    var s = sum(xs[i + 0].a[j + 0], xs[i + 1].a[j + 1], xs[i + 2].a[j + 2], xs[i + 3].a[j + 3], xs[i + 0].a[j + 4], xs[i + 1].a[j + 0], xs[i + 2].a[j + 1], xs[i + 3].a[j + 2], xs[i + 0].a[j + 3], xs[i + 1].a[j + 4], xs[i + 2].a[j + 0], xs[i + 3].a[j + 1], xs[i + 0].a[j + 2], mk(ys[i]))
+    exit(s)
 }

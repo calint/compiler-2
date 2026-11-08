@@ -1,4 +1,4 @@
-# prints 32-bit values as hex with shifts, masks and a separator
+# escaped characters in string data
 
 func assert(expr bool) {
     if not expr exit(1)
@@ -8,44 +8,8 @@ func print(str i8[], len) {
     write(1, str, len)
 }
 
-func input(str mut i8[], len) nbytes {
-    nbytes = read(0, str, len)
-}
-
-func print_hex_32b(num i32) {
-    var buf = i8[9]
-    var n = num
-    
-    var i = 8
-    loop {
-        var nibble = i8(n & 0xf)
-        if nibble > 9 buf[i] = nibble + 55
-        else buf[i] = nibble + 48
-        # note: 55 is ascii for 'A' - 10
-        #       48 is ascii for '0'
-        n = n >> 4
-        if i == 0 break
-        i = i - 1
-        if i == 4 {
-            buf[i] = 0x3a  # ':' separator
-            i = i - 1
-        }
-    }
-    
-    print(buf, 9)
-}
+dat hello = "hello \"world\" \n from 'baz'\n  "
 
 func main() {
-    var nl = i8[1]
-    nl[0] = 0x0a
-    print_hex_32b(0x1234abcd)
-    print(nl, 1)
-    print_hex_32b(1)
-    print(nl, 1)
-    print_hex_32b(i32(0xfedc1234))
-    print(nl, 1)
-    print_hex_32b(-1)
-    print(nl, 1)
-    print_hex_32b(0x10a0b0c0)
-    print(nl, 1)
+    print(hello, array_length(hello))
 }

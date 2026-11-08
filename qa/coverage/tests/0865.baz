@@ -1,9 +1,3 @@
-# a constant argument is narrowed to a smaller variable like a variable of its
-# parameter's type
-func narrow(y i16) res {
-    var a = i8(0)
-    a = y
-    res = a
-}
+# a type without a name is rejected
 
-func main() { exit(narrow(4)) }
+type { x, y }

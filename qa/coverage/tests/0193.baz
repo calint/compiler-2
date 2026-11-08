@@ -1,5 +1,4 @@
-# dat requires a declared name
+# type declarations require fields
 
-dat = 1
-
+type x
 func main() {}

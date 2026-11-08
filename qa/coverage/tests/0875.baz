@@ -1,4 +1,9 @@
-# a function name is an identifier
+# a record literal initializes a global variable
 
-func 2() {
+type point {x, y}
+
+var origin = point{1, 2}
+
+func main() {
+    exit(origin.x + origin.y)
 }

@@ -1,6 +1,8 @@
-# a field name follows the '.'
-type point {x, y}
-func main() {
-    var p = point{1, 2}
-    var a = p..x
-}
+# the fields of a generic type see only the types defined before it
+type pair<T type> { first T, second point }
+
+type point { x, y }
+
+type ipair = pair<i32>
+
+func main() {}

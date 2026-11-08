@@ -1,21 +1,10 @@
-# a conversion of a constant name is a value of its type like the
-# conversion of a literal, e.g. 'i16(k)' compared with a narrower variable as
-# 'i16(300)' is, also of an inlined parameter bound to a constant
-
-let k = 300
-
-func compared(p i16) res i8 {
-    var e = i8(1)
-    res = 0
-    if i16(p) <= e {
-        res = 1
-    }
-}
+# 'array_length' is a value of the default type also when it folds, so a
+# narrower left side is rejected as in a function checked without a call
 
 func main() {
+    var a = i8[3]
     var e = i8(1)
-    if i16(k) <= e {
+    if e < array_length(a) {
         exit(1)
     }
-    exit(int(compared(300)))
 }

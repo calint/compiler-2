@@ -1,4 +1,4 @@
 
-0158.baz:4:19: too many fields for type 'point'
-dat p = point{ 1, 2 }
-                  ^
+0158.baz:6:22: destination array size 2 does not match source size 4
+    var dst = small{ src }
+                     ^~~

@@ -1,6 +1,6 @@
-# conditional expression requires a closing parenthesis
+# arrays_equal arguments require commas
 
 func main() {
-    var x = 1
-    if (x == 1 {}
+    var a = i8[2]
+    var z = arrays_equal(a,a 1)
 }

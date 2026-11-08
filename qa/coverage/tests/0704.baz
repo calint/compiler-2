@@ -1,11 +1,14 @@
-# a constant passed to a mut parameter cannot be written
+# a constant shift by a negative count is rejected, also in code that does not
+# run
 
-let c = 1
-
-func bump(x mut) {
-    x = x + 1
-}
+let n = -1
 
 func main() {
-    bump(c)
+    var zero = 0
+    if zero != 0 {
+        var a = 1 << n
+        var b = 8 >> n
+        exit(a + b)
+    }
+    exit(0)
 }

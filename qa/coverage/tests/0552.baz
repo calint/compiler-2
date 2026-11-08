@@ -1,11 +1,15 @@
-# a '{...}' initializer of an unsized parameter cannot have more elements than
-# the argument
+# the receiver of a method cannot be a whole array
 
-func fill(dst mut i32[]) {
-    dst = {1, 2, 3}
+type list {
+    count,
+    items[4]
+}
+
+func mut list.clear() {
+    self.count = 0
 }
 
 func main() {
-    var values = i32[2]{4, 5}
-    fill(values)
+    var lists = list[2]
+    lists.clear()
 }

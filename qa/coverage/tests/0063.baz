@@ -1,31 +1,23 @@
-# relational operators over booleans and integers
+# arguments with unary values
+
+func assert(expr bool) {
+    if not expr exit(1)
+}
+
+func foozi(x, y) {
+    assert(x == -2)    # ~1 == 0xfffffffe
+    assert(y == -2)
+}
+
+func fow(x, y) {
+    assert(x == 0)
+    assert(y == 0)
+}
 
 func main(){
-    if not true exit(1)
-    if true == false exit(2)
-    if not true == true exit(3)
-    if not false == false exit(4)
-    if true == false or false == true or false or not true exit(5)
-    if not not true == false exit(5)
-
-    var x = 1
-    var y = 2
-
-    if x > y exit(6)
-    if x >= y exit(7)
-    if y < x exit(8)
-    if y <= x exit(9)
-
-    if not x < y exit(10)
-    if not x <= y exit(11)
-    if not y > x exit(12)
-    if not y >= x exit(13)
-
-    if 1 > 2 exit(14)
-    if 1 >= 2 exit(15)
-    if 2 < 1 exit(16)
-    if 2 <= 1 exit(17)
-
-    if 1 > 2 or not (x < y) exit(18)
-    if false or not true exit(19)
+    var a = 1
+    foozi(~1, ~a)
+    fow(~-1, ~-a)
+    foozi(a - 3, -2)
+    fow(a - 1, 0)
 }

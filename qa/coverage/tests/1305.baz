@@ -1,6 +1,10 @@
-# a unary operator on the buffer of 'read' is rejected, the buffer is an array
+# a condition in parentheses compared with a 'bool' is rejected at its
+# comparison, it is stored in a 'bool' first
 func main() {
-    var b = i8[4]
-    read(0, ~b, 2)
+    var x = 1
+    var b = true
+    if (x == 1) == b {
+        exit(1)
+    }
     exit(0)
 }

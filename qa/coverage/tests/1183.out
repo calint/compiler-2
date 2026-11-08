@@ -1,4 +1,4 @@
 
-1183.baz:5:9: variable 'd' already defined at 4:9
-    let d = 7
-        ^
+1183.baz:3:5: 'int' is a built-in type
+dat int = int(5)
+    ^~~

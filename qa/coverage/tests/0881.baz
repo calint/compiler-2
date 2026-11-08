@@ -1,7 +1,9 @@
-# a string after the branch of an if cannot start a statement
+# a condition is not the call of a function without a result
+
+func check(ok bool) {
+}
 
 func main() {
-    var x = 1
-    if x == 1 {
-    } "else"
+    if check(true) {
+    }
 }

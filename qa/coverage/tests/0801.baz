@@ -1,5 +1,10 @@
-# a generic parameter is a constant or has the kind 'type'
+# the arguments of an instance are checked like those of any function
 
-func f<T int>() {}
+func id<T type>(a T) res T {
+    res = a
+}
 
-func main() {}
+func main() {
+    var a = 1
+    var b = id<i16>(a)
+}

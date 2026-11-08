@@ -1,6 +1,6 @@
-# an array literal must name the element type of the destination
+# a type after the data name is rejected, the initializer gives the type,
+# e.g. 'dat x = i32(0)'
 
-func main() {
-    var a = i8[2]
-    a = i16[]{1, 2}
-}
+dat x i32 = 1
+
+func main() {}

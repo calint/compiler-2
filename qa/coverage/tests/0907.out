@@ -1,4 +1,4 @@
 
-0907.baz:1:9: cannot open file 'include/missing.baz'
-include "include/missing.baz"
-        ^~~~~~~~~~~~~~~~~~~~~
+0907.baz:3:9: unterminated string
+dat s = "a
+        ^

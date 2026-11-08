@@ -1,4 +1,4 @@
-# constant declarations require an equals sign
+# function results must be assigned
 
-let x 1
+func f() result { }
 func main() {}

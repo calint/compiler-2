@@ -1,11 +1,11 @@
-# the temporary that holds the result of a call is not named in the error when
-# it does not fit in the variable storage
-func noinline f(x i32) res {
+# a variable in the body of a noinline function that repeats 'res' is
+# rejected
+func noinline f(x) res {
     res = x
+    var res = 7
+    res = 9
 }
 
 func main() {
-    var b = i32[4]
-    b[1] = 2
-    exit(f(b[1]))
+    exit(f(3))
 }

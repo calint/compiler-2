@@ -1,10 +1,9 @@
-# an instance literal that a comparison continues is not a number
-
-type point {x, y}
+# an instance literal compared into a 'bool' is rejected by the comparison
+type point { x, y }
 
 func main() {
     var p = point{1, 2}
-    var x = i8
-    x = point{1, 2} == p
-    exit(x)
+    var b = bool
+    b = point{1, 2} == p
+    exit(0)
 }

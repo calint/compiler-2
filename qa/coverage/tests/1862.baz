@@ -1,15 +1,21 @@
-# an operator after a copied array makes a value, not an array
+# a generic parameter hides a function of its name defined after it, 'T(...)'
+# in a method converts
+type w<T type> {
+    a T,
+}
 
-type left {value}
+type w8 = w<i8>
 
-func mk() res left {
-    res = {}
+func w.next() res T {
+    res = T(self.a + 1)
+}
+
+func T(x) res {
+    res = x + 1
 }
 
 func main() {
-    var ll = left
-    var l = left
-    var a = i8[2]
-    var b = i8[2]
-    b = a + 1
+    var v = w8
+    v.a = i8(2)
+    exit(int(v.next()) + T(3))
 }

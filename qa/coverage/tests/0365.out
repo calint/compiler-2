@@ -1,4 +1,0 @@
-
-0365.baz:5:9: constant 'x' already defined at 4:9
-    let x = 2
-        ^

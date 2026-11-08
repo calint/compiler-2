@@ -1,24 +1,10 @@
-# the element 'e' of a 'foo' over a constant element field is assigned from
-# another field of an element at a run-time index
-
-type item {
-    f i32,
-    g i32,
-}
-
-type ent {
-    items item[2],
-    other i32,
-}
-
+# --checks=upper,division,line: two divisions on different lines, the second
+# one fails
 func main() {
-    var es = ent[3]
-    es[2].other = 5
-    var k = 2
-
-    foo es[1].items {
-        e.f = es[k].other + 1
-    }
-
-    if es[1].items[1].f != 6 exit(1)
+    var a = 8
+    var b = 2
+    var one = a / b
+    var z = 0
+    var two = one % z
+    exit(two)
 }

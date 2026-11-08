@@ -1,12 +1,6 @@
-# a generic parameter hides a function of its name, 'T(5)' converts
-func T(x) res {
-    res = x + 1
-}
+# a built-in type as a function name is reported whatever follows the '('
 
-func f<T type>(a T) res {
-    res = int(T(5)) + int(a)
-}
+func i8(.x) {}
 
 func main() {
-    exit(f(i8(1)) + T(10))
 }

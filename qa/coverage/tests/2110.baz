@@ -1,21 +1,4 @@
-# a copy of a record of 7 B under register pressure: with 'rsi' held by an
-# argument x86_64 copies by parts, not with 'rep movsb'
-
-type r7 { a i8[7] }
-
-func mk(x r7) res r7 {
-    res = x
-}
-
-func sum(a0 i8, a1 i8, a2 i8, a3 i8, a4 i8, a5 i8, h r7) res int {
-    res = a0 + a1 + a2 + a3 + a4 + a5 + h.a[0]
-}
-
+# a character literal that ends with a '\' at the end of the file is
+# unterminated
 func main() {
-    var xs = r7[9]
-    var i = 1
-    var j = 2
-    xs[3].a[0] = 5
-    var s = sum(xs[i + 0].a[j + 0], xs[i + 1].a[j + 1], xs[i + 2].a[j + 2], xs[i + 3].a[j + 3], xs[i + 0].a[j + 4], xs[i + 1].a[j + 0], mk(xs[i + j]))
-    exit(s)
-}
+    var c = '\

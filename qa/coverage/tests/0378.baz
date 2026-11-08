@@ -1,18 +1,12 @@
-# foo loop variable passed to a mutating function
-
-dat values = []{1, 2, 3}
-
-func increment(value mut) {
-    value = value + 10
-}
+# array variable assignment
 
 func assert(x bool) { if not x exit(1) }
 
 func main() {
-    foo values {
-        increment(e)
-    }
-    assert(values[0] == 11)
-    assert(values[1] == 12)
-    assert(values[2] == 13)
+    var source = [3]{ 10, 20, 30 }
+    var destination = [3]
+    destination = source
+    assert(destination[0] == 10)
+    assert(destination[1] == 20)
+    assert(destination[2] == 30)
 }

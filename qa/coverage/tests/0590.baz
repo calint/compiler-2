@@ -1,5 +1,15 @@
-# a comparison may not truncate a folded constant
+# calling a method on the type instead of on a value is rejected
+
+type point {
+    x,
+    y
+}
+
+# a method needs a receiver
+func point.sum() res {
+    res = self.x + self.y
+}
+
 func main() {
-    var n = i8(1)
-    if n == 200 + 57 { exit(1) }
+    var s = point.sum()
 }

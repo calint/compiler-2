@@ -1,12 +1,16 @@
-# with the shift check, a conversion that narrows and one that does not
+# a call result reached into is not the whole argument, it tells no type
+# parameter and is rejected as in a call without type parameters
+
+type point {x i8, y}
+
+func mk() res point {
+    res = {}
+}
+
+func twice<T type>(x T) res int {
+    res = int(x) * 2
+}
+
 func main() {
-    var x = i16(300)
-    var y = i16(5)
-    var c = i8
-    c = i8(x + y)
-    var w = i16
-    w = i16(y)
-    var v = i16
-    v = -i16(c)
-    exit(c + w + v)
+    exit(twice(mk().x + 1))
 }

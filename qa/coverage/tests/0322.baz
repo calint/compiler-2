@@ -1,7 +1,10 @@
-# signed default-type index remains negative
+# valid upper boundary through a computed index
+
+func assert(expr bool) { if not expr exit(1) }
 
 func main() {
-    var arr = i8[8]
-    var index = -1
-    arr[index] = 1
+    var values = i8[8]
+    var index = 7
+    values[index] = 5
+    assert(values[7] == 5)
 }

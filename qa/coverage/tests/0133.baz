@@ -1,0 +1,27 @@
+# division by and multiplication with a parenthesized sum of array elements
+
+func assert(expr bool) { if not expr exit(1) }
+
+
+func fez(val i32[]) res i32 {
+    res = val[2] / (val[1] + val[1]) 
+}
+
+func foz(x i32, y i32) res i32 {
+    res = x * (1 + y) 
+}
+
+
+func main() {
+    var values = i32[4]
+    values[1] = 4
+    values[2] = 8
+
+    # note: temporary because the result may share storage with the argument
+    var tmp1 = fez(values)
+    values[0] = tmp1
+    assert(values[0] == 1)
+
+    values[3] = foz(values[2], values[1])
+    assert(values[3] == 40)
+}

@@ -1,40 +1,31 @@
-# regression: ident_info field destination and alias lea propagation
+# regression: stmt_call alias plain variables (is_indexed off)
 
-func assert(x bool) { if not x exit(1) }
+func assert(err, expr bool) { if not expr exit(err) }
 
-type str {
-    len i8,
-    data i8[4]
+func ret_after_inc(i mut) out {
+    i = i + 1
+    out = 77
 }
 
-type location {
-    name str,
-    note str
-}
-
-func inv8(v i8) out i8 {
-    out = ~v
-}
-
-func copy_name(src location, dst mut location) {
-    dst.name = {src.name.len, src.name.data}
+func store_after_inc(v, slot mut, i mut) {
+    i = i + 1
+    slot = v
 }
 
 func main() {
-    var locations = location[2]
+    var plain = 0
+    var j = 4
 
-    locations[0].name.len = 3
-    locations[0].name.data[1] = 0x61
+    plain = ret_after_inc(j)
 
-    copy_name(locations[0], locations[1])
+    assert(1, j == 5)
+    assert(2, plain == 77)
 
-    assert(locations[1].name.len == 3)
-    assert(locations[1].name.data[1] == 0x61)
+    var plain2 = 9
+    var k = 2
 
-    var z = locations[1].name.data[1] == locations[0].name.data[1]
-    assert(z)
+    store_after_inc(55, plain2, k)
 
-    var ix = 1
-    locations[ix].note.data[0] = inv8(locations[ix].name.data[1])
-    assert(locations[1].note.data[0] == ~0x61)
+    assert(3, k == 3)
+    assert(4, plain2 == 55)
 }

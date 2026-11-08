@@ -1,6 +1,11 @@
-# a local named like a type hides it, also as a statement
-type point {x, y}
+# a generic body sees only the types defined before it
+func make<T type>(x T) res T {
+    var p = point{1, 2}
+    res = x + p.x
+}
+
+type point { x, y }
+
 func main() {
-    var point = 1
-    point{1, 2}
+    exit(make<i32>(2))
 }

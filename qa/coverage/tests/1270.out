@@ -1,4 +1,7 @@
 
-1270.baz:4:13: a 'bool' is compared only with a 'bool'
-    var c = b == 1
-            ^
+1270.baz:10:21: index 9 is out of bounds for array 'self.data' of size 4
+    res = self.data[9]
+                    ^
+1270.baz:7:6: instantiated by
+type small = buf<4>
+     ^~~~~

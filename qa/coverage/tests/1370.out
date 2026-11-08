@@ -1,1 +1,4 @@
-0
+
+1370.baz:8:9: expected type 'i64', got 'point'
+    y = p
+        ^

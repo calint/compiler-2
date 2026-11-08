@@ -1,9 +1,23 @@
-# --checks=shift: a shift in the argument of a conversion to a narrower type
-# is checked against the width of the argument, in a register and in memory
+# the 'n' of a 'foo' over an unsized array parameter is not a constant before
+# a call gives the length, so a function that nothing calls is not rejected by
+# it
+func last(s i8[]) res int {
+    res = 0
+    foo s {
+        let m = n - 1
+        res = s[m]
+    }
+}
+
+func uncalled(s i8[]) res int {
+    res = 0
+    foo s {
+        res = 10 / n + s[n - 1]
+    }
+}
+
 func main() {
-    var n = 9
-    var a = 3
-    var b = i8(0)
-    b = i8(a << n)
-    exit(i8(a << n) + b + 5)
+    var a = i8[4]
+    a[3] = 7
+    exit(last(a))
 }

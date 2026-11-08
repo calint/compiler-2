@@ -1,7 +1,6 @@
-# a type followed by '(' where 'foo' takes an array is a type
-
-type point { x, y }
+# a field of a variable in its own initializer is read before it is set, not
+# a field of the default type
 
 func main() {
-    foo point(5) {}
+    var p = p.x
 }

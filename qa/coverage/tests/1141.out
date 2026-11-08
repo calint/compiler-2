@@ -1,4 +1,4 @@
 
-1141.baz:6:18: 'p.x' is not a constant, a 'dat' holds constants
-dat q = point{3, p.x}
-                 ^
+1141.baz:7:5: cannot assign to constant 'k'
+    k = 2
+    ^

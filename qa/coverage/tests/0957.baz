@@ -1,28 +1,8 @@
-# the destination has two run-time indexes and the read one, the bytes in the
-# elements are different, which is accepted
-
-type item {
-    f i32,
-    g i32,
+# --checks=division: the minimum of 'i32' divided by -1 panics
+func noinline div(a i32, b i32) res i32 {
+    res = a / b
 }
-
-type ent {
-    items item[2],
-    other i32,
-}
-
-dat es = ent[3]
-
-func put(x mut i32, k i32) {
-    x = 100 - es[k].other
-}
-
 func main() {
-    var i = 0
-    var j = 1
-    var k = i32(0)
-
-    es[0].other = 7
-    put(es[i].items[j].f, k)
-    if es[0].items[1].f != 93 exit(1)
+    var x = div(-2147483647 - 1, -1)
+    exit(x)
 }

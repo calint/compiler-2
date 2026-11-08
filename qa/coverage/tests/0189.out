@@ -1,4 +1,4 @@
 
-0189.baz:3:23: function 'nope' not found
-func main() { var x = nope(1) }
-                      ^~~~
+0189.baz:3:12: expected ']' after array size
+dat x = [2 = {1,2}
+           ^

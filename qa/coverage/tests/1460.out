@@ -1,4 +1,4 @@
 
-1460.baz:3:5: 'type' can only be in global scope
-    type point { x, y }
-    ^~~~
+1460.baz:10:8: 'mk()' is not an operand here, store it in a variable first
+    if mk() != p {
+       ^

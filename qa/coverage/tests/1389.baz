@@ -1,10 +1,16 @@
-# 'array_length' is a value of the default type also when it folds, so a
-# narrower left side is rejected as in a function checked without a call
+# a local that hides a global is another variable: 'p' is bound to the global
+# 'g' and the local 'g' is written
+
+type point {x, y}
+
+var g = point{3, 5}
+
+func f(p point) res {
+    var g = point{0, 0}
+    g = {1, p.x}
+    res = g.y
+}
 
 func main() {
-    var a = i8[3]
-    var e = i8(1)
-    if e < array_length(a) {
-        exit(1)
-    }
+    exit(f(g) - 3)
 }

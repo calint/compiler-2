@@ -1,9 +1,6 @@
-# an unknown function in an argument that a generic call deduces from is
-# reported as a function
-func show<T type>(v T) res T {
-    res = v
-}
+# a receiver is read with the '.' on the next line, like where the '.' follows
+# the type, so a built-in type gets the message of a method
+func i8
+    .at() {}
 
-func main() {
-    exit(show(nope(1)))
-}
+func main() {}

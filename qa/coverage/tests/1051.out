@@ -1,4 +1,0 @@
-
-1051.baz:5:20: 'n' is not an array
-    sector_read(0, n)
-                   ^

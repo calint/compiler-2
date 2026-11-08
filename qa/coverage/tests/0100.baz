@@ -1,10 +1,47 @@
-# conditional return assignment is not guaranteed
+# nested array mutation through chained parameters
 
-func foozi(i) res {
-    if i == 3 res = 2
+func assert(expr bool) {
+    if not expr exit(1)
+}
+
+type link {
+    name i8[64],
+    name_len i8,
+    loc i32
+}
+
+type location {
+    name i8[64],
+    links link[8]
+}
+
+type world {
+    time,
+    locations location[7]
+}
+
+func foozi(lnk mut link){
+    lnk.loc = 2
+    lnk.name_len = 1
+    lnk.name[0] = 0x61 # 'a'
+}
+
+func bar(locs mut location[]) {
+    foozi(locs[2].links[1])
+    foozi(locs[3].links[5])
+}
+
+func baz(wld mut world[]) {
+    bar(wld[1].locations)
 }
 
 func main() {
-    var x = 1
-    var y = foozi(x)
+    var worlds = world[2]
+    baz(worlds)
+    assert(worlds[1].locations[2].links[1].loc == 2)
+    assert(worlds[1].locations[2].links[1].name_len == 1)
+    assert(worlds[1].locations[2].links[1].name[0] == 0x61)
+    assert(worlds[1].locations[3].links[5].loc == 2)
+    assert(worlds[1].locations[3].links[5].name_len == 1)
+    assert(worlds[1].locations[3].links[5].name[0] == 0x61)
 }

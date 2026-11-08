@@ -1,13 +1,24 @@
-# indexes that may be equal at run time may share storage
+# three nested 'foo' read the array the second one iterates, which can
+# contain the element itself
+# the value is computed before the destination is written
 
-func inv(v i32) res i32 {
-    res = ~v
+type leaf {
+    v i32[2],
+}
+
+type mid {
+    leaves leaf[2],
+    other i32,
 }
 
 func main() {
-    var arr = i32[4]{ 1, 2, 3, 4 }
-    var ix = 3
+    var m = mid[2]
 
-    arr[ix - 2] = inv(arr[ix])
-    if arr[1] != ~4 exit(1)
+    foo m {
+        foo e.leaves {
+            foo e.v {
+                e = e + m[0].leaves[1].v[0]
+            }
+        }
+    }
 }

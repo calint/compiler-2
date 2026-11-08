@@ -1,6 +1,7 @@
-# an inline argument must have the declared parameter type
-func take(value i8) res i8 { res = value }
+# an instance argument can be a temporary such as a literal
+type point { x, y }
+func sum(p point) res { res = p.x + p.y }
 func main() {
-    var big = i32(300)
-    var small = take(big)
+    var s = sum({ 1, 2 })
+    exit(s)
 }

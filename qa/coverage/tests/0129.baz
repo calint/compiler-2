@@ -1,16 +1,29 @@
-# indexed values participate in multiplication
+# argument aliasing an array element with 'i32' multiply and complement
 
 func assert(expr bool) { if not expr exit(1) }
 
-func fiz(x i32, mul i32) res i32 {
-    res = x * x * mul
+func fiz(x i32, y i32) res i32 {
+    res = x * y + x * 2 
+}
+
+func fuz(x i32, y i32) res i32 {
+    res = x * ~y 
 }
 
 func main() {
     var arr = i32[4]
-    var ix = 1
+    var ix = i32(1)
     arr[ix] = 2
-    arr[3] = 3
-    var c = fiz(arr[ix], arr[3])
-    assert(c == 12)
+    # note: temporary because the result may share storage with the argument
+    var tmp1 = fiz(arr[ix], ix)
+    arr[3] = tmp1
+    assert(arr[3] == 6)
+    var c = fuz(arr[ix], ix)
+    assert(c == -4)
+    var d = fiz(arr[ix], ix)
+    assert(d == 6)
+    # note: temporary because the result may share storage with the argument
+    var tmp2 = fuz(arr[ix], ix)
+    arr[3] = tmp2
+    assert(arr[3] == -4)
 }

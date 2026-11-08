@@ -1,14 +1,7 @@
-# a read-only argument passed to a function that writes it is rejected at the
-# call, also inside a function that is never called
+# 'mut' marks the receiver of a method, a function has none
 
-type tk { start, end }
-
-func mut tk.reset() {
-    self.start = 0
-}
-
-func clear(t tk) {
-    t.reset()
+func mut zero() res {
+    res = 0
 }
 
 func main() {

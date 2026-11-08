@@ -1,13 +1,8 @@
-# an instance literal field narrows only with 'i8(...)' etc, also for a plain
-# identifier that is copied directly
+# an instance array field copied from a single instance
 
-type pixel {
-    shade i8,
-    count
-}
-
+type point { x i32, y i32 }
+type line { pts point[2] }
 func main() {
-    var x = i32(1)
-    var p = pixel{x, 2}
-    exit(p.shade)
+    var p = point
+    var l = line{ p }
 }

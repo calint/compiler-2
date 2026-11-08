@@ -1,10 +1,8 @@
-# a parameter without 'mut' cannot be assigned
+# 'mut' goes after the parameter name
 
-func f(a) {
-    a = 1
+func f(mut x) {
 }
 
 func main() {
-    var x = 5
-    f(x)
+    f(1)
 }

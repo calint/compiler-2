@@ -1,14 +1,8 @@
-# a 'bool' call result is not a number, at the parse, so also in a
-# branch that folds away
-
-func f() res bool {
-    res = true
-}
+# a folded comparison of a 'let' is checked like a compiled one: a typed
+# side wider than the left side
 
 func main() {
-    var x = 1
-    if 1 == 2 {
-        x = f()
-    }
-    exit(x)
+    let k = i8(3)
+    let b = k < i16(300)
+    exit(int(b))
 }

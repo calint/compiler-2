@@ -1,4 +1,0 @@
-
-1180.baz:3:5: 'i8' is a built-in type
-var i8 = i8[2]{1, 2}
-    ^~

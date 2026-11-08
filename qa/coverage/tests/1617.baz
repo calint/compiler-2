@@ -1,8 +1,11 @@
-# a type parameter is not named like the result
-func f<res type>(x res) res res {
-    res = x
+# a call in a value written in parts that reads a part written before it,
+# also 'noinline'
+type pt {x, y}
+var g = pt{1, 2}
+func noinline gx() res {
+    res = g.x
 }
-
 func main() {
-    exit(f<i8>(1))
+    g = {7, gx()}
+    exit(g.y)
 }

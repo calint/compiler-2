@@ -1,0 +1,4 @@
+
+2040.baz:7:9: 'm' of type 'i32' is narrowed to 'i8', use 'i8(...)'
+    z = m
+        ^

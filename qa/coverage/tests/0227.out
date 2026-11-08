@@ -1,4 +1,4 @@
 
-0227.baz:4:28: too many fields for type 'p'
-func main() { var p1 = p{1,2} }
-                           ^
+0227.baz:3:27: expected a constant, a name or a call
+func main() { var x = 1 + }
+                          ^

@@ -1,9 +1,7 @@
-# an instance literal is not an operand of a comparison
-type point {x, y}
-
-func main() {
-    var p = point{1, 2}
-    if p == point{1, 2} {
-        exit(1)
-    }
+# an escape of a character literal is checked where it is read, also in a
+# generic body that no instance parses
+func g<T type>() {
+    var c = '\q'
 }
+
+func main() {}

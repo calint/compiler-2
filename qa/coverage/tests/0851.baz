@@ -1,16 +1,20 @@
-# generics that are never instantiated are listed in the footer, the types of
-# their signatures and their bodies are not checked
-func untyped<T type>(a b) {
+# a noinline function that nothing calls leaves no code, and a method that
+# passes its own receiver on does not load it into the receiver register
+type counter { n }
+
+func noinline mut counter.add(d) { self.n = self.n + d }
+
+func noinline mut counter.twice(d) {
+    self.add(d)
+    self.add(d)
 }
 
-func unknown_result<T type>(a T) res q {
-}
+func noinline helper(x) res { res = x }
 
-type list<T type> { items T[4] }
-
-# a method of a generic type without an alias is listed too
-func list.find<U type>(x U) res U {
-}
+func noinline unused(x) res { res = helper(x) }
 
 func main() {
+    var c = counter
+    c.twice(3)
+    exit(c.n)
 }

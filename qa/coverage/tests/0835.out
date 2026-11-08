@@ -1,4 +1,4 @@
 
-0835.baz:2:6: 'int' is a built-in type
-type int { value i32 }
-     ^~~
+0835.baz:2:19: expected '{' to begin declaration of type
+type list<T type> x }
+                  ^

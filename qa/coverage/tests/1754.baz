@@ -1,13 +1,14 @@
-# an inlined loop without 'break' in a later element of an 'and' does not end
-# the statement
+# a noinline call in a function that nothing calls checks the body with the
+# lengths of its array arguments
+func noinline f(s i8[]) res {
+    res = s[5]
+}
 
-func spin() res bool {
-    loop {
-    }
+func g() res {
+    var a = i8[4]
+    res = f(a)
 }
 
 func main() {
-    var x = 1
-    var b = x > 5 and spin()
-    exit(9)
+    exit(0)
 }

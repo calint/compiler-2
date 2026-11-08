@@ -1,8 +1,9 @@
-# a call of 'main' is rejected also in a function that nothing calls
-func main() {
-    exit(0)
-}
+# braced instances assigned to the array they read are rejected when a field
+# reads an instance written before it
+type point {x, y}
 
-func g() {
-    main()
+func main() {
+    var ps = point[2]{{1, 2}, {3, 4}}
+    ps = {{5, 6}, {ps[0].x, 0}}
+    exit(ps[1].x)
 }

@@ -1,7 +1,0 @@
-# a name after an array that no element has is rejected with a hint to the
-# length
-
-func main() {
-    var a = [4]
-    var x = a.length
-}

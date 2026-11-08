@@ -1,9 +1,6 @@
-# a field of the result is read before it is set
-type point {x, y}
-func grow() res point {
-    res.x = 1
-    res.y = res.y + res.x
-}
+# a comparison may not truncate a wider right-hand side
 func main() {
-    var p = grow()
+    var a = i8(-5)
+    var b = i16(1000)
+    if a < b { exit(1) }
 }

@@ -1,7 +1,6 @@
-# data array initializer closes each element
+# negative constant array size is rejected
 
-type p { x }
-
-dat x = p[2]{{1},{2} }
-
-func main() {}
+let n = -1
+func main() {
+    var values = i8[n]
+}

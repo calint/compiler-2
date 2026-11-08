@@ -1,16 +1,26 @@
-# a noinline body calls another noinline function inside an expression that
-# holds registers, rv32i: the callee has its own registers
+# three nested 'foo' read a field outside the arrays they iterate, which is
+# accepted
 
-func noinline f(a i32, b i32) res i32 {
-    res = ((a * b) + ((a * b) + ((a * b) + ((a * b) + ((a * b) + ((a * b) + ((a * b) + ((a * b) + ((a * b) + ((a * b) + ((a * b) + ((a * b) + ((a * b) + ((a * b) + ((a * b) + ((a * b) + ((a * b) + ((a * b) + ((a * b) + ((a * b) + ((a * b) + ((a * b) + ((a * b) + ((a * b) + (a * b)))))))))))))))))))))))))
+type leaf {
+    v i32[2],
 }
 
-func noinline g(x i32, y i32) res i32 {
-    res = ((x * y) + ((x * y) + ((x * y) + ((x * y) + ((x * y) + ((x * y) + f(x, y)))))))
+type mid {
+    leaves leaf[2],
+    other i32,
 }
 
 func main() {
-    var x = i32(1)
-    var y = i32(1)
-    exit(g(x, y))
+    var m = mid[2]
+    m[0].other = 2
+
+    foo m {
+        foo e.leaves {
+            foo e.v {
+                e = e + m[0].other
+            }
+        }
+    }
+
+    if m[1].leaves[1].v[1] != 2 exit(1)
 }

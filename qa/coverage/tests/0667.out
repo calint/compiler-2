@@ -1,4 +1,4 @@
 
-0667.baz:3:6: 'mut' requires a method 'type.name'
-func mut zero() res {
-     ^~~
+0667.baz:13:28: argument 2 'values[j]' may share storage with argument 1 'values[i]' (both name 'values'), use a temporary variable for one of them
+    swap_values(values[i], values[j])
+                           ^

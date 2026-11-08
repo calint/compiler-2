@@ -1,4 +1,0 @@
-
-2841.baz:6:19: a comparison makes a condition, which is not an operand here, store it in a 'bool' first
-    var n = int(a == b)
-                  ^~

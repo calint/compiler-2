@@ -1,6 +1,3 @@
-# array_length requires an opening parenthesis
+# a variable declaration without '=' and an initializer is rejected
 
-func main() {
-    var x = i8[2]
-    var n = array_length x
-}
+func main() { var x nope }

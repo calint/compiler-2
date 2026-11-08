@@ -1,6 +1,10 @@
-# a 'bool' is not an exit code, 'int(b)' converts it
+# a negative constant index is rejected also for an unsized array parameter in
+# a function that is never called
+
+func last(s i8[]) res i8 {
+    res = s[-1]
+}
 
 func main() {
-    var b = true
-    exit(b)
+    exit(0)
 }

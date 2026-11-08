@@ -1,7 +1,4 @@
 
-1520.baz:3:11: function 'add' not found
-    res = add(x, x)
-          ^~~
-1520.baz:11:10: instantiated by 'twice<i32>'
-    exit(twice<i32>(2))
-         ^~~~~
+1520.baz:3:13: 'i64' is not available on this target, use 'i32' or 'int'
+    var x = i64
+            ^~~

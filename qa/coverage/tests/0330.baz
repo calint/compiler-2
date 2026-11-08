@@ -1,10 +1,11 @@
-# valid upper boundary through a computed index
+# computed index must respect array-parameter bounds
 
-func assert(expr bool) { if not expr exit(1) }
+func legacy_write(values mut i8[], index) {
+    values[index + 1] = 1
+}
 
 func main() {
     var values = i8[8]
-    var index = 7
-    values[index] = 5
-    assert(values[7] == 5)
+    var last = 7
+    legacy_write(values, last)
 }

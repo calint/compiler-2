@@ -1,11 +1,7 @@
-# a result set only in a branch whose condition is a constant true is set on
-# every path
-func f() res {
-    if 1 == 1 {
-        res = 2
-    }
-}
+# a bare user type is a zero instance, a '!' after it is not an operator
+
+type p { x i8 }
 
 func main() {
-    exit(f())
+    var q = p ! 3
 }

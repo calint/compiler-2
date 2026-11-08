@@ -1,4 +1,4 @@
 
-0600.baz:9:13: result 'self' requires a constructor 'type.name'
-func make() self {
-            ^~~~
+0600.baz:5:9: the destination gives the type 'i8[2]', write '{...}'
+    a = i8[2]{1, 2}
+        ^~

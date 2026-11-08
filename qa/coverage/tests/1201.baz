@@ -1,10 +1,9 @@
-# a 'bool' is not assigned to an integer field of a record
+# 'break' outside a loop is rejected also in a function that is never called
 
-type point { x i32, y i32 }
+func f() {
+    break
+}
 
 func main() {
-    var b = true
-    var p = point
-    p.x = b
-    exit(p.x)
+    exit(0)
 }

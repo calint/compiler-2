@@ -1,4 +1,4 @@
 
-1888.baz:3:11: type 'p' cannot contain itself
-type p {x p}
-          ^
+1888.baz:5:1: expected ',' followed by another field in type 'p'
+func main() {}
+^

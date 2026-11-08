@@ -1,8 +1,20 @@
-# a generic argument is one token, a negative constant is named with 'let'
+# a generic parameter hides a generic function of its name
+func first<T type>(x T) res T {
+    res = x
+}
 
-type box<n> {x i8[n]}
+type pair<first type> {
+    a first,
+}
 
-type s = box<-3>
+func pair.get() res first {
+    res = first(self.a + 1)
+}
+
+type p8 = pair<i8>
 
 func main() {
+    var p = p8
+    p.a = i8(6)
+    exit(int(p.get()) + first(1))
 }

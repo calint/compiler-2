@@ -1,0 +1,4 @@
+
+1247.baz:3:16: 'q' not found
+    var a = i8[q]
+               ^

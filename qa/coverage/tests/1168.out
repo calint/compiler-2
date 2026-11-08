@@ -1,4 +1,4 @@
 
-1168.baz:5:5: 'dat' can only be in global scope
-    dat x = 1 / 0
-    ^~~
+1168.baz:4:9: 'int' is a built-in type
+    var int = int[2]{1, 2}
+        ^~~

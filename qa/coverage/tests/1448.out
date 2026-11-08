@@ -1,4 +1,4 @@
 
-1448.baz:3:6: expected '(' after function name
-func f<T type>
-     ^
+1448.baz:4:17: built-in function 'array_length' is not generic, it takes no type arguments
+    var n = 1 + array_length<i8>(a)
+                ^~~~~~~~~~~~

@@ -1,8 +1,8 @@
-# a 'dat' named like a global constant is rejected
-
-let x = 3
-dat x = 4
+# a 'bool' is not assigned to an integer variable, 'int(b)' converts it
 
 func main() {
-    exit(x)
+    var b = true
+    var r = 0
+    r = b
+    exit(r)
 }

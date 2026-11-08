@@ -1,9 +1,4 @@
-# a method of a generic type is checked for a valid name at its definition,
-# also when no alias makes an instance
-type text<n> {
-    items i8[n]
+# 'bool' has no conversion, a comparison makes a 'bool'
+func main() {
+    var b = bool(5)
 }
-
-func text.if() {}
-
-func main() {}

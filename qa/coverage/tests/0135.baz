@@ -1,29 +1,35 @@
-# argument aliasing an array element with 'i32' multiply and complement
+# constant and non-constant conditions with 'not', 'and', 'or' and 'else'
 
 func assert(expr bool) { if not expr exit(1) }
 
-func fiz(x i32, y i32) res i32 {
-    res = x * y + x * 2 
-}
-
-func fuz(x i32, y i32) res i32 {
-    res = x * ~y 
+func foozi(x i8, y i16) {
+    assert((y == x) and (x == 4 or y == 4))
 }
 
 func main() {
-    var arr = i32[4]
-    var ix = i32(1)
-    arr[ix] = 2
-    # note: temporary because the result may share storage with the argument
-    var tmp1 = fiz(arr[ix], ix)
-    arr[3] = tmp1
-    assert(arr[3] == 6)
-    var c = fuz(arr[ix], ix)
-    assert(c == -4)
-    var d = fiz(arr[ix], ix)
-    assert(d == 6)
-    # note: temporary because the result may share storage with the argument
-    var tmp2 = fuz(arr[ix], ix)
-    arr[3] = tmp2
-    assert(arr[3] == -4)
+    if true assert(true) else assert(false)
+    if not true assert(false)
+    if false  assert(false)
+    if not false assert(true) else assert(false)
+    if false and false assert(false)
+    if true and true assert(true) else assert(false)
+    if not true assert(false)
+    if not false  assert(true) else assert(false)
+    if not (true and false) assert(true) else assert(false)
+    if not (false or true)  assert(false)
+
+    var values = i32[4]
+    values[1] = 4
+    values[2] = 3
+
+    assert(values[1] == 4 and values[2] == 3)
+
+    var values_byte = i8[4]
+    values_byte[1] = 4
+    values_byte[2] = 3
+    assert(values_byte[1] == 4 or values_byte[2] == 3)
+
+    assert(values[1] == values_byte[1] and values[2] == values_byte[2])
+    
+    foozi(values_byte[1], 4)
 }

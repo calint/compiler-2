@@ -1,21 +1,2 @@
 
-2204.baz:4:13: register rdi is always used by the operation at 12:5 and is needed here too, compute the operand that needs it with 'let' before that operation
-    var z = i64[20]
-            ^
-2204.baz:12:10: called from 'g(y)'
-    exit(g(y))
-         ^
-
-register use at the failure: 2 of 14 registers live, 2 named by instructions
-
-  held  frame, registers (allocated at)
-     1  main
-          rdi 12:5 (named)
-     1  g called at 12:10
-          rax 4:13 (named)
-
-these frames are not noinline, making one noinline starts its body with all 13
-registers free and saves the registers held above it around the call:
-
-  held inside  saved at the call  candidate frame
-            1                  1  g
+panic: bounds

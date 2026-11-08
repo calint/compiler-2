@@ -1,0 +1,4 @@
+
+0568.baz:7:10: 'ps[1]' is not an array
+    qs = ps[1]
+         ^~

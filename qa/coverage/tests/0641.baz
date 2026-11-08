@@ -1,14 +1,6 @@
-# a parameter without 'mut' cannot be passed to a 'mut' non-inline parameter
-
-func noinline set(a mut) {
-    a = 1
-}
-
-func f(a) {
-    set(a)
-}
+# 'read' cannot fill a 'let' array
 
 func main() {
-    var x = 5
-    f(x)
+    let d = i8[]{1, 2}
+    read(0, d)
 }

@@ -1,7 +1,4 @@
 
-0705.baz:11:22: 'g.x' is read but has been overwritten in the same statement, use a temporary variable
-    g = {v + self.x, g.x}
-                     ^
-0705.baz:16:5: called from
-    p.bad(1)
-    ^
+0705.baz:4:5: 'dat' can only be in global scope
+    dat x = 1
+    ^~~

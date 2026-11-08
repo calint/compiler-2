@@ -1,4 +1,4 @@
 
-1590.baz:7:12: 'i8' is a built-in type
-func box.f<i8 type>() {}
-           ^~
+1590.baz:6:15: 'q.a[3]' is read but has been overwritten in the same statement, use a temporary variable
+    q = {{1}, q.a[3]}
+              ^

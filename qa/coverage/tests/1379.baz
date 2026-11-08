@@ -1,14 +1,15 @@
-# a folded right side of a comparison with an inlined parameter bound to a
-# constant is checked as a computed one is
+# an element of an array field of a literal is a destination of its own: a
+# call that writes element 0 may read element 1
 
-func compared(p i8) res i8 {
-    var e = i8(1)
-    res = 0
-    if e < p + 300 {
-        res = 1
-    }
+type point {x, y}
+type t {ps point[2]}
+
+func noinline mk(v) res point {
+    res = {v, v}
 }
 
 func main() {
-    exit(int(compared(1)))
+    var w = t{{{1, 2}, {3, 4}}}
+    w = {{mk(w.ps[1].x), {5, 6}}}
+    exit(w.ps[0].y + w.ps[1].x - 8)
 }

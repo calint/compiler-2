@@ -1,6 +1,13 @@
-# a string cannot span lines
+# the argument is a local, the data the function reads is not it
 
-dat s = "a
-b"
+dat g = i32[4]{ 1, 2, 3, 4 }
 
-func main() {}
+func put(x mut i32, k i32) {
+    x = k + (100 - g[3])
+}
+
+func main() {
+    var local = i32(0)
+    put(local, 10)
+    if local != 106 exit(1)
+}

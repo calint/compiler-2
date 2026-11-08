@@ -1,2 +1,4 @@
-hello baz world!!!!
-hello baz world!!!!
+
+1654.baz:10:9: the result of 'f' is discarded
+        f()
+        ^

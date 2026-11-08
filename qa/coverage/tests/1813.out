@@ -1,4 +1,4 @@
 
-1813.baz:4:21: divisor must not be zero
-let k = true or 1 / 0 == 1
-                    ^
+1813.baz:4:10: function may return without setting its result 'res'
+func f() res {
+         ^~~

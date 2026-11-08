@@ -1,8 +1,5 @@
-# 'and' in parentheses makes a condition, not an operand of a comparison
+# a string whose text names a built-in type is a string, not the type
 func main() {
-    var t = true
-    var f = false
-    if (t and f) == f {
-        exit(1)
-    }
+    var x = 3
+    x = "i16"
 }

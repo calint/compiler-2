@@ -1,4 +1,4 @@
 
-0191.baz:4:23: function 'f' has no result
-func main() { var x = f() }
-                      ^
+0191.baz:3:17: too many elements for array of size 1
+dat x = i8[1]{1,2}
+                ^

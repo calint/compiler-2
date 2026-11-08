@@ -1,4 +1,4 @@
 
-0715.baz:3:6: 'foo' is a keyword
-func foo() {
-     ^~~
+0715.baz:9:9: 'f(1)' of type 'i64' is narrowed to 'i8', use 'i8(...)'
+    a = f(1)
+        ^

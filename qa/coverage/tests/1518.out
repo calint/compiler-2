@@ -1,4 +1,4 @@
 
-1518.baz:7:13: cannot deduce 'T' of generic function 'make', write 'make<...>'
-    var x = make()
-            ^~~~
+1518.baz:2:14: 'i64' is not available on this target, use 'i32' or 'int'
+type pair {a i64, b i32}
+             ^~~

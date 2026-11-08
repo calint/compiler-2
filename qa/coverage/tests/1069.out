@@ -1,4 +1,4 @@
 
-1069.baz:8:23: generic type 'list' needs arguments, e.g. 'list<...>'
-type text<capacity> = list
-                      ^~~~
+1069.baz:9:29: constructor 'list.make' cannot have type parameters
+func list.make<U type>(u U) self {
+                            ^~~~

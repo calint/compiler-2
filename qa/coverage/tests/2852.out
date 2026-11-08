@@ -1,4 +1,0 @@
-
-2852.baz:5:14: unsupported escape '\\xc3'
-    var s = "\\xc3A"
-             ^~~~~

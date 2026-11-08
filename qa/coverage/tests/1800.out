@@ -1,0 +1,4 @@
+
+1800.baz:12:19: divisor must not be zero
+    f(true or a / 0 == 1)
+                  ^

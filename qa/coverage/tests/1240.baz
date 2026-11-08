@@ -1,5 +1,9 @@
-# a long chain of noinline calls compiles, each body once: the script compiles
-# a generated chain
+# a register error in an included file names the file of each location in
+# the message and in the register report
+include "include/say.baz"
+
 func main() {
-    exit(0)
+    var text = "hi\n"
+    var k = write(say(text) - 2, text)
+    exit(k)
 }

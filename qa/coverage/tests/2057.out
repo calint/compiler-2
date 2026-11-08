@@ -1,7 +1,4 @@
 
-2057.baz:9:17: index 4 is out of bounds for array 's' of size 4
-        res = s[m]
-                ^
-2057.baz:15:10: called from 'last(a)'
-    exit(last(a))
-         ^~~~
+2057.baz:6:10: array 'bs' must be indexed
+    n = -bs
+         ^~

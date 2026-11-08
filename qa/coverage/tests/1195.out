@@ -1,4 +1,4 @@
 
-1195.baz:5:9: 't' is not a constant, a 'dat' holds constants
-dat u = t
-        ^
+1195.baz:5:22: expected type 'i32', got 'bool', use 'i32(...)'
+    var a = i32[]{1, b}
+                     ^

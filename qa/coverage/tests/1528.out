@@ -1,4 +1,4 @@
 
-1528.baz:4:9: a string is not a number, it fills only an array of 'i8'
-    x = "i16"
-        ^~~~~
+1528.baz:4:12: 'return' takes no value, a result is assigned, e.g. 'res = a'
+    return 2
+           ^

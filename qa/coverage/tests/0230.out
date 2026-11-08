@@ -1,0 +1,4 @@
+
+0230.baz:4:19: expected ',' before argument 2 ('y')
+func main() { f(1 2) }
+                  ^

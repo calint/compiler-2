@@ -1,4 +1,4 @@
 
-1438.baz:6:13: function 'array_copy' has no result
-    var n = array_copy(a, b, 2)
-            ^~~~~~~~~~
+1438.baz:11:18: 'a.m' is a method, not an array
+    array_copy(a.m, b, 2)
+                 ^

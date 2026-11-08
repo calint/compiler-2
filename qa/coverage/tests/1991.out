@@ -1,4 +1,4 @@
 
-1991.baz:4:8: 'i8' is a built-in type
-func f<i8>() {
-       ^~
+1991.baz:15:9: a call of 'point.get' is not an array
+    f(p.get())
+        ^~~

@@ -1,4 +1,4 @@
 
-1600.baz:4:16: 'i8' is a type, not an array
-    array_copy(i8, a, 1)
-               ^~
+1600.baz:4:14: generic parameter 'get' is also the name of the method at 4:10, use another name
+func box.get<get type>(x get) res get {
+             ^~~

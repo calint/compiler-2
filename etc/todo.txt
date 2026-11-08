@@ -62,9 +62,9 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
     'assembler_rv32i::reaches', in '/tmp/r174-fa-work'; a hidden debug option
     is the other way), and 'flowx.py' with 'FX_PAD' must skip or cap programs
     larger than rv32i-fpga memory
-[p] easy: user decision (2026-11-07, round 154 DV): test 2055 nests 20
+[p] easy: user decision (2026-11-07, round 154 DV): test 2036 nests 20
     noinline calls in a list, about 45 s with '--versions=nested', which
-    'test-versions.sh' runs (about 2 minutes with 1716); 14 levels take
+    'test-versions.sh' runs (about 2 minutes with 1698); 14 levels take
     about 1.5 s but guard less of the default compile time
 [p] easy: user decision (2026-11-07, round 165 EN): 'toc::record_use' takes a
     'use_kind' and turns it into a bool, 'stmt_call::record_uses_of_call'
@@ -201,7 +201,7 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
     the instruction counts first (phase R4b, plan 1 rejected alternative 2)
 [ ] medium: low priority: a conversion to a narrower type of an argument
     with '<<' computes the argument at its own width and narrows it, one
-    copy more (1226 'exit(i8(a << n) + b + 5)': rv32i 'sll t0, t0, t1; mv
+    copy more (1215 'exit(i8(a << n) + b + 5)': rv32i 'sll t0, t0, t1; mv
     a0, t0', x86_64 'sal r15, cl; mov dil, r15b'); a '<<' by a count below
     the narrower width keeps its low bits when narrowed, e.g. a constant
     count ('keeps_low_bits', an optimization)
@@ -434,7 +434,7 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
 --------------------------------------------------------------------------------
 [ ] easy: a type argument is deduced from the result of a function call,
     'show(mk(1, 2))', not from the result of a method call, 'show(p.sum())'
-    is "cannot deduce 'T'" (2100; design review series 2, round 67 B5)
+    is "cannot deduce 'T'" (2077; design review series 2, round 67 B5)
 [ ] easy: variable argument count in read/write might be confusing, consider
     requiring all arguments
 [ ] medium: a 'size_of' built-in for types and fields; none exists today
@@ -459,7 +459,7 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
     steps; benchmark a faster routine (e.g. RVINT reciprocal, see
     https://needlesscomplexity.substack.com/p/rvint-integer-mathematical-algorithms)
     before changing it
-[ ] medium: --checks=overflow: 0746.baz needs every rv32i scratch register and
+[ ] medium: --checks=overflow: 0736.baz needs every rv32i scratch register and
     fails to compile under the check ('out of scratch registers');
     the memory source add or sub needs two registers, one would do with a
     reload of the second operand

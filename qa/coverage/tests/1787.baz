@@ -1,19 +1,17 @@
-# the methods of an alias's levels are made in the order they are defined,
-# so a method of the base calls one of the alias's level defined before it
-type list<T type, n> { a T[n], len }
-type text<n> = list<i8, n>
+# a 'bool' result passed to the call that writes it shares storage as the
+# result of another type does
 
-func text.t() res {
-    res = 7
+func g(x int, v bool) res bool {
+    res = x == 1 and v
 }
 
-func list.l() res {
-    res = self.t()
+func h(x int) res bool {
+    res = false
+    res = g(x, res)
 }
-
-type str = text<4>
 
 func main() {
-    var s = str
-    exit(s.l())
+    if h(1) {
+        exit(1)
+    }
 }

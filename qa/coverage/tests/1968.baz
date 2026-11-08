@@ -1,12 +1,6 @@
-# a typed literal of a type parameter where the destination gives the type
-# names the type it is bound to
-type point {x i32, y i32}
-type seg {a point, b point}
-
-func f<T type>() {
-    var s = seg{T}
-}
+# an operator after the array of a built-in
 
 func main() {
-    f<point>()
+    var a = i8[4]
+    var n = array_length(a + 1)
 }

@@ -1,9 +1,8 @@
-# a constructor of a generic type does not take 'mut', also without an
-# instance
+# a generic call whose argument is not a value reports it as a call of a
+# function without type parameters does, not that the type cannot be deduced
 
-type box<n> {x}
-
-func mut box.mk() self {}
+func show<T type>(x T) {}
 
 func main() {
+    show(main)
 }

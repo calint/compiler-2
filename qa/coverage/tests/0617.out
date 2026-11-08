@@ -1,4 +1,2 @@
 
-0617.baz:4:6: expected '=' followed by an initializer, e.g. 'dat x = i32'
-dat x i32 = 1
-     ^
+panic: bounds at 0617.baz:7

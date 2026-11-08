@@ -1,8 +1,8 @@
-# the code ends with the jump of a loop that is left by 'exit'
+# the same as 863 in a noinline function, the message is the same
+func noinline same(x i8, y i16) res bool { res = x == y }
+
 func main() {
-    var i = 0
-    loop {
-        if i == 3 exit(i)
-        i = i + 1
-    }
+    var b = i8[2]
+    var r = same(b[1], 4)
+    exit(int(r))
 }

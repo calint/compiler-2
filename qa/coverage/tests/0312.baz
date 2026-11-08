@@ -1,7 +1,7 @@
-# arithmetic underflow
+# signed sixteen-bit index remains negative
 
 func main() {
     var arr = i8[8]
-    var index = 0
-    arr[index - 1] = 1
+    var index = i16(-1)
+    arr[index] = 1
 }

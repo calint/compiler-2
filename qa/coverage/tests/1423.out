@@ -1,4 +1,4 @@
 
-1423.baz:3:11: 'main' cannot have type parameters
-func main<T type>() {
-          ^
+1423.baz:6:5: the result of 'arrays_equal' is discarded
+    arrays_equal(a, b, 4)
+    ^~~~~~~~~~~~

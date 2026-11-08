@@ -1,18 +1,12 @@
-# --checks=shift: counts within the width pass the check
-func assert(ok bool) { if not ok exit(1) }
-func noinline shl(a, n) res {
-    res = a << n
-}
-func noinline shr(a, n) res {
-    res = a >> n
-}
-func noinline shl8(a i8, n i8) res i8 {
-    res = a << n
+# --checks=stack: recursion deeper than the stack panics
+func noinline depth(n) res {
+    if n == 0 {
+        res = 0
+        return
+    }
+    res = depth(n - 1) + 1
 }
 func main() {
-    assert(shl(1, 0) == 1)
-    assert(shl(1, 10) == 1024)
-    assert(shr(-8, 2) == -2)
-    assert(shl8(1, 7) == -128)
-    assert(shr(1024, 10) == 1)
+    var d = depth(1000)
+    exit(d - 1000)
 }

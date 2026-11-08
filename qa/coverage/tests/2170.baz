@@ -1,7 +1,5 @@
-# a program that only writes sectors has no read routine
+# an escape quotes the continuation bytes its lead byte announces
+
 func main() {
-    var bytes = i8[512]
-    bytes[0] = 7
-    sector_write(0, bytes)
-    exit(bytes[0])
+    var s = "\Ã©©"
 }

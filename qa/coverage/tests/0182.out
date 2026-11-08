@@ -1,4 +1,4 @@
 
-0182.baz:5:28: expected ',' before argument 2
-    var z = arrays_equal(a a,1)
-                           ^
+0182.baz:4:15: cannot assign to constant 'x'
+func main() { x = 2 }
+              ^

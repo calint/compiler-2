@@ -1,6 +1,22 @@
-# a variable must fit in the vars section
+# x86: a division needs 'rdx' while the iterator of a loop holds it
+
+dat a = []{1, 2}
 
 func main() {
-    var a = [32]
-    exit(a[0])
+    var x = 100
+    foo a {
+        foo a {
+            foo a {
+                foo a {
+                    foo a {
+                        foo a {
+                            foo a {
+                                x = x / i
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
 }

@@ -1,3 +1,4 @@
-# a program without a 'main' function is rejected
+# function return value is ignored
 
-func f() {}
+func f() r { r = 1 }
+func main() { f() }

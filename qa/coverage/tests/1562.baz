@@ -1,5 +1,6 @@
-# the parameters of a generic function are read like those of a function at
-# the definition, also when no call makes an instance
-func f<T type>(x T y) {}
-
-func main() {}
+# a character literal as a condition is quoted once in the message
+func main() {
+    if 'a' {
+        exit(1)
+    }
+}

@@ -1,9 +1,8 @@
-# a function name has no fields
-
-func noop() res {
-    res = 1
-}
+# a negative count is rejected by the lower check alone
 
 func main() {
-    var y = noop.x
+    var a = [4]{1, 2, 3, 4}
+    var b = [4]
+    var n = -1
+    array_copy(a, b, n)
 }

@@ -1,31 +1,17 @@
-# mutation through function references and return values
+# state mutation across nested function calls
 
 func assert(expr bool) { if not expr exit(1) }
 
-func mutate_and_return(x mut) res {
-    x = x * 2
-    res = x + 1
-}
+func f1(state mut) res { state = state + 1 res = state }
+func f2(x) res { res = x * 2 }
+func f3(x) res { res = x + 10 }
 
-func mutate_only(x mut i32) {
-    x = 0xff
-}
+dat state = 0
 
 func main() {
-    var a = 5
-    var r = mutate_and_return(a)
-    assert(a == 10)  # Verify reference semantics
-    assert(r == 11)
-    
-    var b = i32(100)
-    mutate_only(b)
-    assert(b == 0xff)
-    
-    # Nested function calls with mutations
-    var c = 1
-    # a 'mut' parameter takes a variable, so the inner result is named
-    var e = mutate_and_return(c)
-    var d = mutate_and_return(e)
-    assert(e == 6)
-    assert(d == 7)
+    var r = f3(f2(f1(state)))
+    # f1() returns 1, state = 1
+    # f2(1) returns 2
+    # f3(2) returns 12
+    assert(r == 12 and state == 1)
 }

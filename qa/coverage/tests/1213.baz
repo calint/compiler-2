@@ -1,10 +1,28 @@
-# 'continue' outside a loop is rejected also in a function that is never
-# called
+# fourteen indexed arguments of an inlined call on rv32i: both versions fit,
+# the footer counts the scratch registers of the kept version only
 
-func f() {
-    continue
+func f(p0 i32, p1 i32, p2 i32, p3 i32, p4 i32, p5 i32, p6 i32, p7 i32, p8 i32, p9 i32, p10 i32, p11 i32, p12 i32, p13 i32) res i32 {
+    res = p0
 }
 
+var arr = i32[8]
+
 func main() {
-    exit(0)
+    arr[0] = 3
+    var k0 = 0
+    var k1 = 1
+    var k2 = 2
+    var k3 = 3
+    var k4 = 4
+    var k5 = 5
+    var k6 = 6
+    var k7 = 7
+    var k8 = 0
+    var k9 = 1
+    var k10 = 2
+    var k11 = 3
+    var k12 = 4
+    var k13 = 5
+    var r = f(arr[k0], arr[k1], arr[k2], arr[k3], arr[k4], arr[k5], arr[k6], arr[k7], arr[k8], arr[k9], arr[k10], arr[k11], arr[k12], arr[k13])
+    exit(r)
 }

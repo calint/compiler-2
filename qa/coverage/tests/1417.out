@@ -1,4 +1,4 @@
 
-1417.baz:8:8: parentheses around a single value group nothing, write 'p'
-    if (p) == ((q)) {
-       ^
+1417.baz:9:16: generic parameter 'T' of 'id' needs a type, got a string
+    var y = id<"i8">(x)
+               ^~~~

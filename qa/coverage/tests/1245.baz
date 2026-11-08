@@ -1,5 +1,4 @@
-# a bare type is not a value before a word operator: 'or'
+# 'main' calling itself is rejected, it cannot be declared 'noinline'
 func main() {
-    var b = bool or true
-    exit(int(b))
+    main()
 }

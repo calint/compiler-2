@@ -1,10 +1,10 @@
-# a generic type as a result type names an instance first
+# an ordering comparison after an instance: an instance is not a number, it
+# compares only by '==' and '!='
 
-type box<T> {x T}
-
-func f() res box<i8> {
-    res = {}
-}
+type point {x, y}
 
 func main() {
+    var p = point{1, 2}
+    var q = point{1, 2}
+    q = p < q
 }

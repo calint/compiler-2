@@ -1,12 +1,30 @@
-# == compares arrays
+# nested string-field mutation through functions
 
 func assert(expr bool) { if not expr exit(1) }
 
-func main() {
-    var p = i32[4]
-    var q = i32[4]
-    assert(p == q)
+type string { len i8, data i8[127] }
 
-    q[1] = 2
-    assert(p != q)
+type room { name string, description string, note string }
+
+type world { rooms room[128] }
+
+func bar(i mut i8) {
+    i = 1
+}
+
+func foozi(str mut i8[]) {
+    bar(str[5])
+}
+
+func fuz(rm mut room) {
+    rm.name.len = 2
+    foozi(rm.name.data)
+}
+
+func main() {
+    var wld = world
+    fuz(wld.rooms[2])
+
+    assert(wld.rooms[2].name.len == 2)
+    assert(wld.rooms[2].name.data[5] == 1)
 }

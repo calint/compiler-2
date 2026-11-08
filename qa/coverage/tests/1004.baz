@@ -1,11 +1,10 @@
-# a local of a callee with the name of a variable the caller passes as 'mut' is another variable
-func f(p mut i32) res i32 {
-    var acc = i32(5)
-    p = acc
-    res = acc
-}
+# the destination of a copy at the maximum of i32 with a count of one is out of bounds
+
 func main() {
-    var acc = i32(1)
-    var r = f(acc)
-    exit(acc + r)
+    var x = i8[4]
+    var y = i8[4]
+    var start = i32(0x7fffffff)
+    var count = i32(1)
+    array_copy(x[0], y[start], count)
+    exit(0)
 }

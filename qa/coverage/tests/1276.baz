@@ -1,37 +1,13 @@
-# a noinline call's narrower result widens as an operand, its unary ops
-# apply at the width of the operand
-func noinline g(x i8) res i8 {
-    res = x
+# a noinline function that runs out of scratch registers is rejected also when
+# nothing calls it, its body is compiled the same for every call
+func sum(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20, a21, a22, a23, a24, a25, a26, a27) res {
+    res = a0 + a1 + a2 + a3 + a4 + a5 + a6 + a7 + a8 + a9 + a10 + a11 + a12 + a13 + a14 + a15 + a16 + a17 + a18 + a19 + a20 + a21 + a22 + a23 + a24 + a25 + a26 + a27
 }
 
-func noinline h(x i8) res i8 {
-    res = x
+func noinline g(v) res {
+    res = sum(v, v, v, v, v, v, v, v, v, v, v, v, v, v, v, v, v, v, v, v, v, v, v, v, v, v, v, v)
 }
 
 func main() {
-    var w = 10
-    var x = 0
-    x = g(-128) + 1
-    if x != -127 {
-        exit(1)
-    }
-    x = w + g(-2)
-    if x != 8 {
-        exit(2)
-    }
-    x = w + -g(-128)
-    if x != 138 {
-        exit(3)
-    }
-    x = g(-128) * g(-128)
-    if x != 16384 {
-        exit(4)
-    }
-    var a = i16(1)
-    var b = i8(2)
-    var r = a + h(b)
-    if r != 3 {
-        exit(5)
-    }
-    exit(7)
+    exit(3)
 }

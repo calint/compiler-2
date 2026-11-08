@@ -1,4 +1,12 @@
-# fixed-size array may use an empty initializer
+# string escape decoding
 
-type p { data i8[2] }
-func main() { var a = p[2]{} }
+func print(str i8[], len) {
+    write(1, str, len)
+}
+
+dat escapes = "\t\r\v\f`"
+dat output = "token escapes\n"
+
+func main() {
+    print(output, array_length(output))
+}

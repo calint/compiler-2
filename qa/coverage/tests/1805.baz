@@ -1,17 +1,4 @@
-# a 'bool' result passed to the call that writes it shares storage as the
-# result of another type does
-
-func g(x int, v bool) res bool {
-    res = x == 1 and v
-}
-
-func h(x int) res bool {
-    res = false
-    res = g(x, res)
-}
-
+# 'true' followed by '(' is not a call, as a number
 func main() {
-    if h(1) {
-        exit(1)
-    }
+    var x = true(1)
 }

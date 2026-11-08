@@ -1,5 +1,5 @@
-# a comparison may not truncate a constant
+# an array field literal may not have more elements than the field
+type rec { a[3], b }
 func main() {
-    var n = i8(1)
-    if n == 257 { exit(1) }
+    var r = rec{ {1, 2, 3, 4}, 5 }
 }

@@ -1,4 +1,2 @@
 
-1367.baz:6:26: variable 'a' is read before it is set
-    let a = array_length(a)
-                         ^
+panic: overflow

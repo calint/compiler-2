@@ -1,22 +1,12 @@
-# a noinline call computes the address of a place in the order of the
-# arguments: the call in the index of 'v[h()]' reads 'g' before the call in
-# the later argument writes it
-var g = 0
-
-func h() res {
-    res = g
-}
-
-func f() res {
-    g = g + 1
-    res = 1
-}
-
-func noinline pick(a, n) res {
-    res = a + n * 0
-}
+# a run-time start past the end of the array is rejected at run time also with
+# a constant count of 0
 
 func main() {
-    var v = []{10, 20, 30}
-    exit(pick(v[h()], f()))
+    var a = i8[4]
+    var b = i8[4]
+    var k = 9
+    if arrays_equal(a[k], b, 0) {
+        exit(3)
+    }
+    exit(4)
 }

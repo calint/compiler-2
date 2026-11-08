@@ -1,4 +1,0 @@
-
-0294.baz:4:24: function 'f' has no result
-func main() { var x = -f() }
-                       ^

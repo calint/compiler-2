@@ -1,4 +1,4 @@
 
-0802.baz:3:15: expected ',' or '>' after generic parameter 'T'
-func f<T type U type>() {}
-              ^
+0802.baz:9:6: type 'str' already defined at 8:6
+type str = text<9>
+     ^~~

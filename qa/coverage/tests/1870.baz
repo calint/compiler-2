@@ -1,17 +1,5 @@
-# a divisor of 1 and a shift count of 0 change nothing, also when folded from
-# a constant or an inlined argument
+# a type cannot contain itself, its fields are read before it is defined
 
-func sh(x, n) res {
-    res = x >> n
-}
-
+type p {x p}
 func main() {
-    var d = 7
-    let k = 0
-    d = d / 1
-    d = d >> 0
-    d = d << k
-    d = d << (k + 0)
-    var e = sh(d, 0)
-    exit(e)
 }

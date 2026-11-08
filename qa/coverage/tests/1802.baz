@@ -1,9 +1,8 @@
-# a value of a type with all its fields but no closing '}' is not one with too
-# many fields
+# a 'dat' past the memory the target addresses is an error before it is
+# placed
 
-type point {x, y}
+dat a = i8[9223372036854775790]
 
 func main() {
-    var p = point{1, 2
-    var q = 3
+    exit(1)
 }

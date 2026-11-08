@@ -1,6 +1,7 @@
-# a character literal that ends with a '\' at the end of the line is
-# unterminated
+# an array literal reached into where an instance is expected
+type pt { x, y }
+
 func main() {
-    var c = '\
-    exit(0)
+    var p = pt
+    p = pt[2]{}[0]
 }

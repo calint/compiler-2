@@ -1,0 +1,4 @@
+
+0293.baz:7:19: 'p.x' is not an array, it cannot be indexed
+    var value = p.x[0]
+                  ^

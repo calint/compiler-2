@@ -1,4 +1,4 @@
 
-1872.baz:11:19: 'point.gen' is a method, call it on a value of type 'point'
-    var z = point.gen(1)
-                  ^~~
+1872.baz:12:9: store the result of 'mk' in a variable before reading a field or calling a method of it
+        .y
+        ^

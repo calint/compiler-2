@@ -1,7 +1,8 @@
-# a lone utf-8 continuation byte before the token is one column of the
-# padding of the caret
+# a global variable named like a global constant is rejected
 
-dat s = "©" x
+let x = 3
+var x = 4
 
 func main() {
+    exit(x)
 }

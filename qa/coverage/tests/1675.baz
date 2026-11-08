@@ -1,9 +1,13 @@
-# the buffer of an io built-in is an array where it is parsed, also in a branch
-# that is not compiled
+# the code after an inlined call that leaves on every path holds the
+# compile rules
+
+func stop() {
+    exit(3)
+}
 
 func main() {
-    var x = 1
-    if 1 == 2 {
-        write(1, x)
-    }
+    var a = i8[4]
+    var n = 1
+    stop()
+    n = a
 }

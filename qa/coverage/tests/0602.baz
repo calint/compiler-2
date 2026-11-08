@@ -1,11 +1,5 @@
-# a variable named 'self' is rejected
+# an array literal with a size holds at most that many elements
 
-type point {
-    x,
-    y
-}
-
-# 'self' is reserved
 func main() {
-    var self = 1
+    var a = i8[2]{1, 2, 3}
 }

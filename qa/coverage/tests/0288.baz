@@ -1,15 +1,19 @@
-# function returns a constructed value
+# narrowing conversion preserves the low byte
 
 func assert(expr bool) { if not expr exit(1) }
 
-type point { x, y }
-
-func make_point() res point {
-    res = { 12, -7 }
+func take(value i8) result i8 {
+    result = value
 }
 
 func main() {
-    var point_value = make_point()
-    assert(point_value.x == 12)
-    assert(point_value.y == -7)
+    var bigger = 0x123
+    var low = i8(bigger)
+    var smaller = take(low)
+    assert(smaller == 0x23)
+
+    var bigger_again = 0x1234
+    var low_again = i8(bigger_again)
+    var smaller_again = take(low_again)
+    assert(smaller_again == 0x34)
 }

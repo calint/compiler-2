@@ -1,8 +1,9 @@
-# a parameter name of a generic function is checked where it is read, also
-# when nothing calls it
-
-func f<T type>(if T) {
-}
+# a constant start of 'write' before the array is an error, also with a count
+# known at run time
 
 func main() {
+    var a = i8[4]
+    var n = 1
+    write(1, a, n, -1)
+    exit(0)
 }

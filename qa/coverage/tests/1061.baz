@@ -1,38 +1,19 @@
-# a generic type based on another passes a type parameter through and renames
-# a constant parameter
-
-func assert(err, ok bool) { if not ok exit(err) }
+# an error in a method of a base names each level from the base to the alias,
+# also for a method defined after the alias
 
 type list<T type, capacity> {
     array T[capacity],
     len,
 }
 
-func mut list.push(item T) {
-    self.array[self.len] = item
-    self.len = self.len + 1
+type text<capacity> = list<i8, capacity>
+
+type name<n> = text<n>
+
+type short_name = name<4>
+
+func list.first_x() res {
+    res = self.array[0].x
 }
 
-type stack<T type> = list<T, 4>
-
-func mut stack.pop() res T {
-    self.len = self.len - 1
-    res = self.array[self.len]
-}
-
-type bytes<n> = list<i8, n>
-
-type ints = stack<int>
-type pair = bytes<2>
-
-func main() {
-    var s = ints
-    s.push(7)
-    s.push(9)
-    assert(1, s.pop() == 9 and s.len == 1)
-    assert(2, array_length(s.array) == 4)
-
-    var p = pair
-    p.push('x')
-    assert(3, p.len == 1 and array_length(p.array) == 2)
-}
+func main() {}

@@ -1,13 +1,8 @@
-# a branch that a constant argument makes false is not compiled, the 'if'
-# guards the division
-
-func h(a) res {
-    res = 7
-    if a != 0 {
-        res = 100 / a
-    }
-}
-
+# two 'bool's are compared only for equality, they are not numbers
 func main() {
-    exit(h(0))
+    var t = true
+    var f = false
+    if t > f {
+        exit(1)
+    }
 }

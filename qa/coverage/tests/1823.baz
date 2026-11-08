@@ -1,4 +1,5 @@
-# 'true' followed by '(' is not a call, as a number
+# a character literal is a constant, it has no field
+
 func main() {
-    var x = true(1)
+    var y = 'a'.x
 }

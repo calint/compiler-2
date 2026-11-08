@@ -1,7 +1,9 @@
-# a run-time element count beyond the array panics
+# a negative count with a start panics
 
 func main() {
-    var buf = i8[2]
-    var n = 3
-    var r = write(1, buf, n)
+    var buf = i8[4]
+    var a = i8[4]
+    var k = 0
+    var n = -1
+    var r = write(1, buf, n, k)
 }

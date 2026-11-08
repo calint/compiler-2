@@ -1,4 +1,0 @@
-
-1336.baz:5:20: constant '200' does not fit 'i8' (-128 to 127), 'i8(...)' wraps it
-    var r = i8(a + 200)
-                   ^~~

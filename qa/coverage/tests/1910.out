@@ -1,4 +1,4 @@
 
-1910.baz:6:26: unexpected keyword 'else'
-    var n = array_length(else)
-                         ^~~~
+1910.baz:5:9: a call runs only inside a function, not in the initializer of a global
+var x = write(1, b, nope)
+        ^~~~~

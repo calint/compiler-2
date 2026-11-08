@@ -1,16 +1,8 @@
-# a 'let' of the 'n' of a 'foo' over an unsized array parameter is a constant
-# at a noinline call that gives the length, as 'n' is: 's[m]' past the end is
-# rejected like 's[n]'
-
-func noinline last(s i8[]) res i8 {
-    res = 0
-    foo s {
-        let m = n
-        res = s[m]
-    }
-}
-
+# a whole array of 'bool' under a unary operator is rejected as an array that
+# must be indexed, not as a 'bool' to convert
 func main() {
-    var a = i8[4]
-    exit(last(a))
+    var bs = bool[2]
+    var n = 0
+    n = -bs
+    exit(n)
 }

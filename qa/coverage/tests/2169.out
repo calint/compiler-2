@@ -1,4 +1,4 @@
 
-2169.baz:7:12: generic parameter 'T' of 'g' needs a type, got the constant 'false'
-    exit(g<false>(1))
-           ^~~~~
+2169.baz:5:9: character literal '\n\xb0' must contain one byte, e.g. 'a' or '\xe9'
+    c = '\n\xb0'
+        ^~~~~~~~

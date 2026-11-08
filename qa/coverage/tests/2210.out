@@ -1,4 +1,0 @@
-
-2210.baz:5:13: an instance literal of 'pt' is not an operand here, store it in a variable first
-    var s = pt{1, 2}.x
-            ^~

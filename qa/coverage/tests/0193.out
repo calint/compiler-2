@@ -1,4 +1,4 @@
 
-0193.baz:3:5: expected a name
-dat = 1
-    ^
+0193.baz:4:1: expected '{' to begin declaration of type
+func main() {}
+^

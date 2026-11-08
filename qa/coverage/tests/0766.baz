@@ -1,10 +1,11 @@
-# an array argument must have the element type of the parameter
+# the argument of a constant parameter is a number or a constant
 
-func noinline first(v i32[]) res i32 {
-    res = v[0]
+type text<capacity> {
+    array i8[capacity],
+    len,
 }
 
+type str = text<unknown>
+
 func main() {
-    var a = i16[3]{ 1, 2, 3 }
-    var r = first(a)
 }

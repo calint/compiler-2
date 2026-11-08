@@ -1,4 +1,4 @@
 
-1944.baz:4:9: 'i8' is a type, not an array
-    a = i8
-        ^~
+1944.baz:6:14: 'box<...>' is not a generic argument, name an instance first, e.g. 'type my_box = box<...>'
+type s = box<box<i8>>
+             ^~~

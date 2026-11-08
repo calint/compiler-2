@@ -1,4 +1,5 @@
-# a block requires its closing brace
+# read requires an array to fill
 
 func main() {
-    if true
+    read(0, 1 + 2, 1)
+}

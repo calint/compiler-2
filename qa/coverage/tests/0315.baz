@@ -1,10 +1,10 @@
-# out-of-range index returned by a function
+# constant index past the end of an array argument is rejected at compile
 
-func get_index() result {
-    result = 8
+func legacy_write(values mut i8[]) {
+    values[8] = 1
 }
 
 func main() {
-    var arr = i8[8]
-    arr[get_index()] = 1
+    var values = i8[8]
+    legacy_write(values)
 }

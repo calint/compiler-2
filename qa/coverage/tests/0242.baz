@@ -1,7 +1,6 @@
-# user-type fields require structured initializers
+# arrays_equal requires a closing parenthesis
 
-type p { x }
-
-dat x = p[2]{1,2}
-
-func main() {}
+func main() {
+    var a = i8[2]
+    var z = arrays_equal(a,a,1
+}

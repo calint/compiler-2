@@ -1,4 +1,4 @@
 
-1585.baz:4:9: expected type 'i64', got 'bool'
-    n = bool
-        ^~~~
+1585.baz:12:15: method 'pt.get' is not generic, it takes no type arguments
+    var x = p.get<i8>()
+              ^~~

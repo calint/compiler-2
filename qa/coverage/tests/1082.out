@@ -1,0 +1,4 @@
+
+1082.baz:9:7: constant '300' does not fit 'i8' (-128 to 127), 'i8(...)' wraps it
+    f(300 + 1)
+      ^~~

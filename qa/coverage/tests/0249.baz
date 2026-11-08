@@ -1,6 +1,6 @@
-# arrays_equal requires a closing parenthesis
+# missing initializer delimiter is rejected
 
-func main() {
-    var a = i8[2]
-    var z = arrays_equal(a,a,1
-}
+type p { x, y }
+dat x = p{1 2}
+
+func main() {}

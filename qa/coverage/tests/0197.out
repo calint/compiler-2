@@ -1,4 +1,4 @@
 
-0197.baz:3:17: too many elements for array of size 1
-dat x = i8[1]{1,2}
-                ^
+0197.baz:3:10: type 'nope' not found
+func f(x nope) {}
+         ^~~~

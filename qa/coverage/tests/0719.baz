@@ -1,0 +1,29 @@
+# rv32i: 'write' needs 'a1', which is held by a loop register
+
+dat a = i8[]{65, 10}
+
+func main() {
+    foo a {
+        foo a {
+            foo a {
+                foo a {
+                    foo a {
+                        foo a {
+                            foo a {
+                                foo a {
+                                    foo a {
+                                        foo a {
+                                            foo a {
+                                                write(1, a, 2)
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

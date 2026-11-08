@@ -1,4 +1,0 @@
-
-1862.baz:14:11: an operator makes a value, not an array
-    b = a + 1
-          ^

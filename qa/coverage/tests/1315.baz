@@ -1,7 +1,12 @@
-# 'exit' assigned to an instance is rejected, it does not return a value
-type point {x, y}
+# a call of the wrong type in a field of an instance literal is reported at the
+# call
+type rec {a, b}
+
+func t() res bool {
+    res = true
+}
 
 func main() {
-    var p = point{1, 2}
-    p = exit(1)
+    var s = rec{2, t()}
+    exit(0)
 }

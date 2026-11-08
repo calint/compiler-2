@@ -1,4 +1,4 @@
 
-1842.baz:9:7: an array literal is not an operand here, store it in a variable first
-    f([3]{1, 2, 3})
-      ^
+1842.baz:14:9: an instance of 'left' is not a number
+    l = ll + 1
+        ^~

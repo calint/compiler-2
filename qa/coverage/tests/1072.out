@@ -1,13 +1,4 @@
 
-1072.baz:16:25: type 'i8' has no fields
-    res = self.array[0].x
-                        ^
-1072.baz:9:23: instantiated by 'list<i8, 4>'
-type text<capacity> = list<i8, capacity>
-                      ^~~~
-1072.baz:11:16: instantiated by 'text<4>'
-type name<n> = text<n>
-               ^~~~
-1072.baz:13:6: instantiated by
-type short_name = name<4>
-     ^~~~~~~~~~
+1072.baz:5:14: a 'bool' is not an arithmetic operand, convert it, e.g. 'int(t)'
+    var n = -t
+             ^

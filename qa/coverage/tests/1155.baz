@@ -1,18 +1,13 @@
-# a 'let' of the 'array_length' of an unsized array parameter is the length
-# of the argument of each call, inline and noinline
+# a constant compared with an inlined constant argument of a narrower
+# parameter on its right is rejected like with a variable of that type
 
-func f(s i8[]) res {
-    let n = array_length(s)
-    res = n
-}
-
-func noinline g(s i8[]) res {
-    let n = array_length(s)
-    res = n
+func g(v i8) {
+    if 1000 < v {
+        exit(3)
+    }
+    exit(4)
 }
 
 func main() {
-    var a = i8[5]
-    var b = i8[7]
-    exit(f(a) + f(b) + g(a) + g(b))
+    g(5)
 }

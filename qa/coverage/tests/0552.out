@@ -1,7 +1,4 @@
 
-0552.baz:5:18: too many elements for array of size 2
-    dst = {1, 2, 3}
-                 ^
-0552.baz:10:5: called from
-    fill(values)
-    ^~~~
+0552.baz:14:5: receiver of method 'list.clear' cannot be an array
+    lists.clear()
+    ^~~~~

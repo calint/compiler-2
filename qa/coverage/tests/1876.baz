@@ -1,10 +1,6 @@
-# a generic function takes only types, a '-' is not an argument and no hint
-# about constants is given
+# 'mut' needs a method, also in a generic function that is never instantiated
 
-func id<T type>(x T) res T {
-    res = x
-}
+func mut f<T type>() {}
 
 func main() {
-    var a = id<-1>(1)
 }

@@ -1,4 +1,4 @@
 
-1846.baz:8:7: generic parameter 'T' of 'f' needs a type, got a string
-    f<"a">(1)
-      ^~~
+1846.baz:8:23: 'box<...>' is not a type, name an instance first, e.g. 'type my_box = box<...>'
+func point.at(a) self box<3> {
+                      ^~~

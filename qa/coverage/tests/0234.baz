@@ -1,3 +1,6 @@
-# incomplete addition is rejected
+# user-type array initializers cannot exceed their size
 
-func main() { var x = 1 + }
+type p { x }
+dat x = p[1]{{1},{2}}
+
+func main() {}

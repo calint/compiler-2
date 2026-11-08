@@ -1,17 +1,18 @@
-# foo over a user type with an array field
+# foo loop variable passed to a mutating function
 
-type holder { values[2] }
+dat values = []{1, 2, 3}
 
-dat holders = holder[2]{ {{1, 2}}, {{3, 4}} }
+func increment(value mut) {
+    value = value + 10
+}
 
 func assert(x bool) { if not x exit(1) }
 
 func main() {
-    foo holders {
-        e.values[0] = e.values[0] + 10
+    foo values {
+        increment(e)
     }
-    assert(holders[0].values[0] == 11)
-    assert(holders[0].values[1] == 2)
-    assert(holders[1].values[0] == 13)
-    assert(holders[1].values[1] == 4)
+    assert(values[0] == 11)
+    assert(values[1] == 12)
+    assert(values[2] == 13)
 }

@@ -1,6 +1,6 @@
-# user-type array initializers cannot exceed their size
+# arrays_equal requires parentheses
 
-type p { x }
-dat x = p[1]{{1},{2}}
-
-func main() {}
+func main() {
+    var a = i8[2]
+    var z = arrays_equal a,a,1
+}

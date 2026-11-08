@@ -1,3 +1,10 @@
-# an unterminated generic definition
+# the constant argument of an alias must make a valid type
 
-func f<T type>() {
+type text<capacity> {
+    array i8[capacity],
+    len,
+}
+
+type str = text<0>
+
+func main() {}

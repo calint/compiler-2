@@ -1,37 +1,24 @@
-# foo and increment both index through nested user types
+# regression: a call result of each width compared with 0 uses a register of
+# its width
 
-type point { x, y }
-type data_holder { data point[3] }
-type item { something data_holder[2] }
+func one8() r i8 { r = 1 }
+func one16() r i16 { r = 1 }
+func one32() r i32 { r = 1 }
+func one64() r { r = 1 }
 
-dat values =
-    item[2]{
-        {
-            {
-                { { {1, 2}, {3, 4}, {5, 6} } },
-                { { {7, 8}, {9, 10}, {11, 12} } }
-            }
-        },
-        {
-            {
-                { { {13, 14}, {15, 16}, {17, 18} } },
-                { { {19, 20}, {21, 22}, {23, 24} } }
-            }
-        }
-    }
-
-func increment(value mut data_holder) {
-    value.data[2].x = value.data[2].x + 10
-}
-
-func assert(x bool) { if not x exit(1) }
+func zero8() r i8 { r = 0 }
+func zero16() r i16 { r = 0 }
+func zero32() r i32 { r = 0 }
+func zero64() r { r = 0 }
 
 func main() {
-    foo values {
-        increment(e.something[1])
-    }
-    assert(values[0].something[0].data[2].x == 5)
-    assert(values[0].something[1].data[2].x == 21)
-    assert(values[1].something[0].data[2].x == 17)
-    assert(values[1].something[1].data[2].x == 33)
+    if one8() == 0 exit(11)
+    if one16() == 0 exit(12)
+    if one32() == 0 exit(13)
+    if one64() == 0 exit(14)
+
+    if zero8() != 0 exit(21)
+    if zero16() != 0 exit(22)
+    if zero32() != 0 exit(23)
+    if zero64() != 0 exit(24)
 }

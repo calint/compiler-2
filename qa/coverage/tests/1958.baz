@@ -1,6 +1,11 @@
-# a whole array literal for an instance is a type mismatch
-type point {x i8, y i8}
+# a call where a built-in takes an array is not an array, a result never is
+# one, so storing it would not make one
+
+func f() res i8 {
+    res = 1
+}
+
 func main() {
-    var p = point
-    p = i8[2]{1, 2}
+    var a = i8[2]
+    array_copy(a, f(), 1)
 }

@@ -1,7 +1,6 @@
-# '{}' is not an operand of a comparison
+# the same in an initializer
 func main() {
-    var b = bool
-    if b == {} {
-        exit(1)
-    }
+    var t = true
+    var f = false
+    var b = (t and f) == f
 }

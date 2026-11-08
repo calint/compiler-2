@@ -1,26 +1,15 @@
-# three nested 'foo' read a field outside the arrays they iterate, which is
-# accepted
+# the same element forwarded through parameters shares storage
 
-type leaf {
-    v i32[2],
+func copy_over(dst mut i32, src mut i32) {
+    dst = src
+    src = 0
 }
 
-type mid {
-    leaves leaf[2],
-    other i32,
+func forward(a mut i32, b mut i32) {
+    copy_over(a, b)
 }
 
 func main() {
-    var m = mid[2]
-    m[0].other = 2
-
-    foo m {
-        foo e.leaves {
-            foo e.v {
-                e = e + m[0].other
-            }
-        }
-    }
-
-    if m[1].leaves[1].v[1] != 2 exit(1)
+    var arr = i32[4]
+    forward(arr[1], arr[1])
 }

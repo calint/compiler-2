@@ -1,4 +1,4 @@
 
-0163.baz:6:11: destination array size 2 does not match source size 4
-    dst = src
-          ^~~
+0163.baz:5:26: 'x' is not an array
+    var n = array_length(x)
+                         ^

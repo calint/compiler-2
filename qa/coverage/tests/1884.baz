@@ -1,6 +1,11 @@
-# a ')' after the last element with no value is a missing value, not an
-# element too many
+# a whole array of instances in a comparison is reported as an array that
+# must be indexed, like an array of numbers
+
+type pt {x}
 
 func main() {
-    var a = i8[2]{1, 2, )
+    var ps = pt[2]
+    var q = pt{1}
+    if ps < q {
+    }
 }

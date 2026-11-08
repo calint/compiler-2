@@ -1,4 +1,4 @@
 
-1512.baz:6:13: an instance of 'point' is not a number
-    var x = point + 1
-            ^~~~~
+1512.baz:2:19: expected ',' or ')' after parameter 'a'
+func f<T type>(a T] {}
+                  ^

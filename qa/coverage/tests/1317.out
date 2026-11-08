@@ -1,4 +1,4 @@
 
-1317.baz:6:11: a comparison makes a condition, which is not an operand here, store it in a 'bool' first
-    if (x == 1) == b {
-          ^~
+1317.baz:8:20: expected type 'i64', got 'bool', use 'i64(...)'
+    var s = rec{1, arrays_equal(x, y, 2)}
+                   ^~~~~~~~~~~~

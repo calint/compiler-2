@@ -1,7 +1,11 @@
-# an error in the fields of a generic type names the generic definition
+# a whole array for an instance parameter must be indexed whatever its element
+# type
 
-type box<T type> { x T y }
+type point { x, y }
 
-type s = box<i8>
+func show(p point) {}
 
-func main() {}
+func main() {
+    var a = i8[2]
+    show(a)
+}

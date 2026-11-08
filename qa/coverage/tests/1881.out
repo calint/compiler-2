@@ -1,4 +1,4 @@
 
-1881.baz:6:13: constant 'array_length(pad)' does not fit 'i32'
-    var c = array_length(pad)
-            ^~~~~~~~~~~~
+1881.baz:4:11: generic parameter 'list' is also the name of the generic type at 4:6, use another name
+type list<list type> { a list }
+          ^~~~

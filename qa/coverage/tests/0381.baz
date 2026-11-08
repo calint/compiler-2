@@ -1,30 +1,40 @@
-# foo indexes an array of user types in a user-type field
-
-type point { x, y }
-type item { data point[2] }
-
-dat values =
-    item[3]{
-        { { {1, 2}, {3, 4} } },
-        { { {5, 6}, {7, 8} } },
-        { { {9, 10}, {11, 12} } }
-    }
-
-func increment(value mut point) {
-    value.y = value.y + 10
-}
+# regression: ident_info field destination and alias lea propagation
 
 func assert(x bool) { if not x exit(1) }
 
+type str {
+    len i8,
+    data i8[4]
+}
+
+type location {
+    name str,
+    note str
+}
+
+func inv8(v i8) out i8 {
+    out = ~v
+}
+
+func copy_name(src location, dst mut location) {
+    dst.name = {src.name.len, src.name.data}
+}
+
 func main() {
-    foo values {
-        increment(e.data[1])
-    }
-    assert(values[0].data[0].y == 2)
-    assert(values[0].data[1].x == 3)
-    assert(values[0].data[1].y == 14)
-    assert(values[1].data[1].x == 7)
-    assert(values[1].data[1].y == 18)
-    assert(values[2].data[1].x == 11)
-    assert(values[2].data[1].y == 22)
+    var locations = location[2]
+
+    locations[0].name.len = 3
+    locations[0].name.data[1] = 0x61
+
+    copy_name(locations[0], locations[1])
+
+    assert(locations[1].name.len == 3)
+    assert(locations[1].name.data[1] == 0x61)
+
+    var z = locations[1].name.data[1] == locations[0].name.data[1]
+    assert(z)
+
+    var ix = 1
+    locations[ix].note.data[0] = inv8(locations[ix].name.data[1])
+    assert(locations[1].note.data[0] == ~0x61)
 }

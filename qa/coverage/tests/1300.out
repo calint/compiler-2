@@ -1,4 +1,4 @@
 
-1300.baz:6:9: expected ')' after the arguments
-    f(1 2)
-        ^
+1300.baz:8:19: 'ls[0].a[0]' may have been overwritten in the same statement, use a temporary variable
+    ls[i].a = {5, ls[0].a[0]}
+                  ^~

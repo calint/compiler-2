@@ -1,10 +1,7 @@
-# a function without a body before a generic function is reported as the
-# missing body, not as type arguments of a result type
-
-func f()
-
-func g<T type>(x T) {
-}
+# an error at the end of the source after blank lines is shown on the last
+# line that has text
 
 func main() {
-}
+    if
+
+

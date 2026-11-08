@@ -1,57 +1,32 @@
-# regression: user-type return and user-type indexed argument aliasing
+# resolver path: alias chain with depth growth and no lea
 
 func assert(err, expr bool) { if not expr exit(err) }
 
-type pair {
+type point {
     x,
     y
 }
 
-type container {
-    p pair,
-    tag
+type node {
+    p point
 }
 
-func mk_pair(base) out pair {
-    out = {base + 1, base + 2}
+type world {
+    n node
 }
 
-func sum_pair(src pair) out {
-    out = src.x + src.y
-}
-
-func copy_pair(src pair, dst mut pair) {
-    dst = {src.x, src.y}
+func bump(a mut node) {
+    a.p.x = a.p.x + 1
 }
 
 func main() {
-    var srcs = pair[3]
-    var dsts = pair[3]
-    var boxes = container[2]
+    var w = world
 
-    srcs[0] = {10, 20}
-    srcs[1] = {30, 40}
-    srcs[2] = {50, 60}
+    w.n.p.x = 10
+    w.n.p.y = 20
 
-    var ri = 1
-    dsts[ri] = mk_pair(100)
+    bump(w.n)
 
-    assert(1, ri == 1)
-    assert(2, dsts[1].x == 101)
-    assert(3, dsts[1].y == 102)
-
-    var ai = 2
-    boxes[0].tag = sum_pair(srcs[ai])
-
-    assert(4, ai == 2)
-    assert(5, boxes[0].tag == 110)
-
-    var ci_src = 0
-    var ci_dst = 1
-    copy_pair(srcs[ci_src], boxes[ci_dst].p)
-
-    assert(6, ci_src == 0)
-    assert(7, ci_dst == 1)
-    assert(8, boxes[1].p.x == 10)
-    assert(9, boxes[1].p.y == 20)
+    assert(1, w.n.p.x == 11)
+    assert(2, w.n.p.y == 20)
 }

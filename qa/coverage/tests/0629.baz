@@ -1,12 +1,10 @@
-# the foo counter 'i' is read-only also through a parameter
+# 'read' cannot fill an array parameter without 'mut'
 
-func skip(ix mut) {
-    ix = ix + 1
+func f(d i8[]) {
+    read(0, d)
 }
 
 func main() {
-    var arr = []{ 1, 2, 3 }
-    foo arr {
-        skip(i)
-    }
+    var a = i8[2]{ 1, 2 }
+    f(a)
 }

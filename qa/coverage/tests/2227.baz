@@ -1,7 +1,9 @@
-# an array literal reached into where an instance is expected
-type pt { x, y }
+# the length hint for an array reached through an indexed element keeps the
+# index
+
+type room {doors i32[4]}
 
 func main() {
-    var p = pt
-    p = pt[2]{}[0]
+    var rooms = room[2]
+    var n = rooms[1].doors.length
 }

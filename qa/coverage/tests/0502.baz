@@ -1,20 +1,7 @@
-# inline call labels are unique for any function name
-
-func assert(err, expr bool) { if not expr exit(err) }
-
-func cmp() res { res = 1 }
-
-func f() res { res = 2 }
-
-func f_10_11() res {
-    res = f() + 1
-}
+# a run-time element count beyond the array panics
 
 func main() {
-    if cmp() == 1 {
-        var r = f_10_11()
-        assert(2, r == 3)
-        exit(0)
-    }
-    exit(1)
+    var buf = i8[2]
+    var n = 3
+    var r = write(1, buf, n)
 }

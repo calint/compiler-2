@@ -1,10 +1,6 @@
-# a whole array for an instance must be indexed whatever its element type, as
-# for a number
-
-type point { x, y }
+# an array literal without a type where a built-in takes an array
 
 func main() {
-    var p = point
     var a = i8[2]
-    p = a
+    array_copy(a, {1, 2}, 2)
 }

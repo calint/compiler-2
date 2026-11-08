@@ -1,4 +1,13 @@
-# an array literal followed by an arithmetic operator that starts a 'dat' is
-# an array that is not a number, as after '='
-dat d = i8[2]{1, 2} - 1
-func main() {}
+# an expression stored to memory with noinline calls nested 20 deep compiles
+# in milliseconds, a choice inside a version takes its first;
+# '--versions=nested' doubles per level, about 45 s
+
+func noinline g(x i32) res i32 {
+    res = x + 1
+}
+
+func main() {
+    var a = i32(1)
+    var r = g(g(g(g(g(g(g(g(g(g(g(g(g(g(g(g(g(g(g(g(a) + 1) + 1) + 1) + 1) + 1) + 1) + 1) + 1) + 1) + 1) + 1) + 1) + 1) + 1) + 1) + 1) + 1) + 1) + 1) + 1
+    exit(r)
+}

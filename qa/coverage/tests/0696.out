@@ -1,4 +1,7 @@
 
-0696.baz:3:6: 'noinline' is a keyword
-func noinline() {
-     ^~~~~~~~
+0696.baz:11:22: 'g.x' is read but has been overwritten in the same statement, use a temporary variable
+    g = {v + self.x, g.x}
+                     ^
+0696.baz:16:5: called from
+    p.bad(1)
+    ^

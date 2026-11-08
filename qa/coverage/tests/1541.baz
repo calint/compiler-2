@@ -1,14 +1,11 @@
-# an inlined recursion that ends at compile time but nests too deep is not
-# said to be endless
-func r(v mut, n) {
-    if n != 0 {
-        v = v + 1
-        r(v, n - 1)
-    }
+# a variable is not named like a type parameter, here bound to a built-in type,
+# which it would hide only in some places, e.g. 'U(v)' still converts
+func f<U type>(v U) res U {
+    var U = 2
+    res = U(v)
 }
 
 func main() {
-    var v = 0
-    r(v, 100)
-    exit(v)
+    var r = f(i8(1))
+    exit(int(r))
 }

@@ -1,8 +1,12 @@
-# --checks=overflow: the negation of the minimum as an operand of '&' panics
+# an empty 'else' block is written back by --reproduce-source
 func main() {
-    var a = i32(-2147483648)
-    var b = i32(3)
-    var c = i32(0)
-    c = b & (-a)
-    exit(c)
+    var a = 1
+    if a == 1 {
+        a = 2
+    } else {
+    }
+    if a == 2 {
+    } else {
+    }
+    exit(a - 2)
 }

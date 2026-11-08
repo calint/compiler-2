@@ -1,7 +1,4 @@
 
-0870.baz:6:11: recursion of inlined function 'count' runs out of registers before it ends at compile time, declare it 'noinline'
-    res = count(n + 1) + 1
-          ^~~~~
-0870.baz:11:10: called from 'count(start)'
-    exit(count(start))
-         ^~~~~
+0870.baz:6:7: expected a statement
+    } "else"
+      ^~~~~~

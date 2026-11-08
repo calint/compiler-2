@@ -1,4 +1,0 @@
-
-1269.baz:4:19: 'n + 0' of type 'i32' is not a 'bool', compare it, e.g. 'n + 0 != 0'
-    if n == 2 or (n + 0) exit(2)
-                  ^

@@ -1,4 +1,4 @@
 
-0647.baz:10:5: cannot assign to read-only 'p.x', 'p' is declared with 'let'
-    p.x = 3
+0647.baz:4:5: cannot assign to read-only 'a', parameter 'a' is not declared 'mut'
+    a = 2
     ^

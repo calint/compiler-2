@@ -1,14 +1,6 @@
-# a local that hides a global does not share storage with the global that an
-# inlined body reads
-
-var total = 3
-
-func bump(value mut) {
-    value = total + 1
-}
+# a constant count past the end of the buffer of 'write' is rejected
 
 func main() {
-    var total = 7
-    bump(total)
-    exit(total)
+    var a = i8[4]
+    write(1, a, 5)
 }

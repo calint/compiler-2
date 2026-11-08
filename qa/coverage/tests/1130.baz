@@ -1,26 +1,10 @@
-# a 'mut bool' parameter writes the variable of the caller, inlined or not
+# a 'dat' holds constants, a field of another 'dat' is read at run time
 
-func assert(ok bool) { if not ok exit(1) }
+type point {x, y}
 
-func set(b mut bool) {
-    b = true
-}
-
-func noinline clear(b mut bool) {
-    b = false
-}
-
-type flags { on bool }
+dat p = point{1, 2}
+dat q = point{3, p.x}
 
 func main() {
-    var x = false
-    set(x)
-    assert(x)
-    clear(x)
-    assert(not x)
-    var f = flags{false}
-    set(f.on)
-    assert(f.on)
-    clear(f.on)
-    assert(not f.on)
+    exit(q.y)
 }

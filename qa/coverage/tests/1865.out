@@ -1,4 +1,4 @@
 
-1865.baz:8:1: expected '{' to begin block
-func main() {
-^
+1865.baz:7:20: expected '}' to close the value of type 'p'
+    var a = p{1, 2,,}
+                   ^

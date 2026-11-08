@@ -1,7 +1,9 @@
-# a runtime index may already have written the element an instance value reads
-type point {x, y}
+# an inlined narrower result is made in a register of its type and widens
+# into the destination
+func narrow(v i32) res i8 { res = i8(v) }
 func main() {
-    var ps = point[2]
-    var i = 0
-    ps[i] = {1, ps[1].x}
+    var big = i32(0x1234)
+    var x = i32(0)
+    x = narrow(big)
+    exit(x)
 }

@@ -1,0 +1,4 @@
+
+0560.baz:3:29: constant '128' does not fit 'i8' (-128 to 127), 'i8(...)' wraps it
+dat bytes = i8[]{-128, 127, 128}
+                            ^~~

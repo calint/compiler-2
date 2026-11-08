@@ -1,3 +1,9 @@
-# malformed single-statement if block inside a braced function
+# negating a negative size produces a valid array
 
-func main() { if true } }
+let n = -1
+func assert(x bool) { if not x exit(1) }
+func main() {
+    var values = i8[-n]
+    values[0] = 7
+    assert(values[0] == 7)
+}

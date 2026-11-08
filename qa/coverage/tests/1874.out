@@ -1,4 +1,4 @@
 
-1874.baz:5:7: expected a constant, a name or a call
-    if
-      ^
+1874.baz:6:13: index 9223372036854775807 is out of bounds for array 'a' of any size
+    res = a[9223372036854775807]
+            ^

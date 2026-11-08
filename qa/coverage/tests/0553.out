@@ -1,5 +1,4 @@
-aaaaaaaa
-abcdef
-xyz
-hi
-0123456789abcd
+
+0553.baz:14:9: expected '(' after method name
+    lst.clear = 1
+        ^~~~~

@@ -1,4 +1,4 @@
 
-2095.baz:11:11: recursion of inlined function 'r' is nested deeper than 64 calls, declare it 'noinline'
-    res = r(p)
-          ^
+2095.baz:7:5: cannot deduce 'T' of generic function 'show', write 'show<...>'
+    show(read(0, b) + 1)
+    ^~~~

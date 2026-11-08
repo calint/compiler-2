@@ -1,10 +1,15 @@
-# a result of a method of a generic type named like a type parameter of the
-# type is rejected at the definition
+# a call where a function takes an array, its result of another type than
+# the elements
 
-type box<T type> {x T}
-func box.f() T {
-    T = 1
+type point {x, y}
+
+func mk() res point {
+    res = {}
 }
-type b = box<i8>
+
+func f(s i8[]) {
+}
+
 func main() {
+    f(mk())
 }

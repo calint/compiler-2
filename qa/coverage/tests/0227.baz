@@ -1,4 +1,3 @@
-# user type initializers must match their fields
+# incomplete addition is rejected
 
-type p { x }
-func main() { var p1 = p{1,2} }
+func main() { var x = 1 + }

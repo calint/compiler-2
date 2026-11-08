@@ -1,4 +1,4 @@
 
-1664.baz:6:15: unexpected '!'
-    var q = p ! 3
-              ^
+1664.baz:13:13: expected type 'i64', got 'point'
+        n = mk()
+            ^~

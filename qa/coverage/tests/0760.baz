@@ -1,5 +1,15 @@
-# a type name followed by an operator is not an initializer
+# a type argument names a type
+
+type name {
+    array i8[4],
+    len,
+}
+
+func make<T type>(n) res T {
+    res.len = n
+    res.array = {}
+}
 
 func main() {
-    var x = i8 + 1
+    var m = make<nope>(2)
 }

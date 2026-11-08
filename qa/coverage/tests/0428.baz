@@ -1,10 +1,36 @@
-# write and read an indexed field in a 12-byte instance
+# name-first return declarations with default, explicit and aggregate types
 
-type record { first i32, second i32, third i32 }
+type pair { first, second }
+func assert(ok bool) { if not ok exit(1) }
+func twice(value) result { result = value * 2 }
+func narrow(value i32) result i32 { result = value + 1 }
+func make_pair(value) result pair { result = { value, value + 1 } }
+func commented(value) result { # default type
+    result = value + 3
+}
+func noinline fact(value) result {
+    result = 1
+    if value <= 1 return
+    var next = value - 1
+    var partial = 0
+    partial = fact(next)
+    result = value * partial
+}
 
 func main() {
-    var records = record[3]{ { 1, 2, 3 }, { 4, 5, 6 }, { 7, 8, 9 } }
-    var index = i32(1)
-    records[index].second = 42
-    exit(records[index].second)
+    assert(twice(7) == 14)
+    assert(commented(4) == 7)
+    var small = i32(9)
+    # note: temporary because the result may share storage with the argument
+    var tmp1 = narrow(small)
+    small = tmp1
+    assert(small == 10)
+    var record = make_pair(12)
+    assert(record.first == 12)
+    assert(record.second == 13)
+    var value = 5
+    var result = 0
+    result = fact(value)
+    assert(result == 120)
+    assert(value == 5)
 }

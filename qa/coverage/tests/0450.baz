@@ -1,21 +1,22 @@
-# arrays follow names, with optional element types
-type point { coordinates i32[2], tags[2] }
-dat colon = ": "
-dat numbers = [2]{ 3, 4 }
+# constant nested lists as last elements branch to the enclosing true target
 func assert(ok bool) { if not ok exit(1) }
-func sum(values i32[]) result i32 { result = values[0] + values[1] }
-func default_sum(values[]) result { result = values[0] + values[1] }
-func update(points mut point[]) { points[0].coordinates[1] = 9 }
 func main() {
-    var values = i32[]{ 5, 6 }
-    assert(sum(values) == 11)
-    assert(default_sum(numbers) == 7)
-    var points = point[2]
-    update(points)
-    assert(points[0].coordinates[1] == 9)
-    assert(points[0].tags[1] == 0)
-    var defaults = [2]{ 7, 8 }
-    assert(default_sum(defaults) == 15)
-    assert(array_length(colon) == 2)
-    assert(colon[0] == 58)
+    var x = 1
+    var a = (x == 1 and true) or x == 5
+    assert(a)
+    var b = (x == 2 or false) and x == 1
+    assert(not b)
+    var c = not ((x == 1 and true) or x == 5)
+    assert(not c)
+    var d = (not (x == 2 or false)) or x == 5
+    assert(d)
+    var taken = 0
+    if (x == 1 and true) or x == 5 { taken = 1 } else { taken = 2 }
+    assert(taken == 1)
+    if (x == 2 or false) and x == 1 { taken = 3 } else { taken = 4 }
+    assert(taken == 4)
+    if not ((x == 1 and true) or x == 5) { taken = 5 } else { taken = 6 }
+    assert(taken == 6)
+    if (not (x == 2 or false)) or x == 5 { taken = 7 } else { taken = 8 }
+    assert(taken == 7)
 }

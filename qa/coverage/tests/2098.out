@@ -1,4 +1,4 @@
 
-2098.baz:10:26: expected '(' after constructor name
-func main() { show(point.at) }
-                         ^~
+2098.baz:8:9: expected type 'i8', got 'point'
+    x = point{1, 2} == p
+        ^~~~~

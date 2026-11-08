@@ -1,4 +1,4 @@
 
-0780.baz:17:7: cannot deduce 'T' of generic function 'str.append', write 'append<...>'
-    s.append(1)
-      ^~~~~~
+0780.baz:8:13: generic type 'text' is not a type, name an instance first, e.g. 'type my_text = text<...>'
+func show(t text) {
+            ^~~~

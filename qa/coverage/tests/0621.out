@@ -1,4 +1,4 @@
 
-0621.baz:6:9: expected type 'i8', got 'i64'
-    a = [2]{1, 2}
+0621.baz:5:9: the type of '{...}' is not known, write it before the '{'
+dat p = { 1, 2 }
         ^

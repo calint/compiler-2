@@ -1,6 +1,10 @@
-# a delimiter where the single statement of a block should start is rejected
+# an expression is not an array argument
+
+func first(arr i32[]) res i32 {
+    res = arr[0]
+}
 
 func main() {
-    var x = 1
-    loop |
+    var a = i32[4]
+    var x = first(a + 1)
 }

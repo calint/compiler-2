@@ -1,6 +1,4 @@
-# strings require i8 arrays
+# type fields require delimiters
 
-type p { s i16[2] }
-dat x = p{"x"}
-
+type x { a i8 b i8 }
 func main() {}

@@ -1,4 +1,4 @@
 
-1153.baz:7:9: destination array size 2 does not match source size 3
-    a = b
-        ^
+1153.baz:6:20: index 9223372036854775807 is out of bounds for array 'a' of size 4
+    write(1, a, 1, 9223372036854775807)
+                   ^

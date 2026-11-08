@@ -1,4 +1,16 @@
-# a string where a name is expected, the caret is on the string
-type t {x}
-func t.""() {}
-func main() {}
+# a function uses the globals of the functions it calls
+var g = 5
+
+func get() res {
+    res = g
+}
+
+func f() res {
+    res = 1
+    res = res + get()
+}
+
+func main() {
+    g = f()
+    exit(g)
+}

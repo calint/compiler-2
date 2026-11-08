@@ -1,1 +1,10 @@
-ok
+
+1059.baz:4:13: expected a constant array size greater than 0
+    array T[capacity],
+            ^
+1059.baz:8:23: instantiated by 'list<i8, 0>'
+type text<capacity> = list<i8, capacity>
+                      ^~~~
+1059.baz:10:6: instantiated by
+type str = text<0>
+     ^~~

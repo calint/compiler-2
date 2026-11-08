@@ -1,5 +1,11 @@
-# a whole array literal for a number is a type mismatch
+# a built-in type parameter where the destination gives the type names the
+# type it is bound to
+type seg {a i8, b i8}
+
+func f<T type>() {
+    var s = seg{T}
+}
+
 func main() {
-    var n = i16(1)
-    n = i8[2]{1, 2}
+    f<i8>()
 }

@@ -1,4 +1,4 @@
 
-0339.baz:4:20: an empty array needs a size
-    var values = i8[]{}
-                   ^
+0339.baz:6:13: a 'bool' is not an arithmetic operand, convert it, e.g. 'int(a)'
+    var c = a + b
+            ^

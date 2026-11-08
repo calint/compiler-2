@@ -1,4 +1,4 @@
 
-0622.baz:15:21: expected argument 1 ('by')
-    var q = p.moved()
-                    ^
+0622.baz:5:18: expected '}', the zero value of a built-in is '{}'
+dat p = point{ { 1 }, 2 }
+                 ^

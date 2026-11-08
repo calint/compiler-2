@@ -1,24 +1,16 @@
-# the check of a body without its call goes on after an inlined recursion
-# that an unsized array ends, to the 'h(3)' after it
+# the check of a body without its calls rejects an inlined recursion whose
+# arguments all fold and that passes the nesting limit, as every call does
 
-func g(n, s i8[]) res {
-    if n >= array_length(s) {
-        res = 0
+func g(k i32) {
+    if k == 0 {
         return
     }
-    res = s[n] + g(n + 1, s)
+    g(k + 1)
 }
 
-func h(k) res {
-    var a = i8[2]
-    res = a[k]
-}
-
-func f(t i8[]) res {
-    res = g(0, t)
-    res = res + h(3)
+func f(x i32) {
+    g(2)
 }
 
 func main() {
-    exit(0)
 }

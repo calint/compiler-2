@@ -1,10 +1,17 @@
-# a call in a value written in parts that reads a part written before it
-type pt {x, y}
-var g = pt{1, 2}
-func gx() res {
-    res = g.x
+# the buffer of 'write' is computed before the count: the count reads 'n'
+# after the call in the buffer argument wrote it
+type s { buf i8[4], }
+
+var n = 1
+
+func g() res {
+    n = 4
+    res = 0
 }
+
 func main() {
-    g = {7, gx()}
-    exit(g.y)
+    var a = s[2]
+    a[0].buf = {'x', 'y', 'z', '\n'}
+    var k = write(1, a[g()].buf, n)
+    exit(k - 4)
 }

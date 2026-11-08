@@ -366,7 +366,7 @@ program does not depend on inlining.
    - the rules that need the length are left to the calls: 's[7]' and
      'array_copy(s, d, 2)' are accepted, 's[-1]' is not, nor a constant index,
      start or count whose elements end past the storage the target addresses
-     ('longest_array_len', 2800 to 2802); the 'n' of a 'foo' over
+     ('longest_array_len', 2199 to 2201); the 'n' of a 'foo' over
      such a parameter is a read-only variable there and in the parse, not a
      constant; a 'let' whose value folds only at a call is a constant there,
      e.g. 'let m = n', so 's[m]' past the end is rejected like 's[n]'
@@ -868,7 +868,7 @@ A method of a generic type with type parameters of its own, e.g.
 'func text.append<T type>(s T)', is one generic function per instance of the
 type ('str.append', 'name.append'). An error in a call or in the body names
 the instance, e.g. "cannot deduce 'T' of generic function 'str.append'"
-(0780); a clash of two definitions and the report of a generic never
+(0770); a clash of two definitions and the report of a generic never
 instantiated name it after the generic type, 'text.append', the name written
 in the source.
 
@@ -941,9 +941,9 @@ order. The examples use 'make' and 'same' from the start of 2.10 and a type
 
    An argument that is no value tells nothing either and is rejected as in
    a call without type parameters, not made an instance: a whole array
-   ("array 'a' must be indexed", 2660, 2690), a call result reached into
-   (2661), a value that hides a type before '{' (2680) and a method called
-   on its type (2681).
+   ("array 'a' must be indexed", 2189, 2193), a call result reached into
+   (2190), a value that hides a type before '{' (2191) and a method called
+   on its type (2192).
 
    A missing argument is rejected: 'same()' gives "expected argument 1
    ('a')".
@@ -1058,7 +1058,7 @@ place.
 
 Each node states its operands in evaluation order in its 'visit_operands', and
 the walks of the checks follow from it; its 'compile' emits them in that order,
-held by review and the tests, e.g. 1678, also for the built-ins that check a
+held by review and the tests, e.g. 1660, also for the built-ins that check a
 range after its count (7.14). The
 default of 'visit_operands' is 'std::unreachable()': a node that is asked and
 does not say fails in the tests instead of skipping the checks. An operand is a
@@ -1288,7 +1288,7 @@ address    | result address         |    the callee's frame base
    arguments are compiled in their order: a temporary is computed at its
    argument, so is the address of a variable, held in a register until the
    slots are written when it has a run-time index, e.g. the 'w()' of
-   'f(v[w()], g + 1)' runs before 'g + 1' (1729).
+   'f(v[w()], g + 1)' runs before 'g + 1' (1711).
 2. The frame starts after the storage of the caller, aligned to an address,
    not at the stack pointer: in a noinline body after its frame, which its
    frame base holds (x86_64 'rbx', rv32i 's1'), in 'main' at the variables
@@ -1384,7 +1384,7 @@ their options and with '--checks=noub'), 1 instruction less on x86_64, and 10
 of the 7086 of roome on rv32i-fpga (decided 2026-11-07). '--versions=nested'
 measures every choice again, also of a list with calls, which round 152
 compiled in place without versions, for the smaller code at that compile
-time: tests 1716 and 2055 take about 12 s and 45 s with it.
+time: tests 1698 and 2036 take about 12 s and 45 s with it.
 
 The padding of an instance is zeroed gap by gap or as the whole instance by a
 gap count that each backend measured once ('machine::zero_padding'): an
@@ -1957,7 +1957,7 @@ What depends on the target is listed here, nothing else does:
 4. the limits of a target: '--vars' and the memory it addresses, which a
    type stays below, e.g. a field 'i8[0x100000000]' is rejected on rv32i,
    and so does a constant index or count on an unsized array parameter,
-   e.g. 'arrays_equal(a, b, 0x1000)' of 1 MiB records (2761, 2801, 2802),
+   e.g. 'arrays_equal(a, b, 0x1000)' of 1 MiB records (2198, 2200, 2201),
    the depth of noinline calls that fits in '--vars' before 'frame' stops
    it, since a frame holds an address for each parameter and the result,
    8 B on x86_64 and 4 B on rv32i, and a deep noinline recursion, which
@@ -2005,21 +2005,21 @@ constants out of range, and the code the run-time checks.
 
 | class | example | how | option | tests |
 |---|---|---|---|---|
-| uninitialized read | 'var x = x', 'res' read before it is set | rejected ('stmt_def_var' for a declaration; definite assignment of the result, 'ub_assigned.hpp', 3.10) | always | 0099, 0100, 0463, 0464, 1301-1303 |
-| an argument sharing bytes with another argument that the call writes | 'f(a, a)' with 'f' writing 'p.x' and reading 'q.x' | rejected ('stmt_call::assert_no_shared_storage', 4.2) | always | 0525, 0642, 0676 |
-| a result or a global sharing storage with an argument | 'p = f(p)' with 'f' writing its result before it reads 'p', 'f(g)' with 'f' using the global 'g' | rejected ('stmt_call::assert_no_shared_storage', 3.7, 4.2) | always | 0522-0524, 0526, 0527, 0941 |
-| a value written in parts reading a part written before it | 'p = {p.y, p.x}', 'q = {{1}, q.a[3]}', 'g = {7, gx()}' | rejected ('stmt_assign_var', the 'write_plan' of 'expr_type.hpp', 3.7) | always | 1608-1612, 1634, 1635, 1644 |
-| evaluation order | 'f(arr[i], h(i))', 'i == h(i)' with 'h' writing 'i' | evaluation is left to right; an argument, a side of a comparison or a bulk or io argument that a call in a later one may write is rejected ('assert_not_written_later'), an arithmetic list reads each operand at its place; a destination that the value reads, also through a call, is written last ('reaches_destination'), 3.1 | always | 1636-1639, 1641, 1642, 1676; accepted: 1630-1633, 1640, 1643, 1678, 1702 |
-| narrowing | 'b = w' with 'b' an 'i8' and 'w' an 'i16' | rejected ('statement::assert_not_narrowed' through 'compile_checked' and 'fold_checked'); a conversion such as 'i8(w)' wraps on purpose (1.7) | always | 0725, 0856, 0865, 1016, 1017, 1019, 1021, 1022 |
-| a constant out of range | 'a[9]' of 'a = i8[4]', 'x / 0', 'x << 70' | rejected ('assert_constant_index' for an index, 'assert_constant_range' for the range of a bulk or io built-in, 'expr_arith::assert_constant_operand' for a divisor or a shift count, at a fold and at a constant step, 1.7) | always | 0305, 0306, 0750-0752, 1118, 1119, 2760, 2800-2802 |
-| a constant expression that overflows | '0x7fffffffffffffff + 1' | rejected ('fold'), else it wraps | 'overflow' | 0995, 1002, 1010 |
-| array index out of bounds | 'a[i]' | run time ('machine::check_bounds' from 'stmt_identifier::compile_checked_index', the range of a bulk operation or an io built-in ('bulk_operands', 'stmt_builtin_io') and the count of a 'foo') | 'upper', 'lower' | 0302, 0303, 0307-0309, 0626, 0627, 1355 |
-| division by zero and 'MIN / -1', also of '%' | 'a / b' | run time ('machine::divide' from 'expr_arith::emit_operation', not for a constant divisor other than -1); a constant 'MIN / -1' is rejected ('fold'), the 64-bit one also without the check, it has no value | 'division' | 0965-0968, 1775-1777 |
-| shift count below zero or not below the width | 'a << n' | run time ('machine::shift' with 'check_options::shift', from 'expr_arith::emit_operation') | 'shift' | 0975-0977 |
-| signed overflow | 'a + b' | run time ('machine::add_subtract', 'multiply' and 'unary' with 'toc::overflow_options') | 'overflow' | 0988, 0989, 0994 |
-| 'array_copy' whose destination starts inside the source | 'array_copy(a, a[1], 3)' | run time ('machine::copy_elements' with the overlap check of 'stmt_builtin_array_copy') | 'overlap' | 0981-0983 |
-| the variables of a noinline call past '--vars' | deep noinline recursion | run time ('machine::check_frame_capacity' from 'noinline_call::populate_frame', 4.1) | 'frame' | 0413, 0414, 0434 |
-| the stack of a noinline call | deep noinline recursion | run time on rv32i-qemu and rv32i-fpga ('machine::check_stack_capacity' from 'noinline_call::populate_frame'); on x86_64 and rv32i the operating system stops the program | 'stack' | 0985-0987 |
+| uninitialized read | 'var x = x', 'res' read before it is set | rejected ('stmt_def_var' for a declaration; definite assignment of the result, 'ub_assigned.hpp', 3.10) | always | 0095, 0096, 0455, 0456, 1289-1291 |
+| an argument sharing bytes with another argument that the call writes | 'f(a, a)' with 'f' writing 'p.x' and reading 'q.x' | rejected ('stmt_call::assert_no_shared_storage', 4.2) | always | 0517, 0633, 0667 |
+| a result or a global sharing storage with an argument | 'p = f(p)' with 'f' writing its result before it reads 'p', 'f(g)' with 'f' using the global 'g' | rejected ('stmt_call::assert_no_shared_storage', 3.7, 4.2) | always | 0514-0516, 0518, 0519, 0930 |
+| a value written in parts reading a part written before it | 'p = {p.y, p.x}', 'q = {{1}, q.a[3]}', 'g = {7, gx()}' | rejected ('stmt_assign_var', the 'write_plan' of 'expr_type.hpp', 3.7) | always | 1590-1594, 1616, 1617, 1626 |
+| evaluation order | 'f(arr[i], h(i))', 'i == h(i)' with 'h' writing 'i' | evaluation is left to right; an argument, a side of a comparison or a bulk or io argument that a call in a later one may write is rejected ('assert_not_written_later'), an arithmetic list reads each operand at its place; a destination that the value reads, also through a call, is written last ('reaches_destination'), 3.1 | always | 1618-1621, 1623, 1624, 1658; accepted: 1612-1615, 1622, 1625, 1660, 1684 |
+| narrowing | 'b = w' with 'b' an 'i8' and 'w' an 'i16' | rejected ('statement::assert_not_narrowed' through 'compile_checked' and 'fold_checked'); a conversion such as 'i8(w)' wraps on purpose (1.7) | always | 0715, 0845, 0854, 1005, 1006, 1008, 1010, 1011 |
+| a constant out of range | 'a[9]' of 'a = i8[4]', 'x / 0', 'x << 70' | rejected ('assert_constant_index' for an index, 'assert_constant_range' for the range of a bulk or io built-in, 'expr_arith::assert_constant_operand' for a divisor or a shift count, at a fold and at a constant step, 1.7) | always | 0298, 0299, 0740-0742, 1107, 1108, 2197, 2199-2201 |
+| a constant expression that overflows | '0x7fffffffffffffff + 1' | rejected ('fold'), else it wraps | 'overflow' | 0984, 0991, 0999 |
+| array index out of bounds | 'a[i]' | run time ('machine::check_bounds' from 'stmt_identifier::compile_checked_index', the range of a bulk operation or an io built-in ('bulk_operands', 'stmt_builtin_io') and the count of a 'foo') | 'upper', 'lower' | 0295, 0296, 0300-0302, 0617, 0618, 1342 |
+| division by zero and 'MIN / -1', also of '%' | 'a / b' | run time ('machine::divide' from 'expr_arith::emit_operation', not for a constant divisor other than -1); a constant 'MIN / -1' is rejected ('fold'), the 64-bit one also without the check, it has no value | 'division' | 0954-0957, 1757-1759 |
+| shift count below zero or not below the width | 'a << n' | run time ('machine::shift' with 'check_options::shift', from 'expr_arith::emit_operation') | 'shift' | 0964-0966 |
+| signed overflow | 'a + b' | run time ('machine::add_subtract', 'multiply' and 'unary' with 'toc::overflow_options') | 'overflow' | 0977, 0978, 0983 |
+| 'array_copy' whose destination starts inside the source | 'array_copy(a, a[1], 3)' | run time ('machine::copy_elements' with the overlap check of 'stmt_builtin_array_copy') | 'overlap' | 0970-0972 |
+| the variables of a noinline call past '--vars' | deep noinline recursion | run time ('machine::check_frame_capacity' from 'noinline_call::populate_frame', 4.1) | 'frame' | 0405, 0406, 0426 |
+| the stack of a noinline call | deep noinline recursion | run time on rv32i-qemu and rv32i-fpga ('machine::check_stack_capacity' from 'noinline_call::populate_frame'); on x86_64 and rv32i the operating system stops the program | 'stack' | 0974-0976 |
 
 'noub' turns on every check of the table: 'upper', 'lower', 'frame',
 'division', 'shift', 'overlap', 'stack' and 'overflow'.

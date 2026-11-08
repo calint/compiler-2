@@ -1,5 +1,4 @@
-# boolean data requires a boolean initializer
+# function results require known types
 
-dat x = bool[]{2}
-
+func f() r nope { r = 1 }
 func main() {}

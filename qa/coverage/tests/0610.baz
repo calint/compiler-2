@@ -1,5 +1,5 @@
-# an array literal without elements and without a size has no size
+# a data conversion needs its closing parenthesis
 
-func main() {
-    var a = i8[] 1
-}
+dat x = i8(1
+
+func main() {}

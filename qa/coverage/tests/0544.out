@@ -1,4 +1,5 @@
-
-0544.baz:4:13: unterminated character literal
-    var c = 'a
-            ^
+aaaaaaaa
+abcdef
+xyz
+hi
+0123456789abcd

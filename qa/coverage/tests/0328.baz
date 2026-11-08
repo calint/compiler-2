@@ -1,6 +1,7 @@
-# unary negative constant index is rejected at compile
+# minimum signed narrow index must remain negative
 
 func main() {
     var values = i8[8]
-    values[~0] = 1
+    var index = i8(-128)
+    values[index] = 1
 }

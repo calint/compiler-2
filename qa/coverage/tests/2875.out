@@ -1,4 +1,0 @@
-
-2875.baz:5:8: '!' is not an operator, use 'not'
-    if !x exit(1)
-       ^

@@ -1,13 +1,10 @@
-# a 'bool' result of a noinline call is not an integer argument of an inlined
-# call
-func noinline nb() res bool {
-    res = true
-}
+# a missing argument that would deduce a type of a generic method is reported
+# as missing
+type box {v}
 
-func w(x) res {
-    res = x
-}
+func box.put<T type>(x T) {}
 
 func main() {
-    exit(w(nb()))
+    var b = box{1}
+    b.put()
 }

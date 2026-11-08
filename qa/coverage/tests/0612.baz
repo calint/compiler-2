@@ -1,6 +1,7 @@
-# a type after the variable name is rejected, the initializer gives the type,
-# e.g. 'var x = i32(0)'
+# an array literal without a type name has the default type which must match
+# the destination
 
 func main() {
-    var x i32
+    var a = i8[2]
+    a = [2]{1, 2}
 }

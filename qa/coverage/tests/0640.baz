@@ -1,14 +1,7 @@
-# a parameter without 'mut' cannot be written through an inline callee
-
-func set(a mut) {
-    a = 1
-}
-
-func f(a) {
-    set(a)
-}
+# 'array_copy' cannot copy into a 'let' array
 
 func main() {
-    var x = 5
-    f(x)
+    let d = i8[]{1, 2}
+    var s = i8[]{3, 4}
+    array_copy(s, d, 2)
 }

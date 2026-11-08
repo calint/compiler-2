@@ -1,4 +1,4 @@
 
-1006.baz:3:18: 'void' is not a type of a value
-    var values = void[2]
-                 ^~~~
+1006.baz:6:14: 'count' of type 'i32' is narrowed to 'i8', use 'i8(...)'
+    x = x >> count
+             ^~~~~

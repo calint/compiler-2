@@ -1,0 +1,4 @@
+
+0437.baz:2:19: expected ',' or ')' after parameter 'value'
+func helper(value : i32) {}
+                  ^

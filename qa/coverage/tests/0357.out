@@ -1,4 +1,4 @@
 
-0357.baz:3:27: too many elements for array of size 2
-dat values = i8[2]{ 1, 2, 3 }
-                          ^
+0357.baz:5:9: constant 'x' already defined at 4:9
+    let x = 2
+        ^

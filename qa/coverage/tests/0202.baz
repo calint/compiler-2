@@ -1,4 +1,6 @@
-# type field array requires a closing bracket
+# conditional expression requires a closing parenthesis
 
-type x { a i8[2 }
-func main() {}
+func main() {
+    var x = 1
+    if (x == 1 {}
+}

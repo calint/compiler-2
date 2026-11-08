@@ -1,11 +1,63 @@
-# copy an i32 scalar and exit with the copied value
+# arrays with omitted element type use the target's default integer type
 
-dat prefix = i8[3]{1, 2, 3}
-dat initial = i32(42)
-dat padding = i8[5]
+type holder { first, values[3], last }
+dat data = [128]{ 1, 2 }
+dat inferred_data = []{ -3, 4, 5 }
+dat cleared_data = [3]
+dat record = holder{ 7, { 10, 20 }, 9 }
+
+func assert(ok bool) { if not ok exit(1) }
 
 func main() {
-    var source = initial
-    var destination = source
-    exit(destination)
+    var array = [128]{ 1, 2 }
+    var inferred = []{ -3, 4, 5 }
+    var cleared = [3]
+    var scalar = 0
+    assert(array_length(array) == 128)
+    assert(array[0] == 1)
+    assert(array[1] == 2)
+    assert(array[127] == 0)
+    assert(array_length(inferred) == 3)
+    assert(inferred[0] == -3)
+    assert(inferred[2] == 5)
+    assert(cleared[0] == 0)
+    assert(cleared[2] == 0)
+    array[127] = 99
+    scalar = inferred[0]
+    inferred[0] = scalar - 1
+    assert(inferred[0] == -4)
+    assert(array[127] == 99)
+    foo inferred {
+        e = e + 1
+    }
+    assert(inferred[0] == -3)
+    assert(inferred[1] == 5)
+    assert(inferred[2] == 6)
+    assert(array_length(data) == 128)
+    assert(data[0] == 1)
+    assert(data[1] == 2)
+    assert(data[127] == 0)
+    assert(array_length(inferred_data) == 3)
+    assert(inferred_data[0] == -3)
+    assert(inferred_data[2] == 5)
+    assert(cleared_data[0] == 0)
+    assert(cleared_data[2] == 0)
+    assert(array_length(record.values) == 3)
+    assert(record.values[2] == 0)
+    var local = record
+    foo local.values {
+        e = e + i
+    }
+    assert(local.first == 7)
+    assert(local.values[0] == 10)
+    assert(local.values[1] == 21)
+    assert(local.values[2] == 2)
+    assert(local.last == 9)
+    assert(record.values[1] == 20)
+    # a default element holds values beyond 16 bits without touching its
+    # neighbor
+    data[0] = 100000
+    assert(data[0] == 100000 and data[1] == 2)
+    local.values[0] = -100000
+    assert(local.values[0] == -100000 and local.values[1] == 21)
 }

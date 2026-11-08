@@ -1,9 +1,8 @@
-# an element is not an array: a second index is reported like an index of a
-# number, not by what follows the element
+# a 'bool' argument of a generic function cannot deduce its type without a
+# destination, it is not a mismatch with the default type
+
+func show<T type>(x T) {}
 
 func main() {
-    var a = [2]{1, 2}
-    if a[0][1] == 1 {
-        exit(1)
-    }
+    show(true)
 }

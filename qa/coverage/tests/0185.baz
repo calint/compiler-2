@@ -1,4 +1,4 @@
-# a function that may return without setting its result is rejected
+# void function cannot produce a value
 
-func f() r {}
-func main() {}
+func f() {}
+func main() { var x = f() }

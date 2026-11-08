@@ -1,4 +1,4 @@
 
-1808.baz:4:11: 'mut' is a keyword
-func f(a, mut b i8) {
-          ^~~
+1808.baz:6:23: divisor must not be zero
+dat d = r{true or 1 / 0 == 1, 2}
+                      ^

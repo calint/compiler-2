@@ -1,0 +1,17 @@
+# complement and negation composition
+
+dat len=-2
+
+func foozi(x) res{
+    res=-x
+}
+
+func main(){
+    var a=-1
+    var b=~-foozi(-a)
+    var c=~-len
+    if ~-0b1 != 0 exit(2)
+    if a==-1 and b==~1 and c==~2
+        exit(0)
+    exit(1)
+}

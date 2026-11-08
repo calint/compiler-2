@@ -1,4 +1,2 @@
 
-0755.baz:21:12: argument 1 'g' may share storage with the global 'g' that 'middle' uses, use a temporary variable for one of them
-    middle(g)
-           ^
+panic: bounds at 0755.baz:4

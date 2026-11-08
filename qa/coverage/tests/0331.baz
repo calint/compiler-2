@@ -1,9 +1,6 @@
-# valid default-type element scaling
-
-func assert(expr bool) { if not expr exit(1) }
+# an empty array cannot be declared, so its element cannot be accessed
 
 func main() {
-    var values = [2]
-    values[1] = 1
-    assert(values[1] == 1)
+    var values = i8[]{}
+    var value = values[0]
 }

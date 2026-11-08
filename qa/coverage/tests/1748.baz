@@ -1,12 +1,16 @@
-# a run-time start past the end of the array is rejected at run time also with
-# a constant count of 0
+# a constant index past the end in a write of a result is reported as out of
+# bounds, not as a result that may be unset
+type inner { y i8, }
+
+type oa { q i32, arr inner[2], }
+
+func g() res oa {
+    res.q = 3
+    res.arr[2].y = 4
+    res.arr[1].y = 5
+}
 
 func main() {
-    var a = i8[4]
-    var b = i8[4]
-    var k = 9
-    if arrays_equal(a[k], b, 0) {
-        exit(3)
-    }
-    exit(4)
+    var p = g()
+    exit(p.arr[1].y)
 }

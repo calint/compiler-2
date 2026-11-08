@@ -1,4 +1,4 @@
 
-1911.baz:5:5: expected '=' for assignment or '(' for function call after 'n'
-    n == 2
-    ^
+1911.baz:8:19: expected argument 2 ('b')
+    var x = pick(1)
+                  ^

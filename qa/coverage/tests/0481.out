@@ -1,4 +1,4 @@
 
-0481.baz:18:17: argument 1 'x' may share storage with the result destination 'x' (both name 'x'), use a temporary variable for one of them
-    x = add_one(x)
-                ^
+0481.baz:5:22: expected type 'i8' for parameter 'value', got 'i32', use 'i8(...)'
+    var small = take(big)
+                     ^

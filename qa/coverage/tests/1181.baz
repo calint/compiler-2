@@ -1,8 +1,14 @@
-# a variable named like a record type hides the type in its own array
-# initializer
+# a constant that hides a global does not share storage with the global that
+# the argument names
 
-type point {x, y}
+var g = 1
+
+func f(x mut) {
+    let g = 3
+    x = g + 1
+}
 
 func main() {
-    var point = point[2]{{1, 2}}
+    f(g)
+    exit(g)
 }

@@ -1,4 +1,4 @@
 
-1090.baz:7:17: variable 'x' is read before it is set
-        var x = x + 1
-                ^
+1090.baz:5:9: the destination gives the type 'i8', write '{}'
+    n = i8
+        ^~

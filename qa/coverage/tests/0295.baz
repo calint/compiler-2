@@ -1,19 +1,9 @@
-# narrowing conversion preserves the low byte
+# valid upper array boundary
 
 func assert(expr bool) { if not expr exit(1) }
 
-func take(value i8) result i8 {
-    result = value
-}
-
 func main() {
-    var bigger = 0x123
-    var low = i8(bigger)
-    var smaller = take(low)
-    assert(smaller == 0x23)
-
-    var bigger_again = 0x1234
-    var low_again = i8(bigger_again)
-    var smaller_again = take(low_again)
-    assert(smaller_again == 0x34)
+    var arr = i8[8]
+    arr[7] = 0x61
+    assert(arr[7] == 0x61)
 }

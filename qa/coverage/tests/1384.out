@@ -1,4 +1,4 @@
 
-1384.baz:8:9: expected type 'i64', got 'point'
-    y = p
-        ^
+1384.baz:9:17: 'ps[0].x' may have been overwritten in the same statement, use a temporary variable
+    ps[i] = {1, ps[0].x}
+                ^~

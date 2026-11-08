@@ -1,8 +1,13 @@
-# the count of 'read' assigned to an array is rejected as a call, the source
-# must be an array
+# a call of the wrong type in a field of a braced instance assigned to a
+# variable is reported at the call
+type rec {a, b}
+
+func t() res bool {
+    res = true
+}
+
 func main() {
-    var buf = i8[4]
-    var a = int[2]
-    a = read(0, buf, 4)
+    var s = rec{1, 2}
+    s = {1, t()}
     exit(0)
 }

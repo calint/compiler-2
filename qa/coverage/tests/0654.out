@@ -1,4 +1,4 @@
 
-0654.baz:8:5: cannot assign to read-only 'limit', 'limit' is declared with 'let'
-    limit = 11
-    ^~~~~
+0654.baz:5:13: cannot read into read-only 'buf', parameter 'buf' is not declared 'mut'
+    read(0, buf)
+            ^~~

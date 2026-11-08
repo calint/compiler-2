@@ -1,42 +1,14 @@
-# division and remainder with complement on 'i32' array element arguments
+# == compares user-defined values
 
 func assert(expr bool) { if not expr exit(1) }
 
-func faz(x i32, y i32) res i32 {
-    res = x / y 
-}
-
-func fez(val i32[]) res i32 {
-    res = val[2] / val[1] 
-}
-
-func foz(x i32, y i32) res i32 {
-    res = ~x / ~y 
-}
-
-func fuz(x i32, y i32) res i32 {
-    res = ~x % ~y 
-}
+type point {x i32, y i32}
 
 func main() {
-    var values = i32[4]
-    values[1] = 4
-    values[2] = 8
+    var p = point{2, 4}
+    var q = p
+    assert(p == q)
 
-    values[3] = faz(values[2], values[1])
-    assert(values[3] == 2)
-
-    # note: temporary because the result may share storage with the argument
-    var tmp1 = fez(values)
-    values[0] = tmp1
-    assert(values[0] == 2)
-
-    var a = faz(9, 3)
-    assert(a == 3)
-
-    values[3] = foz(values[2], values[1])
-    assert(values[3] == 1)
-
-    values[3] = fuz(values[2], values[1])
-    assert(values[3] == -4)
+    q.x = 3
+    assert(p != q)
 }

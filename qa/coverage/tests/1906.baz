@@ -1,5 +1,11 @@
-# a field list without its '}' does not read the next keyword as a type
+# a call of a function without a result to an instance is reported as for a
+# number destination
 
-type p { x
+type point {x, y}
 
-func main() {}
+func f() {}
+
+func main() {
+    var p = point
+    p = f()
+}

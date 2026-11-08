@@ -1,2 +1,4 @@
 
-panic: overflow
+1797.baz:6:5: 'point' is a type, not a value
+    point{1, 2}
+    ^~~~~

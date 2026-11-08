@@ -1,4 +1,4 @@
 
-1663.baz:4:16: unexpected '='
-    var x = i8 = 3
-               ^
+1663.baz:9:13: expected type 'i64', got 'bool', use 'i64(...)'
+        x = arrays_equal(a, b, 4)
+            ^~~~~~~~~~~~

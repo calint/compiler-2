@@ -1,4 +1,4 @@
 
-1669.baz:9:22: a type argument is a type name, not an array, an array parameter is written 'a T[]'
-    var x = first<i32[]>(buf)
-                     ^
+1669.baz:6:28: 'arrays_equal' takes 3 arguments
+    if arrays_equal(a, b, 1, 2) {
+                           ^

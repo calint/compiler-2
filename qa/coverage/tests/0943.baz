@@ -1,19 +1,24 @@
-# the aliasing is made inside the body of the function that passes a
-# parameter and a global that name the same data
-# the call is rejected: the function uses the global the call passes it
+# the element 'e' of a 'foo' inside another 'foo' is assigned from another
+# field of the same inner array element, which is accepted
 
-dat g = i32[2]{ 1, 2 }
-
-func inner(x mut i32, y i32) {
-    x = 10
-    x = x + y
+type leaf {
+    v i32[2],
+    tag i32,
 }
 
-func outer(a mut i32) {
-    inner(a, g[0])
+type mid {
+    leaves leaf[2],
 }
 
 func main() {
-    outer(g[0])
-    exit(g[0])
+    var m = mid[2]
+    m[0].leaves[1].v[0] = 4
+
+    foo m {
+        foo e.leaves {
+            e.tag = e.tag + m[0].leaves[1].v[0]
+        }
+    }
+
+    if m[1].leaves[1].tag != 4 exit(1)
 }

@@ -1,4 +1,4 @@
 
-1140.baz:4:9: 'a' is not a constant, a 'dat' holds constants
-dat b = a
-        ^
+1140.baz:5:27: index -1 is out of bounds for array 'a' of size 4
+    var n = read(0, a, 1, -1)
+                          ^

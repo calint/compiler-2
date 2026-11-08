@@ -1,16 +1,20 @@
-# a noinline body calls another noinline function inside an expression that
-# holds registers, x86_64: the callee has its own registers
+# the element 'e' of a 'foo' inside the element of another 'foo' reads the
+# same field of the outer array, which can be the element itself the value is
+# computed before the destination is written
 
-func noinline f(a i32, b i32) res i32 {
-    res = ((a * b) + ((a * b) + ((a * b) + ((a * b) + ((a * b) + ((a * b) + ((a * b) + ((a * b) + (a * b)))))))))
-}
-
-func noinline g(x i32, y i32) res i32 {
-    res = ((x * y) + ((x * y) + ((x * y) + ((x * y) + ((x * y) + ((x * y) + f(x, y)))))))
+type item {
+    data i32[2],
+    other i32,
 }
 
 func main() {
-    var x = i32(1)
-    var y = i32(1)
-    exit(int(g(x, y)))
+    var items = item[2]
+    items[0].data[1] = 1
+
+    foo items {
+        foo e.data {
+            e = e + items[0].data[1]
+        }
+    }
+    exit(items[0].data[1] + items[1].data[0] - 4)
 }

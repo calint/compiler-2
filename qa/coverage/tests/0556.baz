@@ -1,8 +1,12 @@
-# a constant 'array_copy' count past the end of the array panics
+# 'self' is the implicit first parameter of a method
+
+type list {
+    count,
+    items[4]
+}
+
+func list.add(self) {
+}
 
 func main() {
-    var a = i8[4]
-    var b = i8[4]
-    var k = 2
-    array_copy(a[k], b[k], 3)
 }

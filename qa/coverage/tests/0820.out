@@ -1,4 +1,4 @@
 
-0820.baz:9:13: cannot deduce 'T' of generic function 'first', write 'first<...>'
-    var r = first(a)
-            ^~~~~
+0820.baz:7:8: an instance of 'point' is not a 'bool'
+    if a exit(1)
+       ^

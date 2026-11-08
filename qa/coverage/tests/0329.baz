@@ -1,10 +1,10 @@
-# computed inner index in a nested array
+# bounds checking must resolve an index from a field
 
-type group { values i8[2] }
+type limits { index }
 
 func main() {
-    var groups = group[2]
-    var outer = 0
-    var inner = 2
-    groups[outer].values[inner] = 1
+    var values = i8[8]
+    var lim = limits
+    lim.index = 8
+    values[lim.index] = 1
 }

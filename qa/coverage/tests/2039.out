@@ -1,4 +1,0 @@
-
-2039.baz:5:17: the destination gives the type 'i8[2]', write '{}'
-    var r = row{i8[2]{}}
-                ^~

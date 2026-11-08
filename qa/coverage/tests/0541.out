@@ -1,4 +1,4 @@
 
-0541.baz:4:13: character literal '' must contain one byte, e.g. 'a' or '\xe9'
-    var c = ''
-            ^~
+0541.baz:4:17: an empty string needs a size
+    var empty = ""
+                ^~

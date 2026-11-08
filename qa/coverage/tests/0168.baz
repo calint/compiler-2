@@ -1,3 +1,5 @@
-# 'and' and 'or' are not mixed without parentheses
+# duplicate type declarations are rejected
 
-func main() { var x = 1 if x == 1 and x == 2 or x == 3 {} }
+type x { a }
+type x { b }
+func main() {}

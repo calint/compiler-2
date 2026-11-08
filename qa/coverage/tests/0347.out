@@ -1,4 +1,4 @@
 
-0347.baz:6:13: a 'bool' is not an arithmetic operand, convert it, e.g. 'int(a)'
-    var c = a + b
-            ^
+0347.baz:6:27: field 'y' not found in type 'point'
+    var value = points[0].y
+                          ^

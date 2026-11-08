@@ -1,12 +1,11 @@
-# a call that writes the destination of the arithmetic it is in keeps the
-# destination unwritten until the value is computed
-var gx = 1
-func gw() res {
-    gx = 10
-    res = 1
+# the condition of a parameter of an inlined function is not known where the
+# function is written, the result is not set on every path
+func f(x) res {
+    if x == 1 {
+        res = 2
+    }
 }
+
 func main() {
-    var k = 0
-    gx = k + gw()
-    exit(gx)
+    exit(f(1))
 }

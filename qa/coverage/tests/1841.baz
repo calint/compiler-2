@@ -1,5 +1,8 @@
-# a character literal is a constant, it has no field
+# type arguments after a type parameter: not a generic type, no hint to name
+# an instance
+
+func f<T type>(x T<3>) {
+}
 
 func main() {
-    var y = 'a'.x
 }

@@ -2,7 +2,7 @@
 # extracts from a listing of the compiler the part that a 'LISTING KIND' case
 # of 'cases.sh' compares with 'NNN.TARGET.KIND': the code of the source lines
 # that a kind selects, found through the located comments of the listing,
-# e.g. '; [0589.baz:12:5] x = 3 + 4' on x86_64 or '# [...]' on rv32i
+# e.g. '; [0580.baz:12:5] x = 3 + 4' on x86_64 or '# [...]' on rv32i
 #
 #   folds     the instructions of each line marked '# folds', so constant
 #             elements stay folded at compile time

@@ -1,2 +1,4 @@
 
-panic: bounds at 1045.baz:9
+1045.baz:4:9: 'sector_write' is a built-in function
+    var sector_write = 3
+        ^~~~~~~~~~~~

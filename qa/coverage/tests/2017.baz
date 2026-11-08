@@ -1,13 +1,4 @@
-# a method call on the call of a method without a result is reported as a
-# call without a value
-
-type pt {x}
-
-func mut pt.clear() {
-    self.x = 0
-}
-
-func main() {
-    var p = pt
-    p.clear().clear()
-}
+# an array literal followed by an arithmetic operator that starts a 'dat' is
+# an array that is not a number, as after '='
+dat d = i8[2]{1, 2} - 1
+func main() {}

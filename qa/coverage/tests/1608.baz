@@ -1,8 +1,8 @@
-# a read of an element that an array field literal zeroed before it
-type st {a i8[4], b i8}
+# parentheses around a parenthesized condition group nothing
 func main() {
-    var q = st
-    q.a[3] = 4
-    q = {{1}, q.a[3]}
-    exit(q.b)
+    var b = true
+    var c = false
+    if ((b or c)) {
+        exit(1)
+    }
 }

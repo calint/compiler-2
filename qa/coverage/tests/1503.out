@@ -1,4 +1,7 @@
 
-1503.baz:5:5: 'point' names a value here, which hides the type 'point'
-    point{1, 2}
-    ^~~~~
+1503.baz:3:13: 'point' not found
+    var p = point{1, 2}
+            ^~~~~
+1503.baz:10:10: instantiated by 'make<i32>'
+    exit(make<i32>(2))
+         ^~~~

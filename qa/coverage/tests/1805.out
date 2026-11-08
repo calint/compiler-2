@@ -1,4 +1,4 @@
 
-1805.baz:10:16: argument 2 'res' may share storage with the result destination 'res' (both name 'res'), use a temporary variable for one of them
-    res = g(x, res)
-               ^
+1805.baz:3:13: 'true' is a constant, not a function
+    var x = true(1)
+            ^~~~

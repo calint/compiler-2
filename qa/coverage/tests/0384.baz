@@ -1,24 +1,24 @@
-# variable array initialization for built-in and user types
+# function results of struct type set by field and by literal
 
-type point { x, y }
+func assert(err, x bool) { if not x exit(err) }
 
-func assert(code, x bool) { if not x exit(code) }
+type point {x, y}
 
-func fooz(v) res {
-    res = v * 2
+func baz(i) res point { 
+    res.x = i * 3
+    res.y = i * 4
+}
+
+func bazi() res point {
+    res = {7, 13}
 }
 
 func main() {
-    var x = 10
-    var y = 4
-    var numbers = [3]{ x, 20, 30 }
-    var points = point[2]{ {1, 2}, {3, fooz(y) + 1} }
+    var p = baz(2)
+    assert(1, p.x == 6)
+    assert(2, p.y == 8)
 
-    assert(1, numbers[0] == 10)
-    assert(2, numbers[1] == 20)
-    assert(3, numbers[2] == 30)
-    assert(4, points[0].x == 1)
-    assert(5, points[0].y == 2)
-    assert(6, points[1].x == 3)
-    assert(7, points[1].y == 9)
+    p = bazi()
+    assert(3, p.x == 7)
+    assert(4, p.y == 13)
 }

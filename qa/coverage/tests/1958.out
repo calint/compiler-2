@@ -1,4 +1,4 @@
 
-1958.baz:5:9: expected type 'point', got 'i8[]'
-    p = i8[2]{1, 2}
-        ^~
+1958.baz:10:19: a call of 'f' is not an array
+    array_copy(a, f(), 1)
+                  ^

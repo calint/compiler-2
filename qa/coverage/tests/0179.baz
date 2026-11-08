@@ -1,4 +1,4 @@
-# type fields require a name
+# a function that may return without setting its result is rejected
 
-type x { , }
+func f() r {}
 func main() {}

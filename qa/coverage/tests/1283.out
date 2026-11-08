@@ -1,4 +1,4 @@
 
-1283.baz:9:12: index 5 is out of bounds for array 'v.data' of size 4
-    v.data[5] = 1
-           ^
+1283.baz:6:17: count 5 is past the end of array 'a' of size 4
+    write(1, a, 5, i)
+                ^

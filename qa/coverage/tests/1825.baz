@@ -1,10 +1,7 @@
-# a 'dat' checks the elements of a condition in an array literal after the
-# one that decides it
+# a keyword as a field name is reported where it is read, before an error
+# in a later field
 
-dat a = i8[2]{1, 2}
-dat d = bool[1]{true or a == 1}
+type p {true, y qq}
 
 func main() {
-    if not d[0] exit(1)
-    exit(0)
 }

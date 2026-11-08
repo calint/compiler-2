@@ -1,9 +1,4 @@
-# a type is not called, an instance is made with '{...}'
-type point {
-    x,
-    y
-}
-
+# a number has no field
 func main() {
-    var p = point(5)
+    var x = 1.x
 }

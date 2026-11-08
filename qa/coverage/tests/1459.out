@@ -1,4 +1,4 @@
 
-1459.baz:4:9: 'func' can only be in global scope
-        func g() {}
-        ^~~~
+1459.baz:11:13: 'mk()' is not an operand here, store it in a variable first
+    if p == mk() {
+            ^

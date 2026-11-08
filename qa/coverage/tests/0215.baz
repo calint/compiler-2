@@ -1,3 +1,4 @@
-# array literal size requires a closing bracket
+# a constant that does not fit in 64 bits is rejected
 
-func main() { var x = [2 = {1,2} }
+let x = 0b10000000000000000000000000000000000000000000000000000000000000000
+func main() {}

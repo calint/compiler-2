@@ -1,12 +1,11 @@
-# an assignment to a constant is rejected also in a function that is never
-# called
+# the minimum of a 'dat' element divided by -1 wraps like the run-time code
+# without the division check
 
-let k = 1
-
-func set() {
-    k = 2
-}
+dat a = i8[2]{-128 / -1, -128 % -1}
 
 func main() {
-    exit(k)
+    if a[0] == -128 and a[1] == 0 {
+        exit(1)
+    }
+    exit(2)
 }

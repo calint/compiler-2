@@ -1,4 +1,4 @@
 
-0352.baz:6:22: 'value' is not an array
-    var dst = small{ value }
-                     ^~~~~
+0352.baz:4:22: too many elements for array of size 2
+dat x = p[2]{{1},{2},{3}}
+                     ^

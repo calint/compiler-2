@@ -1,9 +1,7 @@
-# the zero value assigned to a record is '{}', not the type name
+# 'write' to a descriptor that is not open returns the error, -9 is 'EBADF'
 
-type point { x, y }
-
+dat text = "A"
 func main() {
-    var p = point{1, 2}
-    p = point
-    exit(p.x)
+    var bad = write(-1, text, 1)
+    if bad != -9 exit(1)
 }

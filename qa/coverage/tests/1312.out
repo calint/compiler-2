@@ -1,4 +1,4 @@
 
-1312.baz:8:19: 'ls[0].a[0]' may have been overwritten in the same statement, use a temporary variable
-    ls[i].a = {5, ls[0].a[0]}
-                  ^~
+1312.baz:2:1: expected a definition ('func', 'type', 'var', 'let' or 'dat'), got '"abc"'
+"abc"
+^~~~~

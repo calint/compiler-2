@@ -1,7 +1,10 @@
-# a keyword where a value is expected is reported as one, not as a name that
-# is not found
+# a 'dat' checks the elements of a condition in an array literal after the
+# one that decides it
+
+dat a = i8[2]{1, 2}
+dat d = bool[1]{true or a == 1}
 
 func main() {
-    var x = 1
-    x = loop(1)
+    if not d[0] exit(1)
+    exit(0)
 }

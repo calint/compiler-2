@@ -1,32 +1,53 @@
-# assignment between user-defined values
+# assignments and conversions between 'i8', 'i16', 'i32' and default integers
 
 func assert(expr bool) {
     if not expr exit(1)
 }
 
-type point {x, y}
-
-type object {color i32, pos point[2]} 
-
 func main() {
-    var x = 1
-    var y = 2
+  var b = i8(1)
+  var b2 = i8(11)
+  var w = i16(2)
+  var w2 = i16(22)
+  var dw = i32(3)
+  var dw2 = i32(33)
+  var q = 4
+  var q2 = 44
 
-    var o1 = object{0xff0000, {{x * 10, y}} }
-    assert(o1.pos[0].x == 10)
-    assert(o1.pos[0].y == 2)
-    assert(o1.color == 0xff0000)
+  b = b2
+  assert(b == 11)
+  b = i8(w)
+  assert(b == 2)
+  b = i8(dw)
+  assert(b == 3)
+  b = i8(q)
+  assert(b == 4)
+  b = 1
 
-    var p1 = point{-x, -y}
-    assert(p1.x == -1)
-    assert(p1.y == -2)
+  w = b
+  assert(w == 1)
+  w = w2
+  assert(w == 22)
+  w = i16(dw)
+  assert(w == 3)
+  w = i16(q)
+  assert(w == 4)
+  w = 2
 
-    o1.pos[1] = p1
-    assert(o1.pos[1].x == -1)
-    assert(o1.pos[1].y == -2)
+  dw = b
+  assert(dw == 1)
+  dw = dw2
+  assert(dw == 33)
+  dw = i32(q)
+  assert(dw == 4)
+  dw = 3
 
-    var o2 = o1
-    assert(o2.pos[1].x == -1)
-    assert(o2.pos[1].y == -2)
-    assert(o2.color == 0xff0000)
+  q = b
+  assert(q == 1)
+  q = w
+  assert(q == 2)
+  q = dw
+  assert(q == 3)
+  q = q2
+  assert(q == 44)
 }

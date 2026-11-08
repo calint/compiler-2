@@ -1,4 +1,4 @@
 
-2200.baz:11:28: 'a.m' is a method, not an array
-    var n = array_length(a.m < 2)
-                           ^
+2200.baz:7:34: count 536870912 from index 536870912 is past the end of array 'a' of any size
+    array_copy(a[0x20000000], b, 0x20000000)
+                                 ^

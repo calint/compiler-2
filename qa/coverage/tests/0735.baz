@@ -1,9 +1,9 @@
-# copy between variables far from the variables base
+# a sum with a constant that does not fit one immediate
 
 func main() {
-    var pad = i8[10000]
-    var a = 7
-    var b = 0
-    b = a
-    exit(b)
+    var a = 5
+    var b = 6
+    a = a + 3000
+    b = b - 3000
+    exit(a + b - 8)
 }

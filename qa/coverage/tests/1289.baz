@@ -1,15 +1,9 @@
-# an inlined recursion in a noinline function is rejected also when nothing
-# calls the function, its argument is not known at any call
-func r(x) {
-    if x > 0 {
-        r(x - 1)
-    }
-}
-
-func noinline b(x) {
-    r(x)
-}
-
+# a 'let' that reads its own name is rejected as uninitialized, also when an
+# outer block has a constant of that name
 func main() {
-    exit(4)
+    let k = 5
+    {
+        let k = k + 1
+        exit(k)
+    }
 }

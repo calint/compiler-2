@@ -1,23 +1,9 @@
-# the 'n' of a 'foo' over an unsized array parameter is not a constant before
-# a call gives the length, so a function that nothing calls is not rejected by
-# it
-func last(s i8[]) res int {
-    res = 0
-    foo s {
-        let m = n - 1
-        res = s[m]
-    }
-}
-
-func uncalled(s i8[]) res int {
-    res = 0
-    foo s {
-        res = 10 / n + s[n - 1]
-    }
-}
+# the braced elements of an array field are written one by one, an element
+# written before it is read is rejected
+type t {b, a i8[2]}
 
 func main() {
-    var a = i8[4]
-    a[3] = 7
-    exit(last(a))
+    var v = t{3, {1, 2}}
+    v = {v.b, {v.a[1], v.a[0]}}
+    exit(v.a[0])
 }

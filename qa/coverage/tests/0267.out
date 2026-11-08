@@ -1,4 +1,4 @@
 
-0267.baz:5:5: expected '=' for assignment or '(' for function call after 'x'
-    x 2
-    ^
+0267.baz:4:13: expected a constant array size greater than 0
+    name i8[-1]
+            ^

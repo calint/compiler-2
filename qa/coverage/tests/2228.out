@@ -1,4 +1,0 @@
-
-2228.baz:4:15: unsupported escape '\é'
-    var s = "a\éb"
-              ^~

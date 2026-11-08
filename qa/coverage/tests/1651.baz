@@ -1,18 +1,11 @@
-# the arrays of 'arrays_equal' are computed before the count: the count reads
-# 'n' after the call in an array argument wrote it
-var n = 1
+# a type argument is a type name, an array parameter is written 'a T[]'
 
-func g() res {
-    n = 3
-    res = 0
+func first<T type>(a T[]) res T {
+    res = a[0]
 }
 
 func main() {
-    var a = i8[4]
-    var b = i8[4]
-    b[2] = 5
-    if arrays_equal(a, b[g()], n) {
-        exit(1)
-    }
-    exit(0)
+    var buf = i32[4]
+    var x = first<i32[]>(buf)
+    exit(x)
 }

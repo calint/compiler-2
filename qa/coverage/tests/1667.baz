@@ -1,5 +1,6 @@
-# a bare type is a zero value, a '~' after it is a prefix, not an operator
+# a conversion without its argument is reported as its argument count
 
 func main() {
-    var x = i8 ~1
+    var x = int()
+    exit(x)
 }

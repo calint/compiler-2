@@ -1,4 +1,0 @@
-
-1685.baz:4:13: 'int' takes 1 argument
-    var x = int()
-            ^~~

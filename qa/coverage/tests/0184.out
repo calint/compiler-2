@@ -1,2 +1,4 @@
 
-0184.baz: function 'main' not found
+0184.baz:4:15: the result of 'f' is discarded
+func main() { f() }
+              ^

@@ -1,4 +1,4 @@
 
-0741.baz:7:22: count 9223372036854775807 is past the end of array 'a' of size 8
-    array_copy(a, b, 9223372036854775807)
-                     ^
+0741.baz:5:14: shift count must be 0 to 7 for 8-bit values
+    c = c << 8
+             ^

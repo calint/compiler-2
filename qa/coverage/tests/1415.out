@@ -1,4 +1,4 @@
 
-1415.baz:5:9: a unary operator makes a value, not an array
-    a = -a
-        ^
+1415.baz:4:16: a string is not a number, it fills only an array of 'i8'
+    var a = i8["4"]
+               ^~~

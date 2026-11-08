@@ -1,0 +1,4 @@
+
+0691.baz:6:13: 'c' is not an array
+    read(0, c, 1)
+            ^

@@ -1,17 +1,15 @@
-# a range may end exactly at the array end, an empty range may start there
+# an instance result may share storage with another element
 
-func assert(err, expr bool) { if not expr exit(err) }
+type point {x, y}
+
+func swap(p point) res point {
+    res.x = p.y
+    res.y = p.x
+}
 
 func main() {
-    var buf = i8[4]
-    var n = read(0, buf, 2, 2)
-    assert(1, n == 0)
-    n = read(0, buf, 0, 4)
-    assert(2, n == 0)
-    var a = i8[4]{1, 2, 3, 4}
-    var b = i8[4]
-    var k = 2
-    array_copy(a[k], b[k], 2)
-    assert(3, b[3] == 4)
-    assert(4, arrays_equal(a[k], b[k], 2))
+    var ps = point[2]{{1, 2}, {3, 4}}
+    var i = 1
+    ps[i] = swap(ps[0])
+    exit(ps[1].x)
 }

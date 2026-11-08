@@ -1,4 +1,4 @@
 
-0995.baz:4:22: constant expression overflows the type
-    x = 2147483647 + 1
-                     ^
+0995.baz:3:18: 'void' is not a type of a value
+    var values = void[2]
+                 ^~~~

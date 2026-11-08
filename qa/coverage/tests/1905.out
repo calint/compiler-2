@@ -1,4 +1,4 @@
 
-1905.baz:8:9: a comparison makes a condition, which is not an operand here, store it in a 'bool' first
-    f(x < 1 < 2)
-        ^
+1905.baz:9:20: expected '}' to close the value of type 'point'
+    show(point{1, 2)
+                   ^

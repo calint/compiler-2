@@ -1,8 +1,8 @@
-# a constant count whose bytes would exceed the 32-bit address range is past
-# the end of the array
+# x86: a constant count at the signed 64-bit maximum is past the end of the
+# array
 
 func main() {
-    var a = i32[8]
-    var b = i32[8]
-    array_copy(a, b, 2000000000)
+    var a = i64[8]
+    var b = i64[8]
+    array_copy(a, b, 9223372036854775807)
 }

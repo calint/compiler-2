@@ -1,7 +1,4 @@
 
-1968.baz:7:17: the destination gives the type 'point', write '{}'
-    var s = seg{T}
-                ^
-1968.baz:11:5: instantiated by 'f<point>'
-    f<point>()
-    ^
+1968.baz:5:28: an operator makes a value, not an array
+    var n = array_length(a + 1)
+                           ^

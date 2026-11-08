@@ -1,0 +1,7 @@
+
+1478.baz:6:6: generic method 'deck.app' clashes with the generic method 'buffer.app' defined at 5:6
+func deck.app<T type>(x T) {}
+     ^~~~
+1478.baz:7:6: instantiated by
+type sd = deck<4>
+     ^~

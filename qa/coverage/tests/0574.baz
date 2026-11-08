@@ -1,8 +1,36 @@
-# an instance array field copied from an array of another size
+# aliases of array elements are read as the element
+
+func assert(expr bool) {
+    if not expr exit(1)
+}
 
 type point { x i32, y i32 }
-type line { pts point[2] }
+
+func twice(v i32) res i32 {
+    res = v
+    res = res + v
+}
+
+func sum(p point) res i32 {
+    res = p.x + p.y
+}
+
 func main() {
-    var ps = point[3]
-    var l = line{ ps }
+    var arr = i32[3]{1, 2, 3}
+    var ix = 2
+
+    # note: temporary because the result may share storage with the argument
+    var tmp1 = twice(arr[ix])
+    arr[0] = tmp1
+    assert(arr[0] == 6)
+
+    # note: temporary because the result may share storage with the argument
+    var tmp2 = twice(arr[1])
+    arr[ix] = tmp2
+    assert(arr[2] == 4)
+
+    var ps = point[2]{{1, 2}, {3, 4}}
+    assert(sum(ps[1]) == 7)
+    assert(ps[0] == ps[0])
+    assert(arr[0] != arr[1])
 }

@@ -1,5 +1,14 @@
-# convert requires a closing parenthesis
+# a constructor name follows the dot
+
+type point {
+    x,
+    y
+}
+
+func point.at(x, y) self {
+    self.x = x
+    self.y = y
+}
 
 func main() {
-    var a = i8(1
-}
+    var p = point.

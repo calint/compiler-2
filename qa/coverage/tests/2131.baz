@@ -1,5 +1,4 @@
-# the mark under an error counts a character of three or four bytes as one
-# column
+# a ']' after the last ',' of an array literal
 func main() {
-    var x = 1 + "€😀"
+    var a = i8[2]{1, 2, ]
 }

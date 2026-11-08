@@ -1,7 +1,7 @@
-# --checks=overflow: the negation of a conversion is checked at the width of
-# its destination at run time
+# --checks=overflow: the negation of a named 64-bit minimum is an overflow
+let m = -9223372036854775807 - 1
+
 func main() {
-    var x = 128
-    var r = -i8(x)
-    exit(r)
+    var x = -m
+    exit(x)
 }

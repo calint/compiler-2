@@ -1,3 +1,13 @@
-# a string where a name is expected, the caret is on the string
-func f<"">() {}
-func main() {}
+# a read of the global in a later statement than the one that sets 'res'
+var g = 5
+
+func f() res {
+    res = 1
+    var x = g
+    res = res + x
+}
+
+func main() {
+    g = f()
+    exit(g)
+}

@@ -1,4 +1,0 @@
-
-2140.baz:5:21: 'array_length(a)' of type 'i64' is narrowed to 'i8', use 'i8(...)'
-    let k = i8(1) + array_length(a)
-                    ^~~~~~~~~~~~

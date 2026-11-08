@@ -1,4 +1,4 @@
 
-0477.baz:3:18: function may return without setting its result 'res'
-func make_pair() res pair {
-                 ^~~
+0477.baz:6:17: 'ps[1].x' may have been overwritten in the same statement, use a temporary variable
+    ps[i] = {1, ps[1].x}
+                ^~

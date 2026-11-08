@@ -1,11 +1,15 @@
-# a block that is not reached is reported at its '{', after the comments
-# before it
-func main() {
-    var x = 1
-    exit(x)
-    # not reached
+# the padding of a call result is zeroed after the arguments are computed: the
+# whole instance is zeroed for its 5 gaps on x86_64, the argument reads the
+# destination first
 
-    {
-        x = 2
-    }
+type g {a i8, b i16, c i8, d i16, e i8, f i16, h i8, i i16, j i8, k i16}
+
+func mk(v i8) res g {
+    res = {v, 2, 3, 4, 5, 6, 7, 8, 9, 10}
+}
+
+func main() {
+    var p = g{42}
+    p = mk(p.a + 1)
+    exit(p.a)
 }

@@ -1,11 +1,3 @@
-# a constant shadows the function of the same name
+include base
 
-let f = 8
-
-func f() {
-}
-
-func main() {
-    var x = f
-    exit(x)
-}
+func main() {}

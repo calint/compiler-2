@@ -1,9 +1,12 @@
-# a constant index in the argument of 'array_length' is checked against its
-# array like any other
-type holder { v i8[4] }
+# an inlined call that never returns in a later element of an 'or' does not
+# end the statement: the short circuit of 'x > 0' reaches the code after it
+
+func die(c) res {
+    exit(c)
+}
 
 func main() {
-    var hs = holder[2]
-    var s = array_length(hs[2].v)
-    exit(s)
+    var x = 1
+    var b = x > 0 or die(3) > 0
+    exit(9)
 }

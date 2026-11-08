@@ -1,13 +1,12 @@
-# a conversion of a named constant folds: a 'dat' takes it, also negated and
-# as an array element, and a 'var' adds to it at compile time
+# the body of a 'noinline' function has its own registers, the variables base
+# and the frame base are not handed out
 
-let N = 4
-
-dat a = i8(N)
-dat b = i8(-N)
-dat c = i8[2]{i8(N)}
+func noinline f() {
+    var a = 1
+    var b = a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + a)))))))))))))))))))))))))))))
+    exit(b)
+}
 
 func main() {
-    var x = i8(N) + 1
-    exit(a - b + c[0] + x)
+    f()
 }

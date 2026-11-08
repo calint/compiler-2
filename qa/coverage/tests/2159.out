@@ -1,0 +1,4 @@
+
+2159.baz:3:17: a zero value is a constant, it has no field or element
+    var a = i8{}.x
+                ^

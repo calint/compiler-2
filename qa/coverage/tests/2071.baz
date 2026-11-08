@@ -1,20 +1,11 @@
-# the check of a body without its call expands an inlined recursion: the
-# constant of 'g(x, 2)' ends it, so 'a[3 - n]' past the end at its second
-# level is rejected also where nothing calls 'f'
+# the arguments of a call are checked left to right: the type of the first
+# argument is reported before the 'mut' parameter of the second
 
-func g(x, n) res {
-    if n == 0 {
-        res = 0
-        return
-    }
-    var a = i8[2]
-    res = a[3 - n] + g(x, n - 1)
-}
-
-func f(x) res {
-    res = x + g(x, 2)
+func f(a i8, b mut i32) {
+    b = a
 }
 
 func main() {
-    exit(0)
+    var x = i32(1)
+    f(x, 3)
 }

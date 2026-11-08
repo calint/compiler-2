@@ -1,7 +1,5 @@
-# scalar value cannot satisfy an array parameter
+# boolean data requires a boolean initializer
 
-func f(x i8[]) {}
-func main() {
-    var x = i8(0)
-    f(x)
-}
+dat x = bool[]{2}
+
+func main() {}

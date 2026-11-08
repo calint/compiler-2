@@ -1,8 +1,6 @@
-# a function without parameters takes no arguments
-
-func f() {
-}
+# the buffer of a sector function is an array
 
 func main() {
-    f(1)
+    var n = 0
+    sector_read(0, n)
 }

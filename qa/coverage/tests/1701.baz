@@ -1,15 +1,18 @@
-# the same with the result read after the call that writes it
+# rv32i compiles the inlined call 'g(a[i])' in two versions, the second runs
+# out of registers inside the 'if' of the body, where the caller holds two
+# registers: the code after the call is still reached, the kept version
+# starts from the state before it (x86_64 rejects the expression for
+# registers)
 
-func noinline inc(x mut) res {
-    x = x + 10
-    res = 1
-}
-
-func f() res {
-    res = 1
-    res = inc(res) + res
+func g(p) res {
+    res = p
+    if p == p + (p * p * (p + p + (p * p * (p + p + (p * p * (p + p + (p * p * (p + p + (p * p * (p + p + (p * p * (p + p + (p * p * (p + p + (p * p * (p + p + (p * p * (p + p + (p * p * (p + p + (p * p * (p + p + (p * p * (p + p)))))))))))))))))))))))) return
 }
 
 func main() {
-    exit(f())
+    var a = []{1, 2, 3, 4}
+    var i = 1
+    var y = i + (i + g(a[i]))
+    if y == 77 exit(9)
+    exit(3)
 }

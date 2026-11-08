@@ -1,7 +1,4 @@
-# a boolean value is not a name
-
-func true() {
-}
-
 func main() {
+    exit(3)
 }
+# comment on the last line without a line end

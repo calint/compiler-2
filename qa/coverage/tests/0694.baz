@@ -1,5 +1,18 @@
-# read requires an array to fill
+# a global passed to a non-inline function that also names it shares storage
+# the call is rejected: the function uses the global the call passes it
+
+var g = 1
+
+func swap_values(x mut, y mut) {
+    var tmp = x
+    x = y
+    y = tmp
+}
+
+func noinline outer(a mut) {
+    swap_values(a, g)
+}
 
 func main() {
-    read(0, 1 + 2, 1)
+    outer(g)
 }

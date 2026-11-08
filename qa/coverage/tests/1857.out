@@ -1,4 +1,4 @@
 
-1857.baz:6:1: expected '{' to begin block
-type box<n> {x i8[n]}
-^
+1857.baz:9:9: a string fills only an array of 'i8', not an instance of 's'
+    g = "a"
+        ^~~

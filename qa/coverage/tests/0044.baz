@@ -1,53 +1,17 @@
-# left and right shift operations
+# grouped negated boolean expressions
 
 func main(){
-    var a=1
-    var b=a<<1
-    if not b==2 exit(1)
+    var a=-2
+    var b=-a
 
-    b=b>>1
-    if not b==1 exit(2)
-
-    var c=2
-    var d=a<<c
-    if not d==4 exit(3)
-
-    var e=d>>c
-    if not e==1 exit(3)
-
-    var count = i8(2)
-    var narrow = i8(1)
-    narrow = narrow << count
-    if not narrow == 4 exit(4)
-    narrow = 1
-    narrow = narrow << (count + 1)
-    if not narrow == 8 exit(5)
-
-    var negative_count = i8(-2)
-    narrow = 1
-    narrow = narrow << -negative_count
-    if not narrow == 4 exit(6)
-    negative_count = -3
-    narrow = 1
-    narrow = narrow << ~negative_count
-    if not narrow == 4 exit(7)
-
-    narrow = -64
-    narrow = narrow >> count
-    if not narrow == -16 exit(8)
-    narrow = -64
-    narrow = narrow >> (count + 1)
-    if not narrow == -8 exit(9)
-
-    var word = i16(16384)
-    word = word << (count - 1)
-    if not word == -32768 exit(10)
-    var integer = i32(-1024)
-    integer = integer >> (count + 1)
-    if not integer == -128 exit(11)
-
-    b = a << (a << 1)
-    if not b == 4 exit(12)
-
+    if not (a==-2 and b==-a) exit(1)
+    if not a==-2 or not b==-a exit(2)
+    if not (a==-2 or b==-a) exit(3)
+    if not a==-2 and not b==-a exit(4)
+    if not (a==-2 and not (a==-1 and b==-1)) exit(5)
+    if not (a==-2 and not (a==-1 and b==-a)) exit(6)
+    if not (a==-2 or not (a==-2 or b==-a)) exit(7)
+    if not (a==-2) exit(8)
+    if not a==-2 exit(9)
     exit(0)
 }

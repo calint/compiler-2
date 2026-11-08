@@ -1,13 +1,13 @@
-# a read at a run-time index of the data that the argument names rejected
-# inlined as well as noinline
+# a noinline body that fits alone is called inside an expression that holds
+# registers, x86_64: the body has its own registers
 
-dat g = i32[4]{ 1, 2, 3, 4 }
-
-func put(x mut i32, j i32) {
-    x = 100 - g[j]
+func noinline f(a i32, b i32) res i32 {
+    res = ((a * b) + ((a * b) + ((a * b) + ((a * b) + ((a * b) + ((a * b) + ((a * b) + ((a * b) + (a * b)))))))))
 }
 
 func main() {
-    put(g[3], 3)
-    exit(g[3] - 96)
+    var x = i32(1)
+    var y = i32(1)
+    var r = ((x * y) + ((x * y) + ((x * y) + ((x * y) + ((x * y) + ((x * y) + f(x, y)))))))
+    exit(r)
 }

@@ -1,9 +1,6 @@
-# the overflow of a negation inside other unary operators is located at that
-# negation, not at the outermost operator
+# a comparison as a statement is not read as an assignment
 
 func main() {
-    let k = i8(-128)
-    var y = i8(0)
-    y = ~-k
-    exit(y)
+    var n = 1
+    n == 2
 }

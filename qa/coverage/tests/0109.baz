@@ -1,169 +1,36 @@
-# deeply nested structs and arrays initialized, transformed and verified
+# mixed-size struct layout and array stride
 
-func assert(expr bool) {
-    if not expr exit(1)
-}
+func assert(expr bool) { if not expr exit(1) }
 
-type vec3 { x i32, y i32, z i32 }
+# Verify struct field ordering and padding
+type packed_small { a i8, b i8, c i8, d i8 }
+type mixed_sizes { x i32, y i8, z i32, w i16 }
 
-type mesh {
-    vertices vec3[8],
-    indices i32[12],
-    id i32
-}
-
-type scene {
-    meshes mesh[4],
-    time
-}
-
-type world {
-    scenes scene[3]
-}
-
-func init_mesh(m mut mesh, id_val i32) {
-    m.id = id_val
-
-    var i = 0
-    loop {
-        m.vertices[i].x = i32(i * 10)
-        m.vertices[i].y = i32(i * 20)
-        m.vertices[i].z = i32(i * 30)
-        i = i + 1
-        if i == 8 break
-    }
-    
-    i = 0
-    loop {
-        m.indices[i] = i32(i)
-        i = i + 1
-        if i == 12 break
-    }
-}
-
-func verify_mesh(m mesh, id_val i32) {
-    assert(m.id == id_val)
-    var i = 0
-    loop {
-        assert(i * 10 == m.vertices[i].x)
-        assert(i * 20 == m.vertices[i].y)
-        assert(i * 30 == m.vertices[i].z)
-        i = i + 1
-        if i == 8 break
-    }
-}
-
-func transform_vertices(s mut scene, offset vec3) {
-    var i = 0
-    loop {
-        var j = 0
-        loop {
-            s.meshes[i].vertices[j].x = s.meshes[i].vertices[j].x + offset.x
-            s.meshes[i].vertices[j].y = s.meshes[i].vertices[j].y + offset.y
-            s.meshes[i].vertices[j].z = s.meshes[i].vertices[j].z + offset.z
-            j = j + 1
-            if j == 8 break
-        }
-        i = i + 1
-        if i == 4 break
-    }
-}
-
+# Test that field offsets are as expected
 func main() {
-    var w = world[2]
+    var p = packed_small{1, 2, 3, 4}
+    var m = mixed_sizes{0x7FFFFFFF, 0x7f, -0x80000000, -0x80}
     
-    # test 1: initialize nested array structures
-    var offset = vec3{5, 10, 15}
-    
-    var i = 0
-    loop {
-        var j = i32(0)
-        loop {
-            init_mesh(w[0].scenes[0].meshes[j], j)
-            j = j + 1
-            if j == 4 break
-        }
-        i = i + 1
-        if i == 1 break
-    }
-    
-    # test 2: verify nested array element access
-    #verify_mesh(w[0].scenes[0].meshes[0], 0)
-    verify_mesh(w[0].scenes[0].meshes[3], 3)
-    
-    # test 3: deep nested access and modification
-    w[0].scenes[1].meshes[2].vertices[5].x = 0xff
-    w[0].scenes[1].meshes[2].vertices[5].y = 0xaa
-    w[0].scenes[1].meshes[2].vertices[5].z = 0xbb
-    assert(w[0].scenes[1].meshes[2].vertices[5].x == 0xff)
-    assert(w[0].scenes[1].meshes[2].vertices[5].y == 0xaa)
-    assert(w[0].scenes[1].meshes[2].vertices[5].z == 0xbb)
-    
-    # test 4: array_copy on nested structures
-    array_copy(
-        w[0].scenes[0].meshes,
-        w[1].scenes[2].meshes,
-        array_length(w[0].scenes[0].meshes)
-    )
-    
-    # verify copy succeeded
-    var k = 0
-    loop {
-        assert(k == w[1].scenes[2].meshes[k].id)
-        k = k + 1
-        if k == 4 break
-    }
-    
-    # test 5: arrays_equal on nested arrays
-    var ok = arrays_equal(
-        w[0].scenes[0].meshes[1].vertices,
-        w[1].scenes[2].meshes[1].vertices,
-        array_length(w[0].scenes[0].meshes[1].vertices)
-    )
-    assert(ok)
-    
-    # test 6: array_copy partial nested arrays
-    array_copy(
-        w[0].scenes[0].meshes[2].indices,
-        w[0].scenes[1].meshes[1].indices,
-        6
-    )
-    
-    var idx = 0
-    loop {
-        assert(idx == w[0].scenes[1].meshes[1].indices[idx])
-        idx = idx + 1
-        if idx == 6 break
-    }
-    
-    # test 7: modify through function with nested refs
-    # Initialize w[1].scenes[0] first
-    var ii = 0
-    loop {
-        init_mesh(w[1].scenes[0].meshes[ii], i32(ii + 100))
-        ii = ii + 1
-        if ii == 4 break
-    }
+    # Verify individual fields survive assignment (catches alignment issues)
+    assert(m.x == 0x7FFFFFFF)
+    assert(m.z == -0x80000000)
+    assert(m.y == 0x7F)
+    assert(m.w == -0x80)
 
-    transform_vertices(w[1].scenes[0], offset)
-    assert(0 + 5 == w[1].scenes[0].meshes[0].vertices[0].x)      # 0 + offset.x
-    assert(60 + 10 == w[1].scenes[0].meshes[1].vertices[3].y)    # (3*20) + offset.y = 70
-    assert(210 + 15 == w[1].scenes[0].meshes[2].vertices[7].z)   # (7*30) + offset.z = 225   
-    
-    # test 8: struct array initialization
-    var mesh_array = mesh[4]
-    var m = 0
-    loop {
-        init_mesh(mesh_array[m], i32(m * 100))
-        m = m + 1
-        if m == 4 break
-    }
-    
-    # test 9: verify struct array
-    var verify_idx = 0
-    loop {
-        assert(verify_idx * 100 == mesh_array[verify_idx].id)
-        verify_idx = verify_idx + 1
-        if verify_idx == 4 break
-    }
+    m.x = 0x7FFFFFFF
+    m.y = 0x7F
+    m.z = -0x80000000
+    m.w = -0x80
+
+    assert(m.x == 0x7FFFFFFF)
+    assert(m.z == -0x80000000)
+    assert(m.y == 0x7F)
+    assert(m.w == -0x80)
+
+    # Array of these types to verify stride
+    var ps = packed_small[3]
+    ps[0].a = 10
+    ps[1].a = 20
+    ps[2].a = 30
+    assert(ps[0].a == 10 and ps[2].a == 30)
 }

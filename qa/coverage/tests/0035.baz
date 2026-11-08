@@ -1,17 +1,13 @@
-# bytes read from input into a data array and printed minus the newline
+# negated function result
 
-dat name="............................................................"
-
-func print(str i8[], len) {
-    write(1, str, len)
-}
-
-func input(str mut i8[], len) nbytes_read {
-    nbytes_read = read(0, str, len)
+func f(a) res{
+    res=-a*2
 }
 
 func main(){
-    var len=input(name,array_length(name))-1 # remove the \n
-    print(name,len)
-    exit(0)
+    var a=1
+    var b=-f(-a)
+    if(b==-2)
+        exit(0)
+    exit(1)
 }

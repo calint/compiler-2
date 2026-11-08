@@ -1,34 +1,26 @@
-# constant last elements after non-constant elements decide the list only when they short-circuit it
-func assert(ok bool) { if not ok exit(1) }
+# results set on every path stay accepted, including early returns and loops
+func early(i) res {
+    if i == 3 { res = 1 return }
+    res = 2
+}
+func branches(i) res {
+    if i == 3 { res = 1 } else if i == 4 { res = 2 } else { res = 3 }
+}
+func looped(i) res {
+    loop {
+        res = i
+        break
+    }
+}
 func main() {
-    var x = 1
-    var a = x == 2 and true
-    assert(not a)
-    var b = x == 1 and true
-    assert(b)
-    var c = x == 1 or false
-    assert(c)
-    var d = x == 2 or false
-    assert(not d)
-    var e = not (x == 2 and true)
-    assert(e)
-    var f = not (x == 1 or false)
-    assert(not f)
-    var g = x == 2 or true
-    assert(g)
-    var h = x == 1 and false
-    assert(not h)
-    var taken = 0
-    if x == 2 and true { taken = 1 } else { taken = 2 }
-    assert(taken == 2)
-    if x == 1 or false { taken = 3 } else { taken = 4 }
-    assert(taken == 3)
-    if not (x == 1 and true) { taken = 5 } else { taken = 6 }
-    assert(taken == 6)
-    if not (x == 2 or false) { taken = 7 } else { taken = 8 }
-    assert(taken == 7)
-    if x == 2 or true { taken = 9 } else { taken = 10 }
-    assert(taken == 9)
-    if x == 1 and false { taken = 11 } else { taken = 12 }
-    assert(taken == 12)
+    var a = early(3)
+    if a != 1 exit(1)
+    a = early(4)
+    if a != 2 exit(2)
+    a = branches(4)
+    if a != 2 exit(3)
+    a = branches(5)
+    if a != 3 exit(4)
+    a = looped(7)
+    if a != 7 exit(5)
 }

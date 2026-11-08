@@ -1,8 +1,8 @@
-# --checks=overflow: a sum above the maximum of the width panics
-func noinline add(a i32, b i32) res i32 { res = a + b }
+# --checks=overflow: the negation of the minimum as an operand of '&' panics
 func main() {
-    var a = i32(2147483647)
-    var b = i32(1)
-    var x = add(a, b)
-    exit(x)
+    var a = i32(-2147483648)
+    var b = i32(3)
+    var c = i32(0)
+    c = b & (-a)
+    exit(c)
 }

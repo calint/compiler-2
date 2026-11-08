@@ -1,4 +1,4 @@
 
-0795.baz:12:17: generic parameter 'capacity' of 'text' needs a constant, got the type 'name'
-type str = text<name>
-                ^~~~
+0795.baz:5:6: function 'f' already defined at 3:6
+func f<T type>() {}
+     ^

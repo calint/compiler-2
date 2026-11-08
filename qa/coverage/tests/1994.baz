@@ -1,5 +1,6 @@
-# an array literal where a built-in takes an array is not an argument
+# a 'let' named by '{}' alone has no type to take its zero value from
 
 func main() {
-    var n = array_length(i8[2]{1, 2})
+    let k = {}
+    exit(k)
 }

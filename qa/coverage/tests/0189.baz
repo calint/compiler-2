@@ -1,3 +1,5 @@
-# unknown function calls are rejected
+# data array type requires a closing bracket
 
-func main() { var x = nope(1) }
+dat x = [2 = {1,2}
+
+func main() {}

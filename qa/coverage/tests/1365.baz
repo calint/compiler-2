@@ -1,10 +1,14 @@
-# a field read at a run-time index is not overwritten by the fields of a
-# literal written before it when it is another field
-type point {x, y}
+# a folded right side of a comparison with an inlined parameter bound to a
+# constant is checked as a computed one is
+
+func compared(p i8) res i8 {
+    var e = i8(1)
+    res = 0
+    if e < p + 300 {
+        res = 1
+    }
+}
 
 func main() {
-    var ps = point[2]{{1, 2}, {3, 4}}
-    var i = 1
-    ps[0] = {1, ps[i].y}
-    exit(ps[0].y)
+    exit(int(compared(1)))
 }

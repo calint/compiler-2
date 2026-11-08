@@ -1,8 +1,6 @@
-# a generic call whose argument is not a value reports it as a call of a
-# function without type parameters does, not that the type cannot be deduced
-
-func show<T type>(x T) {}
-
-func main() {
-    show(main)
+# the result name of a generic function is checked where it is read, also
+# without an instance
+func make<T type>() exit {
 }
+
+func main() {}

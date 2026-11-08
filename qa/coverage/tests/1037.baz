@@ -1,11 +1,6 @@
-# a field name is declared once in a type
-
-type point {
-    x,
-    x,
-}
+# an sd card image that cannot be opened panics
 
 func main() {
-    var p = point{1, 2}
-    exit(p.x)
+    var bytes = i8[512]
+    sector_read(0, bytes)
 }

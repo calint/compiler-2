@@ -1,7 +1,9 @@
-# a 'dat' array element divided by a constant zero is rejected like a 'var'
+# a conversion assigned to an instance is rejected for its type
 
-dat a = i8[2]{1 / 0}
+type point {x, y}
 
 func main() {
-    exit(0)
+    var p = point
+    p = i8(1)
+    exit(p.x)
 }

@@ -1,6 +1,5 @@
-# --checks=overflow: a constant expression that overflows is rejected
+# 'void' is not the type of a value
 func main() {
-    var x = i32(0)
-    x = 2147483647 + 1
-    exit(x)
+    var values = void[2]
+    values[1] = 1
 }

@@ -1,4 +1,4 @@
 
-1983.baz:6:9: 'point' is a type, not an array
-    foo point(5) {}
-        ^~~~~
+1983.baz:5:13: variable 'p' is read before it is set
+    var p = p.x
+            ^

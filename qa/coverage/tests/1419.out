@@ -1,4 +1,7 @@
 
-1419.baz:4:25: expected '{' to begin block
-func f<T type>(x T) res T
-                        ^
+1419.baz:6:15: index 5 is out of bounds for array 'arr' of size 2
+    res = arr[a]
+              ^
+1419.baz:14:15: called from 'g(5)'
+    var x = f(g(5))
+              ^

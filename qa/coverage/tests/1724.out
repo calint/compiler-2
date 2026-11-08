@@ -1,4 +1,4 @@
 
-1724.baz:6:1: expected '{' to begin block
-func main() {
-^
+1724.baz:8:12: array 'cs' must be indexed
+    exit(a[cs])
+           ^~

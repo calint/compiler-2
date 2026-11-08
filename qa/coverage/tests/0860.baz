@@ -1,55 +1,46 @@
-# a type parameter is deduced from an instance literal, a constructor call and
-# a call result, and the receiver's type parameter takes a literal
-type point { x, y }
+# a result that may share storage with an argument is rejected on every
+# target
 
-type list<T type, capacity> {
-    array T[capacity],
-    len,
+var total = 3
+
+type point {x, y}
+
+func add_one(a) res {
+    res = 1
+    res = res + a
 }
 
-type points = list<point, 8>
-
-func point.at(a, b) self {
-    self.x = a
-    self.y = b
+func noinline add_one_noinline(a) res {
+    res = 1
+    res = res + a
 }
 
-func mk(a, b) res point { res = { a, b } }
-
-func take<T type>(item T) res { res = item.x + item.y }
-
-func noinline ntake<T type>(item T) res { res = item.x + item.y }
-
-func mut list.push(item T) {
-    self.array[self.len] = item
-    self.len = self.len + 1
+func swap(p point) res point {
+    res.x = p.y
+    res.y = p.x
 }
 
-func noinline mut list.npush(item T) {
-    self.array[self.len] = item
-    self.len = self.len + 1
+func bump(value mut) {
+    value = add_one(total)
 }
 
-func mut list.add<U type>(item U) {
-    self.array[self.len] = item
-    self.len = self.len + 1
+func noinline bump_noinline(value) {
+    total = add_one(value)
 }
 
 func main() {
-    var p = point{10, 20}
-    var k = take(p)
-    k = k + take(point{3, 4})
-    k = k + take(point.at(5, 6))
-    k = k + take(mk(7, 8))
-    k = k + ntake(point{3, 4})
-    k = k + ntake(point.at(5, 6))
-    k = k + ntake(mk(7, 8))
+    var x = 5
+    x = add_one(x)
+    x = add_one_noinline(x)
 
-    var ls = points
-    ls.push({1, 2})
-    ls.push({ 3, 4 })
-    ls.add(point{5, 6})
-    ls.npush({7, 8})
-    ls.npush({ 9, 10 })
-    exit(k - 30 + ls.len + ls.array[4].y)
+    var p = point{1, 2}
+    p = swap(p)
+
+    var ps = point[2]
+    ps[1] = swap(ps[1])
+
+    bump(total)
+    bump_noinline(total)
+
+    exit(0)
 }

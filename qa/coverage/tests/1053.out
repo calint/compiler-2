@@ -1,4 +1,4 @@
 
-1053.baz:4:20: cannot read into read-only 'd', parameter 'd' is not declared 'mut'
-    sector_read(0, d)
-                   ^
+1053.baz:3:23: 'list' is not a generic type, a generic type is defined before the type based on it
+type text<capacity> = list<i8, capacity>
+                      ^~~~

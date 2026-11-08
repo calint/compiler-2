@@ -1,4 +1,6 @@
-# type fields require known types
+# an index requires an expression
 
-type x { a nope }
-func main() {}
+func main() {
+    var x = i8[2]
+    var y = x[
+}

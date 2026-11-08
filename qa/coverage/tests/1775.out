@@ -1,4 +1,4 @@
 
-1775.baz:3:25: constant division of the minimum by -1 overflows the type
-    var x = i8(-128) / -1
-                        ^
+1775.baz:5:9: unexpected ')'
+    x i8)
+        ^

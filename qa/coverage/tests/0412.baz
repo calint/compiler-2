@@ -1,52 +1,5 @@
-# non-inline print_num: repeated calls, local arrays and inline syscall helpers
+# a non-inline argument can be a computed expression, it is passed in a
+# temporary
 
-func print(str i8[], len) {
-    write(1, str, len)
-}
-
-func noinline print_num(num) {
-    var buf = i8[20]
-    var n = num
-    var negative = n < 0
-    if not negative n = -n
-
-    var i = 20
-    loop {
-        i = i - 1
-        var ascii = 48 - (n % 10)
-        buf[i] = i8(ascii)
-        n = n / 10
-        if n == 0 break
-    }
-    if negative {
-        i = i - 1
-        buf[i] = 45
-    }
-
-    var count = 20 - i
-    var pos = 0
-    loop {
-        buf[pos] = buf[i]
-        pos = pos + 1
-        i = i + 1
-        if i == 20 break
-    }
-    print(buf, count)
-}
-
-func main() {
-    var newline = i8[1]
-    newline[0] = 10
-    var first = 123
-    var second = -2147483648
-    var third = 0
-
-    print_num(first)
-    print(newline, 1)
-    print_num(second)
-    print(newline, 1)
-    print_num(third)
-    print(newline, 1)
-    print_num(first)
-    print(newline, 1)
-}
+func noinline target(parameter) { exit(parameter) }
+func main() { var value = 1 target(value + 1) }

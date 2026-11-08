@@ -1,8 +1,7 @@
-# rv32i: a constant index that does not fit the default type is rejected, not
-# folded to its low bits
+# the zero value assigned to an array is '{}', not the array type
 
 func main() {
-    var a = i32[4]
-    a[4294967296 + 1] = 2
-    exit(a[1])
+    var a = i8[]{1, 2}
+    a = i8[2]
+    exit(a[0])
 }

@@ -1,13 +1,10 @@
-# a 'bool' constant is no number for the constant parameter of a generic
-# type, like 'true'
+# a 'dat' after an included file that declares a variable and after a 'let'
+# of an array, the data is placed before the variables in any order
+include "include/counter.baz"
 
-let b = true
-
-type w<n> {v i8[n]}
-
-type s = w<b>
+let k = i8[]{1, 2}
+dat d = "ab"
 
 func main() {
-    var x = s
-    exit(array_length(x.v))
+    exit(counter + k[1] + d[1])
 }

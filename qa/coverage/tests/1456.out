@@ -1,4 +1,4 @@
 
-1456.baz:10:28: 'a.m' is a method, not an array
-    var n = array_length(a.m)
-                           ^
+1456.baz:2:18: expected a generic type after '='
+type t<T type> = ""
+                 ^~

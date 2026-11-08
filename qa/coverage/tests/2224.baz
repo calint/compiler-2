@@ -1,13 +1,5 @@
-# a generic call with nested type arguments reached into where an array is
-# expected
-type box<T type> { v T }
+# an error in a file included through another lists the includes
 
-type pt { x, a i8[3] }
+include "include/via.baz"
 
-func gn<T type>() res pt {
-    res = {}
-}
-
-func main() {
-    exit(array_length(gn<box<i8>>().a))
-}
+func main() { }

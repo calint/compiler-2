@@ -1,38 +1,31 @@
-# conditional result assignment
-
-func f(b bool) res bool{
-    if b res=false else res=true
-}
-
-func f2(i) res{
-    if i==0 res=4
-    else if i==1 res=5
-    else if i==2 res=6
-    else res=7
-}
+# relational operators over booleans and integers
 
 func main(){
-    var r = f(true)
-    if r exit(1)
+    if not true exit(1)
+    if true == false exit(2)
+    if not true == true exit(3)
+    if not false == false exit(4)
+    if true == false or false == true or false or not true exit(5)
+    if not not true == false exit(5)
 
-    r=f(false)
-    if not r exit(2)
-    
-    if 1==2 exit(3)
-    
-    if 1==1 r=true else r=false
-    
-    if not r exit(4)
+    var x = 1
+    var y = 2
 
-    if 1==2 r=true else r=false
-    
-    if r exit(5)
+    if x > y exit(6)
+    if x >= y exit(7)
+    if y < x exit(8)
+    if y <= x exit(9)
 
-    if not f2(0)==4 exit(6)
-    if not f2(1)==5 exit(7)
-    if not f2(2)==6 exit(8)
-    if not f2(3)==7 exit(9)
-    
+    if not x < y exit(10)
+    if not x <= y exit(11)
+    if not y > x exit(12)
+    if not y >= x exit(13)
 
-    exit(0)
+    if 1 > 2 exit(14)
+    if 1 >= 2 exit(15)
+    if 2 < 1 exit(16)
+    if 2 <= 1 exit(17)
+
+    if 1 > 2 or not (x < y) exit(18)
+    if false or not true exit(19)
 }

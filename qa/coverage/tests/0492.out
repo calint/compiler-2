@@ -1,4 +1,0 @@
-
-0492.baz:4:13: constant '0xfe' does not fit 'i8' (-128 to 127), 'i8(...)' wraps it
-    small = 0xfe
-            ^~~~

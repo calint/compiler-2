@@ -1,15 +1,12 @@
-# the receiver of a method cannot be a whole array
+# an instance data field is checked after its unary operations
 
-type list {
-    count,
-    items[4]
+type limits {
+    low i16,
+    high i16
 }
 
-func mut list.clear() {
-    self.count = 0
-}
+dat words = limits{-32768, ~32768}
 
 func main() {
-    var lists = list[2]
-    lists.clear()
+    exit(words.low)
 }

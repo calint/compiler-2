@@ -1,10 +1,7 @@
-# the initializer of an inner variable reads the variable it declares, not an
-# outer one of the same name
+# the zero value assigned to a built-in is '{}', not the type name
 
 func main() {
-    var x = 1
-    {
-        var x = x + 1
-        exit(x)
-    }
+    var n = i8(7)
+    n = i8
+    exit(n)
 }

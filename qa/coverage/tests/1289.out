@@ -1,7 +1,4 @@
 
-1289.baz:5:9: recursion of inlined function 'r' runs out of registers before it ends at compile time, declare it 'noinline'
-        r(x - 1)
-        ^
-1289.baz:10:5: called from
-    r(x)
-    ^
+1289.baz:6:17: variable 'k' is read before it is set
+        let k = k + 1
+                ^

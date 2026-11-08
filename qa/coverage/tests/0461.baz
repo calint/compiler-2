@@ -1,8 +1,9 @@
-# a conditional return skips the result assignment
-func pick(i) res {
-    if i == 3 return
-    res = 2
+# the variable is passed to the function that initializes it
+type point {x, y}
+func twice(pt point) res point {
+    res.x = pt.x * 2
+    res.y = pt.y * 2
 }
 func main() {
-    var y = pick(3)
+    var ps = point[1]{twice(ps[0])}
 }

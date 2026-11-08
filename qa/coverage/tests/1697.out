@@ -1,4 +1,4 @@
 
-1697.baz:6:18: constant '1000' does not fit 'k' of type 'i8'
-    let b = k == 1000
-                 ^
+1697.baz:6:17: constant expression overflows the type
+    let y = x + 1
+                ^

@@ -1,7 +1,16 @@
-# the end of the file where the ')' of the arguments is expected
-func f(x) res {
-    res = x
+# a method called on its type tells no type parameter, it is rejected as in a
+# call without type parameters, not made an instance of the type
+
+type point {x i8, y}
+
+func point.get() res i8 {
+    res = self.x
+}
+
+func first<T type>(x T) res int {
+    res = x.len
 }
 
 func main() {
-    exit(f(1
+    exit(first(point.get()))
+}

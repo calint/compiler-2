@@ -1,4 +1,0 @@
-
-2106.baz:5:10: function may return without setting its result 'res'
-func f() res r {
-         ^~~

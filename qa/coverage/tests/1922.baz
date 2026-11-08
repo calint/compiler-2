@@ -1,9 +1,11 @@
-# a generic call whose literal argument is followed by a token that does not
-# continue it reports the missing ')' like a plain call, not that the type
-# cannot be deduced
+# a type parameter named before an instance names the type it is bound to
+type point {x i32, y i32}
+type seg {a point, b i8}
 
-func f<T type>(x T) {}
+func f<U type>() res point {
+    res = U{}
+}
 
 func main() {
-    f(1 2)
+    var p = f<seg>()
 }

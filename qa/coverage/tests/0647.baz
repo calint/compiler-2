@@ -1,11 +1,8 @@
-# a field of a 'let' variable cannot be assigned
+# a parameter without 'mut' cannot be assigned in a function that is never called
 
-type point {
-    x,
-    y,
+func unused(a) {
+    a = 2
 }
 
 func main() {
-    let p = point{1, 2}
-    p.x = 3
 }

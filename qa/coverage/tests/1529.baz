@@ -1,5 +1,4 @@
-# a buffer with an operator is not an array, also when it names a 'let'
+# a number followed by '(' is not a call
 func main() {
-    let c = i8[4]
-    var n = read(0, -c)
+    var x = 1 (2)
 }

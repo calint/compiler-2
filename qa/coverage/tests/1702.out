@@ -1,0 +1,4 @@
+
+1702.baz:4:6: type 'q' of 4294967296 B is too large, it must be smaller than the 4294967296 B the target addresses
+type q {a i8[0x100000000]}
+     ^

@@ -1,7 +1,4 @@
 
-2070.baz:15:13: index 3 is out of bounds for array 'a' of size 2
-    res = a[k]
-            ^
-2070.baz:20:17: called from 'h(3)'
-    res = res + h(3)
-                ^
+2070.baz:6:11: recursion of inlined function 'f' is nested deeper than 64 calls, declare it 'noinline'
+    res = f()
+          ^

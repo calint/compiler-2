@@ -1,9 +1,7 @@
-# a comparison after an instance is a condition, like after a number
-
-type point {x, y}
+# a comparison followed by another is reported at the first, its condition
+# is not an operand
 
 func main() {
-    var p = point{1, 2}
-    var q = point{1, 2}
-    q = p == p
+    var x = 1
+    var c = x == 1 == true
 }

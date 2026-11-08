@@ -1,2 +1,4 @@
-01234567
-TUVWXYZ[
+
+1044.baz:5:13: function 'sector_read' has no result
+    var n = sector_read(0, bytes)
+            ^~~~~~~~~~~

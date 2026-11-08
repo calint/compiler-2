@@ -1,12 +1,5 @@
-# a generic type is not a type until an alias names an instance
+# a generic parameter list has at least one parameter
 
-type text<capacity> {
-    array i8[capacity],
-    len,
-}
+func f<>() {}
 
-func show(t text) {
-}
-
-func main() {
-}
+func main() {}

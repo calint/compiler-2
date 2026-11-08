@@ -1,4 +1,4 @@
 
-0768.baz:15:13: cannot deduce 'T' of generic function 'make', write 'make<...>'
-    var m = make(2)
-            ^~~~
+0768.baz:7:15: type 'nothing' not found
+type p = pair<nothing>
+              ^~~~~~~

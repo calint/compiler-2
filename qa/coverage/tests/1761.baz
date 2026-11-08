@@ -1,11 +1,17 @@
-# the start of a range is checked before the count is computed: the bounds
-# check fails before the division by zero in the count
+# the method 'g.f1' inlined at 15:11 of the main file and the function 'g'
+# inlined at 15:11 of an included file have labels of their own
+include "include/labels.baz"
+
 func main() {
-    var a = i8[4]
-    var b = i8[4]
-    var i = 5
-    var x = 2
-    var z = 0
-    array_copy(a[i], b, x / z)
-    exit(0)
+    var v = g{5}
+    var a = 1
+    var r = 0
+    r = h(a)
+    if r != 3 {
+        exit(1)
+    }
+    r = 0
+    r = r + 0
+    r = v.f1()
+    exit(r + 3)
 }

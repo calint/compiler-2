@@ -1,4 +1,7 @@
 
-1481.baz:4:17: a trailing ',' is not allowed in generic arguments
-type a = list<i8,>
-                ^
+1481.baz:6:6: generic method 'buffer.app' clashes with the method 'sd.app' defined at 5:6
+func buffer.app<T type>(x T) {}
+     ^~~~~~
+1481.baz:4:6: instantiated by
+type sd = buffer<4>
+     ^~

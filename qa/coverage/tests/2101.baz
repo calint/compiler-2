@@ -1,23 +1,16 @@
-# a comparison of a known size compiles both addresses before it takes its
-# registers, so an index may shift or divide on x86_64
-
-type point { x, y }
+# the branches after one that always runs hold the compile rules too, e.g. a
+# noinline call there checks the body with the lengths of its array arguments
+func noinline f(s i8[]) res {
+    res = s[5]
+}
 
 func main() {
-    var a = i32[64]
-    var b = i32[64]
-    var i = 3
-    var k = 1
-    a[7] = 5
-    b[7] = 5
-    if not arrays_equal(a[i << k], b[(i / k) << k], 8) { exit(1) }
-    a[8] = 1
-    if arrays_equal(a[i << k], b[(i / k) << k], 8) { exit(2) }
-    var ps = point[8]
-    var qs = point[8]
-    ps[6] = {1, 2}
-    qs[6] = {1, 2}
-    if ps[i << k] != qs[(i / k) << k] { exit(3) }
-    qs[6].y = 3
-    if ps[i << k] == qs[(i / k) << k] { exit(4) }
+    var a = i8[4]
+    var r = 0
+    if 1 == 1 {
+        r = 1
+    } else if r == 2 {
+        r = f(a)
+    }
+    exit(r)
 }

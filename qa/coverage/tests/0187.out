@@ -1,4 +1,4 @@
 
-0187.baz:5:9: variable 'x' already defined at 4:9
-    var x = 0
-        ^
+0187.baz:3:5: expected a name
+dat = 1
+    ^

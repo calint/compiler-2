@@ -1,8 +1,16 @@
-# a type parameter of a method of a generic type is not named like the method
-type box<n> { a i8[n] }
-
-func box.get<get type>(x get) res get {
-    res = x
+# an argument that a call in a later argument may write is rejected,
+# evaluation is left to right
+func h(i mut) res {
+    i = i + 1
+    res = 0
 }
-
-func main() {}
+func f(a, b) res {
+    res = a + b
+}
+func main() {
+    var arr = [4]
+    arr[0] = 10
+    arr[1] = 20
+    var i = 0
+    exit(f(arr[i], h(i)))
+}

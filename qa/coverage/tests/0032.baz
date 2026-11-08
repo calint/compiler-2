@@ -1,10 +1,9 @@
-# unary negation with multiplication precedence
+# optimized nested unary multiplication
 
 func main(){
     var a=-1
-    var b=-2
-    var c=1+-a*-b+3*-a
-    if c==6
+    var b=-(-a*-a) # should trigger optimization
+    if b==-1
         exit(0)
     exit(1)
 }

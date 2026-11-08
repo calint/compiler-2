@@ -1,4 +1,4 @@
 
-1143.baz:14:9: argument 1 'g.b' may share storage with the global 'g' that 'set' uses, use a temporary variable for one of them
-    set(g.b)
+1143.baz:5:9: 'a[0]' is not an array
+    foo a[0] {
         ^

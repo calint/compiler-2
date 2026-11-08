@@ -1,10 +1,8 @@
-# an array parameter does not tell the type
-
-func first<T type>(a T[]) res {
-    res = 0
-}
+# an instance of a user type is not a condition, it would be tested as its
+# first field
+type point { x i32, y i32 }
 
 func main() {
-    var a = i8[4]
-    var r = first(a)
+    var a = point{0, 5}
+    if a exit(1)
 }

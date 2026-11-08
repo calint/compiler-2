@@ -1,9 +1,10 @@
-# a function without a body before a generic type is reported as the missing
-# body, not as type arguments of a result type
+# a string assigned to an instance is rejected, a string fills only an array
+# of 'i8'
 
-func f()
+type s {a i8}
 
-type box<n> {x i8[n]}
+var g = s
 
 func main() {
+    g = "a"
 }

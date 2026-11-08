@@ -1,10 +1,7 @@
-# a type argument names a type
+# a generic parameter is declared once
 
-type pair<first type> {
-    a first,
+func f<T type, T type>(x T) {
 }
-
-type p = pair<nothing>
 
 func main() {
 }

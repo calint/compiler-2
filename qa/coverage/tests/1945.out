@@ -1,4 +1,4 @@
 
-1945.baz:10:28: a call of 'point.m' is not an array
-    var n = array_length(p.m())
-                           ^
+1945.baz:7:26: 'box<...>' is not a generic argument, name an instance first, e.g. 'type my_box = box<...>'
+func main() { var b = mk<box<i8>>() }
+                         ^~~

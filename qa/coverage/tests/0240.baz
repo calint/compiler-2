@@ -1,6 +1,6 @@
-# a data array initializer is complete without '{}', a value after it is
-# unexpected
+# a whole array is not compared with a number
 
-type p { x }
-dat x = p[2] 1
-func main() { }
+func main() {
+    var a = i8[2]
+    var z = a == 1
+}

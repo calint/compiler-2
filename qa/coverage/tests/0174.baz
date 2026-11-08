@@ -1,5 +1,6 @@
-# duplicate type declarations are rejected
+# array_length requires an opening parenthesis
 
-type x { a }
-type x { b }
-func main() {}
+func main() {
+    var x = i8[2]
+    var n = array_length x
+}

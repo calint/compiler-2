@@ -1,12 +1,8 @@
-# a constructor call reached into where an array is expected, rejected at
-# its type
-type pt { x, a i8[3] }
-
-func pt.at(v) self {
-    self.x = v
-    self.a = {}
-}
+# a 'foo' body that assigns a variable 'in' is not read as 'foo e in arr'
 
 func main() {
-    exit(array_length(pt.at(1).a))
+    var arr = []{1, 2, 3}
+    var in = 0
+    foo arr in = in + e
+    exit(in)
 }

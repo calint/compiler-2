@@ -1,10 +1,5 @@
-# boolean arrays_equal result used in non-boolean arithmetic argument
+# empty brace data arrays require a size
 
-func take(value i16) {
-}
+dat value = i8[]{}
 
-func main() {
-    var src = i8[2]
-    var cmp = i8[2]
-    take(arrays_equal(src, cmp, 2))
-}
+func main() {}

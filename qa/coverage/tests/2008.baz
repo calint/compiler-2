@@ -1,15 +1,9 @@
-# a call where a function takes an array, its result of another type than
-# the elements
+# a function that lacks its body before a type definition is reported at the
+# 'type', as before any other definition
+
+func f()
 
 type point {x, y}
 
-func mk() res point {
-    res = {}
-}
-
-func f(s i8[]) {
-}
-
 func main() {
-    f(mk())
 }

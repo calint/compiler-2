@@ -1,4 +1,0 @@
-
-2097.baz:6:21: expected ',' or '>' after generic argument '1'
-type s = list<i8, 1 << 4>
-                    ^

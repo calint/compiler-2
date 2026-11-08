@@ -1,7 +1,9 @@
-# a function cannot have the name of a generic function
+# an alias names a generic type, not a type
 
-func f<T type>() {}
+type name {
+    x,
+}
 
-func f() {}
+type str = name<8>
 
 func main() {}

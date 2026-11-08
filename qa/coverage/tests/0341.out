@@ -1,4 +1,4 @@
 
-0341.baz:3:17: expected a constant array size greater than 0
-dat values = i8[0]
-                ^
+0341.baz:5:21: expected ',' followed by a value for field 'y' in type 'p'
+    var value = p{1 2}
+                    ^

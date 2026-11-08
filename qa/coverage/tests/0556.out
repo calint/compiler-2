@@ -1,2 +1,4 @@
 
-panic: bounds at 0556.baz:7
+0556.baz:8:15: 'self' is a keyword
+func list.add(self) {
+              ^~~~

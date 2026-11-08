@@ -1,8 +1,8 @@
-# the array of a built-in is not a call
-func f(x) res i8 {
+# a type parameter is not named like the result
+func f<res type>(x res) res res {
     res = x
 }
 
 func main() {
-    var n = array_length(f(1))
+    exit(f<i8>(1))
 }

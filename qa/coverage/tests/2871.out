@@ -1,4 +1,0 @@
-
-2871.baz:4:14: ';' is not used, a statement ends at the line
-    var x = 3;
-             ^

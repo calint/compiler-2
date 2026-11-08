@@ -1,11 +1,9 @@
-# a built-in type parameter where the destination gives the type names the
-# type it is bound to
-type seg {a i8, b i8}
+# a string for a parameter that is not an array
 
-func f<T type>() {
-    var s = seg{T}
+func f(x) res {
+    res = x
 }
 
 func main() {
-    f<i8>()
+    var n = f("a")
 }

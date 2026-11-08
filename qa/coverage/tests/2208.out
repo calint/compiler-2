@@ -1,7 +1,4 @@
 
-2208.baz:6:31: index 5 is out of bounds for array 'x' of size 4
-    var q = i8[array_length(x[5].a)]
-                              ^
-2208.baz:12:14: called from 'g(m)'
-    exit(int(g(m)))
-             ^
+2208.baz:5:14: unsupported escape '\\xe2\x82'
+    var s = "\\xe2\x82"
+             ^~~~~~~~~

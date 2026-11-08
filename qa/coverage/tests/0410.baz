@@ -1,30 +1,11 @@
-# non-inline reference arguments: narrow writes, globals and inline forwarding
+# a non-inline result is written to an element of an array literal
 
-func assert(err, expr bool) { if not expr exit(err) }
+func assert(err, ok bool) { if not ok exit(err) }
 
-var calls = 0
-
-func bump(value mut i16) {
-    value = value + 1
-}
-
-func noinline update(value mut i16, other mut i16) {
-    var local = value
-    bump(value)
-    other = other + local
-    calls = calls + 1
-}
+func noinline target() result { result = 1 }
 
 func main() {
-    var before = i16(1234)
-    var value = i16(-7)
-    var after = i16(2345)
-    var other = i16(20)
-
-    update(value, other)
-    assert(1, value == -6)
-    assert(2, other == 13)
-    assert(3, calls == 1)
-    assert(4, before == 1234)
-    assert(5, after == 2345)
+    var result = [2]{target()}
+    assert(1, result[0] == 1)
+    assert(2, result[1] == 0)
 }

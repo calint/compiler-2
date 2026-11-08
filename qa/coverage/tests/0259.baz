@@ -1,12 +1,3 @@
-# string escape decoding
+# malformed single-statement if block inside a braced function
 
-func print(str i8[], len) {
-    write(1, str, len)
-}
-
-dat escapes = "\t\r\v\f`"
-dat output = "token escapes\n"
-
-func main() {
-    print(output, array_length(output))
-}
+func main() { if true } }

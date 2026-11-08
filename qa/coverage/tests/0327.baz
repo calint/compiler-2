@@ -1,7 +1,9 @@
-# combined bounds checks without line output
+# valid four-byte element scaling
+
+func assert(expr bool) { if not expr exit(1) }
 
 func main() {
-    var values = i8[8]
-    var index = 8
-    values[index] = 1
+    var values = i32[2]
+    values[1] = 1
+    assert(values[1] == 1)
 }

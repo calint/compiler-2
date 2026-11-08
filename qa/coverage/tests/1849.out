@@ -1,4 +1,4 @@
 
-1849.baz:5:10: type 'pt' is not generic, it takes no type arguments
-func f(a pt<i8>) {
-         ^~
+1849.baz:3:9: the file name is empty
+include ""
+        ^~

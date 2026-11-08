@@ -1,8 +1,13 @@
-# a type parameter in a message names the type it is bound to
-func f<U type>() res i16 {
-    res = U
+# a type parameter is not named like its function, also when bound to a user
+# type
+func f<f type>(x f) res f {
+    res = x
 }
 
+type p { v }
+
 func main() {
-    var x = f<i8>()
+    var a = p{1}
+    var b = f<p>(a)
+    exit(b.v)
 }

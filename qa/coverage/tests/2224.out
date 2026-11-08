@@ -1,4 +1,10 @@
 
-2224.baz:12:23: a call of 'gn' is not an array
-    exit(array_length(gn<box<i8>>().a))
-                      ^~
+include/bad.baz:2:5: 'x' not found
+    x = 1
+    ^
+include/via.baz:1:9: included from
+include "bad.baz"
+        ^~~~~~~~~
+2224.baz:3:9: included from
+include "include/via.baz"
+        ^~~~~~~~~~~~~~~~~

@@ -1,4 +1,7 @@
 
-1989.baz:6:12: parameter 'T' is also the name of the generic parameter of 'box' at 5:10, use another name
-func box.f(T) {}
-           ^
+1989.baz:6:9: 'U' names the type 'point'
+    var U = 2
+        ^
+1989.baz:11:5: instantiated by 'f<point>'
+    f(p)
+    ^

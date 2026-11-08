@@ -1,4 +1,4 @@
 
-0788.baz:3:16: generic parameter 'T' is declared twice
-func f<T type, T type>(x T) {
-               ^
+0788.baz:3:19: expected '}' to close block
+func f<T type>() {
+                  ^

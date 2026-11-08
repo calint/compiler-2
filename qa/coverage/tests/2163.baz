@@ -1,4 +1,5 @@
-# a character literal that ends with a '\' at the end of the file is
-# unterminated
+# an index of a call of a function that is not defined where an array is
+# expected
 func main() {
-    var c = '\
+    exit(array_length(nope()[0]))
+}

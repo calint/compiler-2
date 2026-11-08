@@ -1,14 +1,4 @@
-# incompatible user types cannot be passed
+# void function results cannot be negated
 
-type left { value }
-type right { value }
-
-func make() result right {
-    result.value = 1
-}
-
-func take(value left) {}
-
-func main() {
-    take(make())
-}
+func f() {}
+func main() { var x = -f() }

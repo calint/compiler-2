@@ -1,4 +1,8 @@
-# a character literal of two escapes holds more than one character
+# the array of a built-in is not a call
+func f(x) res i8 {
+    res = x
+}
+
 func main() {
-    var c = '\n\n'
+    var n = array_length(f(1))
 }

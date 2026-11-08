@@ -1,13 +1,10 @@
-# a condition after a branch true at the parse reads no unset result
+# a result of 1 TiB, its definite assignment is traced by byte ranges
 
-func f() res {
-    if true {
-        res = 1
-    } else if res == 2 {
-        res = 3
-    }
+type huge {a i8[1099511627776]}
+
+func f() res huge {
+    res = {}
 }
 
 func main() {
-    exit(f())
 }

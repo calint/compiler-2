@@ -1,4 +1,4 @@
 
-0487.baz:5:12: 'b' of type 'i16' is wider than 'a' of type 'i8', swap the operands: 'b > a'
-    if a < b { exit(1) }
-           ^
+0487.baz:3:26: too many elements for array of size 3
+    var a = [3]{1, 2, 3, 4}
+                         ^

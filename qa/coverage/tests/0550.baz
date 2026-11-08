@@ -1,5 +1,8 @@
-# an empty string cannot give a 'var' array its size
+# methods on built-in types are not supported
+
+func i32.abs() res i32 {
+    res = self
+}
 
 func main() {
-    var empty = ""
 }

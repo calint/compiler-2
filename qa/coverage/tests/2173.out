@@ -1,0 +1,4 @@
+
+2173.baz:4:15: a carriage return is not followed by a line feed
+    var s = "a\x0db"
+              ^~~~

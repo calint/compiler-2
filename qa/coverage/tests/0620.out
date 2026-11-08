@@ -1,4 +1,4 @@
 
-0620.baz:5:13: a 'bool' is not an arithmetic operand, convert it, e.g. 'int(true)'
-    n = n + true
-            ^~~~
+0620.baz:10:14: read-only 'i' cannot be passed to a 'mut' parameter, 'i' is the index of 'foo'
+        skip(i)
+             ^

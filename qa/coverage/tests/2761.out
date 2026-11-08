@@ -1,4 +1,0 @@
-
-2761.baz:9:30: count 4096 is past the end of array 'a' of any size
-    res = arrays_equal(a, b, 0x1000)
-                             ^

@@ -1,7 +1,11 @@
-# --checks=overflow: the negation of the minimum of the width panics
-func noinline neg(a i16) res i16 { res = -a }
+# a local of a callee with the name of a variable the caller passes as 'mut' is another variable
+func f(p mut i32) res i32 {
+    var acc = i32(5)
+    p = acc
+    res = acc
+}
 func main() {
-    var a = i16(-32768)
-    var x = neg(a)
-    exit(x)
+    var acc = i32(1)
+    var r = f(acc)
+    exit(acc + r)
 }

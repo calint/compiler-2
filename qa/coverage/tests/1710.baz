@@ -1,16 +1,21 @@
-# a constant that hides a generic function does not hide its call: 'mk()'
-# deduces its type from the 'bool' destination like without the constant
+# the arrays of 'array_copy' are computed before the count: the call in the
+# count reads 'n' after the call in an array argument wrote it
+var n = 0
 
-func mk<T type>() res T {
-    res = {}
+func w() res {
+    n = 2
+    res = 0
+}
+
+func f() res {
+    res = n
 }
 
 func main() {
-    var b = bool
-    let mk = 1
-    b = mk()
-    if b {
-        exit(2)
-    }
-    exit(mk)
+    var a = i8[4]
+    a[0] = 4
+    a[1] = 5
+    var b = i8[4]
+    array_copy(a[w()], b, f())
+    exit(b[1])
 }

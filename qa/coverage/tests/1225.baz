@@ -1,10 +1,14 @@
-# --checks=shift: the count of a shift in an 'i8' expression is compared with
-# the width of 'i8' also when the expression is computed in a wider register
+# the 'n' of a 'foo' over an unsized array parameter is the length of the
+# argument, also where a 'let' reads it
+func uses(s i8[]) res int {
+    res = 0
+    foo s {
+        let m = n
+        res = m
+    }
+}
+
 func main() {
-    var n = i8(9)
-    var a = i8(1)
-    var b = i8(0)
-    var c = i8(2)
-    b = c + (a << n)
-    exit(b)
+    var a = i8[4]
+    exit(uses(a))
 }

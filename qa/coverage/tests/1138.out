@@ -1,4 +1,4 @@
 
-1138.baz:7:16: 'm' is not a constant
-    var a = i8[m]
-               ^
+1138.baz:6:23: a sector of 512 elements from index 600 is past the end of array 'a' of size 1024
+    sector_read(0, a, 600)
+                      ^

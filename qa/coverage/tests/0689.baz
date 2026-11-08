@@ -1,14 +1,6 @@
-# a constructor name follows the dot
-
-type point {
-    x,
-    y
-}
-
-func point.at(x, y) self {
-    self.x = x
-    self.y = y
-}
+# a string is not a constant operand of let
 
 func main() {
-    var p = point.
+    let s = "abc"
+    exit(3)
+}

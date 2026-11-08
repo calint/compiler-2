@@ -1,5 +1,3 @@
-1234:ABCD
-0000:0001
-FEDC:1234
-FFFF:FFFF
-10A0:B0C0
+hello "world" 
+ from 'baz'
+  

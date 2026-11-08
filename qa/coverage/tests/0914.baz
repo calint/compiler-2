@@ -1,10 +1,12 @@
-# a constant shift count from unary operators is checked like a literal, '~n'
-# is -4
+# the same for a non-inlined function
 
-let n = 3
+dat g = i32[4]{ 1, 2, 3, 4 }
+
+func noinline put(x mut i32, k i32) {
+    x = k + (100 - g[3])
+}
 
 func main() {
-    var a = 1
-    a = a << ~n
-    exit(a)
+    put(g[3], 10)
+    exit(g[3])
 }

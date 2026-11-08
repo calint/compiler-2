@@ -1,4 +1,7 @@
 
-2002.baz:3:18: expected a type name, got a string
-func f<T type>(a "i8") {
-                 ^~~~
+2002.baz:10:13: 'point.get' is a method, call it on a value of type 'T (point)'
+    res = T.get()
+            ^~~
+2002.baz:14:13: instantiated by 'mk<point>'
+    var p = mk<point>()
+            ^~

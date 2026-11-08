@@ -1,0 +1,4 @@
+
+1664.baz:13:13: expected type 'i32', got 'point'
+        n = mk()
+            ^~

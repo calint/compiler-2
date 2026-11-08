@@ -1,4 +1,0 @@
-
-1203.baz:6:9: expected type 'i32', got 'bool', use 'i32(...)'
-    r = b
-        ^

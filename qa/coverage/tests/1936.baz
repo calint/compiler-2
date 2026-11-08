@@ -1,17 +1,6 @@
-# an empty string assigned to an unsized array parameter zeroes it like '{}'
-
-func clear(s mut i8[]) {
-    s = ""
-}
-
-func noinline clear_noinline(s mut i8[]) {
-    s = ""
-}
-
+# a compared array literal keeps the operand message
 func main() {
-    var a = i8[2]{5, 5}
-    clear(a)
-    var b = i8[3]{6, 6, 6}
-    clear_noinline(b)
-    exit(a[1] + b[2] + 7)
+    var a = i8[2]{1, 2}
+    var b = true
+    b = i8[2]{1, 2} == a
 }

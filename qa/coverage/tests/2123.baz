@@ -1,9 +1,8 @@
-# a generic call is not an array
-
-func zero<T type>() res T {
-    res = {}
-}
-
+# a lone '=' after a parenthesized operand
 func main() {
-    exit(array_length(zero<i8>()))
+    var x = 1
+    if (x + 1) = 2 {
+        exit(1)
+    }
+    exit(2)
 }

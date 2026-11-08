@@ -1,6 +1,5 @@
-# a second 'var' of the same name in one scope is rejected
+# dat requires a declared name
 
-func main() {
-    var x = 0
-    var x = 0
-}
+dat = 1
+
+func main() {}

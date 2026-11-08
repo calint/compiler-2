@@ -1,3 +1,12 @@
-# a string that the end of the file ends is unterminated
+# a constructor call reached into where an array is expected, rejected at
+# its type
+type pt { x, a i8[3] }
+
+func pt.at(v) self {
+    self.x = v
+    self.a = {}
+}
+
 func main() {
-    var s = "abc
+    exit(array_length(pt.at(1).a))
+}

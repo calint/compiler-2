@@ -1,8 +1,8 @@
-# a variable without a type gives its initializer none to deduce from
-func make<T type>() res T {
-    res = 1
-}
+# rv32i: 'i64' is not available, also in a field that is only copied
+type pair {a i64, b i32}
 
 func main() {
-    var x = make()
+    var x = pair
+    var y = x
+    exit(y.b)
 }

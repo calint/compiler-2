@@ -1,4 +1,4 @@
 
-0240.baz:5:14: expected a definition ('func', 'type', 'var', 'let' or 'dat'), got '1'
-dat x = p[2] 1
-             ^
+0240.baz:5:13: array 'a' must be indexed
+    var z = a == 1
+            ^

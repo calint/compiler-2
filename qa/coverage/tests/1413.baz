@@ -1,18 +1,10 @@
-# a generic parameter hides a generic type of its name
-type list<T type, n> {
-    items T[n],
+# a function named like an integer type could never be called, its call is a
+# conversion
+
+func int(a) res {
+    res = a + 100
 }
-
-type pt {x, y}
-
-func f<list type>(x list) res {
-    var t = list{5, 6}
-    res = t.y + x.x
-}
-
-type l4 = list<i8, 4>
 
 func main() {
-    var l = l4
-    exit(f(pt{1, 2}) + array_length(l.items))
+    exit(int(2))
 }

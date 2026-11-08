@@ -1,6 +1,7 @@
-# a built-in type followed by '.' is reported like a user type without that
-# constructor, wherever it stands
+# an array literal followed by an arithmetic operator that starts a 'var' is
+# an array that is not a number, as in an assignment: the message is at the
+# literal, not "unexpected '+'"
 
 func main() {
-    var y = i8.x
+    var a = i8[2]{1, 2} + 1
 }

@@ -1,0 +1,4 @@
+
+0117.baz:8:23: variable 'x' is read before it is set
+    var x = i32(foozi(x))
+                      ^

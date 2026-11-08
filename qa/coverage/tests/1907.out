@@ -1,4 +1,4 @@
 
-1907.baz:5:1: expected ',' or ')' after parameter 'a'
-func main() {}
-^
+1907.baz:8:9: a call of 'f' is not an array
+    a = f()
+        ^

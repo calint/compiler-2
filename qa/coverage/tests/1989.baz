@@ -1,8 +1,12 @@
-# a parameter of a method of a generic type named like a type parameter of
-# the type is rejected at the definition, also without an instance and when
-# the parameter is bound to a user type
+# a variable is not named like a type parameter bound to a user type either,
+# so the argument does not decide whether the definition is accepted
+type point { x i8 }
 
-type box<T type> {x T}
-func box.f(T) {}
+func f<U type>(v U) {
+    var U = 2
+}
+
 func main() {
+    var p = point{1}
+    f(p)
 }

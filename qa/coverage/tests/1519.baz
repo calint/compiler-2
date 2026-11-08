@@ -1,10 +1,5 @@
-# a generic body sees only the globals defined before it, like a plain body
-func get<T type>() res T {
-    res = limit
-}
-
-var limit = 7
-
+# rv32i: 'i64' is not available, also in an array that is only written out
 func main() {
-    exit(get<i8>())
+    var a = i64[2]
+    write(1, a)
 }

@@ -1,34 +1,9 @@
-# '{}' assigned is the zero value of an instance or an array, '0' and 'false'
-# of a built-in
+# a user type instance is compared only with an instance of the same type
+type point { x i32, y i32 }
+type other { x i32, y i32 }
 
-func assert(err, ok bool) { if not ok exit(err) }
-type p {x, y}
-type q {a p, arr i8[4]}
-func mk() res p {
-    res = {}
-}
-func wrap<T type>() res T {
-    res = {}
-}
 func main() {
-    var a = mk()
-    a.x = 5
-    a = {}
-    assert(1, a.x == 0)
-    var z = wrap<q>()
-    z.a.x = 3
-    z.a = {}
-    assert(2, z.a.x == 0)
-    var n = 7
-    n = 0
-    assert(3, n == 0)
-    var f = true
-    f = false
-    assert(4, not f)
-    var arr = i8[4]
-    arr[1] = 9
-    arr = {}
-    assert(5, arr[1] == 0)
-    z = {}
-    assert(6, z.arr[0] == 0)
+    var a = point{1, 2}
+    var b = other{1, 2}
+    if a == b exit(1)
 }

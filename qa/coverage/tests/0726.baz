@@ -1,22 +1,9 @@
-# x86: a division needs 'rdx' while the iterator of a loop holds it
-
-dat a = []{1, 2}
+# and with zero and or with all bits yield constants
 
 func main() {
-    var x = 100
-    foo a {
-        foo a {
-            foo a {
-                foo a {
-                    foo a {
-                        foo a {
-                            foo a {
-                                x = x / i
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
+    var a = 5
+    var b = 6
+    a = a & 0
+    b = b | -1
+    exit(a + b + 1)
 }

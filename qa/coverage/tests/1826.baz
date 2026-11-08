@@ -1,11 +1,7 @@
-# a 'dat' checks the elements of a condition in a field after the one that
-# decides it
+# a field declared twice is reported where it is read, before an error in a
+# later field
 
-type r {b bool, n i32}
-
-dat d = r{true or 1 / 0 == 1, 2}
+type p {x, x, y qq}
 
 func main() {
-    if not d.b exit(1)
-    exit(0)
 }

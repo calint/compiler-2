@@ -1,9 +1,4 @@
-# an error in a function of an included file is shown with the call, also
-# when its offset in its file is inside the call in the calling file
-
-include "include/frame.baz"
-
+# an include is only in global scope
 func main() {
-    var x = divide(0)
-    exit(x)
+    include "include/util.baz"
 }

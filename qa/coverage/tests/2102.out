@@ -1,4 +1,4 @@
 
-2102.baz:6:28: expected argument 2 ('b')
-func main() { g(point{1, 2}) }
-                           ^
+2102.baz:4:17: a string is not a number, it fills only an array of 'i8'
+    var x = 1 + "€😀"
+                ^~~~

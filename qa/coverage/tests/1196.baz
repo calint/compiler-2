@@ -1,28 +1,10 @@
-# the innermost declaration of a name hides the others: a constant hides a
-# variable, a variable a constant, a parameter a constant of the generic
-# type and a constant a type
-
-func assert(err, ok bool) { if not ok exit(err) }
-
-type point {x, y}
-
-type box<n> {a i8[n]}
-
-func box.size(n) res { res = n }
-
-type box5 = box<5>
-
-var v = 1
-let c = 2
+# a 'bool' converted to an integer is 1 for 'true' and 0 for 'false'
 
 func main() {
-    let v = 3
-    assert(1, v == 3)
-    var c = 4
-    assert(2, c == 4)
-    var b = box5
-    assert(3, b.size(6) == 6)
-    let point = 7
-    var p = point
-    assert(4, p == 7)
+    var b = true
+    var c = false
+    var r = i32(0)
+    r = i32(b)
+    var s = i8(c)
+    exit(r * 2 + s)
 }

@@ -1,6 +1,6 @@
-# array_length requires a closing parenthesis
+# a second 'var' of the same name in one scope is rejected
 
 func main() {
-    var x = i8[2]
-    var n = array_length(x
+    var x = 0
+    var x = 0
 }

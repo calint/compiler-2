@@ -1,4 +1,7 @@
 
-1394.baz:13:14: argument 1 'w.ps[0].x' may share storage with the result destination 'w.ps[0]' (both name 'w'), use a temporary variable for one of them
-    w = {{mk(w.ps[0].x), {5, 6}}}
-             ^
+1394.baz:11:7: argument 1 'g' may share storage with the global 'g' that 'h' uses, use a temporary variable for one of them
+    h(g)
+      ^
+1394.baz:15:5: called from
+    f()
+    ^

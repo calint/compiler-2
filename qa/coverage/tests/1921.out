@@ -1,4 +1,4 @@
 
-1921.baz:3:16: a result cannot be an array, pass the array as a 'mut' parameter
-func f() res i8[3] {
-               ^
+1921.baz:4:15: parameter 'a' already defined at 4:12
+func box.f(a, a) { }
+              ^

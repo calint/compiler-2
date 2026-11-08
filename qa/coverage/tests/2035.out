@@ -1,4 +1,4 @@
 
-2035.baz:5:13: an instance of 'point' is not a number
-    var p = point{1, 2} + 1
-            ^~~~~
+2035.baz:6:9: index 'i' of 'foo' over 2147483649 elements does not fit 'i32', give a count
+    foo a {
+        ^

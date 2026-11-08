@@ -1,21 +1,17 @@
-# a constant count with a constant start is checked at compile time, its
-# range is not checked again at run time; a run-time start is checked up to
-# the length in its walk and its range after the count
+# a method of a call result is called on a variable, the result is stored
+# first, like for a field
+type pt {
+    x,
+}
+
+func mk() res pt {
+    res = {1}
+}
+
+func pt.sum() res int {
+    res = self.x
+}
+
 func main() {
-    var a = i8[]{1, 2, 3, 4}
-    var b = i8[4]
-    var s = 0
-    foo a, 2 {
-        s = s + e
-    }
-    array_copy(a[1], b, 2)
-    array_copy(a, b, 4)
-    if arrays_equal(a[1], b, 2) {
-        s = s + 1
-    }
-    write(1, b, 2, 1)
-    write(1, a, 2)
-    var i = 1
-    array_copy(a[i], b, 2)
-    exit(s)
+    exit(mk().sum())
 }

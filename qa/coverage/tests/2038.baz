@@ -1,7 +1,16 @@
-# an instance literal with no values whose type the destination gives is
-# written as the zero value '{}'
-type point {x i32, y i32}
-type line {a point, b point}
+# a 'let' of the 'n' of a 'foo' over an unsized array parameter is a constant
+# at a noinline call that gives the length, as 'n' is: 's[m]' past the end is
+# rejected like 's[n]'
+
+func noinline last(s i8[]) res i8 {
+    res = 0
+    foo s {
+        let m = n
+        res = s[m]
+    }
+}
+
 func main() {
-    var l = line{{1, 2}, point{}}
+    var a = i8[4]
+    exit(last(a))
 }

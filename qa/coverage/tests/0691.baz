@@ -1,13 +1,7 @@
-# a constant quotient that wraps folds to the wrapped value unless the
-# division check is on, then it is rejected like a constant zero divisor
+# read cannot fill a constant
+
+let c = 5
 
 func main() {
-    var zero = 0
-    if zero != 0 {
-        var e = 5 / -1
-        var f = i8(0)
-        f = -128 / -1
-        exit(e + f)
-    }
-    exit(7)
+    read(0, c, 1)
 }

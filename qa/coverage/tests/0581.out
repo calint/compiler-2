@@ -1,4 +1,4 @@
 
-0581.baz:9:15: array 'arr' must be indexed
-    var x = f(arr)
-              ^~~
+0581.baz:4:13: constant '257' does not fit 'n' of type 'i8'
+    if n == 200 + 57 { exit(1) }
+            ^

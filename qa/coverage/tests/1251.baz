@@ -1,9 +1,8 @@
-# a register error in an included file names the file of each location in
-# the message and in the register report
-include "include/say.baz"
+# a constant in the body of a function that repeats a named result is rejected
+func f() r {
+    let r = 2
+}
 
 func main() {
-    var text = "hi\n"
-    var k = write(say(text) - 2, text)
-    exit(k)
+    exit(f())
 }

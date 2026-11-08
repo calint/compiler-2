@@ -1,4 +1,2 @@
 
-2064.baz:3:9: a call runs only inside a function, not in the initializer of a global
-var g = nope()
-        ^~~~
+panic: division

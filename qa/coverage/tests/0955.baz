@@ -1,25 +1,9 @@
-# aliasing: two run-time indexes in a path, the read is of the same field
-# of an element that both indexes can select
-# the call is rejected: the function reads the global the argument is part of
-
-type item {
-    f i32,
+# --checks=division: a zero divisor panics
+func noinline div(a, b) res {
+    res = a / b
 }
-
-type ent {
-    items item[2],
-}
-
-dat es = ent[3]
-
-func put(x mut i32) {
-    x = 100 - es[0].items[1].f
-}
-
 func main() {
-    var i = 0
-    var j = 1
-
-    put(es[i].items[j].f)
-    exit(es[0].items[1].f - 100)
+    var z = 0
+    var x = div(7, z)
+    exit(x)
 }

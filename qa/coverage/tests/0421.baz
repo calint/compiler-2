@@ -1,4 +1,4 @@
-# a non-inline argument can have unary operators, it is passed in a temporary
+# reject redefinition of the reserved exit builtin
 
-func noinline target(parameter) { exit(parameter + 5) }
-func main() { var value = 1 target(-value) }
+func exit() {}
+func main() {}

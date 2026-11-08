@@ -1,4 +1,4 @@
 
-1665.baz:5:12: unexpected '='
-    n = {} = 1
+1665.baz:9:12: an instance of 'point' is not a 'bool'
+        if p {
            ^

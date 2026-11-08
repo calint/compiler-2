@@ -1,7 +1,12 @@
-# data instance initializer requires the type name
+# the element of 'foo' over an array parameter without 'mut' cannot be assigned
 
-type point { x i16, y i16 }
+func f(d i8[], n) {
+    foo d, n {
+        e = 1
+    }
+}
 
-dat p = { 1, 2 }
-
-func main() {}
+func main() {
+    var a = i8[2]{ 1, 2 }
+    f(a, 2)
+}

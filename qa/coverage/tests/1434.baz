@@ -1,7 +1,14 @@
-# a control character in the name of an included file, e.g. a NUL that would
-# end the path early
+# a function named like a type is called in an initializer as anywhere else
+type point { x }
 
-include "1434\x00.baz"
+func point(a) res {
+    res = a
+}
 
 func main() {
+    var y = point(3)
+    let z = point(4)
+    var p = point
+    p.x = y + z
+    exit(p.x)
 }

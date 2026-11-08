@@ -1,16 +1,11 @@
-# an inlined recursion that does not end at compile time inside a version of
-# a call with an indexed argument (rv32i) fails as without versions
-func f(x mut) {
-    if x > 0 {
-        x = x - 1
-        f(x)
-    }
+# a generic call deduced from its argument where an array is expected
+type pt { x, a i8[3] }
+
+func gm<T type>(v T) res pt {
+    res = {}
 }
 
 func main() {
-    var a = [4]
-    var i = 1
-    a[i] = 3
-    f(a[i])
-    exit(a[i])
+    var n = i8(1)
+    exit(array_length(gm(n)))
 }

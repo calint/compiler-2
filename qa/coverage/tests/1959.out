@@ -1,4 +1,4 @@
 
-1959.baz:5:9: expected type 'point', got 'i64[]'
-    p = [2]{1, 2}
+1959.baz:9:9: array 'a' must be indexed
+    p = a
         ^

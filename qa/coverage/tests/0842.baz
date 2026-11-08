@@ -1,8 +1,8 @@
-# a whole array is not compared with an instance of its element type
-type point { x i32, y i32 }
-
+# the code ends with the jump of a loop that is left by 'exit'
 func main() {
-    var a = point[2]
-    var p = point{1, 2}
-    if a == p exit(1)
+    var i = 0
+    loop {
+        if i == 3 exit(i)
+        i = i + 1
+    }
 }

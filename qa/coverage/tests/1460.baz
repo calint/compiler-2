@@ -1,4 +1,13 @@
-# a type is declared only in global scope
+# the call on the left of the comparison
+type point {x, y}
+
+func mk() res point {
+    res = {1, 2}
+}
+
 func main() {
-    type point { x, y }
+    var p = point{1, 2}
+    if mk() != p {
+        exit(1)
+    }
 }

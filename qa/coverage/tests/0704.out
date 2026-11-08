@@ -1,4 +1,4 @@
 
-0704.baz:10:10: constant 'c' cannot be passed to a 'mut' parameter
-    bump(c)
-         ^
+0704.baz:9:22: shift count must be 0 to 63 for 64-bit values
+        var a = 1 << n
+                     ^

@@ -1,4 +1,4 @@
 
-2000.baz:5:13: variable 'b' is read before it is set
-    var b = b == 1
-            ^
+2000.baz:13:15: 'point.at' is a constructor, call it as 'point.at(...)'
+    var q = p.at<i8>(1, 2)
+              ^~

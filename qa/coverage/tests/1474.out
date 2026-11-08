@@ -1,2 +1,4 @@
-ABC
-4
+
+1474.baz:5:12: '{}' is a whole value, an operator cannot follow it
+    b = {} and c
+           ^

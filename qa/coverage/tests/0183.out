@@ -1,4 +1,4 @@
 
-0183.baz:3:15: expected '{' to begin block
-func f() r int.x { r = 1 }
-              ^
+0183.baz:3:23: function 'nope' not found
+func main() { var x = nope(1) }
+                      ^~~~

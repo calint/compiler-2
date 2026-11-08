@@ -1,4 +1,0 @@
-
-0248.baz:5:13: expected '(' after function name
-    var z = arrays_equal a,a,1
-            ^~~~~~~~~~~~

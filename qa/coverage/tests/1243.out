@@ -1,4 +1,4 @@
 
-1243.baz:12:12: expected type 'i64', got 'bool', use 'i64(...)'
-    exit(w(nb()))
-           ^~
+1243.baz:9:11: expected argument 1 ('x')
+    b.put()
+          ^

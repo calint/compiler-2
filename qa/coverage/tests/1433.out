@@ -1,4 +1,4 @@
 
-1433.baz:9:16: generic parameter 'T' of 'id' needs a type, got a string
-    var y = id<"i8">(x)
-               ^~~~
+1433.baz:4:11: expected '(' after method name
+func text.print
+          ^~~~~

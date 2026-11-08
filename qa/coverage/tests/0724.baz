@@ -1,8 +1,6 @@
-# an instance value starts with '{'
+# rv32i: data beyond the 32-bit address range
 
-type point { x, y }
+dat a = i8[5000000000]
 
 func main() {
-    var q = point{3, 4}
-    q = (1)
 }

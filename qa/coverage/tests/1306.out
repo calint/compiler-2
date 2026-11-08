@@ -1,4 +1,4 @@
 
-1306.baz:7:7: a unary operator makes a value, not an array
-    f(-a)
-      ^
+1306.baz:6:16: a comparison makes a condition, which is not an operand here, store it in a 'bool' first
+    if b != (x < 1) {
+               ^

@@ -1,15 +1,6 @@
-# a system call inside nested loops keeps the loop register 'r11' of x86
+# an instance field whose size exceeds the signed 64-bit range
 
-dat a = i8[]{65, 10}
+type big { a i32[4611686018427387904] }
 
 func main() {
-    foo a {
-        foo a {
-            foo a {
-                foo a {
-                    write(1, a, 2)
-                }
-            }
-        }
-    }
 }

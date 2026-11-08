@@ -1,6 +1,6 @@
-# a built-in type as a function name is reported whatever follows the '('
+# a keyword after the '=' of an alias is no generic type
 
-func i8(.x) {}
+type list<n> { items i8[n] }
+type str =
 
-func main() {
-}
+func main() {}

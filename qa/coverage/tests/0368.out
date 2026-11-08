@@ -1,0 +1,4 @@
+
+0368.baz:6:9: 'value' is not an array
+    foo value {}
+        ^~~~~

@@ -1,6 +1,9 @@
-# --checks=overflow: a sum that overflows in a constant expression is rejected
+# a result is named like a variable
+
+func f() true int {
+    true = 1
+}
 
 func main() {
-    let x = 9223372036854775807 + 1
-    exit(x)
+    exit(f())
 }

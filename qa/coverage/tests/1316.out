@@ -1,4 +1,4 @@
 
-1316.baz:6:9: a call of 'read' is not an array
-    a = read(0, buf, 4)
-        ^~~~
+1316.baz:11:13: expected type 'i64', got 'bool', use 'i64(...)'
+    s = {1, t()}
+            ^

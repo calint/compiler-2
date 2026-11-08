@@ -1,13 +1,10 @@
-# a 'mut' argument names a global that the body reads after it wrote the
-# parameter
-var g = 5
-
-func f(p mut) {
-    p = 1
-    var x = g
-    exit(x)
-}
-
+# a path may go on after whitespace and line ends around its '.'
+type item {x, y}
+type world {array item[2]}
 func main() {
-    f(g)
+    var entities = world
+    entities.array[1].y = 3
+    var a = entities.
+        array  [1] .y
+    exit(a)
 }

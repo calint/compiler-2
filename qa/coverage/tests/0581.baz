@@ -1,10 +1,5 @@
-# a whole array passed to a scalar parameter
-
-func f(v i32) result i32 {
-    result = v
-}
-
+# a comparison may not truncate a folded constant
 func main() {
-    var arr = i32[2]
-    var x = f(arr)
+    var n = i8(1)
+    if n == 200 + 57 { exit(1) }
 }

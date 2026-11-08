@@ -1,10 +1,7 @@
-# '{}' is the zero value of a field in an instance literal
+# a user type instance is not compared with a number by an operator
+type point { x i32, y i32 }
 
-func assert(err, ok bool) { if not ok exit(err) }
-type p {x, y}
-type line {a p, b p}
 func main() {
-    var l = line{{}, {5, 6}}
-    assert(1, l.a.x == 0 and l.a.y == 0)
-    assert(2, l.b.y == 6)
+    var a = point{1, 2}
+    if a == 1 exit(1)
 }

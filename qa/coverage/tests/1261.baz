@@ -1,11 +1,5 @@
-# a variable in the body of a noinline function that repeats 'res' is
-# rejected
-func noinline f(x) res {
-    res = x
-    var res = 7
-    res = 9
-}
-
+# a bool compared with an integer in a condition is rejected
 func main() {
-    exit(f(3))
+    var b = true
+    if b != 2 exit(2)
 }

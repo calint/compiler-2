@@ -1,8 +1,0 @@
-# a sector led by an 'i32' is computed at 'i32', so an 'i64' in it is narrowed
-# and rejected, as in 'var t = s + k'
-func main() {
-    var b = i8[512]
-    var s = i32(1)
-    var k = i64(2)
-    sector_read(s + k, b)
-}

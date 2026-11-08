@@ -1,0 +1,4 @@
+
+1308.baz:5:15: 'N' is a constant, it has no field 'x'
+    var a = N.x
+              ^

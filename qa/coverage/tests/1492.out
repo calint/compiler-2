@@ -1,4 +1,4 @@
 
-1492.baz:5:12: '{}' is a whole value, an operator cannot follow it
-    b = {} and c
-           ^
+1492.baz:5:11: 'and' makes a condition, which is not an operand here, store it in a 'bool' first
+    if (t and f) == f {
+          ^~~

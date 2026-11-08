@@ -1,25 +1,10 @@
-# the check of a body without its call goes on after an inlined recursion
-# that an argument it does not know drives past the nesting limit, to the
-# 'h(3)' after it
+# the check of a body without its calls rejects an inlined recursion without
+# arguments, which passes the nesting limit at every call; 'f' has a result,
+# so its check takes from a call
 
-func g(n, k) res {
-    if n == 0 {
-        res = k
-        return
-    }
-    res = g(n - 1, k)
-}
-
-func h(k) res {
-    var a = i8[2]
-    res = a[k]
-}
-
-func f(x) res {
-    res = x + g(x, 70)
-    res = res + h(3)
+func f() res i32 {
+    res = f()
 }
 
 func main() {
-    exit(0)
 }

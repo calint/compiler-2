@@ -1,12 +1,14 @@
-# a call that writes is an argument of 'write', the inner call needs the
-# registers that the outer call holds
+# a local that hides a global does not share storage with the global that an
+# inlined body reads
 
-func say(text i8[]) res {
-    res = write(1, text)
+var total = 3
+
+func bump(value mut) {
+    value = total + 1
 }
 
 func main() {
-    var text = "hi\n"
-    var k = write(say(text) - 2, text)
-    exit(k)
+    var total = 7
+    bump(total)
+    exit(total)
 }

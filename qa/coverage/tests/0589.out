@@ -1,0 +1,4 @@
+
+0589.baz:15:15: 'point.at' is a constructor, call it as 'point.at(...)'
+    var q = p.at(1, 2)
+              ^~

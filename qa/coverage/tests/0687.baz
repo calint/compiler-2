@@ -1,6 +1,8 @@
-# an array field gets its initializer after a delimiter
+# 'noinline' is a keyword, not a function name
 
-type p { x, y[2] }
-dat x = p{1 2}
+func noinline() {
+}
 
-func main() {}
+func main() {
+    exit(3)
+}

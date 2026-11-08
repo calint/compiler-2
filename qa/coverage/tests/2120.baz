@@ -1,16 +1,5 @@
-# an inlined recursion that a constant argument ends, in the check of its
-# body: a deeper level that does not fold binds an instance literal argument
-# in a temporary of its block
-
-type point {x, y}
-
-func rec(n, p point) res {
-    res = {}
-    if n > 0 {
-        res = rec(n - 1, {1, 2}) + p.x
-    }
-}
-
+# an array without a size and an element type
 func main() {
-    exit(rec(3, {2, 2}))
+    var a = []
+    exit(0)
 }

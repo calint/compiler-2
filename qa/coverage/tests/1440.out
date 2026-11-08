@@ -1,4 +1,4 @@
 
-1440.baz:5:5: the result of 'array_length' is discarded
-    array_length(a)
-    ^~~~~~~~~~~~
+1440.baz:10:28: 'a.m' is a method, not an array
+    var n = array_length(a.m)
+                           ^

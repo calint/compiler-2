@@ -1,16 +1,9 @@
-# an inlined recursion of a constructor is reported at the constructor name
+# a constructor of a generic type does not take 'mut', also without an
+# instance
 
-type point {x, y}
+type box<n> {x}
 
-func point.at(x, y) self {
-    self.x = x
-    self.y = y
-    if x > 0 {
-        self = point.at(x - 1, y)
-    }
-}
+func mut box.mk() self {}
 
 func main() {
-    var n = 3
-    var p = point.at(n, 2)
 }

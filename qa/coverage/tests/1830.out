@@ -1,4 +1,0 @@
-
-1830.baz:6:15: result 'res' is read before it is set
-    } else if res == 2 {
-              ^~~

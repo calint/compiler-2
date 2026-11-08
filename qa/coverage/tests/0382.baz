@@ -1,29 +1,53 @@
-# increment indexes an array member of its user-type argument
-
-type point { x, y }
-type item { data point[2] }
-
-dat values =
-    item[3]{
-        { { {1, 2}, {3, 4} } },
-        { { {5, 6}, {7, 8} } },
-        { { {9, 10}, {11, 12} } }
-    }
-
-func increment(value mut item) {
-    value.data[1].y = value.data[1].y + 10
-}
+# regression: nested destinations plus by-reference call semantics
 
 func assert(x bool) { if not x exit(1) }
 
+type bytepair {
+    a i8,
+    b i8
+}
+
+type wrap {
+    l bytepair,
+    r bytepair
+}
+
+func inv8(v i8) out i8 {
+    out = ~v
+}
+
+func triple(v mut) {
+    v = v * 3
+}
+
+func swap_into(src bytepair, dst mut bytepair) {
+    var src_a = src.a
+    var src_b = src.b
+    dst = {src_b, src_a}
+}
+
 func main() {
-    foo values {
-        increment(e)
-    }
-    assert(values[0].data[0].y == 2)
-    assert(values[0].data[1].y == 14)
-    assert(values[1].data[1].x == 7)
-    assert(values[1].data[1].y == 18)
-    assert(values[2].data[1].x == 11)
-    assert(values[2].data[1].y == 22)
+    var ws = wrap[2]
+
+    ws[0].l = {1, 2}
+    swap_into(ws[0].l, ws[0].r)
+
+    if not (ws[0].r.a == 2 and ws[0].r.b == 1) exit(11)
+
+    var ix = 1
+    ws[ix].l = ws[0].r
+
+    if ws[ix].l.a != ws[0].r.a exit(12)
+    if ws[ix].l.b != ws[0].r.b exit(13)
+
+    ws[ix].r.a = inv8(ws[ix - 1].l.a)
+    ws[ix].r.b = inv8(ws[ix - 1].l.b)
+
+    if not (ws[1].r.a == ~1) exit(14)
+    if not (ws[1].r.b == ~2) exit(15)
+    if ws[1].r.a == ws[1].r.b exit(16)
+
+    var q = 4
+    triple(q)
+    if not (q == 12) exit(17)
 }

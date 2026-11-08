@@ -1,4 +1,4 @@
 
-1999.baz:5:13: variable 'a' is read before it is set
-    var a = a[0]
+1999.baz:4:13: unexpected '=='
+    exit(0) == 1
             ^

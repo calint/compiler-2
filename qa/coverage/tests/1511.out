@@ -1,4 +1,4 @@
 
-1511.baz:5:16: 'and' makes a condition, which is not an operand here, store it in a 'bool' first
-    var b = (t and f) == f
-               ^~~
+1511.baz:4:21: a unary operator makes a value, not an array
+    var n = read(0, -c)
+                    ^

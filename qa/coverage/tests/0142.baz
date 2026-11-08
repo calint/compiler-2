@@ -1,7 +1,155 @@
-# constant boolean expression folding
+# 'dat' initializers of scalars, arrays, structs and strings, then mutation
 
 func assert(expr bool) { if not expr exit(1) }
 
+type point { x, y }
+
+type world { locations[4] }
+
+type exits {  from i32[4], to i32[4] }
+
+type line { points point[2] }
+
+type string { data i8[128] }
+
+type entity { messages string[8] }
+
+dat    pt0 = point{ -1 }
+dat    pt1 = point{  }
+dat    pt2 = point[2]{ {-1} }
+dat   wld0 = world
+
+dat data_a = 0
+dat data_b = i32(32)
+dat data_c = i16[4]{ 1, 2, 3, 4 }
+dat data_e = i8(0)
+dat data_f = true
+dat data_g = i16[]{  1  , 2  ,  3  }
+dat data_h = i16[5]{1,2}
+dat data_i = i8[128]
+dat data_j = false
+dat data_k = bool[]{true, false}
+dat data_l = "hello world\n"
+dat data_m = i8[10]{'a'}
+dat data_n = i8[4]{ -1, 2 }
+dat data_o = bool[2]{ true, false }
+
+dat  point = point{ -1, -2 }
+dat  world = world{  {-1,   2}    }
+dat  exits =  exits{   {    1 ,  2   }  ,  {  3  ,  4  }  }
+dat  lines = line[2]{ {  { {-1,-2}, {4,5} } } }
+dat    str = string{   "hello world\n"   }
+dat   hero = entity{ {  {   "msg1"    }     ,      {       "msg2"        }         }          }
+dat   strs = string[4]{ {"hello\n"} ,  {"world"} }
+dat  strs2 = string[]{ {"hello\n"} ,  {"world"} }
+dat    dds = i32[4]
+dat   str3 = i8[128]
+dat    ln1 = line{ { { -2 } , { 4 } } }
+
 func main() {
-    if not (false or false or false) assert(true) else assert(false)
+    assert(data_a == 0)
+    data_a = 0xff
+    assert(data_a == 0xff)
+
+    assert(data_b == 32)
+    data_b = 10
+    assert(data_b == 10)
+
+    assert(data_c[0] == 1)
+    assert(data_c[1] == 2)
+    assert(data_c[2] == 3)
+    assert(data_c[3] == 4)
+    data_c[0] = 5
+    data_c[1] = 6
+    data_c[2] = 7
+    data_c[3] = 8
+    assert(data_c[0] == 5)
+    assert(data_c[1] == 6)
+    assert(data_c[2] == 7)
+    assert(data_c[3] == 8)
+
+    assert(data_e == 0)
+    data_e = 1
+    assert(data_e == 1)
+
+    assert(data_f == true)
+    data_f = false
+    assert(data_f == false)
+
+    assert(data_g[0] == 1)
+    assert(data_g[1] == 2)
+    assert(data_g[2] == 3)
+
+    assert(data_h[2] == 0)
+    assert(data_h[3] == 0)
+    assert(data_h[4] == 0)
+
+    data_i[127] = i8(0xfe)
+    assert(data_i[127] == -2)
+
+    assert(array_length(data_l) == 12)
+    assert(data_l[0] == 104) # 'h'
+    assert(data_l[11] == 10) # '\n'
+
+    assert(array_length(data_m) == 10)
+    assert(data_m[0] == 97) # 'a'
+    assert(data_m[9] == 0) # '\0'
+
+    assert(point.x == -1)
+    assert(point.y == -2)
+    point.x = 3
+    point.y = 4
+    assert(point.x == 3)
+    assert(point.y == 4)
+
+    assert(data_n[0] == -1)
+    assert(data_n[1] == 2)
+
+    assert(data_o[0] == true)
+    assert(data_o[1] == false)
+
+    assert(world.locations[0] == -1)
+    assert(world.locations[1] == 2)
+
+    assert(exits.from[0] == 1)
+    assert(exits.from[1] == 2)
+    assert(exits.to[0] == 3)
+    assert(exits.to[1] == 4)
+
+    assert(lines[0].points[0].x == -1)
+    assert(lines[0].points[0].y == -2)
+    assert(lines[0].points[1].x == 4)
+    assert(lines[0].points[1].y == 5)
+    lines[0].points[0].x = -5
+    lines[0].points[0].y = -4
+    lines[0].points[1].x = -3
+    lines[0].points[1].y = -2
+    assert(lines[0].points[0].x == -5)
+    assert(lines[0].points[0].y == -4)
+    assert(lines[0].points[1].x == -3)
+    assert(lines[0].points[1].y == -2)
+
+    assert(str.data[0] == 104) # 'h'
+    assert(str.data[11] == 10) # '\n'
+
+    assert(strs[0].data[0] == 104) # 'h'
+    assert(strs[0].data[5] == 10) # '\n'
+    assert(strs[1].data[0] == 119) # 'w'
+
+    assert(strs2[0].data[0] == 104) # 'h'
+    assert(strs2[0].data[5] == 10) # '\n'
+    assert(strs2[1].data[0] == 119) # 'w'
+
+    assert(ln1.points[0].x == -2)
+    assert(ln1.points[0].y == 0)
+    assert(ln1.points[1].x == 4)
+    assert(ln1.points[1].y == 0)
+    ln1.points[0].x = -3
+    ln1.points[0].y = 5
+    ln1.points[1].x = 6
+    ln1.points[1].y = 7
+    assert(ln1.points[0].x == -3)
+    assert(ln1.points[0].y == 5)
+    assert(ln1.points[1].x == 6)
+    assert(ln1.points[1].y == 7)
 }

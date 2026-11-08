@@ -1,4 +1,4 @@
 
-0914.baz:8:15: shift count must be 0 to 63 for 64-bit values
-    a = a << ~n
-              ^
+0914.baz:10:9: argument 1 'g[3]' may share storage with the global 'g' that 'put' uses, use a temporary variable for one of them
+    put(g[3], 10)
+        ^

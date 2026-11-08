@@ -1,6 +1,4 @@
-# a whole array is not compared with a number
+# array literals cannot be passed as function arguments
 
-func main() {
-    var a = i8[2]
-    var z = a == 1
-}
+func f(x i8[]) {}
+func main() { f({}) }

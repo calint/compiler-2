@@ -1,4 +1,10 @@
-# scalar values cannot be assigned to user types
+# == compares indexed i32 values
 
-type p { x }
-func main() { var p1 = p{} p1 = 1 }
+func assert(x bool) { if not x exit(1) }
+func main() {
+    var a = i32[2]
+    var b = i32[2]
+    a[0] = 3
+    b[0] = 3
+    assert(a[0] == b[0])
+}

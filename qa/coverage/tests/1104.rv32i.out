@@ -1,4 +1,0 @@
-
-1104.baz:5:9: the destination gives the type 'i32[2]', write '{...}'
-    a = []{3, 4}
-        ^

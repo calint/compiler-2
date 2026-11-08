@@ -1,63 +1,31 @@
-# struct array elements passed through two nested function calls
+# break and continue in nested loops
 
 func assert(expr bool) { if not expr exit(1) }
 
-func print(str i8[], len) {
-    write(1, str, len)
-}
-
-func input(str mut i8[], len) nbytes {
-    nbytes = read(0, str, len)
-}
-
-func pn(num) {
-    var buf = i8[20]
-    var n = num
-    var is_negative = false
-
-    if n < 0 {
-        is_negative = true
-        n = -n
-    }
-
-    var i = 20
-    loop {
-        i = i - 1
-        buf[i] = i8(48 + (n % 10))
-        n = n / 10
-        if n == 0 break
-    }
-
-    if is_negative {
-        i = i - 1
-        buf[i] = 45  # '-'
-    }
-
-    write(1, buf, 20 - i, i)
-}
-
-type str {
-    size i8,
-    chars i8[127]
-}
-
-type world {
-    name str,
-    note str
-}
-
-func foozi(w1 world, w2 world){
-    assert(w1.note.size + w2.note.size == 3)
-}
-
-func bar(w1 world, w2 world){
-    foozi(w1, w2)
-}
-
+# Break/continue in nested loops, multiple breaks
 func main() {
-    var wlds = world[2]
-    wlds[0].note.size = 1
-    wlds[1].note.size = 2
+    var outer_count = 0
+    var i = 0
+    loop {
+        var j = 0
+        loop {
+            if j == 3 break
+            outer_count = outer_count + 1
+            j = j + 1
+        }
+        i = i + 1
+        if i == 2 break
+    }
+    assert(outer_count == 6)  # 2 * 3
     
-    bar(wlds[0], wlds[1])
+    # Continue in nested context
+    var sum = 0
+    var k = 0
+    loop {
+        k = k + 1
+        if k == 3 continue
+        sum = sum + k
+        if k == 5 break
+    }
+    assert(sum == 1 + 2 + 4 + 5)
 }

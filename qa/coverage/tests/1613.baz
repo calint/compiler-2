@@ -1,7 +1,12 @@
-# the remaining elements are zeroed after the listed ones, which read them first
+# a call that writes the destination of the arithmetic it is in keeps the
+# destination unwritten until the value is computed, also 'noinline'
+var gx = 1
+func noinline gw() res {
+    gx = 10
+    res = 1
+}
 func main() {
-    var a = i8[4]
-    a[3] = 4
-    a = {1, a[3]}
-    exit(a[1])
+    var k = 0
+    gx = k + gw()
+    exit(gx)
 }

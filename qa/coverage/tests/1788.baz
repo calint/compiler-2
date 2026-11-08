@@ -1,19 +1,15 @@
-# the methods of an alias's levels are made in the order they are defined,
-# so a method does not see one of another level defined after it
-type list<T type, n> { a T[n], len }
-type text<n> = list<i8, n>
-
-func text.t() res {
-    res = self.l()
-}
-
-func list.l() res {
-    res = 7
-}
-
-type str = text<4>
+# --checks=upper: the end of a range below the minimum of the default type
+# does not fit it and fails, on every target alike
 
 func main() {
-    var s = str
-    exit(s.t())
+    var a = i8[10]
+    var b = i8[10]
+    var m = 1
+    loop {
+        if m < 0 break
+        m = m << 1
+    }
+    var n = -1
+    array_copy(a[m], b[0], n)
+    exit(7)
 }

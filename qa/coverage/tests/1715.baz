@@ -1,11 +1,16 @@
-# a 'let' that folds from a typed constant wraps at its type without the
-# overflow check, and is rejected with it
+# the length of an element's array is folded, an index in the argument of
+# 'array_length' must be a constant: the call in 'm[f()]' would not run
+type row { a i8[2] }
+
+var g = 0
+
+func f() res {
+    g = g + 1
+    res = 0
+}
 
 func main() {
-    let x = i8(127)
-    let y = x + 1
-    if y != -128 {
-        exit(1)
-    }
-    exit(0)
+    var m = row[3]
+    var k = array_length(m[f()].a) + g
+    exit(k)
 }

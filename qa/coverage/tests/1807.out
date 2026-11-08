@@ -1,4 +1,4 @@
 
-1807.baz:6:9: unexpected keyword 'loop'
-    x = loop(1)
-        ^~~~
+1807.baz:5:25: array 'a' must be indexed
+dat d = bool[1]{true or a == 1}
+                        ^

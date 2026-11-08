@@ -1,4 +1,4 @@
 
-1972.baz:5:13: a string is not a number, it fills only an array of 'i8'
-    var b = "ab" == a
-            ^~~~
+1972.baz:5:14: result 'T' is also the name of the generic parameter of 'box' at 4:10, use another name
+func box.f() T {
+             ^

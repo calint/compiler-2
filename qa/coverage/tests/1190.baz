@@ -1,21 +1,10 @@
-# a variable or a constant named like a function is an operand of '<'
+# a 'bool' is not assigned to an integer field of a record
 
-func assert(err, ok bool) { if not ok exit(err) }
-
-func show<T type>(x T) res T { res = x }
-
-func f() res { res = 9 }
+type point { x i32, y i32 }
 
 func main() {
-    var show = 1
-    var b = show < 2
-    assert(1, b)
-    if b {
-        let show = 3
-        var c = show < 4
-        assert(2, c)
-    }
-    let f = 1
-    var d = f < 2
-    assert(3, d)
+    var b = true
+    var p = point
+    p.x = b
+    exit(p.x)
 }

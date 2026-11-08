@@ -1,5 +1,7 @@
-# an array literal indexed is not an operand, assigned to a number
+# a variable without an initializer at the end of its line is reported at
+# the end of its name, not at the next line
+
 func main() {
-    var s = 0
-    s = []{1, 2}[1]
+    var x
+    x = 3
 }

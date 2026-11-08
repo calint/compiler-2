@@ -1,4 +1,4 @@
-# reads lines into struct array elements and prints them with their lengths
+# prints integers of several widths including the extreme 32-bit values
 
 func assert(expr bool) {
     if not expr exit(1)
@@ -12,67 +12,69 @@ func input(str mut i8[], len) nbytes {
     nbytes = read(0, str, len)
 }
 
-type location {
-    name i8[64],
-    name_len
-}
-
-dat nl_str = "\n"
-
-func nl() {
-    print(nl_str, array_length(nl_str))
-}
-
-func pn(num) {
+func print_num(num) {
     var buf = i8[20]
     var n = num
     var is_negative = false
-
+    
     if n < 0 {
         is_negative = true
-        n = -n
     }
-
+    if n > 0 n = -n
+    
     var i = 20
     loop {
         i = i - 1
-        var ascii = 48 + (n % 10)
-        buf[i] = i8(ascii)
-        # note: not buf[i] = 48 + ... because operation is done in byte sized
-        #       with n overflows
+        var ascii = 48 - (n % 10)
+        # note: not buf[i] = 48 + ... because expression will be executed as byte sized and n overflows
+        buf[i] = i8(ascii) 
         n = n / 10
         if n == 0 break
     }
-
+    
     if is_negative {
         i = i - 1
-        buf[i] = 45  # '-'
+        buf[i] = 45
     }
-
-    write(1, buf, 20 - i, i)
+    
+    var write_pos = 0
+    loop {
+        buf[write_pos] = buf[i]
+        write_pos = write_pos + 1
+        i = i + 1
+        if i == 20 break
+    }
+    
+    print(buf, write_pos)
 }
 
 func main() {
-    var locations = location[4]
+  var nl = i8[1]
+  nl[0] = 10
 
-    var i = 0
-    loop {
-      locations[i].name_len = input(locations[i].name, array_length(locations[0].name))
-      pn(locations[i].name_len)
-      nl()
-      print(locations[i].name, locations[i].name_len)
-      nl()
-      i = i + 1
-      if i == 4 break
-    }
+  var i1 = 123
+  var i2 = i32(321)
+  var i3 = i16(420)
+  var i4 = 840
+  var i5 = -1
+  var i6 = 2147483647  
+  var i7 = -2147483648
+  # 'i(...)' widens to the default type of 'print_num'
+  var i2_wide = int(i2)
+  var i3_wide = int(i3)
 
-    i = 0
-    loop {
-      pn(locations[i].name_len)
-      nl()
-      print(locations[i].name, locations[i].name_len)
-      nl()
-      i = i + 1
-      if i == 4 break
-    }
+  print_num(i1)
+  print(nl, 1)
+  print_num(i2_wide)
+  print(nl, 1)
+  print_num(i3_wide)
+  print(nl, 1)
+  print_num(i4)
+  print(nl, 1)
+  print_num(i5)
+  print(nl, 1)
+  print_num(i6)
+  print(nl, 1)
+  print_num(i7)
+  print(nl, 1)
 }

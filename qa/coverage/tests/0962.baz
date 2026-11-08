@@ -1,15 +1,11 @@
-# the same element forwarded through parameters shares storage
-
-func copy_over(dst mut i32, src mut i32) {
-    dst = src
-    src = 0
+# --checks=upper,division,line: a bounds failure reports its line when the
+# handler of the division is emitted too
+func noinline div(a, b) res {
+    res = a / b
 }
-
-func forward(a mut i32, b mut i32) {
-    copy_over(a, b)
-}
-
 func main() {
-    var arr = i32[4]
-    forward(arr[1], arr[1])
+    var arr = i8[4]
+    var i = 4
+    var x = div(8, 2)
+    arr[i] = i8(x)
 }

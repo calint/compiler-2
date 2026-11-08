@@ -1,25 +1,18 @@
-# a call reaches of a 'mut' argument what its body writes: 'sety' writes only
-# 'q.y', so the earlier read of 'q.x' is accepted, inlined and noinline
+# a noinline call computes the address of a place in the order of the
+# arguments: the call in the index of 'v[w()]' writes 'g' before the later
+# argument reads it
+var g = 0
 
-type pt {x, y}
-
-func sety(p mut pt) res {
-    p.y = 5
+func w() res {
+    g = 5
     res = 1
 }
 
-func noinline nsety(p mut pt) res {
-    p.y = 6
-    res = 2
-}
-
-func add(a, b) res {
-    res = a + b
+func noinline pick(a, n) res {
+    res = a * 100 + n
 }
 
 func main() {
-    var q = pt{1, 2}
-    var a = add(q.x, sety(q))
-    var b = add(q.x, nsety(q))
-    exit(a * 10 + b + q.y)
+    var v = []{10, 20, 30}
+    exit(pick(v[w()], g + 1) % 256)
 }

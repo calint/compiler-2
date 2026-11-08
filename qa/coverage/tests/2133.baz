@@ -1,0 +1,4 @@
+# an array literal as a statement
+func main() {
+    i8[]{1}
+}

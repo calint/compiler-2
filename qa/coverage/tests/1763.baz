@@ -1,25 +1,24 @@
-# ranges at the end of the arrays: a run-time start at the length with a count
-# of 0, run-time and constant starts and counts that end at the length
-dat s = "abcd"
+# the 'else' and the code after the 'if' start where the 'else if' condition
+# is false, which an inlined 'exit' in it never is
+func stop(m) res {
+    if m >= 3 exit(m)
+    res = 0
+}
+
+func g(k, x) {
+    var a = [4]
+    if x == 1 {
+        exit(2)
+    } else if stop(k) == 1 {
+        exit(3)
+    } else {
+        a[k] = 2
+    }
+    a[k] = 1
+}
 
 func main() {
-    var a = i8[4]
-    a = {1, 2, 3, 4}
-    var b = i8[4]
-    var i = 4
-    var n = 0
-    array_copy(a[i], b[i], n)
-    i = 2
-    n = 2
-    array_copy(a[i], b[2], n)
-    array_copy(a[i], b[i], 2)
-    array_copy(a[0], b[0], n)
-    if not arrays_equal(a[i], b[i], n) {
-        exit(1)
-    }
-    if not arrays_equal(a[2], b[2], n) {
-        exit(2)
-    }
-    var r = write(1, s, n, i)
-    exit(b[0] + b[1] + b[2] + b[3] - 10)
+    var x = 0
+    g(5, x)
+    exit(1)
 }

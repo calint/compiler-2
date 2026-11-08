@@ -1,0 +1,4 @@
+
+0821.baz:8:13: cannot compare type 'point' with type 'other'
+    if a == b exit(1)
+            ^

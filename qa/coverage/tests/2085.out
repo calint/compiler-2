@@ -1,4 +1,4 @@
 
-2085.baz:8:7: 'a[1]' is not an array, parameter 's' takes one
-    f(a[1])
-      ^
+2085.baz:6:23: expected '}' to close the value of type 'point'
+    var p = point{1, 2
+                      ^

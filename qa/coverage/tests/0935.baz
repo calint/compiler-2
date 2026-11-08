@@ -1,19 +1,14 @@
-# the method writes a field of an element chosen at run time and reads
-# another field of an element, so the bytes are never the same
+# the same for a non-inlined function
 
-type entity {
-    len i32,
-    name i32,
-}
+dat g = i32[4]{ 1, 2, 3, 4 }
 
-dat entities = entity[4]
-
-func mut entity.bump(k i32) {
-    self.len = k + entities[1].name
+func noinline put(x mut i32, k i32) {
+    x = k + (100 - g[3])
 }
 
 func main() {
-    var i = 2
-    entities[i].bump(1)
-    if entities[2].len != 1 exit(1)
+    foo g {
+        put(e, 10)
+    }
+    exit(g[0])
 }

@@ -1,3 +1,47 @@
-# inferred empty array is rejected
+# signed eight-bit division
 
-func main() { var a = i8[]{} }
+func assert(x bool) { if not x exit(1) }
+func main() {
+    var x = i8(100)
+    var y = i8(2)
+    var z = i8(x / y)
+    assert(z == 50)
+
+    x = -7
+    y = 3
+    assert(-x == 7)
+    assert(~x == 6)
+    assert(7 == -x)
+    z = x / y
+    assert(z == -2)
+    z = x % y
+    assert(z == -1)
+    z = x / (y + 0)
+    assert(z == -2)
+    z = x % (y + 0)
+    assert(z == -1)
+    z = x / 3
+    assert(z == -2)
+    z = x % 3
+    assert(z == -1)
+
+    x = 7
+    y = -3
+    z = x / y
+    assert(z == -2)
+    z = x % y
+    assert(z == 1)
+
+    x = -128
+    z = x / -1
+    assert(z == -128)
+    z = x % -1
+    assert(z == 0)
+
+    var wide = 259
+    x = 7
+    z = i8(int(x) / wide)
+    assert(z == 0)
+    z = i8(int(x) % wide)
+    assert(z == 7)
+}

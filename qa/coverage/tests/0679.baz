@@ -1,4 +1,5 @@
-# a constant must be a parsable number
+# a call requires parentheses
 
-let x = 1abc
-func main() {}
+func main() {
+    exit
+}

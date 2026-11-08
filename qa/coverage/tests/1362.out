@@ -1,4 +1,4 @@
 
-1362.baz:5:16: a comparison makes a condition, which is not an operand here, store it in a 'bool' first
-    x = 1 + (x < 1)
-               ^
+1362.baz:8:13: 'i16(k)' of type 'i16' is wider than 'e' of type 'i8', swap the operands: 'i16(k) <= e'
+    if e >= i16(k) {
+            ^

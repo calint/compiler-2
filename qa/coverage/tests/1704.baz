@@ -1,25 +1,13 @@
-# a 'mut' argument written by a call in an earlier argument is read after
-# the write by an instance literal, inlined and noinline
+# a 'bool' constant is no number for the constant parameter of a generic
+# type, like 'true'
 
-type pt {x, y}
+let b = true
 
-func set(v mut) res {
-    v = 7
-    res = 1
-}
+type w<n> {v i8[n]}
 
-func f(a, p pt) res {
-    res = p.x
-}
-
-func noinline fn(a, p pt) res {
-    res = p.x
-}
+type s = w<b>
 
 func main() {
-    var x = 0
-    var y = 0
-    var a = f(set(x), {x, 0})
-    var b = fn(set(y), {y, 0})
-    exit(a * 10 + b)
+    var x = s
+    exit(array_length(x.v))
 }

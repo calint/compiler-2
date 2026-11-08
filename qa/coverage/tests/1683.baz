@@ -1,14 +1,15 @@
-# an instance is not a condition, at the parse, so also in a branch that
-# folds away
+# the same with the result read after the call that writes it
 
-type point {x, y}
+func noinline inc(x mut) res {
+    x = x + 10
+    res = 1
+}
+
+func f() res {
+    res = 1
+    res = inc(res) + res
+}
 
 func main() {
-    var p = point{1, 2}
-    if 1 == 2 {
-        if p {
-            exit(1)
-        }
-    }
-    exit(0)
+    exit(f())
 }

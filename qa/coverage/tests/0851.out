@@ -1,0 +1,2 @@
+bodies: func.counter.add func.counter.twice
+receiver loaded into itself: 0

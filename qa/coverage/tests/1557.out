@@ -1,0 +1,7 @@
+
+1557.baz:4:5: recursion of inlined function 'g<i8>' is nested deeper than 64 calls, declare it 'noinline'
+    g<T>()
+    ^
+1557.baz:8:5: called from
+    g<i8>()
+    ^

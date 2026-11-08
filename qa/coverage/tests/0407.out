@@ -1,0 +1,4 @@
+
+0407.baz:4:15: the result of 'target' is discarded
+func main() { target() }
+              ^~~~~~

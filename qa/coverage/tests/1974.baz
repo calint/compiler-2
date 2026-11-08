@@ -1,11 +1,12 @@
-# a type parameter named like the alias of its instance is the parameter in
-# the fields
-type box<T type> {x T}
+# a type defined after a generic function and before its instance does not
+# hide the type parameter
+func f<T type>(a T) res {
+    res = int(T(a + 1))
+}
 
-type T = box<i8>
+type T {x}
 
 func main() {
-    var b = T
-    b.x = i8(5)
-    exit(int(b.x))
+    var t = T{3}
+    exit(f(i8(1)) + t.x)
 }

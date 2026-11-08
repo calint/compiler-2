@@ -1,23 +1,19 @@
-# all functions are inlined
+# reads input into a local byte array and prints it
 
 func assert(expr bool) {
     if not expr exit(1)
 }
 
-# user types are defined using keyword `type`
+func print(str i8[], len) {
+    write(1, str, len)
+}
 
-type point {x, y}
-type polygon {nindices, indices i8[8]}
-type object {pos point, pgons polygon[8], color i32}
+func input(str mut i8[], len) nbytes {
+    nbytes = read(0, str, len)
+}
 
 func main() {
-    var o = object[1]
-    o[0].pgons[3].nindices = 4
-    o[0].pgons[3].indices[3] = 7
-
-    assert(o[0].pgons[3].indices[3] == 7)
-    assert(o[0].pgons[3].nindices == 4)
-
-    o[0].pgons[0].indices[0] = 1
-    assert(o[0].pgons[0].indices[0] == 1)
+    var input_buffer = i8[80]
+    var len = input(input_buffer, array_length(input_buffer))
+    print(input_buffer, len)
 }

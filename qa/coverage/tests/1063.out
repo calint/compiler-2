@@ -1,4 +1,0 @@
-
-1063.baz:5:23: type 'point' is not generic, it takes no type arguments
-type text<capacity> = point<capacity>
-                      ^~~~~

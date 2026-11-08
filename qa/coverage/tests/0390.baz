@@ -1,53 +1,57 @@
-# regression: nested destinations plus by-reference call semantics
+# regression: user-type return and user-type indexed argument aliasing
 
-func assert(x bool) { if not x exit(1) }
+func assert(err, expr bool) { if not expr exit(err) }
 
-type bytepair {
-    a i8,
-    b i8
+type pair {
+    x,
+    y
 }
 
-type wrap {
-    l bytepair,
-    r bytepair
+type container {
+    p pair,
+    tag
 }
 
-func inv8(v i8) out i8 {
-    out = ~v
+func mk_pair(base) out pair {
+    out = {base + 1, base + 2}
 }
 
-func triple(v mut) {
-    v = v * 3
+func sum_pair(src pair) out {
+    out = src.x + src.y
 }
 
-func swap_into(src bytepair, dst mut bytepair) {
-    var src_a = src.a
-    var src_b = src.b
-    dst = {src_b, src_a}
+func copy_pair(src pair, dst mut pair) {
+    dst = {src.x, src.y}
 }
 
 func main() {
-    var ws = wrap[2]
+    var srcs = pair[3]
+    var dsts = pair[3]
+    var boxes = container[2]
 
-    ws[0].l = {1, 2}
-    swap_into(ws[0].l, ws[0].r)
+    srcs[0] = {10, 20}
+    srcs[1] = {30, 40}
+    srcs[2] = {50, 60}
 
-    if not (ws[0].r.a == 2 and ws[0].r.b == 1) exit(11)
+    var ri = 1
+    dsts[ri] = mk_pair(100)
 
-    var ix = 1
-    ws[ix].l = ws[0].r
+    assert(1, ri == 1)
+    assert(2, dsts[1].x == 101)
+    assert(3, dsts[1].y == 102)
 
-    if ws[ix].l.a != ws[0].r.a exit(12)
-    if ws[ix].l.b != ws[0].r.b exit(13)
+    var ai = 2
+    boxes[0].tag = sum_pair(srcs[ai])
 
-    ws[ix].r.a = inv8(ws[ix - 1].l.a)
-    ws[ix].r.b = inv8(ws[ix - 1].l.b)
+    assert(4, ai == 2)
+    assert(5, boxes[0].tag == 110)
 
-    if not (ws[1].r.a == ~1) exit(14)
-    if not (ws[1].r.b == ~2) exit(15)
-    if ws[1].r.a == ws[1].r.b exit(16)
+    var ci_src = 0
+    var ci_dst = 1
+    copy_pair(srcs[ci_src], boxes[ci_dst].p)
 
-    var q = 4
-    triple(q)
-    if not (q == 12) exit(17)
+    assert(6, ci_src == 0)
+    assert(7, ci_dst == 1)
+    assert(8, boxes[1].p.x == 10)
+    assert(9, boxes[1].p.y == 20)
 }

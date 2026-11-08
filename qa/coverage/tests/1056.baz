@@ -1,6 +1,12 @@
-# a sector function name is not a variable name
+# an argument of the base is a parameter, a type or a constant
 
-func main() {
-    var sector_write = 3
-    exit(sector_write)
+type list<T type, capacity> {
+    array T[capacity],
+    len,
 }
+
+type text<capacity> = list<i8, cap>
+
+type str = text<8>
+
+func main() {}

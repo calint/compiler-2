@@ -1,6 +1,5 @@
-# two parameters with the same name are rejected at the second one
-func f(x, x) {}
-
+# an integer as the condition of an if is rejected
 func main() {
-    f(1, 2)
+    var n = i32(1)
+    if n exit(2)
 }

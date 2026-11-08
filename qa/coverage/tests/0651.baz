@@ -1,12 +1,13 @@
-# a 'let' variable cannot be passed to a 'mut' non-inline parameter
+# 'read' writes its buffer, so passing a read-only array on to the function
+# that reads into it is rejected at the call
 
-func noinline set(a mut) {
-    a = 1
+func fill(buf mut i8[]) {
+    read(0, buf)
 }
 
-dat base = 5
+func pass(buf i8[]) {
+    fill(buf)
+}
 
 func main() {
-    let x = base + 0
-    set(x)
 }

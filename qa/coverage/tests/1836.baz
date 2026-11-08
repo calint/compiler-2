@@ -1,10 +1,11 @@
-# data of the whole address space leaves no room, the type stays below it
+# type arguments after a constructor, which is never generic
 
-dat a = i8[140737488355328]
+type pt {x i8}
+
+func pt.at(v i8) self {
+    self = {v}
+}
 
 func main() {
-    if a == a {
-        exit(1)
-    }
-    exit(0)
+    var p = pt.at<i8>(1)
 }

@@ -1,10 +1,4 @@
-# a value that reads another name of the destination once is computed in the
-# destination
+# 'main' has no caller to take its result
 
-func main() {
-    var g = i32[4]{1, 2, 3, 4}
-    foo g {
-        g[3] = e + 1
-    }
-    exit(g[3] - 5)
+func main() res {
 }

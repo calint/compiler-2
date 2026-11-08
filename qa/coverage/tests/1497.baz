@@ -1,6 +1,9 @@
-# a method with type parameters defined twice
-type buffer<c> { a i8[c] }
-func buffer.app<T type>(x T) {}
-func buffer.app<T type>(x T) {}
-type sd = buffer<4>
+# a method of a generic type is defined once, also when no alias makes an
+# instance of the type
+type text<n> {a i8[n]}
+
+func text.print() {}
+
+func text.print() {}
+
 func main() {}

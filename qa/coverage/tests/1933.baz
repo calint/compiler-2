@@ -1,5 +1,5 @@
-# a comparison after the name of a definition is not read as its '='
-
+# a typed array literal as an operand is rejected like the untyped one
 func main() {
-    var n == 2
+    var x = 1
+    x = 1 + i8[2]{1, 2}
 }

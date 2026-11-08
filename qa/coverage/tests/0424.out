@@ -1,4 +1,4 @@
 
-0424.baz:4:41: expected type 'i16' for parameter 'parameter', got 'i32', use 'i16(...)'
-func main() { var value = i32(1) target(value) }
-                                        ^
+0424.baz:3:34: 'n' is not an array
+func main() { var n = 0 write(1, n, 1) }
+                                 ^

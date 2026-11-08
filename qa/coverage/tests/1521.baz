@@ -1,11 +1,8 @@
-# a generic body sees only the types defined before it
-func make<T type>(x T) res T {
-    var p = point{1, 2}
-    res = x + p.x
-}
-
-type point { x, y }
-
+# a 'bool' array is a buffer of bytes like a record with 'bool' fields
 func main() {
-    exit(make<i32>(2))
+    var flags = bool[]{true, false, true}
+    var n = write(1, flags)
+    if n != 3 {
+        exit(1)
+    }
 }

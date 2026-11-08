@@ -1,4 +1,4 @@
 
-1578.baz:4:5: expected a statement
-    true = b
-    ^~~~
+1578.baz:5:7: 'a' is not an array, parameter 's' takes one
+    f('a')
+      ^

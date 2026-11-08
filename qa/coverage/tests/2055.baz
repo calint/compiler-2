@@ -1,13 +1,21 @@
-# an expression stored to memory with noinline calls nested 20 deep compiles
-# in milliseconds, a choice inside a version takes its first;
-# '--versions=nested' doubles per level, about 45 s
+# the check of a body without its call binds an instance argument of an
+# inlined recursion it does not expand, 'rs[5]' past the end of 'rs' of 'f'
 
-func noinline g(x i32) res i32 {
-    res = x + 1
+type row { a i8[4] }
+
+func g(r row, rs row[], x) res {
+    if x > 0 {
+        res = g(rs[5], rs, x - 1)
+        return
+    }
+    res = r.a[0]
+}
+
+func f(x) res {
+    var rs = row[2]
+    res = g(rs[0], rs, x)
 }
 
 func main() {
-    var a = i32(1)
-    var r = g(g(g(g(g(g(g(g(g(g(g(g(g(g(g(g(g(g(g(g(a) + 1) + 1) + 1) + 1) + 1) + 1) + 1) + 1) + 1) + 1) + 1) + 1) + 1) + 1) + 1) + 1) + 1) + 1) + 1) + 1
-    exit(r)
+    exit(0)
 }

@@ -1,9 +1,12 @@
-# the braced elements of an array field are written one by one, an element
-# written before it is read is rejected
-type t {b, a i8[2]}
-
+# a widening conversion inside a narrowing one computes at its own width
+# before it is narrowed
 func main() {
-    var v = t{3, {1, 2}}
-    v = {v.b, {v.a[1], v.a[0]}}
-    exit(v.a[0])
+    var a = i8(20)
+    var c = i8
+    c = i8(i16(a * (a >> 1)))
+    if c != -56 {
+        exit(1)
+    }
+    var d = i8(i16(a * (a / 2)) / 4)
+    exit(d)
 }

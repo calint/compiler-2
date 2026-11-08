@@ -1,4 +1,4 @@
 
-1160.baz:5:19: divisor must not be zero
-dat p = point{1 / 0}
-                  ^
+1160.baz:7:9: a call of 'array_length' is not an array
+    b = array_length(a)
+        ^~~~~~~~~~~~

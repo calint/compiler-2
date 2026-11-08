@@ -1,2 +1,4 @@
-bodies: func.counter.add func.counter.twice
-receiver loaded into itself: 0
+
+0862.baz:5:5: unexpected '|'
+    |
+    ^

@@ -1,4 +1,4 @@
 
-1994.baz:4:26: an array literal is not an operand here, store it in a variable first
-    var n = array_length(i8[2]{1, 2})
-                         ^~
+1994.baz:4:13: the type of '{}' is not known, write it before the '{'
+    let k = {}
+            ^

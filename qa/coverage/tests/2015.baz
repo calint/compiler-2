@@ -1,22 +1,9 @@
-# a 'foo' declares no 'e' named like a type parameter of the generic type of
-# a method, here bound to a user type, so the argument does not decide
-# whether the method is accepted
-type point { x i8 }
+# a method call named like a keyword is reported as a keyword, as at its
+# definition
 
-type box<e type> {
-    v e
-}
-
-type pbox = box<point>
-
-func box.f() {
-    var a = i8[2]
-    foo a {
-        a[i] = 1
-    }
-}
+type point {x, y}
 
 func main() {
-    var b = pbox
-    b.f()
+    var p = point
+    p.var()
 }

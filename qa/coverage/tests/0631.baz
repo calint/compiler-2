@@ -1,7 +1,14 @@
-# data built-in field initialized with braces
+# a parameter without 'mut' cannot be written through an inline callee
 
-type point { x i16, y i16 }
+func set(a mut) {
+    a = 1
+}
 
-dat p = point{ { 1 }, 2 }
+func f(a) {
+    set(a)
+}
 
-func main() {}
+func main() {
+    var x = 5
+    f(x)
+}

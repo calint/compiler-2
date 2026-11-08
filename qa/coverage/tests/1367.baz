@@ -1,8 +1,12 @@
-# a constant named in the 'array_length' of its own initializer is the
-# constant being defined, not an outer array of the same name
-var a = i8[2]
+# the '-' of a conversion to the width of its use overflows there under the
+# overflow check, as for a variable of the type
+
+func noinline called(x i8) res i8 {
+    res = x
+}
 
 func main() {
-    let a = array_length(a)
-    exit(a)
+    var v = i8(-128)
+    var r = -i8(called(v))
+    exit(int(r))
 }

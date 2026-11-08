@@ -1,8 +1,11 @@
-# a folded comparison of a 'let' is checked like a compiled one: a constant
-# that does not fit the typed side
+# a 'let' that folds from a typed constant wraps at its type without the
+# overflow check, and is rejected with it
 
 func main() {
-    let k = i8(3)
-    let b = k == 1000
-    exit(int(b))
+    let x = i8(127)
+    let y = x + 1
+    if y != -128 {
+        exit(1)
+    }
+    exit(0)
 }

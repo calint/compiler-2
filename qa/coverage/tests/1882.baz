@@ -1,8 +1,13 @@
-# 'true' as a constant generic argument is a bool constant, not a number
+# a type parameter named like its based generic type is rejected at the
+# definition
 
-type w<c> {
-    a i8[c]
-}
-type s = w<true>
+type box<T type> { a T }
+
+type text<text type> = box<text>
+
+func text.f() {}
+
+type s = text<i8>
+
 func main() {
 }

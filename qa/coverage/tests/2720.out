@@ -1,4 +1,0 @@
-
-2720.baz:6:30: count 9223372036854775807 is past the end of array 'a' of any size
-    res = arrays_equal(a, b, 9223372036854775807)
-                             ^

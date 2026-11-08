@@ -1,0 +1,4 @@
+
+1074.baz:8:14: a 'bool' is not an arithmetic operand, convert it, e.g. 'int(...)'
+    var b = -is_on()
+             ^~~~~

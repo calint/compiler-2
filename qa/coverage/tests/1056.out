@@ -1,4 +1,7 @@
 
-1056.baz:4:9: 'sector_write' is a built-in function
-    var sector_write = 3
-        ^~~~~~~~~~~~
+1056.baz:8:32: generic parameter 'capacity' of 'list' needs a constant, got 'cap'
+type text<capacity> = list<i8, cap>
+                               ^~~
+1056.baz:10:6: instantiated by
+type str = text<8>
+     ^~~

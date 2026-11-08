@@ -1,4 +1,0 @@
-
-1506.baz:4:10: 'nope' not found
-    show(nope)
-         ^~~~

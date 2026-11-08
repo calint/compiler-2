@@ -1,4 +1,4 @@
 
-2075.baz:8:9: array 'ps' must be indexed
-    n = ps + 1
-        ^~
+2075.baz:10:26: expected '(' after constructor name
+func main() { show(point.at) }
+                         ^~

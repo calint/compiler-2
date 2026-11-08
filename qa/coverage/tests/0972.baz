@@ -1,10 +1,6 @@
-# --checks=division,line: the minimum divided by -1 reports the line of the
-# remainder
-func noinline rem(a i32, b i32) res i32 {
-    res = 0
-    res = a % b
-}
+# --checks=overlap: the destination starts inside the source, runtime count
 func main() {
-    var x = rem(-2147483647 - 1, -1)
-    exit(x)
+    var a = i32[8]
+    var n = 3
+    array_copy(a, a[1], n)
 }

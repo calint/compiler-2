@@ -1,11 +1,9 @@
-# a field of a call result is read from a variable, the call is stored first
-type pt {x, y}
-
-func mk() res pt {
-    res = {1, 2}
+# a parameter type with type arguments is not a type, an instance is named
+# first, like the type of a field
+type box<T type> {
+    v T
 }
 
-func main() {
-    var z = mk().y
-    exit(z)
-}
+func f(b box<i8>) {}
+
+func main() {}

@@ -1,4 +1,4 @@
 
-0803.baz:3:21: a trailing ',' is not allowed in generic parameters
-type pair<first type, > {
-                    ^
+0803.baz:9:6: generic method 'text.size' already defined at 8:6
+func text.size() res { res = capacity }
+     ^~~~

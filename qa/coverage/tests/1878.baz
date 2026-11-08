@@ -1,15 +1,9 @@
-# a result destination that shares storage with a global the constructor uses
-# is reported at the constructor name
+# 'self' of a constructor of a generic type has no type, also without an
+# instance
 
-type point {x, y}
+type box<n> {x}
 
-var g = point{1, 2}
-
-func point.at(x, y) self {
-    self.x = g.x + x
-    self.y = y
-}
+func box.mk() self i8 {}
 
 func main() {
-    g = point.at(1, 2)
 }

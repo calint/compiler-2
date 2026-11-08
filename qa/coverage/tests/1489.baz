@@ -1,0 +1,13 @@
+# an inlined recursion with a run-time argument does not end at compile time,
+# the registers run out before the nesting limit
+func f(n) res {
+    if n == 0 {
+        res = 0
+        return
+    }
+    res = f(n - 1) + 1
+}
+func main() {
+    var k = 3
+    exit(f(k))
+}

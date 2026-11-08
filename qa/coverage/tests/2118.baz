@@ -1,8 +1,6 @@
-# the value of a built-in that an operator continues tells no type argument
-
-func show<T type>(s T) {}
-
+# a '$' of a source line that the listing quotes in a comment is part of a
+# symbol for the jump optimizer, as in a label of nasm
 func main() {
-    var b = i8[4]
-    show(read(0, b) + 1)
+    var s = "a$b"
+    exit(s[1])
 }

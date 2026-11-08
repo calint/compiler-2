@@ -1,4 +1,7 @@
 
-1979.baz:10:10: expected type 'point' for parameter 'ps', got 'i8'
-    show(a)
-         ^
+1979.baz:5:16: 's[0]' is read but has been overwritten in the same statement, use a temporary variable
+    s = {s[1], s[0]}
+               ^
+1979.baz:10:5: called from
+    flip(a)
+    ^~~~

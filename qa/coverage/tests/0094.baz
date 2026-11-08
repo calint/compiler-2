@@ -1,22 +1,48 @@
-# block-local shadowing preserves the outer variable
+# 'arrays_equal' on input arrays, equal and different prefixes
 
 func assert(expr bool) {
     if not expr exit(1)
 }
 
+func print(str i8[], len) {
+    write(1, str, len)
+}
+
+func input(str mut i8[], len) nbytes {
+    nbytes = read(0, str, len)
+}
+
+dat ok = "ok\n"
+
 func main() {
-    var i = 2
-    assert(i == 2)
-    
-    var j = 3
-    assert(j == 3)
+    var word1 = i8[64]
+    var word2 = i8[64]
 
-    {
-        var i = 4
-        assert(i == 4)
-        assert(j == 3)
-    }
+    print(ok, array_length(ok))
 
-    assert(i == 2)
-    assert(j == 3)
+    # expect same word input for both
+    var len1 = input(word1, array_length(word1))
+    print(word1, len1)
+
+    print(ok, array_length(ok))
+
+    var len2 = input(word2, array_length(word2))
+    print(word2, len2)
+  
+    assert(arrays_equal(word1, word2, len1))
+
+    print(ok, array_length(ok))
+
+    # expect not same word input for both
+    len1 = input(word1, array_length(word1))
+    print(word1, len1)
+
+    print(ok, array_length(ok))
+ 
+    len2 = input(word2, array_length(word2))
+    print(word2, len2)
+ 
+    assert(not arrays_equal(word1, word2, len1))
+
+    print(ok, array_length(ok))
 }

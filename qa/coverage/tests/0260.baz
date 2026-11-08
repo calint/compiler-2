@@ -1,11 +1,6 @@
-# hexadecimal string escape decoding
-
-func print(str i8[], len) {
-    write(1, str, len)
-}
-
-dat letter = "\x41"
+# statement requires an assignment operator
 
 func main() {
-    print(letter, array_length(letter))
+    var x = 1
+    x 2
 }

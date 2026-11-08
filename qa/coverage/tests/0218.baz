@@ -1,4 +1,9 @@
-# constant values require known identifiers
+# distinct user types cannot be assigned
 
-let x = nope
-func main() {}
+type p { x }
+type q { x }
+func main() {
+    var q1 = q
+    var p1 = p
+    p1 = q1
+}

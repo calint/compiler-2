@@ -1,4 +1,7 @@
 
-1569.baz:3:13: 'bool' has no conversion, compare instead, e.g. 'x != 0'
-    var b = bool(5)
-            ^~~~
+1569.baz:8:15: argument 1 'res' may share storage with the result destination 'res' (both name 'res'), use a temporary variable for one of them
+    res = add(res, v)
+              ^
+1569.baz:13:13: called from 'twice(x)'
+    x = 1 + twice(x)
+            ^~~~~

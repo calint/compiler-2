@@ -1,27 +1,38 @@
-# boolean function results
+# interactive loop: prompts, rejects short names, greets, ends on empty line
 
-func f(b bool) res bool{
-    if b res=false else res=true
+
+func print(str i8[], len) {
+    write(1, str, len)
 }
 
-func main(){
-    var b = true
-    var q=1
+func input(str mut i8[], len) nbytes {
+    nbytes = read(0, str, len)
+}
 
-    var r = f(not b)
-    if not r exit(1)
-    
-    r=f(b)
-    if r exit(2)
-    
-    r=f(q != 0)
-    if r exit(3)
-    
-    r=f(true)
-    if r exit(4)
-    
-    r=f(false)
-    if not r exit(5)
-    
-    exit(0)
+dat   hello = "hello world from baz\n"
+dat   input = "............................................................"
+dat prompt1 = "enter name:\n"
+dat prompt2 = "that is not a name.\n"
+dat prompt3 = "hello "
+dat     dot = "."
+dat      nl = "\n"
+
+func main(){
+
+    print(hello, array_length(hello))
+    loop {
+        print(prompt1, array_length(prompt1))
+        var len = input(input, array_length(input)) - 1    # -1 don't include the '\n'
+        if len == 0 {
+            break
+        }
+        if len <= 4 {
+            print(prompt2, array_length(prompt2))
+            continue
+        }
+        print(prompt3, array_length(prompt3))
+        print(input, len)
+        print(dot, array_length(dot))
+        print(nl, array_length(nl))
+    }
 }

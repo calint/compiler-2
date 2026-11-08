@@ -1,4 +1,4 @@
 
-0882.baz:6:19: '2' is not an array
-    array_copy(a, 2, n)
-                  ^
+0882.baz:7:13: function 'check' has no result
+    if 1 == check(true) {
+            ^~~~~

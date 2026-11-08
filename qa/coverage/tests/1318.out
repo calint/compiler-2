@@ -1,4 +1,4 @@
 
-1318.baz:6:16: a comparison makes a condition, which is not an operand here, store it in a 'bool' first
-    if b != (x < 1) {
-               ^
+1318.baz:5:17: 'not' makes a condition, which is not an operand here, store it in a 'bool' first
+    var n = int(not b)
+                ^~~

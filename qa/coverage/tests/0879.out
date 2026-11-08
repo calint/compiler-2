@@ -1,4 +1,4 @@
 
-0879.baz:3:19: expected '{' to begin declaration of type
-type list<T type> item { x }
-                  ^
+0879.baz:3:6: 'true' is a keyword
+func true() {
+     ^~~~

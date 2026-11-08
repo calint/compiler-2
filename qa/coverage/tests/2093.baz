@@ -1,10 +1,9 @@
-# the check of a body without its calls rejects an inlined recursion without
-# arguments, which passes the nesting limit at every call; 'f' has a result,
-# so its check takes from a call
+# an instance literal that an operator continues tells no type argument
 
-func f() res i32 {
-    res = f()
-}
+type point {x, y}
+
+func show<T type>(s T) {}
 
 func main() {
+    show(point{1, 2} == point{1, 2})
 }

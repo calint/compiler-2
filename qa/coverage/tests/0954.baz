@@ -1,24 +1,21 @@
-# the element 'e' of a 'foo' inside another 'foo' is assigned from another
-# field of the same inner array element, which is accepted
-
-type leaf {
-    v i32[2],
-    tag i32,
+# --checks=division: divisions that are defined pass the check
+func assert(ok bool) { if not ok exit(1) }
+func noinline div(a, b) res {
+    res = a / b
 }
-
-type mid {
-    leaves leaf[2],
+func noinline rem(a, b) res {
+    res = a % b
 }
-
+func noinline div8(a i8, b i8) res i8 {
+    res = a / b
+}
 func main() {
-    var m = mid[2]
-    m[0].leaves[1].v[0] = 4
-
-    foo m {
-        foo e.leaves {
-            e.tag = e.tag + m[0].leaves[1].v[0]
-        }
-    }
-
-    if m[1].leaves[1].tag != 4 exit(1)
+    assert(div(7, 2) == 3)
+    assert(div(-7, 2) == -3)
+    assert(div(7, -1) == -7)
+    assert(rem(7, 2) == 1)
+    assert(rem(-7, -1) == 0)
+    assert(div8(-127, -1) == 127)
+    assert(div8(-128, 1) == -128)
+    assert(div8(-128, 2) == -64)
 }

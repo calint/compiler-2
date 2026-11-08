@@ -1,10 +1,9 @@
-# a function named like an integer type could never be called, its call is a
-# conversion
+# an error in a function of an included file is shown with the call, also
+# when its offset in its file is inside the call in the calling file
 
-func int(a) res {
-    res = a + 100
-}
+include "include/frame.baz"
 
 func main() {
-    exit(int(2))
+    var x = divide(0)
+    exit(x)
 }

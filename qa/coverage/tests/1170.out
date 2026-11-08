@@ -1,4 +1,4 @@
 
-1170.baz:7:9: expected type 'point', got 'i8'
-    p = i8(1)
-        ^~
+1170.baz:7:17: variable 'point' is read before it is set
+    var point = point[2]{{1, 2}}
+                ^~~~~

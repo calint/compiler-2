@@ -1,4 +1,4 @@
 
-2009.baz:15:9: a call of 'point.get' is not an array
-    f(p.get())
-        ^~~
+2009.baz:6:9: an instance of 'point' is not a number
+    p = point{3, 4} + 1
+        ^~~~~

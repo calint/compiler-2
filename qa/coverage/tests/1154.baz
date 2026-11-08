@@ -1,7 +1,13 @@
-# 'foo' over an element of an array that is not an array names the element
+# a constant compared with an inlined constant argument of a narrower
+# parameter is rejected like with a variable of that type
+
+func g(v i8) {
+    if v > 1000 {
+        exit(3)
+    }
+    exit(4)
+}
 
 func main() {
-    var a = i8[4]
-    foo a[0] {
-    }
+    g(5)
 }

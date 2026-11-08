@@ -1,4 +1,4 @@
 
-2077.baz:5:17: array 'bs' must be indexed
-    var n = int(bs)
-                ^~
+2077.baz:12:5: cannot deduce 'T' of generic function 'show', write 'show<...>'
+    show(p.sum())
+    ^~~~

@@ -1,41 +1,22 @@
-# left shift by array elements, constants and a complemented operand
+# boolean assignment from comparisons, an integer is compared first
 
 func assert(expr bool) { if not expr exit(1) }
 
-
-func fez(val i32[]) res i32 {
-    res = val[2] << (val[1] + val[1]) 
-}
-
-func foz(x i32, y i32) res i32 {
-    res = x << y 
-}
-
-func fuz(x i32) res i32 {
-    res = x << 3
-}
-
-func faz(x i32, y i32) res i32 {
-    res = x << ~y 
-}
-
 func main() {
-    var values = i32[4]
-    values[1] = 4
-    values[2] = 3
+    var x = 1
+    var y = 2
 
-    # note: temporary because the result may share storage with the argument
-    var tmp1 = fez(values)
-    values[0] = tmp1
-    assert(values[0] == 768)
+    var b = false
 
-    values[3] = foz(values[2], values[1])
-    assert(values[3] == 48)
+    b = x == 1
+    assert(b)
 
-    values[0] = fuz(values[1])
-    assert(values[0] == 32)
+    b = x != 0
+    assert(b)
+    
+    b = x == 1 and y == 2
+    assert(b)
 
-    var a = i32(-2)
-    values[0] = faz(values[1], a)
-    assert(values[0] == 8)
+    b = x == 1 or y == 2
+    assert(b)
 }
