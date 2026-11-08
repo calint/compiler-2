@@ -1156,9 +1156,9 @@ main:
             mov rax, 0
             syscall
             mov qword [rbp + 1416], rax
-            mov r15, qword [rbp + 1416]
-            dec r15
+            mov r15b, byte [rbp + 1416]
             mov byte [rbp + 1288], r15b
+            dec byte [rbp + 1288]
         func.str.input..411.12.end:
         if.413.9:
         cmp.413.12:
@@ -1320,8 +1320,7 @@ func.print_num:
         cmp r15, 20
         jae baz_bounds_line_155
         mov r14, 48
-        mov r13, qword [rbx + 32]
-        mov rax, r13
+        mov rax, qword [rbx + 32]
         mov r12, 10
         cqo
         idiv r12

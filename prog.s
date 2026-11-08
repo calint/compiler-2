@@ -1798,7 +1798,7 @@ main:
 ;   [prog.baz:344:34] src: folded constant '0xff0000'
     mov dword [rbp + 656], 16711680
 ;   [prog.baz:344:14] zero padding: 4 B
-;   [prog.baz:344:14] 1 parts, use mov
+;   [prog.baz:344:14] 1 part, use mov
     mov dword [rbp + 660], 0
 ;   [prog.baz:345:5] assert(o1.pos.x == 10)
 ;   [prog.baz:345:12] allocate scratch register -> r15
@@ -2175,7 +2175,7 @@ main:
 ;   [prog.baz:373:5] o3[1] = object.at(2, 74, 0xffffff)
 ;   [prog.baz:373:13] object.at(2, 74, 0xffffff)
 ;   [prog.baz:373:13] zero padding: 4 B
-;   [prog.baz:373:13] 1 parts, use mov
+;   [prog.baz:373:13] 1 part, use mov
     mov dword [rbp + 748], 0
 ;   [prog.baz:119:6] object.at(x, y, color i32) self
     func.object.at..373.13:
@@ -2627,14 +2627,15 @@ main:
 ;           [prog.baz:92:5] self.len = i8(nbytes - 1)
 ;           [prog.baz:92:16] self.len = i8(nbytes - 1)
 ;           [prog.baz:92:16] = expression
-;           [prog.baz:92:16] allocate scratch register -> r15
+;           [prog.baz:92:19] kept the first of two versions of 3 and 3 instructions, the first of equal sizes
 ;           [prog.baz:92:19] nbytes
-            mov r15, qword [rbp + 1416]
-;           [prog.baz:92:19] r15 - 1
-;           [prog.baz:92:19] src: folded constant '- 1'
-            dec r15
+;           [prog.baz:92:19] allocate scratch register -> r15
+            mov r15b, byte [rbp + 1416]
             mov byte [rbp + 1288], r15b
-;           [prog.baz:92:16] free scratch register r15
+;           [prog.baz:92:19] free scratch register r15
+;           [prog.baz:92:19] self.len - 1
+;           [prog.baz:92:19] src: folded constant '- 1'
+            dec byte [rbp + 1288]
         func.str.input..411.12.end:
         if.413.9:
 ;       [prog.baz:413:12] ? nm.len <= 0
@@ -3070,11 +3071,10 @@ func.print_num:
 ;       [prog.baz:155:27] src: expression
 ;       [prog.baz:155:27] allocate scratch register -> r13
 ;       [prog.baz:155:27] n
-        mov r13, qword [rbx + 32]
+        mov rax, qword [rbx + 32]
 ;       [prog.baz:155:31] r13 % 10
 ;       [prog.baz:155:31] src: folded constant '% 10'
 ;       [prog.baz:155:31] allocate named register rax
-        mov rax, r13
 ;       [prog.baz:155:31] allocate named register rdx
 ;       [prog.baz:155:31] allocate scratch register -> r12
         mov r12, 10
@@ -3090,7 +3090,7 @@ func.print_num:
 ;       [prog.baz:155:18] free scratch register r14
 ;       [prog.baz:155:9] free scratch register r15
 ;       [prog.baz:156:9] n = n / 10
-;       [prog.baz:156:13] kept the first of two versions of 5 and 7 instructions, the smaller
+;       [prog.baz:156:13] kept the first of two versions of 5 and 6 instructions, the smaller
 ;       [prog.baz:156:13] n
 ;       [prog.baz:156:17] n / 10
 ;       [prog.baz:156:17] src: folded constant '/ 10'
@@ -3472,19 +3472,20 @@ vars.end:
 
 ;           noinline functions:
 ;                    factorial: 1 body, 2 calls, 29 instructions
-;                    print_num: 1 body, 2 calls, 67 instructions
+;                    print_num: 1 body, 2 calls, 66 instructions
 ;
 ;   removed jumps to next code: 75
 ;    removed unreachable jumps: 2
 ; removed same target branches: 0
 ; inverted branches over jumps: 7
 ; removed reloads after stores: 0
+;      removed register copies: 0
 ; max scratch registers in use: 4
 ;            max scopes in use: 10
 ;                     dat size: 376 B
 ;              dat var padding: 8 B
 ;           max body vars size: 1045 B
-;                 instructions: 900
+;                 instructions: 899
 ;
 ; register use at the peak: 6 of 13 registers live, 2 named by instructions
 ;
