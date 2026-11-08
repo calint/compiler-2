@@ -1,0 +1,4 @@
+
+6301.baz:4:16: 'zz' not found
+    var r = mk(zz)
+               ^~

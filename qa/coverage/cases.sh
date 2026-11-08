@@ -7133,3 +7133,12 @@ SRC=5302 && COMPERR
 # rv32i-qemu: an image that needs the 2 MiB that qemu keeps for its device
 # tree is rejected
 if [[ $MACHINE == rv32i-qemu ]]; then SRC=5700 && COMPERR; fi
+
+# an argument before the deducing one is reported before "cannot deduce"
+SRC=6300 && COMPERR
+
+# the arguments of a call deduced from its result are reported first
+SRC=6301 && COMPERR
+
+# an argument of the default type is its destination, as in the call
+SRC=6302 && COMPERR

@@ -1,6 +1,26 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] hard: round 190 (2026-11-08, user: fix the deduction error order,
+    continue the loop; GJ regressions of the change)
+    => done (2026-11-08): the deduction item below; listings, images and
+       errors equal but for tests 6300 to 6302
+[x] easy: user decision (2026-11-08, round 185 FU): when deduction fails
+    the arguments before the deducing one are not checked: 'func f<A
+    type>(b, a A)' called as 'f(zz, 1)' says "cannot deduce 'A'" where
+    'f<i8>(zz, 1)' says "'zz' not found"; README 2.10.2 item 3 states the
+    current rule, the comment of 'generic_call::deduced_type_arguments' says
+    a call without type parameters' errors come first; checking each
+    earlier argument first is about 10 lines and may change expected
+    outputs; deduction messages were kept narrow in rounds 31 and 108
+    => done (2026-11-08, user: fix the deduction error order): before
+       "cannot deduce" the arguments up to the deducing one, all for a
+       result, are checked in order as in a call without type parameters
+       ('assert_argument_valid', shared with 'assert_argument_present'); an
+       argument of the default type is parsed with it as its destination,
+       as the call does, so 'g1(g4(1), 1)' still names 'g1' (GJ); README
+       2.10.2 item 3; tests 6300 to 6302; GJ found no change of acceptance
+       or listings over 3500 generated calls and 7000 mutants
 [x] hard: round 189 (2026-11-08, user: overlap tasks and loop until
     nothing is left to fix; GH the io built-ins, the register report and
     the bulk operands, GI a fuzz campaign on round 187)

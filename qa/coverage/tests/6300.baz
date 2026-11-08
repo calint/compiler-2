@@ -1,0 +1,3 @@
+# an argument before the deducing one is reported before 'cannot deduce'
+func f<A type>(b, a A) res { res = 1 }
+func main() { exit(f(zz, 1)) }

@@ -1,0 +1,4 @@
+
+6302.baz:4:20: cannot deduce 'A' of generic function 'g1', write 'g1<...>'
+func main() { exit(g1(g4(1), 1)) }
+                   ^~

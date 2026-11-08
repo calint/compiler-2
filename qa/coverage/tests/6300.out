@@ -1,0 +1,4 @@
+
+6300.baz:3:22: 'zz' not found
+func main() { exit(f(zz, 1)) }
+                     ^~

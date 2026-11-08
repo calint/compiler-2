@@ -1,0 +1,6 @@
+# the arguments of a call deduced from its result are reported first
+func mk<T type>(a) res T { res = T(a) }
+func main() {
+    var r = mk(zz)
+    exit(r)
+}

@@ -304,7 +304,15 @@ struct generic_call {
             return;
         }
 
-        std::ignore = expr_bool{tc, tz.next_whitespace_token(), tz};
+        // a parameter of the default type is the destination of its
+        // argument, as in the call, e.g. the 'g(1)' of 'f(g(1), 1)' for 'func
+        // g<T type>(a) res T'
+        if (params.at(index).type_name.empty()) {
+            std::ignore = expr_any{tc, tz, tc.builtins().default_type(),
+                                   literal_typing::from_destination};
+        } else {
+            std::ignore = expr_bool{tc, tz.next_whitespace_token(), tz};
+        }
 
         assert_delimiter_after(tz, params, index);
     }
@@ -332,22 +340,32 @@ struct generic_call {
             return;
         }
 
-        tokenizer after_last{tz};
-
-        // e.g. 'point{1, 2}' of 'g(point{1, 2})', which parses only at a
-        // type, else parsed like a 'var' initializer or, for an array
-        // parameter, as in the call
-        if (not params.at(last).is_array and
-            argument_type(tc, after_last, last) != nullptr) {
-
-            assert_delimiter_after(after_last, params, last);
-        } else {
-            assert_argument_parses(tc, tz, params, last);
-        }
+        assert_argument_valid(tc, tz, params, last);
 
         throw compile_error{
             scan, missing_argument_text(last + 2,
                                         params.at(last + 1).name_tk.text())};
+    }
+
+    // the argument at 'index', which is there, is reported as in a call
+    // without type parameters. 'tz' is after the '('
+    static auto
+    assert_argument_valid(toc& tc, const tokenizer& tz,
+                          const std::span<const generic_signature_param> params,
+                          const size_t index) -> void {
+
+        tokenizer after{tz};
+
+        // e.g. 'point{1, 2}' of 'g(point{1, 2})', which parses only at a
+        // type, else parsed like a 'var' initializer or, for an array
+        // parameter, as in the call
+        if (not params.at(index).is_array and
+            argument_type(tc, after, index) != nullptr) {
+
+            assert_delimiter_after(after, params, index);
+        } else {
+            assert_argument_parses(tc, tz, params, index);
+        }
     }
 
     // 'tz' is after the argument at 'index', a ',' or the ')' follows, e.g.
@@ -383,8 +401,9 @@ struct generic_call {
     //      or an expression
     //   3. otherwise the type the call is assigned to, when the result is
     //      declared with the type parameter
-    //   4. otherwise an argument that does not parse is reported as in that
-    //      call ('assert_argument_parses'), then "cannot deduce"
+    //   4. otherwise the arguments up to the deducing one, or all for a
+    //      result, are reported as in that call ('assert_argument_valid'),
+    //      then "cannot deduce"
     [[nodiscard]] static auto
     deduced_type_arguments(toc& tc, const tokenizer& tz, const token& name_tk,
                            const std::string_view generic_name,
@@ -428,14 +447,23 @@ struct generic_call {
                 arg_type = expected_type;
             }
 
-            // e.g. 'show(exit(1))' or 'show(point)', an argument that is not
-            // a value is reported as in a call without type parameters
-            if (arg_type == nullptr and source.param_index) {
-                assert_argument_parses(tc, scan, generic.signature.params,
-                                       *source.param_index);
-            }
-
             if (arg_type == nullptr) {
+                // e.g. the 'zz' of 'f(zz, 1)' for 'func f<A type>(b, a A)' or
+                // the 'point' of 'show(point)', reported as in a call without
+                // type parameters
+                const size_t checked_count{
+                    source.param_index ? *source.param_index + 1
+                                       : generic.signature.params.size(),
+                };
+
+                for (size_t i{}; i < checked_count; ++i) {
+                    assert_argument_present(tc, scan, generic.signature.params,
+                                            i);
+
+                    assert_argument_valid(tc, scan, generic.signature.params,
+                                          i);
+                }
+
                 throw compile_error{
                     name_tk,
                     std::format("cannot deduce {} of generic function {}, "
