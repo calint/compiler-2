@@ -1,6 +1,19 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] hard: round 187 (2026-11-08, user: overlap tasks and loop until
+    nothing is left to fix; GB the reports and listing annotations, GD code
+    versions and roome)
+    => done (2026-11-08): GB with no register held the x86_64 register
+       report put the peak in the global initializers, the peak keeps the
+       first frame, 'main' ('register_trace::begin_frame', 'test-cli.sh');
+       the x86_64 copy and zero comments say '1 part'; README 1.6.1 says a
+       version is counted before the jump optimizations; GB found every
+       other report number equal to the listing; GD found the listings of
+       every '--versions' mode equal to a direct emit and roome right in
+       432 option combinations; the report names and the x86_64 label
+       numbers of dropped versions are todo items; code equal, x86_64
+       comments differ by the 'part' wording
 [x] hard: round 186 (2026-11-08, user: continue the loop, several things
     at a time; FY 'stmt_call', FZ 'toc', GA 'expr_any' and
     'stmt_identifier_impl')

@@ -33,6 +33,18 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
     a call without type parameters' errors come first; checking each
     earlier argument first is about 10 lines and may change expected
     outputs; deduction messages were kept narrow in rounds 31 and 108
+[ ] easy: register report names (round 187 GB): the 'calls' column of a
+    noinline body counts the bodies compiled ('factorial (noinline body)'
+    1) while the noinline report says '2 calls'; name the column, e.g.
+    'frames', or leave the count out for a body; the section "calls of
+    functions with a body of their own" prints labels ('f..a.b',
+    'sum..len.4') where the rest of the footer prints source names
+    ('f<a,b>', 'sum'), mapping a label back needs the assembler's body list
+[ ] easy: low priority (round 188 GD): the x86_64 'local_label_count_'
+    ('.Lbaz_division.N', '.Lbaz_overlap.N', '.Lbaz_equal.N') is not put back
+    when a version is dropped, kept labels stay unique but are numbered with
+    gaps that differ between '--versions' modes; moving the counter into
+    'machine::version_state' would make the listings of the modes equal
 [ ] easy: line of a run-time io range (round 181 FL): 'write(1,\n a,\n 3,\n
     s)' panics at the line of the start 's' while the constant version is
     rejected at the count '3'; one 'check_bounds' covers the start's lower

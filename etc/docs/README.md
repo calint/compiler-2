@@ -527,7 +527,9 @@ zero padding: 4 B      the bytes no field writes
 allocate scratch register -> r15, free scratch register r15
                        the registers a step holds
 kept the second of two versions of 6 and 4 instructions, the smaller
-                       the version kept of code compiled two ways (5)
+                       the version kept of code compiled two ways (5),
+                       counted before the jump optimizations and the far
+                       branches of rv32i
 kept the first of two versions, inside a version
                        a choice inside a version, not measured (5.2)
 ```

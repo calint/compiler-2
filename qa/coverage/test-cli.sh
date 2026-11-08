@@ -290,6 +290,11 @@ CLI_REGISTER_REPORT() {
     "$BIN" --report=registers 2151.baz >out 2>err
     grep -Fq "register use at the peak: 2 of" out
     grep -Fq "global initializers" out
+    # 0142.baz: no register is held on x86_64, the peak is in 'main'
+    "$BIN" --report=registers 0142.baz >out 2>err
+    grep -Fq "register use at the peak: 0 of" out
+    grep -Eq '^; +0  main$' out
+    grep -Fq "global initializers" out && exit 1
     echo ok
 }
 

@@ -183,6 +183,12 @@ class register_trace final {
             .call_site_tk{call_site_tk},
             .kind{kind},
         });
+
+        // a build that holds no register has its peak in its first frame,
+        // 'main', not in the global initializers
+        if (enabled_ and peak_.held == 0 and peak_.frames.empty()) {
+            peak_.frames = frames_;
+        }
     }
 
     [[nodiscard]] auto callees() const

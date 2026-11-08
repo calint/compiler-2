@@ -306,7 +306,7 @@ class machine_x86_64 final : public machine {
             return;
         }
 
-        comment(src_loc_tk, indent, "{} parts, use mov", parts);
+        comment(src_loc_tk, indent, "{}, use mov", counted(parts, "part"));
 
         const operation_scope scope{*this};
 
@@ -619,7 +619,7 @@ class machine_x86_64 final : public machine {
             return;
         }
 
-        comment(src_loc_tk, indent, "{} parts, use mov", parts);
+        comment(src_loc_tk, indent, "{}, use mov", counted(parts, "part"));
 
         for_each_part(
             size_bytes, size_qword_,
