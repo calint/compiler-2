@@ -1,6 +1,16 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: user decision (2026-11-08, round 177 FF): the fuzzers count a
+    nasm stall ("unable to find valid values for all labels", README 8.3) as
+    'invalid-asm'; 'fuzzlib.assemble_x86' could retry with 'nasm -O1' and
+    count it as 'nasm-stall' (about 10 lines, no listing change); forward
+    jumps written 'near' always settle but grow '.text' 10.4%
+    => done (2026-11-08, user: apply the recommended retry): on that
+       message 'fuzzlib.assemble_x86' assembles again with 'nasm -O1' and
+       the program is judged as usual (no new category, which would need
+       each fuzzer to know it); 'invalid-asm-8063c7ca94' now assembles and
+       gives the expected output
 [x] hard: round 179 (2026-11-08, user: continue all night; FI pathological
     input: deep nesting, large input, names like mnemonics and labels)
     => done (2026-11-08): no wrong result or crash; nesting stops at its

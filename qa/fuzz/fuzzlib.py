@@ -263,9 +263,16 @@ def assemble_x86(assembly, work):
     # a tool that is stopped by a limit says nothing about the code
     if a.timed_out or a.signal:
         return None, ("skip", "")
+    # nasm's default jump sizing may not settle on a valid listing, '-O1'
+    # assembles it (README 8.3); the program is judged as usual
+    if a.returncode and "unable to find valid values for all labels" in a.stderr:
+        a = run(["nasm", "-O1", "-w+error", "-f", "elf64", assembly, "-o", obj],
+                60, file_size=1 << 30)
+        if a.timed_out or a.signal:
+            return None, ("skip", "")
     if a.returncode:
         return None, ("invalid-asm", a.stderr)
-    link = run(["ld", "-s", "-T", os.path.join(ROOT, "baz.ld"), obj, "-o", exe], 60,
+    link =run(["ld", "-s", "-T", os.path.join(ROOT, "baz.ld"), obj, "-o", exe], 60,
                file_size=1 << 30)
     if link.timed_out or link.signal:
         return None, ("skip", "")
