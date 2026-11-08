@@ -110,7 +110,6 @@ class stmt_builtin_io final : public statement {
             return;
         }
 
-        // 'read' and 'sector_read' fill the buffer
         buffer_path().record_write(tc, "read into");
     }
 

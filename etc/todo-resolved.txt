@@ -1,6 +1,14 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] hard: round 189 (2026-11-08, user: overlap tasks and loop until
+    nothing is left to fix; GH the io built-ins, the register report and
+    the bulk operands, GI a fuzz campaign on round 187)
+    => done (2026-11-08): GH a comment of 'stmt_builtin_io' that repeated
+       its code is gone, the rest of its files was found minimal; GI
+       fuzz-all at scale 3 on all targets and nine fuzzers with 900 to 3000
+       programs each found no mismatch, every mutant caught; the second
+       pass of the design reviews covers every source file
 [x] hard: round 188 (2026-11-08, user: overlap tasks and loop until
     nothing is left to fix; GC 'machine' and the two backends, GE the
     function and type definitions, GF the tokenizer, tokens and literals,
