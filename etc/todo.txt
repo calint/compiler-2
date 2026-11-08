@@ -25,6 +25,14 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
     makes copies O(1) (70 MB, 20 MB), about 40 lines with a loop destructor
     so that freeing a deep chain does not overflow the stack; the patch is
     '/tmp/r179-fi-work/generic-trace.diff'
+[p] easy: user decision (2026-11-08, round 185 FU): when deduction fails
+    the arguments before the deducing one are not checked: 'func f<A
+    type>(b, a A)' called as 'f(zz, 1)' says "cannot deduce 'A'" where
+    'f<i8>(zz, 1)' says "'zz' not found"; README 2.10.2 item 3 states the
+    current rule, the comment of 'generic_call::deduced_type_arguments' says
+    a call without type parameters' errors come first; checking each
+    earlier argument first is about 10 lines and may change expected
+    outputs; deduction messages were kept narrow in rounds 31 and 108
 [ ] easy: line of a run-time io range (round 181 FL): 'write(1,\n a,\n 3,\n
     s)' panics at the line of the start 's' while the constant version is
     rejected at the count '3'; one 'check_bounds' covers the start's lower

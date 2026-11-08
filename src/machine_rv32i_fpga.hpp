@@ -19,7 +19,7 @@ class machine_rv32i_fpga final : public machine_rv32i_bare_metal {
     // extended offsets from the zero register
     static constexpr int uart_in_offset_{-12};
     static constexpr int uart_out_offset_{-8};
-    // uart_in reads -1 while no byte is received, uart_out while ready
+    // 'uart_in' reads -1 while no byte is received, 'uart_out' while ready
     static constexpr int uart_idle_{-1};
     // the sd card addresses 0xffff'fff0, 0xffff'ffec, 0xffff'ffe8 and
     // 0xffff'ffe0 as offsets from the zero register like the uart

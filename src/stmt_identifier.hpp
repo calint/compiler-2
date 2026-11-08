@@ -840,9 +840,9 @@ class stmt_identifier final : public statement {
     //
 
     // the path where an array is expected, e.g. the 'a' of 'array_length(a)',
-    // 'foo a' or 'f(a)', not a value made of it; anything else is rejected at
-    // its first token without parsing it, e.g. a call, a literal, a type or a
-    // function; the caller checks that it names an array or an element
+    // 'foo a' or 'f(a)', not a value made of it; anything else, a call, a
+    // literal, a type or a function, is rejected at its first token without
+    // parsing it; the caller checks that it names an array or an element
     [[nodiscard]] static auto parse_array_argument(toc& tc, tokenizer& tz)
         -> stmt_identifier {
 

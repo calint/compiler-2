@@ -149,7 +149,7 @@ inline auto assert_no_operator_after_array(const tokenizer& tz) -> void {
 enum class term_kind : uint8_t {
     // no token, e.g. the end of the source or a delimiter
     none,
-    // e.g. "abc"
+    // e.g. '"abc"'
     string,
     // e.g. '12', 'a', 'true'
     literal,

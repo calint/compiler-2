@@ -1,6 +1,30 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] hard: round 184 (2026-11-08, user: continue the loop, several things
+    at a time; FQ the tutorial and the remaining doc examples, FS the
+    bare-metal targets, FV call summaries, FT the comment rules)
+    => done (2026-11-08): FS rv32i-qemu accepted images up to 128 MiB but
+       qemu keeps 2 MiB after the image for its device tree, an image of
+       127 MiB did not start; the memory is 126 MiB (test 5700, the help,
+       README and 'test-cli.sh' numbers); chapter 8 names the backspace
+       the fpga emulator reads as 0x7f; FQ README 8.3 names
+       'etc/nasm-issue.s' for the nasm stall; FV a body that passes a
+       parameter or a global on to a call reads it whole in its record,
+       README 3.9, 4.2 and 8.3 say so (the item of round 153 DU keeps the
+       code fix); FT 17 comments in 9 files follow the comment rules;
+       listings, images and errors equal but for the qemu memory in the
+       errors of tests 2810 to 2812 and test 5700
+[-] medium: call summaries less precise than the docs say (round 184 FQ):
+    README 3.9 and 4.2 say a call records only what the callee touches
+    ("only 'q.y' of 'sety(q)'"), but 'func f(p mut point, q mut point) {
+    var t = gety(p) q.x = 2 }' called as 'f(a, a)' is rejected as sharing
+    storage, while 'var t = p.y' in place of 'gety(p)' is accepted; also
+    'sety(p)' then 'q.x = 2'; either a conservative rule to document or
+    precision lost when a parameter is passed on
+    => discarded (2026-11-08): the read of the whole argument is the
+       conservative rule of round 153 DU, which keeps its code fix; the
+       docs now state it (round 184 FV)
 [x] hard: round 183 (2026-11-08, user: continue the loop; FO the test,
     lint and fuzz scripts, FP noinline functions and the calling convention)
     => done (2026-11-08): FO 'test-cli.sh' checks an exit code of 1 with

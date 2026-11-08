@@ -85,8 +85,8 @@ inline auto assert_names_type(const toc& tc, const token& type_tk,
     throw_type_mismatch(type_tk, tp.name(), named_type.name());
 }
 
-// 'kind' of 'tp' written at 'value_tk' is not continued, e.g. the '+' of
-// 'p + 1' or of 'i8[2]{1, 2} + 1', nor reached into, e.g. the '.x' of
+// 'kind' of 'tp' written at 'value_tk' is not continued nor reached into,
+// e.g. the '+' of 'p + 1' or of 'i8[2]{1, 2} + 1' and the '.x' of
 // 'point{1, 2}.x'; an equality gets the message of a number destination, it
 // makes a condition
 inline auto assert_value_ends(const tokenizer& tz, const token& value_tk,

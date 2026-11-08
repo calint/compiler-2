@@ -146,8 +146,7 @@ inline auto parse_builtin(toc& tc, tokenizer& tz, const token& tk,
 }
 
 // e.g. the 'a' of 'return a', a value on the line of the 'return' that no
-// statement starts with; a statement may follow, e.g. 'g()' in
-// 'if x return g()'
+// statement starts with, not the 'g()' of 'if x return g()'
 inline auto assert_return_without_value(const tokenizer& tz,
                                         const token& return_tk) -> void {
 

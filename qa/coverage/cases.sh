@@ -3073,7 +3073,7 @@ if [[ $MACHINE == x86_64 ]]; then
     SRC=0970 && EXP=253 && OPTS="--checks=division" RUN_ERR
 fi
 
-# --checks=division,line: zero divisor with the line, the fpga prints nothing
+# --checks=division,line: zero divisor with the line
 SRC=0971 && EXP=253 && OPTS="--checks=division,line" RUN_ERR
 
 # --checks=division,line: minimum divided by -1 with the line
@@ -7129,3 +7129,7 @@ SRC=5301 && COMPERR
 
 # a value that hides a type is not indexed as the type
 SRC=5302 && COMPERR
+
+# rv32i-qemu: an image that needs the 2 MiB that qemu keeps for its device
+# tree is rejected
+if [[ $MACHINE == rv32i-qemu ]]; then SRC=5700 && COMPERR; fi

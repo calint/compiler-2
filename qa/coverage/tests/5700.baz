@@ -1,0 +1,5 @@
+# rv32i-qemu keeps 2 MiB of its 128 MiB for the device tree of qemu
+dat big = [0x1fc0000]{7}
+func main() {
+    exit(big[0x1fbffff] + big[0])
+}

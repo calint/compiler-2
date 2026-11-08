@@ -649,7 +649,7 @@ class expr_any final : public statement {
 
         // array, e.g. 'i8[]{1, 2}' or 'a' of 'var b = a'
 
-        // e.g. "hello" fills the start of an 'i8' array
+        // e.g. '"hello"' fills the start of an 'i8' array
         if (tz.peek_char_after_whitespace() == '"') {
             const token string_tk{tz.next_token()};
 

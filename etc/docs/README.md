@@ -1198,14 +1198,17 @@ programs: 'qa/fuzz/fuzz-alias.sh', see 'qa/fuzz/README.md'.
 
 ### 3.9 What a call does
 
-The effect of a call is a summary that the parse makes of its body ('body_uses',
-4.2): the globals the body reads and writes, also through its calls, and what
-it reads and writes of each argument through its parameter, e.g. only 'q.y'
-of 'sety(q)' ('stmt_call::visit_callee_effects'). The calls in the arguments
-come first. The parse records the same summary for the caller. A function
-that calls itself has no complete summary yet: there the argument of a 'mut'
-parameter is written whole and of another parameter read whole, so no fixed
-point over the bodies is needed (8.3).
+The effect of a call is a summary that the parse makes of its body
+('body_uses', 4.2): the globals the body reads and writes, also through its
+calls, and what it reads and writes of each argument through its parameter,
+e.g. only 'q.y' of 'sety(q)' ('stmt_call::visit_callee_effects'). The calls in
+the arguments come first. The parse records the same summary for the caller,
+and with it a read of the whole argument: the parse records a read of each path
+it parses before it knows the path is passed in place, e.g. a body that calls
+'sety(p)' reads all of 'p' and writes 'p.y' (8.3). A function that calls itself
+has no complete summary yet: there the argument of a 'mut' parameter is written
+whole and of another parameter read whole, so no fixed point over the bodies is
+needed (8.3).
 
 ### 3.10 Definite assignment
 
@@ -1318,12 +1321,13 @@ inlined and noinline alike, so the verdict does not depend on inlining:
 The parse records what each body reaches that its callers name too
 ('body_uses'): the globals, its parameters and its result, each with its path
 and whether it is written, also through its calls. Of the result destination,
-the arguments and the globals the callee uses, two may not reach the same
-bytes where one of them writes them, e.g. 'f(a, a)' where 'f' writes 'p.x' and
-reads 'q.x', 'f(g)' where 'f' writes its parameter and reads 'g', or 'g = f()'
-where 'f' reads 'g'; 'f(a, a)' where 'f' writes 'p.x' and reads 'q.y' is
-accepted. A call of the function it is in reaches its arguments and its result
-whole, its record is not complete yet (3.9).
+the arguments and the globals the callee uses, two may not reach the same bytes
+where one of them writes them, e.g. 'f(a, a)' where 'f' writes 'p.x' and reads
+'q.x', 'f(g)' where 'f' writes its parameter and reads 'g', or 'g = f()' where
+'f' reads 'g'; 'f(a, a)' where 'f' writes 'p.x' and reads 'q.y' is accepted,
+but not where it reads 'q.y' through 'gety(q)', which reads 'q' whole in the
+record of 'f' (3.9). A call of the function it is in reaches its arguments and
+its result whole, its record is not complete yet (3.9).
 
 A value without storage (a constant, '{1, 2}') shares storage with nothing: a
 noinline call passes it in a temporary of the call, an inlined call folds a
@@ -1967,8 +1971,10 @@ What depends on the target is listed here, nothing else does:
    and rv32i; the uart of 'rv32i-qemu' and 'rv32i-fpga' takes every file
    descriptor, a 'read' returns at most one line, a carriage return reads as a
    newline, and an end of transmission byte ends a read, also inside the
-   input; code, data, variables and '--stack' fit in the memory of the
-   device, 128 MiB on 'rv32i-qemu' and '--memory' on 'rv32i-fpga'
+   input, the emulator of 'rv32i-fpga' reads a backspace as 0x7f as a
+   terminal key sends it; code, data, variables and '--stack' fit in the
+   memory of the device, 126 MiB on 'rv32i-qemu' (qemu keeps 2 MiB of its
+   128 MiB for its device tree) and '--memory' on 'rv32i-fpga'
 
 So whether a program is accepted can depend on the target through 1 to 5,
 and its result through 1, 4 and 5; under 'noub' the result of an accepted
@@ -2060,6 +2066,13 @@ message, x86_64 stops with a signal.
   from an 'f(x)' that nothing calls, with deep expressions in 'x' around the
   recursive call, is accepted on x86_64 and rejected on rv32i and at
   'f(1)'.
+- A body that passes a parameter or a global on to a call, or calls a
+  method of it, reads it whole in its record (3.9), whatever the callee
+  reaches of it: 'f(p mut point, q mut point)' that calls 'gety(p)' or
+  'sety(p)' and writes 'q.x' is rejected at 'f(a, a)', as is 'f(g)' of an
+  'f(p mut point)' that calls 'sety(p)' and writes 'g.x'. The parse records
+  a read of each path it parses; deferring it until the call knows the path
+  is passed in place complicates the parse.
 - Definite assignment does not count the writes of a call, e.g.
   'init(res)' is a read of 'res'; a conservative rejection.
 - A noinline call there with an array argument of unknown length is not
@@ -2078,8 +2091,8 @@ message, x86_64 stops with a signal.
   round 14 B1-1, B1-2).
 - The x86_64 listing leaves the size of each jump to nasm. On rare listings
   nasm's default search ('-Ox') does not settle ("unable to find valid values
-  for all labels"), e.g. a '--nopt' listing of 'fuzz-flow' seed 71;
-  'nasm -O1' assembles it, with longer jumps.
+  for all labels"), e.g. 'etc/nasm-issue.s'; 'nasm -O1' assembles it, with
+  longer jumps; the fuzzers assemble such a listing with '-O1'.
 
 ## 9. Changing a target or a check
 

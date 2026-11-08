@@ -126,7 +126,7 @@ options:
                       rv32i: linux, llvm assembler, qemu user mode
                       rv32i-qemu: bare-metal image for the qemu virt machine,
                         fails when code, data, variables and stack exceed its
-                        128 MiB
+                        126 MiB
                       rv32i-fpga: bare-metal image for the fpga soft core,
                         stack grows down from the end of the memory (see
                         --memory), fails when code, data, variables and stack

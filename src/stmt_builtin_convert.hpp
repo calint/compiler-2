@@ -24,11 +24,11 @@
 //
 // 'T(arg)' behaves like a temporary of type T that holds 'arg' computed at W
 // and wrapped to T. W is the wider of T and the type of the argument, which is
-// that of its first element. The argument follows the rule of a list at W: a
+// that of its first element. the argument follows the rule of a list at W: a
 // wider element is rejected as narrowed, '+', '-' and '*' wrap (it is
 // compiled into a wrapping destination, a call in it is checked as anywhere
-// else) and its own unary ops apply at W. The conversion's own '-' and '~'
-// apply where the value is used, at the width D of the destination.
+// else) and its own unary ops apply at W. the conversion's own '-' and '~'
+// apply where the value is used, at the width D of the destination
 //
 // where the conversion's own unary ops apply ('is_made_at_type'): when D > T,
 // or D == T with ops under the overflow check, the value is made at T in the

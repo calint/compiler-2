@@ -424,7 +424,7 @@ class type_instantiator final {
 
     // the base of 'instance', its argument tokens naming the parameters of
     // 'instance', e.g. 'list<i8, 8>' for 'text<8>' with
-    // 'type text<size> = list<i8, size>'; none for the root, e.g. 'list'
+    // 'type text<size> = list<i8, size>'; none for the root 'list'
     [[nodiscard]] static auto
     base_instance(toc& tc, const generic_type_instance& instance)
         -> std::optional<generic_type_instance> {

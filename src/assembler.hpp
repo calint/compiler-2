@@ -31,25 +31,25 @@
 //
 // jump optimizations done by 'optimize_jumps', in x86_64 and rv32i syntax:
 //
-// jumps_to_next:
+// 'jumps_to_next':
 //     jmp if.16.8.code                  j if.16.8.code
 //     if.16.8.code:                     if.16.8.code:
 //   to
 //     if.16.8.code:                     if.16.8.code:
 //
-// unreachable_jumps:
+// 'unreachable_jumps':
 //     jmp loop.10.5.end                 j loop.10.5.end
 //     jmp loop.10.5                     j loop.10.5
 //   to
 //     jmp loop.10.5.end                 j loop.10.5.end
 //
-// same_target_branches:
+// 'same_target_branches':
 //     jne bool.15.19.end                beq t0, zero, bool.15.19.end
 //     jmp bool.15.19.end                j bool.15.19.end
 //   to
 //     jmp bool.15.19.end                j bool.15.19.end
 //
-// inverted_branches:
+// 'inverted_branches':
 //     jne cmp.19.27                     bne t0, t1, cmp.19.27
 //     jmp if.19.8.code                  j if.19.8.code
 //     cmp.19.27:                        cmp.19.27:

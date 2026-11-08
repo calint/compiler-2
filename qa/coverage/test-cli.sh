@@ -725,17 +725,17 @@ CLI_VARS_RANGE() {
 CLI_QEMU_STACK() {
     echo -n "cli rv32i-qemu stack size: "
     expect_exit_1 "$BIN" --target=rv32i-qemu --bin=gen-rv32i.bin --stack=0x100000010 0426.baz >gen.s 2>err
-    grep -Fq "error: invalid --stack: 4294967312 B exceeds the 134217728 B of device memory" err
+    grep -Fq "error: invalid --stack: 4294967312 B exceeds the 132120576 B of device memory" err
     grep -Fq "use --help for usage information" err
     # the address space, one more than the largest 32-bit immediate
     expect_exit_1 "$BIN" --target=rv32i-qemu --bin=gen-rv32i.bin --stack=0x100000000 0426.baz >gen.s 2>err
-    grep -Fq "error: invalid --stack: 4294967296 B exceeds the 134217728 B of device memory" err
+    grep -Fq "error: invalid --stack: 4294967296 B exceeds the 132120576 B of device memory" err
     grep -Fq "use --help for usage information" err
-    # the 'virt' machine has 128 MiB
-    "$BIN" --target=rv32i-qemu --bin=gen-rv32i.bin --stack=0x7f00000 0426.baz >gen.s 2>err
+    # the 'virt' machine has 128 MiB, 126 MiB of it for the image
+    "$BIN" --target=rv32i-qemu --bin=gen-rv32i.bin --stack=0x7d00000 0426.baz >gen.s 2>err
     [[ ! -s err ]]
-    expect_exit_1 "$BIN" --target=rv32i-qemu --bin=gen-rv32i.bin --stack=0x8000000 0426.baz >gen.s 2>err
-    grep -Fq "the stack 134217728 B, which exceeds the 134217728 B of device memory" err
+    expect_exit_1 "$BIN" --target=rv32i-qemu --bin=gen-rv32i.bin --stack=0x7e00000 0426.baz >gen.s 2>err
+    grep -Fq "the stack 132120576 B, which exceeds the 132120576 B of device memory" err
     rm -f gen-rv32i.bin
     echo ok
 }
