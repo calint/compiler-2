@@ -7116,3 +7116,16 @@ SRC=4900 && COMPERR
 
 # a value after 'return' that starts with an operator is reported as a value
 SRC=4901 && COMPERR
+
+# --checks=upper,line: a run-time range of 'array_copy' past the end reports
+# the line of its count, as a constant count is rejected at the count
+SRC=5200 && EXP=255 && OPTS="--checks=upper,line" RUN_ERR
+
+# a typed literal passed to a 'mut' parameter is not a variable
+SRC=5300 && COMPERR
+
+# a braced literal is not an operand
+SRC=5301 && COMPERR
+
+# a value that hides a type is not indexed as the type
+SRC=5302 && COMPERR

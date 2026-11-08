@@ -190,6 +190,10 @@ class bulk_operands final {
                 tc_.checks().bounds_options(),
             };
 
+            // a range past the end names the count, as the check of a
+            // constant count does ('assert_count_in_bounds')
+            const token& count_tk{operands_.count().tok()};
+
             machine& x{tc_.machine()};
 
             if (not count_register) {
@@ -214,7 +218,7 @@ class bulk_operands final {
 
                 range.start_lower_checked = true;
 
-                x.check_bounds(array.tok(), indent_, range, options);
+                x.check_bounds(count_tk, indent_, range, options);
 
                 return false;
             }
@@ -228,7 +232,7 @@ class bulk_operands final {
                 range.start_lower_checked = true;
                 range.count_lower_checked = count_lower_checked;
 
-                x.check_bounds(array.tok(), indent_, range, options);
+                x.check_bounds(count_tk, indent_, range, options);
 
                 return options.lower;
             }
@@ -249,7 +253,7 @@ class bulk_operands final {
                     array_count - static_cast<size_t>(*constant_start)),
             };
 
-            x.check_bounds(array.tok(), indent_, range, options);
+            x.check_bounds(count_tk, indent_, range, options);
 
             return options.lower;
         }

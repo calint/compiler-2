@@ -1,0 +1,6 @@
+# a value that hides a type is not indexed as the type
+type point { x, y }
+func main() {
+    var point = 1
+    var q = point[2]
+}

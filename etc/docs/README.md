@@ -1393,10 +1393,9 @@ or the index in a 'let' avoids it.
 
 A version changes more than the lines it emits. 'machine::version_scope' and
 'toc::emit_most_efficient' save what it changes and put it back when the version
-ends, also when an error unwinds it; 1.4 lists it by owner. The registers held
-carry what a passed lower bounds check proved, and the routines marked used
-('machine::mark_used') are a set of values like the registers, so those of a
-dropped version or of discarded code are dropped.
+ends, also when an error unwinds it; 1.4 lists it by owner. The routines
+marked used ('machine::mark_used') are a set of values like the registers held,
+so those of a dropped version or of discarded code are dropped.
 
 Each version starts from the saved state; after the choice the state the kept
 version ended in remains. So the footer and '--report=registers' describe the

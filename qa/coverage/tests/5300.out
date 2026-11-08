@@ -1,0 +1,4 @@
+
+5300.baz:5:7: 'pt{1, 2}', which is not a variable, cannot be passed to a 'mut' parameter
+    f(pt{1, 2})
+      ^~

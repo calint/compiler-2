@@ -1,0 +1,5 @@
+# a braced literal is not an operand of a comparison
+func main() {
+    var a = i8[2]
+    var b = a == {1, 2}
+}

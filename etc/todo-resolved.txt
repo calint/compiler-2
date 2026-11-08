@@ -1,6 +1,27 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] hard: round 181 (2026-11-08, user: continue the loop, fix the three
+    messages; FK statements, the register pool and the array built-ins, FL
+    the individual run-time checks)
+    => done (2026-11-08): FL the run-time range of 'array_copy' and
+       'arrays_equal' names the count as the compile time check does
+       (test 5200), README 5.3 no longer names the removed lower bound
+       state; FK a constant of one use and two comments; FL found no check
+       missing, leaked or of a wrong kind; the io range line is a todo
+       item; the code is equal, comments and errors differ only for the
+       moved range check and tests 5200 and 5300 to 5302
+[x] easy: messages (round 175 FC): 'f(pt{1, 2})' to a 'mut' parameter says
+    to write '{...}', which then fails as not a variable; 'a == {1, 2}' gets
+    the generic "expected a constant, a name or a call" ('a == {}' has its
+    own); 'point[2]' with a value 'point' hiding the type says it is not an
+    array, not that the value hides the type
+    => done (2026-11-08, user: fix the three messages): a 'mut' argument
+       is parsed with its written type, so 'f(pt{1, 2})' is rejected as
+       not a variable; a '{' operand is "a '{...}' literal is not an
+       operand here"; 'point[2]' says the value hides the type; the three
+       uses of that message share 'throw_value_hides_type'; tests 5300 to
+       5302
 [x] easy: user decision (2026-11-08, round 177 FF): the fuzzers count a
     nasm stall ("unable to find valid values for all labels", README 8.3) as
     'invalid-asm'; 'fuzzlib.assemble_x86' could retry with 'nasm -O1' and

@@ -258,10 +258,7 @@ inline auto assert_value_or_call(const toc& tc, const tokenizer& tz,
 
     // e.g. 'point{1, 2}' after 'var point = 1', the value hides the type
     if (tm == term_kind::value and tc.types().has(tk.text()) and next == '{') {
-        throw compile_error{
-            tk, std::format("{} names a value here, which hides the type "
-                            "{}",
-                            in_quotes(tk.text()), in_quotes(tk.text()))};
+        throw_value_hides_type(tk, tk.text());
     }
 
     // e.g. '1 (2)' or 'true(1)', a literal is not called
@@ -463,6 +460,11 @@ inline auto parse_operand(toc& tc, tokenizer& tz, unary_ops uops,
         tz.peek_char_after_whitespace() == '!') {
 
         throw compile_error{tk, "'!' is not an operator, use 'not'"};
+    }
+
+    // e.g. the '{1, 2}' of 'a == {1, 2}', which only a destination types
+    if (tk.is_none() and tz.peek_char_after_whitespace() == '{') {
+        throw_literal_not_operand(tk, "a '{...}' literal");
     }
 
     if (tk.is_none()) {

@@ -173,10 +173,9 @@ class stmt_identifier;
 // is 'std::unreachable()' where no other class reaches it:
 //
 //   every node     'compile', 'source_to', 'tok', 'trace_assignment'
-//                  (control flow); 'visit_operands' (the default is
-//                  'std::unreachable()'): overridden by every value and by
-//                  every node whose 'trace_assignment' checks its reads with
-//                  'assert_result_not_read', a leaf lists none;
+//                  (control flow); 'visit_operands': overridden by every
+//                  value and by every node whose 'trace_assignment' checks
+//                  its reads with 'assert_result_not_read', a leaf lists none;
 //                  'visit_reads' and 'visit_call_effects' walk the
 //                  operands, 'stmt_identifier' adds its own read,
 //                  'stmt_call' what its callee reads and writes,

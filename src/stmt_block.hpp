@@ -158,7 +158,6 @@ class stmt_block final : public statement {
     // '{ var a = 1 exit(a) }'
     auto parse_statements(toc& tc, tokenizer& tz) -> void {
         while (true) {
-            // the '}' ends the block
             close_brace_tk_ = tz.is_next_char_token('}');
 
             if (close_brace_tk_) {

@@ -158,9 +158,6 @@ class register_trace final {
     };
 
   private:
-    // the name of the frame of a function with a body of its own ends with this
-    static constexpr std::string_view noinline_body_suffix_{" (noinline body)"};
-
     bool enabled_{};
     std::vector<frame> frames_;
     peak_use peak_{};
@@ -174,7 +171,7 @@ class register_trace final {
                      const frame_kind kind) -> void {
 
         if (kind == frame_kind::noinline_body) {
-            name += noinline_body_suffix_;
+            name += " (noinline body)";
         }
 
         if (enabled_) {

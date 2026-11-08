@@ -1,0 +1,6 @@
+# a typed literal passed to a mut parameter is not a variable
+type pt { x, y }
+func f(p mut pt) { p.x = 1 }
+func main() {
+    f(pt{1, 2})
+}

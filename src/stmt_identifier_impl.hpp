@@ -300,8 +300,13 @@ inline auto stmt_identifier::parse_element(toc& tc, tokenizer& tz,
         return;
     }
 
-    // the '[' of an element needs an array
+    // the '[' of an element needs an array, e.g. the 'point[2]' of a value
+    // 'point' that hides the type
     if (not prefix.is_array()) {
+        if (tc.types().has(dotted_path_)) {
+            throw_value_hides_type(tk, dotted_path_);
+        }
+
         throw_not_indexable(tk, dotted_path_);
     }
 

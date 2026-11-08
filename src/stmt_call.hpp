@@ -2179,12 +2179,7 @@ class stmt_call final : public statement {
             // e.g. 'point.at(1)' after 'dat point = point{}', the value hides
             // the type, 'point.at(...)' is what was written
             if (tc.types().has(receiver.dotted_path())) {
-                throw compile_error{
-                    receiver.tok(),
-                    std::format("{} names a value here, which hides the "
-                                "type {}",
-                                in_quotes(receiver.dotted_path()),
-                                in_quotes(receiver.dotted_path()))};
+                throw_value_hides_type(receiver.tok(), receiver.dotted_path());
             }
 
             throw compile_error{
@@ -2505,14 +2500,18 @@ class stmt_call final : public statement {
                 continue;
             }
 
-            const bool is_deducing{
-                std::ranges::contains(deducing_args, arg_index),
+            // a 'mut' argument names its type, so 'f(pt{1, 2})' is rejected
+            // as not a variable rather than for the type it writes
+            const bool is_written_type{
+                std::ranges::contains(deducing_args, arg_index) or
+                    not params.at(i).is_read_only(),
             };
 
             // e.g. 'a' and 'b + 1' of 'f(a, b + 1)'
             args_.emplace_back(tc, tz, params.at(i).get_type(),
-                               is_deducing ? literal_typing::written
-                                           : literal_typing::from_destination);
+                               is_written_type
+                                   ? literal_typing::written
+                                   : literal_typing::from_destination);
         }
 
         assert_no_surplus_argument(tz, callee().name(),

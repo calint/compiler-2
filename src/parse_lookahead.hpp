@@ -438,3 +438,14 @@ throw_literal_not_operand(const token& tk, const std::string_view literal)
                                         "in a variable first",
                                         literal)};
 }
+
+// a value named like a type hides the type, e.g. 'point' after
+// 'var point = 1'
+[[noreturn]] inline auto throw_value_hides_type(const token& tk,
+                                                const std::string_view name)
+    -> void {
+
+    throw compile_error{tk, std::format("{} names a value here, which hides "
+                                        "the type {}",
+                                        in_quotes(name), in_quotes(name))};
+}

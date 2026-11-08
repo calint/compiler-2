@@ -17,11 +17,6 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
     0x8000'0000 for qemu, 0 for the fpga), so 'emit_target_setup' and
     'emit_stack_limit_load' move to 'machine_rv32i_bare_metal' and both
     qemu overrides go; changes the qemu layout and listings
-[ ] easy: messages (round 175 FC): 'f(pt{1, 2})' to a 'mut' parameter says
-    to write '{...}', which then fails as not a variable; 'a == {1, 2}' gets
-    the generic "expected a constant, a name or a call" ('a == {}' has its
-    own); 'point[2]' with a value 'point' hiding the type says it is not an
-    array, not that the value hides the type
 [p] medium: user decision (2026-11-08, round 179 FI): generic type base
     chains ('type dI<k> = dI-1<k>') take cubic memory: 'generic_trace::inside'
     copies every outer frame into each level and each instance and method
@@ -30,6 +25,11 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
     makes copies O(1) (70 MB, 20 MB), about 40 lines with a loop destructor
     so that freeing a deep chain does not overflow the stack; the patch is
     '/tmp/r179-fi-work/generic-trace.diff'
+[ ] easy: line of a run-time io range (round 181 FL): 'write(1,\n a,\n 3,\n
+    s)' panics at the line of the start 's' while the constant version is
+    rejected at the count '3'; one 'check_bounds' covers the start's lower
+    bound and the range, naming both right means splitting the check (more
+    code and instructions), left as is
 [ ] easy: compile time quadratic in table sizes (round 179 FI), far above
     real programs: 'data_table::get_dat' (128000 dats 9.9 s),
     'data_table::add_constant' (64000 strings 6.0 s), 'assembler::summary_of'
