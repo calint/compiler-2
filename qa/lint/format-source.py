@@ -919,15 +919,6 @@ class stmt:
     def is_control(self):
         return self.kind in CONTROL_KINDS
 
-    @property
-    def is_plain(self):
-        # a statement that a rule treats as one line of code
-        return not (
-            self.is_control
-            or self.is_assert
-            or self.kind in PASSIVE_KINDS | {K.RETURN_STMT}
-        )
-
 
 @dataclass
 class block:

@@ -14,6 +14,14 @@ cd "$SCRIPT_DIR/tests"
 BIN="$SCRIPT_DIR/../../baz"
 export LLVM_PROFILE_FILE="$SCRIPT_DIR/cli-%p.profraw"
 
+# runs a command that must exit with 1, e.g. a rejected compile
+expect_exit_1() {
+    local exit_code=0
+    "$@" || exit_code=$?
+    # note: a failure returned names the line of the caller, not this one
+    [[ $exit_code -eq 1 ]] || return 1
+}
+
 CLI() {
     echo -n "cli $1: "
     set +e
@@ -96,22 +104,14 @@ CLI_BINARY_NAME() {
     [[ ! -e gen-rv32i.bin ]]
     # the image does not replace the source, also named another way
     cp 0426.baz gen-source.baz
-    set +e
-    "$BIN" --target=rv32i --bin=./gen-source.baz gen-source.baz >gen.s 2>err
-    local exit_code=$?
-    set -e
-    [[ $exit_code -eq 1 ]]
+    expect_exit_1 "$BIN" --target=rv32i --bin=./gen-source.baz gen-source.baz >gen.s 2>err
     grep -Fq "invalid --bin: './gen-source.baz' is a source file" err
     cmp -s 0426.baz gen-source.baz
     rm -f gen-source.baz
     # nor an included file
     printf 'func three() res {\n    res = 3\n}\n' >gen-include.baz
     printf 'include "gen-include.baz"\n\nfunc main() {\n    exit(three())\n}\n' >gen-main.baz
-    set +e
-    "$BIN" --target=rv32i --bin=gen-include.baz gen-main.baz >gen.s 2>err
-    exit_code=$?
-    set -e
-    [[ $exit_code -eq 1 ]]
+    expect_exit_1 "$BIN" --target=rv32i --bin=gen-include.baz gen-main.baz >gen.s 2>err
     grep -Fq "invalid --bin: 'gen-include.baz' is a source file" err
     grep -Fq "res = 3" gen-include.baz
     rm -f gen-include.baz gen-main.baz
@@ -168,8 +168,7 @@ CLI_JUMP_OPTIMIZATIONS() {
         ld -s -T "$SCRIPT_DIR/../../baz.ld" -o "$temp_dir/test" "$temp_dir/test.o"
         "$temp_dir/test"
     done
-    rm -f "$temp_dir/test.o" "$temp_dir/test"
-    rmdir "$temp_dir"
+    rm -rf "$temp_dir"
     echo "ok (jumps to next: 3, inverted: 1; jumps $raw_count -> $optimized_count; both exit 0)"
 }
 
@@ -232,67 +231,31 @@ CLI_CHECKS_LIST() {
 
 CLI_FILE_ERRORS() {
     echo -n "cli unreadable source and unwritable image: "
-    set +e
-    "$BIN" missing-source.baz >gen.s 2>err
-    local exit_code=$?
-    set -e
-    [[ $exit_code -eq 1 ]]
+    expect_exit_1 "$BIN" missing-source.baz >gen.s 2>err
     # an error without a place in the source starts with 'error: ' like an
     # option error
     grep -Fq "error: cannot open file 'missing-source.baz'" err
-    set +e
-    "$BIN" --target=rv32i --bin=missing-directory/gen-rv32i.bin 0015.baz >gen.s 2>err
-    exit_code=$?
-    set -e
-    [[ $exit_code -eq 1 ]]
+    expect_exit_1 "$BIN" --target=rv32i --bin=missing-directory/gen-rv32i.bin 0015.baz >gen.s 2>err
     [[ ! -s gen.s ]]
     grep -Fq "cannot write file 'missing-directory/gen-rv32i.bin'" err
     # a full disk is an error, for the listing and for the image
-    set +e
-    "$BIN" 0015.baz >/dev/full 2>err
-    exit_code=$?
-    set -e
-    [[ $exit_code -eq 1 ]]
+    expect_exit_1 "$BIN" 0015.baz >/dev/full 2>err
     grep -Fq "error: cannot write the assembly to stdout" err
-    set +e
-    "$BIN" --target=rv32i --bin=/dev/full 0015.baz >gen.s 2>err
-    exit_code=$?
-    set -e
-    [[ $exit_code -eq 1 ]]
+    expect_exit_1 "$BIN" --target=rv32i --bin=/dev/full 0015.baz >gen.s 2>err
     [[ ! -s gen.s ]]
     grep -Fq "cannot write file '/dev/full'" err
     # a message that cannot be written still exits with 1, the help too
-    set +e
-    "$BIN" --help >/dev/full 2>err
-    exit_code=$?
-    set -e
-    [[ $exit_code -eq 1 ]]
+    expect_exit_1 "$BIN" --help >/dev/full 2>err
     # the version is the tag and commit of the build, written like the help
     "$BIN" --version >gen.s 2>err
     grep -Eq '^baz [^ ]+$' gen.s
-    set +e
-    "$BIN" --version >/dev/full 2>err
-    exit_code=$?
-    set -e
-    [[ $exit_code -eq 1 ]]
+    expect_exit_1 "$BIN" --version >/dev/full 2>err
     grep -Fq "cannot write the version to stdout" err
     # a help shorter than a block is still checked, e.g. a closed stdout
-    set +e
-    "$BIN" --help 1>&- 2>err
-    exit_code=$?
-    set -e
-    [[ $exit_code -eq 1 ]]
-    set +e
-    "$BIN" missing-source.baz >gen.s 2>/dev/full
-    exit_code=$?
-    set -e
-    [[ $exit_code -eq 1 ]]
+    expect_exit_1 "$BIN" --help 1>&- 2>err
+    expect_exit_1 "$BIN" missing-source.baz >gen.s 2>/dev/full
     # a source is read up to its size limit
-    set +e
-    "$BIN" /dev/zero >gen.s 2>err
-    exit_code=$?
-    set -e
-    [[ $exit_code -eq 1 ]]
+    expect_exit_1 "$BIN" /dev/zero >gen.s 2>err
     grep -Fq "file '/dev/zero' is larger than 268435456 B" err
     # a source from a pipe has no canonical path
     cat 0015.baz | "$BIN" /dev/stdin >gen.s 2>err
@@ -576,22 +539,14 @@ CLI_ADDRESS_RANGE() {
         fi
         printf 'dat big = i8[4294967000]\nfunc main(){\n    exit(0)\n}\n' >gen-range.baz
         rm -f gen-rv32i.bin
-        set +e
-        "$BIN" --target=$target --bin=gen-rv32i.bin gen-range.baz >gen.s 2>err
-        exit_code=$?
-        set -e
-        [[ $exit_code -eq 1 ]]
+        expect_exit_1 "$BIN" --target=$target --bin=gen-rv32i.bin gen-range.baz >gen.s 2>err
         [[ ! -s gen.s && ! -e gen-rv32i.bin ]]
         grep -Fq "code, data and variables use" err
         # data of the whole range leaves no room, it is rejected where it is
         # declared, before its address from the variables base would wrap
         printf 'dat d = i8[0x100000000]\nfunc main() {\n    d[1] = 1\n}\n' \
             >gen-range.baz
-        set +e
-        "$BIN" --target=$target --bin=gen-rv32i.bin gen-range.baz >gen.s 2>err
-        exit_code=$?
-        set -e
-        [[ $exit_code -eq 1 ]]
+        expect_exit_1 "$BIN" --target=$target --bin=gen-rv32i.bin gen-range.baz >gen.s 2>err
         grep -Fq "data and variables of 4294967296 B reach the 4294967296 B" err
     done
     rm -f gen-range.baz gen-rv32i.bin
@@ -672,79 +627,45 @@ CLI_FPGA_MEMORY() {
     "$BIN" --target=rv32i-fpga --bin=gen-rv32i.bin --vars=$vars_fit 0426.baz >gen.s 2>err
     [[ ! -s err ]]
     rm -f gen-rv32i.bin
-    set +e
-    "$BIN" --target=rv32i-fpga --bin=gen-rv32i.bin --vars=$((vars_fit + 16)) 0426.baz >gen.s 2>err
-    local exit_code=$?
-    set -e
-    [[ $exit_code -eq 1 ]]
+    expect_exit_1 "$BIN" --target=rv32i-fpga --bin=gen-rv32i.bin --vars=$((vars_fit + 16)) 0426.baz >gen.s 2>err
     [[ ! -s gen.s && ! -e gen-rv32i.bin ]]
     grep -Fq "exceeds the $memory_size B of device memory" err
-    set +e
-    "$BIN" --target=rv32i-fpga --bin=gen-rv32i.bin --stack=$((memory_size + 16)) 0426.baz >gen.s 2>err
-    exit_code=$?
-    set -e
-    [[ $exit_code -eq 1 ]]
+    expect_exit_1 "$BIN" --target=rv32i-fpga --bin=gen-rv32i.bin --stack=$((memory_size + 16)) 0426.baz >gen.s 2>err
     grep -Fq "error: invalid --stack: $((memory_size + 16)) B exceeds the $memory_size B of device memory" err
     grep -Fq "use --help for usage information" err
     # a memory smaller than the default stack names '--memory', the stack was
     # not given
-    set +e
-    "$BIN" --target=rv32i-fpga --bin=gen-rv32i.bin --memory=0x1000 0426.baz >gen.s 2>err
-    exit_code=$?
-    set -e
-    [[ $exit_code -eq 1 ]]
+    expect_exit_1 "$BIN" --target=rv32i-fpga --bin=gen-rv32i.bin --memory=0x1000 0426.baz >gen.s 2>err
     grep -Fq "error: invalid --memory: 4096 B is smaller than the default stack of 65536 B, give a smaller --stack" err
     # it is an option error, reported before the source is read
     "$BIN" --target=rv32i-fpga --memory=0x1000 missing.baz >gen.s 2>err || true
     grep -Fq "error: invalid --memory: 4096 B is smaller than the default stack" err
     # a stack larger than the memory is rejected before a stack check of a
     # 'noinline' call is generated with it
-    set +e
-    "$BIN" --target=rv32i-fpga --bin=gen-rv32i.bin --checks=stack --stack=$((memory_size + 16)) 0992.baz >gen.s 2>err
-    exit_code=$?
-    set -e
-    [[ $exit_code -eq 1 ]]
+    expect_exit_1 "$BIN" --target=rv32i-fpga --bin=gen-rv32i.bin --checks=stack --stack=$((memory_size + 16)) 0992.baz >gen.s 2>err
     grep -Fq "error: invalid --stack: $((memory_size + 16)) B exceeds the $memory_size B of device memory" err
     # the options are checked before the source, so an error in the source
     # does not hide a stack below what 'main' may use
-    set +e
-    "$BIN" --target=rv32i-fpga --bin=gen-rv32i.bin --stack=16 0218.baz >gen.s 2>err
-    exit_code=$?
-    set -e
-    [[ $exit_code -eq 1 ]]
+    expect_exit_1 "$BIN" --target=rv32i-fpga --bin=gen-rv32i.bin --stack=16 0218.baz >gen.s 2>err
     grep -Fq "error: invalid --stack: 16 B is smaller than the 48 B" err
     grep -Fq "cannot resolve" err && exit 1
     # a size beyond the range of a number is out of range, not a non-number
-    set +e
-    "$BIN" --target=rv32i-fpga --stack=99999999999999999999999 0426.baz >gen.s 2>err
-    exit_code=$?
-    set -e
-    [[ $exit_code -eq 1 ]]
+    expect_exit_1 "$BIN" --target=rv32i-fpga --stack=99999999999999999999999 0426.baz >gen.s 2>err
     grep -Fq "error: invalid --stack: '99999999999999999999999' is out of range" err
     # a smaller memory moves the end of the stack and the limit of the vars
     local small_size=$((0x40000))
     "$BIN" --target=rv32i-fpga --bin=gen-rv32i.bin --memory=$small_size 0426.baz >gen.s 2>err
     [[ ! -s err ]]
     grep -Fq "load stack pointer to 0x4:0000" gen.s
-    set +e
-    "$BIN" --target=rv32i-fpga --bin=gen-rv32i.bin --memory=$small_size --vars=$((small_size)) 0426.baz >gen.s 2>err
-    exit_code=$?
-    set -e
-    [[ $exit_code -eq 1 ]]
+    expect_exit_1 "$BIN" --target=rv32i-fpga --bin=gen-rv32i.bin --memory=$small_size --vars=$((small_size)) 0426.baz >gen.s 2>err
     grep -Fq "exceeds the $small_size B of device memory" err
     local bad
     for bad in 0 100 0x100000000 0xfffff800 abc; do
-        set +e
-        "$BIN" --target=rv32i-fpga --memory=$bad 0426.baz >gen.s 2>err
-        exit_code=$?
-        set -e
-        [[ $exit_code -eq 1 ]]
+        expect_exit_1 "$BIN" --target=rv32i-fpga --memory=$bad 0426.baz >gen.s 2>err
         [[ ! -s gen.s ]]
     done
     # the target rejects a memory that reaches its devices
-    set +e
-    "$BIN" --target=rv32i-fpga --memory=0x100000000 0426.baz >gen.s 2>err
-    set -e
+    "$BIN" --target=rv32i-fpga --memory=0x100000000 0426.baz >gen.s 2>err || true
     grep -Fq "error: invalid --memory: 4294967296 B exceeds the 4294963200 B below the device addresses" err
     # the largest memory below the devices is accepted
     "$BIN" --target=rv32i-fpga --bin=gen-rv32i.bin --memory=0xfffff000 0426.baz >gen.s 2>err
@@ -791,11 +712,7 @@ CLI_STACK_HANDLER() {
 
 CLI_VARS_RANGE() {
     echo -n "cli --vars past the target addresses: "
-    set +e
-    "$BIN" --vars=0x100000010 --target=rv32i 0426.baz >gen.s 2>err
-    local exit_code=$?
-    set -e
-    [[ $exit_code -eq 1 ]]
+    expect_exit_1 "$BIN" --vars=0x100000010 --target=rv32i 0426.baz >gen.s 2>err
     grep -Fq "invalid --vars: 4294967312 B reaches the 4294967296 B that the target addresses" err
     grep -Fq "use --help for usage information" err
     # the variables stay below the end, so the whole address space is too
@@ -807,29 +724,17 @@ CLI_VARS_RANGE() {
 
 CLI_QEMU_STACK() {
     echo -n "cli rv32i-qemu stack size: "
-    set +e
-    "$BIN" --target=rv32i-qemu --bin=gen-rv32i.bin --stack=0x100000010 0426.baz >gen.s 2>err
-    local exit_code=$?
-    set -e
-    [[ $exit_code -eq 1 ]]
+    expect_exit_1 "$BIN" --target=rv32i-qemu --bin=gen-rv32i.bin --stack=0x100000010 0426.baz >gen.s 2>err
     grep -Fq "error: invalid --stack: 4294967312 B exceeds the 134217728 B of device memory" err
     grep -Fq "use --help for usage information" err
     # the address space, one more than the largest 32-bit immediate
-    set +e
-    "$BIN" --target=rv32i-qemu --bin=gen-rv32i.bin --stack=0x100000000 0426.baz >gen.s 2>err
-    exit_code=$?
-    set -e
-    [[ $exit_code -eq 1 ]]
+    expect_exit_1 "$BIN" --target=rv32i-qemu --bin=gen-rv32i.bin --stack=0x100000000 0426.baz >gen.s 2>err
     grep -Fq "error: invalid --stack: 4294967296 B exceeds the 134217728 B of device memory" err
     grep -Fq "use --help for usage information" err
     # the 'virt' machine has 128 MiB
     "$BIN" --target=rv32i-qemu --bin=gen-rv32i.bin --stack=0x7f00000 0426.baz >gen.s 2>err
     [[ ! -s err ]]
-    set +e
-    "$BIN" --target=rv32i-qemu --bin=gen-rv32i.bin --stack=0x8000000 0426.baz >gen.s 2>err
-    exit_code=$?
-    set -e
-    [[ $exit_code -eq 1 ]]
+    expect_exit_1 "$BIN" --target=rv32i-qemu --bin=gen-rv32i.bin --stack=0x8000000 0426.baz >gen.s 2>err
     grep -Fq "the stack 134217728 B, which exceeds the 134217728 B of device memory" err
     rm -f gen-rv32i.bin
     echo ok
@@ -838,13 +743,9 @@ CLI_QEMU_STACK() {
 CLI_SMALL_STACK() {
     echo -n "cli bare-metal stack below what 'main' may use: "
     # 'main' has no stack check, a helper call and a failure use 48 B
-    local target exit_code
+    local target
     for target in rv32i-qemu rv32i-fpga; do
-        set +e
-        "$BIN" --target=$target --bin=gen-rv32i.bin --stack=32 0426.baz >gen.s 2>err
-        exit_code=$?
-        set -e
-        [[ $exit_code -eq 1 ]]
+        expect_exit_1 "$BIN" --target=$target --bin=gen-rv32i.bin --stack=32 0426.baz >gen.s 2>err
         grep -Fq "error: invalid --stack: 32 B is smaller than the 48 B that 'main' may use without a stack check" err
         grep -Fq "use --help for usage information" err
         "$BIN" --target=$target --bin=gen-rv32i.bin --stack=48 0426.baz >gen.s 2>err
@@ -924,13 +825,9 @@ CLI_SHARED_STRING_CONSTANT() {
 
 CLI_OPTION_MESSAGES() {
     echo -n "cli option errors name their option: "
-    local arg exit_code
+    local arg
     for arg in --vars=0 --stack=x --memory=100 --target=x --checks=x --report=x --versions=x; do
-        set +e
-        "$BIN" "$arg" 0015.baz >/dev/null 2>err
-        exit_code=$?
-        set -e
-        [[ $exit_code -eq 1 ]]
+        expect_exit_1 "$BIN" "$arg" 0015.baz >/dev/null 2>err
         grep -Fq "error: invalid ${arg%%=*}: " err
     done
     # each names what it lists
@@ -958,7 +855,6 @@ CLI_OPTION_MESSAGES() {
 # '--target' comes after them
 CLI_TARGET_OPTIONS() {
     echo -n "cli options a target does not read: "
-    local exit_code
     local -a rejected=(
         "--stack=0x10000 0426.baz"
         "--target=rv32i --stack=0x10000 0426.baz"
@@ -969,12 +865,8 @@ CLI_TARGET_OPTIONS() {
     )
     local args
     for args in "${rejected[@]}"; do
-        set +e
         # shellcheck disable=SC2086
-        "$BIN" --bin=gen-rv32i.bin $args >gen.s 2>err
-        exit_code=$?
-        set -e
-        [[ $exit_code -eq 1 ]]
+        expect_exit_1 "$BIN" --bin=gen-rv32i.bin $args >gen.s 2>err
         grep -Eq "^error: invalid --(stack|memory|sdcard): target '[^']+' does not read it, the targets that do are: " err
     done
     grep -Fq "error: invalid --sdcard: target 'rv32i-qemu' does not read it, the targets that do are: x86_64, rv32i" err

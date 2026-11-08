@@ -31,7 +31,6 @@ COMPILE_TIMEOUT = 120
 SLOW_COMPILE = 60
 RUN_TIMEOUT = 5
 OUTPUT_LIMIT = 1 << 20
-MEMORY_LIMIT = 4 << 30
 
 # a sanitizer report ends the compiler with these exit codes
 SANITIZER_EXIT = {98, 99}
@@ -129,17 +128,15 @@ class Result:
         return -self.returncode if self.returncode < 0 else 0
 
 
-def _limits(seconds, memory, file_size=OUTPUT_LIMIT):
+def _limits(seconds, file_size=OUTPUT_LIMIT):
     def apply():
         resource.setrlimit(resource.RLIMIT_CPU, (seconds, seconds))
         resource.setrlimit(resource.RLIMIT_FSIZE, (file_size, file_size))
-        if memory:
-            resource.setrlimit(resource.RLIMIT_AS, (memory, memory))
         resource.setrlimit(resource.RLIMIT_CORE, (0, 0))
     return apply
 
 
-def run(command, timeout, cwd=None, memory=0, env=None,
+def run(command, timeout, cwd=None, env=None,
         file_size=OUTPUT_LIMIT, stdin_bytes=None):
     # output goes to files so that a program that prints without end cannot
     # fill the memory, the size of a file is limited
@@ -152,7 +149,7 @@ def run(command, timeout, cwd=None, memory=0, env=None,
             command, stdin=given if stdin_bytes is not None
             else subprocess.DEVNULL, stdout=out, stderr=err,
             cwd=cwd, env=env or ENVIRONMENT,
-            preexec_fn=_limits(timeout + 2, memory, file_size))
+            preexec_fn=_limits(timeout + 2, file_size))
         timed_out = False
         try:
             process.wait(timeout=timeout)
@@ -241,7 +238,7 @@ def _compile_source(compiler, path, options, assembly_path, cwd):
             process = subprocess.Popen(
                 command, stdin=subprocess.DEVNULL, stdout=out, stderr=err,
                 cwd=cwd, env=ENVIRONMENT,
-                preexec_fn=_limits(COMPILE_TIMEOUT + 5, 0, 1 << 30))
+                preexec_fn=_limits(COMPILE_TIMEOUT + 5, 1 << 30))
             timed_out = False
             try:
                 process.wait(timeout=COMPILE_TIMEOUT)
@@ -272,7 +269,7 @@ def assemble_x86(assembly, work):
             return None, ("skip", "")
     if a.returncode:
         return None, ("invalid-asm", a.stderr)
-    link =run(["ld", "-s", "-T", os.path.join(ROOT, "baz.ld"), obj, "-o", exe], 60,
+    link = run(["ld", "-s", "-T", os.path.join(ROOT, "baz.ld"), obj, "-o", exe], 60,
                file_size=1 << 30)
     if link.timed_out or link.signal:
         return None, ("skip", "")

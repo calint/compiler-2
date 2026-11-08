@@ -173,7 +173,8 @@ verify-rv32i-image() {
     fi
 }
 
-# Common: compile and assemble
+# links 'gen' from 'gen.s' where the target runs it, and checks the image of
+# the rv32i targets
 assemble_and_link() {
     case "$MACHINE" in
     x86_64)
@@ -250,7 +251,6 @@ compile_expect_error() {
     fi
 }
 
-# Common: compare output with expected
 check_output() {
     local expected="$1"
     # 'UPDATE=1' writes the output as the expected output, review the diff
@@ -269,12 +269,12 @@ check_output() {
 # else for the target of the compiler, e.g. 'NNN.rv32i.out' for rv32i-fpga,
 # else 'NNN.out'
 expected_output_file() {
-    if [[ -e "${SRC%.*}.$MACHINE.out" ]]; then
-        echo "${SRC%.*}.$MACHINE.out"
-    elif [[ -e "${SRC%.*}.$COMPILER_MACHINE.out" ]]; then
-        echo "${SRC%.*}.$COMPILER_MACHINE.out"
+    if [[ -e "$SRC.$MACHINE.out" ]]; then
+        echo "$SRC.$MACHINE.out"
+    elif [[ -e "$SRC.$COMPILER_MACHINE.out" ]]; then
+        echo "$SRC.$COMPILER_MACHINE.out"
     else
-        echo "${SRC%.*}.out"
+        echo "$SRC.out"
     fi
 }
 
@@ -295,7 +295,6 @@ make_sdcard() {
     truncate -s "${SDCARD:-0}" sdcard.img
 }
 
-# Test with exit code
 RUN() {
     echo -n "$SRC: "
     compile_and_build
@@ -330,7 +329,6 @@ RUN_ERR() {
     check_output "$(expected_output_file)"
 }
 
-# Test with output comparison (no input)
 DIFF() {
     echo -n "$SRC: "
     compile_and_build
@@ -340,29 +338,27 @@ DIFF() {
     check_output "$(expected_output_file)"
 }
 
-# Test with input file
 DIFFINP() {
     echo -n "$SRC: "
     compile_and_build
     local exit_code=0
-    execute_program <"${SRC%.*}.in" >out || exit_code=$?
+    execute_program <"$SRC.in" >out || exit_code=$?
     expect_exit_zero $exit_code
     check_output "$(expected_output_file)"
 }
 
-# Test with line-by-line input
 DIFFINP2() {
     echo -n "$SRC: "
     compile_and_build
 
     program_command
     local exit_code=0
-    "$SCRIPT_DIR/input-lines.py" "${SRC%.*}.in" "${PROGRAM_COMMAND[@]}" >out 2>err || exit_code=$?
+    "$SCRIPT_DIR/input-lines.py" "$SRC.in" "${PROGRAM_COMMAND[@]}" >out 2>err || exit_code=$?
     expect_exit_zero $exit_code
     check_output "$(expected_output_file)"
 }
 
-# Test with Python script, which runs the program with the command in
+# the script of the case runs the program with the command in
 # 'PROGRAM_COMMAND_LINES', one argument per line
 DIFFPY() {
     echo -n "$SRC: "
@@ -370,12 +366,11 @@ DIFFPY() {
     program_command
     local exit_code=0
     MACHINE="$MACHINE" PROGRAM_COMMAND_LINES="$(printf '%s\n' "${PROGRAM_COMMAND[@]}")" \
-        "./${SRC%.*}.py" >out || exit_code=$?
+        "./$SRC.py" >out || exit_code=$?
     expect_exit_zero $exit_code
     check_output "$(expected_output_file)"
 }
 
-# Test with exit code and the jump optimizations as a diff from --nopt
 DIFFNOPT() {
     echo -n "$SRC: "
     # the expected difference is that of the default version
@@ -400,7 +395,7 @@ DIFFNOPT() {
         exit 1
     fi
 
-    check_output "${SRC%.*}.$MACHINE.diff"
+    check_output "$SRC.$MACHINE.diff"
 }
 
 # the part of the listing that 'listing.py' extracts for the kind of the
@@ -408,7 +403,7 @@ DIFFNOPT() {
 # compared with 'NNN.TARGET.KIND'
 LISTING() {
     echo -n "$SRC: "
-    local expected="${SRC%.*}.$COMPILER_MACHINE.$1"
+    local expected="$SRC.$COMPILER_MACHINE.$1"
     # the expected listing is that of the default version
     if [[ -n "$VERSION_OPTS" ]]; then
         echo skipped
@@ -430,7 +425,6 @@ LISTING() {
     check_output "$expected"
 }
 
-# Test with output comparison of compiler (no input)
 COMPERR() {
     echo -n "$SRC: "
     # the program is not run
@@ -439,17 +433,15 @@ COMPERR() {
         return
     fi
     compile_expect_error
-    local expected="${SRC%.*}.$COMPILER_MACHINE.out"
+    local expected="$SRC.$COMPILER_MACHINE.out"
     if [[ ! -f "$expected" ]]; then
-        expected="${SRC%.*}.out"
+        expected="$SRC.out"
     fi
     check_output "$expected"
 }
 
-# Run all test cases
 source "$SCRIPT_DIR/cases.sh"
 
-# Cleanup
 rm -f gen gen.o gen.s gen-nopt.s gen-rv32i.bin diff.baz out err sdcard.img
 rm -f gen-image.o gen-image.elf gen-image.bin
 

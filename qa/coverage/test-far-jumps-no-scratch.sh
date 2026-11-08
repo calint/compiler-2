@@ -231,14 +231,14 @@ source.append("}")
 open("exit.baz", "w").write("\n".join(source) + "\n")
 EOF
 
-# the far jump to the shared exit routine takes a register that is dead there
-for target in rv32i rv32i-qemu rv32i-fpga; do
+# the far jump to the shared exit routine takes a register that is dead there;
+# rv32i last, its listing is run
+for target in rv32i-qemu rv32i-fpga rv32i; do
     echo -n "far jump to exit routine $target: "
     "$BIN" exit.baz --target=$target --bin=exit.bin >exit.s
     echo ok
 done
 echo -n "far jump to exit routine rv32i run: "
-"$BIN" exit.baz --target=rv32i --bin=exit.bin >exit.s
 run_rv32i exit
 [[ $status -eq 7 ]]
 echo ok

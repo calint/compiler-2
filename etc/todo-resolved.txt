@@ -1,6 +1,16 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] hard: round 183 (2026-11-08, user: continue the loop; FO the test,
+    lint and fuzz scripts, FP noinline functions and the calling convention)
+    => done (2026-11-08): FO 'test-cli.sh' checks an exit code of 1 with
+       'expect_exit_1' (27 blocks of five lines), 'test-coverage.sh' drops
+       a suffix strip that did nothing and comments that restate helper
+       names, 'test-far-jumps-no-scratch.sh' compiles the rv32i listing
+       once, 'fuzzlib' loses the unused memory limit, 'format-source.py'
+       an unused property; FP found inlined and noinline results equal
+       on all targets over hand-written and 2416 generated programs;
+       listings, images and errors equal
 [x] hard: round 182 (2026-11-08, user: continue the loop; FM the
     'statement::' qualifier, FN folding against run time)
     => done (2026-11-08): FM 30 calls of a base member drop 'statement::'
