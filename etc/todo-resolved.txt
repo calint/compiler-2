@@ -1,6 +1,16 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] hard: round 185 (2026-11-08, user: continue the loop, several things
+    at a time; FX the rv32i targets, FR slices and bulk operations, FU
+    generics, FW conditions)
+    => done (2026-11-08): FX 'check_stack_size', of one caller, part of the
+       bare metal constructor as the fpga one checks '--memory', its
+       parameter 'memory_size_bytes_in'; the comment of the linux sector
+       routines names 'sector_read_label_'; FR, FU and FW found no bug over
+       generated programs with models on all targets and option lists; the
+       order of the deduction error is a pending decision; listings,
+       images and errors equal
 [x] hard: round 184 (2026-11-08, user: continue the loop, several things
     at a time; FQ the tutorial and the remaining doc examples, FS the
     bare-metal targets, FV call summaries, FT the comment rules)

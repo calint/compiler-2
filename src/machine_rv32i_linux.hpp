@@ -56,11 +56,11 @@ class machine_rv32i_linux final : public machine_rv32i {
         output.ecall(indent);
     }
 
-    // the registers as 'machine_rv32i::emit_sector_routines' says; an
-    // operating system transfers the sectors of the image file: the image file
-    // is opened at the first transfer, its descriptor and last sector kept in
-    // '.Lbaz_sd_card', a sector past the end, a failed open or a short transfer
-    // panics
+    // the registers as 'sector_read_label_' says; an operating system
+    // transfers the sectors of the image file: the image file is opened at
+    // the first transfer, its descriptor and last sector kept in
+    // '.Lbaz_sd_card', a sector past the end, a failed open or a short
+    // transfer panics
     auto emit_sector_routines(const bool read_used, const bool write_used)
         -> void override {
 

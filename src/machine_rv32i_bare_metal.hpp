@@ -25,21 +25,35 @@ class machine_rv32i_bare_metal : public machine_rv32i {
     size_t memory_size_bytes_{};
 
   public:
-    // 'memory_size_bytes' is the memory of the target, e.g. fixed for the
+    // 'memory_size_bytes_in' is the memory of the target, e.g. fixed for the
     // qemu 'virt' machine
     machine_rv32i_bare_metal(const builtin_type_set& builtins,
                              const source_files& files,
                              const target_options& options,
-                             const size_t memory_size_bytes,
+                             const size_t memory_size_bytes_in,
                              const bool has_sd_card)
         : machine_rv32i{builtins, files, options,
                         bare_metal_target(has_sd_card)},
-          memory_size_bytes_{memory_size_bytes} {
+          memory_size_bytes_{memory_size_bytes_in} {
 
         // note: the options are checked before the source is parsed, so an
         //       error in the source does not hide them
 
-        check_stack_size();
+        // the stack fits the memory and what 'main' may use without a stack
+        // check, which 'finish_target' and the stack limit rely on
+        if (stack_size_bytes() > memory_size_bytes()) {
+            throw option_error{
+                std::format("invalid --stack: {} B exceeds the {} B of device "
+                            "memory",
+                            stack_size_bytes(), memory_size_bytes())};
+        }
+
+        if (stack_size_bytes() < leaf_stack_bytes()) {
+            throw option_error{
+                std::format("invalid --stack: {} B is smaller than the {} B "
+                            "that 'main' may use without a stack check",
+                            stack_size_bytes(), leaf_stack_bytes())};
+        }
     }
 
   protected:
@@ -125,24 +139,6 @@ class machine_rv32i_bare_metal : public machine_rv32i {
     //
     // class methods
     //
-
-    // the stack fits the memory and what 'main' may use without a stack
-    // check, which 'finish_target' and the stack limit rely on
-    auto check_stack_size() const -> void {
-        if (stack_size_bytes() > memory_size_bytes()) {
-            throw option_error{
-                std::format("invalid --stack: {} B exceeds the {} B of device "
-                            "memory",
-                            stack_size_bytes(), memory_size_bytes())};
-        }
-
-        if (stack_size_bytes() < leaf_stack_bytes()) {
-            throw option_error{
-                std::format("invalid --stack: {} B is smaller than the {} B "
-                            "that 'main' may use without a stack check",
-                            stack_size_bytes(), leaf_stack_bytes())};
-        }
-    }
 
     // reads until a newline or the count is reached, 'a0' receives the count
     // and ctrl-d ends the read without being stored like at a terminal
