@@ -109,10 +109,10 @@ class stmt_builtin_array_length final : public statement {
         // default type, like the 'n' of a 'foo' over it; no hint, a conversion
         // folds its argument here too
         if (not constant_arith::fits_width(length, get_type())) {
-            throw compile_error{
-                tok(), std::format("constant {} does not fit {}",
-                                   in_quotes(statement::trimmed_source(*this)),
-                                   in_quotes(get_type().name()))};
+            throw compile_error{tok(),
+                                std::format("constant {} does not fit {}",
+                                            in_quotes(trimmed_source(*this)),
+                                            in_quotes(get_type().name()))};
         }
 
         // typed, so a comparison gets the verdict of the length computed at

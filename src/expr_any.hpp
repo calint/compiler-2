@@ -1265,10 +1265,9 @@ inline stmt_array_size::stmt_array_size(toc& tc, tokenizer& tz)
     };
 
     if (not folded) {
-        throw compile_error{
-            value_->tok(),
-            std::format("{} is not a constant",
-                        in_quotes(statement::trimmed_source(*value_)))};
+        throw compile_error{value_->tok(),
+                            std::format("{} is not a constant",
+                                        in_quotes(trimmed_source(*value_)))};
     }
 
     if (*folded < 1) {

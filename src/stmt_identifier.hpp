@@ -500,8 +500,7 @@ class stmt_identifier final : public statement {
             return;
         }
 
-        throw_narrowed(tok(), statement::trimmed_source(*this), src_type,
-                       dst_type);
+        throw_narrowed(tok(), trimmed_source(*this), src_type, dst_type);
     }
 
     // a typed constant is a value of its type, so it wraps at the width of
@@ -554,9 +553,9 @@ class stmt_identifier final : public statement {
             return;
         }
 
-        throw compile_error{
-            tok(), std::format("{} is not an array",
-                               in_quotes(statement::trimmed_source(*this)))};
+        throw compile_error{tok(),
+                            std::format("{} is not an array",
+                                        in_quotes(trimmed_source(*this)))};
     }
 
     // an array or an element of one, where a bulk operation starts
@@ -906,7 +905,7 @@ class stmt_identifier final : public statement {
             return;
         }
 
-        const std::string source{statement::trimmed_source(*this)};
+        const std::string source{trimmed_source(*this)};
 
         const int64_t minimum{
             constant_arith::signed_minimum(dst_type.size_bits()),

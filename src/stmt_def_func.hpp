@@ -735,9 +735,7 @@ class stmt_def_func final : public statement {
     }
 
     // the type of the result, 'void' without one; the node's type
-    [[nodiscard]] auto result_type() const -> const type& {
-        return statement::get_type();
-    }
+    [[nodiscard]] auto result_type() const -> const type& { return get_type(); }
 
     [[nodiscard]] auto uses() const -> const body_uses& { return body_uses_; }
 

@@ -2229,11 +2229,10 @@ class stmt_call final : public statement {
             const storage_path target{place_storage(tc, *passed)};
 
             reference arg_reference{
-                make_reference(
-                    tc, i, arg.tok(),
-                    std::format("{} {}", describe_argument(i),
-                                in_quotes(statement::trimmed_source(arg))),
-                    target),
+                make_reference(tc, i, arg.tok(),
+                               std::format("{} {}", describe_argument(i),
+                                           in_quotes(trimmed_source(arg))),
+                               target),
             };
 
             assert_not_shared_with_earlier(references, arg_reference);
@@ -2599,7 +2598,7 @@ class stmt_call final : public statement {
             .name_tk{callee_name_token()},
             .begin_tk{call_begin_token()},
             .close_paren_tk{close_paren_tk_},
-            .source{statement::trimmed_source(*this)},
+            .source{trimmed_source(*this)},
             .args{args_},
             .func{func_},
             .places{argument_places(tc)},

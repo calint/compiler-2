@@ -394,6 +394,6 @@ class stmt_def_dat final : public statement {
         throw compile_error{
             value.tok(),
             std::format("{} is not a constant, a 'dat' holds constants",
-                        in_quotes(statement::trimmed_source(value)))};
+                        in_quotes(trimmed_source(value)))};
     }
 };

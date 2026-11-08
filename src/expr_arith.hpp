@@ -535,7 +535,7 @@ class expr_arith final : public statement {
 
         if (folded) {
             compile_constant(tc, indent, tok(), dst, folded->value,
-                             statement::trimmed_source(*this));
+                             trimmed_source(*this));
 
             return;
         }
@@ -790,8 +790,8 @@ class expr_arith final : public statement {
         // note: the ')' closed the list, see 'read_close_paren'
         assert(open_paren_tk_);
 
-        throw_parentheses_group_nothing(
-            *open_paren_tk_, statement::trimmed_source(*exprs_.front()));
+        throw_parentheses_group_nothing(*open_paren_tk_,
+                                        trimmed_source(*exprs_.front()));
     }
 
     auto compile_first_step(toc& tc, const size_t indent,
@@ -820,9 +820,8 @@ class expr_arith final : public statement {
         // an identifier copies itself, anything else is computed into 'dst'
         if (element.is_computed()) {
             x.comment(element.tok(), indent,
-                      statement::trimmed_source(
-                          element, dst.text(),
-                          source_text(arithmetic_operator::assign)));
+                      trimmed_source(element, dst.text(),
+                                     source_text(arithmetic_operator::assign)));
 
             x.comment(element.tok(), indent, "= expression");
         }
@@ -856,9 +855,8 @@ class expr_arith final : public statement {
 
         machine& x{tc.machine()};
 
-        x.comment(
-            src.tok(), indent,
-            statement::trimmed_source(src, dst.text(), source_text(s.op)));
+        x.comment(src.tok(), indent,
+                  trimmed_source(src, dst.text(), source_text(s.op)));
 
         // the element is computed into a scratch register or read where it
         // is stored
@@ -1042,8 +1040,7 @@ class expr_arith final : public statement {
                     folded_value::value_of(e.fold(tc, tc.use_of(dst))),
                 },
                 .folded_source{
-                    std::format("{} {}", source_text(op),
-                                statement::trimmed_source(e)),
+                    std::format("{} {}", source_text(op), trimmed_source(e)),
                 },
             });
         }

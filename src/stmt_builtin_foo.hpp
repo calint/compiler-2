@@ -244,10 +244,10 @@ class stmt_builtin_foo final : public statement {
 
     // the 'foo' header as one comment line, e.g. 'foo a, 2'
     auto comment_header(machine& x, const size_t indent) const -> void {
-        std::string header{statement::trimmed_source(ident_)};
+        std::string header{trimmed_source(ident_)};
 
         if (count_) {
-            header += ", " + statement::trimmed_source(count_->count);
+            header += ", " + trimmed_source(count_->count);
         }
 
         x.comment(tok(), indent, "foo {}", header);
@@ -294,8 +294,7 @@ class stmt_builtin_foo final : public statement {
 
         machine& x{tc.machine()};
 
-        x.comment(count.tok(), indent, "count {}",
-                  statement::trimmed_source(count));
+        x.comment(count.tok(), indent, "count {}", trimmed_source(count));
 
         count.compile(tc, indent, destination::of_register(reg_count));
 

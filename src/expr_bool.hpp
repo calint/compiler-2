@@ -194,7 +194,7 @@ class expr_bool_op final : public statement {
                                             in_quotes(lhs_type.name()))};
         }
 
-        const std::string source{statement::trimmed_source(lhs_)};
+        const std::string source{trimmed_source(lhs_)};
         const std::string suggestion{std::format("{} != 0", source)};
 
         throw compile_error{
@@ -233,8 +233,7 @@ class expr_bool_op final : public statement {
         machine& x{tc.machine()};
 
         x.comment(tok(), indent,
-                  statement::trimmed_source(*this, "?",
-                                            comment_label(list_op, inverted)));
+                  trimmed_source(*this, "?", comment_label(list_op, inverted)));
 
         x.label(indent, tc.create_unique_label(tok(), "cmp"));
 
@@ -591,7 +590,7 @@ class expr_bool_op final : public statement {
             constant.node->tok(),
             std::format("constant {} does not fit {} of type {}",
                         in_quotes(std::format("{}", value)),
-                        in_quotes(statement::trimmed_source(typed)),
+                        in_quotes(trimmed_source(typed)),
                         in_quotes(typed_type.name()))};
     }
 
@@ -602,8 +601,7 @@ class expr_bool_op final : public statement {
             return;
         }
 
-        throw_literal_not_operand(side.tok(),
-                                  in_quotes(statement::trimmed_source(side)));
+        throw_literal_not_operand(side.tok(), in_quotes(trimmed_source(side)));
     }
 
     // a '=' or '!' that is not part of a comparison, e.g. 'if a = b', is an
@@ -750,10 +748,10 @@ class expr_bool_op final : public statement {
 
         machine::held_registers held{x, src_loc_tk, indent};
 
-        x.comment(lhs.tok(), indent, statement::trimmed_source(lhs));
+        x.comment(lhs.tok(), indent, trimmed_source(lhs));
         const operand lhs_address{lhs.compile_lea(tc, indent, held, {})};
 
-        x.comment(rhs.tok(), indent, statement::trimmed_source(rhs));
+        x.comment(rhs.tok(), indent, trimmed_source(rhs));
         const operand rhs_address{rhs.compile_lea(tc, indent, held, {})};
 
         x.memory_equal(src_loc_tk, indent, *size_bytes, lhs_address,
@@ -916,7 +914,7 @@ class expr_bool_op final : public statement {
         machine& x{tc.machine()};
 
         x.comment(expr.tok(), indent, "src: folded constant {}",
-                  in_quotes(statement::trimmed_source(expr)));
+                  in_quotes(trimmed_source(expr)));
 
         return immediate_of(side, tc.builtins().default_type());
     }
@@ -942,15 +940,14 @@ class expr_bool_op final : public statement {
         const type& rhs_type{rhs.get_type()};
 
         throw compile_error{
-            rhs.tok(), std::format("{} of type {} is wider than {} of type {}, "
-                                   "swap the operands: '{} {} {}'",
-                                   in_quotes(statement::trimmed_source(rhs)),
-                                   in_quotes(rhs_type.name()),
-                                   in_quotes(statement::trimmed_source(lhs)),
-                                   in_quotes(lhs_type.name()),
-                                   statement::trimmed_source(rhs),
-                                   source_text(mirrored(op)),
-                                   statement::trimmed_source(lhs))};
+            rhs.tok(),
+            std::format("{} of type {} is wider than {} of type {}, "
+                        "swap the operands: '{} {} {}'",
+                        in_quotes(trimmed_source(rhs)),
+                        in_quotes(rhs_type.name()),
+                        in_quotes(trimmed_source(lhs)),
+                        in_quotes(lhs_type.name()), trimmed_source(rhs),
+                        source_text(mirrored(op)), trimmed_source(lhs))};
     }
 
     // the value compared with 0, a computed one in the register of the
@@ -1185,8 +1182,8 @@ class expr_bool final : public statement {
         // note: only a parenthesized list asks, see its constructor
         assert(open_paren_tk_);
 
-        throw_parentheses_group_nothing(
-            *open_paren_tk_, statement::trimmed_source(as_statement(only)));
+        throw_parentheses_group_nothing(*open_paren_tk_,
+                                        trimmed_source(as_statement(only)));
     }
 
     // e.g. 'a or b and c' is rejected, '(a or b) and c' is not
@@ -1355,8 +1352,8 @@ class expr_bool final : public statement {
             machine& x{tc.machine()};
 
             x.comment(tok(), indent,
-                      statement::trimmed_source(
-                          *this, "?", outer_inverted ? " inverted: " : " "));
+                      trimmed_source(*this, "?",
+                                     outer_inverted ? " inverted: " : " "));
         }
 
         // inverted, according to De Morgan's laws

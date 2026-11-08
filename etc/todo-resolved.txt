@@ -1,6 +1,13 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] hard: round 182 (2026-11-08, user: continue the loop; FM the
+    'statement::' qualifier, FN folding against run time)
+    => done (2026-11-08): FM 30 calls of a base member drop 'statement::'
+       where nothing hides the name, 48 keep it (an override calling the
+       base, a call from outside the class); FN found every folded value
+       equal to the run-time one over about 9000 generated programs on all
+       targets and option lists; listings, images and errors equal
 [x] hard: round 181 (2026-11-08, user: continue the loop, fix the three
     messages; FK statements, the register pool and the array built-ins, FL
     the individual run-time checks)
