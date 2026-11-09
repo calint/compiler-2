@@ -9,6 +9,12 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
 [ ] easy: low priority (round 190 GJ): an argument of a named, not
     generic, parameter type of a generic call is parsed without its type
     before "cannot deduce" ('g3(point, 1)')
+    => not done (2026-11-09, round 203): 'generic_signature_param' knows
+       neither whether its type name is a type parameter nor whether it is
+       'mut', so the parse at the type needs the signature and the
+       mutability threaded through 'assert_argument_present',
+       'assert_argument_valid' and 'assert_argument_parses' for a better
+       first message only; the call still rejects each case
 [p] medium: a chain of distinct inlined functions with deeply nested
     expressions overflows the compiler's stack (segfault on both targets,
     bug hunt round 6 S2): each limit holds alone, parse nesting 128 per body
