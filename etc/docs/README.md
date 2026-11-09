@@ -910,11 +910,12 @@ order. The examples use 'make' and 'same' from the start of 2.10 and a type
       same(k, t)              T = i8 for 'let k = i8(3)'
       ```
 
-   2. a value that names its type: an instance literal, a constructor call,
-      a call of a function that is not generic and returns a value, or a
-      built-in with a value
+   2. a value that names its type: 'true' or 'false', an instance literal,
+      a constructor call, a call of a function that is not generic and
+      returns a value, or a built-in with a value
 
       ```text
+      same(true, b)           T = bool (1908)
       same(name{}, t)         T = name
       same(point.at(1, 2), p) T = point
       same(mk(), t)           T = the return type of 'mk'
@@ -932,7 +933,7 @@ order. The examples use 'make' and 'same' from the start of 2.10 and a type
    3. anything else tells nothing, and step 2 is tried
 
       ```text
-      same(1, t)              a literal: its type depends on where it goes
+      same(1, t)              a number: its type depends on where it goes
       same(n, t)              an untyped constant, e.g. 'let n = 3', likewise
       same({}, t)             '{}' does not name a type
       same(s + 1, t)          an expression, not the whole argument

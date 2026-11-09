@@ -522,15 +522,22 @@ struct generic_call {
         return index;
     }
 
-    // the type of an instance literal, a constructor call or a call of a
-    // built-in or of a function, 'tk' is its first token and 'tz' is after
-    // it; 'tz' ends after the value when it names a type
-    // note: an argument is parsed at the type of its parameter, so it is read
+    // the type of a 'bool' literal, an instance literal, a constructor call or
+    // a call of a built-in or of a function, 'tk' is its first token and 'tz'
+    // is after it; 'tz' ends after the value when it names a type note: an
+    // argument is parsed at the type of its parameter, so it is read
     //       here without a parse, unlike a 'var' initializer, see
     //       'initializer_declaration::deduce_from_initializer'
     [[nodiscard]] static auto value_type(toc& tc, tokenizer& tz,
                                          const token& tk, const term_kind tm)
         -> const type* {
+
+        // e.g. 'true', the one literal whose type does not depend on where
+        // it goes
+        if (tm == term_kind::literal) {
+            const bool is_bool{constant_parser::is_bool_literal(tk.text())};
+            return is_bool ? &tc.builtins().boolean() : nullptr;
+        }
 
         // e.g. 'point{1, 2}', a missing '}' is left to the parse of the
         // argument

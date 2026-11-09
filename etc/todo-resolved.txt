@@ -1,6 +1,12 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[-] easy: user decision: third-party pages are tracked:
+    etc/notes/x86-64-reference.pdf, 'etc/notes/CS107 Guide to x86-64.html',
+    'etc/notes/NASM x64 Assembly.html', 'etc/from/Hello, world!.html',
+    'etc/from/nasm x86 Assembly.html'; keep, or replace by links (round 130
+    BJ11)
+    => discarded (2026-11-09, user): the pages are kept
 [x] easy: user decision: a number with a leading zero is decimal ('010' is
     10, round 123 AQ7), a C programmer expects 8: document it in the README,
     or reject a leading zero

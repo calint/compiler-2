@@ -6094,8 +6094,8 @@ SRC=1906 && COMPERR
 # a call without a result to an array
 SRC=1907 && COMPERR
 
-# a 'bool' argument of a generic function
-SRC=1908 && COMPERR
+# a 'bool' literal argument of a generic function deduces 'bool'
+SRC=1908 && EXP=4 && RUN
 
 # a built-in with all its arguments and no ')'
 SRC=1909 && COMPERR

@@ -74,11 +74,7 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
 [ ] easy: user decision: no LICENSE at the root and the README names none
     (only fpga-emulator/LICENSE, Apache-2.0); choose one, a LICENSE file and
     one README line (round 130 BJ11)
-[ ] easy: user decision: third-party pages are tracked:
-    etc/notes/x86-64-reference.pdf, 'etc/notes/CS107 Guide to x86-64.html',
-    'etc/notes/NASM x64 Assembly.html', 'etc/from/Hello, world!.html',
-    'etc/from/nasm x86 Assembly.html'; keep, or replace by links (round 130
-    BJ11)
+    => left open (2026-11-09, user)
 [ ] medium: low priority: one lexer (round 23 C.3, D1-4): 'one_line_source'
     ('statement.hpp') scans the source text of a statement again for the
     comments of the listing; 'source_to' writing through a 'source_sink' with

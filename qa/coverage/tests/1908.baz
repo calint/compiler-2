@@ -1,8 +1,9 @@
-# a 'bool' argument of a generic function cannot deduce its type without a
-# destination, it is not a mismatch with the default type
+# a 'bool' literal argument of a generic function deduces 'bool', the one
+# literal whose type does not depend on where it goes
 
-func show<T type>(x T) {}
+func pick<T type>(x T) res T { res = x }
 
 func main() {
-    show(true)
+    var b = pick(true)
+    if b and not pick(false) exit(4)
 }
