@@ -190,23 +190,25 @@ inline auto stmt_identifier::assert_count_in_bounds(const toc& tc,
 
     const ident_info array_info{resolve_path(tc)};
 
+    // the written start, none for a whole array
+    std::optional<token> start_tk;
+
+    if (is_array_element()) {
+        start_tk = elems_.back().index_expr().tok();
+    }
+
     const machine& x{tc.machine()};
 
-    assert_constant_range(
-        array_info,
-        {
-            .start{constant_start_index(tc)},
-            .count{count},
-            .start_tk{
-                is_array_element()
-                    ? std::optional{elems_.back().index_expr().tok()}
-                    : std::nullopt,
-            },
-            .count_tk{count_tk},
-            .count_text{std::format("count {}", count)},
-            .array_name{dotted_path_},
-        },
-        x.max_storage_bytes());
+    assert_constant_range(array_info,
+                          {
+                              .start{constant_start_index(tc)},
+                              .count{count},
+                              .start_tk{start_tk},
+                              .count_tk{count_tk},
+                              .count_text{std::format("count {}", count)},
+                              .array_name{dotted_path_},
+                          },
+                          x.max_storage_bytes());
 }
 
 inline auto stmt_identifier::constant_start_index(const toc& tc) const
@@ -405,12 +407,14 @@ inline auto stmt_identifier::path_address::add_index(const ident_elem& cur_elem,
         x.scale_index(index_tk, indent_, index_register, element_size_bytes);
     }
 
+    const int64_t displacement{
+        add_scaled_address_offset(address.displacement(), addend_elements,
+                                  element_size_bytes),
+    };
+
     return operand::mem(address.base_register(), index_register.register_name(),
                         is_encodable_scale ? element_size_bytes : 1,
-                        add_scaled_address_offset(address.displacement(),
-                                                  addend_elements,
-                                                  element_size_bytes),
-                        cur_info.type_ref());
+                        displacement, cur_info.type_ref());
 }
 
 inline auto stmt_identifier::compile_checked_index(
@@ -492,7 +496,8 @@ inline auto stmt_identifier::path_address::indexed_element(
     operand base{address};
 
     if (not address.index_register().empty()) {
-        base = operand::mem(fold_indexed_address(address), cur_info.type_ref());
+        const operand folded_register{fold_indexed_address(address)};
+        base = operand::mem(folded_register, cur_info.type_ref());
     }
 
     return add_index(cur_elem, cur_info, request, base);

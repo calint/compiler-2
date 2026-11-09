@@ -759,8 +759,6 @@ class stmt_identifier final : public statement {
         return method_->name_tk;
     }
 
-    auto path_source_to(std::ostream& os) const -> void;
-
     // the path as written, with indexes but without unary operators
     [[nodiscard]] auto path_text() const -> std::string {
         std::stringstream ss;
@@ -1051,6 +1049,8 @@ class stmt_identifier final : public statement {
     // and 'prefix' what the path up to it resolves to
     auto parse_element(toc& tc, tokenizer& tz, const token& tk,
                        const type_field* fld, const ident_info& prefix) -> void;
+
+    auto path_source_to(std::ostream& os) const -> void;
 
     // the path is an array only while its last element is not indexed
     auto resolve_type(const ident_info& info) -> void {

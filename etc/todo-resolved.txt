@@ -1,6 +1,9 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 234 (2026-11-10, UT 'stmt_identifier' simplification)
+    => done (2026-11-10): 'path_source_to' private, three nested calls split
+       into named steps; listings unchanged
 [x] medium: round 233 (2026-11-10, UQ partial '--checks' sets bug hunt,
     UR compile time of round 210 against round 232)
     => done (2026-11-10): nothing found; UQ ran the fuzzers' programs and
