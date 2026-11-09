@@ -235,13 +235,6 @@ class assembler_x86_64 final : public assembler {
     // class methods
     //
 
-    // the number buffer, apart from the variables that 'baz.ld' places right
-    // after the data
-    auto begin_bss_section() -> void {
-        set_code_section(false);
-        add_text("section .bss");
-    }
-
     auto bits64() -> void { add_text("bits 64"); }
 
     auto call(const size_t indent, const std::string_view target) -> void {

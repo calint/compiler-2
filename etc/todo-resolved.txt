@@ -8,10 +8,14 @@
        registers of a call pass as names ('register_names_of' and two rv32i
        wrappers removed); 'stmt_def_func::dry_run_in_frame'; two wrong
        comments; listings equal over 2274 compiles
-    => open for the user: '--bin' rejected on x86_64, the x86_64 line report
-       on the stack (no '.bss'), bare-metal read/write as target routines,
-       the stack limit in 'target_description', the shared comment
-       overloads of the assemblers
+    => done (2026-11-09, round 210, user): '--bin' rejected on x86_64 (the
+       scripts pass it to the rv32i targets only), the x86_64 line report
+       writes its digits below 'rsp' (no '.bss', 182 x86_64 '--checks=line'
+       listings change in that routine), the stack limit is
+       'target_description::stack_limit_address' (no virtual); not done:
+       the shared comment overloads, x86_64 writes ';[loc]' but '; text', one
+       prefix changes every x86_64 listing; bare-metal read/write as target
+       routines not chosen
 [x] easy: low priority (round 205 HB): 'exit(-1)' and 'exit(511)' exit with
     255 like a 'bounds' panic (the low 8 bits)
     => user decision: reject a constant 'exit' code outside 0..255 (a

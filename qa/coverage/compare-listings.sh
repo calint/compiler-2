@@ -46,15 +46,21 @@ compare_case() {
         for opts in "$options" "--checks=noub"; do
             local dir
             dir=$(mktemp -d "$WORK/case.XXXXXX")
+            # the rv32i targets write an image, x86_64 takes no '--bin'
+            local base_image=() new_image=()
+            if [[ $target != x86_64 ]]; then
+                base_image=(--bin=base.bin)
+                new_image=(--bin=new.bin)
+            fi
             (
                 cd "$dir"
                 # shellcheck disable=SC2086 # the options are words
                 timeout 60 "$BASE" "$TESTS/$src.baz" --target=$target \
-                    --bin=base.bin $opts >base.s 2>base.err && echo 0 >base.rc ||
+                    "${base_image[@]}" $opts >base.s 2>base.err && echo 0 >base.rc ||
                     echo $? >base.rc
                 # shellcheck disable=SC2086
                 timeout 60 "$NEW" "$TESTS/$src.baz" --target=$target \
-                    --bin=new.bin $opts >new.s 2>new.err && echo 0 >new.rc ||
+                    "${new_image[@]}" $opts >new.s 2>new.err && echo 0 >new.rc ||
                     echo $? >new.rc
                 sed -i "s|$BASE|BAZ|g;s|$NEW|BAZ|g" base.err new.err
                 if ! cmp -s base.s new.s || ! cmp -s base.err new.err ||

@@ -68,6 +68,12 @@ esac
 COMPILER_MACHINE="${MACHINE%-qemu}"
 COMPILER_MACHINE="${COMPILER_MACHINE%-fpga}"
 
+# the rv32i targets write an image, x86_64 takes no '--bin'
+IMAGE_OPTS=()
+if [[ $MACHINE != x86_64 ]]; then
+    IMAGE_OPTS=(--bin=gen-rv32i.bin)
+fi
+
 # a plain serial console passes every input byte to the program
 QEMU_SYSTEM=(qemu-system-riscv32 -machine virt -bios none -display none
     -serial stdio -monitor none -kernel gen-rv32i.bin)
@@ -231,7 +237,7 @@ execute_program_errors_to_out() {
 
 # also makes the sd card image of the case, see 'make_sdcard'
 compile_and_build() {
-    if ! "$BIN" "$SRC.baz" --target="$MACHINE" --bin=gen-rv32i.bin $OPTS $REPRODUCE $VERSION_OPTS 2>err >gen.s; then
+    if ! "$BIN" "$SRC.baz" --target="$MACHINE" "${IMAGE_OPTS[@]}" $OPTS $REPRODUCE $VERSION_OPTS 2>err >gen.s; then
         echo "compiler failed. see 'tests/err' and 'tests/gen.s'" >&2
         exit 1
     fi
@@ -242,7 +248,7 @@ compile_and_build() {
 # the compile fails with exit code 1, its message is in 'out'
 compile_expect_error() {
     set +e
-    "$BIN" "$SRC.baz" --target="$MACHINE" --bin=gen-rv32i.bin $OPTS $REPRODUCE >gen.s 2>out
+    "$BIN" "$SRC.baz" --target="$MACHINE" "${IMAGE_OPTS[@]}" $OPTS $REPRODUCE >gen.s 2>out
     local exit_code=$?
     set -e
     if [[ $exit_code -ne 1 ]]; then
@@ -378,7 +384,7 @@ DIFFNOPT() {
         echo skipped
         return
     fi
-    if ! "$BIN" "$SRC.baz" --target="$MACHINE" --bin=gen-rv32i.bin $OPTS --nopt 2>err >gen-nopt.s; then
+    if ! "$BIN" "$SRC.baz" --target="$MACHINE" "${IMAGE_OPTS[@]}" $OPTS --nopt 2>err >gen-nopt.s; then
         echo "compiler failed. see 'tests/err' and 'tests/gen-nopt.s'" >&2
         exit 1
     fi
@@ -414,7 +420,7 @@ LISTING() {
         echo "FAILED. no expected listing 'tests/$expected'"
         exit 1
     fi
-    if ! "$BIN" "$SRC.baz" --target="$COMPILER_MACHINE" --bin=gen-rv32i.bin 2>err >gen.s; then
+    if ! "$BIN" "$SRC.baz" --target="$COMPILER_MACHINE" "${IMAGE_OPTS[@]}" 2>err >gen.s; then
         echo "compiler failed. see 'tests/err' and 'tests/gen.s'" >&2
         exit 1
     fi

@@ -26,8 +26,7 @@
 //
 // sections: 'switch_section' starts one of 'section', a subclass writes its
 // directive ('add_section_directive') and the rv32i image is indexed by it;
-// sizes and entries count only in code, so the x86_64 '.bss' of its number
-// buffer, which only that target has, calls 'set_code_section' itself
+// sizes and entries count only in code
 //
 // jump optimizations done by 'optimize_jumps', in x86_64 and rv32i syntax:
 //
@@ -342,7 +341,8 @@ class assembler {
 
     // e.g. back to the code after the data of a failure handler
     auto switch_section(const section which) -> void {
-        set_code_section(which == section::text);
+        // code sizes and entries only count in code
+        code_section_ = which == section::text;
         add_section_directive(which);
     }
 
@@ -430,11 +430,6 @@ class assembler {
     // the line just added calls the label 'target'
     auto mark_call(const std::string_view target) -> void {
         current_lines().back().call_target = target;
-    }
-
-    // code sizes and entries only count in code
-    auto set_code_section(const bool code_section) -> void {
-        code_section_ = code_section;
     }
 
     //

@@ -9,6 +9,8 @@ import tempfile
 # with a body nested 120 levels, and prints the exit code and the message of
 # each
 machine = os.environ.get('MACHINE')
+# x86_64 writes no image and takes no '--bin'
+image_options = [] if machine == 'x86_64' else ['--bin=chain.bin']
 compiler = os.path.abspath('../../../baz')
 
 
@@ -32,7 +34,7 @@ def nested_function(name, depth):
 
 def compile_source(root, name):
     result = subprocess.run(
-        [compiler, name, '--target=' + machine, '--bin=chain.bin'],
+        [compiler, name, '--target=' + machine, *image_options],
         cwd=root, capture_output=True, text=True)
     lines = [line for line in result.stderr.splitlines() if line]
     print(result.returncode, *lines[:1])

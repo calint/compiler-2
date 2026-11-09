@@ -82,9 +82,10 @@ struct target_description {
     // the alignment of a string constant, e.g. a word lets copies to aligned
     // destinations use words
     size_t string_alignment{};
-    // true where no operating system stops a program that overflows the
-    // stack: calls check that the stack has room and a failure has a handler
-    bool is_stack_bounded{};
+    // the lowest address the stack may reach where no operating system stops
+    // a program that overflows the stack: calls check that the stack has room
+    // and a failure has a handler
+    std::optional<size_t> stack_limit_address;
     std::string_view frame_base_register;
     std::string_view variables_base_register;
     // the register that carries the address of the receiver of a method call
@@ -1393,7 +1394,7 @@ class machine {
     }
 
     [[nodiscard]] auto is_stack_bounded() const -> bool {
-        return target_.is_stack_bounded;
+        return target_.stack_limit_address.has_value();
     }
 
     auto label(const size_t indent, const std::string_view name) -> void {
@@ -1509,6 +1510,13 @@ class machine {
 
     [[nodiscard]] auto slot_register() const -> std::string_view {
         return target_.slot_register;
+    }
+
+    // only a target that 'is_stack_bounded' is asked
+    [[nodiscard]] auto stack_limit_address() const -> size_t {
+        assert(target_.stack_limit_address);
+
+        return *target_.stack_limit_address;
     }
 
     // the header, the entry of the program and the variables base, held until

@@ -330,7 +330,7 @@ struct target_option {
 };
 
 auto check_target_reads(const options& opts) -> void {
-    const std::array<target_option, 3> target_options{
+    const std::array<target_option, 4> target_options{
         target_option{
             .name{"--stack"},
             .reads{&target_name::reads_stack},
@@ -345,6 +345,11 @@ auto check_target_reads(const options& opts) -> void {
             .name{"--sdcard"},
             .reads{&target_name::reads_sd_card},
             .given{opts.sd_card_file_name.has_value()},
+        },
+        target_option{
+            .name{"--bin"},
+            .reads{&target_name::writes_image},
+            .given{opts.binary_file_name.has_value()},
         },
     };
 

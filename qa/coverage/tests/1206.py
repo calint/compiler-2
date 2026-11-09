@@ -8,6 +8,8 @@ import tempfile
 # each in a directory of its own under the same name, with every check and
 # the register report, and compares the outputs
 machine = os.environ.get('MACHINE')
+# x86_64 writes no image and takes no '--bin'
+image_options = [] if machine == 'x86_64' else ['--bin=1206.bin']
 compiler = os.path.abspath('../../../baz')
 source = open('1206.baz').read()
 marker = '# not called'
@@ -21,7 +23,7 @@ def compile_in(directory, text):
     with open(os.path.join(directory, '1206.baz'), 'w') as f:
         f.write(text)
     result = subprocess.run(
-        [compiler, '1206.baz', *options, '--bin=1206.bin'], cwd=directory,
+        [compiler, '1206.baz', *options, *image_options], cwd=directory,
         capture_output=True, text=True)
     image = os.path.join(directory, '1206.bin')
     binary = open(image, 'rb').read() if os.path.exists(image) else b''

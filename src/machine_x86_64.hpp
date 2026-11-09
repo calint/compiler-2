@@ -818,14 +818,11 @@ class machine_x86_64 final : public machine {
     }
 
     // prints the line number in 'report_line_register_' and exits with the
-    // code in 'report_exit_code_register_'
+    // code in 'report_exit_code_register_'; the digits are written backwards
+    // below 'rsp', the newline last, and the routine never returns
     auto emit_report_line_routine() -> void override {
         constexpr int newline{'\n'};
         constexpr int decimal_base{10};
-        // the 20 digits of a 64-bit number and a newline, the digits are
-        // written backwards before the newline at the end of the buffer
-        constexpr size_t number_buffer_size_bytes{21};
-        constexpr size_t newline_offset{number_buffer_size_bytes - 1};
 
         const std::string line_comment{
             std::format("line number is in {}",
@@ -836,13 +833,19 @@ class machine_x86_64 final : public machine {
         assembler_.instruction(1, op::mov, "rax", report_line_register_);
         assembler_.comment(1, "convert to string");
 
-        const std::string newline_address{
-            std::format("num_buffer + {}", newline_offset),
+        // note: the 20 digits of a 64-bit number and the newline fit in the
+        //       128 bytes below 'rsp' that the ABI keeps from signal handlers
+
+        const assembler_x86_64::memory newline_address{
+            .symbol{},
+            .base{"rsp"},
+            .index{},
+            .scale{},
+            .displacement{-1},
+            .size_bytes{},
         };
 
-        assembler_.instruction(
-            1, op::mov, "rdi",
-            assembler_x86_64::immediate::of_qword_expression(newline_address));
+        assembler_.instruction(1, op::lea, "rdi", newline_address);
 
         assembler_.instruction(
             1, op::mov, assembler_x86_64::memory::of_base("rdi", size_byte_),
@@ -868,24 +871,12 @@ class machine_x86_64 final : public machine {
         assembler_.comment(1, "print line number to stderr");
         assembler_.instruction(1, op::mov, "rax", syscall_write_);
         assembler_.instruction(1, op::mov, "rsi", "rdi");
-
-        // the length is the end of the buffer minus the first digit
-        const std::string buffer_end{
-            std::format("num_buffer + {}", number_buffer_size_bytes),
-        };
-
-        assembler_.instruction(
-            1, op::mov, "rdx",
-            assembler_x86_64::immediate::of_qword_expression(buffer_end));
-
+        // the length is 'rsp', the end of the digits, minus the first digit
+        assembler_.instruction(1, op::mov, "rdx", "rsp");
         assembler_.instruction(1, op::sub, "rdx", "rdi");
         assembler_.instruction(1, op::mov, "rdi", stderr_descriptor_);
         assembler_.instruction(1, op::syscall);
         exit(token{}, 1, qword_register(report_exit_code_register_));
-        assembler_.begin_bss_section();
-        assembler_.label(0, "num_buffer");
-        assembler_.reserve(number_buffer_size_bytes);
-        assembler_.switch_section(section::text);
     }
 
     // the routines take the sector in 'rdi', the address in 'rsi' and the size
@@ -1954,7 +1945,7 @@ class machine_x86_64 final : public machine {
             .memory_counter_pressure_count{memory_counter_pressure_count_},
             .has_sd_card{true},
             .string_alignment{1},
-            .is_stack_bounded{},
+            .stack_limit_address{},
             .frame_base_register{"rbx"},
             .variables_base_register{"rbp"},
             .slot_register{"r11"},

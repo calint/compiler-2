@@ -8,6 +8,8 @@ import tempfile
 # an inlined function before the one before it, and prints the exit code
 # and the message
 machine = os.environ.get('MACHINE')
+# x86_64 writes no image and takes no '--bin'
+image_options = [] if machine == 'x86_64' else ['--bin=chain.bin']
 compiler = os.path.abspath('../../../baz')
 
 
@@ -26,7 +28,7 @@ with tempfile.TemporaryDirectory() as root:
     with open(source, 'w') as f:
         f.write(chain(100))
     result = subprocess.run(
-        [compiler, 'chain.baz', '--target=' + machine, '--bin=chain.bin'],
+        [compiler, 'chain.baz', '--target=' + machine, *image_options],
         cwd=root, capture_output=True, text=True)
     lines = [line for line in result.stderr.splitlines() if line]
     print(result.returncode, *lines[:1])

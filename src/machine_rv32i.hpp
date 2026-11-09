@@ -61,7 +61,7 @@
 //                ('failure_tests', 'fail_if', 'pass_if')
 //   handlers     'emit_panic_message', 'emit_report_line_routine'
 //   calls        'emit_call', 'emit_target_call' through 'call_io_routine'
-//   target hooks 'emit_io_call', 'emit_stack_limit_load', and the machine
+//   target hooks 'emit_io_call' and the machine
 //                virtuals 'emit_exit_routine', 'emit_sector_routines',
 //                'emit_target_setup' and 'finish_target';
 //                the protected section is what the targets build on
@@ -533,7 +533,7 @@ class machine_rv32i : public machine {
             alloc_scratch_register(src_loc_tk, indent, default_type()),
         };
 
-        emit_stack_limit_load(indent, limit.register_name());
+        assembler_.li(indent, limit.register_name(), stack_limit_address());
 
         comment(src_loc_tk, indent, "lowest stack pointer the call reaches");
 
@@ -1411,15 +1411,6 @@ class machine_rv32i : public machine {
     virtual auto emit_io_call(const size_t indent, const target_call function)
         -> void = 0;
 
-    // loads the lowest address the stack may reach into the register 'reg',
-    // only a target that 'is_stack_bounded' is asked
-    virtual auto
-    emit_stack_limit_load([[maybe_unused]] const size_t indent,
-                          [[maybe_unused]] const std::string_view reg) -> void {
-
-        std::unreachable();
-    }
-
     //
     // class methods
     //
@@ -1468,7 +1459,7 @@ class machine_rv32i : public machine {
             .memory_counter_pressure_count{},
             .has_sd_card{true},
             .string_alignment{word_size_bytes_},
-            .is_stack_bounded{},
+            .stack_limit_address{},
             .frame_base_register{"s1"},
             .variables_base_register{"s0"},
             // the last of the saved registers, no built-in names it

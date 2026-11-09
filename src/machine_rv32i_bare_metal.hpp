@@ -40,29 +40,10 @@ class machine_rv32i_bare_metal : public machine_rv32i {
                              const size_t memory_size_bytes_in,
                              const bool has_sd_card)
         : machine_rv32i{builtins, files, options,
-                        bare_metal_target(has_sd_card)},
+                        bare_metal_target(options, memory_start_address_in,
+                                          memory_size_bytes_in, has_sd_card)},
           memory_start_address_{memory_start_address_in},
-          memory_size_bytes_{memory_size_bytes_in} {
-
-        // note: the options are checked before the source is parsed, so an
-        //       error in the source does not hide them
-
-        // the stack fits the memory and what 'main' may use without a stack
-        // check, which 'finish_target' and the stack limit rely on
-        if (stack_size_bytes() > memory_size_bytes()) {
-            throw option_error{
-                std::format("invalid --stack: {} B exceeds the {} B of device "
-                            "memory",
-                            stack_size_bytes(), memory_size_bytes())};
-        }
-
-        if (stack_size_bytes() < leaf_stack_bytes()) {
-            throw option_error{
-                std::format("invalid --stack: {} B is smaller than the {} B "
-                            "that 'main' may use without a stack check",
-                            stack_size_bytes(), leaf_stack_bytes())};
-        }
-    }
+          memory_size_bytes_{memory_size_bytes_in} {}
 
   protected:
     //
@@ -74,18 +55,6 @@ class machine_rv32i_bare_metal : public machine_rv32i {
 
         call_io_routine(indent, function == target_call::read ? read_label_
                                                               : write_label_);
-    }
-
-    // the stack is the 'stack_size_bytes' below the end of memory
-    auto emit_stack_limit_load(const size_t indent, const std::string_view reg)
-        -> void override {
-
-        // note: the constructor rejected a stack larger than the memory
-        assert(stack_size_bytes() <= memory_size_bytes());
-
-        assembler_rv32i& output{assembler()};
-
-        output.li(indent, reg, stack_top_address() - stack_size_bytes());
     }
 
     // no operating system sets up a stack, it grows down from the end of
@@ -127,7 +96,7 @@ class machine_rv32i_bare_metal : public machine_rv32i {
         const size_t memory_end_address{output.memory_end_address()};
         const size_t memory_bytes{memory_size_bytes()};
 
-        // note: the constructor rejected a stack larger than the memory
+        // note: 'bare_metal_target' rejected a stack larger than the memory
         assert(stack_size_bytes() <= memory_bytes);
 
         if (memory_end_address <= memory_bytes - stack_size_bytes()) {
@@ -235,13 +204,42 @@ class machine_rv32i_bare_metal : public machine_rv32i {
     //
 
     // no operating system stops a stack overflow, see
-    // 'target_description::is_stack_bounded'
-    [[nodiscard]] static constexpr auto
-    bare_metal_target(const bool has_sd_card) -> target_description {
+    // 'target_description::stack_limit_address'; the stack is the
+    // 'stack_size_bytes' below the end of memory
+    [[nodiscard]] static auto
+    bare_metal_target(const target_options& options,
+                      const size_t memory_start_address,
+                      const size_t memory_size_bytes, const bool has_sd_card)
+        -> target_description {
+
+        const size_t stack_size_bytes{options.stack_size_bytes};
+
+        // note: the options are checked before the source is parsed, so an
+        //       error in the source does not hide them
+
+        // the stack fits the memory and what 'main' may use without a stack
+        // check, which 'finish_target' and the stack limit rely on
+        if (stack_size_bytes > memory_size_bytes) {
+            throw option_error{
+                std::format("invalid --stack: {} B exceeds the {} B of device "
+                            "memory",
+                            stack_size_bytes, memory_size_bytes)};
+        }
+
+        if (stack_size_bytes < leaf_stack_bytes()) {
+            throw option_error{
+                std::format("invalid --stack: {} B is smaller than the {} B "
+                            "that 'main' may use without a stack check",
+                            stack_size_bytes, leaf_stack_bytes())};
+        }
 
         target_description target{rv32i_target()};
-        target.is_stack_bounded = true;
+
+        target.stack_limit_address =
+            memory_start_address + memory_size_bytes - stack_size_bytes;
+
         target.has_sd_card = has_sd_card;
+
         return target;
     }
 };

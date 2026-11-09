@@ -15,6 +15,18 @@ BIN="$SCRIPT_DIR/../../baz"
 export LLVM_PROFILE_FILE="$SCRIPT_DIR/cli-%p.profraw"
 
 # runs a command that must exit with 1, e.g. a rejected compile
+# runs the compiler for target '$1' with the other arguments, an rv32i target
+# writes its image to 'gen-rv32i.bin', x86_64 takes no '--bin'
+baz_at() {
+    local target=$1
+    shift
+    if [[ $target == x86_64 ]]; then
+        "$BIN" --target="$target" "$@"
+    else
+        "$BIN" --target="$target" --bin=gen-rv32i.bin "$@"
+    fi
+}
+
 expect_exit_1() {
     local exit_code=0
     "$@" || exit_code=$?
@@ -99,8 +111,10 @@ CLI_BINARY_NAME() {
     cmp -s 0418-rv32i-qemu.bin gen-rv32i.bin
     cmp -s gen.s out
     rm -f 0418-rv32i-qemu.bin gen-rv32i.bin
-    # x86_64 writes no binary
-    "$BIN" --bin=gen-rv32i.bin 0418.baz >gen.s 2>err
+    # x86_64 writes no binary, so '--bin' is rejected like the other options
+    # a target does not read
+    expect_exit_1 "$BIN" --bin=gen-rv32i.bin 0418.baz >gen.s 2>err
+    grep -Fq "error: invalid --bin: target 'x86_64' does not read it, the targets that do are: rv32i, rv32i-qemu, rv32i-fpga" err
     [[ ! -e gen-rv32i.bin ]]
     # the image does not replace the source, also named another way
     cp 0418.baz gen-source.baz
@@ -115,12 +129,6 @@ CLI_BINARY_NAME() {
     grep -Fq "invalid --bin: 'gen-include.baz' is a source file" err
     grep -Fq "res = 3" gen-include.baz
     rm -f gen-include.baz gen-main.baz
-    # x86_64 writes no image, so a source named as one is left untouched
-    cp 0418.baz gen-source.baz
-    "$BIN" --target=x86_64 --bin=gen-source.baz gen-source.baz >gen.s 2>err
-    [[ ! -s err ]]
-    cmp -s 0418.baz gen-source.baz
-    rm -f gen-source.baz
     echo ok
 }
 
@@ -375,7 +383,7 @@ CLI_COMMENT_LOCATIONS() {
     # 0895.baz includes 'include/cycle.baz'
     local target
     for target in x86_64 rv32i; do
-        "$BIN" --target=$target --bin=gen-rv32i.bin 0895.baz >gen.s 2>err
+        baz_at "$target" 0895.baz >gen.s 2>err
         # files are named relative to the directory of the main file
         grep -Fq '[0895.baz:4:5] exit(three())' gen.s
         grep -Fq '[include/cycle.baz:4:5] res = 3' gen.s
@@ -531,7 +539,7 @@ CLI_ADDRESS_RANGE() {
     for target in rv32i rv32i-qemu rv32i-fpga; do
         printf 'dat big = i8[3000000000]\nfunc main(){\n    exit(0)\n}\n' >gen-range.baz
         set +e
-        "$BIN" --target=$target --bin=gen-rv32i.bin gen-range.baz >gen.s 2>err
+        baz_at "$target" gen-range.baz >gen.s 2>err
         local exit_code=$?
         set -e
         # the bare-metal targets reject it for their device memory, linux
@@ -544,14 +552,14 @@ CLI_ADDRESS_RANGE() {
         fi
         printf 'dat big = i8[4294967000]\nfunc main(){\n    exit(0)\n}\n' >gen-range.baz
         rm -f gen-rv32i.bin
-        expect_exit_1 "$BIN" --target=$target --bin=gen-rv32i.bin gen-range.baz >gen.s 2>err
+        expect_exit_1 baz_at "$target" gen-range.baz >gen.s 2>err
         [[ ! -s gen.s && ! -e gen-rv32i.bin ]]
         grep -Fq "code, data and variables use" err
         # data of the whole range leaves no room, it is rejected where it is
         # declared, before its address from the variables base would wrap
         printf 'dat d = i8[0x100000000]\nfunc main() {\n    d[1] = 1\n}\n' \
             >gen-range.baz
-        expect_exit_1 "$BIN" --target=$target --bin=gen-rv32i.bin gen-range.baz >gen.s 2>err
+        expect_exit_1 baz_at "$target" gen-range.baz >gen.s 2>err
         grep -Fq "data and variables of 4294967296 B reach the 4294967296 B" err
     done
     rm -f gen-range.baz gen-rv32i.bin
@@ -612,7 +620,7 @@ CLI_NO_EXIT_ROUTINE() {
     printf 'func main() {\n    loop {\n    }\n}\n' >gen-loop.baz
     local target
     for target in x86_64 rv32i; do
-        "$BIN" --target=$target --bin=gen-rv32i.bin gen-loop.baz >gen.s 2>err
+        baz_at "$target" gen-loop.baz >gen.s 2>err
         [[ ! -s err ]]
         grep -Fq baz_exit gen.s && exit 1
     done
@@ -684,7 +692,7 @@ CLI_NOINLINE_REPORT() {
     for target in x86_64 rv32i; do
         # 0751.baz: 'sum' has an instance per array length, 'length_of' a body
         # for each of its two calls
-        "$BIN" --target=$target --bin=gen-rv32i.bin 0751.baz >gen.s 2>err
+        baz_at "$target" 0751.baz >gen.s 2>err
         [[ ! -s err ]]
         grep -Eq '^[;#] +sum: 2 bodies, 3 calls, [0-9]+ instructions$' gen.s
         grep -Eq '^[;#] +length_of: 2 bodies, 2 calls, [0-9]+ instructions, no reuse$' gen.s
@@ -704,7 +712,7 @@ CLI_STACK_HANDLER() {
     # an operating system stops a stack overflow, no handler is written
     local target
     for target in x86_64 rv32i; do
-        "$BIN" --target=$target --bin=gen-rv32i.bin --checks=stack 0981.baz >gen.s 2>err
+        baz_at "$target" --checks=stack 0981.baz >gen.s 2>err
         [[ ! -s err ]]
         grep -Fq "stack overflow handler" gen.s && exit 1
     done
@@ -750,10 +758,10 @@ CLI_SMALL_STACK() {
     # 'main' has no stack check, a helper call and a failure use 48 B
     local target
     for target in rv32i-qemu rv32i-fpga; do
-        expect_exit_1 "$BIN" --target=$target --bin=gen-rv32i.bin --stack=32 0418.baz >gen.s 2>err
+        expect_exit_1 baz_at "$target" --stack=32 0418.baz >gen.s 2>err
         grep -Fq "error: invalid --stack: 32 B is smaller than the 48 B that 'main' may use without a stack check" err
         grep -Fq "use --help for usage information" err
-        "$BIN" --target=$target --bin=gen-rv32i.bin --stack=48 0418.baz >gen.s 2>err
+        baz_at "$target" --stack=48 0418.baz >gen.s 2>err
         [[ ! -s err ]]
     done
     rm -f gen-rv32i.bin
@@ -793,7 +801,7 @@ CLI_PADDING_ZERO() {
     for target in x86_64 rv32i-fpga; do
         # 1269.baz: 4000 elements with 3 B of padding each, one zero of the
         # instance instead of a store per gap
-        "$BIN" --target=$target --bin=gen-rv32i.bin 1269.baz >gen.s 2>err
+        baz_at "$target" 1269.baz >gen.s 2>err
         [[ ! -s err ]]
         [[ $(grep -c "zero instance for its padding: 32000 B" gen.s) -eq 1 ]]
         [[ $(grep -c "zero padding" gen.s) -eq 0 ]]
