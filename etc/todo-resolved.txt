@@ -1,6 +1,15 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] medium: round 230 (2026-11-10, UM roome review, UN fpga emulator
+    review)
+    => done (2026-11-10): roome: commands tested in the order of their
+       'dat's and the help, a message clearing loop that could not find a
+       message removed (a 'note:' says why), 'entity.print' and the uncalled
+       'text.equals' removed, 'text.input' uses 'is_full', comments; 34
+       instructions less on rv32i-fpga, 9 on x86_64, sessions unchanged;
+       UN's stricter emulator (misaligned and uninitialized accesses, writes
+       to code, device widths, undecoded encodings) waits for the user
 [x] medium: round 229 (2026-11-10, UK test and lint scripts review, UL
     feature combinations bug hunt)
     => done (2026-11-10): a check of 'CLI_VERSIONS' that could not fail

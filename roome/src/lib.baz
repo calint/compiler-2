@@ -220,22 +220,12 @@ func mut text.input() res bool {
             out.print(c, 1)
             break
         }
-        if self.len == array_length(self.array) continue
+        if self.is_full() continue
         out.print(c, 1)
         self.insert_at(pos, c[0])
         pos = pos + 1
         self.redraw_from(pos, 0)
     }
-}
-
-# compares with a text of any capacity
-func text.equals<T type>(other T) res bool {
-    if self.len != other.len {
-        res = false
-        return
-    }
-
-    res = arrays_equal(self.array, other.array, self.len)
 }
 
 # prints the lead-in before the first item of a list and a comma before the
@@ -330,6 +320,7 @@ func tokenizer.is_empty() res bool {
 func tokenizer.token<T type>() res T {
     res.len = self.len()
     if res.len > array_length(res.array) res.len = array_length(res.array)
+    # note: zeroed so that equal names compare equal, see 'find_or_add'
     res.array = {}
     array_copy(self.string.array[self.start], res.array, res.len)
 }

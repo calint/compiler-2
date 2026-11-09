@@ -69,7 +69,7 @@ func action_go(eid, tz mut tokenizer) {
 
     let to_found_ix = rooms.array[to_room_id].links.index_of_link_to(cur_room_id)
 
-    # missing link back is program error
+    # a missing link back is a program error
     assert(2, to_found_ix != rooms.array[to_room_id].links.len)
 
     var arrived_text = message_text
@@ -211,7 +211,7 @@ dat str_u_have_nothing = "u have nothing\n"
 
 func action_inventory(eid, tz tokenizer) {
     let len = entities.array[eid].objects.len
-    if  len == 0 {
+    if len == 0 {
         out.print_all(str_u_have_nothing)
         return
     }
@@ -380,8 +380,7 @@ func action_say(eid, tz mut tokenizer) {
 
     let text = tz.token<message_text>()
 
-    notify_room(entities.array[eid].room_id, eid,
-                    message_said, text)
+    notify_room(entities.array[eid].room_id, eid, message_said, text)
 }
 
 dat str_which_sector = "which sector\n"

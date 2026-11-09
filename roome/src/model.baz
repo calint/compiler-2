@@ -52,10 +52,6 @@ type entity {
     messages messages,
 }
 
-func entity.print() {
-    out.print(self.name.array, self.name.len)
-}
-
 type entities = list<entity, entities_len>
 
 # the bare entity, the creation script makes the rest
@@ -146,7 +142,7 @@ func room.print(cur_entity) {
     foo self.entities.array, self.entities.len {
         if e == cur_entity continue
         present.next(str_uc)
-        entities.array[e].print()
+        entities.array[e].name.print()
     }
     foo self.objects.array, self.objects.len {
         present.next(str_uc)

@@ -46,34 +46,21 @@ dat str_action_new_entity = "en"
 dat str_action_sector_write = "sdw"
 dat str_action_sector_read = "sdr"
 
-# note: `noinline` because it unfolds into a lot of code and called from 2
-#       locations
+# note: 'noinline' because it expands to a lot of code and is called twice
 func noinline parse_input(eid, tz mut tokenizer) {
     tz.next()
 
-    if tz.is_array(str_action_go) {
+    if tz.is_array(str_action_help) {
+        action_help(eid, tz)
+
+    } else if tz.is_array(str_action_go) {
         action_go(eid, tz)
-
-    } else if tz.is_array(str_action_new_room) {
-        action_new_room(eid, tz)
-
-    } else if tz.is_array(str_action_set_room_description) {
-        action_set_room_description(eid, tz)
-
-    } else if tz.is_array(str_action_set_room_note) {
-        action_set_room_note(eid, tz)
-
-    } else if tz.is_array(str_action_set_room_name) {
-        action_set_room_name(eid, tz)
-
-    } else if tz.is_array(str_action_new_entity) {
-        action_new_entity(eid, tz)
-
-    } else if tz.is_array(str_action_new_object) {
-        action_new_object(eid, tz)
 
     } else if tz.is_array(str_action_inventory) {
         action_inventory(eid, tz)
+
+    } else if tz.is_array(str_action_new_object) {
+        action_new_object(eid, tz)
 
     } else if tz.is_array(str_action_drop) {
         action_drop(eid, tz)
@@ -87,14 +74,26 @@ func noinline parse_input(eid, tz mut tokenizer) {
     } else if tz.is_array(str_action_say) {
         action_say(eid, tz)
 
+    } else if tz.is_array(str_action_new_room) {
+        action_new_room(eid, tz)
+
+    } else if tz.is_array(str_action_set_room_name) {
+        action_set_room_name(eid, tz)
+
+    } else if tz.is_array(str_action_set_room_description) {
+        action_set_room_description(eid, tz)
+
+    } else if tz.is_array(str_action_set_room_note) {
+        action_set_room_note(eid, tz)
+
+    } else if tz.is_array(str_action_new_entity) {
+        action_new_entity(eid, tz)
+
     } else if tz.is_array(str_action_sector_write) {
         action_sector_write(eid, tz)
 
     } else if tz.is_array(str_action_sector_read) {
         action_sector_read(eid, tz)
-
-    } else if tz.is_array(str_action_help) {
-        action_help(eid, tz)
 
     } else {
         out.print_all(str_not_understood)
@@ -111,6 +110,7 @@ go roome\n\
 en me\n"
 
 # runs the lines of the script as the bare entity, a line ends with '\n'
+# note: no message is left because the entities are made after it moves
 func run_creation_script() {
     out.set_silenced(true)
 
@@ -123,11 +123,6 @@ func run_creation_script() {
             parse_input(0, tz)
             line_start = i + 1
         }
-    }
-
-    # clear messages to entities
-    foo entities.array, entities.len {
-        e.messages.len = 0
     }
 
     out.set_silenced(false)
