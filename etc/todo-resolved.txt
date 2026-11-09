@@ -1,6 +1,10 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 241 (2026-11-10, VD 'expr_bool' simplification)
+    => done (2026-11-10): 'is_untyped_constant' for the negation every
+       caller wrote, 'comment_label' spells its connective, a nested call
+       named, an element fetched once; listings unchanged
 [x] easy: round 240 (2026-11-10, VA control flow with inlining bug hunt,
     VC 'register_report' and 'compile_error' simplification)
     => done (2026-11-10): VA found nothing (about 5800 fuzzed programs of

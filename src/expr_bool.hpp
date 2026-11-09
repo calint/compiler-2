@@ -106,8 +106,8 @@ class expr_bool_op final : public statement {
         // empty when computed or read at run time
         std::optional<folded_value> folded;
 
-        [[nodiscard]] auto is_typed_constant() const -> bool {
-            return folded and folded->is_typed();
+        [[nodiscard]] auto is_untyped_constant() const -> bool {
+            return folded and not folded->is_typed();
         }
     };
 
@@ -216,10 +216,6 @@ class expr_bool_op final : public statement {
                    const connective joined_by, const operand& dst) const
         -> std::optional<bool> {
 
-        const std::string_view list_op{
-            joined_by == connective::logical_or ? "or" : "and",
-        };
-
         // inverted by the list and by the element's own 'not's
         const bool is_inverted{inverted != is_negated()};
 
@@ -230,10 +226,11 @@ class expr_bool_op final : public statement {
             .branch_on_true{branch_on_true},
         };
 
+        const std::string label{comment_label(joined_by, inverted)};
+
         machine& x{tc.machine()};
 
-        x.comment(tok(), indent,
-                  trimmed_source(*this, "?", comment_label(list_op, inverted)));
+        x.comment(tok(), indent, trimmed_source(*this, "?", label));
 
         x.label(indent, tc.create_unique_label(tok(), "cmp"));
 
@@ -350,8 +347,12 @@ class expr_bool_op final : public statement {
     }
 
     // a shorthand is named since its source shows no comparison with 0
-    [[nodiscard]] auto comment_label(const std::string_view list_op,
+    [[nodiscard]] auto comment_label(const connective joined_by,
                                      const bool inverted) const -> std::string {
+
+        const std::string_view list_op{
+            joined_by == connective::logical_or ? "or" : "and",
+        };
 
         if (inverted and not comparison_) {
             return std::format(" {} inverted shorthand: ", in_quotes(list_op));
@@ -391,9 +392,9 @@ class expr_bool_op final : public statement {
         // register copy: an untyped one fits the other side, a typed one when
         // its value does, which then compares as it would at its own width
         const bool is_mirrored{
-            lhs.folded and (not lhs.is_typed_constant() or
-                            constant_arith::fits_width(lhs.folded->value,
-                                                       rhs.node->get_type())),
+            lhs.is_untyped_constant() or
+                (lhs.folded and constant_arith::fits_width(
+                                    lhs.folded->value, rhs.node->get_type())),
         };
 
         if (not is_mirrored) {
@@ -653,8 +654,8 @@ class expr_bool_op final : public statement {
                                  const comparison_side& rhs,
                                  const comparison_operator op) -> void {
 
-        const bool is_lhs_untyped{lhs.folded and not lhs.is_typed_constant()};
-        const bool is_rhs_untyped{rhs.folded and not rhs.is_typed_constant()};
+        const bool is_lhs_untyped{lhs.is_untyped_constant()};
+        const bool is_rhs_untyped{rhs.is_untyped_constant()};
 
         if (is_lhs_untyped and is_rhs_untyped) {
             return;
@@ -1263,9 +1264,9 @@ class expr_bool final : public statement {
 
         const bool is_or{joined_by(inverted) == connective::logical_or};
 
-        if (const expr_bool* const nested_expr{
-                std::get_if<expr_bool>(&bools_.at(expr_index)),
-            }) {
+        const element& e{bools_.at(expr_index)};
+
+        if (const expr_bool* const nested_expr{std::get_if<expr_bool>(&e)}) {
 
             const statement& next_expr{as_statement(bools_.at(expr_index + 1))};
 
@@ -1287,7 +1288,7 @@ class expr_bool final : public statement {
                                                    inverted, dst);
         }
 
-        const expr_bool_op& expr{std::get<expr_bool_op>(bools_.at(expr_index))};
+        const expr_bool_op& expr{std::get<expr_bool_op>(e)};
 
         return expr.compile_branch(tc, indent,
                                    is_or ? targets.if_true : targets.if_false,
