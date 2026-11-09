@@ -1,6 +1,16 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] medium: round 213 (2026-11-09, TE 'expr_bool.hpp' simplification, TF
+    noinline call protocol bug hunt; user: the bool fuzzer into 'qa/fuzz')
+    => done (2026-11-09): 'compile_constant' returns a 'bool', a stored
+       memory comparison without a target is an assert, 'is_only_element'
+       without 'has_not', the sides of a memory comparison are not folded;
+       listings equal over 2276 compiles; 'qa/fuzz/fuzz-bools.py' (round 211
+       TA) on 'fuzzlib', in 'fuzz-all.sh' and 'fuzz-coverage.py', its
+       generator writes no program that is rightly rejected; TF found
+       nothing: about 5000 programs built inline, noinline and mixed on
+       x86_64, rv32i, rv32i-fpga and rv32i-qemu
 [x] medium: round 212 (2026-11-09, TC built-in statements simplification, TD
     conversions and overflow bug hunt)
     => done (2026-11-09): 'bulk_operands::constant_size_bytes' shared by

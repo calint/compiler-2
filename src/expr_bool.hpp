@@ -374,9 +374,6 @@ class expr_bool_op final : public statement {
                             const machine::comparison_action& action) const
         -> void {
 
-        const comparison_side lhs{side_of(tc, lhs_)};
-        const comparison_side rhs{side_of(tc, cmp.rhs)};
-
         // e.g. the 'i' of 'i == h(i)' with 'h' writing 'i'
         assert_not_written_later(tc, *this, "operand");
 
@@ -384,6 +381,9 @@ class expr_bool_op final : public statement {
             resolve_memory_cmp(tc, indent, cmp, action);
             return;
         }
+
+        const comparison_side lhs{side_of(tc, lhs_)};
+        const comparison_side rhs{side_of(tc, cmp.rhs)};
 
         assert_sides_fit(lhs, rhs, cmp.op);
 
@@ -413,7 +413,7 @@ class expr_bool_op final : public statement {
     // a constant emits no comparison, only the short-circuit branch
     auto compile_constant(toc& tc, const size_t indent, const bool value,
                           const machine::comparison_action& action) const
-        -> std::optional<bool> {
+        -> bool {
 
         machine& x{tc.machine()};
 
@@ -553,7 +553,10 @@ class expr_bool_op final : public statement {
                                 action.operation ==
                                     comparison_operator::not_equal);
 
-        if (not is_stored or not action.target.empty()) {
+        // note: a condition that is not stored branches, e.g. that of an 'if'
+        assert(is_stored or not action.target.empty());
+
+        if (not action.target.empty()) {
             machine::comparison_action branch_action{action};
             branch_action.operation = comparison_operator::not_equal;
             branch_action.destination = {};
@@ -1344,9 +1347,8 @@ class expr_bool final : public statement {
 
         // the element of a list that is only that element comments the same
         // source and also how it is joined and inverted
-        const bool is_only_element{
-            bools_.size() == 1 and not has_not() and not is_enclosed(),
-        };
+        // note: only a group in parentheses has 'not's of its own
+        const bool is_only_element{bools_.size() == 1 and not is_enclosed()};
 
         if (not is_only_element) {
             machine& x{tc.machine()};
