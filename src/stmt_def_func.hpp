@@ -637,21 +637,6 @@ class stmt_def_func final : public statement {
         }
     }
 
-    // the body compiled in a frame of its own for 'array_lengths', nothing
-    // kept
-    auto dry_run_in_frame(toc& tc,
-                          const std::span<const size_t> array_lengths) const
-        -> void {
-
-        tc.dry_run(
-            [&] -> void {
-                const toc::scope_entry body{tc, frame_scope(array_lengths)};
-
-                std::ignore = compile_in_frame(tc, 0, array_lengths);
-            },
-            machine::discarded_code::body);
-    }
-
     // the body of a noinline function for one set of array lengths, after
     // 'main'; the lengths are those of the array arguments, one per array
     // parameter
@@ -675,7 +660,7 @@ class stmt_def_func final : public statement {
 
         x.begin_noinline_body(std::string{name()}, body_label(array_lengths));
 
-        const size_t frame_size_bytes{compile_in_frame(tc, 0, array_lengths)};
+        const size_t frame_size_bytes{compile_in_frame(tc, array_lengths)};
 
         x.end_noinline_body();
 
@@ -717,9 +702,7 @@ class stmt_def_func final : public statement {
         return result_.has_value();
     }
 
-    // the name of the function or method, or that of an instance, e.g.
-    // 'tokenizer.to<name>'
-    // e.g. 'use<big>', empty for a function written in the source
+    // e.g. 'tokenizer.to<name>', empty for a function written in the source
     [[nodiscard]] auto instance_name() const -> std::string_view {
         if (not instance_) {
             return {};
@@ -921,8 +904,7 @@ class stmt_def_func final : public statement {
     // the body in a frame of its own at the frame base, which the caller
     // holds, inside its 'frame_scope'; returns the size of the frame
     [[nodiscard]] auto
-    compile_in_frame(toc& tc, const size_t indent,
-                     const std::span<const size_t> array_lengths) const
+    compile_in_frame(toc& tc, const std::span<const size_t> array_lengths) const
         -> size_t {
 
         // the register is held while the body runs
@@ -931,25 +913,25 @@ class stmt_def_func final : public statement {
         machine& x{tc.machine()};
 
         if (has_self_param()) {
-            slot_register = x.alloc_named_register(
-                tok(), indent + 1, x.slot_register(), tc.builtins().address());
+            slot_register = x.alloc_named_register(tok(), 1, x.slot_register(),
+                                                   tc.builtins().address());
         }
 
-        add_constants(tc, indent + 1);
+        add_constants(tc, 1);
 
-        add_signature_vars(tc, indent + 1,
+        add_signature_vars(tc, 1,
                            through_frame{
                                .slot_register{slot_register},
                            },
                            array_lengths);
 
-        compile_statements(tc, indent);
-        x.return_function(indent + 1);
+        compile_statements(tc, 0);
+        x.return_function(1);
 
         const size_t frame_size_bytes{tc.layout().max_frame_size_bytes()};
 
         if (slot_register) {
-            x.free_named_register(tok(), indent + 1, *slot_register);
+            x.free_named_register(tok(), 1, *slot_register);
         }
 
         return frame_size_bytes;
@@ -958,6 +940,21 @@ class stmt_def_func final : public statement {
     // in place or in a body of its own, the function is compiled
     auto compile_statements(toc& tc, const size_t indent) const -> void {
         code_.compile(tc, indent, destination{});
+    }
+
+    // the body compiled in a frame of its own for 'array_lengths', nothing
+    // kept
+    auto dry_run_in_frame(toc& tc,
+                          const std::span<const size_t> array_lengths) const
+        -> void {
+
+        tc.dry_run(
+            [&] -> void {
+                const toc::scope_entry body{tc, frame_scope(array_lengths)};
+
+                std::ignore = compile_in_frame(tc, array_lengths);
+            },
+            machine::discarded_code::body);
     }
 
     // the scope of the body in a frame of its own, entered before the frame

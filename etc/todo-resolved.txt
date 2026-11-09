@@ -1,6 +1,14 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] medium: round 222 (2026-11-09, TW 'stmt_def_func.hpp' simplification,
+    TX x86_64 code generation bug hunt)
+    => done (2026-11-09): 'dry_run_in_frame' private, 'compile_in_frame'
+       without its always 0 'indent', the comment of 'instance_name';
+       listings equal over 2280 compiles; TX found nothing: i64 overflow
+       edges, 'idiv' with MIN / -1 at every width, shifts by 'cl', 64-bit
+       immediates, offsets past 2 GiB, 'rep' operations, registers around
+       syscalls, about 80000 fuzzed programs on x86_64 and rv32i-fpga
 [x] medium: round 221 (2026-11-09, TV nested calls in named steps across
     the sources, TU rv32i code generation bug hunt)
     => done (2026-11-09): the 'value_of(fold(...))' chains and other calls
