@@ -7190,3 +7190,6 @@ SRC=2263 && COMPERR
 
 # an error in a called generic instance names the instance in its call frames
 SRC=2264 && COMPERR
+
+# a character that looks like a space or like nothing is escaped in a message
+SRC=2265 && COMPERR

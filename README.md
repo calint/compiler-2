@@ -69,8 +69,10 @@ the binary image itself.
   target), each file once, also when reached through another path or a link
 * a source file has `\n` or `\r\n` line ends, a carriage return without a
   line feed and a byte order mark are rejected; strings and comments take
-  any other byte, a message shows a control byte or a byte outside a UTF-8
-  character as `\xNN`
+  any other byte, a message shows a control byte, a byte outside a UTF-8
+  character or the bytes of a character that is invisible or looks like a
+  space (no-break space, soft hyphen, zero width and bidi characters) as
+  `\xNN`
 * built-in functions: `array_copy`, `array_length`, `arrays_equal`, `read`,
   `write`, `sector_read`, `sector_write`, `exit`, `int`, `i8`, `i16`, `i32`, `i64`
 * read and write sectors from and to file on `x86_64` and `rv32i`, the file

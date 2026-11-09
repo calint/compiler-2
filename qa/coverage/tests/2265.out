@@ -1,0 +1,4 @@
+
+2265.baz:4:5: 'var\xc2\xa0x' is not a valid name, a name starts with a letter or '_' and has only letters, digits and '_'
+    var\xc2\xa0x = 1
+    ^~~~~~~~~~~~

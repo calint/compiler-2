@@ -1058,7 +1058,9 @@ default_binary_file_name(const std::string_view src_file_name,
         return 1;
     } catch (const std::exception& e) {
         // a defect of the compiler, the input is not at fault
-        std::println(stderr, "\ninternal error: {}", e.what());
+        // note: the text may hold a file name, e.g. that of
+        //       'check_reproduced_source'
+        std::println(stderr, "\ninternal error: {}", printable(e.what()));
         return 1;
     }
 

@@ -680,38 +680,6 @@ struct call_site {
                              func->result_type());
     }
 
-    // a variable in the current block, a root variable of its own
-    [[nodiscard]] auto add_temporary(toc& tc, const size_t indent,
-                                     const std::string& name,
-                                     const type& tpe) const -> destination {
-
-        tc.add_var(indent,
-                   {
-                       .name{name},
-                       .type_ptr{&tpe},
-                       .src_loc_tk{tk},
-                       .shape{},
-                       .read_only_why{},
-                       .placement{},
-                       .foo_array{},
-                   },
-                   var_kind::var);
-
-        const ident_info info{tc.resolve_declared(tk, name)};
-
-        // note: a declared variable resolves to its storage
-        assert(not info.is_address_by_call());
-
-        return destination::of_name(
-            info,
-            {
-                .address{info.operand()},
-                .is_final_address{},
-                .storage{tc.storage_of(name, access_path::whole_variable())},
-                .text{name},
-            });
-    }
-
     // a variable of the current block that holds the argument at 'index',
     // compiled into it
     [[nodiscard]] auto make_argument_temporary(toc& tc, const size_t indent,
@@ -763,6 +731,38 @@ struct call_site {
     }
 
   private:
+    // a variable in the current block, a root variable of its own
+    [[nodiscard]] auto add_temporary(toc& tc, const size_t indent,
+                                     const std::string& name,
+                                     const type& tpe) const -> destination {
+
+        tc.add_var(indent,
+                   {
+                       .name{name},
+                       .type_ptr{&tpe},
+                       .src_loc_tk{tk},
+                       .shape{},
+                       .read_only_why{},
+                       .placement{},
+                       .foo_array{},
+                   },
+                   var_kind::var);
+
+        const ident_info info{tc.resolve_declared(tk, name)};
+
+        // note: a declared variable resolves to its storage
+        assert(not info.is_address_by_call());
+
+        return destination::of_name(
+            info,
+            {
+                .address{info.operand()},
+                .is_final_address{},
+                .storage{tc.storage_of(name, access_path::whole_variable())},
+                .text{name},
+            });
+    }
+
     [[nodiscard]] auto is_inside_call(const compile_error& e) const -> bool {
 
         // note: a recursive call is checked inside its own body, so an error
@@ -2143,28 +2143,26 @@ class stmt_call final : public statement {
         }
 
         const expr_any& arg{args_.at(index)};
+        const stmt_identifier* const path{arg.bare_path()};
 
         // e.g. 'a + 1', '-a' or 'point{1, 2}'
-        if (arg.bare_path() == nullptr) {
-            throw_not_writable(index, arg,
+        if (path == nullptr) {
+            throw_not_writable(index,
                                std::format("{}, which is not a variable,",
                                            in_quotes(trimmed_source(arg))),
                                "");
         }
 
         // e.g. '2' or a 'let' constant
-        // note: 'arg' is a path, see above
         if (not written) {
             throw_not_writable(
-                index, arg,
-                std::format("constant {}",
-                            in_quotes(arg.bare_path()->dotted_path())),
-                "");
+                index,
+                std::format("constant {}", in_quotes(path->dotted_path())), "");
         }
 
         if (written->info.is_read_only()) {
             throw_not_writable(
-                index, arg,
+                index,
                 std::format("read-only {}",
                             in_quotes(written->ident->dotted_path())),
                 read_only_hint(written->ident->tok().text(), written->info));
@@ -2537,8 +2535,11 @@ class stmt_call final : public statement {
             // of a built-in, not a value of the element type, which for a
             // 'bool' is a condition that rejects a whole array
             if (params.at(i).is_array()) {
-                args_.push_back(path_argument(parse_array_parameter_argument(
-                    tc, tz, params.at(i).name())));
+                stmt_identifier array{
+                    parse_array_parameter_argument(tc, tz, params.at(i).name()),
+                };
+
+                args_.push_back(path_argument(std::move(array)));
 
                 continue;
             }
@@ -2677,12 +2678,14 @@ class stmt_call final : public statement {
         }
     }
 
-    // 'what' names the argument, 'hint' says how to make it writable
+    // 'what' names the argument at 'index', 'hint' says how to make it
+    // writable
     [[noreturn]] auto throw_not_writable(const size_t index,
-                                         const expr_any& arg,
                                          const std::string_view what,
                                          const std::string_view hint) const
         -> void {
+
+        const expr_any& arg{args_.at(index)};
 
         if (is_method() and index == 0) {
             throw compile_error{

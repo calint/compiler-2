@@ -1,4 +1,4 @@
 
 2171.baz:1:1: the source starts with a byte order mark, save it without one
-﻿# a byte order mark at the start of the source is rejected
-^
+\xef\xbb\xbf# a byte order mark at the start of the source is rejected
+^~~~~~~~~~~~

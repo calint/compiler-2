@@ -188,6 +188,32 @@ class compile_error final : public std::exception {
            code_point <= last_code_point and not is_surrogate;
 }
 
+// a character that a terminal reads as a control or that looks like a space
+// or like nothing is escaped as the control bytes are, e.g. U+009B starts a
+// control sequence, the no-break space U+00A0 makes 'var\xc2\xa0x' read
+// 'var x', U+202E reverses the rest of the line
+[[nodiscard]] inline auto is_escaped_code_point(const uint32_t code_point)
+    -> bool {
+
+    // first and last code point of each range
+    constexpr std::array<std::pair<uint32_t, uint32_t>, 7> escaped{
+        {
+            {0x80, 0xa0},     // C1 controls, no-break space
+            {0xad, 0xad},     // soft hyphen
+            {0x200b, 0x200f}, // zero width, direction marks
+            {0x2028, 0x202e}, // line separators, bidi embeddings
+            {0x2060, 0x2064}, // word joiner, invisible operators
+            {0x2066, 0x2069}, // bidi isolates
+            {0xfeff, 0xfeff}, // zero width no-break space
+        },
+    };
+
+    return std::ranges::any_of(
+        escaped, [&](const std::pair<uint32_t, uint32_t>& range) -> bool {
+            return code_point >= range.first and code_point <= range.second;
+        });
+}
+
 // the bytes of the whole UTF-8 character at 'index' of 'text', 0 for a
 // control character or a byte that starts no whole character, e.g. a lone
 // continuation byte, a truncated or an overlong character
@@ -235,12 +261,7 @@ class compile_error final : public std::exception {
         return 0;
     }
 
-    // the C1 controls, e.g. U+009B that a terminal reads as the start of a
-    // control sequence, are escaped as the control bytes are
-    constexpr uint32_t first_c1_control{0x80};
-    constexpr uint32_t last_c1_control{0x9f};
-
-    if (code_point >= first_c1_control and code_point <= last_c1_control) {
+    if (is_escaped_code_point(code_point)) {
         return 0;
     }
 

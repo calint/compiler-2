@@ -6,6 +6,16 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
 --------------------------------------------------------------------------------
 1. clean up
 --------------------------------------------------------------------------------
+[ ] easy: low priority (round 218 TP1): an error at the end of the source
+    after a trailing comment shows the caret after the comment, e.g.
+    "expected '}' to close block" at 3:10 for 'func main() {\n exit(0)\n#
+    comment', 2:12 without the comment ('located_in_text', 'main.cpp',
+    takes the last byte that is not whitespace)
+    => not done (2026-11-09, round 218): 'stmt_block' reads the end with
+       'next_token', which skips the comment, so the tokenizer would keep
+       the end of the last token on every read path, or the error path
+       would tokenize the file again and must skip strings and characters
+       that hold '#'; both add more than this position is worth
 [ ] easy: low priority (round 190 GJ): an argument of a named, not
     generic, parameter type of a generic call is parsed without its type
     before "cannot deduce" ('g3(point, 1)')

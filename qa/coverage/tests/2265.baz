@@ -1,0 +1,5 @@
+# a character that looks like a space or like nothing is escaped in a message
+
+func main() {
+    var x = 1
+}
