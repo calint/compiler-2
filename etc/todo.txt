@@ -206,6 +206,12 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
        (covers a noinline callee only); caution: an argument with a call in
        its index, e.g. 'v[g(1)]', builds the frame of 'g' at the same next
        frame address, so an early write is overwritten
+    => prototyped (2026-11-09, round 203, user: keep in the todo):
+       'bind_reference' folds an argument's own base and index into the base
+       with one 'lea' and frees the index ('held_registers::free_last'),
+       about +65 lines; x86_64 +11 instructions over the tests, rv32i -90
+       (nested versions get folded addresses), 56 of 2264 compiles change,
+       2089 runs out later; the diff is '/tmp/r203-keep/fold.diff'
 [ ] hard: noinline calls: cost of the call protocol (roome, x86_64, no
     checks, 2026-11-06: every function but 'main' noinline 6035
     instructions against 10139 all inline and 5815 as written; 331 calls,
