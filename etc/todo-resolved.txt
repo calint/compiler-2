@@ -1,6 +1,20 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] medium: round 227 (2026-11-10, UG assemblers simplification, UH
+    documentation against the code)
+    => done (2026-11-10): 'assembler::destination' shared by the label
+       lookups, 'add_label' inlined into 'label', 'named_escape' private,
+       the 'memory_move' comment names both readers; listings equal over
+       2282 compiles; docs: 11 virtual methods of 'statement', the lengths
+       of a noinline body follow the location in a label, '.Lbaz_jump.N' is
+       the skip of a far jump on rv32i ('1:' inside an operation), the
+       escaped characters of a message, 'g++' and 'python3' for the tests,
+       the frame aligned to the size of an address, '--versions=nested'
+       without the round history, 'machine_rv32i_bare_metal.hpp' in the
+       pipeline, the case comment of 1698; README.md regenerated (listings,
+       line counts) and two edits made to it directly moved into
+       'etc/readme/README.1.md'; AGENTS.md says to edit the parts
 [x] medium: round 226 (2026-11-10, UE rv32i target variants
     simplification, UF inlining and limits bug hunt)
     => done (2026-11-10): the bare-metal class comment says what the

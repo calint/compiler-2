@@ -1520,7 +1520,7 @@ db `\npanic: bounds at prog.baz:`
 section .text
 baz_report_line:
     mov rax, rbp
-    mov rdi, strict qword num_buffer + 20
+    lea rdi, [rsp - 1]
     mov byte [rdi], 10
     dec rdi
     mov rcx, 10
@@ -1535,15 +1535,11 @@ baz_report_line:
     inc rdi
     mov rax, 1
     mov rsi, rdi
-    mov rdx, strict qword num_buffer + 21
+    mov rdx, rsp
     sub rdx, rdi
     mov rdi, 2
     syscall
     mov rdi, rbx
-section .bss
-num_buffer:
-resb 21
-section .text
 baz_exit:
     mov rax, 60
     syscall

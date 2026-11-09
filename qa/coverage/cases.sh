@@ -5398,8 +5398,8 @@ SRC=1695 && COMPERR
 SRC=1696 && EXP=0 && OPTS="--checks=upper" RUN
 SRC=1697 && OPTS="--checks=overflow" COMPERR
 
-# an expression in memory with an inlined call is not measured in versions,
-# so a deep chain compiles in linear time
+# an expression stored to memory that calls an inlined function: a deep chain
+# compiles in milliseconds, a choice inside a version takes its first
 SRC=1698 && EXP=48 && RUN
 
 # a generic instance cannot call back the function whose body instantiates it,

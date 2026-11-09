@@ -159,3 +159,6 @@
 - Run symbol renames before file renames (open buffers recreate old files).
 - `make.sh` (without `build`) and `roome/run.sh` read input: type return,
   respectively "go home".
+- `README.md` is written by `etc/readme/make.sh` from `etc/readme/*.md`, the
+  usage, the line counts and the listings of `./run.sh prog.baz`: edit the
+  parts, not `README.md`.

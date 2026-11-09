@@ -273,8 +273,16 @@ class assembler {
     [[nodiscard]] auto is_empty() const -> bool { return lines_.empty(); }
 
     auto label(const size_t indent, const std::string_view name) -> void {
-        add_label(std::string{name},
-                  std::format("{}{}:", indentation(indent), name));
+        current_lines().push_back({
+            .text{std::format("{}{}:", indentation(indent), name)},
+            .label{std::string{name}},
+            .call_target{},
+            .jump{},
+            .code_size{},
+            .entry{code_section_},
+            .removed{},
+            .record{},
+        });
     }
 
     // the bodies of each noinline function with their calls and size, in
@@ -368,7 +376,6 @@ class assembler {
         });
     }
 
-    // 'record' is the index of the target's structured form of the line
     auto add_line(std::string text, const size_t code_size,
                   const std::optional<size_t> record = std::nullopt) -> void {
 
@@ -451,6 +458,19 @@ class assembler {
         return text;
     }
 
+    // the line of the label 'jump' goes to; the backend defines the labels
+    // it jumps to
+    [[nodiscard]] static auto
+    destination(const std::unordered_map<std::string_view, size_t>& labels,
+                const jump_info& jump) -> size_t {
+
+        const auto found{labels.find(jump.target)};
+
+        assert(found != labels.end());
+
+        return found->second;
+    }
+
     // 'bytes' between the quotes of a string directive: a backslash before
     // a backslash and each of 'quote_chars', a line end or a tab by name, a
     // printable character as it is and another byte by 'numeric_escape', a
@@ -506,26 +526,6 @@ class assembler {
         return text.substr(0, text.find_first_not_of(" \t"));
     }
 
-    // the escape of a line end or a tab, which reads better than a numeric
-    // escape
-    [[nodiscard]] static auto named_escape(const char ch)
-        -> std::optional<std::string_view> {
-
-        switch (ch) {
-        case '\n':
-            return "\\n";
-
-        case '\r':
-            return "\\r";
-
-        case '\t':
-            return "\\t";
-
-        default:
-            return std::nullopt;
-        }
-    }
-
     static auto remove(line& l) -> void {
         l.jump.reset();
         l.code_size = 0;
@@ -569,19 +569,6 @@ class assembler {
     //
     // class methods
     //
-
-    auto add_label(std::string name, std::string text) -> void {
-        current_lines().push_back({
-            .text{std::move(text)},
-            .label{std::move(name)},
-            .call_target{},
-            .jump{},
-            .code_size{},
-            .entry{code_section_},
-            .removed{},
-            .record{},
-        });
-    }
 
     [[nodiscard]] auto current_lines() -> std::vector<line>& {
         if (captures_.empty()) {
@@ -673,7 +660,6 @@ class assembler {
             return false;
         }
 
-        // the backend defines the labels it jumps to
         const size_t target{destination(labels, *branch.jump)};
 
         const size_t target_code{next_instruction(target)};
@@ -745,8 +731,8 @@ class assembler {
         }
     }
 
-    // a jump target is viewed through the label map because inverting a
-    // branch replaces its target string
+    // a jump target is viewed in its label line because inverting a branch
+    // replaces its target string
     [[nodiscard]] auto referenced_labels(
         const std::unordered_map<std::string_view, size_t>& labels,
         const std::unordered_set<std::string_view>& named) const
@@ -758,12 +744,7 @@ class assembler {
                 continue;
             }
 
-            const auto found{labels.find(l.jump->target)};
-
-            // note: the backend defines the labels it jumps to ('destination')
-            assert(found != labels.end());
-
-            referenced.insert(found->first);
+            referenced.insert(lines_.at(destination(labels, *l.jump)).label);
         }
 
         return referenced;
@@ -869,17 +850,6 @@ class assembler {
         return size;
     }
 
-    [[nodiscard]] static auto
-    destination(const std::unordered_map<std::string_view, size_t>& labels,
-                const jump_info& jump) -> size_t {
-
-        const auto found{labels.find(jump.target)};
-
-        assert(found != labels.end());
-
-        return found->second;
-    }
-
     // the jump instruction without indentation, e.g. 'beq t0, t1, target'
     [[nodiscard]] static auto format_jump(const jump_info& jump)
         -> std::string {
@@ -903,7 +873,7 @@ class assembler {
             return false;
         }
 
-        // note: only 'add_label' sets 'entry', with a name
+        // note: only 'label' sets 'entry', with a name
         assert(not l.label.empty());
 
         if (is_numeric(l.label)) {
@@ -916,6 +886,26 @@ class assembler {
     [[nodiscard]] static auto is_symbol_char(const char ch) -> bool {
         return std::isalnum(static_cast<unsigned char>(ch)) != 0 or ch == '_' or
                ch == '.' or ch == '$';
+    }
+
+    // the escape of a line end or a tab, which reads better than a numeric
+    // escape
+    [[nodiscard]] static auto named_escape(const char ch)
+        -> std::optional<std::string_view> {
+
+        switch (ch) {
+        case '\n':
+            return "\\n";
+
+        case '\r':
+            return "\\r";
+
+        case '\t':
+            return "\\t";
+
+        default:
+            return std::nullopt;
+        }
     }
 
     [[nodiscard]] static auto

@@ -23,6 +23,8 @@ the binary image itself.
 * data, constants, arrays and array iteration
 * variables with the type deduced from the initializer
 * string, character, user type and array initializers
+* numbers in decimal, `0x` hex and `0b` binary; a leading zero is decimal,
+  `010` is 10, not octal as in C
 * inlined and non-inlined functions
 * checks against undefined behavior, selected with `--checks=LIST`
   * `noub` turns on all of them, `line` adds the line number to the report of
@@ -67,8 +69,10 @@ the binary image itself.
   target), each file once, also when reached through another path or a link
 * a source file has `\n` or `\r\n` line ends, a carriage return without a
   line feed and a byte order mark are rejected; strings and comments take
-  any other byte, a message shows a control byte or a byte outside a UTF-8
-  character as `\xNN`
+  any other byte, a message shows a control byte, a byte outside a UTF-8
+  character or the bytes of a character that is invisible or looks like a
+  space (no-break space, soft hyphen, zero width and bidi characters) as
+  `\xNN`
 * built-in functions: `array_copy`, `array_length`, `arrays_equal`, `read`,
   `write`, `sector_read`, `sector_write`, `exit`, `int`, `i8`, `i16`, `i32`, `i64`
 * read and write sectors from and to file on `x86_64` and `rv32i`, the file

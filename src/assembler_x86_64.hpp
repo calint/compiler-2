@@ -35,7 +35,8 @@ class assembler_x86_64 final : public assembler {
         size_t operand_count{};
     };
 
-    // a 'mov' between a register and memory, which 'is_reload' compares
+    // a 'mov' between a register and memory, read by 'is_reload' and
+    // 'move_consumed'
     struct memory_move {
         std::string register_name;
         // the operand with its width, e.g. 'word [rbp + 2]'

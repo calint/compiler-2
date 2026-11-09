@@ -10,7 +10,7 @@ For a reviewer:
 3. build: './make.sh build' (clang++ with c++26), one translation unit
 4. test: 'qa/coverage/test-all.sh', see its header and AGENTS.md "Tests"
    (needs nasm, ld, llvm-mc, llvm-objcopy, ld.lld, llvm-profdata, llvm-cov,
-   qemu-riscv32 and qemu-system-riscv32)
+   qemu-riscv32, qemu-system-riscv32, g++ and python3)
 5. lint and format: 'qa/lint/clang-tidy.sh', 'qa/lint/check-all.sh' (the
    design rules), 'qa/lint/format-source.sh', 'qa/lint/fix-source.py'
    ('format-source.py' and 'fix-source.py' need the python libclang bindings)
@@ -42,6 +42,7 @@ machine.hpp      one virtual method per operation the front end needs,
   |              machine_x86_64.hpp, machine_rv32i.hpp with its targets
   |              machine_rv32i_linux.hpp and the bare-metal
   |              machine_rv32i_qemu.hpp and machine_rv32i_fpga.hpp
+  |              (machine_rv32i_bare_metal.hpp)
   v
 assembler.hpp    buffers the lines, optimizes the jumps, removes reloads
                  and on rv32i register copies
@@ -440,8 +441,8 @@ checks in a dry run ('toc::check_skipped') where what it folds is no constant of
 a call: in 'main', in a noinline body without array parameters, in the
 initializer of a global and in the check of a body without its calls. That is
 a branch whose condition folds to false, the branches and the 'else' after one
-that always runs, the operands of 'and' and 'or' after the one that decides
-the list, the body of a 'foo' whose count folds to 0, and the code after a
+that always runs, the operands of 'and' and 'or' after the one that decides,
+the body of a 'foo' whose count folds to 0, and the code after a
 statement that leaves on every path, e.g. 'if 1 == 2 { n = a }' with 'a' an
 array is rejected. Such code is judged as if it ran, with the
 registers and the variable storage in use where it stands; a 'break' or
@@ -505,13 +506,14 @@ baz_NAME       a failure handler, and a routine of the x86_64 runtime,
                included file baz_bounds_f1_line_9, and
                baz_bounds_panic_file_0; its message is baz_NAME_message
 .Lbaz_NAME     a routine of the rv32i runtime; numbered, a jump target
-               inside one operation, e.g. '.Lbaz_equal.0' on x86_64 and
-               '.Lbaz_jump.0' on rv32i
+               inside one operation, e.g. '.Lbaz_equal.0' on x86_64 ('1:'
+               named by '1b' on rv32i), and on rv32i '.Lbaz_jump.0' the
+               skip of a branch grown to a far jump
 ```
 
 E.g. 'if.7.5.36.13' is the 'if' at 7:5 in a body inlined by the call at
-36:13. Inside a noinline body for array lengths every label ends in the
-lengths, e.g. 'loop.14.5.len.3'. A location in an included file is 'fN.L.C',
+36:13. Inside a noinline body for array lengths the lengths follow the
+location in every label, e.g. 'loop.14.5.len.3' and 'loop.14.5.len.3.end'. A location in an included file is 'fN.L.C',
 N the index of the file. A path follows a name after '..', as type arguments
 do; a plain and a generic function or method cannot share a name, so the
 function 'h' for array lengths ('func.h..len.4') and the method 'h.len'
@@ -671,9 +673,11 @@ the register use at the failure that 'machine::register_error' adds.
    'program::load_file' locates at its 'include'. A file that starts with a
    byte order mark or has a carriage return without a line feed is rejected
    when it is loaded ('tokenizer::assert_source_well_formed').
-4. A message stays on its line and is valid UTF-8: a control byte or a byte
-   outside a whole UTF-8 character of the message, the quoted source line,
-   a file name, also in a run-time panic, is shown as '\xNN' ('printable').
+4. A message stays on its line and is valid UTF-8: a control byte, a byte
+   outside a whole UTF-8 character or a character that looks like a space or
+   like nothing (no-break space, soft hyphen, zero width and bidi characters)
+   of the message, the quoted source line, a file name, also in a run-time
+   panic, is shown as '\xNN' ('printable', 'is_escaped_code_point').
 
 ## 2. Generic types: how 'type' with parameters becomes real types
 
@@ -1294,8 +1298,8 @@ address    | result address         |    the callee's frame base
    argument, so is the address of a variable, held in a register until the
    slots are written when it has a run-time index, e.g. the 'w()' of
    'f(v[w()], g + 1)' runs before 'g + 1' (1711).
-2. The frame starts after the storage of the caller, aligned to an address,
-   not at the stack pointer: in a noinline body after its frame, which its
+2. The frame starts after the storage of the caller, aligned to the size of
+   an address, not at the stack pointer: in a noinline body after its frame, which its
    frame base holds (x86_64 'rbx', rv32i 's1'), in 'main' at the variables
    base (x86_64 'rbp', rv32i 's0'). The frame size of a body is the peak of
    its storage, a constant named after the body ('frame_size_label').
@@ -1387,9 +1391,8 @@ path: a chain of inlined calls each passing a new indexed argument, e.g. the
 cost 0.17% of the rv32i code of the tests (175164 to 175460 instructions, with
 their options and with '--checks=noub'), 1 instruction less on x86_64, and 10
 of the 7086 of roome on rv32i-fpga (decided 2026-11-07). '--versions=nested'
-measures every choice again, also of a list with calls, which round 152
-compiled in place without versions, for the smaller code at that compile
-time: test 1698 takes about 12 s with it, and 2036 (14 nested calls) under
+measures every choice, also those inside a version, for the smaller code at
+that compile time: test 1698 takes about 12 s with it, and 2036 (14 nested calls) under
 1 s, doubling per level.
 
 The padding of an instance is zeroed gap by gap or as the whole instance by a
@@ -1695,7 +1698,7 @@ is complete: such a call is rejected.
 
 ### 7.3 One base class for every node
 
-'statement' has 12 virtual methods, each node overrides the ones it needs
+'statement' has 11 virtual methods, each node overrides the ones it needs
 (the groups are listed above the class). A default that no other node reaches
 is 'std::unreachable()', the others answer for a node that lacks the
 capability, e.g. 'fold' is empty. Every node parses, writes its source back,

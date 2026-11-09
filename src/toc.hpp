@@ -3001,11 +3001,13 @@ class toc final {
     //                  'baz_report_line'
     //   .Lbaz_NAME     a routine of the rv32i runtime, e.g. '.Lbaz_divide';
     //                  numbered, a jump target inside one operation, e.g.
-    //                  '.Lbaz_equal.0' (x86_64), '.Lbaz_jump.0' (rv32i)
+    //                  '.Lbaz_equal.0' (x86_64), on rv32i '.Lbaz_jump.0' the
+    //                  skip of a branch grown to a far jump
     //
     // e.g. 'if.7.5.36.13' is the 'if' at 7:5 inlined by the call at 36:13;
-    // inside a noinline body for array lengths every label ends in them, e.g.
-    // 'loop.14.5.len.3', and in the noinline body of a generic instance in
+    // inside a noinline body for array lengths the lengths follow the
+    // location, e.g.
+    // 'loop.14.5.len.3.end', and in the noinline body of a generic instance in
     // its name, e.g. 'if.2.3.f..i8' ('stmt_def_func::body_call_path'); a
     // location in an included file is 'fN.L.C' ('source_locations::for_label')
     [[nodiscard]] auto call_path_at(const token& src_loc_tk) const

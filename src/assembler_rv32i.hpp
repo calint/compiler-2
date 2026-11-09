@@ -1281,17 +1281,14 @@ class assembler_rv32i final : public assembler {
                 continue;
             }
 
-            // an unknown offset would leave the jump unchecked
-            const auto target{labels.find(l.jump->target)};
+            // asserted, an unknown offset would leave the jump unchecked
+            const size_t target{destination(labels, *l.jump)};
 
-            assert(target != labels.end());
-
-            line& target_line{lines().at(target->second)};
+            line& target_line{lines().at(target)};
 
             // a landing comes before its label
             const size_t target_offset{
-                image.positions.at(target->second).offset +
-                    target_line.code_size,
+                image.positions.at(target).offset + target_line.code_size,
             };
 
             if (reaches(l, image.positions.at(index).offset, target_offset)) {

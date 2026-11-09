@@ -213,10 +213,10 @@ examples:
 ```text
 Language                     files          blank        comment           code
 -------------------------------------------------------------------------------
-C/C++ Header                    64           9307           7078          27187
-C++                              1            194             97            787
+C/C++ Header                    64           9343           7123          27253
+C++                              1            204            103            824
 -------------------------------------------------------------------------------
-SUM:                            65           9501           7175          27974
+SUM:                            65           9547           7226          28077
 -------------------------------------------------------------------------------
 ```
 
@@ -2188,7 +2188,7 @@ db `\npanic: bounds at prog.baz:`
 section .text
 baz_report_line:
     mov rax, rbp
-    mov rdi, strict qword num_buffer + 20
+    lea rdi, [rsp - 1]
     mov byte [rdi], 10
     dec rdi
     mov rcx, 10
@@ -2203,15 +2203,11 @@ baz_report_line:
     inc rdi
     mov rax, 1
     mov rsi, rdi
-    mov rdx, strict qword num_buffer + 21
+    mov rdx, rsp
     sub rdx, rdi
     mov rdi, 2
     syscall
     mov rdi, rbx
-section .bss
-num_buffer:
-resb 21
-section .text
 baz_exit:
     mov rax, 60
     syscall
@@ -5631,7 +5627,7 @@ baz_report_line:
 ;    line number is in 'rbp'
     mov rax, rbp
 ;    convert to string
-    mov rdi, strict qword num_buffer + 20
+    lea rdi, [rsp - 1]
     mov byte [rdi], 10
     dec rdi
     mov rcx, 10
@@ -5647,15 +5643,11 @@ baz_report_line:
 ;    print line number to stderr
     mov rax, 1
     mov rsi, rdi
-    mov rdx, strict qword num_buffer + 21
+    mov rdx, rsp
     sub rdx, rdi
     mov rdi, 2
     syscall
     mov rdi, rbx
-section .bss
-num_buffer:
-resb 21
-section .text
 baz_exit:
     mov rax, 60
     syscall
@@ -5737,7 +5729,7 @@ vars.end:
 ;           max body vars size: 1045 B
 ;                 instructions: 899
 ;
-; register use at the peak: 6 of 13 registers live, 2 named by instructions
+; register use at the peak: 6 of 14 registers live, 2 named by instructions
 ;
 ;   held  frame, registers (allocated at)
 ;      6  print_num (noinline body)
@@ -5754,12 +5746,12 @@ vars.end:
 ; per callee, the most registers one call holds itself
 ;
 ;   own  calls  callee
-;     6      1  print_num (noinline body)
+;     6      2  print_num (noinline body)
 ;     4      1  main
 ;     4      9  print
 ;     4      1  str.input
 ;     4      1  str.print
-;     3      1  factorial (noinline body)
+;     3      2  factorial (noinline body)
 ;     1     60  assert
 ;     1      3  baz
 ;     1      1  inv
