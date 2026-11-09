@@ -313,14 +313,14 @@ class stmt_identifier final : public statement {
 
             toc& tc{tc_.get()};
 
-            machine& x{tc.machine()};
-
             std::optional<operand> target{fold_register(address)};
 
             if (not target) {
                 target = held_.get().alloc_scratch_register(
                     src_loc_tk_, indent_, tc.builtins().address());
             }
+
+            machine& x{tc.machine()};
 
             x.address_of(src_loc_tk_, indent_, *target, address);
 
@@ -609,7 +609,6 @@ class stmt_identifier final : public statement {
         const lea_request inner_request{};
 
         operand address;
-        const type* value_type{};
 
         for_each_prefix(tc, [&](const prefix_step& step) -> void {
             const ident_info& cur_info{*step.info};
@@ -623,8 +622,6 @@ class stmt_identifier final : public statement {
                 address.increment_offset(address_offset(fld->offset));
             }
 
-            value_type = &cur_info.type_ref();
-
             // the range of an unindexed array is checked by the caller
             if (not step.elem->index) {
                 return;
@@ -635,7 +632,8 @@ class stmt_identifier final : public statement {
                 step.is_last ? request : inner_request, address);
         });
 
-        return operand::mem(address, *value_type);
+        // note: the type the parse resolved is that of the last element
+        return operand::mem(address, get_type());
     }
 
     // the value of this path where 'info' resolves it to a variable: its

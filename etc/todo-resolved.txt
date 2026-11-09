@@ -1,6 +1,15 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] medium: round 219 (2026-11-09, TQ paths simplification, TR records
+    and methods bug hunt)
+    => done (2026-11-09): a read-only receiver or argument of a 'mut'
+       parameter is named with its indexes ("read-only 'K.g[i]'", was
+       'K.g'), test 2266; 'compile_lea' returns the type the parse resolved
+       ('value_type' removed), a backend local next to its use; TR found no
+       wrong code: padding of every alignment, '==' of records and arrays,
+       copies, partial literals, result padding (400 generated programs),
+       methods on every receiver kind, aliasing checks
 [x] medium: round 218 (2026-11-09, TO 'stmt_call.hpp' simplification, TP
     tokenizer and parse bug hunt)
     => done (2026-11-09): 'throw_not_writable' takes the index only,

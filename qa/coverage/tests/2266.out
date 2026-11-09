@@ -1,0 +1,4 @@
+
+2266.baz:8:5: read-only 'k.g[i]' cannot be the receiver of 'mut' method 'a.bump', 'k' is declared with 'let'
+    k.g[i].bump()
+    ^

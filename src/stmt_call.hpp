@@ -2156,15 +2156,15 @@ class stmt_call final : public statement {
         // e.g. '2' or a 'let' constant
         if (not written) {
             throw_not_writable(
-                index,
-                std::format("constant {}", in_quotes(path->dotted_path())), "");
+                index, std::format("constant {}", in_quotes(path->path_text())),
+                "");
         }
 
         if (written->info.is_read_only()) {
             throw_not_writable(
                 index,
                 std::format("read-only {}",
-                            in_quotes(written->ident->dotted_path())),
+                            in_quotes(written->ident->path_text())),
                 read_only_hint(written->ident->tok().text(), written->info));
         }
     }

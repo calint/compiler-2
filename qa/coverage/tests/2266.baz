@@ -1,0 +1,9 @@
+# a read-only receiver of a 'mut' method is named with its indexes
+type a { x i8, y i32 }
+type b { g a[2], h i16 }
+func mut a.bump() { self.y = 1 }
+func main() {
+    let k = b{}
+    var i = 0
+    k.g[i].bump()
+}

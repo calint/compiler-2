@@ -7193,3 +7193,6 @@ SRC=2264 && COMPERR
 
 # a character that looks like a space or like nothing is escaped in a message
 SRC=2265 && COMPERR
+
+# a read-only receiver of a 'mut' method is named with its indexes
+SRC=2266 && COMPERR
