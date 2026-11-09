@@ -1,6 +1,11 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: user decision: a number with a leading zero is decimal ('010' is
+    10, round 123 AQ7), a C programmer expects 8: document it in the README,
+    or reject a leading zero
+    => done (2026-11-09, round 199, user): kept decimal, documented in the
+       README 'Supports' list, test 2250
 [x] easy: user decision (2026-11-07, round 154 DV): test 2036 nests 20
     noinline calls in a list, about 45 s with '--versions=nested', which
     'test-versions.sh' runs (about 2 minutes with 1698); 14 levels take

@@ -7145,3 +7145,6 @@ SRC=2248 && COMPERR
 
 # a surplus argument of a call deduced from its result is reported first
 SRC=2249 && COMPERR
+
+# a leading zero is decimal, not octal as in C
+SRC=2250 && EXP=28 && RUN

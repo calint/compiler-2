@@ -23,6 +23,8 @@ the binary image itself.
 * data, constants, arrays and array iteration
 * variables with the type deduced from the initializer
 * string, character, user type and array initializers
+* numbers in decimal, `0x` hex and `0b` binary; a leading zero is decimal,
+  `010` is 10, not octal as in C
 * inlined and non-inlined functions
 * checks against undefined behavior, selected with `--checks=LIST`
   * `noub` turns on all of them, `line` adds the line number to the report of

@@ -1,0 +1,4 @@
+# a leading zero is decimal, not octal as in C: '010' is 10
+func main() {
+    exit(010 + 0b10 + 0x10)
+}
