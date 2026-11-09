@@ -1,5 +1,5 @@
 
-2186.baz:9:9: 'G' names the type 'i8'
+2186.baz:9:9: 'G' is a generic parameter, here the type 'i8', use another name
     var G = 2
         ^
 2186.baz:14:10: instantiated by 'f<i8>'

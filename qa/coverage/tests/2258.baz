@@ -1,0 +1,3 @@
+# a result takes no 'mut'
+func f() res mut { res = 1 }
+func main() {}

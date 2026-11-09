@@ -1,0 +1,7 @@
+
+2259.baz:3:9: 'T' is a generic parameter, here the type 'i8', use another name
+    let T = 3
+        ^
+2259.baz:7:10: instantiated by 'f<i8>'
+    exit(f(i8(1)))
+         ^

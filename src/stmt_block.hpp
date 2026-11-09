@@ -35,7 +35,10 @@ class stmt_block final : public statement {
         : statement{tz.next_token_position()},
           open_brace_tk_{tz.is_next_char_token('{')} {
 
-        const toc::parse_nesting_scope nesting{tc, tz};
+        const toc::parse_nesting_scope nesting{
+            tc,
+            open_brace_tk_ ? *open_brace_tk_ : tz.next_token_position(),
+        };
 
         if (is_one_statement() and braces == block_braces::required) {
             throw compile_error{tz, "expected '{' to begin block"};

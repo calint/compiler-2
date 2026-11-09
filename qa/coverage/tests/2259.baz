@@ -1,0 +1,8 @@
+# a constant named like a type parameter of its generic
+func f<T type>(x T) res T {
+    let T = 3
+    res = x
+}
+func main() {
+    exit(f(i8(1)))
+}

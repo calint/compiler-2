@@ -1,0 +1,6 @@
+# a read-only element is named with its index
+type pt {x, y}
+func main() {
+    let tps = pt[]{{1, 2}}
+    tps[0].x = 1
+}

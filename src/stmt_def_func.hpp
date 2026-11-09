@@ -351,6 +351,13 @@ struct func_result {
             statement::assert_no_type_arguments(tc, tz, type_tk);
         }
 
+        // e.g. 'res mut', a parameter's modifier
+        if (not is_keyword and type_tk.is_text("mut")) {
+            throw compile_error{type_tk,
+                                "a result takes no 'mut', its function writes "
+                                "it"};
+        }
+
         // e.g. the '[' of 'res i8[4]' or 'res[4]'
         if (not is_keyword and tz.peek_char_after_whitespace() == '[') {
             throw compile_error{tz, "a result cannot be an array, pass the "

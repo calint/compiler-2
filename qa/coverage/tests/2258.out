@@ -1,0 +1,4 @@
+
+2258.baz:2:14: a result takes no 'mut', its function writes it
+func f() res mut { res = 1 }
+             ^~~

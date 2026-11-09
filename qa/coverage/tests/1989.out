@@ -1,5 +1,5 @@
 
-1989.baz:6:9: 'U' names the type 'point'
+1989.baz:6:9: 'U' is a generic parameter, here the type 'point', use another name
     var U = 2
         ^
 1989.baz:11:5: instantiated by 'f<point>'

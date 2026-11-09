@@ -1941,9 +1941,9 @@ class ident_resolver final {
         if (meaning.is_variable() and
             scopes_.get().at(meaning.scope_index).is_initializer()) {
 
-            throw compile_error{
-                src_loc_tk, std::format("{} is read in its own initializer",
-                                        in_quotes(ident))};
+            throw compile_error{src_loc_tk,
+                                std::format("{} is read in its own initializer",
+                                            in_quotes(ident))};
         }
 
         const ident_info id_info{resolve_or_empty(src_loc_tk, ident, meaning)};
@@ -2588,16 +2588,20 @@ class toc final {
         toc& tc_;
 
       public:
-        parse_nesting_scope(toc& tc, const tokenizer& tz) : tc_{tc} {
+        // the error is located at 'src_loc_tk', e.g. the '{' of a block
+        parse_nesting_scope(toc& tc, const token& src_loc_tk) : tc_{tc} {
             if (tc_.parse_nesting_ >= max_parse_nesting_) {
                 throw compile_error{
-                    tz, std::format("nesting is too deep, the limit is {} "
-                                    "levels",
-                                    max_parse_nesting_)};
+                    src_loc_tk,
+                    std::format("nesting is too deep, the limit is {} levels",
+                                max_parse_nesting_)};
             }
 
             ++tc_.parse_nesting_;
         }
+
+        parse_nesting_scope(toc& tc, const tokenizer& tz)
+            : parse_nesting_scope{tc, tz.next_token_position()} {}
 
         parse_nesting_scope(const parse_nesting_scope&) = delete;
         parse_nesting_scope(parse_nesting_scope&&) = delete;
@@ -2935,9 +2939,12 @@ class toc final {
         // 'U(v)' still converts; rejected whatever the argument, so that no
         // instance decides it
         if (const type* const bound{type_param_named(name_tk.text())}) {
-            throw compile_error{name_tk, std::format("{} names the type {}",
-                                                     in_quotes(name_tk.text()),
-                                                     in_quotes(bound->name()))};
+            throw compile_error{
+                name_tk,
+                std::format("{} is a generic parameter, here the type {}, use "
+                            "another name",
+                            in_quotes(name_tk.text()),
+                            in_quotes(bound->name()))};
         }
     }
 

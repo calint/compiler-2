@@ -1,6 +1,25 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: low priority (round 205 HC): 'let T = 3' in a generic body
+    instantiated with 'i8' says "'T' names the type 'i8'", a parameter named
+    'T' says "generic parameter 'T' is also the name of the parameter at
+    1:16, use another name" ('toc.hpp' near the type parameter lookup)
+    => done (2026-11-09, round 206, user): "'T' is a generic parameter, here
+       the type 'i8', use another name", test 2259
+[x] easy: low priority (round 205 HC): 128 nested '{' report the nesting
+    limit at the first token inside the innermost block, not at the '{'
+    ('stmt_block.hpp' opens the nesting scope after the '{'); 'func f() res
+    mut' says "type 'mut' not found" although 'mut' is a keyword
+    => done (2026-11-09, round 206, user): the error is at the '{' of the
+       block ('parse_nesting_scope' takes a token), 0883; 'res mut' says "a
+       result takes no 'mut', its function writes it", test 2258
+[x] easy: low priority (round 205 HB): the read-only message drops the
+    index: 'tps[0].x = 1' for 'let tps = pt[]{{1, 2}}' says "cannot assign
+    to read-only 'tps.x'"; 'exit(-1)' and 'exit(511)' exit with 255 like a
+    'bounds' panic (the low 8 bits)
+    => done (2026-11-09, round 206, user): the read-only message names the
+       path with its indexes, test 2257; the 'exit' part stays open
 [-] easy: low priority: the compile time of a value of a huge type grows
     with its bytes where it is a result or a constructor on rv32i (bug hunt
     round 1 K3.1): 'machine_rv32i::zero' takes about 0.5 ns per byte, a

@@ -790,7 +790,7 @@ class stmt_identifier final : public statement {
         if (info.is_read_only()) {
             throw compile_error{
                 tok(), std::format("cannot {} read-only {}{}", action,
-                                   in_quotes(dotted_path_),
+                                   in_quotes(path_text()),
                                    read_only_hint(tok().text(), info))};
         }
 

@@ -7166,3 +7166,12 @@ SRC=2255 && COMPERR
 
 # a 'foo' body cannot declare the length 'n' it is given, a block inside it can
 SRC=2256 && COMPERR
+
+# a read-only element is named with its index
+SRC=2257 && COMPERR
+
+# a result takes no 'mut'
+SRC=2258 && COMPERR
+
+# a constant named like a type parameter of its generic
+SRC=2259 && COMPERR

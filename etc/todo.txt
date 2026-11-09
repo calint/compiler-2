@@ -41,23 +41,13 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
     'a"}" i8[n]'), where a plain function says "'x"' is not a valid name";
     the body skip ('tokenizer::skip_to_unnested') ends the word at the '}'
     inside the quotes
-[ ] easy: low priority (round 205 HC): 'let T = 3' in a generic body
-    instantiated with 'i8' says "'T' names the type 'i8'", a parameter named
-    'T' says "generic parameter 'T' is also the name of the parameter at
-    1:16, use another name" ('toc.hpp' near the type parameter lookup)
 [ ] easy: low priority (round 205 HC): 'var r = i8{5}' says "expected a
     statement" at '5' ('{5}' is a block after 'var r = i8'), 'var r = i8{}'
     is a declaration and an empty block; 'exit(i8{5})' and 'r = i8{5}' treat
     'i8{5}' as a literal ('is_bare_builtin_type' in 'stmt_def_var.hpp'); see
     the item of a block on the line after a declaration
-[ ] easy: low priority (round 205 HC): 128 nested '{' report the nesting
-    limit at the first token inside the innermost block, not at the '{'
-    ('stmt_block.hpp' opens the nesting scope after the '{'); 'func f() res
-    mut' says "type 'mut' not found" although 'mut' is a keyword
-[ ] easy: low priority (round 205 HB): the read-only message drops the
-    index: 'tps[0].x = 1' for 'let tps = pt[]{{1, 2}}' says "cannot assign
-    to read-only 'tps.x'"; 'exit(-1)' and 'exit(511)' exit with 255 like a
-    'bounds' panic (the low 8 bits)
+[ ] easy: low priority (round 205 HB): 'exit(-1)' and 'exit(511)' exit with
+    255 like a 'bounds' panic (the low 8 bits)
 [ ] easy: low priority: a block on the line after a declaration whose
     initializer ends with a type is parsed as a literal of that type (bug
     hunt round 9 W2-1): 'var a = i8[2]' then '{ f() }' on the next lines is
