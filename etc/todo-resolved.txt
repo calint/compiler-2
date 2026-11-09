@@ -1,6 +1,13 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 239 (2026-11-10, UX conversions and strings bug hunt, VB
+    'dat' and 'type' definition simplification)
+    => done (2026-11-10): UX found nothing (conversions in every context,
+       unary operators on them, generic 'T(x)', every escape and byte value,
+       continuation lines, about 31600 fuzzed programs); VB: a nested
+       argument named, a wrong comment on generic type text fixed; listings
+       unchanged
 [x] easy: round 238 (2026-11-10, UZ 'foo' and 'read'/'write'
     simplification)
     => done (2026-11-10): two declarations in 'stmt_builtin_io' moved next

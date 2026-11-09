@@ -9,6 +9,7 @@
 #include <ostream>
 #include <print>
 #include <span>
+#include <string>
 #include <string_view>
 #include <utility>
 #include <variant>
@@ -260,8 +261,7 @@ class stmt_def_type_generic final : public statement {
     std::string_view generic_text_;
 
   public:
-    // the text after 'type' is kept for 'source_to' and for the aliases, errors
-    // in it are found when an alias parses it
+    // errors in the fields are found when an alias parses them
     stmt_def_type_generic(toc& tc, const token src_loc_tk, const token name_tk,
                           tokenizer& tz)
         : statement{src_loc_tk} {
@@ -559,10 +559,13 @@ class stmt_def_type final : public statement {
                   "name", "offset", "size", "array?", "array size");
 
         for (const type_field& f : type_.fields()) {
-            x.comment(
-                tok(), indent, "{:>10} : {:>7} : {:>7} : {:>7} : {:>10}",
-                f.name, f.offset, f.size_bytes, f.is_array() ? "yes" : "no",
-                f.shape.length() ? std::format("{}", *f.shape.length()) : "");
+            const std::string array_size{
+                f.shape.length() ? std::format("{}", *f.shape.length()) : "",
+            };
+
+            x.comment(tok(), indent, "{:>10} : {:>7} : {:>7} : {:>7} : {:>10}",
+                      f.name, f.offset, f.size_bytes,
+                      f.is_array() ? "yes" : "no", array_size);
         }
 
         x.comment({}, 0, "");
