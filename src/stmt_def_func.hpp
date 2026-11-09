@@ -1458,7 +1458,6 @@ class func_instantiator final {
 
             args.push_back({
                 .param_tk{param_tk},
-                .arg_tk{},
                 .value{type_arg},
             });
         }

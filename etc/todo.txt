@@ -6,6 +6,13 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
 --------------------------------------------------------------------------------
 1. clean up
 --------------------------------------------------------------------------------
+[ ] medium: user decision (round 224 UB1): a typed 'let' passed as a
+    generic constant loses its type, 'let K = i8(127)' and 'type B =
+    buf<K>' make 'N + 1' 128 at the default type inside the instance where
+    'K + 1' is rejected as an overflow (docs 1.7); 'resolve_const_arg'
+    ('toc.hpp') keeps the value only; keep the type ('buf<K>' and
+    'buf<127>' become different instances), reject a typed argument (test
+    2127 passes one) or document an untyped generic constant
 [ ] easy: low priority (round 218 TP1): an error at the end of the source
     after a trailing comment shows the caret after the comment, e.g.
     "expected '}' to close block" at 3:10 for 'func main() {\n exit(0)\n#

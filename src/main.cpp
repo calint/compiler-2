@@ -217,9 +217,10 @@ options:
                       sector (default: {8})
   --nopt              no jump optimizations
   --versions=KEPT     of two versions of the same code keep the smaller,
-                      nested choices taking the first (default), the smaller
-                      also of nested choices ('nested', compile time doubles
-                      per level), or for testing the first or the last
+                      nested choices taking the first ('smaller', default),
+                      the smaller also of nested choices ('nested', compile
+                      time doubles per level), or for testing 'first' or
+                      'last'
   --reproduce-source  check that the source written back from the parse
                       matches the input, else write it to diff.baz
   --version           the version of the compiler
@@ -1041,10 +1042,30 @@ default_binary_file_name(const std::string_view src_file_name,
                 opts.sd_card_file_name.value_or(default_sd_card_file_name),
             };
 
-            // note: none of two missing files is the other
             std::error_code error;
 
-            if (std::filesystem::equivalent(binary, sd_card, error)) {
+            const bool is_same_file{
+                std::filesystem::equivalent(binary, sd_card, error),
+            };
+
+            // note: a card that does not exist yet is compared by its
+            //       absolute path, which is empty when it cannot be resolved
+
+            const std::filesystem::path image_path{
+                std::filesystem::weakly_canonical(
+                    std::filesystem::absolute(binary, error), error),
+            };
+
+            const std::filesystem::path card_path{
+                std::filesystem::weakly_canonical(
+                    std::filesystem::absolute(sd_card, error), error),
+            };
+
+            const bool is_same_path{
+                not image_path.empty() and image_path == card_path,
+            };
+
+            if (is_same_file or is_same_path) {
                 throw option_error{
                     std::format("invalid --bin: {} is the sd card image",
                                 in_quotes(binary))};
@@ -1057,10 +1078,16 @@ default_binary_file_name(const std::string_view src_file_name,
 
         prg.build(std::cout);
 
-        // e.g. a full disk, the listing is incomplete
+        // e.g. a full disk, the listing is incomplete; a failed compile
+        // leaves no image
         std::cout.flush();
 
         if (not std::cout) {
+            if (opts.target->writes_image) {
+                std::error_code error;
+                std::filesystem::remove(binary, error);
+            }
+
             throw unlocated_error{"cannot write the assembly to stdout"};
         }
     } catch (const compile_error& e) {

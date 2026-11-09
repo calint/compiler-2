@@ -2646,16 +2646,13 @@ class toc final {
             tc_.types_.exit_params();
         }
 
-        // a type is located at its parameter, a constant at its argument
+        // an argument is located at its parameter
         auto add_args(const std::span<const generic_arg> args) -> void {
             for (const generic_arg& arg : args) {
                 if (arg.is_type()) {
                     tc_.types_.add_param(arg.param_tk, arg.type_ref());
                 } else {
-                    // note: a constant argument is always written
-                    assert(arg.arg_tk);
-
-                    add_const(*arg.arg_tk, arg.param_tk.text(), arg.constant());
+                    add_const(arg.param_tk, arg.constant());
                 }
             }
         }
@@ -2676,14 +2673,13 @@ class toc final {
         }
 
       private:
-        auto add_const(const token& src_loc_tk, const std::string_view name,
-                       const int64_t value) -> void {
-
+        auto add_const(const token& param_tk, const int64_t value) -> void {
             if (not constants_block_) {
                 constants_block_.emplace(tc_, scope::block());
             }
 
-            tc_.add_const(src_loc_tk, 0, name, folded_value::untyped(value));
+            tc_.add_const(param_tk, 0, param_tk.text(),
+                          folded_value::untyped(value));
         }
     };
 
@@ -3739,13 +3735,11 @@ resolve_generic_args(const toc& tc, const std::string_view generic_name,
         if (param.is_type) {
             args.push_back({
                 .param_tk{param.name_tk},
-                .arg_tk{arg_tk},
                 .value{&resolve_type_arg(tc, generic_name, name, arg_tk)},
             });
         } else {
             args.push_back({
                 .param_tk{param.name_tk},
-                .arg_tk{arg_tk},
                 .value{resolve_const_arg(tc, generic_name, name, arg_tk)},
             });
         }

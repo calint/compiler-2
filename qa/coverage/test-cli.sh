@@ -135,6 +135,10 @@ CLI_BINARY_NAME() {
     grep -Fq "invalid --bin: './gen-sdcard.img' is the sd card image" err
     [[ $(stat -c %s gen-sdcard.img) -eq 4096 ]]
     rm -f gen-sdcard.img
+    # also when the card does not exist yet
+    expect_exit_1 "$BIN" --target=rv32i --bin=gen-sdcard.img --sdcard=./gen-sdcard.img 0418.baz >gen.s 2>err
+    grep -Fq "invalid --bin: 'gen-sdcard.img' is the sd card image" err
+    [[ ! -e gen-sdcard.img ]]
     echo ok
 }
 
@@ -255,6 +259,10 @@ CLI_FILE_ERRORS() {
     # a full disk is an error, for the listing and for the image
     expect_exit_1 "$BIN" 0015.baz >/dev/full 2>err
     grep -Fq "error: cannot write the assembly to stdout" err
+    # and leaves no image
+    rm -f gen-full.bin
+    expect_exit_1 "$BIN" --target=rv32i --bin=gen-full.bin 0015.baz >/dev/full 2>err
+    [[ ! -e gen-full.bin ]]
     expect_exit_1 "$BIN" --target=rv32i --bin=/dev/full 0015.baz >gen.s 2>err
     [[ ! -s gen.s ]]
     grep -Fq "cannot write file '/dev/full'" err

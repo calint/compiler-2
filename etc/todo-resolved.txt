@@ -1,6 +1,16 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] medium: round 223 (2026-11-09, TY generics simplification, TZ options
+    and reports bug hunt)
+    => done (2026-11-09): 'generic_arg::arg_tk' removed, a generic constant
+       is located at its parameter; the help and README name the default
+       '--versions' value 'smaller'; a listing that cannot be written
+       removes the image it came with; '--bin' naming an sd card that does
+       not exist yet is rejected (absolute paths compared), test-cli cases;
+       listings equal over 2280 compiles; TZ found no crash: '--report'
+       never changes the code over every test and target, its numbers add
+       up, the help matches the README
 [x] medium: round 222 (2026-11-09, TW 'stmt_def_func.hpp' simplification,
     TX x86_64 code generation bug hunt)
     => done (2026-11-09): 'dry_run_in_frame' private, 'compile_in_frame'
