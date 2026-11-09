@@ -1,10 +1,10 @@
 #!/bin/bash
 # compares two builds of the compiler over every case of 'cases.sh': each case
-# is compiled with its options and with '--checks=noub' for every target, the
-# uart targets for their input and output routines, and the listing, the error
-# output, the exit code and the rv32i image of the two builds must be equal;
-# the refactor check of AGENTS.md, e.g. a build of HEAD against the build of
-# the working tree
+# is compiled with its options and with '--checks=noub --report=registers' (a
+# refactor keeps the report too) for every target, the uart targets for their
+# input and output routines, and the listing, the error output, the exit code
+# and the rv32i image of the two builds must be equal; the refactor check of
+# AGENTS.md, e.g. a build of HEAD against the build of the working tree
 #
 # usage: compare-listings.sh BASE_BAZ NEW_BAZ
 #   prints the cases that differ and their count, exits 1 when any differs
@@ -50,7 +50,7 @@ compare_case() {
     local src=$1
     local options=$2
     for target in x86_64 rv32i rv32i-qemu rv32i-fpga; do
-        for opts in "$options" "--checks=noub"; do
+        for opts in "$options" "--checks=noub --report=registers"; do
             local dir
             dir=$(mktemp -d "$WORK/case.XXXXXX")
             # the rv32i targets write an image, x86_64 takes no '--bin'

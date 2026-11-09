@@ -1,6 +1,10 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 232 (2026-11-10): 'compare-listings.sh' compiles its second
+    option set with '--report=registers', so a refactor that changes the
+    report is caught (round 224 UA1 shows 2578 differing compiles against
+    the fix)
 [x] medium: round 231 (2026-11-10, UO regression hunt of round 210 against
     round 230, UP language documentation against the behavior)
     => done (2026-11-10): the total of '--report=registers' counted the
