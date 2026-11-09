@@ -170,11 +170,12 @@ class register_trace final {
     auto begin_frame(const token& call_site_tk, std::string name,
                      const frame_kind kind) -> void {
 
-        if (kind == frame_kind::noinline_body) {
-            name += " (noinline body)";
-        }
+        // note: a body is compiled once for each list of array lengths, its
+        //       calls are counted at the calls, see 'record_noinline_call'
 
-        if (enabled_) {
+        if (kind == frame_kind::noinline_body) {
+            name = body_frame_name(name);
+        } else if (enabled_) {
             ++callees_[name].calls;
         }
 
@@ -230,16 +231,19 @@ class register_trace final {
         record_peak(pool);
     }
 
-    // a call of the function with the body 'label' saves 'saved' registers
+    // a call of the function 'name', which has a body of its own, saves
+    // 'saved' registers
     auto record_noinline_call(const token& call_site_tk,
-                              const std::string_view label, const size_t saved)
+                              const std::string_view name, const size_t saved)
         -> void {
 
         if (not enabled_) {
             return;
         }
 
-        noinline_use& use{noinline_uses_[std::string{label}]};
+        ++callees_[body_frame_name(name)].calls;
+
+        noinline_use& use{noinline_uses_[std::string{name}]};
 
         ++use.calls;
 
@@ -252,6 +256,13 @@ class register_trace final {
     //
     // statics
     //
+
+    // the frame name of the body of 'name'
+    [[nodiscard]] static auto body_frame_name(const std::string_view name)
+        -> std::string {
+
+        return std::format("{} (noinline body)", name);
+    }
 
     // the registers the backend holds itself are left out of the report
     [[nodiscard]] static auto

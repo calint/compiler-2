@@ -1,6 +1,18 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: register report names (round 187 GB): the 'calls' column of a
+    noinline body counts the bodies compiled ('factorial (noinline body)'
+    1) while the noinline report says '2 calls'; name the column, e.g.
+    'frames', or leave the count out for a body; the section "calls of
+    functions with a body of their own" prints labels ('f..a.b',
+    'sum..len.4') where the rest of the footer prints source names
+    ('f<a,b>', 'sum'), mapping a label back needs the assembler's body list
+    => done (2026-11-09, round 193): a noinline body's 'calls' are counted
+       at its calls ('record_noinline_call'), the section names the callee
+       by its source name passed to 'machine::call_function', the bodies of
+       one function share a row; 56 of 2248 register reports change, no
+       listing changes
 [x] easy: low priority (round 188 GD): the x86_64 'local_label_count_'
     ('.Lbaz_division.N', '.Lbaz_overlap.N', '.Lbaz_equal.N') is not put back
     when a version is dropped, kept labels stay unique but are numbered with

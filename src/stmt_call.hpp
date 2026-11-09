@@ -1498,8 +1498,9 @@ class noinline_call final {
 
         // the address in a register is loaded after the registers are saved,
         // a register that holds a value of the caller is not lost
-        x.call_function(call_.tk, indent, call_.func->body_label(array_lengths),
-                        frame_address, register_address(dst, arguments));
+        x.call_function(call_.tk, indent, call_.func->name(),
+                        call_.func->body_label(array_lengths), frame_address,
+                        register_address(dst, arguments));
     }
 
     // a value without storage, e.g. a literal or an expression, is passed in

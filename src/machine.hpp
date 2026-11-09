@@ -669,7 +669,7 @@ class machine {
         std::numeric_limits<unsigned char>::digits,
     };
 
-    // the start of the label of a noinline body, the report drops it
+    // the start of the label of a noinline body
     static constexpr std::string_view body_label_prefix{"func."};
 
   protected:
@@ -937,8 +937,10 @@ class machine {
     }
 
     // 'slot_address' is the address the callee finds in
-    // 'slot_register', none when the register is not used
+    // 'slot_register', none when the register is not used; 'name' is the
+    // callee's for the register report
     auto call_function(const token& src_loc_tk, const size_t indent,
+                       const std::string_view name,
                        const std::string_view label,
                        const operand& frame_address,
                        const std::optional<operand>& slot_address) -> void {
@@ -953,7 +955,7 @@ class machine {
         // values live at the call need saving
         const std::vector<size_t> saved{registers_saved_by_call()};
 
-        state_.trace.record_noinline_call(src_loc_tk, label, saved.size());
+        state_.trace.record_noinline_call(src_loc_tk, name, saved.size());
 
         if (not saved.empty()) {
             comment(src_loc_tk, indent,

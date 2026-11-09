@@ -331,19 +331,15 @@ class register_reporter final {
             "  saved  calls  callee, most saved at",
         };
 
-        for (const auto& [label, use] :
+        for (const auto& [name, use] :
              descending(trace_.get().noinline_uses(),
                         &register_trace::noinline_use::saved_peak)) {
 
-            // note: a call is to a 'stmt_def_func::body_label'
-            assert(label.starts_with(machine::body_label_prefix));
-
             const machine& x{machine_.get()};
 
-            lines.push_back(
-                std::format("{:>7}{:>7}  {} {}", use.saved_peak, use.calls,
-                            label.substr(machine::body_label_prefix.size()),
-                            x.location_text(use.peak_site_tk)));
+            lines.push_back(std::format("{:>7}{:>7}  {} {}", use.saved_peak,
+                                        use.calls, name,
+                                        x.location_text(use.peak_site_tk)));
         }
 
         return lines;
