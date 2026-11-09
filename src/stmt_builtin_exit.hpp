@@ -23,8 +23,8 @@ class stmt_builtin_exit final : public statement {
     builtin_arguments args_;
 
   public:
-    stmt_builtin_exit(toc& tc, const token tk, tokenizer& tz)
-        : statement{tk}, args_{tc, tz, tk, {}, 1, 1} {
+    stmt_builtin_exit(toc& tc, const token src_loc_tk, tokenizer& tz)
+        : statement{src_loc_tk}, args_{tc, tz, src_loc_tk, {}, 1, 1} {
 
         assert_constant_code_fits(tc);
     }

@@ -20,6 +20,7 @@
 #include "stmt_identifier.hpp"
 #include "toc.hpp"
 #include "token.hpp"
+#include "type.hpp"
 #include "ub_order.hpp"
 #include "ub_reads.hpp"
 
@@ -359,6 +360,22 @@ class bulk_operands final {
         assert_constant_count_in_bounds(tc);
 
         return element_type;
+    }
+
+    // the bytes of the elements a constant count covers, none for a run-time
+    // count; 'check' put a constant count in the bounds of both arrays
+    [[nodiscard]] auto constant_size_bytes(const toc& tc,
+                                           const type& element_type) const
+        -> std::optional<size_t> {
+
+        const std::optional<int64_t> constant_count{count().constant_value(tc)};
+
+        if (not constant_count) {
+            return std::nullopt;
+        }
+
+        return product_storage_size(element_type.size_bytes(),
+                                    static_cast<size_t>(*constant_count));
     }
 
     [[nodiscard]] auto count() const -> const expr_any& { return args_.at(2); }

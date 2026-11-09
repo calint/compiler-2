@@ -2,12 +2,10 @@
 
 #include <cassert>
 #include <cstddef>
-#include <cstdint>
 #include <optional>
 #include <ostream>
 
 #include "bulk_operands.hpp"
-#include "expr_any.hpp"
 #include "operand.hpp"
 #include "statement.hpp"
 #include "stmt_identifier.hpp"
@@ -54,8 +52,8 @@ class stmt_builtin_array_copy final : public statement {
 
         const type& element_type{operands_.check(tc)};
 
-        const std::optional<int64_t> count{
-            operands_.count().constant_value(tc),
+        const std::optional<size_t> size_bytes{
+            operands_.constant_size_bytes(tc, element_type),
         };
 
         // the overlap check compares the addresses of the loop at run time;
@@ -70,15 +68,10 @@ class stmt_builtin_array_copy final : public statement {
 
         // the size is known so the copy is unrolled when small and the width
         // follows the alignment of both addresses
-        if (count and not checks_overlap) {
-            const size_t size_bytes{
-                product_storage_size(element_type.size_bytes(),
-                                     static_cast<size_t>(*count)),
-            };
-
+        if (size_bytes and not checks_overlap) {
             emit.both_addresses(
                 [&](const operand& src, const operand& dst_address) -> void {
-                    x.copy_block(tok(), indent, dst_address, src, size_bytes,
+                    x.copy_block(tok(), indent, dst_address, src, *size_bytes,
                                  element_type.alignment());
                 });
 

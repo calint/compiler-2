@@ -98,9 +98,9 @@ class stmt_builtin_io final : public statement {
 
   public:
     stmt_builtin_io(toc& tc, const io_function& io, unary_ops uops,
-                    const token tk, tokenizer& tz)
-        : statement{tk, std::move(uops)}, io_{io},
-          args_{read_arguments(tc, io, tk, tz)} {
+                    const token src_loc_tk, tokenizer& tz)
+        : statement{src_loc_tk, std::move(uops)}, io_{io},
+          args_{read_arguments(tc, io, src_loc_tk, tz)} {
 
         set_type(io_.result_type(tc));
 
@@ -231,19 +231,17 @@ class stmt_builtin_io final : public statement {
         // note: the parse took an array path ('assert_buffer_path'), an
         //       address would bypass the bounds check
 
-        std::optional<place> array{as_place(tc, buffer_path())};
+        std::optional<place> buffer{as_place(tc, buffer_path())};
 
-        assert(array and array->info.is_array());
-
-        const place buffer{std::move(*array)};
+        assert(buffer and buffer->info.is_array());
 
         if (io_.is_sector) {
-            assert_sector_buffer(tc, buffer.info);
+            assert_sector_buffer(tc, buffer->info);
         }
 
-        assert_constant_range_in_bounds(tc, buffer);
+        assert_constant_range_in_bounds(tc, *buffer);
 
-        return buffer;
+        return std::move(*buffer);
     }
 
     // the buffer is an array, not an element ('builtin_arguments' took an

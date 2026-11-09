@@ -260,9 +260,9 @@ class stmt_builtin_foo final : public statement {
                                      machine::held_registers& held) const
         -> operand {
 
-        if (not count_) {
-            const type& counter_type{tc.builtins().default_type()};
+        const type& counter_type{tc.builtins().default_type()};
 
+        if (not count_) {
             // e.g. 'i8[0x80000001]' on rv32i, whose last 'i' is 2^31
             // note: 'discarded_array_len' (0) wraps to -1, which fits
             if (not constant_arith::fits_width(
@@ -284,12 +284,11 @@ class stmt_builtin_foo final : public statement {
 
         if (const std::optional<int64_t> value{count.constant_value(tc)}) {
             ident_.assert_count_in_bounds(tc, count.tok(), *value);
-            return operand::imm(*value, tc.builtins().default_type());
+            return operand::imm(*value, counter_type);
         }
 
         const operand reg_count{
-            held.alloc_scratch_register(count.tok(), indent,
-                                        tc.builtins().default_type()),
+            held.alloc_scratch_register(count.tok(), indent, counter_type),
         };
 
         machine& x{tc.machine()};

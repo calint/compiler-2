@@ -1,6 +1,15 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] medium: round 212 (2026-11-09, TC built-in statements simplification, TD
+    conversions and overflow bug hunt)
+    => done (2026-11-09): 'bulk_operands::constant_size_bytes' shared by
+       'array_copy' and 'arrays_equal', 'array_length::array_info',
+       'io::assert_buffer' without a second local, the built-in constructors
+       name their token 'src_loc_tk', 'foo::compile_limit' one counter type;
+       listings equal over 2276 compiles; TD found nothing: about 18000
+       programs of mixed widths, conversions, boundary operations and
+       comparisons against a model on x86_64, rv32i and rv32i-fpga
 [x] medium: round 211 (2026-11-09, TA bool and condition bug hunt, TB
     'toc.hpp' simplification)
     => done (2026-11-09): a '{' where an operand is expected says "expected

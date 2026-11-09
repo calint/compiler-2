@@ -64,10 +64,7 @@ class stmt_builtin_array_length final : public statement {
 
         assert(dst.type_ref().is_same(tc.builtins().default_type()));
 
-        const ident_info src_info{make_ident_info(tc, array())};
-
-        // note: the parse rejected an argument that is not an array
-        assert(src_info.is_var() and src_info.is_array());
+        const ident_info src_info{array_info(tc)};
 
         // note: the destination has the default type, so a known length
         //       folds and the list copies it itself; the length is unknown
@@ -91,10 +88,7 @@ class stmt_builtin_array_length final : public statement {
         // gives an unsized array parameter its length
         array().assert_constant_indexes_in_bounds(tc);
 
-        const ident_info src_info{make_ident_info(tc, array())};
-
-        // note: the parse rejected an argument that is not an array
-        assert(src_info.is_var() and src_info.is_array());
+        const ident_info src_info{array_info(tc)};
 
         const std::optional<size_t> array_len{src_info.array_len()};
 
@@ -132,5 +126,14 @@ class stmt_builtin_array_length final : public statement {
   private:
     [[nodiscard]] auto array() const -> const stmt_identifier& {
         return *args_.at(0).bare_path();
+    }
+
+    [[nodiscard]] auto array_info(const toc& tc) const -> ident_info {
+        const ident_info info{make_ident_info(tc, array())};
+
+        // note: the parse rejected an argument that is not an array
+        assert(info.is_var() and info.is_array());
+
+        return info;
     }
 };

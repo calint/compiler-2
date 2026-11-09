@@ -2,7 +2,6 @@
 
 #include <cassert>
 #include <cstddef>
-#include <cstdint>
 #include <optional>
 #include <ostream>
 #include <utility>
@@ -53,23 +52,18 @@ class stmt_builtin_arrays_equal final : public statement {
 
         const type& element_type{operands_.check(tc)};
 
-        const std::optional<int64_t> count{
-            operands_.count().constant_value(tc),
+        const std::optional<size_t> size_bytes{
+            operands_.constant_size_bytes(tc, element_type),
         };
 
         bulk_operands::argument_emitters emit{operands_, tc, indent, tok()};
 
         // a known size is compared like two instances; a count of 0 stays a
         // run-time walk, which compares nothing
-        if (count and *count > 0) {
-            const size_t size_bytes{
-                product_storage_size(element_type.size_bytes(),
-                                     static_cast<size_t>(*count)),
-            };
-
+        if (size_bytes and *size_bytes > 0) {
             emit.both_addresses(
                 [&](const operand& lhs, const operand& rhs) -> void {
-                    x.memory_equal(tok(), indent, size_bytes, lhs, rhs,
+                    x.memory_equal(tok(), indent, *size_bytes, lhs, rhs,
                                    {
                                        .alignment{element_type.alignment()},
                                        .dst{dst.operand()},
