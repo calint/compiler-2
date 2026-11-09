@@ -1,0 +1,3 @@
+# a ';' after a field type is reported as unused, not as a type 'i8;'
+type t { a i8; }
+func main() {}

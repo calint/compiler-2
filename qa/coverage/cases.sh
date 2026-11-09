@@ -7203,3 +7203,6 @@ SRC=2267 && OPTS="--checks=noub" COMPERR
 
 # a method defined twice is named a method
 SRC=2268 && COMPERR
+
+# a ';' after a field type is reported as unused, not as a type 'i8;'
+SRC=2269 && COMPERR

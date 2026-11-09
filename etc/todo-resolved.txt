@@ -1,6 +1,15 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] medium: round 235 (2026-11-10, US user types and fields bug hunt, UV
+    'stmt_def_var' and parameter simplification)
+    => done (2026-11-10): US found no wrong code and no no-UB hole over
+       fuzzed nested types, addresses and comparisons on x86_64 and
+       rv32i-fpga; a ';' after a field, parameter or result type is
+       reported as unused, not as a type 'i8;' not found (test 2269);
+       message paths without indexes go to round 236; a constant used as a
+       type waits for the user; UV: a parameter keeps its tokens in one
+       'syntax' member, 'deduce_literal_length' split out
 [x] easy: round 234 (2026-11-10, UT 'stmt_identifier' simplification)
     => done (2026-11-10): 'path_source_to' private, three nested calls split
        into named steps; listings unchanged

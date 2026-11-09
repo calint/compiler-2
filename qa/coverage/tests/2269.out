@@ -1,0 +1,4 @@
+
+2269.baz:2:14: ';' is not used, statements need no separator
+type t { a i8; }
+             ^

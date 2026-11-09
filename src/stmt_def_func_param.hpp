@@ -20,12 +20,6 @@ class stmt_def_func_param final : public statement {
         token close_bracket_tk;
     };
 
-    std::optional<token> mut_tk_;
-    // none for the default type
-    std::optional<token> type_tk_;
-    // none when not an array
-    std::optional<bracket_tokens> brackets_;
-
   public:
     // the tokens of a parameter 'name [mut] [type][[]]', before the type is
     // resolved
@@ -205,19 +199,27 @@ class stmt_def_func_param final : public statement {
         }
     };
 
-    stmt_def_func_param(const toc& tc, const syntax& tokens)
-        : statement{tokens.name_tk}, mut_tk_{tokens.mut_tk},
-          type_tk_{tokens.type_tk}, brackets_{tokens.brackets} {
+  private:
+    syntax syntax_;
 
-        set_type(type_tk_ ? tc.get_type_or_throw(*type_tk_)
-                          : tc.builtins().default_type());
+  public:
+    stmt_def_func_param(const toc& tc, const syntax& tokens)
+        : statement{tokens.name_tk}, syntax_{tokens} {
+
+        set_type(syntax_.type_tk ? tc.get_type_or_throw(*syntax_.type_tk)
+                                 : tc.builtins().default_type());
     }
 
     // the implicit 'self' ('stmt_def_func::add_self_param'), 'mut_tk' that of
     // the head, e.g. 'func mut point.move(dx)'
     stmt_def_func_param(const token tk, const type& tp,
                         const std::optional<token>& mut_tk)
-        : statement{tk}, mut_tk_{mut_tk} {
+        : statement{tk}, syntax_{
+                             .name_tk{tk},
+                             .mut_tk{mut_tk},
+                             .type_tk{},
+                             .brackets{},
+                         } {
 
         set_type(tp);
     }
@@ -228,12 +230,12 @@ class stmt_def_func_param final : public statement {
 
     auto source_to(std::ostream& os) const -> void override {
         statement::source_to(os);
-        token::source_to(os, mut_tk_);
-        token::source_to(os, type_tk_);
+        token::source_to(os, syntax_.mut_tk);
+        token::source_to(os, syntax_.type_tk);
 
-        if (brackets_) {
-            brackets_->open_bracket_tk.source_to(os);
-            brackets_->close_bracket_tk.source_to(os);
+        if (syntax_.brackets) {
+            syntax_.brackets->open_bracket_tk.source_to(os);
+            syntax_.brackets->close_bracket_tk.source_to(os);
         }
     }
 
@@ -241,13 +243,13 @@ class stmt_def_func_param final : public statement {
     // class methods
     //
 
-    [[nodiscard]] auto is_array() const -> bool {
-        return brackets_.has_value();
-    }
+    [[nodiscard]] auto is_array() const -> bool { return syntax_.is_array(); }
 
     // not declared 'mut', so the body cannot write it and arguments sharing
     // storage are not a hazard
-    [[nodiscard]] auto is_read_only() const -> bool { return not mut_tk_; }
+    [[nodiscard]] auto is_read_only() const -> bool {
+        return not syntax_.mut_tk;
+    }
 
     [[nodiscard]] auto name() const -> std::string_view { return tok().text(); }
 };

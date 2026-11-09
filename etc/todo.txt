@@ -6,6 +6,12 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
 --------------------------------------------------------------------------------
 1. clean up
 --------------------------------------------------------------------------------
+[ ] easy: user decision (round 234 US3): a constant, 'dat', variable or
+    function used as a type, e.g. 'let n = 3' and 'type t { a n }', gives
+    "type 'n' not found", also a generic's constant parameter ('type
+    node<n> { a n }'); one more lookup in 'toc::get_type_or_throw' could
+    say "'n' is a constant, not a type", as the reverse case has its own
+    message
 [ ] medium: user decision (round 229 UL1): 'p.get() < p.bump()' is
     rejected ("'p' may be written by the call of 'bump' in a later
     operand"), also 'rd(p.x) < bumpx(p.x)' and 'add2(p.get(), p.bump())',

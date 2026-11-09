@@ -3246,6 +3246,9 @@ class toc final {
                                          in_quotes(name), instance_hint(name))};
             }
 
+            // e.g. the 'i8;' of 'type t { a i8; }'
+            throw_if_ends_with_semicolon(type_tk);
+
             throw compile_error{
                 type_tk, std::format("type {} not found", in_quotes(name))};
         }

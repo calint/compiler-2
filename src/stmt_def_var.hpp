@@ -180,30 +180,7 @@ class initializer_declaration final {
             return;
         }
 
-        shape_ = array_shape::array(std::nullopt);
-        set_type(*element_type);
-
-        std::optional<token> size_tk;
-
-        trial_parse(tc, tz, [this, &tc, &size_tk](tokenizer& probe) -> void {
-            // an unsized array, the initializer gives the count
-            const expr_any initializer{tc, probe, type_ref(),
-                                       literal_typing::written, shape_};
-
-            // later statements read the size while parsing, e.g. 'var b = a'
-            shape_ = array_shape::array(initializer.array_count());
-            size_tk = initializer.size_token();
-        });
-
-        if (shape_.length().value_or(0) == 0) {
-            // e.g. the '[' of 'var a = i8[]{}' or the '""' of 'var s = ""'
-            assert(size_tk);
-
-            throw compile_error{
-                *size_tk,
-                std::format("an empty {} needs a size",
-                            size_tk->is_string() ? "string" : "array")};
-        }
+        deduce_literal_length(tc, tz, *element_type);
     }
 
     // note: the type of a whole initializer, e.g. 'bool' for 'a < b' and the
@@ -261,6 +238,36 @@ class initializer_declaration final {
         }
 
         deduce_whole_array_copy(tc, tk, *ident);
+    }
+
+    // e.g. 'var a = i8[]{1, 2}' or 'var s = "hi"'
+    auto deduce_literal_length(toc& tc, const tokenizer& tz,
+                               const type& element_type) -> void {
+
+        shape_ = array_shape::array(std::nullopt);
+        set_type(element_type);
+
+        std::optional<token> size_tk;
+
+        trial_parse(tc, tz, [this, &tc, &size_tk](tokenizer& probe) -> void {
+            // an unsized array, the initializer gives the count
+            const expr_any initializer{tc, probe, type_ref(),
+                                       literal_typing::written, shape_};
+
+            // later statements read the size while parsing, e.g. 'var b = a'
+            shape_ = array_shape::array(initializer.array_count());
+            size_tk = initializer.size_token();
+        });
+
+        if (shape_.length().value_or(0) == 0) {
+            // e.g. the '[' of 'var a = i8[]{}' or the '""' of 'var s = ""'
+            assert(size_tk);
+
+            throw compile_error{
+                *size_tk,
+                std::format("an empty {} needs a size",
+                            size_tk->is_string() ? "string" : "array")};
+        }
     }
 
     // e.g. 'var c = a' copies the whole array 'a'
