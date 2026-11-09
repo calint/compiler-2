@@ -1,6 +1,31 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[-] medium: user decision (2026-11-08, round 179 FI): generic type base
+    chains ('type dI<k> = dI-1<k>') take cubic memory: 'generic_trace::inside'
+    copies every outer frame into each level and each instance and method
+    keeps a copy; 400 levels with 400 aliases take 3.0 GB, 10000 levels
+    9.7 GB; a linked trace (one frame and a 'shared_ptr' to the outer)
+    makes copies O(1) (70 MB, 20 MB), about 40 lines with a loop destructor
+    so that freeing a deep chain does not overflow the stack; the patch is
+    '/tmp/r179-fi-work/generic-trace.diff'
+    => discarded (2026-11-09, user): 400 nested generic aliases are far
+       from real programs, the linked trace adds about 40 lines of
+       ownership code
+[-] easy: user decision (2026-11-07, round 165 EN): 'toc::record_use' takes a
+    'use_kind' and turns it into a bool, 'stmt_call::record_uses_of_call'
+    turns a bool back into a 'use_kind'; passing the bool removes the enum
+    and both conversions, with bare 'true'/'false' at two call sites
+    => discarded (2026-11-09, user): the named kind reads better at the
+       call sites than a bare bool
+[-] easy: user decision (2026-11-07, round 166 EQ): parameters named like a
+    member function shadow it ('array_count' in 'expr_any':
+    'assert_whole_array_copy_fits', 'plan_remaining_elements',
+    'plan_string', 'assert_string_fits'); AGENTS.md asks '_in' for a
+    parameter that shadows a member: does that cover member functions? if
+    so, one consistency topic across all sources
+    => discarded (2026-11-09, user): the '_in' rule covers data members
+       only, AGENTS.md says so
 [-] easy: compile time quadratic in table sizes (round 179 FI), far above
     real programs: 'data_table::get_dat' (128000 dats 9.9 s),
     'data_table::add_constant' (64000 strings 6.0 s), 'assembler::summary_of'

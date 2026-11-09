@@ -6,25 +6,11 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
 --------------------------------------------------------------------------------
 1. clean up
 --------------------------------------------------------------------------------
-[p] easy: user decision (2026-11-07, round 166 EQ): parameters named like a
-    member function shadow it ('array_count' in 'expr_any':
-    'assert_whole_array_copy_fits', 'plan_remaining_elements',
-    'plan_string', 'assert_string_fits'); AGENTS.md asks '_in' for a
-    parameter that shadows a member: does that cover member functions? if
-    so, one consistency topic across all sources
 [p] medium: user decision (2026-11-07, round 166 EP): rv32i-qemu could put
     its stack below the end of RAM like rv32i-fpga (memory start
     0x8000'0000 for qemu, 0 for the fpga), so 'emit_target_setup' and
     'emit_stack_limit_load' move to 'machine_rv32i_bare_metal' and both
     qemu overrides go; changes the qemu layout and listings
-[p] medium: user decision (2026-11-08, round 179 FI): generic type base
-    chains ('type dI<k> = dI-1<k>') take cubic memory: 'generic_trace::inside'
-    copies every outer frame into each level and each instance and method
-    keeps a copy; 400 levels with 400 aliases take 3.0 GB, 10000 levels
-    9.7 GB; a linked trace (one frame and a 'shared_ptr' to the outer)
-    makes copies O(1) (70 MB, 20 MB), about 40 lines with a loop destructor
-    so that freeing a deep chain does not overflow the stack; the patch is
-    '/tmp/r179-fi-work/generic-trace.diff'
 [ ] easy: low priority (round 190 GJ): an argument of a named, not
     generic, parameter type of a generic call is parsed without its type
     before "cannot deduce" ('g3(point, 1)')
@@ -40,10 +26,6 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
     noinline calls in a list, about 45 s with '--versions=nested', which
     'test-versions.sh' runs (about 2 minutes with 1698); 14 levels take
     about 1.5 s but guard less of the default compile time
-[p] easy: user decision (2026-11-07, round 165 EN): 'toc::record_use' takes a
-    'use_kind' and turns it into a bool, 'stmt_call::record_uses_of_call'
-    turns a bool back into a 'use_kind'; passing the bool removes the enum
-    and both conversions, with bare 'true'/'false' at two call sites
 [p] medium: a chain of distinct inlined functions with deeply nested
     expressions overflows the compiler's stack (segfault on both targets,
     bug hunt round 6 S2): each limit holds alone, parse nesting 128 per body

@@ -69,9 +69,10 @@
   interface's paired vocabulary.
 - One-letter names only in tight loops.
 - Public fields have no trailing underscore; private and protected members do.
-- Parameters shadowing members get an `_in` suffix, only where a member of
-  that name is in scope (not in static factories); no locals named like
-  enclosing class fields.
+- Parameters shadowing data members get an `_in` suffix, only where a member
+  of that name is in scope (not in static factories); a parameter named like
+  a member function keeps its name; no locals named like enclosing class
+  fields.
 
 ### Code
 
