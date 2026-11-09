@@ -40,7 +40,7 @@ class assigned_bytes final {
             return;
         }
 
-        std::vector<byte_range> result{};
+        std::vector<byte_range> result;
         byte_range joined{assigned};
 
         for (const byte_range& range : ranges_) {
@@ -84,7 +84,7 @@ class assigned_bytes final {
     auto intersect(const assigned_bytes& other) -> void {
         assert(size_bytes_ == other.size_bytes_);
 
-        std::vector<byte_range> result{};
+        std::vector<byte_range> result;
 
         for (const byte_range& lhs : ranges_) {
             for (const byte_range& rhs : other.ranges_) {

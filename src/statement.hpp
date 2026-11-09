@@ -279,10 +279,7 @@ class statement {
                                     const call_effect_visitor visitor) const
         -> void;
 
-    // the operands of this node in evaluation order, see 'node_operand'; the
-    // walks 'visit_reads' and 'visit_call_effects' read them; a value and a
-    // statement whose 'trace_assignment' checks its reads say what they are,
-    // a leaf that it has none
+    // the operands of this node in evaluation order, see 'node_operand'
     virtual auto
     visit_operands([[maybe_unused]] const operand_visitor visitor) const
         -> void {

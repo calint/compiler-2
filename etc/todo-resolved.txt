@@ -1,6 +1,13 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] medium: round 228 (2026-11-10, UI no-UB layer simplification, UJ fuzz
+    campaign)
+    => done (2026-11-10): two vector locals without '{}', the comment of
+       'statement::visit_operands' without what the class table says;
+       listings equal over 2282 compiles; UI found no check another one
+       covers; UJ: 'fuzz-all.sh 3' with FUZZ_TARGETS=all (seed 1794244776),
+       about 63000 programs on the four targets, nothing found
 [x] medium: round 227 (2026-11-10, UG assemblers simplification, UH
     documentation against the code)
     => done (2026-11-10): 'assembler::destination' shared by the label
