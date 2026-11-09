@@ -1,6 +1,17 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] medium: round 220 (2026-11-09, TS arithmetic expressions
+    simplification, TT rv32i assembler and image bug hunt)
+    => done (2026-11-09): '--bin' naming the sd card image is rejected on
+       rv32i (it replaced the card), test-cli case; 'stmt_array_size::
+       fold_size', 'fold_operation' takes a token, the comment text of a
+       step in named parts; listings equal over 2280 compiles; TT found no
+       wrong encoding and no image unlike llvm's: 1894 'li' constants,
+       offsets at the 12-bit edges, branch growth across 4 KiB, data
+       alignment (every test on an emulator that aborts on a misaligned
+       access), '--vars' and '--memory' limits; the rv32i link base near
+       4 GiB is documented (docs chapter 8)
 [x] medium: round 219 (2026-11-09, TQ paths simplification, TR records
     and methods bug hunt)
     => done (2026-11-09): a read-only receiver or argument of a 'mut'

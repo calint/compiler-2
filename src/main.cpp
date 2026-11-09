@@ -1035,6 +1035,22 @@ default_binary_file_name(const std::string_view src_file_name,
                                            in_quotes(binary))};
         }
 
+        // the image would replace the sd card that the program reads
+        if (opts.target->writes_image and opts.target->reads_sd_card) {
+            const std::string_view sd_card{
+                opts.sd_card_file_name.value_or(default_sd_card_file_name),
+            };
+
+            // note: none of two missing files is the other
+            std::error_code error;
+
+            if (std::filesystem::equivalent(binary, sd_card, error)) {
+                throw option_error{
+                    std::format("invalid --bin: {} is the sd card image",
+                                in_quotes(binary))};
+            }
+        }
+
         if (opts.reproduce_source) {
             check_reproduced_source(prg, files);
         }

@@ -129,6 +129,12 @@ CLI_BINARY_NAME() {
     grep -Fq "invalid --bin: 'gen-include.baz' is a source file" err
     grep -Fq "res = 3" gen-include.baz
     rm -f gen-include.baz gen-main.baz
+    # nor the sd card that the program reads
+    head -c 4096 /dev/zero >gen-sdcard.img
+    expect_exit_1 "$BIN" --target=rv32i --bin=./gen-sdcard.img --sdcard=gen-sdcard.img 0418.baz >gen.s 2>err
+    grep -Fq "invalid --bin: './gen-sdcard.img' is the sd card image" err
+    [[ $(stat -c %s gen-sdcard.img) -eq 4096 ]]
+    rm -f gen-sdcard.img
     echo ok
 }
 

@@ -75,6 +75,9 @@ class stmt_array_size final : public statement {
     [[nodiscard]] auto has_value() const -> bool { return value_ != nullptr; }
 
   private:
+    // the size at 'i64', empty when it is not a constant
+    [[nodiscard]] auto fold_size(const toc& tc) const -> std::optional<int64_t>;
+
     //
     // statics
     //
@@ -353,9 +356,7 @@ class expr_any final : public statement {
         // note: only an index expression asks, it is never an array and has
         //       the default type
 
-        const expr_arith& arith{
-            std::get<expr_arith>(std::get<single_value>(form_).value),
-        };
+        const expr_arith& arith{std::get<expr_arith>(value_at(0))};
 
         arith.assert_not_narrowed(tc, dst.type_ref());
 
@@ -1246,10 +1247,7 @@ inline stmt_array_size::stmt_array_size(toc& tc, tokenizer& tz)
     value_ = std::make_unique<expr_any>(tc, tz, tc.builtins().default_type(),
                                         literal_typing::from_destination);
 
-    const std::optional<int64_t> folded{
-        folded_value::value_of(
-            value_->fold_checked(tc, tc.use_at(tc.builtins().i64()))),
-    };
+    const std::optional<int64_t> folded{fold_size(tc)};
 
     if (not folded) {
         throw compile_error{value_->tok(),
@@ -1282,10 +1280,7 @@ inline auto stmt_array_size::check_where_written(const toc& tc) const -> void {
         return;
     }
 
-    const std::optional<int64_t> folded{
-        folded_value::value_of(
-            value_->fold_checked(tc, tc.use_at(tc.builtins().i64()))),
-    };
+    const std::optional<int64_t> folded{fold_size(tc)};
 
     // note: the names of a size are constants wherever it is written, and
     //       a length is the same in every call
@@ -1297,6 +1292,13 @@ inline auto stmt_array_size::array_size() const -> size_t {
     assert(value_);
 
     return static_cast<size_t>(folded_);
+}
+
+inline auto stmt_array_size::fold_size(const toc& tc) const
+    -> std::optional<int64_t> {
+
+    const value_use use{tc.use_at(tc.builtins().i64())};
+    return folded_value::value_of(value_->fold_checked(tc, use));
 }
 
 inline auto stmt_array_size::assert_size_not_type(const toc& tc,
