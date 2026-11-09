@@ -1,6 +1,14 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] medium: round 217 (2026-11-09, TM declarations and blocks
+    simplification, TN compile-time no-UB checks bug hunt)
+    => done (2026-11-09): 'initializer_declaration::read_name' shared by
+       'var' and 'dat', the nesting scope of a block at its token; listings
+       equal over 2278 compiles; TN found nothing: about 120 probes of
+       definite assignment, padding, evaluation order and shared storage on
+       x86_64 and rv32i with '--nopt' and versions, the asan build over the
+       probes and the tests, fuzz-flow, fuzz-effects and fuzz-reject
 [x] medium: round 216 (2026-11-09, TK 'foo' and bulk operations bug hunt,
     TL 'machine.hpp' simplification)
     => done (2026-11-09): the protected part of 'machine' holds only what the

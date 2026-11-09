@@ -149,6 +149,15 @@ class initializer_declaration final {
         return tz.seen_char_token('=');
     }
 
+    // the name of a definition, e.g. the 'x' of 'var x = 1'
+    [[nodiscard]] static auto read_name(const toc& tc, tokenizer& tz) -> token {
+        const token name_tk{tz.next_token()};
+
+        tc.assert_valid_unqualified_name(name_tk);
+
+        return name_tk;
+    }
+
   private:
     // e.g. 'var s = "hi"' is an 'i8' array of 2
     auto deduce_declaration(toc& tc, tokenizer& tz) -> void {
@@ -532,9 +541,7 @@ class stmt_def_var final : public statement {
 inline auto make_stmt_def_var(toc& tc, const token tk, tokenizer& tz)
     -> std::unique_ptr<statement> {
 
-    const token name_tk{tz.next_token()};
-
-    tc.assert_valid_unqualified_name(name_tk);
+    const token name_tk{initializer_declaration::read_name(tc, tz)};
 
     // the destination is read where it ends at '=', past it the '[2]' in
     // 'var a = [2]{}' would read as an index

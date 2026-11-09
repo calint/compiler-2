@@ -81,7 +81,8 @@ class stmt_def_dat final : public statement {
 
   public:
     stmt_def_dat(toc& tc, const token src_loc_tk, tokenizer& tz)
-        : statement{src_loc_tk}, name_tk_{read_name(tc, tz)},
+        : statement{src_loc_tk},
+          name_tk_{initializer_declaration::read_name(tc, tz)},
           equals_tk_{initializer_declaration::read_equals(tz, "dat", name_tk_)},
           declaration_{tc, tz, name_tk_, name_in_initializer::hidden},
           initializer_{declaration_.parse_value(tc, tz)},
@@ -378,14 +379,6 @@ class stmt_def_dat final : public statement {
         return {
             .form{std::move(fields)},
         };
-    }
-
-    [[nodiscard]] static auto read_name(const toc& tc, tokenizer& tz) -> token {
-        const token name_tk{tz.next_token()};
-
-        tc.assert_valid_unqualified_name(name_tk);
-
-        return name_tk;
     }
 
     [[noreturn]] static auto throw_not_constant(const statement& value)
