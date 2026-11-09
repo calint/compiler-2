@@ -1,0 +1,6 @@
+# a surplus argument of a call deduced from its result is reported first
+func mk<T type>(a) res T { res = T(a) }
+func main() {
+    var r = mk(1, 2)
+    exit(r)
+}

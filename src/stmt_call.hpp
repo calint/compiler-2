@@ -392,6 +392,23 @@ struct generic_call {
                                        params.at(next_index).name_tk.text())};
     }
 
+    // the arguments, which are there, are no more than 'params', reported
+    // as in a call without type parameters, e.g. the '2' of 'g(1, 2)' for
+    // 'func g<T type>(b) res T'. 'tz' is after the '('
+    static auto assert_no_surplus_argument_of(
+        const tokenizer& tz, const std::string_view name,
+        const std::span<const generic_signature_param> params) -> void {
+
+        tokenizer after{tz};
+
+        if (not params.empty()) {
+            std::ignore = skip_to_argument(after, params.size() - 1);
+            after.skip_argument();
+        }
+
+        assert_no_surplus_argument(after, name, params.size());
+    }
+
     // the type arguments of 'f(x)' for 'func f<T type>(s T)', for each type
     // parameter in this order, so the errors come as a call without type
     // parameters would report them first:
@@ -401,9 +418,9 @@ struct generic_call {
     //      or an expression
     //   3. otherwise the type the call is assigned to, when the result is
     //      declared with the type parameter
-    //   4. otherwise the arguments up to the deducing one, or all for a
-    //      result, are reported as in that call ('assert_argument_valid'),
-    //      then "cannot deduce"
+    //   4. otherwise the arguments up to the deducing one, or all and a
+    //      surplus one for a result, are reported as in that call
+    //      ('assert_argument_valid'), then "cannot deduce"
     [[nodiscard]] static auto
     deduced_type_arguments(toc& tc, const tokenizer& tz, const token& name_tk,
                            const std::string_view generic_name,
@@ -462,6 +479,11 @@ struct generic_call {
 
                     assert_argument_valid(tc, scan, generic.signature.params,
                                           i);
+                }
+
+                if (not source.param_index) {
+                    assert_no_surplus_argument_of(scan, generic_name,
+                                                  generic.signature.params);
                 }
 
                 throw compile_error{

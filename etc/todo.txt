@@ -25,12 +25,9 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
     makes copies O(1) (70 MB, 20 MB), about 40 lines with a loop destructor
     so that freeing a deep chain does not overflow the stack; the patch is
     '/tmp/r179-fi-work/generic-trace.diff'
-[ ] easy: low priority (round 190 GJ): a call deduced only from its
-    result does not check surplus arguments before "cannot deduce": 'var r
-    = g4(1, 2)' for 'func g4<T type>(b) res T' says "cannot deduce 'T'"
-    where a call without type parameters says it takes 1 argument; an
-    argument of a named, not generic, parameter type is still parsed
-    without its type ('g3(point, 1)')
+[ ] easy: low priority (round 190 GJ): an argument of a named, not
+    generic, parameter type of a generic call is parsed without its type
+    before "cannot deduce" ('g3(point, 1)')
 [ ] easy: line of a run-time io range (round 181 FL): 'write(1,\n a,\n 3,\n
     s)' panics at the line of the start 's' while the constant version is
     rejected at the count '3'; one 'check_bounds' covers the start's lower

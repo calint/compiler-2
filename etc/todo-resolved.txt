@@ -1,6 +1,16 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: low priority (round 190 GJ): a call deduced only from its
+    result does not check surplus arguments before "cannot deduce": 'var r
+    = g4(1, 2)' for 'func g4<T type>(b) res T' says "cannot deduce 'T'"
+    where a call without type parameters says it takes 1 argument; an
+    argument of a named, not generic, parameter type is still parsed
+    without its type ('g3(point, 1)')
+    => done (2026-11-09, round 194): the surplus argument part; a call
+       deduced only from its result checks for a surplus argument before
+       "cannot deduce" ('assert_no_surplus_argument_of'), test 2249; the
+       named-type parse stays open in 'etc/todo.txt'
 [x] easy: register report names (round 187 GB): the 'calls' column of a
     noinline body counts the bodies compiled ('factorial (noinline body)'
     1) while the noinline report says '2 calls'; name the column, e.g.

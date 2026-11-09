@@ -1,0 +1,4 @@
+
+2249.baz:4:17: 'mk' takes 1 argument
+    var r = mk(1, 2)
+                ^

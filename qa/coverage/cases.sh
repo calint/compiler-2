@@ -7142,3 +7142,6 @@ SRC=2247 && COMPERR
 
 # an argument of the default type is its destination, as in the call
 SRC=2248 && COMPERR
+
+# a surplus argument of a call deduced from its result is reported first
+SRC=2249 && COMPERR

@@ -964,10 +964,11 @@ order. The examples use 'make' and 'same' from the start of 2.10 and a type
    call, so there is nothing to take it from.
 
 3. If neither tells the type, the arguments up to the one that told
-   nothing, all of them for a result, are checked in order as in a call
-   without type parameters, so their own errors win, e.g. "function 'exit'
-   has no result" for 'show(exit(1))' and "'zz' not found" for 'f(zz, 1)'
-   of 'func f<A type>(b, a A)'; otherwise the call is rejected and asks for
+   nothing, all of them and a surplus one for a result, are checked in
+   order as in a call without type parameters, so their own errors win,
+   e.g. "function 'exit' has no result" for 'show(exit(1))', "'zz' not
+   found" for 'f(zz, 1)' of 'func f<A type>(b, a A)' and "'make' takes 1
+   argument" for 'make(2, 3)' (2249); otherwise the call is rejected and asks for
    the type arguments to be written:
 
    ```text
