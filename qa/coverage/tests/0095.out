@@ -1,4 +1,4 @@
 
-0095.baz:8:19: variable 'x' is read before it is set
+0095.baz:8:19: 'x' is read in its own initializer
     var x = foozi(x)
                   ^

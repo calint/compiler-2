@@ -1,0 +1,4 @@
+# a constant read in its own initializer
+func main() {
+    let k = k
+}

@@ -7148,3 +7148,21 @@ SRC=2249 && COMPERR
 
 # a leading zero is decimal, not octal as in C
 SRC=2250 && EXP=28 && RUN
+
+# a name with a lone apostrophe is quoted in the message
+SRC=2251 && COMPERR
+
+# a string inside the braces of an 'i8' array is not an element
+SRC=2252 && COMPERR
+
+# a constant read in its own initializer
+SRC=2253 && COMPERR
+
+# a 'foo' body cannot declare the element 'e' it is given
+SRC=2254 && COMPERR
+
+# a 'foo' body cannot declare the counter 'i' it is given
+SRC=2255 && COMPERR
+
+# a 'foo' body cannot declare the length 'n' it is given, a block inside it can
+SRC=2256 && COMPERR

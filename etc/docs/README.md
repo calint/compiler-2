@@ -1241,7 +1241,7 @@ type point {x, y}
 
 var x = x + 1                  the variable is not set while its value is
                                computed: its bytes are read, none are assigned
-                               => "variable 'x' is read before it is set"
+                               => "'x' is read in its own initializer"
 
 func point.at(x) self {        a constructor must assign every field: it
     self.x = x                 assigns the bytes of 'x', not those of 'y'

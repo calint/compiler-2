@@ -1,0 +1,5 @@
+# a string inside the braces of an 'i8' array is not an element
+func main() {
+    var a = i8[4]{"abc"}
+    exit(a[0])
+}

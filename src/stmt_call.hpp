@@ -524,8 +524,8 @@ struct generic_call {
 
     // the type of a 'bool' literal, an instance literal, a constructor call or
     // a call of a built-in or of a function, 'tk' is its first token and 'tz'
-    // is after it; 'tz' ends after the value when it names a type note: an
-    // argument is parsed at the type of its parameter, so it is read
+    // is after it; 'tz' ends after the value when it names a type
+    // note: an argument is parsed at the type of its parameter, so it is read
     //       here without a parse, unlike a 'var' initializer, see
     //       'initializer_declaration::deduce_from_initializer'
     [[nodiscard]] static auto value_type(toc& tc, tokenizer& tz,

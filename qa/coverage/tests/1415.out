@@ -1,4 +1,4 @@
 
-1415.baz:4:16: a string is not a number, it fills only an array of 'i8'
+1415.baz:4:16: a string is not a number, it fills a whole array of 'i8', e.g. 'a = "abc"'
     var a = i8["4"]
                ^~~

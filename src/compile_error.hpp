@@ -1,5 +1,6 @@
 #pragma once
 
+#include <algorithm>
 #include <array>
 #include <cassert>
 #include <cstddef>
@@ -276,12 +277,13 @@ class compile_error final : public std::exception {
 }
 
 // a source text in a message, in quotes unless it holds a character literal,
-// which brings its own, e.g. -'\xff'; a message never puts quotes around
-// source text itself ('qa/lint/check-messages.py')
+// which brings its own, e.g. -'\xff', not a lone apostrophe, e.g. 'don't'; a
+// message never puts quotes around source text itself
+// ('qa/lint/check-messages.py')
 [[nodiscard]] inline auto in_quotes(const std::string_view source)
     -> std::string {
 
-    if (source.contains('\'')) {
+    if (std::ranges::count(source, '\'') > 1) {
         return std::string{source};
     }
 

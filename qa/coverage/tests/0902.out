@@ -1,4 +1,4 @@
 
-0902.baz:2:17: a string is not a number, it fills only an array of 'i8'
+0902.baz:2:17: a string is not a number, it fills a whole array of 'i8', e.g. 'a = "abc"'
     var x = 1 + "héllo wörld"
                 ^~~~~~~~~~~~~

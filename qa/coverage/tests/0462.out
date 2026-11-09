@@ -1,4 +1,4 @@
 
-0462.baz:4:20: variable 'i' is read before it is set
+0462.baz:4:20: 'i' is read in its own initializer
     var i = values[i]
                    ^

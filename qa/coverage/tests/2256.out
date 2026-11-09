@@ -1,0 +1,4 @@
+
+2256.baz:6:17: constant 'n' hides the length 'n' declared at 6:9
+    foo a { let n = 3 }
+                ^

@@ -1,4 +1,4 @@
 
-1981.baz:5:13: variable 'a' is read before it is set
+1981.baz:5:13: 'a' is read in its own initializer
     var a = a[0]
             ^

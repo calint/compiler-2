@@ -1,4 +1,4 @@
 
-1170.baz:7:17: variable 'point' is read before it is set
+1170.baz:7:17: 'point' is read in its own initializer
     var point = point[2]{{1, 2}}
                 ^~~~~

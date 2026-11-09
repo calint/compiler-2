@@ -1,4 +1,4 @@
 
-1510.baz:4:9: a string is not a number, it fills only an array of 'i8'
+1510.baz:4:9: a string is not a number, it fills a whole array of 'i8', e.g. 'a = "abc"'
     x = "i16"
         ^~~~~

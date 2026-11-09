@@ -518,10 +518,19 @@ class scope final {
         return func_part().takes_from_call;
     }
 
-    // what the variable 'name' of this scope is in a message: a function
-    // scope declares only the parameters and the result
+    // what the name 'name' of this scope is in a message: a function scope
+    // declares only the parameters and the result, a loop scope only the
+    // 'e', 'i' and 'n' of a 'foo'
     [[nodiscard]] auto var_role(const std::string_view name) const
         -> std::string_view {
+
+        if (is_loop()) {
+            if (name == reserved_names::foo_counter) {
+                return "counter";
+            }
+
+            return name == reserved_names::foo_length ? "length" : "element";
+        }
 
         if (not is_func()) {
             return "variable";
@@ -1872,7 +1881,7 @@ inline auto throw_if_ends_with_semicolon(const token& src_loc_tk) -> void {
     };
 
     throw compile_error{semicolon_tk,
-                        "';' is not used, a statement ends at the line"};
+                        "';' is not used, statements need no separator"};
 }
 
 // a word that cannot be a name, e.g. '$x'
@@ -1933,7 +1942,7 @@ class ident_resolver final {
             scopes_.get().at(meaning.scope_index).is_initializer()) {
 
             throw compile_error{
-                src_loc_tk, std::format("variable {} is read before it is set",
+                src_loc_tk, std::format("{} is read in its own initializer",
                                         in_quotes(ident))};
         }
 
@@ -2288,8 +2297,9 @@ class definition_checks final {
     }
 
   private:
-    // the body of a function is the block above its scope, a name declared
-    // there cannot repeat a parameter or the result; a deeper block may
+    // the body of a function or of a 'foo' is the block above its scope, a
+    // name declared there cannot repeat a parameter, the result or the 'e',
+    // 'i' and 'n' of the 'foo'; a deeper block may
     auto assert_not_hiding_signature(const token& src_loc_tk,
                                      const std::string_view what,
                                      const std::string_view name) const
@@ -2301,19 +2311,29 @@ class definition_checks final {
             return;
         }
 
-        const scope& func_scp{scopes.at(scopes.size() - 2)};
+        const scope& outer_scp{scopes.at(scopes.size() - 2)};
 
-        if (not func_scp.is_func() or not func_scp.has_var(name)) {
+        if (not outer_scp.is_func() and not outer_scp.is_loop()) {
             return;
         }
 
-        const var_info& decl_var{func_scp.get_var_const_ref(name)};
+        // note: a known 'n' of a 'foo' is a constant
+        const bool is_const{outer_scp.has_const(name)};
+
+        if (not is_const and not outer_scp.has_var(name)) {
+            return;
+        }
+
+        const token& decl_tk{
+            is_const ? outer_scp.get_const(name).src_loc_tk
+                     : outer_scp.get_var_const_ref(name).src_loc_tk,
+        };
 
         throw compile_error{
             src_loc_tk,
             std::format("{} {} hides the {} {} declared at {}", what,
-                        in_quotes(name), func_scp.var_role(name),
-                        in_quotes(name), where(decl_var.src_loc_tk)),
+                        in_quotes(name), outer_scp.var_role(name),
+                        in_quotes(name), where(decl_tk)),
         };
     }
 

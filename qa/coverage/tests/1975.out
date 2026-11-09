@@ -1,4 +1,4 @@
 
-1975.baz:8:15: a string is not a number, it fills only an array of 'i8'
+1975.baz:8:15: a string is not a number, it fills a whole array of 'i8', e.g. 'a = "abc"'
     var n = f("a")
               ^~~

@@ -1,4 +1,4 @@
 
-0461.baz:8:29: variable 'ps' is read before it is set
+0461.baz:8:29: 'ps' is read in its own initializer
     var ps = point[1]{twice(ps[0])}
                             ^~

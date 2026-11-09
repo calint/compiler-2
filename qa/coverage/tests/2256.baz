@@ -1,0 +1,7 @@
+# a 'foo' body cannot declare the length 'n' it is given, a block inside
+# it can
+func main() {
+    var a = [2]{1, 2}
+    foo a { if true { var e = 1 } }
+    foo a { let n = 3 }
+}

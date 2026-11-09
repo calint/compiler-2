@@ -434,7 +434,8 @@ inline auto parse_operand(toc& tc, tokenizer& tz, unary_ops uops,
     // array destinations parse strings in 'expr_any'
     if (tk.is_string()) {
         throw compile_error{
-            tk, "a string is not a number, it fills only an array of 'i8'"};
+            tk, "a string is not a number, it fills a whole array of 'i8', "
+                "e.g. 'a = \"abc\"'"};
     }
 
     // e.g. the '{}' of '1 + {}', which the destination types

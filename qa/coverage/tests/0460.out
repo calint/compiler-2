@@ -1,4 +1,4 @@
 
-0460.baz:4:13: variable 'p' is read before it is set
+0460.baz:4:13: 'p' is read in its own initializer
     var p = p
             ^

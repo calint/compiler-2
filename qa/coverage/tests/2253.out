@@ -1,0 +1,4 @@
+
+2253.baz:3:13: 'k' is read in its own initializer
+    let k = k
+            ^

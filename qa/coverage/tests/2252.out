@@ -1,0 +1,4 @@
+
+2252.baz:3:19: a string is not a number, it fills a whole array of 'i8', e.g. 'a = "abc"'
+    var a = i8[4]{"abc"}
+                  ^~~~~

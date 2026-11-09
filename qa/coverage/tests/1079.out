@@ -1,4 +1,4 @@
 
-1079.baz:7:17: variable 'x' is read before it is set
+1079.baz:7:17: 'x' is read in its own initializer
         var x = x + 1
                 ^

@@ -1,4 +1,4 @@
 
-1969.baz:4:10: a string is not a number, it fills only an array of 'i8'
+1969.baz:4:10: a string is not a number, it fills a whole array of 'i8', e.g. 'a = "abc"'
     exit("a")
          ^~~

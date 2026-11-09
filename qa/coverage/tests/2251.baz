@@ -1,0 +1,4 @@
+# a name with a lone apostrophe is quoted in the message
+func main() {
+    var don't = 1
+}

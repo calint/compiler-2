@@ -1,4 +1,4 @@
 
-1289.baz:6:17: variable 'k' is read before it is set
+1289.baz:6:17: 'k' is read in its own initializer
         let k = k + 1
                 ^

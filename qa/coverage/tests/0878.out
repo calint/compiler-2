@@ -1,4 +1,4 @@
 
-0878.baz:3:13: a string is not a number, it fills only an array of 'i8'
+0878.baz:3:13: a string is not a number, it fills a whole array of 'i8', e.g. 'a = "abc"'
 dat x = i32("5")
             ^~~

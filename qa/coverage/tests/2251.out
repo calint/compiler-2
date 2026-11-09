@@ -1,0 +1,4 @@
+
+2251.baz:3:9: 'don't' is not a valid name, a name starts with a letter or '_' and has only letters, digits and '_'
+    var don't = 1
+        ^~~~~

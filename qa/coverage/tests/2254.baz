@@ -1,0 +1,5 @@
+# a 'foo' body cannot declare the element 'e' it is given
+func main() {
+    var a = [2]{1, 2}
+    foo a { var e = 1 }
+}

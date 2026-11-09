@@ -1,4 +1,4 @@
 
-0459.baz:4:19: variable 'p' is read before it is set
+0459.baz:4:19: 'p' is read in its own initializer
     var p = point{p.y, 2}
                   ^
