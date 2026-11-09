@@ -7181,3 +7181,6 @@ SRC=2260 && COMPERR
 
 # a long string stored while 'array_copy' holds the 'rep movsb' registers
 SRC=2261 && EXP=0 && RUN
+
+# a block where the operand after 'and' is expected
+SRC=2262 && COMPERR

@@ -1,0 +1,4 @@
+
+2262.baz:4:14: expected an operand before '{', a '{...}' literal is not one here, store it in a variable first
+    if a and {
+             ^

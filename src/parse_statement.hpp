@@ -462,9 +462,12 @@ inline auto parse_operand(toc& tc, tokenizer& tz, unary_ops uops,
         throw compile_error{tk, "'!' is not an operator, use 'not'"};
     }
 
-    // e.g. the '{1, 2}' of 'a == {1, 2}', which only a destination types
+    // e.g. the '{1, 2}' of 'a == {1, 2}', which only a destination types, or
+    // the block of 'if a and {', which the operand parse cannot tell apart
     if (tk.is_none() and tz.peek_char_after_whitespace() == '{') {
-        throw_literal_not_operand(tk, "a '{...}' literal");
+        throw compile_error{tk, "expected an operand before '{', a '{...}' "
+                                "literal is not one here, store it in a "
+                                "variable first"};
     }
 
     if (tk.is_none()) {

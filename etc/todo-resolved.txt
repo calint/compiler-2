@@ -1,6 +1,15 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] medium: round 211 (2026-11-09, TA bool and condition bug hunt, TB
+    'toc.hpp' simplification)
+    => done (2026-11-09): a '{' where an operand is expected says "expected
+       an operand before '{', a '{...}' literal is not one here" ('if a and
+       {' called the block a literal), test 2262; 'scope::add_var' returns
+       the stored variable ('get_var_ref' removed),
+       'generic_func_info::generic_method'; TA found no wrong code: about
+       31000 fuzzed programs (exprs, flow, calls, effects, whole, a new bool
+       fuzzer) on both targets, inline, noinline, '--nopt' and versions
 [x] medium: round 209 (2026-11-09, design review RA, RB, RC)
     => done (2026-11-09): x86_64 'store_bytes' stores immediates when a
        'rep movsb' register is held (a string in an inlined count of

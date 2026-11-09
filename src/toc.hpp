@@ -363,7 +363,10 @@ class scope final {
             sum_storage_size(allocated_storage_size_bytes_, size_bytes);
     }
 
-    auto add_var(const var_info& var, const var_kind kind) -> void {
+    // returns the stored copy of 'var'
+    [[nodiscard]] auto add_var(const var_info& var, const var_kind kind)
+        -> var_info& {
+
         vars_.put(var.name, var);
 
         if (kind == var_kind::result) {
@@ -373,6 +376,8 @@ class scope final {
         if (kind == var_kind::param) {
             func_part().param_names.emplace_back(var.name);
         }
+
+        return vars_.get_ref(var.name);
     }
 
     [[nodiscard]] auto allocated_storage_size_bytes() const -> size_t {
@@ -415,10 +420,6 @@ class scope final {
         -> const var_info& {
 
         return vars_.get_const_ref(name);
-    }
-
-    [[nodiscard]] auto get_var_ref(const std::string_view name) -> var_info& {
-        return vars_.get_ref(name);
     }
 
     [[nodiscard]] auto has_binding(const std::string_view name) const -> bool {
@@ -2186,8 +2187,7 @@ class definition_checks final {
             const generic_func_info& fn{generics_.get().get_func(name)};
 
             throw_function_defined(src_loc_tk, name, generic_method,
-                                   fn.src_loc_tk,
-                                   fn.receiver ? fn.report_name : "");
+                                   fn.src_loc_tk, fn.generic_method());
         }
     }
 
@@ -2782,8 +2782,8 @@ class toc final {
     auto add_generic_func(std::string name, generic_func_info info) -> void {
         assert(not is_compiling_);
 
-        definitions_.assert_function_not_defined(
-            info.src_loc_tk, name, info.receiver ? info.report_name : "");
+        definitions_.assert_function_not_defined(info.src_loc_tk, name,
+                                                 info.generic_method());
 
         generics_.add_func(std::move(name), std::move(info));
     }
@@ -2875,9 +2875,7 @@ class toc final {
             std::holds_alternative<in_storage>(var.placement),
         };
 
-        scopes_.back().add_var(var, kind);
-
-        var_info& declared{scopes_.back().get_var_ref(var.name)};
+        var_info& declared{scopes_.back().add_var(var, kind)};
 
         // note: a 'dat' here is the compile half of 'add_dat'
         if (is_compiling_ and kind == var_kind::dat) {
@@ -3118,7 +3116,7 @@ class toc final {
 
         assert(is_compiling_);
 
-        const dry_run_scope scope{*this};
+        const dry_run_scope run{*this};
 
         ::machine& x{machine()};
 

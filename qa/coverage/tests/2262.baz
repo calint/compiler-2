@@ -1,0 +1,7 @@
+# a block where the operand after 'and' is expected
+func main() {
+    var a = true
+    if a and {
+        exit(1)
+    }
+}

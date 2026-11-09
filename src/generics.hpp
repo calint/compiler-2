@@ -545,6 +545,16 @@ struct generic_func_info {
     size_t definition{};
     // reached through its type wherever it is defined
     bool is_type_member{};
+
+    // e.g. 'text.append', empty for a generic function without a receiver,
+    // see 'func_instance::generic_method'
+    [[nodiscard]] auto generic_method() const -> std::string_view {
+        if (not receiver) {
+            return {};
+        }
+
+        return report_name;
+    }
 };
 
 // what a function made from a generic definition keeps of it
