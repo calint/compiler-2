@@ -668,7 +668,7 @@ struct call_site {
             return;
         }
 
-        e.add_call_frame(begin_tk, source);
+        e.add_call_frame(begin_tk, source, func->instance_name());
     }
 
     // the result is made in a temporary of the call, then copied into

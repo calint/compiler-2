@@ -16,6 +16,10 @@
 #   diff-nopt     '--nopt' ends differently
 #   diff-checks   the program without checks ends differently
 #   diff-line     '--checks=noub,line' ends differently
+#   diff-inline   the program with every function 'f<n>' inlined ends
+#                 differently
+#   diff-noinline the program with every function 'f<n>' 'noinline' ends
+#                 differently
 #   cpu-error     the emulator stops
 #   ub-signal     a signal ends the program (x86_64, rv32i)
 #   compiler-crash, compiler-hang, invalid-asm, link-failure  see fuzz-compiler.py
@@ -32,6 +36,9 @@ import tempfile
 import fuzzlib as fl
 
 LIMIT = 1 << 30
+# the functions that 'make_function' writes, 'rec' recurses and stays
+# 'noinline'
+FUNCTION = re.compile(r"^func (noinline )?(f\d+\()", re.M)
 VAR_BOUND = 1 << 16
 
 
@@ -470,6 +477,7 @@ def fuzz_one(args):
                     ("diff-checks", []),
                     ("diff-line", ["--checks=noub,line"])]
         if x86.finished():
+            compare_inlining(compiler, work, source, base, x86, found)
             for category, options in variants:
                 c3, other, p3 = fl.run_x86(compiler, path, options, work, "v")
                 if c3.returncode and fl.out_of_registers(c3.stderr):
@@ -483,6 +491,35 @@ def fuzz_one(args):
     finally:
         shutil.rmtree(work, ignore_errors=True)
     return source, found, stats
+
+
+def with_inlining(source, noinline):
+    # 'source' with every function of 'make_function' inlined or 'noinline'
+    word = "noinline " if noinline else ""
+    return FUNCTION.sub(lambda m: f"func {word}{m.group(2)}", source)
+
+
+def compare_inlining(compiler, work, source, options, x86, found):
+    # the same program with every function inlined and with every function
+    # 'noinline' ends like 'x86'
+    for category, noinline in (("diff-inline", False),
+                               ("diff-noinline", True)):
+        variant = with_inlining(source, noinline)
+        if variant == source:
+            continue
+        path = os.path.join(work, "inlining.baz")
+        with open(path, "w") as f:
+            f.write(variant)
+        c, other, problem = fl.run_x86(compiler, path, options, work, "i")
+        if c.returncode and fl.out_of_registers(c.stderr):
+            # inlining changes how many registers an expression needs
+            continue
+        if c.returncode or problem:
+            found.append((category, "rejected",
+                          c.stderr[-500:] or str(problem)))
+        elif other.finished() and not x86.same(other):
+            found.append((category, f"{x86.kind} vs {other.kind}",
+                          f"base {x86}\nvariant {other}"))
 
 
 def compare_rv32i(compiler, path, options, work, target, x86, found):

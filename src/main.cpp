@@ -22,6 +22,7 @@
 #include <string>
 #include <string_view>
 #include <system_error>
+#include <utility>
 #include <vector>
 
 // note: the headers kept without a use here hold the definitions that close
@@ -1005,8 +1006,10 @@ default_binary_file_name(const std::string_view src_file_name,
             opts.src_file_name.value_or(default_src_file_name),
         };
 
-        files.add(std::string{src_file_name},
-                  source_files::read_file(src_file_name), std::nullopt);
+        std::string src_text{source_files::read_file(src_file_name)};
+
+        files.add(std::string{src_file_name}, std::move(src_text),
+                  std::nullopt);
 
         const std::string binary{
             opts.binary_file_name

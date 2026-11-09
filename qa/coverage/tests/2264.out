@@ -1,0 +1,10 @@
+
+2264.baz:5:27: constant 'n' does not fit 'i8' (-128 to 127), 'i8(...)' wraps it
+func t.f() res i8 { res = n }
+                          ^
+2264.baz:6:39: 'big.f' called from 'x.f()'
+func use<T type>(x T) res { res = int(x.f()) }
+                                      ^
+2264.baz:10:19: 'use<big>' called from 'use(b)'
+    exit(use(s) + use(b))
+                  ^~~

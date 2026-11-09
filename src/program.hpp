@@ -505,7 +505,9 @@ class program final {
             try {
                 body.func->check_noinline_body(tc, body.array_lengths);
             } catch (compile_error& e) {
-                e.add_call_frame(body.call_tk, body.call_source);
+                e.add_call_frame(body.call_tk, body.call_source,
+                                 body.func->instance_name());
+
                 throw;
             }
         }
@@ -527,7 +529,9 @@ class program final {
             try {
                 body.func->emit_noinline_body(tc, body.array_lengths);
             } catch (compile_error& e) {
-                e.add_call_frame(body.call_tk, body.call_source);
+                e.add_call_frame(body.call_tk, body.call_source,
+                                 body.func->instance_name());
+
                 throw;
             }
         }

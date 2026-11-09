@@ -1,6 +1,19 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] medium: round 214 (2026-11-09, TG generics bug hunt, TH 'main.cpp' and
+    error reporting simplification; user: TF's call fuzzer into 'qa/fuzz')
+    => done (2026-11-09): a name of a method body that hides a constant of
+       the generic type says "hides the generic parameter 'capacity'
+       declared at" the parameter (was "the parameter" at the method name),
+       test 2263, the listing comments of these constants name the parameter
+       (19 listings, comments only); an error in a called generic instance
+       names it in the call frame ("'use<big>' called from 'use(b)'"), test
+       2264, 1557, docs 7 frames; 'compile_error' without its private
+       constructor; 'compile_file' reads the source in a step of its own;
+       'fuzz-programs.py' also builds each program with every function
+       inlined and with every function 'noinline' (round 213 TF), its
+       generator instead of a second one; TG found no wrong code
 [x] medium: round 213 (2026-11-09, TE 'expr_bool.hpp' simplification, TF
     noinline call protocol bug hunt; user: the bool fuzzer into 'qa/fuzz')
     => done (2026-11-09): 'compile_constant' returns a 'bool', a stored

@@ -520,8 +520,9 @@ class scope final {
     }
 
     // what the name 'name' of this scope is in a message: a function scope
-    // declares only the parameters and the result, a loop scope only the
-    // 'e', 'i' and 'n' of a 'foo'
+    // declares only the parameters, the result and the constants of the
+    // generic type of a method, a loop scope only the 'e', 'i' and 'n' of a
+    // 'foo'
     [[nodiscard]] auto var_role(const std::string_view name) const
         -> std::string_view {
 
@@ -535,6 +536,10 @@ class scope final {
 
         if (not is_func()) {
             return "variable";
+        }
+
+        if (has_const(name)) {
+            return "generic parameter";
         }
 
         return is_result(name) ? "result" : "parameter";

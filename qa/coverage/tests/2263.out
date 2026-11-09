@@ -1,0 +1,7 @@
+
+2263.baz:5:9: constant 'capacity' hides the generic parameter 'capacity' declared at 2:13
+    let capacity = 7
+        ^~~~~~~~
+2263.baz:3:6: instantiated by
+type small = buffer<4>
+     ^~~~~

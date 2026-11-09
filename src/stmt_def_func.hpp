@@ -717,6 +717,17 @@ class stmt_def_func final : public statement {
         return result_.has_value();
     }
 
+    // the name of the function or method, or that of an instance, e.g.
+    // 'tokenizer.to<name>'
+    // e.g. 'use<big>', empty for a function written in the source
+    [[nodiscard]] auto instance_name() const -> std::string_view {
+        if (not instance_) {
+            return {};
+        }
+
+        return instance_->name;
+    }
+
     [[nodiscard]] auto is_body_parsed() const -> bool {
         return is_body_parsed_;
     }
@@ -730,8 +741,6 @@ class stmt_def_func final : public statement {
         return not head_.noinline_tk;
     }
 
-    // the name of the function or method, or that of an instance, e.g.
-    // 'tokenizer.to<name>'
     [[nodiscard]] auto name() const -> std::string_view {
         return instance_ ? instance_->name : head_.name;
     }
@@ -758,7 +767,7 @@ class stmt_def_func final : public statement {
         }
 
         for (const generic_arg& constant : instance_->constants) {
-            tc.add_const(head_.name_tk, indent, constant.param_tk.text(),
+            tc.add_const(constant.param_tk, indent, constant.param_tk.text(),
                          folded_value::untyped(constant.constant()));
         }
     }

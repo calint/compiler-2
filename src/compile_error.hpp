@@ -136,10 +136,10 @@ class compile_error final : public std::exception {
 
     error_kind kind{error_kind::source};
 
-    auto add_call_frame(const token& call_tk, std::string text) -> void {
-        call_frames.push_back(
-            call_frame::at(call_tk, std::move(text), "called from"));
-    }
+    // 'instance' names the generic instance that was called, empty for a
+    // function written in the source, e.g. 'use<big>'
+    auto add_call_frame(const token& call_tk, std::string text,
+                        std::string_view instance) -> void;
 
     // see 'error_kind'
     [[nodiscard]] auto is_limit() const -> bool {
@@ -153,11 +153,8 @@ class compile_error final : public std::exception {
     // a problem of the whole file, e.g. a missing 'main', has no place, every
     // other error points at the token that caused it
     [[nodiscard]] static auto file_level(std::string message) -> compile_error {
-        return compile_error{std::move(message)};
+        return compile_error{token{}, std::move(message)};
     }
-
-  private:
-    explicit compile_error(std::string message) : msg{std::move(message)} {}
 };
 
 // a byte below ' ' or DEL, which would break a message or a path
@@ -288,6 +285,21 @@ class compile_error final : public std::exception {
     }
 
     return std::format("'{}'", source);
+}
+
+inline auto compile_error::add_call_frame(const token& call_tk,
+                                          std::string text,
+                                          const std::string_view instance)
+    -> void {
+
+    std::string reason{"called from"};
+
+    if (not instance.empty()) {
+        reason = std::format("{} called from", in_quotes(instance));
+    }
+
+    call_frames.push_back(
+        call_frame::at(call_tk, std::move(text), std::move(reason)));
 }
 
 // a count with its noun for a message, e.g. '1 argument' or '2 arguments'

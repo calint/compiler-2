@@ -7184,3 +7184,9 @@ SRC=2261 && EXP=0 && RUN
 
 # a block where the operand after 'and' is expected
 SRC=2262 && COMPERR
+
+# a constant of a method body named like a constant of its generic type
+SRC=2263 && COMPERR
+
+# an error in a called generic instance names the instance in its call frames
+SRC=2264 && COMPERR

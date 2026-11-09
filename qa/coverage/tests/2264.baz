@@ -1,0 +1,11 @@
+# an error in a called generic instance names the instance in its call frames
+type t<n> { a i8[2] }
+type ok = t<2>
+type big = t<200>
+func t.f() res i8 { res = n }
+func use<T type>(x T) res { res = int(x.f()) }
+func main() {
+    var s = ok
+    var b = big
+    exit(use(s) + use(b))
+}

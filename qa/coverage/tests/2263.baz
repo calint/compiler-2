@@ -1,0 +1,11 @@
+# a constant of a method body named like a constant of its generic type
+type buffer<capacity> { items i8[capacity] }
+type small = buffer<4>
+func buffer.f() res {
+    let capacity = 7
+    res = capacity
+}
+func main() {
+    var s = small
+    exit(s.f())
+}
