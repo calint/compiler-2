@@ -1185,8 +1185,10 @@ class expr_bool final : public statement {
         // note: only a parenthesized list asks, see its constructor
         assert(open_paren_tk_);
 
+        const statement& only_expr{as_statement(only)};
+
         throw_parentheses_group_nothing(*open_paren_tk_,
-                                        trimmed_source(as_statement(only)));
+                                        trimmed_source(only_expr));
     }
 
     // e.g. 'a or b and c' is rejected, '(a or b) and c' is not
@@ -1265,9 +1267,10 @@ class expr_bool final : public statement {
                 std::get_if<expr_bool>(&bools_.at(expr_index)),
             }) {
 
+            const statement& next_expr{as_statement(bools_.at(expr_index + 1))};
+
             const std::string next_label{
-                tc.create_unique_label(
-                    as_statement(bools_.at(expr_index + 1)).tok(), "cmp"),
+                tc.create_unique_label(next_expr.tok(), "cmp"),
             };
 
             // an 'or' continues when false and an 'and' continues when true

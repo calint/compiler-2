@@ -449,9 +449,10 @@ class stmt_builtin_io final : public statement {
         // note: an unknown length is the check of a function without its
         //       calls, its code is discarded
 
+        const int64_t count_value{known_count.value_or(discarded_array_len)};
+
         x.copy_value(tok(), indent, count,
-                     operand::imm(known_count.value_or(discarded_array_len),
-                                  tc.builtins().default_type()));
+                     operand::imm(count_value, tc.builtins().default_type()));
     }
 
     // the count argument, else the elements of the array or of one sector,

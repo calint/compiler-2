@@ -1,6 +1,16 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] medium: round 221 (2026-11-09, TV nested calls in named steps across
+    the sources, TU rv32i code generation bug hunt)
+    => done (2026-11-09): the 'value_of(fold(...))' chains and other calls
+       nested three deep are named steps (11 sites in 8 files); text built
+       for messages, comments and the assembler ('in_quotes(trimmed_source
+       (...))') stays nested; listings equal over 2280 compiles; TU found
+       nothing: about 2750 programs of i8, i16 and i32 against x86_64 on
+       the three rv32i targets with the checks, '--nopt' and versions,
+       register pressure chains, the multiply and divide helpers, shifts,
+       12-bit immediates, large offsets
 [x] medium: round 220 (2026-11-09, TS arithmetic expressions
     simplification, TT rv32i assembler and image bug hunt)
     => done (2026-11-09): '--bin' naming the sd card image is rejected on

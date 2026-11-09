@@ -1037,12 +1037,14 @@ class expr_arith final : public statement {
 
             const statement& e{*exprs_.at(i)};
 
+            const std::optional<folded_value> folded{
+                e.fold(tc, tc.use_of(dst)),
+            };
+
             steps.push_back({
                 .op{op},
                 .element{&e},
-                .value{
-                    folded_value::value_of(e.fold(tc, tc.use_of(dst))),
-                },
+                .value{folded_value::value_of(folded)},
                 .folded_source{
                     std::format("{} {}", source_text(op), trimmed_source(e)),
                 },

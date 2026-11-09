@@ -1424,10 +1424,12 @@ class noinline_call final {
         }
 
         const size_t index{*slot.param_index};
+        const expr_any& arg{call_.args.at(index)};
+        const stmt_def_func_param& param{call_.func->params().at(index)};
 
         x.comment(call_.tk, indent, "address of argument {} to parameter {}",
-                  in_quotes(statement::trimmed_source(call_.args.at(index))),
-                  in_quotes(call_.func->params().at(index).name()));
+                  in_quotes(statement::trimmed_source(arg)),
+                  in_quotes(param.name()));
     }
 
     // an argument or a result that needs one goes through a temporary of the

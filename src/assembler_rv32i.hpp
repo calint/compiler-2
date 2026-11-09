@@ -314,7 +314,9 @@ class assembler_rv32i final : public assembler {
     auto data(const size_t element_size_bytes,
               const std::span<const int64_t> values) -> void override {
 
-        add_record(data_text(data_directive(element_size_bytes), values), 0,
+        const std::string_view directive{data_directive(element_size_bytes)};
+
+        add_record(data_text(directive, values), 0,
                    data_values{
                        .element_size_bytes{element_size_bytes},
                        .values{values.begin(), values.end()},

@@ -336,8 +336,12 @@ class stmt_def_dat final : public statement {
         const statement& element{value.element(index)};
 
         if (tp.is_builtin()) {
+            const std::optional<folded_value> folded{
+                element.fold_checked(tc, tc.use_at(tp)),
+            };
+
             const std::optional<int64_t> constant{
-                folded_value::value_of(element.fold_checked(tc, tc.use_at(tp))),
+                folded_value::value_of(folded),
             };
 
             if (not constant) {

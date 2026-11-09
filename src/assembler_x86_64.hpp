@@ -201,7 +201,9 @@ class assembler_x86_64 final : public assembler {
     auto data(const size_t element_size_bytes,
               const std::span<const int64_t> values) -> void override {
 
-        add_text(data_text(data_directive(element_size_bytes), values));
+        const std::string_view directive{data_directive(element_size_bytes)};
+
+        add_text(data_text(directive, values));
     }
 
     auto define_constant(const std::string_view name, const int64_t value)

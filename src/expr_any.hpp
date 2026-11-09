@@ -368,8 +368,11 @@ class expr_any final : public statement {
     [[nodiscard]] auto constant_value(const toc& tc) const
         -> std::optional<int64_t> {
 
-        return folded_value::value_of(
-            fold_checked(tc, tc.use_at(tc.builtins().default_type())));
+        const std::optional<folded_value> folded{
+            fold_checked(tc, tc.use_at(tc.builtins().default_type())),
+        };
+
+        return folded_value::value_of(folded);
     }
 
     // the value of a single value, an element of a list or the source of a
@@ -529,10 +532,11 @@ class expr_any final : public statement {
             }
 
             // e.g. '{300}' for 'i8' is rejected as when stored alone
-            const std::optional<int64_t> value{
-                folded_value::value_of(
-                    element(index).fold_checked(tc, tc.use_at(element_type))),
+            const std::optional<folded_value> folded{
+                element(index).fold_checked(tc, tc.use_at(element_type)),
             };
+
+            const std::optional<int64_t> value{folded_value::value_of(folded)};
 
             if (not value) {
                 return std::nullopt;
@@ -1105,8 +1109,10 @@ class expr_any final : public statement {
             throw_known_type(tk, tp.name(), "{}");
         }
 
-        return builtin_value(
-            tc, tz, std::make_unique<expr_zero>(tc.get_type_or_throw(tk), tk));
+        const type& zero_type{tc.get_type_or_throw(tk)};
+
+        return builtin_value(tc, tz,
+                             std::make_unique<expr_zero>(zero_type, tk));
     }
 
     [[nodiscard]] static auto parse_variant(toc& tc, tokenizer& tz,
