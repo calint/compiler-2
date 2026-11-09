@@ -185,7 +185,7 @@ class machine_x86_64 final : public machine {
 
     auto add_subtract(const token& src_loc_tk, const size_t indent,
                       const arithmetic_operator operation, const operand& dst,
-                      const operand& src, const runtime_check& check = {})
+                      const operand& src, const runtime_check& check)
         -> void override {
 
         assert(operation == arithmetic_operator::add or
@@ -580,7 +580,7 @@ class machine_x86_64 final : public machine {
 
     auto unary(const token& src_loc_tk, const size_t indent,
                const arithmetic_operator operation, const operand& dst,
-               const runtime_check& check = {}) -> void override {
+               const runtime_check& check) -> void override {
 
         if (operation == arithmetic_operator::complement) {
             emit_unary(src_loc_tk, indent, op::not_op, dst);

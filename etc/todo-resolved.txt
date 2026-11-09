@@ -1,6 +1,17 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] medium: round 216 (2026-11-09, TK 'foo' and bulk operations bug hunt,
+    TL 'machine.hpp' simplification)
+    => done (2026-11-09): the protected part of 'machine' holds only what the
+       targets use (12 members private, 'stack_limit_address' protected),
+       the overrides of 'add_subtract' and 'unary' lose their dead default
+       argument; listings equal over 2278 compiles; not done: bare-metal
+       read and write in 'emit_target_routines' (one instruction more per
+       rv32i-fpga and rv32i-qemu program); TK found nothing: sizes around
+       the unroll and 'rep' thresholds, starts inside a word, overlap both
+       ways, about 1000 bounds programs against a model on x86_64, rv32i and
+       rv32i-fpga
 [x] medium: round 215 (2026-11-09, TI user types simplification, TJ input
     and output bug hunt)
     => done (2026-11-09): a user type is named by its constructor ('type()'

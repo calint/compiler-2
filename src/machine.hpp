@@ -1278,14 +1278,14 @@ class machine {
         assembler& output{target_assembler()};
 
         output.switch_section(section::rodata);
-        for (const read_only_constant& s : constants) {
+        for (const read_only_constant& constant : constants) {
             // note: a byte alignment needs no directive
             if (target_.string_alignment > 1) {
                 output.align(target_.string_alignment);
             }
 
-            output.label(0, s.label);
-            output.string_data(s.bytes);
+            output.label(0, constant.label);
+            output.string_data(constant.bytes);
         }
     }
 
@@ -1510,13 +1510,6 @@ class machine {
 
     [[nodiscard]] auto slot_register() const -> std::string_view {
         return target_.slot_register;
-    }
-
-    // only a target that 'is_stack_bounded' is asked
-    [[nodiscard]] auto stack_limit_address() const -> size_t {
-        assert(target_.stack_limit_address);
-
-        return *target_.stack_limit_address;
     }
 
     // the header, the entry of the program and the variables base, held until
@@ -1830,31 +1823,6 @@ class machine {
         }
     }
 
-    // the lines of the failures of 'routine' by the file they are in
-    [[nodiscard]] auto failure_lines_of(const std::string_view routine) const
-        -> failure_lines {
-
-        failure_lines lines;
-
-        for (const failure_location& failure : failure_locations_) {
-            if (failure.routine == routine) {
-                lines[failure.file_ix].insert(failure.line);
-            }
-        }
-
-        return lines;
-    }
-
-    // e.g. 'panic: bounds at prog.baz:', the line follows; the name is
-    // escaped as in the compiler's messages, so the message stays one line
-    [[nodiscard]] auto failure_message(const std::string_view name,
-                                       const size_t file_ix) const
-        -> std::string {
-
-        return std::format("{} at {}:", panic_message(name),
-                           printable(locations_.relative_name(file_ix)));
-    }
-
     // the label a failed check at 'src_loc_tk' jumps to, 'handler' marked
     // used: the handler, or with the line the stub of the line, which loads
     // the line for the entry of the handler for the file
@@ -1908,15 +1876,6 @@ class machine {
         return static_cast<size_t>(count);
     }
 
-    auto free_scratch_registers(const token& src_loc_tk, const size_t indent,
-                                const std::span<const operand> registers)
-        -> void {
-
-        for (const operand& reg : registers | std::views::reverse) {
-            free_scratch_register(src_loc_tk, indent, reg);
-        }
-    }
-
     // the backend holds 'register_name' itself, e.g. the frame base while a
     // noinline body is compiled
     [[nodiscard]] auto
@@ -1967,15 +1926,6 @@ class machine {
             compile_error::error_kind::out_of_registers);
     }
 
-    // the mask of the register 'name' in the pool, 0 for text that names no
-    // register
-    [[nodiscard]] auto register_mask(const std::string_view name) const
-        -> uint32_t {
-
-        const std::optional<size_t> index{register_index_of(name)};
-        return index ? uint32_t{1} << *index : 0;
-    }
-
     // the registers 'value' names, its base and index when it is in memory
     [[nodiscard]] auto registers_mask(const operand& value) const -> uint32_t {
         if (value.is_register()) {
@@ -2007,23 +1957,6 @@ class machine {
         return saved;
     }
 
-    auto release_named_register(const token& src_loc_tk, const size_t indent,
-                                const std::string_view register_name) -> void {
-
-        assert(state_.registers.top().holder !=
-               register_pool::holder_kind::scratch);
-
-        pop_allocation(src_loc_tk, indent, pool_index(register_name));
-    }
-
-    // the failure of 'handler' reports its line, e.g. not a frame overflow,
-    // which is not at a statement
-    [[nodiscard]] auto reports_line(const failure_handler& handler) const
-        -> bool {
-
-        return options_.reports_line and handler.takes_line;
-    }
-
     // 'alloc_named_register' without an operand, for a register that the
     // backend uses by name
     auto reserve_named_register(const token& src_loc_tk, const size_t indent,
@@ -2040,13 +1973,11 @@ class machine {
                         register_pool::holder_kind::named);
     }
 
-    // the assembler the target writes its output with
-    [[nodiscard]] auto target_assembler() -> assembler& {
-        return output_.get();
-    }
+    // only a target that 'is_stack_bounded' is asked
+    [[nodiscard]] auto stack_limit_address() const -> size_t {
+        assert(target_.stack_limit_address);
 
-    [[nodiscard]] auto target_assembler() const -> const assembler& {
-        return output_.get();
+        return *target_.stack_limit_address;
     }
 
     // 'emit' changes the registers 'clobbered', the allocated ones among them
@@ -2079,37 +2010,6 @@ class machine {
     //
     // statics
     //
-
-    // a memory operand as the comments show it, e.g. 'rbp + 8' or
-    // 's0 + t0 * 4 + 28' of a variable at a run-time index
-    [[nodiscard]] static auto address_text(const operand& address)
-        -> std::string {
-
-        // note: variables and frames are addressed from a base register
-        assert(not address.base_register().empty());
-
-        std::string text{address.base_register()};
-
-        if (not address.index_register().empty()) {
-            text += std::format(" + {}", address.index_register());
-
-            if (address.scale() != 1) {
-                text += std::format(" * {}", address.scale());
-            }
-        }
-
-        if (address.displacement() < 0) {
-            const uint64_t magnitude{
-                uint64_t{} - static_cast<uint64_t>(address.displacement()),
-            };
-
-            text += std::format(" - {}", magnitude);
-        } else if (address.displacement() > 0) {
-            text += std::format(" + {}", address.displacement());
-        }
-
-        return text;
-    }
 
     // the kind of the factor 'bits' at 'width_bits', see 'multiply'
     [[nodiscard]] static auto classify_factor(const uint64_t bits,
@@ -2146,15 +2046,6 @@ class machine {
         };
     }
 
-    // the entry of the handler 'handler_label' for the failures in a file,
-    // which names the file before the line
-    [[nodiscard]] static auto
-    failure_entry_label(const std::string_view handler_label,
-                        const size_t file_ix) -> std::string {
-
-        return std::format("{}_file_{}", handler_label, file_ix);
-    }
-
     // the two's complement bits of an immediate, empty for an operand that is
     // not one
     [[nodiscard]] static auto immediate_bits(const operand& value)
@@ -2165,20 +2056,6 @@ class machine {
         }
 
         return static_cast<uint64_t>(value.immediate());
-    }
-
-    // a location in the main file has no file index, so the label stays the
-    // same for a program of one file
-    [[nodiscard]] static auto line_failure_label(const std::string_view name,
-                                                 const size_t file_ix,
-                                                 const size_t line)
-        -> std::string {
-
-        if (file_ix == 0) {
-            return std::format("baz_{}_line_{}", name, line);
-        }
-
-        return std::format("baz_{}_f{}_line_{}", name, file_ix, line);
     }
 
     // 4 and 8 bytes are read as signed so a value that fits a signed 32-bit
@@ -2208,14 +2085,6 @@ class machine {
         return moved;
     }
 
-    // e.g. 'panic: bounds'; the newline in front separates it from the output
-    // of the program, which may not end with one
-    [[nodiscard]] static auto panic_message(const std::string_view name)
-        -> std::string {
-
-        return std::format("\npanic: {}", name);
-    }
-
   public:
     // the queries and the register state that the register report reads
     friend class register_reporter;
@@ -2226,7 +2095,7 @@ class machine {
     //
 
     // the name of a register in the output, for the use of registers
-    [[nodiscard]] virtual auto register_display_name(size_t index) const
+    [[nodiscard]] virtual auto register_display_name(const size_t index) const
         -> std::string_view = 0;
 
     //
@@ -2408,6 +2277,40 @@ class machine {
                    is_stack_bounded());
 
             emit_failure_handler(handler);
+        }
+    }
+
+    // the lines of the failures of 'routine' by the file they are in
+    [[nodiscard]] auto failure_lines_of(const std::string_view routine) const
+        -> failure_lines {
+
+        failure_lines lines;
+
+        for (const failure_location& failure : failure_locations_) {
+            if (failure.routine == routine) {
+                lines[failure.file_ix].insert(failure.line);
+            }
+        }
+
+        return lines;
+    }
+
+    // e.g. 'panic: bounds at prog.baz:', the line follows; the name is
+    // escaped as in the compiler's messages, so the message stays one line
+    [[nodiscard]] auto failure_message(const std::string_view name,
+                                       const size_t file_ix) const
+        -> std::string {
+
+        return std::format("{} at {}:", panic_message(name),
+                           printable(locations_.relative_name(file_ix)));
+    }
+
+    auto free_scratch_registers(const token& src_loc_tk, const size_t indent,
+                                const std::span<const operand> registers)
+        -> void {
+
+        for (const operand& reg : registers | std::views::reverse) {
+            free_scratch_register(src_loc_tk, indent, reg);
         }
     }
 
@@ -2634,6 +2537,32 @@ class machine {
                         name, holder_location));
     }
 
+    // the mask of the register 'name' in the pool, 0 for text that names no
+    // register
+    [[nodiscard]] auto register_mask(const std::string_view name) const
+        -> uint32_t {
+
+        const std::optional<size_t> index{register_index_of(name)};
+        return index ? uint32_t{1} << *index : 0;
+    }
+
+    auto release_named_register(const token& src_loc_tk, const size_t indent,
+                                const std::string_view register_name) -> void {
+
+        assert(state_.registers.top().holder !=
+               register_pool::holder_kind::scratch);
+
+        pop_allocation(src_loc_tk, indent, pool_index(register_name));
+    }
+
+    // the failure of 'handler' reports its line, e.g. not a frame overflow,
+    // which is not at a statement
+    [[nodiscard]] auto reports_line(const failure_handler& handler) const
+        -> bool {
+
+        return options_.reports_line and handler.takes_line;
+    }
+
     // a register the backend holds itself, which no source location asked
     // for, e.g. the variables base from 'start' to 'finish'
     auto reserve_backend_register(const std::string_view register_name)
@@ -2671,9 +2600,49 @@ class machine {
         return target_.scratch_registers;
     }
 
+    // the assembler the target writes its output with
+    [[nodiscard]] auto target_assembler() -> assembler& {
+        return output_.get();
+    }
+
+    [[nodiscard]] auto target_assembler() const -> const assembler& {
+        return output_.get();
+    }
+
     //
     // statics
     //
+
+    // a memory operand as the comments show it, e.g. 'rbp + 8' or
+    // 's0 + t0 * 4 + 28' of a variable at a run-time index
+    [[nodiscard]] static auto address_text(const operand& address)
+        -> std::string {
+
+        // note: variables and frames are addressed from a base register
+        assert(not address.base_register().empty());
+
+        std::string text{address.base_register()};
+
+        if (not address.index_register().empty()) {
+            text += std::format(" + {}", address.index_register());
+
+            if (address.scale() != 1) {
+                text += std::format(" * {}", address.scale());
+            }
+        }
+
+        if (address.displacement() < 0) {
+            const uint64_t magnitude{
+                uint64_t{} - static_cast<uint64_t>(address.displacement()),
+            };
+
+            text += std::format(" - {}", magnitude);
+        } else if (address.displacement() > 0) {
+            text += std::format(" + {}", address.displacement());
+        }
+
+        return text;
+    }
 
     // what a version that fails with 'kind' ran out of, for the comment of
     // the choice
@@ -2693,5 +2662,36 @@ class machine {
         assert(kind == compile_error::error_kind::inlining_limit);
 
         return "inlined call levels";
+    }
+
+    // the entry of the handler 'handler_label' for the failures in a file,
+    // which names the file before the line
+    [[nodiscard]] static auto
+    failure_entry_label(const std::string_view handler_label,
+                        const size_t file_ix) -> std::string {
+
+        return std::format("{}_file_{}", handler_label, file_ix);
+    }
+
+    // a location in the main file has no file index, so the label stays the
+    // same for a program of one file
+    [[nodiscard]] static auto line_failure_label(const std::string_view name,
+                                                 const size_t file_ix,
+                                                 const size_t line)
+        -> std::string {
+
+        if (file_ix == 0) {
+            return std::format("baz_{}_line_{}", name, line);
+        }
+
+        return std::format("baz_{}_f{}_line_{}", name, file_ix, line);
+    }
+
+    // e.g. 'panic: bounds'; the newline in front separates it from the output
+    // of the program, which may not end with one
+    [[nodiscard]] static auto panic_message(const std::string_view name)
+        -> std::string {
+
+        return std::format("\npanic: {}", name);
     }
 };

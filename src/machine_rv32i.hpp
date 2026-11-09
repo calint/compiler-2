@@ -434,7 +434,7 @@ class machine_rv32i : public machine {
 
     auto add_subtract(const token& src_loc_tk, const size_t indent,
                       const arithmetic_operator operation, const operand& dst,
-                      const operand& src, const runtime_check& check = {})
+                      const operand& src, const runtime_check& check)
         -> void override {
 
         assert(operation == arithmetic_operator::add or
@@ -940,7 +940,7 @@ class machine_rv32i : public machine {
 
     auto unary(const token& src_loc_tk, const size_t indent,
                const arithmetic_operator operation, const operand& dst,
-               const runtime_check& check = {}) -> void override {
+               const runtime_check& check) -> void override {
 
         assert(operation == arithmetic_operator::negate or
                operation == arithmetic_operator::complement);
