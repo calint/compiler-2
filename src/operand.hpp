@@ -25,6 +25,24 @@ class type;
     return static_cast<int64_t>(size_bytes);
 }
 
+// whether 'base' plus 'offset' stays in the range of an address offset
+[[nodiscard]] inline auto fits_offset_sum(const int64_t base,
+                                          const int64_t offset) -> bool {
+
+    return (offset <= 0 or
+            base <= std::numeric_limits<int64_t>::max() - offset) and
+           (offset >= 0 or
+            base >= std::numeric_limits<int64_t>::min() - offset);
+}
+
+[[nodiscard]] inline auto add_address_offset(const int64_t base,
+                                             const int64_t offset) -> int64_t {
+
+    assert(fits_offset_sum(base, offset));
+
+    return base + offset;
+}
+
 // whether 'count' elements of 'size_bytes' added to the offset 'base' stay in
 // the range of an address offset, 'count' may be negative
 [[nodiscard]] inline auto fits_address_offset(const int64_t base,
@@ -41,10 +59,7 @@ class type;
 
     const int64_t offset{count * size};
 
-    return (offset <= 0 or
-            base <= std::numeric_limits<int64_t>::max() - offset) and
-           (offset >= 0 or
-            base >= std::numeric_limits<int64_t>::min() - offset);
+    return fits_offset_sum(base, offset);
 }
 
 // 'base' plus 'count' elements of 'size_bytes', which 'fits_address_offset'
@@ -58,16 +73,7 @@ class type;
 
     const int64_t scaled{count * address_offset(size_bytes)};
 
-    return base + scaled;
-}
-
-[[nodiscard]] inline auto add_address_offset(const int64_t base,
-                                             const int64_t offset) -> int64_t {
-
-    assert(offset <= 0 or base <= std::numeric_limits<int64_t>::max() - offset);
-    assert(offset >= 0 or base >= std::numeric_limits<int64_t>::min() - offset);
-
-    return base + offset;
+    return add_address_offset(base, scaled);
 }
 
 // what an operation of the backend reads or writes: empty, a register, an

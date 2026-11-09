@@ -383,9 +383,10 @@ class ident_info final {
         if (is_register()) {
             const ::operand& reg{std::get<register_part>(part_).reg};
 
-            return is_typed and reg.is_register() and
-                   not reg.register_name().empty() and
-                   reg.index_register().empty() and reg.displacement() == 0;
+            // note: a register operand has a name and no index or
+            //       displacement ('operand::reg')
+
+            return is_typed and reg.is_register();
         }
 
         return is_typed and (is_const() or is_var());

@@ -1,0 +1,4 @@
+
+2267.baz:4:18: constant '200' does not fit 'i8' (-128 to 127), 'i8(...)' wraps it
+    var a = i8[]{200 - 100}
+                 ^~~

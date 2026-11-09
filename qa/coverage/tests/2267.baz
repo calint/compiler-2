@@ -1,0 +1,5 @@
+# --checks=noub: an element that does not fit is reported before the
+# overflow of its list, as without the check
+func main() {
+    var a = i8[]{200 - 100}
+}

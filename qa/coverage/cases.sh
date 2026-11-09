@@ -7196,3 +7196,7 @@ SRC=2265 && COMPERR
 
 # a read-only receiver of a 'mut' method is named with its indexes
 SRC=2266 && COMPERR
+
+# --checks=noub: an element that does not fit is reported before the
+# overflow of its list, as without the check
+SRC=2267 && OPTS="--checks=noub" COMPERR

@@ -1,6 +1,17 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] medium: round 224 (2026-11-09, UA small modules simplification, UB
+    constants and folding bug hunt)
+    => done (2026-11-09): with the overflow check a folded list reports an
+       element that does not fit before its overflow, as without the check
+       ('i8[]{200 - 100}' names the '200'), test 2267; the register trace
+       derives the peak count from its list, 'fits_offset_sum' shared by
+       the offset helpers, three checks of 'validate_invariants' that
+       'operand::reg' makes hold removed; UB1 (a typed constant as a
+       generic argument loses its type) is a user decision in 'etc/todo.txt';
+       UB otherwise found nothing: about 8000 fuzzed programs (spelling,
+       data, ub), constant against run-time spellings on both targets
 [x] medium: round 223 (2026-11-09, TY generics simplification, TZ options
     and reports bug hunt)
     => done (2026-11-09): 'generic_arg::arg_tk' removed, a generic constant

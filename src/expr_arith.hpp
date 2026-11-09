@@ -628,6 +628,12 @@ class expr_arith final : public statement {
             if (use.checks_overflow and
                 constant_arith::overflows_width(value, o.op, rhs, width_type)) {
 
+                // note: an element that does not fit is reported first, as
+                //       without the overflow check, e.g. the '200' of
+                //       'i8[]{200 - 100}'
+
+                assert_not_narrowed(tc, width_type);
+
                 throw compile_error{e->tok(),
                                     "constant expression overflows the type"};
             }

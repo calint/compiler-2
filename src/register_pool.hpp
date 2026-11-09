@@ -5,6 +5,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <map>
+#include <ranges>
 #include <span>
 #include <string>
 #include <string_view>
@@ -150,9 +151,8 @@ class register_trace final {
         token peak_site_tk;
     };
 
-    // the registers held when the most were
+    // the listed registers held when the most were
     struct peak_use {
-        size_t held{};
         std::vector<register_pool::allocation> allocations;
         std::vector<frame> frames;
     };
@@ -187,7 +187,7 @@ class register_trace final {
 
         // a build that holds no register has its peak in its first frame,
         // 'main', not in the global initializers
-        if (enabled_ and peak_.held == 0 and peak_.frames.empty()) {
+        if (enabled_ and peak_.allocations.empty() and peak_.frames.empty()) {
             peak_.frames = frames_;
         }
     }
@@ -304,12 +304,11 @@ class register_trace final {
             static_cast<size_t>(std::ranges::count_if(live, is_listed)),
         };
 
-        if (held <= peak_.held) {
+        if (held <= peak_.allocations.size()) {
             return;
         }
 
-        peak_.held = held;
-        peak_.allocations.assign(live.begin(), live.end());
+        peak_.allocations.assign_range(live | std::views::filter(is_listed));
         peak_.frames = frames_;
     }
 };
