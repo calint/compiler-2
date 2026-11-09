@@ -274,14 +274,6 @@ class stmt_builtin_io final : public statement {
         const std::optional<int64_t> count{constant_count(tc, buffer_info)};
 
         const expr_any* const start_arg{start_argument()};
-        const expr_any* const count_arg{count_argument()};
-
-        // note: a sector function has no count argument, an error about its
-        //       range points at the start, or at the buffer when there is none
-
-        const expr_any* const count_or_start{
-            count_arg != nullptr ? count_arg : start_arg,
-        };
 
         const std::optional<int64_t> start{constant_start(tc)};
 
@@ -298,6 +290,15 @@ class stmt_builtin_io final : public statement {
 
             return;
         }
+
+        const expr_any* const count_arg{count_argument()};
+
+        // note: a sector function has no count argument, an error about its
+        //       range points at the start, or at the buffer when there is none
+
+        const expr_any* const count_or_start{
+            count_arg != nullptr ? count_arg : start_arg,
+        };
 
         const machine& x{tc.machine()};
 
@@ -417,10 +418,10 @@ class stmt_builtin_io final : public statement {
 
         first_arg.compile(tc, indent, destination::of_register(first_reg));
 
-        // the range is checked after the count
-        buffer.ident->load_address(tc, indent, tok(), buffer.info, buffer_reg);
-
         const ident_info& buffer_info{buffer.info};
+
+        // the range is checked after the count
+        buffer.ident->load_address(tc, indent, tok(), buffer_info, buffer_reg);
 
         const std::optional<int64_t> known_count{
             constant_count(tc, buffer_info),

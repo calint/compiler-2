@@ -1,6 +1,10 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 238 (2026-11-10, UZ 'foo' and 'read'/'write'
+    simplification)
+    => done (2026-11-10): two declarations in 'stmt_builtin_io' moved next
+       to their only use; 'foo' needed nothing; listings unchanged
 [x] easy: round 237 (2026-11-10, UY 'program', 'source_files',
     'statement', 'stmt_block' simplification)
     => done (2026-11-10): the call frame added to an error of a noinline
