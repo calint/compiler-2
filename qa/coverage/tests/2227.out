@@ -1,4 +1,4 @@
 
-2227.baz:8:22: array 'rooms.doors' must be indexed, or use 'array_length(rooms[1].doors)'
+2227.baz:8:22: array 'rooms[1].doors' must be indexed, or use 'array_length(rooms[1].doors)'
     var n = rooms[1].doors.length
                      ^~~~~

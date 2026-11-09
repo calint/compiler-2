@@ -1,0 +1,7 @@
+# an unindexed array before a field is named as written
+type r { a, b }
+type h { x i8, rs r[3], v i8[2] }
+func main() {
+    var hs = h[2]
+    hs[1].v.a = 1
+}

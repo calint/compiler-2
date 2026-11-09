@@ -44,7 +44,7 @@ inline stmt_identifier::stmt_identifier(toc& tc, token tk, tokenizer& tz)
 
 inline stmt_identifier::stmt_identifier(toc& tc, token tk, tokenizer& tz,
                                         const path_reach reach)
-    : statement{tk}, dotted_path_{tk.text()} {
+    : statement{tk} {
 
     // note: the callers read a name, a string or no token was rejected
     //       before, e.g. by 'parse_array_argument'
@@ -93,8 +93,6 @@ inline stmt_identifier::stmt_identifier(toc& tc, token tk, tokenizer& tz,
 
         elem_delims_tk_.emplace_back(field->dot_tk);
         tk = field->name_tk;
-        dotted_path_.push_back('.');
-        dotted_path_ += tk.text();
 
         const type& parent_type{prefix.type_ref()};
 
@@ -206,7 +204,7 @@ inline auto stmt_identifier::assert_count_in_bounds(const toc& tc,
                               .start_tk{start_tk},
                               .count_tk{count_tk},
                               .count_text{std::format("count {}", count)},
-                              .array_name{dotted_path_},
+                              .array_name{array_text(elems_.size() - 1)},
                           },
                           x.max_storage_bytes());
 }
@@ -240,8 +238,9 @@ inline auto stmt_identifier::narrow_to_element(const toc& tc,
     if (constant_index) {
         const machine& x{tc.machine()};
 
-        assert_constant_index(array_info, elem.index_expr().tok(), dotted_path_,
-                              *constant_index, reach == path_reach::to_end,
+        assert_constant_index(array_info, elem.index_expr().tok(),
+                              array_text(elems_.size() - 1), *constant_index,
+                              reach == path_reach::to_end,
                               x.max_storage_bytes());
     }
 
@@ -289,27 +288,32 @@ inline auto stmt_identifier::parse_element(toc& tc, tokenizer& tz,
                                            const type_field* const fld,
                                            const ident_info& prefix) -> void {
 
+    // note: the element is added before its index so that the messages name
+    //       the path up to it, e.g. 'hs[1].x' of 'hs[1].x[0]'
+
+    elems_.push_back({
+        .name_tk{tk},
+        .field{fld},
+        .index{},
+    });
+
     // e.g. the '[i]' of 'rooms[i]', none for 'name'
     const std::optional<token> open_bracket_tk{tz.is_next_char_token('[')};
 
     if (not open_bracket_tk) {
-        elems_.push_back({
-            .name_tk{tk},
-            .field{fld},
-            .index{},
-        });
-
         return;
     }
 
     // the '[' of an element needs an array, e.g. the 'point[2]' of a value
     // 'point' that hides the type
     if (not prefix.is_array()) {
-        if (tc.types().has(dotted_path_)) {
-            throw_value_hides_type(tk, dotted_path_);
+        const std::string path{path_text()};
+
+        if (tc.types().has(path)) {
+            throw_value_hides_type(tk, path);
         }
 
-        throw_not_indexable(tk, dotted_path_);
+        throw_not_indexable(tk, path);
     }
 
     std::unique_ptr<expr_any> index_expr{
@@ -322,17 +326,11 @@ inline auto stmt_identifier::parse_element(toc& tc, tokenizer& tz,
                              "expected ']' to close array index expression"),
     };
 
-    elems_.push_back({
-        .name_tk{tk},
-        .field{fld},
-        .index{
-            index_part{
-                .open_bracket_tk{*open_bracket_tk},
-                .expr{std::move(index_expr)},
-                .close_bracket_tk{close_bracket_tk},
-            },
-        },
-    });
+    elems_.back().index = index_part{
+        .open_bracket_tk{*open_bracket_tk},
+        .expr{std::move(index_expr)},
+        .close_bracket_tk{close_bracket_tk},
+    };
 
     // e.g. the second '[' of 'a[1][2]', an element is not an array
     if (tz.peek_char_after_whitespace() == '[') {

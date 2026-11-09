@@ -1,6 +1,12 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] medium: round 236 (2026-11-10, UW message paths, round 234 US1)
+    => done (2026-11-10): messages name a path as written, with its indexes
+       ('hs[1].v', not 'hs.v' next to 'array_length(hs[1].v)'); the
+       indexless 'dotted_path_' removed, 'array_text' names an array up to
+       the element being checked; tests 2270-2274, 0299 and 2227 updated;
+       listings unchanged
 [x] medium: round 235 (2026-11-10, US user types and fields bug hunt, UV
     'stmt_def_var' and parameter simplification)
     => done (2026-11-10): US found no wrong code and no no-UB hole over

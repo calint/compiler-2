@@ -1,0 +1,4 @@
+
+2273.baz:6:34: count 3 is past the end of array 'hs[0].v' of size 2
+    array_copy(hs[0].v, hs[1].v, 3)
+                                 ^

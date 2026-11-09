@@ -263,7 +263,7 @@ struct generic_call {
         // e.g. 'a' of 'f(a)' or 'f(a{})' for 'a i8[4]', which is not of the
         // element type, as in a call without type parameters
         if (ident.is_array()) {
-            throw_unindexed_array(ident.tok(), ident.dotted_path());
+            throw_unindexed_array(ident.tok(), ident.path_text());
         }
 
         // e.g. not the 'point' of 'point{1, 2}' with 'var point = 1' or the
@@ -2220,10 +2220,12 @@ class stmt_call final : public statement {
         if (not tc.generics().has_func(name) and
             tc.get_func_or_throw(tok(), name).is_constructor()) {
 
+            const std::string path{receiver.path_text()};
+
             // e.g. 'point.at(1)' after 'dat point = point{}', the value hides
             // the type, 'point.at(...)' is what was written
-            if (tc.types().has(receiver.dotted_path())) {
-                throw_value_hides_type(receiver.tok(), receiver.dotted_path());
+            if (tc.types().has(path)) {
+                throw_value_hides_type(receiver.tok(), path);
             }
 
             throw compile_error{
@@ -2729,8 +2731,9 @@ class stmt_call final : public statement {
 
             const stmt_identifier& ident{*passed->ident};
             const storage_path target{place_storage(tc, *passed)};
+            const std::string name{ident.path_text()};
 
-            visit_effects_of(tc, i, ident.dotted_path(), target, visitor);
+            visit_effects_of(tc, i, name, target, visitor);
         }
     }
 

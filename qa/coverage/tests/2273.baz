@@ -1,0 +1,7 @@
+# a count past the end names its array as written
+type r { a, b }
+type h { x i8, rs r[3], v i8[2] }
+func main() {
+    var hs = h[2]
+    array_copy(hs[0].v, hs[1].v, 3)
+}

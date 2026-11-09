@@ -168,9 +168,11 @@ class stmt_builtin_io final : public statement {
 
         assert(written);
 
+        const std::string name{buffer_path().path_text()};
+
         visitor({
             .call_tk{tok()},
-            .name{buffer_path().dotted_path()},
+            .name{name},
             .storage{*written},
             .is_write{true},
         });
@@ -290,7 +292,7 @@ class stmt_builtin_io final : public statement {
                 const machine& x{tc.machine()};
 
                 assert_constant_index(buffer_info, start_arg->tok(),
-                                      buffer.ident->dotted_path(), *start, true,
+                                      buffer.ident->path_text(), *start, true,
                                       x.max_storage_bytes());
             }
 
@@ -317,7 +319,7 @@ class stmt_builtin_io final : public statement {
                         ? std::format("count {}", *count)
                         : std::format("a sector of {} elements", *count),
                 },
-                .array_name{buffer.ident->dotted_path()},
+                .array_name{buffer.ident->path_text()},
             },
             x.max_storage_bytes());
     }

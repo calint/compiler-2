@@ -1,0 +1,7 @@
+# a field that is no array is named as written up to it
+type r { a, b }
+type h { x i8, rs r[3], v i8[2] }
+func main() {
+    var hs = h[2]
+    var z = hs[1].x[0]
+}

@@ -1208,8 +1208,8 @@ class expr_arith final : public statement {
         const stmt_identifier* const ident{term.operand_path()};
         const bool is_named{ident != nullptr and not ident->is_indexed()};
 
-        const std::string_view converted{
-            is_named ? ident->dotted_path() : "...",
+        const std::string converted{
+            is_named ? ident->path_text() : "...",
         };
 
         // note: the list may be narrower than 'int', e.g. 'y + b' of an 'i8'

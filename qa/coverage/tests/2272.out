@@ -1,0 +1,4 @@
+
+2272.baz:6:21: index 2 is out of bounds for array 'hs[1].v' of size 2
+    var z = hs[1].v[2]
+                    ^

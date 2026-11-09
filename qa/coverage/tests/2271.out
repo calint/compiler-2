@@ -1,0 +1,4 @@
+
+2271.baz:6:19: 'hs[1].x' is not an array, it cannot be indexed
+    var z = hs[1].x[0]
+                  ^

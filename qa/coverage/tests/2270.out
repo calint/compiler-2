@@ -1,0 +1,4 @@
+
+2270.baz:6:11: array 'hs[1].v' must be indexed, or use 'array_length(hs[1].v)'
+    hs[1].v.a = 1
+          ^

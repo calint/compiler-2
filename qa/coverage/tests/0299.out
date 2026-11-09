@@ -1,4 +1,4 @@
 
-0299.baz:7:22: index 2 is out of bounds for array 'groups.values' of size 2
+0299.baz:7:22: index 2 is out of bounds for array 'groups[0].values' of size 2
     groups[0].values[2] = 1
                      ^

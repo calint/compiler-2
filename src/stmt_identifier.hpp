@@ -252,8 +252,9 @@ class stmt_identifier final : public statement {
     // one element of a walk of the path from its root, see 'for_each_prefix'
     struct prefix_step {
         const ident_elem* elem{};
-        // the path up to the element, e.g. 'w.rooms' of 'w.rooms[i].x'
-        std::string_view path;
+        // the path as written up to the element, without its index, e.g.
+        // 'w[1].rooms' of 'w[1].rooms[i].x'
+        std::string path;
         // what 'path' resolves to
         const ident_info* info{};
         bool is_last{};
@@ -390,7 +391,6 @@ class stmt_identifier final : public statement {
 
     std::vector<ident_elem> elems_;
     std::vector<token> elem_delims_tk_;
-    std::string dotted_path_;
     // of what the path names, not an array after an index
     array_shape shape_;
 
@@ -547,6 +547,24 @@ class stmt_identifier final : public statement {
     // class methods
     //
 
+    // the path as written up to the element at 'elem_index', without its
+    // index, as the messages about that index name the array, e.g. 'hs[1].v'
+    // of 'hs[1].v[2]'
+    [[nodiscard]] auto array_text(const size_t elem_index) const
+        -> std::string {
+
+        std::stringstream ss;
+
+        for (size_t i{}; i < elem_index; ++i) {
+            elems_.at(i).source_to(ss);
+            elem_delims_tk_.at(i).source_to(ss);
+        }
+
+        elems_.at(elem_index).name_tk.source_to(ss);
+
+        return one_line_source::of(ss.view());
+    }
+
     // a whole array, e.g. the 'a' of 'array_length(a)' or of 'foo a'
     auto assert_array() const -> void {
         if (shape_.is_array()) {
@@ -671,12 +689,6 @@ class stmt_identifier final : public statement {
     [[nodiscard]] auto constant_start_index(const toc& tc) const
         -> std::optional<int64_t>;
 
-    // the path without indexes as the messages name it, e.g. 'b.items' of
-    // 'b.items[i]', or a literal such as '3' or 'true'
-    [[nodiscard]] auto dotted_path() const -> std::string_view {
-        return dotted_path_;
-    }
-
     // the operand of what 'info' resolves this statement to, a computed
     // address goes into 'held'
     [[nodiscard]] auto get_lea_operand(toc& tc, const size_t indent,
@@ -796,7 +808,7 @@ class stmt_identifier final : public statement {
         if (info.is_const()) {
             throw compile_error{tok(),
                                 std::format("cannot assign to constant {}",
-                                            in_quotes(dotted_path_))};
+                                            in_quotes(path_text()))};
         }
 
         tc.record_use(storage(tc), use_kind::write);
@@ -931,7 +943,7 @@ class stmt_identifier final : public statement {
         }
 
         if (prefix.type_ref().has_field(field_tk.text())) {
-            throw_unindexed_array(src_loc_tk, dotted_path_);
+            throw_unindexed_array(src_loc_tk, path_text());
         }
 
         const std::string length_call{
@@ -940,7 +952,7 @@ class stmt_identifier final : public statement {
 
         throw compile_error{src_loc_tk,
                             std::format("array {} must be indexed, or use {}",
-                                        in_quotes(dotted_path_),
+                                        in_quotes(path_text()),
                                         in_quotes(length_call))};
     }
 
@@ -965,7 +977,7 @@ class stmt_identifier final : public statement {
         }
 
         const std::string method_path{
-            std::format("{}.{}", dotted_path_, name_tk.text()),
+            std::format("{}.{}", path_text(), name_tk.text()),
         };
 
         throw compile_error{name_tk, std::format("{} is a method, not an array",
@@ -980,8 +992,6 @@ class stmt_identifier final : public statement {
 
         const token& root_tk{tok()};
 
-        std::string path{root_tk.text()};
-
         ident_info info{
             tc.resolve_declared(root_tk, root_tk.text()),
         };
@@ -991,13 +1001,11 @@ class stmt_identifier final : public statement {
 
             if (elem.field != nullptr) {
                 info = info.field(*elem.field);
-                path.push_back('.');
-                path += elem.name_tk.text();
             }
 
             visit({
                 .elem{&elem},
-                .path{path},
+                .path{array_text(i)},
                 .info{&info},
                 .is_last{i == elems_.size() - 1},
             });
@@ -1281,7 +1289,7 @@ inline auto assert_not_whole_array(const statement& value) -> void {
 
     const stmt_identifier& path{*value.operand_path()};
 
-    throw_unindexed_array(path.tok(), path.dotted_path());
+    throw_unindexed_array(path.tok(), path.path_text());
 }
 
 // a whole array is not read as its first element

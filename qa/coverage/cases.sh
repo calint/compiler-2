@@ -7206,3 +7206,18 @@ SRC=2268 && COMPERR
 
 # a ';' after a field type is reported as unused, not as a type 'i8;'
 SRC=2269 && COMPERR
+
+# an unindexed array before a field is named as written
+SRC=2270 && COMPERR
+
+# a field that is no array is named as written up to it
+SRC=2271 && COMPERR
+
+# an index out of bounds names its array as written up to it
+SRC=2272 && COMPERR
+
+# a count past the end names its array as written
+SRC=2273 && COMPERR
+
+# an unindexed array operand is named as written
+SRC=2274 && COMPERR
