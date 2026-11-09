@@ -1,6 +1,5 @@
 #pragma once
 
-#include <cassert>
 #include <cstddef>
 #include <format>
 #include <string_view>
@@ -35,13 +34,6 @@ class machine_rv32i_fpga final : public machine_rv32i_bare_metal {
                        const source_files& files, const target_options& options)
         : machine_rv32i_bare_metal{
               builtins, files, options, 0, options.memory_size_bytes, true} {
-
-        // note: the '--memory' option accepts only a multiple of what a
-        //       'lui' loads, the end of memory
-
-        assert(memory_size_bytes() %
-                   (size_t{1} << assembler_rv32i::lui_shift) ==
-               0);
 
         if (memory_size_bytes() > max_memory_size_bytes_) {
             throw option_error{

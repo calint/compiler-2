@@ -1,6 +1,16 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] medium: round 226 (2026-11-10, UE rv32i target variants
+    simplification, UF inlining and limits bug hunt)
+    => done (2026-11-10): the bare-metal class comment says what the
+       targets supply, one-use accessors and statics are locals of their
+       routine (bare metal, linux), the assert that the end of memory is
+       what a 'lui' loads sits before the 'lui' and covers rv32i-qemu too;
+       listings and images equal over 2282 compiles on the four targets;
+       UF1 (inlining that doubles per level has no limit) and UF2 (the
+       compiler's stack overflows sooner than recorded) are in
+       'etc/todo.txt' for the user
 [x] medium: round 225 (2026-11-09, UD control flow simplification, UC
     scopes and names bug hunt)
     => done (2026-11-09): 'stmt_if::compile' checks each skipped branch by

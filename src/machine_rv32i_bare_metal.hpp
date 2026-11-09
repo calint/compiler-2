@@ -2,7 +2,6 @@
 
 #include <cassert>
 #include <cstddef>
-#include <cstdint>
 #include <format>
 #include <string_view>
 
@@ -11,19 +10,12 @@
 #include "machine_rv32i.hpp"
 
 // runs the flat image without an operating system, the targets supply the
-// memory size, the stack setup, the uart access, the sector routines where
-// there is a card and how the program ends
+// memory, the uart access, the sector routines where there is a card and how
+// the program ends
 class machine_rv32i_bare_metal : public machine_rv32i {
-    static constexpr int newline_{'\n'};
-    static constexpr int carriage_return_{'\r'};
-    // ctrl-d
-    static constexpr int end_of_transmission_{0x04};
     // the routines a program calls to read and write
     static constexpr std::string_view read_label_{".Lbaz_read"};
     static constexpr std::string_view write_label_{".Lbaz_write"};
-    // the comment prints the address as two 16 bit halves
-    static constexpr uint32_t half_bits_{16};
-    static constexpr uint32_t half_mask_{0xffff};
 
     // the memory of the device, the image is loaded at its start, the stack
     // grows down from its end
@@ -60,15 +52,29 @@ class machine_rv32i_bare_metal : public machine_rv32i {
     // no operating system sets up a stack, it grows down from the end of
     // memory
     auto emit_target_setup() -> void override {
+        // the comment prints the address as two 16 bit halves
+        constexpr size_t half_bits{16};
+        constexpr size_t half_mask{0xffff};
+
+        const size_t stack_top_address{
+            memory_start_address_ + memory_size_bytes_,
+        };
+
+        // note: the start of memory and its size, of the 'virt' machine or
+        //       of '--memory', are multiples of what a 'lui' loads
+
+        assert(stack_top_address % (size_t{1} << assembler_rv32i::lui_shift) ==
+               0);
+
         assembler_rv32i& output{assembler()};
 
         // 'std::format' has no digit separators so the halves are printed
         // apart
         output.comment(0, std::format("load stack pointer to {:#x}:{:04x}",
-                                      stack_top_address() >> half_bits_,
-                                      stack_top_address() & half_mask_));
+                                      stack_top_address >> half_bits,
+                                      stack_top_address & half_mask));
 
-        output.lui(0, "sp", stack_top_address() >> assembler_rv32i::lui_shift);
+        output.lui(0, "sp", stack_top_address >> assembler_rv32i::lui_shift);
         output.add_separator_newline();
     }
 
@@ -94,19 +100,19 @@ class machine_rv32i_bare_metal : public machine_rv32i {
         const assembler_rv32i& output{assembler()};
 
         const size_t memory_end_address{output.memory_end_address()};
-        const size_t memory_bytes{memory_size_bytes()};
+        const size_t stack_bytes{options().stack_size_bytes};
 
         // note: 'bare_metal_target' rejected a stack larger than the memory
-        assert(stack_size_bytes() <= memory_bytes);
+        assert(stack_bytes <= memory_size_bytes_);
 
-        if (memory_end_address <= memory_bytes - stack_size_bytes()) {
+        if (memory_end_address <= memory_size_bytes_ - stack_bytes) {
             return;
         }
 
-        throw unlocated_error{
-            std::format("code, data and variables use {} B and the stack {} B, "
-                        "which exceeds the {} B of device memory",
-                        memory_end_address, stack_size_bytes(), memory_bytes)};
+        throw unlocated_error{std::format(
+            "code, data and variables use {} B and the stack {} B, which "
+            "exceeds the {} B of device memory",
+            memory_end_address, stack_bytes, memory_size_bytes_)};
     }
 
     //
@@ -115,15 +121,6 @@ class machine_rv32i_bare_metal : public machine_rv32i {
 
     [[nodiscard]] auto memory_size_bytes() const -> size_t {
         return memory_size_bytes_;
-    }
-
-    [[nodiscard]] auto stack_size_bytes() const -> size_t {
-        return options().stack_size_bytes;
-    }
-
-    // the address after the memory, where the stack starts
-    [[nodiscard]] auto stack_top_address() const -> size_t {
-        return memory_start_address_ + memory_size_bytes_;
     }
 
   private:
@@ -152,6 +149,11 @@ class machine_rv32i_bare_metal : public machine_rv32i {
     // reads until a newline or the count is reached, 'a0' receives the count
     // and ctrl-d ends the read without being stored like at a terminal
     auto emit_read_routine() -> void {
+        constexpr int newline{'\n'};
+        constexpr int carriage_return{'\r'};
+        // ctrl-d
+        constexpr int end_of_transmission{0x04};
+
         assembler_rv32i& output{assembler()};
 
         output.label(0, read_label_);
@@ -162,17 +164,17 @@ class machine_rv32i_bare_metal : public machine_rv32i {
         output.beq(1, "a0", "a2", "4f");
         emit_receive_byte();
         // the uart has no end of input, so ctrl-d stands for it
-        output.li(1, "a5", end_of_transmission_);
+        output.li(1, "a5", end_of_transmission);
         output.beq(1, "a4", "a5", "4f");
         // terminals send a carriage return for enter where a tty reads newline
-        output.li(1, "a5", carriage_return_);
+        output.li(1, "a5", carriage_return);
         output.bne(1, "a4", "a5", "3f");
-        output.li(1, "a4", newline_);
+        output.li(1, "a4", newline);
         output.label(0, "3");
         output.sb(1, "a4", 0, "a6");
         output.addi(1, "a6", "a6", 1);
         output.addi(1, "a0", "a0", 1);
-        output.li(1, "a5", newline_);
+        output.li(1, "a5", newline);
         output.bne(1, "a4", "a5", "1b");
         output.label(0, "4");
         output.jr(1, "a7");

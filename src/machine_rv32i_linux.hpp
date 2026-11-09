@@ -21,12 +21,6 @@ class machine_rv32i_linux final : public machine_rv32i {
     static constexpr int syscall_llseek_{62};
     static constexpr int syscall_pread_{67};
     static constexpr int syscall_pwrite_{68};
-    // the part the system call sector routines share, and their data
-    static constexpr std::string_view sector_transfer_label_{
-        ".Lbaz_sector_transfer",
-    };
-    static constexpr std::string_view sd_card_label_{".Lbaz_sd_card"};
-    static constexpr std::string_view sd_card_name_label_{".Lbaz_sd_card_name"};
 
   public:
     using machine_rv32i::machine_rv32i;
@@ -64,6 +58,13 @@ class machine_rv32i_linux final : public machine_rv32i {
     auto emit_sector_routines(const bool read_used, const bool write_used)
         -> void override {
 
+        // the part the routines share, and their data
+        constexpr std::string_view sector_transfer_label{
+            ".Lbaz_sector_transfer",
+        };
+
+        constexpr std::string_view sd_card_label{".Lbaz_sd_card"};
+        constexpr std::string_view sd_card_name_label{".Lbaz_sd_card_name"};
         // 'AT_FDCWD', 'O_RDWR' and 'SEEK_END' of linux
         constexpr int current_directory{-100};
         constexpr int read_write{2};
@@ -95,7 +96,7 @@ class machine_rv32i_linux final : public machine_rv32i {
             // note: without the write entry the transfer follows at once
 
             if (write_used) {
-                output.j(1, sector_transfer_label_);
+                output.j(1, sector_transfer_label);
             }
         }
 
@@ -105,16 +106,16 @@ class machine_rv32i_linux final : public machine_rv32i {
         }
 
         // 'a5' holds the system call, 'a6' the return address
-        output.label(0, sector_transfer_label_);
+        output.label(0, sector_transfer_label);
         output.mv(1, "a6", "a7");
-        output.la(1, "a3", sd_card_label_);
+        output.la(1, "a3", sd_card_label);
         output.lw(1, "a4", descriptor_offset, "a3");
         output.bgez(1, "a4", "2f");
 
         save_call_registers(1, saved);
 
         output.li(1, "a0", current_directory);
-        output.la(1, "a1", sd_card_name_label_);
+        output.la(1, "a1", sd_card_name_label);
         output.li(1, "a2", read_write);
 
         // note: without 'O_CREAT' linux ignores the mode in 'a3', which keeps
@@ -168,10 +169,10 @@ class machine_rv32i_linux final : public machine_rv32i {
 
         output.switch_section(section::data);
         output.align(word_size_bytes_);
-        output.label(0, sd_card_label_);
+        output.label(0, sd_card_label);
         output.data(word_size_bytes_, sd_card_words);
         output.switch_section(section::rodata);
-        output.label(0, sd_card_name_label_);
+        output.label(0, sd_card_name_label);
         output.string_data(options().sd_card_file_name);
         output.data(1, name_end);
         output.switch_section(section::text);
