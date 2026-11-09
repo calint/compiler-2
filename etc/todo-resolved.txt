@@ -1,6 +1,20 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] medium: round 231 (2026-11-10, UO regression hunt of round 210 against
+    round 230, UP language documentation against the behavior)
+    => done (2026-11-10): the total of '--report=registers' counted the
+       registers the backend holds itself again (round 224 UA1 kept only the
+       listed allocations at the peak; '3 of 14' for '3 of 13'), reverted,
+       a test-cli check of the total on x86_64 and rv32i, README listing
+       regenerated; UO otherwise found only the intended differences over
+       about 926000 compiles (43542 programs: the tests, 16287 generated,
+       24987 mutations); tutorial and README: comparisons, 'and'/'or'
+       mixing and comparisons as operands, unreached statements, definition
+       before use, 'exit' codes, the escapes and the string continuation,
+       inlined recursion, 'read'/'write' constant counts, evaluation order,
+       sectors on x86_64, where a panic is printed, 'foo' names; UP4 (an
+       undocumented global 'var') waits for the user
 [x] medium: round 230 (2026-11-10, UM roome review, UN fpga emulator
     review)
     => done (2026-11-10): roome: commands tested in the order of their

@@ -18,6 +18,8 @@ func assert(ok bool) { if not ok exit(1) }
 
 let size = 4
 # a constant at the top level is visible to every function
+# a name is defined before it is used: a function, a type or a constant
+# above its first use, so two functions cannot call each other
 
 func constants_and_variables() {
     let answer = 42
@@ -52,8 +54,8 @@ func literals() {
 
     var letter = 'a'
     assert(letter == 97)
-    # a character literal is the byte value of the character, escapes such as
-    # '\n' and '\x41' are supported
+    # a character literal is the byte value of the character, the escapes are
+    # '\0' '\a' '\b' '\t' '\n' '\v' '\f' '\r' '\e' '\\' '\'' '\"' and '\x41'
 
     var neg = -dec
     var inv = ~dec
@@ -192,6 +194,10 @@ func booleans() {
     assert(not (no or x > 2))
     # 'and', 'or' and 'not' combine booleans, evaluation stops as soon as the
     # result is known
+    # comparisons bind looser than arithmetic, 'not' looser than comparisons;
+    # 'and' and 'or' are not mixed without parentheses: 'a or (b and c)'; a
+    # comparison is not an operand of another, 'a == (x < 2)' is an error,
+    # store it in a 'bool' first
 
     var n = int(yes)
     assert(n == 1)
@@ -233,10 +239,13 @@ func control_flow() {
     assert(sum == 1 + 2 + 4 + 5)
     # 'loop' repeats until 'break', 'continue' starts the next iteration
     # there is no 'while' or 'for'
+    # a statement after 'break', 'continue', 'return' or 'exit' in the same
+    # block is never reached and is a compile error
 
     if sum != 12 exit(3)
-    # 'exit' ends the program at once with an exit code, 0 is success, the
-    # 'assert' helper exits with 1 and here the code is never reached
+    # 'exit' ends the program at once with an exit code from 0 to 255, 0 is
+    # success, a constant outside is an error, a run-time one is taken modulo
+    # 256; the 'assert' helper exits with 1 and here the code is never reached
 }
 
 #
@@ -343,6 +352,8 @@ func strings() {
     var word = "baz\n"
     assert(array_length(word) == 4 and word[0] == 'b')
     # a string initializes an 'i8' array of its size
+    # a '\' at the end of a line continues the string on the next line without
+    # the line end, the indentation of that line is part of the string
 
     write(1, word, 2, 1)
     write(1, word, 1, 3)
@@ -370,9 +381,10 @@ func sectors() {
     # the array holds at least a sector and its element size divides 512
     # the fpga reads its card, x86_64 and rv32i the file 'sdcard.img', see
     # '--sdcard'; rv32i-qemu has no card
-    # the sector is an unsigned 32 bit number, on rv32i 'int' is 32 bits, so
-    # the sectors from 2^31 (1 TB) are written as negative numbers, e.g. -1
-    # is the sector 2^32 - 1
+    # the sector is an unsigned 32 bit number; a value of 32 bits or less is
+    # taken modulo 2^32, so on rv32i, where 'int' is 32 bits, the sectors from
+    # 2^31 (1 TB) are written as negative numbers, e.g. -1 is the sector
+    # 2^32 - 1; on x86_64 write them positive or as 'i32(-1)'
     # 'main' does not call this function because it needs the card
 }
 
@@ -681,6 +693,8 @@ func noinline factorial(n) res {
     res = n * partial
 }
 # 'noinline' emits the function once and calls it, which allows recursion
+# of any depth; an inlined function may call itself only when constant
+# arguments end the recursion within 64 calls
 # a call follows the same typing and aliasing rules as an inlined call
 
 func noinline add_all(a []) res {
@@ -845,8 +859,9 @@ func checks() {
     # catches negative indexes
     # '--checks=upper,lower,line' also reports the source line of the failure
     # a constant index out of bounds is always a compile error, so is a
-    # constant count of 'array_copy', 'arrays_equal' or 'foo' that is negative
-    # or passes the end of the array from the whole array or a constant index
+    # constant count of 'array_copy', 'arrays_equal', 'read', 'write' or 'foo'
+    # that is negative or passes the end of the array from the whole array or
+    # a constant index
 
     # 'overflow': signed overflow of '+', '-', '*' and unary '-' at the width
     # of the destination, a constant expression that overflows is a compile
@@ -875,6 +890,8 @@ func checks() {
 #   calls where the result and the arguments may share storage with each
 #   other are rejected, unless two arguments are both read-only; a global
 #   that the function uses counts as an argument
+#   'f(a[i], h(i))' with 'h' writing 'i' is rejected too: evaluation is left
+#   to right and a later call may change what an earlier argument read
 
     var p = point{1, 2}
     p = {2, 1}

@@ -319,6 +319,12 @@ CLI_REGISTER_REPORT() {
     grep -Fq "register use at the peak: 0 of" out
     grep -Eq '^; +0  main$' out
     grep -Fq "global initializers" out && exit 1
+    # the total leaves out the registers the backend holds itself, 13 of the
+    # 14 scratch registers on x86_64 and 29 of 30 on rv32i here
+    "$BIN" --report=registers 0402.baz >out 2>err
+    grep -Fq "register use at the peak: 3 of 13 registers live" out
+    "$BIN" --target=rv32i --report=registers 0001.baz >out 2>err
+    grep -Fq "register use at the peak: 4 of 29 registers live" out
     echo ok
 }
 

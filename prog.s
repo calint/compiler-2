@@ -3483,7 +3483,7 @@ vars.end:
 ;           max body vars size: 1045 B
 ;                 instructions: 899
 ;
-; register use at the peak: 6 of 14 registers live, 2 named by instructions
+; register use at the peak: 6 of 13 registers live, 2 named by instructions
 ;
 ;   held  frame, registers (allocated at)
 ;      6  print_num (noinline body)
