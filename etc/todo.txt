@@ -64,13 +64,6 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
     file '/dev/fd/0' keeps its name in the messages and is '0' in the
     listing; accept and document, or resolve only up to the last '..'
     (names then depend on the spelling again)
-[ ] easy: user decision (own prose): the README calls the result "return"
-    ('methods can have a "return"', '"return" must be assigned on every
-    path') next to the keyword 'return'; the tutorial and the messages say
-    "result" (round 123 AQ9)
-[ ] easy: low priority: 'id(true)' does not deduce 'T = bool' while 'let kb
-    = true' then 'id(kb)' does (round 128 BC): README 2.10.2 counts every
-    literal as telling nothing; option: let 'true' and 'false' tell 'bool'
 [ ] easy: user decision: no LICENSE at the root and the README names none
     (only fpga-emulator/LICENSE, Apache-2.0); choose one, a LICENSE file and
     one README line (round 130 BJ11)

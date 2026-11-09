@@ -1,6 +1,16 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: user decision (own prose): the README calls the result "return"
+    ('methods can have a "return"', '"return" must be assigned on every
+    path') next to the keyword 'return'; the tutorial and the messages say
+    "result" (round 123 AQ9)
+    => done (2026-11-09, round 201, user): the sample says "result"
+[x] easy: low priority: 'id(true)' does not deduce 'T = bool' while 'let kb
+    = true' then 'id(kb)' does (round 128 BC): README 2.10.2 counts every
+    literal as telling nothing; option: let 'true' and 'false' tell 'bool'
+    => done (2026-11-09, round 200, user): 'true' and 'false' tell 'bool'
+       ('value_type'), test 1908 runs 'pick(true)'
 [-] easy: user decision: third-party pages are tracked:
     etc/notes/x86-64-reference.pdf, 'etc/notes/CS107 Guide to x86-64.html',
     'etc/notes/NASM x64 Assembly.html', 'etc/from/Hello, world!.html',

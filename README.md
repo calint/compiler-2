@@ -281,7 +281,7 @@ func mut point.fooz() {
 func point.sum() res {
     res = self.x + self.y
 }
-# methods can have a "return"
+# methods can have a result
 
 func bar(arg mut) {
     if arg == 0 return
@@ -299,7 +299,7 @@ func baz(arg) res {
 func inv(i i32) res i32 {
     res = ~i
 }
-# type of "return" and arguments can be defined, use `int` for default integer
+# type of the result and arguments can be defined, use `int` for default integer
 # type of target platform
 
 func faz(arg mut i32[]) {
@@ -356,7 +356,7 @@ let maybe = -1
 
 # non-inlined functions are called with the same type and aliasing rules as
 # inlined functions
-# arguments and "return" are references to memory locations
+# arguments and the result are references to memory locations
 # an array argument gets a body for each array length
 
 func noinline print_num(num) {
@@ -409,7 +409,7 @@ func noinline factorial(n) res {
     res = n * partial
 }
 # a non-inlined function can call itself
-# `return` leaves early, "return" must be assigned on every path
+# `return` leaves early, the result must be assigned on every path
 
 func main() {
     var answer = 0
@@ -493,7 +493,7 @@ func main() {
     # initializing from an array copies it, `==` compares same size arrays
 
 #   arr[ix] = ~inv(arr[ix - 1])
-#   rejected because "return" and the argument may share storage
+#   rejected because the result and the argument may share storage
 
     ix = 3
     var tmp = ~inv(arr[ix - 1])
