@@ -1,1 +1,1 @@
-error: code, data and variables use 133431376 B and the stack 65536 B, which exceeds the 132120576 B of device memory
+error: code, data and variables use 133431360 B and the stack 65536 B, which exceeds the 132120576 B of device memory

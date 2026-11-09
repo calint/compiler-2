@@ -2,6 +2,7 @@
 
 #include <cassert>
 #include <cstddef>
+#include <cstdint>
 #include <format>
 #include <string_view>
 
@@ -20,8 +21,13 @@ class machine_rv32i_bare_metal : public machine_rv32i {
     // the routines a program calls to read and write
     static constexpr std::string_view read_label_{".Lbaz_read"};
     static constexpr std::string_view write_label_{".Lbaz_write"};
+    // the comment prints the address as two 16 bit halves
+    static constexpr uint32_t half_bits_{16};
+    static constexpr uint32_t half_mask_{0xffff};
 
-    // the memory of the device, the image is loaded at its start
+    // the memory of the device, the image is loaded at its start, the stack
+    // grows down from its end
+    size_t memory_start_address_{};
     size_t memory_size_bytes_{};
 
   public:
@@ -30,10 +36,12 @@ class machine_rv32i_bare_metal : public machine_rv32i {
     machine_rv32i_bare_metal(const builtin_type_set& builtins,
                              const source_files& files,
                              const target_options& options,
+                             const size_t memory_start_address_in,
                              const size_t memory_size_bytes_in,
                              const bool has_sd_card)
         : machine_rv32i{builtins, files, options,
                         bare_metal_target(has_sd_card)},
+          memory_start_address_{memory_start_address_in},
           memory_size_bytes_{memory_size_bytes_in} {
 
         // note: the options are checked before the source is parsed, so an
@@ -66,6 +74,33 @@ class machine_rv32i_bare_metal : public machine_rv32i {
 
         call_io_routine(indent, function == target_call::read ? read_label_
                                                               : write_label_);
+    }
+
+    // the stack is the 'stack_size_bytes' below the end of memory
+    auto emit_stack_limit_load(const size_t indent, const std::string_view reg)
+        -> void override {
+
+        // note: the constructor rejected a stack larger than the memory
+        assert(stack_size_bytes() <= memory_size_bytes());
+
+        assembler_rv32i& output{assembler()};
+
+        output.li(indent, reg, stack_top_address() - stack_size_bytes());
+    }
+
+    // no operating system sets up a stack, it grows down from the end of
+    // memory
+    auto emit_target_setup() -> void override {
+        assembler_rv32i& output{assembler()};
+
+        // 'std::format' has no digit separators so the halves are printed
+        // apart
+        output.comment(0, std::format("load stack pointer to {:#x}:{:04x}",
+                                      stack_top_address() >> half_bits_,
+                                      stack_top_address() & half_mask_));
+
+        output.lui(0, "sp", stack_top_address() >> assembler_rv32i::lui_shift);
+        output.add_separator_newline();
     }
 
     // only the routines the program calls are emitted
@@ -115,6 +150,11 @@ class machine_rv32i_bare_metal : public machine_rv32i {
 
     [[nodiscard]] auto stack_size_bytes() const -> size_t {
         return options().stack_size_bytes;
+    }
+
+    // the address after the memory, where the stack starts
+    [[nodiscard]] auto stack_top_address() const -> size_t {
+        return memory_start_address_ + memory_size_bytes_;
     }
 
   private:

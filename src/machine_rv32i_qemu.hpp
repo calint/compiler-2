@@ -1,11 +1,9 @@
 #pragma once
 
 #include <cstddef>
-#include <format>
 #include <string_view>
 
 #include "assembler_rv32i.hpp"
-#include "compile_error.hpp"
 #include "machine_rv32i_bare_metal.hpp"
 
 // runs the flat image without an operating system on the qemu 'virt' machine,
@@ -22,6 +20,8 @@ class machine_rv32i_qemu final : public machine_rv32i_bare_metal {
     // the finisher takes the exit code in the upper 16 bits
     static constexpr int finisher_code_shift_{16};
     static constexpr int finisher_pass_{0x5555};
+    // the 'virt' machine loads the image at the start of its ram
+    static constexpr size_t ram_start_address_{0x8000'0000};
     static constexpr size_t ram_size_bytes_{0x7e0'0000};
     // note: 126 MiB, the 128 MiB of the 'virt' machine without '-m' less the
     //       2 MiB that qemu keeps after the image for its device tree, fixed,
@@ -30,8 +30,9 @@ class machine_rv32i_qemu final : public machine_rv32i_bare_metal {
   public:
     machine_rv32i_qemu(const builtin_type_set& builtins,
                        const source_files& files, const target_options& options)
-        : machine_rv32i_bare_metal{builtins, files, options, ram_size_bytes_,
-                                   false} {}
+        : machine_rv32i_bare_metal{builtins,           files,           options,
+                                   ram_start_address_, ram_size_bytes_, false} {
+    }
 
   protected:
     //
@@ -50,29 +51,6 @@ class machine_rv32i_qemu final : public machine_rv32i_bare_metal {
         // qemu shuts down after the store completes
         output.label(0, "1");
         output.j(1, "1b");
-    }
-
-    // the stack follows the variables, see 'emit_target_setup'
-    auto emit_stack_limit_load(const size_t indent, const std::string_view reg)
-        -> void override {
-
-        assembler_rv32i& output{assembler()};
-
-        output.la(indent, reg, variables_end_label_);
-    }
-
-    // no operating system sets up a stack, it follows the variables
-    auto emit_target_setup() -> void override {
-        assembler_rv32i& output{assembler()};
-
-        output.comment(0, std::format("load stack pointer to {} + {} B",
-                                      in_quotes(variables_end_label_),
-                                      stack_size_bytes()));
-
-        output.la(0, "sp", variables_end_label_);
-        output.li(0, "t0", stack_size_bytes());
-        output.add(0, "sp", "sp", "t0");
-        output.add_separator_newline();
     }
 
   private:

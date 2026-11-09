@@ -2,7 +2,6 @@
 
 #include <cassert>
 #include <cstddef>
-#include <cstdint>
 #include <format>
 #include <string_view>
 
@@ -30,15 +29,12 @@ class machine_rv32i_fpga final : public machine_rv32i_bare_metal {
     // the uart and the sd card are in the last 'lui' step of the address
     // space, the memory ends below it
     static constexpr size_t max_memory_size_bytes_{0xffff'f000};
-    // the comment prints the address as two 16 bit halves
-    static constexpr uint32_t half_bits_{16};
-    static constexpr uint32_t half_mask_{0xffff};
 
   public:
     machine_rv32i_fpga(const builtin_type_set& builtins,
                        const source_files& files, const target_options& options)
-        : machine_rv32i_bare_metal{builtins, files, options,
-                                   options.memory_size_bytes, true} {
+        : machine_rv32i_bare_metal{
+              builtins, files, options, 0, options.memory_size_bytes, true} {
 
         // note: the '--memory' option accepts only a multiple of what a
         //       'lui' loads, the end of memory
@@ -109,33 +105,6 @@ class machine_rv32i_fpga final : public machine_rv32i_bare_metal {
             emit_wait_while_busy(output, "3");
             output.jr(1, "a7");
         }
-    }
-
-    // the stack is the 'stack_size_bytes' below the end of memory
-    auto emit_stack_limit_load(const size_t indent, const std::string_view reg)
-        -> void override {
-
-        // note: the constructor rejected a stack larger than the memory
-        assert(stack_size_bytes() <= memory_size_bytes());
-
-        assembler_rv32i& output{assembler()};
-
-        output.li(indent, reg, memory_size_bytes() - stack_size_bytes());
-    }
-
-    // no operating system sets up a stack, it grows down from the end of
-    // memory
-    auto emit_target_setup() -> void override {
-        assembler_rv32i& output{assembler()};
-
-        // 'std::format' has no digit separators so the halves are printed
-        // apart
-        output.comment(0, std::format("load stack pointer to {:#x}:{:04x}",
-                                      memory_size_bytes() >> half_bits_,
-                                      memory_size_bytes() & half_mask_));
-
-        output.lui(0, "sp", memory_size_bytes() >> assembler_rv32i::lui_shift);
-        output.add_separator_newline();
     }
 
   private:

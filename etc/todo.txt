@@ -6,11 +6,6 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
 --------------------------------------------------------------------------------
 1. clean up
 --------------------------------------------------------------------------------
-[p] medium: user decision (2026-11-07, round 166 EP): rv32i-qemu could put
-    its stack below the end of RAM like rv32i-fpga (memory start
-    0x8000'0000 for qemu, 0 for the fpga), so 'emit_target_setup' and
-    'emit_stack_limit_load' move to 'machine_rv32i_bare_metal' and both
-    qemu overrides go; changes the qemu layout and listings
 [ ] easy: low priority (round 190 GJ): an argument of a named, not
     generic, parameter type of a generic call is parsed without its type
     before "cannot deduce" ('g3(point, 1)')

@@ -1,6 +1,15 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] medium: user decision (2026-11-07, round 166 EP): rv32i-qemu could put
+    its stack below the end of RAM like rv32i-fpga (memory start
+    0x8000'0000 for qemu, 0 for the fpga), so 'emit_target_setup' and
+    'emit_stack_limit_load' move to 'machine_rv32i_bare_metal' and both
+    qemu overrides go; changes the qemu layout and listings
+    => done (2026-11-09, round 197): 'machine_rv32i_bare_metal' takes the
+       memory start address and sets up the stack below the end of memory
+       for both targets, the qemu overrides are gone; a qemu program is 16 B
+       smaller, fpga listings are unchanged
 [-] medium: user decision (2026-11-08, round 179 FI): generic type base
     chains ('type dI<k> = dI-1<k>') take cubic memory: 'generic_trace::inside'
     copies every outer frame into each level and each instance and method

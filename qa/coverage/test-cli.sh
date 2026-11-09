@@ -82,7 +82,7 @@ CLI_TARGETS() {
     "$BIN" --target=rv32i-qemu --stack=4096 0418.baz >gen.s 2>err
     [[ ! -s err ]]
     [[ $(grep -Ec '^[[:space:]]*ecall$' gen.s) -eq 0 ]]
-    grep -Eq '^[[:space:]]*li t0, 4096$' gen.s
+    grep -Fxq '# load stack pointer to 0x87e0:0000' gen.s
     rm -f 0418-rv32i.bin 0418-rv32i-qemu.bin
     echo ok
 }
