@@ -41,13 +41,22 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
     'a"}" i8[n]'), where a plain function says "'x"' is not a valid name";
     the body skip ('tokenizer::skip_to_unnested') ends the word at the '}'
     inside the quotes
+    => not done (2026-11-09, round 207): the skip is in 'tokenizer', below
+       'toc', so it cannot throw the "not a valid name" error of the parse
+       without moving that message down a layer or a callback; making a
+       quote end a word changes the tokens of every source
 [ ] easy: low priority (round 205 HC): 'var r = i8{5}' says "expected a
     statement" at '5' ('{5}' is a block after 'var r = i8'), 'var r = i8{}'
     is a declaration and an empty block; 'exit(i8{5})' and 'r = i8{5}' treat
     'i8{5}' as a literal ('is_bare_builtin_type' in 'stmt_def_var.hpp'); see
     the item of a block on the line after a declaration
+    => not done (2026-11-09, round 207): taking 'i8{5}' as a literal after
+       'var r =' decides the same '{' as the item of a block after a
+       declaration, which the user left as it is (2026-10-27)
 [ ] easy: low priority (round 205 HB): 'exit(-1)' and 'exit(511)' exit with
     255 like a 'bounds' panic (the low 8 bits)
+    => user decision: reject a constant 'exit' code outside 0..255 (a
+       run-time one still wraps), or document the low 8 bits
 [ ] easy: low priority: a block on the line after a declaration whose
     initializer ends with a type is parsed as a literal of that type (bug
     hunt round 9 W2-1): 'var a = i8[2]' then '{ f() }' on the next lines is
