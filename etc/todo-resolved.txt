@@ -1,6 +1,16 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] medium: round 215 (2026-11-09, TI user types simplification, TJ input
+    and output bug hunt)
+    => done (2026-11-09): a user type is named by its constructor ('type()'
+       and 'set_name' removed, 'type_fields::add_to' takes no name);
+       'generic_type_use::parse' looks up the generic in a step of its own;
+       listings equal over 2278 compiles; TJ found nothing on the four
+       targets: run-time and constant ranges of every width, sectors past
+       4 GiB, registers around the syscall and uart routines, the uart
+       bytes; noted, not changed: 'sector_read' into 'res' does not count
+       as setting it (conservative, 'read' may fill less)
 [x] medium: round 214 (2026-11-09, TG generics bug hunt, TH 'main.cpp' and
     error reporting simplification; user: TF's call fuzzer into 'qa/fuzz')
     => done (2026-11-09): a name of a method body that hides a constant of

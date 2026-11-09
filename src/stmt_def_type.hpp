@@ -96,9 +96,7 @@ class type_fields final {
         }
     }
 
-    auto add_to(type& tp, const token& name_tk) const -> void {
-        tp.set_name(name_tk.text());
-
+    auto add_to(type& tp) const -> void {
         // note: the constructor checked the names
 
         for (const stmt_def_type_field& fld : fields_) {
@@ -176,8 +174,11 @@ struct generic_type_use {
 
         generic_arg_tokens args{read_generic_args(tz, name_tk)};
 
-        assert_arg_count(name_tk, tc.generics().get_type(name_tk.text()),
-                         args.arg_tks);
+        const generic_type_info& generic{
+            tc.generics().get_type(name_tk.text()),
+        };
+
+        assert_arg_count(name_tk, generic, args.arg_tks);
 
         return {
             .equals_tk{equals_tk},
@@ -492,7 +493,7 @@ class type_instantiator final {
         const type_fields fields{tc, reparse.tz(), alias_tk,
                                  generic.src_loc_tk};
 
-        fields.add_to(tp, alias_tk);
+        fields.add_to(tp);
     }
 };
 
@@ -508,7 +509,7 @@ class stmt_def_type final : public statement {
     stmt_def_type(toc& tc, const token src_loc_tk, const token name_tk,
                   std::variant<type_fields, generic_type_use> definition)
         : statement{src_loc_tk}, name_tk_{name_tk},
-          definition_{std::move(definition)} {
+          definition_{std::move(definition)}, type_{name_tk.text()} {
 
         if (const generic_type_use* const generic{
                 std::get_if<generic_type_use>(&definition_),
@@ -518,7 +519,7 @@ class stmt_def_type final : public statement {
             return;
         }
 
-        std::get<type_fields>(definition_).add_to(type_, name_tk_);
+        std::get<type_fields>(definition_).add_to(type_);
 
         tc.add_type(name_tk_, type_);
     }

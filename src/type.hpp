@@ -251,7 +251,8 @@ class type final {
         : name_{name}, size_bytes_{size_bytes},
           alignment_{std::max(size_bytes, size_t{1})}, kind_{kind} {}
 
-    type() = default;
+    // a user type, its fields added by 'add_field'
+    explicit type(const std::string_view name) : name_{name} {}
 
     // fields are placed at offsets aligned to their type and the size is
     // rounded up so that array elements stay aligned; 'array_count' is empty
@@ -388,8 +389,6 @@ class type final {
 
         return gaps;
     }
-
-    auto set_name(const std::string_view name) -> void { name_ = name; }
 
     [[nodiscard]] auto size_bits() const -> size_t {
         return size_bytes_ * std::numeric_limits<unsigned char>::digits;
