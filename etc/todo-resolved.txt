@@ -1,6 +1,23 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: user decision (2026-11-07, round 154 DV): test 2036 nests 20
+    noinline calls in a list, about 45 s with '--versions=nested', which
+    'test-versions.sh' runs (about 2 minutes with 1698); 14 levels take
+    about 1.5 s but guard less of the default compile time
+    => done (2026-11-09, round 198, user): 14 levels, under 1 s with
+       '--versions=nested'
+[-] easy: user decision (2026-11-07, round 162 EK): add the control flow
+    generators '/tmp/r162-ek-work/flowx.py' (structured programs against a
+    model, far jumps with a narrowed reach build) and 'borrow2.py' (far
+    jumps that borrow 't0') to 'qa/fuzz'; they are in '/tmp' until then;
+    round 174 FA: both need a narrowed-reach build (FA used macros on
+    'assembler_rv32i::reaches', in '/tmp/r174-fa-work'; a hidden debug option
+    is the other way), and 'flowx.py' with 'FX_PAD' must skip or cap programs
+    larger than rv32i-fpga memory
+    => discarded (2026-11-09, user): 'test-far-jumps.sh' covers far jumps;
+       a narrowed-reach build would add an option or a patched build only
+       for fuzzing
 [x] medium: user decision (2026-11-07, round 166 EP): rv32i-qemu could put
     its stack below the end of RAM like rv32i-fpga (memory start
     0x8000'0000 for qemu, 0 for the fpga), so 'emit_target_setup' and

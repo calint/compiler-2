@@ -1385,7 +1385,8 @@ their options and with '--checks=noub'), 1 instruction less on x86_64, and 10
 of the 7086 of roome on rv32i-fpga (decided 2026-11-07). '--versions=nested'
 measures every choice again, also of a list with calls, which round 152
 compiled in place without versions, for the smaller code at that compile
-time: tests 1698 and 2036 take about 12 s and 45 s with it.
+time: test 1698 takes about 12 s with it, and 2036 (14 nested calls) under
+1 s, doubling per level.
 
 The padding of an instance is zeroed gap by gap or as the whole instance by a
 gap count that each backend measured once ('machine::zero_padding'): an
