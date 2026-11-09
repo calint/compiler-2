@@ -1,6 +1,14 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] medium: round 233 (2026-11-10, UQ partial '--checks' sets bug hunt,
+    UR compile time of round 210 against round 232)
+    => done (2026-11-10): nothing found; UQ ran the fuzzers' programs and
+       the tests under 50 check sets on x86_64 and rv32i-fpga (each check
+       catches only its class at the same line, turning one off changes
+       nothing else, the listings change only where the check applies); UR
+       measured equal instruction counts within 0.4 % and linear growth for
+       long 'if' chains
 [x] easy: round 232 (2026-11-10): 'compare-listings.sh' compiles its second
     option set with '--report=registers', so a refactor that changes the
     report is caught (round 224 UA1 shows 2578 differing compiles against
