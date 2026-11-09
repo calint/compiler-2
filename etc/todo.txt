@@ -37,11 +37,6 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
        or roome puts it on the next line; rejected: an error for the
        ambiguity (forbids a block after a declaration), '{}' required before
        a block (against the omitted '{}' style), no bare blocks (a feature)
-[ ] easy: low priority: the compile time of a value of a huge type grows
-    with its bytes where it is a result or a constructor on rv32i (bug hunt
-    round 1 K3.1): 'machine_rv32i::zero' takes about 0.5 ns per byte, a
-    field of 64 MiB 33 ms, of 256 MiB 115 ms; x86_64 does not grow (2 ms);
-    '{}' alone does not grow (2026-11-06)
 [p] easy: low priority: 'source_files::contains' compares a path with every
     loaded file by 'std::filesystem::equivalent' (two stats each), so 2000
     included files take 2.8 s against 0.15 s before round 116 (round 117

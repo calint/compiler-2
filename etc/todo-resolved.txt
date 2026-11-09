@@ -1,6 +1,16 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[-] easy: low priority: the compile time of a value of a huge type grows
+    with its bytes where it is a result or a constructor on rv32i (bug hunt
+    round 1 K3.1): 'machine_rv32i::zero' takes about 0.5 ns per byte, a
+    field of 64 MiB 33 ms, of 256 MiB 115 ms; x86_64 does not grow (2 ms);
+    '{}' alone does not grow (2026-11-06)
+    => discarded (2026-11-09, round 202, user): the code is a loop; the
+       time is 'aligned_part_count', which jumps ahead only for words and
+       steps once per access for a start known to byte alignment; jumping
+       ahead for 'plan_loop_start(starts).width' took 175 ms to 2 ms at
+       256 MiB with equal listings (+9/-8 lines), not wanted
 [x] easy: user decision (own prose): the README calls the result "return"
     ('methods can have a "return"', '"return" must be assigned on every
     path') next to the keyword 'return'; the tutorial and the messages say
