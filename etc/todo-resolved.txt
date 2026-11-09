@@ -1,6 +1,22 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[-] easy: compile time quadratic in table sizes (round 179 FI), far above
+    real programs: 'data_table::get_dat' (128000 dats 9.9 s),
+    'data_table::add_constant' (64000 strings 6.0 s), 'assembler::summary_of'
+    and 'noinline_worklist::add_once'/'contains' (128000 noinline functions
+    27 s); an 'unordered_map' index next to each vector would make them
+    linear
+    => discarded (2026-11-09, user): an index next to each vector, kept in
+       sync on 'resize_constants' and on dropped versions, complicates the
+       code for sizes no real program reaches
+[-] easy: line of a run-time io range (round 181 FL): 'write(1,\n a,\n 3,\n
+    s)' panics at the line of the start 's' while the constant version is
+    rejected at the count '3'; one 'check_bounds' covers the start's lower
+    bound and the range, naming both right means splitting the check (more
+    code and instructions), left as is
+    => discarded (2026-11-09, user): splitting 'check_bounds' costs code
+       and emitted instructions for a line number
 [x] easy: low priority (round 190 GJ): a call deduced only from its
     result does not check surplus arguments before "cannot deduce": 'var r
     = g4(1, 2)' for 'func g4<T type>(b) res T' says "cannot deduce 'T'"

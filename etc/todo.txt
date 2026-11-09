@@ -28,17 +28,6 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
 [ ] easy: low priority (round 190 GJ): an argument of a named, not
     generic, parameter type of a generic call is parsed without its type
     before "cannot deduce" ('g3(point, 1)')
-[ ] easy: line of a run-time io range (round 181 FL): 'write(1,\n a,\n 3,\n
-    s)' panics at the line of the start 's' while the constant version is
-    rejected at the count '3'; one 'check_bounds' covers the start's lower
-    bound and the range, naming both right means splitting the check (more
-    code and instructions), left as is
-[ ] easy: compile time quadratic in table sizes (round 179 FI), far above
-    real programs: 'data_table::get_dat' (128000 dats 9.9 s),
-    'data_table::add_constant' (64000 strings 6.0 s), 'assembler::summary_of'
-    and 'noinline_worklist::add_once'/'contains' (128000 noinline functions
-    27 s); an 'unordered_map' index next to each vector would make them
-    linear
 [p] easy: user decision (2026-11-07, round 162 EK): add the control flow
     generators '/tmp/r162-ek-work/flowx.py' (structured programs against a
     model, far jumps with a narrowed reach build) and 'borrow2.py' (far
