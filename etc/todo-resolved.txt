@@ -1,6 +1,11 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 237 (2026-11-10, UY 'program', 'source_files',
+    'statement', 'stmt_block' simplification)
+    => done (2026-11-10): the call frame added to an error of a noinline
+       body is one helper 'with_call_frame' instead of two copies; the
+       include path built in named steps; listings unchanged
 [x] medium: round 236 (2026-11-10, UW message paths, round 234 US1)
     => done (2026-11-10): messages name a path as written, with its indexes
        ('hs[1].v', not 'hs.v' next to 'array_length(hs[1].v)'); the

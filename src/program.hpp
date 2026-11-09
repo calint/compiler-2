@@ -439,11 +439,13 @@ class program final {
             std::make_unique<stmt_include>(include_tk, file.tz),
         };
 
+        const std::filesystem::path includer{
+            files_.get().name(file.parsed.file_ix),
+        };
+
         // relative to the directory of the file with the 'include'
         const std::filesystem::path joined{
-            std::filesystem::path{files_.get().name(file.parsed.file_ix)}
-                    .parent_path() /
-                include->file_name(),
+            includer.parent_path() / include->file_name(),
         };
 
         const std::filesystem::path path{include_path(joined)};
@@ -501,15 +503,9 @@ class program final {
                 continue;
             }
 
-            // an error in the body reports the call that asked for it
-            try {
+            with_call_frame(body, [&] -> void {
                 body.func->check_noinline_body(tc, body.array_lengths);
-            } catch (compile_error& e) {
-                e.add_call_frame(body.call_tk, body.call_source,
-                                 body.func->instance_name());
-
-                throw;
-            }
+            });
         }
     }
 
@@ -525,15 +521,9 @@ class program final {
                 tc.noinline_worklist().emitted_body_at(i),
             };
 
-            // an error in the body reports the call that asked for it
-            try {
+            with_call_frame(body, [&] -> void {
                 body.func->emit_noinline_body(tc, body.array_lengths);
-            } catch (compile_error& e) {
-                e.add_call_frame(body.call_tk, body.call_source,
-                                 body.func->instance_name());
-
-                throw;
-            }
+            });
         }
     }
 
@@ -574,5 +564,19 @@ class program final {
         };
 
         return resolved.lexically_proximate(std::filesystem::current_path());
+    }
+
+    // an error in the body reports the call that asked for it
+    static auto with_call_frame(const noinline_body& body,
+                                const std::function_ref<void()> run) -> void {
+
+        try {
+            run();
+        } catch (compile_error& e) {
+            e.add_call_frame(body.call_tk, body.call_source,
+                             body.func->instance_name());
+
+            throw;
+        }
     }
 };
