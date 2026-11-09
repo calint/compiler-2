@@ -528,7 +528,7 @@ class scope final {
 
         if (is_loop()) {
             if (name == reserved_names::foo_counter) {
-                return "counter";
+                return "index";
             }
 
             return name == reserved_names::foo_length ? "length" : "element";
@@ -2388,8 +2388,11 @@ class definition_checks final {
                             where(existing_tk))};
         }
 
+        // note: a method is named with its type, e.g. 't.x'
+        const std::string_view kind{name.contains('.') ? "method" : "function"};
+
         throw compile_error{src_loc_tk,
-                            std::format("function {} already defined at {}",
+                            std::format("{} {} already defined at {}", kind,
                                         in_quotes(name), where(existing_tk))};
     }
 

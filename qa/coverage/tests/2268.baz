@@ -1,0 +1,5 @@
+# a method defined twice is named a method
+type t { a i8 }
+func t.x() {}
+func t.x() {}
+func main() {}

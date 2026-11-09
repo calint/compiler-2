@@ -1,6 +1,19 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] medium: round 225 (2026-11-09, UD control flow simplification, UC
+    scopes and names bug hunt)
+    => done (2026-11-09): 'stmt_if::compile' checks each skipped branch by
+       itself, as 'trace_assignment' traces it ('check_skipped_after' and
+       'reaches_else' removed); a method defined twice is named a method,
+       test 2268; the 'i' and 'n' of a 'foo' are its index and its length
+       in every message (1227, 2255); not done (UC): 'zz<i8>()' of an
+       unknown 'zz' stays "'zz' not found" ('zz<' may start a comparison),
+       a 'dat' defined again is called a variable ('var_info' does not
+       record a 'dat'), a generic parameter declared twice has no position
+       ('generics.hpp' has no source locations); UC found no wrong
+       resolution: about 200 probes and 1800 asan name-swap mutations;
+       round 226 UF1 and UF2 recorded in 'etc/todo.txt'
 [x] medium: round 224 (2026-11-09, UA small modules simplification, UB
     constants and folding bug hunt)
     => done (2026-11-09): with the overflow check a folded list reports an

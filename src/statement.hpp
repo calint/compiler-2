@@ -512,7 +512,7 @@ class statement {
 
         assert(info.read_only_why() == read_only_cause::foo_length);
 
-        return std::format(", {} is the size of the array of 'foo'",
+        return std::format(", {} is the length of the array of 'foo'",
                            in_quotes(root));
     }
 

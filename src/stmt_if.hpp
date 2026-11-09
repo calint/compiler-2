@@ -146,12 +146,22 @@ class stmt_if final : public statement {
         const std::string label_after_if{toc::end_label(if_label)};
 
         toc::path_merge paths{tc};
-        bool reaches_else{true};
         // a branch starts where the condition before it is false, the first
         // at the 'if'
         bool is_start_reachable{tc.is_reachable()};
+        // the branches after one whose condition is true and the 'else' never
+        // run; they hold the compile rules too, see 'toc::check_skipped'
+        bool is_chain_ended{};
 
         for (size_t i{}; i < branches_.size(); ++i) {
+            if (is_chain_ended) {
+                tc.check_skipped([&] -> void {
+                    std::ignore = compile_branch_at(tc, indent, i, if_label);
+                });
+
+                continue;
+            }
+
             paths.begin_path(is_start_reachable);
 
             const branch_condition condition{
@@ -172,19 +182,19 @@ class stmt_if final : public statement {
                 paths.join_path();
             }
 
-            if (ends_chain(known)) {
-                reaches_else = false;
-
-                check_skipped_after(tc, indent, i, if_label);
-
-                break;
-            }
+            is_chain_ended = ends_chain(known);
         }
 
         machine& x{tc.machine()};
 
-        // an empty 'else' is the path that skips every branch
-        if (reaches_else) {
+        if (is_chain_ended) {
+            if (else_) {
+                tc.check_skipped([&] -> void {
+                    else_->code.compile(tc, indent, destination{});
+                });
+            }
+        } else {
+            // an empty 'else' is the path that skips every branch
             paths.begin_path(is_start_reachable);
 
             if (const stmt_block* const code{else_code()}) {
@@ -236,24 +246,6 @@ class stmt_if final : public statement {
     }
 
   private:
-    // the branches after 'branch_index', whose condition is true, and the
-    // 'else' never run; they hold the compile rules too, see
-    // 'toc::check_skipped'
-    auto check_skipped_after(toc& tc, const size_t indent,
-                             const size_t branch_index,
-                             const std::string_view if_label) const -> void {
-
-        tc.check_skipped([&] -> void {
-            for (size_t i{branch_index + 1}; i < branches_.size(); ++i) {
-                std::ignore = compile_branch_at(tc, indent, i, if_label);
-            }
-
-            if (else_) {
-                else_->code.compile(tc, indent, destination{});
-            }
-        });
-    }
-
     // the branch at 'branch_index': its condition at its label, its code and
     // the jump past the other branches; what it found of its condition
     [[nodiscard]] auto compile_branch_at(toc& tc, const size_t indent,

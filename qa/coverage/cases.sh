@@ -7200,3 +7200,6 @@ SRC=2266 && COMPERR
 # --checks=noub: an element that does not fit is reported before the
 # overflow of its list, as without the check
 SRC=2267 && OPTS="--checks=noub" COMPERR
+
+# a method defined twice is named a method
+SRC=2268 && COMPERR

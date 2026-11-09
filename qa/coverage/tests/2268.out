@@ -1,0 +1,4 @@
+
+2268.baz:4:6: method 't.x' already defined at 3:6
+func t.x() {}
+     ^

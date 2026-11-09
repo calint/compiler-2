@@ -6,6 +6,16 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
 --------------------------------------------------------------------------------
 1. clean up
 --------------------------------------------------------------------------------
+[ ] medium: user decision (round 226 UF1): inlined calls that double per
+    level have no limit, each limit bounds only one path (64 calls of a
+    name, 256 scopes), e.g. 'func r(v mut, n)' calling 'r(v, n - 1)' twice
+    with 'r(v, 60)' expands 2^60 bodies: about 10 GB in 12 s, then killed;
+    'r(v, 17)' in 'main' writes 718 MB of assembly in 7.6 s; a chain
+    'f0..f16' each calling the next twice does the same; proposal: count
+    the inlined bodies under a function body in 'compile_state' (put back
+    by dry runs and dropped versions) and throw 'inlining_limit' past a
+    measured bound (about 65536 bodies, about 6 s), README chapter 8 as
+    another place where acceptance depends on inlining
 [ ] medium: user decision (round 224 UB1): a typed 'let' passed as a
     generic constant loses its type, 'let K = i8(127)' and 'type B =
     buf<K>' make 'N + 1' 128 at the default type inside the instance where
@@ -45,6 +55,10 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
     default 8 MiB stack; the '-O3' build compiles them in 18 s and the
     deepest chain the limits allow (127 x 124) in 45 s with 8 MiB, and
     crashes with 6 MiB (2026-11-06)
+    => worse (2026-11-09, round 226 UF2): the '-O3' build with 8 MiB
+       crashes at 40 functions x 124 levels, 126 x 40 and 50 x 100; 127 x
+       124 is now rejected by the scope limit, 126 x 124 needs 8 to 32 MiB
+       and 52 s; every test compiles with 896 KiB (0885 crashes at 768 KiB)
     => fix: run the compile on a thread with a fixed stack sized for the
        bound (64 MiB, headroom for the asan build); a test that crashes at
        HEAD; rejected: a third limit on the compile depth (a new concept,
