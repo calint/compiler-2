@@ -1035,8 +1035,9 @@ class assembler_rv32i final : public assembler {
             return false;
         }
 
-        // note: device registers are addressed from 'zero', reading one need
-        //       not give what was written
+        // note: the fpga devices are addressed from 'zero', reading one need
+        //       not give what was written; the qemu ones are reached by byte
+        //       or by a store alone, which this rule does not match
 
         return stored->code == op::sw and loaded->code == op::lw and
                stored->rs1 != zero_register_ and stored->rs1 == loaded->rs1 and

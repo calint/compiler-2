@@ -509,8 +509,9 @@ class machine_x86_64 final : public machine {
                 sized_register("rcx", size_byte_));
     }
 
-    // an immediate store is one instruction without a register while a copy
-    // needs a load and a store for each qword
+    // up to 'immediate_store_threshold_bytes_' as immediates, larger bytes
+    // copied from read-only data with 'rep movsb', or as immediates when one
+    // of its registers is held, e.g. 'rsi' by an enclosing 'array_copy'
     auto store_bytes(
         const token& src_loc_tk, const size_t indent,
         const std::string_view bytes, const operand& dst,
@@ -518,7 +519,9 @@ class machine_x86_64 final : public machine {
         const std::function_ref<std::string(std::string_view)> add_constant)
         -> void override {
 
-        if (bytes.size() > immediate_store_threshold_bytes_) {
+        if (bytes.size() > immediate_store_threshold_bytes_ and
+            not is_any_held(bulk_registers_)) {
+
             const std::string label{add_constant(bytes)};
 
             // rip-relative label addresses need no address register
@@ -533,8 +536,14 @@ class machine_x86_64 final : public machine {
             return;
         }
 
-        comment(src_loc_tk, indent, "size <= {} B, use immediates",
-                immediate_store_threshold_bytes_);
+        if (bytes.size() > immediate_store_threshold_bytes_) {
+            comment(src_loc_tk, indent,
+                    "size > {} B, 'rep movsb' registers held, use immediates",
+                    immediate_store_threshold_bytes_);
+        } else {
+            comment(src_loc_tk, indent, "size <= {} B, use immediates",
+                    immediate_store_threshold_bytes_);
+        }
 
         for_each_part(
             bytes.size(), size_qword_,
@@ -1058,22 +1067,20 @@ class machine_x86_64 final : public machine {
     }
 
     auto restore_call_registers(const size_t indent,
-                                const std::span<const size_t> saved)
+                                const std::span<const std::string_view> saved)
         -> void override {
 
-        for (const size_t index : saved | std::views::reverse) {
-            assembler_.instruction(indent, op::pop,
-                                   register_names_.at(index).qword);
+        for (const std::string_view name : saved | std::views::reverse) {
+            assembler_.instruction(indent, op::pop, name);
         }
     }
 
     auto save_call_registers(const size_t indent,
-                             const std::span<const size_t> saved)
+                             const std::span<const std::string_view> saved)
         -> void override {
 
-        for (const size_t index : saved) {
-            assembler_.instruction(indent, op::push,
-                                   register_names_.at(index).qword);
+        for (const std::string_view name : saved) {
+            assembler_.instruction(indent, op::push, name);
         }
     }
 
@@ -1083,9 +1090,9 @@ class machine_x86_64 final : public machine {
     //
 
     [[nodiscard]] auto register_display_name(const size_t index) const
-        -> std::string override {
+        -> std::string_view override {
 
-        return std::string{register_names_.at(index).qword};
+        return register_names_.at(index).qword;
     }
 
     //
@@ -1547,6 +1554,15 @@ class machine_x86_64 final : public machine {
         });
     }
 
+    [[nodiscard]] auto
+    is_any_held(const std::span<const std::string_view> named) const -> bool {
+
+        return std::ranges::any_of(named,
+                                   [&](const std::string_view name) -> bool {
+                                       return is_register_unavailable(name);
+                                   });
+    }
+
     auto lea(const token& src_loc_tk, const size_t indent, const operand& dst,
              const operand& address) -> void {
 
@@ -1715,14 +1731,8 @@ class machine_x86_64 final : public machine {
             return false;
         }
 
-        const bool is_held{
-            std::ranges::any_of(named,
-                                [&](const std::string_view name) -> bool {
-                                    return is_register_unavailable(name);
-                                }),
-        };
-
-        return not is_held or part_instructions > 2 * rep_form_instructions_;
+        return not is_any_held(named) or
+               part_instructions > 2 * rep_form_instructions_;
     }
 
     // a negative value is out of bounds

@@ -1,6 +1,17 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] medium: round 209 (2026-11-09, design review RA, RB, RC)
+    => done (2026-11-09): x86_64 'store_bytes' stores immediates when a
+       'rep movsb' register is held (a string in an inlined count of
+       'array_copy' was rejected on x86_64 only), test 2261; the saved
+       registers of a call pass as names ('register_names_of' and two rv32i
+       wrappers removed); 'stmt_def_func::dry_run_in_frame'; two wrong
+       comments; listings equal over 2274 compiles
+    => open for the user: '--bin' rejected on x86_64, the x86_64 line report
+       on the stack (no '.bss'), bare-metal read/write as target routines,
+       the stack limit in 'target_description', the shared comment
+       overloads of the assemblers
 [x] easy: low priority (round 205 HB): 'exit(-1)' and 'exit(511)' exit with
     255 like a 'bounds' panic (the low 8 bits)
     => user decision: reject a constant 'exit' code outside 0..255 (a

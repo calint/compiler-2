@@ -530,13 +530,7 @@ class stmt_def_func final : public statement {
     // of the call, checked here through an address
     auto check_body(toc& tc) const -> void {
         try {
-            tc.dry_run(
-                [&] -> void {
-                    const toc::scope_entry body{tc, frame_scope({})};
-
-                    std::ignore = compile_in_frame(tc, 0, {});
-                },
-                machine::discarded_code::body);
+            dry_run_in_frame(tc, {});
         } catch (compile_error& e) {
             // the frames of what made the instance, see 'func_instance::trace'
             if (instance_) {
@@ -556,13 +550,7 @@ class stmt_def_func final : public statement {
         assert(not is_inlined());
         assert(array_lengths.size() == array_param_count());
 
-        tc.dry_run(
-            [&] -> void {
-                const toc::scope_entry body{tc, frame_scope(array_lengths)};
-
-                std::ignore = compile_in_frame(tc, 0, array_lengths);
-            },
-            machine::discarded_code::body);
+        dry_run_in_frame(tc, array_lengths);
     }
 
     // the body in place at the call 'call_tk', under labels named by the
@@ -647,6 +635,21 @@ class stmt_def_func final : public statement {
         if (tc.is_reachable()) {
             x.exit(token{}, 1, operand::imm(0, tc.builtins().default_type()));
         }
+    }
+
+    // the body compiled in a frame of its own for 'array_lengths', nothing
+    // kept
+    auto dry_run_in_frame(toc& tc,
+                          const std::span<const size_t> array_lengths) const
+        -> void {
+
+        tc.dry_run(
+            [&] -> void {
+                const toc::scope_entry body{tc, frame_scope(array_lengths)};
+
+                std::ignore = compile_in_frame(tc, 0, array_lengths);
+            },
+            machine::discarded_code::body);
     }
 
     // the body of a noinline function for one set of array lengths, after
@@ -1004,7 +1007,7 @@ class stmt_def_func final : public statement {
 
         add_constants(tc, 0);
 
-        // note: 'parse_result' only keeps a result with a name
+        // note: 'func_result::read' only keeps a result with a name
         assert(not result_ or result_->name_tk.is_word());
 
         add_signature_vars(tc, 0, names_only{}, {});

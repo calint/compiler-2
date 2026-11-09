@@ -1365,18 +1365,39 @@ class machine_rv32i : public machine {
         return assembler_rv32i::register_number(name);
     }
 
+    // 'saved' as given to 'save_call_registers'
     auto restore_call_registers(const size_t indent,
-                                const std::span<const size_t> saved)
+                                const std::span<const std::string_view> saved)
         -> void override {
 
-        restore_saved_registers(indent, register_names_of(saved));
+        const size_t stack_bytes{saved_registers_size_bytes(saved.size())};
+
+        for (const auto [index, name] : std::views::enumerate(saved)) {
+            assembler_.lw(indent, name,
+                          static_cast<size_t>(index) * word_size_bytes_, "sp");
+        }
+
+        if (stack_bytes != 0) {
+            assembler_.addi(indent, "sp", "sp", stack_bytes);
+        }
     }
 
+    // an aligned stack area is allocated only when a register is saved
     auto save_call_registers(const size_t indent,
-                             const std::span<const size_t> saved)
+                             const std::span<const std::string_view> saved)
         -> void override {
 
-        save_registers(indent, register_names_of(saved));
+        const size_t stack_bytes{saved_registers_size_bytes(saved.size())};
+
+        if (stack_bytes != 0) {
+            assembler_.addi(indent, "sp", "sp",
+                            -static_cast<int64_t>(stack_bytes));
+        }
+
+        for (const auto [index, name] : std::views::enumerate(saved)) {
+            assembler_.sw(indent, name,
+                          static_cast<size_t>(index) * word_size_bytes_, "sp");
+        }
     }
 
     //
@@ -1422,40 +1443,6 @@ class machine_rv32i : public machine {
 
         assembler_.call(indent, label, "a7");
         mark_used(label);
-    }
-
-    // 'saved' as given to 'save_registers'
-    auto restore_saved_registers(const size_t indent,
-                                 const std::span<const std::string_view> saved)
-        -> void {
-
-        const size_t stack_bytes{saved_registers_size_bytes(saved.size())};
-
-        for (const auto [index, name] : std::views::enumerate(saved)) {
-            assembler_.lw(indent, name,
-                          static_cast<size_t>(index) * word_size_bytes_, "sp");
-        }
-
-        if (stack_bytes != 0) {
-            assembler_.addi(indent, "sp", "sp", stack_bytes);
-        }
-    }
-
-    // an aligned stack area is allocated only when a register is saved
-    auto save_registers(const size_t indent,
-                        const std::span<const std::string_view> saved) -> void {
-
-        const size_t stack_bytes{saved_registers_size_bytes(saved.size())};
-
-        if (stack_bytes != 0) {
-            assembler_.addi(indent, "sp", "sp",
-                            -static_cast<int64_t>(stack_bytes));
-        }
-
-        for (const auto [index, name] : std::views::enumerate(saved)) {
-            assembler_.sw(indent, name,
-                          static_cast<size_t>(index) * word_size_bytes_, "sp");
-        }
     }
 
     //
@@ -1509,9 +1496,9 @@ class machine_rv32i : public machine {
     //
 
     [[nodiscard]] auto register_display_name(const size_t index) const
-        -> std::string override {
+        -> std::string_view override {
 
-        return std::string{assembler_rv32i::register_names.at(index)};
+        return assembler_rv32i::register_names.at(index);
     }
 
     //
@@ -1682,7 +1669,7 @@ class machine_rv32i : public machine {
         assert(not source.uses_register("sp"));
 
         // save caller values before argument setup overwrites 'a0' or 'a1'
-        save_registers(indent, saved);
+        save_call_registers(indent, saved);
 
         load_helper_arguments(src_loc_tk, indent, dst, source);
 
@@ -1699,7 +1686,7 @@ class machine_rv32i : public machine {
         // the destination is not restored so it can retain the result
         if (dst.is_register()) {
             copy_value(src_loc_tk, indent, dst, result);
-            restore_saved_registers(indent, saved);
+            restore_call_registers(indent, saved);
             return;
         }
 
@@ -1707,7 +1694,7 @@ class machine_rv32i : public machine {
             preserved_helper_result(src_loc_tk, indent, result, saved),
         };
 
-        restore_saved_registers(indent, saved);
+        restore_call_registers(indent, saved);
 
         // memory destinations need their original address registers back
         copy_value(src_loc_tk, indent, dst, kept);
@@ -4302,21 +4289,6 @@ class machine_rv32i : public machine {
                             address.type_ref());
     }
 
-    // the names of the register indexes 'indexes'
-    [[nodiscard]] static auto
-    register_names_of(const std::span<const size_t> indexes)
-        -> std::vector<std::string_view> {
-
-        std::vector<std::string_view> names;
-        names.reserve(indexes.size());
-
-        for (const size_t index : indexes) {
-            names.push_back(assembler_rv32i::register_names.at(index));
-        }
-
-        return names;
-    }
-
     // a narrow register gets high bits from a wider or differently extended
     // source
     [[nodiscard]] static auto register_needs_extension(const type& dst_type,
@@ -4341,7 +4313,8 @@ class machine_rv32i : public machine {
                 (extension_differs and src_size_bytes == dst_size_bytes));
     }
 
-    // the aligned stack area 'save_registers' allocates for 'count' registers
+    // the aligned stack area 'save_call_registers' allocates for 'count'
+    // registers
     [[nodiscard]] static auto saved_registers_size_bytes(const size_t count)
         -> size_t {
 

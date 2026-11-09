@@ -953,7 +953,11 @@ class machine {
 
         // the callee may use every register but the variables base, so only
         // values live at the call need saving
-        const std::vector<size_t> saved{registers_saved_by_call()};
+        std::vector<std::string_view> saved;
+
+        for (const size_t index : registers_saved_by_call()) {
+            saved.push_back(register_display_name(index));
+        }
 
         state_.trace.record_noinline_call(src_loc_tk, name, saved.size());
 
@@ -1725,13 +1729,15 @@ class machine {
         -> std::optional<size_t> = 0;
 
     // puts back the registers 'save_call_registers' saved
-    virtual auto restore_call_registers(const size_t indent,
-                                        const std::span<const size_t> saved)
+    virtual auto
+    restore_call_registers(const size_t indent,
+                           const std::span<const std::string_view> saved)
         -> void = 0;
 
-    // saves the registers of the indexes 'saved' before a call
-    virtual auto save_call_registers(const size_t indent,
-                                     const std::span<const size_t> saved)
+    // saves the registers 'saved' before a call
+    virtual auto
+    save_call_registers(const size_t indent,
+                        const std::span<const std::string_view> saved)
         -> void = 0;
 
     //
@@ -2042,7 +2048,7 @@ class machine {
                               const std::span<const std::string_view> clobbered,
                               const std::function_ref<void()> emit) -> void {
 
-        std::vector<size_t> saved;
+        std::vector<std::string_view> saved;
 
         for (const std::string_view name : clobbered) {
             const std::optional<size_t> index{register_index_of(name)};
@@ -2053,7 +2059,7 @@ class machine {
             if (std::ranges::contains(state_.registers.allocations(), *index,
                                       &register_pool::allocation::index)) {
 
-                saved.push_back(*index);
+                saved.push_back(register_display_name(*index));
             }
         }
 
@@ -2213,7 +2219,7 @@ class machine {
 
     // the name of a register in the output, for the use of registers
     [[nodiscard]] virtual auto register_display_name(size_t index) const
-        -> std::string = 0;
+        -> std::string_view = 0;
 
     //
     // class methods

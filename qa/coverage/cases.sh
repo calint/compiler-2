@@ -7178,3 +7178,6 @@ SRC=2259 && COMPERR
 
 # a constant exit code outside 0 to 255 is rejected
 SRC=2260 && COMPERR
+
+# a long string stored while 'array_copy' holds the 'rep movsb' registers
+SRC=2261 && EXP=0 && RUN

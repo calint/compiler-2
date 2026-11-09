@@ -111,7 +111,7 @@ class machine_rv32i_linux final : public machine_rv32i {
         output.lw(1, "a4", descriptor_offset, "a3");
         output.bgez(1, "a4", "2f");
 
-        save_registers(1, saved);
+        save_call_registers(1, saved);
 
         output.li(1, "a0", current_directory);
         output.la(1, "a1", sd_card_name_label_);
@@ -149,7 +149,7 @@ class machine_rv32i_linux final : public machine_rv32i {
         output.label(0, "1");
         output.addi(1, "a4", "a4", -1);
         output.sw(1, "a4", last_offset, "a3");
-        restore_saved_registers(1, saved);
+        restore_call_registers(1, saved);
         output.label(0, "2");
         output.lw(1, "a4", last_offset, "a3");
         output.bltu(1, "a4", "a0", sd_card_failure_.label);
