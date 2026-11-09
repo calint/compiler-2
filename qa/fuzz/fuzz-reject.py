@@ -30,8 +30,6 @@ import tempfile
 
 import fuzzlib as fl
 
-INT_TYPES = ["i8", "i16", "i32"]
-
 
 class Program:
     # lines of a program, the lines of the mistake are marked

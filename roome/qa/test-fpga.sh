@@ -7,8 +7,7 @@
 # the device defaults to /dev/ttyUSB1, as in scripts/fpga-connect-serial.sh
 # requires python3 with pyserial
 set -eu
-DIR="$(cd "$(dirname "$0")" && pwd)"
-cd "$DIR"
+cd "$(dirname "$0")"
 
 if ! python3 -c "import serial" 2>/dev/null; then
     echo "roome: the test needs pyserial, install the package 'python-pyserial'"
@@ -35,10 +34,10 @@ if [ ! -e "$DEVICE" ]; then
 fi
 
 # kept when the test fails so the output can be inspected
-WORK="$DIR/fpga-work"
+WORK=fpga-work
 mkdir -p "$WORK"
 
-python3 - "$DEVICE" "$DIR/roome.in" "$WORK/fpga.out" "$DIR/roome.out" <<'EOF'
+python3 - "$DEVICE" roome.in "$WORK/fpga.out" roome.out <<'EOF'
 import signal
 import sys
 import serial
@@ -161,8 +160,8 @@ with open(output_path, "wb") as f:
     f.write(received)
 EOF
 
-if ! diff -u "$DIR/roome.out" "$WORK/fpga.out"; then
-    echo "roome: fpga output differs from $DIR/roome.out, the output is in $WORK/fpga.out"
+if ! diff -u roome.out "$WORK/fpga.out"; then
+    echo "roome: fpga output differs from roome/qa/roome.out, the output is in roome/qa/$WORK/fpga.out"
     exit 1
 fi
 

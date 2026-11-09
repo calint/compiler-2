@@ -6,6 +6,14 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
 --------------------------------------------------------------------------------
 1. clean up
 --------------------------------------------------------------------------------
+[ ] medium: user decision (round 229 UL1): 'p.get() < p.bump()' is
+    rejected ("'p' may be written by the call of 'bump' in a later
+    operand"), also 'rd(p.x) < bumpx(p.x)' and 'add2(p.get(), p.bump())',
+    while the earlier call has read 'p' when it returns; skipping the reads
+    inside the calls of an earlier operand ('ub_order.hpp',
+    'assert_not_read_before' through 'visit_operand_reads') would accept
+    them, but an inlined result can be the storage of its argument, so it
+    needs a proof first
 [ ] medium: user decision (round 226 UF1): inlined calls that double per
     level have no limit, each limit bounds only one path (64 calls of a
     name, 256 scopes), e.g. 'func r(v mut, n)' calling 'r(v, n - 1)' twice

@@ -24,7 +24,7 @@ import fuzzlib as fl
 ROOME = os.path.join(fl.ROOT, "roome", "src", "main.baz")
 SESSION = os.path.join(fl.ROOT, "roome", "qa", "roome.in")
 BUILD = os.path.join(fl.HERE, "build")
-X86 = os.path.join(BUILD, "roome-x86")
+X86 = os.path.join(BUILD, "roome-x86.x")
 IMAGE = os.path.join(BUILD, "roome-fpga.bin")
 RV32I = os.path.join(BUILD, "roome-rv32i.elf")
 # the size of the sd card images of a session, as in 'roome/qa/test.sh'
@@ -36,17 +36,14 @@ NASTY = [b"\x00", b"\x1b[A", b"\x1b[D", b"\x1b[3~", b"\x7f", b"\x08", b"\xff",
 def build():
     os.makedirs(BUILD, exist_ok=True)
     options = ["--checks=noub,line", "--vars=0x20000"]
-    asm = X86 + ".s"
+    asm = os.path.join(BUILD, "roome-x86.s")
     c = fl.compile_source(fl.COMPILER, ROOME, ["--target=x86_64"] + options, asm)
     if c.returncode:
         sys.exit("roome does not compile: " + c.stderr)
-    obj = X86 + ".o"
-    if fl.run(["nasm", "-w+error", "-f", "elf64", asm, "-o", obj], 120,
-              file_size=1 << 30).returncode:
-        sys.exit("nasm failed")
-    if fl.run(["ld", "-s", "-T", os.path.join(fl.ROOT, "baz.ld"), obj, "-o", X86],
-              60).returncode:
-        sys.exit("ld failed")
+    exe, problem = fl.assemble_x86(asm, BUILD, "roome-x86")
+    if problem:
+        sys.exit(f"roome for x86_64: {problem[0]} {problem[1]}")
+    assert exe == X86
     c = fl.compile_source(fl.COMPILER, ROOME,
                           ["--target=rv32i-fpga", "--bin=" + IMAGE] + options,
                           os.devnull)

@@ -1,6 +1,21 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] medium: round 229 (2026-11-10, UK test and lint scripts review, UL
+    feature combinations bug hunt)
+    => done (2026-11-10): a check of 'CLI_VERSIONS' that could not fail
+       ('! grep' under 'set -e') can; 'compare-listings.sh' rejects a build
+       path that is not an executable (both builds failing alike reported
+       0 differences); 'check-error-tests.py' and 'check-messages.py' fail
+       when they find nothing to check; 'format-source.sh' and the roome
+       scripts change to their own directory; 'cppcheck.sh' keeps the exit
+       code through 'tee'; 'fuzz-roome.py' assembles with
+       'fuzzlib.assemble_x86'; 'fuzz-reduce-roome.py' finds its directory
+       and runs each session with an sd card; a test-cli case cleans its
+       directory on failure; UL found no wrong code in about 6000 programs
+       of combined features built three ways on three targets; UL1 (an
+       earlier call's reads count against a later write) is a user
+       decision in 'etc/todo.txt'
 [x] medium: round 228 (2026-11-10, UI no-UB layer simplification, UJ fuzz
     campaign)
     => done (2026-11-10): two vector locals without '{}', the comment of

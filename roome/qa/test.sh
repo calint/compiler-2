@@ -8,20 +8,19 @@
 # the output of rv32i-fpga is kept in actual.out, copying it to roome.out
 # updates the expected output
 set -eu
-DIR="$(cd "$(dirname "$0")" && pwd)"
-cd "$DIR/../.."
+cd "$(dirname "$0")"
 
-EMULATOR=fpga-emulator/osqa
+EMULATOR=../../fpga-emulator/osqa
 # rebuilt when missing or older than a source
-if [[ ! -x $EMULATOR || -n "$(find fpga-emulator/src -newer "$EMULATOR" -print -quit)" ]]; then
-    fpga-emulator/make.sh
+if [[ ! -x $EMULATOR || -n "$(find ../../fpga-emulator/src -newer "$EMULATOR" -print -quit)" ]]; then
+    ../../fpga-emulator/make.sh
 fi
 
 WORK="$(mktemp -d)"
 trap 'rm -rf "$WORK"' EXIT
 IMAGE=$WORK/roome-rv32i-fpga.bin
 
-./baz --target=rv32i-fpga --vars=0x20000 --checks=noub,line --bin="$IMAGE" "$DIR/../src/main.baz" >"$WORK/roome.s"
+../../baz --target=rv32i-fpga --vars=0x20000 --checks=noub,line --bin="$IMAGE" ../src/main.baz >"$WORK/roome.s"
 
 # the sd card images of the sector commands, 1 MB of zeros, one per target so
 # that both start alike
@@ -30,7 +29,7 @@ truncate -s 1M "$WORK/sdcard" "$WORK/sdcard-x86_64"
 # the input must end with 'go home', at the end of input the emulator would
 # make the program wait for input forever, so the run is limited by a timeout
 status=0
-timeout 10 "$EMULATOR" "$IMAGE" "$WORK/sdcard" <"$DIR/roome.in" >"$WORK/diff" || status=$?
+timeout 10 "$EMULATOR" "$IMAGE" "$WORK/sdcard" <roome.in >"$WORK/diff" || status=$?
 
 if [[ $status -eq 124 ]]; then
     echo "roome: rv32i-fpga timeout, does roome.in end with 'go home'?"
@@ -41,15 +40,15 @@ if [[ $status -ne 0 ]]; then
     exit 1
 fi
 
-cp "$WORK/diff" "$DIR/actual.out"
+cp "$WORK/diff" actual.out
 
 if [[ ${1:-} == update ]]; then
-    cp "$WORK/diff" "$DIR/roome.out"
-    echo "roome: updated $DIR/roome.out"
+    cp "$WORK/diff" roome.out
+    echo "roome: updated roome/qa/roome.out"
 fi
 
-if ! diff -u "$DIR/roome.out" "$WORK/diff"; then
-    echo "roome: rv32i-fpga output differs from $DIR/roome.out, the output is in $DIR/actual.out"
+if ! diff -u roome.out "$WORK/diff"; then
+    echo "roome: rv32i-fpga output differs from roome/qa/roome.out, the output is in roome/qa/actual.out"
     exit 1
 fi
 
@@ -57,13 +56,13 @@ echo "roome: rv32i-fpga ok"
 
 # the native build catches what rv32i-fpga does not, such as running out of
 # registers
-./baz --target=x86_64 --vars=0x20000 --checks=noub,line --sdcard="$WORK/sdcard-x86_64" \
-    "$DIR/../src/main.baz" >"$WORK/roome-x86_64.s"
+../../baz --target=x86_64 --vars=0x20000 --checks=noub,line --sdcard="$WORK/sdcard-x86_64" \
+    ../src/main.baz >"$WORK/roome-x86_64.s"
 nasm -w+error -f elf64 "$WORK/roome-x86_64.s" -o "$WORK/roome-x86_64.o"
-ld -s -T baz.ld -o "$WORK/roome-x86_64" "$WORK/roome-x86_64.o"
+ld -s -T ../../baz.ld -o "$WORK/roome-x86_64" "$WORK/roome-x86_64.o"
 
 status=0
-timeout 10 "$WORK/roome-x86_64" <"$DIR/roome.in" >"$WORK/x86_64.out" || status=$?
+timeout 10 "$WORK/roome-x86_64" <roome.in >"$WORK/x86_64.out" || status=$?
 
 if [[ $status -eq 124 ]]; then
     echo "roome: x86_64 timeout, does roome.in end with 'go home'?"
@@ -74,8 +73,8 @@ if [[ $status -ne 0 ]]; then
     exit 1
 fi
 
-if ! diff -u "$DIR/roome.out" "$WORK/x86_64.out"; then
-    echo "roome: x86_64 output differs from $DIR/roome.out"
+if ! diff -u roome.out "$WORK/x86_64.out"; then
+    echo "roome: x86_64 output differs from roome/qa/roome.out"
     exit 1
 fi
 

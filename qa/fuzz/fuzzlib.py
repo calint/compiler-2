@@ -252,9 +252,9 @@ def _compile_source(compiler, path, options, assembly_path, cwd):
                           timed_out)
 
 
-def assemble_x86(assembly, work):
-    obj = os.path.join(work, "f.o")
-    exe = os.path.join(work, "f.x")
+def assemble_x86(assembly, work, name="f"):
+    obj = os.path.join(work, name + ".o")
+    exe = os.path.join(work, name + ".x")
     a = run(["nasm", "-w+error", "-f", "elf64", assembly, "-o", obj], 60,
             file_size=1 << 30)
     # a tool that is stopped by a limit says nothing about the code

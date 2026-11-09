@@ -14,7 +14,10 @@ cd "$SCRIPT_DIR/tests"
 BIN="$SCRIPT_DIR/../../baz"
 export LLVM_PROFILE_FILE="$SCRIPT_DIR/cli-%p.profraw"
 
-# runs a command that must exit with 1, e.g. a rejected compile
+# the programs that a case links and runs, also removed when a case fails
+WORK=$(mktemp -d)
+trap 'rm -rf -- "$WORK"' EXIT
+
 # runs the compiler for target '$1' with the other arguments, an rv32i target
 # writes its image to 'gen-rv32i.bin', x86_64 takes no '--bin'
 baz_at() {
@@ -27,6 +30,7 @@ baz_at() {
     fi
 }
 
+# runs a command that must exit with 1, e.g. a rejected compile
 expect_exit_1() {
     local exit_code=0
     "$@" || exit_code=$?
@@ -179,14 +183,12 @@ CLI_JUMP_OPTIMIZATIONS() {
     optimized_count=$(grep -Ec '^[[:space:]]*j[a-z]+ ' out)
     [[ $((raw_count - optimized_count)) -eq 4 ]]
     # identical exit status checks that branch removal preserves the result
-    local temp_dir assembly
-    temp_dir=$(mktemp -d /tmp/baz-jump-cli.XXXXXX)
+    local assembly
     for assembly in gen.s out; do
-        nasm -w+error -f elf64 "$assembly" -o "$temp_dir/test.o"
-        ld -s -T "$SCRIPT_DIR/../../baz.ld" -o "$temp_dir/test" "$temp_dir/test.o"
-        "$temp_dir/test"
+        nasm -w+error -f elf64 "$assembly" -o "$WORK/test.o"
+        ld -s -T "$SCRIPT_DIR/../../baz.ld" -o "$WORK/test" "$WORK/test.o"
+        "$WORK/test"
     done
-    rm -rf "$temp_dir"
     echo "ok (jumps to next: 3, inverted: 1; jumps $raw_count -> $optimized_count; both exit 0)"
 }
 
@@ -805,7 +807,7 @@ CLI_VERSIONS() {
     grep -Fq "kept the first of two versions, inside a version" gen.s
     "$BIN" --target=rv32i-fpga --bin=gen-rv32i.bin --versions=nested 0106.baz >gen.s 2>err
     [[ ! -s err ]]
-    ! grep -Fq "inside a version" gen.s
+    grep -Fq "inside a version" gen.s && exit 1
     echo ok
 }
 

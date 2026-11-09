@@ -1,5 +1,9 @@
-#!/bin/sh
+#!/bin/bash
+# runs cppcheck with every check on '../../src/main.cpp' and writes its output
+# also to 'cppcheck.log'
+# usage: qa/lint/cppcheck.sh
 set -eu
+set -o pipefail
 
 cd "$(dirname "$0")"
 

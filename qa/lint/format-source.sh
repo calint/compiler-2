@@ -6,15 +6,15 @@
 # body
 # usage: qa/lint/format-source.sh
 set -eu
-cd "$(dirname "$0")/../.."
+cd "$(dirname "$0")"
 
 echo "format source: clang-format"
-clang-format -i --style=file src/*
+clang-format -i --style=file ../../src/*
 
 echo "format source: class layout and blank lines"
-qa/lint/format-source.py --apply
+./format-source.py --apply
 
 echo "format source: clang-format"
-clang-format -i --style=file src/*
+clang-format -i --style=file ../../src/*
 
 echo "format source: done"

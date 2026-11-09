@@ -1,4 +1,8 @@
 #!/bin/bash
+# runs clang-tidy with 'clang-tidy.cfg' on '../../src/main.cpp', then the
+# include check on each header, and writes its output also to 'clang-tidy.log'
+# usage: qa/lint/clang-tidy.sh [fix]
+#   fix  applies the fixes clang-tidy offers
 set -e
 set -o pipefail
 

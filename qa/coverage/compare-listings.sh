@@ -18,6 +18,13 @@ fi
 
 BASE=$(realpath "$1")
 NEW=$(realpath "$2")
+# a build that cannot run fails each compile alike, so nothing would differ
+for build in "$BASE" "$NEW"; do
+    if [[ ! -f $build || ! -x $build ]]; then
+        echo "$0: '$build' is not an executable" >&2
+        exit 2
+    fi
+done
 
 cd "$(dirname "$0")"
 

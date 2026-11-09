@@ -4,20 +4,19 @@
 # end the session with 'go home'
 # usage: record.sh
 set -eu
-DIR="$(cd "$(dirname "$0")" && pwd)"
-cd "$DIR/../.."
+cd "$(dirname "$0")"
 
-EMULATOR=fpga-emulator/osqa
+EMULATOR=../../fpga-emulator/osqa
 # rebuilt when missing or older than a source
-if [[ ! -x $EMULATOR || -n "$(find fpga-emulator/src -newer "$EMULATOR" -print -quit)" ]]; then
-    fpga-emulator/make.sh
+if [[ ! -x $EMULATOR || -n "$(find ../../fpga-emulator/src -newer "$EMULATOR" -print -quit)" ]]; then
+    ../../fpga-emulator/make.sh
 fi
 
 WORK="$(mktemp -d)"
 trap 'rm -rf "$WORK"' EXIT
 
-./baz --target=rv32i-fpga --vars=0x20000 --checks=noub,line --bin="$DIR/../roome-rv32i-fpga.bin" \
-    "$DIR/../src/main.baz" >"$WORK/roome.s"
+../../baz --target=rv32i-fpga --vars=0x20000 --checks=noub,line --bin=../roome-rv32i-fpga.bin \
+    ../src/main.baz >"$WORK/roome.s"
 
 # the sd card image of the sector commands, 1 MB of zeros like in test.sh
 truncate -s 1M "$WORK/sdcard"
@@ -28,7 +27,7 @@ echo "roome: recording, end the session with 'go home'"
 # on the emulator's exit code so an aborted session is not saved
 # ctrl-c skips the emulator's terminal restore
 trap 'rm -rf "$WORK"; stty sane 2>/dev/null || true' EXIT
-script -q -e -I "$WORK/typed" -c "$EMULATOR $DIR/../roome-rv32i-fpga.bin $WORK/sdcard" || {
+script -q -e -I "$WORK/typed" -c "$EMULATOR ../roome-rv32i-fpga.bin $WORK/sdcard" || {
     echo "roome: session did not end normally, nothing saved"
     exit 1
 }
@@ -47,7 +46,7 @@ if [[ $answer != y ]]; then
     exit 1
 fi
 
-cp "$WORK/roome.in" "$DIR/roome.in"
+cp "$WORK/roome.in" roome.in
 
 # the expected output comes from a replay so that it has the same form as in the test
-"$DIR/test.sh" update
+./test.sh update

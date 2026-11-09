@@ -2,18 +2,31 @@
 # reduces a session of 'fuzz-roome.py' that makes the x86_64 build of roome
 # print a given text on stderr
 # usage: fuzz-reduce-roome.py SESSION TEXT
+import os
 import subprocess
 import sys
+import tempfile
 
-X86 = __file__.rsplit("/", 1)[0] + "/build/roome-x86"
+import fuzzlib as fl
+
+# the build of 'fuzz-roome.py'
+X86 = os.path.join(fl.HERE, "build", "roome-x86.x")
+# the size of the sd card image, as in 'fuzz-roome.py'
+SDCARD_SIZE_BYTES = 1 << 20
 
 
 def shows(lines, text):
     data = b"\n".join(lines) + b"\n"
-    try:
-        r = subprocess.run([X86], input=data, capture_output=True, timeout=5)
-    except subprocess.TimeoutExpired:
-        return False
+    # the program opens 'sdcard.img' in its working directory, a new one per
+    # run like in 'fuzz-roome.py'
+    with tempfile.TemporaryDirectory() as work:
+        with open(os.path.join(work, "sdcard.img"), "wb") as f:
+            f.truncate(SDCARD_SIZE_BYTES)
+        try:
+            r = subprocess.run([X86], input=data, capture_output=True,
+                               timeout=5, cwd=work)
+        except subprocess.TimeoutExpired:
+            return False
     return text.encode() in r.stderr
 
 

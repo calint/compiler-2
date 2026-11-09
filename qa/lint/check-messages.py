@@ -70,17 +70,23 @@ def format_string(src, ix):
 def main():
     os.chdir(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', 'src'))
     found = 0
+    calls = 0
     for name in sorted(os.listdir('.')):
         if name in EXEMPT or not name.endswith(('.hpp', '.cpp')):
             continue
         src = open(name).read()
         for match in CALLS.finditer(src):
+            calls += 1
             text = format_string(src, match.end())
             if text is None or not re.search(r"'\{[^{}]*\}'", text):
                 continue
             line = src.count('\n', 0, match.start()) + 1
             print(f"src/{name}:{line}: quotes around a placeholder, use 'in_quotes'")
             found += 1
+    # a pattern that no longer matches the sources would check nothing
+    if not calls:
+        print('no format call found under src/')
+        sys.exit(1)
     sys.exit(1 if found else 0)
 
 

@@ -122,7 +122,12 @@ def is_expected(fragment, text):
 def main():
     text = corpus()
     greps = grepped()
-    missing = [m for m in messages()
+    found = messages()
+    # a pattern that no longer matches the sources would check nothing
+    if not found:
+        print('no error message found under src/')
+        return 1
+    missing = [m for m in found
                if not is_expected(m[2], text)
                and not any(g in part for g in greps for part in m[3])]
     for file_name, line_no, fragment, _ in missing:
