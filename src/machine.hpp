@@ -319,6 +319,9 @@ class machine {
         std::set<std::string, std::less<>> used_routines;
         // inside 'emit_discarded': nothing is kept, so no comment is built
         bool is_discarded{};
+        // the local labels of the backend numbered so far, see
+        // 'next_local_label_number'
+        size_t local_label_count{};
     };
 
     // saved before a version and put back after it, see 'version_scope'
@@ -1928,6 +1931,12 @@ class machine {
     // version that is not kept and discarded code use nothing
     auto mark_used(const std::string_view routine) -> void {
         state_.used_routines.emplace(routine);
+    }
+
+    // numbers a local label of the backend; a dropped version gives back its
+    // numbers, so the kept labels do not depend on '--versions'
+    [[nodiscard]] auto next_local_label_number() -> size_t {
+        return state_.local_label_count++;
     }
 
     [[nodiscard]] auto options() const -> const target_options& {

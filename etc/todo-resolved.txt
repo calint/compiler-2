@@ -1,6 +1,15 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: low priority (round 188 GD): the x86_64 'local_label_count_'
+    ('.Lbaz_division.N', '.Lbaz_overlap.N', '.Lbaz_equal.N') is not put back
+    when a version is dropped, kept labels stay unique but are numbered with
+    gaps that differ between '--versions' modes; moving the counter into
+    'machine::version_state' would make the listings of the modes equal
+    => done (2026-11-09, round 192): the counter is 'local_label_count' of
+       'machine::version_state', numbered by 'next_local_label_number', so
+       a dropped version gives its numbers back; 13 x86_64 compiles of 2262
+       renumber their labels, no instruction changes
 [x] hard: round 191 (2026-11-08, user: order the tests and renumber them
     without gaps; GK the renumbering)
     => done (2026-11-08): the 2248 tests of 'qa/coverage/tests' are 0001 to

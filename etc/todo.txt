@@ -32,11 +32,6 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
     functions with a body of their own" prints labels ('f..a.b',
     'sum..len.4') where the rest of the footer prints source names
     ('f<a,b>', 'sum'), mapping a label back needs the assembler's body list
-[ ] easy: low priority (round 188 GD): the x86_64 'local_label_count_'
-    ('.Lbaz_division.N', '.Lbaz_overlap.N', '.Lbaz_equal.N') is not put back
-    when a version is dropped, kept labels stay unique but are numbered with
-    gaps that differ between '--versions' modes; moving the counter into
-    'machine::version_state' would make the listings of the modes equal
 [ ] easy: low priority (round 190 GJ): a call deduced only from its
     result does not check surplus arguments before "cannot deduce": 'var r
     = g4(1, 2)' for 'func g4<T type>(b) res T' says "cannot deduce 'T'"

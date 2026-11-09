@@ -172,9 +172,6 @@ class machine_x86_64 final : public machine {
         "rcx",
     };
 
-    // numbers the local labels of a memory compare, a division check and a
-    // copy overlap check, each kind with its own prefix
-    size_t local_label_count_{};
     assembler_x86_64 assembler_;
 
   public:
@@ -444,7 +441,8 @@ class machine_x86_64 final : public machine {
         std::string end_label;
 
         if (compares.size() > 1) {
-            end_label = std::format(".Lbaz_equal.{}", local_label_count_++);
+            end_label =
+                std::format(".Lbaz_equal.{}", next_local_label_number());
         }
 
         for (const auto [i, compare] : std::views::enumerate(compares)) {
@@ -1210,7 +1208,7 @@ class machine_x86_64 final : public machine {
         comment(src_loc_tk, indent, "overlap check begin");
 
         const std::string passed{
-            std::format(".Lbaz_overlap.{}", local_label_count_++),
+            std::format(".Lbaz_overlap.{}", next_local_label_number()),
         };
 
         const operation_scope scope{*this};
@@ -1242,7 +1240,7 @@ class machine_x86_64 final : public machine {
         -> void {
 
         const std::string not_minus_one{
-            std::format(".Lbaz_division.{}", local_label_count_++),
+            std::format(".Lbaz_division.{}", next_local_label_number()),
         };
 
         comment(src_loc_tk, indent, "division check begin");
