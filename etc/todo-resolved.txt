@@ -1,6 +1,14 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 240 (2026-11-10, VA control flow with inlining bug hunt,
+    VC 'register_report' and 'compile_error' simplification)
+    => done (2026-11-10): VA found nothing (about 5800 fuzzed programs of
+       loops, 'foo', 'break', 'continue', 'return' and 'exit', each also
+       all inlined and all noinline, far branches on rv32i; 13000 programs
+       of definite assignment of 'res' against a model); VC: the register
+       report returns its lines instead of a text split again, 'split_lines'
+       removed; report output unchanged
 [x] easy: round 239 (2026-11-10, UX conversions and strings bug hunt, VB
     'dat' and 'type' definition simplification)
     => done (2026-11-10): UX found nothing (conversions in every context,

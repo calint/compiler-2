@@ -58,11 +58,46 @@ struct register_use_report final {
     size_t named_count{};
     std::vector<frame_use> frames;
 
-    [[nodiscard]] auto text() const -> std::string {
-        return heading_text() + frames_text() + noinline_text();
+    [[nodiscard]] auto lines() const -> std::vector<std::string> {
+        std::vector<std::string> text{heading_lines()};
+        text.append_range(frame_lines());
+        text.append_range(noinline_lines());
+        return text;
     }
 
   private:
+    [[nodiscard]] auto
+    candidate_lines(const std::vector<candidate>& found) const
+        -> std::vector<std::string> {
+
+        // the name is last so that a long one does not push the numbers apart,
+        // the numbers are right aligned under their headings
+        constexpr std::string_view inside_heading{"held inside"};
+        constexpr std::string_view saved_heading{"saved at the call"};
+        constexpr size_t column_gap{2};
+        constexpr size_t inside_width{inside_heading.size() + column_gap};
+        constexpr size_t saved_width{saved_heading.size() + column_gap};
+
+        std::vector<std::string> text{
+            "",
+            std::format("these frames are not noinline, making one noinline "
+                        "starts its body with all {} registers free and "
+                        "saves the registers held above it around the call:",
+                        noinline_register_total),
+            "",
+            std::format("  {}  {}  candidate frame", inside_heading,
+                        saved_heading),
+        };
+
+        for (const candidate& entry : found) {
+            text.push_back(std::format(
+                "{}{}  {}", right_aligned(entry.inside, inside_width),
+                right_aligned(entry.saved, saved_width), entry.name));
+        }
+
+        return text;
+    }
+
     // the frames below the first with registers held above them: what they
     // and what is below them hold, and what the call of them would save
     [[nodiscard]] auto candidates() const -> std::vector<candidate> {
@@ -86,66 +121,40 @@ struct register_use_report final {
         return found;
     }
 
-    [[nodiscard]] auto
-    candidates_text(const std::vector<candidate>& found) const -> std::string {
-
-        // the name is last so that a long one does not push the numbers apart,
-        // the numbers are right aligned under their headings
-        constexpr std::string_view inside_heading{"held inside"};
-        constexpr std::string_view saved_heading{"saved at the call"};
-        constexpr size_t column_gap{2};
-        constexpr size_t inside_width{inside_heading.size() + column_gap};
-        constexpr size_t saved_width{saved_heading.size() + column_gap};
-
-        std::string text{
-            std::format(
-                "\n\nthese frames are not noinline, making one noinline "
-                "starts its body with all {} registers free and "
-                "saves the registers held above it around the "
-                "call:\n\n  {}  {}  candidate frame",
-                noinline_register_total, inside_heading, saved_heading),
-        };
-
-        for (const candidate& entry : found) {
-            text += std::format(
-                "\n{}{}  {}", right_aligned(entry.inside, inside_width),
-                right_aligned(entry.saved, saved_width), entry.name);
-        }
-
-        return text;
-    }
-
-    [[nodiscard]] auto frames_text() const -> std::string {
+    [[nodiscard]] auto frame_lines() const -> std::vector<std::string> {
         // the label of a frame follows the number and two spaces, its
         // registers are indented two more
         const std::string register_indent(held_width_ + 4, ' ');
 
-        std::string text;
+        std::vector<std::string> text;
 
         for (const frame_use& use : frames) {
-            text += std::format(
-                "\n{}  {}", right_aligned(use.registers.size(), held_width_),
-                use.label);
+            text.push_back(std::format(
+                "{}  {}", right_aligned(use.registers.size(), held_width_),
+                use.label));
 
             for (const std::string& held : use.registers) {
-                text += std::format("\n{}{}", register_indent, held);
+                text.push_back(std::format("{}{}", register_indent, held));
             }
         }
 
         return text;
     }
 
-    [[nodiscard]] auto heading_text() const -> std::string {
+    [[nodiscard]] auto heading_lines() const -> std::vector<std::string> {
         const std::string named_note{
             named_count == 0
                 ? std::string{}
                 : std::format(", {} named by instructions", named_count),
         };
 
-        return std::format("{}: {} of {} registers live{}\n\n{}  frame, "
-                           "registers (allocated at)",
-                           heading, live_count(), register_total, named_note,
-                           right_aligned(held_heading_, held_width_));
+        return {
+            std::format("{}: {} of {} registers live{}", heading, live_count(),
+                        register_total, named_note),
+            "",
+            std::format("{}  frame, registers (allocated at)",
+                        right_aligned(held_heading_, held_width_)),
+        };
     }
 
     [[nodiscard]] auto live_count() const -> size_t {
@@ -158,7 +167,7 @@ struct register_use_report final {
         return live;
     }
 
-    [[nodiscard]] auto noinline_text() const -> std::string {
+    [[nodiscard]] auto noinline_lines() const -> std::vector<std::string> {
         if (frames.size() < 2) {
             return {};
         }
@@ -166,11 +175,14 @@ struct register_use_report final {
         const std::vector<candidate> found{candidates()};
 
         if (found.empty()) {
-            return "\n\nno noinline frame helps, the registers are held by "
-                   "the innermost frame, simplify its expression";
+            return {
+                "",
+                "no noinline frame helps, the registers are held by the "
+                "innermost frame, simplify its expression",
+            };
         }
 
-        return candidates_text(found);
+        return candidate_lines(found);
     }
 
     //
@@ -416,7 +428,7 @@ class register_reporter final {
             .frames{std::move(uses)},
         };
 
-        return split_lines(report.text());
+        return report.lines();
     }
 
     //
@@ -441,18 +453,6 @@ class register_reporter final {
             });
 
         return ordered;
-    }
-
-    [[nodiscard]] static auto split_lines(const std::string_view text)
-        -> std::vector<std::string> {
-
-        std::vector<std::string> lines;
-
-        for (const auto line : std::views::split(text, '\n')) {
-            lines.emplace_back(std::string_view{line});
-        }
-
-        return lines;
     }
 
     // breaks a line of text that is too long at its spaces; an indented line,
