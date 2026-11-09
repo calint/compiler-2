@@ -1,0 +1,5 @@
+# a constant exit code outside 0 to 255 is rejected, the operating system
+# keeps only the low 8 bits
+func main() {
+    exit(-1)
+}

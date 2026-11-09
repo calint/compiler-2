@@ -1,6 +1,21 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: low priority (round 205 HB): 'exit(-1)' and 'exit(511)' exit with
+    255 like a 'bounds' panic (the low 8 bits)
+    => user decision: reject a constant 'exit' code outside 0..255 (a
+       run-time one still wraps), or document the low 8 bits
+    => done (2026-11-09, round 208, user): a constant code outside 0 to
+       255 is rejected ('stmt_builtin_exit'), test 2260, docs 8.3
+[x] easy: low priority: an include of '/proc/self/fd/0' is named by the
+    process id, '/proc/714319/fd/0' in the messages and the same path
+    relative to the working directory in the listing (round 117 AC2),
+    since the names follow the resolved directory (round 116 AB1); a main
+    file '/dev/fd/0' keeps its name in the messages and is '0' in the
+    listing; accept and document, or resolve only up to the last '..'
+    (names then depend on the spelling again)
+    => done (2026-11-09, round 208, user): accepted and documented in
+       docs chapter 2 item 1
 [x] easy: low priority (round 205 HC): 'let T = 3' in a generic body
     instantiated with 'i8' says "'T' names the type 'i8'", a parameter named
     'T' says "generic parameter 'T' is also the name of the parameter at

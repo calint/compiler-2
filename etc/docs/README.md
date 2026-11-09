@@ -193,7 +193,9 @@ Invariants the code relies on:
    file is named by its directory as the file system resolves it
    ('program::include_path'), so listings and messages name the file that
    was opened, and it is read once, also when reached through another path
-   or a link ('source_files::contains').
+   or a link ('source_files::contains'). A path through a link that the
+   system makes per process is named by its target, e.g. an include of
+   '/proc/self/fd/0' is '/proc/714319/fd/0' in a message.
 
 2. compile ('program::build'): the statements are walked again with a fresh
    scope stack in 'toc'. Global variables and data are declared again, then
@@ -2096,6 +2098,10 @@ message, x86_64 stops with a signal.
   (1.5); no result changes. Ending the path there needs the reach of each
   exit of a condition and every operand list to stop at the call (bug hunt
   round 14 B1-1, B1-2).
+- The operating system and the emulators keep the low 8 bits of an exit
+  code: a constant 'exit' code outside 0 to 255 is rejected, a run-time one
+  is taken modulo 256, so 'exit(k)' with 'k' -1 ends with 255, the code of
+  a 'bounds' panic.
 - The x86_64 listing leaves the size of each jump to nasm. On rare listings
   nasm's default search ('-Ox') does not settle ("unable to find valid values
   for all labels"), e.g. 'etc/nasm-issue.s'; 'nasm -O1' assembles it, with

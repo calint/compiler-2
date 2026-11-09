@@ -7175,3 +7175,6 @@ SRC=2258 && COMPERR
 
 # a constant named like a type parameter of its generic
 SRC=2259 && COMPERR
+
+# a constant exit code outside 0 to 255 is rejected
+SRC=2260 && COMPERR

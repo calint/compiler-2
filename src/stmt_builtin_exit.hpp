@@ -1,6 +1,8 @@
 #pragma once
 
 #include <cstddef>
+#include <cstdint>
+#include <format>
 #include <optional>
 #include <ostream>
 
@@ -15,11 +17,17 @@
 // 'exit(code)' ends the program with 'code', the path after it is not
 // reached
 class stmt_builtin_exit final : public statement {
+    // the operating system keeps the low 8 bits of the code
+    static constexpr int64_t max_code_{255};
+
     builtin_arguments args_;
 
   public:
     stmt_builtin_exit(toc& tc, const token tk, tokenizer& tz)
-        : statement{tk}, args_{tc, tz, tk, {}, 1, 1} {}
+        : statement{tk}, args_{tc, tz, tk, {}, 1, 1} {
+
+        assert_constant_code_fits(tc);
+    }
 
     //
     // overridden methods
@@ -61,5 +69,27 @@ class stmt_builtin_exit final : public statement {
 
     auto visit_operands(const operand_visitor visitor) const -> void override {
         args_.visit_operands(visitor, std::nullopt);
+    }
+
+  private:
+    // a constant code outside the low 8 bits would end with another code,
+    // e.g. 'exit(-1)' with 255, that of a 'bounds' panic; a run-time code
+    // keeps its low 8 bits (README chapter 8)
+    auto assert_constant_code_fits(const toc& tc) const -> void {
+        const expr_any& code_arg{args_.at(0)};
+
+        const std::optional<folded_value> code{
+            code_arg.fold(tc, tc.use_at(tc.builtins().default_type())),
+        };
+
+        if (not code or (code->value >= 0 and code->value <= max_code_)) {
+            return;
+        }
+
+        throw compile_error{
+            code_arg.tok(),
+            std::format("exit code {} is outside 0 to {}, the operating "
+                        "system keeps only the low 8 bits",
+                        code->value, max_code_)};
     }
 };
