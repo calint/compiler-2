@@ -1,0 +1,4 @@
+
+2293.baz:5:1: expected a definition ('func', 'type', 'var', 'let' or 'dat'), got a string
+"abc\
+^~~~~

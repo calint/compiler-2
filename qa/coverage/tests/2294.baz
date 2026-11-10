@@ -1,0 +1,6 @@
+# a called name with a quote inside is not a valid name, not a function that
+# is missing
+
+func main() {
+    f'a'(1)
+}

@@ -1,0 +1,4 @@
+
+2291.baz:5:11: expected a type name, got the constant '7'
+    first 7,
+          ^

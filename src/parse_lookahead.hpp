@@ -84,11 +84,25 @@ inline auto assert_no_surplus_argument(const tokenizer& tz,
     throw compile_error{tz, argument_count_text(name, count, count)};
 }
 
-// a value can start at the next character, not a closer, a ',' or the end of
-// the source, e.g. not at the ')' of '[2]{1, 2, )'
+// a value can start at the next token, not a closer, a ',', the end of the
+// source or a keyword no value starts with, e.g. not at the ')' of
+// '[2]{1, 2, )' or at the 'var' of the next statement
 [[nodiscard]] inline auto starts_value(const tokenizer& tz) -> bool {
     const char next{tz.peek_char_after_whitespace()};
-    return next != ',' and not is_closer_or_end(next);
+
+    if (next == ',' or is_closer_or_end(next)) {
+        return false;
+    }
+
+    tokenizer probe{tz};
+    const token tk{probe.next_token()};
+
+    if (not std::ranges::contains(reserved_names::keywords, tk.text())) {
+        return true;
+    }
+
+    return tk.is_text(reserved_names::self) or tk.is_text("not") or
+           constant_parser::is_bool_literal(tk.text());
 }
 
 // a string is in read-only data that an array parameter would refer to, a

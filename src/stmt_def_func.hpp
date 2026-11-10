@@ -369,7 +369,7 @@ struct func_result {
         };
 
         if (has_type) {
-            statement::assert_not_string_type(type_tk);
+            statement::assert_not_literal_type(type_tk);
         } else {
             tz.put_back_token(type_tk);
 

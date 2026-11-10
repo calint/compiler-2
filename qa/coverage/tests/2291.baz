@@ -1,0 +1,9 @@
+# a constant where the type of a field is expected is not a type that is
+# missing
+
+type pair {
+    first 7,
+    second,
+}
+
+func main() {}

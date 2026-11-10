@@ -3199,6 +3199,11 @@ class toc final {
             throw_generic_type_not(src_loc_tk, name, "a function");
         }
 
+        // e.g. the 'f'a'' of 'f'a'(1)', which no definition can name
+        if (not is_identifier(name)) {
+            throw_invalid_name(src_loc_tk, name);
+        }
+
         throw compile_error{
             src_loc_tk, std::format("function {} not found", in_quotes(name))};
     }

@@ -1,0 +1,4 @@
+
+2290.baz:6:5: expected '}' to close the array of size 2
+    var x = 1
+    ^

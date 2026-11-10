@@ -1,4 +1,4 @@
 
-0233.baz:5:14: expected a definition ('func', 'type', 'var', 'let' or 'dat'), got '1'
+0233.baz:5:14: expected a definition ('func', 'type', 'var', 'let' or 'dat'), got the constant '1'
 dat x = p[2] 1
              ^

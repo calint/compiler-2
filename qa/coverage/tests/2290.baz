@@ -1,0 +1,7 @@
+# a keyword after the trailing ',' of a full array is a missing '}', not an
+# element too many
+
+func main() {
+    var a = [2]{1, 2,
+    var x = 1
+}

@@ -1,6 +1,17 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 264 (2026-11-10, WQ syntax errors at every position)
+    => done (2026-11-10): about 706000 one-token mutants of the tutorial,
+       prog.baz, roome and 80 tests (165000 under asan): no crash, assert,
+       hang or internal error; fixed: a keyword after the trailing ',' of a
+       full list said "too many elements", now a missing '}' (2290); a
+       literal where a definition is expected was printed whole or read as
+       a name, now "got a string" or "got the constant 'a'" (2293, 0233,
+       0256, 1312, 1313); a literal where a type is expected said "type '7'
+       not found", now "expected a type name, got the constant '7'"
+       ('assert_not_literal_type', 2291); a called name with a quote inside
+       said "function f'a' not found", now not a valid name (2294)
 [x] easy: round 263 (2026-11-10, WN cross-file survey, WP shared
     messages, WO)
     => done (2026-11-10): one message, one helper: 'throw_already_defined'

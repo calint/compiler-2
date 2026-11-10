@@ -1,0 +1,6 @@
+# a string at the top level is not quoted back, it may span lines
+
+func main() {}
+
+"abc\
+def"

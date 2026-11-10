@@ -585,8 +585,18 @@ inline auto parse_statement(toc& tc, tokenizer& tz, const token& tk)
     // e.g. the ';' after 'type point {x, y}'
     throw_if_ends_with_semicolon(tk);
 
+    // a string is not quoted back, it may span lines; a constant is named,
+    // a character quoted back reads as a name
+    std::string got{in_quotes(tk.text())};
+
+    if (tk.is_string()) {
+        got = "a string";
+    } else if (constant_parser::is_literal(tk)) {
+        got = std::format("the constant {}", got);
+    }
+
     throw compile_error{
         tk, std::format("expected a definition ('func', 'type', 'var', "
                         "'let' or 'dat'), got {}",
-                        in_quotes(tk.text()))};
+                        got)};
 }

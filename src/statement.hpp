@@ -16,6 +16,7 @@
 #include <utility>
 
 #include "compile_error.hpp"
+#include "constant_parser.hpp"
 #include "ident_info.hpp"
 #include "toc.hpp"
 #include "token.hpp"
@@ -395,10 +396,18 @@ class statement {
     }
 
     // where it is read, also in a generic definition that no instance
-    // parses, e.g. the '"i8"' of 'a "i8"' or of 'res "i8" {'
-    static auto assert_not_string_type(const token& type_tk) -> void {
+    // parses, e.g. the '"i8"' of 'a "i8"' or of 'res "i8" {', or the '7' of
+    // 'a 7', which is not a type that is missing
+    static auto assert_not_literal_type(const token& type_tk) -> void {
         if (type_tk.is_string()) {
             throw compile_error{type_tk, "expected a type name, got a string"};
+        }
+
+        if (constant_parser::is_literal(type_tk)) {
+            throw compile_error{
+                type_tk,
+                std::format("expected a type name, got the constant {}",
+                            in_quotes(type_tk.text()))};
         }
     }
 
@@ -417,7 +426,7 @@ class statement {
             return std::nullopt;
         }
 
-        assert_not_string_type(type_tk);
+        assert_not_literal_type(type_tk);
         assert_no_type_arguments(tc, tz, type_tk);
 
         return type_tk;

@@ -7249,3 +7249,18 @@ SRC=2282 && COMPERR
 # a displacement at the end of its range and a field after it wrap as the
 # address does
 if [[ $MACHINE == x86_64 ]]; then SRC=2283 && EXP=14 && OPTS="--vars=0x40000" RUN; fi
+
+# a keyword after the trailing ',' of a full array is a missing '}', not an
+# element too many
+SRC=2290 && COMPERR
+
+# a constant where the type of a field is expected is not a type that is
+# missing
+SRC=2291 && COMPERR
+
+# a string at the top level is not quoted back, it may span lines
+SRC=2293 && COMPERR
+
+# a called name with a quote inside is not a valid name, not a function that
+# is missing
+SRC=2294 && COMPERR
