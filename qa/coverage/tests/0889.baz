@@ -1,5 +1,5 @@
-# a constant of a run-time index that is too far for the displacement is added
-# to the index, the sum is an element
+# a constant of a run-time index whose elements pass the range of the
+# displacement goes into it, which wraps as the address does
 func noinline at(a i64[], i) res {
     res = a[i - 9223372036854775806]
 }

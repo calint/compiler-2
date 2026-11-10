@@ -358,7 +358,7 @@ inline auto stmt_identifier::path_address::add_index(const ident_elem& cur_elem,
 
     const operand& index_register{*index_register_};
 
-    int64_t addend_elements{
+    const int64_t addend_elements{
         compile_checked_index(tc, indent_, cur_elem.index_expr(),
                               index_register, cur_info.shape(),
                               request.is_range),
@@ -378,20 +378,10 @@ inline auto stmt_identifier::path_address::add_index(const ident_elem& cur_elem,
 
     const size_t element_size_bytes{cur_info.type_ref().size_bytes()};
 
-    // a constant too far for the displacement is added to the index, the
-    // sum can still be an element, e.g. 'a[i - 9223372036854775806]'
-    if (not fits_address_offset(address.displacement(), addend_elements,
-                                element_size_bytes)) {
+    // note: the displacement wraps as the address does, the sum is right
+    //       modulo the address width, e.g. 'a[i - 9223372036854775806]'
 
-        x.comment(index_tk, indent_, "index constant {} is added",
-                  addend_elements);
-
-        x.add_subtract(
-            index_tk, indent_, arithmetic_operator::add, index_register,
-            operand::imm(addend_elements, tc.builtins().default_type()));
-
-        addend_elements = 0;
-    } else if (addend_elements != 0) {
+    if (addend_elements != 0) {
         x.comment(index_tk, indent_,
                   "index constant {} goes into the displacement",
                   addend_elements);

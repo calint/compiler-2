@@ -2845,8 +2845,8 @@ SRC=0887 && EXP=8 && RUN
 # a call checked for aliasing inside the body of a function that is not inlined
 SRC=0888 && EXP=0 && OPTS="--checks=noub" RUN
 
-# a constant of a run-time index that is too far for the displacement is added
-# to the index, the sum is an element
+# a constant of a run-time index whose elements pass the range of the
+# displacement goes into it, which wraps as the address does
 if [[ $MACHINE == x86_64 ]]; then SRC=0889 && EXP=7 && OPTS="--vars=0x40000" RUN; fi
 
 # a comment on the last line without a line end
@@ -6701,8 +6701,8 @@ SRC=2103 && COMPERR
 # a trailing ',' after the last listed field of a partial instance literal
 SRC=2104 && EXP=7 && RUN
 
-# a positive index constant whose elements pass the displacement range is
-# added to the index, as in 0889 a negative one
+# a positive index constant whose elements pass the displacement range goes
+# into it, as in 0889 a negative one
 if [[ $MACHINE == x86_64 ]]; then SRC=2105 && EXP=7 && OPTS="--vars=0x40000" RUN; fi
 
 # the register peak in a global initializer, see 'test-cli.sh'
@@ -7245,3 +7245,7 @@ SRC=2281 && COMPERR
 
 # a space other than the no-break space is escaped in a message too
 SRC=2282 && COMPERR
+
+# a displacement at the end of its range and a field after it wrap as the
+# address does
+if [[ $MACHINE == x86_64 ]]; then SRC=2283 && EXP=14 && OPTS="--vars=0x40000" RUN; fi

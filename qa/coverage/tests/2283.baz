@@ -1,0 +1,14 @@
+# a constant of a run-time index that leaves the displacement at the end of
+# its range and a field after it, also in an inlined call, wrap as the address
+# does
+type r { a i8, b i8, c i8 }
+
+func r.get() res i8 { res = self.c }
+
+var x = r[4]
+
+func main() {
+    var i = -3074457345618258601
+    x[1].c = 7
+    exit(int(x[i + 3074457345618258602].c + x[i + 3074457345618258602].get()))
+}

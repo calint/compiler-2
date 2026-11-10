@@ -1,6 +1,17 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] medium: round 262 (2026-11-10, WK addresses at the limits)
+    => done (2026-11-10): x86_64 asserted ('fits_offset_sum') on a valid
+       'x[i + 3074457345618258602].c' where the folded displacement reached
+       the int64 limit and the field offset was added after it; addresses
+       wrap at the target width, so displacements now add modulo 2^64 and
+       'fits_offset_sum', 'fits_address_offset' and a branch of 'add_index'
+       are removed (0889 and 2105 two instructions shorter on x86_64), test
+       2283; otherwise no wrong code in about 13000 programs of odd element
+       sizes, 12-bit edges and addresses past 2^31 on all four targets;
+       fuzz-all at scale 3 on all targets with the fixed fuzzers: about
+       63000 programs, no finding
 [x] easy: round 261 (2026-11-10, WM the exceptions of chapter 8)
     => done (2026-11-10): every exception is still present; a 'bool' read
        as 120 is true as a condition and equal to neither 'true' nor

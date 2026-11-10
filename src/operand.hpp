@@ -10,7 +10,6 @@
 #include <concepts>
 #include <cstddef>
 #include <cstdint>
-#include <limits>
 #include <optional>
 #include <string>
 #include <string_view>
@@ -25,55 +24,28 @@ class type;
     return static_cast<int64_t>(size_bytes);
 }
 
-// whether 'base' plus 'offset' stays in the range of an address offset
-[[nodiscard]] inline auto fits_offset_sum(const int64_t base,
-                                          const int64_t offset) -> bool {
-
-    return (offset <= 0 or
-            base <= std::numeric_limits<int64_t>::max() - offset) and
-           (offset >= 0 or
-            base >= std::numeric_limits<int64_t>::min() - offset);
-}
-
+// 'base' plus 'offset' modulo 2^64: an address wraps at the width of the
+// target, so a displacement is right modulo it, e.g. the addend of
+// 'a[i - 9223372036854775806]' with the index back near its range
 [[nodiscard]] inline auto add_address_offset(const int64_t base,
                                              const int64_t offset) -> int64_t {
 
-    assert(fits_offset_sum(base, offset));
+    const uint64_t sum{
+        std::bit_cast<uint64_t>(base) + std::bit_cast<uint64_t>(offset),
+    };
 
-    return base + offset;
+    return std::bit_cast<int64_t>(sum);
 }
 
-// whether 'count' elements of 'size_bytes' added to the offset 'base' stay in
-// the range of an address offset, 'count' may be negative
-[[nodiscard]] inline auto fits_address_offset(const int64_t base,
-                                              const int64_t count,
-                                              const size_t size_bytes) -> bool {
-
-    const int64_t size{address_offset(size_bytes)};
-
-    if (size != 0 and (count > std::numeric_limits<int64_t>::max() / size or
-                       count < std::numeric_limits<int64_t>::min() / size)) {
-
-        return false;
-    }
-
-    const int64_t offset{count * size};
-
-    return fits_offset_sum(base, offset);
-}
-
-// 'base' plus 'count' elements of 'size_bytes', which 'fits_address_offset'
-// accepted
+// 'base' plus 'count' elements of 'size_bytes', wrapping as
+// 'add_address_offset', 'count' may be negative
 [[nodiscard]] inline auto add_scaled_address_offset(const int64_t base,
                                                     const int64_t count,
                                                     const size_t size_bytes)
     -> int64_t {
 
-    assert(fits_address_offset(base, count, size_bytes));
-
-    const int64_t scaled{count * address_offset(size_bytes)};
-
-    return add_address_offset(base, scaled);
+    const uint64_t scaled{std::bit_cast<uint64_t>(count) * size_bytes};
+    return add_address_offset(base, std::bit_cast<int64_t>(scaled));
 }
 
 // what an operation of the backend reads or writes: empty, a register, an

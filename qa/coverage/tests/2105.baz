@@ -1,5 +1,5 @@
-# a positive constant of a run-time index whose elements are too far for the
-# displacement is added to the index, the sum is an element
+# a positive constant of a run-time index whose elements pass the range of the
+# displacement goes into it, as in 0889 a negative one
 func noinline at(a i64[], i) res {
     res = a[i + 2305843009213693952]
 }
