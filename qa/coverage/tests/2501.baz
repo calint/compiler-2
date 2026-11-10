@@ -1,0 +1,13 @@
+# --checks=noub: a run-time shift count narrower than the value is checked at
+# the width of the value, the count register is extended to it; the system
+# call before it leaves a large value in 'rcx' on x86_64
+
+dat msg = "a"
+
+func main() {
+    var x = 1
+    var c = i8(3)
+    write(1, msg, 0)
+    x = x << c
+    exit(x)
+}

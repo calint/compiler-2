@@ -1,0 +1,17 @@
+# the zero of an array with 'rep stosb' clears the byte it stores, on x86_64
+# 'al' holds the quotient of the division before it
+
+func main() {
+    var a = i8[64]
+    foo a {
+        e = 5
+    }
+    var k = 3
+    var d = 100 / k
+    a = {}
+    var s = 0
+    foo a {
+        s = s + e
+    }
+    exit(s + d)
+}

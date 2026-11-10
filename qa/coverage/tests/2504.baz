@@ -1,0 +1,15 @@
+# the registers that a sector function changes keep the partial sums held
+# around an inlined 'sector_write', on x86_64 one of them in 'r10'
+
+func w(v, bytes i8[]) res {
+    sector_write(0, bytes)
+    res = v
+}
+
+func main() {
+    var bytes = i8[512]
+    var a = 1
+    var b = 2
+    var r = a + (b + (a + (b + (a + (b + w(a, bytes))))))
+    exit(r)
+}

@@ -1,0 +1,7 @@
+# a sector number is 32 bits: with an image of more than 2^32 sectors, sector
+# 2^32 is inside the image and still panics
+
+func main() {
+    var bytes = i8[512]
+    sector_write(4294967296, bytes)
+}

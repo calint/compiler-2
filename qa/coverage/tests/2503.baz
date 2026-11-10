@@ -1,0 +1,16 @@
+# a system call keeps the partial sums held around an inlined 'write', on
+# x86_64 one of them in 'r11', which 'syscall' changes
+
+dat msg = "a"
+
+func w(v) res {
+    write(1, msg, 0)
+    res = v
+}
+
+func main() {
+    var a = 1
+    var b = 2
+    var r = a + (b + (a + (b + (a + (b + (a + (b + (a + w(b)))))))))
+    exit(r)
+}

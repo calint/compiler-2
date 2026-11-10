@@ -1,6 +1,13 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 285 (2026-11-10, XR mutation testing of the x86_64
+    arithmetic, division, shifts, io syscalls and the sector routine)
+    => done (2026-11-10): 39 mutants, 6 survived everything; new tests
+       2500-2506 kill them (a factor held in a register, a shift count
+       after a syscall, 'al' before 'rep stosb', 'r11' and 'r10' around
+       calls, the 32-bit sector check, the end-of-image write); 5 are
+       equivalent or seen only with '--versions=first'; no compiler bug
 [x] easy: round 284 (2026-11-10, XP mutation testing of io, sectors, the
     register pool, the register report and options)
     => done (2026-11-10): 70 mutants, 34 survived everything, 1 more was

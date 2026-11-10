@@ -1,0 +1,14 @@
+# a product in memory by a factor that a register holds, the counter 'i',
+# leaves the factor unchanged
+
+func main() {
+    var p = 1
+    var a = int[4]
+    foo a {
+        p = p + 1
+        p = p * i
+        e = i
+    }
+    if not p == 15 exit(1)
+    if not a[3] == 3 exit(2)
+}

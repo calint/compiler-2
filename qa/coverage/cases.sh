@@ -7533,3 +7533,29 @@ SRC=2475 && EXP=0 && RUN
 
 # the footer counts the most scratch registers in use (in 'test-cli.sh')
 SRC=2476 && EXP=0 && RUN
+
+# a product in memory by a factor that a register holds, the counter 'i',
+# leaves the factor unchanged
+SRC=2500 && EXP=0 && RUN
+
+# --checks=noub: a run-time shift count narrower than the value is checked at
+# the width of the value after a system call
+SRC=2501 && EXP=8 && OPTS="--checks=noub" RUN
+
+# the zero of an array with 'rep stosb' clears the byte it stores
+SRC=2502 && EXP=33 && RUN
+
+# a system call keeps the partial sums held around an inlined 'write'
+SRC=2503 && EXP=15 && RUN
+
+# a sector function keeps the partial sums held around an inlined
+# 'sector_write'
+if [[ $MACHINE != rv32i-qemu ]]; then SRC=2504 && EXP=10 && SDCARD=1M RUN; fi
+
+# a sector number is 32 bits: with an image of more than 2^32 sectors, sector
+# 2^32 is inside the image and still panics
+if [[ $MACHINE == x86_64 ]]; then SRC=2505 && EXP=248 && SDCARD=3T RUN_ERR; fi
+
+# a write to the sector at the end of the sd card image panics and does not
+# extend the image
+if [[ $MACHINE == x86_64 || $MACHINE == rv32i ]]; then SRC=2506 && EXP=248 && SDCARD=1M RUN_ERR; fi

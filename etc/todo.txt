@@ -6,6 +6,13 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
 --------------------------------------------------------------------------------
 1. clean up
 --------------------------------------------------------------------------------
+[ ] easy: (round 285 XR) 'assembler_x86_64::is_reload' removes a reload
+    only after a store of qword width; a dword store would also do, since
+    every reader of a dword value reads the 32-bit view or uses 'movsx'
+    (7 tests would lose a reload: 0419, 0513, 0596, 0926, 2091, 2176, 2177);
+    measure and check that no reader takes the 64-bit view
+[ ] easy: (round 284 XP) 'grep ... && exit 1' lines in 'test-cli.sh' fail
+    the script without printing "FAILED", so a log scan misses them
 [ ] medium: user decision (round 251 VT2): an error found in a noinline
     body names only the first call that asked for the body ("called from
     'get(a)'"), not the calls down to 'main': with 'mid' calling a noinline
