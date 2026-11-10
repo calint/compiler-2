@@ -1,0 +1,5 @@
+# the largest exit code the operating system keeps is accepted
+
+func main() {
+    exit(255)
+}

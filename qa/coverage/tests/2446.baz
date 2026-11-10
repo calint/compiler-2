@@ -1,0 +1,17 @@
+# an inlined recursion that runs out of registers in the arguments of its first
+# recursive call, one call deep, is reported as a recursion that runs out of
+# registers, not as an expression to simplify
+
+func f(a, b, c, d, e, g, h, i, j, k, l, m, o, p) res {
+    if a > 5 {
+        res = 0
+        return
+    }
+    res = f(a + 1, b + 1, c + 1, d + 1, e + 1, g + 1, h + 1, i + 1,
+            j + 1, k + 1, l + 1, m + 1, o + 1, p + 1)
+}
+
+func main() {
+    var v = 0
+    exit(f(v, v, v, v, v, v, v, v, v, v, v, v, v, v))
+}

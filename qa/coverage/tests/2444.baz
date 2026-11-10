@@ -1,0 +1,15 @@
+# an inlined recursion that ends at compile time after 65 nested calls passes
+# the limit of 64 by one
+
+func r(v mut, n) {
+    if n != 0 {
+        v = v + 1
+        r(v, n - 1)
+    }
+}
+
+func main() {
+    var v = 0
+    r(v, 64)
+    exit(v)
+}

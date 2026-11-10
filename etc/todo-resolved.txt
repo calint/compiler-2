@@ -1,6 +1,17 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 282 (2026-11-10, XO mutation testing of control flow and
+    calls, second part)
+    => done (2026-11-10): 53 mutants of loops, jumps, 'exit', reachability,
+       'foo', the inline limits, the recursion rows, per-length bodies and
+       the passes of 'program': 41 killed by the tests, 12 survived; new
+       tests 2440-2450 kill 11 ('exit(255)', unreached code still checked,
+       a negative 'foo' count without the lower check, the 64 call and 256
+       scope limits at their edge, recursion out of registers, unknown
+       lengths not nesting alike, the leniency of a limit deep in a
+       recursion, bodies asked for by bodies checked from skipped code,
+       the order of checked and called bodies); one is equivalent
 [x] easy: round 281 (2026-11-10, XL mutation testing of the tokenizer and
     parser)
     => done (2026-11-10): 64 mutants, 46 killed by the tests, 16 survived

@@ -7399,3 +7399,45 @@ SRC=2423 && COMPERR
 
 # an operator apart from a following '=' is not read as a compound assignment
 SRC=2424 && COMPERR
+
+# a branch whose condition is known true ends the chain for the definite
+# assignment, the unknown branch and the empty 'else' after it leave no path
+# without 'res'
+SRC=2440 && EXP=1 && RUN
+
+# the largest exit code the operating system keeps is accepted
+SRC=2441 && EXP=255 && RUN
+
+# the code after an 'if' whose condition never returns is not reached and
+# holds the compile rules in 'main'
+SRC=2442 && COMPERR
+
+# without the lower bound check a negative run-time count skips the body of a
+# 'foo'
+SRC=2443 && EXP=0 && OPTS="--vars=0x40000 --checks=line" RUN
+
+# an inlined recursion of 65 nested calls passes the limit of 64 by one
+SRC=2444 && COMPERR
+
+# inlined calls whose innermost call is made at 256 open scopes are rejected
+SRC=2445 && COMPERR
+
+# an inlined recursion that runs out of registers in the arguments of its first
+# recursive call is reported as a recursion that runs out of registers
+SRC=2446 && COMPERR
+
+# the check of a body without its call does not take an inlined recursion
+# that an unsized array argument ends to nest alike at every call
+SRC=2447 && EXP=1 && RUN
+
+# in the check of a body without its call, a limit deep in an inlined
+# recursion ends the check of the recursion at its first level
+SRC=2448 && EXP=0 && RUN
+
+# a noinline body checked with its array lengths asks for the check of the
+# bodies it calls with theirs
+SRC=2449 && COMPERR
+
+# the noinline bodies that the program calls are compiled before the bodies
+# without their calls are checked
+SRC=2450 && COMPERR

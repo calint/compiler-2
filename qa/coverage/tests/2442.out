@@ -1,0 +1,4 @@
+
+2442.baz:11:17: divisor must not be zero
+    var x = 1 / 0
+                ^

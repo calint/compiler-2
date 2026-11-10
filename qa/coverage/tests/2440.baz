@@ -1,0 +1,15 @@
+# a branch whose condition is known true ends the chain for the definite
+# assignment: the unknown branch and the empty 'else' after it are no paths
+# that leave 'res' unset
+
+func f(x) res {
+    if 1 == 1 {
+        res = 1
+    } else if x == 2 {
+    } else {
+    }
+}
+
+func main() {
+    exit(f(2))
+}

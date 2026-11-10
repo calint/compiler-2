@@ -1,0 +1,12 @@
+# the code after an 'if' whose condition never returns is not reached and
+# still holds the compile rules in 'main': the division by zero is rejected
+
+func stop() res {
+    exit(2)
+}
+
+func main() {
+    if stop() == 1 {
+    }
+    var x = 1 / 0
+}

@@ -1,0 +1,7 @@
+
+2450.baz:10:17: divisor must not be zero
+    var y = 2 / 0
+                ^
+2450.baz:14:5: called from
+    a()
+    ^

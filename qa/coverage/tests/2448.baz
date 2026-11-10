@@ -1,0 +1,21 @@
+# in the check of a body without its call, a limit deep in an inlined
+# recursion ends the check of the recursion at its first level: the 'a[n]'
+# after the deeper calls, with 'n' 1 and more, is not compiled
+
+func g(n, x) res {
+    if x == 0 {
+        res = 0
+        return
+    }
+    res = g(n + 1, x - 1)
+    var a = i8[1]
+    res = a[n]
+}
+
+func f(x) res {
+    res = g(0, x)
+}
+
+func main() {
+    exit(0)
+}

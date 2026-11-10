@@ -1,0 +1,19 @@
+# a noinline body checked with its array lengths asks for the check of the
+# bodies it calls with theirs: only skipped code calls 'g', and its check asks
+# for 'h' with the length 2 of 'a', where 'a[3]' is out of bounds
+
+func noinline h(a i8[]) res {
+    res = a[3]
+}
+
+func noinline g(a i8[]) res {
+    res = h(a)
+}
+
+func main() {
+    if false {
+        var a = i8[2]
+        exit(g(a))
+    }
+    exit(0)
+}

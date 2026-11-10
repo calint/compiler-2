@@ -1,0 +1,11 @@
+# without the lower bound check a negative run-time count skips the body of a
+# 'foo' like a zero count
+
+func main() {
+    var arr = i8[4]
+    var k = -1
+    foo arr, k {
+        exit(2)
+    }
+    exit(0)
+}

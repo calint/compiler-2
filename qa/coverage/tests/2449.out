@@ -1,0 +1,7 @@
+
+2449.baz:6:13: index 3 is out of bounds for array 'a' of size 2
+    res = a[3]
+            ^
+2449.baz:10:11: called from 'h(a)'
+    res = h(a)
+          ^

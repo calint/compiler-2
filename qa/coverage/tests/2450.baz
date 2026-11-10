@@ -1,0 +1,15 @@
+# the noinline bodies that the program calls are compiled before the bodies
+# without their calls are checked: the error in 'a' is reported, not the one
+# in 'b', which nothing calls
+
+func b() {
+    var x = 1 / 0
+}
+
+func noinline a() {
+    var y = 2 / 0
+}
+
+func main() {
+    a()
+}

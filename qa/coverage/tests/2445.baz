@@ -1,0 +1,517 @@
+# inlined calls nested to exactly the limit of 256 scopes are rejected; each
+# call takes two scopes, the call and the block of its body, and the 'if' adds
+# the one that makes the count even
+
+func f126() {
+}
+
+func f125() {
+    f126()
+}
+
+func f124() {
+    f125()
+}
+
+func f123() {
+    f124()
+}
+
+func f122() {
+    f123()
+}
+
+func f121() {
+    f122()
+}
+
+func f120() {
+    f121()
+}
+
+func f119() {
+    f120()
+}
+
+func f118() {
+    f119()
+}
+
+func f117() {
+    f118()
+}
+
+func f116() {
+    f117()
+}
+
+func f115() {
+    f116()
+}
+
+func f114() {
+    f115()
+}
+
+func f113() {
+    f114()
+}
+
+func f112() {
+    f113()
+}
+
+func f111() {
+    f112()
+}
+
+func f110() {
+    f111()
+}
+
+func f109() {
+    f110()
+}
+
+func f108() {
+    f109()
+}
+
+func f107() {
+    f108()
+}
+
+func f106() {
+    f107()
+}
+
+func f105() {
+    f106()
+}
+
+func f104() {
+    f105()
+}
+
+func f103() {
+    f104()
+}
+
+func f102() {
+    f103()
+}
+
+func f101() {
+    f102()
+}
+
+func f100() {
+    f101()
+}
+
+func f99() {
+    f100()
+}
+
+func f98() {
+    f99()
+}
+
+func f97() {
+    f98()
+}
+
+func f96() {
+    f97()
+}
+
+func f95() {
+    f96()
+}
+
+func f94() {
+    f95()
+}
+
+func f93() {
+    f94()
+}
+
+func f92() {
+    f93()
+}
+
+func f91() {
+    f92()
+}
+
+func f90() {
+    f91()
+}
+
+func f89() {
+    f90()
+}
+
+func f88() {
+    f89()
+}
+
+func f87() {
+    f88()
+}
+
+func f86() {
+    f87()
+}
+
+func f85() {
+    f86()
+}
+
+func f84() {
+    f85()
+}
+
+func f83() {
+    f84()
+}
+
+func f82() {
+    f83()
+}
+
+func f81() {
+    f82()
+}
+
+func f80() {
+    f81()
+}
+
+func f79() {
+    f80()
+}
+
+func f78() {
+    f79()
+}
+
+func f77() {
+    f78()
+}
+
+func f76() {
+    f77()
+}
+
+func f75() {
+    f76()
+}
+
+func f74() {
+    f75()
+}
+
+func f73() {
+    f74()
+}
+
+func f72() {
+    f73()
+}
+
+func f71() {
+    f72()
+}
+
+func f70() {
+    f71()
+}
+
+func f69() {
+    f70()
+}
+
+func f68() {
+    f69()
+}
+
+func f67() {
+    f68()
+}
+
+func f66() {
+    f67()
+}
+
+func f65() {
+    f66()
+}
+
+func f64() {
+    f65()
+}
+
+func f63() {
+    f64()
+}
+
+func f62() {
+    f63()
+}
+
+func f61() {
+    f62()
+}
+
+func f60() {
+    f61()
+}
+
+func f59() {
+    f60()
+}
+
+func f58() {
+    f59()
+}
+
+func f57() {
+    f58()
+}
+
+func f56() {
+    f57()
+}
+
+func f55() {
+    f56()
+}
+
+func f54() {
+    f55()
+}
+
+func f53() {
+    f54()
+}
+
+func f52() {
+    f53()
+}
+
+func f51() {
+    f52()
+}
+
+func f50() {
+    f51()
+}
+
+func f49() {
+    f50()
+}
+
+func f48() {
+    f49()
+}
+
+func f47() {
+    f48()
+}
+
+func f46() {
+    f47()
+}
+
+func f45() {
+    f46()
+}
+
+func f44() {
+    f45()
+}
+
+func f43() {
+    f44()
+}
+
+func f42() {
+    f43()
+}
+
+func f41() {
+    f42()
+}
+
+func f40() {
+    f41()
+}
+
+func f39() {
+    f40()
+}
+
+func f38() {
+    f39()
+}
+
+func f37() {
+    f38()
+}
+
+func f36() {
+    f37()
+}
+
+func f35() {
+    f36()
+}
+
+func f34() {
+    f35()
+}
+
+func f33() {
+    f34()
+}
+
+func f32() {
+    f33()
+}
+
+func f31() {
+    f32()
+}
+
+func f30() {
+    f31()
+}
+
+func f29() {
+    f30()
+}
+
+func f28() {
+    f29()
+}
+
+func f27() {
+    f28()
+}
+
+func f26() {
+    f27()
+}
+
+func f25() {
+    f26()
+}
+
+func f24() {
+    f25()
+}
+
+func f23() {
+    f24()
+}
+
+func f22() {
+    f23()
+}
+
+func f21() {
+    f22()
+}
+
+func f20() {
+    f21()
+}
+
+func f19() {
+    f20()
+}
+
+func f18() {
+    f19()
+}
+
+func f17() {
+    f18()
+}
+
+func f16() {
+    f17()
+}
+
+func f15() {
+    f16()
+}
+
+func f14() {
+    f15()
+}
+
+func f13() {
+    f14()
+}
+
+func f12() {
+    f13()
+}
+
+func f11() {
+    f12()
+}
+
+func f10() {
+    f11()
+}
+
+func f9() {
+    f10()
+}
+
+func f8() {
+    f9()
+}
+
+func f7() {
+    f8()
+}
+
+func f6() {
+    f7()
+}
+
+func f5() {
+    f6()
+}
+
+func f4() {
+    f5()
+}
+
+func f3() {
+    f4()
+}
+
+func f2() {
+    f3()
+}
+
+func f1() {
+    f2()
+}
+
+func f0() {
+    f1()
+}
+
+func main() {
+    var c = 1
+    if c == 1 {
+        f0()
+    }
+}

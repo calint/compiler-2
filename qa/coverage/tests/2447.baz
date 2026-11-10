@@ -1,0 +1,21 @@
+# the check of a body without its call does not take an inlined recursion
+# that an unsized array argument ends to nest alike at every call: 'g(n + 1,
+# s)' in the check of 'f' is not rejected at the nesting limit
+
+func g(n, s mut i8[]) {
+    if n >= array_length(s) {
+        return
+    }
+    s[n] = 1
+    g(n + 1, s)
+}
+
+func f(t mut i8[]) {
+    g(0, t)
+}
+
+func main() {
+    var a = i8[3]
+    f(a)
+    exit(a[2])
+}
