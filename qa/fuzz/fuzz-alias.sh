@@ -19,7 +19,10 @@ SEED="${3:-1}"
 JOBS="${4:-$(nproc)}"
 
 TMP="$(mktemp -d -t fuzz-alias.XXXXXX)"
-trap 'rm -rf "$TMP"' EXIT
+# the jobs of a run that is stopped are stopped too
+pids=""
+trap 'kill $pids 2>/dev/null || true; rm -rf -- "$TMP"' EXIT
+trap 'exit 130' INT TERM HUP
 
 echo "alias fuzz: path comparison, $JOBS jobs from seed $SEED"
 clang++ -std=c++26 -O2 -Wno-braced-scalar-init alias-path-fuzz.cpp \
@@ -27,22 +30,23 @@ clang++ -std=c++26 -O2 -Wno-braced-scalar-init alias-path-fuzz.cpp \
 
 job=0
 while [ "$job" -lt "$JOBS" ]; do
-    (
-        "$TMP/alias-path-fuzz" "$PATHS" $((SEED + job)) >"$TMP/$job.out" 2>&1 ||
-            echo "$job" >>"$TMP/failed"
-    ) &
+    "$TMP/alias-path-fuzz" "$PATHS" $((SEED + job)) >"$TMP/$job.out" 2>&1 &
+    pids="$pids $!"
     job=$((job + 1))
 done
-wait
 
 # the output of a job is shown only when it fails
-if [ -e "$TMP/failed" ]; then
-    for job in $(cat "$TMP/failed"); do
+status=0
+job=0
+for pid in $pids; do
+    if ! wait "$pid"; then
         echo "seed $((SEED + job)): FAILED"
         cat "$TMP/$job.out"
-    done
-    exit 1
-fi
+        status=1
+    fi
+    job=$((job + 1))
+done
+[ "$status" -eq 0 ] || exit 1
 
 echo "alias fuzz: programs"
 ./alias-foo-fuzz.py "$PROGRAMS" "$SEED" ../../baz "$JOBS"

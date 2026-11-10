@@ -42,9 +42,10 @@ class Recorder:
         try:
             with open(path, "rb") as f:
                 text = f.read().decode("latin-1")
-            # the definitions of 'fuzzlib.split_include'
-            part = os.path.join(os.path.dirname(path), "lib", "part.baz")
-            if os.path.exists(part):
+            # the definitions of 'fuzzlib.split_include', only when the file
+            # includes them: a part left by an earlier program is not its own
+            if text.startswith(fl.PART_INCLUDE):
+                part = os.path.join(os.path.dirname(path), "lib", "part.baz")
                 with open(part, "rb") as f:
                     text = f.read().decode("latin-1") + text
             self.sources.append(text)
@@ -59,11 +60,8 @@ def collect_fuzz_one(name, count, seed, recorder):
         # 'fuzz-programs.py' also takes the compiler to use
         args = (seed, index, "asan") if name == "fuzz-programs" \
             else (seed, index)
-        try:
-            source = module.fuzz_one(args)[0]
-        except Exception as error:
-            print(f"  {name}: {index}: {type(error).__name__}: {error}")
-            break
+        # an error of a generator ends the run
+        source = module.fuzz_one(args)[0]
         if isinstance(source, str):
             recorder.sources.append(source)
 
@@ -73,14 +71,12 @@ def collect_ub(count, seed, recorder):
     for n in range(count):
         rnd = random.Random(seed * 100003 + n)
         program = module.SCENARIOS[n % len(module.SCENARIOS)](rnd)
+        # the outcomes of the model, as in 'fuzz-ub.py'
         try:
             program.evaluate()
-        except Exception:
+        except (module.Panic, module.Rejected, module.Skip):
             pass
-        try:
-            recorder.sources.append(program.source())
-        except Exception:
-            pass
+        recorder.sources.append(program.source())
 
 
 def collect(job):

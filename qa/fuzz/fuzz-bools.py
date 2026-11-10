@@ -15,9 +15,7 @@
 #
 # usage: fuzz-bools.py [count] [seed] [jobs]
 import random
-import shutil
 import sys
-import tempfile
 
 import fuzzlib as fl
 
@@ -464,12 +462,8 @@ def fuzz_one(args):
     seed, index = args
     rnd = random.Random(seed * 1000003 + index)
     source, expected = Generator(rnd).program()
-    work = tempfile.mkdtemp(prefix="fuzzb-")
-    try:
-        found = fl.judge(work, source, expected, option_lists=OPTION_LISTS,
-                         prefix="bools")
-    finally:
-        shutil.rmtree(work, ignore_errors=True)
+    found = fl.judge(source, expected, option_lists=OPTION_LISTS,
+                     prefix="bools")
     return source, found
 
 

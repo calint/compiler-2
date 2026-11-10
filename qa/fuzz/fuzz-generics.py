@@ -16,9 +16,7 @@
 #
 # usage: fuzz-generics.py [count] [seed] [jobs]
 import random
-import shutil
 import sys
-import tempfile
 
 import fuzzlib as fl
 from fuzzlib import mix
@@ -225,11 +223,7 @@ def fuzz_one(args):
     seed, index = args
     rnd = random.Random(seed * 1000003 + index)
     source, expected = Generator(rnd).program()
-    work = tempfile.mkdtemp(prefix="fuzzg-")
-    try:
-        found = fl.judge(work, source, expected, prefix="generics")
-    finally:
-        shutil.rmtree(work, ignore_errors=True)
+    found = fl.judge(source, expected, prefix="generics")
     return source, found
 
 

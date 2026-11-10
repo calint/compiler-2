@@ -31,6 +31,8 @@ def shows(lines, text):
 
 
 def main():
+    if len(sys.argv) != 3:
+        sys.exit("usage: fuzz-reduce-roome.py SESSION TEXT")
     path, text = sys.argv[1], sys.argv[2]
     lines = open(path, "rb").read().split(b"\n")
     if not shows(lines, text):
@@ -49,4 +51,5 @@ def main():
         print(repr(line[:120]))
 
 
-main()
+if __name__ == "__main__":
+    main()

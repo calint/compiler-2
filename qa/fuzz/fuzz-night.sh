@@ -27,6 +27,6 @@ done
 
 echo "=== done after $round rounds, $(date)" | tee -a "$log"
 echo "=== new findings" | tee -a "$log"
-find findings -name '*.txt' -newer "$stamp" ! -name night.log | sort | while read -r f; do
+find findings -name '*.txt' -newer "$stamp" | sort | while read -r f; do
     echo "$f: $(sed -n 2p "$f" | cut -c1-120)" | tee -a "$log"
 done

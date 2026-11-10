@@ -19,9 +19,7 @@
 #
 # usage: fuzz-calls.py [count] [seed] [jobs]
 import random
-import shutil
 import sys
-import tempfile
 
 import fuzzlib as fl
 
@@ -217,16 +215,12 @@ def fuzz_one(args):
     seed, index = args
     rnd = random.Random(seed * 1000003 + index)
     source, expected = Generator(rnd).program()
-    work = tempfile.mkdtemp(prefix="fuzzc-")
-    try:
-        # note: the optimizer, the checks and the target change the code of a call
-        found = fl.judge(
-            work, source, expected, prefix="calls",
-            option_lists=(("--checks=noub",), ("--checks=noub", "--nopt"),
-                          ("--checks=overflow",),
-                          ("--checks=noub,line", "--nopt")))
-    finally:
-        shutil.rmtree(work, ignore_errors=True)
+    # note: the optimizer, the checks and the target change the code of a call
+    found = fl.judge(
+        source, expected, prefix="calls",
+        option_lists=(("--checks=noub",), ("--checks=noub", "--nopt"),
+                      ("--checks=overflow",),
+                      ("--checks=noub,line", "--nopt")))
     return source, found
 
 

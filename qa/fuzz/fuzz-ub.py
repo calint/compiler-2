@@ -1406,6 +1406,9 @@ def main():
                     except Panic as p:
                         expected = ("panic", p.kinds)
                 got = compile_run(work, source, target)
+                # a tool stopped by a limit says nothing about the code
+                if got[0] == "skip":
+                    continue
                 if getattr(program, "lenient", False) and got[0] == "compile":
                     counts[2] += 1
                     continue

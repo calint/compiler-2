@@ -458,22 +458,6 @@ class assembler_rv32i final : public assembler {
                                 });
     }
 
-    auto branch_zero(const size_t indent, const op code,
-                     const std::string_view rs, const std::string_view target)
-        -> void {
-
-        assert(info(code).operands == form::branch_zero);
-
-        add_instruction(indent, {
-                                    .code{code},
-                                    .rd{},
-                                    .rs1{number_of(rs)},
-                                    .rs2{zero_register_},
-                                    .value{},
-                                    .target{std::string{target}},
-                                });
-    }
-
     // routines returning with 'jr' may take the return address in 'link'
     auto call(const size_t indent, const std::string_view target,
               const std::string_view link = "ra") -> void {
@@ -1092,6 +1076,22 @@ class assembler_rv32i final : public assembler {
         }
     }
 
+    auto branch_zero(const size_t indent, const op code,
+                     const std::string_view rs, const std::string_view target)
+        -> void {
+
+        assert(info(code).operands == form::branch_zero);
+
+        add_instruction(indent, {
+                                    .code{code},
+                                    .rd{},
+                                    .rs1{number_of(rs)},
+                                    .rs2{zero_register_},
+                                    .value{},
+                                    .target{std::string{target}},
+                                });
+    }
+
     [[nodiscard]] auto collect_symbols(const image_layout& image) const
         -> symbol_table {
 
@@ -1109,13 +1109,12 @@ class assembler_rv32i final : public assembler {
                 continue;
             }
 
-            const line_position& position{image.positions.at(index)};
+            const size_t base{
+                image.bases.at(section_index(image.positions.at(index).which)),
+            };
 
-            // a landing comes before its label
             const int64_t address{
-                static_cast<int64_t>(
-                    image.bases.at(section_index(position.which)) +
-                    position.offset + l.code_size),
+                static_cast<int64_t>(base + label_offset(image, index)),
             };
 
             if (is_numeric(l.label)) {
@@ -1262,11 +1261,7 @@ class assembler_rv32i final : public assembler {
             target.code_size = landing_size_bytes_;
         }
 
-        const size_t skip_bytes{
-            is_conditional(*l.jump) ? one_instruction_bytes : 0,
-        };
-
-        l.code_size = skip_bytes + jump_size_bytes(grown);
+        l.code_size = skip_size_bytes(*l.jump) + jump_size_bytes(grown);
     }
 
     [[nodiscard]] auto grow_out_of_reach(
@@ -1284,18 +1279,13 @@ class assembler_rv32i final : public assembler {
             // asserted, an unknown offset would leave the jump unchecked
             const size_t target{destination(labels, *l.jump)};
 
-            line& target_line{lines().at(target)};
-
-            // a landing comes before its label
-            const size_t target_offset{
-                image.positions.at(target).offset + target_line.code_size,
-            };
+            const size_t target_offset{label_offset(image, target)};
 
             if (reaches(l, image.positions.at(index).offset, target_offset)) {
                 continue;
             }
 
-            grow(l, target_line);
+            grow(l, lines().at(target));
             grown = true;
         }
 
@@ -1346,6 +1336,14 @@ class assembler_rv32i final : public assembler {
         }
 
         return std::get_if<instruction>(&records_.at(*l.record));
+    }
+
+    // the offset of the label of line 'index' in its section
+    [[nodiscard]] auto label_offset(const image_layout& image,
+                                    const size_t index) const -> size_t {
+
+        // a landing comes before its label
+        return image.positions.at(index).offset + lines().at(index).code_size;
     }
 
     // sections follow each other in the order text, rodata, data, variables
@@ -1401,15 +1399,11 @@ class assembler_rv32i final : public assembler {
 
     // the form a jump has grown to follows from its size
     [[nodiscard]] auto reach(const line& l) const -> jump_reach {
-        const bool conditional{is_conditional(*l.jump)};
-
-        if (conditional and l.code_size == one_instruction_bytes) {
+        if (is_conditional(*l.jump) and l.code_size == one_instruction_bytes) {
             return jump_reach::branch;
         }
 
-        // grown conditional forms start with an inverted branch around the
-        // jump
-        const size_t skip_bytes{conditional ? one_instruction_bytes : 0};
+        const size_t skip_bytes{skip_size_bytes(*l.jump)};
 
         if (l.code_size == skip_bytes + one_instruction_bytes) {
             return jump_reach::jal;
@@ -1425,10 +1419,9 @@ class assembler_rv32i final : public assembler {
     [[nodiscard]] auto reaches(const line& l, const size_t source_offset,
                                const size_t target_offset) const -> bool {
 
-        // distances count from the jumping instruction, which follows the skip
         const int64_t distance{
             static_cast<int64_t>(target_offset) -
-                static_cast<int64_t>(source_offset + skip_size_bytes(l)),
+                static_cast<int64_t>(source_offset),
         };
 
         const jump_reach form{reach(l)};
@@ -1437,8 +1430,13 @@ class assembler_rv32i final : public assembler {
             return fits(distance, branch_min_, branch_max_);
         }
 
+        // the distance counts from the 'jal', which follows the skip
         if (form == jump_reach::jal) {
-            return fits(distance, jal_min_, jal_max_);
+            const int64_t skip_bytes{
+                static_cast<int64_t>(skip_size_bytes(*l.jump)),
+            };
+
+            return fits(distance - skip_bytes, jal_min_, jal_max_);
         }
 
         // 'auipc' and 'jalr' reach any address of the 32-bit address space
@@ -1453,12 +1451,9 @@ class assembler_rv32i final : public assembler {
         return &records_.at(*l.record);
     }
 
-    [[nodiscard]] auto skip_size_bytes(const line& l) const -> size_t {
-        if (not is_conditional(*l.jump) or reach(l) == jump_reach::branch) {
-            return 0;
-        }
-
-        return one_instruction_bytes;
+    // a grown conditional jump starts with an inverted branch around the jump
+    [[nodiscard]] auto skip_size_bytes(const jump_info& jump) const -> size_t {
+        return is_conditional(jump) ? one_instruction_bytes : 0;
     }
 
     [[nodiscard]] auto store_record(record structured) -> size_t {

@@ -17,9 +17,7 @@
 #
 # usage: fuzz-io.py [count] [seed] [jobs]
 import random
-import shutil
 import sys
-import tempfile
 
 import fuzzlib as fl
 
@@ -134,11 +132,7 @@ def fuzz_one(args):
     rnd = random.Random(seed * 1000003 + index)
     gen = Generator(rnd)
     source, expected = gen.program()
-    work = tempfile.mkdtemp(prefix="fuzzi-")
-    try:
-        found = fl.judge(work, source, expected, stdin=gen.stdin, prefix="io")
-    finally:
-        shutil.rmtree(work, ignore_errors=True)
+    found = fl.judge(source, expected, stdin=gen.stdin, prefix="io")
     return source, found
 
 

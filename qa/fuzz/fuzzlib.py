@@ -288,7 +288,9 @@ class Outcome:
         self.detail = detail
 
     def same(self, other):
-        return self.code == other.code and self.stdout == other.stdout
+        # an exit with the code of a panic is not the panic
+        return self.kind == other.kind and self.code == other.code and \
+            self.stdout == other.stdout
 
     def finished(self):
         return self.kind in ("exit", "panic", "sdcard")
@@ -425,7 +427,7 @@ def run_x86(compiler, path, options, work, name="f", stdin=b""):
                        assembly)
     if c.returncode or c.timed_out:
         return c, None, None
-    exe, problem = assemble_x86(assembly, work)
+    exe, problem = assemble_x86(assembly, work, name)
     if problem:
         return c, None, problem
     r = run([exe], RUN_TIMEOUT, stdin_bytes=stdin)
@@ -564,39 +566,42 @@ def build_and_run(work, source, target, options, stdin=b"",
     return ("exit", o.code, o.stdout)
 
 
-def judge(work, source, expected, stdin=b"", targets=TARGETS,
+def judge(source, expected, stdin=b"", targets=TARGETS,
           option_lists=OPTION_LISTS, prefix="model"):
     # builds the program for every target and option list, a rotated target
     # with the first list only, returns the findings (category, key, detail)
     # of the builds that did not end with the 'expected' ('exit', code,
     # stdout)
-    found = []
-    for target in with_rotated(targets, source):
-        lists = option_lists if target in targets else option_lists[:1]
-        for options in lists:
-            got = build_and_run(work, source, target, options, stdin)
-            # a tool stopped by a limit says nothing about the code
-            if got == expected or got[0] == "skip":
-                continue
-            # the registers of the target are used up, a limit of the
-            # language and not a defect; e.g. the check of a function without
-            # its calls, which a constant argument of the call does not help
-            # (README 1.5 item 3)
-            if got[0] == "compile" and out_of_registers(got[1]):
-                continue
-            key = f"{target} {' '.join(options)} {got[0]}"
-            if got[0] == "compile":
-                category = f"{prefix}-reject"
-                message = got[1].strip().splitlines()[0] if got[1] else ""
-                key = f"{target} {message.split(': ', 1)[-1]}"
-            elif got[0] == "compile-hang":
-                category = "compiler-hang"
-            elif got[0] in ("invalid-asm", "link-failure", "image-mismatch"):
-                category = got[0]
-            else:
-                category = f"{prefix}-mismatch"
-            found.append((category, key, f"expected {expected}, got {got}"))
-    return found
+    with tempfile.TemporaryDirectory(prefix="fuzz-") as work:
+        found = []
+        for target in with_rotated(targets, source):
+            lists = option_lists if target in targets else option_lists[:1]
+            for options in lists:
+                got = build_and_run(work, source, target, options, stdin)
+                # a tool stopped by a limit says nothing about the code
+                if got == expected or got[0] == "skip":
+                    continue
+                # the registers of the target are used up, a limit of the
+                # language and not a defect; e.g. the check of a function
+                # without its calls, which a constant argument of the call
+                # does not help (README 1.5 item 3)
+                if got[0] == "compile" and out_of_registers(got[1]):
+                    continue
+                key = f"{target} {' '.join(options)} {got[0]}"
+                if got[0] == "compile":
+                    category = f"{prefix}-reject"
+                    message = got[1].strip().splitlines()[0] if got[1] else ""
+                    key = f"{target} {message.split(': ', 1)[-1]}"
+                elif got[0] == "compile-hang":
+                    category = "compiler-hang"
+                elif got[0] in ("invalid-asm", "link-failure",
+                                "image-mismatch"):
+                    category = got[0]
+                else:
+                    category = f"{prefix}-mismatch"
+                found.append((category, key,
+                              f"expected {expected}, got {got}"))
+        return found
 
 
 def run_fuzzer(fuzz_one, count, seed, jobs, label="programs", heading="",
@@ -604,9 +609,9 @@ def run_fuzzer(fuzz_one, count, seed, jobs, label="programs", heading="",
     # runs 'fuzz_one((seed, index, *task_args))' in processes, each returns
     # (source, findings) or (source, findings, counts), 'counts' a dict summed
     # over the run or one key counted once, e.g. "exit"; prints the first
-    # example of each finding and the counts, returns 1 when a finding is new
+    # example of each finding and the counts, returns 1 when there is a
+    # finding, also one kept by an earlier run
     import concurrent.futures
-    import time
     findings = Findings()
     print(f"seed {seed}, {count} {label}, {jobs} jobs{heading}")
     new = 0
@@ -616,8 +621,9 @@ def run_fuzzer(fuzz_one, count, seed, jobs, label="programs", heading="",
     tasks = [(seed, i, *task_args) for i in range(count)]
     with concurrent.futures.ProcessPoolExecutor(
             jobs, initializer=initializer) as pool:
-        for n, result in enumerate(
-                pool.map(fuzz_one, tasks, chunksize=chunksize), 1):
+        for index, result in enumerate(
+                pool.map(fuzz_one, tasks, chunksize=chunksize)):
+            n = index + 1
             source, found = result[0], result[1]
             extra = result[2] if len(result) > 2 else {}
             for key, value in ({extra: 1} if isinstance(extra, str)
@@ -625,6 +631,8 @@ def run_fuzzer(fuzz_one, count, seed, jobs, label="programs", heading="",
                 counts[key] = counts.get(key, 0) + value
             for category, key, detail in found:
                 categories[category] = categories.get(category, 0) + 1
+                # note: the seed and the index make the program again
+                detail = f"seed {seed}, index {index}\n{detail}"
                 if findings.add(category, key, source, detail):
                     new += 1
                     print(f"NEW {category}: {key[:150]}\n    {detail[:300]}",
@@ -638,7 +646,7 @@ def run_fuzzer(fuzz_one, count, seed, jobs, label="programs", heading="",
     print("findings by category (all occurrences):",
           dict(sorted(categories.items())))
     print(f"{new} new findings in {FINDINGS}")
-    return 1 if new else 0
+    return 1 if total else 0
 
 
 def arguments(default_count):

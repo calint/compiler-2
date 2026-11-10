@@ -14,10 +14,9 @@
 #   compiler-hang, invalid-asm, link-failure  see fuzz-compiler.py
 #
 # usage: fuzz-flow.py [count] [seed] [jobs]
+#        fuzz-flow.py bisect SEED INDEX
 import random
-import shutil
 import sys
-import tempfile
 
 import fuzzlib as fl
 
@@ -402,31 +401,23 @@ def fuzz_one(args):
     seed, index = args
     rnd = random.Random(seed * 1000003 + index)
     source, expected = Generator(rnd).program()
-    work = tempfile.mkdtemp(prefix="fuzzf-")
-    try:
-        found = fl.judge(work, source, expected, prefix="flow")
-    finally:
-        shutil.rmtree(work, ignore_errors=True)
+    found = fl.judge(source, expected, prefix="flow")
     return source, found
 
 
 def bisect(seed, index):
     # the least number of statements of main after which the builds and the
     # model differ, for the program 'index' of 'seed'
-    work = tempfile.mkdtemp(prefix="fuzzf-")
-    try:
-        for limit in range(1, 40):
-            rnd = random.Random(seed * 1000003 + index)
-            source, expected = Generator(rnd).program(limit)
-            found = fl.judge(work, source, expected, prefix="flow",
-                             option_lists=(("--checks=noub",),))
-            if found:
-                print(f"{limit} statements of main:\n{source}\n{found[0][2]}")
-                return 1
-        print("no difference")
-        return 0
-    finally:
-        shutil.rmtree(work, ignore_errors=True)
+    for limit in range(1, 40):
+        rnd = random.Random(seed * 1000003 + index)
+        source, expected = Generator(rnd).program(limit)
+        found = fl.judge(source, expected, prefix="flow",
+                         option_lists=(("--checks=noub",),))
+        if found:
+            print(f"{limit} statements of main:\n{source}\n{found[0][2]}")
+            return 1
+    print("no difference")
+    return 0
 
 
 def main():

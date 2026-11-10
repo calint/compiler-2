@@ -10,7 +10,7 @@
 # usage: alias-foo-fuzz.py [programs] [seed] [compiler] [jobs]
 # the findings are a missed overlap (a call accepted, bytes can be the same), a
 # false positive (rejected, bytes never are or the code is a 'foo') and an
-# error that is not an alias error; exits 1 when one is new
+# error that is not an alias error; exits 1 when there is one
 #
 # note: a read under the name of the destination ('e.f = e.g') is handled where
 #       the value is compiled, not by this check, so it must be accepted

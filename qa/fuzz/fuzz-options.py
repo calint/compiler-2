@@ -166,18 +166,16 @@ def fuzz_one(args):
         elif result.returncode == 0 and file_arguments == [path] and \
                 not any(o in ("--help", "-h", "--reproduce-source") for o in options):
             run_accepted(work, path, options, target, fpga, expected, name,
-                         description, found, result, image)
+                         description, found, image)
     finally:
         shutil.rmtree(work, ignore_errors=True)
     return description + "\n" + source, found
 
 
 def run_accepted(work, path, options, target, fpga, expected, name, description,
-                 found, result, image):
+                 found, image):
     if target == "x86_64":
         assembly = os.path.join(work, "f.s")
-        with open(assembly, "wb") as f:
-            f.write(result.stdout)
         # the listing went to stdout of the run above, compile again to a file
         fl.compile_source(fl.COMPILER_ASAN, path, options, assembly, cwd=work)
         exe, problem = fl.assemble_x86(assembly, work)

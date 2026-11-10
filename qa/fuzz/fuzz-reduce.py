@@ -7,15 +7,26 @@
 # usage: fuzz-reduce.py FILE.baz [--match=REGEX] [--exit=CODE]
 #                       [--options="--target=rv32i-fpga --checks=noub"]
 #                       [--accepted-by="--target=x86_64 --checks=noub"]
-# '--accepted-by' keeps the source valid: the compiler must also accept it
-# with those options
 #                       [--compiler=asan|plain] [--out=FILE]
-# the reduced source is written to 'FILE.min.baz' (or --out)
+# '--accepted-by' keeps the source valid: the compiler must also accept it
+# with those options; the reduced source is written to 'FILE.min.baz' (or --out)
+import os
 import re
 import shlex
 import sys
 
 import fuzzlib as fl
+
+USAGE = "usage: fuzz-reduce.py FILE.baz [--match=REGEX] [--exit=CODE] " \
+    "[--options=...] [--accepted-by=...] [--compiler=asan|plain] [--out=FILE]"
+
+
+def without_image(flags):
+    # an image of an rv32i target would land next to the source
+    if not any(f.startswith("--bin") for f in flags) and \
+            any("rv32i" in f for f in flags):
+        return flags + ["--bin=/dev/null"]
+    return flags
 
 
 def parse():
@@ -29,22 +40,19 @@ def parse():
         else:
             files.append(arg)
     if len(files) != 1:
-        sys.exit(__doc__)
+        sys.exit(USAGE)
     return files[0], options
 
 
 def main():
     path, options = parse()
     compiler = fl.COMPILER_ASAN if options["compiler"] == "asan" else fl.COMPILER
-    flags = shlex.split(options["options"])
-    if not any(f.startswith("--bin") for f in flags) and \
-            any("rv32i" in f for f in flags):
-        flags.append("--bin=/dev/null")
+    flags = without_image(shlex.split(options["options"]))
     with open(path, "rb") as f:
         text = f.read().decode("latin-1")
     work = path + ".reduce.baz"
 
-    accepted_flags = shlex.split(options["accepted-by"] or "")
+    accepted_flags = without_image(shlex.split(options["accepted-by"] or ""))
 
     def interesting(candidate):
         with open(work, "wb") as f:
@@ -62,6 +70,17 @@ def main():
             return result.returncode == int(options["exit"])
         return result.returncode != 0 and "error" not in output
 
+    try:
+        text = reduced(text, interesting)
+    finally:
+        os.remove(work)
+    out = options["out"] or re.sub(r"\.baz$", "", path) + ".min.baz"
+    with open(out, "wb") as f:
+        f.write(text.encode("latin-1"))
+    print(f"{len(text)} bytes in {out}")
+
+
+def reduced(text, interesting):
     if not interesting(text):
         sys.exit("the source does not show the behavior")
     # lines, then tokens, in chunks that halve until single
@@ -85,10 +104,7 @@ def main():
                     continue
                 chunk //= 2
         text = joiner.join(pieces)
-    out = options["out"] or re.sub(r"\.baz$", "", path) + ".min.baz"
-    with open(out, "wb") as f:
-        f.write(text.encode("latin-1"))
-    print(f"{len(text)} bytes in {out}")
+    return text
 
 
 if __name__ == "__main__":

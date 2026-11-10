@@ -24,7 +24,6 @@
 #
 # usage: fuzz-effects.py [count] [seed] [jobs]
 import random
-import shutil
 import sys
 import tempfile
 
@@ -484,16 +483,15 @@ def fuzz_one(args):
     rnd = random.Random(seed * 1000003 + index)
     statements = Generator(rnd).program()
     expected = expected_of(statements)
-    work = tempfile.mkdtemp(prefix="fuzze-")
-    found = []
-    try:
+    with tempfile.TemporaryDirectory(prefix="fuzze-") as work:
         for word in ("", "noinline "):
             source = source_of(statements, word)
-            found += [(c, f"{word.strip() or 'inline'} {k}", d)
-                      for c, k, d in judge(work, source, expected)]
-    finally:
-        shutil.rmtree(work, ignore_errors=True)
-    return source_of(statements, ""), found
+            found = [(c, f"{word.strip() or 'inline'} {k}", d)
+                     for c, k, d in judge(work, source, expected)]
+            # note: a finding keeps the text of the variant that found it
+            if found:
+                return source, found
+    return source_of(statements, ""), []
 
 
 def main():

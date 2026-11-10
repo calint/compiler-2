@@ -1,7 +1,8 @@
 # fuzzers
 
 Fuzzers of the compiler and of the programs it builds. Every fuzzer prints the
-first example of each finding and keeps it in `findings/` (ignored by git).
+first example of each finding and keeps it in `findings/` (ignored by git), and
+ends with 1 when the run had a finding, also one kept by an earlier run.
 `fuzz-all.sh [scale] [seed]` runs them all and prints the seed first, the same
 seed and scale repeat the run; its work directories are in a temporary
 directory that is removed at the end, also of a run that is stopped.
@@ -76,7 +77,9 @@ an included file (`split_include` in `fuzzlib.py`).
 ## Reading a finding
 
 - `findings/NAME.baz` is the program, `findings/NAME.txt` the category, the key
-  that tells findings apart and the details.
+  that tells findings apart, the seed and the index of the program and the
+  details; `fuzz-flow.py bisect SEED INDEX` and `fuzz-whole.py --one SEED
+  INDEX` take them.
 - `fuzz-reduce.py FILE.baz --match=REGEX --options="--target=rv32i-fpga
   --checks=noub"` shrinks a program that makes the compiler print text,
   `--accepted-by="--target=x86_64"` keeps it valid.

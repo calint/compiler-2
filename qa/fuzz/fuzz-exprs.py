@@ -567,8 +567,10 @@ def fuzz_spelling(args):
                     else "compile"
                 c = spelling_outcome(constant)
                 v = spelling_outcome(variable)
-                # both rejected, whichever check comes first
-                if c == v or constant[0] == variable[0] == "compile":
+                # both rejected, whichever check comes first; a tool stopped
+                # by a limit says nothing about the code
+                if c == v or constant[0] == variable[0] == "compile" or \
+                        "skip" in (constant[0], variable[0]):
                     continue
                 found.append((
                     "spelling",
@@ -606,6 +608,9 @@ def fuzz_one(args):
     try:
         for target in fl.with_rotated(program.targets, source):
             got = run_target(work, source, target, ["--checks=" + CHECKS])
+            # a tool stopped by a limit says nothing about the code
+            if got[0] == "skip":
+                continue
             if not matches(expected, got) and not (
                     alternative and expected[0] == "compile"
                     and constant_overflow(expected)
@@ -632,15 +637,10 @@ def run_target(work, source, target, options):
         return ("compile", c.stderr)
     if problem:
         return (problem[0], problem[1])
-    if o.kind == "panic":
-        return ("panic", o.code)
-    if o.kind == "signal":
-        return ("signal", o.detail)
-    if o.kind == "cpu-error":
-        return ("cpu-error", o.detail)
-    if o.kind == "timeout":
-        return ("timeout", "")
-    return ("exit", o.code)
+    if o.kind in ("exit", "panic"):
+        return (o.kind, o.code)
+    # note: an emulator stopped by a signal is no exit with its number
+    return (o.kind, o.detail)
 
 
 def constant_overflow(expected):

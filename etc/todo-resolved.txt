@@ -1,6 +1,20 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] medium: round 260 (2026-11-10, WI 'assembler_rv32i' simplification,
+    WJ fuzzer review)
+    => done (2026-11-10): WI: 'branch_zero' private, one 'skip_size_bytes'
+       and one 'label_offset' for copies, listings and images unchanged; WJ
+       fixed fuzzers that could miss a mismatch: 'Outcome.same' ignored the
+       kind ('exit 253' equalled 'panic division'), fuzz-exprs read a signal
+       as the exit of the same number, a run with only known findings exited
+       0; also 'run_x86' variants overwrote each other's files, fuzz-effects
+       saved the inline source of a noinline finding, fuzz-reduce exited 0
+       on bad usage and left files, fuzz-alias left its jobs running after
+       TERM, fuzz-coverage prepended another program's include and swallowed
+       generator errors, a skip counted as a mismatch, findings now name
+       their seed and index; 'fl.judge' owns its temporary directory;
+       fuzz-all clean with the fixed comparisons
 [x] easy: round 259 (2026-11-10, WC jump optimizer and versions bug hunt,
     WH '--reproduce-source' bug hunt, WF register bug hunt)
     => done (2026-11-10): WC found no wrong code (the six optimizer rules
