@@ -7332,3 +7332,11 @@ if [[ $MACHINE != x86_64 ]]; then SRC=2375 && EXP=254 && OPTS="--vars=32 --check
 
 # the padding of the result of a noinline call is zeroed, '==' compares it
 SRC=2376 && EXP=2 && RUN
+
+# a typed constant wraps at the width of its use like a variable: the '-p' of
+# an 'i8' 'p' bound to -128 folds to -128, so '-p / 2' is -64
+SRC=2390 && EXP=1 && RUN
+
+# the '-' of a conversion folds at the width of its use and wraps there: the
+# '-i8(-128)' of an 'i8' list is -128, so '-i8(-128) / 2' is -64
+SRC=2391 && EXP=1 && RUN

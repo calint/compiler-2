@@ -1,0 +1,7 @@
+# the '-' of a conversion applies at the width it is used at, where the result
+# wraps: '-i8(-128)' in an 'i8' list folds to -128, so '-i8(-128) / 2' is -64
+
+func main() {
+    var b = -i8(-128) / 2 == -64
+    exit(int(b))
+}

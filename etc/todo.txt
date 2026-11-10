@@ -19,6 +19,11 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
     file 'equivalent' to '/dev/stdout' ("invalid --bin: 'out.s' is the
     standard output") is about 15 lines in 'main.cpp' and a test-cli case,
     only a guard against a user mistake
+[ ] medium: (round 277 XK) the shift count narrowing check in
+    'expr_arith::compile_step' (its comment: "also in the argument of a
+    conversion") may be redundant: mutation testing found no program where
+    it is the only check and the listings are equal without it; removing a
+    no-UB check needs a proof that every path checks the count first
 [ ] easy: (round 265 WT) compile time grows faster than linear in two
     places left as they are: 'source_files::contains' compares each
     include with every loaded file through 'std::filesystem::equivalent'

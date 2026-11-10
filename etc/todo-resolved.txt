@@ -1,6 +1,13 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 278 (2026-11-10, XK mutation testing of the type rules)
+    => done (2026-11-10): 65 mutants of list types, typed and untyped
+       constants, fits, conversions, comparison sides, narrowing, generic
+       deduction and 'let': 52 killed by the tests, 11 equivalent (reasons
+       recorded), 2 gaps: 2390 (a typed constant wraps at the width of its
+       use), 2391 (the '-' of a conversion wraps at the width of its use);
+       a shift count check that may be redundant went to the todo
 [x] easy: round 277 (2026-11-10, XJ mutation testing of code generation)
     => done (2026-11-10): 72 mutants of addresses, inline binding,
        folding, conditions, bulk walks, padding, the jump optimizer, far

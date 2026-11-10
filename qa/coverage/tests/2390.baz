@@ -1,0 +1,8 @@
+# a typed constant wraps at the width of its use like a variable: the '-p' of
+# an 'i8' 'p' bound to -128 is -128 at 'i8', so '-p / 2' is -64
+
+func main() {
+    let p = i8(-128)
+    var b = -p / 2 == -64
+    exit(int(b))
+}
