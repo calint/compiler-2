@@ -1,0 +1,5 @@
+# a space other than the no-break space is escaped in a message too
+
+func main() {
+    var x = 1
+}

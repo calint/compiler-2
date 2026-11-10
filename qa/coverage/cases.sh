@@ -7242,3 +7242,6 @@ SRC=2280 && COMPERR
 
 # a ';' after a definition of the top level is not used
 SRC=2281 && COMPERR
+
+# a space other than the no-break space is escaped in a message too
+SRC=2282 && COMPERR

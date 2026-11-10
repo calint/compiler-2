@@ -1,6 +1,14 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 257 (2026-11-10, WE rendering of compile errors)
+    => done (2026-11-10): the escaped characters of round 218 missed spaces
+       and fillers ('var' em space 'x' read "'var x' is not a valid name"):
+       the other unicode spaces, U+061C, U+180E, the hangul fillers and the
+       tags are escaped too (15 ranges), test 2282; the README says the
+       column counts bytes from 1; otherwise 18700 erroneous programs with
+       tabs, CRLF, invalid UTF-8 and NUL showed the caret and column right
+       (wide characters under the mark are the known round 100 R5 item)
 [x] easy: round 256 (2026-11-10, WD generics and 'expr_type'
     simplification)
     => done (2026-11-10): 'generic_arg_tokens::parse' in named steps

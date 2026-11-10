@@ -190,21 +190,29 @@ class compile_error final : public std::exception {
 
 // a character that a terminal reads as a control or that looks like a space
 // or like nothing is escaped as the control bytes are, e.g. U+009B starts a
-// control sequence, the no-break space U+00A0 makes 'var\xc2\xa0x' read
+// control sequence, the em space U+2003 makes 'var\xe2\x80\x83x' read
 // 'var x', U+202E reverses the rest of the line
 [[nodiscard]] inline auto is_escaped_code_point(const uint32_t code_point)
     -> bool {
 
     // first and last code point of each range
-    constexpr std::array<std::pair<uint32_t, uint32_t>, 7> escaped{
+    constexpr std::array<std::pair<uint32_t, uint32_t>, 15> escaped{
         {
-            {0x80, 0xa0},     // C1 controls, no-break space
-            {0xad, 0xad},     // soft hyphen
-            {0x200b, 0x200f}, // zero width, direction marks
-            {0x2028, 0x202e}, // line separators, bidi embeddings
-            {0x2060, 0x2064}, // word joiner, invisible operators
-            {0x2066, 0x2069}, // bidi isolates
-            {0xfeff, 0xfeff}, // zero width no-break space
+            {0x80, 0xa0},       // C1 controls, no-break space
+            {0xad, 0xad},       // soft hyphen
+            {0x61c, 0x61c},     // arabic letter mark
+            {0x115f, 0x1160},   // hangul fillers
+            {0x1680, 0x1680},   // ogham space mark
+            {0x180e, 0x180e},   // mongolian vowel separator
+            {0x2000, 0x200f},   // spaces, zero width, direction marks
+            {0x2028, 0x202f},   // line separators, bidi, narrow no-break
+            {0x205f, 0x2064},   // math space, word joiner, invisible operators
+            {0x2066, 0x2069},   // bidi isolates
+            {0x3000, 0x3000},   // ideographic space
+            {0x3164, 0x3164},   // hangul filler
+            {0xfeff, 0xfeff},   // zero width no-break space
+            {0xffa0, 0xffa0},   // halfwidth hangul filler
+            {0xe0000, 0xe007f}, // tags
         },
     };
 

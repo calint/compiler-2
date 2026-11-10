@@ -75,8 +75,9 @@ the binary image itself.
   line feed and a byte order mark are rejected; strings and comments take
   any other byte, a message shows a control byte, a byte outside a UTF-8
   character or the bytes of a character that is invisible or looks like a
-  space (no-break space, soft hyphen, zero width and bidi characters) as
-  `\xNN`
+  space (the spaces other than ` `, soft hyphen, zero width, filler, tag and
+  bidi characters) as `\xNN`; a message starts with `FILE:LINE:COLUMN`, the
+  column counts bytes from 1
 * built-in functions: `array_copy`, `array_length`, `arrays_equal`, `read`,
   `write`, `sector_read`, `sector_write`, `exit`, `int`, `i8`, `i16`, `i32`, `i64`
 * read and write sectors from and to file on `x86_64` and `rv32i`, the file
