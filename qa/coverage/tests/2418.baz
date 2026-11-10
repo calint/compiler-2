@@ -1,0 +1,7 @@
+# a character literal of one byte that is not ascii has the value of the
+# unsigned byte, e.g. 233 for the byte 0xe9
+
+func main() {
+    let c = 'é'
+    exit(c - 200)
+}

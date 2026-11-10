@@ -7348,3 +7348,54 @@ SRC=2430 && EXP=3 && RUN
 # a branch whose condition folds to true at a call ends the chain and needs no
 # jump past the others, also with '--nopt'
 SRC=2431 && EXP=5 && DIFFNOPT
+
+# a backslash before a crlf line end continues the string, the line end is not
+# part of it
+SRC=2410 && EXP=0 && RUN
+
+# a character literal ends at its line, a quote on a later line does not close
+# it
+SRC=2411 && COMPERR
+
+# a backslash at the end of a line does not continue a character literal
+SRC=2412 && COMPERR
+
+# an unsupported escape of a three-byte utf-8 character whose lead byte is 0xe0
+# is quoted whole
+SRC=2413 && COMPERR
+
+# a name may contain and start with 'Z'
+SRC=2414 && EXP=3 && RUN
+
+# 'let' is a keyword, not a name
+SRC=2415 && COMPERR
+
+# 'include' is a keyword, not a name
+SRC=2416 && COMPERR
+
+# a surplus element that starts with 'not' is reported as one too many
+SRC=2417 && COMPERR
+
+# a character literal of one byte that is not ascii has the value of the
+# unsigned byte, e.g. 233 for the byte 0xe9
+SRC=2418 && EXP=33 && RUN
+
+# a name on the line after a 'return' starts the next statement, it is not the
+# value of the 'return'
+SRC=2419 && COMPERR
+
+# a call of a generic function after a 'return' on its line is the next
+# statement, not the value of the 'return'
+SRC=2420 && EXP=7 && RUN
+
+# a '~' after a 'return' on its line is meant as its value
+SRC=2421 && COMPERR
+
+# 'x--' is not supported, the decrement is written as an assignment
+SRC=2422 && COMPERR
+
+# a 'not' after a 'return' on its line is meant as its value
+SRC=2423 && COMPERR
+
+# an operator apart from a following '=' is not read as a compound assignment
+SRC=2424 && COMPERR

@@ -1,0 +1,7 @@
+# a name may contain and start with 'Z'
+
+func main() {
+    var Zone = 2
+    var maxZ = 1
+    exit(Zone + maxZ)
+}

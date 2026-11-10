@@ -1,0 +1,4 @@
+
+2424.baz:5:5: expected '=' for assignment or '(' for function call after 'x'
+    x + = 1
+    ^

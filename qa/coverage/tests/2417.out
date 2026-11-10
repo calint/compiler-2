@@ -1,0 +1,4 @@
+
+2417.baz:5:27: too many elements for array of size 1
+    var a = bool[1]{true, not b}
+                          ^

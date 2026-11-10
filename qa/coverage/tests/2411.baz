@@ -1,0 +1,7 @@
+# a character literal ends at its line, a quote on a later line does not
+# close it
+
+func main() {
+    var c = 'a
+    var d = 'b'
+}

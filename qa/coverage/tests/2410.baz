@@ -1,0 +1,17 @@
+# a backslash before a crlf line end continues the string, the line end is
+# not part of it
+
+dat joined = "ab\
+cd"
+
+func assert(x bool) { if not x exit(1) }
+
+func main() {
+    assert(array_length(joined) == 4)
+    assert(joined[2] == 'c')
+
+    var local = "x\
+yz"
+    assert(array_length(local) == 3)
+    assert(local[1] == 'y')
+}

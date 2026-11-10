@@ -1,0 +1,6 @@
+# a surplus element that starts with 'not' is reported as one too many
+
+func main() {
+    var b = false
+    var a = bool[1]{true, not b}
+}

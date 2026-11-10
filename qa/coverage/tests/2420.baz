@@ -1,0 +1,13 @@
+# a call of a generic function after a 'return' on its line is the next
+# statement, not the value of the 'return'
+
+func set<T type>(r mut T, v T) {
+    r = v
+}
+
+func main() {
+    var x = i8
+    var done = false
+    if done return set<i8>(x, 7)
+    exit(x)
+}

@@ -1,0 +1,12 @@
+# a name on the line after a 'return' starts the next statement, it is not
+# the value of the 'return'
+
+func f(x) res {
+    res = 1
+    if x == 0 return
+    res
+}
+
+func main() {
+    var r = f(1)
+}

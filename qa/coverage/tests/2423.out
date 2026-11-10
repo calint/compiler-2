@@ -1,0 +1,4 @@
+
+2423.baz:5:17: 'return' takes no value, a result is assigned, e.g. 'res = a'
+    if b return not b
+                ^~~

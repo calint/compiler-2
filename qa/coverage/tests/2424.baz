@@ -1,0 +1,6 @@
+# an operator apart from a following '=' is not read as a compound assignment
+
+func main() {
+    var x = 1
+    x + = 1
+}

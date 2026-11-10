@@ -1,0 +1,6 @@
+# 'x--' is not supported, the decrement is written as an assignment
+
+func main() {
+    var x = 1
+    x--
+}

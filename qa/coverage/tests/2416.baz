@@ -1,0 +1,5 @@
+# 'include' is a keyword, not a name
+
+func main() {
+    var include = 1
+}

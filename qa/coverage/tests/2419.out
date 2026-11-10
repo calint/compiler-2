@@ -1,0 +1,4 @@
+
+2419.baz:7:5: expected '=' for assignment or '(' for function call after 'res'
+    res
+    ^~~

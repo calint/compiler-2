@@ -1,0 +1,4 @@
+
+2415.baz:4:9: 'let' is a keyword
+    var let = 1
+        ^~~

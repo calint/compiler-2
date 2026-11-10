@@ -1,0 +1,6 @@
+# a 'not' after a 'return' on its line is meant as its value
+
+func main() {
+    var b = true
+    if b return not b
+}

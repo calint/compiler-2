@@ -1,0 +1,6 @@
+# a backslash at the end of a line does not continue a character literal
+
+func main() {
+    var c = '\
+    var d = 'b'
+}

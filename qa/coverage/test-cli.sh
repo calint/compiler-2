@@ -981,6 +981,20 @@ CLI_BINARY_NAME
 CLI_REPRODUCE_SOURCE
 CLI_JUMP_OPTIMIZATIONS
 CLI_RELOADS
+CLI_KEYWORD_NAMES() {
+    echo -n "cli keywords as names: "
+    # every keyword of 'token.hpp' is rejected as the name of a variable
+    local keyword
+    for keyword in func noinline mut type dat var let foo loop if else \
+        continue break return self and or not true false include; do
+        printf 'func main() {\n    var %s = 1\n}\n' "$keyword" >gen-keyword.baz
+        expect_exit_1 "$BIN" gen-keyword.baz >out 2>&1
+        grep -Fq "gen-keyword.baz:2:9: '$keyword' is a keyword" out
+    done
+    rm -f gen-keyword.baz
+    echo ok
+}
+
 CLI_CHECKS_NOUB
 CLI_CHECKS_LIST
 CLI_FILE_ERRORS
@@ -1009,5 +1023,6 @@ CLI_VERSIONS
 CLI_PADDING_ZERO
 CLI_PADDING_ZERO_BY_TARGET
 CLI_SHARED_STRING_CONSTANT
+CLI_KEYWORD_NAMES
 
 rm -f gen.s diff.baz out err gen-rv32i.bin

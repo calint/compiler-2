@@ -1,0 +1,5 @@
+# 'let' is a keyword, not a name
+
+func main() {
+    var let = 1
+}

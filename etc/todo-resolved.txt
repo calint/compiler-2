@@ -1,6 +1,15 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 281 (2026-11-10, XL mutation testing of the tokenizer and
+    parser)
+    => done (2026-11-10): 64 mutants, 46 killed by the tests, 16 survived
+       the tests and the fuzzers; new tests 2410-2424 kill all 16 (CRLF
+       string continuation, unterminated character literals at a line end,
+       UTF-8 lead length in an escape, uppercase names, 'let' and 'include'
+       as names, 'not' and '~' as the start of a value, a one-byte literal
+       above 127, a 'return' followed by a name on the next line, '--',
+       '+ =' apart); test-cli checks every keyword is rejected as a name
 [x] easy: round 280 (2026-11-10, XN mutation testing of 'if', first part)
     => done (2026-11-10): 14 mutants of 'stmt_if' and the loop back jump,
        12 killed by the tests; new 2430 (a false 'else if' that exits is no

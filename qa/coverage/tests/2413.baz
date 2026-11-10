@@ -1,0 +1,6 @@
+# an unsupported escape of a three-byte utf-8 character whose lead byte is
+# 0xe0 is quoted whole
+
+func main() {
+    var s = "a\ࠀb"
+}

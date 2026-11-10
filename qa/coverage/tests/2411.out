@@ -1,0 +1,4 @@
+
+2411.baz:5:13: unterminated character literal
+    var c = 'a
+            ^
