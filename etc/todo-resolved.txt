@@ -1,6 +1,9 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 247 (2026-11-10): 'compare-listings.sh' compiles its second
+    option set with '--checks=noub,line', so a refactor of the line failure
+    handlers is compared too (round 246 checked them by hand)
 [x] easy: round 246 (2026-11-10, VJ 'machine' simplification)
     => done (2026-11-10): 'target_assembler()' removed, its uses take the
        local 'output'; the per-file part of 'emit_failure_handler' is
