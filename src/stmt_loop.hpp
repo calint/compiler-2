@@ -15,7 +15,7 @@ class stmt_loop final : public statement {
     stmt_block code_;
 
   public:
-    stmt_loop(toc& tc, const token src_loc_tk, tokenizer& tz)
+    stmt_loop(toc& tc, const token& src_loc_tk, tokenizer& tz)
         : statement{src_loc_tk}, code_{parse_code(tc, tz)} {}
 
     //

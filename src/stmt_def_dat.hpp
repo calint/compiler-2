@@ -80,7 +80,7 @@ class stmt_def_dat final : public statement {
     elem root_elem_{};
 
   public:
-    stmt_def_dat(toc& tc, const token src_loc_tk, tokenizer& tz)
+    stmt_def_dat(toc& tc, const token& src_loc_tk, tokenizer& tz)
         : statement{src_loc_tk},
           name_tk_{initializer_declaration::read_name(tc, tz)},
           equals_tk_{initializer_declaration::read_equals(tz, "dat", name_tk_)},

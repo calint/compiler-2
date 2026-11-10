@@ -19,15 +19,15 @@ class expr_zero final : public statement {
     std::optional<token> close_brace_tk_;
 
   public:
-    expr_zero(const type& tp, const token open_brace_tk,
-              const token close_brace_tk)
+    expr_zero(const type& tp, const token& open_brace_tk,
+              const token& close_brace_tk)
         : statement{open_brace_tk}, close_brace_tk_{close_brace_tk} {
 
         set_type(tp);
     }
 
     // e.g. the 'i8' of 'var x = i8'
-    expr_zero(const type& tp, const token type_tk) : statement{type_tk} {
+    expr_zero(const type& tp, const token& type_tk) : statement{type_tk} {
         set_type(tp);
     }
 

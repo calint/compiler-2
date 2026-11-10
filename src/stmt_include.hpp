@@ -21,7 +21,7 @@ class stmt_include final : public statement {
 
   public:
     // 'tz' is after the 'include'
-    stmt_include(const token src_loc_tk, tokenizer& tz)
+    stmt_include(const token& src_loc_tk, tokenizer& tz)
         : statement{src_loc_tk}, path_tk_{tz.next_token()} {
 
         if (not path_tk_.is_string()) {

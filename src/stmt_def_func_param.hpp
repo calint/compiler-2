@@ -212,7 +212,7 @@ class stmt_def_func_param final : public statement {
 
     // the implicit 'self' ('stmt_def_func::add_self_param'), 'mut_tk' that of
     // the head, e.g. 'func mut point.move(dx)'
-    stmt_def_func_param(const token tk, const type& tp,
+    stmt_def_func_param(const token& tk, const type& tp,
                         const std::optional<token>& mut_tk)
         : statement{tk}, syntax_{
                              .name_tk{tk},

@@ -32,14 +32,14 @@ class stmt_assign_var final : public statement {
 
   public:
     stmt_assign_var(toc& tc, tokenizer& tz, stmt_identifier ident,
-                    const token equals_tk)
+                    const token& equals_tk)
         : statement{ident.tok()}, stmt_ident_{std::move(ident)},
           expr_{parse_value(tc, tz, stmt_ident_)}, equals_tk_{equals_tk} {}
 
     // the initializer of a declaration, parsed before the variable was
     // declared; a new variable is writable, so the read-only check of an
     // assignment does not apply
-    stmt_assign_var(stmt_identifier ident, const token equals_tk,
+    stmt_assign_var(stmt_identifier ident, const token& equals_tk,
                     expr_any value)
         : statement{ident.tok()}, stmt_ident_{std::move(ident)},
           expr_{std::move(value)}, equals_tk_{equals_tk} {}

@@ -28,7 +28,7 @@ class stmt_builtin_array_length final : public statement {
     builtin_arguments args_;
 
   public:
-    stmt_builtin_array_length(toc& tc, unary_ops uops, const token src_loc_tk,
+    stmt_builtin_array_length(toc& tc, unary_ops uops, const token& src_loc_tk,
                               tokenizer& tz)
         : statement{src_loc_tk, std::move(uops)},
           args_{tc, tz, src_loc_tk, array_indexes_, 1, 1} {

@@ -22,7 +22,7 @@ class stmt_def_type_field final : public statement {
 
   public:
     // 'type_name_tk' names the type the field is in
-    stmt_def_type_field(toc& tc, const token tk, tokenizer& tz,
+    stmt_def_type_field(toc& tc, const token& tk, tokenizer& tz,
                         const token& type_name_tk)
         : statement{tk} {
 

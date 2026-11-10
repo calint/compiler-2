@@ -993,15 +993,15 @@ class expr_bool final : public statement {
     std::optional<token> close_paren_tk_;
 
   public:
-    expr_bool(toc& tc, const token src_loc_tk, tokenizer& tz)
+    expr_bool(toc& tc, const token& src_loc_tk, tokenizer& tz)
         : statement{src_loc_tk} {
 
         parse_list(tc, tz);
     }
 
     // e.g. '(a == b and c == d)' after its 'not's, the '(' has been read
-    expr_bool(toc& tc, const token src_loc_tk, tokenizer& tz,
-              condition_nots nots, const token open_paren_tk)
+    expr_bool(toc& tc, const token& src_loc_tk, tokenizer& tz,
+              condition_nots nots, const token& open_paren_tk)
         : statement{src_loc_tk}, nots_{std::move(nots)},
           open_paren_tk_{open_paren_tk} {
 

@@ -1917,7 +1917,7 @@ class stmt_call final : public statement {
     // 'tz' is after the name, before its '<' or '('. 'expected_type' is the
     // type the call is assigned to, it tells a type parameter that is the
     // result, e.g. 'x.f = tz.to()'
-    stmt_call(toc& tc, unary_ops uops, const token tk, tokenizer& tz,
+    stmt_call(toc& tc, unary_ops uops, const token& tk, tokenizer& tz,
               const type* const expected_type)
         : statement{tk, std::move(uops)} {
 
@@ -1973,7 +1973,7 @@ class stmt_call final : public statement {
     // e.g. 'point.at(1, 2)' calls the constructor 'point.at', 'tz' is after
     // 'point'
     stmt_call(constructor_call_tag /*tag*/, toc& tc, unary_ops uops,
-              const token type_tk, tokenizer& tz)
+              const token& type_tk, tokenizer& tz)
         : statement{type_tk, std::move(uops)},
           constructor_{read_constructor_tokens(tz)},
           func_{&constructor_func(tc)} {

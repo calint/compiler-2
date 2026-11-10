@@ -19,6 +19,11 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
     file 'equivalent' to '/dev/stdout' ("invalid --bin: 'out.s' is the
     standard output") is about 15 lines in 'main.cpp' and a test-cli case,
     only a guard against a user mistake
+[ ] easy: (round 253 VY) on rv32i 'dat a = i8[0xffffffff]' gets "code,
+    data and variables use 4294967344 B, which reaches the 4294967296 B
+    that the target addresses" with no source location: the check at the
+    'dat' counts the data and the allocated variables, not the '--vars'
+    capacity, so the end-of-build check reports it
 [ ] easy: (round 241 VE 2.2) an error in a method instance found while a
     call is compiled names only the call ("'b.m' called from 'q.m(v)'"),
     not the alias that made the instance ("instantiated by 'type b =
@@ -39,7 +44,10 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
     inside the calls of an earlier operand ('ub_order.hpp',
     'assert_not_read_before' through 'visit_operand_reads') would accept
     them, but an inlined result can be the storage of its argument, so it
-    needs a proof first
+    needs a proof first; round 250 VS: wider, a computed operand is
+    rejected too, e.g. 's(g + 0, w())', 's(-g, w())', 's(r(g), w())', while
+    'g + 0 + w()' is accepted; such operands are computed at their place, so
+    only bare paths need the check
 [ ] medium: user decision (round 226 UF1): inlined calls that double per
     level have no limit, each limit bounds only one path (64 calls of a
     name, 256 scopes), e.g. 'func r(v mut, n)' calling 'r(v, n - 1)' twice

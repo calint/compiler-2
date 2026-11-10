@@ -57,7 +57,7 @@ class stmt_builtin_convert final : public statement {
 
   public:
     // note: 'converted' is an integer type, see 'conversion_type'
-    stmt_builtin_convert(toc& tc, unary_ops uops, const token src_loc_tk,
+    stmt_builtin_convert(toc& tc, unary_ops uops, const token& src_loc_tk,
                          const type& converted, tokenizer& tz)
         : statement{src_loc_tk, std::move(uops)},
           argument_{parse_argument(tc, tz, src_loc_tk)} {

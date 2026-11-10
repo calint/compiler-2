@@ -14,7 +14,7 @@
 // inlined body jumps to the end of its call, a noinline body returns
 class stmt_return final : public statement {
   public:
-    explicit stmt_return(const token src_loc_tk) : statement{src_loc_tk} {}
+    explicit stmt_return(const token& src_loc_tk) : statement{src_loc_tk} {}
 
     //
     // overridden methods

@@ -106,7 +106,7 @@ class stmt_if final : public statement {
     std::optional<else_part> else_;
 
   public:
-    stmt_if(toc& tc, const token src_loc_tk, tokenizer& tz)
+    stmt_if(toc& tc, const token& src_loc_tk, tokenizer& tz)
         : statement{src_loc_tk} {
 
         // 'if a == b {x = 1} else if c == d {y = 2} else {z = 3}' breaks down

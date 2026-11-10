@@ -27,5 +27,5 @@ class unary_ops;
     -> std::unique_ptr<statement>;
 
 // a statement of a block, 'tk' its first token
-[[nodiscard]] auto parse_statement(toc& tc, tokenizer& tz, const token tk)
+[[nodiscard]] auto parse_statement(toc& tc, tokenizer& tz, const token& tk)
     -> std::unique_ptr<statement>;

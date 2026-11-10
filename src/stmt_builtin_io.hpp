@@ -98,7 +98,7 @@ class stmt_builtin_io final : public statement {
 
   public:
     stmt_builtin_io(toc& tc, const io_function& io, unary_ops uops,
-                    const token src_loc_tk, tokenizer& tz)
+                    const token& src_loc_tk, tokenizer& tz)
         : statement{src_loc_tk, std::move(uops)}, io_{io},
           args_{read_arguments(tc, io, src_loc_tk, tz)} {
 

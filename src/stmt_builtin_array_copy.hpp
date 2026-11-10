@@ -20,7 +20,7 @@ class stmt_builtin_array_copy final : public statement {
     bulk_operands operands_;
 
   public:
-    stmt_builtin_array_copy(toc& tc, const token src_loc_tk, tokenizer& tz)
+    stmt_builtin_array_copy(toc& tc, const token& src_loc_tk, tokenizer& tz)
         : statement{src_loc_tk}, operands_{tc,
                                            tz,
                                            src_loc_tk,

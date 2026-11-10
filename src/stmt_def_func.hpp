@@ -468,7 +468,7 @@ class stmt_def_func final : public statement {
     // a function of the user code, or an instance of a generic definition,
     // e.g. 'tokenizer.to<name>' or 'str.print', see 'func_instantiator';
     // 'tz' is after 'head'
-    stmt_def_func(toc& tc, const token src_loc_tk, const func_head& head,
+    stmt_def_func(toc& tc, const token& src_loc_tk, const func_head& head,
                   tokenizer& tz, std::optional<func_instance> instance)
         : statement{src_loc_tk}, head_{head}, instance_{std::move(instance)} {
 
@@ -1513,7 +1513,7 @@ class stmt_def_func_generic final : public statement {
 
   public:
     // 'tz' is after the head
-    stmt_def_func_generic(toc& tc, const token src_loc_tk,
+    stmt_def_func_generic(toc& tc, const token& src_loc_tk,
                           const func_head& head, tokenizer& tz)
         : statement{src_loc_tk} {
 
@@ -1713,7 +1713,7 @@ class stmt_def_func_generic final : public statement {
 };
 
 // reads the head and makes the statement of the kind that follows it
-inline auto make_stmt_def_func(toc& tc, const token src_loc_tk, tokenizer& tz)
+inline auto make_stmt_def_func(toc& tc, const token& src_loc_tk, tokenizer& tz)
     -> std::unique_ptr<statement> {
 
     const func_head head{func_head::read(tc, tz)};

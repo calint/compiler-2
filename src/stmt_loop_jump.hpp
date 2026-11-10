@@ -17,7 +17,7 @@ class stmt_loop_jump final : public statement {
     bool is_break_{};
 
   public:
-    stmt_loop_jump(const toc& tc, const token src_loc_tk)
+    stmt_loop_jump(const toc& tc, const token& src_loc_tk)
         : statement{src_loc_tk}, is_break_{src_loc_tk.is_text("break")} {
 
         tc.scopes().assert_in_loop(src_loc_tk);

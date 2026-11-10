@@ -199,7 +199,7 @@ class statement {
     const type* type_{};
 
   public:
-    explicit statement(const token tk, unary_ops uops = {})
+    explicit statement(const token& tk, unary_ops uops = {})
         : token_{tk}, uops_{std::move(uops)} {}
 
     statement(const statement&) = default;

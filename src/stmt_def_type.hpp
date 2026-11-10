@@ -262,8 +262,8 @@ class stmt_def_type_generic final : public statement {
 
   public:
     // errors in the fields are found when an alias parses them
-    stmt_def_type_generic(toc& tc, const token src_loc_tk, const token name_tk,
-                          tokenizer& tz)
+    stmt_def_type_generic(toc& tc, const token& src_loc_tk,
+                          const token& name_tk, tokenizer& tz)
         : statement{src_loc_tk} {
 
         // e.g. 'capacity' of '<capacity>'
@@ -506,7 +506,7 @@ class stmt_def_type final : public statement {
     type type_;
 
   public:
-    stmt_def_type(toc& tc, const token src_loc_tk, const token name_tk,
+    stmt_def_type(toc& tc, const token& src_loc_tk, const token& name_tk,
                   std::variant<type_fields, generic_type_use> definition)
         : statement{src_loc_tk}, name_tk_{name_tk},
           definition_{std::move(definition)}, type_{name_tk.text()} {
@@ -573,7 +573,7 @@ class stmt_def_type final : public statement {
 };
 
 // reads the name and makes the statement of the kind that follows it
-inline auto make_stmt_def_type(toc& tc, const token src_loc_tk, tokenizer& tz)
+inline auto make_stmt_def_type(toc& tc, const token& src_loc_tk, tokenizer& tz)
     -> std::unique_ptr<statement> {
 
     const token name_tk{tz.next_token()};

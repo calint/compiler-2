@@ -186,7 +186,7 @@ inline auto assert_return_without_value(const tokenizer& tz,
 }
 
 // a statement that starts with a keyword, null otherwise
-inline auto parse_keyword_statement(toc& tc, tokenizer& tz, const token tk)
+inline auto parse_keyword_statement(toc& tc, tokenizer& tz, const token& tk)
     -> std::unique_ptr<statement> {
 
     if (tk.is_text("var") or tk.is_text("let")) {
@@ -381,7 +381,7 @@ inline auto assert_not_compound_assignment(const tokenizer& tz,
 
 // a statement that starts with a name: a call as in an expression, e.g.
 // 'f(x)', 'point.at(1, 2)' or 'lst.add(x)', otherwise an assignment
-inline auto parse_name_statement(toc& tc, tokenizer& tz, const token tk,
+inline auto parse_name_statement(toc& tc, tokenizer& tz, const token& tk,
                                  const term_kind tm)
     -> std::unique_ptr<statement> {
 
@@ -523,7 +523,7 @@ inline auto parse_operand(toc& tc, tokenizer& tz, unary_ops uops,
     return std::move(std::get<std::unique_ptr<stmt_identifier>>(parsed));
 }
 
-inline auto parse_statement(toc& tc, tokenizer& tz, const token tk)
+inline auto parse_statement(toc& tc, tokenizer& tz, const token& tk)
     -> std::unique_ptr<statement> {
 
     // e.g. the '2' of 'return 2', which takes no value, or ''a' = 1'

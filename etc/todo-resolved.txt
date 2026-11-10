@@ -1,6 +1,17 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 253 (2026-11-10, VV token parameters, VS aliasing, VW
+    flow, VP regression, VY global data)
+    => done (2026-11-10): a 'token' (72 B) is passed as 'const token&'
+       everywhere (42 parameters were by value), by value only where the
+       function assigns to its copy; listings unchanged, asan and fuzzers
+       clean; VS found no no-UB hole (about 30000 programs inline, noinline
+       and mixed), its wider form of round 229 UL1 joined that item; VW
+       found the flow code simple; VP compiled 147000 programs (6.56 million
+       compiles) with round 233 and round 249: only the intended message
+       changes; VY found no defect in global data (strict alignment
+       emulator, all 256 byte values, offsets past 4096 B)
 [x] easy: round 252 (2026-11-10, VU parser simplification, VT include
     bug hunt)
     => done (2026-11-10): VU: the five rejections of an empty operand in

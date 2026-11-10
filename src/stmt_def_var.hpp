@@ -373,8 +373,8 @@ class stmt_def_const final : public statement {
   public:
     // the constant is declared during the parse so later statements can name
     // it, e.g. as an array size
-    stmt_def_const(toc& tc, const token src_loc_tk, const token name_tk,
-                   const token equals_tk, const type& tp, expr_any initializer,
+    stmt_def_const(toc& tc, const token& src_loc_tk, const token& name_tk,
+                   const token& equals_tk, const type& tp, expr_any initializer,
                    const folded_value& constant)
         : statement{src_loc_tk}, name_tk_{name_tk}, equals_tk_{equals_tk},
           initializer_{std::move(initializer)}, constant_{constant} {
@@ -438,8 +438,8 @@ class stmt_def_var final : public statement {
   public:
     // 'at_name' is the tokenizer after the name, where the destination
     // continues
-    stmt_def_var(toc& tc, const token tk, tokenizer at_name,
-                 const token equals_tk,
+    stmt_def_var(toc& tc, const token& tk, tokenizer at_name,
+                 const token& equals_tk,
                  const initializer_declaration& declaration, expr_any value)
         : statement{tk}, declared_{declaration.declared_var()},
           assign_var_{
@@ -544,7 +544,7 @@ class stmt_def_var final : public statement {
 // reads the name and the initializer and makes the statement of the kind they
 // give: a constant for a 'let' that folds, e.g. 'let n = 2 * 3', else a
 // variable
-inline auto make_stmt_def_var(toc& tc, const token tk, tokenizer& tz)
+inline auto make_stmt_def_var(toc& tc, const token& tk, tokenizer& tz)
     -> std::unique_ptr<statement> {
 
     const token name_tk{initializer_declaration::read_name(tc, tz)};

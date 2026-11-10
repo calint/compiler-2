@@ -183,7 +183,7 @@ class expr_any final : public statement {
 
     // a path parsed apart, e.g. a method receiver or the array argument of a
     // built-in
-    expr_any(const token pos_tk, expr_path path)
+    expr_any(const token& pos_tk, expr_path path)
         : statement{pos_tk}, form_{single_value{
                                  .value{std::move(path)},
                              }} {

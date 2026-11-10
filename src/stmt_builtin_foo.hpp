@@ -34,7 +34,7 @@ class stmt_builtin_foo final : public statement {
     stmt_block code_;
 
   public:
-    stmt_builtin_foo(toc& tc, const token src_loc_tk, tokenizer& tz)
+    stmt_builtin_foo(toc& tc, const token& src_loc_tk, tokenizer& tz)
         : statement{src_loc_tk}, ident_{parse_array(tc, tz)},
           count_{parse_count(tc, tz)}, code_{parse_code(tc, tz)} {}
 
