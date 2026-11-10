@@ -634,14 +634,6 @@ class machine {
         // the status the program exits with, one per handler, the same on
         // every target
         int exit_code{};
-
-        // the name as a part of a label, which has no space, e.g.
-        // 'frame_overflow'
-        [[nodiscard]] auto symbol() const -> std::string {
-            std::string text{name};
-            std::ranges::replace(text, ' ', '_');
-            return text;
-        }
     };
 
   public:
@@ -913,7 +905,7 @@ class machine {
 
     // starts the data section, after the code and every routine it uses
     auto begin_data() -> void {
-        assembler& output{target_assembler()};
+        assembler& output{output_.get()};
 
         output.add_separator_newline();
         output.switch_section(section::data);
@@ -927,8 +919,10 @@ class machine {
     auto begin_noinline_body(std::string function,
                              const std::string& body_label) -> void {
 
-        target_assembler().begin_body(std::move(function), body_label);
-        label(0, body_label);
+        assembler& output{output_.get()};
+
+        output.begin_body(std::move(function), body_label);
+        output.label(0, body_label);
 
         // note: a body starts and ends with no scratch register held
         assert(state_.registers.scratch_count() == 0);
@@ -1114,14 +1108,16 @@ class machine {
 
         const std::string line{printable(text)};
 
+        assembler& output{output_.get()};
+
         if (src_loc_tk.at_line() == 0) {
-            target_assembler().comment(indent, line);
+            output.comment(indent, line);
             return;
         }
 
         const std::string location{locations_.for_comment(src_loc_tk)};
 
-        target_assembler().comment(indent, location, line);
+        output.comment(indent, location, line);
     }
 
     template <typename... args_t>
@@ -1195,14 +1191,18 @@ class machine {
 
         assert(value <= target_.max_storage_bytes);
 
-        target_assembler().define_constant(name, static_cast<int64_t>(value));
+        assembler& output{output_.get()};
+
+        output.define_constant(name, static_cast<int64_t>(value));
     }
 
     // the elements on one line, e.g. '.word 1, 2, 3'
     auto emit_data_array(const size_t element_size_bytes,
                          const std::span<const int64_t> values) -> void {
 
-        target_assembler().data(element_size_bytes, values);
+        assembler& output{output_.get()};
+
+        output.data(element_size_bytes, values);
     }
 
     // runs 'emit' for its checks, nothing it emits is kept and the registers
@@ -1221,7 +1221,9 @@ class machine {
             state_.registers = noinline_body_pool();
         }
 
-        std::ignore = target_assembler().capture(emit);
+        assembler& output{output_.get()};
+
+        std::ignore = output.capture(emit);
     }
 
     // emits both versions and keeps the one with less code, the first on ties,
@@ -1237,7 +1239,7 @@ class machine {
                         const std::function_ref<void()> emit_first,
                         const std::function_ref<void()> emit_second) -> bool {
 
-        assembler& output{target_assembler()};
+        assembler& output{output_.get()};
 
         if (output.is_capturing() and options_.kept != kept_version::nested) {
             comment(src_loc_tk, indent,
@@ -1275,7 +1277,7 @@ class machine {
     auto emit_read_only_constants(
         const std::span<const read_only_constant> constants) -> void {
 
-        assembler& output{target_assembler()};
+        assembler& output{output_.get()};
 
         output.switch_section(section::rodata);
         for (const read_only_constant& constant : constants) {
@@ -1298,11 +1300,15 @@ class machine {
     }
 
     auto emit_string_data(const std::string_view bytes) -> void {
-        target_assembler().string_data(bytes);
+        assembler& output{output_.get()};
+
+        output.string_data(bytes);
     }
 
     auto emit_zero_data(const size_t size_bytes) -> void {
-        target_assembler().zero_data(size_bytes);
+        assembler& output{output_.get()};
+
+        output.zero_data(size_bytes);
     }
 
     // releases the frame base and ends the body
@@ -1310,7 +1316,10 @@ class machine {
         assert(state_.registers.scratch_count() == 0);
 
         release_named_register(token{}, 0, frame_base_register());
-        target_assembler().end_body();
+
+        assembler& output{output_.get()};
+
+        output.end_body();
     }
 
     // the exit routine is shared, an exit is a jump to it
@@ -1342,7 +1351,7 @@ class machine {
         assert(state_.registers.is_empty());
         assert(state_.registers.unavailable_mask() == 0);
 
-        assembler& output{target_assembler()};
+        assembler& output{output_.get()};
 
         output.optimize(options_.jumps == assembler::jump_mode::optimized);
 
@@ -1398,7 +1407,9 @@ class machine {
     }
 
     auto label(const size_t indent, const std::string_view name) -> void {
-        target_assembler().label(indent, name);
+        assembler& output{output_.get()};
+
+        output.label(indent, name);
     }
 
     [[nodiscard]] auto max_storage_bytes() const -> size_t {
@@ -1469,7 +1480,7 @@ class machine {
     // ends the data at 'dat.end', then the variables from 'vars' to
     // 'vars.end'
     auto reserve_variables(const size_t size_bytes) -> void {
-        assembler& output{target_assembler()};
+        assembler& output{output_.get()};
 
         output.label(0, data_end_label_);
         output.add_separator_newline();
@@ -1505,7 +1516,9 @@ class machine {
 
     // a blank line that separates the code from the report
     auto separate_report() -> void {
-        target_assembler().add_separator_newline();
+        assembler& output{output_.get()};
+
+        output.add_separator_newline();
     }
 
     [[nodiscard]] auto slot_register() const -> std::string_view {
@@ -1515,7 +1528,7 @@ class machine {
     // the header, the entry of the program and the variables base, held until
     // 'finish', then the target's own setup
     auto start() -> void {
-        assembler& output{target_assembler()};
+        assembler& output{output_.get()};
 
         // note: the parse declares names without emitting
         assert(output.is_empty());
@@ -1542,7 +1555,7 @@ class machine {
     // what the output measured, for the report of the front end, valid after
     // 'finish'
     [[nodiscard]] auto statistics() const -> output_statistics {
-        const assembler& output{target_assembler()};
+        const assembler& output{output_.get()};
 
         return {
             .optimizations{output.optimizations()},
@@ -1750,13 +1763,10 @@ class machine {
     }
 
     // the handler of a check: without the line it prints 'panic: NAME' and
-    // exits; with it, one stub per failure location loads the line and enters
-    // the entry of its file, which prints 'panic: NAME at FILE:', loads the
-    // exit code and enters the shared line report; its comment above it
+    // exits, with it each file of its failures has an entry
+    // ('emit_failure_entry'); its comment above it
     auto emit_failure_handler(const failure_handler& handler) -> void {
         comment({}, 0, handler.comment);
-
-        assembler& output{target_assembler()};
 
         if (not reports_line(handler)) {
             const std::string message_label{
@@ -1767,6 +1777,8 @@ class machine {
                 std::format("{}\n", panic_message(handler.name)),
             };
 
+            assembler& output{output_.get()};
+
             output.label(0, handler.label);
             emit_panic_message(message_label, message);
             exit(token{}, 1, operand::imm(handler.exit_code, default_type()));
@@ -1776,50 +1788,8 @@ class machine {
             return;
         }
 
-        const std::string label_name{handler.symbol()};
-
-        const operand line_register{
-            make_register_operand(target_.report_line_register, default_type()),
-        };
-
-        const operand code_register{
-            make_register_operand(target_.report_exit_code_register,
-                                  default_type()),
-        };
-
-        const operand exit_code{
-            operand::imm(handler.exit_code, default_type()),
-        };
-
         for (const auto& [file_ix, lines] : failure_lines_of(handler.label)) {
-            const std::string entry_label{
-                failure_entry_label(handler.label, file_ix),
-            };
-
-            for (const size_t line : lines) {
-                output.label(0, line_failure_label(label_name, file_ix, line));
-
-                const operand line_value{
-                    operand::imm(static_cast<int64_t>(line), default_type()),
-                };
-
-                copy_value(token{}, 1, line_register, line_value);
-                emit_no_return_jump(1, entry_label);
-            }
-
-            const std::string message_label{
-                std::format("{}_message", entry_label),
-            };
-
-            const std::string message{failure_message(handler.name, file_ix)};
-
-            output.label(0, entry_label);
-            emit_panic_message(message_label, message);
-            copy_value(token{}, 1, code_register, exit_code);
-            emit_no_return_jump(1, target_.routines.report_line);
-            mark_used(target_.routines.report_line);
-
-            emit_message_data(message_label, message);
+            emit_failure_entry(handler, file_ix, lines);
         }
     }
 
@@ -1841,7 +1811,7 @@ class machine {
             .line{src_loc_tk.at_line()},
         });
 
-        return line_failure_label(handler.symbol(), src_loc_tk.file_index(),
+        return line_failure_label(handler, src_loc_tk.file_index(),
                                   src_loc_tk.at_line());
     }
 
@@ -2150,6 +2120,8 @@ class machine {
     // a routine marked while another one is emitted is emitted only if a
     // later step of 'emit_runtime' asks for it
     auto assert_used_routines_emitted() const -> void {
+        const assembler& output{output_.get()};
+
         for (const std::string& routine : state_.used_routines) {
             // note: the code marks the handlers, they are emitted first and a
             //       handler that reports lines is under the labels of its lines
@@ -2162,7 +2134,7 @@ class machine {
                     }),
             };
 
-            assert(is_handler or target_assembler().defines_label(routine));
+            assert(is_handler or output.defines_label(routine));
         }
     }
 
@@ -2183,7 +2155,7 @@ class machine {
             };
         }
 
-        const assembler& output{target_assembler()};
+        const assembler& output{output_.get()};
 
         const size_t first_count{output.instruction_count_of(first.lines)};
         const size_t second_count{output.instruction_count_of(second->lines)};
@@ -2239,7 +2211,9 @@ class machine {
 
         const version_scope version{*this};
 
-        assembler::captured_lines lines{target_assembler().capture(emit)};
+        assembler& output{output_.get()};
+
+        assembler::captured_lines lines{output.capture(emit)};
 
         return {
             .lines{std::move(lines)},
@@ -2248,11 +2222,68 @@ class machine {
         };
     }
 
+    // the failures of 'handler' at 'lines' of the file 'file_ix': a stub per
+    // line loads the line and enters the entry of the file, which prints
+    // 'panic: NAME at FILE:', loads the exit code and enters the shared line
+    // report
+    auto emit_failure_entry(const failure_handler& handler,
+                            const size_t file_ix, const std::set<size_t>& lines)
+        -> void {
+
+        const std::string entry_label{
+            failure_entry_label(handler.label, file_ix),
+        };
+
+        const operand line_register{
+            make_register_operand(target_.report_line_register, default_type()),
+        };
+
+        assembler& output{output_.get()};
+
+        for (const size_t line : lines) {
+            const std::string line_label{
+                line_failure_label(handler, file_ix, line),
+            };
+
+            output.label(0, line_label);
+
+            const operand line_value{
+                operand::imm(static_cast<int64_t>(line), default_type()),
+            };
+
+            copy_value(token{}, 1, line_register, line_value);
+            emit_no_return_jump(1, entry_label);
+        }
+
+        const std::string message_label{
+            std::format("{}_message", entry_label),
+        };
+
+        const std::string message{failure_message(handler.name, file_ix)};
+
+        const operand code_register{
+            make_register_operand(target_.report_exit_code_register,
+                                  default_type()),
+        };
+
+        const operand exit_code{
+            operand::imm(handler.exit_code, default_type()),
+        };
+
+        output.label(0, entry_label);
+        emit_panic_message(message_label, message);
+        copy_value(token{}, 1, code_register, exit_code);
+        emit_no_return_jump(1, target_.routines.report_line);
+        mark_used(target_.routines.report_line);
+
+        emit_message_data(message_label, message);
+    }
+
     // the text of a message in read-only data, then back to the code
     auto emit_message_data(const std::string_view message_label,
                            const std::string_view message) -> void {
 
-        assembler& output{target_assembler()};
+        assembler& output{output_.get()};
 
         output.switch_section(section::rodata);
         output.label(0, message_label);
@@ -2600,15 +2631,6 @@ class machine {
         return target_.scratch_registers;
     }
 
-    // the assembler the target writes its output with
-    [[nodiscard]] auto target_assembler() -> assembler& {
-        return output_.get();
-    }
-
-    [[nodiscard]] auto target_assembler() const -> const assembler& {
-        return output_.get();
-    }
-
     //
     // statics
     //
@@ -2675,16 +2697,21 @@ class machine {
 
     // a location in the main file has no file index, so the label stays the
     // same for a program of one file
-    [[nodiscard]] static auto line_failure_label(const std::string_view name,
+    [[nodiscard]] static auto line_failure_label(const failure_handler& handler,
                                                  const size_t file_ix,
                                                  const size_t line)
         -> std::string {
 
+        // note: a label has no space, the handlers that take the line have
+        //       names of one word
+
+        assert(not handler.name.contains(' '));
+
         if (file_ix == 0) {
-            return std::format("baz_{}_line_{}", name, line);
+            return std::format("baz_{}_line_{}", handler.name, line);
         }
 
-        return std::format("baz_{}_f{}_line_{}", name, file_ix, line);
+        return std::format("baz_{}_f{}_line_{}", handler.name, file_ix, line);
     }
 
     // e.g. 'panic: bounds'; the newline in front separates it from the output

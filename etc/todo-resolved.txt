@@ -1,6 +1,12 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 246 (2026-11-10, VJ 'machine' simplification)
+    => done (2026-11-10): 'target_assembler()' removed, its uses take the
+       local 'output'; the per-file part of 'emit_failure_handler' is
+       'emit_failure_entry'; 'failure_handler::symbol' and a replace of
+       spaces no handler name has removed (an assert); listings unchanged,
+       also with '--checks=noub,line' (800 tests on both targets)
 [x] easy: round 245 (2026-11-10, VH 'stmt_call' simplification, VI io and
     sectors bug hunt)
     => done (2026-11-10): VH: the noinline argument loop is the named step
