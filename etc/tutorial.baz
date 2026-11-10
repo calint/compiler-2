@@ -366,7 +366,8 @@ func reading() {
     var got = read(0, line, 16)
     write(1, line, got)
     # 'read' fills an array from a file descriptor, here 0 is standard input
-    # it returns the number of bytes read, 0 at the end of the input, and
+    # it returns the number of bytes read, 0 at the end of the input (the
+    # bare-metal targets wait for more input instead), and
     # takes the same optional count and start index as 'write'; the count is
     # in elements and the result in bytes, the same for an 'i8' array, and
     # 'write' returns the bytes it wrote

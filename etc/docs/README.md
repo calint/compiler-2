@@ -1945,7 +1945,8 @@ The exceptions, all listed in this chapter:
 2. the bytes that 'read' and 'sector_read' put into a buffer are not checked
    against their type (below)
 3. the target: items 1 to 5 below
-4. whether a program is accepted may depend on inlining (1.5, 8.3); its
+4. whether a program is accepted may depend on inlining (1.5, 8.3) and on
+   the run-time checks, which take scratch registers (item 3 below); its
    result does not
 
 What depends on the target is listed here, nothing else does:
@@ -1961,10 +1962,13 @@ What depends on the target is listed here, nothing else does:
    and panics 'sd card' on x86_64, a sector of 32 bits or less, e.g.
    'i32(-2)', is its value modulo 2^32 on both
 2. the types a target has: 'i64' is rejected on rv32i
-3. the number of scratch registers: an expression that runs out of them on one
-   target can be accepted on another (7.11), and the run-time checks take
-   some, e.g. the 'frame' check of a noinline call with many indexed
-   arguments; also the registers an instruction fixes:
+3. the number of scratch registers: code that runs out of them on one
+   target, e.g. a deep expression or nested 'foo' loops, whose counters
+   hold registers, can be accepted on another (7.11), and the run-time
+   checks take some, so code accepted without a check can be rejected with
+   it, e.g. the 'overflow' check of the '+' in eight nested
+   'a[i] << (1 + ...)' on x86_64 or the 'frame' check of a noinline call
+   with many indexed arguments; also the registers an instruction fixes:
    'exit(int(arrays_equal(a[s], b, c)))' is rejected on x86_64, where
    'arrays_equal' needs the 'rdi' that 'exit' holds
 4. the limits of a target: '--vars' and the memory it addresses, which a
@@ -1985,11 +1989,15 @@ What depends on the target is listed here, nothing else does:
 5. the devices of the bare-metal targets: 'rv32i-qemu' has no sd card, so
    'sector_read' and 'sector_write' are rejected there; 'rv32i-fpga' does not
    detect a sector past the end of the card, which panics 'sd card' on x86_64
-   and rv32i; the uart of 'rv32i-qemu' and 'rv32i-fpga' takes every file
-   descriptor, a 'read' returns at most one line, a carriage return reads as a
-   newline, and an end of transmission byte ends a read, also inside the
-   input, the emulator of 'rv32i-fpga' reads a backspace as 0x7f as a
-   terminal key sends it; code, data, variables and '--stack' fit in the
+   and rv32i, its emulator stops with "CPU error: 1305" and exit code 25;
+   the uart of 'rv32i-qemu' and 'rv32i-fpga' takes every file descriptor,
+   where x86_64 and rv32i return the negated error number of the system,
+   e.g. -9 from a 'read' or 'write' of a file descriptor that is not open; a
+   'read' returns at most one line, a carriage return reads as a newline,
+   and an end of transmission byte ends a read, also inside the input; the
+   end of the input is not seen, so a 'read' there waits where x86_64 and
+   rv32i return 0; the emulator of 'rv32i-fpga' reads a backspace as 0x7f
+   as a terminal key sends it; code, data, variables and '--stack' fit in the
    memory of the device, 126 MiB on 'rv32i-qemu' (qemu keeps 2 MiB of its
    128 MiB for its device tree) and '--memory' on 'rv32i-fpga'
 
@@ -2006,8 +2014,9 @@ assignment makes a result whole, and no conversion makes a 'bool'.
 The bytes that 'read' and 'sector_read' put into a buffer are assumed to be
 written from the same type, e.g. by 'write' or 'sector_write' of such a
 buffer: a 'bool' is 0 or 1 and the padding of a record is 0. Other bytes are
-not checked; a 'bool' read as 120 is then neither true nor false, and two
-records with equal fields compare unequal, since '==' compares their bytes.
+not checked; a 'bool' read as 120 is then true as a condition and equal to
+neither 'true' nor 'false', and two records with equal fields compare
+unequal, since '==' compares their bytes.
 
 The checks run in three phases: the parse rejects the reads of what is not
 assigned and the kinds of value a destination does not take, the compile the

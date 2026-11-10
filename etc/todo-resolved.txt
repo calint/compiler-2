@@ -1,6 +1,15 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 261 (2026-11-10, WM the exceptions of chapter 8)
+    => done (2026-11-10): every exception is still present; a 'bool' read
+       as 120 is true as a condition and equal to neither 'true' nor
+       'false'; scratch registers also run out in nested 'foo' and make
+       acceptance depend on '--checks'; a sector past the end stops the fpga
+       emulator with a CPU error; on the bare-metal targets an unopened file
+       descriptor works and 'read' waits at the end of the input (also in
+       the tutorial); normalizing read bytes and shortening long x86_64
+       labels wait for the user
 [x] medium: round 260 (2026-11-10, WI 'assembler_rv32i' simplification,
     WJ fuzzer review)
     => done (2026-11-10): WI: 'branch_zero' private, one 'skip_size_bytes'
