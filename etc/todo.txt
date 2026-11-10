@@ -19,6 +19,15 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
     file 'equivalent' to '/dev/stdout' ("invalid --bin: 'out.s' is the
     standard output") is about 15 lines in 'main.cpp' and a test-cli case,
     only a guard against a user mistake
+[ ] medium: user decision (round 264 WS): the check of a body without its
+    calls expands nested inlined recursions as the product of their
+    depths: 'r1' -> 'r2' -> 'r3', each bounded by 'array_length(a)', in a
+    noinline 'f(a i8[])' take 3.3 s at 3 levels and 87 s at 4, even when
+    nothing calls 'f' ('inline_call::check_recursion'); a recursion met
+    inside the dry run of another one's levels could compile only its
+    arguments (one condition and a flag), errors at a combination of levels
+    then found only at real calls; also an error in a per-length body does
+    not name the lengths ("'g<i8>' called from 'g(a)'"), see round 251 VT2
 [ ] medium: user decision (round 256 WF): x86_64 rejects a division whose
     destination is 'rdx' although nothing live is clobbered (test 1113
     'write(1, text, n / 2)'); skipping the reservation of 'rdx' when it is
