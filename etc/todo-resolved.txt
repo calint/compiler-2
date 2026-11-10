@@ -1,6 +1,11 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 265 (2026-11-10, WR 'machine_rv32i' routines review)
+    => done (2026-11-10): nothing left to simplify in the routines,
+       helpers and check emitters; the comment of 'sign_shift_' covers its
+       'srli' use, a comment restating 'emit_no_return_jump' removed, a
+       'note:' under the 3 tests of 'check_divisor'
 [x] easy: round 264 (2026-11-10, WQ syntax errors at every position)
     => done (2026-11-10): about 706000 one-token mutants of the tutorial,
        prog.baz, roome and 80 tests (165000 under asan): no crash, assert,

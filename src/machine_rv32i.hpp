@@ -121,7 +121,8 @@ class machine_rv32i : public machine {
         "a5",
         "a6",
     };
-    // shifting a word right by this spreads its sign bit over all bits
+    // shifting a word right by this moves its sign bit to bit 0, an
+    // arithmetic shift spreads it over all bits
     static constexpr int sign_shift_{31};
     // 'sp' stays 16-byte aligned, the return address slot of a frame is one
     // unit
@@ -1189,7 +1190,6 @@ class machine_rv32i : public machine {
                                operand::reg("a0", default_type()), check);
     }
 
-    // a far jump takes 'no_return_jump_register_'
     auto emit_no_return_jump(const size_t indent, const std::string_view target)
         -> void override {
 
@@ -1738,6 +1738,7 @@ class machine_rv32i : public machine {
         comment(src_loc_tk, indent, "zero divisor");
 
         failure_tests tests{division_failure_, 3};
+        // note: 3 for the two 'fail_if' and the 'pass_if' below
 
         fail_if(src_loc_tk, indent, tests, op::beq, "a1", "zero");
 
