@@ -1,6 +1,19 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] medium: round 267 (2026-11-10, WT compile-time scaling, WV frame and
+    stack checks)
+    => done (2026-11-10): '--report=registers' was quadratic in the
+       functions (the callee maps of 'register_trace' were copied by every
+       version): an ordered 'register_call_log' outside 'version_state', as
+       'failure_locations_' is, 70.7 G to 4.0 G instructions at 3200
+       noinline functions; the text of every path prefix was built on every
+       walk: built only for the messages that need it, about 10% off an
+       ordinary compile (prog.baz 64.2 M to 57.7 M); listings and reports
+       unchanged; the rest scales linearly or follows the listing; WV found
+       no hole in the 'frame' and 'stack' checks with an emulator that stops
+       on any store outside the variables and the stack; long lines of
+       etc/docs/README.md rewrapped
 [x] easy: round 265 (2026-11-10, WR 'machine_rv32i' routines review)
     => done (2026-11-10): nothing left to simplify in the routines,
        helpers and check emitters; the comment of 'sign_shift_' covers its

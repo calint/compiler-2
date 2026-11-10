@@ -174,9 +174,11 @@ stmt_identifier::assert_constant_indexes_in_bounds(const toc& tc) const
         // note: 'assert_constant_indexes' rejected a run-time index
         assert(value);
 
+        const std::string path{array_text(step.elem_index)};
+
         const machine& x{tc.machine()};
 
-        assert_constant_index(*step.info, index.tok(), step.path, *value, false,
+        assert_constant_index(*step.info, index.tok(), path, *value, false,
                               x.max_storage_bytes());
     });
 }

@@ -5,6 +5,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <map>
+#include <optional>
 #include <span>
 #include <string>
 #include <string_view>
@@ -135,19 +136,8 @@ class register_trace final {
         std::string name;
         token call_site_tk;
         frame_kind kind{};
-    };
-
-    // what the calls of a callee hold themselves
-    struct callee_use {
-        size_t own_peak{};
-        size_t calls{};
-    };
-
-    // what the calls of a function with a body of its own save
-    struct noinline_use {
-        size_t calls{};
-        size_t saved_peak{};
-        token peak_site_tk;
+        // the most registers it held itself, none before it held one
+        std::optional<size_t> own_peak;
     };
 
     // the registers held when the most were
@@ -161,8 +151,6 @@ class register_trace final {
     bool enabled_{};
     std::vector<frame> frames_;
     peak_use peak_{};
-    std::map<std::string, callee_use> callees_;
-    std::map<std::string, noinline_use> noinline_uses_;
 
   public:
     // the registers allocated until 'end_frame' belong to the call of
@@ -175,14 +163,13 @@ class register_trace final {
 
         if (kind == frame_kind::noinline_body) {
             name = body_frame_name(name);
-        } else if (enabled_) {
-            ++callees_[name].calls;
         }
 
         frames_.push_back({
             .name{std::move(name)},
             .call_site_tk{call_site_tk},
             .kind{kind},
+            .own_peak{},
         });
 
         // a build that holds no register has its peak in its first frame,
@@ -192,12 +179,6 @@ class register_trace final {
         }
     }
 
-    [[nodiscard]] auto callees() const
-        -> const std::map<std::string, callee_use>& {
-
-        return callees_;
-    }
-
     // the frame that allocations belong to
     [[nodiscard]] auto current_frame() const -> size_t {
         return frames_.empty() ? 0 : frames_.size() - 1;
@@ -205,19 +186,18 @@ class register_trace final {
 
     auto enable() -> void { enabled_ = true; }
 
-    auto end_frame() -> void { frames_.pop_back(); }
+    // the frame that ends, with what it held, see 'register_call_log'
+    [[nodiscard]] auto end_frame() -> frame {
+        frame ended{std::move(frames_.back())};
+        frames_.pop_back();
+        return ended;
+    }
 
     [[nodiscard]] auto frames() const -> const std::vector<frame>& {
         return frames_;
     }
 
     [[nodiscard]] auto is_enabled() const -> bool { return enabled_; }
-
-    [[nodiscard]] auto noinline_uses() const
-        -> const std::map<std::string, noinline_use>& {
-
-        return noinline_uses_;
-    }
 
     [[nodiscard]] auto peak() const -> const peak_use& { return peak_; }
 
@@ -229,28 +209,6 @@ class register_trace final {
 
         record_own_use(pool);
         record_peak(pool);
-    }
-
-    // a call of the function 'name', which has a body of its own, saves
-    // 'saved' registers
-    auto record_noinline_call(const token& call_site_tk,
-                              const std::string_view name, const size_t saved)
-        -> void {
-
-        if (not enabled_) {
-            return;
-        }
-
-        ++callees_[body_frame_name(name)].calls;
-
-        noinline_use& use{noinline_uses_[std::string{name}]};
-
-        ++use.calls;
-
-        if (saved > use.saved_peak or use.calls == 1) {
-            use.saved_peak = saved;
-            use.peak_site_tk = call_site_tk;
-        }
     }
 
     //
@@ -290,9 +248,9 @@ class register_trace final {
             }
         }
 
-        callee_use& use{callees_[frames_.back().name]};
+        frame& cur{frames_.back()};
 
-        use.own_peak = std::max(use.own_peak, own);
+        cur.own_peak = std::max(cur.own_peak.value_or(0), own);
     }
 
     auto record_peak(const register_pool& pool) -> void {
@@ -311,5 +269,126 @@ class register_trace final {
         peak_.held = held;
         peak_.allocations.assign(live.begin(), live.end());
         peak_.frames = frames_;
+    }
+};
+
+// what the kept code recorded for the report of the use of registers, in the
+// order compiled: the calls that ended and the calls of functions with a body
+// of their own; a version appends to it and drops what it added when it is
+// not kept, so no version copies it, see 'machine::version_scope'
+class register_call_log final {
+    // a call of the function 'name', which has a body of its own, that saves
+    // 'saved' registers
+    struct noinline_call {
+        token call_site_tk;
+        std::string name;
+        size_t saved{};
+    };
+
+    std::vector<register_trace::frame> frames_;
+    std::vector<noinline_call> noinline_calls_;
+
+  public:
+    // what the calls of a callee hold themselves
+    struct callee_use {
+        size_t own_peak{};
+        size_t calls{};
+    };
+
+    // what the calls of a function with a body of its own save
+    struct noinline_use {
+        size_t calls{};
+        size_t saved_peak{};
+        token peak_site_tk;
+    };
+
+    // the length of the log, where a version starts
+    struct position {
+        size_t frames{};
+        size_t noinline_calls{};
+    };
+
+    auto add_frame(register_trace::frame ended) -> void {
+        frames_.push_back(std::move(ended));
+    }
+
+    auto add_noinline_call(noinline_call call) -> void {
+        noinline_calls_.push_back(std::move(call));
+    }
+
+    // what 'append' gives back to a log cut at 'start'
+    [[nodiscard]] auto added_since(const position& start) const
+        -> register_call_log {
+
+        register_call_log added;
+
+        added.frames_.append_range(std::span{frames_}.subspan(start.frames));
+
+        added.noinline_calls_.append_range(
+            std::span{noinline_calls_}.subspan(start.noinline_calls));
+
+        return added;
+    }
+
+    auto append(register_call_log added) -> void {
+        frames_.append_range(std::move(added.frames_));
+        noinline_calls_.append_range(std::move(added.noinline_calls_));
+    }
+
+    // a call inlined counts where its frame ends, a call of a body of its own
+    // where it is made; a callee is listed once it is called or holds a
+    // register
+    [[nodiscard]] auto callees() const -> std::map<std::string, callee_use> {
+        std::map<std::string, callee_use> uses;
+
+        for (const register_trace::frame& ended : frames_) {
+            if (ended.kind == register_trace::frame_kind::inlined) {
+                ++uses[ended.name].calls;
+            }
+
+            if (ended.own_peak) {
+                callee_use& use{uses[ended.name]};
+                use.own_peak = std::max(use.own_peak, *ended.own_peak);
+            }
+        }
+
+        for (const noinline_call& call : noinline_calls_) {
+            ++uses[register_trace::body_frame_name(call.name)].calls;
+        }
+
+        return uses;
+    }
+
+    [[nodiscard]] auto end() const -> position {
+        return {
+            .frames{frames_.size()},
+            .noinline_calls{noinline_calls_.size()},
+        };
+    }
+
+    // the first call that saves the most is where the most are saved
+    [[nodiscard]] auto noinline_uses() const
+        -> std::map<std::string, noinline_use> {
+
+        std::map<std::string, noinline_use> uses;
+
+        for (const noinline_call& call : noinline_calls_) {
+            noinline_use& use{uses[call.name]};
+
+            ++use.calls;
+
+            if (call.saved > use.saved_peak or use.calls == 1) {
+                use.saved_peak = call.saved;
+                use.peak_site_tk = call.call_site_tk;
+            }
+        }
+
+        return uses;
+    }
+
+    // drops what was added after 'start'
+    auto truncate(const position& start) -> void {
+        frames_.resize(start.frames);
+        noinline_calls_.resize(start.noinline_calls);
     }
 };

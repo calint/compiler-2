@@ -19,6 +19,13 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
     file 'equivalent' to '/dev/stdout' ("invalid --bin: 'out.s' is the
     standard output") is about 15 lines in 'main.cpp' and a test-cli case,
     only a guard against a user mistake
+[ ] easy: (round 265 WT) compile time grows faster than linear in two
+    places left as they are: 'source_files::contains' compares each
+    include with every loaded file through 'std::filesystem::equivalent'
+    (1.7 s of system time at 3200 includes; a set of (st_dev, st_ino) would
+    need <sys/stat.h>), and linear name searches over fields, parameters,
+    'dat's and call arguments (an n^2 term that matters past about 1000 per
+    type, call or program)
 [ ] medium: user decision (round 264 WS): the check of a body without its
     calls expands nested inlined recursions as the product of their
     depths: 'r1' -> 'r2' -> 'r3', each bounded by 'array_length(a)', in a

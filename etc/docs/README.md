@@ -515,11 +515,12 @@ baz_NAME       a failure handler, and a routine of the x86_64 runtime,
 
 E.g. 'if.7.5.36.13' is the 'if' at 7:5 in a body inlined by the call at
 36:13. Inside a noinline body for array lengths the lengths follow the
-location in every label, e.g. 'loop.14.5.len.3' and 'loop.14.5.len.3.end'. A location in an included file is 'fN.L.C',
-N the index of the file. A path follows a name after '..', as type arguments
-do; a plain and a generic function or method cannot share a name, so the
-function 'h' for array lengths ('func.h..len.4') and the method 'h.len'
-inlined at 4:1 ('func.h.len..4.1') have labels of their own.
+location in every label, e.g. 'loop.14.5.len.3' and 'loop.14.5.len.3.end'. A
+location in an included file is 'fN.L.C', N the index of the file. A path
+follows a name after '..', as type arguments do; a plain and a generic
+function or method cannot share a name, so the function 'h' for array lengths
+('func.h..len.4') and the method 'h.len' inlined at 4:1 ('func.h.len..4.1')
+have labels of their own.
 
 The comment lines say what was compiled and how:
 
@@ -978,8 +979,8 @@ order. The examples use 'make' and 'same' from the start of 2.10 and a type
    order as in a call without type parameters, so their own errors win,
    e.g. "function 'exit' has no result" for 'show(exit(1))', "'zz' not
    found" for 'f(zz, 1)' of 'func f<A type>(b, a A)' and "'make' takes 1
-   argument" for 'make(2, 3)' (2249); otherwise the call is rejected and asks for
-   the type arguments to be written:
+   argument" for 'make(2, 3)' (2249); otherwise the call is rejected and asks
+   for the type arguments to be written:
 
    ```text
    example.baz:15:13: cannot deduce 'T' of generic function 'make', write
@@ -1301,10 +1302,10 @@ address    | result address         |    the callee's frame base
    slots are written when it has a run-time index, e.g. the 'w()' of
    'f(v[w()], g + 1)' runs before 'g + 1' (1711).
 2. The frame starts after the storage of the caller, aligned to the size of
-   an address, not at the stack pointer: in a noinline body after its frame, which its
-   frame base holds (x86_64 'rbx', rv32i 's1'), in 'main' at the variables
-   base (x86_64 'rbp', rv32i 's0'). The frame size of a body is the peak of
-   its storage, a constant named after the body ('frame_size_label').
+   an address, not at the stack pointer: in a noinline body after its frame,
+   which its frame base holds (x86_64 'rbx', rv32i 's1'), in 'main' at the
+   variables base (x86_64 'rbp', rv32i 's0'). The frame size of a body is the
+   peak of its storage, a constant named after the body ('frame_size_label').
 3. 'machine::call_function' saves the registers allocated at the call on the
    stack, all but the variables base, since the callee may use every other
    register, sets the frame base to the frame address, calls and restores
@@ -1394,9 +1395,9 @@ cost 0.17% of the rv32i code of the tests (175164 to 175460 instructions, with
 their options and with '--checks=noub'), 1 instruction less on x86_64, and 10
 of the 7086 of roome on rv32i-fpga (decided 2026-11-07). '--versions=nested'
 measures every choice, also those inside a version, for the smaller code at
-that compile time: test 1698 takes about 12 s with it, and 2036 (14 nested calls) under
-1 s, doubling per level; '--versions=last' compiles every choice too, to run
-each second version (5.4).
+that compile time: test 1698 takes about 12 s with it, and 2036 (14 nested
+calls) under 1 s, doubling per level; '--versions=last' compiles every choice
+too, to run each second version (5.4).
 
 The padding of an instance is zeroed gap by gap or as the whole instance by a
 gap count that each backend measured once ('machine::zero_padding'): an

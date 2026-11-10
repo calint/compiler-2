@@ -252,10 +252,9 @@ class stmt_identifier final : public statement {
     // one element of a walk of the path from its root, see 'for_each_prefix'
     struct prefix_step {
         const ident_elem* elem{};
-        // the path as written up to the element, without its index, e.g.
-        // 'w[1].rooms' of 'w[1].rooms[i].x'
-        std::string path;
-        // what 'path' resolves to
+        // the position of 'elem' in the path, its text is 'array_text' of it
+        size_t elem_index{};
+        // what the path up to the element resolves to
         const ident_info* info{};
         bool is_last{};
     };
@@ -645,8 +644,10 @@ class stmt_identifier final : public statement {
                 return;
             }
 
+            const std::string path{array_text(step.elem_index)};
+
             address = builder.indexed_element(
-                *step.elem, step.path, cur_info,
+                *step.elem, path, cur_info,
                 step.is_last ? request : inner_request, address);
         });
 
@@ -1007,7 +1008,7 @@ class stmt_identifier final : public statement {
 
             visit({
                 .elem{&elem},
-                .path{array_text(i)},
+                .elem_index{i},
                 .info{&info},
                 .is_last{i == elems_.size() - 1},
             });

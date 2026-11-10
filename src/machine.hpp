@@ -327,6 +327,9 @@ class machine {
 
     // saved before a version and put back after it, see 'version_scope'
     version_state state_{};
+    // for the register report; not in 'version_state' either, which would
+    // copy an entry per callee for each version
+    register_call_log call_log_;
 
   public:
     // the registers allocated while it lives belong to the call it names in
@@ -351,7 +354,13 @@ class machine {
         auto operator=(register_trace_scope&&)
             -> register_trace_scope& = delete;
 
-        ~register_trace_scope() { machine_.state_.trace.end_frame(); }
+        ~register_trace_scope() {
+            register_trace::frame ended{machine_.state_.trace.end_frame()};
+
+            if (machine_.state_.trace.is_enabled()) {
+                machine_.call_log_.add_frame(std::move(ended));
+            }
+        }
     };
 
     // the scratch registers a front-end step allocates for its operands and
@@ -442,11 +451,13 @@ class machine {
         machine& machine_;
         version_state start_{};
         size_t failures_start_{};
+        register_call_log::position calls_start_{};
 
       public:
         explicit version_scope(machine& backend)
             : machine_{backend}, start_{backend.state_},
-              failures_start_{backend.failure_locations_.size()} {}
+              failures_start_{backend.failure_locations_.size()},
+              calls_start_{backend.call_log_.end()} {}
 
         version_scope(const version_scope&) = delete;
         version_scope(version_scope&&) = delete;
@@ -456,6 +467,13 @@ class machine {
         ~version_scope() {
             machine_.state_ = std::move(start_);
             machine_.failure_locations_.resize(failures_start_);
+            machine_.call_log_.truncate(calls_start_);
+        }
+
+        // the calls logged since the scope began, given back by a kept
+        // version
+        [[nodiscard]] auto added_calls() const -> register_call_log {
+            return machine_.call_log_.added_since(calls_start_);
         }
 
         // the failures marked since the scope began, given back by a kept
@@ -476,6 +494,7 @@ class machine {
         assembler::captured_lines lines;
         version_state end_state{};
         std::vector<failure_location> failures;
+        register_call_log calls;
     };
 
     // a version, or when it fails with an error that depends on the code
@@ -954,7 +973,13 @@ class machine {
             saved.push_back(register_display_name(index));
         }
 
-        state_.trace.record_noinline_call(src_loc_tk, name, saved.size());
+        if (state_.trace.is_enabled()) {
+            call_log_.add_noinline_call({
+                .call_site_tk{src_loc_tk},
+                .name{std::string{name}},
+                .saved{saved.size()},
+            });
+        }
 
         if (not saved.empty()) {
             comment(src_loc_tk, indent,
@@ -1270,6 +1295,7 @@ class machine {
 
         state_ = std::move(kept.end_state);
         failure_locations_.append_range(kept.failures);
+        call_log_.append(std::move(kept.calls));
 
         output.append(std::move(kept.lines));
 
@@ -2222,6 +2248,7 @@ class machine {
             .lines{std::move(lines)},
             .end_state{state_},
             .failures{version.added_failures()},
+            .calls{version.added_calls()},
         };
     }
 
