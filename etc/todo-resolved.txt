@@ -1,6 +1,16 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 252 (2026-11-10, VU parser simplification, VT include
+    bug hunt)
+    => done (2026-11-10): VU: the five rejections of an empty operand in
+       'parse_operand' are one 'throw_no_operand', listings unchanged; VT
+       found no wrong code, no wrong file or line in a panic and no label
+       collision (every test and 200 fuzz programs split into include trees
+       against the one-file program, asan), the README named the file of a
+       panic "without its directory" where it is the path relative to the
+       directory of the main file; call frames of nested noinline bodies
+       wait for the user
 [x] easy: round 251 (2026-11-10, VR tokenizer and VQ 'toc'
     simplification)
     => done (2026-11-10): 'is_peek_char' removed for 'peek_char() == ch',

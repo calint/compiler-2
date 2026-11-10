@@ -424,6 +424,38 @@ inline auto parse_name_statement(toc& tc, tokenizer& tz, const token tk,
                     in_quotes(statement::trimmed_source(dst)))};
 }
 
+// no operand starts at the empty token 'tk', 'tz' is after it
+[[noreturn]] inline auto throw_no_operand(const token& tk, const tokenizer& tz)
+    -> void {
+
+    // e.g. the '{}' of '1 + {}', which the destination types
+    if (is_zero_value(tz)) {
+        throw compile_error{
+            tk,
+            "'{}' is the zero value of a typed destination, not an operand"};
+    }
+
+    // e.g. the '[2]{1, 2}' of 'a == [2]{1, 2}'
+    if (is_default_array_literal(tz)) {
+        throw_literal_not_operand(tk, "an array literal");
+    }
+
+    // e.g. the '!' of '!x', not the '!=' of a comparison
+    if (tz.peek_operator().empty() and tz.peek_char_after_whitespace() == '!') {
+        throw compile_error{tk, "'!' is not an operator, use 'not'"};
+    }
+
+    // e.g. the '{1, 2}' of 'a == {1, 2}', which only a destination types, or
+    // the block of 'if a and {', which the operand parse cannot tell apart
+    if (tz.peek_char_after_whitespace() == '{') {
+        throw compile_error{tk, "expected an operand before '{', a '{...}' "
+                                "literal is not one here, store it in a "
+                                "variable first"};
+    }
+
+    throw compile_error{tk, "expected a constant, a name or a call"};
+}
+
 // called from 'expr_arith', whose elements include it, e.g. a call
 inline auto parse_operand(toc& tc, tokenizer& tz, unary_ops uops,
                           const type* const destination_type)
@@ -438,40 +470,16 @@ inline auto parse_operand(toc& tc, tokenizer& tz, unary_ops uops,
                 "e.g. 'a = \"abc\"'"};
     }
 
-    // e.g. the '{}' of '1 + {}', which the destination types
-    if (tk.is_none() and is_zero_value(tz)) {
-        throw compile_error{
-            tk,
-            "'{}' is the zero value of a typed destination, not an operand"};
+    if (tk.is_none()) {
+        throw_no_operand(tk, tz);
     }
 
     const term_kind tm{classify_term(tc, tk, tz)};
 
-    // e.g. the '[2]{1, 2}' of 'a == [2]{1, 2}' or the 'i8[2]{1, 2}' of
-    // 'x + i8[2]{1, 2}', an array is compared as memory like an instance
-    if (tm == term_kind::array_literal or
-        (tk.is_none() and is_default_array_literal(tz))) {
-
+    // e.g. the 'i8[2]{1, 2}' of 'x + i8[2]{1, 2}', an array is compared as
+    // memory like an instance
+    if (tm == term_kind::array_literal) {
         throw_literal_not_operand(tk, "an array literal");
-    }
-
-    // e.g. the '!' of '!x', not the '!=' of a comparison
-    if (tk.is_none() and tz.peek_operator().empty() and
-        tz.peek_char_after_whitespace() == '!') {
-
-        throw compile_error{tk, "'!' is not an operator, use 'not'"};
-    }
-
-    // e.g. the '{1, 2}' of 'a == {1, 2}', which only a destination types, or
-    // the block of 'if a and {', which the operand parse cannot tell apart
-    if (tk.is_none() and tz.peek_char_after_whitespace() == '{') {
-        throw compile_error{tk, "expected an operand before '{', a '{...}' "
-                                "literal is not one here, store it in a "
-                                "variable first"};
-    }
-
-    if (tk.is_none()) {
-        throw compile_error{tk, "expected a constant, a name or a call"};
     }
 
     // e.g. the 'not b' of 'int(not b)' or of 'a == not b'

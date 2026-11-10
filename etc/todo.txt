@@ -6,6 +6,13 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
 --------------------------------------------------------------------------------
 1. clean up
 --------------------------------------------------------------------------------
+[ ] medium: user decision (round 251 VT2): an error found in a noinline
+    body names only the first call that asked for the body ("called from
+    'get(a)'"), not the calls down to 'main': with 'mid' calling a noinline
+    'get', 'mid(b) + mid(a)' never names the faulty 'mid(a)'; 'noinline_body'
+    ('toc.hpp') keeps one call token; the index of the requesting body would
+    let 'program::with_call_frame' add the chain (the inlined calls around a
+    request would need a frame list taken at request time)
 [ ] easy: user decision (round 245 VI1): '--bin=out.s' with stdout
     redirected to 'out.s' exits 0 and leaves the listing in 'out.s', the
     image lost (the file is truncated twice); rejecting a regular '--bin'

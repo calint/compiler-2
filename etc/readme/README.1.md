@@ -59,10 +59,11 @@ the binary image itself.
     `f(a[i], h(i))` with `h` writing `i`; evaluation is left to right
   * a failed check prints `panic: NAME` on a line of its own on standard error
     (the uart on the bare-metal targets), with `line` `panic: NAME at FILE:LINE`
-    where FILE is the file name without its directory, and exits with the code
-    of the check: `bounds` 255, `frame overflow` 254, `division` 253, `shift`
-    252, `overlap` 251, `stack overflow` 250, `overflow` 249; a failed
-    `sector_read` or `sector_write` prints `panic: sd card` and exits with 248
+    where FILE is the path of the file relative to the directory of the main
+    file, e.g. `lib/util.baz`, and exits with the code of the check: `bounds`
+    255, `frame overflow` 254, `division` 253, `shift` 252, `overlap` 251,
+    `stack overflow` 250, `overflow` 249; a failed `sector_read` or
+    `sector_write` prints `panic: sd card` and exits with 248
 * keywords: `func`, `noinline`, `mut`, `type`, `dat`, `var`, `let`, `foo`,
   `loop`, `if`, `else`, `continue`, `break`, `return`, `self`, `and`, `or`,
   `not`, `true`, `false`, `include`
