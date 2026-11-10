@@ -1,6 +1,15 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 248 (2026-11-10, VK arithmetic edges bug hunt, VL
+    'machine_x86_64' simplification)
+    => done (2026-11-10): VK found nothing (about 46000 programs against
+       an exact model: mixed widths, MIN and MAX, unary operators,
+       conversions, the folds without the overflow check, the rv32i checked
+       multiply); VL: 'zero' reserves the rep registers through the shared
+       'reserve_rep_registers' (was 'begin_bulk') instead of a copy;
+       'branch' and 'emit_no_return_jump' stay apart, rv32i uses another
+       scratch register for each; listings unchanged
 [x] easy: round 247 (2026-11-10): 'compare-listings.sh' compiles its second
     option set with '--checks=noub,line', so a refactor of the line failure
     handlers is compared too (round 246 checked them by hand)

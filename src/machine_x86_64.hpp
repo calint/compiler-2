@@ -609,17 +609,16 @@ class machine_x86_64 final : public machine {
         if (takes_rep_form(parts, stosb_registers_)) {
             const operation_scope named{*this};
 
-            for (const std::string_view name : stosb_registers_) {
-                reserve_named_register(src_loc_tk, indent, name);
-            }
+            const operand count{
+                reserve_rep_registers(src_loc_tk, indent, stosb_registers_),
+            };
 
             const operand al{sized_register("rax", size_byte_)};
             emit_op(src_loc_tk, indent, op::xor_op, al, al);
 
             lea(src_loc_tk, indent, qword_register("rdi"), dst);
 
-            mov(src_loc_tk, indent, qword_register("rcx"),
-                immediate(size_bytes));
+            mov(src_loc_tk, indent, count, immediate(size_bytes));
 
             assembler_.instruction(indent, op::rep_stosb);
 
@@ -1107,18 +1106,6 @@ class machine_x86_64 final : public machine {
         return std::in_range<int32_t>(value.displacement());
     }
 
-    // reserves 'bulk_registers_', freed by the 'operation_scope' of the
-    // caller, and returns the count register
-    [[nodiscard]] auto begin_bulk(const token& src_loc_tk, const size_t indent)
-        -> operand {
-
-        for (const std::string_view name : bulk_registers_) {
-            reserve_named_register(src_loc_tk, indent, name);
-        }
-
-        return qword_register("rcx");
-    }
-
     // jumps to the overflow failure handler when the instruction before set
     // the overflow flag
     auto branch_on_overflow(const token& src_loc_tk, const size_t indent)
@@ -1361,7 +1348,10 @@ class machine_x86_64 final : public machine {
         -> void {
 
         const operation_scope bulk{*this};
-        const operand count{begin_bulk(src_loc_tk, indent)};
+
+        const operand count{
+            reserve_rep_registers(src_loc_tk, indent, bulk_registers_),
+        };
 
         load_source_address(qword_register("rsi"));
         lea(src_loc_tk, indent, qword_register("rdi"), dst);
@@ -1576,7 +1566,9 @@ class machine_x86_64 final : public machine {
         const std::function_ref<void(const operand&)> emit_count,
         const address_emitter& to_rsi, const address_emitter& to_rdi) -> void {
 
-        const operand count{begin_bulk(src_loc_tk, indent)};
+        const operand count{
+            reserve_rep_registers(src_loc_tk, indent, bulk_registers_),
+        };
 
         to_rsi(std::nullopt, [&](const operand& address) -> void {
             lea(src_loc_tk, indent, qword_register("rsi"), address);
@@ -1642,6 +1634,20 @@ class machine_x86_64 final : public machine {
         -> operand {
 
         return make_register_operand(name, builtins().i64);
+    }
+
+    // reserves the 'named' registers of a rep form, freed by the
+    // 'operation_scope' of the caller, and returns its count register 'rcx'
+    [[nodiscard]] auto
+    reserve_rep_registers(const token& src_loc_tk, const size_t indent,
+                          const std::span<const std::string_view> named)
+        -> operand {
+
+        for (const std::string_view name : named) {
+            reserve_named_register(src_loc_tk, indent, name);
+        }
+
+        return qword_register("rcx");
     }
 
     // a register as its part of the width, a memory operand as an access
