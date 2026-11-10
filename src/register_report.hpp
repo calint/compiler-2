@@ -288,7 +288,9 @@ class register_reporter final {
             "  own  calls  callee",
         };
 
-        const register_call_log& calls{machine_.get().call_log_};
+        const machine& x{machine_.get()};
+
+        const register_call_log& calls{x.call_log_};
 
         const std::map<std::string, register_call_log::callee_use> uses{
             calls.callees(),
@@ -336,7 +338,9 @@ class register_reporter final {
 
     // the registers that the calls of each function with a body of its own save
     [[nodiscard]] auto noinline_call_lines() const -> std::vector<std::string> {
-        const register_call_log& calls{machine_.get().call_log_};
+        const machine& x{machine_.get()};
+
+        const register_call_log& calls{x.call_log_};
 
         const std::map<std::string, register_call_log::noinline_use> uses{
             calls.noinline_uses(),
@@ -356,8 +360,6 @@ class register_reporter final {
 
         for (const auto& [name, use] :
              descending(uses, &register_call_log::noinline_use::saved_peak)) {
-
-            const machine& x{machine_.get()};
 
             lines.push_back(std::format("{:>7}{:>7}  {} {}", use.saved_peak,
                                         use.calls, name,

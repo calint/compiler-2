@@ -1,6 +1,12 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 272 (2026-11-10, XB style sweep)
+    => done (2026-11-10): a scanner of the AGENTS.md rules the linters do
+       not check found the sources nearly clean; the backend access rule
+       broken at 2 sites of 'register_report' ('machine_.get().call_log_'),
+       fixed; a lint check, the trailing comma of throws, double 'e.g.' and
+       one-letter names wait for the user
 [x] easy: round 271 (2026-11-10, XA error messages without a test)
     => done (2026-11-10): an instrumented build logged every throw over
        all cases on the four targets: 379 of 381 throw sites had a test;
