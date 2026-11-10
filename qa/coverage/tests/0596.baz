@@ -2,7 +2,7 @@
 # operand is a 'bool', a single operand has its own type, the first operand
 # decides the type of several operands, a constant has the default type
 #
-# test-deduced-types.sh checks the type on lines marked '# is TYPE', 'default'
+# 'listing.py types' checks the type on lines marked '# is TYPE', 'default'
 # is the default type of the target
 
 func assert(err, ok bool) { if not ok exit(err) }

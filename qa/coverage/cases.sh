@@ -801,7 +801,7 @@ SRC=0252 && DIFF
 # hexadecimal string escape decoding
 SRC=0253 && DIFF
 
-# unary operation on array_length is rejected
+# a unary operator on 'array_length' applies to its value
 SRC=0254 && EXP=0 && RUN
 
 # array_length requires an array
@@ -1268,16 +1268,16 @@ SRC=0404 && DIFF
 # non-inline recursion: factorial results and caller-local preservation
 SRC=0405 && EXP=0 && RUN
 
-# non-inline recursion: factorial results and caller-local preservation
+# --checks=frame: the same recursion fits the variables, the check passes
 SRC=0405 && EXP=0 && OPTS="--vars=0x40000 --checks=frame" RUN
 
-# non-inline recursion: factorial results and caller-local preservation
+# --checks=frame: the same recursion past 64 B of variables panics
 SRC=0405 && EXP=254 && OPTS="--vars=0x40 --checks=frame" RUN_ERR
 
 # non-inline user types: nested fields, reference mutation, copies and returns
 SRC=0406 && EXP=0 && RUN
 
-# non-inline user types: nested fields, reference mutation, copies and returns
+# --checks=frame: the same calls fit the variables, the check passes
 SRC=0406 && EXP=0 && OPTS="--vars=0x40000 --checks=frame" RUN
 
 # non-inline return value cannot be discarded
@@ -1342,10 +1342,10 @@ SRC=0425 && EXP=0 && RUN
 # non-inline recursion, references, aggregate returns and large local frames
 SRC=0426 && EXP=0 && RUN
 
-# non-inline recursion, references, aggregate returns and large local frames
+# --checks=frame: the same calls fit the variables, the check passes
 SRC=0426 && EXP=0 && OPTS="--vars=0x40000 --checks=upper,lower,line,frame" RUN
 
-# non-inline recursion, references, aggregate returns and large local frames
+# --checks=frame: the same calls past 4128 B of variables panic
 SRC=0426 && EXP=254 && OPTS="--vars=0x1020 --checks=frame" RUN_ERR
 
 # arrays with omitted element type use the target's default integer type
@@ -1908,9 +1908,10 @@ SRC=0594 && COMPERR
 SRC=0595 && COMPERR
 
 # an untyped variable has the type of its initializer: a comparison or a
-# 'bool' operand is a 'bool', a single operand has its own type, several
-# operands have the default type like constants; the type on the lines
-# marked '# is TYPE' is checked, 'default' is the default type of the target
+# 'bool' operand is a 'bool', a single operand has its own type, the first
+# operand decides the type of several operands, a constant has the default
+# type; the type on the lines marked '# is TYPE' is checked, 'default' is the
+# default type of the target
 SRC=0596 && EXP=0 && RUN
 SRC=0596 && LISTING types
 
@@ -2125,8 +2126,8 @@ SRC=0658 && COMPERR
 # work on read-only receivers
 SRC=0659 && EXP=0 && RUN
 
-# '==' compares the bytes of the fields, the padding of an instance is not
-# compared: a constructor leaves the padding as the storage held it
+# '==' compares the bytes of instances: a constructor result has its padding
+# zeroed whatever the storage held
 SRC=0660 && EXP=0 && RUN
 
 # an array literal with call elements writes each result at its element
@@ -2226,7 +2227,7 @@ SRC=0687 && COMPERR
 # a field array size is required
 SRC=0688 && COMPERR
 
-# a string is not a constant operand of let
+# a 'let' of a string is a read-only array, not a constant operand
 SRC=0689 && EXP=3 && RUN
 
 # a let initializer starting with a symbol is not a constant
@@ -3123,6 +3124,7 @@ SRC=0974 && EXP=0 && OPTS="--checks=stack" RUN
 if [[ $MACHINE == rv32i-fpga ]]; then SRC=0974 && EXP=0 && OPTS="--memory=0x20000 --stack=0x1000 --checks=stack" RUN; fi
 
 # --checks=stack: the operating system stops an overflow, no check is emitted
+# (listing in 'test-cli.sh'), the recursion runs
 if [[ $MACHINE == x86_64 || $MACHINE == rv32i ]]; then SRC=0975 && EXP=0 && OPTS="--checks=stack" RUN; fi
 
 # --checks=stack: recursion deeper than the stack panics

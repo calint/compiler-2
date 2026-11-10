@@ -1,4 +1,4 @@
-# a string is not a constant operand of let
+# a 'let' of a string is a read-only array, not a constant operand
 
 func main() {
     let s = "abc"

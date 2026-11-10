@@ -683,7 +683,7 @@ CLI_FPGA_MEMORY() {
     # does not hide a stack below what 'main' may use
     expect_exit_1 "$BIN" --target=rv32i-fpga --bin=gen-rv32i.bin --stack=16 0212.baz >gen.s 2>err
     grep -Fq "error: invalid --stack: 16 B is smaller than the 48 B" err
-    grep -Fq "cannot resolve" err && exit 1
+    grep -Fq "'nope' not found" err && exit 1
     # a size beyond the range of a number is out of range, not a non-number
     expect_exit_1 "$BIN" --target=rv32i-fpga --stack=99999999999999999999999 0418.baz >gen.s 2>err
     grep -Fq "error: invalid --stack: '99999999999999999999999' is out of range" err

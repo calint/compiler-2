@@ -1,6 +1,13 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 268 (2026-11-10, WW 'foo' bug hunt, WX test suite review)
+    => done (2026-11-10): WW found no defect in 'foo' (3600 generated, 3000
+       alias-foo and 80 hand programs); WX found no expected output that
+       encodes a bug (200 run results recomputed by hand, every error
+       location inside its test); comments fixed for 0254, 0596, 0660,
+       0689, 0853, the 'frame' cases of 0405, 0406, 0426, and 0975; a
+       test-cli check grepped for a message that no longer exists
 [x] medium: round 267 (2026-11-10, WT compile-time scaling, WV frame and
     stack checks)
     => done (2026-11-10): '--report=registers' was quadratic in the

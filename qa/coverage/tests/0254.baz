@@ -1,4 +1,4 @@
-# unary operation on array_length is rejected
+# a unary operator on 'array_length' applies to its value
 
 func assert(x bool) { if not x exit(1) }
 
