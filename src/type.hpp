@@ -22,7 +22,7 @@
 //
 // a type and its storage, the types and functions below in reading order:
 //
-//   'storage_limits', 'add_storage_size' and the other size functions
+//   'max_storage_size_bytes', 'add_storage_size' and the other size functions
 //                            sizes and alignments, checked against the limit
 //   'array_shape'            not an array, or an array of a length
 //   'type_field', 'byte_range', 'padding_gap', 'type_kind'
@@ -31,26 +31,21 @@
 //   'builtin_type_set'       the built-in types of a compile
 //
 
-// what the storage size functions below accept
-namespace storage_limits {
-
 // every sum, product and aligned size of storage is checked against it, so
 // the offsets stay in the signed 64-bit range
-inline constexpr size_t max_size_bytes{
+inline constexpr size_t max_storage_size_bytes{
     static_cast<size_t>(std::numeric_limits<int64_t>::max()) - 16,
 };
 
 // note: -16, the largest alignment (the stack's), so that a size within the
 //       limit rounded up to an alignment stays in the signed 64-bit range
 
-} // namespace storage_limits
-
 [[nodiscard]] inline auto add_storage_size(const token& src_loc_tk,
                                            const size_t base,
                                            const size_t size_bytes) -> size_t {
 
-    if (size_bytes > storage_limits::max_size_bytes or
-        base > storage_limits::max_size_bytes - size_bytes) {
+    if (size_bytes > max_storage_size_bytes or
+        base > max_storage_size_bytes - size_bytes) {
 
         throw compile_error{src_loc_tk,
                             "storage size exceeds signed 64-bit range"};
@@ -63,7 +58,7 @@ inline constexpr size_t max_size_bytes{
                                                 const size_t size_bytes,
                                                 const size_t count) -> size_t {
 
-    if (count != 0 and size_bytes > storage_limits::max_size_bytes / count) {
+    if (count != 0 and size_bytes > max_storage_size_bytes / count) {
         throw compile_error{src_loc_tk,
                             "storage size exceeds signed 64-bit range"};
     }
@@ -76,7 +71,7 @@ inline constexpr size_t max_size_bytes{
 [[nodiscard]] inline auto product_storage_size(const size_t size_bytes,
                                                const size_t count) -> size_t {
 
-    assert(count == 0 or size_bytes <= storage_limits::max_size_bytes / count);
+    assert(count == 0 or size_bytes <= max_storage_size_bytes / count);
 
     return size_bytes * count;
 }
@@ -86,8 +81,8 @@ inline constexpr size_t max_size_bytes{
 [[nodiscard]] inline auto sum_storage_size(const size_t base,
                                            const size_t size_bytes) -> size_t {
 
-    assert(size_bytes <= storage_limits::max_size_bytes);
-    assert(base <= storage_limits::max_size_bytes - size_bytes);
+    assert(size_bytes <= max_storage_size_bytes);
+    assert(base <= max_storage_size_bytes - size_bytes);
 
     return base + size_bytes;
 }
@@ -201,13 +196,6 @@ struct type_field {
     // an array of a length, or not an array
     array_shape shape;
 
-    // 1 for a field that is not an array
-    [[nodiscard]] auto element_count() const -> size_t {
-        return shape.element_count();
-    }
-
-    [[nodiscard]] auto is_array() const -> bool { return shape.is_array(); }
-
     [[nodiscard]] auto type_ref() const -> const type& { return *type_ptr; }
 };
 
@@ -275,7 +263,7 @@ class type final {
         };
 
         field.size_bytes = multiply_storage_size(src_loc_tk, tp.size_bytes_,
-                                                 field.element_count());
+                                                 field.shape.element_count());
 
         fields_end_bytes_ =
             add_storage_size(src_loc_tk, field.offset, field.size_bytes);
@@ -434,7 +422,8 @@ class type final {
             //       loop ends within 'max_count' + 2 elements
 
             for (size_t i{};
-                 i < f.element_count() and ranges.size() <= max_count; ++i) {
+                 i < f.shape.element_count() and ranges.size() <= max_count;
+                 ++i) {
 
                 const size_t element_offset{
                     f.offset + (i * f.type_ref().size_bytes_),

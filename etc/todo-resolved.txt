@@ -1,6 +1,12 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 258 (2026-11-10, WG 'operand' and 'type'
+    simplification)
+    => done (2026-11-10): a redundant 'operand() = default' removed; the
+       namespace 'storage_limits' of one constant is 'max_storage_size_bytes';
+       the forwarding 'type_field::element_count' and 'is_array' removed
+       for 'shape'; listings unchanged
 [x] easy: round 257 (2026-11-10, WE rendering of compile errors)
     => done (2026-11-10): the escaped characters of round 218 missed spaces
        and fillers ('var' em space 'x' read "'var x' is not a valid name"):

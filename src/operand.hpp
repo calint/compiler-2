@@ -92,8 +92,6 @@ class operand final {
     uint64_t scale_{1};
 
   public:
-    operand() = default;
-
     // the base of a memory operand, e.g. 'rbp' of '[rbp + 8]'
     [[nodiscard]] auto base_register() const -> const std::string& {
         assert(is_memory());
