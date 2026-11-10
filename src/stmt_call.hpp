@@ -65,7 +65,7 @@
 //   'noinline_call::noinline_arg'
 //                                noinline: the variable passed, or the
 //                                temporary that holds the value
-//                                ('compile_arguments_and_call',
+//                                ('noinline_call::compile_arguments',
 //                                'call_site::make_argument_temporary')
 //   frame slot                   the address written to it
 //                                ('noinline_call::slot_address_of')
@@ -1241,7 +1241,8 @@ class inline_call final {
                 return bind_reference(tc, indent, *arg_place, param, held);
             }
 
-            return bind_name(param, ident, arg_place->info);
+            return param_binding::make_name(param.name(), arg_place->info,
+                                            ident.path_text());
         }
 
         // e.g. 'x' bound to a register of the caller; a constant, which the
@@ -1250,7 +1251,8 @@ class inline_call final {
             const ident_info info{make_ident_info(tc, *ident)};
 
             if (info.is_register()) {
-                return bind_name(param, *ident, info);
+                return param_binding::make_name(param.name(), info,
+                                                ident->path_text());
             }
         }
 
@@ -1284,15 +1286,6 @@ class inline_call final {
 
         return param_binding::make_register(param.name(), reg,
                                             reg.register_name());
-    }
-
-    // a place of the caller that 'ident' names and 'info' resolves
-    [[nodiscard]] static auto bind_name(const stmt_def_func_param& param,
-                                        const stmt_identifier& ident,
-                                        const ident_info& info)
-        -> param_binding {
-
-        return param_binding::make_name(param.name(), info, ident.path_text());
     }
 
     // an indexed argument keeps its computed address, e.g.
@@ -1370,8 +1363,8 @@ class inline_call final {
 //
 //   1. 'compile' and 'compile_arguments_and_call': a result or an argument
 //      that is not a variable in memory goes through a temporary, the result
-//      is copied after the call; the arguments are compiled in their order,
-//      the address of a variable at its argument
+//      is copied after the call; the arguments are compiled in their order
+//      ('compile_arguments'), the address of a variable at its argument
 //   2. 'compile_with_arguments': the arguments agree with the parameters,
 //      checked by 'stmt_call::assert_argument_type' before ('assert_call'
 //      asserts it); the body is compiled once per array lengths
@@ -1435,15 +1428,11 @@ class noinline_call final {
                   in_quotes(param.name()));
     }
 
-    // an argument or a result that needs one goes through a temporary of the
-    // current block; the arguments are compiled in their order, a call in the
-    // index of a place runs before the later arguments as the checks assume
-    auto compile_arguments_and_call(toc& tc, const size_t indent,
-                                    const destination& dst) const -> void {
-
-        machine& x{tc.machine()};
-
-        machine::held_registers held{x, call_.tk, indent};
+    // what is passed for each argument, in their order; 'held' holds the
+    // address registers
+    [[nodiscard]] auto compile_arguments(toc& tc, const size_t indent,
+                                         machine::held_registers& held) const
+        -> std::vector<noinline_arg> {
 
         std::vector<noinline_arg> arguments;
 
@@ -1474,6 +1463,23 @@ class noinline_call final {
                 .address{address},
             });
         }
+
+        return arguments;
+    }
+
+    // an argument or a result that needs one goes through a temporary of the
+    // current block; the arguments are compiled in their order, a call in the
+    // index of a place runs before the later arguments as the checks assume
+    auto compile_arguments_and_call(toc& tc, const size_t indent,
+                                    const destination& dst) const -> void {
+
+        machine& x{tc.machine()};
+
+        machine::held_registers held{x, call_.tk, indent};
+
+        const std::vector<noinline_arg> arguments{
+            compile_arguments(tc, indent, held),
+        };
 
         if (not has_result_temporary(dst, *call_.func)) {
             compile_with_arguments(tc, indent, dst, arguments, held);

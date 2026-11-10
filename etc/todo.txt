@@ -6,6 +6,12 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
 --------------------------------------------------------------------------------
 1. clean up
 --------------------------------------------------------------------------------
+[ ] easy: user decision (round 245 VI1): '--bin=out.s' with stdout
+    redirected to 'out.s' exits 0 and leaves the listing in 'out.s', the
+    image lost (the file is truncated twice); rejecting a regular '--bin'
+    file 'equivalent' to '/dev/stdout' ("invalid --bin: 'out.s' is the
+    standard output") is about 15 lines in 'main.cpp' and a test-cli case,
+    only a guard against a user mistake
 [ ] easy: (round 241 VE 2.2) an error in a method instance found while a
     call is compiled names only the call ("'b.m' called from 'q.m(v)'"),
     not the alias that made the instance ("instantiated by 'type b =

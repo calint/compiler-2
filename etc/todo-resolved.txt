@@ -1,6 +1,15 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 245 (2026-11-10, VH 'stmt_call' simplification, VI io and
+    sectors bug hunt)
+    => done (2026-11-10): VH: the noinline argument loop is the named step
+       'noinline_call::compile_arguments', 'inline_call::bind_name' (only
+       reordered arguments) removed, listings unchanged; VI found no wrong
+       code, no no-UB hole and no crash (about 2500 programs over x86_64,
+       rv32i and rv32i-fpga comparing output and sd card images, sector
+       numbers at the bounds, sparse images to 2^41 B); '--bin' naming the
+       file stdout goes to waits for the user
 [x] easy: round 244 (2026-11-10, VG 'expr_any' simplification)
     => done (2026-11-10): 'stmt_array_size' reads and keeps its brackets,
        so 'array_prefix' and the field's 'array_part' no longer store and
