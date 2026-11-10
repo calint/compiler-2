@@ -1,6 +1,14 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 250 (2026-11-10, VO messages from round 249 VM)
+    => done (2026-11-10): a type too large for rv32i said "4294967296 B ...
+       must be smaller than the 4294967296 B", now "the target allows at
+       most 4294967295 B" (1702, 1703, 1830); a ';' after a top-level
+       definition ('type point {x, y};', 'func f() {};', 'include
+       "x.baz";') is reported as unused, test 2281; the hint 'i64(...)' for
+       a 'bool' into an 'int' stays: the compiler keeps the resolved type,
+       naming 'int' made the hint for an 'i32' differ between targets
 [x] easy: round 249 (2026-11-10, VM documentation against behavior, VN
     'machine_rv32i' simplification)
     => done (2026-11-10): VM checked every quoted message, example, option,

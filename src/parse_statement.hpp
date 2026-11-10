@@ -577,6 +577,9 @@ inline auto parse_statement(toc& tc, tokenizer& tz, const token tk)
             tk, "'noinline' comes after 'func', e.g. 'func noinline f()'"};
     }
 
+    // e.g. the ';' after 'type point {x, y}'
+    throw_if_ends_with_semicolon(tk);
+
     throw compile_error{
         tk, std::format("expected a definition ('func', 'type', 'var', "
                         "'let' or 'dat'), got {}",

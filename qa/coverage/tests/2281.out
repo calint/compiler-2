@@ -1,0 +1,4 @@
+
+2281.baz:3:18: ';' is not used, statements need no separator
+type point {x, y};
+                 ^

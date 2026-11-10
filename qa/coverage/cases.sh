@@ -7239,3 +7239,6 @@ SRC=2279 && COMPERR
 
 # a constructor before '<<' lacks its '('
 SRC=2280 && COMPERR
+
+# a ';' after a definition of the top level is not used
+SRC=2281 && COMPERR

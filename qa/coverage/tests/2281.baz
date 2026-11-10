@@ -1,0 +1,5 @@
+# a ';' after a definition of the top level is not used
+
+type point {x, y};
+
+func main() {}

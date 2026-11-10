@@ -3558,9 +3558,10 @@ class toc final {
 
         throw compile_error{
             src_loc_tk,
-            std::format("type {} of {} B is too large, it must be smaller "
-                        "than the {} B the target addresses",
-                        in_quotes(tpe.name()), tpe.size_bytes(), max_bytes)};
+            std::format("type {} of {} B is too large, the target allows at "
+                        "most {} B",
+                        in_quotes(tpe.name()), tpe.size_bytes(),
+                        max_bytes - 1)};
     }
 
     // the comment in the output that tells where a variable is stored, the
