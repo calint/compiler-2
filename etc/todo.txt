@@ -19,6 +19,18 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
     file 'equivalent' to '/dev/stdout' ("invalid --bin: 'out.s' is the
     standard output") is about 15 lines in 'main.cpp' and a test-cli case,
     only a guard against a user mistake
+[ ] medium: user decision (round 256 WF): x86_64 rejects a division whose
+    destination is 'rdx' although nothing live is clobbered (test 1113
+    'write(1, text, n / 2)'); skipping the reservation of 'rdx' when it is
+    the destination is about 10 lines; wider, 164 of 190 x86-only
+    rejections of generated programs are "rdx/rax holds a scratch value",
+    which a push and pop around the division as on rv32i would accept
+    (about 40 lines; touches the decision of 2026-10-23)
+[ ] easy: user decision (round 258 WH): a failed '--reproduce-source' writes
+    'diff.baz' in the working directory without checking the name, so
+    compiling 'diff.baz' from its directory overwrites it (only through a
+    compiler defect); '"' is not a delimiter, 'include"lib.baz"' gives
+    "expected a definition ..., got 'include"lib'"
 [ ] easy: user decision (round 253 WA): 'func mut noinline point.f()'
     gives "'noinline' is a keyword": 'stmt_def_func' reads 'noinline' then
     'mut' in that order and the leftover 'noinline' becomes the name; a

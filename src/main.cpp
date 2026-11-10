@@ -220,7 +220,8 @@ options:
                       nested choices taking the first ('smaller', default),
                       the smaller also of nested choices ('nested', compile
                       time doubles per level), or for testing 'first' or
-                      'last'
+                      'last', also of nested choices (compile time doubles
+                      per level)
   --reproduce-source  check that the source written back from the parse
                       matches the input, else write it to diff.baz
   --version           the version of the compiler

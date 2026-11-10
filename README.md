@@ -164,7 +164,8 @@ options:
                       nested choices taking the first ('smaller', default),
                       the smaller also of nested choices ('nested', compile
                       time doubles per level), or for testing 'first' or
-                      'last'
+                      'last', also of nested choices (compile time doubles
+                      per level)
   --reproduce-source  check that the source written back from the parse
                       matches the input, else write it to diff.baz
   --version           the version of the compiler
@@ -220,10 +221,10 @@ examples:
 ```text
 Language                     files          blank        comment           code
 -------------------------------------------------------------------------------
-C/C++ Header                    64           9390           7147          27334
-C++                              1            204            103            824
+C/C++ Header                    64           9386           7146          27329
+C++                              1            204            103            825
 -------------------------------------------------------------------------------
-SUM:                            65           9594           7250          28158
+SUM:                            65           9590           7249          28154
 -------------------------------------------------------------------------------
 ```
 

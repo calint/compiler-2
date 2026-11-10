@@ -1395,7 +1395,8 @@ their options and with '--checks=noub'), 1 instruction less on x86_64, and 10
 of the 7086 of roome on rv32i-fpga (decided 2026-11-07). '--versions=nested'
 measures every choice, also those inside a version, for the smaller code at
 that compile time: test 1698 takes about 12 s with it, and 2036 (14 nested calls) under
-1 s, doubling per level.
+1 s, doubling per level; '--versions=last' compiles every choice too, to run
+each second version (5.4).
 
 The padding of an instance is zeroed gap by gap or as the whole instance by a
 gap count that each backend measured once ('machine::zero_padding'): an
@@ -1454,8 +1455,9 @@ own scopes.
 Only the kept version runs, so a miscompile in the other one would stay hidden:
 '--versions=first' and '--versions=last' keep that version instead of the
 smaller, and 'qa/coverage/test-versions.sh' runs the cases with each. A choice
-inside a version emits its first with either (5.2); the script also runs the
-cases with '--versions=nested', which emits the second where it is smaller.
+inside a version emits its first with 'first' (5.2) and its second with
+'last', which compiles both as 'nested' does; the script also runs the cases
+with '--versions=nested', which emits the second where it is smaller.
 
 ## 6. Addresses: how a path such as 'w.rooms[i].items[j].x' becomes an operand
 

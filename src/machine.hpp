@@ -1233,7 +1233,8 @@ class machine {
     // state before it, the state of the kept one remains; true when the first
     // is kept, 'toc' keeps its peaks ('toc::emit_most_efficient'). inside a
     // version or discarded code only the first is emitted, so nested choices
-    // compile code twice, not twice per level, unless '--versions=nested'
+    // compile code twice, not twice per level, unless '--versions=nested' or
+    // 'last', which runs the code of every second version
     [[nodiscard]] auto
     emit_most_efficient(const token& src_loc_tk, const size_t indent,
                         const std::function_ref<void()> emit_first,
@@ -1241,7 +1242,9 @@ class machine {
 
         assembler& output{output_.get()};
 
-        if (output.is_capturing() and options_.kept != kept_version::nested) {
+        if (output.is_capturing() and options_.kept != kept_version::nested and
+            options_.kept != kept_version::last) {
+
             comment(src_loc_tk, indent,
                     "kept the first of two versions, inside a version");
 

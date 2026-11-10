@@ -1,6 +1,17 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 259 (2026-11-10, WC jump optimizer and versions bug hunt,
+    WH '--reproduce-source' bug hunt, WF register bug hunt)
+    => done (2026-11-10): WC found no wrong code (the six optimizer rules
+       read, about 700 programs over 6 to 8 option sets with images against
+       llvm-mc, the 4 KiB branch range swept, a jump past 1 MiB); a nested
+       second version never ran in a test: inside a version '--versions=last'
+       now also compiles both and keeps the second, 'test-versions.sh' runs
+       it; WH found no reproduce defect (whitespace, comments and literals
+       mutated over every test); WF found no wrong code (5800 programs in 13
+       configurations, the register report against the listings); the x86_64
+       division rejections, 'diff.baz' and 'include"' wait for the user
 [x] easy: round 258 (2026-11-10, WG 'operand' and 'type'
     simplification)
     => done (2026-11-10): a redundant 'operand() = default' removed; the
