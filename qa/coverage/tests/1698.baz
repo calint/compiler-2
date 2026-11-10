@@ -1,6 +1,6 @@
 # an expression stored to memory that calls an inlined function: a chain of 16
 # such levels compiles in milliseconds, a choice inside a version takes its
-# first; '--versions=nested' doubles per level, about 12 s
+# first; '--versions=nested' and 'last' double per level, about 12 s
 
 func f0(x) res {
     res = x + 1

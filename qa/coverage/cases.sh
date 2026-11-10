@@ -5409,7 +5409,8 @@ SRC=1696 && EXP=0 && OPTS="--checks=upper" RUN
 SRC=1697 && OPTS="--checks=overflow" COMPERR
 
 # an expression stored to memory that calls an inlined function: a deep chain
-# compiles in milliseconds, a choice inside a version takes its first
+# compiles in milliseconds, a choice inside a version takes its first (not
+# with '--versions=nested' or 'last')
 SRC=1698 && EXP=48 && RUN
 
 # a generic instance cannot call back the function whose body instantiates it,

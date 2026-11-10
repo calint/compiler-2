@@ -1,6 +1,13 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 270 (2026-11-10, WU regression hunt of round 249
+    against round 265)
+    => done (2026-11-10): about 110700 programs and 4.7 million compiles,
+       only intended differences (the messages of rounds 250, 257 and 264,
+       the wrap of x86_64 displacements, '--versions=last', which a build of
+       round 249 with the round 259 patch matched exactly); the comments of
+       1698 and 2036 say 'last' also compiles every choice
 [x] easy: round 269 (2026-11-10, WY tests that could not fail as claimed)
     => done (2026-11-10): 1759 x86_64 only (rv32i has no 64-bit type, its
        expected output tested an earlier error); 1153 x86_64 only, 2330 the

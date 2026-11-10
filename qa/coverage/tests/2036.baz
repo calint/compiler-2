@@ -1,6 +1,6 @@
 # an expression stored to memory with noinline calls nested 14 deep compiles
 # in milliseconds, a choice inside a version takes its first;
-# '--versions=nested' doubles per level, under 1 s
+# '--versions=nested' and 'last' double per level, under 1 s
 
 func noinline g(x i32) res i32 {
     res = x + 1
