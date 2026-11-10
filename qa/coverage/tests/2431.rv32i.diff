@@ -1,0 +1,10 @@
+38d37
+<     j .Lbaz_exit
+56c55
+< #   removed jumps to next code: 0
+---
+> #   removed jumps to next code: 1
+67c66
+< #                 instructions: 7
+---
+> #                 instructions: 6

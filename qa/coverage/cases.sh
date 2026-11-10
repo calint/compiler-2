@@ -7340,3 +7340,11 @@ SRC=2390 && EXP=1 && RUN
 # the '-' of a conversion folds at the width of its use and wraps there: the
 # '-i8(-128)' of an 'i8' list is -128, so '-i8(-128) / 2' is -64
 SRC=2391 && EXP=1 && RUN
+
+# a branch whose condition folds to false at a call is no path to the end of
+# the 'if', the code after it is not reached when the next branch exits
+SRC=2430 && EXP=3 && RUN
+
+# a branch whose condition folds to true at a call ends the chain and needs no
+# jump past the others, also with '--nopt'
+SRC=2431 && EXP=5 && DIFFNOPT

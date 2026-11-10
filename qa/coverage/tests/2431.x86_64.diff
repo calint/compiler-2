@@ -1,0 +1,10 @@
+37d36
+<     jmp baz_exit
+55c54
+< ;   removed jumps to next code: 0
+---
+> ;   removed jumps to next code: 1
+66c65
+< ;                 instructions: 5
+---
+> ;                 instructions: 4

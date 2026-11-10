@@ -1,0 +1,14 @@
+# a branch whose condition folds to true at a call ends the chain and needs
+# no jump past the others, also without the jump optimizations
+
+func f(k) res {
+    if k == 1 {
+        res = 5
+    } else {
+        res = 6
+    }
+}
+
+func main() {
+    exit(f(1))
+}

@@ -1,6 +1,12 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 280 (2026-11-10, XN mutation testing of 'if', first part)
+    => done (2026-11-10): 14 mutants of 'stmt_if' and the loop back jump,
+       12 killed by the tests; new 2430 (a false 'else if' that exits is no
+       path to the end of the 'if', so a later index is not checked with its
+       value) and 2431 (a branch folded true takes no jump to the end, a
+       '--nopt' diff); the other 52 sites resume in round 281
 [x] easy: round 279 (2026-11-10, XM the jal reach at 1 MiB)
     => done (2026-11-10): 'test-far-jumps.sh' places conditional jumps at
        1 MiB - 8 and 1 MiB - 4 forward and 1 MiB - 4 and 1 MiB backward,

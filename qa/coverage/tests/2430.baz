@@ -1,0 +1,17 @@
+# a branch whose condition folds to false at a call is no path to the end of
+# the 'if': after 'f(2)' only the exiting branch runs, so the end of the body
+# is not reached and its 'a[k]' with 'k' 2 is not compiled
+
+func f(k) {
+    var a = i8[2]
+    if k == 1 {
+        a[0] = 1
+    } else if k == 2 {
+        exit(3)
+    }
+    a[k] = 1
+}
+
+func main() {
+    f(2)
+}
