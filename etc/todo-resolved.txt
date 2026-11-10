@@ -1,6 +1,14 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 254 (2026-11-10, VZ builtins simplification, WA methods
+    bug hunt)
+    => done (2026-11-10): 'argument_emitters::check_range' split: 'range_of'
+       picks the range of the three cases, one 'check_bounds' emits it;
+       'bulk_operands::count' private; listings unchanged; WA found no
+       defect in methods (about 7000 programs inline and noinline, with a
+       copy-semantics variant that would show an aliasing hole); the
+       message for 'func mut noinline' waits for the user
 [x] easy: round 253 (2026-11-10, VV token parameters, VS aliasing, VW
     flow, VP regression, VY global data)
     => done (2026-11-10): a 'token' (72 B) is passed as 'const token&'

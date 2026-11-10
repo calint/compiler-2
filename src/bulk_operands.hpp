@@ -185,7 +185,14 @@ class bulk_operands final {
                 return false;
             }
 
-            const size_t array_count{shape.element_count()};
+            const std::optional<machine::bounds_range> range{
+                range_of(array, shape.element_count(), start, count_register,
+                         count_lower_checked),
+            };
+
+            if (not range) {
+                return false;
+            }
 
             const machine::bounds_check_options options{
                 tc_.checks().bounds_options(),
@@ -197,66 +204,9 @@ class bulk_operands final {
 
             machine& x{tc_.machine()};
 
-            if (not count_register) {
-                // note: a constant start with a constant count was checked at
-                //       compile time
+            x.check_bounds(count_tk, indent_, *range, options);
 
-                if (not start) {
-                    return false;
-                }
-
-                // note: a constant count is at most the length, rejected at
-                //       compile time otherwise
-
-                assert(constant_count_ and *constant_count_ >= 0 and
-                       std::cmp_less_equal(*constant_count_, array_count));
-
-                machine::bounds_range range{
-                    machine::bounds_range::up_to(
-                        *start,
-                        array_count - static_cast<size_t>(*constant_count_)),
-                };
-
-                range.start_lower_checked = true;
-
-                x.check_bounds(count_tk, indent_, range, options);
-
-                return false;
-            }
-
-            if (start) {
-                machine::bounds_range range{
-                    machine::bounds_range::range(*start, *count_register,
-                                                 array_count),
-                };
-
-                range.start_lower_checked = true;
-                range.count_lower_checked = count_lower_checked;
-
-                x.check_bounds(count_tk, indent_, range, options);
-
-                return options.lower;
-            }
-
-            const std::optional<int64_t> constant_start{
-                array.constant_start_index(tc_),
-            };
-
-            // note: a constant start is at most the length, rejected at
-            //       compile time otherwise
-
-            assert(constant_start and *constant_start >= 0 and
-                   std::cmp_less_equal(*constant_start, array_count));
-
-            const machine::bounds_range range{
-                machine::bounds_range::up_to(
-                    *count_register,
-                    array_count - static_cast<size_t>(*constant_start)),
-            };
-
-            x.check_bounds(count_tk, indent_, range, options);
-
-            return options.lower;
+            return count_register.has_value() and options.lower;
         }
 
         // the ranges of both arrays after the later arguments,
@@ -298,6 +248,67 @@ class bulk_operands final {
                 x.free_scratch_register(src_loc_tk_, indent_, *held.start);
                 held.start.reset();
             }
+        }
+
+        // the range 'check_range' checks, none when the start and the count
+        // are constant
+        [[nodiscard]] auto
+        range_of(const stmt_identifier& array, const size_t array_count,
+                 const std::optional<operand>& start,
+                 const std::optional<operand>& count_register,
+                 const bool count_lower_checked) const
+            -> std::optional<machine::bounds_range> {
+
+            if (not count_register) {
+                // note: a constant start with a constant count was checked at
+                //       compile time
+
+                if (not start) {
+                    return std::nullopt;
+                }
+
+                // note: a constant count is at most the length, rejected at
+                //       compile time otherwise
+
+                assert(constant_count_ and *constant_count_ >= 0 and
+                       std::cmp_less_equal(*constant_count_, array_count));
+
+                machine::bounds_range range{
+                    machine::bounds_range::up_to(
+                        *start,
+                        array_count - static_cast<size_t>(*constant_count_)),
+                };
+
+                range.start_lower_checked = true;
+
+                return range;
+            }
+
+            if (start) {
+                machine::bounds_range range{
+                    machine::bounds_range::range(*start, *count_register,
+                                                 array_count),
+                };
+
+                range.start_lower_checked = true;
+                range.count_lower_checked = count_lower_checked;
+
+                return range;
+            }
+
+            const std::optional<int64_t> constant_start{
+                array.constant_start_index(tc_),
+            };
+
+            // note: a constant start is at most the length, rejected at
+            //       compile time otherwise
+
+            assert(constant_start and *constant_start >= 0 and
+                   std::cmp_less_equal(*constant_start, array_count));
+
+            return machine::bounds_range::up_to(
+                *count_register,
+                array_count - static_cast<size_t>(*constant_start));
         }
 
         // the address of 'array' passed to 'use' while the registers of its
@@ -378,8 +389,6 @@ class bulk_operands final {
                                     static_cast<size_t>(*constant_count));
     }
 
-    [[nodiscard]] auto count() const -> const expr_any& { return args_.at(2); }
-
     [[nodiscard]] auto first() const -> const stmt_identifier& {
         return *args_.at(0).bare_path();
     }
@@ -409,6 +418,8 @@ class bulk_operands final {
         first().assert_count_in_bounds(tc, count().tok(), *constant_count);
         second().assert_count_in_bounds(tc, count().tok(), *constant_count);
     }
+
+    [[nodiscard]] auto count() const -> const expr_any& { return args_.at(2); }
 
     // the elements are compared or copied as a whole, so their types match
     [[nodiscard]] auto resolve_element_type(const toc& tc) const

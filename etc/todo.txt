@@ -19,6 +19,10 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
     file 'equivalent' to '/dev/stdout' ("invalid --bin: 'out.s' is the
     standard output") is about 15 lines in 'main.cpp' and a test-cli case,
     only a guard against a user mistake
+[ ] easy: user decision (round 253 WA): 'func mut noinline point.f()'
+    gives "'noinline' is a keyword": 'stmt_def_func' reads 'noinline' then
+    'mut' in that order and the leftover 'noinline' becomes the name; a
+    message "'noinline' goes before 'mut'" is about 4 lines
 [ ] easy: (round 253 VY) on rv32i 'dat a = i8[0xffffffff]' gets "code,
     data and variables use 4294967344 B, which reaches the 4294967296 B
     that the target addresses" with no source location: the check at the
