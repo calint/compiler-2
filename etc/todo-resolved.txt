@@ -1,6 +1,17 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 274 (2026-11-10, XG cross-feature bug hunt, VX large
+    programs)
+    => done (2026-11-10): XG found no defect over about 13000 generated
+       programs and 9000 variants of the tests (all options together,
+       '--checks=line' lines in generic methods across nested includes,
+       constants folded through inlined layers into checks, io in 'foo' in
+       recursion, which check fails first, every function inline or
+       noinline, asan); chapter 8 says the depth that 'frame' allows also
+       follows '--versions=first' and 'last'; VX (programs of 8000 to 14000
+       lines on four targets, register pressure, roome mutants) found none
+       either, its one mismatch was a run timeout under load
 [x] easy: round 273 (2026-11-10, XE rv32i encoder against llvm-mc, XF
     code size since round 210)
     => done (2026-11-10): about 25000 instruction and directive lines
