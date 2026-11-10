@@ -1,6 +1,12 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 279 (2026-11-10, XM the jal reach at 1 MiB)
+    => done (2026-11-10): 'test-far-jumps.sh' places conditional jumps at
+       1 MiB - 8 and 1 MiB - 4 forward and 1 MiB - 4 and 1 MiB backward,
+       spans measured from llvm's object file and the padding tuned to them,
+       and checks 'j' or 'jump' and the run; it kills the round 277 mutant
+       that drops the skip from the jal reach; about 7 s more
 [x] easy: round 278 (2026-11-10, XK mutation testing of the type rules)
     => done (2026-11-10): 65 mutants of list types, typed and untyped
        constants, fits, conversions, comparison sides, narrowing, generic
