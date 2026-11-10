@@ -1,0 +1,4 @@
+
+2340.baz:8:9: expected '{' to begin a value of type 'point'
+    p = *q
+        ^

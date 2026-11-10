@@ -1,0 +1,11 @@
+# x86: running out of registers in an inlined call whose caller holds none, no
+# noinline frame would help
+func deep(x i32) res {
+    res = x + (x + (x + (x + (x + (x + (x + (x + (x + (x + (x + (x + (x + (x + (x + (x + (x + 1))))))))))))))))
+}
+
+func main() {
+    var y = i32(1)
+    var r = deep(y)
+    exit(r)
+}

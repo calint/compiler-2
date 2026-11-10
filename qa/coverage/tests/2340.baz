@@ -1,0 +1,10 @@
+# an instance assigned from a value that starts with none of a name, a '{' or
+# a value operator, e.g. the '*' of a pointer, expects the '{' of its fields
+type point {x, y}
+
+func main() {
+    var p = point
+    var q = point{1, 2}
+    p = *q
+    exit(p.x)
+}

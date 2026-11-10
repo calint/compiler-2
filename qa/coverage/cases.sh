@@ -7278,3 +7278,16 @@ SRC=2293 && COMPERR
 # a called name with a quote inside is not a valid name, not a function that
 # is missing
 SRC=2294 && COMPERR
+
+# an instance assigned from a value that starts with none of a name, a '{' or
+# a value operator, e.g. the '*' of a pointer, expects the '{' of its fields
+SRC=2340 && COMPERR
+
+# the source of a multiplication in 'a0', the last register and the first
+# argument of the helper routine (rv32i), runs out of registers in the first
+# version too, so the error of the call of the helper is reported
+if [[ $MACHINE != x86_64 ]]; then SRC=2341 && COMPERR; fi
+
+# x86: running out of registers in an inlined call whose caller holds none, no
+# noinline frame would help
+if [[ $MACHINE == x86_64 ]]; then SRC=2342 && COMPERR; fi

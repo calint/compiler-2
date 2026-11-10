@@ -1,0 +1,38 @@
+
+2341.baz:6:158: out of scratch registers, simplify the expression
+    var r = x + (x + (x + (x + (x + (x + (x + (x + (x + (x + (x + (x + (x + (x + (x + (x + (x + (x + (x + (x + (x + (x + (x + (x + (x + (x + (x + (x + (x * (x + 1)))))))))))))))))))))))))))))
+                                                                                                                                                             ^
+
+register use at the failure: 29 of 29 registers live
+
+  held  frame, registers (allocated at)
+    29  main
+          t0 6:18
+          t1 6:23
+          t2 6:28
+          t3 6:33
+          t4 6:38
+          t5 6:43
+          t6 6:48
+          s1 6:53
+          s2 6:58
+          s3 6:63
+          s4 6:68
+          s5 6:73
+          s6 6:78
+          s7 6:83
+          s8 6:88
+          s9 6:93
+          s10 6:98
+          s11 6:103
+          tp 6:108
+          gp 6:113
+          ra 6:118
+          a1 6:123
+          a2 6:128
+          a3 6:133
+          a4 6:138
+          a5 6:143
+          a6 6:148
+          a7 6:153
+          a0 6:158

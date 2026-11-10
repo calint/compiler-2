@@ -1,0 +1,8 @@
+# the source of a multiplication in 'a0', the last register and the first
+# argument of the helper routine (rv32i), runs out of registers in the first
+# version too, so the error of the call of the helper is reported
+func main() {
+    var x = 1
+    var r = x + (x + (x + (x + (x + (x + (x + (x + (x + (x + (x + (x + (x + (x + (x + (x + (x + (x + (x + (x + (x + (x + (x + (x + (x + (x + (x + (x + (x * (x + 1)))))))))))))))))))))))))))))
+    exit(r)
+}
