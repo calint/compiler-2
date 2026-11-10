@@ -416,14 +416,14 @@ class scope final {
         return consts_.get_const_ref(name);
     }
 
-    [[nodiscard]] auto get_var_const_ref(const std::string_view name) const
+    [[nodiscard]] auto get_var(const std::string_view name) const
         -> const var_info& {
 
         return vars_.get_const_ref(name);
     }
 
     [[nodiscard]] auto has_binding(const std::string_view name) const -> bool {
-        return func_part().bindings.has(name);
+        return func_ and func_->bindings.has(name);
     }
 
     [[nodiscard]] auto has_const(const std::string_view name) const -> bool {
@@ -1478,7 +1478,7 @@ class scope_stack final {
             };
         }
 
-        if (scp.is_func() and scp.has_binding(name)) {
+        if (scp.has_binding(name)) {
             return {
                 .what{name_meaning::kind::binding},
                 .scope_index{index},
@@ -2023,7 +2023,7 @@ class ident_resolver final {
         }
 
         const var_info& var{
-            scopes_.get().at(meaning.scope_index).get_var_const_ref(name),
+            scopes_.get().at(meaning.scope_index).get_var(name),
         };
 
         // note: the array was resolved to its root variable when the 'foo'
@@ -2109,7 +2109,7 @@ class ident_resolver final {
         const scope& scp{scopes_.get().at(meaning.scope_index)};
 
         if (meaning.is_variable()) {
-            return resolve_var(scp.get_var_const_ref(ident));
+            return resolve_var(scp.get_var(ident));
         }
 
         if (meaning.is_constant()) {
@@ -2242,8 +2242,10 @@ class definition_checks final {
 
         assert_not_declared_in_scope(src_loc_tk, name);
 
-        if (scopes_.get().back().has_const(name)) {
-            const const_info& existing{scopes_.get().back().get_const(name)};
+        const scope& scp{scopes_.get().back()};
+
+        if (scp.has_const(name)) {
+            const const_info& existing{scp.get_const(name)};
 
             throw compile_error{src_loc_tk,
                                 std::format("constant {} already defined at {}",
@@ -2266,7 +2268,7 @@ class definition_checks final {
             return;
         }
 
-        const var_info& decl_var{scp.get_var_const_ref(name)};
+        const var_info& decl_var{scp.get_var(name)};
 
         throw compile_error{src_loc_tk,
                             std::format("{} {} already defined at {}",
@@ -2331,7 +2333,7 @@ class definition_checks final {
 
         const token& decl_tk{
             is_const ? outer_scp.get_const(name).src_loc_tk
-                     : outer_scp.get_var_const_ref(name).src_loc_tk,
+                     : outer_scp.get_var(name).src_loc_tk,
         };
 
         throw compile_error{

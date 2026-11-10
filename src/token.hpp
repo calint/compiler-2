@@ -202,7 +202,7 @@ class token final {
 
     // a word that starts with a digit, e.g. '12' or '0x1f'
     [[nodiscard]] auto is_number() const -> bool {
-        return is_word() and starts_number(text_);
+        return starts_number(text_);
     }
 
     // the text of a string literal keeps its quotes, like a character

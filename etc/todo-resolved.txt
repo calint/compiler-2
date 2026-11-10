@@ -1,6 +1,12 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 251 (2026-11-10, VR tokenizer and VQ 'toc'
+    simplification)
+    => done (2026-11-10): 'is_peek_char' removed for 'peek_char() == ch',
+       'is_number' without an 'is_word' that never decided; 'scope::get_var'
+       (was 'get_var_const_ref'), 'has_binding' asked of any scope so
+       'meaning_in' needs no guard; listings unchanged
 [x] easy: round 250 (2026-11-10, VO messages from round 249 VM)
     => done (2026-11-10): a type too large for rv32i said "4294967296 B ...
        must be smaller than the 4294967296 B", now "the target allows at

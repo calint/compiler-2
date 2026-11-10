@@ -58,8 +58,8 @@ class tokenizer final {
             return std::ranges::contains(operators_, spelling.text);
         }));
     static_assert(std::ranges::all_of(
-        comparison_operators, [](const comparison_traits& spelling) -> bool {
-            return std::ranges::contains(operators_, spelling.text);
+        comparison_operators, [](const comparison_traits& traits) -> bool {
+            return std::ranges::contains(operators_, traits.text);
         }));
 
   public:
@@ -151,7 +151,7 @@ class tokenizer final {
 
         const std::string_view ws_before{next_whitespace()};
 
-        if (not is_peek_char(ch)) {
+        if (peek_char() != ch) {
             move_back(ws_before.size());
             return std::nullopt;
         }
@@ -377,7 +377,7 @@ class tokenizer final {
 
         while (true) {
             // points at the opening quote, where the literal starts
-            if (is_eos() or is_peek_char('\n')) {
+            if (is_eos() or peek_char() == '\n') {
                 throw compile_error{token::position(file_ix_, bgn_ix, at_line),
                                     "unterminated character literal"};
             }
@@ -389,7 +389,7 @@ class tokenizer final {
             }
 
             // the escaped character may be a quote
-            if (ch == '\\' and not is_eos() and not is_peek_char('\n')) {
+            if (ch == '\\' and not is_eos() and peek_char() != '\n') {
                 skip_char();
             }
         }
@@ -424,7 +424,7 @@ class tokenizer final {
                     throw compile_error{open_quote_tk, "unterminated string"};
                 }
 
-                const bool is_carriage_return{is_peek_char('\r')};
+                const bool is_carriage_return{peek_char() == '\r'};
                 skip_char();
 
                 // a crlf line end after the backslash continues the string
@@ -440,7 +440,7 @@ class tokenizer final {
             }
 
             // a string cannot span lines, the source is echoed in comments
-            if (is_eos() or is_peek_char('\n')) {
+            if (is_eos() or peek_char() == '\n') {
                 throw compile_error{open_quote_tk, "unterminated string"};
             }
 
@@ -470,17 +470,13 @@ class tokenizer final {
     }
 
     [[nodiscard]] auto is_next_char(const char ch) -> bool {
-        if (not is_peek_char(ch)) {
+        if (peek_char() != ch) {
             return false;
         }
 
         skip_char();
 
         return true;
-    }
-
-    [[nodiscard]] auto is_peek_char(const char ch) const -> bool {
-        return not is_eos() and src_.at(char_ix_) == ch;
     }
 
     [[nodiscard]] auto is_token_text_at_source(const token& tk) const -> bool {
