@@ -178,6 +178,12 @@ class tokenizer final {
         return tk;
     }
 
+    // a '<' follows that can start type arguments, e.g. the '<' of
+    // 'show<i8>(x)' but not of the operators of 'show <= x' or 'show << x'
+    [[nodiscard]] auto is_type_args_next() const -> bool {
+        return peek_operator() == "<";
+    }
+
     // e.g. '  # note\n  x = 1' gives the token 'x' with the whitespace and
     // comment before it
     [[nodiscard]] auto next_token() -> token {

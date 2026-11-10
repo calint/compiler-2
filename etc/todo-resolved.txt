@@ -1,6 +1,14 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 243 (2026-11-10, VE generics bug hunt)
+    => done (2026-11-10): no wrong code, no no-UB hole, no crash over about
+       22000 fuzzed generic programs (against the same program instantiated
+       by hand, mutations under asan, errors injected into bodies); a name
+       followed by '<=' or '<<' was read as the start of type arguments
+       ("expected a generic argument", "'g' is not generic"), now only an
+       operator '<' starts them ('tokenizer::is_type_args_next' at the seven
+       checks), tests 2275-2280; a missing alias frame went to the todo
 [x] easy: round 242 (2026-11-10, VF 'expr_arith' and 'constant_arith'
     simplification)
     => done (2026-11-10): the shift count rule written once,

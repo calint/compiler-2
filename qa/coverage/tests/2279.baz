@@ -1,0 +1,5 @@
+# a built-in function before '<=' lacks its '(', it is not given type
+# arguments
+func main() {
+    var b = read <= 3
+}

@@ -1,0 +1,4 @@
+
+2278.baz:9:28: 'p.get' is a method, not an array
+    var n = array_length(p.get <= 3)
+                           ^~~

@@ -73,7 +73,7 @@ inline auto parse_builtin(toc& tc, tokenizer& tz, const token& tk,
     const char next{tz.peek_char_after_whitespace()};
 
     // a built-in is not generic, e.g. 'read<i8>(0, buf)'
-    if (fn != nullptr and next == '<') {
+    if (fn != nullptr and tz.is_type_args_next()) {
         throw_not_generic(tk, "built-in function", tk.text());
     }
 
@@ -282,7 +282,7 @@ inline auto assert_value_or_call(const toc& tc, const tokenizer& tz,
     // e.g. 'show<name>(x)' where 'show' is not generic, says so instead of
     // reading the '<' as an operator; a variable or a constant of that name is
     // an operand of '<'
-    if (tm == term_kind::function_name and next == '<') {
+    if (tm == term_kind::function_name and tz.is_type_args_next()) {
         throw_not_generic(tk, "function", tk.text());
     }
 

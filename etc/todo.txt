@@ -6,6 +6,13 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
 --------------------------------------------------------------------------------
 1. clean up
 --------------------------------------------------------------------------------
+[ ] easy: (round 241 VE 2.2) an error in a method instance found while a
+    call is compiled names only the call ("'b.m' called from 'q.m(v)'"),
+    not the alias that made the instance ("instantiated by 'type b =
+    buf<200>'"), so "constant 'n' does not fit 'i8'" does not show that 'n'
+    is 200; without the call the alias frame is shown; reproducer: 'type
+    buf<n> {a i8[2]}', 'type b = buf<200>', 'func buf.m(x i8) res i8 { res
+    = x + n }', then 'q.m(v)'
 [ ] easy: user decision (round 234 US3): a constant, 'dat', variable or
     function used as a type, e.g. 'let n = 3' and 'type t { a n }', gives
     "type 'n' not found", also a generic's constant parameter ('type

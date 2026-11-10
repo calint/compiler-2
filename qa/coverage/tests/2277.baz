@@ -1,0 +1,9 @@
+# a generic method before '<=' lacks its '(', it is not given type arguments
+type pt { x }
+func pt.get<T type>() res T {
+    res = {}
+}
+func main() {
+    var p = pt{1}
+    var b = p.get <= 3
+}

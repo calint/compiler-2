@@ -262,7 +262,7 @@ enum class term_kind : uint8_t {
     //       starts a comparison
 
     if (not is_type_param and tc.generics().has_func(text) and
-        (next == '(' or (next == '<' and not is_hidden))) {
+        (next == '(' or (tz.is_type_args_next() and not is_hidden))) {
 
         return term_kind::generic_call;
     }

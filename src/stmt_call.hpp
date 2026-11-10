@@ -179,7 +179,10 @@ struct generic_call {
           const std::string_view generic_name, const type* const expected_type)
         -> generic_call {
 
-        const std::optional<token> open_tk{tz.is_next_char_token('<')};
+        // e.g. not the '<=' of 'p.get <= 3', which the deduction reports
+        const std::optional<token> open_tk{
+            tz.is_type_args_next() ? tz.is_next_char_token('<') : std::nullopt,
+        };
 
         std::vector<const type*> type_args;
         std::vector<token> generic_tks;
@@ -1946,8 +1949,7 @@ class stmt_call final : public statement {
 
         // e.g. 'p.get<i8>()' where 'get' is not generic, the '<' is not an
         // operator after a method name
-        if (not tc.generics().has_func(name) and
-            tz.peek_char_after_whitespace() == '<') {
+        if (not tc.generics().has_func(name) and tz.is_type_args_next()) {
 
             throw_not_generic(tok(), "method", name);
         }
@@ -1972,7 +1974,7 @@ class stmt_call final : public statement {
 
         // e.g. 'point.at<i8>(1, 2)', the '<' is not an operator after a
         // constructor name
-        if (tz.peek_char_after_whitespace() == '<') {
+        if (tz.is_type_args_next()) {
             throw_not_generic(callee_name_token(), "constructor",
                               callee().name());
         }

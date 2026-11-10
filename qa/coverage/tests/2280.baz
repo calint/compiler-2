@@ -1,0 +1,8 @@
+# a constructor before '<<' lacks its '(', it is not given type arguments
+type pt { x }
+func pt.at(v) self {
+    self = {v}
+}
+func main() {
+    var b = pt.at << 3
+}

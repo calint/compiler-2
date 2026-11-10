@@ -1,0 +1,4 @@
+
+2275.baz:8:13: 'f' is a function, not a value, a call ends with '()'
+    var b = f <= x
+            ^

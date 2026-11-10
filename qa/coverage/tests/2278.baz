@@ -1,0 +1,10 @@
+# a generic method before '<=' where an array is expected is a method, not a
+# call
+type pt { x }
+func pt.get<T type>() res {
+    res = 1
+}
+func main() {
+    var p = pt{1}
+    var n = array_length(p.get <= 3)
+}

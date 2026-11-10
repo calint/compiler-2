@@ -1,0 +1,4 @@
+
+2279.baz:4:13: expected '(' after function name
+    var b = read <= 3
+            ^~~~

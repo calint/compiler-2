@@ -1,0 +1,4 @@
+
+2277.baz:8:15: expected '(' after method name
+    var b = p.get <= 3
+              ^~~

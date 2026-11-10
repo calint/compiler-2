@@ -972,7 +972,9 @@ class stmt_identifier final : public statement {
 
         const char next{tz.peek_char_after_whitespace()};
 
-        if (next == '(' or (next == '<' and tc.generics().has_func(callee))) {
+        if (next == '(' or
+            (tz.is_type_args_next() and tc.generics().has_func(callee))) {
+
             throw_call_not_array(name_tk, callee);
         }
 

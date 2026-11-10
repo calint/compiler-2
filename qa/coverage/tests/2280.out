@@ -1,0 +1,4 @@
+
+2280.baz:7:16: expected '(' after constructor name
+    var b = pt.at << 3
+               ^~

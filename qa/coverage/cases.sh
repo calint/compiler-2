@@ -7221,3 +7221,21 @@ SRC=2273 && COMPERR
 
 # an unindexed array operand is named as written
 SRC=2274 && COMPERR
+
+# a generic function before '<=' is used as a value
+SRC=2275 && COMPERR
+
+# a function before '<<' is used as a value, not given type arguments
+SRC=2276 && COMPERR
+
+# a generic method before '<=' lacks its '('
+SRC=2277 && COMPERR
+
+# a generic method before '<=' where an array is expected is no call
+SRC=2278 && COMPERR
+
+# a built-in function before '<=' lacks its '('
+SRC=2279 && COMPERR
+
+# a constructor before '<<' lacks its '('
+SRC=2280 && COMPERR

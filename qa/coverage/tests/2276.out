@@ -1,0 +1,4 @@
+
+2276.baz:7:13: 'g' is a function, not a value, a call ends with '()'
+    var y = g << x
+            ^

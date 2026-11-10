@@ -1,0 +1,9 @@
+# a generic function before '<=' is a function used as a value, not the start
+# of type arguments
+func f<T type>(x T) res {
+    res = 1
+}
+func main() {
+    var x = 1
+    var b = f <= x
+}
