@@ -194,10 +194,7 @@ inline auto expr_type::parse_copy_source(toc& tc, tokenizer& tz,
         return;
     }
 
-    value_ = std::make_unique<expr_path>(
-        std::move(*std::get<std::unique_ptr<stmt_identifier>>(parsed)));
-
-    const stmt_identifier& ident{*operand_path()};
+    stmt_identifier& ident{*std::get<std::unique_ptr<stmt_identifier>>(parsed)};
 
     // a whole array is reported as one, not by its element type, as for a
     // number
@@ -207,6 +204,8 @@ inline auto expr_type::parse_copy_source(toc& tc, tokenizer& tz,
         throw_type_mismatch(ident.last_token(), tp.name(),
                             ident.get_type().name());
     }
+
+    value_ = std::make_unique<expr_path>(std::move(ident));
 }
 
 inline auto expr_type::source_to(std::ostream& os) const -> void {

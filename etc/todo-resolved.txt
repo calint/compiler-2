@@ -1,6 +1,12 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 256 (2026-11-10, WD generics and 'expr_type'
+    simplification)
+    => done (2026-11-10): 'generic_arg_tokens::parse' in named steps
+       ('parse_arg', 'assert_arg_ends'); 'part_step' private to
+       'part_location'; 'parse_copy_source' checks the path before storing
+       it instead of fetching it back; listings unchanged
 [x] easy: round 255 (2026-11-10, WB 'stmt_def_func' simplification)
     => done (2026-11-10): the wrapper 'compile_statements' removed; the
        generic method name in one helper 'generic_method_name'; the plain

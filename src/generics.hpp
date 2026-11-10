@@ -172,19 +172,7 @@ struct generic_arg_tokens {
         args.list_tks.emplace_back(open_tk);
 
         while (true) {
-            const token arg_tk{tz.next_token()};
-
-            // e.g. the '-' of 'b<-3>', an argument is one token
-            if (arg_tk.is_none() and takes_constants and
-                tz.peek_char_after_whitespace() == '-') {
-
-                throw compile_error{tz, "expected a generic argument, name a "
-                                        "negative constant with 'let'"};
-            }
-
-            if (arg_tk.is_none()) {
-                throw compile_error{tz, "expected a generic argument"};
-            }
+            const token arg_tk{parse_arg(tz, takes_constants)};
 
             args.arg_tks.emplace_back(arg_tk);
             args.list_tks.emplace_back(arg_tk);
@@ -196,36 +184,7 @@ struct generic_arg_tokens {
                 return args;
             }
 
-            // e.g. the '[' of 'f<i32[]>(a)', 'a T[]' takes an array of 'T'
-            if (const std::optional<token> bracket_tk{
-                    tz.is_next_char_token('['),
-                }) {
-
-                // e.g. the '[' of 'buf<4[2]>', a field 'x T[n]' makes one
-                if (takes_constants) {
-                    throw compile_error{*bracket_tk,
-                                        "a generic argument is one name or "
-                                        "constant, not an array"};
-                }
-
-                throw compile_error{*bracket_tk,
-                                    "a type argument is a type name, not an "
-                                    "array, an array parameter is written "
-                                    "'a T[]'"};
-            }
-
-            // e.g. the inner 'list' of 'box<list<i8>>', as for a field type;
-            // the '<<' of 'list<i8, 1 << 4>' is an operator
-            if (tz.peek_operator() == "<") {
-                const std::string instance{
-                    std::format("{}<...>", arg_tk.text()),
-                };
-
-                throw compile_error{
-                    arg_tk, std::format("{} is not a generic argument, {}",
-                                        in_quotes(instance),
-                                        instance_hint(arg_tk.text()))};
-            }
+            assert_arg_ends(tz, arg_tk, takes_constants);
 
             const token delim_tk{
                 tz.expect_char_token(
@@ -238,6 +197,69 @@ struct generic_arg_tokens {
 
             args.list_tks.emplace_back(delim_tk);
         }
+    }
+
+  private:
+    //
+    // statics
+    //
+
+    // an argument not followed by '>' is followed by a ',', not by an array
+    // or the arguments of a generic
+    static auto assert_arg_ends(tokenizer& tz, const token& arg_tk,
+                                const bool takes_constants) -> void {
+
+        // e.g. the '[' of 'f<i32[]>(a)', 'a T[]' takes an array of 'T'
+        if (const std::optional<token> bracket_tk{
+                tz.is_next_char_token('['),
+            }) {
+
+            // e.g. the '[' of 'buf<4[2]>', a field 'x T[n]' makes one
+            if (takes_constants) {
+                throw compile_error{*bracket_tk,
+                                    "a generic argument is one name or "
+                                    "constant, not an array"};
+            }
+
+            throw compile_error{*bracket_tk,
+                                "a type argument is a type name, not an "
+                                "array, an array parameter is written "
+                                "'a T[]'"};
+        }
+
+        // e.g. the inner 'list' of 'box<list<i8>>', as for a field type;
+        // the '<<' of 'list<i8, 1 << 4>' is an operator
+        if (tz.peek_operator() == "<") {
+            const std::string instance{
+                std::format("{}<...>", arg_tk.text()),
+            };
+
+            throw compile_error{arg_tk,
+                                std::format("{} is not a generic argument, {}",
+                                            in_quotes(instance),
+                                            instance_hint(arg_tk.text()))};
+        }
+    }
+
+    // an argument is one token
+    [[nodiscard]] static auto parse_arg(tokenizer& tz,
+                                        const bool takes_constants) -> token {
+
+        const token arg_tk{tz.next_token()};
+
+        // e.g. the '-' of 'b<-3>'
+        if (arg_tk.is_none() and takes_constants and
+            tz.peek_char_after_whitespace() == '-') {
+
+            throw compile_error{tz, "expected a generic argument, name a "
+                                    "negative constant with 'let'"};
+        }
+
+        if (arg_tk.is_none()) {
+            throw compile_error{tz, "expected a generic argument"};
+        }
+
+        return arg_tk;
     }
 };
 

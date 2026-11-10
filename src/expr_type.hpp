@@ -42,8 +42,7 @@
 //                            not take
 //   'full_list', 'parse_braced_items'
 //                            the items of a list in braces
-//   'part_step', 'part_location'
-//                            a part of a destination, a field or an element
+//   'part_location'          a part of a destination, a field or an element
 //   'value_write', 'bytes_write', 'zero_fill', 'write_comment', 'write_step',
 //   'write_plan', 'emit_write_plan'
 //                            the steps that write a value in parts, read by
@@ -244,16 +243,16 @@ parse_braced_items(tokenizer& tz, std::vector<token>& delims_tk,
     throw compile_error{tz, full->unclosed};
 }
 
-// a step from a destination to a part of it: the field 'field', or the
-// element 'element_index' when 'field' is null
-struct part_step {
-    const type_field* field{};
-    size_t element_index{};
-};
-
 // where a part of a value is in its destination, e.g. the field 'a' and the
 // element 3 for 'q.a[3]' of 'q'
 class part_location final {
+    // a step from a destination to a part of it: the field 'field', or the
+    // element 'element_index' when 'field' is null
+    struct part_step {
+        const type_field* field{};
+        size_t element_index{};
+    };
+
     std::vector<part_step> steps_;
 
   public:
