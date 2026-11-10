@@ -1,0 +1,16 @@
+# a later 'break' that leaves the result unset narrows what the earlier
+# breaks set
+
+func foozi(i) res {
+    loop {
+        if i == 2 {
+            res = 1
+            break
+        }
+        break
+    }
+}
+
+func main() {
+    var x = foozi(2)
+}

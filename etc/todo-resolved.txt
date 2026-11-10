@@ -1,6 +1,15 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 276 (2026-11-10, XI mutation testing of the no-UB checks)
+    => done (2026-11-10): 65 mutants of 'ub_order', 'ub_assigned',
+       'access_path', the overlap, aliasing, read-only, narrowing and
+       constant range checks and the emitted checks of both targets: 59
+       killed by the tests, 3 only by 'fuzz-ub', 3 by nothing; new tests
+       kill all 6: 2360 (a later 'break' leaves 'res' unset), 2361 ('res'
+       set only in a 'foo' that may not run), 2362 (x86_64 'start + count'
+       overflow under 'upper'), 2363 (narrow multiply overflow), 2364
+       (narrow negative overflow); no compiler bug
 [x] easy: round 275 (2026-11-10, XH 'main.cpp', 'register_pool',
     'constant_parser', 'decouple', 'expr_zero')
     => done (2026-11-10): 'compile_file' in named steps

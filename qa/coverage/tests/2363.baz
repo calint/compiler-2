@@ -1,0 +1,8 @@
+# --checks=overflow: a narrow product that does not fit panics
+func noinline mul(a i8, b i8) res i8 { res = a * b }
+func main() {
+    var a = i8(16)
+    var b = i8(8)
+    var x = mul(a, b)
+    exit(x)
+}

@@ -7291,3 +7291,20 @@ if [[ $MACHINE != x86_64 ]]; then SRC=2341 && COMPERR; fi
 # x86: running out of registers in an inlined call whose caller holds none, no
 # noinline frame would help
 if [[ $MACHINE == x86_64 ]]; then SRC=2342 && COMPERR; fi
+
+# a later 'break' that leaves the result unset narrows what the earlier breaks
+# set
+SRC=2360 && COMPERR
+
+# a result set only in a 'foo' whose count may be zero is not set after it
+SRC=2361 && COMPERR
+
+# with only the upper bound checked, a start and count whose sum overflows 64
+# bits fails the bounds check instead of passing as a negative end
+if [[ $MACHINE == x86_64 ]]; then SRC=2362 && EXP=255 && OPTS="--vars=0x40000 --checks=upper,line" RUN_ERR; fi
+
+# --checks=overflow: a narrow product that does not fit panics
+SRC=2363 && EXP=249 && OPTS="--checks=overflow" RUN_ERR
+
+# --checks=overflow: a narrow difference below the minimum panics
+SRC=2364 && EXP=249 && OPTS="--checks=overflow" RUN_ERR

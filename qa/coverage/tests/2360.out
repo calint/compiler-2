@@ -1,0 +1,4 @@
+
+2360.baz:4:15: function may return without setting its result 'res'
+func foozi(i) res {
+              ^~~

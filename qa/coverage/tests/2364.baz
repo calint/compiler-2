@@ -1,0 +1,8 @@
+# --checks=overflow: a narrow difference below the minimum panics
+func noinline sub(a i8, b i8) res i8 { res = a - b }
+func main() {
+    var a = i8(-100)
+    var b = i8(100)
+    var x = sub(a, b)
+    exit(x)
+}

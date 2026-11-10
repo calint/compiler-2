@@ -1,0 +1,12 @@
+# a result set only in a 'foo' whose count may be zero is not set after it
+
+func first(values i32[], n) res {
+    foo values, n {
+        res = e
+    }
+}
+
+func main() {
+    var values = i32[2]
+    var r = first(values, 0)
+}

@@ -1,0 +1,10 @@
+# with only the upper bound checked, a start and count whose sum overflows
+# 64 bits fails the bounds check instead of passing as a negative end
+
+func main() {
+    var x = i8[4]
+    var y = i8[4]
+    var i = 1
+    var n = 0x7fffffffffffffff
+    array_copy(x[i], y[i], n)
+}

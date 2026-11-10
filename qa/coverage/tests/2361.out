@@ -1,0 +1,4 @@
+
+2361.baz:3:29: function may return without setting its result 'res'
+func first(values i32[], n) res {
+                            ^~~
