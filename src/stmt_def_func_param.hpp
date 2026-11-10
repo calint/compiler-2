@@ -150,11 +150,9 @@ class stmt_def_func_param final : public statement {
                 // instance parses, e.g. the second 'a' of 'func f<T type>(a,
                 // a T)'
                 if (const syntax* const existing{list.find(param.name_tk)}) {
-                    throw compile_error{
-                        param.name_tk,
-                        std::format("parameter {} already defined at {}",
-                                    in_quotes(param.name_tk.text()),
-                                    tc.where(existing->name_tk))};
+                    throw_already_defined(param.name_tk, "parameter",
+                                          param.name_tk.text(),
+                                          tc.where(existing->name_tk));
                 }
 
                 list.params.push_back(param);

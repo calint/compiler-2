@@ -1959,10 +1959,7 @@ class ident_resolver final {
         }
 
         if (generics_.get().has_type(ident)) {
-            throw compile_error{
-                src_loc_tk,
-                std::format("generic type {} is not a value, {}",
-                            in_quotes(ident), instance_hint(ident))};
+            throw_generic_type_not(src_loc_tk, ident, "a value");
         }
 
         // note: a function used as a value is rejected where it is parsed
@@ -2209,10 +2206,8 @@ class definition_checks final {
                                    method.method_name_tk.text()),
                 };
 
-                throw compile_error{
-                    method.type_tk,
-                    std::format("generic method {} already defined at {}",
-                                in_quotes(name), where(known.type_tk))};
+                throw_already_defined(method.type_tk, "generic method", name,
+                                      where(known.type_tk));
             }
         }
     }
@@ -2247,10 +2242,8 @@ class definition_checks final {
         if (scp.has_const(name)) {
             const const_info& existing{scp.get_const(name)};
 
-            throw compile_error{src_loc_tk,
-                                std::format("constant {} already defined at {}",
-                                            in_quotes(name),
-                                            where(existing.src_loc_tk))};
+            throw_already_defined(src_loc_tk, "constant", name,
+                                  where(existing.src_loc_tk));
         }
 
         assert_not_hiding_signature(src_loc_tk, what, name);
@@ -2270,10 +2263,8 @@ class definition_checks final {
 
         const var_info& decl_var{scp.get_var(name)};
 
-        throw compile_error{src_loc_tk,
-                            std::format("{} {} already defined at {}",
-                                        scp.var_role(name), in_quotes(name),
-                                        where(decl_var.src_loc_tk))};
+        throw_already_defined(src_loc_tk, scp.var_role(name), name,
+                              where(decl_var.src_loc_tk));
     }
 
     // a generic type and a type share the namespace of types
@@ -2288,9 +2279,7 @@ class definition_checks final {
 
             const token& type_tk{types_.get().src_loc_tk_of(name)};
 
-            throw compile_error{src_loc_tk,
-                                std::format("type {} already defined at {}",
-                                            in_quotes(name), where(type_tk))};
+            throw_already_defined(src_loc_tk, "type", name, where(type_tk));
         }
 
         if (generics_.get().exists_type(name)) {
@@ -2393,9 +2382,7 @@ class definition_checks final {
         // note: a method is named with its type, e.g. 't.x'
         const std::string_view kind{name.contains('.') ? "method" : "function"};
 
-        throw compile_error{src_loc_tk,
-                            std::format("{} {} already defined at {}", kind,
-                                        in_quotes(name), where(existing_tk))};
+        throw_already_defined(src_loc_tk, kind, name, where(existing_tk));
     }
 
     [[nodiscard]] auto where(const token& src_loc_tk) const -> std::string {
@@ -3204,16 +3191,12 @@ class toc final {
 
         // e.g. 'x(1)' after 'var x = 1', a call still calls a hidden function
         if (scopes_.lookup(name).is_value()) {
-            throw compile_error{
-                src_loc_tk,
-                std::format("{} is a value, not a function", in_quotes(name))};
+            throw_not_a_function(src_loc_tk, "value", name);
         }
 
         // e.g. 'box(1)' of 'type box<T type> {x T}'
         if (generics_.has_type(name)) {
-            throw compile_error{
-                src_loc_tk, std::format("generic type {} is not a function, {}",
-                                        in_quotes(name), instance_hint(name))};
+            throw_generic_type_not(src_loc_tk, name, "a function");
         }
 
         throw compile_error{
@@ -3243,9 +3226,7 @@ class toc final {
 
         if (not types_.has(name)) {
             if (generics_.has_type(name)) {
-                throw compile_error{
-                    type_tk, std::format("generic type {} is not a type, {}",
-                                         in_quotes(name), instance_hint(name))};
+                throw_generic_type_not(type_tk, name, "a type");
             }
 
             // e.g. the 'i8;' of 'type t { a i8; }'

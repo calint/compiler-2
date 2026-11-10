@@ -1118,9 +1118,7 @@ class stmt_identifier final : public statement {
 
         // e.g. the 'pt{1, a}.a' of 'array_length(pt{1, a}.a)', not the type
         if (tm == term_kind::record_literal and is_literal_reached_into(tz)) {
-            throw_literal_not_operand(
-                tk,
-                std::format("an instance literal of {}", in_quotes(tk.text())));
+            throw_instance_literal_not_operand(tk, tk.text());
         }
 
         // a call names a function, e.g. not the value 'a' of 'a(1)', as for a

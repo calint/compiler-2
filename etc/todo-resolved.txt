@@ -1,6 +1,17 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 263 (2026-11-10, WN cross-file survey, WP shared
+    messages, WO)
+    => done (2026-11-10): one message, one helper: 'throw_already_defined'
+       (7 sites in 3 files), 'throw_condition_not_operand',
+       'throw_not_a_function', 'throw_generic_type_not' (the value, type and
+       function family), 'throw_not_makes_condition',
+       'throw_instance_literal_not_operand', 'throw_not_a_number' with its
+       kind; no text changed, listings unchanged; one walk for the three
+       reach checks (WO) was not done: they visit different things and
+       would share only two short lambdas; the one-line source idiom stays,
+       its five sites call different writers
 [x] medium: round 262 (2026-11-10, WK addresses at the limits)
     => done (2026-11-10): x86_64 asserted ('fits_offset_sum') on a valid
        'x[i + 3074457345618258602].c' where the folded displacement reached

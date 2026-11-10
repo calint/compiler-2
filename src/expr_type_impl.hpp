@@ -87,9 +87,7 @@ inline expr_type::expr_type(toc& tc, tokenizer& tz, const type& tp,
 
     // e.g. the 'not' of 'q = not b', as a unary operator below
     if (tok().is_text("not")) {
-        throw compile_error{
-            tok(),
-            std::format("'not' makes a condition, not {}", instance_text)};
+        throw_not_makes_condition(tok(), instance_text);
     }
 
     // e.g. 'p = pt', the token is empty at '{x, y}'

@@ -850,9 +850,7 @@ class expr_any final : public statement {
         const term_kind tm{classify_term(tc, tk, tz)};
 
         if (tm == term_kind::record_literal and is_literal_reached_into(tz)) {
-            throw_literal_not_operand(
-                tk,
-                std::format("an instance literal of {}", in_quotes(tk.text())));
+            throw_instance_literal_not_operand(tk, tk.text());
         }
 
         if (is_record_value(tm, tz) or

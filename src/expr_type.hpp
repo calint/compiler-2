@@ -94,10 +94,11 @@ inline auto assert_value_ends(const tokenizer& tz, const token& value_tk,
     const bool is_array{kind == value_kind::array};
 
     if (is_reached_into(tz)) {
-        throw_literal_not_operand(
-            value_tk, is_array ? std::string{"an array literal"}
-                               : std::format("an instance literal of {}",
-                                             in_quotes(tp.name())));
+        if (is_array) {
+            throw_literal_not_operand(value_tk, "an array literal");
+        }
+
+        throw_instance_literal_not_operand(value_tk, tp.name());
     }
 
     if (not continues_expression(tz)) {
@@ -113,10 +114,8 @@ inline auto assert_value_ends(const tokenizer& tz, const token& value_tk,
         expr_arith::assert_no_condition_next(tz);
     }
 
-    throw compile_error{value_tk,
-                        std::format("{} of {} is not a number",
-                                    is_array ? "an array" : "an instance",
-                                    in_quotes(tp.name()))};
+    throw_not_a_number(value_tk, is_array ? "an array" : "an instance",
+                       tp.name());
 }
 
 // a literal that names the type its destination gives, at 'type_tk' with

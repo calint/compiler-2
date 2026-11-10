@@ -382,7 +382,7 @@ class stmt_builtin_convert final : public statement {
         assert_not_whole_array(arg);
 
         if (not arg.get_type().is_builtin()) {
-            throw_not_a_number(arg.tok(), arg.get_type().name());
+            throw_not_a_number(arg.tok(), "an instance", arg.get_type().name());
         }
 
         assert_no_surplus_argument(tz, type_tk.text(), 1);

@@ -765,27 +765,14 @@ class expr_arith final : public statement {
         tokenizer probe{tz};
 
         if (comparison_of(probe.peek_operator())) {
-            throw_comparison_as_operand(probe.seen_operator());
+            throw_condition_not_operand(probe.seen_operator(), "a comparison");
         }
 
         const token next_tk{probe.next_token()};
 
         if (connective_of(next_tk)) {
-            throw compile_error{
-                next_tk, std::format("{} makes a condition, which is not an "
-                                     "operand here, store it in a 'bool' first",
-                                     in_quotes(next_tk.text()))};
+            throw_condition_not_operand(next_tk, in_quotes(next_tk.text()));
         }
-    }
-
-    // the condition of the comparison at 'op_tk' taken as an operand, e.g.
-    // the '>' of 'int(a > 2)' or the first '<' of 'x < 1 < 2'
-    [[noreturn]] static auto throw_comparison_as_operand(const token& op_tk)
-        -> void {
-
-        throw compile_error{op_tk, "a comparison makes a condition, which is "
-                                   "not an operand here, store it in a 'bool' "
-                                   "first"};
     }
 
   private:
@@ -1199,7 +1186,7 @@ class expr_arith final : public statement {
         const type& operand_type{term.get_type()};
 
         if (not operand_type.is_builtin()) {
-            throw_not_a_number(term.tok(), operand_type.name());
+            throw_not_a_number(term.tok(), "an instance", operand_type.name());
         }
 
         if (not operand_type.is_bool()) {

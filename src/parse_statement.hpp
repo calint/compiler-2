@@ -262,8 +262,7 @@ inline auto assert_value_or_call(const toc& tc, const tokenizer& tz,
 
     // e.g. '1 (2)' or 'true(1)', a literal is not called
     if (tm == term_kind::literal and next == '(') {
-        throw compile_error{tk, std::format("{} is a constant, not a function",
-                                            in_quotes(tk.text()))};
+        throw_not_a_function(tk, "constant", tk.text());
     }
 
     // note: 'parse_builtin' made the conversions
@@ -484,15 +483,13 @@ inline auto parse_operand(toc& tc, tokenizer& tz, unary_ops uops,
 
     // e.g. the 'not b' of 'int(not b)' or of 'a == not b'
     if (tk.is_text("not")) {
-        throw compile_error{tk, "'not' makes a condition, which is not an "
-                                "operand here, store it in a 'bool' first"};
+        throw_condition_not_operand(tk, "'not'");
     }
 
     // e.g. the 'point{1, 2}' of 'p == point{1, 2}', an instance is compared
     // as memory, which only a variable has
     if (tm == term_kind::record_literal) {
-        throw_literal_not_operand(
-            tk, std::format("an instance literal of {}", in_quotes(tk.text())));
+        throw_instance_literal_not_operand(tk, tk.text());
     }
 
     if (std::unique_ptr<statement> builtin{

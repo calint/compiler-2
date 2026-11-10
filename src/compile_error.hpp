@@ -390,6 +390,29 @@ inline constexpr std::string_view missing_close_paren_text{
                        name, name);
 }
 
+// a generic type where an instance is needed, e.g. the 'box' of 'box(1)' of
+// 'type box<T type> {x T}'; 'role' is what is needed, e.g. "a function"
+[[noreturn]] inline auto throw_generic_type_not(const token& src_loc_tk,
+                                                const std::string_view name,
+                                                const std::string_view role)
+    -> void {
+
+    throw compile_error{src_loc_tk, std::format("generic type {} is not {}, {}",
+                                                in_quotes(name), role,
+                                                instance_hint(name))};
+}
+
+// a name called that names no function, e.g. the 'x' of 'x(1)' after 'var x =
+// 1'; 'kind' is what it names, e.g. "value" or "constant"
+[[noreturn]] inline auto throw_not_a_function(const token& src_loc_tk,
+                                              const std::string_view kind,
+                                              const std::string_view name)
+    -> void {
+
+    throw compile_error{src_loc_tk, std::format("{} is a {}, not a function",
+                                                in_quotes(name), kind)};
+}
+
 // a value of the type 'got' where the type 'expected' is needed
 [[noreturn]] inline auto throw_type_mismatch(const token& src_loc_tk,
                                              const std::string_view expected,
@@ -411,6 +434,41 @@ throw_parentheses_group_nothing(const token& open_paren_tk,
         open_paren_tk,
         std::format("parentheses around a single value group nothing, write {}",
                     in_quotes(value_source))};
+}
+
+// a condition where a number operand is needed, e.g. the '>' of 'int(a > 2)';
+// 'maker' is what makes it, e.g. "a comparison" or "'not'"
+[[noreturn]] inline auto
+throw_condition_not_operand(const token& src_loc_tk,
+                            const std::string_view maker) -> void {
+
+    throw compile_error{src_loc_tk,
+                        std::format("{} makes a condition, which is not an "
+                                    "operand here, store it in a 'bool' first",
+                                    maker)};
+}
+
+// a 'not' where 'what' is expected, e.g. the 'not' of 'q = not b' for "an
+// instance of 'pt'"
+[[noreturn]] inline auto throw_not_makes_condition(const token& not_tk,
+                                                   const std::string_view what)
+    -> void {
+
+    throw compile_error{not_tk,
+                        std::format("'not' makes a condition, not {}", what)};
+}
+
+// a second definition of 'name' in its namespace, e.g. the second 'x' of
+// 'type p { x i8, x i8 }'; 'kind' names it, e.g. "field", 'existing_where'
+// is where the first one is ('toc::where')
+[[noreturn]] inline auto
+throw_already_defined(const token& src_loc_tk, const std::string_view kind,
+                      const std::string_view name,
+                      const std::string_view existing_where) -> void {
+
+    throw compile_error{src_loc_tk,
+                        std::format("{} {} already defined at {}", kind,
+                                    in_quotes(name), existing_where)};
 }
 
 // an enclosed list met 'next_tk', which is not its ')', e.g. the 'exit' of
@@ -442,12 +500,13 @@ throw_parentheses_group_nothing(const token& open_paren_tk,
                     in_quotes(name))};
 }
 
-// a user type where a number is needed, e.g. the 'p' of 'p + 1'
+// an instance or an array where a number is needed, e.g. the 'p' of 'p + 1';
+// 'kind' is how the message names it: "an instance" or "an array"
 [[noreturn]] inline auto throw_not_a_number(const token& src_loc_tk,
+                                            const std::string_view kind,
                                             const std::string_view type_name)
     -> void {
 
-    throw compile_error{
-        src_loc_tk,
-        std::format("an instance of {} is not a number", in_quotes(type_name))};
+    throw compile_error{src_loc_tk, std::format("{} of {} is not a number",
+                                                kind, in_quotes(type_name))};
 }

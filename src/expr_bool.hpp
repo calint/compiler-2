@@ -500,7 +500,7 @@ class expr_bool_op final : public statement {
 
         // e.g. the first '<' of 'x < 1 < 2', comparisons do not chain
         if (comparison_of(tz.peek_operator())) {
-            expr_arith::throw_comparison_as_operand(op_tk);
+            throw_condition_not_operand(op_tk, "a comparison");
         }
 
         return cmp;
@@ -645,7 +645,7 @@ class expr_bool_op final : public statement {
                             in_quotes(type_name))};
         }
 
-        throw_not_a_number(side.tok(), type_name);
+        throw_not_a_number(side.tok(), "an instance", type_name);
     }
 
     // the backends compare at the width of 'lhs': an untyped constant side

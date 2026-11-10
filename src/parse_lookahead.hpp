@@ -111,8 +111,7 @@ inline auto assert_no_value_operator(const tokenizer& tz,
     tokenizer probe{tz};
 
     if (const std::optional<token> not_tk{probe.is_next_word_token("not")}) {
-        throw compile_error{
-            *not_tk, std::format("'not' makes a condition, not {}", what)};
+        throw_not_makes_condition(*not_tk, what);
     }
 
     if (tz.peek_char_after_whitespace() == '(') {
@@ -437,6 +436,15 @@ throw_literal_not_operand(const token& tk, const std::string_view literal)
     throw compile_error{tk, std::format("{} is not an operand here, store it "
                                         "in a variable first",
                                         literal)};
+}
+
+// an instance literal of 'type_name' has no storage, e.g. 'point{1, 2}.x'
+[[noreturn]] inline auto
+throw_instance_literal_not_operand(const token& tk,
+                                   const std::string_view type_name) -> void {
+
+    throw_literal_not_operand(
+        tk, std::format("an instance literal of {}", in_quotes(type_name)));
 }
 
 // a value named like a type hides the type, e.g. 'point' after

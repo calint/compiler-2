@@ -68,10 +68,8 @@ class type_fields final {
             };
 
             if (existing != fields_.end()) {
-                throw compile_error{
-                    field_tk, std::format("field {} already defined at {}",
-                                          in_quotes(field_tk.text()),
-                                          tc.where(existing->tok()))};
+                throw_already_defined(field_tk, "field", field_tk.text(),
+                                      tc.where(existing->tok()));
             }
 
             fields_.emplace_back(tc, field_tk, tz, name_tk);
