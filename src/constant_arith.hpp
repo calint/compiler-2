@@ -34,7 +34,7 @@ class constant_arith final {
         }
 
         if (family == operator_family::shift) {
-            assert(rhs >= 0 and std::cmp_less(rhs, width_type.size_bits()));
+            assert(is_count_in_width(rhs, width_type));
 
             return shift_constant(lhs, op, static_cast<uint64_t>(rhs),
                                   width_type);
@@ -119,6 +119,14 @@ class constant_arith final {
                                          const type& width_type) -> bool {
 
         return wrap_to_width(value, width_type) == value;
+    }
+
+    // a shift count that every target shifts the same: 0 to the width - 1
+    [[nodiscard]] static auto is_count_in_width(const int64_t count,
+                                                const type& width_type)
+        -> bool {
+
+        return count >= 0 and std::cmp_less(count, width_type.size_bits());
     }
 
     // true when the sum, difference or product is outside the width, e.g.

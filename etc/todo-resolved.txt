@@ -1,6 +1,11 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 242 (2026-11-10, VF 'expr_arith' and 'constant_arith'
+    simplification)
+    => done (2026-11-10): the shift count rule written once,
+       'constant_arith::is_count_in_width'; a nested span named; listings
+       unchanged
 [x] easy: round 241 (2026-11-10, VD 'expr_bool' simplification)
     => done (2026-11-10): 'is_untyped_constant' for the negation every
        caller wrote, 'comment_label' spells its connective, a nested call

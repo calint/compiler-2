@@ -725,8 +725,11 @@ class expr_arith final : public statement {
         // note: a list of constants folds before, so an element precedes
         assert(steps.size() >= 2);
 
-        compile_steps(tc, indent, dst,
-                      std::span{steps}.first(steps.size() - 1));
+        const std::span<const step> leading{
+            std::span{steps}.first(steps.size() - 1),
+        };
+
+        compile_steps(tc, indent, dst, leading);
 
         return last.value;
     }
@@ -1149,11 +1152,11 @@ class expr_arith final : public statement {
 
         // the targets shift differently by a count outside the width, so a
         // constant one is an error, e.g. 'x << 8' of an 'i8'
-        const size_t width_bits{width_type.size_bits()};
-
-        if (value >= 0 and std::cmp_less(value, width_bits)) {
+        if (constant_arith::is_count_in_width(value, width_type)) {
             return;
         }
+
+        const size_t width_bits{width_type.size_bits()};
 
         throw compile_error{
             src_loc_tk,
