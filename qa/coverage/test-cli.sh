@@ -947,8 +947,11 @@ CLI --checks=+division 0 0015.baz
 CLI --checks=noub,-division 0 0015.baz
 CLI --checks=-noub 0 0015.baz
 CLI --checks=+ 1 0015.baz
+# the option is accepted, the compile is rejected by the source
 CLI --checks=upper 1 0930.baz
+grep -Fq "may share storage with the result destination" err
 CLI --checks=noub 1 0930.baz
+grep -Fq "may share storage with the result destination" err
 CLI --checks=unknown 1 --help
 CLI --target=x86_64 0 --help
 CLI --target=rv32i 0 --help

@@ -15,8 +15,16 @@ type ent {
 func main() {
     var es = ent[3]
     var k = 1
+    es[1].items[0].f = 5
+    es[1].items[0].g = 6
+    es[1].items[1].f = 7
+    es[1].items[1].g = 8
 
     foo es[1].items {
         e.f = es[k].items[0].f
     }
+    if es[1].items[0].f != 5 exit(1)
+    if es[1].items[1].f != 5 exit(2)
+    if es[1].items[0].g != 6 exit(3)
+    if es[1].items[1].g != 8 exit(4)
 }

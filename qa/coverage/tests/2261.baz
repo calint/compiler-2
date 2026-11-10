@@ -7,7 +7,9 @@ func f() res {
 }
 
 func main() {
-    var a = i8[8]
+    var a = i8[8]{1, 2, 3, 4}
     var b = i8[8]
     array_copy(a, b, f())
+    if b[2] != 3 exit(1)
+    if b[3] != 0 exit(2)
 }

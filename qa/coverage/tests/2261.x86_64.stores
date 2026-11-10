@@ -1,0 +1,8 @@
+=== 5:     s = "strings longer than 16!\n"
+        mov dword [rbp + 16], 1769108595
+        mov dword [rbp + 20], 544434030
+        mov dword [rbp + 24], 1735290732
+        mov dword [rbp + 28], 1948283493
+        mov dword [rbp + 32], 544104808
+        mov dword [rbp + 36], 169948721
+=== read-only constants

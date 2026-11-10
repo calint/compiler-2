@@ -1,0 +1,7 @@
+# a constant count past the end is rejected by the lower check alone
+
+func main() {
+    var a = [4]{1, 2, 3, 4}
+    var b = [4]
+    array_copy(a, b, 5)
+}

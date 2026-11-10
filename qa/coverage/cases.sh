@@ -2208,6 +2208,7 @@ SRC=0681 && COMPERR
 # a constant quotient that wraps folds to the wrapped value unless the
 # division check is on, then it is rejected like a constant zero divisor
 SRC=0682 && EXP=7 && RUN
+SRC=0682 && OPTS="--checks=division" COMPERR
 
 # a function name has no fields
 SRC=0683 && COMPERR
@@ -2241,6 +2242,9 @@ SRC=0692 && EXP=255 && OPTS="--vars=0x10000 --checks=lower" RUN_ERR
 
 # a constant count is range checked by the lower check alone
 SRC=0693 && EXP=0 && OPTS="--vars=0x10000 --checks=lower" RUN_ERR
+
+# a constant count past the end is rejected by the lower check alone
+SRC=2331 && OPTS="--vars=0x10000 --checks=lower" COMPERR
 
 # a global passed to a non-inline function that also names it shares storage
 SRC=0694 && COMPERR
@@ -3004,7 +3008,8 @@ SRC=0939 && EXP=0 && RUN
 SRC=0940 && EXP=0 && RUN
 
 # three nested 'foo' read the array the second one iterates, which can
-# contain the element itself
+# contain the element itself, the value is computed before the destination is
+# written
 SRC=0941 && EXP=0 && RUN
 
 # three nested 'foo' read another field of the element of the array the
@@ -3051,7 +3056,8 @@ SRC=0951 && COMPERR
 SRC=0952 && EXP=0 && RUN
 
 # the element of a 'foo' over a constant element field and the read of the
-# same field of an element at a run-time index
+# same field of an element at a run-time index, the value is computed before
+# the destination is written
 SRC=0953 && EXP=0 && RUN
 
 # --checks=division: defined divisions pass
@@ -3708,7 +3714,9 @@ SRC=1152 && EXP=1 && RUN
 
 # a constant start of 'write' far past the end of the buffer is rejected, the
 # start and the count are not added
-SRC=1153 && COMPERR
+# note: the start is the maximum of the default type of the target
+if [[ $MACHINE == x86_64 ]]; then SRC=1153 && COMPERR; fi
+if [[ $MACHINE != x86_64 ]]; then SRC=2330 && COMPERR; fi
 
 # a constant compared with an inlined constant argument of a narrower
 # parameter is rejected like with a variable of that type
@@ -5634,7 +5642,8 @@ SRC=1757 && OPTS="--checks=division" COMPERR
 SRC=1758 && OPTS="--checks=noub" COMPERR
 
 # the 64-bit minimum divided by -1 is rejected also without checks
-SRC=1759 && COMPERR
+# note: rv32i has no 64-bit type
+if [[ $MACHINE == x86_64 ]]; then SRC=1759 && COMPERR; fi
 
 # a function named like a type and a method of that type have labels of
 # their own
@@ -7181,8 +7190,10 @@ SRC=2259 && COMPERR
 # a constant exit code outside 0 to 255 is rejected
 SRC=2260 && COMPERR
 
-# a long string stored while 'array_copy' holds the 'rep movsb' registers
+# a long string stored while 'array_copy' holds the 'rep movsb' registers, as
+# immediates on x86_64
 SRC=2261 && EXP=0 && RUN
+if [[ $MACHINE == x86_64 ]]; then SRC=2261 && LISTING stores; fi
 
 # a block where the operand after 'and' is expected
 SRC=2262 && COMPERR

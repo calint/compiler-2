@@ -17,8 +17,21 @@ func main() {
     foo m {
         foo e.leaves {
             foo e.v {
+                e = 1
+            }
+        }
+    }
+    m[0].leaves[1].v[0] = 3
+
+    foo m {
+        foo e.leaves {
+            foo e.v {
                 e = e + m[0].leaves[1].v[0]
             }
         }
     }
+    if m[0].leaves[0].v[1] != 4 exit(1)
+    if m[0].leaves[1].v[0] != 6 exit(2)
+    if m[0].leaves[1].v[1] != 7 exit(3)
+    if m[1].leaves[1].v[1] != 7 exit(4)
 }

@@ -1,6 +1,15 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 269 (2026-11-10, WY tests that could not fail as claimed)
+    => done (2026-11-10): 1759 x86_64 only (rv32i has no 64-bit type, its
+       expected output tested an earlier error); 1153 x86_64 only, 2330 the
+       start at the maximum of the default type on the other targets; 0682
+       runs the wrapped fold and has a '--checks=division' case; 0941 and
+       0953 check values; 2331 a constant count past the end under 'lower';
+       2261 checks its stores in a listing and copies nonzero data; the
+       test-cli lines of 0930 check the message, not only the exit code;
+       each shown to fail when its behavior is broken
 [x] easy: round 268 (2026-11-10, WW 'foo' bug hunt, WX test suite review)
     => done (2026-11-10): WW found no defect in 'foo' (3600 generated, 3000
        alias-foo and 80 hand programs); WX found no expected output that

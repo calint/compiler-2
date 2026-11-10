@@ -2,12 +2,8 @@
 # division check is on, then it is rejected like a constant zero divisor
 
 func main() {
-    var zero = 0
-    if zero != 0 {
-        var e = 5 / -1
-        var f = i8(0)
-        f = -128 / -1
-        exit(e + f)
-    }
-    exit(7)
+    var e = 5 / -1
+    var f = i8(0)
+    f = -128 / -1
+    exit(e + f + 140)
 }

@@ -1,0 +1,4 @@
+
+0682.baz:7:17: constant division of the minimum by -1 overflows the type
+    f = -128 / -1
+                ^
