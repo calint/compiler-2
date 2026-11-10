@@ -1,6 +1,16 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 273 (2026-11-10, XE rv32i encoder against llvm-mc, XF
+    code size since round 210)
+    => done (2026-11-10): about 25000 instruction and directive lines
+       through a driver of 'assembler_rv32i' (every register, immediate
+       edges, 9905 'li' values, every growth step of resolved jumps, all
+       data directives and alignments, 600 random layouts) gave llvm's image;
+       an alignment in code would differ (zeros against llvm's 'nop'), no
+       backend aligns code: an assert in 'layout_image'; XF: no test grew
+       from round 210 to 272 on either target with the case options or
+       '--checks=noub', only 0889 and 2105 are 2 instructions shorter
 [x] easy: round 272 (2026-11-10, XB style sweep)
     => done (2026-11-10): a scanner of the AGENTS.md rules the linters do
        not check found the sources nearly clean; the backend access rule

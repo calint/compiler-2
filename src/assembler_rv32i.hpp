@@ -1371,6 +1371,11 @@ class assembler_rv32i final : public assembler {
             const alignment* const align{std::get_if<alignment>(structured)};
 
             if (align != nullptr) {
+                // note: the image fills gaps with zeros, llvm fills them with
+                //       'nop's in code, which no backend aligns
+
+                assert(current != section::text);
+
                 offset = align_up(offset, align->size_bytes);
 
                 image.alignments.at(index) =
