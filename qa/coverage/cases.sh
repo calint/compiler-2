@@ -7308,3 +7308,27 @@ SRC=2363 && EXP=249 && OPTS="--checks=overflow" RUN_ERR
 
 # --checks=overflow: a narrow difference below the minimum panics
 SRC=2364 && EXP=249 && OPTS="--checks=overflow" RUN_ERR
+
+# a displacement with the low 12 bits 2047, the largest offset of a load or
+# store, stays in the instruction (rv32i)
+SRC=2370 && EXP=7 && RUN
+
+# a conditional branch over 4096 bytes, just past its reach, grows to a jump
+# and one over 4092 bytes does not (rv32i)
+SRC=2371 && EXP=58 && RUN
+
+# adding the most negative constant of the width is not turned into a
+# subtraction, which would overflow under the check
+SRC=2372 && EXP=5 && OPTS="--checks=noub" RUN
+
+# a narrow value shifted left by a run-time count is sign extended in its
+# register (rv32i)
+SRC=2373 && EXP=2 && RUN
+
+# --checks=frame: a frame that passes the end of the variables by its last
+# byte panics
+if [[ $MACHINE == x86_64 ]]; then SRC=2374 && EXP=254 && OPTS="--vars=32 --checks=frame" RUN_ERR; fi
+if [[ $MACHINE != x86_64 ]]; then SRC=2375 && EXP=254 && OPTS="--vars=32 --checks=frame" RUN_ERR; fi
+
+# the padding of the result of a noinline call is zeroed, '==' compares it
+SRC=2376 && EXP=2 && RUN

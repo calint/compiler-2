@@ -1,0 +1,11 @@
+# a narrow value shifted left by a run-time count in a register is sign
+# extended again for the comparison that reads it (rv32i), e.g. the 'i8' 64
+# shifted by 1 is -128
+func main() {
+    var a = i8(64)
+    var n = i8(1)
+    if a << n < 0 {
+        exit(2)
+    }
+    exit(1)
+}

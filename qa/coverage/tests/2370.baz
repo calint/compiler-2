@@ -1,0 +1,11 @@
+# a displacement whose low 12 bits are 2047, the largest offset of a load or
+# store, stays in the instruction; on rv32i the variables base register is
+# 2032 bytes past the variables, so 'a[4079]' is 2047 past it and 'a[4080]'
+# needs the upper part
+var a = i8[8192]
+
+func main() {
+    a[4079] = 3
+    a[4080] = 4
+    exit(a[4079] + a[4080])
+}

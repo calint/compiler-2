@@ -1,0 +1,14 @@
+# --checks=frame: the frame of a noinline call that passes the end of the
+# variables by 1 byte panics; its size counts the last byte of its last
+# variable (x86_64: 'vars' of 32 bytes, the array of 9 bytes is that byte)
+func noinline f(n i8) res i8 {
+    var a = i8[9]
+    a[0] = n
+    res = a[0]
+}
+
+func main() {
+    var x = i8(0)
+    x = f(5)
+    exit(int(x))
+}

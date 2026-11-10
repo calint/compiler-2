@@ -1,0 +1,27 @@
+# the result of a noinline call gets its padding zeroed before the callee
+# writes the fields, so '==' compares it byte by byte with an instance that
+# has the same fields; the storage held other values before
+type pt { a i8, b i32 }
+
+func noinline make(v i8) res pt {
+    res.a = v
+    res.b = 7
+}
+
+func main() {
+    if true {
+        var junk = i32[4]
+        junk[0] = -1
+        junk[1] = -1
+        junk[2] = -1
+        junk[3] = -1
+    }
+    if true {
+        var p = make(3)
+        var q = pt{3, 7}
+        if p == q {
+            exit(2)
+        }
+    }
+    exit(1)
+}

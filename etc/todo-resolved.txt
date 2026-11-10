@@ -1,6 +1,16 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 277 (2026-11-10, XJ mutation testing of code generation)
+    => done (2026-11-10): 72 mutants of addresses, inline binding,
+       folding, conditions, bulk walks, padding, the jump optimizer, far
+       jumps, versions and frames: 64 killed by the tests, 2 only by
+       'fuzz-data'; new tests 2370 (rv32i low part 2047), 2371 (branch reach
+       4092/4096), 2372 (adding the minimum stays an add under the check),
+       2373 (an 'i8' shifted left at run time is normalized), 2374/2375 (a
+       frame that passes the variables by its last byte), 2376 (padding of a
+       noinline result); the jal reach at 1 MiB goes to 'test-far-jumps.sh'
+       (round 278); one mutant is equivalent, one changes only a listing
 [x] easy: round 276 (2026-11-10, XI mutation testing of the no-UB checks)
     => done (2026-11-10): 65 mutants of 'ub_order', 'ub_assigned',
        'access_path', the overlap, aliasing, read-only, narrowing and

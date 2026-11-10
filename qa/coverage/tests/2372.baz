@@ -1,0 +1,10 @@
+# adding the most negative constant of the width stays an add under the
+# overflow check, subtracting its negation would overflow from 0 up, e.g.
+# 'a + -128' of an 'i8' and the merged '- 2147483647 - 1' of an 'i32'
+func main() {
+    var a = i8(5)
+    var b = a + -128
+    var x = i32(5)
+    var y = x - 2147483647 - 1
+    exit(int(b) + 128 + int(y + 2147483643))
+}
