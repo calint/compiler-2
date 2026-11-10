@@ -1,6 +1,14 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 284 (2026-11-10, XP mutation testing of io, sectors, the
+    register pool, the register report and options)
+    => done (2026-11-10): 70 mutants, 34 survived everything, 1 more was
+       caught only by fuzz-io; new tests 2460-2476 and the test-cli checks
+       of the register report counts, the default stack and a hard-linked
+       binary name kill all but 2 (an x86_64 short sector transfer cannot
+       happen on a regular file; not reusing consumed registers changes
+       only register choice); no compiler bug
 [x] easy: round 283 (2026-11-10, XQ mutation testing of generics, types,
     methods, data, includes and type literals)
     => done (2026-11-10): 73 mutants, 9 survived everything, 3 more were

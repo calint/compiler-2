@@ -1,0 +1,12 @@
+# the sector 2^23 at 4 GB and the sector 0 are apart, the byte offset of a
+# sector has more than 32 bits
+
+func main() {
+    var bytes = i8[512]
+    bytes[0] = 1
+    sector_write(0, bytes)
+    bytes[0] = 2
+    sector_write(8388608, bytes)
+    sector_read(0, bytes)
+    exit(bytes[0])
+}

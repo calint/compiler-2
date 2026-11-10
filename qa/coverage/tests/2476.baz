@@ -1,0 +1,10 @@
+# the footer counts the most scratch registers in use, 2 for 'p', not the 1
+# of the last expression
+
+func main() {
+    var a = 1
+    var p = a + (a + (a + 1))
+    var q = a
+    q = q + 1
+    exit(p + q - 6)
+}

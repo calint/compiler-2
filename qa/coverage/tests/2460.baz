@@ -1,0 +1,12 @@
+# 'read' writes its buffer, an element of it in an earlier argument would be
+# read after the call
+
+func f(x i8, n int) res {
+    res = n
+}
+
+func main() {
+    var b = i8[4]
+    var n = f(b[0], read(0, b, 1))
+    exit(n)
+}

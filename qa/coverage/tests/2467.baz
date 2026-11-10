@@ -1,0 +1,7 @@
+# a sector number is 32 bits, the sector 2^32 panics also on an image of 3 TB
+# that holds it
+
+func main() {
+    var bytes = i8[512]
+    sector_read(4294967296, bytes)
+}

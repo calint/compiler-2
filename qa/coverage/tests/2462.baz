@@ -1,0 +1,10 @@
+# a constant start moves the range of a count known at run time: the count 3
+# from the start 2 of 'a = i8[4]' is past the end, the panic names the line of
+# the start
+
+func main() {
+    var a = i8[4]
+    var n = 3
+    write(1, a, n,
+          2)
+}

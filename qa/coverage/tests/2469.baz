@@ -1,0 +1,14 @@
+# --checks=stack: each call of the recursion saves registers in an area that
+# keeps 'sp' 16-byte aligned, on rv32i 16 bytes for 3 registers and 16 for the
+# return address, so 135 calls do not fit a stack of 4 KB
+func noinline depth(n) res {
+    if n == 0 {
+        res = 0
+        return
+    }
+    res = n + depth(n - 1)
+}
+func main() {
+    var d = depth(135)
+    exit(d - 9180)
+}

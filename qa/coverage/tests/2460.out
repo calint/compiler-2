@@ -1,0 +1,4 @@
+
+2460.baz:10:15: 'b[0]' may be written by the call of 'read' in a later argument, use a temporary variable
+    var n = f(b[0], read(0, b, 1))
+              ^

@@ -1,0 +1,4 @@
+
+2463.baz:7:20: the element size 7 B does not divide the sector size 512 B
+    sector_read(0, s)
+                   ^

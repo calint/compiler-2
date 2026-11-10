@@ -1,0 +1,6 @@
+# a buffer of a sector function one byte short of a sector is rejected
+
+func main() {
+    var bytes = i8[511]
+    sector_read(0, bytes)
+}

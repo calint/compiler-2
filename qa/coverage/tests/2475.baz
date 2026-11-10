@@ -1,0 +1,10 @@
+# an inlined call that holds no register is not on the stack of a peak of 0
+# registers in 'main'
+
+func h() res {
+    res = 1
+}
+
+func main() {
+    var x = h()
+}

@@ -138,7 +138,12 @@ CLI_BINARY_NAME() {
     expect_exit_1 "$BIN" --target=rv32i --bin=./gen-sdcard.img --sdcard=gen-sdcard.img 0418.baz >gen.s 2>err
     grep -Fq "invalid --bin: './gen-sdcard.img' is the sd card image" err
     [[ $(stat -c %s gen-sdcard.img) -eq 4096 ]]
-    rm -f gen-sdcard.img
+    # also through a hard link, which has a path of its own
+    ln -f gen-sdcard.img gen-sdcard-link.img
+    expect_exit_1 "$BIN" --target=rv32i --bin=gen-sdcard-link.img --sdcard=gen-sdcard.img 0418.baz >gen.s 2>err
+    grep -Fq "invalid --bin: 'gen-sdcard-link.img' is the sd card image" err
+    [[ $(stat -c %s gen-sdcard.img) -eq 4096 ]]
+    rm -f gen-sdcard.img gen-sdcard-link.img
     # also when the card does not exist yet
     expect_exit_1 "$BIN" --target=rv32i --bin=gen-sdcard.img --sdcard=./gen-sdcard.img 0418.baz >gen.s 2>err
     grep -Fq "invalid --bin: 'gen-sdcard.img' is the sd card image" err
@@ -1024,6 +1029,41 @@ CLI_KEYWORD_NAMES() {
     echo ok
 }
 
+CLI_REGISTER_REPORT_COUNTS() {
+    echo -n "cli --report=registers counts: "
+    "$BIN" --report=registers 2474.baz >out 2>err
+    [[ ! -s err ]]
+    # the first of the equal peaks of lines 15 and 16
+    grep -Fxq ";           r15 15:18" out
+    grep -Fxq ";           r14 15:23" out
+    # a noinline body counts what it holds, not the frame base; an inlined
+    # callee counts its calls
+    grep -Fxq ";     2      3  g (noinline body)" out
+    grep -Fxq ";     1      2  f" out
+    # the first of the calls that save one register
+    grep -Fxq ";       1      3  g 17:17" out
+    # 2476.baz: the footer has the most scratch registers, not the last count
+    "$BIN" 2476.baz >out 2>err
+    grep -Fxq "; max scratch registers in use: 2" out
+    # 2475.baz: the peak of 0 registers is in 'main' alone
+    "$BIN" --report=registers 2475.baz >out 2>err
+    grep -Eq '^; +0  main$' out
+    grep -Fq "h called at" out && exit 1
+    echo ok
+}
+
+# a memory of the default stack has the error of what exceeds it, a smaller
+# memory with a smaller stack given is accepted
+CLI_MEMORY_DEFAULT_STACK() {
+    echo -n "cli rv32i-fpga memory and the default stack: "
+    expect_exit_1 "$BIN" --target=rv32i-fpga --bin=gen-rv32i.bin --memory=0x10000 0418.baz >gen.s 2>err
+    grep -Fq "and the stack 65536 B, which exceeds the 65536 B of device memory" err
+    "$BIN" --target=rv32i-fpga --bin=gen-rv32i.bin --vars=0x1000 --memory=0x8000 --stack=0x1000 0418.baz >gen.s 2>err
+    [[ ! -s err ]]
+    rm -f gen-rv32i.bin
+    echo ok
+}
+
 CLI_CHECKS_NOUB
 CLI_CHECKS_LIST
 CLI_FILE_ERRORS
@@ -1036,6 +1076,8 @@ CLI_VARS_RANGE
 CLI_STACK_HANDLER
 CLI_NOINLINE_REPORT
 CLI_REGISTER_REPORT
+CLI_REGISTER_REPORT_COUNTS
+CLI_MEMORY_DEFAULT_STACK
 CLI_ADDRESS_RANGE
 CLI_FAR_INDEXED_ELEMENT
 CLI_LONG_ARRAY_LOWER_BOUND

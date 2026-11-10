@@ -1,0 +1,7 @@
+# writing the sector at the end of the sd card image panics, the image is not
+# extended; 2048 is the first sector past a 1 MB image
+
+func main() {
+    var bytes = i8[512]
+    sector_write(2048, bytes)
+}

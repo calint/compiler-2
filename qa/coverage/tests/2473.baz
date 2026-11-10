@@ -1,0 +1,11 @@
+# on rv32i the last sector of a card of 3 TB is 2^32 - 1, which a count of the
+# sectors in 32 bits would leave out; -2147483648 is the sector 2^31
+
+func main() {
+    var bytes = i8[512]
+    bytes[0] = 3
+    sector_write(-2147483648, bytes)
+    bytes[0] = 0
+    sector_read(-2147483648, bytes)
+    exit(bytes[0])
+}

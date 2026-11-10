@@ -1,0 +1,23 @@
+# the report of the use of registers: the first of two equal peaks, the calls
+# of an inlined function, and the first call of a noinline function among
+# those that save the most
+
+func noinline g(x) res {
+    res = x + 1
+}
+
+func f(a) res {
+    res = a + (a + 1)
+}
+
+func main() {
+    var a = 1
+    var p = a + (a + (a + 1))
+    var q = a + (a + (a + 1))
+    var r = a + g(a)
+    var s = g(a)
+    var w = a + g(a)
+    var u = f(a) + f(a)
+    var v = p + q + r + s + w + u
+    exit(v - 22)
+}

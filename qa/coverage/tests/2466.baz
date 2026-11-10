@@ -1,0 +1,6 @@
+# an empty sd card image has no sector to write
+
+func main() {
+    var bytes = i8[512]
+    sector_write(0, bytes)
+}

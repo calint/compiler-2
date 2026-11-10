@@ -1,0 +1,10 @@
+# a count of 0 may start at the end of the buffer, the constant start 4 of
+# 'a = i8[4]' with a count known at run time
+
+func main() {
+    var a = i8[4]
+    var n = 0
+    var w = write(1, a, n, 4)
+    var r = read(0, a, n, 4)
+    exit(w + r)
+}

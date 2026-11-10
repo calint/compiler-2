@@ -1,0 +1,4 @@
+
+2464.baz:5:20: the array of 511 B is smaller than a sector of 512 B
+    sector_read(0, bytes)
+                   ^~~~~

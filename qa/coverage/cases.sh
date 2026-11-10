@@ -7474,3 +7474,62 @@ SRC=2486 && EXP=6 && RUN
 # the padding and the fields after a string written through an address are
 # zeroed at the alignment their offset has
 SRC=2487 && LISTING stores
+
+# 'read' writes its buffer, an element of it in an earlier argument would be
+# read after the call
+SRC=2460 && COMPERR
+
+# a count of 0 may start at the end of the buffer
+SRC=2461 && EXP=0 && RUN
+
+# a constant start moves the range of a count known at run time, the panic
+# names the line of the start
+SRC=2462 && EXP=255 && RUN_ERR
+
+# an element of 7 bytes does not divide the sector, which leaves 1 byte
+if [[ $MACHINE != rv32i-qemu ]]; then SRC=2463 && COMPERR; fi
+
+# a buffer of a sector function one byte short of a sector is rejected
+if [[ $MACHINE != rv32i-qemu ]]; then SRC=2464 && COMPERR; fi
+
+# writing the sector at the end of the sd card image panics, the image is not
+# extended
+if [[ $MACHINE == x86_64 || $MACHINE == rv32i ]]; then SRC=2465 && EXP=248 && SDCARD=1M RUN_ERR; fi
+
+# an empty sd card image has no sector to write
+if [[ $MACHINE == x86_64 || $MACHINE == rv32i ]]; then SRC=2466 && EXP=248 && RUN_ERR; fi
+
+# a sector number is 32 bits, the sector 2^32 panics also on an image that
+# holds it
+if [[ $MACHINE == x86_64 ]]; then SRC=2467 && EXP=248 && SDCARD=3T RUN_ERR; fi
+
+# the registers an expression holds survive a 'write' and the sector functions
+# of a function inlined in it
+if [[ $MACHINE != rv32i-qemu ]]; then SRC=2468 && EXP=15 && SDCARD=1M RUN; fi
+
+# --checks=stack: the registers saved at a call take an area that keeps 'sp'
+# 16-byte aligned
+if [[ $MACHINE == rv32i-qemu || $MACHINE == rv32i-fpga ]]; then SRC=2469 && EXP=250 && OPTS="--stack=0x1000 --checks=stack" RUN_ERR; fi
+
+# a constant start of 1 moves the buffer by one byte
+SRC=2470 && DIFF
+
+# the sector 2^23 at 4 GB and the sector 0 are apart
+if [[ $MACHINE != rv32i-qemu ]]; then SRC=2471 && EXP=1 && SDCARD=5G RUN; fi
+
+# 'read' stops at its count before the newline
+SRC=2472 && DIFFINP
+
+# on rv32i the sectors of a card of 3 TB reach 2^32 - 1
+if [[ $MACHINE == rv32i || $MACHINE == rv32i-fpga ]]; then SRC=2473 && EXP=3 && SDCARD=3T RUN; fi
+
+# the report of the use of registers (in 'test-cli.sh'): equal peaks, inlined
+# calls, and the noinline calls that save the most
+SRC=2474 && EXP=0 && RUN
+
+# the report of the use of registers (in 'test-cli.sh'): an inlined call
+# without registers
+SRC=2475 && EXP=0 && RUN
+
+# the footer counts the most scratch registers in use (in 'test-cli.sh')
+SRC=2476 && EXP=0 && RUN

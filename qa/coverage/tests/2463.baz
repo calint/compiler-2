@@ -1,0 +1,8 @@
+# an element of 7 bytes does not divide the sector of 512 bytes, which leaves 1
+
+type seven { a i8, b i8, c i8, d i8, e i8, f i8, g i8 }
+
+func main() {
+    var s = seven[100]
+    sector_read(0, s)
+}

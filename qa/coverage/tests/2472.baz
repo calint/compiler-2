@@ -1,0 +1,14 @@
+# 'read' stops at its count before the newline, the rest of the line is left
+# for the next 'read'
+
+dat bar = "|"
+
+func main() {
+    var b = i8[8]
+    var n = read(0, b, 2)
+    write(1, b, n)
+    write(1, bar)
+    var m = read(0, b, 8)
+    write(1, b, m)
+    write(1, bar)
+}
