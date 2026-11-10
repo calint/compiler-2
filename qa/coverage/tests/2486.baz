@@ -1,0 +1,9 @@
+# the globals of an included file are initialized before those of the file
+# that includes it, which may read them
+include "include/start.baz"
+
+var next = start + 1
+
+func main() {
+    exit(next)
+}

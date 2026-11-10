@@ -1,0 +1,9 @@
+# a noinline function with an 'if' at 6:5, as in 'main' of the file that
+# includes it
+
+func noinline positive(a) res {
+    res = 0
+    if a > 0 {
+        res = 1
+    }
+}

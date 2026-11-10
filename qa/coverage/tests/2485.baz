@@ -1,0 +1,10 @@
+# an 'if' of the main file and one of an included file at the same line and
+# column have labels of their own
+include "include/iflabel.baz"
+
+func main() {
+    if positive(3) == 1 {
+        exit(7)
+    }
+    exit(1)
+}

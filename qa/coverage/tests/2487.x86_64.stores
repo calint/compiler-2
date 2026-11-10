@@ -1,0 +1,12 @@
+=== 11:     n = {"ab"}
+    mov r15, qword [rbx]
+    mov word [r15], 25185
+    mov qword [r15 + 2], 0
+    mov word [r15 + 10], 0
+    ret
+=== 15:     var n = named{"xy", 1, 2}
+    mov word [rbp], 31096
+    mov word [rbp + 2], 0
+    mov dword [rbp + 4], 1
+    mov dword [rbp + 8], 2
+=== read-only constants

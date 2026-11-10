@@ -1,0 +1,17 @@
+# a generic method of a plain type defined after a generic function is
+# reached through the type argument of the function
+
+type point { x }
+
+func f<T type>(p T) res i8 {
+    res = p.get<i8>(5)
+}
+
+func point.get<U type>(v U) res U {
+    res = v
+}
+
+func main() {
+    var p = point{2}
+    exit(f(p))
+}

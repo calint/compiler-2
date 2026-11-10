@@ -1,0 +1,32 @@
+# the report of uninstantiated generics lists each generic function and
+# method of a generic type without an instance once, in definition order: a
+# called method and a method without type parameters are not listed
+
+type box<n> {
+    a i8[n],
+}
+
+func box.get<T type>(x T) res T {
+    res = x
+}
+
+func box.other<T type>(x T) res T {
+    res = x
+}
+
+func box.put() {}
+
+func later<T type>(x T) res T {
+    res = x
+}
+
+func early<T type>(x T) res T {
+    res = x
+}
+
+type b4 = box<4>
+
+func main() {
+    var b = b4
+    exit(b.get<i8>(early(i8(3))))
+}

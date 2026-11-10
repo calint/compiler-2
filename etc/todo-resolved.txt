@@ -1,6 +1,14 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 283 (2026-11-10, XQ mutation testing of generics, types,
+    methods, data, includes and type literals)
+    => done (2026-11-10): 73 mutants, 9 survived everything, 3 more were
+       caught only by fuzz-whole or one target; new tests 2480-2487 and the
+       test-cli checks of the uninstantiated generics report, the type layout
+       comment and the zero comments kill all 12 (generic method visibility
+       through a type argument, file prefixes of labels, the order of files,
+       zeroing alignment through an address on rv32i); no compiler bug
 [x] easy: round 282 (2026-11-10, XO mutation testing of control flow and
     calls, second part)
     => done (2026-11-10): 53 mutants of loops, jumps, 'exit', reachability,

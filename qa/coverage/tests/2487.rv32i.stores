@@ -1,0 +1,23 @@
+=== 11:     n = {"ab"}
+    lw t0, 0(s1)
+    li t1, 97
+    sb t1, 0(t0)
+    li t1, 98
+    sb t1, 1(t0)
+    sh zero, 2(t0)
+    sh zero, 4(t0)
+    sh zero, 6(t0)
+    sh zero, 8(t0)
+    sh zero, 10(t0)
+    lw ra, 0(sp)
+    addi sp, sp, 16
+    ret
+=== 15:     var n = named{"xy", 1, 2}
+    li t0, 31096
+    sh t0, -2032(s0)
+    sh zero, -2030(s0)
+    li t0, 1
+    sw t0, -2028(s0)
+    li t0, 2
+    sw t0, -2024(s0)
+=== read-only constants

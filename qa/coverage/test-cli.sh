@@ -383,6 +383,35 @@ CLI_UNINSTANTIATED_GENERICS() {
     grep -Eq '^; +untyped$' gen.s
     grep -Eq '^; +unknown_result$' gen.s
     grep -Eq '^; +list.find$' gen.s
+    # 2481.baz: a called method, a method without type parameters and a
+    # called function are not listed, the others once in definition order
+    "$BIN" 2481.baz >gen.s 2>err
+    [[ ! -s err ]]
+    local listed
+    listed=$(sed -n '/uninstantiated generics:/,/^;$/p' gen.s | sed 's/^; *//')
+    [[ "$listed" == $'uninstantiated generics:\nbox.other\nlater' ]]
+    echo ok
+}
+
+CLI_TYPE_LAYOUT_COMMENT() {
+    echo -n "cli layout comment of a type: "
+    # 2482.baz: 'b i32[3]' at offset 4 is an array of length 3
+    "$BIN" 2482.baz >gen.s 2>err
+    [[ ! -s err ]]
+    grep -Eq '^;\[2482.baz:4:1\] +a : +0 : +1 : +no : +$' gen.s
+    grep -Eq '^;\[2482.baz:4:1\] +b : +4 : +12 : +yes : +3$' gen.s
+    echo ok
+}
+
+CLI_ZERO_COMMENTS() {
+    echo -n "cli comments of the zeroed parts of an instance: "
+    # 2484.baz: 'rec{1, 2, 3}' has padding only, 'rec{4}' and 'rec{5}' have
+    # fields that are not listed
+    "$BIN" 2484.baz >gen.s 2>err
+    [[ ! -s err ]]
+    grep -Fq '[2484.baz:11:12] zero padding: 3 B' gen.s
+    grep -Fq '[2484.baz:13:12] zero remaining fields: 11 B' gen.s
+    grep -Fq '[2484.baz:16:13] zero remaining fields: 11 B' gen.s
     echo ok
 }
 
@@ -1015,6 +1044,8 @@ CLI_NO_EXIT_ROUTINE
 CLI_SOURCE_LINE_ENDS
 CLI_ERROR_LINE_BYTES
 CLI_UNINSTANTIATED_GENERICS
+CLI_TYPE_LAYOUT_COMMENT
+CLI_ZERO_COMMENTS
 CLI_COMMENT_LOCATIONS
 CLI_INSTANCE_COMMENT
 CLI_CONTROL_BYTE_FILE_NAME

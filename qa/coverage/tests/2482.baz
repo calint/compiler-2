@@ -1,0 +1,13 @@
+# the layout comment of a type lists each field with its offset, size and
+# whether it is an array, with its length
+
+type rec {
+    a i8,
+    b i32[3],
+    c i16,
+}
+
+func main() {
+    var r = rec{1, {2, 3, 4}, 5}
+    exit(r.b[2] + r.c)
+}

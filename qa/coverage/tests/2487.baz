@@ -1,0 +1,18 @@
+# the padding and the fields after a string written through an address are
+# zeroed at the alignment their offset has, in halfwords, not byte by byte
+
+type named {
+    tag i8[2],
+    a i32,
+    b i32,
+}
+
+func noinline reset(n mut named) {
+    n = {"ab"}
+}
+
+func main() {
+    var n = named{"xy", 1, 2}
+    reset(n)
+    exit(n.a + n.b + n.tag[1] - 98)
+}

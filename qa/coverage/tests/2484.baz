@@ -1,0 +1,18 @@
+# an instance in the data of a 'dat' or written to a 'var' zeroes the padding
+# between fields, the fields that are not listed and the padding after the
+# last field
+
+type rec {
+    a i8,
+    b i32,
+    c i8,
+}
+
+dat full = rec{1, 2, 3}
+
+dat part = rec{4}
+
+func main() {
+    var v = rec{5}
+    exit(full.b + full.c + part.a + part.b + v.a)
+}

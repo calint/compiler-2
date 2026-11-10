@@ -1,0 +1,3 @@
+# a global the file that includes it initializes another one from
+
+var start = 5

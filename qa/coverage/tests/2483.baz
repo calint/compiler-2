@@ -1,0 +1,28 @@
+# a method of a generic type sees the functions, types and globals defined
+# before the method, also when no instance of the type exists yet
+
+type box<n> {
+    a i8[n],
+}
+
+type unit {
+    v,
+}
+
+var base = 3
+
+func twice(x) res {
+    res = x * 2
+}
+
+func box.get() res {
+    var u = unit{n}
+    res = twice(u.v) + base
+}
+
+type b4 = box<4>
+
+func main() {
+    var b = b4
+    exit(b.get())
+}

@@ -7441,3 +7441,36 @@ SRC=2449 && COMPERR
 # the noinline bodies that the program calls are compiled before the bodies
 # without their calls are checked
 SRC=2450 && COMPERR
+
+# a generic method of a plain type defined after a generic function is
+# reached through the type argument of the function
+SRC=2480 && EXP=5 && RUN
+
+# the report of uninstantiated generics lists each generic function and
+# method of a generic type without an instance once, in definition order,
+# see 'test-cli.sh'
+SRC=2481 && EXP=3 && RUN
+
+# the layout comment of a type marks an array field with its length, see
+# 'test-cli.sh'
+SRC=2482 && EXP=9 && RUN
+
+# a method of a generic type sees the functions, types and globals defined
+# before the method
+SRC=2483 && EXP=11 && RUN
+
+# an instance in the data of a 'dat' or written to a 'var' zeroes the padding
+# and the fields that are not listed, see 'test-cli.sh' for the comments
+SRC=2484 && EXP=14 && RUN
+
+# an 'if' of the main file and one of an included file at the same line and
+# column have labels of their own
+SRC=2485 && EXP=7 && RUN
+
+# the globals of an included file are initialized before those of the file
+# that includes it, which may read them
+SRC=2486 && EXP=6 && RUN
+
+# the padding and the fields after a string written through an address are
+# zeroed at the alignment their offset has
+SRC=2487 && LISTING stores
