@@ -5,7 +5,6 @@
 #include <optional>
 #include <ostream>
 #include <string_view>
-#include <utility>
 
 #include "compile_error.hpp"
 #include "expr_any.hpp"
@@ -16,17 +15,10 @@
 // a field 'name [type][[size]]' of a type, its type resolved when parsed like
 // a parameter's, the default type when none is written
 class stmt_def_type_field final : public statement {
-    // e.g. the '[4]' of 'tags[4]'
-    struct array_part {
-        token open_bracket_tk;
-        stmt_array_size size;
-        token close_bracket_tk;
-    };
-
     // none for the default type
     std::optional<token> type_tk_;
-    // none when not an array
-    std::optional<array_part> array_;
+    // e.g. the '[4]' of 'tags[4]', none when not an array
+    std::optional<stmt_array_size> size_;
 
   public:
     // 'type_name_tk' names the type the field is in
@@ -63,23 +55,13 @@ class stmt_def_type_field final : public statement {
             return;
         }
 
-        stmt_array_size size{tc, tz};
+        size_.emplace(tc, tz, *open_bracket_tk);
 
         // a field has no initializer to give an unsized array its length
-        if (not size.has_value()) {
+        if (not size_->has_value()) {
             throw compile_error{
-                size.tok(), "expected a constant array size greater than 0"};
+                size_->tok(), "expected a constant array size greater than 0"};
         }
-
-        const token close_bracket_tk{
-            tz.expect_char_token(']', "expected ']' after array size"),
-        };
-
-        array_.emplace(array_part{
-            .open_bracket_tk{*open_bracket_tk},
-            .size{std::move(size)},
-            .close_bracket_tk{close_bracket_tk},
-        });
     }
 
     //
@@ -91,10 +73,8 @@ class stmt_def_type_field final : public statement {
 
         token::source_to(os, type_tk_);
 
-        if (array_) {
-            array_->open_bracket_tk.source_to(os);
-            array_->size.source_to(os);
-            array_->close_bracket_tk.source_to(os);
+        if (size_) {
+            size_->source_to(os);
         }
     }
 
@@ -103,11 +83,11 @@ class stmt_def_type_field final : public statement {
     //
 
     [[nodiscard]] auto array_count() const -> std::optional<size_t> {
-        if (not array_) {
+        if (not size_) {
             return std::nullopt;
         }
 
-        return array_->size.array_size();
+        return size_->array_size();
     }
 
     [[nodiscard]] auto name() const -> std::string_view { return tok().text(); }

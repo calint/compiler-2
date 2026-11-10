@@ -26,24 +26,27 @@
 
 // a value at the type of its destination, the types below in reading order:
 //
-//   'stmt_array_size'  the constant size of an array, an expression folded
-//                      when parsed
+//   'stmt_array_size'  the constant size of an array in its brackets, an
+//                      expression folded when parsed
 //   'expr_any'         the value of an initializer, an argument or a field:
 //                      a number, a condition, an instance or an array form
 
 class expr_any;
 
-// the constant size of an array, e.g. the '4' of 'i8[4]' or the 'n * 2' of a
-// field 'i8[n * 2]': an expression at the default type, folded by 'fold' when
-// parsed and never compiled; empty for 'i8[]'
+// the constant size of an array in its brackets, e.g. the '[4]' of 'i8[4]' or
+// the '[n * 2]' of a field 'i8[n * 2]': an expression at the default type,
+// folded by 'fold' when parsed and never compiled; no value for 'i8[]'
 // note: its members are defined after 'expr_any', which holds one, where a
 //       'unique_ptr' of 'expr_any' is complete
 class stmt_array_size final : public statement {
+    token open_bracket_tk_;
     std::unique_ptr<expr_any> value_;
     int64_t folded_{};
+    token close_bracket_tk_;
 
   public:
-    stmt_array_size(toc& tc, tokenizer& tz);
+    // 'open_bracket_tk' is the '[' read before
+    stmt_array_size(toc& tc, tokenizer& tz, const token& open_bracket_tk);
 
     stmt_array_size(stmt_array_size&&) noexcept;
 
@@ -72,11 +75,22 @@ class stmt_array_size final : public statement {
     // 'i8[array_length(x[5].a)]'
     auto check_where_written(const toc& tc) const -> void;
 
+    [[nodiscard]] auto close_bracket_tk() const -> const token& {
+        return close_bracket_tk_;
+    }
+
     [[nodiscard]] auto has_value() const -> bool { return value_ != nullptr; }
+
+    [[nodiscard]] auto open_bracket_tk() const -> const token& {
+        return open_bracket_tk_;
+    }
 
   private:
     // the size at 'i64', empty when it is not a constant
     [[nodiscard]] auto fold_size(const toc& tc) const -> std::optional<int64_t>;
+
+    // the size between the brackets, e.g. the '4' of 'i8[4]'
+    auto parse_value(toc& tc, tokenizer& tz) -> void;
 
     //
     // statics
@@ -100,15 +114,11 @@ class expr_any final : public statement {
     struct array_prefix {
         // none for the default type, e.g. '[2]{1, 2}'
         std::optional<token> element_type_tk;
-        token open_bracket_tk;
         stmt_array_size size;
-        token close_bracket_tk;
 
         auto source_to(std::ostream& os) const -> void {
             token::source_to(os, element_type_tk);
-            open_bracket_tk.source_to(os);
             size.source_to(os);
-            close_bracket_tk.source_to(os);
         }
     };
 
@@ -310,7 +320,7 @@ class expr_any final : public statement {
                 return *prefix->element_type_tk;
             }
 
-            return prefix->open_bracket_tk;
+            return prefix->size.open_bracket_tk();
         }
 
         if (const element_list* const list{std::get_if<element_list>(&form_)}) {
@@ -328,11 +338,7 @@ class expr_any final : public statement {
     [[nodiscard]] auto as_expr_type(const size_t index) const
         -> const expr_type& {
 
-        const expr_type* const record{record_at(index)};
-
-        assert(record != nullptr);
-
-        return *record;
+        return std::get<expr_type>(value_at(index));
     }
 
     // the fold of a condition stops at the element that decides it, so the
@@ -470,7 +476,7 @@ class expr_any final : public statement {
 
         assert(prefix != nullptr);
 
-        return prefix->open_bracket_tk;
+        return prefix->size.open_bracket_tk();
     }
 
   private:
@@ -510,48 +516,6 @@ class expr_any final : public statement {
                                *array_count, *src_len)};
     }
 
-    // the little endian bytes of the elements, empty when an element is not a
-    // constant or there are no elements to store
-    [[nodiscard]] auto constant_bytes(const toc& tc, const element_list& list,
-                                      const type& element_type) const
-        -> std::optional<std::string> {
-
-        if (list.elements.empty()) {
-            return std::nullopt;
-        }
-
-        std::string bytes;
-        for (size_t index{}; index < list.elements.size(); ++index) {
-            // a condition is compiled, not packed, so the elements after the
-            // one that decides it are checked, e.g. the 'a / 0 == 1' of
-            // 'true or a / 0 == 1'
-            if (std::holds_alternative<expr_bool>(
-                    list.elements.at(index).value)) {
-
-                return std::nullopt;
-            }
-
-            // e.g. '{300}' for 'i8' is rejected as when stored alone
-            const std::optional<folded_value> folded{
-                element(index).fold_checked(tc, tc.use_at(element_type)),
-            };
-
-            const std::optional<int64_t> value{folded_value::value_of(folded)};
-
-            if (not value) {
-                return std::nullopt;
-            }
-
-            const uint64_t bits{static_cast<uint64_t>(*value)};
-            for (size_t i{}; i < element_type.size_bytes(); ++i) {
-                bytes +=
-                    static_cast<char>(bits >> (machine::bits_per_byte * i));
-            }
-        }
-
-        return bytes;
-    }
-
     // e.g. 'i8[3]' in 'i8[3]{1, 2}' names the element type that '{1, 2}' takes
     // from the destination, and the size unless it is 'i8[]'; '[3]{1, 2}' has
     // the default type; none when the destination gives both
@@ -588,20 +552,12 @@ class expr_any final : public statement {
             throw_type_mismatch(literal_tk, tp.name(), literal_type.name());
         }
 
-        // e.g. the '4' of 'i8[4]', none for 'i8[]'
-        stmt_array_size size{tc, tz};
-
-        const token close_bracket_tk{
-            tz.expect_char_token(']', "expected ']' after array size"),
-        };
-
+        // e.g. the '[4]' of 'i8[4]', no value for 'i8[]'
         array_prefix prefix{
             .element_type_tk{
                 is_typed ? std::optional<token>{tk} : std::nullopt,
             },
-            .open_bracket_tk{open_bracket_tk},
-            .size{std::move(size)},
-            .close_bracket_tk{close_bracket_tk},
+            .size{tc, tz, open_bracket_tk},
         };
 
         // e.g. 'i8[]{1, 2}' for an 'i8' array field is '{1, 2}' and 'i8[4]'
@@ -665,7 +621,7 @@ class expr_any final : public statement {
         // e.g. 'var a = i8[]', which lists nothing and gives no size
         if (not open_brace_tk and prefix and not prefix->size.has_value()) {
             throw compile_error{
-                prefix->close_bracket_tk,
+                prefix->size.close_bracket_tk(),
                 std::format("an array needs a constant size, e.g. '{}[4]'",
                             prefix->element_type_tk
                                 ? prefix->element_type_tk->text()
@@ -707,7 +663,10 @@ class expr_any final : public statement {
     auto plan_element(const toc& tc, const size_t index,
                       const part_location& at, write_plan& plan) const -> void {
 
-        if (const expr_type* const record{record_at(index)}) {
+        if (const expr_type* const record{
+                std::get_if<expr_type>(&value_at(index)),
+            }) {
+
             record->plan_writes(tc, at, plan);
             return;
         }
@@ -850,11 +809,6 @@ class expr_any final : public statement {
         }
 
         plan_remaining_elements(at, size_bytes, *array_count, plan);
-    }
-
-    // the element at 'index' when it is an 'expr_type', null otherwise
-    [[nodiscard]] auto record_at(const size_t index) const -> const expr_type* {
-        return std::get_if<expr_type>(&value_at(index));
     }
 
     // the value of a single value or of an element of a list
@@ -1048,6 +1002,49 @@ class expr_any final : public statement {
         }
     }
 
+    // the little endian bytes of the elements, empty when an element is not a
+    // constant or there are no elements to store
+    [[nodiscard]] static auto constant_bytes(const toc& tc,
+                                             const element_list& list,
+                                             const type& element_type)
+        -> std::optional<std::string> {
+
+        if (list.elements.empty()) {
+            return std::nullopt;
+        }
+
+        std::string bytes;
+        for (const listed_element& item : list.elements) {
+            // a condition is compiled, not packed, so the elements after the
+            // one that decides it are checked, e.g. the 'a / 0 == 1' of
+            // 'true or a / 0 == 1'
+            if (std::holds_alternative<expr_bool>(item.value)) {
+                return std::nullopt;
+            }
+
+            const statement& element{as_statement(item.value)};
+
+            // e.g. '{300}' for 'i8' is rejected as when stored alone
+            const std::optional<folded_value> folded{
+                element.fold_checked(tc, tc.use_at(element_type)),
+            };
+
+            const std::optional<int64_t> value{folded_value::value_of(folded)};
+
+            if (not value) {
+                return std::nullopt;
+            }
+
+            const uint64_t bits{static_cast<uint64_t>(*value)};
+            for (size_t i{}; i < element_type.size_bytes(); ++i) {
+                bytes +=
+                    static_cast<char>(bits >> (machine::bits_per_byte * i));
+            }
+        }
+
+        return bytes;
+    }
+
     // the elements between the braces, e.g. '1, 2, 3' of '{1, 2, 3}'; a list
     // of a known length ends when it is full
     static auto parse_braced_elements(toc& tc, tokenizer& tz, const type& tp,
@@ -1235,38 +1232,18 @@ class expr_any final : public statement {
     }
 };
 
-// the size is a constant or none; it is parsed like an index, but it counts
-// storage and is no value of the program, so it folds at 'i64' on every
-// target, e.g. 'dat d = i8[3000000000]' on rv32i, which the address range
-// limits
-inline stmt_array_size::stmt_array_size(toc& tc, tokenizer& tz)
-    : statement{tz.next_whitespace_token()} {
+inline stmt_array_size::stmt_array_size(toc& tc, tokenizer& tz,
+                                        const token& open_bracket_tk)
+    : statement{tz.next_whitespace_token()}, open_bracket_tk_{open_bracket_tk} {
 
     set_type(tc.builtins().default_type());
 
-    if (tz.peek_char_after_whitespace() == ']') {
-        return;
+    if (tz.peek_char_after_whitespace() != ']') {
+        parse_value(tc, tz);
     }
 
-    assert_size_not_type(tc, tz);
-
-    value_ = std::make_unique<expr_any>(tc, tz, tc.builtins().default_type(),
-                                        literal_typing::from_destination);
-
-    const std::optional<int64_t> folded{fold_size(tc)};
-
-    if (not folded) {
-        throw compile_error{value_->tok(),
-                            std::format("{} is not a constant",
-                                        in_quotes(trimmed_source(*value_)))};
-    }
-
-    if (*folded < 1) {
-        throw compile_error{value_->tok(),
-                            "expected a constant array size greater than 0"};
-    }
-
-    folded_ = *folded;
+    close_bracket_tk_ =
+        tz.expect_char_token(']', "expected ']' after array size");
 }
 
 inline stmt_array_size::stmt_array_size(stmt_array_size&&) noexcept = default;
@@ -1274,11 +1251,15 @@ inline stmt_array_size::stmt_array_size(stmt_array_size&&) noexcept = default;
 inline stmt_array_size::~stmt_array_size() = default;
 
 inline auto stmt_array_size::source_to(std::ostream& os) const -> void {
+    open_bracket_tk_.source_to(os);
+
     statement::source_to(os);
 
     if (value_) {
         value_->source_to(os);
     }
+
+    close_bracket_tk_.source_to(os);
 }
 
 inline auto stmt_array_size::check_where_written(const toc& tc) const -> void {
@@ -1305,6 +1286,31 @@ inline auto stmt_array_size::fold_size(const toc& tc) const
 
     const value_use use{tc.use_at(tc.builtins().i64())};
     return folded_value::value_of(value_->fold_checked(tc, use));
+}
+
+// the size is a constant; it is parsed like an index, but it counts storage
+// and is no value of the program, so it folds at 'i64' on every target, e.g.
+// 'dat d = i8[3000000000]' on rv32i, which the address range limits
+inline auto stmt_array_size::parse_value(toc& tc, tokenizer& tz) -> void {
+    assert_size_not_type(tc, tz);
+
+    value_ = std::make_unique<expr_any>(tc, tz, tc.builtins().default_type(),
+                                        literal_typing::from_destination);
+
+    const std::optional<int64_t> folded{fold_size(tc)};
+
+    if (not folded) {
+        throw compile_error{value_->tok(),
+                            std::format("{} is not a constant",
+                                        in_quotes(trimmed_source(*value_)))};
+    }
+
+    if (*folded < 1) {
+        throw compile_error{value_->tok(),
+                            "expected a constant array size greater than 0"};
+    }
+
+    folded_ = *folded;
 }
 
 inline auto stmt_array_size::assert_size_not_type(const toc& tc,

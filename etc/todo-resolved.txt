@@ -1,6 +1,11 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 244 (2026-11-10, VG 'expr_any' simplification)
+    => done (2026-11-10): 'stmt_array_size' reads and keeps its brackets,
+       so 'array_prefix' and the field's 'array_part' no longer store and
+       parse them twice; private 'record_at' removed; 'constant_bytes' a
+       static range loop; listings unchanged
 [x] easy: round 243 (2026-11-10, VE generics bug hunt)
     => done (2026-11-10): no wrong code, no no-UB hole, no crash over about
        22000 fuzzed generic programs (against the same program instantiated
