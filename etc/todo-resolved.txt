@@ -1,6 +1,11 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 255 (2026-11-10, WB 'stmt_def_func' simplification)
+    => done (2026-11-10): the wrapper 'compile_statements' removed; the
+       generic method name in one helper 'generic_method_name'; the plain
+       type checks of 'func_result::read' grouped in 'assert_plain_type';
+       a repeated and an unclear comment fixed; listings unchanged
 [x] easy: round 254 (2026-11-10, VZ builtins simplification, WA methods
     bug hunt)
     => done (2026-11-10): 'argument_emitters::check_range' split: 'range_of'

@@ -207,8 +207,7 @@ struct func_head {
     auto read_method(const toc& tc, tokenizer& tz) -> void {
         const token dot_tk{tz.seen_char_token('.')};
 
-        // null for the 'text' of 'func text.print()'; in an instance 'text'
-        // names a type
+        // see 'method_part::receiver_tp'
         const type* receiver_tp{};
 
         if (not tc.generics().has_type(name_tk.text()) or
@@ -347,21 +346,8 @@ struct func_result {
 
         // a keyword is not a result name, e.g. the 'func' of 'func g<T
         // type>()' after a function that lacks its body
-        if (type_tk.is_word() and not is_keyword) {
-            statement::assert_no_type_arguments(tc, tz, type_tk);
-        }
-
-        // e.g. 'res mut', a parameter's modifier
-        if (not is_keyword and type_tk.is_text("mut")) {
-            throw compile_error{type_tk,
-                                "a result takes no 'mut', its function writes "
-                                "it"};
-        }
-
-        // e.g. the '[' of 'res i8[4]' or 'res[4]'
-        if (not is_keyword and tz.peek_char_after_whitespace() == '[') {
-            throw compile_error{tz, "a result cannot be an array, pass the "
-                                    "array as a 'mut' parameter"};
+        if (not is_keyword) {
+            assert_plain_type(tc, tz, type_tk);
         }
 
         // a word or a string before the '{' of the body is meant as the
@@ -410,6 +396,33 @@ struct func_result {
             .type_tk{has_type ? std::optional{type_tk} : std::nullopt},
         };
     }
+
+  private:
+    //
+    // statics
+    //
+
+    // what follows the result name has no type arguments, 'mut' or '['
+    static auto assert_plain_type(const toc& tc, tokenizer& tz,
+                                  const token& type_tk) -> void {
+
+        if (type_tk.is_word()) {
+            statement::assert_no_type_arguments(tc, tz, type_tk);
+        }
+
+        // e.g. 'res mut', a parameter's modifier
+        if (type_tk.is_text("mut")) {
+            throw compile_error{type_tk,
+                                "a result takes no 'mut', its function writes "
+                                "it"};
+        }
+
+        // e.g. the '[' of 'res i8[4]' or 'res[4]'
+        if (tz.peek_char_after_whitespace() == '[') {
+            throw compile_error{tz, "a result cannot be an array, pass the "
+                                    "array as a 'mut' parameter"};
+        }
+    }
 };
 
 // a slot of the frame of a noinline call: the address of the result, or of
@@ -437,8 +450,7 @@ struct frame_slot {
 //   'compile_main'
 //
 // 'check_body' compiles a function without its calls like a noinline
-// body; 'toc' keeps the address of the definition, so it is not
-// copied or moved
+// body
 class stmt_def_func final : public statement {
     func_head head_{};
     std::vector<stmt_def_func_param> params_;
@@ -609,7 +621,7 @@ class stmt_def_func final : public statement {
 
         // the result reaches the destination through the binding of 'res',
         // so the statements of the body have no destination
-        compile_statements(tc, indent);
+        code_.compile(tc, indent, destination{});
 
         // provide the exit label for 'return' to jump to
         x.label(indent, ret_jmp_label);
@@ -627,7 +639,7 @@ class stmt_def_func final : public statement {
 
         x.label(0, reserved_names::main);
 
-        compile_statements(tc, 0);
+        code_.compile(tc, 0, destination{});
 
         // code after an 'exit' or 'return' on every path would never run;
         // the compile knows the conditions it folded, e.g. with constant
@@ -925,7 +937,7 @@ class stmt_def_func final : public statement {
                            },
                            array_lengths);
 
-        compile_statements(tc, 0);
+        code_.compile(tc, 0, destination{});
         x.return_function(1);
 
         const size_t frame_size_bytes{tc.layout().max_frame_size_bytes()};
@@ -935,11 +947,6 @@ class stmt_def_func final : public statement {
         }
 
         return frame_size_bytes;
-    }
-
-    // in place or in a body of its own, the function is compiled
-    auto compile_statements(toc& tc, const size_t indent) const -> void {
-        code_.compile(tc, indent, destination{});
     }
 
     // the body compiled in a frame of its own for 'array_lengths', nothing
@@ -961,8 +968,8 @@ class stmt_def_func final : public statement {
     // base and the slot register are taken; without array lengths the body
     // is compiled without a call: a noinline body without array parameters,
     // checked as it is emitted, as 'main' is ('check_function_bodies'), or
-    // 'check_body', whose body takes from a call the array lengths, or the
-    // bindings of an inlined function
+    // 'check_body', of a body that a call gives its array lengths or, inlined,
+    // the bindings of its parameters and result
     [[nodiscard]] auto
     frame_scope(const std::span<const size_t> array_lengths) const -> scope {
 
@@ -1271,10 +1278,7 @@ class func_instantiator final {
         std::string report_name{head.name};
 
         if (receiver) {
-            // note: the head of an instance names the receiver type
-            assert(head.method);
-
-            report_name = receiver->method_name(head.method->name_tk.text());
+            report_name = generic_method_name(head, *receiver);
         }
 
         // note: the definition checked that the '(' follows
@@ -1408,17 +1412,24 @@ class func_instantiator final {
         };
 
         if (receiver != nullptr) {
-            // note: the head of an instance names the receiver type
-            assert(head.method);
-
-            instance.generic_method =
-                receiver->method_name(head.method->name_tk.text());
-
+            instance.generic_method = generic_method_name(head, *receiver);
             instance.constants = receiver->constants();
         }
 
         tc.add_func_instance(std::make_shared<stmt_def_func>(
             tc, func_tk, head, tz, std::move(instance)));
+    }
+
+    // the method as written, e.g. 'text.append' for 'str.append' of the
+    // instance 'str' of 'text'
+    [[nodiscard]] static auto
+    generic_method_name(const func_head& head,
+                        const generic_type_instance& receiver) -> std::string {
+
+        // note: the head of an instance names the receiver type
+        assert(head.method);
+
+        return receiver.method_name(head.method->name_tk.text());
     }
 
     // an error in the method is in the generic code, the frames name the bases
