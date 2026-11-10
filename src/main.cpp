@@ -987,14 +987,57 @@ auto check_reproduced_source(const program& prg, const source_files& files)
     }
 }
 
-// keeps the directory so the image lands next to its source
+// '--bin' or by default in the directory of the source so the image lands
+// next to it
 [[nodiscard]] auto
-default_binary_file_name(const std::string_view src_file_name,
-                         const target_name& target) -> std::string {
+resolved_binary_file_name(const options& opts,
+                          const std::string_view src_file_name) -> std::string {
+
+    if (opts.binary_file_name) {
+        return std::string{*opts.binary_file_name};
+    }
 
     std::filesystem::path path{src_file_name};
     path.replace_extension();
-    return std::format("{}-{}.bin", path.string(), target.text);
+
+    return std::format("{}-{}.bin", path.string(), opts.target->text);
+}
+
+// 'binary' is not the sd card, neither the same file nor the same path
+auto check_image_is_not_sd_card(const options& opts, const std::string& binary)
+    -> void {
+
+    const std::string_view sd_card{
+        opts.sd_card_file_name.value_or(default_sd_card_file_name),
+    };
+
+    std::error_code error;
+
+    const bool is_same_file{
+        std::filesystem::equivalent(binary, sd_card, error),
+    };
+
+    // note: a card that does not exist yet is compared by its absolute path,
+    //       which is empty when it cannot be resolved
+
+    const std::filesystem::path image_path{
+        std::filesystem::weakly_canonical(
+            std::filesystem::absolute(binary, error), error),
+    };
+
+    const std::filesystem::path card_path{
+        std::filesystem::weakly_canonical(
+            std::filesystem::absolute(sd_card, error), error),
+    };
+
+    const bool is_same_path{
+        not image_path.empty() and image_path == card_path,
+    };
+
+    if (is_same_file or is_same_path) {
+        throw option_error{std::format("invalid --bin: {} is the sd card image",
+                                       in_quotes(binary))};
+    }
 }
 
 [[nodiscard]] auto compile_file(const options& opts) -> int {
@@ -1014,9 +1057,7 @@ default_binary_file_name(const std::string_view src_file_name,
                   std::nullopt);
 
         const std::string binary{
-            opts.binary_file_name
-                ? std::string{*opts.binary_file_name}
-                : default_binary_file_name(src_file_name, *opts.target),
+            resolved_binary_file_name(opts, src_file_name),
         };
 
         const std::unique_ptr<machine> backend{
@@ -1039,38 +1080,7 @@ default_binary_file_name(const std::string_view src_file_name,
 
         // the image would replace the sd card that the program reads
         if (opts.target->writes_image and opts.target->reads_sd_card) {
-            const std::string_view sd_card{
-                opts.sd_card_file_name.value_or(default_sd_card_file_name),
-            };
-
-            std::error_code error;
-
-            const bool is_same_file{
-                std::filesystem::equivalent(binary, sd_card, error),
-            };
-
-            // note: a card that does not exist yet is compared by its
-            //       absolute path, which is empty when it cannot be resolved
-
-            const std::filesystem::path image_path{
-                std::filesystem::weakly_canonical(
-                    std::filesystem::absolute(binary, error), error),
-            };
-
-            const std::filesystem::path card_path{
-                std::filesystem::weakly_canonical(
-                    std::filesystem::absolute(sd_card, error), error),
-            };
-
-            const bool is_same_path{
-                not image_path.empty() and image_path == card_path,
-            };
-
-            if (is_same_file or is_same_path) {
-                throw option_error{
-                    std::format("invalid --bin: {} is the sd card image",
-                                in_quotes(binary))};
-            }
+            check_image_is_not_sd_card(opts, binary);
         }
 
         if (opts.reproduce_source) {

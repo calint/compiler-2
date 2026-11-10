@@ -1,6 +1,13 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 275 (2026-11-10, XH 'main.cpp', 'register_pool',
+    'constant_parser', 'decouple', 'expr_zero')
+    => done (2026-11-10): 'compile_file' in named steps
+       ('resolved_binary_file_name' replaces 'default_binary_file_name',
+       'check_image_is_not_sd_card'); a comment naming the removed
+       'record_noinline_call' fixed; a second 'e.g.' removed; listings and
+       reports unchanged
 [x] easy: round 274 (2026-11-10, XG cross-feature bug hunt, VX large
     programs)
     => done (2026-11-10): XG found no defect over about 13000 generated

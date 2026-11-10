@@ -159,7 +159,8 @@ class register_trace final {
                      const frame_kind kind) -> void {
 
         // note: a body is compiled once for each list of array lengths, its
-        //       calls are counted at the calls, see 'record_noinline_call'
+        //       calls are counted at the calls, see
+        //       'register_call_log::add_noinline_call'
 
         if (kind == frame_kind::noinline_body) {
             name = body_frame_name(name);
