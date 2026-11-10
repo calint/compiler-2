@@ -509,6 +509,8 @@ baz_NAME       a failure handler, and a routine of the x86_64 runtime,
                inside one operation, e.g. '.Lbaz_equal.0' on x86_64 ('1:'
                named by '1b' on rv32i), and on rv32i '.Lbaz_jump.0' the
                skip of a branch grown to a far jump
+.convert_loop  the digit loop of the x86_64 routine that writes a line
+               number
 ```
 
 E.g. 'if.7.5.36.13' is the 'if' at 7:5 in a body inlined by the call at

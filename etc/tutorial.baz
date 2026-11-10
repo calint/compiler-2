@@ -55,7 +55,8 @@ func literals() {
     var letter = 'a'
     assert(letter == 97)
     # a character literal is the byte value of the character, the escapes are
-    # '\0' '\a' '\b' '\t' '\n' '\v' '\f' '\r' '\e' '\\' '\'' '\"' and '\x41'
+    # '\0' '\a' '\b' '\t' '\n' '\v' '\f' '\r' '\e' '\\' '\'' '\"' '\`' and
+    # '\x41'
 
     var neg = -dec
     var inv = ~dec

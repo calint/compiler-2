@@ -1,6 +1,17 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 249 (2026-11-10, VM documentation against behavior, VN
+    'machine_rv32i' simplification)
+    => done (2026-11-10): VM checked every quoted message, example, option,
+       limit and number; the tutorial lists the escape of a backquote, the
+       howto says 'rv32i' also writes 'NAME-rv32i.bin' that
+       'run-rv32i-bin-as-elf.sh' runs, the label table lists
+       '.convert_loop'; three message oddities go to round 250; the upper
+       limit of '--memory' stays out of the help (a private constant of the
+       fpga backend); VN: 'apply_sign' for 7 copies of the negate pair,
+       'walk_known_loop', 'walk_runtime_loop', 'copy_constant' and
+       'count_to_bytes' split out, 'load_into' flat; listings unchanged
 [x] easy: round 248 (2026-11-10, VK arithmetic edges bug hunt, VL
     'machine_x86_64' simplification)
     => done (2026-11-10): VK found nothing (about 46000 programs against

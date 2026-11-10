@@ -99,7 +99,9 @@ the binary image itself.
   * compiles to `NAME.s` and writes `NAME-without-comments.s`
   * builds and runs depending on `--target`
     * `x86_64` (default): assembles `NAME.o`, links `NAME`, runs natively
-    * `rv32i`: assembles `NAME.o`, links `NAME`, runs in qemu user mode
+    * `rv32i`: assembles `NAME.o`, links `NAME`, runs in qemu user mode;
+      `baz` also writes the image `NAME-TARGET.bin`, which
+      `run-rv32i-bin-as-elf.sh` runs in qemu user mode
     * `rv32i-qemu`: `baz` writes the image `NAME-TARGET.bin` (`NAME.s` is not
       assembled or linked), runs on the qemu `virt` machine
     * `rv32i-fpga`: `baz` writes the image `NAME-TARGET.bin` (`NAME.s` is not
@@ -216,10 +218,10 @@ examples:
 ```text
 Language                     files          blank        comment           code
 -------------------------------------------------------------------------------
-C/C++ Header                    64           9343           7120          27254
+C/C++ Header                    64           9380           7135          27296
 C++                              1            204            103            824
 -------------------------------------------------------------------------------
-SUM:                            65           9547           7223          28078
+SUM:                            65           9584           7238          28120
 -------------------------------------------------------------------------------
 ```
 

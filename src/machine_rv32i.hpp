@@ -48,7 +48,7 @@
 //                through 'walk_known_size' for a known size,
 //                'walk_runtime_count' for a run-time count
 //                (see the note before 'local_label'); 'store_bytes' as
-//                immediates or a copy of a constant ('copy_from_starts')
+//                immediates or a copy of a constant ('copy_constant')
 //   comparisons  'compare_and_branch', 'emit_comparison_branch'
 //   checks       'emit_bounds_check' with 'check_upper_bound',
 //                'check_divisor', 'check_fits_width', 'check_shift_count',
@@ -644,11 +644,7 @@ class machine_rv32i : public machine {
         load_bulk_addresses(src_loc_tk, indent, bulk, request.src, request.dst);
 
         emit_count(bulk.count());
-
-        comment(src_loc_tk, indent, "{}: elements to bytes ({} bytes/element)",
-                bulk.count().register_name(), element_size_bytes);
-
-        scale_index(src_loc_tk, indent, bulk.count(), element_size_bytes);
+        count_to_bytes(src_loc_tk, indent, bulk, element_size_bytes);
 
         if (request.overlap.enabled) {
             check_copy_overlap(src_loc_tk, indent, bulk.pointer(0),
@@ -753,11 +749,7 @@ class machine_rv32i : public machine {
             // scaling the count must not pick the result registers
             const operation_scope scope{*this, dst};
 
-            comment(src_loc_tk, indent,
-                    "{}: elements to bytes ({} bytes/element)",
-                    bulk.count().register_name(), element_size_bytes);
-
-            scale_index(src_loc_tk, indent, bulk.count(), element_size_bytes);
+            count_to_bytes(src_loc_tk, indent, bulk, element_size_bytes);
         }
 
         compare_runtime_count(src_loc_tk, indent, bulk, alignment, dst);
@@ -862,9 +854,7 @@ class machine_rv32i : public machine {
     }
 
     // few bytes are stored with immediates when that takes no more code than
-    // loading them from read-only data; the read-only constant starts as far
-    // into a word as 'dst', so its copy takes words also at an address inside
-    // a word
+    // their copy from read-only data ('copy_constant')
     auto store_bytes(
         const token& src_loc_tk, const size_t indent,
         const std::string_view bytes, const operand& dst,
@@ -911,31 +901,7 @@ class machine_rv32i : public machine {
             return;
         }
 
-        const operand pointer{
-            alloc_scratch_register(src_loc_tk, indent, default_type()),
-        };
-
-        // note: read-only constants are word aligned, the zero bytes before
-        //       the constant bring its first byte to the phase of 'dst'
-
-        const std::string laid_out{
-            std::string(dst_start.phase, '\0') + std::string{bytes},
-        };
-
-        assembler_.la(indent, pointer.register_name(), add_constant(laid_out));
-
-        const std::array<access_start, 2> copy_starts{
-            access_start{
-                .alignment{word_size_bytes_},
-                .phase{dst_start.phase},
-            },
-            dst_start,
-        };
-
-        const operand constant{offset_by(memory_at(pointer), dst_start.phase)};
-
-        copy_from_starts(src_loc_tk, indent, dst, constant, bytes.size(),
-                         copy_starts);
+        copy_constant(src_loc_tk, indent, bytes, dst, dst_start, add_constant);
     }
 
     auto unary(const token& src_loc_tk, const size_t indent,
@@ -1529,6 +1495,15 @@ class machine_rv32i : public machine {
             .right{right},
             .left_is_result{left_is_result},
         };
+    }
+
+    // in a helper body: 'dst' is 'src' negated when 'sign' is -1 and 'src'
+    // when it is 0, e.g. a magnitude or a result with its sign restored
+    auto apply_sign(const std::string_view dst, const std::string_view src,
+                    const std::string_view sign) -> void {
+
+        assembler_.xor_op(1, dst, src, sign);
+        assembler_.sub(1, dst, dst, sign);
     }
 
     // the bulk registers of an array copy or comparison, the roles of the
@@ -2148,6 +2123,42 @@ class machine_rv32i : public machine {
                          to.displacement(), to.base_register());
     }
 
+    // 'bytes' from a read-only constant that starts as far into a word as
+    // 'dst', so the copy takes words also at an address inside a word
+    auto copy_constant(
+        const token& src_loc_tk, const size_t indent,
+        const std::string_view bytes, const operand& dst,
+        const access_start& dst_start,
+        const std::function_ref<std::string(std::string_view)> add_constant)
+        -> void {
+
+        const operand pointer{
+            alloc_scratch_register(src_loc_tk, indent, default_type()),
+        };
+
+        // note: read-only constants are word aligned, the zero bytes before
+        //       the constant bring its first byte to the phase of 'dst'
+
+        const std::string laid_out{
+            std::string(dst_start.phase, '\0') + std::string{bytes},
+        };
+
+        assembler_.la(indent, pointer.register_name(), add_constant(laid_out));
+
+        const std::array<access_start, 2> copy_starts{
+            access_start{
+                .alignment{word_size_bytes_},
+                .phase{dst_start.phase},
+            },
+            dst_start,
+        };
+
+        const operand constant{offset_by(memory_at(pointer), dst_start.phase)};
+
+        copy_from_starts(src_loc_tk, indent, dst, constant, bytes.size(),
+                         copy_starts);
+    }
+
     // 'copy_block' where 'starts' tells where 'src' and then 'dst' are within
     // a word
     auto copy_from_starts(const token& src_loc_tk, const size_t indent,
@@ -2251,6 +2262,17 @@ class machine_rv32i : public machine {
 
         load_into(src_loc_tk, indent, value, src_at);
         store_low_bits(src_loc_tk, indent, rebased(dst, src_at), value);
+    }
+
+    // the element count of 'bulk' becomes its byte count
+    auto count_to_bytes(const token& src_loc_tk, const size_t indent,
+                        const bulk_operation& bulk,
+                        const size_t element_size_bytes) -> void {
+
+        comment(src_loc_tk, indent, "{}: elements to bytes ({} bytes/element)",
+                bulk.count().register_name(), element_size_bytes);
+
+        scale_index(src_loc_tk, indent, bulk.count(), element_size_bytes);
     }
 
     // applies 'instruction' to 'left' with an immediate when it fits
@@ -2519,10 +2541,8 @@ class machine_rv32i : public machine {
         assembler_.beqz(1, "a1", "5f");
         assembler_.srai(1, "a4", "a0", sign_shift_);
         assembler_.srai(1, "a3", "a1", sign_shift_);
-        assembler_.xor_op(1, "a0", "a0", "a4");
-        assembler_.sub(1, "a0", "a0", "a4");
-        assembler_.xor_op(1, "a1", "a1", "a3");
-        assembler_.sub(1, "a1", "a1", "a3");
+        apply_sign("a0", "a0", "a4");
+        apply_sign("a1", "a1", "a3");
         assembler_.xor_op(1, "a3", "a3", "a4");
         assembler_.li(1, "a2", 0);
         assembler_.li(1, "a5", register_bits_);
@@ -2538,10 +2558,8 @@ class machine_rv32i : public machine {
         assembler_.label(0, "2");
         assembler_.addi(1, "a5", "a5", -1);
         assembler_.bnez(1, "a5", "1b");
-        assembler_.xor_op(1, "a0", "a0", "a3");
-        assembler_.sub(1, "a0", "a0", "a3");
-        assembler_.xor_op(1, "a1", "a2", "a4");
-        assembler_.sub(1, "a1", "a1", "a4");
+        apply_sign("a0", "a0", "a3");
+        apply_sign("a1", "a2", "a4");
         assembler_.ret(1);
         assembler_.label(0, "5");
 
@@ -2629,11 +2647,9 @@ class machine_rv32i : public machine {
         assembler_.xor_op(1, "a4", "a0", "a1");
         assembler_.srai(1, "a4", "a4", sign_shift_);
         assembler_.srai(1, "a3", "a0", sign_shift_);
-        assembler_.xor_op(1, "a0", "a0", "a3");
-        assembler_.sub(1, "a0", "a0", "a3");
+        apply_sign("a0", "a0", "a3");
         assembler_.srai(1, "a3", "a1", sign_shift_);
-        assembler_.xor_op(1, "a1", "a1", "a3");
-        assembler_.sub(1, "a1", "a1", "a3");
+        apply_sign("a1", "a1", "a3");
         assembler_.mv(1, "a2", "a0");
         assembler_.li(1, "a0", 0);
         assembler_.beqz(1, "a1", "3f");
@@ -2656,8 +2672,7 @@ class machine_rv32i : public machine {
         assembler_.label(0, "4");
         assembler_.bltu(1, "a3", "a0", "5f");
         assembler_.label(0, "6");
-        assembler_.xor_op(1, "a0", "a0", "a4");
-        assembler_.sub(1, "a0", "a0", "a4");
+        apply_sign("a0", "a0", "a4");
         assembler_.li(1, "a1", 0);
         assembler_.ret(1);
         assembler_.label(0, "5");
@@ -2972,19 +2987,12 @@ class machine_rv32i : public machine {
             return;
         }
 
-        if (src.is_register() and
-            value.register_name() == src.register_name()) {
+        // note: constants are stored by the caller
+        assert(src.is_register());
 
-            return;
-        }
-
-        if (src.is_register()) {
+        if (value.register_name() != src.register_name()) {
             assembler_.mv(indent, value.register_name(), src.register_name());
-            return;
         }
-
-        // constants are stored by the caller
-        std::unreachable();
     }
 
     // 'src' into the register 'dst', the immediate 'constant' when it is
@@ -3182,8 +3190,9 @@ class machine_rv32i : public machine {
                            const uint32_t shift_count, const size_t bits)
         -> void {
 
-        if (operation == arithmetic_operator::shift_left and
-            bits < register_bits_ and dst.is_register()) {
+        const bool is_left{operation == arithmetic_operator::shift_left};
+
+        if (is_left and bits < register_bits_ and dst.is_register()) {
 
             assembler_.slli(indent, loaded.value.register_name(),
                             loaded.value.register_name(),
@@ -3198,8 +3207,6 @@ class machine_rv32i : public machine {
 
             return;
         }
-
-        const bool is_left{operation == arithmetic_operator::shift_left};
 
         assembler_.immediate_op(indent, is_left ? op::slli : op::srai,
                                 loaded.value.register_name(),
@@ -3449,6 +3456,61 @@ class machine_rv32i : public machine {
         return top;
     }
 
+    // the chunks of 'loop' through a pointer per address past the head, then
+    // the tail unrolled from the pointers
+    auto walk_known_loop(const known_walk& walk, const known_loop& loop)
+        -> void {
+
+        std::vector<operand> pointers;
+        std::vector<operand> at;
+        for (const operand& address : walk.addresses) {
+            const operand after_head{offset_by(address, loop.head_size_bytes)};
+
+            const operand pointer{
+                load_pointer(walk.src_loc_tk, walk.indent, after_head),
+            };
+
+            pointers.push_back(pointer);
+            at.push_back(memory_at(pointer));
+        }
+
+        const operand end{
+            alloc_scratch_register(walk.src_loc_tk, walk.indent,
+                                   default_type()),
+        };
+
+        comment(walk.src_loc_tk, walk.indent, "{}",
+                describe_loop(walk.verb, loop.width));
+
+        set_loop_end(walk.src_loc_tk, walk.indent, end, pointers.front(),
+                     loop.chunk_count * loop.width);
+
+        assembler_.label(walk.indent, chunk_loop_.name);
+        walk.access(loop.width, at);
+
+        for (const operand& pointer : pointers) {
+            advance(walk.indent, pointer, loop.width);
+        }
+
+        assembler_.bne(walk.indent, pointers.front().register_name(),
+                       end.register_name(), chunk_loop_.reference);
+
+        if (loop.tail_size_bytes == 0) {
+            return;
+        }
+
+        comment(walk.src_loc_tk, walk.indent, "{} {} B tail", walk.verb,
+                loop.tail_size_bytes);
+
+        // the pointers are at a boundary of the loop width
+        const access_start boundary{
+            .alignment{loop.width},
+            .phase{},
+        };
+
+        walk_parts(walk, loop.tail_size_bytes, std::span{&boundary, 1}, at);
+    }
+
     // unrolled accesses from the direct offsets, or a loop of the widest
     // width every start reaches after a head unrolled from them, then a tail;
     // the walk's own registers are freed before a comparison writes its result
@@ -3478,58 +3540,7 @@ class machine_rv32i : public machine {
             walk_unrolled(walk, loop.head_size_bytes);
         }
 
-        std::vector<operand> pointers;
-        pointers.reserve(walk.addresses.size());
-
-        for (const operand& address : walk.addresses) {
-            const operand after_head{offset_by(address, loop.head_size_bytes)};
-
-            pointers.push_back(
-                load_pointer(walk.src_loc_tk, walk.indent, after_head));
-        }
-
-        const operand end{
-            alloc_scratch_register(walk.src_loc_tk, walk.indent,
-                                   default_type()),
-        };
-
-        comment(walk.src_loc_tk, walk.indent, "{}",
-                describe_loop(walk.verb, loop.width));
-
-        set_loop_end(walk.src_loc_tk, walk.indent, end, pointers.front(),
-                     loop.chunk_count * loop.width);
-
-        std::vector<operand> at;
-        at.reserve(pointers.size());
-
-        for (const operand& pointer : pointers) {
-            at.push_back(memory_at(pointer));
-        }
-
-        assembler_.label(walk.indent, chunk_loop_.name);
-        walk.access(loop.width, at);
-
-        for (const operand& pointer : pointers) {
-            advance(walk.indent, pointer, loop.width);
-        }
-
-        assembler_.bne(walk.indent, pointers.front().register_name(),
-                       end.register_name(), chunk_loop_.reference);
-
-        if (loop.tail_size_bytes == 0) {
-            return;
-        }
-
-        comment(walk.src_loc_tk, walk.indent, "{} {} B tail", walk.verb,
-                loop.tail_size_bytes);
-
-        // the pointers are at a boundary of the loop width
-        const access_start boundary{
-            .alignment{loop.width},
-            .phase{},
-        };
-
-        walk_parts(walk, loop.tail_size_bytes, std::span{&boundary, 1}, at);
+        walk_known_loop(walk, loop);
     }
 
     auto walk_runtime_bytes(const runtime_walk& walk) -> void {
@@ -3544,12 +3555,7 @@ class machine_rv32i : public machine {
         // every iteration
         assembler_.add(walk.indent, count, count, walk.src.register_name());
 
-        assembler_.label(walk.indent, chunk_loop_.name);
-        walk_runtime_step(walk, 1);
-
-        assembler_.bne(walk.indent, walk.src.register_name(), count,
-                       chunk_loop_.reference);
-
+        walk_runtime_loop(walk, count, 1);
         assembler_.label(walk.indent, walk_end_.name);
     }
 
@@ -3577,12 +3583,7 @@ class machine_rv32i : public machine {
         comment(walk.src_loc_tk, walk.indent, "{}",
                 describe_loop(walk.verb, width));
 
-        assembler_.label(walk.indent, chunk_loop_.name);
-        walk_runtime_step(walk, width);
-
-        assembler_.bne(walk.indent, walk.src.register_name(),
-                       chunks.register_name(), chunk_loop_.reference);
-
+        walk_runtime_loop(walk, chunks.register_name(), width);
         assembler_.label(walk.indent, after_chunks_.name);
     }
 
@@ -3655,6 +3656,17 @@ class machine_rv32i : public machine {
         }
 
         assembler_.label(walk.indent, after_head_.name);
+    }
+
+    // steps of 'width' bytes until 'src' reaches 'end'
+    auto walk_runtime_loop(const runtime_walk& walk, const std::string_view end,
+                           const size_t width) -> void {
+
+        assembler_.label(walk.indent, chunk_loop_.name);
+        walk_runtime_step(walk, width);
+
+        assembler_.bne(walk.indent, walk.src.register_name(), end,
+                       chunk_loop_.reference);
     }
 
     // one access at the current pointers, then both move past it
@@ -3825,7 +3837,7 @@ class machine_rv32i : public machine {
         return width;
     }
 
-    // the copy of a constant ('copy_from_starts') takes 'la' and a load and a
+    // the copy of a constant ('copy_constant') takes 'la' and a load and a
     // store for each of its 'copy_part_count' parts, counted as unrolled up to
     // 'immediates_threshold_bytes_'
     [[nodiscard]] static auto

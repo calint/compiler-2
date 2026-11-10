@@ -99,7 +99,9 @@ the binary image itself.
   * compiles to `NAME.s` and writes `NAME-without-comments.s`
   * builds and runs depending on `--target`
     * `x86_64` (default): assembles `NAME.o`, links `NAME`, runs natively
-    * `rv32i`: assembles `NAME.o`, links `NAME`, runs in qemu user mode
+    * `rv32i`: assembles `NAME.o`, links `NAME`, runs in qemu user mode;
+      `baz` also writes the image `NAME-TARGET.bin`, which
+      `run-rv32i-bin-as-elf.sh` runs in qemu user mode
     * `rv32i-qemu`: `baz` writes the image `NAME-TARGET.bin` (`NAME.s` is not
       assembled or linked), runs on the qemu `virt` machine
     * `rv32i-fpga`: `baz` writes the image `NAME-TARGET.bin` (`NAME.s` is not
