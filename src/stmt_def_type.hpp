@@ -253,7 +253,9 @@ struct generic_type_use {
     }
 };
 
-// e.g. 'type text<size> = list<i8, size>'
+// a generic type definition, kept as text for the aliases that make its
+// instances ('type_instantiator'), e.g. 'type list<T type, capacity> {...}' or
+// one based on another, 'type text<size> = list<i8, size>'
 class stmt_def_type_generic final : public statement {
     // the text after 'type' of a generic definition, kept for 'source_to'
     std::string_view generic_text_;

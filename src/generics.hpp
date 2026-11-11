@@ -617,7 +617,8 @@ class generic_registry final {
     explicit generic_registry(const definition_order& order) : order_{order} {}
 
     // note: a generic function without a receiver is added at its
-    //       definition, one with a receiver at an alias
+    //       definition, one with a receiver at an alias, so 'add_method'
+    //       lists it at the definition of its method
 
     auto add_func(std::string name, generic_func_info info) -> void {
         if (not info.receiver) {

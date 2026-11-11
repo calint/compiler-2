@@ -1,6 +1,14 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 296 (2026-11-11, ZN comments after rounds 287-295)
+    => done (2026-11-11): the docs name 'func_instantiator::define', the
+       'toc' header names 'inline_call::compile' as the reader of a body
+       taking from a call and lists its tables in order again, the note of
+       'generic_registry::add_func' says why a function with a receiver is
+       listed by 'add_method', the header of 'stmt_def_type_generic' states
+       its role and both forms, 'checked_constant_index' calls
+       'assert_constant_index' rather than repeating it
 [x] easy: round 295 (2026-11-11, ZL design review of the assemblers)
     => done (2026-11-11): the check that the variables section holds no
        code or data is an assert in 'layout_image' (one pass over the lines

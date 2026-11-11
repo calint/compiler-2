@@ -995,8 +995,8 @@ class stmt_identifier final : public statement {
     }
 
     // the constant index of the element at 'elem_index' of the path, checked
-    // against 'array_info' as 'assert_constant_index' does, empty when
-    // computed at run time
+    // against 'array_info' by 'assert_constant_index', empty when computed at
+    // run time
     [[nodiscard]] auto checked_constant_index(const toc& tc, size_t elem_index,
                                               const ident_info& array_info,
                                               bool allow_end) const

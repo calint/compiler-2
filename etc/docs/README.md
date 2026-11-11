@@ -1043,8 +1043,8 @@ example.baz:13:13: instantiated by 'make<name>'
 generic_registry (generics.hpp)       the generic definitions and their
                                       instances, kept as text
 type_instantiator (stmt_def_type.hpp) a generic type instance from an alias
-func_instantiator::define_func,       a generic function, a method of a
-  define_method (stmt_def_func.hpp)   generic type, kept as text
+func_instantiator::define             a generic function, a method of a
+  (stmt_def_func.hpp)                 generic type, kept as text
 generic_call::parse (stmt_call.hpp)   the type arguments of a call, written
                                       or deduced from the arguments
 func_instantiator::instantiate_func,  the instance of a generic function, the

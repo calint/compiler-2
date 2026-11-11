@@ -2352,9 +2352,9 @@ class definition_checks final {
 //   both           'add_var' and 'add_const' (placed and commented only while
 //                  compiling), 'scope_entry', 'resolve_declared',
 //                  'use_at' and 'storage_of'
-//   tables         'builtins', 'checks', 'data', 'definitions',
-//                  'funcs', 'generics', 'layout', 'machine',
-//                  'emitted_bodies', 'checked_bodies', 'scopes', 'types'
+//   tables         'builtins', 'checked_bodies', 'checks', 'data',
+//                  'definitions', 'emitted_bodies', 'funcs', 'generics',
+//                  'layout', 'machine', 'scopes', 'types'
 //   statics        'assert_valid_name', 'continue_label', 'end_label'
 //
 // a statement may be compiled more than once (each inlined call, both
@@ -2378,7 +2378,7 @@ class definition_checks final {
 //                             the innermost function by 'check_skipped'
 //   'scope::takes_from_call'  set by 'stmt_def_func::frame_scope' for
 //                             'stmt_def_func::check_body'; read for
-//                             any function by 'stmt_call::compile' through
+//                             any function by 'inline_call::compile' through
 //                             'scope_stack::is_in_body_taking_from_call'
 class toc final {
     // the most levels of blocks and expressions inside each other, the parsers
