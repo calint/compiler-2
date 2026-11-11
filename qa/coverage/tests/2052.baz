@@ -1,6 +1,6 @@
-# the check of a body without its call expands an inlined recursion: the
-# constant of 'g(x, 2)' ends it, so 'a[3 - n]' past the end at its second
-# level is rejected also where nothing calls 'f'
+# the check of a body without its call does not expand an inlined recursion
+# that the constant of 'g(x, 2)' ends: 'a[3 - n]' past the end at its second
+# level is accepted where nothing calls 'f', a call of 'f' rejects it
 
 func g(x, n) res {
     if n == 0 {

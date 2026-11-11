@@ -6537,17 +6537,17 @@ SRC=2048 && COMPERR
 # that an unsized array ends
 SRC=2049 && COMPERR
 
-# the check of a body without its call expands an inlined recursion that a
-# constant argument ends beside one that does not fold
-SRC=2050 && COMPERR
+# the check of a body without its call does not expand an inlined recursion
+# that a constant argument ends beside one that does not fold
+SRC=2050 && EXP=0 && RUN
 
 # the check of a body without its call goes on after an inlined recursion
 # that an argument it does not know drives past the nesting limit
 SRC=2051 && COMPERR
 
-# the check of a body without its call expands an inlined recursion that the
-# constant it has ends
-SRC=2052 && COMPERR
+# the check of a body without its call does not expand an inlined recursion
+# that the constant it has ends
+SRC=2052 && EXP=0 && RUN
 
 # the check of a body without its calls rejects an inlined recursion that an
 # instance drives beside a constant argument, as every call does
@@ -6625,10 +6625,10 @@ SRC=2071 && COMPERR
 # 'mut' argument drives as every call does
 SRC=2072 && COMPERR
 
-# the check of a body without its calls ends an inlined recursion that a
-# constant argument ends where it runs out of registers, x86_64 at an outer
-# level
-if [[ $MACHINE == x86_64 ]]; then SRC=2073 && EXP=0 && RUN; else SRC=2073 && COMPERR; fi
+# the check of a body without its calls does not expand an inlined recursion
+# that a constant argument ends, so its verdict does not depend on the
+# registers of the target
+SRC=2073 && EXP=0 && RUN
 
 # a '<<' after a generic argument is an operator, not the '<' of an instance
 SRC=2074 && COMPERR

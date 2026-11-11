@@ -1,6 +1,6 @@
-# the check of a body without its call expands an inlined recursion that a
-# constant argument ends beside one that does not fold, 'f(x, k + 1)' of the
-# 'f(p, 0)' of 'h(p)' reaches 'a[4]'
+# the check of a body without its call does not expand an inlined recursion
+# that a constant argument ends beside one that does not fold: 'f(x, k + 1)'
+# of the 'f(p, 0)' of 'h(p)' would reach 'a[4]', a call of 'h' rejects it
 
 func f(x, k) res {
     var a = i8[4]

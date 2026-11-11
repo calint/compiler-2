@@ -1,6 +1,14 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 302 (2026-11-11, ZT review of the exceptions, item 2)
+    => done (2026-11-11): 'check_recursion' no longer expands a recursion
+       that a constant argument ends in the check of a body taking from a
+       call ('has_constant_argument' is gone, 13 lines fewer), so where it
+       ends no longer depends on the scratch registers of the target: 2073
+       runs on every target; an error deeper in such a recursion of a
+       function nothing calls is not reported (2050, 2052 run), a call
+       still rejects it
 [x] easy: round 301 (2026-11-11, ZT review of the exceptions, item 1)
     => done (2026-11-11): 'rv32i-qemu' emits sector routines that panic
        'sd card' as a card image without the sector does, so a sector

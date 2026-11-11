@@ -386,8 +386,7 @@ program does not depend on inlining.
      | arguments | compiled | the limit | example |
      |---|---|---|---|
      | every value argument folds and every array argument has its length, an instance or a 'mut' argument does not count ('nests_alike_at_every_call'): it nests as deep at every call | the levels | the nesting limit rejects the function, running out of registers ends the recursion | a 'g(k + 1)' entered as 'g(2)' that ends only at 'k == 0', an 'r()' that calls 'r()' |
-     | some value argument folds ('has_constant_argument') | the levels | any limit ends the recursion | the 'g(x, 2)' of an 'f(x)' that nothing calls, checked as in 'main' up to a level that runs out of registers (8.3); a 'g(x, 70)' that the unknown 'x' drives past the nesting limit |
-     | no value argument folds | only the arguments, bound as for the body ('inline_call::compile_arguments') | none, the body is checked where the recursion is entered and in its own check | a recursion that only a constant argument of the call ends is no error there |
+     | otherwise | only the arguments, bound as for the body ('inline_call::compile_arguments') | none, the body is checked where the recursion is entered and in its own check | a recursion that only a constant argument of the call ends is no error there; the 'g(x, 2)' of an 'f(x)' that nothing calls checks its first level, its deeper levels are checked at a call of 'f', so whether the check is accepted does not depend on the registers of the target |
 
 3. Outside such a recursion the check is judged like a noinline body: running
    out of scratch registers or of the variable storage rejects the function,
@@ -2089,14 +2088,12 @@ message, x86_64 stops with a signal.
   written in whole, whatever the body writes, so it needs no fixed point of
   its summary; this rejects more than needed, it accepts no undefined
   behavior.
-- In the check of a body that takes from a call an inlined recursion ends
-  where it runs out of registers (1.5 item 2), also one that a constant
-  argument ends: an error at a deeper level that needs no argument is then
-  found only on a target with more registers or at a call that folds what
-  ran out, e.g. 'a[6 - k]' of an 'i8[5]' in 'r(x, k)' entered as 'r(x, 2)'
-  from an 'f(x)' that nothing calls, with deep expressions in 'x' around the
-  recursive call, is accepted on x86_64 and rejected on rv32i and at
-  'f(1)'.
+- In the check of a body that takes from a call an inlined recursion that
+  does not nest as deep at every call is not expanded (1.5 item 2), also
+  one that a constant argument ends: an error at a deeper level is found
+  at a call that compiles the recursion, e.g. 'a[3 - n]' of an 'i8[2]' at
+  the second level of 'g(x, 2)' in an 'f(x)' is accepted where nothing calls
+  'f' and rejected at 'f(1)'; nothing of it runs where it is accepted.
 - A body that passes a parameter or a global on to a call, or calls a
   method of it, reads it whole in its record (3.9), whatever the callee
   reaches of it: 'f(p mut point, q mut point)' that calls 'gety(p)' or

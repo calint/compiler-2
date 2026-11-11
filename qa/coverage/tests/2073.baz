@@ -1,7 +1,6 @@
-# the check of a body without its calls ends an inlined recursion that a
-# constant argument ends where it runs out of registers: x86_64 runs out at
-# an outer level and accepts, rv32i reaches 'a[5]' at 'k == 1' and rejects
-# (README 8.3)
+# the check of a body without its calls does not expand an inlined recursion
+# that a constant argument ends: 'a[5]' at 'k == 1' is found at a call of
+# 'f', on every target (README 8.3)
 
 func r(x, k) res {
     res = 0

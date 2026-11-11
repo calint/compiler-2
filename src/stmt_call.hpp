@@ -908,8 +908,7 @@ class inline_call final {
     //   1. it nests as deep at every call ('nests_alike_at_every_call'):
     //      expanded, the nesting limit rejects it, e.g. a 'g(k + 1)' that
     //      'g(2)' enters and that ends only at 'k == 0'
-    //   2. a constant argument: expanded, e.g. the 'g(n - 1)' of 'g(2)'
-    //   3. otherwise only its arguments are bound, the body is checked where
+    //   2. otherwise only its arguments are bound, the body is checked where
     //      the recursion is entered and in its own check
     auto check_recursion(toc& tc, const size_t indent, const destination& dst,
                          const size_t nesting) const -> void {
@@ -918,7 +917,7 @@ class inline_call final {
 
         const auto compile_level{
             [&] -> void {
-                if (not nests_alike and not has_constant_argument(tc)) {
+                if (not nests_alike) {
                     compile_arguments(tc, indent);
                     return;
                 }
@@ -1158,18 +1157,6 @@ class inline_call final {
             [](const auto& pair) -> bool {
                 const auto& [arg_place, param]{pair};
                 return is_temporary(arg_place, param);
-            });
-    }
-
-    // a value argument folds to a constant
-    [[nodiscard]] auto has_constant_argument(const toc& tc) const -> bool {
-        return std::ranges::any_of(
-            std::views::zip(call_.args, call_.func->params()),
-            [&](const auto& pair) -> bool {
-                const auto& [arg, param]{pair};
-
-                return is_value_param(param) and
-                       arg.fold(tc, tc.use_at(param.get_type()));
             });
     }
 
