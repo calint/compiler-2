@@ -1,6 +1,16 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 334 (2026-11-11, CC confirming round: readability of
+    'toc' and 'machine')
+    => done (2026-11-11): 'slot_register' carried the receiver of a method,
+       the one argument without a frame slot: 'receiver_register',
+       'receiver_address', 'load_receiver_address', 'receiver_kept'; the
+       listing comment "address of the slot in a register" says "the
+       receiver" (113 listings differ only there); the class map of 'toc'
+       names 'indent' and 'indent_scope'; 'storage_layout' says where
+       variables go and that 'dat' and 'vars' are labels; chapter 7.6
+       counts about 66 public methods of 'toc'
 [x] easy: round 333 (2026-11-11, CB confirming round: design)
     => done (2026-11-11): the rv32i 'runtime_walk' and 'known_walk' and
        'held_registers' kept a token and an indent and rebuilt the site

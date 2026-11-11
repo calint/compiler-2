@@ -1444,13 +1444,14 @@ class scope_stack final {
     }
 };
 
-// where the variables are placed, after the dats that 'data_table' placed: the
-// scopes that have a frame of their own, the capacity of the section and the
-// target limits; the size in use is the sum of what the scopes hold
+// where the variables are placed, after the dats that 'data_table' placed: in
+// the frame of the nearest scope that has one, else after the variables in
+// use, within the '--vars' capacity and what the target addresses; the size
+// in use is the sum of what the scopes hold
 class storage_layout final {
     // where the next variable is placed: 'next_offset_bytes' counts from the
     // base of the frame of the nearest scope with one or, outside a frame,
-    // from 'dat'
+    // from the label 'dat', the start of the data section
     struct storage_location {
         bool is_in_frame{};
         size_t next_offset_bytes{};
@@ -1726,9 +1727,10 @@ class storage_layout final {
         };
     }
 
-    // the operand offset of storage 'offset_from_dat' bytes past 'dat': the
-    // variables base is 'dat' unless the target puts it past 'vars', which
-    // makes the dats negative and the variables start below the base
+    // the operand offset of storage 'offset_from_dat' bytes past the label
+    // 'dat': the variables base is 'dat' unless the target puts it past the
+    // label 'vars', which makes the dats negative and the variables start
+    // below the base
     [[nodiscard]] auto
     offset_from_variables_base(const size_t offset_from_dat) const -> int64_t {
 
@@ -2365,7 +2367,8 @@ class definition_checks final {
 //                  'add_noinline_body', 'dry_run', 'check_skipped',
 //                  'emit_most_efficient', 'create_unique_label',
 //                  'call_path_at', 'next_frame_address', 'use_of',
-//                  'overflow_options', 'checks_overflow', the reachability
+//                  'overflow_options', 'checks_overflow', the listing indent
+//                  ('indent', 'indent_scope'), the reachability
 //                  ('is_reachable', 'end_path', 'record_break',
 //                  'record_continue', 'record_return', 'join_loop',
 //                  'path_merge')

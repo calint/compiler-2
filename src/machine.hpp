@@ -106,7 +106,7 @@ struct target_description {
     std::string_view frame_base_register;
     std::string_view variables_base_register;
     // the register that carries the address of the receiver of a method call
-    std::string_view slot_register;
+    std::string_view receiver_register;
     // empty when the variables base register points at 'dat', else how far
     // past the 'vars' label it points
     std::optional<size_t> variables_base_past_vars_bytes;
@@ -138,7 +138,7 @@ struct target_description {
 //                  'emit_string_data', 'emit_zero_data'
 //   registers      'alloc_scratch_register', 'free_scratch_register',
 //                  'held_registers' (what a front-end step holds),
-//                  'free_named_register', 'slot_register', 'register_view',
+//                  'free_named_register', 'receiver_register', 'register_view',
 //                  'alloc_named_register'
 //   operations     'add_subtract', 'multiply', 'divide', 'shift', 'bitwise',
 //                  'unary', 'zero', 'zero_padding', 'copy_value',
@@ -970,13 +970,13 @@ class machine {
         emit_frame_entry();
     }
 
-    // 'slot_address' is the address the callee finds in
-    // 'slot_register', none when the register is not used; 'name' is the
+    // 'receiver_address' is the address the callee finds in
+    // 'receiver_register', none when the register is not used; 'name' is the
     // callee's for the register report
     auto call_function(const emit_site site, const std::string_view name,
                        const std::string_view label,
                        const operand& frame_address,
-                       const std::optional<operand>& slot_address) -> void {
+                       const std::optional<operand>& receiver_address) -> void {
 
         assert(frame_address.is_memory());
         assert(frame_address.index_register().empty());
@@ -1001,15 +1001,15 @@ class machine {
         }
 
         save_call_registers(site.indent, saved);
-        load_slot_address(site, slot_address);
+        load_receiver_address(site, receiver_address);
 
         comment(site, "set function frame base");
 
         // a far frame address is lowered through a scratch register, which
-        // must not be the loaded slot register
-        const operation_scope slot_kept{
+        // must not be the loaded receiver register
+        const operation_scope receiver_kept{
             *this,
-            make_register_operand(slot_register(), default_type()),
+            make_register_operand(receiver_register(), default_type()),
         };
 
         address_of(site,
@@ -1484,6 +1484,10 @@ class machine {
               operand::imm(factor_info.shift, default_type()), runtime_check{});
     }
 
+    [[nodiscard]] auto receiver_register() const -> std::string_view {
+        return target_.receiver_register;
+    }
+
     // the use of registers at the busiest point of the build, as lines after
     // the code when asked for, else none; defined in 'register_report.hpp'
     [[nodiscard]] auto register_peak_report() const -> std::vector<std::string>;
@@ -1531,10 +1535,6 @@ class machine {
         assembler& output{output_.get()};
 
         output.add_separator_newline();
-    }
-
-    [[nodiscard]] auto slot_register() const -> std::string_view {
-        return target_.slot_register;
     }
 
     // the header, the entry of the program and the variables base, held until
@@ -2410,19 +2410,21 @@ class machine {
 
     // loaded before the frame base is set, the address may be relative to the
     // caller's; the receiver already in the register is passed as is
-    auto load_slot_address(const emit_site site,
-                           const std::optional<operand>& slot_address) -> void {
+    auto load_receiver_address(const emit_site site,
+                               const std::optional<operand>& receiver_address)
+        -> void {
 
-        if (not slot_address or
-            slot_address->is_address_in_register(slot_register())) {
+        if (not receiver_address or
+            receiver_address->is_address_in_register(receiver_register())) {
 
             return;
         }
 
-        comment(site, "address of the slot in a register");
+        comment(site, "address of the receiver in a register");
 
-        address_of(site, make_register_operand(slot_register(), default_type()),
-                   *slot_address);
+        address_of(site,
+                   make_register_operand(receiver_register(), default_type()),
+                   *receiver_address);
     }
 
     [[nodiscard]] auto location_text(const token& src_loc_tk) const

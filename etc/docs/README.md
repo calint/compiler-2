@@ -1298,7 +1298,7 @@ address    | result address         |    the callee's frame base
 
 1. The slots: the address of the result when there is one, then one per
    parameter ('stmt_def_func::frame_slots'); the receiver of a method is
-   passed in the slot register instead, x86_64 'r11' and rv32i 's11'. A
+   passed in the receiver register instead, x86_64 'r11' and rv32i 's11'. A
    result or an argument that is not a variable in memory goes through a
    temporary of the call, the result is copied out after the call. The
    arguments are compiled in their order: a temporary is computed at its
@@ -1787,7 +1787,7 @@ keeps them consistent.
 Rejected: passing the tables one by one, every signature would carry the
 ones its callees need.
 
-Cost: 'toc.hpp' holds about 4k lines and 'toc' 64 public methods,
+Cost: 'toc.hpp' holds about 4k lines and 'toc' about 66 public methods,
 grouped by the map above the class; a node can reach every table through
 it.
 

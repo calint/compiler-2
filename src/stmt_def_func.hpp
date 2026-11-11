@@ -467,11 +467,11 @@ class stmt_def_func final : public statement {
 
     // how the body reaches the result and the parameters: a parsed body only
     // names them, a compiled noinline body has their addresses in its frame
-    // and the receiver's in 'slot_register' when it is passed in a register
+    // and the receiver's in 'receiver_register' when it is passed in one
     struct names_only {};
 
     struct through_frame {
-        std::optional<operand> slot_register;
+        std::optional<operand> receiver_register;
     };
 
     using var_access = std::variant<names_only, through_frame>;
@@ -928,20 +928,20 @@ class stmt_def_func final : public statement {
         const toc::indent_scope body_indent{tc, 0};
 
         // the register is held while the body runs
-        std::optional<operand> slot_register;
+        std::optional<operand> receiver_register;
 
         machine& x{tc.machine()};
 
         if (has_self_param()) {
-            slot_register = x.alloc_named_register(
-                {tok(), 1}, x.slot_register(), tc.builtins().address());
+            receiver_register = x.alloc_named_register(
+                {tok(), 1}, x.receiver_register(), tc.builtins().address());
         }
 
         add_constants(tc);
 
         add_signature_vars(tc,
                            through_frame{
-                               .slot_register{slot_register},
+                               .receiver_register{receiver_register},
                            },
                            array_lengths);
 
@@ -950,8 +950,8 @@ class stmt_def_func final : public statement {
 
         const size_t frame_size_bytes{tc.layout().max_frame_size_bytes()};
 
-        if (slot_register) {
-            x.free_named_register({tok(), 1}, *slot_register);
+        if (receiver_register) {
+            x.free_named_register({tok(), 1}, *receiver_register);
         }
 
         return frame_size_bytes;
@@ -974,12 +974,13 @@ class stmt_def_func final : public statement {
     }
 
     // the scope of the body in a frame of its own, entered before the frame
-    // base and the slot register are taken; without array lengths the body
-    // is compiled without a call: a noinline body without array parameters,
-    // checked as it is emitted, as 'main' is ('check_function_bodies'), or
-    // 'check_body', of a body that a call gives its array lengths or, inlined,
-    // the bindings of its parameters and result; a checked body with a length
-    // unknown takes from a call as 'check_body' does
+    // base and the receiver register are taken; without array lengths the
+    // body is compiled without a call: a noinline body without array
+    // parameters, checked as it is emitted, as 'main' is
+    // ('check_function_bodies'), or 'check_body', of a body that a call gives
+    // its array lengths or, inlined, the bindings of its parameters and
+    // result; a checked body with a length unknown takes from a call as
+    // 'check_body' does
     [[nodiscard]] auto frame_scope(
         const std::span<const std::optional<size_t>> array_lengths) const
         -> scope {
@@ -1016,8 +1017,8 @@ class stmt_def_func final : public statement {
     }
 
     // a method of a type, a constructor builds its 'self' instead; the
-    // address of 'self' is in the slot register of the backend, not in a frame
-    // slot
+    // address of 'self' is in the receiver register of the backend, not in a
+    // frame slot
     [[nodiscard]] auto has_self_param() const -> bool {
         return head_.method and not is_constructor();
     }
@@ -1255,7 +1256,7 @@ class stmt_def_func final : public statement {
 
     // a parsed body names its result and parameters in place, a compiled
     // noinline body reaches each through the address in its frame slot, the
-    // receiver through the address in the slot register
+    // receiver through the address in the receiver register
     [[nodiscard]] static auto placement_of(const var_access& access,
                                            const frame_slot& slot)
         -> var_placement {
@@ -1271,12 +1272,12 @@ class stmt_def_func final : public statement {
         }
 
         if (slot.is_in_register) {
-            // note: 'compile_in_frame' holds the slot register for a receiver
-            //       in a register
+            // note: 'compile_in_frame' holds the receiver register for a
+            //       receiver passed in a register
 
-            assert(frame->slot_register);
+            assert(frame->receiver_register);
 
-            return at_address_register{*frame->slot_register};
+            return at_address_register{*frame->receiver_register};
         }
 
         return in_storage{

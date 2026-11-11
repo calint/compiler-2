@@ -1444,7 +1444,7 @@ class machine_rv32i : public machine {
             .frame_base_register{"s1"},
             .variables_base_register{"s0"},
             // the last of the saved registers, no built-in names it
-            .slot_register{"s11"},
+            .receiver_register{"s11"},
             .variables_base_past_vars_bytes{variables_base_past_vars_bytes_},
             .scratch_registers{scratch_registers_},
             .target_calls{

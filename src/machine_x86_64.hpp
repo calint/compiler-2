@@ -1968,7 +1968,7 @@ class machine_x86_64 final : public machine {
             .stack_limit_address{},
             .frame_base_register{"rbx"},
             .variables_base_register{"rbp"},
-            .slot_register{"r11"},
+            .receiver_register{"r11"},
             .variables_base_past_vars_bytes{std::nullopt},
             .scratch_registers{scratch_registers_},
             .target_calls{
