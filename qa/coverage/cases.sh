@@ -7122,7 +7122,7 @@ SRC=2237 && COMPERR
 # a constructor called through a value that hides its type names the value
 SRC=2238 && COMPERR
 
-# a hex escape that ends inside a UTF-8 character quotes the character whole
+# a hex escape ends before a UTF-8 character, which is not quoted
 SRC=2239 && COMPERR
 
 # a value after 'return' that starts with an operator is reported as a value
@@ -7885,3 +7885,6 @@ SRC=2962 && EXP=0 && DIFFNOPT
 
 # a generic parameter named like the base of its generic type
 SRC=2963 && COMPERR
+
+# a hex escape ends before the escape after it, which is not quoted
+SRC=2990 && COMPERR

@@ -1,0 +1,5 @@
+# a hex escape ends before the escape after it, which is not quoted
+
+func main() {
+    var s = "\x4\n"
+}

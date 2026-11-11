@@ -1,4 +1,4 @@
 
-2115.baz:3:14: unsupported escape '\x1g'
+2115.baz:3:14: unsupported escape '\x1'
     var c = '\x1g'
-             ^~~~
+             ^~~

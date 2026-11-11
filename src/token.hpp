@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <array>
 #include <cassert>
+#include <cctype>
 #include <charconv>
 #include <cstddef>
 #include <cstdint>
@@ -495,9 +496,9 @@ class token final {
     }
 
     // the bytes after a backslash that make up its escape: a hex escape spans
-    // the 'x' and two digits, any other one character with the continuation
-    // bytes its UTF-8 lead byte announces, so a message quotes it whole and a
-    // byte after an ASCII escape stays data, e.g. '\é'
+    // the 'x' and up to two digits, any other one character with the
+    // continuation bytes its UTF-8 lead byte announces, so a message quotes it
+    // whole and a byte after an ASCII escape stays data, e.g. '\é'
     [[nodiscard]] static auto escape_length(const std::string_view after)
         -> size_t {
 
@@ -506,16 +507,17 @@ class token final {
 
         assert(not after.empty());
 
-        // a hex escape that ends inside a UTF-8 character takes the rest of
-        // it, e.g. '\x4é'; hex digits are ASCII, a decodable one never does
+        // a hex escape ends at a character that is no hex digit, so a message
+        // quotes neither the escape after it nor a part of a UTF-8 character,
+        // e.g. '\x4' of '\x4\n'
         if (after.starts_with('x')) {
-            constexpr unsigned char first_non_ascii{0x80};
+            constexpr size_t max_size{3};
+            // note: 3 for the 'x' and two digits
 
-            size_t size{3};
-            while (size < after.size() and
-                   static_cast<unsigned char>(after.at(size - 1)) >=
-                       first_non_ascii and
-                   is_utf8_continuation(after.at(size))) {
+            size_t size{1};
+            while (size < max_size and size < after.size() and
+                   std::isxdigit(static_cast<unsigned char>(after.at(size))) !=
+                       0) {
 
                 ++size;
             }

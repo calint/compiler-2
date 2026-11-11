@@ -1,6 +1,16 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 335 (2026-11-11, CA confirming round: tokens, strings,
+    dat and include)
+    => done (2026-11-11): an invalid hex escape was quoted with the escape
+       after it ('"\x4\n"' gave 'unsupported escape '\x4\''):
+       'token::escape_length' takes the 'x' and at most two hex digits, the
+       loop over the rest of a UTF-8 character goes; 0713, 2115 and 2239
+       quote less, test 2990; numbers, characters, strings, shared string
+       constants, dat initializers (two model fuzzers, 880 seeds), include
+       resolution and error positions agree on three targets; 18600 lexical
+       mutants found no crash
 [x] easy: round 334 (2026-11-11, CC confirming round: readability of
     'toc' and 'machine')
     => done (2026-11-11): 'slot_register' carried the receiver of a method,

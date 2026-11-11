@@ -1,4 +1,4 @@
-# a hex escape that ends inside a UTF-8 character quotes the character whole
+# a hex escape ends before a UTF-8 character, which is not quoted
 
 func main() {
     var s = "\x4é"
