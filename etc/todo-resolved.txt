@@ -1,6 +1,16 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 338 (2026-11-11, CE confirming round: design of 'toc'
+    and the calls)
+    => done (2026-11-11): 'loop_target' copied two fields of the loop scope
+       for its one user: 'scope_stack::innermost_loop' returns the scope
+       ('stmt_loop_jump' reads 'name' and 'continue_label');
+       'storage_layout::assert_total_fits_target' is private; 11 lines
+       fewer, listings equal; 10 candidates rejected (the temporaries of
+       inline and noinline calls follow different rules, derived parameter
+       order is fragile, the register trace and scopes meet in
+       'scope_entry')
 [x] easy: round 337 (2026-11-11, BH the default type mixes with fixed
     widths alike on every target)
     => done (2026-11-11): on rv32i 'int' was the type object of 'i32', so

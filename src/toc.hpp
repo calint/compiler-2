@@ -51,7 +51,8 @@
 //   options, usage  'check_options', 'usage_statistics'
 //   'scope_stack'   the scopes from the globals to the innermost scope and
 //                   'lookup', the one rule of what a name means
-//                   ('name_meaning'), the target of 'break' ('loop_target')
+//                   ('name_meaning'), the target of 'break'
+//                   ('innermost_loop')
 //   'storage_layout' where variables are placed and how much storage is used
 //   'builtin_roles' the types the front end needs by role
 //   name errors     'throw_invalid_name', 'throw_unparsed_number' and
@@ -1021,12 +1022,6 @@ struct usage_statistics {
     std::vector<std::string> uninstantiated_generics;
 };
 
-// a loop named by its label and where its 'continue' jumps
-struct loop_target {
-    std::string_view label;
-    std::string_view continue_label;
-};
-
 // what a name means where it is used, see 'scope_stack::lookup'
 struct name_meaning {
     enum class kind : uint8_t { none, variable, binding, constant };
@@ -1083,7 +1078,7 @@ class scope_stack final {
     // checked at the parse, which reaches the branches that are not compiled,
     // e.g. the 'break' of 'if 1 == 2 { break }'
     auto assert_in_loop(const token& src_loc_tk) const -> void {
-        if (not innermost_loop()) {
+        if (innermost_loop() == nullptr) {
             throw compile_error{src_loc_tk,
                                 std::format("{} is not in a loop",
                                             in_quotes(src_loc_tk.text()))};
@@ -1155,20 +1150,15 @@ class scope_stack final {
     }
 
     // the innermost 'loop' or 'foo' of the function, the target of a 'break'
-    // or a 'continue'
-    [[nodiscard]] auto innermost_loop() const -> std::optional<loop_target> {
+    // or a 'continue'; null outside a loop
+    [[nodiscard]] auto innermost_loop() const -> const scope* {
         const std::optional<size_t> index{innermost_loop_index()};
 
         if (not index) {
-            return std::nullopt;
+            return nullptr;
         }
 
-        const scope& loop{scopes_.at(*index)};
-
-        return loop_target{
-            .label{loop.name()},
-            .continue_label{loop.continue_label()},
-        };
+        return &scopes_.at(*index);
     }
 
     // only the scope of the globals is open
@@ -1560,30 +1550,6 @@ class storage_layout final {
             sum_storage_size(vars_start_bytes(), vars_capacity_bytes_));
     }
 
-    // the declaration that makes the data and variables reach what the target
-    // addresses is the error, not the end of the build; checked before the
-    // scope holds the bytes
-    auto assert_total_fits_target(const token& src_loc_tk,
-                                  const size_t total_bytes) const -> void {
-
-        const ::machine& x{machine_.get()};
-
-        const size_t max_bytes{x.max_storage_bytes()};
-
-        // note: below, the code needs room too and a type stays below the
-        //       end of the address space
-
-        if (total_bytes < max_bytes) {
-            return;
-        }
-
-        throw compile_error{
-            src_loc_tk,
-            std::format("data and variables of {} B reach the {} B that the "
-                        "target addresses",
-                        total_bytes, max_bytes)};
-    }
-
     // a scope with a frame is compiled; the frames do not nest, a noinline
     // body is compiled after the body that calls it
     auto begin_frame() -> void {
@@ -1683,6 +1649,30 @@ class storage_layout final {
     }
 
   private:
+    // the declaration that makes the data and variables reach what the target
+    // addresses is the error, not the end of the build; checked before the
+    // scope holds the bytes
+    auto assert_total_fits_target(const token& src_loc_tk,
+                                  const size_t total_bytes) const -> void {
+
+        const ::machine& x{machine_.get()};
+
+        const size_t max_bytes{x.max_storage_bytes()};
+
+        // note: below, the code needs room too and a type stays below the
+        //       end of the address space
+
+        if (total_bytes < max_bytes) {
+            return;
+        }
+
+        throw compile_error{
+            src_loc_tk,
+            std::format("data and variables of {} B reach the {} B that the "
+                        "target addresses",
+                        total_bytes, max_bytes)};
+    }
+
     auto assert_vars_capacity(const token& src_loc_tk, const var_info& var,
                               const size_t allocated_size_bytes) const -> void {
 
