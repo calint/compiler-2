@@ -424,25 +424,7 @@ class machine_x86_64 final : public machine {
                 immediate(size_bytes / size_qword_));
         }
 
-        // a part that differs decides the result, so the rest is skipped
-        std::string end_label;
-
-        if (compares.size() > 1) {
-            end_label =
-                std::format(".Lbaz_equal.{}", next_local_label_number());
-        }
-
-        for (const auto [i, compare] : std::views::enumerate(compares)) {
-            if (i != 0) {
-                assembler_.jcc(site.indent, condition::ne, end_label);
-            }
-
-            assembler_.instruction(site.indent, compare);
-        }
-
-        if (not end_label.empty()) {
-            assembler_.label(site.indent, end_label);
-        }
+        emit_compares(site.indent, compares);
 
         store_condition(site, request.inverted ? condition::ne : condition::e,
                         request.dst);
@@ -1328,6 +1310,30 @@ class machine_x86_64 final : public machine {
         if (not is_in_place) {
             mov(site, product, left);
         }
+    }
+
+    // a part that differs decides the result, so the rest is skipped
+    auto emit_compares(const size_t indent, const std::vector<op>& compares)
+        -> void {
+
+        if (compares.size() == 1) {
+            assembler_.instruction(indent, compares.front());
+            return;
+        }
+
+        const std::string end_label{
+            std::format(".Lbaz_equal.{}", next_local_label_number()),
+        };
+
+        for (const auto [i, compare] : std::views::enumerate(compares)) {
+            if (i != 0) {
+                assembler_.jcc(indent, condition::ne, end_label);
+            }
+
+            assembler_.instruction(indent, compare);
+        }
+
+        assembler_.label(indent, end_label);
     }
 
     // matches the widths of the operands with scratch registers and sign

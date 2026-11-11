@@ -184,6 +184,33 @@ struct full_list {
     std::string unclosed;
 };
 
+// the '}' after the last item of a full list, after a trailing ',' too,
+// which is appended to 'delims_tk'
+[[nodiscard]] inline auto close_full_list(tokenizer& tz,
+                                          std::vector<token>& delims_tk,
+                                          const full_list& full) -> token {
+
+    const std::optional<token> delimiter_tk{tz.is_next_char_token(',')};
+
+    if (delimiter_tk) {
+        delims_tk.emplace_back(*delimiter_tk);
+    }
+
+    if (const std::optional<token> close_brace_tk{
+            tz.is_next_char_token('}'),
+        }) {
+
+        return *close_brace_tk;
+    }
+
+    // the error is at the value that is too much
+    if (delimiter_tk and starts_value(tz)) {
+        throw compile_error{tz, full.too_many};
+    }
+
+    throw compile_error{tz, full.unclosed};
+}
+
 // the items of a list in braces after its '{' and the delimiters between
 // them, appended to 'delims_tk', up to the '}' it returns; 'full' is none
 // when the length is not known; 'parse_item' parses the item at an index
@@ -220,26 +247,7 @@ parse_braced_items(tokenizer& tz, std::vector<token>& delims_tk,
     // note: only a full list leaves the loop
     assert(full);
 
-    // a full list ends with its '}', after a trailing ',' too
-    const std::optional<token> delimiter_tk{tz.is_next_char_token(',')};
-
-    if (delimiter_tk) {
-        delims_tk.emplace_back(*delimiter_tk);
-    }
-
-    if (const std::optional<token> close_brace_tk{
-            tz.is_next_char_token('}'),
-        }) {
-
-        return *close_brace_tk;
-    }
-
-    // the error is at the value that is too much
-    if (delimiter_tk and starts_value(tz)) {
-        throw compile_error{tz, full->too_many};
-    }
-
-    throw compile_error{tz, full->unclosed};
+    return close_full_list(tz, delims_tk, *full);
 }
 
 // where a part of a value is in its destination, e.g. the field 'a' and the
@@ -366,6 +374,24 @@ struct write_step {
 // check of an assignment reads it, so what is checked is what is emitted
 using write_plan = std::vector<write_step>;
 
+// stores the bytes of 'bytes' at 'part_dst'
+inline auto emit_bytes_write(toc& tc, const size_t indent,
+                             const bytes_write& bytes,
+                             const destination& part_dst) -> void {
+
+    const auto add_constant{
+        [&](const std::string_view laid_out) -> std::string {
+            return tc.add_read_only_constant(
+                bytes.constant_kind, bytes.src_loc_tk, std::string{laid_out});
+        },
+    };
+
+    machine& x{tc.machine()};
+
+    x.store_bytes({bytes.src_loc_tk, indent}, bytes.bytes, part_dst.operand(),
+                  part_dst.type_ref().alignment(), add_constant);
+}
+
 // writes the steps of 'plan' at 'dst'
 inline auto emit_write_plan(toc& tc, const size_t indent,
                             const write_plan& plan, const destination& dst)
@@ -388,14 +414,7 @@ inline auto emit_write_plan(toc& tc, const size_t indent,
                 std::get_if<bytes_write>(&step.action),
             }) {
 
-            x.store_bytes({bytes->src_loc_tk, indent}, bytes->bytes,
-                          part_dst.operand(), part_dst.type_ref().alignment(),
-                          [&](const std::string_view laid_out) -> std::string {
-                              return tc.add_read_only_constant(
-                                  bytes->constant_kind, bytes->src_loc_tk,
-                                  std::string{laid_out});
-                          });
-
+            emit_bytes_write(tc, indent, *bytes, part_dst);
             continue;
         }
 

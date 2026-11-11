@@ -435,19 +435,8 @@ class expr_arith final : public statement {
 
         const toc::parse_nesting_scope nesting{tc, tz};
 
-        // the caller might have parsed the first element: the element before a
-        // higher-precedence operator or a zero value
-        // e.g. the 'b' of 'b * c' in 'a + b * c'
-        if (opts.first_expression) {
-            exprs_.emplace_back(std::move(opts.first_expression));
-        } else {
-            parsed_element first{
-                parse_element(tc, tz, opts.destination_type),
-            };
-
-            is_first_enclosed_ = first.is_enclosed;
-            exprs_.emplace_back(std::move(first.node));
-        }
+        add_first_element(tc, tz, std::move(opts.first_expression),
+                          opts.destination_type);
 
         // the first element decides the width the list is computed at
         // e.g. 'x + 1' has the type of the variable 'x'
@@ -508,17 +497,7 @@ class expr_arith final : public statement {
             // e.g. the '-' of 'a + b - c'
             precedence = next_precedence;
 
-            const token op_tk{tz.seen_operator()};
-
-            assert_not_doubled_logical(tz, op_tk);
-
-            ops_.push_back({
-                .tk{op_tk},
-                .op{*next_op},
-            });
-
-            exprs_.emplace_back(
-                parse_element(tc, tz, opts.destination_type).node);
+            append_element(tc, tz, *next_op, opts.destination_type);
         }
     }
 
@@ -799,6 +778,40 @@ class expr_arith final : public statement {
     }
 
   private:
+    // the caller might have parsed the first element: the element before a
+    // higher-precedence operator or a zero value
+    // e.g. the 'b' of 'b * c' in 'a + b * c'
+    auto add_first_element(toc& tc, tokenizer& tz,
+                           std::unique_ptr<statement> first_expression,
+                           const type* const destination_type) -> void {
+
+        if (first_expression) {
+            exprs_.emplace_back(std::move(first_expression));
+            return;
+        }
+
+        parsed_element first{parse_element(tc, tz, destination_type)};
+
+        is_first_enclosed_ = first.is_enclosed;
+        exprs_.emplace_back(std::move(first.node));
+    }
+
+    // the operator 'op' at 'tz' and the element after it
+    auto append_element(toc& tc, tokenizer& tz, const arithmetic_operator op,
+                        const type* const destination_type) -> void {
+
+        const token op_tk{tz.seen_operator()};
+
+        assert_not_doubled_logical(tz, op_tk);
+
+        ops_.push_back({
+            .tk{op_tk},
+            .op{op},
+        });
+
+        exprs_.emplace_back(parse_element(tc, tz, destination_type).node);
+    }
+
     // parentheses group an operation, around one plain element they mean
     // nothing, e.g. '(x)' is 'x' and '-(x)' is '-x'
     auto assert_parentheses_group() const -> void {

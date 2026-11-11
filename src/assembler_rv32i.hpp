@@ -1380,14 +1380,7 @@ class assembler_rv32i final : public assembler {
             offset += image_size_bytes(l);
         }
 
-        for (size_t index{1}; index < section_count_; ++index) {
-            const size_t previous_end{
-                image.bases.at(index - 1) + image.sizes.at(index - 1),
-            };
-
-            image.bases.at(index) =
-                align_up(previous_end, image.alignments.at(index));
-        }
+        place_sections(image);
 
         return image;
     }
@@ -2211,6 +2204,19 @@ class assembler_rv32i final : public assembler {
             encode_upper(auipc_encoding_, base, upper_part(distance)),
             encode_immediate(second_encoding, rd, base, lower_part(distance)),
         };
+    }
+
+    // each section starts at the end of the previous one, aligned to the
+    // largest alignment in it
+    static auto place_sections(image_layout& image) -> void {
+        for (size_t index{1}; index < section_count_; ++index) {
+            const size_t previous_end{
+                image.bases.at(index - 1) + image.sizes.at(index - 1),
+            };
+
+            image.bases.at(index) =
+                align_up(previous_end, image.alignments.at(index));
+        }
     }
 
     [[nodiscard]] static auto register_fields(const uint8_t rd,

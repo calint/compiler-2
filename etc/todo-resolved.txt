@@ -1,6 +1,14 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 324 (2026-11-11, BF complexity, fourth pass)
+    => done (2026-11-11): 'parse_builtin' splits into
+       'assert_builtin_place' and 'make_builtin' (score 13.3 to 6.8);
+       'emit_write_plan' names its write 'emit_bytes_write'; the end of a
+       full list is 'close_full_list'; x86_64 'memory_equal' names
+       'emit_compares' and returns early for one compare (10.0 to 5.0);
+       rv32i 'layout_image' names 'place_sections'; 'expr_arith' names
+       'add_first_element' and 'append_element'; listings equal
 [x] easy: round 323 (2026-11-11, BB the front end, stored and repeated
     facts)
     => done (2026-11-11): 'stmt_loop_jump' reads 'break' from its token

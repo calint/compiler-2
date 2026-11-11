@@ -58,9 +58,74 @@
 // where a call of a built-in is parsed: in a value, or alone as a statement
 enum class builtin_place : uint8_t { value, statement };
 
+// a built-in 'fn' where it stands, null for a conversion, which has a value
+// only; e.g. 'exit' has no value and 'arrays_equal' is no statement
+inline auto
+assert_builtin_place(const token& tk,
+                     const reserved_names::builtin_function* const fn,
+                     const builtin_place at) -> void {
+
+    const reserved_names::builtin_use use{
+        fn == nullptr ? reserved_names::builtin_use::value : fn->use,
+    };
+
+    if (at == builtin_place::value and
+        use == reserved_names::builtin_use::statement) {
+
+        throw_no_value(tk, tk.text());
+    }
+
+    if (at == builtin_place::statement and
+        use == reserved_names::builtin_use::value) {
+
+        throw_discarded_result(tk, tk.text());
+    }
+}
+
+// the statement of the built-in at 'tk', a conversion to 'converted' when it
+// is not null
+inline auto make_builtin(toc& tc, tokenizer& tz, const token& tk,
+                         const type* const converted, unary_ops& uops)
+    -> std::unique_ptr<statement> {
+
+    if (const stmt_builtin_io::io_function* const io{
+            stmt_builtin_io::find(tk.text()),
+        }) {
+
+        return std::make_unique<stmt_builtin_io>(tc, *io, std::move(uops), tk,
+                                                 tz);
+    }
+
+    if (tk.is_text("array_copy")) {
+        return std::make_unique<stmt_builtin_array_copy>(tc, tk, tz);
+    }
+
+    if (tk.is_text("exit")) {
+        return std::make_unique<stmt_builtin_exit>(tc, tk, tz);
+    }
+
+    if (tk.is_text("array_length")) {
+        return std::make_unique<stmt_builtin_array_length>(tc, std::move(uops),
+                                                           tk, tz);
+    }
+
+    if (tk.is_text("arrays_equal")) {
+        return std::make_unique<stmt_builtin_arrays_equal>(tc, std::move(uops),
+                                                           tk, tz);
+    }
+
+    // note: every built-in of 'reserved_names::builtin_functions' has a
+    //       branch above, what is left is an integer conversion
+
+    assert(converted != nullptr);
+
+    return std::make_unique<stmt_builtin_convert>(tc, std::move(uops), tk,
+                                                  *converted, tz);
+}
+
 // a call of the built-in at 'tk', classified as 'tm', null when 'tk' names
-// none; the catalog says where it may stand, e.g. 'exit' has no value and
-// 'arrays_equal' is no statement; 'uops' are taken only by a statement made
+// none; the catalog says where it may stand ('assert_builtin_place'); 'uops'
+// are taken only by a statement made
 inline auto parse_builtin(toc& tc, tokenizer& tz, const token& tk,
                           const term_kind tm, unary_ops& uops,
                           const builtin_place at)
@@ -93,56 +158,9 @@ inline auto parse_builtin(toc& tc, tokenizer& tz, const token& tk,
         return nullptr;
     }
 
-    // a conversion has a value only
-    const reserved_names::builtin_use use{
-        fn == nullptr ? reserved_names::builtin_use::value : fn->use,
-    };
+    assert_builtin_place(tk, fn, at);
 
-    if (at == builtin_place::value and
-        use == reserved_names::builtin_use::statement) {
-
-        throw_no_value(tk, tk.text());
-    }
-
-    if (at == builtin_place::statement and
-        use == reserved_names::builtin_use::value) {
-
-        throw_discarded_result(tk, tk.text());
-    }
-
-    if (const stmt_builtin_io::io_function* const io{
-            stmt_builtin_io::find(tk.text()),
-        }) {
-
-        return std::make_unique<stmt_builtin_io>(tc, *io, std::move(uops), tk,
-                                                 tz);
-    }
-
-    if (tk.is_text("array_copy")) {
-        return std::make_unique<stmt_builtin_array_copy>(tc, tk, tz);
-    }
-
-    if (tk.is_text("exit")) {
-        return std::make_unique<stmt_builtin_exit>(tc, tk, tz);
-    }
-
-    if (tk.is_text("array_length")) {
-        return std::make_unique<stmt_builtin_array_length>(tc, std::move(uops),
-                                                           tk, tz);
-    }
-
-    if (tk.is_text("arrays_equal")) {
-        return std::make_unique<stmt_builtin_arrays_equal>(tc, std::move(uops),
-                                                           tk, tz);
-    }
-
-    // note: every built-in of 'reserved_names::builtin_functions' has a
-    //       branch above, what is left is an integer conversion
-
-    assert(fn == nullptr and converted != nullptr);
-
-    return std::make_unique<stmt_builtin_convert>(tc, std::move(uops), tk,
-                                                  *converted, tz);
+    return make_builtin(tc, tz, tk, converted, uops);
 }
 
 // e.g. the 'a' of 'return a', a value on the line of the 'return' that no
