@@ -1,3 +1,4 @@
+#include <cassert>
 #include <cstdint>
 #include <cstdio>
 #include <fcntl.h>
@@ -45,22 +46,19 @@ static auto bus(uint32_t const address, rv32i::bus_op_width const op_width,
     //            3|        |        |        |   x    |
     //             +--------+--------+--------+--------+
     //  HALF_WORD 0|   x    |   x    |        |        |
-    //            1|        ignored (read 0)           |
     //            2|        |        |   x    |   x    |
-    //            3|        ignored (read 0)           |
     //             +--------+--------+--------+--------+
-    //  WORD      0|   x    |   x    |   x    |   x    |  lane forced to 0
+    //  WORD      0|   x    |   x    |   x    |   x    |
     //             +--------+--------+--------+--------+
 
     uint32_t const ram_address = address & ~uint32_t(3);
 
-    // byte lane within the word; word accesses ignore the 2 low address bits
-    uint32_t const lane =
-        op_width == rv32i::bus_op_width::WORD ? 0 : address & uint32_t(3);
+    // byte lane within the word
+    uint32_t const lane = address & uint32_t(3);
 
-    // 'ramio' does not write and reads 0 for half words at odd lanes
-    bool const is_ignored =
-        op_width == rv32i::bus_op_width::HALF_WORD && (lane & 1) != 0;
+    // note: the core traps a misaligned half word or word before the bus
+    //       ('ramio' would ignore it), so every access is aligned
+    assert(lane % uint32_t(op_width) == 0);
 
     // check if address is not an IO address and outside the memory range
     if (address < osqa::io_addresses_start &&
@@ -110,9 +108,6 @@ static auto bus(uint32_t const address, rv32i::bus_op_width const op_width,
             break;
         }
         default: {
-            if (is_ignored) {
-                break;
-            }
             for (uint32_t i = 0; i < uint32_t(op_width); ++i) {
                 ram[ram_address + lane + i] = uint8_t(data >> (i * 8));
             }
@@ -175,9 +170,6 @@ static auto bus(uint32_t const address, rv32i::bus_op_width const op_width,
         }
         default: {
             data = 0;
-            if (is_ignored) {
-                break;
-            }
             for (uint32_t i = 0; i < uint32_t(op_width); ++i) {
                 data |= uint32_t(ram[ram_address + lane + i]) << (i * 8);
             }

@@ -1,5 +1,6 @@
 // aligned accesses of each kind that must not trap, then the one misaligned
-// access selected by 'CASE'; without a trap the program exits with 0
+// access, odd jump or unsupported encoding selected by 'CASE'; without a trap
+// the program exits with 0
 
 .global _start
 
@@ -26,8 +27,18 @@ _start:
 	sh x6, 1(x5)
 #elif CASE == 6
 	sw x6, 2(x5)
+#elif CASE == 7
+	jalr x0, %lo(done + 1)(x0)	# an odd target traps at the fetch
+#elif CASE == 8
+	.word 0x0252c333		# 'div x6, x5, x5' (M), not run as 'xor'
+#elif CASE == 9
+	.word 0x02029313		# 'slli x6, x5, 0' with 'funct7' 1
+#elif CASE == 10
+	.word 0x00029067		# 'jalr x0, 0(x5)' with 'funct3' 1
+#elif CASE == 11
+	.word 0x0000200f		# 'fence' with 'funct3' 2
 #else
-#error "CASE is 1 to 6"
+#error "CASE is 1 to 11"
 #endif
 done:
 	ebreak

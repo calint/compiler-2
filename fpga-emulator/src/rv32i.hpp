@@ -85,7 +85,7 @@ public:
 #ifdef RV32I_DEBUG
         printf("addi x%u, x%u, %d\n", rd, rs1, I_imm12);
 #endif
-        regs_[rd] = regs_[rs1] + I_imm12;
+        regs_[rd] = int32_t(uint32_t(regs_[rs1]) + uint32_t(I_imm12));
         break;
       }
       case FUNCT3_SLTI: {
@@ -128,6 +128,9 @@ public:
 #ifdef RV32I_DEBUG
         printf("slli x%u, x%u, %u\n", rd, rs1, shift_amount);
 #endif
+        if (FUNCT7_from(instruction) != 0) {
+          return 11;
+        }
         regs_[rd] = regs_[rs1] << shift_amount;
         break;
       }
@@ -166,6 +169,12 @@ public:
       uint32_t const rs2 = RS2_from(instruction);
       uint32_t const rd = RD_from(instruction);
       uint32_t const funct3 = FUNCT3_from(instruction);
+      // note: only 'sub' and 'sra' have another 'funct7' than 0, so that an
+      //       extension's op such as 'div' is not run as 'xor'
+      if (funct3 != FUNCT3_ADD_SUB and funct3 != FUNCT3_SRL_SRA and
+          FUNCT7_from(instruction) != 0) {
+        return 12;
+      }
       switch (funct3) {
       case FUNCT3_ADD_SUB: {
         uint32_t const FUNCT7 = FUNCT7_from(instruction);
@@ -174,14 +183,14 @@ public:
 #ifdef RV32I_DEBUG
           printf("add x%u, x%u, x%u\n", rd, rs1, rs2);
 #endif
-          regs_[rd] = regs_[rs1] + regs_[rs2];
+          regs_[rd] = int32_t(uint32_t(regs_[rs1]) + uint32_t(regs_[rs2]));
           break;
         }
         case FUNCT7_SUB: {
 #ifdef RV32I_DEBUG
           printf("sub x%u, x%u, x%u\n", rd, rs1, rs2);
 #endif
-          regs_[rd] = regs_[rs1] - regs_[rs2];
+          regs_[rd] = int32_t(uint32_t(regs_[rs1]) - uint32_t(regs_[rs2]));
           break;
         }
         default:
@@ -266,7 +275,7 @@ public:
       uint32_t const rs1 = RS1_from(instruction);
       uint32_t const rs2 = RS2_from(instruction);
       int32_t const S_imm12 = S_imm12_from(instruction);
-      uint32_t const address = uint32_t(regs_[rs1] + S_imm12);
+      uint32_t const address = uint32_t(regs_[rs1]) + uint32_t(S_imm12);
       uint32_t value = uint32_t(regs_[rs2]);
       uint32_t const funct3 = FUNCT3_from(instruction);
       switch (funct3) {
@@ -315,7 +324,7 @@ public:
       uint32_t const rs1 = RS1_from(instruction);
       uint32_t const rd = RD_from(instruction);
       int32_t const I_imm12 = I_imm12_from(instruction);
-      uint32_t const address = uint32_t(regs_[rs1] + I_imm12);
+      uint32_t const address = uint32_t(regs_[rs1]) + uint32_t(I_imm12);
       uint32_t value = 0;
       uint32_t const funct3 = FUNCT3_from(instruction);
       switch (funct3) {
@@ -422,7 +431,11 @@ public:
 #ifdef RV32I_DEBUG
       printf("jalr x%u, %d(x%u)\n", rd, I_imm12, rs1);
 #endif
-      next_pc = uint32_t(regs_[rs1] + I_imm12);
+      if (FUNCT3_from(instruction) != 0) {
+        return 13;
+      }
+      // note: an odd target traps at the fetch; the soft core keeps it
+      next_pc = uint32_t(regs_[rs1]) + uint32_t(I_imm12);
       regs_[rd] = int32_t(pc_ + 4);
 #ifdef RV32I_DEBUG
       printf("  x%u=0x%x\n", rs1, regs_[rs1]);
@@ -508,6 +521,10 @@ public:
 #ifdef RV32I_DEBUG
       printf("fence / pause\n");
 #endif
+      // 'fence.i' and the reserved forms are not supported
+      if (FUNCT3_from(instruction) != 0) {
+        return 14;
+      }
       // NOP
       break;
     }

@@ -1,6 +1,17 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 320 (2026-11-11, AU the fpga emulator against qemu)
+    => done (2026-11-11): 20000 random programs of 60 and 2000 of 300
+       instructions agree with qemu; the emulator stops on what rv32i does
+       not allow although the soft core runs it ('core.sv' ignores 'funct7'
+       and treats other opcodes as no operation): an extension's 'funct7'
+       (12), 'slli' with 'funct7' (11), 'jalr' with 'funct3' (13), 'fence'
+       with 'funct3' 2 to 7 (14); an odd 'jalr' target stops at the fetch
+       as before (the core keeps the odd pc; test case 7); the arithmetic
+       of the emulator is unsigned (signed overflow in C++ was undefined);
+       the bus asserts aligned access (the core stops first, the half word
+       at an odd lane was unreachable); cases 7 to 11 in 'misaligned.S'
 [x] easy: round 319 (2026-11-11, AR the pair of a source token and an
     indent in the backend)
     => done (2026-11-11): the backend takes 'emit_site' (the token the
