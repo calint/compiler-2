@@ -2501,6 +2501,36 @@ class stmt_call final : public statement {
         return result;
     }
 
+    // e.g. 'a' and 'b + 1' of 'f(a, b + 1)'
+    auto parse_argument(toc& tc, tokenizer& tz, const size_t arg_index,
+                        const stmt_def_func_param& param,
+                        const std::span<const size_t> deducing_args) -> void {
+
+        // e.g. the 'bs' of 'f(bs)' for 'gs bool[]', a path as the array of a
+        // built-in, not a value of the element type, which for a 'bool' is a
+        // condition that rejects a whole array
+        if (param.is_array()) {
+            stmt_identifier array{
+                parse_array_parameter_argument(tc, tz, param.name()),
+            };
+
+            args_.push_back(path_argument(std::move(array)));
+
+            return;
+        }
+
+        // a 'mut' argument names its type, so 'f(pt{1, 2})' is rejected as
+        // not a variable rather than for the type it writes
+        const bool is_written_type{
+            std::ranges::contains(deducing_args, arg_index) or
+                not param.is_read_only(),
+        };
+
+        args_.emplace_back(tc, tz, param.get_type(),
+                           is_written_type ? literal_typing::written
+                                           : literal_typing::from_destination);
+    }
+
     // from the '(' on, 'what' names the callee; a method receiver is already
     // in 'args_', the parameter gives the type of a literal argument unless
     // its type was deduced from it, see 'generic_call::deducing_args'
@@ -2521,6 +2551,8 @@ class stmt_call final : public statement {
         args_.reserve(params.size());
 
         for (size_t i{first}; i < params.size(); ++i) {
+            const stmt_def_func_param& param{params.at(i)};
+
             // counted without a receiver, like 'deducing_args'
             const size_t arg_index{i - first_argument_index()};
 
@@ -2529,48 +2561,14 @@ class stmt_call final : public statement {
             // e.g. 'f()' of 'func f(x)'
             if (tz.peek_char_after_whitespace() == ')') {
                 throw compile_error{
-                    tz,
-                    missing_argument_text(arg_index + 1, params.at(i).name())};
+                    tz, missing_argument_text(arg_index + 1, param.name())};
             }
 
-            // e.g. the ',' of 'f(a, b)'
             if (i != first) {
-                const std::string message{
-                    missing_delimiter_text(arg_index + 1, params.at(i).name()),
-                };
-
-                const token delimiter_tk{tz.expect_char_token(',', message)};
-
-                tz.assert_no_trailing_delimiter(delimiter_tk, ')', "a call");
-
-                arg_delims_tk_.emplace_back(delimiter_tk);
+                read_argument_delimiter(tz, arg_index, param);
             }
 
-            // e.g. the 'bs' of 'f(bs)' for 'gs bool[]', a path as the array
-            // of a built-in, not a value of the element type, which for a
-            // 'bool' is a condition that rejects a whole array
-            if (params.at(i).is_array()) {
-                stmt_identifier array{
-                    parse_array_parameter_argument(tc, tz, params.at(i).name()),
-                };
-
-                args_.push_back(path_argument(std::move(array)));
-
-                continue;
-            }
-
-            // a 'mut' argument names its type, so 'f(pt{1, 2})' is rejected
-            // as not a variable rather than for the type it writes
-            const bool is_written_type{
-                std::ranges::contains(deducing_args, arg_index) or
-                    not params.at(i).is_read_only(),
-            };
-
-            // e.g. 'a' and 'b + 1' of 'f(a, b + 1)'
-            args_.emplace_back(tc, tz, params.at(i).get_type(),
-                               is_written_type
-                                   ? literal_typing::written
-                                   : literal_typing::from_destination);
+            parse_argument(tc, tz, arg_index, param, deducing_args);
         }
 
         assert_no_surplus_argument(tz, callee().name(),
@@ -2582,6 +2580,21 @@ class stmt_call final : public statement {
         assert_result_not_accessed(tz);
 
         check_arguments(tc);
+    }
+
+    // e.g. the ',' of 'f(a, b)'
+    auto read_argument_delimiter(tokenizer& tz, const size_t arg_index,
+                                 const stmt_def_func_param& param) -> void {
+
+        const std::string message{
+            missing_delimiter_text(arg_index + 1, param.name()),
+        };
+
+        const token delimiter_tk{tz.expect_char_token(',', message)};
+
+        tz.assert_no_trailing_delimiter(delimiter_tk, ')', "a call");
+
+        arg_delims_tk_.emplace_back(delimiter_tk);
     }
 
     // the '(' after the callee, 'what' names the callee

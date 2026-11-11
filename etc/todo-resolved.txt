@@ -1,6 +1,14 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 308 (2026-11-11, AF complexity, second pass)
+    => done (2026-11-11): 10 more functions split into named steps or
+       flattened: 'stmt_if::compile' ('check_skipped_else', 'compile_else'),
+       'assert_no_read_of_written_part' (one named check per visitor),
+       'range_of' (four sibling cases), 'parse_checks', 'skip_to_unnested',
+       'finish_quoted_token' ('skip_past_closing_quote'), 'parse_variant'
+       ('parse_arith_value'), 'parse_operand' ('classify_operand'),
+       'stmt_call::parse_arguments'; listings and errors equal
 [x] easy: round 307 (2026-11-11, AB complexity of the functions by a
     measure; ZY bug hunt of rounds 301-305)
     => done (2026-11-11): the 8 functions of highest score (length,

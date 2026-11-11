@@ -377,40 +377,7 @@ class tokenizer final {
         // points at the opening quote, where the literal starts
         const token open_quote_tk{token::position(file_ix_, bgn_ix, at_line)};
 
-        const std::string_view unterminated{
-            is_string ? "unterminated string"
-                      : "unterminated character literal",
-        };
-
-        while (true) {
-            // a literal cannot span lines, the source is echoed in comments
-            if (is_eos() or peek_char() == '\n') {
-                throw compile_error{open_quote_tk, std::string{unterminated}};
-            }
-
-            const char ch{next_char()};
-
-            if (ch == quote) {
-                break;
-            }
-
-            if (ch != '\\' or is_eos()) {
-                continue;
-            }
-
-            // a line end after the backslash continues a string, a
-            // character literal is unterminated there
-            const bool is_line_end{peek_char() == '\n' or peek_char() == '\r'};
-
-            if (is_line_end and not is_string) {
-                continue;
-            }
-
-            // the escaped character may be a quote; a carriage return is
-            // followed by a line feed ('assert_source_well_formed')
-            std::ignore = is_next_char('\r');
-            skip_char();
-        }
+        skip_past_closing_quote(quote, open_quote_tk);
 
         const token literal_tk{finish_token(ws_before, at_line, bgn_ix)};
 
@@ -561,6 +528,49 @@ class tokenizer final {
     // reads a character the caller has no use for
     auto skip_char() -> void { std::ignore = next_char(); }
 
+    // the text of a literal opened by 'quote' up to and with its closing
+    // quote, which an escape does not close
+    auto skip_past_closing_quote(const char quote, const token& open_quote_tk)
+        -> void {
+
+        const bool is_string{quote == '"'};
+
+        const std::string_view unterminated{
+            is_string ? "unterminated string"
+                      : "unterminated character literal",
+        };
+
+        while (true) {
+            // a literal cannot span lines, the source is echoed in comments
+            if (is_eos() or peek_char() == '\n') {
+                throw compile_error{open_quote_tk, std::string{unterminated}};
+            }
+
+            const char ch{next_char()};
+
+            if (ch == quote) {
+                return;
+            }
+
+            if (ch != '\\' or is_eos()) {
+                continue;
+            }
+
+            // a line end after the backslash continues a string, a
+            // character literal is unterminated there
+            const bool is_line_end{peek_char() == '\n' or peek_char() == '\r'};
+
+            if (is_line_end and not is_string) {
+                continue;
+            }
+
+            // the escaped character may be a quote; a carriage return is
+            // followed by a line feed ('assert_source_well_formed')
+            std::ignore = is_next_char('\r');
+            skip_char();
+        }
+    }
+
     // moves to the next delimiter, e.g. past the 'abc' of 'abc+d'; stays at a
     // delimiter
     auto skip_to_delimiter() -> void {
@@ -595,18 +605,20 @@ class tokenizer final {
                 return true;
             }
 
+            const bool is_closer{closers.contains(next)};
+
+            if (is_closer and not expected_closers.ends_with(next)) {
+                return false;
+            }
+
+            if (is_closer) {
+                expected_closers.pop_back();
+            }
+
             const size_t opener_ix{openers.find(next)};
 
             if (opener_ix != std::string_view::npos) {
                 expected_closers.push_back(closers.at(opener_ix));
-            } else if (closers.contains(next)) {
-                if (expected_closers.empty() or
-                    expected_closers.back() != next) {
-
-                    return false;
-                }
-
-                expected_closers.pop_back();
             }
 
             skip_token();

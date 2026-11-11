@@ -1035,6 +1035,29 @@ class expr_any final : public statement {
         return bytes;
     }
 
+    // a number, or a generic call that takes the type of a 'bool'
+    // destination
+    [[nodiscard]] static auto parse_arith_value(toc& tc, tokenizer& tz,
+                                                const type& tp,
+                                                const literal_typing typing)
+        -> expr_arith {
+
+        const type* const destination_type{
+            typing == literal_typing::from_destination ? &tp : nullptr,
+        };
+
+        expr_arith value{tc, tz, expr_arith::options::plain(destination_type)};
+
+        if (not tp.is_bool()) {
+            assert_number_kind(value, tp);
+        }
+
+        // e.g. the '>' of 'int(a > 2)', which would end the number
+        expr_arith::assert_no_condition_next(tz);
+
+        return value;
+    }
+
     // the elements between the braces, e.g. '1, 2, 3' of '{1, 2, 3}'; a list
     // of a known length ends when it is full
     static auto parse_braced_elements(toc& tc, tokenizer& tz, const type& tp,
@@ -1134,21 +1157,7 @@ class expr_any final : public statement {
         if (not tp.is_bool() or (typing == literal_typing::from_destination and
                                  is_whole_generic_call(tc, tz))) {
 
-            const type* const destination_type{
-                typing == literal_typing::from_destination ? &tp : nullptr,
-            };
-
-            expr_arith value{tc, tz,
-                             expr_arith::options::plain(destination_type)};
-
-            if (not tp.is_bool()) {
-                assert_number_kind(value, tp);
-            }
-
-            // e.g. the '>' of 'int(a > 2)', which would end the number
-            expr_arith::assert_no_condition_next(tz);
-
-            return value;
+            return parse_arith_value(tc, tz, tp, typing);
         }
 
         expr_bool value{tc, tz.next_whitespace_token(), tz};

@@ -259,14 +259,14 @@ class bulk_operands final {
                  const bool count_lower_checked) const
             -> std::optional<machine::bounds_range> {
 
+            // note: a constant start with a constant count was checked at
+            //       compile time
+
+            if (not count_register and not start) {
+                return std::nullopt;
+            }
+
             if (not count_register) {
-                // note: a constant start with a constant count was checked at
-                //       compile time
-
-                if (not start) {
-                    return std::nullopt;
-                }
-
                 // note: a constant count is at most the length, rejected at
                 //       compile time otherwise
 

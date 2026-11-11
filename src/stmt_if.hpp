@@ -185,25 +185,13 @@ class stmt_if final : public statement {
             is_chain_ended = ends_chain(known);
         }
 
-        machine& x{tc.machine()};
-
         if (is_chain_ended) {
-            if (else_) {
-                tc.check_skipped([&] -> void {
-                    else_->code.compile(tc, indent, destination{});
-                });
-            }
+            check_skipped_else(tc, indent);
         } else {
-            // an empty 'else' is the path that skips every branch
-            paths.begin_path(is_start_reachable);
-
-            if (const stmt_block* const code{else_code()}) {
-                x.label(indent, else_label(if_label));
-                code->compile(tc, indent, destination{});
-            }
-
-            paths.join_path();
+            compile_else(tc, indent, if_label, paths, is_start_reachable);
         }
+
+        machine& x{tc.machine()};
 
         x.label(indent, label_after_if);
     }
@@ -246,6 +234,17 @@ class stmt_if final : public statement {
     }
 
   private:
+    // the 'else' after a branch whose condition is true never runs, it holds
+    // the compile rules too
+    auto check_skipped_else(toc& tc, const size_t indent) const -> void {
+        if (not else_) {
+            return;
+        }
+
+        tc.check_skipped(
+            [&] -> void { else_->code.compile(tc, indent, destination{}); });
+    }
+
     // the branch at 'branch_index': its condition at its label, its code and
     // the jump past the other branches; what it found of its condition
     [[nodiscard]] auto compile_branch_at(toc& tc, const size_t indent,
@@ -308,6 +307,24 @@ class stmt_if final : public statement {
         }
 
         return condition;
+    }
+
+    // an empty 'else' is the path that skips every branch, it starts where
+    // the condition of the last branch is false
+    auto compile_else(toc& tc, const size_t indent,
+                      const std::string_view if_label, toc::path_merge& paths,
+                      const bool is_start_reachable) const -> void {
+
+        paths.begin_path(is_start_reachable);
+
+        if (const stmt_block* const code{else_code()}) {
+            machine& x{tc.machine()};
+
+            x.label(indent, else_label(if_label));
+            code->compile(tc, indent, destination{});
+        }
+
+        paths.join_path();
     }
 
     // an empty 'else' compiles as none, null then

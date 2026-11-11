@@ -546,6 +546,7 @@ static_assert([] -> bool {
     -> check_options {
 
     check_options parsed{};
+    std::vector<bool check_options::*> enabled;
     std::vector<bool check_options::*> disabled;
 
     for (const auto part : checks | std::views::split(',')) {
@@ -571,10 +572,12 @@ static_assert([] -> bool {
         if (is_disable) {
             disabled.append_range(members);
         } else {
-            for (bool check_options::* const member : members) {
-                parsed.*member = true;
-            }
+            enabled.append_range(members);
         }
+    }
+
+    for (bool check_options::* const member : enabled) {
+        parsed.*member = true;
     }
 
     for (bool check_options::* const member : disabled) {

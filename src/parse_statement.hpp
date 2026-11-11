@@ -455,12 +455,9 @@ inline auto parse_name_statement(toc& tc, tokenizer& tz, const token& tk,
     throw compile_error{tk, "expected a constant, a name or a call"};
 }
 
-// called from 'expr_arith', whose elements include it, e.g. a call
-inline auto parse_operand(toc& tc, tokenizer& tz, unary_ops uops,
-                          const type* const destination_type)
-    -> std::unique_ptr<statement> {
-
-    const token tk{tz.next_token()};
+// the kind of the term that 'tk' starts; what is not an operand is rejected
+[[nodiscard]] inline auto classify_operand(const toc& tc, const token& tk,
+                                           const tokenizer& tz) -> term_kind {
 
     // array destinations parse strings in 'expr_any'
     if (tk.is_string()) {
@@ -491,6 +488,17 @@ inline auto parse_operand(toc& tc, tokenizer& tz, unary_ops uops,
     if (tm == term_kind::record_literal) {
         throw_instance_literal_not_operand(tk, tk.text());
     }
+
+    return tm;
+}
+
+// called from 'expr_arith', whose elements include it, e.g. a call
+inline auto parse_operand(toc& tc, tokenizer& tz, unary_ops uops,
+                          const type* const destination_type)
+    -> std::unique_ptr<statement> {
+
+    const token tk{tz.next_token()};
+    const term_kind tm{classify_operand(tc, tk, tz)};
 
     if (std::unique_ptr<statement> builtin{
             parse_builtin(tc, tz, tk, tm, uops, builtin_place::value),
