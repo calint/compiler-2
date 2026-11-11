@@ -1,6 +1,17 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 306 (2026-11-11, AA design review of concepts across
+    files; AD of the passes)
+    => done (2026-11-11): one 'call_site::compile_with_temporaries' enters
+       the block of the temporaries and makes the result in a temporary for
+       inlined and noinline calls (two copies each before); a noinline call
+       declares its result temporary before its argument ones as an inlined
+       call does (262 compiles reorder two temporaries, the same size); the
+       range checks, narrowing, register protection and reach tracking have
+       one mechanism each already; AD: every pass and mode serves a
+       guarantee, a report or the versions, no sizable simplification left
+       (the body checks are about half the compile time of roome)
 [x] easy: round 305 (2026-11-11, ZT review of the exceptions, item 3)
     => done (2026-11-11): x86_64 takes a sector from -2^31 to 2^32 - 1
        modulo 2^32 as rv32i does and panics 'sd card' outside it (3

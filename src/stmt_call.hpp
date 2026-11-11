@@ -674,13 +674,39 @@ struct call_site {
         e.add_call_frame(begin_tk, source, func->instance_name());
     }
 
-    // the result is made in a temporary of the call, then copied into
-    // 'dst', widened when 'dst' is wider
-    [[nodiscard]] auto add_result_temporary(toc& tc, const size_t indent) const
-        -> destination {
+    // 'compile' gets the destination of the result: 'dst', or a temporary of
+    // the call when 'has_result_temporary', then copied into 'dst', widened
+    // when 'dst' is wider; a block holds the temporaries of the call
+    // note: a block is a scope, which counts toward the nesting limit and the
+    //       'max scopes in use' report, so a call without temporaries enters
+    //       none
+    auto compile_with_temporaries(
+        toc& tc, const size_t indent, const destination& dst,
+        const bool has_argument_temporary, const bool has_result_temporary,
+        const std::function_ref<void(const destination&)> compile) const
+        -> void {
 
-        return add_temporary(tc, indent, temporary_name(tk, "call-result", 0),
-                             func->result_type());
+        std::optional<toc::scope_entry> temporaries;
+
+        if (has_argument_temporary or has_result_temporary) {
+            temporaries.emplace(tc, scope::block());
+        }
+
+        if (not has_result_temporary) {
+            compile(dst);
+            return;
+        }
+
+        const destination result{
+            add_temporary(tc, indent, temporary_name(tk, "call-result", 0),
+                          func->result_type()),
+        };
+
+        compile(result);
+
+        machine& x{tc.machine()};
+
+        x.copy_value(tk, indent, dst.operand(), result.operand());
     }
 
     // a variable of the current block that holds the argument at 'index',
@@ -1039,28 +1065,11 @@ class inline_call final {
             dst.is_register() and call_.func->uses().is_result_passed_as_mut(),
         };
 
-        // a block holds the temporaries of the call
-        // note: a block is a scope, which counts toward the nesting limit and
-        //       the 'max scopes in use' report, so a call without temporaries
-        //       enters none
-        std::optional<toc::scope_entry> temporaries;
-
-        if (has_argument_temporary() or has_result_temporary) {
-            temporaries.emplace(tc, scope::block());
-        }
-
-        if (not has_result_temporary) {
-            compile_with_bindings(tc, indent, dst);
-            return;
-        }
-
-        const destination result{call_.add_result_temporary(tc, indent)};
-
-        compile_with_bindings(tc, indent, result);
-
-        machine& x{tc.machine()};
-
-        x.copy_value(call_.tk, indent, dst.operand(), result.operand());
+        call_.compile_with_temporaries(
+            tc, indent, dst, has_argument_temporary(), has_result_temporary,
+            [&](const destination& result) -> void {
+                compile_with_bindings(tc, indent, result);
+            });
     }
 
     // the result is made at its type in a register that the body names, the
@@ -1400,16 +1409,12 @@ class noinline_call final {
     auto compile(toc& tc, const size_t indent, const destination& dst) const
         -> void {
 
-        // a block holds the temporaries of the call
-        std::optional<toc::scope_entry> temporaries;
-
-        if (has_argument_temporary() or
-            has_result_temporary(dst, *call_.func)) {
-
-            temporaries.emplace(tc, scope::block());
-        }
-
-        compile_arguments_and_call(tc, indent, dst);
+        call_.compile_with_temporaries(
+            tc, indent, dst, has_argument_temporary(),
+            has_result_temporary(dst, *call_.func),
+            [&](const destination& result) -> void {
+                compile_arguments_and_call(tc, indent, result);
+            });
     }
 
   private:
@@ -1469,9 +1474,8 @@ class noinline_call final {
         return arguments;
     }
 
-    // an argument or a result that needs one goes through a temporary of the
-    // current block; the arguments are compiled in their order, a call in the
-    // index of a place runs before the later arguments as the checks assume
+    // the arguments are compiled in their order, a call in the index of a
+    // place runs before the later arguments as the checks assume
     auto compile_arguments_and_call(toc& tc, const size_t indent,
                                     const destination& dst) const -> void {
 
@@ -1483,16 +1487,7 @@ class noinline_call final {
             compile_arguments(tc, indent, held),
         };
 
-        if (not has_result_temporary(dst, *call_.func)) {
-            compile_with_arguments(tc, indent, dst, arguments, held);
-            return;
-        }
-
-        const destination result{call_.add_result_temporary(tc, indent)};
-
-        compile_with_arguments(tc, indent, result, arguments, held);
-
-        x.copy_value(call_.tk, indent, dst.operand(), result.operand());
+        compile_with_arguments(tc, indent, dst, arguments, held);
     }
 
     // 'held' holds the addresses of the arguments, freed once the frame is
