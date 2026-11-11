@@ -1,0 +1,4 @@
+
+2563.baz:7:19: result 'res' is read before it is set
+    res.cs[0].y = res.cs[i].x
+                  ^~~

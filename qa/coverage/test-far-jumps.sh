@@ -2,10 +2,10 @@
 # checks the rv32i jumps that grow with the code between them: programs whose
 # 'foo', 'if', 'break' and 'continue' jump over bodies of 8.4 KiB (a branch
 # becomes 'j') and 1.08 MiB (a jump becomes 'jump'), compiled with and without
-# the jump optimizer, assembled, linked and executed under qemu; and that a
-# grown conditional jump, whose 'j' follows the inverted branch, keeps 'j' just
-# inside the reach of 'jal' and becomes 'jump' just outside it, forward and
-# backward
+# the jump optimizer, assembled, linked, their images compared with llvm's and
+# executed under qemu; and that a grown conditional jump, whose 'j' follows the
+# inverted branch, keeps 'j' just inside the reach of 'jal' and becomes 'jump'
+# just outside it, forward and backward
 #
 # usage: test-far-jumps.sh [short]
 #   short   only the 8.4 KiB bodies, which compile in seconds
@@ -16,7 +16,7 @@ trap '[[ $- != *e* ]] || echo "FAILED. line $LINENO: $BASH_COMMAND" >&2' ERR
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 BIN="$SCRIPT_DIR/../../baz"
 
-for tool in llvm-mc llvm-objdump ld.lld qemu-riscv32 python3; do
+for tool in llvm-mc llvm-objdump llvm-objcopy ld.lld qemu-riscv32 python3; do
     command -v "$tool" >/dev/null || {
         echo "Required tool not found: $tool" >&2
         exit 1
@@ -69,9 +69,15 @@ open("far.baz", "w").write("\n".join(source) + "\n")
 EOF
 }
 
+# assembles and links 'far.s', checks that the image the compiler wrote,
+# 'far.bin', has the bytes llvm assembles from the listing, and runs 'far'
 assemble_and_run() {
     llvm-mc -triple=riscv32 -mattr=-m,-a,-f,-d,-c -filetype=obj far.s -o far.o
     ld.lld -m elf32lriscv -e _start -o far far.o
+    ld.lld -m elf32lriscv -T "$SCRIPT_DIR/rv32i-image.ld" -e _start \
+        -o far.elf far.o
+    llvm-objcopy -O binary far.elf image.bin
+    cmp -s image.bin far.bin
     timeout -k 1s 60s qemu-riscv32 ./far
 }
 

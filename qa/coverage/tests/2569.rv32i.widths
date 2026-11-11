@@ -1,0 +1,4 @@
+11: var v = t: 4-byte accesses
+14: var w = i32[32]: 4-byte accesses
+5: p = {{1}}: 4-byte accesses
+8: a = {1, 2}: 4-byte accesses

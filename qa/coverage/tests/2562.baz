@@ -1,0 +1,9 @@
+# the run-time index of an element before the last one of a bulk operand is
+# checked as an element, not as the end of a range
+type cell {a i8[2]}
+func main() {
+    var cs = cell[2]{}
+    var s = i8[2]{}
+    var i = 2
+    array_copy(s, cs[i].a, 1)
+}

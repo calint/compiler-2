@@ -1,0 +1,13 @@
+# a field after a run-time index may be in any element, so every element must
+# be set before it is read
+type cell {x, y}
+type grid {cs cell[2]}
+func make(i) res grid {
+    res.cs[0].x = 1
+    res.cs[0].y = res.cs[i].x
+    res.cs[1].x = 2
+    res.cs[1].y = 3
+}
+func main() {
+    var g = make(0)
+}

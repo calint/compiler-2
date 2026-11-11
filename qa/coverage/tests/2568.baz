@@ -1,0 +1,10 @@
+# the constant elements of an array literal are stored as packed bytes, not
+# one element at a time; the instructions of the lines marked '# folds' are
+# pinned
+func main() {
+    var a = i8[]{1, 2, 3, 4} # folds
+    var b = i16[]{-1, 2, 3} # folds
+    if a[3] != 4 or b[0] != -1 or b[2] != 3 {
+        exit(1)
+    }
+}

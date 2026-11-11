@@ -7559,3 +7559,59 @@ if [[ $MACHINE == x86_64 ]]; then SRC=2505 && EXP=248 && SDCARD=3T RUN_ERR; fi
 # a write to the sector at the end of the sd card image panics and does not
 # extend the image
 if [[ $MACHINE == x86_64 || $MACHINE == rv32i ]]; then SRC=2506 && EXP=248 && SDCARD=1M RUN_ERR; fi
+
+# rv32i loads a constant that is an odd 6-bit value shifted left with 'addi'
+# and 'slli', as llvm does, also at the largest and smallest such value
+SRC=2540 && EXP=0 && RUN
+
+# an element before the last one of a bulk operand is within its array, the
+# end of the array is no element; rejected at the parse, before the next line
+SRC=2560 && COMPERR
+
+# a bulk write from a constant index of an unsized array parameter reaches
+# the elements after it, so an earlier argument that reads one is rejected
+SRC=2561 && COMPERR
+
+# the run-time index of an element before the last one of a bulk operand is
+# checked as an element, not as the end of a range
+SRC=2562 && EXP=255 && RUN_ERR
+
+# a field after a run-time index may be in any element, so every element must
+# be set before it is read
+SRC=2563 && COMPERR
+
+# a constant has no field of any name, also of one that is no valid name
+SRC=2564 && COMPERR
+
+# x86: a read of an element into memory frees its index register before the
+# copy takes one, ten nested loops hold every other register
+if [[ $MACHINE == x86_64 ]]; then SRC=2565 && EXP=4 && RUN; fi
+
+# the arithmetic of a conversion wraps also in an operand computed in a
+# scratch register, e.g. the '(b + c)' of 'i8(a + (b + c))'
+SRC=2566 && EXP=44 && OPTS="--checks=noub,line" RUN
+
+# a 'bool' element of a constant array literal is compiled, not packed, so the
+# elements of a condition after the one that decides it are checked
+SRC=2567 && COMPERR
+
+# the constant elements of an array literal are stored as packed bytes, not
+# one element at a time; the instructions of the lines marked '# folds' are
+# pinned
+SRC=2568 && EXP=0 && RUN
+SRC=2568 && LISTING folds
+
+# the elements after a list are zeroed at the alignment of the element type,
+# also behind an address whose alignment only the type gives
+SRC=2569 && EXP=3 && RUN
+if [[ $MACHINE != x86_64 ]]; then SRC=2569 && LISTING widths; fi
+
+# the unlisted fields after a byte are zeroed at the alignment of their
+# offset, not of the type, behind an address whose alignment only the type
+# gives
+SRC=2570 && EXP=1 && RUN
+if [[ $MACHINE != x86_64 ]]; then SRC=2570 && LISTING widths; fi
+
+# a 'let' that folds to the 'n' of a 'foo' only at a call keeps the type of
+# its variable, the default type: 'm == x' with 'x' an 'i8' compares at it
+SRC=2571 && EXP=2 && RUN

@@ -1,0 +1,4 @@
+
+2561.baz:13:17: 'arr[2]' may be written by the call of 'shift' in a later argument, use a temporary variable
+    var r = add(arr[2], shift(arr))
+                ^~~

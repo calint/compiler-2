@@ -1,6 +1,14 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 286 (2026-11-11, XT mutation testing of the rv32i encoder
+    and XU of identifiers, assignment and literals)
+    => done (2026-11-11): XT: 50 mutants, 2 gaps: test 2540 checks 'li' of
+       the largest and smallest shifted 6-bit constant, and
+       'test-far-jumps.sh' compares the image the compiler writes with
+       llvm's (a wrong 'jal' imm[20]); XU: 49 mutants, 10 gaps killed by
+       tests 2560-2571, 3 equivalent; the final 'write_zeros' of
+       'write_section' never wrote and is an assert; no compiler bug
 [x] easy: round 285 (2026-11-10, XR mutation testing of the x86_64
     arithmetic, division, shifts, io syscalls and the sector routine)
     => done (2026-11-10): 39 mutants, 6 survived everything; new tests

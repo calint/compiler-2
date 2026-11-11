@@ -1,0 +1,13 @@
+# the unlisted fields after a byte are zeroed at the alignment of their
+# offset, not of the type, behind an address whose alignment only the type
+# gives
+type t {a i8, b i32[16]}
+func noinline set(p mut t) {
+    p = {1}
+}
+func main() {
+    var v = t
+    v.b[15] = 5
+    set(v)
+    exit(v.a + v.b[15])
+}

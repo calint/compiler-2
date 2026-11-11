@@ -1,0 +1,5 @@
+# a constant has no field of any name, also of one that is no valid name
+func main() {
+    let k = 3
+    var x = k.$
+}

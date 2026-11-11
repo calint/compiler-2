@@ -1,0 +1,4 @@
+
+2564.baz:4:15: 'k' is a constant, it has no field '$'
+    var x = k.$
+              ^

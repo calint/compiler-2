@@ -1612,9 +1612,12 @@ class assembler_rv32i final : public assembler {
             written = address + image_size_bytes(l);
         }
 
-        // a trailing alignment still belongs to the section
         const size_t end{base + image.sizes.at(section_index(which))};
-        write_zeros(os, end - written);
+
+        // note: a trailing '.balign' is a line of the section and its gap is
+        //       written above
+
+        assert(end == written);
 
         return end;
     }

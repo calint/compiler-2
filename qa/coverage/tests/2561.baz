@@ -1,0 +1,14 @@
+# a bulk write from a constant index of an unsized array parameter reaches
+# the elements after it, so an earlier argument that reads one is rejected
+func add(i, k) res {
+    res = i + k
+}
+func shift(a mut int[]) res {
+    var s = []{7, 8}
+    array_copy(s, a[1], 2)
+    res = 1
+}
+func main() {
+    var arr = [4]{}
+    var r = add(arr[2], shift(arr))
+}

@@ -1,0 +1,9 @@
+# rv32i loads a constant that is an odd 6-bit value shifted left with 'addi'
+# and 'slli', as llvm does, also at the largest and smallest such value
+
+func main() {
+    var a = 3968
+    var b = -3968
+    if a + b != 0 exit(1)
+    if a != 31 * 128 exit(2)
+}

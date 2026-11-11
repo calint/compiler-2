@@ -1,0 +1,16 @@
+# a 'let' that folds to the 'n' of a 'foo' only at a call keeps the type of
+# its variable, the default type: 'm == x' with 'x' an 'i8' compares at it
+func count(s i8[], x i8) res int {
+    res = 0
+    foo s {
+        let m = n
+        if m == x {
+            res = 1
+        }
+    }
+}
+func main() {
+    var a = i8[300]
+    var x = i8(44)
+    exit(count(a, x) + 2)
+}

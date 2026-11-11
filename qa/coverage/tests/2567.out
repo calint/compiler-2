@@ -1,0 +1,4 @@
+
+2567.baz:5:32: divisor must not be zero
+    var b = bool[]{true or a / 0 == 1, false}
+                               ^

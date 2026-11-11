@@ -1,0 +1,10 @@
+# the arithmetic of a conversion wraps also in an operand computed in a
+# scratch register, e.g. the '(b + c)' of 'i8(a + (b + c))'
+func main() {
+    var a = i8(100)
+    var b = i8(100)
+    var c = i8(100)
+    var x = i8(a + (b + c))
+    # 300 wraps to 44 at 'i8'
+    exit(x)
+}

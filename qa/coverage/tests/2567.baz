@@ -1,0 +1,6 @@
+# a 'bool' element of a constant array literal is compiled, not packed, so the
+# elements of a condition after the one that decides it are checked
+func main() {
+    var a = 0
+    var b = bool[]{true or a / 0 == 1, false}
+}

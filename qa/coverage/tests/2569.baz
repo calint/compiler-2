@@ -1,0 +1,18 @@
+# the elements after a list are zeroed at the alignment of the element type,
+# also behind an address whose alignment only the type gives
+type t {a i32[32]}
+func noinline set(p mut t) {
+    p = {{1}}
+}
+func noinline set_a(a mut i32[]) {
+    a = {1, 2}
+}
+func main() {
+    var v = t
+    v.a[31] = 5
+    set(v)
+    var w = i32[32]
+    w[31] = 6
+    set_a(w)
+    exit(v.a[0] + v.a[31] + w[1] + w[31])
+}

@@ -1,0 +1,9 @@
+# an element before the last one of a bulk operand is within its array, the
+# end of the array is no element; rejected at the parse, before the next line
+type cell {a i8[2]}
+func main() {
+    var cs = cell[2]{}
+    var s = i8[2]{}
+    array_copy(s, cs[2].a, 1)
+    undefined_name = 1
+}

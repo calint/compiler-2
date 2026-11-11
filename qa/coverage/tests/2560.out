@@ -1,0 +1,4 @@
+
+2560.baz:7:22: index 2 is out of bounds for array 'cs' of size 2
+    array_copy(s, cs[2].a, 1)
+                     ^

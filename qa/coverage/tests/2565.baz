@@ -1,0 +1,30 @@
+# x86: a read of an element into memory frees its index register before the
+# copy takes one, ten nested loops hold every other register
+dat a = []{1, 2}
+func main() {
+    var b = []{3, 4}
+    var j = 1
+    var x = 0
+    foo a {
+        foo a {
+            foo a {
+                foo a {
+                    foo a {
+                        foo a {
+                            foo a {
+                                foo a {
+                                    foo a {
+                                        foo a {
+                                            x = b[j]
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    exit(x)
+}

@@ -1,0 +1,5 @@
+=== 5:     var a = i8[]{1, 2, 3, 4} # folds
+    mov dword [rbp], 67305985
+=== 6:     var b = i16[]{-1, 2, 3} # folds
+    mov dword [rbp + 4], 196607
+    mov word [rbp + 8], 3
