@@ -389,7 +389,7 @@ program does not depend on inlining.
      | arguments | compiled | the limit | example |
      |---|---|---|---|
      | every value argument folds and every array argument has its length, an instance or a 'mut' argument does not count ('nests_alike_at_every_call'): it nests as deep at every call | the levels | the nesting limit rejects the function, running out of registers ends the recursion | a 'g(k + 1)' entered as 'g(2)' that ends only at 'k == 0', an 'r()' that calls 'r()' |
-     | otherwise | only the arguments, bound as for the body ('inline_call::compile_arguments') | none, the body is checked where the recursion is entered and in its own check | a recursion that only a constant argument of the call ends is no error there; the 'g(x, 2)' of an 'f(x)' that nothing calls checks its first level, its deeper levels are checked at a call of 'f', so whether the check is accepted does not depend on the registers of the target |
+     | otherwise | only the arguments, bound as for the body ('inline_call::compile_arguments_without_body') | none, the body is checked where the recursion is entered and in its own check | a recursion that only a constant argument of the call ends is no error there; the 'g(x, 2)' of an 'f(x)' that nothing calls checks its first level, its deeper levels are checked at a call of 'f', so whether the check is accepted does not depend on the registers of the target |
 
 3. Outside such a recursion the check is judged like a noinline body: running
    out of scratch registers or of the variable storage rejects the function,

@@ -1,6 +1,17 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 336 (2026-11-11, CF confirming round: readability of the
+    calls)
+    => done (2026-11-11): 'is_inside_call' is 'is_located_in_call' (the
+       error lies in the call's own text); the 'inline_call' argument
+       compile used only by an unexpanded recursion is
+       'compile_arguments_without_body'; the noinline local
+       'register_address' is 'receiver_address'; the 'noinline_call' header
+       says the body is asked for and compiled after 'main'; 'frame_scope',
+       'frame_size_label' and 'shared_storage_check::add' say what they do;
+       listings equal; 'qa/perf/linear-growth.sh' of round 316 was ignored
+       by 'qa/perf/.gitignore' and never committed: it is listed there now
 [x] easy: round 335 (2026-11-11, CA confirming round: tokens, strings,
     dat and include)
     => done (2026-11-11): an invalid hex escape was quoted with the escape

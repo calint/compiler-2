@@ -684,10 +684,10 @@ struct call_site {
     // compile share, see 'stmt_call::argument_places'
     std::vector<std::optional<place>> places;
 
-    // the error was found inside the inlined body, unless it is in the call
-    // itself where the call is already the error location
+    // an error found while the inlined body compiled gets the call as a
+    // frame, unless it is located in the call itself, e.g. in an argument
     auto add_call_frame(compile_error& e) const -> void {
-        if (is_inside_call(e)) {
+        if (is_located_in_call(e)) {
             return;
         }
 
@@ -809,7 +809,8 @@ struct call_site {
             });
     }
 
-    [[nodiscard]] auto is_inside_call(const compile_error& e) const -> bool {
+    [[nodiscard]] auto is_located_in_call(const compile_error& e) const
+        -> bool {
 
         // note: a recursive call is checked inside its own body, so an error
         //       can be located after the call
@@ -976,10 +977,10 @@ class inline_call final {
         tc.dry_run(compile_first_level, machine::discarded_code::here);
     }
 
-    // the arguments bound as for the body, which is not compiled, e.g. an
-    // inlined recursion that the check of a body that takes from a call does
-    // not expand ('inline_call::check_recursion')
-    auto compile_arguments(toc& tc) const -> void {
+    // the arguments bound as for the body, which is not compiled: an inlined
+    // recursion that the check of a body that takes from a call does not
+    // expand ('check_recursion')
+    auto compile_arguments_without_body(toc& tc) const -> void {
         // a block holds the temporaries of the call
         std::optional<toc::scope_entry> temporaries;
 
@@ -1069,7 +1070,7 @@ class inline_call final {
                                  const bool nests_alike) const -> void {
 
         if (not nests_alike) {
-            compile_arguments(tc);
+            compile_arguments_without_body(tc);
             return;
         }
 
@@ -1384,11 +1385,13 @@ class inline_call final {
 //      ('compile_arguments'), the address of a variable at its argument
 //   2. 'compile_with_arguments': the arguments agree with the parameters,
 //      checked by 'stmt_call::assert_argument_type' before ('assert_call'
-//      asserts it); the body is compiled once per array lengths
+//      asserts it); the body for the array lengths is asked for
+//      ('toc::add_noinline_body') and compiled after 'main'
 //      ('stmt_def_func::emit_noinline_body')
 //   3. the addresses are written to the callee frame ('populate_frame': the
 //      frame and stack checks and 'write_frame_slots', which returns the
-//      address the callee finds in a register) and the function is called
+//      receiver address the callee finds in a register) and the function is
+//      called
 class noinline_call final {
     // what the call passes for an argument: the variable it names or a
     // temporary of the current block that holds its value
@@ -1521,7 +1524,7 @@ class noinline_call final {
         // pointer, the layout of README 4.1
         const operand frame_address{tc.next_frame_address()};
 
-        const std::optional<operand> register_address{
+        const std::optional<operand> receiver_address{
             populate_frame(tc, dst, arguments, frame_address, array_lengths),
         };
 
@@ -1533,7 +1536,7 @@ class noinline_call final {
         // a register that holds a value of the caller is not lost
         x.call_function({call_.tk, tc.indent()}, call_.func->name(),
                         call_.func->body_label(array_lengths), frame_address,
-                        register_address);
+                        receiver_address);
     }
 
     // a value without storage, e.g. a literal or an expression, is passed in
@@ -1546,7 +1549,8 @@ class noinline_call final {
 
     // the slots of the callee frame at 'frame_address' get the addresses of
     // the result and the arguments, the registers that hold them stay
-    // allocated until the frame is populated; returns 'write_frame_slots'
+    // allocated until the frame is populated; returns the receiver address
+    // of 'write_frame_slots'
     [[nodiscard]] auto populate_frame(
         toc& tc, const destination& dst,
         const std::span<const noinline_arg> arguments,
@@ -1583,12 +1587,12 @@ class noinline_call final {
         machine& x{tc.machine()};
 
         operand slot_address{frame_address};
-        std::optional<operand> register_address;
+        std::optional<operand> receiver_address;
 
         for (const frame_slot& slot : call_.func->frame_slots()) {
             // the callee finds it in a register, it has no slot
             if (slot.is_in_register) {
-                register_address = slot_address_of(dst, slot, arguments);
+                receiver_address = slot_address_of(dst, slot, arguments);
                 continue;
             }
 
@@ -1601,7 +1605,7 @@ class noinline_call final {
                 address_offset(x.address_size_bytes()));
         }
 
-        return register_address;
+        return receiver_address;
     }
 
     //
@@ -1889,8 +1893,8 @@ class shared_storage_check final {
     explicit shared_storage_check(const stmt_def_func& callee)
         : callee_{callee} {}
 
-    // an argument that reaches a part of an earlier one or of the result that
-    // one of the two writes
+    // rejects 'ref' when it reaches a part of an earlier reference that one
+    // of the two writes, else keeps it
     auto add(reference ref) -> void {
         for (const reference& other : references_) {
             if (not may_share(ref, other)) {

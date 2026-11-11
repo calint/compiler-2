@@ -689,8 +689,8 @@ class stmt_def_func final : public statement {
         x.define_constant(frame_size_label(array_lengths), frame_size_bytes);
     }
 
-    // a suffix could collide with a method body, e.g. 'func.list.size' of
-    // function 'list' and method 'list.size'
+    // 'size.' is a prefix, a suffix could collide with a method body, e.g.
+    // 'func.list.size' of function 'list' and method 'list.size'
     [[nodiscard]] auto frame_size_label(
         const std::span<const std::optional<size_t>> array_lengths) const
         -> std::string {
@@ -974,13 +974,15 @@ class stmt_def_func final : public statement {
     }
 
     // the scope of the body in a frame of its own, entered before the frame
-    // base and the receiver register are taken; without array lengths the
-    // body is compiled without a call: a noinline body without array
-    // parameters, checked as it is emitted, as 'main' is
-    // ('check_function_bodies'), or 'check_body', of a body that a call gives
-    // its array lengths or, inlined, the bindings of its parameters and
-    // result; a checked body with a length unknown takes from a call as
-    // 'check_body' does
+    // base and the receiver register are taken; whether the body takes from
+    // a call ('scope::takes_from_call'):
+    //   1. without array lengths it is compiled without a call: a noinline
+    //      body without array parameters takes nothing, it is checked as it
+    //      is emitted, as 'main' is; 'check_body' takes what a call gives,
+    //      the array lengths or, inlined, the bindings of the parameters and
+    //      the result
+    //   2. with array lengths it takes from a call when one is unknown, as
+    //      'check_body' does
     [[nodiscard]] auto frame_scope(
         const std::span<const std::optional<size_t>> array_lengths) const
         -> scope {
