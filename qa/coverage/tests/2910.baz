@@ -1,0 +1,12 @@
+# a typed array literal assigned to an unsized array parameter names the
+# destination type without a length
+
+func f(a mut i8[]) {
+    a = i8[]{1, 2}
+}
+
+func main() {
+    var b = i8[2]
+    f(b)
+    exit(b[0])
+}

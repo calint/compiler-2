@@ -1289,10 +1289,11 @@ class machine {
         }
 
         // note: the second version of each caller holds the registers of the
-        //       first and one more, with the same storage and inlining depth
-        //       ('expr_arith' through a scratch register, 'stmt_call' with
-        //       address registers), so it fails where the first fails and the
-        //       error of the first ends the choice
+        //       first and one more ('expr_arith' through a scratch register,
+        //       'stmt_call' with address registers), so it fails where the
+        //       first fails and the error of the first ends the choice; in
+        //       'expr_arith' the temporary of a noinline call result adds
+        //       storage and a scope, a limit only they reach drops the second
 
         compiled_version first{compile_version(emit_first)};
         version_result second{compile_available_version(emit_second)};

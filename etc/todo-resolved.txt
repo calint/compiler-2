@@ -1,6 +1,16 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 313 (2026-11-11, AN the lines the coverage report of
+    2026-11-08 shows not run)
+    => done (2026-11-11): new tests 2910 (a list literal into an unsized
+       array destination) and 2911 (a call 255 levels deep that fits only
+       in the first version, the second is dropped); the note of
+       'emit_most_efficient' said the second version fails where the first
+       does, but in 'expr_arith' the temporary of a noinline call result
+       adds storage and a scope; the far and borrowed jumps are run only by
+       the far-jump scripts, which the report does not measure; the rest is
+       'std::unreachable', defaults and the handlers of compiler defects
 [x] easy: round 312 (2026-11-11, AI test of the emulator traps; AL
     design review of the classes)
     => done (2026-11-11): 'fpga-emulator/qa/test.sh' runs 'misaligned.S'

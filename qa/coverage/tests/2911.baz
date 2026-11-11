@@ -1,0 +1,43 @@
+# the result of a noinline call held in a scratch register goes through a
+# temporary, whose block is one more scope: there the inlined call in the index
+# of its argument is past the limit of 256 scopes, so the second version runs
+# out of inlined call levels and the first is kept
+
+func noinline one(p) res {
+    res = p
+}
+
+func inl(p) res {
+    res = p + 1
+}
+
+func r(n, a) res {
+    if n == 0 {
+        var b = int[4]
+        var x = 0
+        x = one(b[inl(0)]) + a
+        res = x
+    } else {
+        res = 0
+        if a == 2 {
+            if a == 2 {
+                res = r(n - 1, a)
+            }
+        }
+    }
+}
+
+func main() {
+    var a = 2
+    var x = 0
+    if a == 2 {
+        if a == 2 {
+            if a == 2 {
+                if a == 2 {
+                    x = r(49, a)
+                }
+            }
+        }
+    }
+    exit(x)
+}

@@ -7860,3 +7860,9 @@ if [[ $MACHINE != rv32i-qemu ]]; then SRC=2900 && SDCARD=1M DIFF; fi
 # note: the harness redirects standard input, so 'write(0)' and 'read(1)' at a
 #       terminal, which linux would serve, are not tested
 if [[ $MACHINE == x86_64 ]]; then SRC=2901 && DIFF; fi
+
+# a typed array literal assigned to an unsized array parameter names no length
+SRC=2910 && COMPERR
+
+# a version that alone runs out of inlined call levels is dropped
+SRC=2911 && EXP=2 && RUN
