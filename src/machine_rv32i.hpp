@@ -378,8 +378,7 @@ class machine_rv32i : public machine {
     // two pointers walked by a run-time byte count, 'access' emits one access
     // of 'width' bytes at the current pointers and 'verb' names it in comments
     struct runtime_walk {
-        token src_loc_tk;
-        size_t indent{};
+        emit_site site;
         std::string_view verb;
         operand src;
         operand dst;
@@ -391,8 +390,7 @@ class machine_rv32i : public machine {
     // of 'width' bytes at an operand per address and 'verb' names it in
     // comments
     struct known_walk {
-        token src_loc_tk;
-        size_t indent{};
+        emit_site site;
         std::string_view verb;
         std::span<const operand> addresses;
         std::span<const access_start> starts;
@@ -790,8 +788,7 @@ class machine_rv32i : public machine {
         // for small sizes
         walk_known_size(
             {
-                .src_loc_tk{site.src_loc_tk},
-                .indent{site.indent},
+                .site{site},
                 .verb{"compare"},
                 .addresses{in_use},
                 .starts{starts},
@@ -990,8 +987,7 @@ class machine_rv32i : public machine {
 
         walk_known_size(
             {
-                .src_loc_tk{site.src_loc_tk},
-                .indent{site.indent},
+                .site{site},
                 .verb{"zero"},
                 .addresses{std::span{&dst, 1}},
                 .starts{starts},
@@ -1980,8 +1976,7 @@ class machine_rv32i : public machine {
 
             walk_runtime_count(
                 {
-                    .src_loc_tk{site.src_loc_tk},
-                    .indent{site.indent},
+                    .site{site},
                     .verb{"compare"},
                     .src{left},
                     .dst{right},
@@ -2188,8 +2183,7 @@ class machine_rv32i : public machine {
         // copies
         walk_known_size(
             {
-                .src_loc_tk{site.src_loc_tk},
-                .indent{site.indent},
+                .site{site},
                 .verb{"copy"},
                 .addresses{addresses},
                 .starts{starts},
@@ -2224,8 +2218,7 @@ class machine_rv32i : public machine {
 
         walk_runtime_count(
             {
-                .src_loc_tk{site.src_loc_tk},
-                .indent{site.indent},
+                .site{site},
                 .verb{"copy"},
                 .src{src},
                 .dst{dst},
@@ -3454,7 +3447,7 @@ class machine_rv32i : public machine {
             const operand after_head{offset_by(address, loop.head_size_bytes)};
 
             const operand pointer{
-                load_pointer({walk.src_loc_tk, walk.indent}, after_head),
+                load_pointer(walk.site, after_head),
             };
 
             pointers.push_back(pointer);
@@ -3462,32 +3455,29 @@ class machine_rv32i : public machine {
         }
 
         const operand end{
-            alloc_scratch_register({walk.src_loc_tk, walk.indent},
-                                   default_type()),
+            alloc_scratch_register(walk.site, default_type()),
         };
 
-        comment({walk.src_loc_tk, walk.indent}, "{}",
-                describe_loop(walk.verb, loop.width));
+        comment(walk.site, "{}", describe_loop(walk.verb, loop.width));
 
-        set_loop_end({walk.src_loc_tk, walk.indent}, end, pointers.front(),
+        set_loop_end(walk.site, end, pointers.front(),
                      loop.chunk_count * loop.width);
 
-        assembler_.label(walk.indent, chunk_loop_.name);
+        assembler_.label(walk.site.indent, chunk_loop_.name);
         walk.access(loop.width, at);
 
         for (const operand& pointer : pointers) {
-            advance(walk.indent, pointer, loop.width);
+            advance(walk.site.indent, pointer, loop.width);
         }
 
-        assembler_.bne(walk.indent, pointers.front().register_name(),
+        assembler_.bne(walk.site.indent, pointers.front().register_name(),
                        end.register_name(), chunk_loop_.reference);
 
         if (loop.tail_size_bytes == 0) {
             return;
         }
 
-        comment({walk.src_loc_tk, walk.indent}, "{} {} B tail", walk.verb,
-                loop.tail_size_bytes);
+        comment(walk.site, "{} {} B tail", walk.verb, loop.tail_size_bytes);
 
         // the pointers are at a boundary of the loop width
         const access_start boundary{
@@ -3507,8 +3497,8 @@ class machine_rv32i : public machine {
         const operation_scope walk_scope{*this};
 
         if (is_unrolled) {
-            comment_aligned_parts({walk.src_loc_tk, walk.indent}, walk.verb,
-                                  size_bytes, walk.starts);
+            comment_aligned_parts(walk.site, walk.verb, size_bytes,
+                                  walk.starts);
 
             walk_unrolled(walk, size_bytes);
 
@@ -3517,8 +3507,7 @@ class machine_rv32i : public machine {
 
         const known_loop loop{plan_known_loop(size_bytes, walk.starts)};
 
-        comment_known_loop({walk.src_loc_tk, walk.indent}, walk.verb, loop,
-                           walk.starts);
+        comment_known_loop(walk.site, walk.verb, loop, walk.starts);
 
         if (loop.head_size_bytes != 0) {
             // a head pointer for a far offset is not needed by the loop
@@ -3533,17 +3522,17 @@ class machine_rv32i : public machine {
     auto walk_runtime_bytes(const runtime_walk& walk) -> void {
         const std::string_view count{walk.count.register_name()};
 
-        comment({walk.src_loc_tk, walk.indent}, "{}; skip if none",
-                describe_loop(walk.verb, 1));
+        comment(walk.site, "{}; skip if none", describe_loop(walk.verb, 1));
 
-        assembler_.beqz(walk.indent, count, walk_end_.reference);
+        assembler_.beqz(walk.site.indent, count, walk_end_.reference);
 
         // 'count' becomes the end of the walk, which saves a decrement in
         // every iteration
-        assembler_.add(walk.indent, count, count, walk.src.register_name());
+        assembler_.add(walk.site.indent, count, count,
+                       walk.src.register_name());
 
         walk_runtime_loop(walk, count, 1);
-        assembler_.label(walk.indent, walk_end_.name);
+        assembler_.label(walk.site.indent, walk_end_.name);
     }
 
     // the loop takes 'count' rounded down to whole chunks and ends when 'src'
@@ -3553,25 +3542,24 @@ class machine_rv32i : public machine {
 
         const std::string_view count{walk.count.register_name()};
 
-        comment({walk.src_loc_tk, walk.indent},
+        comment(walk.site,
                 "split bytes into chunks and tail; skip loop if none");
 
-        assembler_.andi(walk.indent, chunks.register_name(), count,
+        assembler_.andi(walk.site.indent, chunks.register_name(), count,
                         -static_cast<int64_t>(width));
 
-        assembler_.andi(walk.indent, count, count, width - 1);
+        assembler_.andi(walk.site.indent, count, count, width - 1);
 
-        assembler_.beqz(walk.indent, chunks.register_name(),
+        assembler_.beqz(walk.site.indent, chunks.register_name(),
                         after_chunks_.reference);
 
-        assembler_.add(walk.indent, chunks.register_name(),
+        assembler_.add(walk.site.indent, chunks.register_name(),
                        chunks.register_name(), walk.src.register_name());
 
-        comment({walk.src_loc_tk, walk.indent}, "{}",
-                describe_loop(walk.verb, width));
+        comment(walk.site, "{}", describe_loop(walk.verb, width));
 
         walk_runtime_loop(walk, chunks.register_name(), width);
-        assembler_.label(walk.indent, after_chunks_.name);
+        assembler_.label(walk.site.indent, after_chunks_.name);
     }
 
     // a head up to the first aligned chunk, whole chunks, then a tail
@@ -3582,8 +3570,7 @@ class machine_rv32i : public machine {
 
         const loop_start start{plan_loop_start(starts)};
 
-        comment_pointer_loop({walk.src_loc_tk, walk.indent}, start, starts,
-                             bulk.alignment);
+        comment_pointer_loop(walk.site, start, starts, bulk.alignment);
 
         // without a known alignment every access is a byte
         if (start.width == byte_size_bytes_) {
@@ -3594,11 +3581,10 @@ class machine_rv32i : public machine {
         // the end of the chunks, also the scratch of the head check and the
         // halfword tail test
         const operand chunks{
-            alloc_scratch_register({walk.src_loc_tk, walk.indent},
-                                   default_type()),
+            alloc_scratch_register(walk.site, default_type()),
         };
 
-        comment({walk.src_loc_tk, walk.indent}, "{}: end of {}, {}: tail bytes",
+        comment(walk.site, "{}: end of {}, {}: tail bytes",
                 chunks.register_name(),
                 start.width == word_size_bytes_ ? "words" : "halfwords",
                 walk.count.register_name());
@@ -3619,37 +3605,37 @@ class machine_rv32i : public machine {
 
         const std::string_view count{walk.count.register_name()};
 
-        comment({walk.src_loc_tk, walk.indent}, "{} {} B head", walk.verb,
-                head_size_bytes);
+        comment(walk.site, "{} {} B head", walk.verb, head_size_bytes);
 
         if ((head_size_bytes & size_t{1}) != 0) {
-            assembler_.beqz(walk.indent, count, after_head_.reference);
+            assembler_.beqz(walk.site.indent, count, after_head_.reference);
 
             walk_runtime_step(walk, 1);
-            assembler_.addi(walk.indent, count, count, -1);
+            assembler_.addi(walk.site.indent, count, count, -1);
         }
 
         if ((head_size_bytes & size_t{2}) != 0) {
-            assembler_.sltiu(walk.indent, chunks.register_name(), count, 2);
+            assembler_.sltiu(walk.site.indent, chunks.register_name(), count,
+                             2);
 
-            assembler_.bnez(walk.indent, chunks.register_name(),
+            assembler_.bnez(walk.site.indent, chunks.register_name(),
                             after_head_.reference);
 
             walk_runtime_step(walk, 2);
-            assembler_.addi(walk.indent, count, count, -2);
+            assembler_.addi(walk.site.indent, count, count, -2);
         }
 
-        assembler_.label(walk.indent, after_head_.name);
+        assembler_.label(walk.site.indent, after_head_.name);
     }
 
     // steps of 'width' bytes until 'src' reaches 'end'
     auto walk_runtime_loop(const runtime_walk& walk, const std::string_view end,
                            const size_t width) -> void {
 
-        assembler_.label(walk.indent, chunk_loop_.name);
+        assembler_.label(walk.site.indent, chunk_loop_.name);
         walk_runtime_step(walk, width);
 
-        assembler_.bne(walk.indent, walk.src.register_name(), end,
+        assembler_.bne(walk.site.indent, walk.src.register_name(), end,
                        chunk_loop_.reference);
     }
 
@@ -3658,8 +3644,8 @@ class machine_rv32i : public machine {
         -> void {
 
         walk.access(width);
-        advance(walk.indent, walk.src, width);
-        advance(walk.indent, walk.dst, width);
+        advance(walk.site.indent, walk.src, width);
+        advance(walk.site.indent, walk.dst, width);
     }
 
     // after words at most 3 bytes remain, bit 1 selects a halfword and bit 0
@@ -3670,25 +3656,23 @@ class machine_rv32i : public machine {
         const std::string_view count{walk.count.register_name()};
 
         if (width == word_size_bytes_) {
-            comment({walk.src_loc_tk, walk.indent}, "{} optional 2-byte tail",
-                    walk.verb);
+            comment(walk.site, "{} optional 2-byte tail", walk.verb);
 
-            assembler_.andi(walk.indent, chunks.register_name(), count, 2);
+            assembler_.andi(walk.site.indent, chunks.register_name(), count, 2);
 
-            assembler_.beqz(walk.indent, chunks.register_name(),
+            assembler_.beqz(walk.site.indent, chunks.register_name(),
                             after_halfword_.reference);
 
             walk_runtime_step(walk, 2);
-            assembler_.label(walk.indent, after_halfword_.name);
-            assembler_.andi(walk.indent, count, count, 1);
+            assembler_.label(walk.site.indent, after_halfword_.name);
+            assembler_.andi(walk.site.indent, count, count, 1);
         }
 
-        comment({walk.src_loc_tk, walk.indent}, "{} optional final byte",
-                walk.verb);
+        comment(walk.site, "{} optional final byte", walk.verb);
 
-        assembler_.beqz(walk.indent, count, walk_end_.reference);
+        assembler_.beqz(walk.site.indent, count, walk_end_.reference);
         walk.access(1);
-        assembler_.label(walk.indent, walk_end_.name);
+        assembler_.label(walk.site.indent, walk_end_.name);
     }
 
     // the first 'size_bytes' from the direct offsets of the addresses
@@ -3697,8 +3681,7 @@ class machine_rv32i : public machine {
 
         std::vector<operand> at;
         for (const operand& address : walk.addresses) {
-            at.push_back(unrolled_address({walk.src_loc_tk, walk.indent},
-                                          address, size_bytes));
+            at.push_back(unrolled_address(walk.site, address, size_bytes));
         }
 
         walk_parts(walk, size_bytes, walk.starts, at);

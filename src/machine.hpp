@@ -382,8 +382,8 @@ class machine {
 
     // the scratch registers a front-end step allocates for its operands and
     // holds until it ends, e.g. the address registers of a path; it frees
-    // them in reverse when it goes out of scope, with the token and indent it
-    // was made with. like 'operation_scope' for the backend, but it frees only
+    // them in reverse when it goes out of scope, with the site it was made
+    // with. like 'operation_scope' for the backend, but it frees only
     // what was added to it
     //
     // note: an error leaves the registers allocated: a version or a dry run
@@ -391,15 +391,13 @@ class machine {
     //       compile
     class held_registers final {
         machine& machine_;
-        token src_loc_tk_;
-        size_t indent_{};
+        emit_site site_;
         int uncaught_at_start_{};
         std::vector<operand> registers_;
 
       public:
         held_registers(machine& backend, const emit_site site)
-            : machine_{backend}, src_loc_tk_{site.src_loc_tk},
-              indent_{site.indent},
+            : machine_{backend}, site_{site},
               uncaught_at_start_{std::uncaught_exceptions()} {}
 
         held_registers(const held_registers&) = delete;
@@ -412,7 +410,7 @@ class machine {
                 return;
             }
 
-            machine_.free_scratch_registers({src_loc_tk_, indent_}, registers_);
+            machine_.free_scratch_registers(site_, registers_);
         }
 
         // a scratch register held until the scope ends or 'release'
@@ -436,7 +434,7 @@ class machine {
         // frees the registers before the scope ends, e.g. before a call
         // that would save them as live
         auto release() -> void {
-            machine_.free_scratch_registers({src_loc_tk_, indent_}, registers_);
+            machine_.free_scratch_registers(site_, registers_);
             registers_.clear();
         }
     };

@@ -1,6 +1,12 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 333 (2026-11-11, CB confirming round: design)
+    => done (2026-11-11): the rv32i 'runtime_walk' and 'known_walk' and
+       'held_registers' kept a token and an indent and rebuilt the site
+       from them (18 rebuilds), left from round 319: they keep an
+       'emit_site'; 19 lines fewer, listings equal; the indent held by the
+       backend instead of 'toc' is an open todo item
 [x] easy: round 332 (2026-11-11, BL the tokenizer names what it reads)
     => done (2026-11-11): 'is_next_char_token', 'is_next_word_token' and
        'is_next_char' read the token when it matches, as the 'is_' prefix
