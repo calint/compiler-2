@@ -298,7 +298,8 @@ class stmt_if final : public statement {
         b.code.compile(tc, destination{});
 
         // the last branch without an 'else' continues after the 'if'
-        // without a jump
+        // without a jump; so does a constant true one, the branches after
+        // it are not emitted ('check_skipped_from')
         const bool falls_through{is_last_branch and else_code() == nullptr};
 
         if (not known and not falls_through) {

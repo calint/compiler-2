@@ -1,6 +1,13 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 340 (2026-11-11, confirming round: design of the
+    definitions and readability of the statements)
+    => done (2026-11-11): CK: 'generic_type_instance::method_name' had no
+       caller (8 lines); 12 candidates rejected; CL: the comment of
+       'stmt_if::compile_branch_at' says that a constant true branch
+       continues without a jump because the branches after it are not
+       emitted; listings equal
 [x] easy: round 339 (2026-11-11, confirming round: assembler design and
     readability of the expressions)
     => done (2026-11-11): CI: 'expr_arith::compile' returns for a single

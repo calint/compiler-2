@@ -452,14 +452,6 @@ struct generic_type_instance {
         return args_of_kind(false);
     }
 
-    // the name written in the source, e.g. 'text.print' for the method
-    // 'print' of 'text<8>'
-    [[nodiscard]] auto method_name(const std::string_view name) const
-        -> std::string {
-
-        return method_name_of(generic_name, name);
-    }
-
     // e.g. 'T' is 'i8'
     [[nodiscard]] auto type_args() const -> std::vector<generic_arg> {
         return args_of_kind(true);
