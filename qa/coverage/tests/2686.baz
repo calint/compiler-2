@@ -1,0 +1,14 @@
+# x86_64: a 'foo' that starts with 6 scratch registers held keeps its counter
+# in memory, the register it saves lets the body fit in the scratch registers
+func total(s i8[]) res {
+    res = 0
+    foo s {
+        res = res + (e + (e + (e + (e + (e + (e + (e + e)))))))
+    }
+}
+func main() {
+    var s = i8[3]{1, 2, 3}
+    var a = 1
+    var k = a + (a + (a + (a + (a + total(s)))))
+    exit(k)
+}

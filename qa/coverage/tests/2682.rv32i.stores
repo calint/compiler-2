@@ -1,0 +1,4 @@
+=== 4:     var w = "\xfd\xff\xff\xff"
+    li t0, -3
+    sw t0, -2032(s0)
+=== read-only constants

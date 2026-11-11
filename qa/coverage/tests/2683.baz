@@ -1,0 +1,42 @@
+# a result written field by field with more padding gaps than the target
+# zeroes one by one has its whole instance zeroed, up to its last byte, the
+# padding after 'z'
+type gaps {
+    a0 i8, b0 i16, a1 i8, b1 i16, a2 i8, b2 i16, a3 i8, b3 i16,
+    a4 i8, b4 i16, a5 i8, b5 i16, a6 i8, b6 i16, a7 i8, b7 i16,
+    z i8,
+}
+func noinline make(v i8) res gaps {
+    res.a0 = v
+    res.b0 = 1
+    res.a1 = v
+    res.b1 = 2
+    res.a2 = v
+    res.b2 = 3
+    res.a3 = v
+    res.b3 = 4
+    res.a4 = v
+    res.b4 = 5
+    res.a5 = v
+    res.b5 = 6
+    res.a6 = v
+    res.b6 = 7
+    res.a7 = v
+    res.b7 = 8
+    res.z = v
+}
+func main() {
+    # the storage of the result is first filled with ones
+    if true {
+        var scribble = i8[34]
+        foo scribble {
+            e = -1
+        }
+    }
+    var p = make(9)
+    var q = gaps{9, 1, 9, 2, 9, 3, 9, 4, 9, 5, 9, 6, 9, 7, 9, 8, 9}
+    if p == q {
+        exit(0)
+    }
+    exit(1)
+}

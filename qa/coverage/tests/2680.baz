@@ -1,0 +1,8 @@
+# --checks=overflow: a product by a power of two that overflows panics, the
+# shift that a product without the check becomes would lose the bits
+func noinline quadruple(a i32) res i32 { res = a * 4 }
+func main() {
+    var a = i32(536870912)
+    var x = quadruple(a)
+    exit(x)
+}

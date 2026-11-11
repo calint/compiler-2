@@ -1,0 +1,3 @@
+=== 4:     var w = "\xfd\xff\xff\xff"
+    mov dword [rbp], -3
+=== read-only constants

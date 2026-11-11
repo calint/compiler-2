@@ -1,6 +1,18 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 297 (2026-11-11, YB mutation testing of 'machine')
+    => done (2026-11-11): 46 mutants of constant factors, byte order,
+       booleans, padding zeroing, the registers saved at a call, the frame
+       base and slot, target calls, scratch reuse, saved registers around
+       routines, the 'foo' counter, alignment of data and the register
+       reports; 27 killed by the tests, new tests 2680-2688 kill 9 more
+       (a checked power-of-two and -1 factor, a signed 4-byte immediate, the
+       last byte of a whole-instance zero, the variables base not saved, two
+       live registers around a sector routine, the 'foo' counter in memory,
+       factors classified at their width, registers a copy gives up), 10
+       equivalent; a todo: the fpga emulator drops a misaligned store
+       without a trap; no compiler bug
 [x] easy: round 296 (2026-11-11, ZN comments after rounds 287-295)
     => done (2026-11-11): the docs name 'func_instantiator::define', the
        'toc' header names 'inline_call::compile' as the reader of a body

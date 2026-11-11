@@ -1,0 +1,16 @@
+# rv32i: a copy from an element at a run-time index loads the value into the
+# register of its address, which the copy gave up, so a copy fits in the
+# registers that an expression leaves
+var a = i8[4]
+var b = i8[]{1, 2, 3, 4}
+func mv(i, j) res {
+    a[i] = b[j]
+    res = a[i]
+}
+func main() {
+    var x = 1
+    var i = 1
+    var j = 2
+    var k = x + (x + (x + (x + (x + (x + (x + (x + (x + (x + (x + (x + (x + (x + (x + (x + (x + (x + (x + (x + (x + (x + (x + (x + (x + (x + mv(i, j))))))))))))))))))))))))))
+    exit(k)
+}

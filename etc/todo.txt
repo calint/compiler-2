@@ -6,6 +6,12 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
 --------------------------------------------------------------------------------
 1. clean up
 --------------------------------------------------------------------------------
+[ ] easy: (round 297 YB) the fpga emulator drops a halfword or word store
+    at a misaligned address without a trap (qemu accepts it), so a
+    misaligned access the compiler emits goes unseen on every rv32i
+    target; trapping in the emulator would make the rv32i-fpga run catch
+    it (mutation m14 of round 297: a padding gap zeroed at the alignment
+    of the type behind 'rs[i] = make()')
 [ ] easy: (round 294 XW) 'test-coverage.sh' runs the compiler without a
     timeout, so a compiler that loops (a mutant of 'assembler::remove')
     hangs the run instead of failing the case

@@ -1,0 +1,14 @@
+# --checks=stack: a call saves the registers allocated at it but not the
+# variables base, which the callee keeps: 4 registers in 16 bytes, so 100
+# calls of 32 bytes fit a stack of 4 KB
+func noinline depth(n, m) res {
+    if n == 0 {
+        res = 0
+        return
+    }
+    res = n + m * 2 + depth(n - 1, m)
+}
+func main() {
+    var d = depth(100, 1)
+    exit(d - 5250)
+}

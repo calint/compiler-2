@@ -1,0 +1,16 @@
+# the registers an expression holds survive the sector functions of a function
+# inlined in it when more than one of them is changed by the routine, e.g.
+# 'r10' and 'r11' on x86_64
+func card(c i8) res {
+    var b = i8[512]
+    b[0] = c
+    sector_write(1, b)
+    b[0] = 0
+    sector_read(1, b)
+    res = b[0]
+}
+func main() {
+    var a = 1
+    var k = a + (a + (a + (a + (a + (a + (a + (a + (a + card(7)))))))))
+    exit(k)
+}

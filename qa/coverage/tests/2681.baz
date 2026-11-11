@@ -1,0 +1,8 @@
+# --checks=overflow: the minimum of a width multiplied by -1 panics, also as
+# the negation that a product by -1 becomes
+func noinline negated(a i32) res i32 { res = a * -1 }
+func main() {
+    var a = i32(-2147483648)
+    var x = negated(a)
+    exit(x)
+}

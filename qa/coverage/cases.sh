@@ -7759,3 +7759,33 @@ SRC=2586 && EXP=21 && RUN
 # a 'continue' under an 'if' that ends the body of a loop: the inverted branch
 # and the jump back after it go to the start of the loop, the jump stays
 SRC=2587 && EXP=54 && RUN
+
+# --checks=overflow: a product by a power of two that overflows panics
+SRC=2680 && EXP=249 && OPTS="--checks=overflow" RUN_ERR
+
+# --checks=overflow: the minimum of a width multiplied by -1 panics
+SRC=2681 && EXP=249 && OPTS="--checks=overflow" RUN_ERR
+
+# the 4 bytes of a string stored with an immediate are a signed word
+SRC=2682 && EXP=1 && RUN
+SRC=2682 && LISTING stores
+
+# a result with more padding gaps than are zeroed one by one is zeroed whole
+SRC=2683 && EXP=0 && RUN
+
+# --checks=stack: a call does not save the variables base
+if [[ $MACHINE == rv32i-qemu || $MACHINE == rv32i-fpga ]]; then SRC=2684 && EXP=0 && OPTS="--stack=0x1000 --checks=stack" RUN; fi
+
+# the registers an expression holds survive a sector routine that changes two
+if [[ $MACHINE != rv32i-qemu ]]; then SRC=2685 && EXP=16 && SDCARD=1M RUN; fi
+
+# x86_64: a 'foo' started with 6 scratch registers held keeps its counter in
+# memory
+SRC=2686 && EXP=53 && RUN
+
+# a product by the minimum of its width is a shift
+SRC=2687 && EXP=0 && RUN
+SRC=2687 && LISTING folds
+
+# rv32i: a copy from an element loads into the register of its address
+if [[ $MACHINE != x86_64 ]]; then SRC=2688 && EXP=29 && RUN; fi

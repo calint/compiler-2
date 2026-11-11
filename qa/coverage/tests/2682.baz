@@ -1,0 +1,6 @@
+# the 4 bytes of a string stored with an immediate are read as a signed word,
+# so a word with its top bit set is a small negative immediate
+func main() {
+    var w = "\xfd\xff\xff\xff"
+    exit(w[0] + w[3] + 5)
+}
