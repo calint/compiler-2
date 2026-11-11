@@ -1,6 +1,12 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 327 (2026-11-11, the sd card is no source file)
+    => done (2026-11-11): '--sdcard' naming a source file, the main file or
+       an included one, is an error as '--bin' is
+       ('check_sd_card_is_not_source'); a program that calls 'sector_write'
+       would write over its source (round 319 BD); two cases in
+       'test-cli.sh'
 [x] easy: round 326 (2026-11-11, BD the asserts user input can reach)
     => done (2026-11-11): about 1.1 million compiles under asan (a
        structure-aware mutation fuzzer, sweeps of the tests with options the

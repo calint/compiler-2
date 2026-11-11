@@ -1063,6 +1063,24 @@ auto check_image_destination(const options& opts, const source_files& files,
     }
 }
 
+// the sd card that the program writes is no source file
+auto check_sd_card_is_not_source(const options& opts, const source_files& files)
+    -> void {
+
+    if (not opts.target->reads_sd_card) {
+        return;
+    }
+
+    const std::string_view sd_card{
+        opts.sd_card_file_name.value_or(default_sd_card_file_name),
+    };
+
+    if (files.contains(sd_card)) {
+        throw option_error{std::format("invalid --sdcard: {} is a source file",
+                                       in_quotes(sd_card))};
+    }
+}
+
 // e.g. a full disk, the listing is incomplete; a failed compile leaves no
 // image
 auto check_listing_written(const options& opts, const std::string& binary)
@@ -1109,6 +1127,7 @@ auto compile_to_stdout(const options& opts, source_files& files,
     program prg{*backend, builtins, files, opts.vars_size_bytes, checks};
 
     check_image_destination(opts, files, binary);
+    check_sd_card_is_not_source(opts, files);
 
     if (opts.reproduce_source) {
         check_reproduced_source(prg, files);

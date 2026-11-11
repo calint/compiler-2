@@ -133,6 +133,15 @@ CLI_BINARY_NAME() {
     grep -Fq "invalid --bin: 'gen-include.baz' is a source file" err
     grep -Fq "res = 3" gen-include.baz
     rm -f gen-include.baz gen-main.baz
+    # the sd card that the program writes is no source file either
+    cp 0418.baz gen-source.baz
+    expect_exit_1 "$BIN" --target=x86_64 --sdcard=./gen-source.baz gen-source.baz >gen.s 2>err
+    grep -Fq "invalid --sdcard: './gen-source.baz' is a source file" err
+    printf 'func three() res {\n    res = 3\n}\n' >gen-include.baz
+    printf 'include "gen-include.baz"\n\nfunc main() {\n    exit(three())\n}\n' >gen-main.baz
+    expect_exit_1 "$BIN" --target=rv32i --sdcard=gen-include.baz gen-main.baz >gen.s 2>err
+    grep -Fq "invalid --sdcard: 'gen-include.baz' is a source file" err
+    rm -f gen-source.baz gen-include.baz gen-main.baz
     # nor the sd card that the program reads
     head -c 4096 /dev/zero >gen-sdcard.img
     expect_exit_1 "$BIN" --target=rv32i --bin=./gen-sdcard.img --sdcard=gen-sdcard.img 0418.baz >gen.s 2>err
