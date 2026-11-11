@@ -153,11 +153,12 @@ class machine_rv32i : public machine {
     };
 
     // the registers of an active copy or comparison of arrays and where its
-    // two addresses start, each start taken with alignment 1 since the type
-    // alignment is given at the end
+    // two addresses start
     struct bulk_operation {
         // the two pointers then the count, in the order of allocation
         std::array<operand, 3> registers{};
+        // the type alignment of the elements
+        size_t alignment{};
         std::array<access_start, 2> starts{};
         // a missing address would leave the loop width unproven
         size_t address_count{};
@@ -639,7 +640,8 @@ class machine_rv32i : public machine {
         const operation_scope bulk_scope{*this};
 
         bulk_operation bulk{
-            begin_array_operation(src_loc_tk, indent, "source", "destination"),
+            begin_array_operation(src_loc_tk, indent, "source", "destination",
+                                  request.alignment),
         };
 
         load_bulk_addresses(src_loc_tk, indent, bulk, request.src, request.dst);
@@ -652,7 +654,7 @@ class machine_rv32i : public machine {
                                bulk.pointer(1), bulk.count());
         }
 
-        copy_runtime_count(src_loc_tk, indent, bulk, request.alignment);
+        copy_runtime_count(src_loc_tk, indent, bulk);
     }
 
     auto copy_value(const token& src_loc_tk, const size_t indent,
@@ -739,7 +741,7 @@ class machine_rv32i : public machine {
         const operation_scope bulk_scope{*this};
 
         bulk_operation bulk{
-            begin_array_operation(src_loc_tk, indent, "lhs", "rhs"),
+            begin_array_operation(src_loc_tk, indent, "lhs", "rhs", alignment),
         };
 
         load_bulk_addresses(src_loc_tk, indent, bulk, lhs, rhs);
@@ -753,7 +755,7 @@ class machine_rv32i : public machine {
             count_to_bytes(src_loc_tk, indent, bulk, element_size_bytes);
         }
 
-        compare_runtime_count(src_loc_tk, indent, bulk, alignment, dst);
+        compare_runtime_count(src_loc_tk, indent, bulk, dst);
     }
 
     // known size: the addresses are memory operands, small sizes unrolled and
@@ -890,7 +892,7 @@ class machine_rv32i : public machine {
         //       and an unrolled copy)
 
         const size_t copy_part_count{
-            aligned_part_count(bytes.size(), estimated_starts),
+            aligned_parts(bytes.size(), estimated_starts).size(),
         };
 
         if (are_immediates_smaller(parts, bytes.size(), copy_part_count)) {
@@ -989,9 +991,13 @@ class machine_rv32i : public machine {
             },
         };
 
+        // note: a part is at most a word, so a larger size has more parts and
+        //       its parts are not listed
+
         const bool is_unrolled{
-            aligned_part_count(size_bytes, starts) <=
-                zero_unroll_threshold_parts_,
+            size_bytes <= zero_unroll_threshold_parts_ * word_size_bytes_ and
+                aligned_parts(size_bytes, starts).size() <=
+                    zero_unroll_threshold_parts_,
         };
 
         walk_known_size(
@@ -1393,10 +1399,7 @@ class machine_rv32i : public machine {
         //       needs, in the allocation order, so they are free whenever the
         //       call is made
 
-        assert(std::ranges::none_of(io_routine_clobbered_,
-                                    [&](const std::string_view name) -> bool {
-                                        return is_register_unavailable(name);
-                                    }));
+        assert(not is_any_held(io_routine_clobbered_));
 
         assembler_.call(indent, label, "a7");
         mark_used(label);
@@ -1506,16 +1509,19 @@ class machine_rv32i : public machine {
         assembler_.sub(1, dst, dst, sign);
     }
 
-    // the bulk registers of an array copy or comparison, the roles of the
-    // pointers name them in the comment, e.g. 'source' and 'destination'
+    // the bulk registers of an array copy or comparison of elements aligned
+    // to 'alignment', the roles of the pointers name them in the comment,
+    // e.g. 'source' and 'destination'
     auto begin_array_operation(const token& src_loc_tk, const size_t indent,
                                const std::string_view first_role,
-                               const std::string_view second_role)
-        -> bulk_operation {
+                               const std::string_view second_role,
+                               const size_t alignment) -> bulk_operation {
+
+        bulk_operation bulk{};
+        bulk.alignment = alignment;
 
         // argument-order allocation keeps pointer and count names easy to
         // follow
-        bulk_operation bulk{};
         for (operand& reg : bulk.registers) {
             reg = alloc_scratch_register(src_loc_tk, indent, default_type());
         }
@@ -1761,12 +1767,7 @@ class machine_rv32i : public machine {
                           const size_t width_bytes,
                           const std::string_view extended) -> void {
 
-        const size_t shift{
-            register_bits_ - (width_bytes * bits_per_byte),
-        };
-
-        assembler_.slli(indent, extended, value, shift);
-        assembler_.srai(indent, extended, extended, shift);
+        sign_extend(indent, extended, value, width_bytes * bits_per_byte);
 
         branch_to_failure(src_loc_tk, indent, op::bne, extended, value,
                           overflow_failure_);
@@ -1899,13 +1900,13 @@ class machine_rv32i : public machine {
     // names what decided the width of a pointer loop
     auto comment_pointer_loop(const token& src_loc_tk, const size_t indent,
                               const loop_start& start,
-                              const std::array<access_start, 2>& typed,
+                              const std::array<access_start, 2>& starts,
                               const size_t alignment) -> void {
 
         if (start.head_size_bytes != 0) {
             comment(src_loc_tk, indent,
                     "{}-byte accesses after a {} B head: {}", start.width,
-                    start.head_size_bytes, describe_starts(typed));
+                    start.head_size_bytes, describe_starts(starts));
 
             return;
         }
@@ -1946,8 +1947,7 @@ class machine_rv32i : public machine {
     // byte count, 'result' is 1 when every access matched, else 0
     auto compare_runtime_count(const token& src_loc_tk, const size_t indent,
                                const bulk_operation& bulk,
-                               const size_t alignment, const operand& result)
-        -> void {
+                               const operand& result) -> void {
 
         const operand& left{bulk.pointer(0)};
         const operand& right{bulk.pointer(1)};
@@ -1985,7 +1985,7 @@ class machine_rv32i : public machine {
                     .count{count},
                     .access{access},
                 },
-                bulk.checked_starts(), alignment);
+                bulk);
         }
 
         write_compare_result(src_loc_tk, indent, result, registers, false);
@@ -2207,8 +2207,7 @@ class machine_rv32i : public machine {
     // run-time count: the addresses are pointer registers and 'count' is a
     // byte count
     auto copy_runtime_count(const token& src_loc_tk, const size_t indent,
-                            const bulk_operation& bulk, const size_t alignment)
-        -> void {
+                            const bulk_operation& bulk) -> void {
 
         const operand& src{bulk.pointer(0)};
         const operand& dst{bulk.pointer(1)};
@@ -2239,7 +2238,7 @@ class machine_rv32i : public machine {
                 .count{count},
                 .access{access},
             },
-            bulk.checked_starts(), alignment);
+            bulk);
     }
 
     // both addresses are 'base + upper + low', so one 'lui' and 'add' serve
@@ -2772,15 +2771,10 @@ class machine_rv32i : public machine {
 
         assert(not dst_type.is_bool());
 
-        const size_t shift{register_bits_ - dst_type.size_bits()};
-
         // the register holds the value at the full width, as the comparisons
         // and the arithmetic of the narrow type read it
-        assembler_.slli(indent, value.register_name(), value.register_name(),
-                        shift);
-
-        assembler_.srai(indent, value.register_name(), value.register_name(),
-                        shift);
+        sign_extend(indent, value.register_name(), value.register_name(),
+                    dst_type.size_bits());
     }
 
     // a check of one test branches to the handler; of more, the last passing
@@ -2898,7 +2892,7 @@ class machine_rv32i : public machine {
                            bulk_operation& bulk, const size_t slot,
                            const operand& address) -> void {
 
-        bulk.starts.at(slot) = start_of(address, 1);
+        bulk.starts.at(slot) = start_of(address, bulk.alignment);
         ++bulk.address_count;
 
         address_of(src_loc_tk, indent, bulk.pointer(slot), address);
@@ -3239,6 +3233,17 @@ class machine_rv32i : public machine {
 
         store_operation_result(indent, dst, loaded.address, loaded.value,
                                is_left);
+    }
+
+    // 'dst' is the low 'width_bits' of 'src' sign extended
+    auto sign_extend(const size_t indent, const std::string_view dst,
+                     const std::string_view src, const size_t width_bits)
+        -> void {
+
+        const size_t shift{register_bits_ - width_bits};
+
+        assembler_.slli(indent, dst, src, shift);
+        assembler_.srai(indent, dst, dst, shift);
     }
 
     auto source_register(const token& src_loc_tk, const size_t indent,
@@ -3590,17 +3595,14 @@ class machine_rv32i : public machine {
 
     // a head up to the first aligned chunk, whole chunks, then a tail
     auto walk_runtime_count(const runtime_walk& walk,
-                            const std::array<access_start, 2>& starts,
-                            const size_t alignment) -> void {
+                            const bulk_operation& bulk) -> void {
 
-        const std::array<access_start, 2> typed{
-            typed_starts(starts, alignment),
-        };
+        const std::array<access_start, 2>& starts{bulk.checked_starts()};
 
-        const loop_start start{plan_loop_start(typed)};
+        const loop_start start{plan_loop_start(starts)};
 
-        comment_pointer_loop(walk.src_loc_tk, walk.indent, start, typed,
-                             alignment);
+        comment_pointer_loop(walk.src_loc_tk, walk.indent, start, starts,
+                             bulk.alignment);
 
         // without a known alignment every access is a byte
         if (start.width == byte_size_bytes_) {
@@ -3768,36 +3770,6 @@ class machine_rv32i : public machine {
     //
     // statics
     //
-
-    // the same count as 'aligned_parts' without keeping the parts, which a
-    // large size would not allow
-    [[nodiscard]] static auto
-    aligned_part_count(const size_t size_bytes,
-                       const std::span<const access_start> starts) -> size_t {
-
-        size_t count{};
-        size_t offset{};
-        while (offset < size_bytes) {
-            const size_t width{aligned_width_at(size_bytes, offset, starts)};
-
-            // a word access keeps every start word aligned, so whole words
-            // follow until fewer than a word remain
-            if (width == word_size_bytes_) {
-                const size_t word_count{
-                    (size_bytes - offset) / word_size_bytes_,
-                };
-
-                count += word_count;
-                offset += word_count * word_size_bytes_;
-                continue;
-            }
-
-            offset += width;
-            ++count;
-        }
-
-        return count;
-    }
 
     // each access is the widest that fits the remaining bytes and is aligned
     // for every address, so an unaligned start takes a byte and a halfword up
@@ -4404,20 +4376,6 @@ class machine_rv32i : public machine {
 
         return operation == comparison_operator::greater or
                operation == comparison_operator::less_equal;
-    }
-
-    // pointers may hold any address, so their starts from 'start_of' with
-    // alignment 1 gain the type 'alignment' here
-    [[nodiscard]] static auto
-    typed_starts(const std::array<access_start, 2>& starts,
-                 const size_t alignment) -> std::array<access_start, 2> {
-
-        std::array<access_start, 2> typed{starts};
-        for (access_start& s : typed) {
-            s.alignment = std::max(s.alignment, bulk_width(alignment));
-        }
-
-        return typed;
     }
 
     // loads without sign extension, for copying bytes unchanged

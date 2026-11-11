@@ -1875,6 +1875,16 @@ class machine {
         return static_cast<size_t>(count);
     }
 
+    // one of the registers 'named' is allocated or protected
+    [[nodiscard]] auto
+    is_any_held(const std::span<const std::string_view> named) const -> bool {
+
+        return std::ranges::any_of(named,
+                                   [&](const std::string_view name) -> bool {
+                                       return is_register_unavailable(name);
+                                   });
+    }
+
     // the backend holds 'register_name' itself, e.g. the frame base while a
     // noinline body is compiled
     [[nodiscard]] auto

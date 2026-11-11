@@ -1,6 +1,15 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 289 (2026-11-11, ZB design review of the rv32i backend)
+    => done (2026-11-11): rv32i is twice the size of x86_64 for what the
+       hardware lacks (aligned bulk walks against 'rep', the multiply and
+       divide helpers, overflow without flags, 'slt'-only comparisons), not
+       for duplication; 'aligned_part_count' is gone ('zero' counts the
+       parts behind a size guard), 'is_any_held' moves to 'machine' and
+       rv32i uses it, bulk starts take the element alignment when the
+       address is loaded ('typed_starts' and three alignment parameters
+       gone), 'sign_extend' holds the 'slli'/'srai' pair; listings equal
 [x] easy: round 288 (2026-11-11, ZD design review of 'toc'; ZC and ZF
     bug hunts)
     => done (2026-11-11): ZD: one 'noinline_body_list' class, held twice

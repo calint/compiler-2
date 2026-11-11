@@ -1,6 +1,5 @@
 #pragma once
 
-#include <algorithm>
 #include <array>
 #include <bit>
 #include <cassert>
@@ -1533,15 +1532,6 @@ class machine_x86_64 final : public machine {
         with_saved_registers(indent, clobbered, [&] -> void {
             assembler_.instruction(indent, op::syscall);
         });
-    }
-
-    [[nodiscard]] auto
-    is_any_held(const std::span<const std::string_view> named) const -> bool {
-
-        return std::ranges::any_of(named,
-                                   [&](const std::string_view name) -> bool {
-                                       return is_register_unavailable(name);
-                                   });
     }
 
     auto lea(const token& src_loc_tk, const size_t indent, const operand& dst,
