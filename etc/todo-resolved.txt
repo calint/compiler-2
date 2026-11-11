@@ -1,6 +1,14 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 345 (2026-11-12, confirming round: across files, and the
+    first day)
+    => done (2026-11-12): CT: rv32i 'check_against_constant' took a check
+       name equal to its handler's own '.name'; 'next_frame_address' took
+       the address type that the machine it holds gives; 9 cross-layer
+       candidates rejected; CU: the path of a first day still names what
+       exists, in an order that introduces each concept first; the
+       document says that a four-digit number is a test; listings equal
 [x] easy: round 344 (2026-11-12, confirming round: the infrastructure
     headers)
     => done (2026-11-12): CR: 'builtin_type_set::all' says it leaves out

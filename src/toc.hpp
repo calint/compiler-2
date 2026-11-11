@@ -1570,9 +1570,7 @@ class storage_layout final {
     }
 
     // a callee frame starts aligned for any variable it holds
-    [[nodiscard]] auto next_frame_address(const type& address_type) const
-        -> operand {
-
+    [[nodiscard]] auto next_frame_address() const -> operand {
         const ::machine& x{machine_.get()};
 
         const size_t frame_alignment{x.address_size_bytes()};
@@ -1586,12 +1584,12 @@ class storage_layout final {
         if (location.is_in_frame) {
             return operand::mem(x.frame_base_register(), {}, 1,
                                 address_offset(aligned_offset_bytes),
-                                address_type);
+                                x.default_type());
         }
 
         return operand::mem(x.variables_base_register(), {}, 1,
                             offset_from_variables_base(aligned_offset_bytes),
-                            address_type);
+                            x.default_type());
     }
 
     [[nodiscard]] auto peaks_now() const -> peaks {
@@ -3336,7 +3334,7 @@ class toc final {
     [[nodiscard]] auto next_frame_address() const -> operand {
         assert(is_compiling_);
 
-        return storage_.next_frame_address(builtins_.address());
+        return storage_.next_frame_address();
     }
 
     [[nodiscard]] auto overflow_options(const destination& dst) const

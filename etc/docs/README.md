@@ -10,7 +10,8 @@ For a reviewer:
 3. build: './make.sh build' (clang++ with c++26), one translation unit
 4. test: 'qa/coverage/test-all.sh', see its header and AGENTS.md "Tests"
    (needs nasm, ld, llvm-mc, llvm-objcopy, ld.lld, llvm-profdata, llvm-cov,
-   qemu-riscv32, qemu-system-riscv32, g++ and python3)
+   qemu-riscv32, qemu-system-riscv32, g++ and python3); a four-digit number
+   in this document, e.g. (1711), is the test 'qa/coverage/tests/1711.baz'
 5. lint and format: 'qa/lint/clang-tidy.sh', 'qa/lint/check-all.sh' (the
    design rules), 'qa/lint/format-source.sh', 'qa/lint/fix-source.py'
    ('format-source.py' and 'fix-source.py' need the python libclang bindings)

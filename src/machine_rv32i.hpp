@@ -1685,15 +1685,14 @@ class machine_rv32i : public machine {
         copy_value(site, dst, kept);
     }
 
-    // a check named 'name' that fails to the handler when 'failed' holds for
+    // a check named by its handler that fails to it when 'failed' holds for
     // 'value' and 'constant', loaded into a scratch register
-    auto check_against_constant(const emit_site site,
-                                const std::string_view name, const op failed,
+    auto check_against_constant(const emit_site site, const op failed,
                                 const std::string_view value,
                                 const int64_t constant,
                                 const failure_handler& handler) -> void {
 
-        comment(site, "{} check begin", name);
+        comment(site, "{} check begin", handler.name);
 
         const operation_scope scope{*this};
 
@@ -1706,7 +1705,7 @@ class machine_rv32i : public machine {
         branch_to_failure(site, failed, value,
                           constant_register.register_name(), handler);
 
-        comment(site, "{} check end", name);
+        comment(site, "{} check end", handler.name);
     }
 
     // a distance from the source to the destination that is not zero and below
@@ -1810,8 +1809,8 @@ class machine_rv32i : public machine {
             constant_arith::signed_minimum(width_bytes * bits_per_byte),
         };
 
-        check_against_constant(site, "overflow", op::beq, value.register_name(),
-                               minimum, overflow_failure_);
+        check_against_constant(site, op::beq, value.register_name(), minimum,
+                               overflow_failure_);
     }
 
     // a count below zero or not below the width jumps to the failure handler,
@@ -1821,7 +1820,7 @@ class machine_rv32i : public machine {
 
         const int64_t width_bits{static_cast<int64_t>(dst_type.size_bits())};
 
-        check_against_constant(site, "shift", op::bgeu, amount.register_name(),
+        check_against_constant(site, op::bgeu, amount.register_name(),
                                width_bits, shift_failure_);
     }
 
