@@ -1,6 +1,16 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 292 (2026-11-11, ZG design review of identifiers and
+    operands, ZE of the expression front end)
+    => done (2026-11-11): ZG: 'ident_info' keeps no type of its own, a
+       variable or register takes it from its operand ('make_var' lost its
+       type parameter, 'validate_invariants' is gone), and one
+       'checked_constant_index' replaces the three writings of the constant
+       index check (parse, 'array_length', compile); ZE: a step records
+       once whether it is a lone negation (no callback in 'arith_steps'),
+       one 'as_statement' for 'expr_any' and 'expr_bool', one
+       'list_parens' for the parentheses of both lists; listings equal
 [x] easy: round 291 (2026-11-11, YD mutation testing of the x86_64
     backend outside arithmetic)
     => done (2026-11-11): 50 mutants of condition suffixes, size specifiers,

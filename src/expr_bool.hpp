@@ -40,6 +40,16 @@
 // and a nested list through 'compile_with_label'
 //
 
+// a node held in a variant of nodes, e.g. an element of 'expr_bool' or the
+// value of 'expr_any'
+template <typename... Nodes>
+[[nodiscard]] auto as_statement(const std::variant<Nodes...>& node)
+    -> const statement& {
+
+    return node.visit(
+        [](const auto& item) -> const statement& { return item; });
+}
+
 // where a condition continues, e.g. the code of an 'if' when it holds and the
 // next branch when it does not; the same label for both when the value is
 // only stored, e.g. 'b = x < 3'
@@ -988,9 +998,7 @@ class expr_bool final : public statement {
     // the 'not's before the '(' of a parenthesized list, e.g. both of
     // 'not not (a == b and c == d)'
     condition_nots nots_;
-    // none unless the list is parenthesized
-    std::optional<token> open_paren_tk_;
-    std::optional<token> close_paren_tk_;
+    list_parens parens_;
 
   public:
     expr_bool(toc& tc, const token& src_loc_tk, tokenizer& tz)
@@ -1003,7 +1011,10 @@ class expr_bool final : public statement {
     expr_bool(toc& tc, const token& src_loc_tk, tokenizer& tz,
               condition_nots nots, const token& open_paren_tk)
         : statement{src_loc_tk}, nots_{std::move(nots)},
-          open_paren_tk_{open_paren_tk} {
+          parens_{
+              .open_tk{open_paren_tk},
+              .close_tk{},
+          } {
 
         parse_list(tc, tz);
         assert_parentheses_group();
@@ -1016,7 +1027,7 @@ class expr_bool final : public statement {
     auto source_to(std::ostream& os) const -> void override {
         statement::source_to(os);
         nots_.source_to(os);
-        token::source_to(os, open_paren_tk_);
+        token::source_to(os, parens_.open_tk);
 
         as_statement(bools_.front()).source_to(os);
 
@@ -1027,7 +1038,7 @@ class expr_bool final : public statement {
             as_statement(e).source_to(os);
         }
 
-        token::source_to(os, close_paren_tk_);
+        token::source_to(os, parens_.close_tk);
     }
 
     // the value of the list stored in 'dst', e.g. 'b = x < 3 and y'
@@ -1184,11 +1195,11 @@ class expr_bool final : public statement {
         }
 
         // note: only a parenthesized list asks, see its constructor
-        assert(open_paren_tk_);
+        assert(parens_.open_tk);
 
         const statement& only_expr{as_statement(only)};
 
-        throw_parentheses_group_nothing(*open_paren_tk_,
+        throw_parentheses_group_nothing(*parens_.open_tk,
                                         trimmed_source(only_expr));
     }
 
@@ -1352,7 +1363,9 @@ class expr_bool final : public statement {
         // the element of a list that is only that element comments the same
         // source and also how it is joined and inverted
         // note: only a group in parentheses has 'not's of its own
-        const bool is_only_element{bools_.size() == 1 and not is_enclosed()};
+        const bool is_only_element{
+            bools_.size() == 1 and not parens_.is_enclosed(),
+        };
 
         if (not is_only_element) {
             machine& x{tc.machine()};
@@ -1409,10 +1422,6 @@ class expr_bool final : public statement {
     // true when a 'not' leads the list
     [[nodiscard]] auto has_not() const -> bool { return not nots_.is_empty(); }
 
-    [[nodiscard]] auto is_enclosed() const -> bool {
-        return open_paren_tk_.has_value();
-    }
-
     [[nodiscard]] auto is_negated() const -> bool { return nots_.is_negated(); }
 
     // note: every operator of a list is the same, mixing them is rejected
@@ -1465,7 +1474,7 @@ class expr_bool final : public statement {
 
         parse_element(tc, tz);
 
-        while (not read_close_paren(tz)) {
+        while (not parens_.read_close(tz)) {
             const std::optional<spelled_operator<connective>> next{
                 read_connective(tz),
             };
@@ -1482,19 +1491,8 @@ class expr_bool final : public statement {
         }
     }
 
-    // the ')' of an enclosed list is next: read it, e.g. '(a == 1 or b == 2)'
-    [[nodiscard]] auto read_close_paren(tokenizer& tz) -> bool {
-        if (not is_enclosed()) {
-            return false;
-        }
-
-        close_paren_tk_ = tz.is_next_char_token(')');
-
-        return close_paren_tk_.has_value();
-    }
-
     // the 'and' or 'or' after an operand, none when the expression ends; an
-    // enclosed expression first reads its ')' ('read_close_paren')
+    // enclosed expression first reads its ')' ('list_parens::read_close')
     [[nodiscard]] auto read_connective(tokenizer& tz)
         -> std::optional<spelled_operator<connective>> {
 
@@ -1513,7 +1511,7 @@ class expr_bool final : public statement {
         // first
         // e.g. the 'exit' of 'if a == 1 exit(1)', or of '(a == 1 exit(1)'
         // which lacks its ')'
-        if (is_enclosed()) {
+        if (parens_.is_enclosed()) {
             throw_unclosed_list(op_tk);
         }
 
@@ -1550,14 +1548,6 @@ class expr_bool final : public statement {
     //
     // statics
     //
-
-    // an element as the node it is, a comparison or a parenthesized list
-    [[nodiscard]] static auto as_statement(const element& e)
-        -> const statement& {
-
-        return e.visit(
-            [](const auto& item) -> const statement& { return item; });
-    }
 
     // a parenthesized list follows its 'not's, decided on a copy
     [[nodiscard]] static auto is_list_next(const tokenizer& tz) -> bool {

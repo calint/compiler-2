@@ -831,14 +831,6 @@ class expr_any final : public statement {
     // statics
     //
 
-    // every kind of element is a 'statement'; the only 'visit' of the variant
-    [[nodiscard]] static auto as_statement(const expr_variant& value)
-        -> const statement& {
-
-        return value.visit(
-            [](const auto& item) -> const statement& { return item; });
-    }
-
     // a record or array literal where the built-in 'tp' is expected, also
     // one reached into, e.g. 'pt{1, 2}.x'
     static auto assert_not_aggregate(const toc& tc, const tokenizer& tz,

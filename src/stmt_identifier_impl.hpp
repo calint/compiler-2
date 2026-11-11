@@ -168,19 +168,30 @@ stmt_identifier::assert_constant_indexes_in_bounds(const toc& tc) const
             return;
         }
 
-        const expr_any& index{step.elem->index_expr()};
-        const std::optional<int64_t> value{index.constant_value(tc)};
+        const std::optional<int64_t> value{
+            checked_constant_index(tc, step.elem_index, *step.info, false),
+        };
 
         // note: 'assert_constant_indexes' rejected a run-time index
         assert(value);
+    });
+}
 
-        const std::string path{array_text(step.elem_index)};
+inline auto stmt_identifier::checked_constant_index(
+    const toc& tc, const size_t elem_index, const ident_info& array_info,
+    const bool allow_end) const -> std::optional<int64_t> {
 
+    const expr_any& index{elems_.at(elem_index).index_expr()};
+    const std::optional<int64_t> value{index.constant_value(tc)};
+
+    if (value) {
         const machine& x{tc.machine()};
 
-        assert_constant_index(*step.info, index.tok(), path, *value, false,
-                              x.max_storage_bytes());
-    });
+        assert_constant_index(array_info, index.tok(), array_text(elem_index),
+                              *value, allow_end, x.max_storage_bytes());
+    }
+
+    return value;
 }
 
 inline auto stmt_identifier::assert_count_in_bounds(const toc& tc,
@@ -225,26 +236,16 @@ inline auto stmt_identifier::narrow_to_element(const toc& tc,
                                                const ident_info& array_info,
                                                const path_reach reach) -> void {
 
-    const ident_elem& elem{elems_.back()};
-
-    if (not elem.index) {
+    if (not is_array_element()) {
         return;
     }
 
-    const std::optional<int64_t> constant_index{
-        elem.index_expr().constant_value(tc),
-    };
-
     // the checks that use the accessed bytes would report an unknown
     // element first, e.g. a result that may be unset
-    if (constant_index) {
-        const machine& x{tc.machine()};
-
-        assert_constant_index(array_info, elem.index_expr().tok(),
-                              array_text(elems_.size() - 1), *constant_index,
-                              reach == path_reach::to_end,
-                              x.max_storage_bytes());
-    }
+    const std::optional<int64_t> constant_index{
+        checked_constant_index(tc, elems_.size() - 1, array_info,
+                               reach == path_reach::to_end),
+    };
 
     const std::optional<size_t> array_len{array_info.array_len()};
 
@@ -453,23 +454,11 @@ inline auto stmt_identifier::compile_checked_index(
 }
 
 inline auto stmt_identifier::path_address::indexed_element(
-    const ident_elem& cur_elem, const std::string_view path,
+    const ident_elem& cur_elem, const std::optional<int64_t> constant_index,
     const ident_info& cur_info, const lea_request& request,
     const operand& address) -> operand {
 
-    const toc& tc{tc_.get()};
-
-    const std::optional<int64_t> constant_index{
-        cur_elem.index_expr().constant_value(tc),
-    };
-
     if (constant_index) {
-        const machine& x{tc.machine()};
-
-        assert_constant_index(cur_info, cur_elem.index_expr().tok(), path,
-                              *constant_index, request.is_range,
-                              x.max_storage_bytes());
-
         // note: the caller checks the range from a constant start
         assert(not request.start_register);
 

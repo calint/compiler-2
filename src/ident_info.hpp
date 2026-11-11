@@ -185,10 +185,17 @@ enum class var_address : uint8_t {
 };
 
 // what a name resolves to: nothing, a constant, a register or storage, with
-// the type of the last element of its path, e.g. that of 'x' for 'p.x'; what
-// else is known depends on the kind and is in its part, the accessors give
-// what a kind does not have as empty, e.g. 'is_array' of a constant is false
+// the type of the last element of its path, e.g. that of 'x' for 'p.x', which
+// a register or storage has as the type of its operand; what else is known
+// depends on the kind and is in its part, the accessors give what a kind does
+// not have as empty, e.g. 'is_array' of a constant is false
 class ident_info final {
+    // a constant and the type it is read as, e.g. a literal of the default type
+    struct const_part {
+        folded_value value;
+        const type* type_ptr{};
+    };
+
     // a variable or the storage that an argument names
     struct var_part {
         ::operand operand;
@@ -202,8 +209,7 @@ class ident_info final {
         ::operand reg;
     };
 
-    const type* type_ptr_{};
-    std::variant<std::monostate, folded_value, register_part, var_part> part_;
+    std::variant<std::monostate, const_part, register_part, var_part> part_;
 
   public:
     [[nodiscard]] auto array_len() const -> std::optional<size_t> {
@@ -234,7 +240,7 @@ class ident_info final {
     }
 
     [[nodiscard]] auto constant() const -> const folded_value& {
-        return std::get<folded_value>(part_);
+        return std::get<const_part>(part_).value;
     }
 
     // 1 for a name that is not an array, see 'discarded_array_len'
@@ -252,7 +258,6 @@ class ident_info final {
 
         var.operand.increment_offset(address_offset(fld.offset));
         var.shape = fld.shape;
-        result.type_ptr_ = fld.type_ptr;
 
         return result;
     }
@@ -270,7 +275,7 @@ class ident_info final {
     [[nodiscard]] auto is_array() const -> bool { return shape().is_array(); }
 
     [[nodiscard]] auto is_const() const -> bool {
-        return std::holds_alternative<folded_value>(part_);
+        return std::holds_alternative<const_part>(part_);
     }
 
     [[nodiscard]] auto is_empty() const -> bool {
@@ -318,10 +323,13 @@ class ident_info final {
         return var == nullptr ? array_shape{} : var->shape;
     }
 
+    // note: an empty info has no type
     [[nodiscard]] auto type_ref() const -> const type& {
-        assert(validate_invariants());
+        if (const const_part* const constant{std::get_if<const_part>(&part_)}) {
+            return *constant->type_ptr;
+        }
 
-        return *type_ptr_;
+        return operand().type_ref();
     }
 
     // the bytes of the value, e.g. the whole array, not an address
@@ -343,8 +351,11 @@ class ident_info final {
         assert(not constant.is_typed() or constant.own_type == &tp);
 
         ident_info info;
-        info.type_ptr_ = &tp;
-        info.part_ = constant;
+
+        info.part_ = const_part{
+            .value{constant},
+            .type_ptr{&tp},
+        };
 
         return info;
     }
@@ -357,7 +368,6 @@ class ident_info final {
         assert(reg.is_register());
 
         ident_info info;
-        info.type_ptr_ = &reg.type_ref();
 
         info.part_ = register_part{
             .reg{reg},
@@ -366,30 +376,11 @@ class ident_info final {
         return info;
     }
 
-    [[nodiscard]] static auto make_var(const type& tp, var_part var)
-        -> ident_info {
-
+    // note: the type of a variable is that of its operand
+    [[nodiscard]] static auto make_var(var_part var) -> ident_info {
         ident_info info;
-        info.type_ptr_ = &tp;
         info.part_ = std::move(var);
         return info;
-    }
-
-  private:
-    // an empty info has no type
-    [[nodiscard]] auto validate_invariants() const -> bool {
-        const bool is_typed{type_ptr_ != nullptr};
-
-        if (is_register()) {
-            const ::operand& reg{std::get<register_part>(part_).reg};
-
-            // note: a register operand has a name and no index or
-            //       displacement ('operand::reg')
-
-            return is_typed and reg.is_register();
-        }
-
-        return is_typed and (is_const() or is_var());
     }
 };
 

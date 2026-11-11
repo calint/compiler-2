@@ -281,13 +281,14 @@ class stmt_identifier final : public statement {
               owned_from_{held.registers().size()},
               address_register_{std::move(address_register)} {}
 
-        // the address after the element index, a constant index goes into the
-        // displacement and any other one into an index register
-        [[nodiscard]] auto indexed_element(const ident_elem& cur_elem,
-                                           std::string_view path,
-                                           const ident_info& cur_info,
-                                           const lea_request& request,
-                                           const operand& address) -> operand;
+        // the address after the element index, a constant index, which the
+        // caller checked, goes into the displacement and any other one into an
+        // index register
+        [[nodiscard]] auto
+        indexed_element(const ident_elem& cur_elem,
+                        std::optional<int64_t> constant_index,
+                        const ident_info& cur_info, const lea_request& request,
+                        const operand& address) -> operand;
 
         // the address a call computed, the address a slot holds or the
         // storage
@@ -644,11 +645,17 @@ class stmt_identifier final : public statement {
                 return;
             }
 
-            const std::string path{array_text(step.elem_index)};
+            const lea_request& elem_request{
+                step.is_last ? request : inner_request,
+            };
 
-            address = builder.indexed_element(
-                *step.elem, path, cur_info,
-                step.is_last ? request : inner_request, address);
+            const std::optional<int64_t> constant_index{
+                checked_constant_index(tc, step.elem_index, cur_info,
+                                       elem_request.is_range),
+            };
+
+            address = builder.indexed_element(*step.elem, constant_index,
+                                              cur_info, elem_request, address);
         });
 
         // note: the type the parse resolved is that of the last element
@@ -986,6 +993,14 @@ class stmt_identifier final : public statement {
         throw compile_error{name_tk, std::format("{} is a method, not an array",
                                                  in_quotes(method_path))};
     }
+
+    // the constant index of the element at 'elem_index' of the path, checked
+    // against 'array_info' as 'assert_constant_index' does, empty when
+    // computed at run time
+    [[nodiscard]] auto checked_constant_index(const toc& tc, size_t elem_index,
+                                              const ident_info& array_info,
+                                              bool allow_end) const
+        -> std::optional<int64_t>;
 
     // walks the elements from the root: the root resolved, then each field
     // stepped, e.g. 'w', 'w.rooms' and 'w.rooms.items'

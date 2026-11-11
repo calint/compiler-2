@@ -5,7 +5,6 @@
 #include <cstddef>
 #include <cstdint>
 #include <format>
-#include <functional>
 #include <limits>
 #include <memory>
 #include <optional>
@@ -34,6 +33,7 @@
 //
 //   'arith_steps'  the steps of a list and the passes 0 to 3 that regroup its
 //                  constants before it is compiled
+//   'list_parens'  the parentheses of an enclosed list, also of a condition
 //   'expr_arith'   a list of elements and operators, e.g. 'a + b * c'
 
 // the steps of an arithmetic list and the passes that regroup its constants
@@ -50,6 +50,9 @@ class arith_steps final {
         const statement* element{};
         std::optional<int64_t> value; // set when the step is a constant
         std::string folded_source;    // e.g. '* 3 * 2' for the comment
+        // the element is a lone negation of a stored value, e.g. '-b', which
+        // pass 3 moves after a constant and add or subtract folds
+        bool is_negated_operand{};
     };
 
     //
@@ -77,16 +80,14 @@ class arith_steps final {
         return is_binary(op) and traits_of(op).is_regroupable;
     }
 
-    // the passes in order; 'is_negated_operand' tells whether an element is a
-    // lone negation of a stored value, which pass 3 moves after a constant
-    [[nodiscard]] static auto
-    plan(std::vector<step> steps, const type& width_type,
-         const std::function_ref<bool(const statement&)> is_negated_operand)
+    // the passes in order
+    [[nodiscard]] static auto plan(std::vector<step> steps,
+                                   const type& width_type)
         -> std::vector<step> {
 
         steps = merge_regroupable_constants(steps, width_type);
         steps = merge_divisors(steps, width_type);
-        lead_with_constant(steps, is_negated_operand);
+        lead_with_constant(steps);
         return steps;
     }
 
@@ -109,11 +110,7 @@ class arith_steps final {
     //   '- b + 3'  =>  '3 - b'   from '1 - b + 2'
     //   '-b + 23'  =>  '23 - b'
     //   '- b + 0'  =>  '- b + 0' from '2 - b - 2'
-    static auto lead_with_constant(
-        std::vector<step>& steps,
-        const std::function_ref<bool(const statement&)> is_negated_operand)
-        -> void {
-
+    static auto lead_with_constant(std::vector<step>& steps) -> void {
         const step& first{steps.front()};
         const step& last{steps.back()};
 
@@ -124,8 +121,7 @@ class arith_steps final {
         }
 
         const bool is_negated{
-            first.op == arithmetic_operator::add and not is_merged(first) and
-                is_negated_operand(*first.element),
+            first.op == arithmetic_operator::add and first.is_negated_operand,
         };
 
         if (first.op != arithmetic_operator::subtract and not is_negated) {
@@ -226,6 +222,7 @@ class arith_steps final {
             .element{},
             .value{identity},
             .folded_source{},
+            .is_negated_operand{},
         };
 
         bool has_constant{};
@@ -293,6 +290,28 @@ class arith_steps final {
     }
 };
 
+// the parentheses of an enclosed list, e.g. '(a + b)' or '(a or b)', none
+// when the list is not enclosed
+struct list_parens {
+    std::optional<token> open_tk;
+    std::optional<token> close_tk;
+
+    [[nodiscard]] auto is_enclosed() const -> bool {
+        return open_tk.has_value();
+    }
+
+    // the ')' of an enclosed list is next: read it
+    [[nodiscard]] auto read_close(tokenizer& tz) -> bool {
+        if (not is_enclosed()) {
+            return false;
+        }
+
+        close_tk = tz.is_next_char_token(')');
+
+        return close_tk.has_value();
+    }
+};
+
 //
 // a flat list of elements and nested lists instead of a binary tree
 //
@@ -315,9 +334,7 @@ class expr_arith final : public statement {
     std::vector<std::unique_ptr<statement>> exprs_;
     // the operators between the elements
     std::vector<spelled_operator<arithmetic_operator>> ops_;
-    // of '(a + b)', none when not enclosed
-    std::optional<token> open_paren_tk_;
-    std::optional<token> close_paren_tk_;
+    list_parens parens_;
 
     // the first element is an enclosed list; a first element given by the
     // caller keeps it false: the element before a higher-precedence operator,
@@ -411,7 +428,10 @@ class expr_arith final : public statement {
                         ? opts.first_expression->tok().start_position()
                         : tz.next_token_position(),
                     std::move(opts.uops)},
-          open_paren_tk_{opts.open_paren_tk} {
+          parens_{
+              .open_tk{opts.open_paren_tk},
+              .close_tk{},
+          } {
 
         const toc::parse_nesting_scope nesting{tc, tz};
 
@@ -445,7 +465,7 @@ class expr_arith final : public statement {
         while (true) {
             // a sub-expression is closed by its ')'
             // e.g. '(a + b)'
-            if (read_close_paren(tz)) {
+            if (parens_.read_close(tz)) {
                 assert_parentheses_group();
                 validate_arithmetic_operands();
                 return;
@@ -509,7 +529,7 @@ class expr_arith final : public statement {
     auto source_to(std::ostream& os) const -> void override {
         get_unary_ops().source_to(os);
 
-        token::source_to(os, open_paren_tk_);
+        token::source_to(os, parens_.open_tk);
 
         // note: an empty position, the first element prints the whitespace
         tok().source_to(os);
@@ -522,7 +542,7 @@ class expr_arith final : public statement {
             e->source_to(os);
         }
 
-        token::source_to(os, close_paren_tk_);
+        token::source_to(os, parens_.close_tk);
     }
 
     auto compile(toc& tc, const size_t indent, const destination& dst) const
@@ -783,10 +803,10 @@ class expr_arith final : public statement {
             return;
         }
 
-        // note: the ')' closed the list, see 'read_close_paren'
-        assert(open_paren_tk_);
+        // note: the ')' closed the list, see 'list_parens::read_close'
+        assert(parens_.open_tk);
 
-        throw_parentheses_group_nothing(*open_paren_tk_,
+        throw_parentheses_group_nothing(*parens_.open_tk,
                                         trimmed_source(*exprs_.front()));
     }
 
@@ -865,7 +885,7 @@ class expr_arith final : public statement {
             return;
         }
 
-        compile_stored_operand(tc, indent, s.op, dst, src);
+        compile_stored_operand(tc, indent, dst, s);
     }
 
     // the steps that 'plan_steps' made for 'dst'; a nested list is folded
@@ -965,7 +985,7 @@ class expr_arith final : public statement {
         // e.g. the first '==' of '(x == 1) == b' or the '<' of
         // 'x = 1 + (x < 1)', which takes the condition for an arithmetic
         // operand
-        if (is_enclosed()) {
+        if (parens_.is_enclosed()) {
             assert_no_condition_next(tz);
 
             // an enclosed list ends with its ')'
@@ -1013,11 +1033,6 @@ class expr_arith final : public statement {
                e.operand_path()->get_unary_ops().is_empty();
     }
 
-    // e.g. '(a + b)' vs 'a + b'
-    [[nodiscard]] auto is_enclosed() const -> bool {
-        return open_paren_tk_.has_value();
-    }
-
     // pass 0: one step per element with the constant value of the element
     //   'a * 3 * 2 / 3 / 2 * 4'  =>  '* a' '* 3' '* 2' '/ 3' '/ 2' '* 4'
     [[nodiscard]] auto make_steps(const toc& tc, const destination& dst) const
@@ -1044,6 +1059,7 @@ class expr_arith final : public statement {
                 .folded_source{
                     std::format("{} {}", source_text(op), trimmed_source(e)),
                 },
+                .is_negated_operand{is_negated_operand(tc, e)},
             });
         }
 
@@ -1082,21 +1098,7 @@ class expr_arith final : public statement {
             return make_steps(tc, dst);
         }
 
-        return arith_steps::plan(make_steps(tc, dst), dst.type_ref(),
-                                 [&tc](const statement& element) -> bool {
-                                     return is_negated_operand(tc, element);
-                                 });
-    }
-
-    // the ')' of an enclosed list is next: read it, e.g. '(a + b)'
-    [[nodiscard]] auto read_close_paren(tokenizer& tz) -> bool {
-        if (not is_enclosed()) {
-            return false;
-        }
-
-        close_paren_tk_ = tz.is_next_char_token(')');
-
-        return close_paren_tk_.has_value();
+        return arith_steps::plan(make_steps(tc, dst), dst.type_ref());
     }
 
     // a merged constant has no element and is located at the list
@@ -1257,9 +1259,11 @@ class expr_arith final : public statement {
     // of unary ops may be overwritten; 'a + -b' is 'a - b' and 'a - -b' is
     // 'a + b'
     static auto compile_stored_operand(toc& tc, const size_t indent,
-                                       const arithmetic_operator op,
-                                       const destination& dst,
-                                       const statement& src) -> void {
+                                       const destination& dst, const step& s)
+        -> void {
+
+        const arithmetic_operator op{s.op};
+        const statement& src{*s.element};
 
         // note: a value that is not computed is a name or a literal, '{}' is a
         //       whole value and folds before; the rewrite hides an overflow
@@ -1267,7 +1271,7 @@ class expr_arith final : public statement {
 
         const bool is_negation_folded{
             arith_steps::is_additive(op) and not tc.checks_overflow(dst) and
-                is_negated_operand(tc, src),
+                s.is_negated_operand,
         };
 
         const stmt_identifier& ident{*src.operand_path()};

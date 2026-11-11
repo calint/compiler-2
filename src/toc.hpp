@@ -1994,17 +1994,15 @@ class ident_resolver final {
 
         const ::machine& x{machine_.get()};
 
-        return ident_info::make_var(
-            *var.type_ptr,
-            {
-                .operand{
-                    memory_at(var.placement, x.variables_base_register(),
-                              *var.type_ptr),
-                },
-                .address{address},
-                .shape{var.shape},
-                .read_only_why{var.read_only_why},
-            });
+        return ident_info::make_var({
+            .operand{
+                memory_at(var.placement, x.variables_base_register(),
+                          *var.type_ptr),
+            },
+            .address{address},
+            .shape{var.shape},
+            .read_only_why{var.read_only_why},
+        });
     }
 
   private:
