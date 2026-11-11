@@ -1,6 +1,16 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 318 (2026-11-11, AY the README against the compiler)
+    => done (2026-11-11): about 120 programs on four targets found no
+       compiler defect; the README says that a negative constant index on
+       an unsized parameter is rejected, that a call in a later operand is
+       rejected for an argument or a side of a comparison while an
+       arithmetic operand is read at its place, and that a run-time 'exit'
+       code is taken modulo 256; tests 2920 ('upper' alone passes a negative
+       index) and 2921-2922 (run-time 'exit' codes); AGENTS.md names
+       'etc/docs/README.md' for chapter 8; AS (determinism) found no defect
+       in about 290k compiles
 [x] easy: round 317 (2026-11-11, AW comments after rounds 300-316)
     => done (2026-11-11): seven comments said what the code no longer
        does: 'target_call' and the rv32i i/o routines (routines on all

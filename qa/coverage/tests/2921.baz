@@ -1,0 +1,6 @@
+# a run-time exit code is taken modulo 256: -1 ends with 255
+
+func main() {
+    var k = -1
+    exit(k)
+}

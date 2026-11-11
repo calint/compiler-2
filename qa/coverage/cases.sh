@@ -7866,3 +7866,10 @@ SRC=2910 && COMPERR
 
 # a version that alone runs out of inlined call levels is dropped
 SRC=2911 && EXP=2 && RUN
+
+# with only the upper bound check a negative run-time index passes
+SRC=2920 && EXP=0 && OPTS="--checks=upper" RUN
+
+# a run-time exit code is taken modulo 256
+SRC=2921 && EXP=255 && RUN
+SRC=2922 && EXP=44 && RUN

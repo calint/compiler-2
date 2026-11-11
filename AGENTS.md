@@ -92,7 +92,8 @@
 - Standing goal: every program accepted is free of undefined behavior when
   compiled with `--checks=noub`; each case is rejected at compile time or
   checked at run time. A result never depends on the target, inlining or
-  optimization. Exceptions: README chapter 8 (mainly the default type 'int').
+  optimization. Exceptions: `etc/docs/README.md` chapter 8 (mainly the
+  default type 'int').
 - Standing goal: the compiler as simple as possible. Remove what a guarantee
   does not need; remove an exception rather than work around it. Never remove
   a feature (options, reports, optimizations, versions). Growth of the

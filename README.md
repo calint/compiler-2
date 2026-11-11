@@ -33,7 +33,7 @@ the binary image itself.
   * `upper`, `lower`: array bounds at runtime; a constant index outside the
     array or a constant count that is negative or passes the end of the array
     is a compile error also without the checks, on an unsized array parameter
-    when it passes the longest array the target addresses
+    when it is negative or passes the longest array the target addresses
   * `frame`: non-inlined function frame capacity at runtime
   * `division`: division by zero and `MIN / -1`, also of `%`, at runtime; a
     constant `MIN / -1` is a compile error, of `i64` also without the check; a
@@ -55,15 +55,19 @@ the binary image itself.
   * always on: compile time rejection of calls and assignments where the
     value may read the destination under another name (aliasing), of
     arguments that may share storage when a parameter is `mut`, and of an
-    argument or operand that a call in a later one may write, e.g.
-    `f(a[i], h(i))` with `h` writing `i`; evaluation is left to right
+    argument or a side of a comparison that a call in a later one may write,
+    e.g. `f(a[i], h(i))` or `i == h(i)` with `h` writing `i`; evaluation is
+    left to right, an arithmetic operand is read at its place: `i + h(i)`
+    adds the `i` from before the call
   * a failed check prints `panic: NAME` on a line of its own on standard error
     (the uart on the bare-metal targets), with `line` `panic: NAME at FILE:LINE`
     where FILE is the path of the file relative to the directory of the main
     file, e.g. `lib/util.baz`, and exits with the code of the check: `bounds`
     255, `frame overflow` 254, `division` 253, `shift` 252, `overlap` 251,
     `stack overflow` 250, `overflow` 249; a failed `sector_read` or
-    `sector_write` prints `panic: sd card` and exits with 248
+    `sector_write` prints `panic: sd card` and exits with 248; a constant
+    `exit` code outside 0 to 255 is rejected, a run-time one is taken modulo
+    256, so `exit(-1)` of a variable ends with 255 as a `bounds` panic does
 * keywords: `func`, `noinline`, `mut`, `type`, `dat`, `var`, `let`, `foo`,
   `loop`, `if`, `else`, `continue`, `break`, `return`, `self`, `and`, `or`,
   `not`, `true`, `false`, `include`
@@ -222,10 +226,10 @@ examples:
 ```text
 Language                     files          blank        comment           code
 -------------------------------------------------------------------------------
-C/C++ Header                    64           9344           7202          27146
-C++                              1            208            105            829
+C/C++ Header                    64           9431           7296          27374
+C++                              1            217            108            843
 -------------------------------------------------------------------------------
-SUM:                            65           9552           7307          27975
+SUM:                            65           9648           7404          28217
 -------------------------------------------------------------------------------
 ```
 

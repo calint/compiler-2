@@ -1,0 +1,10 @@
+# with only the upper bound check a negative run-time index passes
+
+func main() {
+    var a = i8[4]
+    var b = i8[4]
+    var i = -1
+    b[i] = 1
+    a[0] = 2
+    exit(0)
+}

@@ -1,0 +1,6 @@
+# a run-time exit code is taken modulo 256: 300 ends with 44
+
+func main() {
+    var k = 300
+    exit(k)
+}
