@@ -1,0 +1,7 @@
+# a constant enclosed list wraps at its width after its unary ops, before
+# the list around it reads it: '-(i8(-128) + 0)' is -128
+
+func main() {
+    var x = -(i8(-128) + 0) / 2
+    if not x == -64 exit(1)
+}

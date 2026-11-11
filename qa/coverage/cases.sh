@@ -7615,3 +7615,34 @@ if [[ $MACHINE != x86_64 ]]; then SRC=2570 && LISTING widths; fi
 # a 'let' that folds to the 'n' of a 'foo' only at a call keeps the type of
 # its variable, the default type: 'm == x' with 'x' an 'i8' compares at it
 SRC=2571 && EXP=2 && RUN
+
+# a constant zero shifted right folds to zero, also at the 64 bits of 'int'
+SRC=2600 && EXP=0 && RUN
+
+# a constant comparison '<=' of equal values holds
+SRC=2601 && EXP=0 && RUN
+
+# a constant quotient of the minimum by -1 wraps before the next operation
+SRC=2602 && EXP=0 && RUN
+
+# constant divisors whose product wraps at the width are not merged
+SRC=2603 && EXP=0 && RUN
+
+# --checks=division: the minimum of 'i8' divided by a constant -1 panics
+SRC=2604 && EXP=253 && OPTS="--checks=division" RUN_ERR
+
+# a narrowing conversion computes a list at its own width when a later
+# element reads high bits
+SRC=2605 && EXP=0 && RUN
+
+# --checks=noub: a constant bitwise operation of the minimum and -1 folds
+SRC=2606 && EXP=0 && OPTS="--checks=noub" RUN
+
+# --checks=noub: the negation of the left side of a comparison is checked
+SRC=2607 && EXP=249 && OPTS="--checks=noub" RUN_ERR
+
+# a constant enclosed list wraps after its unary ops before it is read
+SRC=2608 && EXP=0 && RUN
+
+# a constant shifted left wraps at its width before the next operation
+SRC=2609 && EXP=0 && RUN

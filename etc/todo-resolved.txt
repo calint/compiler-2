@@ -1,6 +1,19 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 287 (2026-11-11, XX mutation testing of 'expr_arith',
+    'expr_bool', 'constant_arith' and 'constant_parser'; ZA design review of
+    calls)
+    => done (2026-11-11): XX: 62 mutants, 13 survived the tests, 10 killed
+       by new tests 2600-2609 (constant shifts, quotients and folds wrapped
+       at their width, merged divisors whose product wraps, '<=' folding,
+       the division check of an immediate -1, the width of a list inside a
+       conversion, the overflow check of a comparison operand), 3
+       equivalent; no compiler bug; ZA: 'inline_call::compile' is the one
+       entry of an inlined call and counts the inline nesting once (it was
+       counted three times), and 'write_frame_slots' returns the address
+       passed in a register ('register_address' walked the slots again);
+       listings equal
 [x] easy: round 286 (2026-11-11, XT mutation testing of the rv32i encoder
     and XU of identifiers, assignment and literals)
     => done (2026-11-11): XT: 50 mutants, 2 gaps: test 2540 checks 'li' of

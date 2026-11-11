@@ -1,0 +1,7 @@
+# a constant shifted left wraps at its width before the next operation of
+# the list reads it: 'i8(1) << 7' is -128
+
+func main() {
+    var x = i8(1) << 7 >> 7
+    if not x == -1 exit(1)
+}

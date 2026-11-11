@@ -1,0 +1,12 @@
+# --checks=noub: the negation of the left side of a comparison is checked,
+# '-a' of the minimum of 'i8' overflows
+
+func noinline id(v i8) res i8 {
+    res = v
+}
+
+func main() {
+    var a = id(-128)
+    if -a < 0 exit(1)
+    exit(2)
+}

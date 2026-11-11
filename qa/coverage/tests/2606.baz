@@ -1,0 +1,9 @@
+# --checks=noub: a constant bitwise operation of the minimum and -1 is not a
+# division and folds
+
+func main() {
+    var a = i8(-128) & -1
+    if not a == -128 exit(1)
+    var b = i8(-128) ^ -1
+    if not b == 127 exit(2)
+}

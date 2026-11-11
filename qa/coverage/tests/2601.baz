@@ -1,0 +1,7 @@
+# a constant comparison '<=' of equal values holds
+
+func main() {
+    let k = 3
+    var b = k <= 3
+    if not b exit(1)
+}

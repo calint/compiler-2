@@ -1,0 +1,11 @@
+# --checks=division: the minimum of 'i8' divided by a constant -1 panics, the
+# constant divisor keeps the run-time check
+
+func noinline div(a i8) res i8 {
+    res = a / -1
+}
+
+func main() {
+    var x = div(-128)
+    exit(x)
+}

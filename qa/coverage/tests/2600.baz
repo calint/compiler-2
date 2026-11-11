@@ -1,0 +1,9 @@
+# a constant zero shifted right folds to zero at every width, also at the 64
+# bits of 'int' on x86_64
+
+func main() {
+    var x = 0 >> 1
+    if not x == 0 exit(1)
+    var y = i32(0) >> 31
+    if not y == 0 exit(2)
+}

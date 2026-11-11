@@ -128,7 +128,7 @@ class body_uses final {
     std::vector<global_use> globals_;
     std::vector<binding_use> bindings_;
     // the result is passed to a 'mut' parameter, so an inlined call keeps it
-    // in memory, see 'inline_call::compile'
+    // in memory, see 'inline_call::compile_in_block'
     bool is_result_passed_as_mut_{};
 
   public:

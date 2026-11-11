@@ -1,0 +1,11 @@
+# a conversion to a narrower type computes a list at its own width when a
+# later element reads high bits: the quotient of '(b / c)' is not computed
+# from the low byte of 'b'
+
+func main() {
+    var a = 0
+    var b = 1000
+    var c = 10
+    var x = i8(a + (b / c))
+    if not x == 100 exit(1)
+}

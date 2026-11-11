@@ -1,0 +1,8 @@
+# consecutive constant divisors whose product wraps at the width are not
+# merged: 11 * 25 wraps to 19 at 8 bits
+
+func main() {
+    var a = i8(100)
+    var b = a / 11 / 25
+    if not b == 0 exit(1)
+}
