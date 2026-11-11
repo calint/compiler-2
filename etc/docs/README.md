@@ -727,9 +727,9 @@ type list<T type, capacity> {
 ```
 
 'T type' is a type parameter, 'capacity' is a constant parameter. A parameter
-may not be a keyword, a built-in name, the name of the generic type or of
-another parameter; it hides a global of its name (1.3), so that inside the
-recipe a name has one meaning.
+may not be a keyword, a built-in name, the name of the generic type, of its
+base (2.4) or of another parameter; it hides a global of its name (1.3), so
+that inside the recipe a name has one meaning.
 
 The braced block is skipped without reading the fields. An error in the fields
 is therefore found only when an alias reads them: until then there are no

@@ -291,6 +291,13 @@ class stmt_def_type_generic final : public statement {
                 generic_type_use::parse(tc, tz, "the type based on it"),
             };
 
+            // a parameter hides the generic type of its name, so it cannot
+            // name the base, e.g. 'l' of 'type m<l type> = l<l>'
+            for (const generic_param& param : generic.params) {
+                tc.definitions().assert_generic_param_apart(
+                    param.name_tk, base.name_tk, "base type");
+            }
+
             generic.base_tk = base.name_tk;
             generic.base_arg_tks = std::move(base.args.arg_tks);
 

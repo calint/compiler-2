@@ -7882,3 +7882,6 @@ SRC=2961 && EXP=4 && DIFFNOPT
 # without a failure handler, which writes its message on the uart targets, a
 # program without 'write' does not emit it
 SRC=2962 && EXP=0 && DIFFNOPT
+
+# a generic parameter named like the base of its generic type
+SRC=2963 && COMPERR

@@ -1,6 +1,17 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 329 (2026-11-11, BI generics and the names they hide)
+    => done (2026-11-11): 'type m<l type> = l<l>' was accepted, the base of
+       a generic type was looked up without its parameters, so 'l' meant
+       two things in the recipe: a parameter named like the base type is
+       an error ('assert_generic_param_apart' in 'stmt_def_type_generic');
+       test 2963, docs 2.3 list the base; instance identity, recursion,
+       constants as sizes, 'foo' names and the checks inside instances
+       agree on x86_64 and rv32i-qemu; todo item pending: one rule for the
+       names of a method's parameters and its receiver's constants;
+       AGENTS.md: the loop ends when one round of fresh agents finds
+       nothing to apply
 [x] easy: round 328 (2026-11-11, BG fuzzing of the descriptors)
     => done (2026-11-11): 'fuzz-io.py' gives half of its programs to a
        'DescriptorGenerator': served and bad descriptors of every width

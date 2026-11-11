@@ -1,0 +1,11 @@
+# a generic parameter named like the base of its generic type
+
+type list<n> { a i8[n] }
+
+type wrap<list> = list<list>
+
+type w = wrap<3>
+
+func main() {
+    exit(0)
+}

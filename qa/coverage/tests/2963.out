@@ -1,0 +1,4 @@
+
+2963.baz:5:11: generic parameter 'list' is also the name of the base type at 5:19, use another name
+type wrap<list> = list<list>
+          ^~~~
