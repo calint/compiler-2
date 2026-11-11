@@ -14,11 +14,9 @@
 // 'break' leaves the innermost 'loop' or 'foo', 'continue' goes on with its
 // next round
 class stmt_loop_jump final : public statement {
-    bool is_break_{};
-
   public:
     stmt_loop_jump(const toc& tc, const token& src_loc_tk)
-        : statement{src_loc_tk}, is_break_{src_loc_tk.is_text("break")} {
+        : statement{src_loc_tk} {
 
         tc.scopes().assert_in_loop(src_loc_tk);
     }
@@ -40,7 +38,7 @@ class stmt_loop_jump final : public statement {
         // note: the parse rejected a 'break' or 'continue' outside a loop
         assert(loop);
 
-        if (is_break_) {
+        if (tok().is_text("break")) {
             tc.record_break();
             x.branch(indent, toc::end_label(loop->label));
         } else {
@@ -54,7 +52,7 @@ class stmt_loop_jump final : public statement {
     // the next round of a 'continue' starts with at least the loop entry
     // coverage
     auto trace_assignment(assignment_flow& flow) const -> void override {
-        if (is_break_) {
+        if (tok().is_text("break")) {
             flow.record_break();
         } else {
             flow.end_path();

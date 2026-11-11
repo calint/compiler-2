@@ -16,8 +16,6 @@
 // the 'include'; the statement only keeps the source
 class stmt_include final : public statement {
     token path_tk_;
-    // the name as the file system takes it, its escapes decoded
-    std::string file_name_;
 
   public:
     // 'tz' is after the 'include'
@@ -30,15 +28,15 @@ class stmt_include final : public statement {
         }
 
         // escapes are decoded like in any other string, e.g. '\x20'
-        file_name_ = path_tk_.string_bytes();
+        const std::string file_name{path_tk_.string_bytes()};
 
-        if (file_name_.empty()) {
+        if (file_name.empty()) {
             throw compile_error{path_tk_, "the file name is empty"};
         }
 
         // e.g. a NUL would end the path early and a line end split the
         // messages that name the file
-        if (std::ranges::any_of(file_name_, is_control_char)) {
+        if (std::ranges::any_of(file_name, is_control_char)) {
             throw compile_error{path_tk_,
                                 "the file name has a control character"};
         }
@@ -61,8 +59,9 @@ class stmt_include final : public statement {
     // class methods
     //
 
-    [[nodiscard]] auto file_name() const -> const std::string& {
-        return file_name_;
+    // the name as the file system takes it, its escapes decoded
+    [[nodiscard]] auto file_name() const -> std::string {
+        return path_tk_.string_bytes();
     }
 
     [[nodiscard]] auto path_token() const -> const token& { return path_tk_; }

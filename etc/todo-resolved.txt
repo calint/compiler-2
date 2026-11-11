@@ -1,6 +1,15 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 323 (2026-11-11, BB the front end, stored and repeated
+    facts)
+    => done (2026-11-11): 'stmt_loop_jump' reads 'break' from its token
+       instead of a flag; 'stmt_include' keeps no copy of its file name;
+       'stmt_identifier::assert_not_narrowed' calls the base after the
+       untyped constant (an assert ties 'info.type_ref()' to 'get_type()');
+       'assert_array_or_element' is inlined into its one caller; 10 lines
+       fewer, listings equal; rejected: 13 candidates that move lines or
+       change the order of errors
 [x] easy: round 322 (2026-11-11, AZ what the backends repeat)
     => done (2026-11-11): 'emit_used_routines' is not virtual (no backend
        overrides it); 'write_served_count_' is a fact of every target in

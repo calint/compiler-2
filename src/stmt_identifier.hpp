@@ -497,18 +497,17 @@ class stmt_identifier final : public statement {
             return;
         }
 
-        const type& src_type{info.type_ref()};
-
         // note: the parse rejected an instance in a built-in destination,
         //       e.g. the 'a' of 'y = a' ('expr_any::assert_number_kind')
 
-        assert(src_type.is_builtin());
+        assert(get_type().is_builtin());
 
-        if (src_type.size_bytes() <= dst_type.size_bytes()) {
-            return;
-        }
+        // note: the parse typed the name by what it resolves to, a binding
+        //       has the type of its parameter
 
-        throw_narrowed(tok(), trimmed_source(*this), src_type, dst_type);
+        assert(info.type_ref().is_same(get_type()));
+
+        statement::assert_not_narrowed(tc, dst_type);
     }
 
     // a typed constant is a value of its type, so it wraps at the width of
@@ -582,16 +581,6 @@ class stmt_identifier final : public statement {
         throw compile_error{tok(),
                             std::format("{} is not an array",
                                         in_quotes(trimmed_source(*this)))};
-    }
-
-    // an array or an element of one, where a bulk operation starts
-    // note: 'parse_array_argument' rejected a method
-    auto assert_array_or_element() const -> void {
-        if (is_array_element()) {
-            return;
-        }
-
-        assert_array();
     }
 
     // every index is a constant within its array, e.g. the '1' of

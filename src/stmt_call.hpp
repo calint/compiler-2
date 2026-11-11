@@ -1810,7 +1810,11 @@ class builtin_arguments final {
 
         stmt_identifier array{stmt_identifier::parse_array_argument(tc, tz)};
 
-        array.assert_array_or_element();
+        // an array or an element of one, where a bulk operation starts
+        // note: 'parse_array_argument' rejected a method
+        if (not array.is_array_element()) {
+            array.assert_array();
+        }
 
         args_.push_back(path_argument(std::move(array)));
     }
