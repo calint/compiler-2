@@ -6,6 +6,12 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
 --------------------------------------------------------------------------------
 1. clean up
 --------------------------------------------------------------------------------
+[ ] easy: (round 291 YD) x86_64 'memory_equal' reserves 'rcx', which
+    only 'shift' names alone and which is held only when 'rsi' and 'rdi'
+    are; without the reservation a record '==' whose displacement is past
+    2 GiB under 11 live values compiles (the lowering borrows 'rcx' before
+    the count is loaded) instead of "out of scratch registers"; check that
+    no path holds 'rcx' alone, then drop the reservation
 [ ] easy: (round 290 XS) the 'is_left' normalize flag that rv32i passes
     to the last 'store_operation_result' of a constant shift has no effect:
     a left shift into a narrow register takes the 'slli'/'srai' branch

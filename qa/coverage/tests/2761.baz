@@ -1,0 +1,15 @@
+# every scratch register holds a value of each width: the terms of a sum
+# nested so deep that each one stays in its own register until the innermost
+# is added
+func main() {
+    var b = i8[]{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13}
+    var w = i16[]{100, 200, 300, 400, 500, 600, 700, 800, 900, 1000, 1100, 1200, 1300}
+    var d = i32[]{1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096}
+    var sb = i8(b[0] + (b[1] + (b[2] + (b[3] + (b[4] + (b[5] + (b[6] + (b[7] + (b[8] + (b[9] + (b[10] + (b[11] + b[12] * 2))))))))))))
+    var sw = i16(w[0] + (w[1] + (w[2] + (w[3] + (w[4] + (w[5] + (w[6] + (w[7] + (w[8] + (w[9] + (w[10] + (w[11] + w[12] * 2))))))))))))
+    var sd = d[0] + (d[1] + (d[2] + (d[3] + (d[4] + (d[5] + (d[6] + (d[7] + (d[8] + (d[9] + (d[10] + (d[11] + d[12] * 2)))))))))))
+    if sb != 104 exit(1)
+    if sw != 10400 exit(2)
+    if sd != 12287 exit(3)
+    exit(0)
+}

@@ -1,0 +1,16 @@
+# the form x86_64 picks for a zero, a copy and a string of a known size: a
+# value up to 16 B and a qword above the signed 32-bit range are stored with
+# immediates, a zero or a copy takes 'rep' only when its unrolled parts are
+# more; the instructions of the lines marked '# folds' are pinned
+type t {a i8[23]}
+func main() {
+    var s = "0123456789abcdef" # folds
+    var q = "\x00\x00\x00\x80\x00\x00\x00\x00" # folds
+    var u = t # folds
+    var c = i8[7] # folds
+    c[1] = 2
+    var d = c # folds
+    if s[15] != 'f' or q[3] != -128 or u.a[22] != 0 or d[1] != 2 {
+        exit(1)
+    }
+}

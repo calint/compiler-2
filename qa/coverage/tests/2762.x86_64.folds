@@ -1,0 +1,22 @@
+=== 7:     var s = "0123456789abcdef" # folds
+    mov dword [rbp], 858927408
+    mov dword [rbp + 4], 926299444
+    mov dword [rbp + 8], 1650538808
+    mov dword [rbp + 12], 1717920867
+=== 8:     var q = "\x00\x00\x00\x80\x00\x00\x00\x00" # folds
+    mov dword [rbp + 16], -2147483648
+    mov dword [rbp + 20], 0
+=== 9:     var u = t # folds
+    xor al, al
+    lea rdi, [rbp + 24]
+    mov rcx, 23
+    rep stosb
+=== 10:     var c = i8[7] # folds
+    mov dword [rbp + 47], 0
+    mov word [rbp + 51], 0
+    mov byte [rbp + 53], 0
+=== 12:     var d = c # folds
+    lea rsi, [rbp + 47]
+    lea rdi, [rbp + 54]
+    mov rcx, 7
+    rep movsb

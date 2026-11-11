@@ -7668,3 +7668,14 @@ SRC=2525 && EXP=0 && RUN
 
 # an i8 conversion of an 'xor' of i32 values keeps only the bits of the i8
 SRC=2526 && EXP=0 && RUN
+
+# an 'i16' element at a variable index is addressed with the index scaled by 2
+SRC=2760 && EXP=0 && RUN
+
+# every scratch register holds a value of each width
+SRC=2761 && EXP=0 && RUN
+
+# the form x86_64 picks for a zero, a copy and a string of a known size; the
+# instructions of the lines marked '# folds' are pinned
+SRC=2762 && EXP=0 && RUN
+if [[ $MACHINE == x86_64 ]]; then SRC=2762 && LISTING folds; fi

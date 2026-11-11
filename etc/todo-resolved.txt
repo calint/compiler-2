@@ -1,6 +1,16 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 291 (2026-11-11, YD mutation testing of the x86_64
+    backend outside arithmetic)
+    => done (2026-11-11): 50 mutants of condition suffixes, size specifiers,
+       data directives, displacements, strings, extensions, compares,
+       immediate stores, 'rep' thresholds, register names and the panic
+       report; 9 survived, new tests 2760-2762 kill 7 (a scale-2 index at
+       run time, every scratch register at each width, the store forms of
+       strings and zeros), 2 equivalent (one is a todo: 'memory_equal'
+       reserves 'rcx' it does not need); x86_64 writes nasm text, so nasm is
+       its encoding check until it has an encoder; no compiler bug
 [x] easy: round 290 (2026-11-11, XS mutation testing of the rv32i
     arithmetic)
     => done (2026-11-11): 52 mutants of the multiply and divide helpers,

@@ -1,0 +1,15 @@
+# an 'i16' element at a variable index is addressed with the index scaled by
+# 2, each element keeps its value
+func main() {
+    var a = i16[4]
+    var i = 0
+    loop {
+        a[i] = i16(i * 1000 + 1)
+        i = i + 1
+        if i == 4 break
+    }
+    var j = 3
+    if a[j] != 3001 exit(1)
+    if a[j - 2] != 1001 exit(2)
+    exit(0)
+}
