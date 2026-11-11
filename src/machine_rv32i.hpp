@@ -1271,9 +1271,7 @@ class machine_rv32i : public machine {
     // 'emit_io_call'; the sector functions are routines with the sector in
     // 'a0' where 'read' has the descriptor, there is no result
     auto emit_target_call(const token& src_loc_tk, const size_t indent,
-                          const target_call function,
-                          [[maybe_unused]] const operand& result)
-        -> void override {
+                          const target_call function) -> void override {
 
         const operation_scope scope{*this};
 

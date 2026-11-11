@@ -294,10 +294,10 @@ class machine_x86_64 final : public machine {
 
         // note: 2 because a part is a load and a store
         if (takes_rep_form(2 * parts, bulk_registers_)) {
-            copy_with_rep_movsb(src_loc_tk, indent, dst, size_bytes,
-                                [&](const operand& pointer) -> void {
-                                    lea(src_loc_tk, indent, pointer, src);
-                                });
+            emit_rep_form(src_loc_tk, indent, op::rep_movsb, dst, size_bytes,
+                          [&](const operand& pointer) -> void {
+                              lea(src_loc_tk, indent, pointer, src);
+                          });
 
             return;
         }
@@ -311,7 +311,7 @@ class machine_x86_64 final : public machine {
         };
 
         for_each_part(
-            size_bytes, size_qword_,
+            size_bytes,
             [&](const size_t part_size_bytes, const size_t offset) -> void {
                 const operand reg{sized_operand(tmp, part_size_bytes)};
 
@@ -524,13 +524,12 @@ class machine_x86_64 final : public machine {
             const std::string label{add_constant(bytes)};
 
             // rip-relative label addresses need no address register
-            copy_with_rep_movsb(
-                src_loc_tk, indent, dst, bytes.size(),
-                [&](const operand& pointer) -> void {
-                    assembler_.instruction(
-                        indent, op::lea, to_argument(pointer),
-                        assembler_x86_64::memory::of_symbol(label));
-                });
+            emit_rep_form(src_loc_tk, indent, op::rep_movsb, dst, bytes.size(),
+                          [&](const operand& pointer) -> void {
+                              assembler_.instruction(
+                                  indent, op::lea, to_argument(pointer),
+                                  assembler_x86_64::memory::of_symbol(label));
+                          });
 
             return;
         }
@@ -545,7 +544,7 @@ class machine_x86_64 final : public machine {
         }
 
         for_each_part(
-            bytes.size(), size_qword_,
+            bytes.size(),
             [&](const size_t part_size_bytes, const size_t offset) -> void {
                 const int64_t value{
                     little_endian_value(bytes.substr(offset, part_size_bytes)),
@@ -606,20 +605,11 @@ class machine_x86_64 final : public machine {
         const size_t parts{part_count(size_bytes)};
 
         if (takes_rep_form(parts, stosb_registers_)) {
-            const operation_scope named{*this};
-
-            const operand count{
-                reserve_rep_registers(src_loc_tk, indent, stosb_registers_),
-            };
-
-            const operand al{sized_register("rax", size_byte_)};
-            emit_op(src_loc_tk, indent, op::xor_op, al, al);
-
-            lea(src_loc_tk, indent, qword_register("rdi"), dst);
-
-            mov(src_loc_tk, indent, count, immediate(size_bytes));
-
-            assembler_.instruction(indent, op::rep_stosb);
+            emit_rep_form(src_loc_tk, indent, op::rep_stosb, dst, size_bytes,
+                          [&](const operand& rax) -> void {
+                              const operand al{sized_operand(rax, size_byte_)};
+                              emit_op(src_loc_tk, indent, op::xor_op, al, al);
+                          });
 
             return;
         }
@@ -627,7 +617,7 @@ class machine_x86_64 final : public machine {
         comment(src_loc_tk, indent, "{}, use mov", counted(parts, "part"));
 
         for_each_part(
-            size_bytes, size_qword_,
+            size_bytes,
             [&](const size_t part_size_bytes, const size_t offset) -> void {
                 mov(src_loc_tk, indent,
                     memory_part(dst, part_size_bytes, offset), immediate(0));
@@ -1008,16 +998,15 @@ class machine_x86_64 final : public machine {
 
     // 'read' and 'write' are system calls, the sector functions routines
     auto emit_target_call(const token& src_loc_tk, const size_t indent,
-                          const target_call function, const operand& result)
-        -> void override {
+                          const target_call function) -> void override {
 
         if (function == target_call::read) {
-            io_syscall(src_loc_tk, indent, result, syscall_read_);
+            io_syscall(src_loc_tk, indent, syscall_read_);
             return;
         }
 
         if (function == target_call::write) {
-            io_syscall(src_loc_tk, indent, result, syscall_write_);
+            io_syscall(src_loc_tk, indent, syscall_write_);
             return;
         }
 
@@ -1339,26 +1328,6 @@ class machine_x86_64 final : public machine {
         emit_op(src_loc_tk, indent, op::cmp, dst_op, src_op);
     }
 
-    // 'load_source_address' sets the 'rep movsb' source pointer
-    auto copy_with_rep_movsb(
-        const token& src_loc_tk, const size_t indent, const operand& dst,
-        const size_t size_bytes,
-        const std::function_ref<void(const operand&)> load_source_address)
-        -> void {
-
-        const operation_scope bulk{*this};
-
-        const operand count{
-            reserve_rep_registers(src_loc_tk, indent, bulk_registers_),
-        };
-
-        load_source_address(qword_register("rsi"));
-        lea(src_loc_tk, indent, qword_register("rdi"), dst);
-        mov(src_loc_tk, indent, count, immediate(size_bytes));
-
-        assembler_.instruction(indent, op::rep_movsb);
-    }
-
     // writes the instruction with the operands as they are
     auto emit(const size_t indent, const op code, const operand& dst,
               const operand& src) -> void {
@@ -1423,6 +1392,31 @@ class machine_x86_64 final : public machine {
         // the low part of the source is used, so a narrower destination needs
         // no extension
         emit(indent, code, dst_op, sized_operand(src_op, dst_size_bytes));
+    }
+
+    // 'rep movsb' or 'rep stosb' of 'size_bytes' at 'dst': 'load_source' sets
+    // its source register, 'rsi' the address or 'rax' the byte
+    auto
+    emit_rep_form(const token& src_loc_tk, const size_t indent, const op code,
+                  const operand& dst, const size_t size_bytes,
+                  const std::function_ref<void(const operand&)> load_source)
+        -> void {
+
+        assert(code == op::rep_movsb or code == op::rep_stosb);
+
+        const std::span<const std::string_view> named{
+            code == op::rep_movsb ? bulk_registers_ : stosb_registers_,
+        };
+
+        const operation_scope scope{*this};
+
+        const operand count{reserve_rep_registers(src_loc_tk, indent, named)};
+
+        load_source(qword_register(named.front()));
+        lea(src_loc_tk, indent, qword_register("rdi"), dst);
+        mov(src_loc_tk, indent, count, immediate(size_bytes));
+
+        assembler_.instruction(indent, code);
     }
 
     // idiv takes the divisor as a qword register or memory operand and the
@@ -1518,16 +1512,18 @@ class machine_x86_64 final : public machine {
         return operand::imm(value, default_type());
     }
 
-    // 'syscall' changes 'rcx' and 'r11', the allocated ones are saved
+    // 'syscall' changes 'rcx' and 'r11', the allocated ones are saved; the
+    // number goes in 'rax', the result register that 'call_target' allocated
     auto io_syscall(const token& src_loc_tk, const size_t indent,
-                    const operand& dst, const int syscall_number) -> void {
+                    const int syscall_number) -> void {
 
         static constexpr std::array<std::string_view, 2> clobbered{
             "rcx",
             "r11",
         };
 
-        mov(src_loc_tk, indent, dst, immediate(syscall_number));
+        mov(src_loc_tk, indent, qword_register("rax"),
+            immediate(syscall_number));
 
         with_saved_registers(indent, clobbered, [&] -> void {
             assembler_.instruction(indent, op::syscall);
@@ -1762,15 +1758,15 @@ class machine_x86_64 final : public machine {
         return condition::ge;
     }
 
-    // unrolled accesses take the widest parts first so each narrower width
-    // covers at most one remaining part
+    // unrolled accesses take qwords first so each narrower width covers at
+    // most one remaining part
     static auto for_each_part(
-        const size_t size_bytes, const size_t widest_size_bytes,
+        const size_t size_bytes,
         const std::function_ref<void(size_t part_size_bytes, size_t offset)>
             emit_part) -> void {
 
         size_t offset{};
-        for (size_t w{widest_size_bytes}; w != 0; w /= 2) {
+        for (size_t w{size_qword_}; w != 0; w /= 2) {
             while (size_bytes - offset >= w) {
                 emit_part(w, offset);
                 offset += w;
@@ -1790,7 +1786,7 @@ class machine_x86_64 final : public machine {
             remaining_bytes %= size_qword_;
         }
 
-        for_each_part(remaining_bytes, size_qword_,
+        for_each_part(remaining_bytes,
                       [&](const size_t part_size_bytes,
                           [[maybe_unused]] const size_t offset) -> void {
                           compares.push_back(string_compare(part_size_bytes));

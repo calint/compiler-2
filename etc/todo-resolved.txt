@@ -1,6 +1,17 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 298 (2026-11-11, ZQ design review of 'machine' and the
+    x86_64 backend; ZR, ZP bug hunts)
+    => done (2026-11-11): one 'emit_panic' for the failure handler and the
+       per-file entry, one 'emit_rep_form' for every 'rep movsb' and 'rep
+       stosb', 'for_each_part' without the size every caller passed,
+       'emit_target_call' without the result only 'call_target' decides,
+       'registers_saved_by_call' returns names; listings equal; ZR (an
+       emulator that traps misaligned accesses over the tests, fuzzers,
+       roome and alignment programs) and ZP (rounds 287-293 compared with
+       their parent over 6000 generated programs, probes and option
+       variants): no defect
 [x] easy: round 297 (2026-11-11, YB mutation testing of 'machine')
     => done (2026-11-11): 46 mutants of constant factors, byte order,
        booleans, padding zeroing, the registers saved at a call, the frame

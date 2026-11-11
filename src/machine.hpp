@@ -967,11 +967,7 @@ class machine {
 
         // the callee may use every register but the variables base, so only
         // values live at the call need saving
-        std::vector<std::string_view> saved;
-
-        for (const size_t index : registers_saved_by_call()) {
-            saved.push_back(register_display_name(index));
-        }
+        const std::vector<std::string_view> saved{registers_saved_by_call()};
 
         if (state_.trace.is_enabled()) {
             call_log_.add_noinline_call({
@@ -1043,13 +1039,13 @@ class machine {
         };
 
         if (is_sector) {
-            emit_target_call(src_loc_tk, indent, function, operand{});
+            emit_target_call(src_loc_tk, indent, function);
             return;
         }
 
         const operand result{alloc_target_call_result(src_loc_tk, indent)};
 
-        emit_target_call(src_loc_tk, indent, function, result);
+        emit_target_call(src_loc_tk, indent, function);
 
         use_result(result);
     }
@@ -1711,10 +1707,10 @@ class machine {
         std::unreachable();
     }
 
-    // the call of 'call_target', its arguments in their registers
+    // the call of 'call_target', its arguments in their registers and the
+    // result register of 'read' and 'write' allocated
     virtual auto emit_target_call(const token& src_loc_tk, const size_t indent,
-                                  const target_call function,
-                                  const operand& result) -> void = 0;
+                                  const target_call function) -> void = 0;
 
     // the routines of the target besides 'routine_labels' that the code
     // marked used, before the sector routines and 'exit', which they may use,
@@ -1798,21 +1794,12 @@ class machine {
         comment({}, 0, handler.comment);
 
         if (not reports_line(handler)) {
-            const std::string message_label{
-                std::format("{}_message", handler.label),
-            };
-
             const std::string message{
                 std::format("{}\n", panic_message(handler.name)),
             };
 
-            assembler& output{output_.get()};
-
-            output.label(0, handler.label);
-            emit_panic_message(message_label, message);
-            exit(token{}, 1, operand::imm(handler.exit_code, default_type()));
-
-            emit_message_data(message_label, message);
+            emit_panic(handler.label, message, handler.exit_code,
+                       exit_code_register(), target_.routines.exit);
 
             return;
         }
@@ -1950,16 +1937,19 @@ class machine {
     }
 
     // the registers a 'noinline' call saves: the allocated ones but the
-    // variables base, which the callee uses too
-    [[nodiscard]] auto registers_saved_by_call() const -> std::vector<size_t> {
+    // variables base, which the callee uses too; by their names in the
+    // output
+    [[nodiscard]] auto registers_saved_by_call() const
+        -> std::vector<std::string_view> {
+
         const size_t variables_base{pool_index(variables_base_register())};
 
-        std::vector<size_t> saved;
+        std::vector<std::string_view> saved;
         for (const register_pool::allocation& allocated :
              state_.registers.allocations()) {
 
             if (allocated.index != variables_base) {
-                saved.push_back(allocated.index);
+                saved.push_back(register_display_name(allocated.index));
             }
         }
 
@@ -2295,28 +2285,9 @@ class machine {
             emit_no_return_jump(1, entry_label);
         }
 
-        const std::string message_label{
-            std::format("{}_message", entry_label),
-        };
-
-        const std::string message{failure_message(handler.name, file_ix)};
-
-        const operand code_register{
-            make_register_operand(target_.report_exit_code_register,
-                                  default_type()),
-        };
-
-        const operand exit_code{
-            operand::imm(handler.exit_code, default_type()),
-        };
-
-        output.label(0, entry_label);
-        emit_panic_message(message_label, message);
-        copy_value(token{}, 1, code_register, exit_code);
-        emit_no_return_jump(1, target_.routines.report_line);
-        mark_used(target_.routines.report_line);
-
-        emit_message_data(message_label, message);
+        emit_panic(entry_label, failure_message(handler.name, file_ix),
+                   handler.exit_code, target_.report_exit_code_register,
+                   target_.routines.report_line);
     }
 
     // the text of a message in read-only data, then back to the code
@@ -2333,6 +2304,31 @@ class machine {
 
         output.string_data(message);
         output.switch_section(section::text);
+    }
+
+    // the code at 'label' that prints 'message' and jumps to the routine
+    // 'routine' with 'exit_code' in 'code_register', then the text of the
+    // message
+    auto emit_panic(const std::string_view label,
+                    const std::string_view message, const int exit_code,
+                    const std::string_view code_register,
+                    const std::string_view routine) -> void {
+
+        const std::string message_label{std::format("{}_message", label)};
+
+        const operand code{
+            make_register_operand(code_register, default_type()),
+        };
+
+        assembler& output{output_.get()};
+
+        output.label(0, label);
+        emit_panic_message(message_label, message);
+        copy_value(token{}, 1, code, operand::imm(exit_code, default_type()));
+        emit_no_return_jump(1, routine);
+        mark_used(routine);
+
+        emit_message_data(message_label, message);
     }
 
     // the handlers that the code branches to, see 'mark_used'; before
