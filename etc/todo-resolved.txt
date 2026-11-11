@@ -1,6 +1,14 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 316 (2026-11-11, a guard of compile time; the checks of a
+    phase)
+    => done (2026-11-11): 'qa/perf/linear-growth.sh' compiles a long
+       expression on one line, many statements on one line, a path of
+       constant indexes and a path of fields at a size and 4 times it and
+       fails above a ratio of 8 (HEAD 2.9 to 4.2; the build of round 314
+       8.8 to 16.2); AGENTS.md lists it and 'fpga-emulator/qa/test.sh' with
+       the checks of a phase or behavior change
 [x] easy: round 315 (2026-11-11, AM pathological inputs: three compile
     times that grew more than linearly)
     => done (2026-11-11): a column is found in the table of line starts

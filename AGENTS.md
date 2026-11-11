@@ -122,9 +122,10 @@
   (one after the other): some tests have expected files of their own for
   them.
 - Per phase or behavior change, also `test-far-jumps.sh`,
-  `test-far-jumps-no-scratch.sh`, `test-versions.sh`, `roome/qa/test.sh`, the
-  asan build and the fuzzers (in a bug hunt round: asan and fuzzers once, at
-  the end of the round).
+  `test-far-jumps-no-scratch.sh`, `test-versions.sh`, `roome/qa/test.sh`,
+  `qa/perf/linear-growth.sh`, `fpga-emulator/qa/test.sh`, the asan build and
+  the fuzzers (in a bug hunt round: asan and fuzzers once, at the end of the
+  round).
 - Run each check once per round; do not edit sources while a check runs.
 - `UPDATE=1` with `test-coverage.sh` writes expected `.out` files; run it for
   every target whose run differs and review the diff.
