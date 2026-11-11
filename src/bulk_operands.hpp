@@ -179,7 +179,7 @@ class bulk_operands final {
             const array_shape shape{array.resolve_path(tc_).shape()};
 
             // note: an unknown length is the check of a function without its
-            //       calls, its code is discarded
+            //       calls or a body it checks, its code is discarded
 
             if (shape.is_length_unknown()) {
                 return false;

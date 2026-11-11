@@ -1,6 +1,12 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 317 (2026-11-11, AW comments after rounds 300-316)
+    => done (2026-11-11): seven comments said what the code no longer
+       does: 'target_call' and the rv32i i/o routines (routines on all
+       targets since round 311), the bare-metal header (every target has
+       sector routines), two notes on an unknown length (also a body it
+       checks), the class index of 'stmt_call.hpp' ('shared_storage_check')
 [x] easy: round 316 (2026-11-11, a guard of compile time; the checks of a
     phase)
     => done (2026-11-11): 'qa/perf/linear-growth.sh' compiles a long

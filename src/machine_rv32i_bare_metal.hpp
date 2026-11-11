@@ -9,8 +9,7 @@
 #include "machine_rv32i.hpp"
 
 // runs the flat image without an operating system, the targets supply the
-// memory, the uart access, the sector routines where there is a card and how
-// the program ends
+// memory, the uart access, the sector routines and how the program ends
 class machine_rv32i_bare_metal : public machine_rv32i {
     // the memory of the device, the image is loaded at its start, the stack
     // grows down from its end

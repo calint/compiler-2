@@ -53,6 +53,9 @@
 //   'builtin_arguments'
 //                     the arguments of a built-in that parses like a call,
 //                     e.g. 'exit(0)'
+//   'shared_storage_check'
+//                     the result and the arguments that may share storage
+//                     ('stmt_call::assert_no_shared_storage')
 //
 // an argument, from the parse to the body:
 //

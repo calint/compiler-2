@@ -156,7 +156,7 @@ class machine {
     // version too, the first or the last
     enum class kept_version : uint8_t { smaller, nested, first, last };
 
-    // a built-in the target provides as a system call or a routine
+    // a built-in the target provides as a routine
     enum class target_call : uint8_t {
         read,
         write,

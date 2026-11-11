@@ -68,10 +68,10 @@ class stmt_builtin_array_length final : public statement {
 
         // note: the destination has the default type, so a known length
         //       folds and the list copies it itself; the length is unknown
-        //       only in a function checked without a call, whose code is
-        //       discarded, e.g. the left side of 'array_length(a) * i', which
-        //       an operation with a run-time right side compiles without
-        //       folding
+        //       only in a function checked without a call or a body it
+        //       checks, whose code is discarded, e.g. the left side of
+        //       'array_length(a) * i', which an operation with a run-time
+        //       right side compiles without folding
 
         assert(src_info.is_length_unknown());
     }

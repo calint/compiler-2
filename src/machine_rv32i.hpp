@@ -1317,8 +1317,7 @@ class machine_rv32i : public machine {
         const operation_scope scope{*this};
 
         // the arguments are in the registers of 'target_calls', allocated by
-        // 'call_target'; 'a7' selects the system call or receives the return
-        // address
+        // 'call_target'; 'a7' receives the return address
         reserve_named_register(src_loc_tk, indent, "a7");
 
         call_io_routine(indent, routine_label(function));
@@ -1428,7 +1427,7 @@ class machine_rv32i : public machine {
 
     [[nodiscard]] auto assembler() -> assembler_rv32i& { return assembler_; }
 
-    // i/o routines replacing system calls return through 'a7' and change only
+    // the i/o routines return through 'a7' and change only
     // 'io_routine_clobbered_' besides 'a0', which are free at the call, so
     // like a system call it saves nothing
     auto call_io_routine(const size_t indent, const std::string_view label)
