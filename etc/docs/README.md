@@ -371,8 +371,9 @@ program does not depend on inlining.
      start or count whose elements end past the storage the target addresses
      ('longest_array_len', 2199 to 2201); the 'n' of a 'foo' over
      such a parameter is a read-only variable there and in the parse, not a
-     constant; a 'let' whose value folds only at a call is a constant there,
-     e.g. 'let m = n', so 's[m]' past the end is rejected like 's[n]'
+     constant; a 'let' whose value folds only at a call is a constant only
+     at the call, e.g. 'let m = n': 's[m]' past the end is rejected there
+     like 's[n]', and '[m]' is no array size in the body
    - the constants that end an inlined recursion: a recursive inlined call in
      the check ('scope_stack::is_in_body_taking_from_call'), also a call of the
      function in its own check ('scope_stack::inlined_nesting'), is compiled in

@@ -1,6 +1,18 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 288 (2026-11-11, ZD design review of 'toc'; ZC and ZF
+    bug hunts)
+    => done (2026-11-11): ZD: one 'noinline_body_list' class, held twice
+       by 'toc' as the emitted and the checked bodies, replaces the paired
+       methods of 'noinline_worklist', and the root check of
+       'record_if_global' moves into 'scope_stack' (63 lines fewer,
+       listings equal); ZC (hand-written programs across features, targets
+       and options) and ZF (every guard of bulk, io, 'foo', overlap,
+       assignment, division and generics read against its paths): no
+       defect; the docs say a 'let' that folds only at a call is a constant
+       only there; the todo asks whether a 'foo' count falls under the
+       later-argument rule
 [x] easy: round 287 (2026-11-11, XX mutation testing of 'expr_arith',
     'expr_bool', 'constant_arith' and 'constant_parser'; ZA design review of
     calls)

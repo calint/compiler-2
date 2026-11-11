@@ -45,8 +45,8 @@
 //                   of a noinline call, while the register trace
 //                   ('scope_entry', 'register_trace') and 'call_frame' of an
 //                   error use it for a call level
-//   tables          'type_table', 'noinline_worklist' (the noinline bodies to
-//                   emit or only to check), 'function_table'
+//   tables          'type_table', 'noinline_body_list' (the noinline bodies
+//                   to emit or only to check), 'function_table'
 //   'data_table'    the dats ('placed_dat') and the read-only constants
 //   options, usage  'check_options', 'usage_statistics'
 //   'scope_stack'   the scopes from the globals to the innermost scope and
@@ -791,102 +791,37 @@ class type_table final {
     }
 };
 
-// what a compile made: the bodies of the noinline functions to emit, a
-// worklist that grows while they compile, and the bodies that only a dry run
-// asks for, checked and not emitted
-class noinline_worklist final {
-    std::vector<noinline_body> emitted_bodies_;
-    std::vector<noinline_body> checked_bodies_;
+// the noinline bodies of one kind, each once per function and array lengths:
+// a worklist that grows while its bodies compile
+class noinline_body_list final {
+    std::vector<noinline_body> bodies_;
 
   public:
-    // a body asked for by a call in a dry run is checked once per array
-    // lengths, unless it is emitted
-    auto add_checked_body(const stmt_def_func& func,
-                          std::vector<size_t> array_lengths,
-                          const token& call_tk, std::string call_source)
-        -> void {
-
-        add_once(checked_bodies_, func, std::move(array_lengths), call_tk,
-                 std::move(call_source));
-    }
-
-    // a body is emitted once per array lengths
-    auto add_emitted_body(const stmt_def_func& func,
-                          std::vector<size_t> array_lengths,
-                          const token& call_tk, std::string call_source)
-        -> void {
-
-        add_once(emitted_bodies_, func, std::move(array_lengths), call_tk,
-                 std::move(call_source));
-    }
-
-    // a copy, the list grows while the bodies are checked
-    [[nodiscard]] auto checked_body_at(const size_t index) const
-        -> noinline_body {
-
-        return checked_bodies_.at(index);
-    }
-
-    [[nodiscard]] auto checked_body_count() const -> size_t {
-        return checked_bodies_.size();
-    }
-
-    // a copy, the list grows while the bodies compile
-    [[nodiscard]] auto emitted_body_at(const size_t index) const
-        -> noinline_body {
-
-        return emitted_bodies_.at(index);
-    }
-
-    [[nodiscard]] auto emitted_body_count() const -> size_t {
-        return emitted_bodies_.size();
-    }
-
-    [[nodiscard]] auto
-    is_emitted(const stmt_def_func& func,
-               const std::vector<size_t>& array_lengths) const -> bool {
-
-        return contains(emitted_bodies_, func, array_lengths);
-    }
-
-    [[nodiscard]] auto is_empty() const -> bool {
-        return emitted_bodies_.empty() and checked_bodies_.empty();
-    }
-
-  private:
-    //
-    // statics
-    //
-
-    static auto add_once(std::vector<noinline_body>& bodies,
-                         const stmt_def_func& func,
-                         std::vector<size_t> array_lengths,
-                         const token& call_tk, std::string call_source)
-        -> void {
-
-        if (contains(bodies, func, array_lengths)) {
+    auto add_once(noinline_body body) -> void {
+        if (contains(*body.func, body.array_lengths)) {
             return;
         }
 
-        bodies.push_back({
-            .func{&func},
-            .array_lengths{std::move(array_lengths)},
-            .call_tk{call_tk},
-            .call_source{std::move(call_source)},
-        });
+        bodies_.push_back(std::move(body));
     }
 
-    [[nodiscard]] static auto contains(const std::vector<noinline_body>& bodies,
-                                       const stmt_def_func& func,
-                                       const std::vector<size_t>& array_lengths)
+    // a copy, the list grows while the bodies compile
+    [[nodiscard]] auto at(const size_t index) const -> noinline_body {
+        return bodies_.at(index);
+    }
+
+    [[nodiscard]] auto contains(const stmt_def_func& func,
+                                const std::vector<size_t>& array_lengths) const
         -> bool {
 
         return std::ranges::any_of(
-            bodies, [&](const noinline_body& known) -> bool {
+            bodies_, [&](const noinline_body& known) -> bool {
                 return known.func == &func and
                        known.array_lengths == array_lengths;
             });
     }
+
+    [[nodiscard]] auto count() const -> size_t { return bodies_.size(); }
 };
 
 // the functions of the program: the defined ones and the instances of
@@ -1340,8 +1275,13 @@ class scope_stack final {
         innermost_loop_ref().reach_of_loop().is_continued = true;
     }
 
-    // a variable, data or constant of the root scope
-    auto record_global(const std::string_view name) -> void {
+    // a variable, data or constant declared in the root scope keeps the
+    // definition that declared it at the parse, the compile declares it again
+    auto record_if_global(const std::string_view name) -> void {
+        if (not is_at_root()) {
+            return;
+        }
+
         global_definitions_.try_emplace(std::string{name},
                                         order_.get().current());
     }
@@ -2422,7 +2362,7 @@ class definition_checks final {
 //                  'use_at' and 'storage_of'
 //   tables         'builtins', 'checks', 'data', 'definitions',
 //                  'funcs', 'generics', 'layout', 'machine',
-//                  'noinline_worklist', 'scopes', 'types'
+//                  'emitted_bodies', 'checked_bodies', 'scopes', 'types'
 //   statics        'assert_valid_name', 'continue_label', 'end_label'
 //
 // a statement may be compiled more than once (each inlined call, both
@@ -2461,7 +2401,10 @@ class toc final {
     scope_stack scopes_;
     data_table data_;
     function_table funcs_;
-    ::noinline_worklist noinline_worklist_;
+    // the bodies to emit and those that only a dry run asks for, checked and
+    // not emitted
+    noinline_body_list emitted_bodies_;
+    noinline_body_list checked_bodies_;
     generic_registry generics_;
     type_table types_;
     definition_checks definitions_;
@@ -2724,7 +2667,7 @@ class toc final {
                                            .constant{constant},
                                        });
 
-        record_if_global(name);
+        scopes_.record_if_global(name);
     }
 
     // the parse places the data of 'dat' after the dats before it and
@@ -2813,18 +2756,21 @@ class toc final {
 
         assert(is_compiling_);
 
+        noinline_body body{
+            .func{&func},
+            .array_lengths{std::move(array_lengths)},
+            .call_tk{call_tk},
+            .call_source{std::move(call_source)},
+        };
+
         const ::machine& x{machine()};
 
         if (x.is_discarding()) {
-            noinline_worklist_.add_checked_body(func, std::move(array_lengths),
-                                                call_tk,
-                                                std::move(call_source));
-
+            checked_bodies_.add_once(std::move(body));
             return;
         }
 
-        noinline_worklist_.add_emitted_body(func, std::move(array_lengths),
-                                            call_tk, std::move(call_source));
+        emitted_bodies_.add_once(std::move(body));
     }
 
     // a read-only constant labeled 'kind' and the call path, e.g. "str" for
@@ -2877,7 +2823,7 @@ class toc final {
             storage_.allocate_var(src_loc_tk, declared);
         }
 
-        record_if_global(var.name);
+        scopes_.record_if_global(var.name);
 
         if (is_compiling_) {
             comment_var(src_loc_tk, indent, declared);
@@ -2951,7 +2897,7 @@ class toc final {
         scopes_.set_max_scope_count(0);
 
         // note: the parse compiles no call
-        assert(noinline_worklist_.is_empty());
+        assert(emitted_bodies_.count() == 0 and checked_bodies_.count() == 0);
 
         is_compiling_ = true;
     }
@@ -3036,6 +2982,11 @@ class toc final {
                 compile();
             },
             machine::discarded_code::here);
+    }
+
+    // the bodies that only a dry run asked for, see 'add_noinline_body'
+    [[nodiscard]] auto checked_bodies() const -> const noinline_body_list& {
+        return checked_bodies_;
     }
 
     // what '--checks' turned on
@@ -3164,6 +3115,10 @@ class toc final {
         };
 
         restore_compile_state(keeps_first ? first_end : second_end);
+    }
+
+    [[nodiscard]] auto emitted_bodies() const -> const noinline_body_list& {
+        return emitted_bodies_;
     }
 
     // e.g. 'exit' leaves the code after it unreached
@@ -3343,10 +3298,6 @@ class toc final {
         assert(is_compiling_);
 
         return storage_.next_frame_address(builtins_.address());
-    }
-
-    [[nodiscard]] auto noinline_worklist() const -> const ::noinline_worklist& {
-        return noinline_worklist_;
     }
 
     [[nodiscard]] auto overflow_options(const destination& dst) const
@@ -3616,14 +3567,6 @@ class toc final {
 
         if (ends_caller_path) {
             end_path();
-        }
-    }
-
-    // a global keeps the definition that declared it at the parse, the
-    // compile declares it again
-    auto record_if_global(const std::string_view name) -> void {
-        if (scopes_.is_at_root()) {
-            scopes_.record_global(name);
         }
     }
 

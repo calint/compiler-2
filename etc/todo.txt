@@ -6,6 +6,13 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
 --------------------------------------------------------------------------------
 1. clean up
 --------------------------------------------------------------------------------
+[ ] easy: user decision (round 288 ZC): 'foo g[k].it, bump()' with 'bump'
+    writing 'k' is accepted (the address of 'g[k].it' is taken before the
+    count, the same on every target), while 'array_copy(g[k].it, b,
+    bump())' and 'write(1, g[k].it, bump())' are rejected ("'k' may be
+    written by the call of 'bump' in a later argument"); either the count
+    of a 'foo' falls under the later-argument rule or the rule's reason
+    does not hold for the built-ins either
 [ ] easy: (round 285 XR) 'assembler_x86_64::is_reload' removes a reload
     only after a store of qword width; a dword store would also do, since
     every reader of a dword value reads the 32-bit view or uses 'movsx'

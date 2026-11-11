@@ -476,8 +476,7 @@ class program final {
 
         for (const stmt_def_func* const f : tc.funcs().defs()) {
             // a noinline body without array lengths was checked as emitted
-            if (f != &func_main and
-                not tc.noinline_worklist().is_emitted(*f, {})) {
+            if (f != &func_main and not tc.emitted_bodies().contains(*f, {})) {
 
                 f->check_body(tc);
             }
@@ -492,13 +491,10 @@ class program final {
         // note: the calls in a body can request more bodies, so the count
         //       is read on every pass
 
-        for (size_t i{}; i < tc.noinline_worklist().checked_body_count(); ++i) {
-            const noinline_body body{
-                tc.noinline_worklist().checked_body_at(i),
-            };
+        for (size_t i{}; i < tc.checked_bodies().count(); ++i) {
+            const noinline_body body{tc.checked_bodies().at(i)};
 
-            if (tc.noinline_worklist().is_emitted(*body.func,
-                                                  body.array_lengths)) {
+            if (tc.emitted_bodies().contains(*body.func, body.array_lengths)) {
 
                 continue;
             }
@@ -516,10 +512,8 @@ class program final {
         // note: the calls in a body can request more bodies, so the count
         //       is read on every pass
 
-        for (size_t i{}; i < tc.noinline_worklist().emitted_body_count(); ++i) {
-            const noinline_body body{
-                tc.noinline_worklist().emitted_body_at(i),
-            };
+        for (size_t i{}; i < tc.emitted_bodies().count(); ++i) {
+            const noinline_body body{tc.emitted_bodies().at(i)};
 
             with_call_frame(body, [&] -> void {
                 body.func->emit_noinline_body(tc, body.array_lengths);
