@@ -61,6 +61,8 @@ class unary_ops final {
                         constant_arith::signed_minimum(width.size_bits()));
     }
 
+    // the ops applied to 'value' at 64 bits, wrapping, without the overflow
+    // check of 'evaluate_at'
     [[nodiscard]] auto evaluate_constant(const int64_t value) const -> int64_t {
         return evaluate(value, std::nullopt);
     }

@@ -238,6 +238,8 @@ class stmt_identifier final : public statement {
         token close_bracket_tk;
     };
 
+    // an element of the path: a name, the field it names and its index, e.g.
+    // the 'rooms[i]' of 'w.rooms[i].x'
     struct ident_elem {
         token name_tk;
         // the field it names in the instance before it, null for the root
@@ -429,6 +431,7 @@ class stmt_identifier final : public statement {
         token name_tk;
     };
 
+    // nothing follows the element, the path ends
     struct path_end {};
 
     // what follows an element of the path, see 'read_continuation'

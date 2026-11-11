@@ -316,7 +316,7 @@ class program final {
             }
 
             tc_.get_main_or_throw().compile_main(tc_);
-            compile_noinline_functions(tc_);
+            emit_noinline_bodies(tc_);
             check_function_bodies(tc_);
             check_noinline_bodies(tc_);
         }
@@ -483,9 +483,9 @@ class program final {
         }
     }
 
-    // a body that only skipped code or the check of a function without its
-    // calls asks for is checked with its array lengths, as an inlined call
-    // there is
+    // a noinline body that was not emitted, asked for only by skipped code
+    // or by 'check_function_bodies', is checked with its array lengths, as
+    // an inlined call there is
     static auto check_noinline_bodies(toc& tc) -> void {
 
         // note: the calls in a body can request more bodies, so the count
@@ -507,7 +507,7 @@ class program final {
 
     // each noinline function that is called has one body per array lengths,
     // after 'main'; a function nothing calls leaves no code
-    static auto compile_noinline_functions(toc& tc) -> void {
+    static auto emit_noinline_bodies(toc& tc) -> void {
 
         // note: the calls in a body can request more bodies, so the count
         //       is read on every pass

@@ -139,7 +139,7 @@ class stmt_def_dat final : public statement {
         machine& x{tc.machine()};
 
         x.comment({name_tk_, 0}, name_tk_.text());
-        compile_data_rec(x, get_type(), root_elem_);
+        compile_data_elem(x, get_type(), root_elem_);
     }
 
   private:
@@ -147,7 +147,45 @@ class stmt_def_dat final : public statement {
     // statics
     //
 
-    // e.g. 'dat primes = []{2, 3, 5}'
+    // an element of any form at the type 'tp', a field or an element of it
+    // in turn
+    static auto compile_data_elem(machine& x, const type& tp, const elem& el)
+        -> void {
+
+        if (const elem::scalar* const value{
+                std::get_if<elem::scalar>(&el.form),
+            }) {
+
+            x.comment({value->src_loc_tk, 0}, "{}", tp.name());
+
+            x.emit_data_array(tp.size_bytes(),
+                              std::array<int64_t, 1>{value->value});
+
+            return;
+        }
+
+        if (const elem::fields* const record{
+                std::get_if<elem::fields>(&el.form),
+            }) {
+
+            compile_data_record(x, tp, *record);
+            return;
+        }
+
+        // only 'i8[]' can be initialized with a string
+        if (const elem::string* const str{
+                std::get_if<elem::string>(&el.form),
+            }) {
+
+            compile_data_string(x, tp, *str);
+            return;
+        }
+
+        compile_data_list(x, tp, std::get<elem::elements>(el.form));
+    }
+
+    // the listed elements of a built-in type on one data line, e.g. 'dat
+    // primes = []{2, 3, 5}'
     static auto compile_data_elements(machine& x, const type& tp,
                                       const elem::elements& list) -> void {
 
@@ -183,41 +221,6 @@ class stmt_def_dat final : public statement {
                               list.array_count - list.items.size());
     }
 
-    static auto compile_data_rec(machine& x, const type& tp, const elem& el)
-        -> void {
-
-        if (const elem::scalar* const value{
-                std::get_if<elem::scalar>(&el.form),
-            }) {
-
-            x.comment({value->src_loc_tk, 0}, "{}", tp.name());
-
-            x.emit_data_array(tp.size_bytes(),
-                              std::array<int64_t, 1>{value->value});
-
-            return;
-        }
-
-        if (const elem::fields* const record{
-                std::get_if<elem::fields>(&el.form),
-            }) {
-
-            compile_data_record(x, tp, *record);
-            return;
-        }
-
-        // only 'i8[]' can be initialized with a string
-        if (const elem::string* const str{
-                std::get_if<elem::string>(&el.form),
-            }) {
-
-            compile_data_string(x, tp, *str);
-            return;
-        }
-
-        compile_data_list(x, tp, std::get<elem::elements>(el.form));
-    }
-
     static auto compile_data_record(machine& x, const type& tp,
                                     const elem::fields& record) -> void {
 
@@ -236,7 +239,7 @@ class stmt_def_dat final : public statement {
 
             written_bytes = f.offset + f.size_bytes;
 
-            compile_data_rec(x, f.type_ref(), e);
+            compile_data_elem(x, f.type_ref(), e);
         }
 
         // zero out remaining fields and the padding after the last field

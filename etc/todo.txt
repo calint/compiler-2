@@ -627,6 +627,17 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
        fewer; 1177 and 2644 become rejection tests, the box part of 1185
        goes; rejects programs accepted today, e.g. 'func list.get(n)' on
        'type list<T type, n>'; patch /tmp/r324-bi-work/bi-2.diff
+[p] medium: need approval: in a generic instance a guard on a length does not
+    protect a constant index: 'if array_length(b.items) > 4 { b.items[4] =
+    1 }' instantiated with 'buf<4>' is rejected, the condition is constant
+    at the parse of the instance and skipped code obeys the rules; the same
+    guard on an unsized 'i8[]' parameter is accepted (round 325 BM, probes
+    /tmp/r325-bm-work/t/g1-g3.baz)
+    => round 92 J1 rejected a check per length because it would reject code
+       guarded by a length, which is what an instance does here
+    => decide whether an instance behaves as an unsized parameter there
+       (the bounds rule of skipped code not applied to a constant index
+       under a folded length guard) or keeps the rules of skipped code
 [p] easy: need approval: 'read' and 'sector_read' into an element type that
     holds a 'bool' put bytes there that are neither 'true' nor 'false'
     ('read(0, b, 1)' of a 'bool[1]' with input 'x' is true as a condition;

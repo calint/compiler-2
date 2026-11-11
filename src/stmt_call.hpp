@@ -42,7 +42,8 @@
 //   'missing_argument_text', 'missing_delimiter_text',
 //   'throw_not_array_argument', 'named_argument_type',
 //   'parse_array_parameter_argument'
-//                     free, first, 'generic_call' and 'stmt_call' use them
+//                     free functions that 'generic_call' and 'stmt_call'
+//                     use
 //   'generic_call'    the instance of a generic function that the call names
 //   'call_site'       what compiling the call needs of it
 //   'inline_call'     compiles the body of the function in place

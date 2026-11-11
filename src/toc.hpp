@@ -77,6 +77,8 @@
 class stmt_def_dat;
 class stmt_def_func;
 
+// a function of the function table: its definition, the generic method it
+// is an instance of and its place in the definition order
 struct func_info {
     token src_loc_tk;           // the definition
     const stmt_def_func* def{}; // never null
@@ -247,6 +249,8 @@ struct param_binding {
     }
 };
 
+// a constant of a scope: a 'let' that folds, the 'n' of a 'foo' or a
+// constant parameter of a generic instance
 struct const_info {
     token src_loc_tk; // the definition
     // typed when the initializer of a 'let' is or its type is not the

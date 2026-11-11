@@ -1,6 +1,17 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 330 (2026-11-11, BK a newcomer reads the code in order)
+    => done (2026-11-11): 22 places where reading stopped along the order
+       of 'etc/docs/README.md', 16 fixed: 'compile_noinline_functions' is
+       'emit_noinline_bodies', 'compile_data_rec' is 'compile_data_elem';
+       header comments for 'builtin_function', 'type_field', 'var_info',
+       'source_files::file', 'func_info', 'const_info', 'ident_elem',
+       'path_end'; comments on 'check_target_reads', 'parse_option',
+       'check_noinline_bodies', 'statement::compile', 'evaluate_constant',
+       the 'continue' path and the 'stmt_call.hpp' map; listings equal;
+       BM (flow analyses, 17000 programs) found no defect, its question on
+       a length guard in a generic instance is a pending todo item
 [x] easy: round 329 (2026-11-11, BI generics and the names they hide)
     => done (2026-11-11): 'type m<l type> = l<l>' was accepted, the base of
        a generic type was looked up without its parameters, so 'l' meant

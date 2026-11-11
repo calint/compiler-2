@@ -189,6 +189,8 @@ class array_shape final {
         : is_array_{is_array}, length_{length} {}
 };
 
+// a field of a user type: its name, its element type, its offset in an
+// instance and its size, of every element for an array
 struct type_field {
     std::string name;
     const type* type_ptr{}; // element type

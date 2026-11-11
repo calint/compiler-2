@@ -61,6 +61,8 @@ enum class builtin_value : uint8_t { none, count, boolean };
 // either, e.g. 'read' whose count may be dropped
 enum class builtin_use : uint8_t { statement, value, either };
 
+// a built-in function: its name, the value of a call and where a call may
+// stand
 struct builtin_function {
     std::string_view name;
     builtin_value value{};

@@ -229,8 +229,9 @@ class statement {
         throw_narrowed(tok(), trimmed_source(*this), get_type(), dst_type);
     }
 
-    // may run more than once, what it adds to 'toc' is the same each time or
-    // put back, see the class comment of 'toc'
+    // emits the code of the node through 'tc', a value written to 'dst'; may
+    // run more than once, what it adds to 'toc' is the same each time or put
+    // back, see the class comment of 'toc'
     virtual auto compile([[maybe_unused]] toc& tc,
                          [[maybe_unused]] const size_t indent,
                          [[maybe_unused]] const destination& dst) const

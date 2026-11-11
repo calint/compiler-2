@@ -155,6 +155,8 @@ using var_placement =
     return name.contains('-');
 }
 
+// what a variable is declared as: its name, type and array shape, the
+// token of its declaration, why it is read-only and where it lives
 struct var_info {
     std::string name;
     const type* type_ptr{};

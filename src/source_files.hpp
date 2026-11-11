@@ -54,6 +54,8 @@ struct source_line {
 // the source files of a program, the first is the main file; the text stays
 // where it is when files are added, tokens refer to it
 class source_files final {
+    // a file that was read: its name as given and its text, with what the
+    // messages need to place a token in it
     struct file {
         std::string name;
         std::string text;

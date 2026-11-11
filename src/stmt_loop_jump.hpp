@@ -49,8 +49,8 @@ class stmt_loop_jump final : public statement {
         }
     }
 
-    // the next round of a 'continue' starts with at least the loop entry
-    // coverage
+    // a 'continue' ends the path, the next round starts with at least the
+    // coverage at the loop entry ('assignment_flow::trace_loop')
     auto trace_assignment(assignment_flow& flow) const -> void override {
         if (tok().is_text("break")) {
             flow.record_break();

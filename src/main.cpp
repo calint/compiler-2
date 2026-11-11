@@ -332,6 +332,8 @@ struct target_option {
     bool given{};
 };
 
+// an option that the chosen target does not read is an error, e.g. '--stack'
+// with 'x86_64'
 auto check_target_reads(const options& opts) -> void {
     const std::array<target_option, 4> target_options{
         target_option{
@@ -629,6 +631,7 @@ auto apply_versions(const std::string_view value, options& opts) -> void {
     opts.kept_version = row.kind;
 }
 
+// one argument of the command line: an option or the source file
 auto parse_option(const std::string_view arg, options& opts) -> void {
     constexpr std::array<value_option, 9> value_options{
         value_option{.name{"--vars="}, .apply{apply_vars}},
