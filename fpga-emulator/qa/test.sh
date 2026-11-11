@@ -106,4 +106,39 @@ if [ "$BYTES" != " 3 10 17 24" ]; then
     exit 1
 fi
 
+echo " * run misaligned access tests in the emulator"
+
+# CASE=N assembles the case N of 'misaligned.S', which must stop with the exit
+# code and the message on stderr
+misaligned() {
+    $CC -march=rv32i \
+        -mabi=ilp32 \
+        -nostartfiles \
+        -nostdlib \
+        -Wl,-Ttext=0x0 \
+        -Wl,--no-relax \
+        -DCASE=$1 \
+        -o misaligned misaligned.S
+
+    $OBJCOPY misaligned --output-target=binary misaligned.bin
+    rm misaligned
+
+    STATUS=0
+    ../osqa misaligned.bin "$IMAGE" </dev/null >/dev/null 2>misaligned.err || STATUS=$?
+    if [ "$STATUS" != "$2" ] || ! grep -qxF "$3" misaligned.err; then
+        echo "misaligned test $1 FAILED: exit code $STATUS"
+        cat misaligned.err
+        exit 1
+    fi
+}
+
+misaligned 1 199 "misaligned fetch at pc 0x0000002e address 0x0000002e"
+misaligned 2 200 "misaligned lh at pc 0x00000028 address 0x00001001"
+misaligned 3 201 "misaligned lhu at pc 0x00000028 address 0x00001003"
+misaligned 4 202 "misaligned lw at pc 0x00000028 address 0x00001002"
+misaligned 5 203 "misaligned sh at pc 0x00000028 address 0x00001001"
+misaligned 6 204 "misaligned sw at pc 0x00000028 address 0x00001002"
+
+rm misaligned.bin misaligned.err
+
 echo "test: PASSED"

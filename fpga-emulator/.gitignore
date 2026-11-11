@@ -5,3 +5,6 @@ qa/osqa-test
 qa/sdcard-test
 qa/sdcard-firmware.bin
 qa/sdcard-firmware.lst
+qa/misaligned
+qa/misaligned.bin
+qa/misaligned.err

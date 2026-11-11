@@ -1,6 +1,17 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 312 (2026-11-11, AI test of the emulator traps; AL
+    design review of the classes)
+    => done (2026-11-11): 'fpga-emulator/qa/test.sh' runs 'misaligned.S'
+       once per case (fetch, 'lh', 'lhu', 'lw', 'sh', 'sw'), each image does
+       the aligned accesses first and one misaligned access, and checks the
+       exit code and message; removing any trap fails its case; AL: the
+       shared storage check of a call is a class of its own,
+       'shared_storage_check' ('stmt_call' 1030 to 943 lines); the other
+       classes have no cluster of members that a helper would make simpler
+       ('toc' is a facade over its tables, the backends hold no state);
+       listings equal
 [x] easy: round 311 (2026-11-11, ZY finding 1: the descriptors of 'read'
     and 'write' on linux)
     => done (2026-11-11): on x86_64 and rv32i a program's 'write(3)' after

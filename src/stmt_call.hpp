@@ -1875,6 +1875,115 @@ class builtin_arguments final {
     }
 };
 
+// the result destination and the arguments of a call that name variables,
+// with what the callee reaches of each: a part that one of them writes may be
+// reached through another one or be a global the callee uses, so it may be
+// read or written under another name, see 'stmt_call::assert_no_shared_storage'
+class shared_storage_check final {
+  public:
+    // the result destination or an argument that names a variable, with
+    // what the callee reaches of it, kept to compare with the next ones
+    struct reference {
+        token tk;
+        // e.g. "argument 1 'a'" or "the result destination 'x'"
+        std::string text;
+        storage_path target{};
+        std::vector<call_effect> reached;
+    };
+
+  private:
+    static constexpr std::string_view use_temporary_fix_{
+        "use a temporary variable for one of them",
+    };
+
+    std::reference_wrapper<const stmt_def_func> callee_;
+    std::vector<reference> references_;
+
+  public:
+    explicit shared_storage_check(const stmt_def_func& callee)
+        : callee_{callee} {}
+
+    // an argument that reaches a part of an earlier one or of the result that
+    // one of the two writes
+    auto add(reference ref) -> void {
+        for (const reference& other : references_) {
+            if (not may_share(ref, other)) {
+                continue;
+            }
+
+            // note: the root of an argument is a name of the source or a
+            //       parameter, a temporary is the result or behind a binding
+
+            assert(not is_temporary_name(ref.target.root.name));
+
+            throw compile_error{
+                ref.tk, std::format("{} may share storage with {} (both name "
+                                    "{}), {}",
+                                    ref.text, other.text,
+                                    in_quotes(ref.target.root.name),
+                                    use_temporary_fix_)};
+        }
+
+        references_.push_back(std::move(ref));
+    }
+
+    auto assert_not_shared_with_globals() const -> void {
+        const stmt_def_func& callee{callee_.get()};
+
+        for (const body_uses::global_use& global : callee.uses().globals()) {
+            assert_not_shared_with_global(global);
+        }
+    }
+
+  private:
+    // what the callee writes through the result or an argument may be a
+    // global it uses, or what it writes to the global may be what it reaches
+    // through them, e.g. 'g = add_g()' where 'add_g' sets 'res' and reads 'g'
+    auto
+    assert_not_shared_with_global(const body_uses::global_use& global) const
+        -> void {
+
+        for (const reference& ref : references_) {
+            for (const call_effect& reached : ref.reached) {
+                if (not(reached.is_write or global.is_written) or
+                    not reached.storage.may_overlap(global.storage)) {
+
+                    continue;
+                }
+
+                const stmt_def_func& callee{callee_.get()};
+
+                throw compile_error{
+                    ref.tk,
+                    std::format("{} may share storage with the global "
+                                "{} that {} uses, {}",
+                                ref.text, in_quotes(global.storage.root.name),
+                                in_quotes(callee.name()), use_temporary_fix_)};
+            }
+        }
+    }
+
+    //
+    // statics
+    //
+
+    [[nodiscard]] static auto may_share(const reference& lhs,
+                                        const reference& rhs) -> bool {
+
+        for (const call_effect& l : lhs.reached) {
+            for (const call_effect& r : rhs.reached) {
+                if ((l.is_write or r.is_write) and
+                    l.storage.may_overlap(r.storage)) {
+
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+};
+
 // a call of a function, a method or a constructor
 //
 // parsing, in the constructors: the call is in a function
@@ -1911,20 +2020,6 @@ class stmt_call final : public statement {
     std::vector<expr_any> args_;
     std::vector<token> arg_delims_tk_;
     token close_paren_tk_;
-
-    static constexpr std::string_view use_temporary_fix_{
-        "use a temporary variable for one of them",
-    };
-
-    // the result destination or an argument that names a variable, with
-    // what the callee reaches of it, kept to compare with the next ones
-    struct reference {
-        token tk;
-        // e.g. "argument 1 'a'" or "the result destination 'x'"
-        std::string text;
-        storage_path target{};
-        std::vector<call_effect> reached;
-    };
 
   public:
     // 'tz' is after the name, before its '<' or '('. 'expected_type' is the
@@ -2262,13 +2357,13 @@ class stmt_call final : public statement {
         const toc& tc, const destination& dst,
         const std::span<const std::optional<place>> places) const -> void {
 
-        std::vector<reference> references;
+        shared_storage_check check{callee()};
 
         // none for a destination without storage, e.g. a register
         const std::optional<storage_path> dst_storage{dst.storage()};
 
         if (dst_storage) {
-            references.push_back(make_reference(
+            check.add(make_reference(
                 tc, std::nullopt, callee_name_token(),
                 std::format("the result destination {}", in_quotes(dst.text())),
                 *dst_storage));
@@ -2285,49 +2380,17 @@ class stmt_call final : public statement {
             const expr_any& arg{args_.at(i)};
             const storage_path target{place_storage(tc, *passed)};
 
-            reference arg_reference{
+            check.add(
                 make_reference(tc, i, arg.tok(),
                                std::format("{} {}", describe_argument(i),
                                            in_quotes(trimmed_source(arg))),
-                               target),
-            };
-
-            assert_not_shared_with_earlier(references, arg_reference);
-            references.push_back(std::move(arg_reference));
+                               target));
         }
 
         // note: always, a body compiled once for all calls, a noinline one,
         //       cannot see that a parameter names a global it also uses
 
-        for (const body_uses::global_use& global : callee().uses().globals()) {
-            assert_not_shared_with_global(global, references);
-        }
-    }
-
-    // what the callee writes through the result or an argument may be a
-    // global it uses, or what it writes to the global may be what it reaches
-    // through them, e.g. 'g = add_g()' where 'add_g' sets 'res' and reads 'g'
-    auto assert_not_shared_with_global(
-        const body_uses::global_use& global,
-        const std::span<const reference> references) const -> void {
-
-        for (const reference& ref : references) {
-            for (const call_effect& reached : ref.reached) {
-                if (not(reached.is_write or global.is_written) or
-                    not reached.storage.may_overlap(global.storage)) {
-
-                    continue;
-                }
-
-                throw compile_error{
-                    ref.tk,
-                    std::format("{} may share storage with the global "
-                                "{} that {} uses, {}",
-                                ref.text, in_quotes(global.storage.root.name),
-                                in_quotes(callee().name()),
-                                use_temporary_fix_)};
-            }
-        }
+        check.assert_not_shared_with_globals();
     }
 
     // e.g. the '.' of 'mk().y' or 'mk().sum()', a result has no storage to
@@ -2482,9 +2545,9 @@ class stmt_call final : public statement {
                                       const std::optional<size_t> param_index,
                                       const token& tk, std::string text,
                                       const storage_path& target) const
-        -> reference {
+        -> shared_storage_check::reference {
 
-        reference result{
+        shared_storage_check::reference result{
             .tk{tk},
             .text{std::move(text)},
             .target{target},
@@ -2805,52 +2868,11 @@ class stmt_call final : public statement {
     // statics
     //
 
-    // an argument that reaches a part of an earlier one or of the result that
-    // one of the two writes
-    static auto
-    assert_not_shared_with_earlier(const std::span<const reference> earlier,
-                                   const reference& ref) -> void {
-
-        for (const reference& other : earlier) {
-            if (not may_share(ref, other)) {
-                continue;
-            }
-
-            // note: the root of an argument is a name of the source or a
-            //       parameter, a temporary is the result or behind a binding
-
-            assert(not is_temporary_name(ref.target.root.name));
-
-            throw compile_error{
-                ref.tk, std::format("{} may share storage with {} (both name "
-                                    "{}), {}",
-                                    ref.text, other.text,
-                                    in_quotes(ref.target.root.name),
-                                    use_temporary_fix_)};
-        }
-    }
-
     [[nodiscard]] static auto is_widened_integer(const type& result_type,
                                                  const type& dst_type) -> bool {
 
         return result_type.is_integer() and dst_type.is_integer() and
                result_type.size_bytes() < dst_type.size_bytes();
-    }
-
-    [[nodiscard]] static auto may_share(const reference& lhs,
-                                        const reference& rhs) -> bool {
-
-        for (const call_effect& l : lhs.reached) {
-            for (const call_effect& r : rhs.reached) {
-                if ((l.is_write or r.is_write) and
-                    l.storage.may_overlap(r.storage)) {
-
-                    return true;
-                }
-            }
-        }
-
-        return false;
     }
 
     // the storage of the variable an argument names
