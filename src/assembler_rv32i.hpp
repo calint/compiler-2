@@ -1530,6 +1530,31 @@ class assembler_rv32i final : public assembler {
         std::println(os, "{}:", skip_label);
     }
 
+    // the data, the zeros or the code of the line at 'line_index', which is
+    // at 'address'
+    auto write_line_bytes(std::ostream& os, const line& l,
+                          const size_t line_index, const size_t address,
+                          const symbol_table& symbols) const -> void {
+
+        const record* const structured{record_of(l)};
+
+        const data_values* const data{
+            std::get_if<data_values>(structured),
+        };
+
+        const zero_fill* const fill{std::get_if<zero_fill>(structured)};
+
+        // zero fills such as the zero elements of a 'dat' can be large
+        if (data != nullptr) {
+            write_data(os, *data);
+        } else if (fill != nullptr) {
+            write_zeros(os, fill->size_bytes);
+        } else {
+            write_code(os, l, line_index, static_cast<int64_t>(address),
+                       symbols);
+        }
+    }
+
     auto write_long_jump(std::ostream& os, const std::string_view indent,
                          const line& l) const -> void {
 
@@ -1579,23 +1604,7 @@ class assembler_rv32i final : public assembler {
 
             const line& l{lines().at(index)};
 
-            const record* const structured{record_of(l)};
-
-            const data_values* const data{
-                std::get_if<data_values>(structured),
-            };
-
-            const zero_fill* const fill{std::get_if<zero_fill>(structured)};
-
-            // zero fills such as the zero elements of a 'dat' can be large
-            if (data != nullptr) {
-                write_data(os, *data);
-            } else if (fill != nullptr) {
-                write_zeros(os, fill->size_bytes);
-            } else {
-                write_code(os, l, index, static_cast<int64_t>(address),
-                           symbols);
-            }
+            write_line_bytes(os, l, index, address, symbols);
 
             written = address + image_size_bytes(l);
         }

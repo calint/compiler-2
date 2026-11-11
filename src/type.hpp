@@ -404,37 +404,7 @@ class type final {
                 break;
             }
 
-            const std::vector<byte_range> element_ranges{
-                f.type_ref().data_ranges(max_count),
-            };
-
-            const bool is_unpadded{
-                element_ranges.size() == 1 and
-                    element_ranges.front().size_bytes ==
-                        f.type_ref().size_bytes_,
-            };
-
-            if (is_unpadded) {
-                append_range(ranges, f.offset, f.size_bytes);
-                continue;
-            }
-
-            // note: each padded element after the first adds a range, so the
-            //       loop ends within 'max_count' + 2 elements
-
-            for (size_t i{};
-                 i < f.shape.element_count() and ranges.size() <= max_count;
-                 ++i) {
-
-                const size_t element_offset{
-                    f.offset + (i * f.type_ref().size_bytes_),
-                };
-
-                for (const byte_range& r : element_ranges) {
-                    append_range(ranges, element_offset + r.offset,
-                                 r.size_bytes);
-                }
-            }
+            append_field_ranges(ranges, f, max_count);
         }
 
         return ranges;
@@ -443,6 +413,42 @@ class type final {
     //
     // statics
     //
+
+    // the data ranges of the elements of 'f', the elements stop at more than
+    // 'max_count' ranges
+    static auto append_field_ranges(std::vector<byte_range>& ranges,
+                                    const type_field& f, const size_t max_count)
+        -> void {
+
+        const std::vector<byte_range> element_ranges{
+            f.type_ref().data_ranges(max_count),
+        };
+
+        const bool is_unpadded{
+            element_ranges.size() == 1 and
+                element_ranges.front().size_bytes == f.type_ref().size_bytes_,
+        };
+
+        if (is_unpadded) {
+            append_range(ranges, f.offset, f.size_bytes);
+            return;
+        }
+
+        // note: each padded element after the first adds a range, so the
+        //       loop ends within 'max_count' + 2 elements
+
+        for (size_t i{};
+             i < f.shape.element_count() and ranges.size() <= max_count; ++i) {
+
+            const size_t element_offset{
+                f.offset + (i * f.type_ref().size_bytes_),
+            };
+
+            for (const byte_range& r : element_ranges) {
+                append_range(ranges, element_offset + r.offset, r.size_bytes);
+            }
+        }
+    }
 
     // the bytes from 'start' to 'end' are a gap unless there are none,
     // 'alignment' is that of the instance

@@ -322,15 +322,15 @@ enum class term_kind : uint8_t {
         return term_kind::value;
     }
 
-    if (not tc.types().has(text)) {
-        if (tc.is_func(text)) {
-            return term_kind::function_name;
-        }
-
-        return term_kind::unknown;
+    if (tc.types().has(text)) {
+        return classify_record_type_term(next);
     }
 
-    return classify_record_type_term(next);
+    if (tc.is_func(text)) {
+        return term_kind::function_name;
+    }
+
+    return term_kind::unknown;
 }
 
 // the integer type of a conversion, e.g. 'i8' of 'i8(x)'; 'bool' and 'void'

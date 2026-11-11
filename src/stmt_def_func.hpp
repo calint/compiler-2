@@ -777,6 +777,24 @@ class stmt_def_func final : public statement {
         }
     }
 
+    auto add_result_var(toc& tc, const size_t indent,
+                        const var_placement& placement) const -> void {
+
+        assert(result_);
+
+        tc.add_var(indent,
+                   {
+                       .name{result_->name_tk.text()},
+                       .type_ptr{&result_type()},
+                       .src_loc_tk{result_->name_tk},
+                       .shape{},
+                       .read_only_why{},
+                       .placement{placement},
+                       .foo_array{},
+                   },
+                   var_kind::result);
+    }
+
     // located at the method name for diagnostics
     auto add_self_param() -> void {
         // note: a method has its name after the '.'
@@ -813,22 +831,9 @@ class stmt_def_func final : public statement {
                 placement_of(access, slot),
             };
 
+            // note: a slot without a parameter is the result
             if (not slot.param_index) {
-                // note: a slot without a parameter is the result
-                assert(result_);
-
-                tc.add_var(indent,
-                           {
-                               .name{result_->name_tk.text()},
-                               .type_ptr{&result_type()},
-                               .src_loc_tk{result_->name_tk},
-                               .shape{},
-                               .read_only_why{},
-                               .placement{placement},
-                               .foo_array{},
-                           },
-                           var_kind::result);
-
+                add_result_var(tc, indent, placement);
                 continue;
             }
 
@@ -840,23 +845,7 @@ class stmt_def_func final : public statement {
                     : std::nullopt,
             };
 
-            tc.add_var(indent,
-                       {
-                           .name{param.name()},
-                           .type_ptr{&param.get_type()},
-                           .src_loc_tk{param.tok()},
-                           .shape{
-                               param.is_array() ? array_shape::array(array_len)
-                                                : array_shape{},
-                           },
-                           .read_only_why{
-                               param.is_read_only() ? read_only_cause::param
-                                                    : read_only_cause::none,
-                           },
-                           .placement{placement},
-                           .foo_array{},
-                       },
-                       var_kind::param);
+            add_param_var(tc, indent, param, array_len, placement);
         }
     }
 
@@ -1187,6 +1176,31 @@ class stmt_def_func final : public statement {
     //
     // statics
     //
+
+    // 'array_len' is that of an array parameter, empty where no call gives it
+    static auto add_param_var(toc& tc, const size_t indent,
+                              const stmt_def_func_param& param,
+                              const std::optional<size_t> array_len,
+                              const var_placement& placement) -> void {
+
+        tc.add_var(indent,
+                   {
+                       .name{param.name()},
+                       .type_ptr{&param.get_type()},
+                       .src_loc_tk{param.tok()},
+                       .shape{
+                           param.is_array() ? array_shape::array(array_len)
+                                            : array_shape{},
+                       },
+                       .read_only_why{
+                           param.is_read_only() ? read_only_cause::param
+                                                : read_only_cause::none,
+                       },
+                       .placement{placement},
+                       .foo_array{},
+                   },
+                   var_kind::param);
+    }
 
     // e.g. 'len.4.8', 'len.u.8' with the first length unknown, unlike the
     // 'L.C' pairs of inlined calls
@@ -1579,65 +1593,10 @@ class stmt_def_func_generic final : public statement {
         }
     }
 
-    // the rules of a generic definition, checked once whether or not an
-    // instance is made: the type parameters name no built-in and are named
-    // apart from the signature, so are those of the generic type of a method,
     // a constructor has a receiver and no type parameters
-    static auto assert_generic_signature(const toc& tc, const func_head& head,
-                                         const generic_signature& signature)
+    static auto assert_constructor_signature(const func_head& head,
+                                             const generic_signature& signature)
         -> void {
-
-        // e.g. 'to' of 'func text.to<T type>()' and of 'func
-        // tokenizer.to<T type>()', 'f' of 'func f<T type>()'
-        const token& name_tk{
-            head.method ? head.method->name_tk : head.name_tk,
-        };
-
-        for (const token& param_tk : signature.type_param_tks) {
-            // e.g. 'n' of 'func box.f<n type>()' of 'type box<n>'
-            if (head.is_generic_type_method()) {
-                assert_apart_from_receiver_params(tc, head, param_tk,
-                                                  "generic parameter", false);
-            }
-
-            tc.assert_valid_unqualified_name(param_tk);
-
-            tc.definitions().assert_generic_param_apart(
-                param_tk, name_tk, head.method ? "method" : "function");
-
-            // e.g. 'box' of 'func box.f<box type>()', the receiver type
-            if (head.method) {
-                tc.definitions().assert_generic_param_apart(
-                    param_tk, head.name_tk, "type");
-            }
-
-            for (const generic_signature_param& param : signature.params) {
-                tc.definitions().assert_generic_param_apart(
-                    param_tk, param.name_tk, "parameter");
-            }
-
-            if (signature.result_name_tk) {
-                tc.definitions().assert_generic_param_apart(
-                    param_tk, *signature.result_name_tk, "result");
-            }
-        }
-
-        // e.g. 'T' of 'func box.f(T)' of 'type box<T type>'
-        if (head.is_generic_type_method()) {
-            for (const generic_signature_param& param : signature.params) {
-                assert_apart_from_receiver_params(tc, head, param.name_tk,
-                                                  "parameter", true);
-            }
-
-            if (signature.result_name_tk) {
-                assert_apart_from_receiver_params(
-                    tc, head, *signature.result_name_tk, "result", true);
-            }
-        }
-
-        if (not signature.is_constructor()) {
-            return;
-        }
 
         assert(signature.result_name_tk);
 
@@ -1654,6 +1613,88 @@ class stmt_def_func_generic final : public statement {
             *signature.result_name_tk,
             std::format("constructor {} cannot have type parameters",
                         in_quotes(head.name))};
+    }
+
+    // the rules of a generic definition, checked once whether or not an
+    // instance is made: the type parameters name no built-in and are named
+    // apart from the signature, so are those of the generic type of a method,
+    // a constructor has a receiver and no type parameters
+    static auto assert_generic_signature(const toc& tc, const func_head& head,
+                                         const generic_signature& signature)
+        -> void {
+
+        for (const token& param_tk : signature.type_param_tks) {
+            assert_type_param_apart(tc, head, signature, param_tk);
+        }
+
+        // e.g. 'T' of 'func box.f(T)' of 'type box<T type>'
+        if (head.is_generic_type_method()) {
+            assert_names_apart_from_receiver_params(tc, head, signature);
+        }
+
+        if (not signature.is_constructor()) {
+            return;
+        }
+
+        assert_constructor_signature(head, signature);
+    }
+
+    // the parameters and the result of a method of a generic type are named
+    // apart from the type parameters of the type
+    static auto assert_names_apart_from_receiver_params(
+        const toc& tc, const func_head& head,
+        const generic_signature& signature) -> void {
+
+        for (const generic_signature_param& param : signature.params) {
+            assert_apart_from_receiver_params(tc, head, param.name_tk,
+                                              "parameter", true);
+        }
+
+        if (signature.result_name_tk) {
+            assert_apart_from_receiver_params(
+                tc, head, *signature.result_name_tk, "result", true);
+        }
+    }
+
+    // the type parameter 'param_tk' is a valid name apart from the type
+    // parameters of the generic type of a method, the function, the receiver
+    // type, the parameters and the result
+    static auto assert_type_param_apart(const toc& tc, const func_head& head,
+                                        const generic_signature& signature,
+                                        const token& param_tk) -> void {
+
+        // e.g. 'to' of 'func text.to<T type>()' and of 'func
+        // tokenizer.to<T type>()', 'f' of 'func f<T type>()'
+        const token& name_tk{
+            head.method ? head.method->name_tk : head.name_tk,
+        };
+
+        // e.g. 'n' of 'func box.f<n type>()' of 'type box<n>'
+        if (head.is_generic_type_method()) {
+            assert_apart_from_receiver_params(tc, head, param_tk,
+                                              "generic parameter", false);
+        }
+
+        tc.assert_valid_unqualified_name(param_tk);
+
+        tc.definitions().assert_generic_param_apart(
+            param_tk, name_tk, head.method ? "method" : "function");
+
+        // e.g. 'box' of 'func box.f<box type>()', the receiver type
+        if (head.method) {
+            tc.definitions().assert_generic_param_apart(param_tk, head.name_tk,
+                                                        "type");
+        }
+
+        for (const generic_signature_param& param : signature.params) {
+            tc.definitions().assert_generic_param_apart(param_tk, param.name_tk,
+                                                        "parameter");
+        }
+
+        if (signature.result_name_tk) {
+            tc.definitions().assert_generic_param_apart(
+                param_tk, *signature.result_name_tk, "result");
+        }
     }
 
     // the signature after the head, the '(' and the body must follow, else

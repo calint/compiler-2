@@ -164,6 +164,25 @@ class stmt_def_dat final : public statement {
         }
     }
 
+    // the listed elements then zeros up to the length of the array
+    static auto compile_data_list(machine& x, const type& tp,
+                                  const elem::elements& list) -> void {
+
+        x.comment(list.src_loc_tk, 0, "{}[{}]", tp.name(), list.array_count);
+
+        if (tp.is_builtin()) {
+            compile_data_elements(x, tp, list);
+        } else {
+            for (const auto [i, e] : std::views::enumerate(list.items)) {
+                x.comment(e.tok(), 0, "[{}]", i);
+                compile_data_record(x, tp, std::get<elem::fields>(e.form));
+            }
+        }
+
+        compile_zero_elements(x, list.src_loc_tk, tp,
+                              list.array_count - list.items.size());
+    }
+
     static auto compile_data_rec(machine& x, const type& tp, const elem& el)
         -> void {
 
@@ -192,37 +211,11 @@ class stmt_def_dat final : public statement {
                 std::get_if<elem::string>(&el.form),
             }) {
 
-            x.comment(str->src_loc_tk, 0, "{}[{}]", tp.name(),
-                      str->array_count);
-
-            const std::string bytes{str->src_loc_tk.string_bytes()};
-
-            // note: the parse rejected a string longer than its array
-            assert(bytes.size() <= str->array_count);
-
-            x.emit_string_data(bytes);
-
-            compile_zero_elements(x, str->src_loc_tk, tp,
-                                  str->array_count - bytes.size());
-
+            compile_data_string(x, tp, *str);
             return;
         }
 
-        const elem::elements& list{std::get<elem::elements>(el.form)};
-
-        x.comment(list.src_loc_tk, 0, "{}[{}]", tp.name(), list.array_count);
-
-        if (tp.is_builtin()) {
-            compile_data_elements(x, tp, list);
-        } else {
-            for (const auto [i, e] : std::views::enumerate(list.items)) {
-                x.comment(e.tok(), 0, "[{}]", i);
-                compile_data_record(x, tp, std::get<elem::fields>(e.form));
-            }
-        }
-
-        compile_zero_elements(x, list.src_loc_tk, tp,
-                              list.array_count - list.items.size());
+        compile_data_list(x, tp, std::get<elem::elements>(el.form));
     }
 
     static auto compile_data_record(machine& x, const type& tp,
@@ -260,6 +253,23 @@ class stmt_def_dat final : public statement {
 
         x.comment(record.src_loc_tk, 0, "zero {}: {} B", what, remaining_bytes);
         x.emit_zero_data(remaining_bytes);
+    }
+
+    // the bytes of the string then zeros up to the length of the array
+    static auto compile_data_string(machine& x, const type& tp,
+                                    const elem::string& str) -> void {
+
+        x.comment(str.src_loc_tk, 0, "{}[{}]", tp.name(), str.array_count);
+
+        const std::string bytes{str.src_loc_tk.string_bytes()};
+
+        // note: the parse rejected a string longer than its array
+        assert(bytes.size() <= str.array_count);
+
+        x.emit_string_data(bytes);
+
+        compile_zero_elements(x, str.src_loc_tk, tp,
+                              str.array_count - bytes.size());
     }
 
     // the elements after the listed ones are zero, as in a 'var'

@@ -1,6 +1,15 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 314 (2026-11-11, AJ complexity, third pass)
+    => done (2026-11-11): 'stmt_if::compile' stops at the branch that ends
+       the chain ('check_skipped_from', no lambda), 'type::data_ranges'
+       ('append_field_ranges'), 'assert_generic_signature' in three named
+       steps, 'add_signature_vars' ('add_result_var', 'add_param_var'),
+       'classify_term' without the nested 'if', 'compile_data_rec' over
+       four forms, 'write_section' ('write_line_bytes'); listings equal;
+       measured: 70 functions take 6 or more parameters, the pair
+       ('src_loc_tk', 'indent') of the back end leads 36 of them
 [x] easy: round 313 (2026-11-11, AN the lines the coverage report of
     2026-11-08 shows not run)
     => done (2026-11-11): new tests 2910 (a list literal into an unsized
