@@ -1,6 +1,12 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 301 (2026-11-11, ZT review of the exceptions, item 1)
+    => done (2026-11-11): 'rv32i-qemu' emits sector routines that panic
+       'sd card' as a card image without the sector does, so a sector
+       function is accepted on every target ('has_sd_card' is gone, 7 lines
+       fewer); 1046 panics instead of being rejected on qemu, the qemu
+       listings of the 31 sector tests are the only ones that differ
 [x] easy: round 300 (2026-11-11, the two items cleared by the user)
     => done (2026-11-11): the shift count check of 'compile_step' is gone
        and the fpga emulator traps a misaligned access (see the two items

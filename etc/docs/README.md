@@ -1991,8 +1991,9 @@ What depends on the target is listed here, nothing else does:
    starts; on x86_64 nasm truncates a label to 4095 characters, so a
    name of about 4000 characters gives a listing that nasm rejects
 5. the devices of the bare-metal targets: 'rv32i-qemu' has no sd card, so
-   'sector_read' and 'sector_write' are rejected there; 'rv32i-fpga' does not
-   detect a sector past the end of the card, which panics 'sd card' on x86_64
+   'sector_read' and 'sector_write' panic 'sd card' there, as on a card
+   image without the sector; 'rv32i-fpga' does not detect a sector past the
+   end of the card, which panics 'sd card' on x86_64
    and rv32i, its emulator stops with "CPU error: 1305" and exit code 25;
    the uart of 'rv32i-qemu' and 'rv32i-fpga' takes every file descriptor,
    where x86_64 and rv32i return the negated error number of the system,

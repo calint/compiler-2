@@ -1,4 +1,2 @@
 
-1046.baz:5:5: the target has no sd card
-    sector_read(0, bytes)
-    ^~~~~~~~~~~
+panic: sd card

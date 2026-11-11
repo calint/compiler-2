@@ -60,7 +60,7 @@ struct routine_labels {
 
 // the facts of a target that the shared code and the front end read, one
 // table per backend; a target that differs passes a copy with its change,
-// e.g. the qemu machine has no sd card
+// e.g. the stack limit of a bare-metal machine
 struct target_description {
     size_t address_size_bytes{};
     size_t data_alignment{};
@@ -77,8 +77,6 @@ struct target_description {
     // the live scratch values from which the counter of an array loop is
     // kept in memory, none where it stays in a register
     std::optional<size_t> memory_counter_pressure_count;
-    // the sector functions need it, a sector is 'card_sector_size_bytes_'
-    bool has_sd_card{};
     // the alignment of a string constant, e.g. a word lets copies to aligned
     // destinations use words
     size_t string_alignment{};
@@ -139,7 +137,7 @@ struct target_description {
 //   target         'default_type', 'address_size_bytes',
 //                  'has_indexed_addressing', 'can_lower_index_scale',
 //                  'is_stack_bounded',
-//                  'max_storage_bytes', 'has_sd_card', 'sector_size_bytes',
+//                  'max_storage_bytes', 'sector_size_bytes',
 //                  'foo_counter_in_memory', 'frame_base_register',
 //                  'variables_base_register', 'variables_base_past_vars_bytes',
 //                  'exit_code_register'
@@ -1418,10 +1416,6 @@ class machine {
         return target_.has_indexed_addressing;
     }
 
-    [[nodiscard]] auto has_sd_card() const -> bool {
-        return target_.has_sd_card;
-    }
-
     // inside 'emit_discarded', also in a version inside it
     [[nodiscard]] auto is_discarding() const -> bool {
         return state_.is_discarded;
@@ -1532,13 +1526,6 @@ class machine {
                  factor_use::read_only);
     }
 
-    // asked only of a target that has a card
-    [[nodiscard]] auto sector_size_bytes() const -> size_t {
-        assert(target_.has_sd_card);
-
-        return card_sector_size_bytes_;
-    }
-
     // a blank line that separates the code from the report
     auto separate_report() -> void {
         assembler& output{output_.get()};
@@ -1641,6 +1628,14 @@ class machine {
         }
     }
 
+    //
+    // statics
+    //
+
+    [[nodiscard]] static auto sector_size_bytes() -> size_t {
+        return card_sector_size_bytes_;
+    }
+
   protected:
     //
     // virtual methods
@@ -1699,13 +1694,9 @@ class machine {
     virtual auto emit_report_line_routine() -> void = 0;
 
     // the routines at 'routine_labels::sector_read' and 'sector_write', each
-    // only when it is used; only a target that 'has_sd_card' is asked
-    virtual auto emit_sector_routines([[maybe_unused]] const bool read_used,
-                                      [[maybe_unused]] const bool write_used)
-        -> void {
-
-        std::unreachable();
-    }
+    // only when it is used
+    virtual auto emit_sector_routines(const bool read_used,
+                                      const bool write_used) -> void = 0;
 
     // the call of 'call_target', its arguments in their registers and the
     // result register of 'read' and 'write' allocated

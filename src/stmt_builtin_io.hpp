@@ -238,7 +238,7 @@ class stmt_builtin_io final : public statement {
         assert(buffer and buffer->info.is_array());
 
         if (io_.is_sector) {
-            assert_sector_buffer(tc, buffer->info);
+            assert_sector_buffer(buffer->info);
         }
 
         assert_constant_range_in_bounds(tc, *buffer);
@@ -312,12 +312,8 @@ class stmt_builtin_io final : public statement {
 
     // a sector is a whole number of elements; an array shorter than a sector
     // is a range past its end ('assert_constant_range_in_bounds')
-    auto assert_sector_buffer(toc& tc, const ident_info& buffer_info) const
-        -> void {
-
-        const machine& x{tc.machine()};
-
-        const size_t sector_size_bytes{x.sector_size_bytes()};
+    auto assert_sector_buffer(const ident_info& buffer_info) const -> void {
+        const size_t sector_size_bytes{machine::sector_size_bytes()};
 
         const size_t element_size_bytes{buffer_info.type_ref().size_bytes()};
 
@@ -439,13 +435,11 @@ class stmt_builtin_io final : public statement {
         }
 
         if (io_.is_sector) {
-            const machine& x{tc.machine()};
-
             const size_t element_size_bytes{
                 buffer_info.type_ref().size_bytes(),
             };
 
-            return static_cast<int64_t>(x.sector_size_bytes() /
+            return static_cast<int64_t>(machine::sector_size_bytes() /
                                         element_size_bytes);
         }
 
@@ -592,12 +586,6 @@ class stmt_builtin_io final : public statement {
         -> builtin_arguments {
 
         assert_call_in_func(tc, tk);
-
-        const machine& x{tc.machine()};
-
-        if (io.is_sector and not x.has_sd_card()) {
-            throw compile_error{tk, "the target has no sd card"};
-        }
 
         return {
             tc,

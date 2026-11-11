@@ -3339,8 +3339,9 @@ SRC=1044 && COMPERR
 # a sector function name is not a variable name
 SRC=1045 && COMPERR
 
-# the qemu machine has no sd card
-if [[ $MACHINE == rv32i-qemu ]]; then SRC=1046 && COMPERR; fi
+# a sector of an empty sd card image panics, the qemu machine has no sd card
+# and panics alike; rv32i-fpga does not detect it
+if [[ $MACHINE != rv32i-fpga ]]; then SRC=1046 && EXP=248 && RUN_ERR; fi
 
 # the loop counters that registers hold survive the sector functions
 if [[ $MACHINE != rv32i-qemu ]]; then SRC=1047 && EXP=32 && SDCARD=1M RUN; fi

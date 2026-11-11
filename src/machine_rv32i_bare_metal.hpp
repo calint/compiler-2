@@ -29,11 +29,10 @@ class machine_rv32i_bare_metal : public machine_rv32i {
                              const source_files& files,
                              const target_options& options,
                              const size_t memory_start_address_in,
-                             const size_t memory_size_bytes_in,
-                             const bool has_sd_card)
+                             const size_t memory_size_bytes_in)
         : machine_rv32i{builtins, files, options,
                         bare_metal_target(options, memory_start_address_in,
-                                          memory_size_bytes_in, has_sd_card)},
+                                          memory_size_bytes_in)},
           memory_start_address_{memory_start_address_in},
           memory_size_bytes_{memory_size_bytes_in} {}
 
@@ -211,8 +210,7 @@ class machine_rv32i_bare_metal : public machine_rv32i {
     [[nodiscard]] static auto
     bare_metal_target(const target_options& options,
                       const size_t memory_start_address,
-                      const size_t memory_size_bytes, const bool has_sd_card)
-        -> target_description {
+                      const size_t memory_size_bytes) -> target_description {
 
         const size_t stack_size_bytes{options.stack_size_bytes};
 
@@ -239,8 +237,6 @@ class machine_rv32i_bare_metal : public machine_rv32i {
 
         target.stack_limit_address =
             memory_start_address + memory_size_bytes - stack_size_bytes;
-
-        target.has_sd_card = has_sd_card;
 
         return target;
     }

@@ -1,4 +1,5 @@
-# the qemu machine has no sd card
+# a sector of an empty sd card image panics, the qemu machine has no sd card
+# and panics alike
 
 func main() {
     var bytes = i8[512]

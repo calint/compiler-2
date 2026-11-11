@@ -103,8 +103,8 @@ an included file (`split_include` in `fuzzlib.py`).
   as many bytes as fit; each read at the end of the input takes one end of
   transmission byte; a carriage return reads as a newline
 - a sector past the end of the card panics `sd card` on x86_64 and rv32i,
-  rv32i-fpga does not detect it; rv32i-qemu has no sd card, a program that
-  reads or writes a sector is rejected there, the tutorial too
+  rv32i-fpga does not detect it; rv32i-qemu has no sd card, a sector
+  transfer panics `sd card` there, the tutorial too
 - nasm 3.02 may stall ("unable to find valid values for all labels") on x86_64
   code with many jumps near the short jump limit, e.g. with
   `--checks=noub,line`; the code has no size that depends on a label, the

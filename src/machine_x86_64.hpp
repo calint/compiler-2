@@ -1935,7 +1935,6 @@ class machine_x86_64 final : public machine {
                 max_padding_gaps_zeroed_one_by_one_,
             },
             .memory_counter_pressure_count{memory_counter_pressure_count_},
-            .has_sd_card{true},
             .string_alignment{1},
             .stack_limit_address{},
             .frame_base_register{"rbx"},

@@ -1424,7 +1424,6 @@ class machine_rv32i : public machine {
             },
             // note: a load and store machine counts in a register
             .memory_counter_pressure_count{},
-            .has_sd_card{true},
             .string_alignment{word_size_bytes_},
             .stack_limit_address{},
             .frame_base_register{"s1"},

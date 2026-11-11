@@ -30,9 +30,8 @@ class machine_rv32i_qemu final : public machine_rv32i_bare_metal {
   public:
     machine_rv32i_qemu(const builtin_type_set& builtins,
                        const source_files& files, const target_options& options)
-        : machine_rv32i_bare_metal{builtins,           files,           options,
-                                   ram_start_address_, ram_size_bytes_, false} {
-    }
+        : machine_rv32i_bare_metal{builtins, files, options, ram_start_address_,
+                                   ram_size_bytes_} {}
 
   protected:
     //
@@ -51,6 +50,24 @@ class machine_rv32i_qemu final : public machine_rv32i_bare_metal {
         // qemu shuts down after the store completes
         output.label(0, "1");
         output.j(1, "1b");
+    }
+
+    // the machine has no sd card: every transfer fails as on a card that is
+    // not there
+    auto emit_sector_routines(const bool read_used, const bool write_used)
+        -> void override {
+
+        assembler_rv32i& output{assembler()};
+
+        if (read_used) {
+            output.label(0, sector_read_label_);
+        }
+
+        if (write_used) {
+            output.label(0, sector_write_label_);
+        }
+
+        emit_failure_handler(sd_card_failure_);
     }
 
   private:

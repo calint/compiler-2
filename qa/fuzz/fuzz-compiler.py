@@ -292,7 +292,7 @@ def first_diagnostic(text):
 # e.g. an index past the longest array of an unsized parameter ('of any size')
 EXPECTED_DIFFERENCE = re.compile(
     r"overflows the type|scratch registers|cannot allocate register|always used by the operation|simplify the expression|runs out of registers|does not end at compile time|RV32I|shift count must be|'i64'|i64|out of range|too large|too many|does not fit|a sector of [0-9]* elements|"
-    r"exceeds|capacity|memory|beyond|of any size|has no sd card")
+    r"exceeds|capacity|memory|beyond|of any size")
 # the diagnostics that have no place in the source
 NO_LOCATION = re.compile(r"function 'main' not found")
 
