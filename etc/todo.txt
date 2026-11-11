@@ -6,6 +6,13 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
 --------------------------------------------------------------------------------
 1. clean up
 --------------------------------------------------------------------------------
+[ ] easy: x86_64: nasm truncates a label at 4000 characters, so two
+    noinline functions whose 4100-character names share a prefix give a
+    listing nasm rejects (round 323 BH demo t5); generic type arguments
+    lengthen labels, so a limit on name length does not bound them
+    => shorten a label over 4000 characters to a prefix and a counter in
+       the x86_64 listing, or reject such a label on every target, about 20
+       lines
 [ ] medium: user decision (round 315 AM): the size of an inline expansion
     has no bound, only its depth (64 levels, 256 scopes): 'r(a, k - 1)'
     called twice in 'r' and entered as 'r(a, 40)' doubles the work per
@@ -590,6 +597,46 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
 --------------------------------------------------------------------------------
 3. new features
 --------------------------------------------------------------------------------
+[p] easy: need approval: two fuzzers as new files in 'qa/fuzz', called from
+    'fuzz-all.sh'
+    => 'fuzz-mutate.py' (round 319 BD 'smf.py'): mutates the accepted tests
+       by structure (types and widths, array sizes and constants at the
+       edges, 'mut', 'noinline', statements moved, wrapped or spliced,
+       definitions swapped) and compiles each on four targets with random
+       options under asan; 500000 mutants, about 1 million compiles, found
+       no assert or crash, one hang that is the open item on the size of an
+       inline expansion
+    => 'fuzz-model.py' (round 317 BC 'gen3.py'): builds a program as a
+       tree, writes it inline, noinline and mixed, runs each on x86_64 and
+       rv32i-qemu with every '--versions' value and '--nopt', and compares
+       exit code, output and panic with a python model of 'noub'; 21000
+       programs, 362000 builds, no defect
+    => sources kept in /tmp/r319-bd-work and /tmp/r317-bc-work until then
+[p] easy: need approval: one rule for the names of a method of a generic
+    type: a parameter or the result named like a constant parameter of the
+    receiver ('type buf<n>', 'func buf.get(n)') is accepted and hides the
+    constant (tests 1177, 1185, 2644), while a 'var n' at the top of the
+    body is rejected (2263), one in a deeper block accepted, a parameter
+    named like a type parameter of the receiver rejected, and a generic
+    function rejects a parameter named like its type parameter (2.10.1)
+    => round 324 BI: every generic parameter of the receiver, type or
+       constant, is named apart from the parameters and the result: the
+       'is_type_only' flag of 'assert_apart_from_receiver_params' goes,
+       'toc::add_var' uses 'assert_name_free' for every kind
+       ('assert_not_declared_in_scope' merged into it); 14 source lines
+       fewer; 1177 and 2644 become rejection tests, the box part of 1185
+       goes; rejects programs accepted today, e.g. 'func list.get(n)' on
+       'type list<T type, n>'; patch /tmp/r324-bi-work/bi-2.diff
+[p] easy: need approval: 'read' and 'sector_read' into an element type that
+    holds a 'bool' put bytes there that are neither 'true' nor 'false'
+    ('read(0, b, 1)' of a 'bool[1]' with input 'x' is true as a condition;
+    chapter 8, exception 2)
+    => round 323 BH: reject 'read' and 'sector_read' into an element type
+       that holds a 'bool' (a recursive predicate in 'type.hpp' used by
+       'stmt_builtin_io::assert_buffer', 2 error tests, about 25 lines, no
+       change to generated code; no test or roome reads into one); records
+       with a 'bool' field can no longer be read; padding is left out, it
+       depends on the target ('{a i32, b int}')
 [ ] easy: a type argument is deduced from the result of a function call,
     'show(mk(1, 2))', not from the result of a method call, 'show(p.sum())'
     is "cannot deduce 'T'" (2077; design review series 2, round 67 B5)

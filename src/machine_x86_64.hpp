@@ -665,7 +665,9 @@ class machine_x86_64 final : public machine {
             assembler_.label(0, read_label_);
             assembler_.instruction(1, op::cmp, "rdi", stdin_descriptor_);
             assembler_.jcc(1, condition::ne, bad_descriptor_label);
-            assembler_.instruction(1, op::mov, "eax", syscall_read_);
+            // note: the 'read' number is zero, which 'xor' sets shorter
+            static_assert(syscall_read_ == 0);
+            assembler_.instruction(1, op::xor_op, "eax", "eax");
             assembler_.instruction(1, op::syscall);
             assembler_.instruction(1, op::ret);
         }
@@ -1359,6 +1361,15 @@ class machine_x86_64 final : public machine {
             return;
         }
 
+        // note: shorter than the move; no flags are live at a move of a zero,
+        //       a value is set before the compare that reads it
+
+        if (code == op::mov and is_wide_register_zeroed(dst_op, src_op)) {
+            const operand dword{sized_operand(dst_op, size_dword_)};
+            emit(site.indent, op::xor_op, dword, dword);
+            return;
+        }
+
         if (src_op.is_immediate() and
             not needs_immediate_register(code, dst_op, src_op)) {
 
@@ -1772,6 +1783,24 @@ class machine_x86_64 final : public machine {
                 offset += w;
             }
         }
+    }
+
+    // a dword write clears the upper half, a narrower register keeps its move
+    [[nodiscard]] static auto is_wide_register_zeroed(const operand& dst,
+                                                      const operand& src)
+        -> bool {
+
+        if (not dst.is_register() or not src.is_immediate()) {
+            return false;
+        }
+
+        const size_t size_bytes{dst.type_ref().size_bytes()};
+
+        if (size_bytes != size_qword_ and size_bytes != size_dword_) {
+            return false;
+        }
+
+        return src.immediate() == 0;
     }
 
     // the qwords, then the remaining dword, word and byte

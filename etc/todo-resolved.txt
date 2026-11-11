@@ -1,6 +1,19 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 325 (2026-11-11, AX shorter x86_64 code)
+    => done (2026-11-11): x86_64 zeroes a qword or dword register with
+       'xor r32, r32' instead of 'mov r, 0' ('is_wide_register_zeroed'; no
+       flags are live at a move of a zero, checked at 1739 sites), and the
+       read routine with 'xor eax, eax'; test corpus -5000 B (-0.72 %),
+       roome -75 B, rv32i unchanged; the rule that drops the 'test' after
+       a 'setcc' (-1.6 %, about 122 lines) is a pending todo item; AGENTS.md
+       takes the standing loop: readability, design simplification and
+       bug hunt, refactors large and small, commit and tag each round,
+       approvals as todo items; BC (checks under inlining, 21000 programs)
+       and BG (descriptors, 32000 programs) found no defect; todo items:
+       two fuzzers, one rule for method parameter names, 'read' into a
+       'bool', x86_64 labels over 4000 characters
 [x] easy: round 324 (2026-11-11, BF complexity, fourth pass)
     => done (2026-11-11): 'parse_builtin' splits into
        'assert_builtin_place' and 'make_builtin' (score 13.3 to 6.8);

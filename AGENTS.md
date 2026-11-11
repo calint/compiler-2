@@ -137,22 +137,26 @@
 
 - Search and lookup subagents use model 'sonnet'; review and bug-hunting
   agents keep the default.
-- Fixes: within a clean design, no hacks; refactor first when needed. Tell the
-  user the intended fix before changing code.
+- Standing loop: improve readability by humans, simplify the design and hunt
+  bugs, round after round; implement what is recommended. Refactoring is
+  allowed, large ones too, when the design improves.
+- Fixes: within a clean design, no hacks; refactor first when needed. State
+  the intended fix in the round's entry.
 - Do not split large headers; helper classes go near their user in the same
   file; ask before adding a source file.
 - One consistency topic at a time across all sources.
 - A todo item whose solution complicates the code is not done: note why in
   the item and go to the next.
-- Before fixing a todo item, ask the user with the proposed fix and its
-  measurements, and send the notification "need clearance for todo item".
+- What needs the user's approval (a new source file, a todo item marked
+  "user decision", removing behavior) goes into `etc/todo.txt` as `[p]` with
+  "need approval", the proposed change and its measurements; then go on.
 - Todo items one by one; resolved or discarded ones move to the top of
   `etc/todo-resolved.txt` below its legend (`[x]`, `=> done (date): ...`).
 - Done means: built, focused tests run, clang-tidy and `qa/lint/check-all.sh`
   clean, formatter applied.
-- After each step or round, pause for the user to commit (message `.`). In
-  design review rounds the next round's reviewers may start meanwhile; their
-  patches are applied after the commit.
+- After each round's checks pass, commit with message `.` and tag it
+  `DATE--HH-MM--MODEL--round-N` with the next N; the next round's agents may
+  run meanwhile, their patches are applied after the commit.
 - Remove a round's agent worktrees and branches when done (check they hold no
   commits).
 - Shell scripts `cd` to their own directory and use relative paths.
