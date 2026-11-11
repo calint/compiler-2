@@ -1,7 +1,6 @@
 #pragma once
 
 #include <cassert>
-#include <cstddef>
 #include <format>
 #include <optional>
 #include <ostream>
@@ -56,13 +55,12 @@ class stmt_assign_var final : public statement {
         expr_.source_to(os);
     }
 
-    auto compile(toc& tc, const size_t indent,
-                 [[maybe_unused]] const destination& dst) const
+    auto compile(toc& tc, [[maybe_unused]] const destination& dst) const
         -> void override {
 
         machine& x{tc.machine()};
 
-        comment_source(x, indent);
+        comment_source(tc);
 
         const std::optional<storage_path> dst_storage{
             stmt_ident_.storage(tc),
@@ -80,10 +78,10 @@ class stmt_assign_var final : public statement {
         // note: the parse rejected a constant destination
         assert(not dst_info.is_const());
 
-        machine::held_registers held{x, {tok(), indent}};
+        machine::held_registers held{x, {tok(), tc.indent()}};
 
         const operand address{
-            stmt_ident_.get_lea_operand(tc, indent, dst_info, held),
+            stmt_ident_.get_lea_operand(tc, dst_info, held),
         };
 
         // the destination is written at the address computed here
@@ -101,7 +99,7 @@ class stmt_assign_var final : public statement {
                                  }),
         };
 
-        emit_write_plan(tc, indent, plan, var_dst);
+        emit_write_plan(tc, plan, var_dst);
     }
 
     // the value is read before the destination is written

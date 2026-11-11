@@ -1,6 +1,5 @@
 #pragma once
 
-#include <cstddef>
 #include <cstdint>
 #include <optional>
 #include <ostream>
@@ -37,12 +36,11 @@ class unary_ops final {
 
     // applies the ops to 'dst', the innermost first, without the pairs that
     // cancel, see 'applied_ops'
-    auto compile(machine& x, const size_t indent, const token& src_loc_tk,
-                 const operand& dst, const machine::runtime_check& check) const
-        -> void {
+    auto compile(machine& x, const emit_site site, const operand& dst,
+                 const machine::runtime_check& check) const -> void {
 
         for (const arithmetic_operator op : applied_ops(check)) {
-            x.unary({src_loc_tk, indent}, op, dst, check);
+            x.unary(site, op, dst, check);
         }
     }
 

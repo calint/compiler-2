@@ -44,7 +44,7 @@ struct runtime_check {
 //       the parsed program or of the caller, so a holder that outlives the
 //       call copies the token instead
 struct emit_site {
-    // note: a constructor keeps the call sites short: '{tok(), indent}'
+    // note: a constructor keeps the call sites short: '{tok(), tc.indent()}'
     emit_site(const token& src_loc_tk_in, const size_t indent_in)
         : src_loc_tk{src_loc_tk_in}, indent{indent_in} {}
 

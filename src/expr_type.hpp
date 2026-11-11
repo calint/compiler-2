@@ -375,8 +375,7 @@ struct write_step {
 using write_plan = std::vector<write_step>;
 
 // stores the bytes of 'bytes' at 'part_dst'
-inline auto emit_bytes_write(toc& tc, const size_t indent,
-                             const bytes_write& bytes,
+inline auto emit_bytes_write(toc& tc, const bytes_write& bytes,
                              const destination& part_dst) -> void {
 
     const auto add_constant{
@@ -388,14 +387,14 @@ inline auto emit_bytes_write(toc& tc, const size_t indent,
 
     machine& x{tc.machine()};
 
-    x.store_bytes({bytes.src_loc_tk, indent}, bytes.bytes, part_dst.operand(),
-                  part_dst.type_ref().alignment(), add_constant);
+    x.store_bytes({bytes.src_loc_tk, tc.indent()}, bytes.bytes,
+                  part_dst.operand(), part_dst.type_ref().alignment(),
+                  add_constant);
 }
 
 // writes the steps of 'plan' at 'dst'
-inline auto emit_write_plan(toc& tc, const size_t indent,
-                            const write_plan& plan, const destination& dst)
-    -> void {
+inline auto emit_write_plan(toc& tc, const write_plan& plan,
+                            const destination& dst) -> void {
 
     machine& x{tc.machine()};
 
@@ -406,7 +405,7 @@ inline auto emit_write_plan(toc& tc, const size_t indent,
                 std::get_if<value_write>(&step.action),
             }) {
 
-            value->item->compile_checked(tc, indent, part_dst);
+            value->item->compile_checked(tc, part_dst);
             continue;
         }
 
@@ -414,14 +413,14 @@ inline auto emit_write_plan(toc& tc, const size_t indent,
                 std::get_if<bytes_write>(&step.action),
             }) {
 
-            emit_bytes_write(tc, indent, *bytes, part_dst);
+            emit_bytes_write(tc, *bytes, part_dst);
             continue;
         }
 
         if (const zero_fill* const zero{std::get_if<zero_fill>(&step.action)}) {
-            x.comment({zero->src_loc_tk, indent}, zero->comment);
+            x.comment({zero->src_loc_tk, tc.indent()}, zero->comment);
 
-            x.zero({zero->src_loc_tk, indent},
+            x.zero({zero->src_loc_tk, tc.indent()},
                    part_dst.operand_at(zero->offset, *zero->value_type),
                    zero->size_bytes, zero->alignment);
 
@@ -430,7 +429,7 @@ inline auto emit_write_plan(toc& tc, const size_t indent,
 
         const write_comment& comment{std::get<write_comment>(step.action)};
 
-        x.comment({comment.src_loc_tk, indent}, comment.text);
+        x.comment({comment.src_loc_tk, tc.indent()}, comment.text);
     }
 }
 
@@ -457,9 +456,7 @@ class expr_path final : public statement {
     }
 
     // e.g. 'pt1 = pt2' or 'var b = a'
-    auto compile(toc& tc, const size_t indent, const destination& dst) const
-        -> void override {
-
+    auto compile(toc& tc, const destination& dst) const -> void override {
         const type& dst_type{dst.type_ref()};
 
         const ident_info src_info{make_ident_info(tc, path_)};
@@ -469,13 +466,13 @@ class expr_path final : public statement {
 
         machine& x{tc.machine()};
 
-        machine::held_registers held{x, {tok(), indent}};
+        machine::held_registers held{x, {tok(), tc.indent()}};
 
-        const operand src_op{path_.get_lea_operand(tc, indent, src_info, held)};
+        const operand src_op{path_.get_lea_operand(tc, src_info, held)};
 
         const size_t size_bytes{src_info.value_size_bytes(tok())};
 
-        x.copy_block({tok(), indent}, dst.operand(), src_op, size_bytes,
+        x.copy_block({tok(), tc.indent()}, dst.operand(), src_op, size_bytes,
                      dst_type.alignment());
     }
 

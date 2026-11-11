@@ -515,7 +515,7 @@ class stmt_def_func final : public statement {
 
     // the body is compiled by its calls: in place by 'compile_inlined', else
     // once per array lengths by 'emit_noinline_body'
-    auto compile([[maybe_unused]] toc& tc, [[maybe_unused]] const size_t indent,
+    auto compile([[maybe_unused]] toc& tc,
                  [[maybe_unused]] const destination& dst) const
         -> void override {}
 
@@ -568,7 +568,7 @@ class stmt_def_func final : public statement {
 
     // the body in place at the call 'call_tk', under labels named by the
     // call, its result and parameters named by the bindings to the call
-    auto compile_inlined(toc& tc, const size_t indent, const token& call_tk,
+    auto compile_inlined(toc& tc, const token& call_tk,
                          const std::optional<param_binding>& result,
                          const std::span<const param_binding> arguments) const
         -> void {
@@ -587,9 +587,9 @@ class stmt_def_func final : public statement {
 
         machine& x{tc.machine()};
 
-        source_def_comment_to(x, indent);
+        source_def_comment_to(x, tc.indent());
 
-        x.label(indent, call_label);
+        x.label(tc.indent(), call_label);
 
         const toc::scope_entry body{
             tc,
@@ -597,14 +597,14 @@ class stmt_def_func final : public statement {
             call_tk,
         };
 
-        add_constants(tc, indent + 1);
+        add_constants(tc);
 
         const auto add_binding{
             [&](const param_binding& binding) -> void {
                 const ident_info& bound{binding.info};
 
                 x.comment_binding(
-                    {call_tk, indent + 1}, binding.from, binding.text,
+                    {call_tk, tc.indent() + 1}, binding.from, binding.text,
                     bound.is_address_by_call() ? std::optional{bound.operand()}
                                                : std::nullopt);
 
@@ -622,10 +622,10 @@ class stmt_def_func final : public statement {
 
         // the result reaches the destination through the binding of 'res',
         // so the statements of the body have no destination
-        code_.compile(tc, indent, destination{});
+        code_.compile(tc, destination{});
 
         // provide the exit label for 'return' to jump to
-        x.label(indent, ret_jmp_label);
+        x.label(tc.indent(), ret_jmp_label);
     }
 
     // where the program starts, 'main' takes nothing from a call
@@ -640,7 +640,7 @@ class stmt_def_func final : public statement {
 
         x.label(0, reserved_names::main);
 
-        code_.compile(tc, 0, destination{});
+        code_.compile(tc, destination{});
 
         // code after an 'exit' or 'return' on every path would never run;
         // the compile knows the conditions it folded, e.g. with constant
@@ -766,33 +766,34 @@ class stmt_def_func final : public statement {
   private:
     // the constant arguments of the generic type of a method, in the scope of
     // the body
-    auto add_constants(toc& tc, const size_t indent) const -> void {
+    auto add_constants(toc& tc) const -> void {
         if (not instance_) {
             return;
         }
 
+        // listed like the statements of the body
+        const toc::indent_scope names{tc, tc.indent() + 1};
+
         for (const generic_arg& constant : instance_->constants) {
-            tc.add_const(constant.param_tk, indent, constant.param_tk.text(),
+            tc.add_const(constant.param_tk, constant.param_tk.text(),
                          folded_value::untyped(constant.constant()));
         }
     }
 
-    auto add_result_var(toc& tc, const size_t indent,
-                        const var_placement& placement) const -> void {
-
+    auto add_result_var(toc& tc, const var_placement& placement) const -> void {
         assert(result_);
 
-        tc.add_var(indent,
-                   {
-                       .name{result_->name_tk.text()},
-                       .type_ptr{&result_type()},
-                       .src_loc_tk{result_->name_tk},
-                       .shape{},
-                       .read_only_why{},
-                       .placement{placement},
-                       .foo_array{},
-                   },
-                   var_kind::result);
+        tc.add_var(
+            {
+                .name{result_->name_tk.text()},
+                .type_ptr{&result_type()},
+                .src_loc_tk{result_->name_tk},
+                .shape{},
+                .read_only_why{},
+                .placement{placement},
+                .foo_array{},
+            },
+            var_kind::result);
     }
 
     // located at the method name for diagnostics
@@ -817,12 +818,15 @@ class stmt_def_func final : public statement {
     // where no call gives them: in the parse and in 'check_body'; one is
     // unknown where 'check_body' passes an unsized array parameter on
     auto add_signature_vars(
-        toc& tc, const size_t indent, const var_access& access,
+        toc& tc, const var_access& access,
         const std::span<const std::optional<size_t>> array_lengths) const
         -> void {
 
         assert(array_lengths.empty() or
                array_lengths.size() == array_param_count());
+
+        // listed like the statements of the body
+        const toc::indent_scope names{tc, tc.indent() + 1};
 
         size_t next_array_index{};
 
@@ -833,7 +837,7 @@ class stmt_def_func final : public statement {
 
             // note: a slot without a parameter is the result
             if (not slot.param_index) {
-                add_result_var(tc, indent, placement);
+                add_result_var(tc, placement);
                 continue;
             }
 
@@ -845,7 +849,7 @@ class stmt_def_func final : public statement {
                     : std::nullopt,
             };
 
-            add_param_var(tc, indent, param, array_len, placement);
+            add_param_var(tc, param, array_len, placement);
         }
     }
 
@@ -920,6 +924,9 @@ class stmt_def_func final : public statement {
         const std::span<const std::optional<size_t>> array_lengths) const
         -> size_t {
 
+        // a body is listed from the left also where a call checks it
+        const toc::indent_scope body_indent{tc, 0};
+
         // the register is held while the body runs
         std::optional<operand> slot_register;
 
@@ -930,15 +937,15 @@ class stmt_def_func final : public statement {
                 {tok(), 1}, x.slot_register(), tc.builtins().address());
         }
 
-        add_constants(tc, 1);
+        add_constants(tc);
 
-        add_signature_vars(tc, 1,
+        add_signature_vars(tc,
                            through_frame{
                                .slot_register{slot_register},
                            },
                            array_lengths);
 
-        code_.compile(tc, 0, destination{});
+        code_.compile(tc, destination{});
         x.return_function(1);
 
         const size_t frame_size_bytes{tc.layout().max_frame_size_bytes()};
@@ -1037,12 +1044,12 @@ class stmt_def_func final : public statement {
                          : scope::noinline_func(name(), {}),
         };
 
-        add_constants(tc, 0);
+        add_constants(tc);
 
         // note: 'func_result::read' only keeps a result with a name
         assert(not result_ or result_->name_tk.is_word());
 
-        add_signature_vars(tc, 0, names_only{}, {});
+        add_signature_vars(tc, names_only{}, {});
 
         code_ = {tc, tz, block_braces::required};
 
@@ -1178,28 +1185,27 @@ class stmt_def_func final : public statement {
     //
 
     // 'array_len' is that of an array parameter, empty where no call gives it
-    static auto add_param_var(toc& tc, const size_t indent,
-                              const stmt_def_func_param& param,
+    static auto add_param_var(toc& tc, const stmt_def_func_param& param,
                               const std::optional<size_t> array_len,
                               const var_placement& placement) -> void {
 
-        tc.add_var(indent,
-                   {
-                       .name{param.name()},
-                       .type_ptr{&param.get_type()},
-                       .src_loc_tk{param.tok()},
-                       .shape{
-                           param.is_array() ? array_shape::array(array_len)
-                                            : array_shape{},
-                       },
-                       .read_only_why{
-                           param.is_read_only() ? read_only_cause::param
-                                                : read_only_cause::none,
-                       },
-                       .placement{placement},
-                       .foo_array{},
-                   },
-                   var_kind::param);
+        tc.add_var(
+            {
+                .name{param.name()},
+                .type_ptr{&param.get_type()},
+                .src_loc_tk{param.tok()},
+                .shape{
+                    param.is_array() ? array_shape::array(array_len)
+                                     : array_shape{},
+                },
+                .read_only_why{
+                    param.is_read_only() ? read_only_cause::param
+                                         : read_only_cause::none,
+                },
+                .placement{placement},
+                .foo_array{},
+            },
+            var_kind::param);
     }
 
     // e.g. 'len.4.8', 'len.u.8' with the first length unknown, unlike the
@@ -1555,7 +1561,7 @@ class stmt_def_func_generic final : public statement {
     }
 
     // only its instances are functions
-    auto compile([[maybe_unused]] toc& tc, [[maybe_unused]] const size_t indent,
+    auto compile([[maybe_unused]] toc& tc,
                  [[maybe_unused]] const destination& dst) const
         -> void override {}
 

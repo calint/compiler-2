@@ -73,13 +73,12 @@ class stmt_block final : public statement {
     }
 
     // a statement in a block has no destination, its value is not used
-    auto compile(toc& tc, const size_t indent,
-                 [[maybe_unused]] const destination& dst) const
+    auto compile(toc& tc, [[maybe_unused]] const destination& dst) const
         -> void override {
 
         const toc::scope_entry block{tc, scope::block()};
 
-        compile_from(tc, indent, 0);
+        compile_from(tc, 0);
     }
 
     auto trace_assignment(assignment_flow& flow) const -> void override {
@@ -107,21 +106,21 @@ class stmt_block final : public statement {
     // compile stops after what it folds and the parse could not, e.g. an 'if'
     // on a constant argument of an inlined call, and the code after it holds
     // the compile rules too, see 'toc::check_skipped'
-    auto compile_from(toc& tc, const size_t indent, const size_t first) const
-        -> void {
-
+    auto compile_from(toc& tc, const size_t first) const -> void {
         for (size_t i{first}; i < statements_.size(); ++i) {
             // e.g. the code after a 'return', or of a branch whose condition
             // never returns, as 'stop() == 1' with 'stop' an inlined 'exit';
             // 'check_skipped' compiles it as reached
             if (not tc.is_reachable()) {
-                tc.check_skipped([&] -> void { compile_from(tc, indent, i); });
+                tc.check_skipped([&] -> void { compile_from(tc, i); });
                 return;
             }
 
             const statement& stmt{*statements_.at(i)};
 
-            stmt.compile(tc, indent + 1, destination{});
+            const toc::indent_scope nested{tc, tc.indent() + 1};
+
+            stmt.compile(tc, destination{});
         }
     }
 

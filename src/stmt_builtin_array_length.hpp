@@ -51,12 +51,8 @@ class stmt_builtin_array_length final : public statement {
         args_.source_to(os);
     }
 
-    auto compile(toc& tc, const size_t indent, const destination& dst) const
-        -> void override {
-
-        machine& x{tc.machine()};
-
-        comment_source(x, indent);
+    auto compile(toc& tc, const destination& dst) const -> void override {
+        comment_source(tc);
 
         // note: a narrower destination is rejected by 'assert_not_narrowed'
         //       or the argument check of a conversion, a 'bool' by its

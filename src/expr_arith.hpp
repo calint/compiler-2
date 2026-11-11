@@ -524,8 +524,7 @@ class expr_arith final : public statement {
         token::source_to(os, parens_.close_tk);
     }
 
-    auto compile(toc& tc, const size_t indent, const destination& dst) const
-        -> void override {
+    auto compile(toc& tc, const destination& dst) const -> void override {
 
         // a list that folds is one copy of its value
         const std::optional<folded_value> folded{
@@ -533,7 +532,7 @@ class expr_arith final : public statement {
         };
 
         if (folded) {
-            compile_constant(tc, indent, tok(), dst, folded->value,
+            compile_constant(tc, tok(), dst, folded->value,
                              trimmed_source(*this));
 
             return;
@@ -545,7 +544,7 @@ class expr_arith final : public statement {
         // a single element in memory that 'is_compiled_in_place' is compiled
         // once, without trying with and without a scratch register
         if (not dst.is_register() and is_compiled_in_place()) {
-            compile_steps(tc, indent, dst, steps);
+            compile_steps(tc, dst, steps);
             return;
         }
 
@@ -554,22 +553,21 @@ class expr_arith final : public statement {
         // inlined function
         // e.g. 'r = a + r * 2' would copy 'a' into 'r' before 'r * 2' reads it
         if (destination_is_clobbered_before_read(tc, dst, steps)) {
-            compile_through_scratch(tc, indent, dst, steps);
+            compile_through_scratch(tc, dst, steps);
             return;
         }
 
         // a register destination needs no scratch register
         if (dst.is_register()) {
-            compile_steps(tc, indent, dst, steps);
+            compile_steps(tc, dst, steps);
             return;
         }
 
         // a scratch register saves loads and stores of a memory destination
         // or costs a copy, which depends on the elements, so both are measured
         tc.emit_most_efficient(
-            tok(), indent,
-            [&] -> void { compile_steps(tc, indent, dst, steps); },
-            [&] -> void { compile_through_scratch(tc, indent, dst, steps); });
+            tok(), [&] -> void { compile_steps(tc, dst, steps); },
+            [&] -> void { compile_through_scratch(tc, dst, steps); });
     }
 
     // each element is computed at the width of the destination
@@ -708,8 +706,7 @@ class expr_arith final : public statement {
     // the register is no storage that an element could read, and an index
     // has no unary ops of its own
     [[nodiscard]] auto
-    compile_without_trailing_addend(toc& tc, const size_t indent,
-                                    const destination& dst) const
+    compile_without_trailing_addend(toc& tc, const destination& dst) const
         -> std::optional<int64_t> {
 
         assert(get_unary_ops().is_empty());
@@ -731,7 +728,7 @@ class expr_arith final : public statement {
             std::span{steps}.first(steps.size() - 1),
         };
 
-        compile_steps(tc, indent, dst, leading);
+        compile_steps(tc, dst, leading);
 
         return last.value;
     }
@@ -826,9 +823,8 @@ class expr_arith final : public statement {
                                         trimmed_source(*exprs_.front()));
     }
 
-    auto compile_first_step(toc& tc, const size_t indent,
-                            const destination& dst, const step& first) const
-        -> void {
+    auto compile_first_step(toc& tc, const destination& dst,
+                            const step& first) const -> void {
 
         // a list copies a constant itself, an element never emits one, e.g.
         // the merged '2 * 3' of '2 * 3 / b' or the element '3' of '3 - b'
@@ -839,7 +835,7 @@ class expr_arith final : public statement {
 
             assert(first.op != arithmetic_operator::subtract);
 
-            compile_constant(tc, indent, step_token(first), dst, *first.value,
+            compile_constant(tc, step_token(first), dst, *first.value,
                              first.folded_source);
 
             return;
@@ -855,26 +851,26 @@ class expr_arith final : public statement {
                 source_text(arithmetic_operator::assign),
             };
 
-            x.comment({element.tok(), indent},
+            x.comment({element.tok(), tc.indent()},
                       trimmed_source(element, dst.text(), assign_text));
 
-            x.comment({element.tok(), indent}, "= expression");
+            x.comment({element.tok(), tc.indent()}, "= expression");
         }
 
-        element.compile(tc, indent, dst);
+        element.compile(tc, dst);
 
         // only a zero constant leaves a subtracted element first: '2 - b - 2'
         if (first.op == arithmetic_operator::subtract) {
-            x.unary({tok(), indent}, arithmetic_operator::negate, dst.operand(),
-                    tc.overflow_options(dst));
+            x.unary({tok(), tc.indent()}, arithmetic_operator::negate,
+                    dst.operand(), tc.overflow_options(dst));
         }
     }
 
-    auto compile_step(toc& tc, const size_t indent, const destination& dst,
-                      const step& s) const -> void {
+    auto compile_step(toc& tc, const destination& dst, const step& s) const
+        -> void {
 
         if (s.value) {
-            emit_constant_step(tc, indent, dst, s);
+            emit_constant_step(tc, dst, s);
             return;
         }
 
@@ -884,66 +880,64 @@ class expr_arith final : public statement {
 
         const std::string_view op_text{source_text(s.op)};
 
-        x.comment({src.tok(), indent},
+        x.comment({src.tok(), tc.indent()},
                   trimmed_source(src, dst.text(), op_text));
 
         // the element is computed into a scratch register or read where it
         // is stored
         if (src.is_computed()) {
-            compile_computed_operand(tc, indent, s.op, dst, src);
+            compile_computed_operand(tc, s.op, dst, src);
             return;
         }
 
-        compile_stored_operand(tc, indent, dst, s);
+        compile_stored_operand(tc, dst, s);
     }
 
     // the steps that 'plan_steps' made for 'dst'; a nested list is folded
     // when it is compiled as an element:
     //   '3 + a * 3 * 2 / 3 / 2 * 4 + 5'  =>  'a * 6 / 6 * 4 + 8'
-    auto compile_steps(toc& tc, const size_t indent, const destination& dst,
+    auto compile_steps(toc& tc, const destination& dst,
                        const std::span<const step> steps) const -> void {
 
-        compile_first_step(tc, indent, dst, steps.front());
+        compile_first_step(tc, dst, steps.front());
 
         for (const step& s : steps.subspan(1)) {
-            compile_step(tc, indent, dst, s);
+            compile_step(tc, dst, s);
         }
 
         machine& x{tc.machine()};
 
         // the unary ops of the list apply to its result, e.g. '-(a + b)'
-        get_unary_ops().compile(x, indent, tok(), dst.operand(),
+        get_unary_ops().compile(x, {tok(), tc.indent()}, dst.operand(),
                                 tc.overflow_options(dst));
     }
 
     // the destination keeps its value until the whole expression is computed;
     // the steps planned for 'dst' are those of a register of its type
-    auto compile_through_scratch(toc& tc, const size_t indent,
-                                 const destination& dst,
+    auto compile_through_scratch(toc& tc, const destination& dst,
                                  const std::span<const step> steps) const
         -> void {
 
         machine& x{tc.machine()};
 
         const operand reg{
-            x.alloc_scratch_register({tok(), indent}, dst.type_ref()),
+            x.alloc_scratch_register({tok(), tc.indent()}, dst.type_ref()),
         };
 
         const destination reg_dst{dst.in_register(reg)};
 
-        compile_steps(tc, indent, reg_dst, steps);
+        compile_steps(tc, reg_dst, steps);
 
-        x.copy_value({tok(), indent}, dst.operand(), reg);
+        x.copy_value({tok(), tc.indent()}, dst.operand(), reg);
 
-        x.free_scratch_register({tok(), indent}, reg);
+        x.free_scratch_register({tok(), tc.indent()}, reg);
     }
 
     // a step with a value: a constant element, its value folded by
     // 'make_steps', or constants the passes merged, e.g. the '+ 8' of
     // 'a + 3 + 5'; a constant that changes nothing does not reach the backend
-    auto emit_constant_step(toc& tc, const size_t indent,
-                            const destination& dst, const step& s) const
-        -> void {
+    auto emit_constant_step(toc& tc, const destination& dst,
+                            const step& s) const -> void {
 
         // note: 'compile_step' sends a step with a value
         assert(s.value);
@@ -957,7 +951,7 @@ class expr_arith final : public statement {
         machine& x{tc.machine()};
 
         if (traits_of(s.op).identity == step_value) {
-            x.comment({src_loc_tk, indent},
+            x.comment({src_loc_tk, tc.indent()},
                       "src: folded constant {} is {} and changes nothing",
                       in_quotes(s.folded_source), step_value);
 
@@ -978,14 +972,13 @@ class expr_arith final : public statement {
 
         const int64_t value{is_subtracted ? -step_value : step_value};
 
-        x.comment({src_loc_tk, indent}, "{} {} {}", dst.text(), source_text(op),
-                  value);
+        x.comment({src_loc_tk, tc.indent()}, "{} {} {}", dst.text(),
+                  source_text(op), value);
 
-        x.comment({src_loc_tk, indent}, "src: folded constant {}",
+        x.comment({src_loc_tk, tc.indent()}, "src: folded constant {}",
                   in_quotes(s.folded_source));
 
-        emit_operation(tc, indent, src_loc_tk, op, dst,
-                       constant_operand(dst, value),
+        emit_operation(tc, src_loc_tk, op, dst, constant_operand(dst, value),
                        machine::factor_use::read_only);
     }
 
@@ -1224,8 +1217,7 @@ class expr_arith final : public statement {
     }
 
     // the operand in a scratch register that the operation may overwrite
-    static auto compile_computed_operand(toc& tc, const size_t indent,
-                                         const arithmetic_operator op,
+    static auto compile_computed_operand(toc& tc, const arithmetic_operator op,
                                          const destination& dst,
                                          const statement& src) -> void {
 
@@ -1233,43 +1225,41 @@ class expr_arith final : public statement {
 
         machine& x{tc.machine()};
 
-        x.comment({src.tok(), indent}, "src: expression");
+        x.comment({src.tok(), tc.indent()}, "src: expression");
 
         const operand reg{
-            x.alloc_scratch_register({src.tok(), indent}, dst.type_ref()),
+            x.alloc_scratch_register({src.tok(), tc.indent()}, dst.type_ref()),
         };
 
         // note: the callers are the operators after the first element
-        src.compile(tc, indent, dst.in_register(reg));
+        src.compile(tc, dst.in_register(reg));
 
-        emit_operation(tc, indent, src.tok(), op, dst, reg,
+        emit_operation(tc, src.tok(), op, dst, reg,
                        machine::factor_use::may_overwrite);
 
-        x.free_scratch_register({src.tok(), indent}, reg);
+        x.free_scratch_register({src.tok(), tc.indent()}, reg);
     }
 
-    static auto compile_constant(toc& tc, const size_t indent,
-                                 const token& src_loc_tk,
+    static auto compile_constant(toc& tc, const token& src_loc_tk,
                                  const destination& dst, const int64_t value,
                                  const std::string_view folded_source) -> void {
 
         machine& x{tc.machine()};
 
-        x.comment({src_loc_tk, indent}, "{} = {}", dst.text(), value);
+        x.comment({src_loc_tk, tc.indent()}, "{} = {}", dst.text(), value);
 
-        x.comment({src_loc_tk, indent}, "src: folded constant {}",
+        x.comment({src_loc_tk, tc.indent()}, "src: folded constant {}",
                   in_quotes(folded_source));
 
-        x.copy_value({src_loc_tk, indent}, dst.operand(),
+        x.copy_value({src_loc_tk, tc.indent()}, dst.operand(),
                      constant_operand(dst, value));
     }
 
     // a name or a literal read in place, a register that holds the result
     // of unary ops may be overwritten; 'a + -b' is 'a - b' and 'a - -b' is
     // 'a + b'
-    static auto compile_stored_operand(toc& tc, const size_t indent,
-                                       const destination& dst, const step& s)
-        -> void {
+    static auto compile_stored_operand(toc& tc, const destination& dst,
+                                       const step& s) -> void {
 
         const arithmetic_operator op{s.op};
         const statement& src{*s.element};
@@ -1293,10 +1283,10 @@ class expr_arith final : public statement {
 
         machine& x{tc.machine()};
 
-        x.comment({src.tok(), indent}, "{}",
+        x.comment({src.tok(), tc.indent()}, "{}",
                   stored_operand_comment(is_negation_folded, has_unary_ops));
 
-        machine::held_registers held{x, {src.tok(), indent}};
+        machine::held_registers held{x, {src.tok(), tc.indent()}};
 
         if (is_negation_folded) {
             const arithmetic_operator flipped{
@@ -1305,22 +1295,21 @@ class expr_arith final : public statement {
             };
 
             const operand src_operand{
-                ident.get_lea_operand(tc, indent, src_info, held),
+                ident.get_lea_operand(tc, src_info, held),
             };
 
-            emit_operation(tc, indent, src.tok(), flipped, dst, src_operand,
+            emit_operation(tc, src.tok(), flipped, dst, src_operand,
                            machine::factor_use::read_only);
 
             return;
         }
 
         const operand src_operand{
-            ident.compile_value_operand(tc, indent, src.tok(), src_info,
-                                        dst.type_ref(),
+            ident.compile_value_operand(tc, src.tok(), src_info, dst.type_ref(),
                                         tc.overflow_options(dst), held),
         };
 
-        emit_operation(tc, indent, src.tok(), op, dst, src_operand,
+        emit_operation(tc, src.tok(), op, dst, src_operand,
                        has_unary_ops ? machine::factor_use::may_overwrite
                                      : machine::factor_use::read_only);
     }
@@ -1367,8 +1356,7 @@ class expr_arith final : public statement {
     // the machine operation of 'op' with its run-time check: overflow for
     // add, subtract and multiply, the division check for divide and
     // remainder, the shift check for shifts, none for the bitwise operators
-    static auto emit_operation(toc& tc, const size_t indent,
-                               const token& src_loc_tk,
+    static auto emit_operation(toc& tc, const token& src_loc_tk,
                                const arithmetic_operator op,
                                const destination& dst, const operand& value,
                                const machine::factor_use use) -> void {
@@ -1378,14 +1366,14 @@ class expr_arith final : public statement {
         machine& x{tc.machine()};
 
         if (family == operator_family::add_subtract) {
-            x.add_subtract({src_loc_tk, indent}, op, dst.operand(), value,
+            x.add_subtract({src_loc_tk, tc.indent()}, op, dst.operand(), value,
                            tc.overflow_options(dst));
 
             return;
         }
 
         if (family == operator_family::multiply) {
-            x.multiply({src_loc_tk, indent}, dst.operand(), value, use,
+            x.multiply({src_loc_tk, tc.indent()}, dst.operand(), value, use,
                        tc.overflow_options(dst));
 
             return;
@@ -1399,7 +1387,7 @@ class expr_arith final : public statement {
                 not value.is_immediate() or value.immediate() == -1,
             };
 
-            x.divide({src_loc_tk, indent}, op, dst.operand(), value,
+            x.divide({src_loc_tk, tc.indent()}, op, dst.operand(), value,
                      {
                          .enabled{tc.checks().division and can_fail},
                      });
@@ -1408,7 +1396,7 @@ class expr_arith final : public statement {
         }
 
         if (family == operator_family::shift) {
-            x.shift({src_loc_tk, indent}, op, dst.operand(), value,
+            x.shift({src_loc_tk, tc.indent()}, op, dst.operand(), value,
                     {
                         .enabled{tc.checks().shift},
                     });
@@ -1418,7 +1406,7 @@ class expr_arith final : public statement {
 
         assert(family == operator_family::bitwise);
 
-        x.bitwise({src_loc_tk, indent}, op, dst.operand(), value);
+        x.bitwise({src_loc_tk, tc.indent()}, op, dst.operand(), value);
     }
 
     // rejects a constant divisor or shift count like 'compile', and the

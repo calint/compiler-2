@@ -233,7 +233,6 @@ class statement {
     // run more than once, what it adds to 'toc' is the same each time or put
     // back, see the class comment of 'toc'
     virtual auto compile([[maybe_unused]] toc& tc,
-                         [[maybe_unused]] const size_t indent,
                          [[maybe_unused]] const destination& dst) const
         -> void {
 
@@ -309,20 +308,20 @@ class statement {
     [[nodiscard]] auto bare_path() const -> const stmt_identifier*;
 
     // the source as a listing comment, not rendered in discarded code
-    auto comment_source(machine& x, const size_t indent) const -> void {
+    auto comment_source(toc& tc) const -> void {
+        machine& x{tc.machine()};
+
         if (x.is_discarding()) {
             return;
         }
 
-        x.comment({tok(), indent}, trimmed_source(*this));
+        x.comment({tok(), tc.indent()}, trimmed_source(*this));
     }
 
     // the compile of a value that must fit 'dst', checked like 'fold_checked'
-    auto compile_checked(toc& tc, const size_t indent,
-                         const destination& dst) const -> void {
-
+    auto compile_checked(toc& tc, const destination& dst) const -> void {
         assert_not_narrowed(tc, dst.type_ref());
-        compile(tc, indent, dst);
+        compile(tc, dst);
     }
 
     // the fold of a value that must fit where it is used, checked as its

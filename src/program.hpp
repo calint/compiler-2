@@ -311,7 +311,7 @@ class program final {
             // type writes its layout comment, a function emits nothing here
             for (const parsed_file& parsed : parsed_files_) {
                 for (const std::unique_ptr<statement>& s : parsed.statements) {
-                    s->compile(tc_, 0, destination{});
+                    s->compile(tc_, destination{});
                 }
             }
 

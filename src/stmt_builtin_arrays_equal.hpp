@@ -38,8 +38,7 @@ class stmt_builtin_arrays_equal final : public statement {
         operands_.source_to(os);
     }
 
-    auto compile(toc& tc, const size_t indent, const destination& dst) const
-        -> void override {
+    auto compile(toc& tc, const destination& dst) const -> void override {
 
         // note: the parse rejected a destination that is not a 'bool'
         //       ('expr_any::assert_number_kind')
@@ -48,7 +47,7 @@ class stmt_builtin_arrays_equal final : public statement {
 
         machine& x{tc.machine()};
 
-        comment_source(x, indent);
+        comment_source(tc);
 
         const type& element_type{operands_.check(tc)};
 
@@ -56,14 +55,14 @@ class stmt_builtin_arrays_equal final : public statement {
             operands_.constant_size_bytes(tc, element_type),
         };
 
-        bulk_operands::argument_emitters emit{operands_, tc, indent, tok()};
+        bulk_operands::argument_emitters emit{operands_, tc, tok()};
 
         // a known size is compared like two instances; a count of 0 stays a
         // run-time walk, which compares nothing
         if (size_bytes and *size_bytes > 0) {
             emit.both_addresses(
                 [&](const operand& lhs, const operand& rhs) -> void {
-                    x.memory_equal({tok(), indent}, *size_bytes, lhs, rhs,
+                    x.memory_equal({tok(), tc.indent()}, *size_bytes, lhs, rhs,
                                    {
                                        .alignment{element_type.alignment()},
                                        .dst{dst.operand()},
@@ -74,7 +73,7 @@ class stmt_builtin_arrays_equal final : public statement {
             return;
         }
 
-        x.equal_elements({tok(), indent}, element_type.size_bytes(),
+        x.equal_elements({tok(), tc.indent()}, element_type.size_bytes(),
                          emit.count(), emit.first(), emit.second(),
                          element_type.alignment(), dst.operand());
     }

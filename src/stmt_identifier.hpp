@@ -274,7 +274,6 @@ class stmt_identifier final : public statement {
     // the path's own and may be overwritten, the earlier ones are the caller's
     class path_address final {
         std::reference_wrapper<toc> tc_;
-        size_t indent_{};
         token src_loc_tk_;
         std::reference_wrapper<machine::held_registers> held_;
         size_t owned_from_{};
@@ -284,10 +283,10 @@ class stmt_identifier final : public statement {
         std::optional<operand> index_register_;
 
       public:
-        path_address(toc& tc, const size_t indent, const token& src_loc_tk,
+        path_address(toc& tc, const token& src_loc_tk,
                      machine::held_registers& held,
                      std::optional<operand> address_register)
-            : tc_{tc}, indent_{indent}, src_loc_tk_{src_loc_tk}, held_{held},
+            : tc_{tc}, src_loc_tk_{src_loc_tk}, held_{held},
               owned_from_{held.registers().size()},
               address_register_{std::move(address_register)} {}
 
@@ -328,12 +327,12 @@ class stmt_identifier final : public statement {
 
             if (not target) {
                 target = held_.get().alloc_scratch_register(
-                    {src_loc_tk_, indent_}, tc.builtins().address());
+                    {src_loc_tk_, tc.indent()}, tc.builtins().address());
             }
 
             machine& x{tc.machine()};
 
-            x.address_of({src_loc_tk_, indent_}, *target, address);
+            x.address_of({src_loc_tk_, tc.indent()}, *target, address);
 
             return *target;
         }
@@ -382,13 +381,13 @@ class stmt_identifier final : public statement {
             toc& tc{tc_.get()};
 
             const operand address_register{
-                held_.get().alloc_scratch_register({src_loc_tk_, indent_},
+                held_.get().alloc_scratch_register({src_loc_tk_, tc.indent()},
                                                    tc.builtins().address()),
             };
 
             machine& x{tc.machine()};
 
-            x.copy_value({src_loc_tk_, indent_}, address_register,
+            x.copy_value({src_loc_tk_, tc.indent()}, address_register,
                          operand::mem(address_slot, tc.builtins().address()));
 
             return operand::mem(address_register, tc.builtins().address());
@@ -461,29 +460,27 @@ class stmt_identifier final : public statement {
         path_source_to(os);
     }
 
-    auto compile(toc& tc, const size_t indent, const destination& dst) const
-        -> void override {
-
+    auto compile(toc& tc, const destination& dst) const -> void override {
         machine& x{tc.machine()};
 
-        comment_source(x, indent);
+        comment_source(tc);
 
         const ident_info src_info{make_scalar_ident_info(tc, *this)};
 
         // note: a list copies a constant itself
         assert(not src_info.is_const());
 
-        machine::held_registers held{x, {tok(), indent}};
+        machine::held_registers held{x, {tok(), tc.indent()}};
 
-        const operand op{get_lea_operand(tc, indent, src_info, held)};
+        const operand op{get_lea_operand(tc, src_info, held)};
 
         // the copy protects the address registers until it reads them, then
         // may load the value into one of them
         held.release();
 
-        x.copy_value({tok(), indent}, dst.operand(), op);
+        x.copy_value({tok(), tc.indent()}, dst.operand(), op);
 
-        get_unary_ops().compile(x, indent, tok(), dst.operand(),
+        get_unary_ops().compile(x, {tok(), tc.indent()}, dst.operand(),
                                 tc.overflow_options(dst));
     }
 
@@ -616,12 +613,11 @@ class stmt_identifier final : public statement {
 
     // the memory operand of this identifier, e.g. 'rbp + 4 * r15 + 248',
     // 'held' receives the scratch registers of the indexing
-    [[nodiscard]] auto compile_lea(toc& tc, const size_t indent,
-                                   machine::held_registers& held,
+    [[nodiscard]] auto compile_lea(toc& tc, machine::held_registers& held,
                                    const lea_request& request) const
         -> operand {
 
-        path_address builder{tc, indent, tok(), held, request.address_register};
+        path_address builder{tc, tok(), held, request.address_register};
 
         // only the last element starts a range
         const lea_request inner_request{};
@@ -666,7 +662,7 @@ class stmt_identifier final : public statement {
     // storage or computed address, with unary ops a scratch register of
     // 'register_type' that holds the result; the registers go to 'held'
     [[nodiscard]] auto
-    compile_value_operand(toc& tc, const size_t indent, const token& src_loc_tk,
+    compile_value_operand(toc& tc, const token& src_loc_tk,
                           const ident_info& info, const type& register_type,
                           const machine::runtime_check& overflow_check,
                           machine::held_registers& held) const -> operand {
@@ -675,19 +671,22 @@ class stmt_identifier final : public statement {
         assert(not info.is_const());
 
         if (get_unary_ops().is_empty()) {
-            return get_lea_operand(tc, indent, info, held);
+            return get_lea_operand(tc, info, held);
         }
 
-        const operand storage{get_lea_operand(tc, indent, info, held)};
+        const operand storage{get_lea_operand(tc, info, held)};
 
         const operand reg{
-            held.alloc_scratch_register({src_loc_tk, indent}, register_type),
+            held.alloc_scratch_register({src_loc_tk, tc.indent()},
+                                        register_type),
         };
 
         machine& x{tc.machine()};
 
-        x.copy_value({src_loc_tk, indent}, reg, storage);
-        get_unary_ops().compile(x, indent, src_loc_tk, reg, overflow_check);
+        x.copy_value({src_loc_tk, tc.indent()}, reg, storage);
+
+        get_unary_ops().compile(x, {src_loc_tk, tc.indent()}, reg,
+                                overflow_check);
 
         return reg;
     }
@@ -699,8 +698,7 @@ class stmt_identifier final : public statement {
 
     // the operand of what 'info' resolves this statement to, a computed
     // address goes into 'held'
-    [[nodiscard]] auto get_lea_operand(toc& tc, const size_t indent,
-                                       const ident_info& info,
+    [[nodiscard]] auto get_lea_operand(toc& tc, const ident_info& info,
                                        machine::held_registers& held) const
         -> operand {
 
@@ -708,7 +706,7 @@ class stmt_identifier final : public statement {
             return info.operand();
         }
 
-        return compile_lea(tc, indent, held, {});
+        return compile_lea(tc, held, {});
     }
 
     // the address of what 'info' resolves this statement to is computed into
@@ -744,17 +742,16 @@ class stmt_identifier final : public statement {
 
     // 'reg' receives the address of what 'info' resolves this statement to;
     // 'src_loc_tk' is the statement that asks for it, e.g. a 'foo'
-    auto load_address(toc& tc, const size_t indent, const token& src_loc_tk,
-                      const ident_info& info, const operand& reg) const
-        -> void {
+    auto load_address(toc& tc, const token& src_loc_tk, const ident_info& info,
+                      const operand& reg) const -> void {
 
         machine& x{tc.machine()};
 
-        machine::held_registers held{x, {src_loc_tk, indent}};
+        machine::held_registers held{x, {src_loc_tk, tc.indent()}};
 
-        const operand address{get_lea_operand(tc, indent, info, held)};
+        const operand address{get_lea_operand(tc, info, held)};
 
-        x.address_of({src_loc_tk, indent}, reg, address);
+        x.address_of({src_loc_tk, tc.indent()}, reg, address);
     }
 
     // this path may reach bytes of 'target', e.g. 'e.x' in a 'foo ps' reaches
@@ -1171,9 +1168,8 @@ class stmt_identifier final : public statement {
     // 'ix' and returns 1, only without bounds checks since they check the sum
     // in the register
     [[nodiscard]] static auto compile_checked_index(
-        toc& tc, const size_t indent, const expr_any& index_expr,
-        const operand& index_register, const array_shape& shape,
-        const bool is_range) -> int64_t;
+        toc& tc, const expr_any& index_expr, const operand& index_register,
+        const array_shape& shape, const bool is_range) -> int64_t;
 
     // the field 'name_tk' of what the path up to it resolved to, a constant
     // named 'root' has none

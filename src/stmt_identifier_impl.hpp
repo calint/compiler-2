@@ -365,15 +365,14 @@ inline auto stmt_identifier::path_address::add_index(const ident_elem& cur_elem,
     if (not index_register_) {
         // index expressions are parsed with the default type
         index_register_ = held_.get().alloc_scratch_register(
-            {index_tk, indent_}, tc.builtins().default_type());
+            {index_tk, tc.indent()}, tc.builtins().default_type());
     }
 
     const operand& index_register{*index_register_};
 
     const int64_t addend_elements{
-        compile_checked_index(tc, indent_, cur_elem.index_expr(),
-                              index_register, cur_info.shape(),
-                              request.is_range),
+        compile_checked_index(tc, cur_elem.index_expr(), index_register,
+                              cur_info.shape(), request.is_range),
     };
 
     machine& x{tc.machine()};
@@ -384,7 +383,7 @@ inline auto stmt_identifier::path_address::add_index(const ident_elem& cur_elem,
 
         assert(addend_elements == 0);
 
-        x.copy_value({index_tk, indent_}, *request.start_register,
+        x.copy_value({index_tk, tc.indent()}, *request.start_register,
                      index_register);
     }
 
@@ -394,7 +393,7 @@ inline auto stmt_identifier::path_address::add_index(const ident_elem& cur_elem,
     //       modulo the address width, e.g. 'a[i - 9223372036854775806]'
 
     if (addend_elements != 0) {
-        x.comment({index_tk, indent_},
+        x.comment({index_tk, tc.indent()},
                   "index constant {} goes into the displacement",
                   addend_elements);
     }
@@ -404,7 +403,8 @@ inline auto stmt_identifier::path_address::add_index(const ident_elem& cur_elem,
     const bool is_encodable_scale{x.can_lower_index_scale(element_size_bytes)};
 
     if (not is_encodable_scale) {
-        x.scale_index({index_tk, indent_}, index_register, element_size_bytes);
+        x.scale_index({index_tk, tc.indent()}, index_register,
+                      element_size_bytes);
     }
 
     const int64_t displacement{
@@ -418,13 +418,12 @@ inline auto stmt_identifier::path_address::add_index(const ident_elem& cur_elem,
 }
 
 inline auto stmt_identifier::compile_checked_index(
-    toc& tc, const size_t indent, const expr_any& index_expr,
-    const operand& index_register, const array_shape& shape,
-    const bool is_range) -> int64_t {
+    toc& tc, const expr_any& index_expr, const operand& index_register,
+    const array_shape& shape, const bool is_range) -> int64_t {
 
     machine& x{tc.machine()};
 
-    x.comment({index_expr.tok(), indent}, "set array index");
+    x.comment({index_expr.tok(), tc.indent()}, "set array index");
 
     const destination index_dst{
         destination::of_register(index_register),
@@ -436,7 +435,7 @@ inline auto stmt_identifier::compile_checked_index(
 
     if (not checks.upper and not checks.lower) {
         const std::optional<int64_t> addend{
-            index_expr.compile_without_trailing_addend(tc, indent, index_dst),
+            index_expr.compile_without_trailing_addend(tc, index_dst),
         };
 
         if (addend) {
@@ -444,7 +443,7 @@ inline auto stmt_identifier::compile_checked_index(
         }
     }
 
-    index_expr.compile(tc, indent, index_dst);
+    index_expr.compile(tc, index_dst);
 
     const std::optional<size_t> array_len{shape.length()};
 
@@ -457,7 +456,7 @@ inline auto stmt_identifier::compile_checked_index(
                                            shape.element_count()),
     };
 
-    x.check_bounds({index_expr.tok(), indent}, checked, checks);
+    x.check_bounds({index_expr.tok(), tc.indent()}, checked, checks);
 
     return 0;
 }

@@ -221,7 +221,7 @@ class expr_bool_op final : public statement {
     // its connective after the inversion; returns the value after 'inverted'
     // when the element folds, empty when the run decides it
     [[nodiscard]] auto
-    compile_branch(toc& tc, const size_t indent, const std::string_view target,
+    compile_branch(toc& tc, const std::string_view target,
                    const bool branch_on_true, const bool inverted,
                    const connective joined_by, const operand& dst) const
         -> std::optional<bool> {
@@ -240,22 +240,22 @@ class expr_bool_op final : public statement {
 
         machine& x{tc.machine()};
 
-        x.comment({tok(), indent}, trimmed_source(*this, "?", label));
+        x.comment({tok(), tc.indent()}, trimmed_source(*this, "?", label));
 
-        x.label(indent, tc.create_unique_label(tok(), "cmp"));
+        x.label(tc.indent(), tc.create_unique_label(tok(), "cmp"));
 
         // a constant has the element's 'not's applied, the list inversion is
         // left
         if (const std::optional<bool> constant{constant_value(tc)}) {
-            return compile_constant(tc, indent, *constant != inverted, action);
+            return compile_constant(tc, *constant != inverted, action);
         }
 
         if (not comparison_) {
-            compile_shorthand(tc, indent, action);
+            compile_shorthand(tc, action);
             return std::nullopt;
         }
 
-        compile_comparison(tc, indent, *comparison_, action);
+        compile_comparison(tc, *comparison_, action);
 
         return std::nullopt;
     }
@@ -381,7 +381,7 @@ class expr_bool_op final : public statement {
 
     // a comparison whose sides do not both fold, the sides are classified
     // once
-    auto compile_comparison(toc& tc, const size_t indent, const comparison& cmp,
+    auto compile_comparison(toc& tc, const comparison& cmp,
                             const machine::comparison_action& action) const
         -> void {
 
@@ -389,7 +389,7 @@ class expr_bool_op final : public statement {
         assert_not_written_later(tc, *this, "operand");
 
         if (cmp.is_memory) {
-            resolve_memory_cmp(tc, indent, cmp, action);
+            resolve_memory_cmp(tc, cmp, action);
             return;
         }
 
@@ -408,7 +408,7 @@ class expr_bool_op final : public statement {
         };
 
         if (not is_mirrored) {
-            resolve_cmp(tc, indent, lhs, rhs, action);
+            resolve_cmp(tc, lhs, rhs, action);
             return;
         }
 
@@ -418,33 +418,33 @@ class expr_bool_op final : public statement {
         const comparison_side& mirrored_lhs{rhs};
         const comparison_side& mirrored_rhs{lhs};
 
-        resolve_cmp(tc, indent, mirrored_lhs, mirrored_rhs, mirrored_action);
+        resolve_cmp(tc, mirrored_lhs, mirrored_rhs, mirrored_action);
     }
 
     // a constant emits no comparison, only the short-circuit branch
-    auto compile_constant(toc& tc, const size_t indent, const bool value,
+    auto compile_constant(toc& tc, const bool value,
                           const machine::comparison_action& action) const
         -> bool {
 
         machine& x{tc.machine()};
 
-        x.comment({lhs_.tok(), indent}, "const eval to {}",
+        x.comment({lhs_.tok(), tc.indent()}, "const eval to {}",
                   value ? "true" : "false");
 
         // note: a run-time element before it may have stored the other value
         if (not action.destination.is_empty()) {
-            x.store_boolean({tok(), indent}, action.destination, value);
+            x.store_boolean({tok(), tc.indent()}, action.destination, value);
         }
 
         if (value == action.branch_on_true and not action.target.empty()) {
-            x.branch(indent, action.target);
+            x.branch(tc.indent(), action.target);
         }
 
         return value;
     }
 
     // the operand alone, compared with 0, when it does not fold
-    auto compile_shorthand(toc& tc, const size_t indent,
+    auto compile_shorthand(toc& tc,
                            const machine::comparison_action& action) const
         -> void {
 
@@ -455,22 +455,22 @@ class expr_bool_op final : public statement {
 
         machine& x{tc.machine()};
 
-        machine::held_registers held{x, {tok(), indent}};
+        machine::held_registers held{x, {tok(), tc.indent()}};
 
         const comparison_side condition{side_of(tc, lhs_)};
 
         const operand value{
-            truth_test_operand(tc, indent, condition, action, held),
+            truth_test_operand(tc, condition, action, held),
         };
 
         // a 'bool' already holds 0 or 1, a copy is shorter than evaluating the
         // shorthand as '!= 0'
         if (is_bool_copy(action)) {
-            x.copy_value({tok(), indent}, action.destination, value);
+            x.copy_value({tok(), tc.indent()}, action.destination, value);
             return;
         }
 
-        x.compare_and_branch({tok(), indent}, value,
+        x.compare_and_branch({tok(), tc.indent()}, value,
                              operand::imm(0, tc.builtins().default_type()),
                              action);
     }
@@ -516,23 +516,23 @@ class expr_bool_op final : public statement {
         return cmp;
     }
 
-    auto resolve_cmp(toc& tc, const size_t indent, const comparison_side& lhs,
+    auto resolve_cmp(toc& tc, const comparison_side& lhs,
                      const comparison_side& rhs,
                      const machine::comparison_action& action) const -> void {
 
         machine& x{tc.machine()};
 
-        machine::held_registers held{x, {tok(), indent}};
+        machine::held_registers held{x, {tok(), tc.indent()}};
 
-        const operand dst{left_operand(tc, indent, lhs, held)};
-        const operand src{right_operand(tc, indent, rhs, held)};
+        const operand dst{left_operand(tc, lhs, held)};
+        const operand src{right_operand(tc, rhs, held)};
 
-        x.compare_and_branch({tok(), indent}, dst, src, action);
+        x.compare_and_branch({tok(), tc.indent()}, dst, src, action);
     }
 
     // the bytes are compared and the result is branched on as for a shorthand
     // condition
-    auto resolve_memory_cmp(toc& tc, const size_t indent, const comparison& cmp,
+    auto resolve_memory_cmp(toc& tc, const comparison& cmp,
                             const machine::comparison_action& action) const
         -> void {
 
@@ -556,11 +556,11 @@ class expr_bool_op final : public statement {
 
         const operand result{
             is_stored ? action.destination
-                      : x.alloc_scratch_register({tok(), indent},
+                      : x.alloc_scratch_register({tok(), tc.indent()},
                                                  tc.builtins().boolean()),
         };
 
-        compile_memory_equality(tc, indent + 1, tok(), lhs, rhs, result,
+        compile_memory_equality(tc, tok(), lhs, rhs, result,
                                 action.operation ==
                                     comparison_operator::not_equal);
 
@@ -572,13 +572,13 @@ class expr_bool_op final : public statement {
             branch_action.operation = comparison_operator::not_equal;
             branch_action.destination = {};
 
-            x.compare_and_branch({tok(), indent}, result,
+            x.compare_and_branch({tok(), tc.indent()}, result,
                                  operand::imm(0, tc.builtins().default_type()),
                                  branch_action);
         }
 
         if (not is_stored) {
-            x.free_scratch_register({tok(), indent}, result);
+            x.free_scratch_register({tok(), tc.indent()}, result);
         }
     }
 
@@ -738,12 +738,14 @@ class expr_bool_op final : public statement {
 
     // compares the bytes of two user type instances or of two whole arrays,
     // 'dst' is 1 when they are equal, negated when 'inverted'
-    static auto compile_memory_equality(toc& tc, const size_t indent,
-                                        const token& src_loc_tk,
+    static auto compile_memory_equality(toc& tc, const token& src_loc_tk,
                                         const stmt_identifier& lhs,
                                         const stmt_identifier& rhs,
                                         const operand& dst, const bool inverted)
         -> void {
+
+        // the comparison is listed below the condition
+        const toc::indent_scope nested{tc, tc.indent() + 1};
 
         const ident_info lhs_info{make_memory_operand_info(tc, lhs)};
         const ident_info rhs_info{make_memory_operand_info(tc, rhs)};
@@ -760,15 +762,15 @@ class expr_bool_op final : public statement {
 
         machine& x{tc.machine()};
 
-        machine::held_registers held{x, {src_loc_tk, indent}};
+        machine::held_registers held{x, {src_loc_tk, tc.indent()}};
 
-        x.comment({lhs.tok(), indent}, trimmed_source(lhs));
-        const operand lhs_address{lhs.compile_lea(tc, indent, held, {})};
+        x.comment({lhs.tok(), tc.indent()}, trimmed_source(lhs));
+        const operand lhs_address{lhs.compile_lea(tc, held, {})};
 
-        x.comment({rhs.tok(), indent}, trimmed_source(rhs));
-        const operand rhs_address{rhs.compile_lea(tc, indent, held, {})};
+        x.comment({rhs.tok(), tc.indent()}, trimmed_source(rhs));
+        const operand rhs_address{rhs.compile_lea(tc, held, {})};
 
-        x.memory_equal({src_loc_tk, indent}, *size_bytes, lhs_address,
+        x.memory_equal({src_loc_tk, tc.indent()}, *size_bytes, lhs_address,
                        rhs_address,
                        {
                            .alignment{lhs_info.type_ref().alignment()},
@@ -777,17 +779,20 @@ class expr_bool_op final : public statement {
                        });
     }
 
-    [[nodiscard]] static auto compile_to_scratch(toc& tc, const size_t indent,
+    [[nodiscard]] static auto compile_to_scratch(toc& tc,
                                                  const expr_arith& expr,
                                                  machine::held_registers& held)
         -> operand {
 
         // the operand is computed at the width of its first element
         const operand reg{
-            held.alloc_scratch_register({expr.tok(), indent}, expr.get_type()),
+            held.alloc_scratch_register({expr.tok(), tc.indent()},
+                                        expr.get_type()),
         };
 
-        expr.compile_checked(tc, indent + 1, destination::of_register(reg));
+        const toc::indent_scope nested{tc, tc.indent() + 1};
+
+        expr.compile_checked(tc, destination::of_register(reg));
 
         return reg;
     }
@@ -860,8 +865,7 @@ class expr_bool_op final : public statement {
 
     // the comparison needs its left operand in a register; a constant left
     // side was mirrored onto the right unless it is typed and does not fit it
-    [[nodiscard]] static auto left_operand(toc& tc, const size_t indent,
-                                           const comparison_side& side,
+    [[nodiscard]] static auto left_operand(toc& tc, const comparison_side& side,
                                            machine::held_registers& held)
         -> operand {
 
@@ -873,7 +877,7 @@ class expr_bool_op final : public statement {
         const stmt_identifier* const ident{expr.operand_path()};
 
         if (ident == nullptr or side.folded) {
-            return compile_to_scratch(tc, indent, expr, held);
+            return compile_to_scratch(tc, expr, held);
         }
 
         const ident_info expr_info{make_scalar_ident_info(tc, *ident)};
@@ -885,7 +889,7 @@ class expr_bool_op final : public statement {
         };
 
         // e.g. 'a', '-a[i]'
-        return ident->compile_value_operand(tc, indent, expr.tok(), expr_info,
+        return ident->compile_value_operand(tc, expr.tok(), expr_info,
                                             expr_info.type_ref(),
                                             overflow_check, held);
     }
@@ -906,13 +910,13 @@ class expr_bool_op final : public statement {
     // the right operand may be an immediate, a side that does not fold is
     // read like a left one; an untyped constant is compared as written, the
     // caller checks that it fits the left side
-    [[nodiscard]] static auto right_operand(toc& tc, const size_t indent,
+    [[nodiscard]] static auto right_operand(toc& tc,
                                             const comparison_side& side,
                                             machine::held_registers& held)
         -> operand {
 
         if (not side.folded) {
-            return left_operand(tc, indent, side, held);
+            return left_operand(tc, side, held);
         }
 
         const expr_arith& expr{*side.node};
@@ -927,7 +931,7 @@ class expr_bool_op final : public statement {
 
         machine& x{tc.machine()};
 
-        x.comment({expr.tok(), indent}, "src: folded constant {}",
+        x.comment({expr.tok(), tc.indent()}, "src: folded constant {}",
                   in_quotes(trimmed_source(expr)));
 
         return immediate_of(side, tc.builtins().default_type());
@@ -967,21 +971,22 @@ class expr_bool_op final : public statement {
     // the value compared with 0, a computed one in the register of the
     // destination
     [[nodiscard]] static auto
-    truth_test_operand(toc& tc, const size_t indent,
-                       const comparison_side& condition,
+    truth_test_operand(toc& tc, const comparison_side& condition,
                        const machine::comparison_action& action,
                        machine::held_registers& held) -> operand {
 
         const expr_arith& lhs{*condition.node};
 
         if (lhs.is_computed() and action.destination.is_register()) {
-            lhs.compile_checked(tc, indent + 1,
+            const toc::indent_scope nested{tc, tc.indent() + 1};
+
+            lhs.compile_checked(tc,
                                 destination::of_register(action.destination));
 
             return action.destination;
         }
 
-        return left_operand(tc, indent, condition, held);
+        return left_operand(tc, condition, held);
     }
 };
 
@@ -1042,25 +1047,24 @@ class expr_bool final : public statement {
     }
 
     // the value of the list stored in 'dst', e.g. 'b = x < 3 and y'
-    auto compile(toc& tc, const size_t indent, const destination& dst) const
-        -> void override {
+    auto compile(toc& tc, const destination& dst) const -> void override {
 
         // stored comparisons would change what later elements read; a
         // register that the list reads is the result of an inlined function
         if (not reaches_destination(tc, *this, dst)) {
-            compile_value(tc, indent, dst.operand());
+            compile_value(tc, dst.operand());
             return;
         }
 
         machine& x{tc.machine()};
 
         const operand reg{
-            x.alloc_scratch_register({tok(), indent}, dst.type_ref()),
+            x.alloc_scratch_register({tok(), tc.indent()}, dst.type_ref()),
         };
 
-        compile_value(tc, indent, reg);
-        x.copy_value({tok(), indent}, dst.operand(), reg);
-        x.free_scratch_register({tok(), indent}, reg);
+        compile_value(tc, reg);
+        x.copy_value({tok(), tc.indent()}, dst.operand(), reg);
+        x.free_scratch_register({tok(), tc.indent()}, reg);
     }
 
     // a condition known at compile time is 1 or 0
@@ -1115,12 +1119,11 @@ class expr_bool final : public statement {
 
     // branches to 'targets', returns what the compile found out about the
     // value without running it, empty when the run decides it
-    [[nodiscard]] auto compile_branches(toc& tc, const size_t indent,
-                                        const branch_targets& targets,
+    [[nodiscard]] auto compile_branches(toc& tc, const branch_targets& targets,
                                         const operand& dst) const
         -> std::optional<bool> {
 
-        return compile_rec(tc, indent, targets, false, dst);
+        return compile_rec(tc, targets, false, dst);
     }
 
     // the value the parse can tell, the part of what 'compile' finds that
@@ -1219,10 +1222,9 @@ class expr_bool final : public statement {
     // the elements after it never run and hold the compile rules too, see
     // 'toc::check_skipped'
     [[nodiscard]] auto
-    compile_elements_from(toc& tc, const size_t indent,
-                          const branch_targets& targets, const bool inverted,
-                          const operand& dst, const size_t first) const
-        -> std::optional<bool> {
+    compile_elements_from(toc& tc, const branch_targets& targets,
+                          const bool inverted, const operand& dst,
+                          const size_t first) const -> std::optional<bool> {
 
         bool has_runtime_element{};
 
@@ -1235,8 +1237,7 @@ class expr_bool final : public statement {
 
         for (size_t expr_index{first}; expr_index < last_index; ++expr_index) {
             const std::optional<bool> const_eval{
-                compile_inner_element(tc, indent, expr_index, targets, inverted,
-                                      dst),
+                compile_inner_element(tc, expr_index, targets, inverted, dst),
             };
 
             if (not const_eval) {
@@ -1247,8 +1248,8 @@ class expr_bool final : public statement {
 
             if (is_short_circuit(*const_eval, inverted)) {
                 tc.check_skipped([&] -> void {
-                    std::ignore = compile_elements_from(
-                        tc, indent, targets, inverted, dst, expr_index + 1);
+                    std::ignore = compile_elements_from(tc, targets, inverted,
+                                                        dst, expr_index + 1);
                 });
 
                 paths.join_path();
@@ -1258,7 +1259,7 @@ class expr_bool final : public statement {
         }
 
         const std::optional<bool> last{
-            compile_last_element(tc, indent, targets, inverted, dst,
+            compile_last_element(tc, targets, inverted, dst,
                                  has_runtime_element),
         };
 
@@ -1268,10 +1269,11 @@ class expr_bool final : public statement {
     }
 
     // an element that does not decide the list continues at the next element
-    [[nodiscard]] auto
-    compile_inner_element(toc& tc, const size_t indent, const size_t expr_index,
-                          const branch_targets& targets, const bool inverted,
-                          const operand& dst) const -> std::optional<bool> {
+    [[nodiscard]] auto compile_inner_element(toc& tc, const size_t expr_index,
+                                             const branch_targets& targets,
+                                             const bool inverted,
+                                             const operand& dst) const
+        -> std::optional<bool> {
 
         const bool is_or{joined_by(inverted) == connective::logical_or};
 
@@ -1295,21 +1297,22 @@ class expr_bool final : public statement {
                 },
             };
 
-            return nested_expr->compile_with_label(tc, indent, nested_targets,
-                                                   inverted, dst);
+            return nested_expr->compile_with_label(tc, nested_targets, inverted,
+                                                   dst);
         }
 
         const expr_bool_op& expr{std::get<expr_bool_op>(e)};
 
-        return expr.compile_branch(tc, indent,
+        return expr.compile_branch(tc,
                                    is_or ? targets.if_true : targets.if_false,
                                    is_or, inverted, joined_by(inverted), dst);
     }
 
-    [[nodiscard]] auto compile_last_element(
-        toc& tc, const size_t indent, const branch_targets& targets,
-        const bool inverted, const operand& dst,
-        const bool has_runtime_element) const -> std::optional<bool> {
+    [[nodiscard]] auto
+    compile_last_element(toc& tc, const branch_targets& targets,
+                         const bool inverted, const operand& dst,
+                         const bool has_runtime_element) const
+        -> std::optional<bool> {
 
         // a stored value branches nowhere at its end, the label of both
         // outcomes follows; an empty target is no branch ('machine')
@@ -1329,16 +1332,15 @@ class expr_bool final : public statement {
 
         const std::optional<bool> const_eval{
             nested_expr != nullptr
-                ? nested_expr->compile_with_label(tc, indent, targets, inverted,
-                                                  dst)
+                ? nested_expr->compile_with_label(tc, targets, inverted, dst)
                 : std::get<expr_bool_op>(bools_.back())
-                      .compile_branch(tc, indent, if_false, false, inverted,
+                      .compile_branch(tc, if_false, false, inverted,
                                       joined_by(inverted), dst),
         };
 
         if (const_eval) {
-            return resolve_last_constant(tc, indent, *const_eval, if_true,
-                                         inverted, has_runtime_element);
+            return resolve_last_constant(tc, *const_eval, if_true, inverted,
+                                         has_runtime_element);
         }
 
         // a nested list has emitted its final branch, a stored value branches
@@ -1350,14 +1352,14 @@ class expr_bool final : public statement {
         machine& x{tc.machine()};
 
         // every element that failed has branched to false
-        x.branch(indent, if_true);
+        x.branch(tc.indent(), if_true);
 
         return std::nullopt;
     }
 
-    [[nodiscard]] auto
-    compile_rec(toc& tc, const size_t indent, const branch_targets& targets,
-                const bool outer_inverted, const operand& dst) const
+    [[nodiscard]] auto compile_rec(toc& tc, const branch_targets& targets,
+                                   const bool outer_inverted,
+                                   const operand& dst) const
         -> std::optional<bool> {
 
         // the element of a list that is only that element comments the same
@@ -1370,7 +1372,7 @@ class expr_bool final : public statement {
         if (not is_only_element) {
             machine& x{tc.machine()};
 
-            x.comment({tok(), indent},
+            x.comment({tok(), tc.indent()},
                       trimmed_source(*this, "?",
                                      outer_inverted ? " inverted: " : " "));
         }
@@ -1378,22 +1380,20 @@ class expr_bool final : public statement {
         // inverted, according to De Morgan's laws
         const bool inverted{outer_inverted != is_negated()};
 
-        return compile_elements_from(tc, indent, targets, inverted, dst, 0);
+        return compile_elements_from(tc, targets, inverted, dst, 0);
     }
 
     // the condition stores its value in 'dst', so both outcomes continue at
     // the same label
     // note: the label is named after the token of this list so that two
     //       conditions of one initializer get distinct labels
-    auto compile_value(toc& tc, const size_t indent, const operand& dst) const
-        -> void {
-
+    auto compile_value(toc& tc, const operand& dst) const -> void {
         const std::string jmp_to_end{
             toc::end_label(tc.create_unique_label(tok(), "bool")),
         };
 
         // note: every element stores its value, a known result included
-        std::ignore = compile_branches(tc, indent,
+        std::ignore = compile_branches(tc,
                                        {
                                            .if_false{jmp_to_end},
                                            .if_true{jmp_to_end},
@@ -1402,21 +1402,20 @@ class expr_bool final : public statement {
 
         machine& x{tc.machine()};
 
-        x.label(indent, jmp_to_end);
+        x.label(tc.indent(), jmp_to_end);
     }
 
     // earlier elements jump to the label that begins a nested list
-    [[nodiscard]] auto compile_with_label(toc& tc, const size_t indent,
-                                          const branch_targets& targets,
-                                          const bool outer_inverted,
-                                          const operand& dst) const
+    [[nodiscard]] auto
+    compile_with_label(toc& tc, const branch_targets& targets,
+                       const bool outer_inverted, const operand& dst) const
         -> std::optional<bool> {
 
         machine& x{tc.machine()};
 
-        x.label(indent, tc.create_unique_label(tok(), "cmp"));
+        x.label(tc.indent(), tc.create_unique_label(tok(), "cmp"));
 
-        return compile_rec(tc, indent, targets, outer_inverted, dst);
+        return compile_rec(tc, targets, outer_inverted, dst);
     }
 
     // true when a 'not' leads the list
@@ -1523,9 +1522,9 @@ class expr_bool final : public statement {
     // a constant last element decides the list only if all earlier elements
     // were constants or it short-circuits the list
     [[nodiscard]] auto resolve_last_constant(
-        toc& tc, const size_t indent, const bool const_eval,
-        const std::string_view jmp_to_if_true, const bool inverted,
-        const bool has_runtime_element) const -> std::optional<bool> {
+        toc& tc, const bool const_eval, const std::string_view jmp_to_if_true,
+        const bool inverted, const bool has_runtime_element) const
+        -> std::optional<bool> {
 
         if (not has_runtime_element or is_short_circuit(const_eval, inverted)) {
             return const_eval;
@@ -1540,7 +1539,7 @@ class expr_bool final : public statement {
         machine& x{tc.machine()};
 
         // a constant true emits no branch of its own
-        x.branch(indent, jmp_to_if_true);
+        x.branch(tc.indent(), jmp_to_if_true);
 
         return std::nullopt;
     }

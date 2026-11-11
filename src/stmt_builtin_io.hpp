@@ -122,8 +122,7 @@ class stmt_builtin_io final : public statement {
         args_.source_to(os);
     }
 
-    auto compile(toc& tc, const size_t indent, const destination& dst) const
-        -> void override {
+    auto compile(toc& tc, const destination& dst) const -> void override {
 
         // e.g. the 'i' of 'read(0, bs[i].b, f())' with 'f' writing 'i'; the
         // 'b' of 'read(0, b, n)' is written
@@ -133,19 +132,19 @@ class stmt_builtin_io final : public statement {
 
         machine& x{tc.machine()};
 
-        comment_source(x, indent);
+        comment_source(tc);
 
         x.call_target(
-            {tok(), indent}, io_.function,
+            {tok(), tc.indent()}, io_.function,
             [&](const std::span<const operand> args) -> void {
-                compile_arguments(tc, indent, buffer, args);
+                compile_arguments(tc, buffer, args);
             },
             [&](const operand& result) -> void {
-                get_unary_ops().compile(x, indent, tok(), result,
+                get_unary_ops().compile(x, {tok(), tc.indent()}, result,
                                         tc.overflow_options(dst));
 
                 if (not dst.is_empty()) {
-                    x.copy_value({tok(), indent}, dst.operand(), result);
+                    x.copy_value({tok(), tc.indent()}, dst.operand(), result);
                 }
             });
     }
@@ -334,8 +333,8 @@ class stmt_builtin_io final : public statement {
 
     // the range is checked and the buffer address moves to the start, which
     // is 0 without a start argument
-    auto check_range_from_start(toc& tc, const size_t indent,
-                                const operand& buffer_reg, const operand& count,
+    auto check_range_from_start(toc& tc, const operand& buffer_reg,
+                                const operand& count,
                                 const std::optional<int64_t> known_count,
                                 const ident_info& buffer_info) const -> void {
 
@@ -349,20 +348,19 @@ class stmt_builtin_io final : public statement {
 
         if (start and (start_arg == nullptr or buffer_info.array_len())) {
 
-            move_to_constant_start(tc, indent, buffer_reg, count, known_count,
+            move_to_constant_start(tc, buffer_reg, count, known_count,
                                    buffer_info, static_cast<size_t>(*start));
 
             return;
         }
 
-        move_to_run_time_start(tc, indent, buffer_reg, count, known_count,
-                               buffer_info);
+        move_to_run_time_start(tc, buffer_reg, count, known_count, buffer_info);
     }
 
     // every argument into the register of the call the target takes it in,
     // 'args', in the order of the arguments, then the range check and the
     // byte count; the count and start are in elements
-    auto compile_arguments(toc& tc, const size_t indent, const place& buffer,
+    auto compile_arguments(toc& tc, const place& buffer,
                            const std::span<const operand> args) const -> void {
 
         // the descriptor, or the sector of a sector function
@@ -382,34 +380,33 @@ class stmt_builtin_io final : public statement {
                 : descriptor,
         };
 
-        first_arg.compile(tc, indent, destination::of_register(first_reg));
+        first_arg.compile(tc, destination::of_register(first_reg));
 
         const ident_info& buffer_info{buffer.info};
 
         // the range is checked after the count
-        buffer.ident->load_address(tc, indent, tok(), buffer_info, buffer_reg);
+        buffer.ident->load_address(tc, tok(), buffer_info, buffer_reg);
 
         const std::optional<int64_t> known_count{
             constant_count(tc, buffer_info),
         };
 
-        compile_count(tc, indent, count, known_count);
+        compile_count(tc, count, known_count);
 
-        check_range_from_start(tc, indent, buffer_reg, count, known_count,
-                               buffer_info);
+        check_range_from_start(tc, buffer_reg, count, known_count, buffer_info);
 
         // the count becomes the byte count
-        x.scale_index({tok(), indent}, count,
+        x.scale_index({tok(), tc.indent()}, count,
                       buffer_info.type_ref().size_bytes());
     }
 
     // without a count the whole array is transferred, a sector function
     // transfers the elements of one sector, see 'constant_count'
-    auto compile_count(toc& tc, const size_t indent, const operand& count,
+    auto compile_count(toc& tc, const operand& count,
                        const std::optional<int64_t> known_count) const -> void {
 
         if (const expr_any* const count_arg{count_argument()}) {
-            count_arg->compile(tc, indent, destination::of_register(count));
+            count_arg->compile(tc, destination::of_register(count));
             return;
         }
 
@@ -420,7 +417,7 @@ class stmt_builtin_io final : public statement {
 
         const int64_t count_value{known_count.value_or(discarded_array_len)};
 
-        x.copy_value({tok(), indent}, count,
+        x.copy_value({tok(), tc.indent()}, count,
                      operand::imm(count_value, tc.builtins().default_type()));
     }
 
@@ -474,8 +471,8 @@ class stmt_builtin_io final : public statement {
     // a constant start in an array of known length is checked at compile
     // time and moves the address by a constant, a run-time count is then
     // checked against the elements after it
-    auto move_to_constant_start(toc& tc, const size_t indent,
-                                const operand& buffer_reg, const operand& count,
+    auto move_to_constant_start(toc& tc, const operand& buffer_reg,
+                                const operand& count,
                                 const std::optional<int64_t> known_count,
                                 const ident_info& buffer_info,
                                 const size_t start_count) const -> void {
@@ -498,7 +495,7 @@ class stmt_builtin_io final : public statement {
                 start_arg != nullptr ? *start_arg : *count_arg,
             };
 
-            x.check_bounds({checked_arg.tok(), indent},
+            x.check_bounds({checked_arg.tok(), tc.indent()},
                            machine::bounds_range::up_to(count, element_count -
                                                                    start_count),
                            tc.checks().bounds_options());
@@ -511,7 +508,7 @@ class stmt_builtin_io final : public statement {
         if (offset_bytes != 0) {
             const type& default_type{tc.builtins().default_type()};
 
-            x.add_subtract({tok(), indent}, arithmetic_operator::add,
+            x.add_subtract({tok(), tc.indent()}, arithmetic_operator::add,
                            buffer_reg,
                            operand::imm(offset_bytes, default_type));
         }
@@ -519,8 +516,8 @@ class stmt_builtin_io final : public statement {
 
     // a run-time start is checked with the count, against the last start a
     // constant count leaves, e.g. 'write(1, a, 2, s)'
-    auto move_to_run_time_start(toc& tc, const size_t indent,
-                                const operand& buffer_reg, const operand& count,
+    auto move_to_run_time_start(toc& tc, const operand& buffer_reg,
+                                const operand& count,
                                 const std::optional<int64_t> known_count,
                                 const ident_info& buffer_info) const -> void {
 
@@ -536,10 +533,11 @@ class stmt_builtin_io final : public statement {
         machine& x{tc.machine()};
 
         const operand start{
-            x.alloc_scratch_register({start_arg->tok(), indent}, default_type),
+            x.alloc_scratch_register({start_arg->tok(), tc.indent()},
+                                     default_type),
         };
 
-        start_arg->compile(tc, indent, destination::of_register(start));
+        start_arg->compile(tc, destination::of_register(start));
 
         // note: a constant count past the end is rejected at compile time
         assert(not known_count or not array_len or
@@ -547,20 +545,20 @@ class stmt_builtin_io final : public statement {
                 std::cmp_less_equal(*known_count, element_count)));
 
         x.check_bounds(
-            {start_arg->tok(), indent},
+            {start_arg->tok(), tc.indent()},
             known_count and array_len
                 ? machine::bounds_range::up_to(
                       start, element_count - static_cast<size_t>(*known_count))
                 : machine::bounds_range::range(start, count, element_count),
             tc.checks().bounds_options());
 
-        x.scale_index({tok(), indent}, start,
+        x.scale_index({tok(), tc.indent()}, start,
                       buffer_info.type_ref().size_bytes());
 
-        x.add_subtract({tok(), indent}, arithmetic_operator::add, buffer_reg,
-                       start);
+        x.add_subtract({tok(), tc.indent()}, arithmetic_operator::add,
+                       buffer_reg, start);
 
-        x.free_scratch_register({tok(), indent}, start);
+        x.free_scratch_register({tok(), tc.indent()}, start);
     }
 
     // the start, the last argument a call can have, null when left out

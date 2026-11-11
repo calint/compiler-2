@@ -1,6 +1,5 @@
 #pragma once
 
-#include <cstddef>
 #include <ostream>
 #include <string>
 
@@ -27,26 +26,25 @@ class stmt_loop final : public statement {
         code_.source_to(os);
     }
 
-    auto compile(toc& tc, const size_t indent,
-                 [[maybe_unused]] const destination& dst) const
+    auto compile(toc& tc, [[maybe_unused]] const destination& dst) const
         -> void override {
 
         machine& x{tc.machine()};
 
-        x.comment({tok(), indent}, "loop");
+        x.comment({tok(), tc.indent()}, "loop");
 
         const std::string label{tc.create_unique_label(tok(), "loop")};
-        x.label(indent, label);
+        x.label(tc.indent(), label);
 
         const toc::scope_entry loop{
             tc,
             scope::loop(label, loop_end::at_break, label),
         };
 
-        code_.compile(tc, indent, destination{});
+        code_.compile(tc, destination{});
 
-        x.branch(indent, label);
-        x.label(indent, toc::end_label(label));
+        x.branch(tc.indent(), label);
+        x.label(tc.indent(), toc::end_label(label));
 
         // the end is reached only by a 'break' that is compiled, the parse
         // rejects code after a loop without one

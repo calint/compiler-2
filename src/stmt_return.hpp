@@ -1,7 +1,5 @@
 #pragma once
 
-#include <cstddef>
-
 #include "ident_info.hpp"
 #include "machine.hpp"
 #include "operand.hpp"
@@ -20,32 +18,31 @@ class stmt_return final : public statement {
     // overridden methods
     //
 
-    auto compile(toc& tc, const size_t indent,
-                 [[maybe_unused]] const destination& dst) const
+    auto compile(toc& tc, [[maybe_unused]] const destination& dst) const
         -> void override {
 
         machine& x{tc.machine()};
 
-        comment_source(x, indent);
+        comment_source(tc);
 
         const scope& func_scp{tc.scopes().current_func_scope()};
 
         tc.record_return();
 
         if (func_scp.is_main()) {
-            x.exit({tok(), indent},
+            x.exit({tok(), tc.indent()},
                    operand::imm(0, tc.builtins().default_type()));
 
             return;
         }
 
         if (func_scp.has_frame()) {
-            x.return_function(indent);
+            x.return_function(tc.indent());
             return;
         }
 
         // an inlined body ends where the call continues
-        x.branch(indent, func_scp.func_ret_label());
+        x.branch(tc.indent(), func_scp.func_ret_label());
     }
 
     auto trace_assignment(assignment_flow& flow) const -> void override {

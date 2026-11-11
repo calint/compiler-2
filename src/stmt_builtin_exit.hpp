@@ -1,6 +1,5 @@
 #pragma once
 
-#include <cstddef>
 #include <cstdint>
 #include <format>
 #include <optional>
@@ -38,24 +37,23 @@ class stmt_builtin_exit final : public statement {
         args_.source_to(os);
     }
 
-    auto compile(toc& tc, const size_t indent,
-                 [[maybe_unused]] const destination& dst) const
+    auto compile(toc& tc, [[maybe_unused]] const destination& dst) const
         -> void override {
 
         machine& x{tc.machine()};
 
-        comment_source(x, indent);
+        comment_source(tc);
 
         const operand exit_code{
-            x.alloc_named_register({tok(), indent}, x.exit_code_register(),
+            x.alloc_named_register({tok(), tc.indent()}, x.exit_code_register(),
                                    tc.builtins().default_type()),
         };
 
-        args_.at(0).compile(tc, indent, destination::of_register(exit_code));
+        args_.at(0).compile(tc, destination::of_register(exit_code));
 
-        x.exit({tok(), indent}, exit_code);
+        x.exit({tok(), tc.indent()}, exit_code);
 
-        x.free_named_register({tok(), indent}, exit_code);
+        x.free_named_register({tok(), tc.indent()}, exit_code);
 
         tc.end_path();
     }

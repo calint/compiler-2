@@ -701,8 +701,8 @@ struct call_site {
     //       'max scopes in use' report, so a call without temporaries enters
     //       none
     auto compile_with_temporaries(
-        toc& tc, const size_t indent, const destination& dst,
-        const bool has_argument_temporary, const bool has_result_temporary,
+        toc& tc, const destination& dst, const bool has_argument_temporary,
+        const bool has_result_temporary,
         const std::function_ref<void(const destination&)> compile) const
         -> void {
 
@@ -718,7 +718,7 @@ struct call_site {
         }
 
         const destination result{
-            add_temporary(tc, indent, temporary_name(tk, "call-result", 0),
+            add_temporary(tc, temporary_name(tk, "call-result", 0),
                           func->result_type()),
         };
 
@@ -726,12 +726,12 @@ struct call_site {
 
         machine& x{tc.machine()};
 
-        x.copy_value({tk, indent}, dst.operand(), result.operand());
+        x.copy_value({tk, tc.indent()}, dst.operand(), result.operand());
     }
 
     // a variable of the current block that holds the argument at 'index',
     // compiled into it
-    [[nodiscard]] auto make_argument_temporary(toc& tc, const size_t indent,
+    [[nodiscard]] auto make_argument_temporary(toc& tc,
                                                const size_t index) const
         -> destination {
 
@@ -742,11 +742,11 @@ struct call_site {
         //       caller's scope
 
         const destination temporary{
-            add_temporary(tc, indent, temporary_name(tk, "call-arg", index),
+            add_temporary(tc, temporary_name(tk, "call-arg", index),
                           func->params().at(index).get_type()),
         };
 
-        args.at(index).compile(tc, indent, temporary);
+        args.at(index).compile(tc, temporary);
 
         return temporary;
     }
@@ -754,16 +754,14 @@ struct call_site {
     // the result is written field by field, so its padding is zeroed for
     // '==' to compare instances byte by byte; after the arguments, which may
     // read the destination, e.g. 'p = f(p.a + 1)'
-    auto zero_result_padding(toc& tc, const size_t indent,
-                             const destination& dst) const -> void {
-
+    auto zero_result_padding(toc& tc, const destination& dst) const -> void {
         if (dst.is_empty()) {
             return;
         }
 
         machine& x{tc.machine()};
 
-        x.zero_padding({tk, indent}, dst.operand(), dst.type_ref());
+        x.zero_padding({tk, tc.indent()}, dst.operand(), dst.type_ref());
     }
 
     //
@@ -781,21 +779,20 @@ struct call_site {
 
   private:
     // a variable in the current block, a root variable of its own
-    [[nodiscard]] auto add_temporary(toc& tc, const size_t indent,
-                                     const std::string& name,
+    [[nodiscard]] auto add_temporary(toc& tc, const std::string& name,
                                      const type& tpe) const -> destination {
 
-        tc.add_var(indent,
-                   {
-                       .name{name},
-                       .type_ptr{&tpe},
-                       .src_loc_tk{tk},
-                       .shape{},
-                       .read_only_why{},
-                       .placement{},
-                       .foo_array{},
-                   },
-                   var_kind::var);
+        tc.add_var(
+            {
+                .name{name},
+                .type_ptr{&tpe},
+                .src_loc_tk{tk},
+                .shape{},
+                .read_only_why{},
+                .placement{},
+                .foo_array{},
+            },
+            var_kind::var);
 
         const ident_info info{tc.resolve_declared(tk, name)};
 
@@ -869,17 +866,15 @@ class inline_call final {
 
     // a recursion in the check of a body that takes from a call goes to
     // 'check_recursion'
-    auto compile(toc& tc, const size_t indent, const destination& dst) const
-        -> void {
-
+    auto compile(toc& tc, const destination& dst) const -> void {
         const size_t nesting{tc.scopes().inlined_nesting(call_.func->name())};
 
         if (nesting != 0 and tc.scopes().is_in_body_taking_from_call()) {
-            check_recursion(tc, indent, dst, nesting);
+            check_recursion(tc, dst, nesting);
             return;
         }
 
-        compile_within_limits(tc, indent, dst, nesting);
+        compile_within_limits(tc, dst, nesting);
     }
 
   private:
@@ -915,7 +910,7 @@ class inline_call final {
     }
 
     // the bindings of the arguments of the inlined body, in their order
-    [[nodiscard]] auto bind_arguments(toc& tc, const size_t indent,
+    [[nodiscard]] auto bind_arguments(toc& tc,
                                       machine::held_registers& held) const
         -> std::vector<param_binding> {
 
@@ -931,7 +926,7 @@ class inline_call final {
 
             if (is_temporary(arg_place, param)) {
                 const destination temporary{
-                    call_.make_argument_temporary(tc, indent, i),
+                    call_.make_argument_temporary(tc, i),
                 };
 
                 arguments.push_back(param_binding::make_name(
@@ -940,8 +935,7 @@ class inline_call final {
                 continue;
             }
 
-            arguments.push_back(
-                bind_argument(tc, indent, arg, param, arg_place, held));
+            arguments.push_back(bind_argument(tc, arg, param, arg_place, held));
         }
 
         return arguments;
@@ -956,22 +950,21 @@ class inline_call final {
     //      'g(2)' enters and that ends only at 'k == 0'
     //   2. otherwise only its arguments are bound, the body is checked where
     //      the recursion is entered and in its own check
-    auto check_recursion(toc& tc, const size_t indent, const destination& dst,
+    auto check_recursion(toc& tc, const destination& dst,
                          const size_t nesting) const -> void {
 
         const bool nests_alike{nests_alike_at_every_call(tc)};
 
         // note: a deeper level is in the dry run of the first
         if (nesting > 1) {
-            compile_recursion_level(tc, indent, dst, nesting, nests_alike);
+            compile_recursion_level(tc, dst, nesting, nests_alike);
             return;
         }
 
         const auto compile_first_level{
             [&] -> void {
                 try {
-                    compile_recursion_level(tc, indent, dst, nesting,
-                                            nests_alike);
+                    compile_recursion_level(tc, dst, nesting, nests_alike);
                 } catch (const compile_error& e) {
                     if (not ends_recursion(e, nests_alike)) {
                         throw;
@@ -986,7 +979,7 @@ class inline_call final {
     // the arguments bound as for the body, which is not compiled, e.g. an
     // inlined recursion that the check of a body that takes from a call does
     // not expand ('inline_call::check_recursion')
-    auto compile_arguments(toc& tc, const size_t indent) const -> void {
+    auto compile_arguments(toc& tc) const -> void {
         // a block holds the temporaries of the call
         std::optional<toc::scope_entry> temporaries;
 
@@ -996,18 +989,16 @@ class inline_call final {
 
         machine& x{tc.machine()};
 
-        machine::held_registers held{x, {call_.tk, indent + 1}};
+        machine::held_registers held{x, {call_.tk, tc.indent() + 1}};
 
-        std::ignore = bind_arguments(tc, indent, held);
+        std::ignore = bind_arguments(tc, held);
     }
 
     // an error found in the inlined body reports where it was called from,
     // an error in the arguments is in the caller and has no call frame
-    auto compile_body(toc& tc, const size_t indent,
-                      const call_bindings& bindings) const -> void {
-
+    auto compile_body(toc& tc, const call_bindings& bindings) const -> void {
         try {
-            call_.func->compile_inlined(tc, indent, call_.tk, bindings.result,
+            call_.func->compile_inlined(tc, call_.tk, bindings.result,
                                         bindings.arguments);
         } catch (compile_error& e) {
             call_.add_call_frame(e);
@@ -1017,13 +1008,13 @@ class inline_call final {
 
     // a new register per argument because the index register may belong to
     // an enclosing binding that is used after the call
-    auto compile_body_with_address_registers(toc& tc, const size_t indent,
+    auto compile_body_with_address_registers(toc& tc,
                                              call_bindings bindings) const
         -> void {
 
         machine& x{tc.machine()};
 
-        machine::held_registers held{x, {call_.tk, indent + 1}};
+        machine::held_registers held{x, {call_.tk, tc.indent() + 1}};
 
         for (param_binding& binding : bindings.arguments) {
             if (not is_indexed_reference(binding)) {
@@ -1033,30 +1024,28 @@ class inline_call final {
             ident_info& bound{binding.info};
 
             const operand address{
-                held.alloc_scratch_register({call_.tk, indent},
+                held.alloc_scratch_register({call_.tk, tc.indent()},
                                             tc.builtins().address()),
             };
 
-            x.comment({call_.tk, indent}, "address of parameter {}",
+            x.comment({call_.tk, tc.indent()}, "address of parameter {}",
                       in_quotes(binding.from));
 
-            x.address_of({call_.tk, indent}, address, bound.operand());
+            x.address_of({call_.tk, tc.indent()}, address, bound.operand());
 
             bound = bound.at_address(
                 operand::mem(address, bound.operand().type_ref()));
         }
 
-        compile_body(tc, indent, bindings);
+        compile_body(tc, bindings);
     }
 
-    auto compile_in_block(toc& tc, const size_t indent,
-                          const destination& dst) const -> void {
-
+    auto compile_in_block(toc& tc, const destination& dst) const -> void {
         if (call_.func->has_result() and
             call_site::result_type_differs(dst, *call_.func)) {
             // note: a narrower integer, see 'stmt_call::assert_result_type'
 
-            compile_widened(tc, indent, dst);
+            compile_widened(tc, dst);
             return;
         }
 
@@ -1066,56 +1055,52 @@ class inline_call final {
             dst.is_register() and call_.func->uses().is_result_passed_as_mut(),
         };
 
-        call_.compile_with_temporaries(
-            tc, indent, dst, has_argument_temporary(), has_result_temporary,
-            [&](const destination& result) -> void {
-                compile_with_bindings(tc, indent, result);
-            });
+        call_.compile_with_temporaries(tc, dst, has_argument_temporary(),
+                                       has_result_temporary,
+                                       [&](const destination& result) -> void {
+                                           compile_with_bindings(tc, result);
+                                       });
     }
 
     // a level of a recursion in 'check_recursion': expanded when it nests
     // alike at every call, otherwise only its arguments are bound
-    auto compile_recursion_level(toc& tc, const size_t indent,
-                                 const destination& dst, const size_t nesting,
+    auto compile_recursion_level(toc& tc, const destination& dst,
+                                 const size_t nesting,
                                  const bool nests_alike) const -> void {
 
         if (not nests_alike) {
-            compile_arguments(tc, indent);
+            compile_arguments(tc);
             return;
         }
 
-        compile_within_limits(tc, indent, dst, nesting);
+        compile_within_limits(tc, dst, nesting);
     }
 
     // the result is made at its type in a register that the body names, the
     // copy into the operand widens it
-    auto compile_widened(toc& tc, const size_t indent,
-                         const destination& dst) const -> void {
-
+    auto compile_widened(toc& tc, const destination& dst) const -> void {
         machine& x{tc.machine()};
 
         const operand result{
-            x.alloc_scratch_register({call_.tk, indent},
+            x.alloc_scratch_register({call_.tk, tc.indent()},
                                      call_.func->result_type()),
         };
 
-        compile_in_block(tc, indent, destination::of_register(result));
+        compile_in_block(tc, destination::of_register(result));
 
-        x.copy_value({call_.tk, indent}, dst.operand(), result);
-        x.free_scratch_register({call_.tk, indent}, result);
+        x.copy_value({call_.tk, tc.indent()}, dst.operand(), result);
+        x.free_scratch_register({call_.tk, tc.indent()}, result);
     }
 
-    auto compile_with_bindings(toc& tc, const size_t indent,
-                               const destination& dst) const -> void {
-
+    auto compile_with_bindings(toc& tc, const destination& dst) const -> void {
         machine& x{tc.machine()};
 
         // scratch registers stay allocated until the inlined body is compiled
-        machine::held_registers held{x, {call_.tk, indent + 1}};
+        machine::held_registers held{x, {call_.tk, tc.indent() + 1}};
 
-        const call_bindings bindings{make_bindings(tc, indent, dst, held)};
+        const call_bindings bindings{make_bindings(tc, dst, held)};
 
-        call_.zero_result_padding(tc, indent, dst);
+        call_.zero_result_padding(tc, dst);
 
         const bool has_indexed_argument{
             std::ranges::any_of(bindings.arguments, is_indexed_reference),
@@ -1124,7 +1109,7 @@ class inline_call final {
         // an access can use the indexed address as it is, so computing it
         // into a register is not tried
         if (not has_indexed_argument or x.has_indexed_addressing()) {
-            compile_body(tc, indent, bindings);
+            compile_body(tc, bindings);
             return;
         }
 
@@ -1145,25 +1130,21 @@ class inline_call final {
         //       frees them after the choice
 
         tc.emit_most_efficient(
-            call_.tk, indent,
-            [&] -> void { compile_body(tc, indent, bindings); },
-            [&] -> void {
-                compile_body_with_address_registers(tc, indent, bindings);
-            });
+            call_.tk, [&] -> void { compile_body(tc, bindings); },
+            [&] -> void { compile_body_with_address_registers(tc, bindings); });
     }
 
     // the call within the nesting limits, 'nesting' inlined bodies of the
     // callee around it, a recursion when not 0; a recursion that does not end
     // at compile time runs out of registers before it reaches the nesting
     // limit, the advice is the same
-    auto compile_within_limits(toc& tc, const size_t indent,
-                               const destination& dst,
+    auto compile_within_limits(toc& tc, const destination& dst,
                                const size_t nesting) const -> void {
 
         assert_inline_nesting(tc, nesting);
 
         try {
-            compile_in_block(tc, indent, dst);
+            compile_in_block(tc, dst);
         } catch (const compile_error& e) {
             if (nesting == 0 or
                 e.kind != compile_error::error_kind::out_of_registers) {
@@ -1185,8 +1166,7 @@ class inline_call final {
     }
 
     // the bindings of the result and of the arguments of the inlined body
-    [[nodiscard]] auto make_bindings(toc& tc, const size_t indent,
-                                     const destination& dst,
+    [[nodiscard]] auto make_bindings(toc& tc, const destination& dst,
                                      machine::held_registers& held) const
         -> call_bindings {
 
@@ -1205,7 +1185,7 @@ class inline_call final {
             bindings.result = bind_result(dst, *result);
         }
 
-        bindings.arguments = bind_arguments(tc, indent, held);
+        bindings.arguments = bind_arguments(tc, held);
 
         return bindings;
     }
@@ -1248,7 +1228,7 @@ class inline_call final {
     // the inlined body reaches a place or a value of a built-in type by
     // the binding it gives, see 'stmt_call::argument_places'
     [[nodiscard]] static auto
-    bind_argument(toc& tc, const size_t indent, const expr_any& arg,
+    bind_argument(toc& tc, const expr_any& arg,
                   const stmt_def_func_param& param,
                   const std::optional<place>& arg_place,
                   machine::held_registers& held) -> param_binding {
@@ -1264,7 +1244,7 @@ class inline_call final {
 
             // an indexed argument keeps its computed address
             if (ident.has_computed_address(arg_place->info)) {
-                return bind_reference(tc, indent, *arg_place, param, held);
+                return bind_reference(tc, *arg_place, param, held);
             }
 
             return param_binding::make_name(param.name(), arg_place->info,
@@ -1282,12 +1262,11 @@ class inline_call final {
             }
         }
 
-        return bind_expression(tc, indent, arg, param, held);
+        return bind_expression(tc, arg, param, held);
     }
 
     // a constant lets the inlined body be decided at compile time
-    [[nodiscard]] static auto bind_expression(toc& tc, const size_t indent,
-                                              const expr_any& arg,
+    [[nodiscard]] static auto bind_expression(toc& tc, const expr_any& arg,
                                               const stmt_def_func_param& param,
                                               machine::held_registers& held)
         -> param_binding {
@@ -1298,17 +1277,18 @@ class inline_call final {
 
         if (folded) {
             // note: as a noinline call, which compiles every argument
-            arg.check_folded_conditions(tc, indent);
+            arg.check_folded_conditions(tc);
 
             return param_binding::make_constant(param.name(), param.get_type(),
                                                 folded->value);
         }
 
         const operand reg{
-            held.alloc_scratch_register({arg.tok(), indent}, param.get_type()),
+            held.alloc_scratch_register({arg.tok(), tc.indent()},
+                                        param.get_type()),
         };
 
-        arg.compile(tc, indent, destination::of_register(reg));
+        arg.compile(tc, destination::of_register(reg));
 
         return param_binding::make_register(param.name(), reg,
                                             reg.register_name());
@@ -1316,8 +1296,7 @@ class inline_call final {
 
     // an indexed argument keeps its computed address, e.g.
     // '[rbp + r14 * 4 + 205]', '[r15 + r14]' or simply '[r15]'
-    [[nodiscard]] static auto bind_reference(toc& tc, const size_t indent,
-                                             const place& arg_place,
+    [[nodiscard]] static auto bind_reference(toc& tc, const place& arg_place,
                                              const stmt_def_func_param& param,
                                              machine::held_registers& held)
         -> param_binding {
@@ -1328,7 +1307,7 @@ class inline_call final {
         //       compiled
 
         const operand lea{
-            ident.compile_lea(tc, indent, held, {}),
+            ident.compile_lea(tc, held, {}),
         };
 
         return param_binding::make_name(
@@ -1433,23 +1412,23 @@ class noinline_call final {
     // a result destination or an argument that is not a variable in memory,
     // e.g. a register or an expression, goes through a temporary, as does a
     // result that widens into an operand
-    auto compile(toc& tc, const size_t indent, const destination& dst) const
-        -> void {
-
-        call_.compile_with_temporaries(
-            tc, indent, dst, has_argument_temporary(),
-            has_result_temporary(dst, *call_.func),
-            [&](const destination& result) -> void {
-                compile_arguments_and_call(tc, indent, result);
-            });
+    auto compile(toc& tc, const destination& dst) const -> void {
+        call_.compile_with_temporaries(tc, dst, has_argument_temporary(),
+                                       has_result_temporary(dst, *call_.func),
+                                       [&](const destination& result) -> void {
+                                           compile_arguments_and_call(tc,
+                                                                      result);
+                                       });
     }
 
   private:
-    auto comment_frame_slot(machine& x, const size_t indent,
-                            const frame_slot& slot) const -> void {
+    auto comment_frame_slot(toc& tc, const frame_slot& slot) const -> void {
+        machine& x{tc.machine()};
 
         if (not slot.param_index) {
-            x.comment({call_.tk, indent}, "result address in callee frame");
+            x.comment({call_.tk, tc.indent()},
+                      "result address in callee frame");
+
             return;
         }
 
@@ -1457,14 +1436,14 @@ class noinline_call final {
         const expr_any& arg{call_.args.at(index)};
         const stmt_def_func_param& param{call_.func->params().at(index)};
 
-        x.comment({call_.tk, indent}, "address of argument {} to parameter {}",
-                  in_quotes(statement::trimmed_source(arg)),
-                  in_quotes(param.name()));
+        x.comment(
+            {call_.tk, tc.indent()}, "address of argument {} to parameter {}",
+            in_quotes(statement::trimmed_source(arg)), in_quotes(param.name()));
     }
 
     // what is passed for each argument, in their order; 'held' holds the
     // address registers
-    [[nodiscard]] auto compile_arguments(toc& tc, const size_t indent,
+    [[nodiscard]] auto compile_arguments(toc& tc,
                                          machine::held_registers& held) const
         -> std::vector<noinline_arg> {
 
@@ -1476,7 +1455,7 @@ class noinline_call final {
             // e.g. a literal or an expression
             if (not arg_place) {
                 const destination temporary{
-                    call_.make_argument_temporary(tc, indent, i),
+                    call_.make_argument_temporary(tc, i),
                 };
 
                 arguments.push_back({
@@ -1488,8 +1467,7 @@ class noinline_call final {
             }
 
             const operand address{
-                arg_place->ident->get_lea_operand(tc, indent, arg_place->info,
-                                                  held),
+                arg_place->ident->get_lea_operand(tc, arg_place->info, held),
             };
 
             arguments.push_back({
@@ -1503,30 +1481,29 @@ class noinline_call final {
 
     // the arguments are compiled in their order, a call in the index of a
     // place runs before the later arguments as the checks assume
-    auto compile_arguments_and_call(toc& tc, const size_t indent,
-                                    const destination& dst) const -> void {
+    auto compile_arguments_and_call(toc& tc, const destination& dst) const
+        -> void {
 
         machine& x{tc.machine()};
 
-        machine::held_registers held{x, {call_.tk, indent}};
+        machine::held_registers held{x, {call_.tk, tc.indent()}};
 
         const std::vector<noinline_arg> arguments{
-            compile_arguments(tc, indent, held),
+            compile_arguments(tc, held),
         };
 
-        compile_with_arguments(tc, indent, dst, arguments, held);
+        compile_with_arguments(tc, dst, arguments, held);
     }
 
     // 'held' holds the addresses of the arguments, freed once the frame is
     // written
-    auto compile_with_arguments(toc& tc, const size_t indent,
-                                const destination& dst,
+    auto compile_with_arguments(toc& tc, const destination& dst,
                                 const std::span<const noinline_arg> arguments,
                                 machine::held_registers& held) const -> void {
 
         assert_call(dst, *call_.func, arguments);
 
-        call_.zero_result_padding(tc, indent, dst);
+        call_.zero_result_padding(tc, dst);
 
         const std::vector<std::optional<size_t>> array_lengths{
             array_argument_lengths(*call_.func, arguments),
@@ -1545,8 +1522,7 @@ class noinline_call final {
         const operand frame_address{tc.next_frame_address()};
 
         const std::optional<operand> register_address{
-            populate_frame(tc, indent, dst, arguments, frame_address,
-                           array_lengths),
+            populate_frame(tc, dst, arguments, frame_address, array_lengths),
         };
 
         held.release();
@@ -1555,7 +1531,7 @@ class noinline_call final {
 
         // the address in a register is loaded after the registers are saved,
         // a register that holds a value of the caller is not lost
-        x.call_function({call_.tk, indent}, call_.func->name(),
+        x.call_function({call_.tk, tc.indent()}, call_.func->name(),
                         call_.func->body_label(array_lengths), frame_address,
                         register_address);
     }
@@ -1572,7 +1548,7 @@ class noinline_call final {
     // the result and the arguments, the registers that hold them stay
     // allocated until the frame is populated; returns 'write_frame_slots'
     [[nodiscard]] auto populate_frame(
-        toc& tc, const size_t indent, const destination& dst,
+        toc& tc, const destination& dst,
         const std::span<const noinline_arg> arguments,
         const operand& frame_address,
         const std::span<const std::optional<size_t>> array_lengths) const
@@ -1581,7 +1557,7 @@ class noinline_call final {
         machine& x{tc.machine()};
 
         if (tc.checks().frame) {
-            x.check_frame_capacity({call_.tk, indent}, frame_address,
+            x.check_frame_capacity({call_.tk, tc.indent()}, frame_address,
                                    call_.func->frame_size_label(array_lengths));
         }
 
@@ -1589,20 +1565,22 @@ class noinline_call final {
         // allocated, the check must not change a register that is free but
         // used by the call
         if (tc.checks().stack) {
-            x.check_stack_capacity({call_.tk, indent});
+            x.check_stack_capacity({call_.tk, tc.indent()});
         }
 
-        return write_frame_slots(x, indent, frame_address, dst, arguments);
+        return write_frame_slots(tc, frame_address, dst, arguments);
     }
 
     // each slot holds an address, not the value stored at that address;
     // returns the address the callee finds in a register, none when no slot
     // is in it
     [[nodiscard]] auto
-    write_frame_slots(machine& x, const size_t indent,
-                      const operand& frame_address, const destination& dst,
+    write_frame_slots(toc& tc, const operand& frame_address,
+                      const destination& dst,
                       const std::span<const noinline_arg> arguments) const
         -> std::optional<operand> {
+
+        machine& x{tc.machine()};
 
         operand slot_address{frame_address};
         std::optional<operand> register_address;
@@ -1614,9 +1592,9 @@ class noinline_call final {
                 continue;
             }
 
-            comment_frame_slot(x, indent, slot);
+            comment_frame_slot(tc, slot);
 
-            x.address_of({call_.tk, indent}, slot_address,
+            x.address_of({call_.tk, tc.indent()}, slot_address,
                          slot_address_of(dst, slot, arguments));
 
             slot_address.increment_offset(
@@ -2121,8 +2099,7 @@ class stmt_call final : public statement {
         close_paren_tk_.source_to(os);
     }
 
-    auto compile(toc& tc, const size_t indent, const destination& dst) const
-        -> void override {
+    auto compile(toc& tc, const destination& dst) const -> void override {
 
         // note: the built-ins that parse like a call, e.g. 'exit' and the io
         //       functions, are nodes of their own ('stmt_builtin_*')
@@ -2131,14 +2108,14 @@ class stmt_call final : public statement {
 
         machine& x{tc.machine()};
 
-        x.comment({tok(), indent}, call.source);
+        x.comment({tok(), tc.indent()}, call.source);
 
         assert_call_accepted(tc, dst, call.places);
 
         if (callee().is_inlined()) {
-            inline_call{call}.compile(tc, indent, dst);
+            inline_call{call}.compile(tc, dst);
         } else {
-            noinline_call{call}.compile(tc, indent, dst);
+            noinline_call{call}.compile(tc, dst);
         }
 
         // a call statement, its result is not used
@@ -2152,7 +2129,7 @@ class stmt_call final : public statement {
         // the operators of the call apply to its result where it is used, at
         // the width and with the overflow check of the destination, e.g. the
         // '~' of '~f(x)'
-        get_unary_ops().compile(x, indent, tok(), dst.operand(),
+        get_unary_ops().compile(x, {tok(), tc.indent()}, dst.operand(),
                                 tc.overflow_options(dst));
     }
 

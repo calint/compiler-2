@@ -221,8 +221,7 @@ class expr_any final : public statement {
         token::source_to(os, list->close_brace_tk);
     }
 
-    auto compile(toc& tc, const size_t indent, const destination& dst) const
-        -> void override {
+    auto compile(toc& tc, const destination& dst) const -> void override {
 
         // note: an array literal is written by its assignment or definition
         //       ('plan_writes'), the parse rejects one as an argument
@@ -231,7 +230,7 @@ class expr_any final : public statement {
 
         write_plan plan;
         plan_writes(tc, part_location{}, dst.array_len(), plan);
-        emit_write_plan(tc, indent, plan, dst);
+        emit_write_plan(tc, plan, dst);
     }
 
     auto assert_not_narrowed(const toc& tc, const type& dst_type) const
@@ -345,9 +344,9 @@ class expr_any final : public statement {
     // elements after it are checked like skipped code, e.g. the 'a / 0 == 1'
     // of 'true or a / 0 == 1'; every condition of the value is, also in the
     // elements of a list and in the fields of an instance literal
-    auto check_folded_conditions(toc& tc, const size_t indent) const -> void {
+    auto check_folded_conditions(toc& tc) const -> void {
         for (size_t i{}; i < element_count(); ++i) {
-            check_folded_conditions_of(tc, indent, value_at(i));
+            check_folded_conditions_of(tc, value_at(i));
         }
     }
 
@@ -355,8 +354,7 @@ class expr_any final : public statement {
     // expression and returns the constant, e.g. 'ix + 1' compiles 'ix' and
     // returns 1, empty when nothing was compiled
     [[nodiscard]] auto
-    compile_without_trailing_addend(toc& tc, const size_t indent,
-                                    const destination& dst) const
+    compile_without_trailing_addend(toc& tc, const destination& dst) const
         -> std::optional<int64_t> {
 
         // note: only an index expression asks, it is never an array and has
@@ -366,7 +364,7 @@ class expr_any final : public statement {
 
         arith.assert_not_narrowed(tc, dst.type_ref());
 
-        return arith.compile_without_trailing_addend(tc, indent, dst);
+        return arith.compile_without_trailing_addend(tc, dst);
     }
 
     // e.g. '-2' or a named constant at the default type, empty when computed
@@ -939,8 +937,8 @@ class expr_any final : public statement {
     }
 
     // compiled as a branch condition, which needs no register for its value
-    static auto check_folded_condition(toc& tc, const size_t indent,
-                                       const expr_bool& condition) -> void {
+    static auto check_folded_condition(toc& tc, const expr_bool& condition)
+        -> void {
 
         tc.check_skipped([&] -> void {
             // note: two targets as an 'if', the same one for both would store
@@ -952,7 +950,7 @@ class expr_any final : public statement {
 
             const std::string false_label{toc::end_label(true_label)};
 
-            std::ignore = condition.compile_branches(tc, indent,
+            std::ignore = condition.compile_branches(tc,
                                                      {
                                                          .if_false{false_label},
                                                          .if_true{true_label},
@@ -961,16 +959,16 @@ class expr_any final : public statement {
 
             machine& x{tc.machine()};
 
-            x.label(indent, true_label);
-            x.label(indent, false_label);
+            x.label(tc.indent(), true_label);
+            x.label(tc.indent(), false_label);
         });
     }
 
-    static auto check_folded_conditions_of(toc& tc, const size_t indent,
-                                           const expr_variant& value) -> void {
+    static auto check_folded_conditions_of(toc& tc, const expr_variant& value)
+        -> void {
 
         if (const expr_bool* const condition{std::get_if<expr_bool>(&value)}) {
-            check_folded_condition(tc, indent, *condition);
+            check_folded_condition(tc, *condition);
             return;
         }
 
@@ -988,7 +986,7 @@ class expr_any final : public statement {
         for (const std::unique_ptr<expr_any>& field :
              instance->field_values()) {
 
-            field->check_folded_conditions(tc, indent);
+            field->check_folded_conditions(tc);
         }
     }
 

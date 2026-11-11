@@ -64,7 +64,6 @@ class bulk_operands final {
 
         const bulk_operands& operands_;
         toc& tc_;
-        size_t indent_{};
         const token& src_loc_tk_;
         // none for a run-time count
         std::optional<int64_t> constant_count_;
@@ -74,9 +73,8 @@ class bulk_operands final {
 
       public:
         argument_emitters(const bulk_operands& operands, toc& tc,
-                          const size_t indent, const token& src_loc_tk)
-            : operands_{operands}, tc_{tc}, indent_{indent},
-              src_loc_tk_{src_loc_tk},
+                          const token& src_loc_tk)
+            : operands_{operands}, tc_{tc}, src_loc_tk_{src_loc_tk},
               constant_count_{operands.count().constant_value(tc)} {}
 
         argument_emitters(const argument_emitters&) = delete;
@@ -107,7 +105,7 @@ class bulk_operands final {
         [[nodiscard]] auto count() -> std::function<void(const operand&)> {
             return [this](const operand& count_register) -> void {
                 operands_.count().compile(
-                    tc_, indent_, destination::of_register(count_register));
+                    tc_, destination::of_register(count_register));
 
                 // note: a constant count checked the ranges after the second
                 //       address, e.g. for the overlap check of 'array_copy'
@@ -149,8 +147,9 @@ class bulk_operands final {
 
                     machine& x{tc_.machine()};
 
-                    held.start = x.alloc_scratch_register(
-                        {array.tok(), indent_}, tc_.builtins().default_type());
+                    held.start =
+                        x.alloc_scratch_register({array.tok(), tc_.indent()},
+                                                 tc_.builtins().default_type());
                 }
 
                 walk_address(array, held.start, address_register, checks_ranges,
@@ -204,7 +203,7 @@ class bulk_operands final {
 
             machine& x{tc_.machine()};
 
-            x.check_bounds({count_tk, indent_}, *range, options);
+            x.check_bounds({count_tk, tc_.indent()}, *range, options);
 
             return count_register.has_value() and options.lower;
         }
@@ -245,7 +244,9 @@ class bulk_operands final {
 
                 machine& x{tc_.machine()};
 
-                x.free_scratch_register({src_loc_tk_, indent_}, *held.start);
+                x.free_scratch_register({src_loc_tk_, tc_.indent()},
+                                        *held.start);
+
                 held.start.reset();
             }
         }
@@ -322,15 +323,16 @@ class bulk_operands final {
 
             machine& x{tc_.machine()};
 
-            x.comment({array.tok(), indent_}, statement::trimmed_source(array));
+            x.comment({array.tok(), tc_.indent()},
+                      statement::trimmed_source(array));
 
-            machine::held_registers walk{x, {src_loc_tk_, indent_}};
+            machine::held_registers walk{x, {src_loc_tk_, tc_.indent()}};
 
             // note: the walk checks a start up to the length, its range is
             //       checked after the later arguments
 
             const operand address{
-                array.compile_lea(tc_, indent_, walk,
+                array.compile_lea(tc_, walk,
                                   {
                                       .is_range{true},
                                       .start_register{start},

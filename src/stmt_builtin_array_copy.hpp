@@ -42,13 +42,12 @@ class stmt_builtin_array_copy final : public statement {
         operands_.source_to(os);
     }
 
-    auto compile(toc& tc, const size_t indent,
-                 [[maybe_unused]] const destination& dst) const
+    auto compile(toc& tc, [[maybe_unused]] const destination& dst) const
         -> void override {
 
         machine& x{tc.machine()};
 
-        comment_source(x, indent);
+        comment_source(tc);
 
         const type& element_type{operands_.check(tc)};
 
@@ -64,21 +63,21 @@ class stmt_builtin_array_copy final : public statement {
             tc.checks().overlap and may_overlap(tc),
         };
 
-        bulk_operands::argument_emitters emit{operands_, tc, indent, tok()};
+        bulk_operands::argument_emitters emit{operands_, tc, tok()};
 
         // the size is known so the copy is unrolled when small and the width
         // follows the alignment of both addresses
         if (size_bytes and not checks_overlap) {
             emit.both_addresses(
                 [&](const operand& src, const operand& dst_address) -> void {
-                    x.copy_block({tok(), indent}, dst_address, src, *size_bytes,
-                                 element_type.alignment());
+                    x.copy_block({tok(), tc.indent()}, dst_address, src,
+                                 *size_bytes, element_type.alignment());
                 });
 
             return;
         }
 
-        x.copy_elements({tok(), indent}, element_type.size_bytes(),
+        x.copy_elements({tok(), tc.indent()}, element_type.size_bytes(),
                         emit.count(),
                         {
                             .alignment{element_type.alignment()},

@@ -114,20 +114,17 @@ class stmt_def_dat final : public statement {
         initializer_.source_to(os);
     }
 
-    auto compile(toc& tc, const size_t indent,
-                 [[maybe_unused]] const destination& dst) const
+    auto compile(toc& tc, [[maybe_unused]] const destination& dst) const
         -> void override {
 
-        machine& x{tc.machine()};
+        comment_source(tc);
 
-        comment_source(x, indent);
-
-        tc.add_var(indent, declaration_.declared_var(), var_kind::dat);
+        tc.add_var(declaration_.declared_var(), var_kind::dat);
 
         // note: the compile of a 'var' checks the elements of a condition
         //       after the one that decides it, so does this
 
-        initializer_.check_folded_conditions(tc, indent);
+        initializer_.check_folded_conditions(tc);
     }
 
     //

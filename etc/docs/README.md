@@ -159,7 +159,10 @@ The names most methods share: 'tc' the 'toc', 'tz' the tokenizer of the
 parse, 'x' the 'machine', 'dst' the 'destination' of a value, 'src_loc_tk' the
 token that an error, a listing comment and a label point at (line 0 has no
 place), and 'indent' the depth of the listing lines emitted
-('assembler::indentation'), one more for each nested block.
+('assembler::indentation'), one more for each nested block. The front end
+reads it from 'toc::indent', which the code that nests sets for what it
+compiles ('toc::indent_scope'), e.g. a block for its statements; the backend
+takes it in an 'emit_site'.
 
 Invariants the code relies on:
 

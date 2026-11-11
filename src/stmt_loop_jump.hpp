@@ -1,7 +1,6 @@
 #pragma once
 
 #include <cassert>
-#include <cstddef>
 #include <optional>
 
 #include "ident_info.hpp"
@@ -25,13 +24,12 @@ class stmt_loop_jump final : public statement {
     // overridden methods
     //
 
-    auto compile(toc& tc, const size_t indent,
-                 [[maybe_unused]] const destination& dst) const
+    auto compile(toc& tc, [[maybe_unused]] const destination& dst) const
         -> void override {
 
         machine& x{tc.machine()};
 
-        comment_source(x, indent);
+        comment_source(tc);
 
         const std::optional<loop_target> loop{tc.scopes().innermost_loop()};
 
@@ -40,12 +38,12 @@ class stmt_loop_jump final : public statement {
 
         if (tok().is_text("break")) {
             tc.record_break();
-            x.branch(indent, toc::end_label(loop->label));
+            x.branch(tc.indent(), toc::end_label(loop->label));
         } else {
             tc.record_continue();
 
             // e.g. the head of a 'loop', the counter step of a 'foo'
-            x.branch(indent, loop->continue_label);
+            x.branch(tc.indent(), loop->continue_label);
         }
     }
 

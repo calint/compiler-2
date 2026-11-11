@@ -1,6 +1,17 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 331 (2026-11-11, BJ the indent of the listing in the
+    front end)
+    => done (2026-11-11): the front end passed the listing indent down
+       through 128 functions and changed it in about 10; 'toc' holds it
+       ('tc.indent()') and 'toc::indent_scope' sets it where code nests
+       (a block's statements, the scratch and memory compares of
+       'expr_bool', the names of a signature, a body in a frame at 0);
+       'statement::compile(tc, dst)' and its 25 overrides, the helpers and
+       two classes that kept a copy drop it; the backend keeps
+       'emit_site'; 57 lines fewer, listings equal; the docs of chapter 1.1
+       say where the indent lives
 [x] easy: round 330 (2026-11-11, BK a newcomer reads the code in order)
     => done (2026-11-11): 22 places where reading stopped along the order
        of 'etc/docs/README.md', 16 fixed: 'compile_noinline_functions' is

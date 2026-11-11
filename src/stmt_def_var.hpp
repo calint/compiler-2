@@ -1,7 +1,6 @@
 #pragma once
 
 #include <cassert>
-#include <cstddef>
 #include <cstdint>
 #include <format>
 #include <functional>
@@ -17,7 +16,6 @@
 #include "expr_arith.hpp"
 #include "expr_bool.hpp"
 #include "ident_info.hpp"
-#include "machine.hpp"
 #include "parse_lookahead.hpp"
 #include "stmt_assign_var.hpp"
 #include "stmt_identifier.hpp"
@@ -315,7 +313,7 @@ class initializer_declaration final {
 
         const toc::scope_entry block{tc, scope::initializer()};
 
-        tc.add_var(0, declared_var(), var_kind::var);
+        tc.add_var(declared_var(), var_kind::var);
 
         parse();
     }
@@ -381,7 +379,7 @@ class stmt_def_const final : public statement {
 
         set_type(tp);
 
-        tc.add_const(name_tk_, 0, name_tk_.text(), constant_);
+        tc.add_const(name_tk_, name_tk_.text(), constant_);
     }
 
     //
@@ -395,13 +393,10 @@ class stmt_def_const final : public statement {
         initializer_.source_to(os);
     }
 
-    auto compile(toc& tc, const size_t indent,
-                 [[maybe_unused]] const destination& dst) const
+    auto compile(toc& tc, [[maybe_unused]] const destination& dst) const
         -> void override {
 
-        machine& x{tc.machine()};
-
-        comment_source(x, indent);
+        comment_source(tc);
 
         // note: the names it folds from are constants wherever it is
         //       compiled, a name that is a constant only with a call is a
@@ -416,9 +411,9 @@ class stmt_def_const final : public statement {
         // note: the compile of a 'var' checks the elements of a condition
         //       after the one that decides it, so does this
 
-        initializer_.check_folded_conditions(tc, indent);
+        initializer_.check_folded_conditions(tc);
 
-        tc.add_const(name_tk_, indent, name_tk_.text(), constant_);
+        tc.add_const(name_tk_, name_tk_.text(), constant_);
     }
 
     // a constant reads and writes nothing at run time, the elements of a
@@ -468,13 +463,10 @@ class stmt_def_var final : public statement {
         assign_var_.source_to(os);
     }
 
-    auto compile(toc& tc, const size_t indent,
-                 [[maybe_unused]] const destination& dst) const
+    auto compile(toc& tc, [[maybe_unused]] const destination& dst) const
         -> void override {
 
-        machine& x{tc.machine()};
-
-        comment_source(x, indent);
+        comment_source(tc);
 
         // a 'let' whose value folds only in this compile is a constant here,
         // e.g. 'let m = n' in a 'foo' over an unsized array parameter at a
@@ -483,18 +475,17 @@ class stmt_def_var final : public statement {
             // note: the compile of a 'var' checks the elements of a condition
             //       after the one that decides it, so does this
 
-            assign_var_.value().check_folded_conditions(tc, indent);
+            assign_var_.value().check_folded_conditions(tc);
 
-            tc.add_const(declared_.src_loc_tk, indent, declared_.name,
-                         *constant);
+            tc.add_const(declared_.src_loc_tk, declared_.name, *constant);
 
             return;
         }
 
-        tc.add_var(indent, declared_, var_kind::var);
+        tc.add_var(declared_, var_kind::var);
 
         // the assignment names its destination itself
-        assign_var_.compile(tc, indent, destination{});
+        assign_var_.compile(tc, destination{});
     }
 
     auto visit_operands(const operand_visitor visitor) const -> void override {
@@ -531,7 +522,7 @@ class stmt_def_var final : public statement {
                        const token& equals_tk, expr_any value)
         -> stmt_assign_var {
 
-        tc.add_var(0, var, var_kind::var);
+        tc.add_var(var, var_kind::var);
 
         return {
             stmt_identifier{tc, var.src_loc_tk, at_name},

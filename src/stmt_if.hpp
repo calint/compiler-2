@@ -137,8 +137,7 @@ class stmt_if final : public statement {
         }
     }
 
-    auto compile(toc& tc, const size_t indent,
-                 [[maybe_unused]] const destination& dst) const
+    auto compile(toc& tc, [[maybe_unused]] const destination& dst) const
         -> void override {
 
         // the 'if' keyword locates the labels shared by all branches
@@ -158,7 +157,7 @@ class stmt_if final : public statement {
             paths.begin_path(is_start_reachable);
 
             const branch_condition condition{
-                compile_branch_at(tc, indent, index, if_label),
+                compile_branch_at(tc, index, if_label),
             };
 
             is_start_reachable = condition.is_end_reachable;
@@ -179,14 +178,14 @@ class stmt_if final : public statement {
         }
 
         if (is_chain_ended) {
-            check_skipped_from(tc, indent, index, if_label);
+            check_skipped_from(tc, index, if_label);
         } else {
-            compile_else(tc, indent, if_label, paths, is_start_reachable);
+            compile_else(tc, if_label, paths, is_start_reachable);
         }
 
         machine& x{tc.machine()};
 
-        x.label(indent, label_after_if);
+        x.label(tc.indent(), label_after_if);
     }
 
     // the paths that the conditions known where the 'if' is written leave,
@@ -229,13 +228,12 @@ class stmt_if final : public statement {
   private:
     // the branches from 'first_index' and the 'else' after a branch whose
     // condition is true never run, they hold the compile rules too
-    auto check_skipped_from(toc& tc, const size_t indent,
-                            const size_t first_index,
+    auto check_skipped_from(toc& tc, const size_t first_index,
                             const std::string_view if_label) const -> void {
 
         for (size_t i{first_index}; i < branches_.size(); ++i) {
             tc.check_skipped([&] -> void {
-                std::ignore = compile_branch_at(tc, indent, i, if_label);
+                std::ignore = compile_branch_at(tc, i, if_label);
             });
         }
 
@@ -244,13 +242,12 @@ class stmt_if final : public statement {
         }
 
         tc.check_skipped(
-            [&] -> void { else_->code.compile(tc, indent, destination{}); });
+            [&] -> void { else_->code.compile(tc, destination{}); });
     }
 
     // the branch at 'branch_index': its condition at its label, its code and
     // the jump past the other branches; what it found of its condition
-    [[nodiscard]] auto compile_branch_at(toc& tc, const size_t indent,
-                                         const size_t branch_index,
+    [[nodiscard]] auto compile_branch_at(toc& tc, const size_t branch_index,
                                          const std::string_view if_label) const
         -> branch_condition {
 
@@ -271,10 +268,10 @@ class stmt_if final : public statement {
 
         machine& x{tc.machine()};
 
-        x.label(indent, label);
+        x.label(tc.indent(), label);
 
         const std::optional<bool> known{
-            b.condition.compile_branches(tc, indent,
+            b.condition.compile_branches(tc,
                                          {
                                              .if_false{jmp_if_false},
                                              .if_true{code_label},
@@ -292,20 +289,20 @@ class stmt_if final : public statement {
 
         if (known == false) {
             tc.check_skipped(
-                [&] -> void { b.code.compile(tc, indent, destination{}); });
+                [&] -> void { b.code.compile(tc, destination{}); });
 
             return condition;
         }
 
-        x.label(indent, code_label);
-        b.code.compile(tc, indent, destination{});
+        x.label(tc.indent(), code_label);
+        b.code.compile(tc, destination{});
 
         // the last branch without an 'else' continues after the 'if'
         // without a jump
         const bool falls_through{is_last_branch and else_code() == nullptr};
 
         if (not known and not falls_through) {
-            x.branch(indent, toc::end_label(if_label));
+            x.branch(tc.indent(), toc::end_label(if_label));
         }
 
         return condition;
@@ -313,8 +310,8 @@ class stmt_if final : public statement {
 
     // an empty 'else' is the path that skips every branch, it starts where
     // the condition of the last branch is false
-    auto compile_else(toc& tc, const size_t indent,
-                      const std::string_view if_label, toc::path_merge& paths,
+    auto compile_else(toc& tc, const std::string_view if_label,
+                      toc::path_merge& paths,
                       const bool is_start_reachable) const -> void {
 
         paths.begin_path(is_start_reachable);
@@ -322,8 +319,8 @@ class stmt_if final : public statement {
         if (const stmt_block* const code{else_code()}) {
             machine& x{tc.machine()};
 
-            x.label(indent, else_label(if_label));
-            code->compile(tc, indent, destination{});
+            x.label(tc.indent(), else_label(if_label));
+            code->compile(tc, destination{});
         }
 
         paths.join_path();

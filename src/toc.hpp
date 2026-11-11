@@ -2432,6 +2432,9 @@ class toc final {
     // inside the parse that needs it, so the levels are counted once for all
     // of them, see 'parse_nesting_scope'
     size_t parse_nesting_{};
+    // the indent of the listing lines the code being compiled emits, see
+    // 'indent_scope'
+    size_t indent_{};
 
     // what a dry run and a version that is not kept put back: the peaks that
     // compiling raises and whether the code after is reached, which an error
@@ -2466,6 +2469,27 @@ class toc final {
     };
 
   public:
+    // the code compiled while it lives is written at 'indent_in', e.g. one
+    // more for the statements of a block; put back also when an error unwinds
+    class indent_scope final {
+        toc& tc_;
+        size_t outer_indent_{};
+
+      public:
+        indent_scope(toc& tc, const size_t indent_in)
+            : tc_{tc}, outer_indent_{tc.indent_} {
+
+            tc.indent_ = indent_in;
+        }
+
+        indent_scope(const indent_scope&) = delete;
+        indent_scope(indent_scope&&) = delete;
+        auto operator=(const indent_scope&) -> indent_scope& = delete;
+        auto operator=(indent_scope&&) -> indent_scope& = delete;
+
+        ~indent_scope() { tc_.indent_ = outer_indent_; }
+    };
+
     // the paths of an 'if' start where the condition before them is false,
     // the first at the 'if', of an 'and'/'or' list at an element that may end
     // it; the end is reached when one path that runs reaches it; set when the
@@ -2626,7 +2650,7 @@ class toc final {
                 constants_block_.emplace(tc_, scope::block());
             }
 
-            tc_.add_const(param_tk, 0, param_tk.text(),
+            tc_.add_const(param_tk, param_tk.text(),
                           folded_value::untyped(value));
         }
     };
@@ -2662,16 +2686,15 @@ class toc final {
 
     // a constant of the innermost scope, e.g. a 'let' that folds or a
     // constant argument of a generic instance; commented only while compiling
-    auto add_const(const token& src_loc_tk, const size_t indent,
-                   const std::string_view name, const folded_value& constant)
-        -> void {
+    auto add_const(const token& src_loc_tk, const std::string_view name,
+                   const folded_value& constant) -> void {
 
         definitions_.assert_name_free(src_loc_tk, "constant", name);
 
         if (is_compiling_) {
             ::machine& x{machine()};
 
-            x.comment({src_loc_tk, indent}, "const {} = {}", name,
+            x.comment({src_loc_tk, indent_}, "const {} = {}", name,
                       constant.value);
         }
 
@@ -2706,7 +2729,7 @@ class toc final {
         // asserts it at the compile
         storage_.assert_dats_and_vars_fit_target(var.src_loc_tk);
 
-        add_var(0, var, var_kind::dat);
+        add_var(var, var_kind::dat);
     }
 
     auto add_func(std::string name, func_info info) -> void {
@@ -2819,9 +2842,7 @@ class toc final {
         types_.add(src_loc_tk, tpe);
     }
 
-    auto add_var(const size_t indent, const var_info& var, const var_kind kind)
-        -> void {
-
+    auto add_var(const var_info& var, const var_kind kind) -> void {
         const token src_loc_tk{var.src_loc_tk};
 
         if (kind == var_kind::param or kind == var_kind::result) {
@@ -2848,7 +2869,7 @@ class toc final {
         scopes_.record_if_global(var.name);
 
         if (is_compiling_) {
-            comment_var(src_loc_tk, indent, declared);
+            comment_var(src_loc_tk, declared);
         }
     }
 
@@ -3102,7 +3123,7 @@ class toc final {
     // the kept version, e.g. the frame size of a noinline body; a read-only
     // constant that the other version added stays, unused, so the labels stay
     // unique
-    auto emit_most_efficient(const token& src_loc_tk, const size_t indent,
+    auto emit_most_efficient(const token& src_loc_tk,
                              const std::function_ref<void()> emit_first,
                              const std::function_ref<void()> emit_second)
         -> void {
@@ -3133,7 +3154,7 @@ class toc final {
         ::machine& x{machine()};
 
         const bool keeps_first{
-            x.emit_most_efficient({src_loc_tk, indent}, first, second),
+            x.emit_most_efficient({src_loc_tk, indent_}, first, second),
         };
 
         restore_compile_state(keeps_first ? first_end : second_end);
@@ -3241,6 +3262,9 @@ class toc final {
 
         return tp;
     }
+
+    // the indent of the listing lines the code being compiled emits
+    [[nodiscard]] auto indent() const -> size_t { return indent_; }
 
     // a plain or a generic function, unlike 'funcs().has'
     [[nodiscard]] auto is_func(const std::string_view name) const -> bool {
@@ -3527,9 +3551,7 @@ class toc final {
 
     // the comment in the output that tells where a variable is stored, the
     // resolved name shows it
-    auto comment_var(const token& src_loc_tk, const size_t indent,
-                     const var_info& var) -> void {
-
+    auto comment_var(const token& src_loc_tk, const var_info& var) -> void {
         const ident_info name_info{resolver_.resolve_var(var)};
 
         std::string text{
@@ -3547,20 +3569,20 @@ class toc final {
         ::machine& x{machine()};
 
         if (reg) {
-            x.comment({src_loc_tk, indent}, "{} ({})", text,
+            x.comment({src_loc_tk, indent_}, "{} ({})", text,
                       reg->register_name());
 
             return;
         }
 
         if (holds_address(var.placement)) {
-            x.comment_held_address({src_loc_tk, indent}, text,
+            x.comment_held_address({src_loc_tk, indent_}, text,
                                    name_info.operand());
 
             return;
         }
 
-        x.comment_variable({src_loc_tk, indent}, text,
+        x.comment_variable({src_loc_tk, indent_}, text,
                            name_info.value_size_bytes(src_loc_tk),
                            name_info.operand());
     }

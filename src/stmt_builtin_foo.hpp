@@ -54,13 +54,12 @@ class stmt_builtin_foo final : public statement {
         code_.source_to(os);
     }
 
-    auto compile(toc& tc, const size_t indent,
-                 [[maybe_unused]] const destination& dst) const
+    auto compile(toc& tc, [[maybe_unused]] const destination& dst) const
         -> void override {
 
         machine& x{tc.machine()};
 
-        comment_header(x, indent);
+        comment_header(tc);
 
         const std::string loop_label{tc.create_unique_label(tok(), "foo")};
         const std::string end_label{toc::end_label(loop_label)};
@@ -69,19 +68,19 @@ class stmt_builtin_foo final : public statement {
         // hide names they use
         const ident_info array_info{make_ident_info(tc, ident_)};
 
-        machine::held_registers held{x, {tok(), indent}};
+        machine::held_registers held{x, {tok(), tc.indent()}};
 
         const operand reg_iter{
-            held.alloc_scratch_register({ident_.tok(), indent},
+            held.alloc_scratch_register({ident_.tok(), tc.indent()},
                                         tc.builtins().address()),
         };
 
-        x.comment({ident_.tok(), indent}, "initialize iterator e");
+        x.comment({ident_.tok(), tc.indent()}, "initialize iterator e");
 
-        ident_.load_address(tc, indent, tok(), array_info, reg_iter);
+        ident_.load_address(tc, tok(), array_info, reg_iter);
 
         const operand limit{
-            compile_limit(tc, indent, array_info.element_count(), held),
+            compile_limit(tc, array_info.element_count(), held),
         };
 
         // e.g. not after 'foo a, stop() { }' with 'stop' an inlined 'exit'
@@ -99,31 +98,30 @@ class stmt_builtin_foo final : public statement {
                             toc::continue_label(loop_label))};
 
         const operand counter{
-            declare_loop_names(tc, indent, array_info, reg_iter, held),
+            declare_loop_names(tc, array_info, reg_iter, held),
         };
 
-        x.comment({tok(), indent}, "initialize counter i");
+        x.comment({tok(), tc.indent()}, "initialize counter i");
 
-        x.copy_value({tok(), indent}, counter,
+        x.copy_value({tok(), tc.indent()}, counter,
                      operand::imm(0, tc.builtins().default_type()));
 
         // a count that folds to 0 skips the body like a branch that folds to
         // false, see 'toc::check_skipped'
         if (limit.is_immediate() and limit.immediate() == 0) {
-            tc.check_skipped(
-                [&] -> void { code_.compile(tc, indent, destination{}); });
+            tc.check_skipped([&] -> void { code_.compile(tc, destination{}); });
         } else {
-            skip_empty_loop(tc, indent, limit, end_label);
+            skip_empty_loop(tc, limit, end_label);
 
-            x.label(indent, loop_label);
-            code_.compile(tc, indent, destination{});
-            x.label(indent + 1, toc::continue_label(loop_label));
+            x.label(tc.indent(), loop_label);
+            code_.compile(tc, destination{});
+            x.label(tc.indent() + 1, toc::continue_label(loop_label));
 
-            advance_iteration(tc, indent + 2, reg_iter, counter,
+            advance_iteration(tc, reg_iter, counter,
                               array_info.type_ref().size_bytes(), limit,
                               loop_label);
 
-            x.label(indent, end_label);
+            x.label(tc.indent(), end_label);
         }
 
         tc.join_loop();
@@ -149,8 +147,7 @@ class stmt_builtin_foo final : public statement {
     // declares the names only); 'n' is a constant when the size is known,
     // else a read-only variable that is never read at run time, see
     // 'ident_info::is_length_unknown'
-    auto add_loop_names(toc& tc, const size_t indent,
-                        const ident_info& array_info,
+    auto add_loop_names(toc& tc, const ident_info& array_info,
                         const var_placement& element,
                         const var_placement& counter) const -> void {
 
@@ -162,7 +159,6 @@ class stmt_builtin_foo final : public statement {
         const token& src_loc_tk{ident_.tok()};
 
         tc.add_var(
-            indent,
             {
                 .name{std::string{reserved_names::foo_element}},
                 .type_ptr{&array_info.type_ref()},
@@ -177,48 +173,51 @@ class stmt_builtin_foo final : public statement {
             },
             var_kind::var);
 
-        tc.add_var(indent,
-                   {
-                       .name{std::string{reserved_names::foo_counter}},
-                       .type_ptr{&tc.builtins().default_type()},
-                       .src_loc_tk{src_loc_tk},
-                       .shape{},
-                       .read_only_why{read_only_cause::foo_counter},
-                       .placement{counter},
-                       .foo_array{},
-                   },
-                   var_kind::var);
+        tc.add_var(
+            {
+                .name{std::string{reserved_names::foo_counter}},
+                .type_ptr{&tc.builtins().default_type()},
+                .src_loc_tk{src_loc_tk},
+                .shape{},
+                .read_only_why{read_only_cause::foo_counter},
+                .placement{counter},
+                .foo_array{},
+            },
+            var_kind::var);
 
         const std::optional<size_t> array_len{array_info.array_len()};
 
         // note: a constant 0 would fold, e.g. 'let m = n' would keep it
         if (not array_len) {
-            tc.add_var(indent,
-                       {
-                           .name{std::string{reserved_names::foo_length}},
-                           .type_ptr{&tc.builtins().default_type()},
-                           .src_loc_tk{src_loc_tk},
-                           .shape{},
-                           .read_only_why{read_only_cause::foo_length},
-                           .placement{},
-                           .foo_array{},
-                       },
-                       var_kind::var);
+            tc.add_var(
+                {
+                    .name{std::string{reserved_names::foo_length}},
+                    .type_ptr{&tc.builtins().default_type()},
+                    .src_loc_tk{src_loc_tk},
+                    .shape{},
+                    .read_only_why{read_only_cause::foo_length},
+                    .placement{},
+                    .foo_array{},
+                },
+                var_kind::var);
 
             return;
         }
 
-        tc.add_const(src_loc_tk, indent, reserved_names::foo_length,
+        tc.add_const(src_loc_tk, reserved_names::foo_length,
                      folded_value::untyped(static_cast<int64_t>(*array_len)));
     }
 
     // the iterator steps to the next element and the counter by one, the loop
     // repeats until the counter is 'limit', a constant or a register
-    auto advance_iteration(toc& tc, const size_t indent,
-                           const operand& iterator, const operand& counter,
+    auto advance_iteration(toc& tc, const operand& iterator,
+                           const operand& counter,
                            const size_t element_size_bytes,
                            const operand& limit,
                            const std::string_view loop_label) const -> void {
+
+        // the step is listed below the continue label of the loop
+        const size_t indent{tc.indent() + 2};
 
         machine& x{tc.machine()};
 
@@ -243,20 +242,21 @@ class stmt_builtin_foo final : public statement {
     }
 
     // the 'foo' header as one comment line, e.g. 'foo a, 2'
-    auto comment_header(machine& x, const size_t indent) const -> void {
+    auto comment_header(toc& tc) const -> void {
         std::string header{trimmed_source(ident_)};
 
         if (count_) {
             header += ", " + trimmed_source(count_->count);
         }
 
-        x.comment({tok(), indent}, "foo {}", header);
+        machine& x{tc.machine()};
+
+        x.comment({tok(), tc.indent()}, "foo {}", header);
     }
 
     // a count register is checked against the array size like the count of
     // 'array_copy', a constant count is checked at compile time
-    [[nodiscard]] auto compile_limit(toc& tc, const size_t indent,
-                                     const size_t array_len,
+    [[nodiscard]] auto compile_limit(toc& tc, const size_t array_len,
                                      machine::held_registers& held) const
         -> operand {
 
@@ -288,16 +288,18 @@ class stmt_builtin_foo final : public statement {
         }
 
         const operand reg_count{
-            held.alloc_scratch_register({count.tok(), indent}, counter_type),
+            held.alloc_scratch_register({count.tok(), tc.indent()},
+                                        counter_type),
         };
 
         machine& x{tc.machine()};
 
-        x.comment({count.tok(), indent}, "count {}", trimmed_source(count));
+        x.comment({count.tok(), tc.indent()}, "count {}",
+                  trimmed_source(count));
 
-        count.compile(tc, indent, destination::of_register(reg_count));
+        count.compile(tc, destination::of_register(reg_count));
 
-        x.check_bounds({count.tok(), indent},
+        x.check_bounds({count.tok(), tc.indent()},
                        machine::bounds_range::up_to(reg_count, array_len),
                        tc.checks().bounds_options());
 
@@ -306,8 +308,7 @@ class stmt_builtin_foo final : public statement {
 
     // 'e', 'i' and 'n' are declared, the counter is a register or a variable in
     // memory, as the machine prefers
-    auto declare_loop_names(toc& tc, const size_t indent,
-                            const ident_info& array_info,
+    auto declare_loop_names(toc& tc, const ident_info& array_info,
                             const operand& reg_iter,
                             machine::held_registers& held) const -> operand {
 
@@ -316,19 +317,19 @@ class stmt_builtin_foo final : public statement {
         const bool counter_in_memory{x.foo_counter_in_memory()};
 
         if (counter_in_memory) {
-            add_loop_names(tc, indent, array_info,
-                           at_address_register{reg_iter}, var_placement{});
+            add_loop_names(tc, array_info, at_address_register{reg_iter},
+                           var_placement{});
 
             return tc.resolve_declared(tok(), reserved_names::foo_counter)
                 .operand();
         }
 
         const operand reg_counter{
-            held.alloc_scratch_register({tok(), indent},
+            held.alloc_scratch_register({tok(), tc.indent()},
                                         tc.builtins().default_type()),
         };
 
-        add_loop_names(tc, indent, array_info, at_address_register{reg_iter},
+        add_loop_names(tc, array_info, at_address_register{reg_iter},
                        in_value_register{reg_counter});
 
         return reg_counter;
@@ -347,13 +348,13 @@ class stmt_builtin_foo final : public statement {
             scope::loop({}, loop_end::also_when_done, {}),
         };
 
-        add_loop_names(tc, 0, array_info, var_placement{}, var_placement{});
+        add_loop_names(tc, array_info, var_placement{}, var_placement{});
 
         return {tc, tz};
     }
 
     // the loop is tested at the end, so a count of zero or less skips it
-    auto skip_empty_loop(toc& tc, const size_t indent, const operand& limit,
+    auto skip_empty_loop(toc& tc, const operand& limit,
                          const std::string_view end_label) const -> void {
 
         // note: a constant limit is the length or a constant count, which is
@@ -369,7 +370,7 @@ class stmt_builtin_foo final : public statement {
 
         machine& x{tc.machine()};
 
-        x.compare_and_branch({count_->count.tok(), indent}, limit,
+        x.compare_and_branch({count_->count.tok(), tc.indent()}, limit,
                              operand::imm(0, tc.builtins().default_type()),
                              {
                                  .operation{comparison_operator::less_equal},
