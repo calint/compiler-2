@@ -6,6 +6,20 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
 --------------------------------------------------------------------------------
 1. clean up
 --------------------------------------------------------------------------------
+[ ] medium: user decision (round 307 ZY): in a function nothing calls, a
+    noinline recursion that swaps its array arguments is checked per
+    lengths ('len.4.u') and rejects an error at the swapped level, where
+    the inlined recursion, not nesting alike, is not expanded and accepts
+    it ('recursion-swapped-lengths-*.baz' of round 307); a call rejects
+    both; documented in 8.3; making them agree means either expanding the
+    inlined one per lengths or not checking per-length bodies requested
+    from the check of a recursion
+[ ] medium: user decision (round 307 ZY): in the check of a body without a
+    call an inlined recursion that nests alike ends at a limit of the
+    compile, and running out of scratch registers is one, so where it ends
+    depends on the target ('nests-alike-registers.baz': x86_64 accepts,
+    rv32i rejects 'a[6 - k]' at 'k == 1'); documented in 8 item 3; ending
+    it only at the nesting limit would make it target independent
 [ ] medium: user decision (round 299 ZO): a function with a result counts
     as taking from a call ('frame_scope'), so the check of its body without
     a call ends a recursion at a limit instead of rejecting it, also an

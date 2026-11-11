@@ -1,6 +1,17 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 307 (2026-11-11, AB complexity of the functions by a
+    measure; ZY bug hunt of rounds 301-305)
+    => done (2026-11-11): the 8 functions of highest score (length,
+       nesting, branches, parameters, lambdas) that could be simpler are
+       split into named steps: 'classify_term', 'compile_file',
+       'deduced_type_arguments', 'value_type', 'check_recursion',
+       'read_arguments', 'store_bytes', 'emit_multiply'; listings equal;
+       ZY: the docs name two verdicts of a function nothing calls that
+       depend on inlining (a noinline recursion that swaps its arrays) and
+       on the target (where a recursion that nests alike ends), two todo
+       items; the descriptors of 'read' and 'write' on linux follow
 [x] easy: round 306 (2026-11-11, AA design review of concepts across
     files; AD of the passes)
     => done (2026-11-11): one 'call_site::compile_with_temporaries' enters

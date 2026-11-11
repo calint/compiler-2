@@ -546,33 +546,9 @@ class machine_x86_64 final : public machine {
         for_each_part(
             bytes.size(),
             [&](const size_t part_size_bytes, const size_t offset) -> void {
-                const int64_t value{
-                    little_endian_value(bytes.substr(offset, part_size_bytes)),
-                };
-
-                // a qword store takes only a sign-extended 32-bit immediate
-                if (part_size_bytes == size_qword_ and
-                    not std::in_range<int32_t>(value)) {
-
-                    for (const size_t half_offset :
-                         {offset, offset + size_dword_}) {
-
-                        const int64_t half{
-                            little_endian_value(
-                                bytes.substr(half_offset, size_dword_)),
-                        };
-
-                        mov(src_loc_tk, indent,
-                            memory_part(dst, size_dword_, half_offset),
-                            immediate(half));
-                    }
-
-                    return;
-                }
-
-                mov(src_loc_tk, indent,
-                    memory_part(dst, part_size_bytes, offset),
-                    immediate(value));
+                store_immediate_part(src_loc_tk, indent,
+                                     bytes.substr(offset, part_size_bytes), dst,
+                                     offset);
             });
     }
 
@@ -709,36 +685,7 @@ class machine_x86_64 final : public machine {
         -> void override {
 
         if (product.type_ref().size_bytes() == size_byte_) {
-            const operation_scope scope{*this};
-
-            // a register product holds the wide product in place, its low
-            // byte is the result
-            const bool is_in_place{product.is_register()};
-
-            const operand left{
-                is_in_place ? register_view(product, default_type())
-                            : alloc_scratch_register(src_loc_tk, indent,
-                                                     default_type()),
-            };
-
-            const operand right{
-                alloc_scratch_register(src_loc_tk, indent, default_type()),
-            };
-
-            mov(src_loc_tk, indent, left, product);
-            mov(src_loc_tk, indent, right, factor);
-            emit_op(src_loc_tk, indent, op::imul, left, right);
-
-            if (check.enabled) {
-                check_byte_product(src_loc_tk, indent, left, right);
-            }
-
-            if (is_in_place) {
-                return;
-            }
-
-            mov(src_loc_tk, indent, product, left);
-
+            emit_byte_multiply(src_loc_tk, indent, product, factor, check);
             return;
         }
 
@@ -1344,6 +1291,41 @@ class machine_x86_64 final : public machine {
                                to_argument(src));
     }
 
+    // 'imul' has no two-operand byte form, the bytes are multiplied at the
+    // default width
+    auto emit_byte_multiply(const token& src_loc_tk, const size_t indent,
+                            const operand& product, const operand& factor,
+                            const runtime_check& check) -> void {
+
+        const operation_scope scope{*this};
+
+        // a register product holds the wide product in place, its low byte
+        // is the result
+        const bool is_in_place{product.is_register()};
+
+        const operand left{
+            is_in_place
+                ? register_view(product, default_type())
+                : alloc_scratch_register(src_loc_tk, indent, default_type()),
+        };
+
+        const operand right{
+            alloc_scratch_register(src_loc_tk, indent, default_type()),
+        };
+
+        mov(src_loc_tk, indent, left, product);
+        mov(src_loc_tk, indent, right, factor);
+        emit_op(src_loc_tk, indent, op::imul, left, right);
+
+        if (check.enabled) {
+            check_byte_product(src_loc_tk, indent, left, right);
+        }
+
+        if (not is_in_place) {
+            mov(src_loc_tk, indent, product, left);
+        }
+    }
+
     // matches the widths of the operands with scratch registers and sign
     // extension, and lowers addresses x86 cannot encode
     auto emit_op(const token& src_loc_tk, const size_t indent, const op code,
@@ -1708,6 +1690,33 @@ class machine_x86_64 final : public machine {
         const operand lowered{lower_address(src_loc_tk, indent, byte)};
 
         assembler_.setcc(indent, cc, to_argument(lowered));
+    }
+
+    // 'part' of the bytes 'store_bytes' stores as immediates, at 'offset' in
+    // 'dst'
+    auto store_immediate_part(const token& src_loc_tk, const size_t indent,
+                              const std::string_view part, const operand& dst,
+                              const size_t offset) -> void {
+
+        const int64_t value{little_endian_value(part)};
+
+        // a qword store takes only a sign-extended 32-bit immediate
+        if (part.size() == size_qword_ and not std::in_range<int32_t>(value)) {
+            for (const size_t half_offset : {size_t{}, size_dword_}) {
+                const int64_t half{
+                    little_endian_value(part.substr(half_offset, size_dword_)),
+                };
+
+                mov(src_loc_tk, indent,
+                    memory_part(dst, size_dword_, offset + half_offset),
+                    immediate(half));
+            }
+
+            return;
+        }
+
+        mov(src_loc_tk, indent, memory_part(dst, part.size(), offset),
+            immediate(value));
     }
 
     // the rep form when the parts take more instructions than it; when one of

@@ -208,6 +208,46 @@ enum class term_kind : uint8_t {
            kind == term_kind::record_literal;
 }
 
+// what a built-in type denotes, 'next' is the character after it
+[[nodiscard]] inline auto classify_builtin_type_term(const char next)
+    -> term_kind {
+
+    if (next == '(') {
+        return term_kind::conversion;
+    }
+
+    if (next == '[') {
+        return term_kind::array_literal;
+    }
+
+    // e.g. 'i8.at', reported like a missing constructor of a user type
+    if (next == '.') {
+        return term_kind::constructor_call;
+    }
+
+    return term_kind::builtin_type;
+}
+
+// what a user type that is not called denotes, 'next' is the character after
+// it
+[[nodiscard]] inline auto classify_record_type_term(const char next)
+    -> term_kind {
+
+    if (next == '{') {
+        return term_kind::record_literal;
+    }
+
+    if (next == '[') {
+        return term_kind::array_literal;
+    }
+
+    if (next == '.') {
+        return term_kind::constructor_call;
+    }
+
+    return term_kind::record_type;
+}
+
 // what 'tk', with 'tz' after it, denotes where a value or a statement starts;
 // the rules of hiding: a variable, a parameter or a constant hides a user type
 // and a generic function of its name, a call 'f(...)' still calls the
@@ -237,20 +277,7 @@ enum class term_kind : uint8_t {
     const char next{tz.peek_char_after_whitespace()};
 
     if (tc.types().has(text) and tc.types().get(text).is_builtin()) {
-        if (next == '(') {
-            return term_kind::conversion;
-        }
-
-        if (next == '[') {
-            return term_kind::array_literal;
-        }
-
-        // e.g. 'i8.at', reported like a missing constructor of a user type
-        if (next == '.') {
-            return term_kind::constructor_call;
-        }
-
-        return term_kind::builtin_type;
+        return classify_builtin_type_term(next);
     }
 
     // a type parameter hides a global of its name, e.g. the function 'T' in
@@ -303,19 +330,7 @@ enum class term_kind : uint8_t {
         return term_kind::unknown;
     }
 
-    if (next == '{') {
-        return term_kind::record_literal;
-    }
-
-    if (next == '[') {
-        return term_kind::array_literal;
-    }
-
-    if (next == '.') {
-        return term_kind::constructor_call;
-    }
-
-    return term_kind::record_type;
+    return classify_record_type_term(next);
 }
 
 // the integer type of a conversion, e.g. 'i8' of 'i8(x)'; 'bool' and 'void'

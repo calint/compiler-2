@@ -1040,6 +1040,82 @@ auto check_image_is_not_sd_card(const options& opts, const std::string& binary)
     }
 }
 
+// the image replaces no input of the compile or of the program
+auto check_image_destination(const options& opts, const source_files& files,
+                             const std::string& binary) -> void {
+
+    if (not opts.target->writes_image) {
+        return;
+    }
+
+    // the image would replace a source file, the parse read the includes
+    if (files.contains(binary)) {
+        throw option_error{std::format("invalid --bin: {} is a source file",
+                                       in_quotes(binary))};
+    }
+
+    // the image would replace the sd card that the program reads
+    if (opts.target->reads_sd_card) {
+        check_image_is_not_sd_card(opts, binary);
+    }
+}
+
+// e.g. a full disk, the listing is incomplete; a failed compile leaves no
+// image
+auto check_listing_written(const options& opts, const std::string& binary)
+    -> void {
+
+    std::cout.flush();
+
+    if (std::cout) {
+        return;
+    }
+
+    if (opts.target->writes_image) {
+        std::error_code error;
+        std::filesystem::remove(binary, error);
+    }
+
+    throw unlocated_error{"cannot write the assembly to stdout"};
+}
+
+// the source file compiled for the target, the listing written to stdout;
+// 'files' holds the sources read, for the report of an error
+auto compile_to_stdout(const options& opts, source_files& files,
+                       const builtin_type_set& builtins) -> void {
+
+    const std::string_view src_file_name{
+        opts.src_file_name.value_or(default_src_file_name),
+    };
+
+    std::string src_text{source_files::read_file(src_file_name)};
+
+    files.add(std::string{src_file_name}, std::move(src_text), std::nullopt);
+
+    const std::string binary{resolved_binary_file_name(opts, src_file_name)};
+
+    const std::unique_ptr<machine> backend{
+        opts.target->make(builtins, files, make_target_options(opts, binary)),
+    };
+
+    // the checks the target cannot honor are off, e.g. x86_64 has no
+    // stack bound
+    check_options checks{opts.checks};
+    checks.stack = checks.stack and backend->is_stack_bounded();
+
+    program prg{*backend, builtins, files, opts.vars_size_bytes, checks};
+
+    check_image_destination(opts, files, binary);
+
+    if (opts.reproduce_source) {
+        check_reproduced_source(prg, files);
+    }
+
+    prg.build(std::cout);
+
+    check_listing_written(opts, binary);
+}
+
 [[nodiscard]] auto compile_file(const options& opts) -> int {
     source_files files;
 
@@ -1047,60 +1123,7 @@ auto check_image_is_not_sd_card(const options& opts, const std::string& binary)
     const builtin_type_set builtins;
 
     try {
-        const std::string_view src_file_name{
-            opts.src_file_name.value_or(default_src_file_name),
-        };
-
-        std::string src_text{source_files::read_file(src_file_name)};
-
-        files.add(std::string{src_file_name}, std::move(src_text),
-                  std::nullopt);
-
-        const std::string binary{
-            resolved_binary_file_name(opts, src_file_name),
-        };
-
-        const std::unique_ptr<machine> backend{
-            opts.target->make(builtins, files,
-                              make_target_options(opts, binary)),
-        };
-
-        // the checks the target cannot honor are off, e.g. x86_64 has no
-        // stack bound
-        check_options checks{opts.checks};
-        checks.stack = checks.stack and backend->is_stack_bounded();
-
-        program prg{*backend, builtins, files, opts.vars_size_bytes, checks};
-
-        // the image would replace a source file, the parse read the includes
-        if (opts.target->writes_image and files.contains(binary)) {
-            throw option_error{std::format("invalid --bin: {} is a source file",
-                                           in_quotes(binary))};
-        }
-
-        // the image would replace the sd card that the program reads
-        if (opts.target->writes_image and opts.target->reads_sd_card) {
-            check_image_is_not_sd_card(opts, binary);
-        }
-
-        if (opts.reproduce_source) {
-            check_reproduced_source(prg, files);
-        }
-
-        prg.build(std::cout);
-
-        // e.g. a full disk, the listing is incomplete; a failed compile
-        // leaves no image
-        std::cout.flush();
-
-        if (not std::cout) {
-            if (opts.target->writes_image) {
-                std::error_code error;
-                std::filesystem::remove(binary, error);
-            }
-
-            throw unlocated_error{"cannot write the assembly to stdout"};
-        }
+        compile_to_stdout(opts, files, builtins);
     } catch (const compile_error& e) {
         print_compiler_error(files, e);
         return 1;

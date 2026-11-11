@@ -371,6 +371,28 @@ struct generic_call {
         }
     }
 
+    // the arguments up to and including the one at 'param_index', or all and
+    // no surplus one when it is none, reported as in a call without type
+    // parameters. 'tz' is after the '('
+    static auto assert_arguments_valid_up_to(
+        toc& tc, const tokenizer& tz, const std::string_view generic_name,
+        const std::span<const generic_signature_param> params,
+        const std::optional<size_t> param_index) -> void {
+
+        const size_t checked_count{
+            param_index ? *param_index + 1 : params.size(),
+        };
+
+        for (size_t i{}; i < checked_count; ++i) {
+            assert_argument_present(tc, tz, params, i);
+            assert_argument_valid(tc, tz, params, i);
+        }
+
+        if (not param_index) {
+            assert_no_surplus_argument_of(tz, generic_name, params);
+        }
+    }
+
     // 'tz' is after the argument at 'index', a ',' or the ')' follows, e.g.
     // not the '2' of 'f(1 2)'
     static auto assert_delimiter_after(
@@ -410,6 +432,38 @@ struct generic_call {
         }
 
         assert_no_surplus_argument(after, name, params.size());
+    }
+
+    // e.g. 'point.at(1, 2)', not the method 'point.m()' or 'point.zz(1)',
+    // which the parse of the argument reports; 'tk' is the type and 'tz' is
+    // after it
+    [[nodiscard]] static auto constructor_call_type(toc& tc, tokenizer& tz,
+                                                    const token& tk)
+        -> const type* {
+
+        std::ignore = tz.seen_char_token('.');
+
+        // the type names the result, the constructor, e.g. 'at', does not
+        const token ctor_tk{tz.next_token()};
+
+        if (not tz.is_next_char_token('(')) {
+            return nullptr;
+        }
+
+        tz.skip_to_close_paren();
+
+        const type& result_type{tc.get_type_or_throw(tk)};
+
+        const std::string ctor_name{
+            method_name_of(result_type.name(), ctor_tk.text()),
+        };
+
+        const bool is_constructor{
+            tc.funcs().has(ctor_name) and
+                tc.get_func_or_throw(ctor_tk, ctor_name).is_constructor(),
+        };
+
+        return is_constructor ? &result_type : nullptr;
     }
 
     // the type arguments of 'f(x)' for 'func f<T type>(s T)', for each type
@@ -471,23 +525,9 @@ struct generic_call {
                 // e.g. the 'zz' of 'f(zz, 1)' for 'func f<A type>(b, a A)' or
                 // the 'point' of 'show(point)', reported as in a call without
                 // type parameters
-                const size_t checked_count{
-                    source.param_index ? *source.param_index + 1
-                                       : generic.signature.params.size(),
-                };
-
-                for (size_t i{}; i < checked_count; ++i) {
-                    assert_argument_present(tc, scan, generic.signature.params,
-                                            i);
-
-                    assert_argument_valid(tc, scan, generic.signature.params,
-                                          i);
-                }
-
-                if (not source.param_index) {
-                    assert_no_surplus_argument_of(scan, generic_name,
-                                                  generic.signature.params);
-                }
+                assert_arguments_valid_up_to(tc, scan, generic_name,
+                                             generic.signature.params,
+                                             source.param_index);
 
                 throw compile_error{
                     name_tk,
@@ -549,32 +589,8 @@ struct generic_call {
             return &tc.get_type_or_throw(tk);
         }
 
-        // e.g. 'point.at(1, 2)', not the method 'point.m()' or 'point.zz(1)',
-        // which the parse of the argument reports
         if (tm == term_kind::constructor_call) {
-            std::ignore = tz.seen_char_token('.');
-
-            // the type names the result, the constructor, e.g. 'at', does not
-            const token ctor_tk{tz.next_token()};
-
-            if (not tz.is_next_char_token('(')) {
-                return nullptr;
-            }
-
-            tz.skip_to_close_paren();
-
-            const type& result_type{tc.get_type_or_throw(tk)};
-
-            const std::string ctor_name{
-                method_name_of(result_type.name(), ctor_tk.text()),
-            };
-
-            const bool is_constructor{
-                tc.funcs().has(ctor_name) and
-                    tc.get_func_or_throw(ctor_tk, ctor_name).is_constructor(),
-            };
-
-            return is_constructor ? &result_type : nullptr;
+            return constructor_call_type(tc, tz, tk);
         }
 
         // e.g. 'read(0, buf)', the value of a built-in
@@ -941,40 +957,21 @@ class inline_call final {
 
         const bool nests_alike{nests_alike_at_every_call(tc)};
 
-        const auto compile_level{
-            [&] -> void {
-                if (not nests_alike) {
-                    compile_arguments(tc, indent);
-                    return;
-                }
-
-                compile_within_limits(tc, indent, dst, nesting);
-            },
-        };
-
         // note: a deeper level is in the dry run of the first
         if (nesting > 1) {
-            compile_level();
+            compile_recursion_level(tc, indent, dst, nesting, nests_alike);
             return;
         }
 
         const auto compile_first_level{
             [&] -> void {
                 try {
-                    compile_level();
+                    compile_recursion_level(tc, indent, dst, nesting,
+                                            nests_alike);
                 } catch (const compile_error& e) {
-                    // note: a limit ends the recursion, not the check
-
-                    const bool is_nesting_alike_limit{
-                        nests_alike and
-                            e.kind == compile_error::error_kind::inlining_limit,
-                    };
-
-                    if (e.is_limit() and not is_nesting_alike_limit) {
-                        return;
+                    if (not ends_recursion(e, nests_alike)) {
+                        throw;
                     }
-
-                    throw;
                 }
             },
         };
@@ -1070,6 +1067,20 @@ class inline_call final {
             [&](const destination& result) -> void {
                 compile_with_bindings(tc, indent, result);
             });
+    }
+
+    // a level of a recursion in 'check_recursion': expanded when it nests
+    // alike at every call, otherwise only its arguments are bound
+    auto compile_recursion_level(toc& tc, const size_t indent,
+                                 const destination& dst, const size_t nesting,
+                                 const bool nests_alike) const -> void {
+
+        if (not nests_alike) {
+            compile_arguments(tc, indent);
+            return;
+        }
+
+        compile_within_limits(tc, indent, dst, nesting);
     }
 
     // the result is made at its type in a register that the body names, the
@@ -1335,6 +1346,18 @@ class inline_call final {
         }
 
         return param_binding::make_name(name, dst.bound_info(), dst.text());
+    }
+
+    // a limit ends the recursion, not the check, except the inlining limit of
+    // a recursion that nests alike at every call, which rejects it
+    [[nodiscard]] static auto ends_recursion(const compile_error& e,
+                                             const bool nests_alike) -> bool {
+
+        const bool is_nesting_alike_limit{
+            nests_alike and e.kind == compile_error::error_kind::inlining_limit,
+        };
+
+        return e.is_limit() and not is_nesting_alike_limit;
     }
 
     // e.g. '[s0 + t0 * 4 + 28]' but not '[t1 + 28]'
@@ -1770,6 +1793,25 @@ class builtin_arguments final {
     }
 
   private:
+    // the next argument: an array or an element of one at the positions of
+    // 'array_indexes', otherwise a value
+    auto read_argument(toc& tc, tokenizer& tz,
+                       const std::span<const size_t> array_indexes) -> void {
+
+        if (not std::ranges::contains(array_indexes, args_.size())) {
+            args_.emplace_back(tc, tz, tc.builtins().default_type(),
+                               literal_typing::from_destination);
+
+            return;
+        }
+
+        stmt_identifier array{stmt_identifier::parse_array_argument(tc, tz)};
+
+        array.assert_array_or_element();
+
+        args_.push_back(path_argument(std::move(array)));
+    }
+
     // up to and including the ')', which follows the argument numbered
     // 'max_count' at the latest; a surplus argument is not parsed, e.g. the
     // 'zz' of 'exit(1, zz)'
@@ -1787,40 +1829,28 @@ class builtin_arguments final {
                 return;
             }
 
-            if (std::ranges::contains(array_indexes, args_.size())) {
-                stmt_identifier array{
-                    stmt_identifier::parse_array_argument(tc, tz),
-                };
-
-                array.assert_array_or_element();
-
-                args_.push_back(path_argument(std::move(array)));
-            } else {
-                args_.emplace_back(tc, tz, tc.builtins().default_type(),
-                                   literal_typing::from_destination);
-            }
+            read_argument(tc, tz, array_indexes);
 
             const std::optional<token> delim_tk{tz.is_next_char_token(',')};
 
-            if (delim_tk) {
-                tz.assert_no_trailing_delimiter(*delim_tk, ')', "a call");
+            if (not delim_tk) {
+                // e.g. 'array_copy(a b, 1)' lacks the ',' like a call of a
+                // function, 'write(1, text n)' the ',' or the ')', 'exit(1 n)'
+                // the ')'
+                close_paren_tk_ = tz.expect_char_token(
+                    ')', missing_after_argument_text(args_.size(), min_count,
+                                                     max_count));
 
-                if (args_.size() == max_count) {
-                    throw compile_error{*delim_tk, std::string{count_text}};
-                }
-
-                delims_tk_.emplace_back(*delim_tk);
-                continue;
+                return;
             }
 
-            // e.g. 'array_copy(a b, 1)' lacks the ',' like a call of a
-            // function, 'write(1, text n)' the ',' or the ')', 'exit(1 n)'
-            // the ')'
-            close_paren_tk_ = tz.expect_char_token(
-                ')', missing_after_argument_text(args_.size(), min_count,
-                                                 max_count));
+            tz.assert_no_trailing_delimiter(*delim_tk, ')', "a call");
 
-            return;
+            if (args_.size() == max_count) {
+                throw compile_error{*delim_tk, std::string{count_text}};
+            }
+
+            delims_tk_.emplace_back(*delim_tk);
         }
     }
 

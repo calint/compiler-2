@@ -412,7 +412,8 @@ program does not depend on inlining.
    does and, as an inlined body, does not check its skipped code: 'f(ps, b)'
    in a function 'g(ps i8[])' that nothing calls, with 'b' an 'i8[4]',
    rejects 't[5]' of 'f(s i8[], t i8[])' with length 4, inlined or
-   noinline.
+   noinline; a noinline recursion that swaps its arrays is the exception
+   (8.3).
 
 #### 1.5.1 Code that is not reached
 
@@ -1968,7 +1969,11 @@ What depends on the target is listed here, nothing else does:
    'a[i] << (1 + ...)' on x86_64 or the 'frame' check of a noinline call
    with many indexed arguments; also the registers an instruction fixes:
    'exit(int(arrays_equal(a[s], b, c)))' is rejected on x86_64, where
-   'arrays_equal' needs the 'rdi' that 'exit' holds
+   'arrays_equal' needs the 'rdi' that 'exit' holds; and where an inlined
+   recursion that nests as deep at every call ends in the check of a body
+   without a call (1.5 item 2): x86_64 runs out of registers at a level
+   rv32i reaches, so an error at that level is accepted on x86_64 where
+   nothing calls the function
 4. the limits of a target: '--vars' and the memory it addresses, which a
    type stays below, e.g. a field 'i8[0x100000000]' is rejected on rv32i,
    and so does a constant index or count on an unsized array parameter,
@@ -2088,7 +2093,12 @@ message, x86_64 stops with a signal.
   one that a constant argument ends: an error at a deeper level is found
   at a call that compiles the recursion, e.g. 'a[3 - n]' of an 'i8[2]' at
   the second level of 'g(x, 2)' in an 'f(x)' is accepted where nothing calls
-  'f' and rejected at 'f(1)'; nothing of it runs where it is accepted.
+  'f' and rejected at 'f(1)'; nothing of it runs where it is accepted. A
+  noinline recursion asks for a body per array lengths instead, so one that
+  swaps its arrays, 'r(t, s, k - 1)' entered as 'r(ps, b, 1)' with 'b' an
+  'i8[4]' in a 'g(ps i8[])' that nothing calls, rejects the 's[4]' of the
+  swapped level where the inlined one accepts it; a call of 'g' rejects
+  both.
 - A body that passes a parameter or a global on to a call, or calls a
   method of it, reads it whole in its record (3.9), whatever the callee
   reaches of it: 'f(p mut point, q mut point)' that calls 'gety(p)' or
