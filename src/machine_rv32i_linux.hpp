@@ -38,16 +38,8 @@ class machine_rv32i_linux final : public machine_rv32i {
         output.ecall(1);
     }
 
-    auto emit_io_call(const size_t indent, const target_call function)
-        -> void override {
-
-        assembler_rv32i& output{assembler()};
-
-        output.li(indent, "a7",
-                  function == target_call::read ? syscall_read_
-                                                : syscall_write_);
-
-        output.ecall(indent);
+    auto emit_read_transfer() -> void override {
+        emit_io_syscall(syscall_read_);
     }
 
     // the registers as 'sector_read_label_' says; an operating system
@@ -176,5 +168,29 @@ class machine_rv32i_linux final : public machine_rv32i {
         output.string_data(options().sd_card_file_name);
         output.data(1, name_end);
         output.switch_section(section::text);
+    }
+
+    // the system call, so a program that writes only when it fails has no
+    // write routine
+    auto emit_stderr_write(const size_t indent) -> void override {
+        assembler_rv32i& output{assembler()};
+
+        output.li(indent, "a7", syscall_write_);
+        output.ecall(indent);
+    }
+
+    auto emit_write_transfer() -> void override {
+        emit_io_syscall(syscall_write_);
+    }
+
+  private:
+    // the system call takes 'a7', so the return address moves to 'a6'
+    auto emit_io_syscall(const int syscall_number) -> void {
+        assembler_rv32i& output{assembler()};
+
+        output.mv(1, "a6", "a7");
+        output.li(1, "a7", syscall_number);
+        output.ecall(1);
+        output.jr(1, "a6");
     }
 };

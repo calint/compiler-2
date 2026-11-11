@@ -1,0 +1,16 @@
+# x86_64: a descriptor is compared at the full 64 bits, 2^32 + 1 and
+# -(2^32 - 1) are not 1, and 2^32 is not 0
+
+dat text = "ok\n"
+func main() {
+    var bad = write(i64(4294967297), text)
+    if bad != -9 exit(1)
+    bad = write(i64(-4294967295), text)
+    if bad != -9 exit(2)
+    bad = write(i64(4294967298), text)
+    if bad != -9 exit(3)
+    var buffer = i8[4]
+    bad = read(i64(4294967296), buffer)
+    if bad != -9 exit(4)
+    write(1, text)
+}

@@ -344,7 +344,8 @@ class stmt_builtin_io final : public statement {
         const std::optional<int64_t> start{constant_start(tc)};
 
         // note: an unsized array parameter has no length in the check of a
-        //       function without its calls, see 'ident_info::is_length_unknown'
+        //       function without its calls and in the bodies it checks with
+        //       the length unknown, see 'ident_info::is_length_unknown'
 
         if (start and (start_arg == nullptr or buffer_info.array_len())) {
 
@@ -415,7 +416,7 @@ class stmt_builtin_io final : public statement {
         machine& x{tc.machine()};
 
         // note: an unknown length is the check of a function without its
-        //       calls, its code is discarded
+        //       calls or a body it checks, the code is discarded
 
         const int64_t count_value{known_count.value_or(discarded_array_len)};
 

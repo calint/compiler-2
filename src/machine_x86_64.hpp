@@ -42,9 +42,9 @@
 //                each jumps to its handler, all but the frame check with a stub
 //                per line for '--checks=line'
 //   handlers     'emit_panic_message', 'emit_report_line_routine'
-//   calls        'emit_call', 'emit_target_call' through the system call
-//                'io_syscall' or 'call_sector_routine', the shared exit
-//                routine 'emit_exit_routine', the sector routines
+//   calls        'emit_call', 'emit_target_call' through 'call_io_routine'
+//                or 'call_sector_routine', the shared exit routine
+//                'emit_exit_routine', the routines 'emit_io_routines' and
 //                'emit_sector_routines'
 class machine_x86_64 final : public machine {
     using op = assembler_x86_64::op;
@@ -68,6 +68,9 @@ class machine_x86_64 final : public machine {
     static constexpr int syscall_lseek_{8};
     static constexpr int syscall_pread_{17};
     static constexpr int syscall_pwrite_{18};
+    // the routines 'read' and 'write' call, see 'emit_io_routines'
+    static constexpr std::string_view read_label_{"baz_read"};
+    static constexpr std::string_view write_label_{"baz_write"};
     static constexpr std::string_view sector_read_label_{"baz_sector_read"};
     static constexpr std::string_view sector_write_label_{"baz_sector_write"};
     // the routine that the handlers with a line jump to
@@ -679,6 +682,55 @@ class machine_x86_64 final : public machine {
                           frame_overflow_failure_);
     }
 
+    // the routines take the descriptor in 'rdi', the address in 'rsi' and the
+    // count in 'rdx' and return the result of the system call in 'rax'
+    auto emit_io_routines(const bool read_used, const bool write_used)
+        -> void override {
+
+        // the descriptors that 'write' serves
+        constexpr int write_served_count{2};
+
+        constexpr std::string_view bad_descriptor_label{
+            "baz_bad_descriptor",
+        };
+
+        // 'rax' is the descriptor less 'stdout_descriptor_'
+        const assembler_x86_64::memory write_index{
+            .symbol{},
+            .base{"rdi"},
+            .index{},
+            .scale{},
+            .displacement{-stdout_descriptor_},
+            .size_bytes{},
+        };
+
+        assembler_.add_separator_newline();
+
+        if (read_used) {
+            assembler_.label(0, read_label_);
+            assembler_.instruction(1, op::cmp, "rdi", stdin_descriptor_);
+            assembler_.jcc(1, condition::ne, bad_descriptor_label);
+            assembler_.instruction(1, op::mov, "eax", syscall_read_);
+            assembler_.instruction(1, op::syscall);
+            assembler_.instruction(1, op::ret);
+        }
+
+        if (write_used) {
+            assembler_.label(0, write_label_);
+            // 1 and 2 less 1 are below 2 unsigned, any other 64 bit value not
+            assembler_.instruction(1, op::lea, "rax", write_index);
+            assembler_.instruction(1, op::cmp, "rax", write_served_count);
+            assembler_.jcc(1, condition::ae, bad_descriptor_label);
+            assembler_.instruction(1, op::mov, "eax", syscall_write_);
+            assembler_.instruction(1, op::syscall);
+            assembler_.instruction(1, op::ret);
+        }
+
+        assembler_.label(0, bad_descriptor_label);
+        assembler_.instruction(1, op::mov, "rax", bad_descriptor_);
+        assembler_.instruction(1, op::ret);
+    }
+
     auto emit_multiply(const token& src_loc_tk, const size_t indent,
                        const operand& product, const operand& factor,
                        const factor_use use, const runtime_check& check)
@@ -951,17 +1003,18 @@ class machine_x86_64 final : public machine {
         assembler_.switch_section(section::text);
     }
 
-    // 'read' and 'write' are system calls, the sector functions routines
+    // every function is a routine, 'read' and 'write' those of
+    // 'emit_io_routines'
     auto emit_target_call(const token& src_loc_tk, const size_t indent,
                           const target_call function) -> void override {
 
         if (function == target_call::read) {
-            io_syscall(src_loc_tk, indent, syscall_read_);
+            call_io_routine(indent, read_label_);
             return;
         }
 
         if (function == target_call::write) {
-            io_syscall(src_loc_tk, indent, syscall_write_);
+            call_io_routine(indent, write_label_);
             return;
         }
 
@@ -1089,6 +1142,23 @@ class machine_x86_64 final : public machine {
         default:
             std::unreachable();
         }
+    }
+
+    // the routine changes 'rcx' and 'r11' by its 'syscall' besides 'rax', the
+    // result register that 'call_target' allocated, the allocated ones are
+    // saved around the call
+    auto call_io_routine(const size_t indent, const std::string_view label)
+        -> void {
+
+        static constexpr std::array<std::string_view, 2> clobbered{
+            "rcx",
+            "r11",
+        };
+
+        mark_used(label);
+
+        with_saved_registers(indent, clobbered,
+                             [&] -> void { assembler_.call(indent, label); });
     }
 
     // the routine changes 'rax', 'rcx', 'r10' and 'r11' besides the
@@ -1500,24 +1570,6 @@ class machine_x86_64 final : public machine {
     template <std::integral value_t>
     [[nodiscard]] auto immediate(const value_t value) const -> operand {
         return operand::imm(value, default_type());
-    }
-
-    // 'syscall' changes 'rcx' and 'r11', the allocated ones are saved; the
-    // number goes in 'rax', the result register that 'call_target' allocated
-    auto io_syscall(const token& src_loc_tk, const size_t indent,
-                    const int syscall_number) -> void {
-
-        static constexpr std::array<std::string_view, 2> clobbered{
-            "rcx",
-            "r11",
-        };
-
-        mov(src_loc_tk, indent, qword_register("rax"),
-            immediate(syscall_number));
-
-        with_saved_registers(indent, clobbered, [&] -> void {
-            assembler_.instruction(indent, op::syscall);
-        });
     }
 
     auto lea(const token& src_loc_tk, const size_t indent, const operand& dst,
@@ -1966,6 +2018,8 @@ class machine_x86_64 final : public machine {
             .routines{
                 .exit{exit_label_},
                 .report_line{report_line_label_},
+                .read{read_label_},
+                .write{write_label_},
                 .sector_read{sector_read_label_},
                 .sector_write{sector_write_label_},
             },

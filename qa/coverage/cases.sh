@@ -7851,3 +7851,12 @@ SRC=2872 && EXP=0 && RUN
 
 # an element of 512 bytes divides the sector
 if [[ $MACHINE != rv32i-qemu ]]; then SRC=2873 && EXP=7 && SDCARD=1M RUN; fi
+
+# after a sector transfer the descriptor 3 of the card image is not served on
+# any target
+if [[ $MACHINE != rv32i-qemu ]]; then SRC=2900 && SDCARD=1M DIFF; fi
+
+# x86_64: a descriptor is compared at its full width
+# note: the harness redirects standard input, so 'write(0)' and 'read(1)' at a
+#       terminal, which linux would serve, are not tested
+if [[ $MACHINE == x86_64 ]]; then SRC=2901 && DIFF; fi

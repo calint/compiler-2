@@ -54,6 +54,10 @@ struct routine_labels {
     // prints the line in 'report_line_register' and exits with the code in
     // 'report_exit_code_register', see 'emit_failure_handler'
     std::string_view report_line;
+    // 'read' and 'write', which serve only the descriptors of
+    // 'machine::emit_io_routines'
+    std::string_view read;
+    std::string_view write;
     std::string_view sector_read;
     std::string_view sector_write;
 };
@@ -683,11 +687,23 @@ class machine {
     static constexpr std::string_view body_label_prefix{"func."};
 
   protected:
+    // 'read' serves only standard input and 'write' standard output and
+    // standard error, see 'emit_io_routines'
+    static constexpr int stdin_descriptor_{0};
+    static constexpr int stdout_descriptor_{1};
     // a failed check prints its message, the 'panic: ...' of its handler, to
     // this descriptor and exits with the code of its handler
     static constexpr int stderr_descriptor_{2};
+    // what 'read' and 'write' return for a descriptor they do not serve, the
+    // negated 'EBADF' of linux
+    static constexpr int bad_descriptor_{-9};
 
-    // the sector size of the sd card of every target that has one
+    // note: the check of 'write' is one unsigned comparison of the descriptor
+    //       less 'stdout_descriptor_'
+
+    static_assert(stderr_descriptor_ == stdout_descriptor_ + 1);
+
+    // the sector size of the sd card of every target
     static constexpr size_t card_sector_size_bytes_{512};
 
     // the labels of the sections of the program's data and variables
@@ -1671,6 +1687,14 @@ class machine {
     // reserved, none by default; 'return_function' is its exit
     virtual auto emit_frame_entry() -> void {}
 
+    // the routines at 'routine_labels::read' and 'write', each only when it is
+    // used: 'read' serves only 'stdin_descriptor_' and 'write' only
+    // 'stdout_descriptor_' and 'stderr_descriptor_', compared at the full
+    // width of the register, any other descriptor returns 'bad_descriptor_'
+    // without a system call, so the result does not depend on the target
+    virtual auto emit_io_routines(const bool read_used, const bool write_used)
+        -> void = 0;
+
     // a multiplication that 'multiply' did not resolve: a run-time factor, a
     // constant one that is not zero, one, minus one or a power of two, or a
     // checked power of two
@@ -1723,11 +1747,11 @@ class machine {
 
         emit_target_routines();
 
-        const bool is_read_used{is_used(routines.sector_read)};
-        const bool is_write_used{is_used(routines.sector_write)};
+        const bool is_sector_read_used{is_used(routines.sector_read)};
+        const bool is_sector_write_used{is_used(routines.sector_write)};
 
-        if (is_read_used or is_write_used) {
-            emit_sector_routines(is_read_used, is_write_used);
+        if (is_sector_read_used or is_sector_write_used) {
+            emit_sector_routines(is_sector_read_used, is_sector_write_used);
         }
 
         // note: after the routines that may use 'exit', e.g. the report of a
@@ -1736,6 +1760,16 @@ class machine {
         if (is_used(routines.exit)) {
             label(0, routines.exit);
             emit_exit_routine();
+        }
+
+        // note: after 'exit', so that 'exit' follows the report of a line,
+        //       which writes and exits, as its next code
+
+        const bool is_read_used{is_used(routines.read)};
+        const bool is_write_used{is_used(routines.write)};
+
+        if (is_read_used or is_write_used) {
+            emit_io_routines(is_read_used, is_write_used);
         }
     }
 

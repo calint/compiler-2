@@ -3,7 +3,6 @@
 #include <cassert>
 #include <cstddef>
 #include <format>
-#include <string_view>
 
 #include "assembler_rv32i.hpp"
 #include "compile_error.hpp"
@@ -13,13 +12,6 @@
 // memory, the uart access, the sector routines where there is a card and how
 // the program ends
 class machine_rv32i_bare_metal : public machine_rv32i {
-    // the routines a program calls to read and write
-    static constexpr std::string_view read_label_{".Lbaz_read"};
-    static constexpr std::string_view write_label_{".Lbaz_write"};
-    // the result of a descriptor the uart does not serve, the negated 'EBADF'
-    // that x86_64 and rv32i return for a descriptor that is not open
-    static constexpr int bad_descriptor_{-9};
-
     // the memory of the device, the image is loaded at its start, the stack
     // grows down from its end
     size_t memory_start_address_{};
@@ -44,11 +36,43 @@ class machine_rv32i_bare_metal : public machine_rv32i {
     // overridden methods
     //
 
-    auto emit_io_call(const size_t indent, const target_call function)
-        -> void override {
+    // reads from the uart until a newline or the count is reached, 'a0'
+    // receives the count and ctrl-d ends the read without being stored like
+    // at a terminal
+    auto emit_read_transfer() -> void override {
+        constexpr int newline{'\n'};
+        constexpr int carriage_return{'\r'};
+        // ctrl-d
+        constexpr int end_of_transmission{0x04};
 
-        call_io_routine(indent, function == target_call::read ? read_label_
-                                                              : write_label_);
+        assembler_rv32i& output{assembler()};
+
+        emit_uart_setup();
+        output.mv(1, "a6", "a1");
+        output.li(1, "a0", 0);
+        output.label(0, "1");
+        output.beq(1, "a0", "a2", "4f");
+        emit_receive_byte();
+        // the uart has no end of input, so ctrl-d stands for it
+        output.li(1, "a5", end_of_transmission);
+        output.beq(1, "a4", "a5", "4f");
+        // terminals send a carriage return for enter where a tty reads newline
+        output.li(1, "a5", carriage_return);
+        output.bne(1, "a4", "a5", "3f");
+        output.li(1, "a4", newline);
+        output.label(0, "3");
+        output.sb(1, "a4", 0, "a6");
+        output.addi(1, "a6", "a6", 1);
+        output.addi(1, "a0", "a0", 1);
+        output.li(1, "a5", newline);
+        output.bne(1, "a4", "a5", "1b");
+        output.label(0, "4");
+        output.jr(1, "a7");
+    }
+
+    // the uart is written only by the routine
+    auto emit_stderr_write(const size_t indent) -> void override {
+        call_io_routine(indent, write_label_);
     }
 
     // no operating system sets up a stack, it grows down from the end of
@@ -80,17 +104,24 @@ class machine_rv32i_bare_metal : public machine_rv32i {
         output.add_separator_newline();
     }
 
-    // only the routines the program calls are emitted
-    auto emit_used_routines() -> void override {
-        machine_rv32i::emit_used_routines();
+    // writes the count of bytes to the uart, 'a0' receives the count
+    auto emit_write_transfer() -> void override {
+        assembler_rv32i& output{assembler()};
 
-        if (is_used(read_label_)) {
-            emit_read_routine();
-        }
-
-        if (is_used(write_label_)) {
-            emit_write_routine();
-        }
+        emit_uart_setup();
+        output.mv(1, "a5", "a1");
+        // the descriptor is checked so 'a0' holds the end
+        output.add(1, "a0", "a1", "a2");
+        // the end test sits at the bottom, one branch per byte, the guard
+        // handles a count of zero
+        output.beq(1, "a5", "a0", "3f");
+        output.label(0, "1");
+        emit_transmit_byte();
+        output.addi(1, "a5", "a5", 1);
+        output.bne(1, "a5", "a0", "1b");
+        output.label(0, "3");
+        output.mv(1, "a0", "a2");
+        output.jr(1, "a7");
     }
 
     // the stack may not reach past the end of memory or into the variables,
@@ -143,87 +174,6 @@ class machine_rv32i_bare_metal : public machine_rv32i {
 
     // prepares 'a3' for 'emit_receive_byte' and 'emit_transmit_byte'
     virtual auto emit_uart_setup() -> void = 0;
-
-    //
-    // class methods
-    //
-
-    // the label '5' of a routine returns 'bad_descriptor_'
-    auto emit_bad_descriptor_return() -> void {
-        assembler_rv32i& output{assembler()};
-
-        output.label(0, "5");
-        output.li(1, "a0", bad_descriptor_);
-        output.jr(1, "a7");
-    }
-
-    // reads from descriptor 0 until a newline or the count is reached, 'a0'
-    // receives the count and ctrl-d ends the read without being stored like
-    // at a terminal
-    auto emit_read_routine() -> void {
-        constexpr int newline{'\n'};
-        constexpr int carriage_return{'\r'};
-        // ctrl-d
-        constexpr int end_of_transmission{0x04};
-
-        assembler_rv32i& output{assembler()};
-
-        output.label(0, read_label_);
-        output.bnez(1, "a0", "5f");
-        emit_uart_setup();
-        output.mv(1, "a6", "a1");
-        output.li(1, "a0", 0);
-        output.label(0, "1");
-        output.beq(1, "a0", "a2", "4f");
-        emit_receive_byte();
-        // the uart has no end of input, so ctrl-d stands for it
-        output.li(1, "a5", end_of_transmission);
-        output.beq(1, "a4", "a5", "4f");
-        // terminals send a carriage return for enter where a tty reads newline
-        output.li(1, "a5", carriage_return);
-        output.bne(1, "a4", "a5", "3f");
-        output.li(1, "a4", newline);
-        output.label(0, "3");
-        output.sb(1, "a4", 0, "a6");
-        output.addi(1, "a6", "a6", 1);
-        output.addi(1, "a0", "a0", 1);
-        output.li(1, "a5", newline);
-        output.bne(1, "a4", "a5", "1b");
-        output.label(0, "4");
-        output.jr(1, "a7");
-        emit_bad_descriptor_return();
-    }
-
-    // writes the count of bytes to descriptor 1 or 2, 'a0' receives the
-    // count
-    auto emit_write_routine() -> void {
-        // the uart serves the descriptors 1 and 2
-        constexpr int served_count{2};
-
-        assembler_rv32i& output{assembler()};
-
-        output.label(0, write_label_);
-        // 1 and 2 less 1 are below 'served_count' unsigned, 0 and a negative
-        // descriptor are not
-        output.addi(1, "a5", "a0", -1);
-        output.li(1, "a4", served_count);
-        output.bgeu(1, "a5", "a4", "5f");
-        emit_uart_setup();
-        output.mv(1, "a5", "a1");
-        // the descriptor is checked so 'a0' holds the end
-        output.add(1, "a0", "a1", "a2");
-        // the end test sits at the bottom, one branch per byte, the guard
-        // handles a count of zero
-        output.beq(1, "a5", "a0", "3f");
-        output.label(0, "1");
-        emit_transmit_byte();
-        output.addi(1, "a5", "a5", 1);
-        output.bne(1, "a5", "a0", "1b");
-        output.label(0, "3");
-        output.mv(1, "a0", "a2");
-        output.jr(1, "a7");
-        emit_bad_descriptor_return();
-    }
 
     //
     // statics

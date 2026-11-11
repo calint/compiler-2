@@ -156,8 +156,9 @@ class array_shape final {
 
     [[nodiscard]] auto is_array() const -> bool { return is_array_; }
 
-    // an unsized array parameter where no call gave it a length: in the parse
-    // and in the check of a function without its calls
+    // an unsized array parameter where no call gave it a length: in the parse,
+    // in the check of a function without its calls and in the checked bodies
+    // it calls with the length unknown, e.g. 'len.u.8'
     [[nodiscard]] auto is_length_unknown() const -> bool {
         return is_array_ and not length_;
     }

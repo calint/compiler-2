@@ -1,6 +1,17 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 311 (2026-11-11, ZY finding 1: the descriptors of 'read'
+    and 'write' on linux)
+    => done (2026-11-11): on x86_64 and rv32i a program's 'write(3)' after
+       a sector call reached the sd card image the sector routines keep
+       open, a terminal on standard input took 'write(0)', and x86_64 took
+       an 'i64' descriptor modulo 2^32; now every target serves 'read' from
+       0 and 'write' to 1 and 2 only, compared at the full width, others
+       return -9 without a system call: the rule is in 'machine', x86_64
+       calls 'baz_read' and 'baz_write', rv32i linux and bare metal share
+       one check (about 24 B more on x86_64, 32 to 64 B on rv32i linux per
+       program with io, bare metal unchanged); new tests 2900, 2901
 [x] easy: round 310 (2026-11-11, the fuzzer of round 309 AC added)
     => done (2026-11-11): 'qa/fuzz/fuzz-combos.py' combines what the other
        fuzzers keep apart (methods on indexed elements in 'foo', generics,

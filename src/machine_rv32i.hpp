@@ -61,7 +61,9 @@
 //                ('failure_tests', 'fail_if', 'pass_if')
 //   handlers     'emit_panic_message', 'emit_report_line_routine'
 //   calls        'emit_call', 'emit_target_call' through 'call_io_routine'
-//   target hooks 'emit_io_call' and the machine
+//                to the routines of 'emit_io_routines' and the sector routines
+//   target hooks 'emit_read_transfer', 'emit_write_transfer',
+//                'emit_stderr_write' and the machine
 //                virtuals 'emit_exit_routine', 'emit_sector_routines',
 //                'emit_target_setup' and 'finish_target';
 //                the protected section is what the targets build on
@@ -1044,6 +1046,9 @@ class machine_rv32i : public machine {
     static constexpr size_t register_bits_{
         std::numeric_limits<uint32_t>::digits,
     };
+    // the routines of 'read' and 'write', see 'emit_io_routines'
+    static constexpr std::string_view read_label_{".Lbaz_read"};
+    static constexpr std::string_view write_label_{".Lbaz_write"};
     // the sector routines, see 'emit_sector_routines': a routine takes the
     // sector in 'a0', the address in 'a1' and the size in 'a2', returns
     // through 'a7', which it may change, and changes only 'a0' and
@@ -1161,6 +1166,42 @@ class machine_rv32i : public machine {
         assembler_.sw(1, "ra", 0, "sp");
     }
 
+    // 'a0' is the descriptor and receives the result, 'a1' is the address and
+    // 'a2' the count; a routine returns through 'a7' and changes only
+    // 'io_routine_clobbered_' else, see 'call_io_routine'
+    // note: the label '5' of each routine returns 'bad_descriptor_', a
+    //       transfer may use the labels '1' to '4'
+    auto emit_io_routines(const bool read_used, const bool write_used)
+        -> void override {
+
+        // the descriptors that 'write' serves
+        constexpr int write_served_count{2};
+
+        if (read_used) {
+            // note: 'bnez' compares the descriptor with 'stdin_descriptor_'
+
+            static_assert(stdin_descriptor_ == 0);
+
+            assembler_.label(0, read_label_);
+            assembler_.bnez(1, "a0", "5f");
+            emit_read_transfer();
+            emit_bad_descriptor_return();
+        }
+
+        if (not write_used) {
+            return;
+        }
+
+        assembler_.label(0, write_label_);
+        // 1 and 2 less 1 are below 2 unsigned, 0 and a negative descriptor
+        // are not
+        assembler_.addi(1, "a5", "a0", -stdout_descriptor_);
+        assembler_.li(1, "a4", write_served_count);
+        assembler_.bgeu(1, "a5", "a4", "5f");
+        emit_write_transfer();
+        emit_bad_descriptor_return();
+    }
+
     // a constant factor that 'multiply' did not resolve shifts and adds
     // unless checked, else the helper multiplies
     auto emit_multiply(const token& src_loc_tk, const size_t indent,
@@ -1208,7 +1249,7 @@ class machine_rv32i : public machine {
         assembler_.li(1, "a0", stderr_descriptor_);
         assembler_.la(1, "a1", message_label);
         assembler_.li(1, "a2", message.size());
-        emit_io_call(1, target_call::write);
+        emit_stderr_write(1);
     }
 
     // writes the line number of 'report_line_register_' in decimal, then exits
@@ -1250,7 +1291,7 @@ class machine_rv32i : public machine {
         assembler_.addi(1, "a2", "a2", 1);
         assembler_.mv(1, "a1", "sp");
         assembler_.li(1, "a0", stderr_descriptor_);
-        emit_io_call(1, target_call::write);
+        emit_stderr_write(1);
 
         exit(token{}, 1,
              make_register_operand(report_exit_code_register_, default_type()));
@@ -1267,9 +1308,9 @@ class machine_rv32i : public machine {
         assembler_.switch_section(section::text);
     }
 
-    // 'read' and 'write' are system calls or routines of the target, see
-    // 'emit_io_call'; the sector functions are routines with the sector in
-    // 'a0' where 'read' has the descriptor, there is no result
+    // the functions are routines, see 'emit_io_routines'; the sector functions
+    // take the sector in 'a0' where 'read' has the descriptor, there is no
+    // result
     auto emit_target_call(const token& src_loc_tk, const size_t indent,
                           const target_call function) -> void override {
 
@@ -1280,13 +1321,7 @@ class machine_rv32i : public machine {
         // address
         reserve_named_register(src_loc_tk, indent, "a7");
 
-        if (function == target_call::read or function == target_call::write) {
-            emit_io_call(indent, function);
-        } else {
-            call_io_routine(indent, function == target_call::sector_read
-                                        ? sector_read_label_
-                                        : sector_write_label_);
-        }
+        call_io_routine(indent, routine_label(function));
     }
 
     // the arithmetic helpers
@@ -1374,12 +1409,18 @@ class machine_rv32i : public machine {
     // virtual methods
     //
 
-    // the call of 'read' or 'write': 'a0' is the descriptor and receives the
-    // byte count, 'a1' is the address, 'a2' the count and 'a7' is reserved;
-    // an override may change the registers after 'a2' in the allocation
-    // order, see 'call_io_routine'
-    virtual auto emit_io_call(const size_t indent, const target_call function)
-        -> void = 0;
+    // the transfer of 'read' from the checked descriptor in 'a0', which
+    // receives the count, see 'emit_io_routines'
+    virtual auto emit_read_transfer() -> void = 0;
+
+    // writes the count in 'a2' at 'a1' to 'stderr_descriptor_' in 'a0' for a
+    // failure, which needs no check of the descriptor; changes what the
+    // routines of 'emit_io_routines' change, 'a7' included
+    virtual auto emit_stderr_write(const size_t indent) -> void = 0;
+
+    // the transfer of 'write' to the checked descriptor in 'a0', which
+    // receives the count, see 'emit_io_routines'
+    virtual auto emit_write_transfer() -> void = 0;
 
     //
     // class methods
@@ -1439,6 +1480,8 @@ class machine_rv32i : public machine {
             .routines{
                 .exit{exit_label_},
                 .report_line{report_line_label_},
+                .read{read_label_},
+                .write{write_label_},
                 .sector_read{sector_read_label_},
                 .sector_write{sector_write_label_},
             },
@@ -2270,6 +2313,13 @@ class machine_rv32i : public machine {
                 bulk.count().register_name(), element_size_bytes);
 
         scale_index(src_loc_tk, indent, bulk.count(), element_size_bytes);
+    }
+
+    // the label '5' of an i/o routine returns 'bad_descriptor_'
+    auto emit_bad_descriptor_return() -> void {
+        assembler_.label(0, "5");
+        assembler_.li(1, "a0", bad_descriptor_);
+        assembler_.jr(1, "a7");
     }
 
     // applies 'instruction' to 'left' with an immediate when it fits
@@ -4284,6 +4334,25 @@ class machine_rv32i : public machine {
         return dst_size_bytes < word_size_bytes_ and
                (src_size_bytes > dst_size_bytes or
                 (extension_differs and src_size_bytes == dst_size_bytes));
+    }
+
+    // the routine that a call of 'function' calls
+    [[nodiscard]] static auto routine_label(const target_call function)
+        -> std::string_view {
+
+        if (function == target_call::read) {
+            return read_label_;
+        }
+
+        if (function == target_call::write) {
+            return write_label_;
+        }
+
+        if (function == target_call::sector_read) {
+            return sector_read_label_;
+        }
+
+        return sector_write_label_;
     }
 
     // the aligned stack area 'save_call_registers' allocates for 'count'

@@ -1,0 +1,19 @@
+# after a sector transfer, which keeps the card image open on x86_64 and
+# rv32i, 'write' and 'read' of the descriptor 3 return -9 on every target and
+# leave the card as it was
+
+dat text = "ok\n"
+func main() {
+    var bytes = i8[512]
+    bytes[0] = 5
+    sector_write(0, bytes)
+    var bad = write(3, text)
+    if bad != -9 exit(1)
+    var buffer = i8[4]
+    bad = read(3, buffer)
+    if bad != -9 exit(2)
+    bytes[0] = 0
+    sector_read(0, bytes)
+    if bytes[0] != 5 exit(3)
+    write(1, text)
+}
