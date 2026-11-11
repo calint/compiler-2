@@ -1,0 +1,14 @@
+# the peak of the registers is in a call inlined in a noinline body, the report
+# notes that the body starts with all registers free
+
+func add3(a, b, c) res {
+    res = a * b + c * (a + b * (c + a))
+}
+
+func noinline work(x) res {
+    res = add3(x, x + 1, x + 2)
+}
+
+func main() {
+    exit(work(1) - 29)
+}

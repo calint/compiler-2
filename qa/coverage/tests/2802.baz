@@ -1,0 +1,23 @@
+# the check of an inlined function that takes only its result from a call
+# reaches the result through an address, a register more than the call needs:
+# the recursion in the check of 'f', 13 calls deep, runs out of registers on
+# x86_64 and ends the check of the recursion, the call compiles it whole
+
+var d = 1
+
+func g(n) res {
+    if n == 0 {
+        res = 0
+        return
+    }
+    res = d + g(n - 1)
+}
+
+func f() res {
+    res = g(13)
+}
+
+func main() {
+    var x = f()
+    exit(x - 13)
+}

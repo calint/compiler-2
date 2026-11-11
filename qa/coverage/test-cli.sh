@@ -315,6 +315,10 @@ CLI_REGISTER_REPORT() {
     "$BIN" --report=registers 0753.baz >out 2>err
     grep -Fq "calls of functions with a body of their own save the registers" out
     grep -Fq "the peak is in a function with a body of its own" out
+    # 2800.baz: also where the peak is in a call inlined in that body
+    "$BIN" --report=registers 2800.baz >out 2>err
+    grep -Fq "add3 called at 9:11" out
+    grep -Fq "the peak is in a function with a body of its own" out
     # 2106.baz: the peak is in a global initializer, outside every function
     "$BIN" --report=registers 2106.baz >out 2>err
     grep -Fq "register use at the peak: 2 of" out
@@ -464,6 +468,13 @@ CLI_COMMENT_LOCATIONS() {
         >gen-abs-panic.baz
     "$BIN" --checks=upper,line "$PWD/gen-abs-panic.baz" >gen.s 2>err
     grep -Fq 'panic: bounds at gen-abs-panic.baz:' gen.s
+    # an error in a file included by an absolute path with a '..' names the
+    # file without it
+    printf 'func three() res {\n    res = nope\n}\n' >gen-abs-lib.baz
+    printf 'include "%s/include/../gen-abs-lib.baz"\n\nfunc main() {\n    exit(three())\n}\n' \
+        "$PWD" >gen-abs-main.baz
+    "$BIN" gen-abs-main.baz >gen.s 2>err && exit 1
+    grep -Fq "$PWD/gen-abs-lib.baz:2:11:" err
     rm -f gen-abs-lib.baz gen-abs-main.baz gen-abs-panic.baz
     echo ok
 }
@@ -1049,6 +1060,12 @@ CLI_REGISTER_REPORT_COUNTS() {
     "$BIN" --report=registers 2475.baz >out 2>err
     grep -Eq '^; +0  main$' out
     grep -Fq "h called at" out && exit 1
+    # 0753.baz: the callees and the saved registers in descending order, equal
+    # counts by name
+    "$BIN" --report=registers 0753.baz >out 2>err
+    grep -A1 -Fx ";   own  calls  callee" out | grep -Fxq ";     6      1  box.total (noinline body)"
+    grep -A2 -Fx ";   saved  calls  callee, most saved at" out | tail -1 |
+        grep -Fxq ";       0      2  box.take 63:12"
     echo ok
 }
 

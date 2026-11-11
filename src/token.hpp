@@ -6,6 +6,7 @@
 #include <charconv>
 #include <cstddef>
 #include <cstdint>
+#include <expected>
 #include <memory>
 #include <optional>
 #include <ostream>
@@ -186,6 +187,52 @@ class token final {
 
     [[nodiscard]] auto at_line() const -> size_t { return at_line_; }
 
+    // the bytes of a string or character literal, its escapes decoded, e.g.
+    // '\n' is one byte; a backslash before a line end is dropped with the
+    // line end, so the string continues on the next line; the first
+    // unsupported escape instead, located at its backslash, e.g. '\q'
+    [[nodiscard]] auto decoded() const -> std::expected<std::string, token> {
+        const std::string_view body{quoted_body()};
+
+        std::string bytes;
+        size_t line{at_line_};
+
+        for (size_t i{}; i < body.size(); ++i) {
+            if (body.at(i) != '\\') {
+                bytes += body.at(i);
+                continue;
+            }
+
+            // note: the tokenizer reads a character after every backslash
+
+            assert(i + 1 < body.size());
+
+            // a whole escape is consumed, so an escaped backslash is not
+            // taken as a continuation
+            const escape esc{escape_at(body, i)};
+
+            if (not esc.is_continuation and not esc.decoded) {
+                const size_t backslash_index{start_ix_ + 1 + i};
+                // note: +1 because the text starts after the opening quote
+
+                return std::unexpected{
+                    synthetic(file_ix_, body.substr(i, 1 + esc.size),
+                              backslash_index, line),
+                };
+            }
+
+            if (esc.is_continuation) {
+                ++line;
+            } else {
+                bytes += *esc.decoded;
+            }
+
+            i += esc.size;
+        }
+
+        return bytes;
+    }
+
     [[nodiscard]] auto end_index() const -> size_t {
         return start_ix_ + text_.size();
     }
@@ -240,79 +287,19 @@ class token final {
         return position(file_index(), start_index(), at_line());
     }
 
-    // the bytes of a string literal, its escapes decoded, e.g. '\n' is one
-    // byte; a backslash before a line end is dropped with the line end, so
-    // the string continues on the next line
+    // the bytes of a string literal, see 'decoded'
     [[nodiscard]] auto string_bytes() const -> std::string {
-        const std::string_view body{quoted_body()};
+        const std::expected<std::string, token> bytes{decoded()};
 
-        std::string bytes;
+        // note: the tokenizer rejected an unsupported escape
+        //       ('tokenizer::assert_escapes_supported')
 
-        for (size_t i{}; i < body.size(); ++i) {
-            if (body.at(i) != '\\') {
-                bytes += body.at(i);
-                continue;
-            }
+        assert(bytes);
 
-            // note: the tokenizer reads a character after every backslash and
-            //       rejected an unsupported escape ('unsupported_escape')
-
-            assert(i + 1 < body.size());
-
-            // a whole escape is consumed, so an escaped backslash is not
-            // taken as a continuation
-            const escape esc{escape_at(body, i)};
-
-            if (not esc.is_continuation) {
-                assert(esc.decoded);
-
-                bytes += *esc.decoded;
-            }
-
-            i += esc.size;
-        }
-
-        return bytes;
+        return *bytes;
     }
 
     [[nodiscard]] auto text() const -> std::string_view { return text_; }
-
-    // the first unsupported escape of a string or character token, as
-    // 'decode_escape' rejects it, located at its backslash, e.g. '\q'
-    [[nodiscard]] auto unsupported_escape() const -> std::optional<token> {
-        const std::string_view body{quoted_body()};
-
-        size_t line{at_line_};
-        for (size_t i{}; i < body.size(); ++i) {
-            if (body.at(i) == '\n') {
-                ++line;
-                continue;
-            }
-
-            if (body.at(i) != '\\') {
-                continue;
-            }
-
-            const escape esc{escape_at(body, i)};
-
-            // the line end of a continuation is counted by the loop
-            if (esc.is_continuation) {
-                continue;
-            }
-
-            if (not esc.decoded) {
-                const size_t backslash_index{start_ix_ + 1 + i};
-                // note: +1 because the text starts after the opening quote
-
-                return synthetic(file_ix_, body.substr(i, 1 + esc.size),
-                                 backslash_index, line);
-            }
-
-            i += esc.size;
-        }
-
-        return std::nullopt;
-    }
 
     //
     // statics

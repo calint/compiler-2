@@ -1,6 +1,21 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 299 (2026-11-11, ZS design review of the tokenizer,
+    tokens and source files; ZO mutation testing of 'stmt_def_func',
+    'program', 'source_files' and 'register_report'; fuzz-all scale 3)
+    => done (2026-11-11): ZS: one 'finish_quoted_token' reads strings and
+       character literals, a column is counted from 'line_at' (no table of
+       line starts), 'token::decoded' walks the escapes once for the bytes
+       and the first unsupported escape (73 lines fewer, listings and
+       errors equal); ZO: 71 mutants, 64 killed by the tests and test-cli,
+       new tests 2800-2802 and test-cli checks (an absolute include named
+       without '..', the order of the register report tables) kill 6, one
+       equivalent; a todo: a function with a result counts as taking from
+       a call; fuzz-all scale 3 on all targets found only a false positive
+       of 'fuzz-compiler', an exit that carries the byte count of a
+       written array of the default integer, now not compared with such an
+       output
 [x] easy: round 298 (2026-11-11, ZQ design review of 'machine' and the
     x86_64 backend; ZR, ZP bug hunts)
     => done (2026-11-11): one 'emit_panic' for the failure handler and the

@@ -442,9 +442,10 @@ def compare_rv32i(run, target, x86, findings, stats):
     if not (run.noub and x86.finished() and rv.finished()):
         return
     stats["compared"] += 1
-    same = x86.code == rv.code and (
-        x86.stdout == rv.stdout
-        or is_default_width_output(x86.stdout, rv.stdout))
+    # note: an exit may carry the byte count of a written array of the
+    #       default integer, so it is not compared with such an output
+    same = (x86.code == rv.code and x86.stdout == rv.stdout) or \
+        is_default_width_output(x86.stdout, rv.stdout)
     # the default integer is 32 bits on rv32i, 64 on x86_64: a value or a
     # shift count that fits 64 bits panics on rv32i only, x86_64 goes on and
     # may panic later on another check

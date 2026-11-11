@@ -4,6 +4,7 @@
 #include <array>
 #include <cassert>
 #include <cstddef>
+#include <expected>
 #include <format>
 #include <optional>
 #include <string>
@@ -191,12 +192,8 @@ class tokenizer final {
         const size_t at_line{at_line_};
         const size_t bgn_ix{char_ix_};
 
-        if (is_next_char('"')) {
-            return finish_string_token(ws_before, at_line, bgn_ix);
-        }
-
-        if (is_next_char('\'')) {
-            return finish_character_literal_token(ws_before, at_line, bgn_ix);
+        if (is_next_char('"') or is_next_char('\'')) {
+            return finish_quoted_token(ws_before, at_line, bgn_ix);
         }
 
         skip_to_delimiter();
@@ -368,90 +365,67 @@ class tokenizer final {
     }
 
   private:
-    // the opening quote has been read, the text keeps both quotes so it
-    // resolves like a numeric constant, e.g. 'a' or '\n'
-    [[nodiscard]] auto
-    finish_character_literal_token(const std::string_view ws_before,
-                                   const size_t at_line, const size_t bgn_ix)
-        -> token {
+    // the opening quote has been read, the text keeps both quotes; a
+    // character literal resolves like a numeric constant, e.g. 'a' or '\n'
+    [[nodiscard]] auto finish_quoted_token(const std::string_view ws_before,
+                                           const size_t at_line,
+                                           const size_t bgn_ix) -> token {
+
+        const char quote{src_.at(bgn_ix)};
+        const bool is_string{quote == '"'};
+
+        // points at the opening quote, where the literal starts
+        const token open_quote_tk{token::position(file_ix_, bgn_ix, at_line)};
+
+        const std::string_view unterminated{
+            is_string ? "unterminated string"
+                      : "unterminated character literal",
+        };
 
         while (true) {
-            // points at the opening quote, where the literal starts
+            // a literal cannot span lines, the source is echoed in comments
             if (is_eos() or peek_char() == '\n') {
-                throw compile_error{token::position(file_ix_, bgn_ix, at_line),
-                                    "unterminated character literal"};
+                throw compile_error{open_quote_tk, std::string{unterminated}};
             }
 
             const char ch{next_char()};
 
-            if (ch == '\'') {
+            if (ch == quote) {
                 break;
             }
 
-            // the escaped character may be a quote
-            if (ch == '\\' and not is_eos() and peek_char() != '\n') {
-                skip_char();
+            if (ch != '\\' or is_eos()) {
+                continue;
             }
+
+            // a line end after the backslash continues a string, a
+            // character literal is unterminated there
+            const bool is_line_end{peek_char() == '\n' or peek_char() == '\r'};
+
+            if (is_line_end and not is_string) {
+                continue;
+            }
+
+            // the escaped character may be a quote; a carriage return is
+            // followed by a line feed ('assert_source_well_formed')
+            std::ignore = is_next_char('\r');
+            skip_char();
         }
 
         const token literal_tk{finish_token(ws_before, at_line, bgn_ix)};
 
-        // an unsupported escape is reported before the length, as in a
-        // string, e.g. the '\X' of '\X41' and the '\q' of 'a\q'
+        // an unsupported escape is reported before the length of a character
+        // literal, e.g. the '\X' of '\X41' and the '\q' of 'a\q'
         assert_escapes_supported(literal_tk);
 
         // checked where it is read like a string, also in a generic body that
         // no instance parses
-        std::ignore =
-            constant_parser::parse_character(literal_tk, literal_tk.text());
-
-        return literal_tk;
-    }
-
-    // the opening quote has been read, the text keeps both quotes
-    [[nodiscard]] auto finish_string_token(const std::string_view ws_before,
-                                           const size_t at_line,
-                                           const size_t bgn_ix) -> token {
-
-        // points at the opening quote, the string may run to the end of the
-        // source
-        const token open_quote_tk{token::position(file_ix_, bgn_ix, at_line)};
-
-        while (true) {
-            if (is_next_char('\\')) {
-                // a backslash at the end of the source escapes nothing
-                if (is_eos()) {
-                    throw compile_error{open_quote_tk, "unterminated string"};
-                }
-
-                const bool is_carriage_return{peek_char() == '\r'};
-                skip_char();
-
-                // a crlf line end after the backslash continues the string
-                if (is_carriage_return) {
-                    std::ignore = is_next_char('\n');
-                }
-
-                continue;
-            }
-
-            if (is_next_char('"')) {
-                break;
-            }
-
-            // a string cannot span lines, the source is echoed in comments
-            if (is_eos() or peek_char() == '\n') {
-                throw compile_error{open_quote_tk, "unterminated string"};
-            }
-
-            skip_char();
+        if (not is_string) {
+            std::ignore =
+                constant_parser::parse_character(literal_tk, literal_tk.text());
         }
 
-        const token string_tk{finish_token(ws_before, at_line, bgn_ix)};
-
-        assert_escapes_supported(string_tk);
-
-        return string_tk;
+        return literal_tk;
     }
 
     // the token of the text from 'bgn_ix' to the cursor, with the whitespace
@@ -658,13 +632,12 @@ class tokenizer final {
 
     // the escapes of the string or character literal 'literal_tk' decode
     static auto assert_escapes_supported(const token& literal_tk) -> void {
-        if (const std::optional<token> escape_tk{
-                literal_tk.unsupported_escape(),
-            }) {
+        const std::expected<std::string, token> bytes{literal_tk.decoded()};
 
-            throw compile_error{*escape_tk,
+        if (not bytes) {
+            throw compile_error{bytes.error(),
                                 std::format("unsupported escape {}",
-                                            in_quotes(escape_tk->text()))};
+                                            in_quotes(bytes.error().text()))};
         }
     }
 };

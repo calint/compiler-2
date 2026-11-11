@@ -7789,3 +7789,14 @@ SRC=2687 && LISTING folds
 
 # rv32i: a copy from an element loads into the register of its address
 if [[ $MACHINE != x86_64 ]]; then SRC=2688 && EXP=29 && RUN; fi
+
+# the peak of the registers is in a call inlined in a noinline body
+SRC=2800 && EXP=0 && RUN
+
+# the check of a noinline body without its call does not take an inlined
+# recursion that an unsized array parameter ends to nest alike at every call
+SRC=2801 && EXP=1 && RUN
+
+# the check of a function that takes only its result from a call ends an
+# inlined recursion that runs out of registers, the call compiles it whole
+SRC=2802 && EXP=0 && RUN

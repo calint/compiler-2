@@ -6,6 +6,13 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
 --------------------------------------------------------------------------------
 1. clean up
 --------------------------------------------------------------------------------
+[ ] medium: user decision (round 299 ZO): a function with a result counts
+    as taking from a call ('frame_scope'), so the check of its body without
+    a call ends a recursion at a limit instead of rejecting it, also an
+    unbounded one such as 'res = g(d)' with a global 'd': an uncalled 'f'
+    is accepted, the same program with a call of 'f' is rejected (the
+    result is reached through an address in the check, which test 2802
+    relies on)
 [ ] easy: (round 297 YB) the fpga emulator drops a halfword or word store
     at a misaligned address without a trap (qemu accepts it), so a
     misaligned access the compiler emits goes unseen on every rv32i

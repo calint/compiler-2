@@ -12,13 +12,11 @@
 #include <fstream>
 #include <functional>
 #include <ios>
-#include <iterator>
 #include <optional>
 #include <string>
 #include <string_view>
 #include <system_error>
 #include <utility>
-#include <vector>
 
 #include "compile_error.hpp"
 #include "token.hpp"
@@ -63,8 +61,6 @@ class source_files final {
         std::filesystem::path absolute;
         // see 'relative_name'
         std::string relative_name;
-        // the index where each line begins, the first is 0
-        std::vector<size_t> line_begins;
         // the path of the 'include' that loaded the file, none for the main
         // file
         std::optional<source_span> included_at;
@@ -92,14 +88,11 @@ class source_files final {
             absolute.lexically_relative(main_dir).string(),
         };
 
-        std::vector<size_t> line_begins{line_begins_of(text)};
-
         files_.push_back({
             .name{std::move(name)},
             .text{std::move(text)},
             .absolute{std::move(absolute)},
             .relative_name{std::move(relative_name)},
-            .line_begins{std::move(line_begins)},
             .included_at{included_at},
         });
 
@@ -110,16 +103,11 @@ class source_files final {
     [[nodiscard]] auto column(const size_t file_ix, const size_t char_ix) const
         -> size_t {
 
-        const file& src{files_.at(file_ix)};
+        const std::string_view src{files_.at(file_ix).text};
 
-        assert(char_ix <= src.text.size());
+        assert(char_ix <= src.size());
 
-        // note: the first line begins at 0, a line begins at or before any
-        //       index
-
-        const auto after{std::ranges::upper_bound(src.line_begins, char_ix)};
-
-        return char_ix - *std::prev(after) + 1;
+        return char_ix - line_at(src, char_ix).begin + 1;
         // note: +1 because the columns start at 1
     }
 
@@ -228,27 +216,6 @@ class source_files final {
         }
 
         return dir / path.filename();
-    }
-
-  private:
-    //
-    // statics
-    //
-
-    // the index where each line of 'text' begins
-    [[nodiscard]] static auto line_begins_of(const std::string_view text)
-        -> std::vector<size_t> {
-
-        std::vector<size_t> begins{0};
-
-        size_t line_end{text.find('\n')};
-
-        while (line_end != std::string_view::npos) {
-            begins.push_back(line_end + 1);
-            line_end = text.find('\n', line_end + 1);
-        }
-
-        return begins;
     }
 };
 
