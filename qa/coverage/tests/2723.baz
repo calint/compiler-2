@@ -1,0 +1,10 @@
+# the unary ops of a conversion of a 'bool' call apply to the converted copy,
+# not to the 'bool' scratch register
+func f() res bool {
+    res = true
+}
+func main() {
+    var r = -i8(f())
+    var s = ~i8(f())
+    exit(r + s)
+}

@@ -1,0 +1,22 @@
+# --checks=frame: each noinline body has a frame of its own size, a small
+# body compiled after a large one does not take its size
+func noinline big(n i8) res i8 {
+    var a = i8[64]
+    a[0] = n
+    res = a[0]
+}
+
+func noinline small(n i8) res i8 {
+    res = n
+}
+
+func main() {
+    var m = i8[48]
+    m[0] = 3
+    if m[1] == 4 {
+        var y = big(m[0])
+        m[0] = y
+    }
+    var z = small(m[0])
+    exit(int(z))
+}

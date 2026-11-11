@@ -1,0 +1,4 @@
+
+2641.baz:11:12: argument 1 'r.b' may share storage with the global 'r' that 'f' uses, use a temporary variable for one of them
+    exit(f(r.b))
+           ^

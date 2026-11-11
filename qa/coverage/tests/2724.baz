@@ -1,0 +1,17 @@
+# the breaks of a loop before an inner loop narrow what is set after it: the
+# first 'break' leaves 'res' unset
+func f(n) res {
+    loop {
+        if n == 1 {
+            break
+        }
+        loop {
+            break
+        }
+        res = 2
+        break
+    }
+}
+func main() {
+    exit(f(1))
+}

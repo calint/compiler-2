@@ -1,4 +1,4 @@
 
-2464.baz:5:20: the array of 511 B is smaller than a sector of 512 B
+2464.baz:5:20: a sector of 512 elements is past the end of array 'bytes' of size 511
     sector_read(0, bytes)
                    ^~~~~

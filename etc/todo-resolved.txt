@@ -1,6 +1,25 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 293 (2026-11-11, ZI design review of generics and
+    definitions, ZJ of the built-in statements; YA mutation testing of
+    'toc', YC of conversions, assignment analysis, declarations and
+    parameters; ZK, ZH bug hunts)
+    => done (2026-11-11): ZI: the instantiable generic functions are a list
+       in definition order (no 'named_definition' and sort),
+       'generic_method_info' is gone (a method of a generic type is a
+       'generic_func_info', 'define_func' and 'define_method' are one
+       'define'), one registration in 'stmt_def_type_generic' (90 lines
+       fewer, listings equal); ZJ: a constant start with a run-time count
+       goes through 'assert_constant_range' with a count of 0, and the
+       sector size check is gone since the range check rejects the same
+       programs (the message of 1039 and 2464 now names the sector in
+       elements); YA: 50 mutants, tests 2640-2646, 4 equivalent; YC: 61
+       mutants, tests 2720-2725, 6 equivalent; ZK (needless rejections)
+       and ZH (versions, stack and frame checks, odd-size records): no
+       defect; todo items for the self-blocking result registers, the
+       x86_64 'rep' forms without a fallback and a 'check_folded_conditions'
+       call without effect
 [x] easy: round 292 (2026-11-11, ZG design review of identifiers and
     operands, ZE of the expression front end)
     => done (2026-11-11): ZG: 'ident_info' keeps no type of its own, a

@@ -1,0 +1,29 @@
+=== 9:     var r = i16(a * (a >> 1)) # folds
+    lb t0, -2032(s0)
+    sh t0, -2028(s0)
+    lb t0, -2032(s0)
+    srai t0, t0, 1
+    lh a0, -2028(s0)
+    mv a1, t0
+    call .Lbaz_multiply
+    sh a0, -2028(s0)
+=== 10:     var s = i8(i16(a) + b) # folds
+    lb t0, -2032(s0)
+    sb t0, -2026(s0)
+    lb t0, -2026(s0)
+    lh t1, -2030(s0)
+    add t0, t0, t1
+    sb t0, -2026(s0)
+=== 11:     s = -i8(b) # folds
+    lh t0, -2030(s0)
+    sb t0, -2026(s0)
+    lb t0, -2026(s0)
+    sub t0, zero, t0
+    sb t0, -2026(s0)
+=== 12:     r = i16(b / 3) # folds
+    lh t0, -2030(s0)
+    sh t0, -2028(s0)
+    lh a0, -2028(s0)
+    li a1, 3
+    call .Lbaz_divide
+    sh a0, -2028(s0)

@@ -1,0 +1,6 @@
+# the untyped constants of a list in a conversion are checked at the width of
+# the list, the default type: '0xfedc1234' does not fit 'i32'
+func main() {
+    var a = i8(0xfedc1234 + 1)
+    exit(a)
+}

@@ -1,0 +1,11 @@
+# the result of a method may hide a constant of its generic type, as a
+# parameter may
+type buffer<capacity> { items i8[capacity] }
+type small = buffer<4>
+func buffer.f() capacity {
+    capacity = 7
+}
+func main() {
+    var s = small
+    exit(s.f())
+}

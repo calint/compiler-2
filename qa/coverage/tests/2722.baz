@@ -1,0 +1,7 @@
+# the argument of a conversion computed in a scratch register wraps also
+# under the overflow check, e.g. the 'a * a' of 'i8(a * a / 1)' at 'i16'
+func main() {
+    var a = i16(300)
+    var r = i8(a * a / 1)
+    exit(r)
+}

@@ -1,0 +1,4 @@
+
+2724.baz:3:11: function may return without setting its result 'res'
+func f(n) res {
+          ^~~

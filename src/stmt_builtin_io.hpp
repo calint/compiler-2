@@ -271,26 +271,11 @@ class stmt_builtin_io final : public statement {
 
         const ident_info& buffer_info{buffer.info};
 
-        const std::optional<int64_t> count{constant_count(tc, buffer_info)};
+        // a run-time count is checked at run time, a constant start then
+        // alone as that of an empty range, e.g. the -1 of 'write(1, a, n, -1)'
+        const int64_t count{constant_count(tc, buffer_info).value_or(0)};
 
         const expr_any* const start_arg{start_argument()};
-
-        const std::optional<int64_t> start{constant_start(tc)};
-
-        // a constant start alone, e.g. the -1 of 'write(1, a, n, -1)'; a count
-        // of 0 may start at the end
-        if (not count) {
-            if (start_arg != nullptr and start) {
-                const machine& x{tc.machine()};
-
-                assert_constant_index(buffer_info, start_arg->tok(),
-                                      buffer.ident->path_text(), *start, true,
-                                      x.max_storage_bytes());
-            }
-
-            return;
-        }
-
         const expr_any* const count_arg{count_argument()};
 
         // note: a sector function has no count argument, an error about its
@@ -305,8 +290,8 @@ class stmt_builtin_io final : public statement {
         assert_constant_range(
             buffer_info,
             {
-                .start{start},
-                .count{*count},
+                .start{constant_start(tc)},
+                .count{count},
                 .start_tk{
                     start_arg != nullptr ? std::optional{start_arg->tok()}
                                          : std::nullopt,
@@ -317,15 +302,16 @@ class stmt_builtin_io final : public statement {
                 },
                 .count_text{
                     count_arg != nullptr
-                        ? std::format("count {}", *count)
-                        : std::format("a sector of {} elements", *count),
+                        ? std::format("count {}", count)
+                        : std::format("a sector of {} elements", count),
                 },
                 .array_name{buffer.ident->path_text()},
             },
             x.max_storage_bytes());
     }
 
-    // a sector is a whole number of elements and fits in the array
+    // a sector is a whole number of elements; an array shorter than a sector
+    // is a range past its end ('assert_constant_range_in_bounds')
     auto assert_sector_buffer(toc& tc, const ident_info& buffer_info) const
         -> void {
 
@@ -341,23 +327,6 @@ class stmt_builtin_io final : public statement {
                 std::format("the element size {} B does not divide the "
                             "sector size {} B",
                             element_size_bytes, sector_size_bytes)};
-        }
-
-        const std::optional<size_t> array_len{buffer_info.array_len()};
-
-        // e.g. a parameter checked without a call
-        if (not array_len) {
-            return;
-        }
-
-        const size_t buffer_size_bytes{*array_len * element_size_bytes};
-
-        if (buffer_size_bytes < sector_size_bytes) {
-            throw compile_error{
-                buffer_path().tok(),
-                std::format("the array of {} B is smaller than a sector of "
-                            "{} B",
-                            buffer_size_bytes, sector_size_bytes)};
         }
     }
 

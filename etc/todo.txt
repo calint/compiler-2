@@ -6,6 +6,28 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
 --------------------------------------------------------------------------------
 1. clean up
 --------------------------------------------------------------------------------
+[ ] medium: user decision (round 293 ZK): an operation allocates its own
+    result register before the named registers it then needs, so it blocks
+    itself one live value before the real limit (the division of round 256
+    WF is one case): x86_64 'if p == q' of records or 'arrays_equal' as a
+    condition ('resolve_memory_cmp' allocates the result before
+    'memory_equal' names 'rsi'/'rdi'; a branch needs no result register),
+    the count of 'read'/'write' or a sector call used as an operand on both
+    targets ('stmt_builtin_io::compile' gets 'dst' before 'call_target'
+    names the arguments), the result register of an inlined call held
+    through its body; the advice "compute a part with 'let'" does not name
+    the cause; repros in the round 293 notes (f1, f2, f1c)
+[ ] easy: user decision (round 293 ZK): x86_64 'zero' and 'copy_block'
+    of a value that is not small always take 'rep' ('takes_rep_form'), so
+    'p = {}' or 'p = q' of a 200-byte record is rejected when 'rax'/'rsi'
+    is held, while 'store_bytes' falls back to immediate stores at any
+    size: 'p = {"<200 bytes>"}' is accepted and 'p = {"abc"}' is not; rv32i
+    accepts all three
+[ ] easy: (round 293 YC) the 'check_folded_conditions' call of the
+    compile-time 'let' fold in 'stmt_def_var' has no effect: a 'let' folds
+    only in a body compiled with constants from a call, where
+    'toc::check_skipped' returns at once; mutation removing it is
+    equivalent; remove the call if no other path folds there
 [ ] easy: (round 291 YD) x86_64 'memory_equal' reserves 'rcx', which
     only 'shift' names alone and which is held only when 'rsi' and 'rdi'
     are; without the reservation a record '==' whose displacement is past

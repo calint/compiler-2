@@ -7679,3 +7679,49 @@ SRC=2761 && EXP=0 && RUN
 # instructions of the lines marked '# folds' are pinned
 SRC=2762 && EXP=0 && RUN
 if [[ $MACHINE == x86_64 ]]; then SRC=2762 && LISTING folds; fi
+
+# a global written and then read at one path stays written for the arguments
+SRC=2640 && COMPERR
+
+# a global used at two paths keeps both, the field written is the argument
+SRC=2641 && COMPERR
+
+# a 'break' checked only after an inlined 'exit' leaves the loop end unreached
+SRC=2642 && EXP=3 && RUN
+SRC=2642 && LISTING folds
+
+# a branch skipped for an array length in a noinline body is not checked
+SRC=2643 && EXP=3 && RUN
+
+# the result of a method may hide a constant of its generic type
+SRC=2644 && EXP=7 && RUN
+
+# a generic body sees only the data defined before it
+SRC=2645 && COMPERR
+
+# --checks=frame: a body compiled after a larger one keeps its own frame size
+SRC=2646 && EXP=3 && OPTS="--vars=112 --checks=frame" RUN
+
+# the untyped constants of a list in a conversion are checked at the default
+# type: '0xfedc1234' fits on x86_64, not on rv32i
+if [[ $MACHINE == x86_64 ]]; then SRC=2720 && EXP=53 && RUN; fi
+if [[ $MACHINE != x86_64 ]]; then SRC=2720 && COMPERR; fi
+
+# a conversion computes its argument in the destination when it can; the
+# instructions of the lines marked '# folds' are pinned
+SRC=2721 && EXP=178 && RUN
+SRC=2721 && LISTING folds
+
+# the argument of a conversion computed in a scratch register wraps under the
+# overflow check
+SRC=2722 && EXP=144 && OPTS="--checks=noub,line" RUN
+
+# the unary ops of a conversion of a 'bool' call apply to the converted copy
+SRC=2723 && EXP=253 && RUN
+
+# a 'break' before an inner loop narrows what is set after the outer loop
+SRC=2724 && COMPERR
+
+# the breaks of an inner loop are its own, an outer 'break' does not narrow
+# what is set after it
+SRC=2725 && EXP=11 && RUN

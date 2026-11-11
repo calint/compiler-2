@@ -1,0 +1,12 @@
+# a global used at two paths keeps both, the field it writes after reading
+# another is shared with the argument
+type pair {a i8[2], b i8[2]}
+var r = pair
+func f(p i8[]) res int {
+    res = r.a[1]
+    r.b[0] = 3
+    res = res + p[0]
+}
+func main() {
+    exit(f(r.b))
+}

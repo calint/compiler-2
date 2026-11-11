@@ -1,0 +1,7 @@
+
+2645.baz:3:13: 'limit' not found
+    res = T(limit[0])
+            ^~~~~
+2645.baz:9:10: instantiated by 'get<i8>'
+    exit(get<i8>())
+         ^~~

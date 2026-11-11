@@ -1,0 +1,22 @@
+=== 9:     var r = i16(a * (a >> 1)) # folds
+    movsx r15w, byte [rbp]
+    movsx r14w, byte [rbp]
+    sar r14w, 1
+    imul r15w, r14w
+    mov word [rbp + 4], r15w
+=== 10:     var s = i8(i16(a) + b) # folds
+    mov r15b, byte [rbp]
+    add r15b, byte [rbp + 2]
+    mov byte [rbp + 6], r15b
+=== 11:     s = -i8(b) # folds
+    mov r15b, byte [rbp + 2]
+    mov byte [rbp + 6], r15b
+    neg byte [rbp + 6]
+=== 12:     r = i16(b / 3) # folds
+    mov r15w, word [rbp + 2]
+    mov word [rbp + 4], r15w
+    movsx rax, word [rbp + 4]
+    mov r15, 3
+    cqo
+    idiv r15
+    mov word [rbp + 4], ax

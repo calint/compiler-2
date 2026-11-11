@@ -1,6 +1,7 @@
 #pragma once
 
 #include <algorithm>
+#include <cassert>
 #include <cstddef>
 #include <cstdint>
 #include <format>
@@ -34,8 +35,9 @@
 // with the 'generic_arg's 'T' 'i8' and 'capacity' 8, it parses the fields of
 // 'list' again as those of 'str'
 //
-// e.g. 'func list.add(x)' is a 'generic_method_info', every instance of
-// 'list' parses it again as its own method, e.g. 'str.add'
+// e.g. 'func list.add(x)' is a 'generic_func_info' kept as a method of
+// 'list', every instance of 'list' parses it again as its own method, e.g.
+// 'str.add'
 //
 // e.g. 'func f<T type>(x T)' is a 'generic_func_info', a call 'f<i8>(x)' or
 // 'f(x)' parses it again as 'f<i8>'
@@ -543,10 +545,12 @@ struct generic_signature {
 
 // a function with type parameters, e.g. 'func tokenizer.to<T type>()'. every
 // distinct list of type arguments is the definition parsed again from
-// 'start_tk' as an instance. the method of a generic type with type parameters
-// of its own is one generic function per instance of the type
+// 'start_tk' as an instance. a method of a generic type, e.g. 'func
+// text.print()', is kept the same way, every instance of the type parses it
+// again as its own method; one with type parameters of its own is one generic
+// function per instance of the type
 struct generic_func_info {
-    // e.g. 'tokenizer'
+    // e.g. 'tokenizer', or the generic type 'text' of a method
     token src_loc_tk;
     // e.g. 'func'
     token func_tk;
@@ -594,30 +598,17 @@ struct func_instance {
     generic_trace trace;
 };
 
-// a method of a generic type, e.g. 'func text.print()', every instance of the
-// type gets its own method
-struct generic_method_info {
-    // the generic type it is a method of, e.g. 'text'
-    token type_tk;
-    // e.g. 'print'
-    token method_name_tk;
-    // e.g. 'func'
-    token func_tk;
-    // where the definition continues after 'func', e.g. at 'text'
-    token start_tk;
-    // e.g. '()' of 'func text.print()'
-    generic_signature signature{};
-    // see 'definition_order'
-    size_t definition{};
-};
-
 // the generic functions and types of the program, the methods of the generic
 // types and the instances made of them
 class generic_registry final {
     lut<generic_func_info> funcs_;
     lut<generic_type_info> types_;
-    std::vector<generic_method_info> methods_;
+    // the methods of the generic types, see 'add_method'
+    std::vector<generic_func_info> methods_;
     std::vector<generic_type_instance> type_instances_;
+    // the names that a call instantiates, in the order of definition, see
+    // 'uninstantiated_func_names'
+    std::vector<std::string> instantiable_funcs_;
     std::set<std::string, std::less<>> instantiated_funcs_;
 
     std::reference_wrapper<const definition_order> order_;
@@ -625,11 +616,25 @@ class generic_registry final {
   public:
     explicit generic_registry(const definition_order& order) : order_{order} {}
 
+    // note: a generic function without a receiver is added at its
+    //       definition, one with a receiver at an alias
+
     auto add_func(std::string name, generic_func_info info) -> void {
+        if (not info.receiver) {
+            instantiable_funcs_.push_back(info.report_name);
+        }
+
         funcs_.put(std::move(name), std::move(info));
     }
 
-    auto add_method(const generic_method_info& info) -> void {
+    // e.g. 'text.print' of 'func text.print()', without a receiver
+    auto add_method(const generic_func_info& info) -> void {
+        assert(not info.receiver);
+
+        if (not info.signature.type_param_tks.empty()) {
+            instantiable_funcs_.push_back(info.report_name);
+        }
+
         methods_.push_back(info);
     }
 
@@ -702,7 +707,7 @@ class generic_registry final {
 
     // in the order they are defined
     [[nodiscard]] auto methods() const
-        -> const std::vector<generic_method_info>& {
+        -> const std::vector<generic_func_info>& {
 
         return methods_;
     }
@@ -714,41 +719,11 @@ class generic_registry final {
     [[nodiscard]] auto uninstantiated_func_names() const
         -> std::vector<std::string> {
 
-        struct named_definition {
-            size_t definition{};
-            std::string name;
-        };
-
-        std::vector<named_definition> generics;
-
-        for (const generic_func_info& func : funcs_.values()) {
-            if (not func.receiver) {
-                generics.push_back({
-                    .definition{func.definition},
-                    .name{func.report_name},
-                });
-            }
-        }
-
-        for (const generic_method_info& method : methods_) {
-            if (not method.signature.type_param_tks.empty()) {
-                generics.push_back({
-                    .definition{method.definition},
-                    .name{
-                        method_name_of(method.type_tk.text(),
-                                       method.method_name_tk.text()),
-                    },
-                });
-            }
-        }
-
-        std::ranges::stable_sort(generics, {}, &named_definition::definition);
-
         std::vector<std::string> names;
 
-        for (const named_definition& generic : generics) {
-            if (not instantiated_funcs_.contains(generic.name)) {
-                names.push_back(generic.name);
+        for (const std::string& name : instantiable_funcs_) {
+            if (not instantiated_funcs_.contains(name)) {
+                names.push_back(name);
             }
         }
 

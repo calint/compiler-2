@@ -1,0 +1,4 @@
+
+2720.baz:4:16: constant '0xfedc1234' does not fit 'i32' (-2147483648 to 2147483647), 'i32(...)' wraps it
+    var a = i8(0xfedc1234 + 1)
+               ^~~~~~~~~~

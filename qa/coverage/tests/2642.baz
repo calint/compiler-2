@@ -1,0 +1,14 @@
+# a 'break' compiled only for its checks, after an inlined 'exit', does not
+# reach the end of the loop, so the code after the loop is not emitted; the
+# instructions of the line marked '# folds' are pinned
+func stop(k int) {
+    exit(k)
+}
+func main() {
+    var k = 3
+    loop {
+        stop(k)
+        break
+    }
+    k = 4 # folds
+}

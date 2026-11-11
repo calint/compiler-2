@@ -2132,20 +2132,14 @@ class definition_checks final {
     }
 
     auto
-    assert_generic_method_not_defined(const generic_method_info& method) const
+    assert_generic_method_not_defined(const generic_func_info& method) const
         -> void {
 
-        for (const generic_method_info& known : generics_.get().methods()) {
-            if (known.type_tk.text() == method.type_tk.text() and
-                known.method_name_tk.text() == method.method_name_tk.text()) {
-
-                const std::string name{
-                    method_name_of(method.type_tk.text(),
-                                   method.method_name_tk.text()),
-                };
-
-                throw_already_defined(method.type_tk, "generic method", name,
-                                      where(known.type_tk));
+        for (const generic_func_info& known : generics_.get().methods()) {
+            if (known.report_name == method.report_name) {
+                throw_already_defined(method.src_loc_tk, "generic method",
+                                      method.report_name,
+                                      where(known.src_loc_tk));
             }
         }
     }
@@ -2724,7 +2718,7 @@ class toc final {
 
     // a method is defined once for its generic type, also when no alias
     // makes an instance of the type
-    auto add_generic_method(const generic_method_info& method) -> void {
+    auto add_generic_method(const generic_func_info& method) -> void {
         assert(not is_compiling_);
 
         definitions_.assert_generic_method_not_defined(method);

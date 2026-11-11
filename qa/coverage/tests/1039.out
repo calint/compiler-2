@@ -1,4 +1,4 @@
 
-1039.baz:5:21: the array of 100 B is smaller than a sector of 512 B
+1039.baz:5:21: a sector of 512 elements is past the end of array 'bytes' of size 100
     sector_write(0, bytes)
                     ^~~~~

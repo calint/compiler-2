@@ -1,0 +1,19 @@
+# the breaks of an inner loop are its own: the 'break' of the outer loop with
+# 'res' unset does not narrow what is set after the inner loop
+func f(n) res {
+    loop {
+        if n == 1 {
+            break
+        }
+        loop {
+            res = 3
+            break
+        }
+        res = res + 1
+        return
+    }
+    res = 7
+}
+func main() {
+    exit(f(0) + f(1))
+}
