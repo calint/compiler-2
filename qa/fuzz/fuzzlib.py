@@ -572,19 +572,22 @@ def build_and_run(work, source, target, options, stdin=b"",
 
 
 def judge(source, expected, stdin=b"", targets=TARGETS,
-          option_lists=OPTION_LISTS, prefix="model"):
+          option_lists=OPTION_LISTS, prefix="model", uart_expected=None):
     # builds the program for every target and option list, a rotated target
     # with the first list only, returns the findings (category, key, detail)
     # of the builds that did not end with the 'expected' ('exit', code,
-    # stdout)
+    # stdout), on 'UART_TARGETS' with 'uart_expected' when given, which has
+    # the standard error in the output
     with tempfile.TemporaryDirectory(prefix="fuzz-") as work:
         found = []
         for target in with_rotated(targets, source):
             lists = option_lists if target in targets else option_lists[:1]
+            wanted = uart_expected if uart_expected and \
+                target in UART_TARGETS else expected
             for options in lists:
                 got = build_and_run(work, source, target, options, stdin)
                 # a tool stopped by a limit says nothing about the code
-                if got == expected or got[0] == "skip":
+                if got == wanted or got[0] == "skip":
                     continue
                 # the registers of the target are used up, a limit of the
                 # language and not a defect; e.g. the check of a function
@@ -605,7 +608,7 @@ def judge(source, expected, stdin=b"", targets=TARGETS,
                 else:
                     category = f"{prefix}-mismatch"
                 found.append((category, key,
-                              f"expected {expected}, got {got}"))
+                              f"expected {wanted}, got {got}"))
         return found
 
 

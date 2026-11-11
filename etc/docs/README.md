@@ -1997,9 +1997,11 @@ What depends on the target is listed here, nothing else does:
    end of the card, which panics 'sd card' on x86_64
    and rv32i, its emulator stops with "CPU error: 1305" and exit code 25;
    the descriptors do not differ: on every target 'read' serves only 0 and
-   'write' only 1 and 2, compared at the full width of the value, and any
-   other returns -9 without a system call, also the descriptor of the card
-   image that x86_64 and rv32i keep open;
+   'write' only 1 and 2, compared at the full width of the value (a
+   descriptor led by 'i8' or 'i16' is computed at 'i32', e.g. 'write(d8 <<
+   1, b)' with 'd8' 64 writes to 128), and any other returns -9 without a
+   system call, also the descriptor of the card image that x86_64 and
+   rv32i keep open;
    on the uart of 'rv32i-qemu' and 'rv32i-fpga' a 'read' returns at most one
    line, a carriage return reads as a newline,
    and an end of transmission byte ends a read, also inside the input; the

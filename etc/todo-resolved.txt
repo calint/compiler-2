@@ -1,6 +1,16 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 328 (2026-11-11, BG fuzzing of the descriptors)
+    => done (2026-11-11): 'fuzz-io.py' gives half of its programs to a
+       'DescriptorGenerator': served and bad descriptors of every width
+       (x86_64 also above 2^31), counts and starts at the edges of the
+       array and past them under the checks, values from literals, fields,
+       elements, conversions, inline and noinline calls, in lists and in
+       wrappers; 'fuzzlib.judge' takes the output of the uart targets
+       apart, since a write to 2 shows only there; 32000 programs found no
+       defect; chapter 8 says that a descriptor led by 'i8' or 'i16' is
+       computed at 'i32'
 [x] easy: round 327 (2026-11-11, the sd card is no source file)
     => done (2026-11-11): '--sdcard' naming a source file, the main file or
        an included one, is an error as '--bin' is
