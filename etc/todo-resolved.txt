@@ -1,6 +1,34 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 300 (2026-11-11, the two items cleared by the user)
+    => done (2026-11-11): the shift count check of 'compile_step' is gone
+       and the fpga emulator traps a misaligned access (see the two items
+       below); tests on all targets, listings equal, far jumps, versions,
+       roome and fuzz-all with the asan build on all targets clean
+[x] medium: (round 277 XK) the shift count narrowing check in
+    'expr_arith::compile_step' (its comment: "also in the argument of a
+    conversion") may be redundant: mutation testing found no program where
+    it is the only check and the listings are equal without it; removing a
+    no-UB check needs a proof that every path checks the count first
+    => done (2026-11-11): round 300 ZM: every path checks the count with
+       'assert_not_narrowed' at a width no wider than the one it is compiled
+       at (assignments, calls, 'exit', 'foo', io, indexes, comparison
+       sides; a conversion narrows on purpose only an argument that keeps
+       its low bits, never a shift); turned into a log, the check never
+       fired over the tests, 7 fuzzers and 35 programs on three targets and
+       six check sets; removed, listings equal; a note at 'keeps_low_bits'
+[x] easy: (round 297 YB) the fpga emulator drops a halfword or word store
+    at a misaligned address without a trap (qemu accepts it), so a
+    misaligned access the compiler emits goes unseen on every rv32i
+    target; trapping in the emulator would make the rv32i-fpga run catch
+    it (mutation m14 of round 297: a padding gap zeroed at the alignment
+    of the type behind 'rs[i] = make()')
+    => done (2026-11-11): round 300 ZR: the emulator stops on a misaligned
+       fetch, 'lh', 'lhu', 'lw', 'sh' or 'sw' with "misaligned OP at pc ...
+       address ..." and exit codes 199 to 204, which the fuzzers report as
+       a target difference; the tests, the fuzzers, roome and alignment
+       programs found no misaligned access
 [x] easy: round 299 (2026-11-11, ZS design review of the tokenizer,
     tokens and source files; ZO mutation testing of 'stmt_def_func',
     'program', 'source_files' and 'register_report'; fuzz-all scale 3)

@@ -674,6 +674,9 @@ class expr_arith final : public statement {
     // '/', '%' and '>>' read the high bits of their operands; a '<<' count
     // is checked against the width it is computed at, and a count not below
     // a narrower width is defined only at the wider one
+    // note: false for a shift, so a conversion computes a shift no narrower
+    //       than the width its count was checked at ('assert_not_narrowed');
+    //       'compile_step' does not check the count again
     [[nodiscard]] auto keeps_low_bits() const -> bool override {
         for (const spelled_operator<arithmetic_operator>& spelled : ops_) {
             const arithmetic_operator o{spelled.op};
@@ -856,14 +859,6 @@ class expr_arith final : public statement {
 
     auto compile_step(toc& tc, const size_t indent, const destination& dst,
                       const step& s) const -> void {
-
-        if (is_shift(s.op)) {
-            // note: a count wider than the value is rejected as narrowed also
-            //       in the argument of a conversion, which narrows the other
-            //       elements on purpose
-
-            s.element->assert_not_narrowed(tc, dst.type_ref());
-        }
 
         if (s.value) {
             emit_constant_step(tc, indent, dst, s);

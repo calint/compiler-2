@@ -13,12 +13,6 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
     is accepted, the same program with a call of 'f' is rejected (the
     result is reached through an address in the check, which test 2802
     relies on)
-[ ] easy: (round 297 YB) the fpga emulator drops a halfword or word store
-    at a misaligned address without a trap (qemu accepts it), so a
-    misaligned access the compiler emits goes unseen on every rv32i
-    target; trapping in the emulator would make the rv32i-fpga run catch
-    it (mutation m14 of round 297: a padding gap zeroed at the alignment
-    of the type behind 'rs[i] = make()')
 [ ] easy: (round 294 XW) 'test-coverage.sh' runs the compiler without a
     timeout, so a compiler that loops (a mutant of 'assembler::remove')
     hangs the run instead of failing the case
@@ -86,11 +80,6 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
     file 'equivalent' to '/dev/stdout' ("invalid --bin: 'out.s' is the
     standard output") is about 15 lines in 'main.cpp' and a test-cli case,
     only a guard against a user mistake
-[ ] medium: (round 277 XK) the shift count narrowing check in
-    'expr_arith::compile_step' (its comment: "also in the argument of a
-    conversion") may be redundant: mutation testing found no program where
-    it is the only check and the listings are equal without it; removing a
-    no-UB check needs a proof that every path checks the count first
 [ ] easy: (round 265 WT) compile time grows faster than linear in two
     places left as they are: 'source_files::contains' compares each
     include with every loaded file through 'std::filesystem::equivalent'

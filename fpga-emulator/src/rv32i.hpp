@@ -9,9 +9,7 @@
 #pragma once
 
 #include <cstdint>
-#ifdef RV32I_DEBUG
 #include <cstdio>
-#endif
 
 namespace rv32i {
 
@@ -23,6 +21,17 @@ using bus_status = uint32_t;
 
 using bus = auto (*)(uint32_t address, bus_op_width op_width, bool is_store,
                      uint32_t &data) -> bus_status;
+
+// status of a misaligned access, e.g. 'lw' at an address not a multiple of 4,
+// 'CPU error: 199' for a fetch to 204 for an 'sw' (exit code, modulo 256)
+enum misaligned : uint32_t {
+  MISALIGNED_FETCH = 1991,
+  MISALIGNED_LH = 1992,
+  MISALIGNED_LHU = 1993,
+  MISALIGNED_LW = 1994,
+  MISALIGNED_SH = 1995,
+  MISALIGNED_SW = 1996,
+};
 
 class cpu final {
 
@@ -41,6 +50,9 @@ public:
     regs_[0] = 0;
     uint32_t next_pc = pc_ + 4;
     uint32_t instruction = 0;
+    if (pc_ & 3) {
+      return misaligned_(MISALIGNED_FETCH, "fetch", pc_);
+    }
     if (bus_status const s =
             bus_(pc_, bus_op_width::WORD, false, instruction)) {
       return 1000 + s;
@@ -271,6 +283,9 @@ public:
 #ifdef RV32I_DEBUG
         printf("sh x%u, %d(x%u)\n", rs2, S_imm12, rs1);
 #endif
+        if (address & 1) {
+          return misaligned_(MISALIGNED_SH, "sh", address);
+        }
         if (bus_status const s = bus_(address, HALF_WORD, true, value)) {
           return 1200 + s;
         }
@@ -280,6 +295,9 @@ public:
 #ifdef RV32I_DEBUG
         printf("sw x%u, %d(x%u)\n", rs2, S_imm12, rs1);
 #endif
+        if (address & 3) {
+          return misaligned_(MISALIGNED_SW, "sw", address);
+        }
         if (bus_status const s = bus_(address, WORD, true, value)) {
           return 1300 + s;
         }
@@ -315,6 +333,9 @@ public:
 #ifdef RV32I_DEBUG
         printf("lh x%u, %d(x%u)\n", rd, I_imm12, rs1);
 #endif
+        if (address & 1) {
+          return misaligned_(MISALIGNED_LH, "lh", address);
+        }
         if (bus_status const s = bus_(address, HALF_WORD, false, value)) {
           return 1500 + s;
         }
@@ -325,6 +346,9 @@ public:
 #ifdef RV32I_DEBUG
         printf("lw x%u, %d(x%u)\n", rd, I_imm12, rs1);
 #endif
+        if (address & 3) {
+          return misaligned_(MISALIGNED_LW, "lw", address);
+        }
         if (bus_status const s = bus_(address, WORD, false, value)) {
           return 1600 + s;
         }
@@ -349,6 +373,9 @@ public:
 #ifdef RV32I_DEBUG
         printf("lhu x%u, %d(x%u)\n", rd, I_imm12, rs1);
 #endif
+        if (address & 1) {
+          return misaligned_(MISALIGNED_LHU, "lhu", address);
+        }
         if (bus_status const s = bus_(address, HALF_WORD, false, value)) {
           return 1800 + s;
         }
@@ -508,6 +535,16 @@ public:
 
   auto reg(uint32_t const num) const -> int32_t { return regs_[num]; }
   auto pc() const -> uint32_t { return pc_; }
+
+private:
+  auto misaligned_(misaligned const code, char const *const op,
+                   uint32_t const address) const -> uint32_t {
+    fprintf(stderr, "\nmisaligned %s at pc 0x%08x address 0x%08x\n", op, pc_,
+            address);
+    return code;
+  }
+
+public:
   auto is_halted() const -> bool { return is_halted_; }
 
 private:
