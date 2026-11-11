@@ -1,0 +1,12 @@
+# an element of a sector, 512 bytes, divides the sector (2463)
+
+type block { bytes i8[512] }
+
+func main() {
+    var blocks = block[1]
+    blocks[0].bytes[0] = 7
+    sector_write(0, blocks)
+    blocks[0].bytes[0] = 0
+    sector_read(0, blocks)
+    exit(blocks[0].bytes[0])
+}

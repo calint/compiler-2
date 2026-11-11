@@ -1,6 +1,17 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 309 (2026-11-11, AE mutation testing of rounds 300-305;
+    AC new fuzzer of combined features; AH regression hunt of 306-308)
+    => done (2026-11-11): AE: 46 mutants, 33 killed by the tests, new tests
+       2870-2873 kill 4 (the qemu sector routines of one direction, a
+       'read' without 'write' on bare metal, a sector buffer of 512-byte
+       elements), the emulator traps are not reachable from an accepted
+       program; AC: a generator of methods on indexed elements in 'foo',
+       generics, recursion, written 'dat's and io into fields found no
+       defect in 5850 programs on all targets and options; AH: rounds 307
+       and 308 change nothing, the reorder of round 306 changes the size of
+       some rv32i compiles (entry of round 306 corrected)
 [x] easy: round 308 (2026-11-11, AF complexity, second pass)
     => done (2026-11-11): 10 more functions split into named steps or
        flattened: 'stmt_if::compile' ('check_skipped_else', 'compile_else'),
@@ -26,7 +37,10 @@
        the block of the temporaries and makes the result in a temporary for
        inlined and noinline calls (two copies each before); a noinline call
        declares its result temporary before its argument ones as an inlined
-       call does (262 compiles reorder two temporaries, the same size); the
+       call does (262 compiles of the tests reorder two temporaries, the
+       same size; over 2251 generated programs 206 rv32i compiles change as
+       a record argument temporary lands at another alignment: 63 smaller
+       by 1 to 7 instructions, 14 larger by 1, 129 another mix); the
        range checks, narrowing, register protection and reach tracking have
        one mechanism each already; AD: every pass and mode serves a
        guarantee, a report or the versions, no sizable simplification left

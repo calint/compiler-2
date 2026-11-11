@@ -7841,3 +7841,13 @@ if [[ $MACHINE == x86_64 ]]; then SRC=2853 && EXP=248 && SDCARD=1100G RUN_ERR; f
 
 # x86_64: the sector 4294967295 is the sector -1
 if [[ $MACHINE == x86_64 ]]; then SRC=2854 && EXP=7 && SDCARD=2T RUN; fi
+
+# a 'sector_write' without a card panics, also with a 'sector_read' and on qemu
+if [[ $MACHINE != rv32i-fpga ]]; then SRC=2870 && EXP=248 && RUN_ERR; fi
+if [[ $MACHINE != rv32i-fpga ]]; then SRC=2871 && EXP=248 && RUN_ERR; fi
+
+# 'read' from a descriptor other than 0 returns -9 in a program without 'write'
+SRC=2872 && EXP=0 && RUN
+
+# an element of 512 bytes divides the sector
+if [[ $MACHINE != rv32i-qemu ]]; then SRC=2873 && EXP=7 && SDCARD=1M RUN; fi

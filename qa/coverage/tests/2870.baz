@@ -1,0 +1,7 @@
+# a 'sector_write' without a card panics, also on the qemu machine, which has
+# no sd card (1046)
+
+func main() {
+    var bytes = i8[512]
+    sector_write(0, bytes)
+}

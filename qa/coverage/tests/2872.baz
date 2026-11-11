@@ -1,0 +1,9 @@
+# 'read' from a descriptor other than 0 returns -9 also in a program that does
+# not 'write' (2862)
+
+func main() {
+    var buffer = i8[8]
+    var bad = read(1, buffer)
+    if bad != -9 exit(1)
+    exit(0)
+}
