@@ -1,6 +1,15 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 341 (2026-11-11, CJ confirming round: versions and
+    registers)
+    => done (2026-11-11): every test and 4600 generated programs give the
+       same verdict, result, register report and routines under each
+       '--versions' value and '--nopt' on both targets; the second version
+       never compiled where the first ran out of registers; chapter 8 item
+       4 names '--versions=nested' with 'first' and 'last': the kept
+       version sets the frame size, so 'frame' stops a recursion at another
+       depth (24 B against 28 B per frame in a probe on rv32i-fpga)
 [x] easy: round 340 (2026-11-11, confirming round: design of the
     definitions and readability of the statements)
     => done (2026-11-11): CK: 'generic_type_instance::method_name' had no

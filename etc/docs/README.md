@@ -1988,11 +1988,11 @@ What depends on the target is listed here, nothing else does:
    e.g. 'arrays_equal(a, b, 0x1000)' of 1 MiB records (2198, 2200, 2201),
    the depth of noinline calls that fits in '--vars' before 'frame' stops
    it, since a frame holds an address for each parameter and the result,
-   8 B on x86_64 and 4 B on rv32i (and the testing modes '--versions=first'
-   and 'last', since the frame size follows the kept version, 1.4), and a
-   deep noinline recursion, which
-   'stack' stops on the bare-metal targets and the operating system on
-   x86_64 and rv32i (8.1); on rv32i linux the linker places the program, so
+   8 B on x86_64 and 4 B on rv32i (and '--versions': 'nested', 'first' and
+   'last' keep other versions than the default, and the frame size follows
+   the kept version, 1.4), and a deep noinline recursion, which 'stack'
+   stops on the bare-metal targets and the operating system on x86_64 and
+   rv32i (8.1); on rv32i linux the linker places the program, so
    code, data and variables that fit in 4 GiB from address 0 can still fail
    the link, e.g. '--vars=0xffff0000' with 'ld.lld', which starts it at
    about 0x11000; on x86_64 '--vars' reaches 2^47 - 16, and variables
