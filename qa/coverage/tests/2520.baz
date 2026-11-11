@@ -1,0 +1,10 @@
+# without the overflow check an i8 difference in a register wraps at its width
+
+func noinline wrapped(a i8, b i8) res {
+    res = {}
+    if a - b == 127 res = 1
+}
+
+func main() {
+    if not wrapped(-128, 1) == 1 exit(1)
+}

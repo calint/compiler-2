@@ -1,0 +1,10 @@
+# a difference with the constant 2048 is one 'addi' of -2048; the instructions
+# of the line marked '# folds' are pinned
+
+func noinline difference(a) res {
+    res = a - 2048 # folds
+}
+
+func main() {
+    if not difference(1) == -2047 exit(1)
+}

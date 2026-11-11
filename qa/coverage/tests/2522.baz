@@ -1,0 +1,16 @@
+# a boolean of 'x > 2047' and 'x <= 2047' compares with the threshold 2048
+
+func noinline above(x) res bool {
+    res = x > 2047
+}
+
+func noinline at_most(x) res bool {
+    res = x <= 2047
+}
+
+func main() {
+    if above(2047) exit(1)
+    if not above(2048) exit(2)
+    if not at_most(2047) exit(3)
+    if at_most(2048) exit(4)
+}

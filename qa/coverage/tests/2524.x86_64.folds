@@ -1,0 +1,7 @@
+=== 5:     res = a - 2048 # folds
+    mov r15, qword [rbx]
+    mov r14, qword [rbx + 8]
+    mov r14, qword [r14]
+    mov qword [r15], r14
+    sub qword [r15], 2048
+    ret

@@ -1,0 +1,10 @@
+# without the overflow check the negation of the minimum i8 in a register wraps
+
+func noinline negated(a i8) res {
+    res = {}
+    if -a == -128 res = 1
+}
+
+func main() {
+    if not negated(-128) == 1 exit(1)
+}

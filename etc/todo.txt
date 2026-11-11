@@ -6,6 +6,11 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
 --------------------------------------------------------------------------------
 1. clean up
 --------------------------------------------------------------------------------
+[ ] easy: (round 290 XS) the 'is_left' normalize flag that rv32i passes
+    to the last 'store_operation_result' of a constant shift has no effect:
+    a left shift into a narrow register takes the 'slli'/'srai' branch
+    before it, any other is 32-bit or a store; mutation 'is_left' -> 'false'
+    is equivalent; dropping the flag would simplify the shift
 [ ] easy: user decision (round 288 ZC): 'foo g[k].it, bump()' with 'bump'
     writing 'k' is accepted (the address of 'g[k].it' is taken before the
     count, the same on every target), while 'array_copy(g[k].it, b,

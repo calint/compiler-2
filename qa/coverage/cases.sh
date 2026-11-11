@@ -7646,3 +7646,25 @@ SRC=2608 && EXP=0 && RUN
 
 # a constant shifted left wraps at its width before the next operation
 SRC=2609 && EXP=0 && RUN
+
+# without the overflow check an i8 difference in a register wraps at its width
+SRC=2520 && EXP=0 && RUN
+
+# without the overflow check the negation of the minimum i8 in a register wraps
+SRC=2521 && EXP=0 && RUN
+
+# a boolean of 'x > 2047' and 'x <= 2047' compares with the threshold 2048
+SRC=2522 && EXP=0 && RUN
+
+# a quotient and remainder by the minimum i32 divide the magnitudes unsigned
+SRC=2523 && EXP=0 && RUN
+
+# a difference with the constant 2048 is one 'addi' of -2048, pinned
+SRC=2524 && EXP=0 && RUN
+SRC=2524 && LISTING folds
+
+# a constant right shift of a negative value keeps its sign
+SRC=2525 && EXP=0 && RUN
+
+# an i8 conversion of an 'xor' of i32 values keeps only the bits of the i8
+SRC=2526 && EXP=0 && RUN

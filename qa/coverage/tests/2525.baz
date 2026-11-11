@@ -1,0 +1,15 @@
+# a constant right shift of a negative value keeps its sign
+
+func noinline shifted(a) res {
+    res = a >> 2
+}
+
+func noinline shifted_i8(a i8) res {
+    res = {}
+    if a >> 1 == -64 res = 1
+}
+
+func main() {
+    if not shifted(-8) == -2 exit(1)
+    if not shifted_i8(-128) == 1 exit(2)
+}

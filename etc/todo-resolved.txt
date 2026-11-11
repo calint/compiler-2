@@ -1,6 +1,16 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 290 (2026-11-11, XS mutation testing of the rv32i
+    arithmetic)
+    => done (2026-11-11): 52 mutants of the multiply and divide helpers,
+       shift-and-add constants, shifts, extensions, loads, immediates,
+       comparisons and negation; 11 survived the tests, new tests 2520-2526
+       kill 7 (narrow '-' and negation that wrap without the overflow check,
+       which the fuzzers never run, comparisons at 2047, division by the
+       32-bit minimum, 'a - 2048' as one 'addi', constant '>>' keeping the
+       sign, the normalize after a wider operand), 4 equivalent (one is a
+       todo: the 'is_left' flag of a constant shift); no compiler bug
 [x] easy: round 289 (2026-11-11, ZB design review of the rv32i backend)
     => done (2026-11-11): rv32i is twice the size of x86_64 for what the
        hardware lacks (aligned bulk walks against 'rep', the multiply and

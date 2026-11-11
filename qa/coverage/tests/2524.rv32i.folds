@@ -1,0 +1,9 @@
+=== 5:     res = a - 2048 # folds
+    lw t0, 0(s1)
+    lw t2, 4(s1)
+    lw t1, 0(t2)
+    addi t1, t1, -2048
+    sw t1, 0(t0)
+    lw ra, 0(sp)
+    addi sp, sp, 16
+    ret
