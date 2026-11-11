@@ -1156,9 +1156,6 @@ class machine_rv32i : public machine {
     auto emit_io_routines(const bool read_used, const bool write_used)
         -> void override {
 
-        // the descriptors that 'write' serves
-        constexpr int write_served_count{2};
-
         if (read_used) {
             // note: 'bnez' compares the descriptor with 'stdin_descriptor_'
 
@@ -1178,7 +1175,7 @@ class machine_rv32i : public machine {
         // 1 and 2 less 1 are below 2 unsigned, 0 and a negative descriptor
         // are not
         assembler_.addi(1, "a5", "a0", -stdout_descriptor_);
-        assembler_.li(1, "a4", write_served_count);
+        assembler_.li(1, "a4", write_served_count_);
         assembler_.bgeu(1, "a5", "a4", "5f");
         emit_write_transfer();
         emit_bad_descriptor_return();
@@ -4271,25 +4268,6 @@ class machine_rv32i : public machine {
         return dst_size_bytes < word_size_bytes_ and
                (src_size_bytes > dst_size_bytes or
                 (extension_differs and src_size_bytes == dst_size_bytes));
-    }
-
-    // the routine that a call of 'function' calls
-    [[nodiscard]] static auto routine_label(const target_call function)
-        -> std::string_view {
-
-        if (function == target_call::read) {
-            return read_label_;
-        }
-
-        if (function == target_call::write) {
-            return write_label_;
-        }
-
-        if (function == target_call::sector_read) {
-            return sector_read_label_;
-        }
-
-        return sector_write_label_;
     }
 
     // the aligned stack area 'save_call_registers' allocates for 'count'

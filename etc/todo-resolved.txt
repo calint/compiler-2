@@ -1,6 +1,16 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 322 (2026-11-11, AZ what the backends repeat)
+    => done (2026-11-11): 'emit_used_routines' is not virtual (no backend
+       overrides it); 'write_served_count_' is a fact of every target in
+       'machine'; 'machine::routine_label' reads the labels of
+       'target_.routines', rv32i drops its own and x86_64 merges
+       'call_io_routine' and 'call_sector_routine' into 'emit_target_call';
+       27 lines fewer, listings equal; rejected: the checks of overlap,
+       divisor and bounds (the instructions differ), the handler of the
+       sd card (the listing changes), one-caller forwarders (each keeps the
+       front end off the assembler)
 [x] easy: round 321 (2026-11-11, AO mutants of the i/o routines of
     round 311)
     => done (2026-11-11): 43 mutants, 36 killed and 7 equivalent ('rcx' on

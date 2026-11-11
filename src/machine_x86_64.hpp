@@ -42,8 +42,7 @@
 //                each jumps to its handler, all but the frame check with a stub
 //                per line for '--checks=line'
 //   handlers     'emit_panic_message', 'emit_report_line_routine'
-//   calls        'emit_call', 'emit_target_call' through 'call_io_routine'
-//                or 'call_sector_routine', the shared exit routine
+//   calls        'emit_call', 'emit_target_call', the shared exit routine
 //                'emit_exit_routine', the routines 'emit_io_routines' and
 //                'emit_sector_routines'
 class machine_x86_64 final : public machine {
@@ -664,9 +663,6 @@ class machine_x86_64 final : public machine {
     auto emit_io_routines(const bool read_used, const bool write_used)
         -> void override {
 
-        // the descriptors that 'write' serves
-        constexpr int write_served_count{2};
-
         constexpr std::string_view bad_descriptor_label{
             "baz_bad_descriptor",
         };
@@ -696,7 +692,7 @@ class machine_x86_64 final : public machine {
             assembler_.label(0, write_label_);
             // 1 and 2 less 1 are below 2 unsigned, any other 64 bit value not
             assembler_.instruction(1, op::lea, "rax", write_index);
-            assembler_.instruction(1, op::cmp, "rax", write_served_count);
+            assembler_.instruction(1, op::cmp, "rax", write_served_count_);
             assembler_.jcc(1, condition::ae, bad_descriptor_label);
             assembler_.instruction(1, op::mov, "eax", syscall_write_);
             assembler_.instruction(1, op::syscall);
@@ -979,21 +975,38 @@ class machine_x86_64 final : public machine {
     }
 
     // every function is a routine, 'read' and 'write' those of
-    // 'emit_io_routines'
+    // 'emit_io_routines'; the routine changes 'rcx' and 'r11' by its 'syscall'
+    // besides 'rax', the result register that 'call_target' allocated, a
+    // sector routine changes 'rax' and 'r10' too, the allocated ones are
+    // saved around the call
     auto emit_target_call(const emit_site site, const target_call function)
         -> void override {
 
-        if (function == target_call::read) {
-            call_io_routine(site.indent, read_label_);
+        static constexpr std::array<std::string_view, 2> io_clobbered{
+            "rcx",
+            "r11",
+        };
+
+        static constexpr std::array<std::string_view, 4> sector_clobbered{
+            "rax",
+            "rcx",
+            "r10",
+            "r11",
+        };
+
+        const std::string_view label{routine_label(function)};
+
+        mark_used(label);
+
+        const auto call{[&] -> void { assembler_.call(site.indent, label); }};
+
+        if (function == target_call::read or function == target_call::write) {
+            with_saved_registers(site.indent, io_clobbered, call);
             return;
         }
 
-        if (function == target_call::write) {
-            call_io_routine(site.indent, write_label_);
-            return;
-        }
-
-        call_sector_routine(site, function);
+        comment(site, "sector of the sd card");
+        with_saved_registers(site.indent, sector_clobbered, call);
     }
 
     auto emit_variables_base_load() -> void override {
@@ -1114,48 +1127,6 @@ class machine_x86_64 final : public machine {
         default:
             std::unreachable();
         }
-    }
-
-    // the routine changes 'rcx' and 'r11' by its 'syscall' besides 'rax', the
-    // result register that 'call_target' allocated, the allocated ones are
-    // saved around the call
-    auto call_io_routine(const size_t indent, const std::string_view label)
-        -> void {
-
-        static constexpr std::array<std::string_view, 2> clobbered{
-            "rcx",
-            "r11",
-        };
-
-        mark_used(label);
-
-        with_saved_registers(indent, clobbered,
-                             [&] -> void { assembler_.call(indent, label); });
-    }
-
-    // the routine changes 'rax', 'rcx', 'r10' and 'r11' besides the
-    // arguments, the allocated ones are saved around the call
-    auto call_sector_routine(const emit_site site, const target_call function)
-        -> void {
-
-        static constexpr std::array<std::string_view, 4> clobbered{
-            "rax",
-            "rcx",
-            "r10",
-            "r11",
-        };
-
-        const std::string_view label{
-            function == target_call::sector_read ? sector_read_label_
-                                                 : sector_write_label_,
-        };
-
-        comment(site, "sector of the sd card");
-        mark_used(label);
-
-        with_saved_registers(site.indent, clobbered, [&] -> void {
-            assembler_.call(site.indent, label);
-        });
     }
 
     // 'left' holds the product of two bytes in a register of the default

@@ -712,8 +712,11 @@ class machine {
     // negated 'EBADF' of linux
     static constexpr int bad_descriptor_{-9};
 
+    // the descriptors that 'write' serves
+    static constexpr int write_served_count_{2};
+
     // note: the check of 'write' is one unsigned comparison of the descriptor
-    //       less 'stdout_descriptor_'
+    //       less 'stdout_descriptor_' with 'write_served_count_'
 
     static_assert(stderr_descriptor_ == stdout_descriptor_ + 1);
 
@@ -1713,44 +1716,6 @@ class machine {
     // the setup a target needs before 'main', none by default
     virtual auto emit_target_setup() -> void {}
 
-    // the routines that the code marked used; a routine may mark another one
-    // it calls, see 'emit_runtime'
-    virtual auto emit_used_routines() -> void {
-        const routine_labels& routines{target_.routines};
-
-        if (is_used(routines.report_line)) {
-            label(0, routines.report_line);
-            emit_report_line_routine();
-        }
-
-        emit_target_routines();
-
-        const bool is_sector_read_used{is_used(routines.sector_read)};
-        const bool is_sector_write_used{is_used(routines.sector_write)};
-
-        if (is_sector_read_used or is_sector_write_used) {
-            emit_sector_routines(is_sector_read_used, is_sector_write_used);
-        }
-
-        // note: after the routines that may use 'exit', e.g. the report of a
-        //       line
-
-        if (is_used(routines.exit)) {
-            label(0, routines.exit);
-            emit_exit_routine();
-        }
-
-        // note: after 'exit', so that 'exit' follows the report of a line,
-        //       which writes and exits, as its next code
-
-        const bool is_read_used{is_used(routines.read)};
-        const bool is_write_used{is_used(routines.write)};
-
-        if (is_read_used or is_write_used) {
-            emit_io_routines(is_read_used, is_write_used);
-        }
-    }
-
     // the variables base register gets its address, after it is reserved
     virtual auto emit_variables_base_load() -> void = 0;
 
@@ -1809,6 +1774,44 @@ class machine {
 
         for (const auto& [file_ix, lines] : failure_lines_of(handler.label)) {
             emit_failure_entry(handler, file_ix, lines);
+        }
+    }
+
+    // the routines that the code marked used; a routine may mark another one
+    // it calls, see 'emit_runtime'
+    auto emit_used_routines() -> void {
+        const routine_labels& routines{target_.routines};
+
+        if (is_used(routines.report_line)) {
+            label(0, routines.report_line);
+            emit_report_line_routine();
+        }
+
+        emit_target_routines();
+
+        const bool is_sector_read_used{is_used(routines.sector_read)};
+        const bool is_sector_write_used{is_used(routines.sector_write)};
+
+        if (is_sector_read_used or is_sector_write_used) {
+            emit_sector_routines(is_sector_read_used, is_sector_write_used);
+        }
+
+        // note: after the routines that may use 'exit', e.g. the report of a
+        //       line
+
+        if (is_used(routines.exit)) {
+            label(0, routines.exit);
+            emit_exit_routine();
+        }
+
+        // note: after 'exit', so that 'exit' follows the report of a line,
+        //       which writes and exits, as its next code
+
+        const bool is_read_used{is_used(routines.read)};
+        const bool is_write_used{is_used(routines.write)};
+
+        if (is_read_used or is_write_used) {
+            emit_io_routines(is_read_used, is_write_used);
         }
     }
 
@@ -1971,6 +1974,27 @@ class machine {
         }
 
         push_allocation(site, register_name, register_pool::holder_kind::named);
+    }
+
+    // the routine that a call of 'function' calls
+    [[nodiscard]] auto routine_label(const target_call function) const
+        -> std::string_view {
+
+        const routine_labels& routines{target_.routines};
+
+        if (function == target_call::read) {
+            return routines.read;
+        }
+
+        if (function == target_call::write) {
+            return routines.write;
+        }
+
+        if (function == target_call::sector_read) {
+            return routines.sector_read;
+        }
+
+        return routines.sector_write;
     }
 
     // only a target that 'is_stack_bounded' is asked
