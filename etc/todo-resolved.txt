@@ -1,6 +1,15 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 346 (2026-11-12, confirming round with a strict bar: the
+    end of the loop of 2026-11-11)
+    => done (2026-11-12): CW: 'machine_rv32i_qemu.hpp' included
+       '<string_view>' without using it; no other dead code, no
+       simplification of 15 lines or more; CX: no name or comment states
+       something false (the 15 longest functions, the most called, 298
+       class headers); CV: every option at its limits and the check sets
+       on four targets (50000 compiles, 7500 runs) found no defect; the
+       bug hunts of the last six rounds found none; the loop ends here
 [x] easy: round 345 (2026-11-12, confirming round: across files, and the
     first day)
     => done (2026-11-12): CT: rv32i 'check_against_constant' took a check

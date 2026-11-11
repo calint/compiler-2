@@ -1,7 +1,6 @@
 #pragma once
 
 #include <cstddef>
-#include <string_view>
 
 #include "assembler_rv32i.hpp"
 #include "machine_rv32i_bare_metal.hpp"
