@@ -14,6 +14,14 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
        'site.indent'), and the versions of 'emit_most_efficient' and the
        noinline bodies (indent 0) would need indent scopes in the backend:
        mutable backend state across versions; measure before deciding
+[ ] easy: 'fuzz-combos.py' generates a divisor that an inlined recursion
+    ended by a constant folds to zero, 't.sum(i32(n) / 7)' with 'n' below
+    7 in 'depth', so the inlined variant is rejected ('divisor must not be
+    zero', chapter 8: acceptance depends on inlining) and reported as
+    'combos-reject' (round 337, seed 1794409898 index 106; HEAD rejects it
+    the same way)
+    => make the generated divisors of that call nonzero for every 'n',
+       e.g. '(i32(n) / 7) | 1'
 [ ] easy: x86_64: nasm truncates a label at 4000 characters, so two
     noinline functions whose 4100-character names share a prefix give a
     listing nasm rejects (round 323 BH demo t5); generic type arguments

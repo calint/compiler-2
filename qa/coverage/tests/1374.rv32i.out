@@ -1,4 +1,4 @@
 
-1374.baz:8:12: expected type 'i32', got 'point'
+1374.baz:8:12: expected type 'int', got 'point'
     exit(a[p])
            ^

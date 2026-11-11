@@ -7886,5 +7886,19 @@ SRC=2962 && EXP=0 && DIFFNOPT
 # a generic parameter named like the base of its generic type
 SRC=2963 && COMPERR
 
+# the default type mixes with 'i32' as on every target: narrowed into it, a
+# wider comparison side, not the type of a 'mut' parameter, widened from it
+SRC=2964 && COMPERR
+SRC=2965 && COMPERR
+SRC=2966 && COMPERR
+SRC=2967 && EXP=0 && RUN
+
+# an 'i32' result widens into the default type, inlined and noinline
+SRC=2968 && EXP=3 && RUN
+
+# a conversion to the default type computes an 'i32' list with 'array_length'
+# in an 'i32' scratch on a 32-bit target
+SRC=2969 && EXP=2 && RUN
+
 # a hex escape ends before the escape after it, which is not quoted
 SRC=2990 && COMPERR

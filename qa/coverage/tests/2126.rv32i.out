@@ -2,6 +2,6 @@
 2126.baz:3:13: 'box' not found
     var b = box<2>
             ^~~
-2126.baz:12:10: instantiated by 'make<i32>'
+2126.baz:12:10: instantiated by 'make<int>'
     exit(make(1))
          ^~~~

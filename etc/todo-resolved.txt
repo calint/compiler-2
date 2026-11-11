@@ -1,6 +1,23 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 337 (2026-11-11, BH the default type mixes with fixed
+    widths alike on every target)
+    => done (2026-11-11): on rv32i 'int' was the type object of 'i32', so
+       'x = k', 'x + k' and 'f(x)' with an 'i32' 'x' and an 'int' 'k' were
+       accepted there and rejected on x86_64: 'int' on a 32-bit target is a
+       type of its own whose checks see it 8 bytes wide
+       ('type::check_width_bytes', used by the narrowing rules, the
+       comparison sides, 'array_length', the descriptor width and the
+       widened call result), the machine treats it as 'i32'
+       ('has_same_representation'); a conversion computes a list narrower
+       by that width at its type (the fuzzers caught 'int(g & ...
+       array_length(p))' aborting before the fix, test 2969); x86_64
+       listings equal, rv32i comments and reports name 'int', 0072 +16 B,
+       0928 +12 B, 2090 and 2140 +4 B on rv32i; tests 2964-2969; chapter 8
+       item 1 no longer lists the mixing; CD (bool expressions and control
+       flow, 8900 programs) found no defect; todo item: a 'fuzz-combos'
+       divisor that an inlined recursion folds to zero
 [x] easy: round 336 (2026-11-11, CF confirming round: readability of the
     calls)
     => done (2026-11-11): 'is_inside_call' is 'is_located_in_call' (the

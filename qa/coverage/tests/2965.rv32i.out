@@ -1,0 +1,4 @@
+
+2965.baz:7:13: 'k' of type 'int' is wider than 'x' of type 'i32', swap the operands: 'k == x'
+    if x == k exit(1)
+            ^

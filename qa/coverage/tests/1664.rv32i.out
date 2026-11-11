@@ -1,4 +1,4 @@
 
-1664.baz:13:13: expected type 'i32', got 'point'
+1664.baz:13:13: expected type 'int', got 'point'
         n = mk()
             ^~

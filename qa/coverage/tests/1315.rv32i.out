@@ -1,4 +1,4 @@
 
-1315.baz:10:20: expected type 'i32', got 'bool', use 'i32(...)'
+1315.baz:10:20: expected type 'int', got 'bool', use 'int(...)'
     var s = rec{2, t()}
                    ^

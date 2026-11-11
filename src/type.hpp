@@ -234,13 +234,22 @@ class type final {
     size_t alignment_{1};
     std::vector<type_field> fields_;
     type_kind kind_{type_kind::user};
+    size_t check_width_bytes_{}; // the width the narrowing rules compare
 
   public:
     // builtins are aligned to their size, a zero size needs no alignment
     type(const std::string_view name, const size_t size_bytes,
          const type_kind kind)
         : name_{name}, size_bytes_{size_bytes},
-          alignment_{std::max(size_bytes, size_t{1})}, kind_{kind} {}
+          alignment_{std::max(size_bytes, size_t{1})}, kind_{kind},
+          check_width_bytes_{size_bytes} {}
+
+    // a built-in checked as wider than it is, see 'check_width_bytes'
+    type(const std::string_view name, const size_t size_bytes,
+         const type_kind kind, const size_t check_width_bytes)
+        : name_{name}, size_bytes_{size_bytes},
+          alignment_{std::max(size_bytes, size_t{1})}, kind_{kind},
+          check_width_bytes_{check_width_bytes} {}
 
     // a user type, its fields added by 'add_field'
     explicit type(const std::string_view name) : name_{name} {}
@@ -281,6 +290,13 @@ class type final {
 
     [[nodiscard]] auto alignment() const -> size_t { return alignment_; }
 
+    // the width that narrowing and the wider of two types compare: the
+    // size, except the default type of a 32-bit target, checked as the
+    // 64-bit one so that it mixes with a fixed width as on every target
+    [[nodiscard]] auto check_width_bytes() const -> size_t {
+        return check_width_bytes_;
+    }
+
     [[nodiscard]] auto field(const token& src_loc_tk,
                              const std::string_view name) const
         -> const type_field& {
@@ -308,6 +324,15 @@ class type final {
 
     [[nodiscard]] auto has_field(const std::string_view name) const -> bool {
         return std::ranges::contains(fields_, name, &type_field::name);
+    }
+
+    // the same type or an integer of the same size, e.g. 'i32' and the
+    // default type of a 32-bit target, which the machine treats alike
+    [[nodiscard]] auto has_same_representation(const type& other) const
+        -> bool {
+
+        return is_same(other) or (is_integer() and other.is_integer() and
+                                  size_bytes_ == other.size_bytes_);
     }
 
     [[nodiscard]] auto is_bool() const -> bool {
@@ -514,6 +539,9 @@ class builtin_type_set final {
     const type i32{"i32", sizeof(int32_t), type_kind::integer};
     const type i16{"i16", sizeof(int16_t), type_kind::integer};
     const type i8{"i8", sizeof(int8_t), type_kind::integer};
+    // the default type of a 32-bit target, distinct from 'i32'
+    const type int32{"int", sizeof(int32_t), type_kind::integer,
+                     sizeof(int64_t)};
 
     static constexpr size_t type_count{6};
 

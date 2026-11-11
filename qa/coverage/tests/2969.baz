@@ -1,0 +1,14 @@
+# a conversion to the default type of an 'i32' list with 'array_length'
+# computes in an 'i32' scratch on a 32-bit target
+
+dat g = i32[4]
+
+func noinline f(p i32[]) res int {
+    res = int(g[1] & 32767 % array_length(p))
+}
+
+func main() {
+    var a = i32[3]
+    g[1] = 5
+    exit(f(a))
+}

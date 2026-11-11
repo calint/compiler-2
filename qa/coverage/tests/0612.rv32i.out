@@ -1,4 +1,4 @@
 
-0612.baz:6:9: expected type 'i8', got 'i32'
+0612.baz:6:9: expected type 'i8', got 'int'
     a = [2]{1, 2}
         ^

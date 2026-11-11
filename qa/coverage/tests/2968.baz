@@ -1,0 +1,18 @@
+# an 'i32' result widens into a destination of the default type, inlined
+# and noinline, and the body keeps the type of its result
+
+func g() res i32 {
+    res = 1
+    var z = i32(0)
+    z = res
+    res = z + 1
+}
+
+func noinline h(c i32) res i32 { res = c + 1 }
+
+func main() {
+    var k = 0
+    k = g()
+    k = h(i32(k))
+    exit(k)
+}

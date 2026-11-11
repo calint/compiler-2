@@ -1,0 +1,4 @@
+
+2966.baz:8:9: expected type 'int' for parameter 'p', got 'i32'
+    set(x)
+        ^

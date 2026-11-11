@@ -3258,9 +3258,9 @@ class toc final {
         if (tp.is_builtin() and tp.size_bytes() > widest.size_bytes()) {
             throw compile_error{
                 type_tk,
-                std::format("{} is not available on this target, use {} "
+                std::format("{} is not available on this target, use 'i32' "
                             "or 'int'",
-                            in_quotes(name), in_quotes(widest.name()))};
+                            in_quotes(name))};
         }
 
         return tp;

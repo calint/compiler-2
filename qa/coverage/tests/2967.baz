@@ -1,0 +1,15 @@
+# the default type and 'i32' mix as on every target: an 'i32' widens into a
+# list led by the default type and converts both ways
+
+func add(a, b i32) res { res = a + b }
+
+func main() {
+    var x = i32(5)
+    var k = 1
+    var s = k + x
+    var t = i32(k) + x
+    var u = int(x + i32(k))
+    if s != 6 or t != 6 or u != 6 exit(1)
+    if add(k, x) != 6 exit(2)
+    exit(0)
+}

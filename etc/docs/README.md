@@ -573,8 +573,12 @@ The default type ('int') is the width of a register, 'i64' on x86_64 and 'i32'
 on rv32i (7.12). A variable or a parameter without a type has it, and so has
 a list led by a literal, since the first element decides the type of a list:
 '1 << k' with 'k' an 'i32' is computed at the default type. Their arithmetic
-and how they mix with a fixed width depend on the target (chapter 8); a
-portable program writes the type, e.g. 'lim i32' or 'i32(1) << k'.
+depends on the target (chapter 8); a portable program writes the type, e.g.
+'lim i32' or 'i32(1) << k'. How the default type mixes with a fixed width
+does not: the narrowing rules compare it as 64 bits wide on every target
+('type::check_width_bytes'), and on rv32i it is a type of its own, named
+'int', so 'x = k' or 'x == k' of an 'i32' 'x' and 'f(x)' of a 'mut'
+parameter without a type are rejected on rv32i as on x86_64.
 
 Where it is used is a 'value_use': the width the value is computed at and
 whether its arithmetic is checked for overflow, made by 'toc::use_of' from a
@@ -1958,11 +1962,12 @@ What depends on the target is listed here, nothing else does:
 
 1. the default type, the width of a register (1.7, 7.12): its arithmetic, a
    panic included, its constants, e.g. 'var k = 3000000000' is rejected on
-   rv32i, its shift counts, e.g. 'x << 40', whether it mixes with a fixed
-   width, and an index, computed in it: 'a[i + i]' with 'i' an 'i32' of
-   2000000000 panics 'bounds' on x86_64 and 'overflow' on rv32i; a list led
-   by a literal has it (1.7): with 'k' an 'i32' of 31, '1 << k < 0' is false
-   on x86_64 and true on rv32i, 'i32(1) << k < 0' is true on both
+   rv32i, its shift counts, e.g. 'x << 40', and an index, computed in it:
+   'a[i + i]' with 'i' an 'i32' of 2000000000 panics 'bounds' on x86_64 and
+   'overflow' on rv32i; a list led by a literal has it (1.7): with 'k' an
+   'i32' of 31, '1 << k < 0' is false on x86_64 and true on rv32i,
+   'i32(1) << k < 0' is true on both; how it mixes with a fixed width does
+   not depend on the target (1.7)
 2. the types a target has: 'i64' is rejected on rv32i
 3. the number of scratch registers: code that runs out of them on one
    target, e.g. a deep expression or nested 'foo' loops, whose counters

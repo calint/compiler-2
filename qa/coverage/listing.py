@@ -26,7 +26,7 @@ import re
 import sys
 
 # the default type of each target, see 'types'
-DEFAULT_TYPE = {"x86_64": "i64", "rv32i": "i32"}
+DEFAULT_TYPE = {"x86_64": "i64", "rv32i": "int"}
 
 
 def located_line(comment, line):

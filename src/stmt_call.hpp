@@ -2861,7 +2861,7 @@ class stmt_call final : public statement {
                                                  const type& dst_type) -> bool {
 
         return result_type.is_integer() and dst_type.is_integer() and
-               result_type.size_bytes() < dst_type.size_bytes();
+               result_type.check_width_bytes() < dst_type.check_width_bytes();
     }
 
     // the storage of the variable an argument names

@@ -1,4 +1,4 @@
 
-2223.baz:10:15: expected type 'i16' for parameter 'a', got 'i32', use 'i16(...)'
+2223.baz:10:15: expected type 'i16' for parameter 'a', got 'int', use 'i16(...)'
     var y = f(x)
               ^

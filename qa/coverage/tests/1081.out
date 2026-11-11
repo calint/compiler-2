@@ -1,4 +1,4 @@
 
-1081.baz:6:7: constant '4294967296' does not fit 'i32' (-2147483648 to 2147483647), 'i32(...)' wraps it
+1081.baz:6:7: constant '4294967296' does not fit 'int' (-2147483648 to 2147483647), 'int(...)' wraps it
     a[4294967296 + 1] = 2
       ^~~~~~~~~~

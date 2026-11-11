@@ -1,4 +1,4 @@
 
-1587.baz:3:16: expected type 'i32', got 'bool', use 'i32(...)'
+1587.baz:3:16: expected type 'int', got 'bool', use 'int(...)'
     var a = i8[true]
                ^~~~

@@ -16,13 +16,13 @@
 63: e: i8
 67: negated: i8
 72: n: i32
-76: d: i32
+76: d: int
 82: sum: i8
 86: list: i8
 90: wide_sum: i16
-94: constant_first: i32
-98: k: i32
-102: t: i32
+94: constant_first: int
+98: k: int
+102: t: int
 106: p: point
 109: q: point
 112: o: object
@@ -31,7 +31,7 @@
 123: points: point
 126: sized: i16
 129: declared: i8
-133: defaults: i32
+133: defaults: int
 136: zeros: i8
 140: text: i8
 143: copy: i16

@@ -1,4 +1,4 @@
 
-1302.baz:8:9: expected type 'point', got 'i32'
+1302.baz:8:9: expected type 'point', got 'int'
     p = read(0, buf, 4)
         ^~~~

@@ -1,4 +1,4 @@
 
-1370.baz:8:9: expected type 'i32', got 'point'
+1370.baz:8:9: expected type 'int', got 'point'
     y = p
         ^

@@ -1,0 +1,8 @@
+# the default type narrows into an 'i32' on every target, also where it is
+# 32 bits wide
+
+func main() {
+    var x = i32(5)
+    var k = 1
+    x = k
+}

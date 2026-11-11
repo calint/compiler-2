@@ -1,4 +1,4 @@
 
-0219.baz:4:33: expected type 'p', got 'i32'
+0219.baz:4:33: expected type 'p', got 'int'
 func main() { var p1 = p{} p1 = 1 }
                                 ^

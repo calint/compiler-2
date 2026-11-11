@@ -1,4 +1,4 @@
 
-1187.baz:5:9: expected type 'i32', got 'bool', use 'i32(...)'
+1187.baz:5:9: expected type 'int', got 'bool', use 'int(...)'
     r = true
         ^~~~

@@ -1,0 +1,4 @@
+
+2964.baz:7:9: 'k' of type 'int' is narrowed to 'i32', use 'i32(...)'
+    x = k
+        ^

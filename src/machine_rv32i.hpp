@@ -661,7 +661,7 @@ class machine_rv32i : public machine {
         // a copy onto itself, e.g. of a parameter to its argument, changes
         // nothing
         if (dst.is_same_address(src) and
-            dst.type_ref().is_same(src.type_ref())) {
+            dst.type_ref().has_same_representation(src.type_ref())) {
 
             return;
         }
@@ -1995,7 +1995,9 @@ class machine_rv32i : public machine {
                             const operand& dst) -> operand {
 
         // matching register representations need no conversion
-        if (source.is_register() and source.type_ref().is_same(width_type)) {
+        if (source.is_register() and
+            source.type_ref().has_same_representation(width_type)) {
+
             return source;
         }
 

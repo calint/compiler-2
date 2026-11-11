@@ -221,7 +221,7 @@ class statement {
                                      const type& dst_type) const -> void {
 
         if (not dst_type.is_builtin() or not get_type().is_builtin() or
-            get_type().size_bytes() <= dst_type.size_bytes()) {
+            get_type().check_width_bytes() <= dst_type.check_width_bytes()) {
 
             return;
         }

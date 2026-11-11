@@ -1,0 +1,9 @@
+# an 'i32' is not the default type of a parameter written in place, also
+# where both are 32 bits wide
+
+func set(p mut) { p = 1 }
+
+func main() {
+    var x = i32(5)
+    set(x)
+}

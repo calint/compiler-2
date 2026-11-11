@@ -1211,7 +1211,7 @@ class machine {
         assert(address_size_bytes() == sizeof(int32_t) or
                address_size_bytes() == sizeof(int64_t));
 
-        return address_size_bytes() == sizeof(int32_t) ? builtins_.get().i32
+        return address_size_bytes() == sizeof(int32_t) ? builtins_.get().int32
                                                        : builtins_.get().i64;
     }
 

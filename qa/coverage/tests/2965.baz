@@ -1,0 +1,8 @@
+# a comparison side of the default type is wider than an 'i32' on every
+# target
+
+func main() {
+    var x = i32(5)
+    var k = 1
+    if x == k exit(1)
+}
