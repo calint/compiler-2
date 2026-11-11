@@ -451,8 +451,7 @@ def compare_rv32i(run, target, x86, findings, stats):
     # may panic later on another check
     width = rv.kind == "panic" and x86.code != rv.code and \
         rv.code in (fl.PANIC_CODE["overflow"], fl.PANIC_CODE["shift"])
-    foreign = target in fl.UART_TARGETS and (
-        FOREIGN_WRITE.search(run.text) or FOREIGN_READ.search(run.text))
+    foreign = target in fl.UART_TARGETS and FOREIGN_WRITE.search(run.text)
     if not same and not stack_difference(x86, rv) and not width \
             and not foreign:
         findings.append(("diff-target",
@@ -467,12 +466,9 @@ def bucket(outcome):
         f"{outcome.kind}"
 
 
-# the uart of rv32i-qemu and rv32i-fpga takes every file descriptor: a write
-# to another one than 1 shows only there and fails on x86_64, which may change
-# the exit too
+# the uart of rv32i-qemu and rv32i-fpga carries standard error with the
+# output: a write to another descriptor than 1, e.g. 2, may show only there
 FOREIGN_WRITE = re.compile(r"write\(\s*(?!1\s*,)")
-# and a read from another one than 0 fails on x86_64 and reads the uart there
-FOREIGN_READ = re.compile(r"read\(\s*(?!0\s*,)")
 
 
 def is_default_width_output(x86_stdout, rv_stdout):

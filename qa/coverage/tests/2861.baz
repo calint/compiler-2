@@ -1,0 +1,13 @@
+# 'write' to 2 reaches standard error, where the uart carries it, and 'read'
+# from 2 returns -9, 'EBADF', on every target
+
+dat text = "err\n"
+func main() {
+    var count = write(2, text)
+    if count != 4 exit(1)
+    var buffer = i8[4]
+    var bad = read(2, buffer)
+    if bad != -9 exit(2)
+    var eof = read(0, buffer)
+    if eof != 0 exit(3)
+}

@@ -90,8 +90,8 @@ an included file (`split_include` in `fuzzlib.py`).
 
 - the default integer is 64 bits on x86_64 and 32 bits on rv32i, a program of
   default integers can overflow on one target only
-- the uart of rv32i-qemu and rv32i-fpga takes every file descriptor in `write`
-  and `read`
+- the uart of rv32i-qemu and rv32i-fpga carries standard error with the
+  output, a `write` to 2 shows in the output there only
 - register use differs between targets and between `--checks`, an expression
   that needs too many registers is rejected with "out of scratch registers,
   simplify the expression"

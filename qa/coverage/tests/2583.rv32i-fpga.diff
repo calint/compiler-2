@@ -4,11 +4,11 @@
 <     j .Lbaz_report_line
 113d110
 <     j .Lbaz_exit
-152c149
+158c155
 < #   removed jumps to next code: 0
 ---
 > #   removed jumps to next code: 3
-163c160
-< #                 instructions: 75
+169c166
+< #                 instructions: 80
 ---
-> #                 instructions: 72
+> #                 instructions: 77

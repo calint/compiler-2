@@ -16,6 +16,9 @@ class machine_rv32i_bare_metal : public machine_rv32i {
     // the routines a program calls to read and write
     static constexpr std::string_view read_label_{".Lbaz_read"};
     static constexpr std::string_view write_label_{".Lbaz_write"};
+    // the result of a descriptor the uart does not serve, the negated 'EBADF'
+    // that x86_64 and rv32i return for a descriptor that is not open
+    static constexpr int bad_descriptor_{-9};
 
     // the memory of the device, the image is loaded at its start, the stack
     // grows down from its end
@@ -128,13 +131,13 @@ class machine_rv32i_bare_metal : public machine_rv32i {
     //
 
     // waits for a byte and loads it into 'a4', may change only 'a4'
-    // note: the read routine uses the labels '1', '3' and '4' around it, an
-    //       override may use '2'
+    // note: the read routine uses the labels '1', '3', '4' and '5' around it,
+    //       an override may use '2'
     virtual auto emit_receive_byte() -> void = 0;
 
     // waits until the uart is ready and sends the byte at 'a5', may change
     // only 'a4'
-    // note: the write routine uses the labels '1' and '3' around it, an
+    // note: the write routine uses the labels '1', '3' and '5' around it, an
     //       override may use '2'
     virtual auto emit_transmit_byte() -> void = 0;
 
@@ -145,8 +148,18 @@ class machine_rv32i_bare_metal : public machine_rv32i {
     // class methods
     //
 
-    // reads until a newline or the count is reached, 'a0' receives the count
-    // and ctrl-d ends the read without being stored like at a terminal
+    // the label '5' of a routine returns 'bad_descriptor_'
+    auto emit_bad_descriptor_return() -> void {
+        assembler_rv32i& output{assembler()};
+
+        output.label(0, "5");
+        output.li(1, "a0", bad_descriptor_);
+        output.jr(1, "a7");
+    }
+
+    // reads from descriptor 0 until a newline or the count is reached, 'a0'
+    // receives the count and ctrl-d ends the read without being stored like
+    // at a terminal
     auto emit_read_routine() -> void {
         constexpr int newline{'\n'};
         constexpr int carriage_return{'\r'};
@@ -156,6 +169,7 @@ class machine_rv32i_bare_metal : public machine_rv32i {
         assembler_rv32i& output{assembler()};
 
         output.label(0, read_label_);
+        output.bnez(1, "a0", "5f");
         emit_uart_setup();
         output.mv(1, "a6", "a1");
         output.li(1, "a0", 0);
@@ -177,16 +191,26 @@ class machine_rv32i_bare_metal : public machine_rv32i {
         output.bne(1, "a4", "a5", "1b");
         output.label(0, "4");
         output.jr(1, "a7");
+        emit_bad_descriptor_return();
     }
 
-    // writes the count of bytes, 'a0' receives the count
+    // writes the count of bytes to descriptor 1 or 2, 'a0' receives the
+    // count
     auto emit_write_routine() -> void {
+        // the uart serves the descriptors 1 and 2
+        constexpr int served_count{2};
+
         assembler_rv32i& output{assembler()};
 
         output.label(0, write_label_);
+        // 1 and 2 less 1 are below 'served_count' unsigned, 0 and a negative
+        // descriptor are not
+        output.addi(1, "a5", "a0", -1);
+        output.li(1, "a4", served_count);
+        output.bgeu(1, "a5", "a4", "5f");
         emit_uart_setup();
         output.mv(1, "a5", "a1");
-        // the descriptor is not needed so 'a0' holds the end
+        // the descriptor is checked so 'a0' holds the end
         output.add(1, "a0", "a1", "a2");
         // the end test sits at the bottom, one branch per byte, the guard
         // handles a count of zero
@@ -198,6 +222,7 @@ class machine_rv32i_bare_metal : public machine_rv32i {
         output.label(0, "3");
         output.mv(1, "a0", "a2");
         output.jr(1, "a7");
+        emit_bad_descriptor_return();
     }
 
     //

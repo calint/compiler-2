@@ -1,0 +1,18 @@
+# 'write' returns -9, 'EBADF', for a descriptor other than 1 and 2 on every
+# target, also for a count of zero
+
+dat text = "ok\n"
+func main() {
+    var count = write(1, text)
+    if count != 3 exit(1)
+    var bad = write(0, text)
+    if bad != -9 exit(2)
+    bad = write(3, text)
+    if bad != -9 exit(3)
+    bad = write(-1, text)
+    if bad != -9 exit(4)
+    bad = write(2147483647, text)
+    if bad != -9 exit(5)
+    bad = write(3, text, 0)
+    if bad != -9 exit(6)
+}

@@ -1327,8 +1327,7 @@ SRC=0420 && EXP=42 && RUN
 SRC=0421 && COMPERR
 
 # portable read/write with byte counts, errors, and discarded results
-# the uart ignores descriptors, so there are no descriptor errors
-if [[ $MACHINE != rv32i-qemu && $MACHINE != rv32i-fpga ]]; then SRC=0422 && DIFFINP; fi
+SRC=0422 && DIFFINP
 
 # read requires a descriptor and an array
 SRC=0423 && COMPERR
@@ -3523,9 +3522,8 @@ SRC=1097 && EXP=0 && RUN
 # every escape of a string literal reaches the output byte for byte
 SRC=1098 && DIFF
 
-# 'write' to a descriptor that is not open returns the error, -9 is 'EBADF';
-# the bare-metal targets have no descriptors
-if [[ $MACHINE == x86_64 || $MACHINE == rv32i ]]; then SRC=1099 && EXP=0 && RUN; fi
+# 'write' to a descriptor that is not open returns the error, -9 is 'EBADF'
+SRC=1099 && EXP=0 && RUN
 
 # a negative index fails the bounds check with both bounds enabled, the
 # handler without a line prints only its message
@@ -7817,3 +7815,12 @@ SRC=2844 && EXP=5 && RUN
 # such a checked body does not check its skipped code, as inlined
 SRC=2845 && EXP=0 && RUN
 SRC=2846 && EXP=0 && RUN
+
+# 'write' to a descriptor other than 1 and 2 returns -9 on every target
+SRC=2860 && DIFF
+
+# 'write' to 2 reaches standard error, 'read' from 2 returns -9
+SRC=2861 && EXP=0 && RUN_ERR
+
+# 'read' from a descriptor other than 0 returns -9 on every target
+SRC=2862 && DIFFINP

@@ -1994,10 +1994,8 @@ What depends on the target is listed here, nothing else does:
    image without the sector; 'rv32i-fpga' does not detect a sector past the
    end of the card, which panics 'sd card' on x86_64
    and rv32i, its emulator stops with "CPU error: 1305" and exit code 25;
-   the uart of 'rv32i-qemu' and 'rv32i-fpga' takes every file descriptor,
-   where x86_64 and rv32i return the negated error number of the system,
-   e.g. -9 from a 'read' or 'write' of a file descriptor that is not open; a
-   'read' returns at most one line, a carriage return reads as a newline,
+   on the uart of 'rv32i-qemu' and 'rv32i-fpga' a 'read' returns at most one
+   line, a carriage return reads as a newline,
    and an end of transmission byte ends a read, also inside the input; the
    end of the input is not seen, so a 'read' there waits where x86_64 and
    rv32i return 0; the emulator of 'rv32i-fpga' reads a backspace as 0x7f

@@ -1,0 +1,19 @@
+# 'read' returns -9, 'EBADF', for a descriptor other than 0 on every target,
+# also for a count of zero, and reads no input
+
+func main() {
+    var buffer = i8[8]
+    var bad = read(1, buffer)
+    if bad != -9 exit(1)
+    bad = read(3, buffer)
+    if bad != -9 exit(2)
+    bad = read(-1, buffer)
+    if bad != -9 exit(3)
+    bad = read(2147483647, buffer)
+    if bad != -9 exit(4)
+    bad = read(3, buffer, 0)
+    if bad != -9 exit(5)
+    var count = read(0, buffer)
+    if count != 5 exit(6)
+    write(1, buffer, count)
+}

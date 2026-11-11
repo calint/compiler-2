@@ -336,6 +336,11 @@ def outcome_fpga(result):
                        result.stdout[:cpu_error.start()],
                        cpu_error.group(0).decode().strip())
     panic = FPGA_PANIC.search(result.stdout)
+    # note: rv32i-qemu has no sd card and panics 'sd card' on the uart
+    if panic and panic.group(1) == b"sd card" and \
+            result.returncode == SDCARD_EXIT:
+        return Outcome("sdcard", SDCARD_CODE, result.stdout[:panic.start()],
+                       "sd card")
     if panic and PANIC_CODE.get(panic.group(1).decode()) == result.returncode:
         return Outcome("panic", result.returncode,
                        result.stdout[:panic.start()], panic.group(1).decode())
