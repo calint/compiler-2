@@ -1,6 +1,12 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 310 (2026-11-11, the fuzzer of round 309 AC added)
+    => done (2026-11-11): 'qa/fuzz/fuzz-combos.py' combines what the other
+       fuzzers keep apart (methods on indexed elements in 'foo', generics,
+       recursion, written 'dat's, io into fields) against a python model on
+       the four targets and option variants; 'fuzz-all.sh' runs 200 per
+       scale; 200 programs, 4000 builds, no finding
 [x] easy: round 309 (2026-11-11, AE mutation testing of rounds 300-305;
     AC new fuzzer of combined features; AH regression hunt of 306-308)
     => done (2026-11-11): AE: 46 mutants, 33 killed by the tests, new tests
