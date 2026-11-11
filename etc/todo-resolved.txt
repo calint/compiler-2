@@ -1,6 +1,14 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 295 (2026-11-11, ZL design review of the assemblers)
+    => done (2026-11-11): the check that the variables section holds no
+       code or data is an assert in 'layout_image' (one pass over the lines
+       fewer), the rv32i encoder writes the I format and the fixed
+       instructions through one path ('form::system' and 'form::ret' are
+       'form::none'; the fields a form does not write are zero), and
+       'label' and 'add_jump' build their line through 'add_line'; 36 lines
+       fewer; listings and images equal, far jumps unchanged
 [x] easy: round 294 (2026-11-11, XW mutation testing of the assembler
     optimization passes)
     => done (2026-11-11): 67 mutants of the shared jump, reload and copy

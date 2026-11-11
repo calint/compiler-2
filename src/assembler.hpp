@@ -273,16 +273,11 @@ class assembler {
     [[nodiscard]] auto is_empty() const -> bool { return lines_.empty(); }
 
     auto label(const size_t indent, const std::string_view name) -> void {
-        current_lines().push_back({
-            .text{std::format("{}{}:", indentation(indent), name)},
-            .label{std::string{name}},
-            .call_target{},
-            .jump{},
-            .code_size{},
-            .entry{code_section_},
-            .removed{},
-            .record{},
-        });
+        add_text(std::format("{}{}:", indentation(indent), name));
+
+        line& added{current_lines().back()};
+        added.label = name;
+        added.entry = code_section_;
     }
 
     // the bodies of each noinline function with their calls and size, in
@@ -362,18 +357,11 @@ class assembler {
 
         assert(code_section_);
 
-        std::string text{indentation(indent) + format_jump(jump)};
+        add_line(indentation(indent) + format_jump(jump), instruction_size(),
+                 record);
 
-        current_lines().push_back({
-            .text{std::move(text)},
-            .label{},
-            .call_target{},
-            .jump{std::make_unique<jump_info>(std::move(jump))},
-            .code_size{instruction_size()},
-            .entry{},
-            .removed{},
-            .record{record},
-        });
+        current_lines().back().jump =
+            std::make_unique<jump_info>(std::move(jump));
     }
 
     auto add_line(std::string text, const size_t code_size,

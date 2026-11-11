@@ -132,14 +132,14 @@ class assembler_rv32i final : public assembler {
         store,
         branch,
         branch_zero,
-        system,
+        // e.g. 'ecall' or 'ret'
+        none,
         load_immediate,
         load_address,
         move,
         jump,
         jump_register,
         call,
-        ret,
     };
 
     struct op_info {
@@ -1059,23 +1059,6 @@ class assembler_rv32i final : public assembler {
         add_line(std::move(text), code_size, index);
     }
 
-    // the variables are not part of the image, so they may only reserve zero
-    // bytes
-    auto assert_variables_uninitialized(const image_layout& image) const
-        -> void {
-
-        for (size_t index{}; index < lines().size(); ++index) {
-            if (image.positions.at(index).which != section::variables) {
-                continue;
-            }
-
-            [[maybe_unused]] const line& l{lines().at(index)};
-
-            assert(l.code_size == 0 and
-                   std::get_if<data_values>(record_of(l)) == nullptr);
-        }
-    }
-
     auto branch_zero(const size_t indent, const op code,
                      const std::string_view rs, const std::string_view target)
         -> void {
@@ -1365,6 +1348,13 @@ class assembler_rv32i final : public assembler {
                 current = start->which;
             }
 
+            // note: the variables are not part of the image, so they only
+            //       reserve zero bytes
+
+            assert(current != section::variables or
+                   (l.code_size == 0 and
+                    std::get_if<data_values>(structured) == nullptr));
+
             const size_t index{section_index(current)};
             size_t& offset{image.sizes.at(index)};
 
@@ -1488,8 +1478,6 @@ class assembler_rv32i final : public assembler {
     auto write_image(std::ostream& os) const -> void {
         const image_layout image{layout_image()};
         const symbol_table symbols{collect_symbols(image)};
-
-        assert_variables_uninitialized(image);
 
         // the variables follow the image in memory with unspecified content
         size_t written{};
@@ -1756,12 +1744,6 @@ class assembler_rv32i final : public assembler {
             };
         }
 
-        if (operands == form::immediate or operands == form::shift or
-            operands == form::load) {
-
-            return {encode_immediate(details.encoding, ins.rd, ins.rs1, value)};
-        }
-
         if (operands == form::upper) {
             return {
                 encode_upper(details.encoding, ins.rd,
@@ -1773,10 +1755,6 @@ class assembler_rv32i final : public assembler {
             return {encode_store(details.encoding, ins.rs1, ins.rs2, value)};
         }
 
-        if (operands == form::system or operands == form::ret) {
-            return {details.encoding};
-        }
-
         if (operands == form::load_immediate) {
             return load_immediate(ins.rd, value);
         }
@@ -1786,14 +1764,11 @@ class assembler_rv32i final : public assembler {
                                value - address);
         }
 
-        if (operands == form::move) {
-            return {encode_immediate(details.encoding, ins.rd, ins.rs1, 0)};
-        }
+        // note: the fields a form does not write are zero, e.g. the immediate
+        //       of 'mv' and 'jr' or the registers of 'ecall' and 'ret'
 
-        if (operands == form::jump_register) {
-            return {
-                encode_immediate(details.encoding, zero_register_, ins.rs1, 0),
-            };
+        if (ins.target.empty()) {
+            return {encode_immediate(details.encoding, ins.rd, ins.rs1, value)};
         }
 
         // the remaining forms go to a label
@@ -2013,15 +1988,15 @@ class assembler_rv32i final : public assembler {
                 row("bltz", form::branch_zero, 0x4063),
                 row("bgez", form::branch_zero, 0x5063),
                 row("bgtz", form::branch_zero, 0x4063, true),
-                row("ecall", form::system, 0x73),
-                row("ebreak", form::system, 0x100073),
+                row("ecall", form::none, 0x73),
+                row("ebreak", form::none, 0x100073),
                 row("li", form::load_immediate, 0),
                 row("la", form::load_address, 0),
                 row("mv", form::move, 0x13),
                 row("j", form::jump, 0),
                 row("jr", form::jump_register, 0x67),
                 row("call", form::call, 0),
-                row("ret", form::ret, 0x8067),
+                row("ret", form::none, 0x8067),
             }),
         };
 
@@ -2090,7 +2065,8 @@ class assembler_rv32i final : public assembler {
             return std::format("{} {}", mnemonic, ins.target);
         }
 
-        // 'ecall', 'ebreak' and 'ret' have no operands
+        assert(operands == form::none);
+
         return std::string{mnemonic};
     }
 
