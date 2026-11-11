@@ -35,11 +35,11 @@ class machine_rv32i_fpga final : public machine_rv32i_bare_metal {
         : machine_rv32i_bare_metal{builtins, files, options, 0,
                                    options.memory_size_bytes} {
 
-        if (memory_size_bytes() > max_memory_size_bytes_) {
+        if (options.memory_size_bytes > max_memory_size_bytes_) {
             throw option_error{
                 std::format("invalid --memory: {} B exceeds the {} B below "
                             "the device addresses",
-                            memory_size_bytes(), max_memory_size_bytes_)};
+                            options.memory_size_bytes, max_memory_size_bytes_)};
         }
     }
 

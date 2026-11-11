@@ -1408,9 +1408,10 @@ class machine_rv32i : public machine {
     auto call_io_routine(const size_t indent, const std::string_view label)
         -> void {
 
-        // note: the clobbered registers follow 'a1' and 'a2', which the call
-        //       needs, in the allocation order, so they are free whenever the
-        //       call is made
+        // note: the clobbered registers and 'a7' follow 'a1' and 'a2', which
+        //       the call needs, in the allocation order, so they are free
+        //       whenever the call is made; 'ra' comes before them and can hold
+        //       a value
 
         assert(not is_any_held(io_routine_clobbered_));
 
@@ -2524,7 +2525,11 @@ class machine_rv32i : public machine {
                     action.target);
     }
 
-    // divide and remainder share magnitude division and sign restoration
+    // divide and remainder share magnitude division and sign restoration:
+    // 'a4' is the sign of the dividend and of the remainder, 'a3' that of the
+    // divisor then of the quotient, the dividend shifts out of 'a0' into the
+    // remainder 'a2' while the quotient bits shift into 'a0'; the magnitudes
+    // are unsigned, so that of the minimum, 2^31, is exact
     auto emit_divide_body() -> void {
         assembler_.beqz(1, "a1", "5f");
         assembler_.srai(1, "a4", "a0", sign_shift_);
@@ -3373,7 +3378,8 @@ class machine_rv32i : public machine {
         return lowered;
     }
 
-    // the value compared with the limit, the index or the end 'index + count'
+    // the value compared with the limit, the index or the end 'index + count';
+    // 'limit' is a scratch here, 'check_upper_bound' loads it afterwards
     [[nodiscard]] auto upper_bound_top(const emit_site site,
                                        const bounds_range& range,
                                        const operand& limit,

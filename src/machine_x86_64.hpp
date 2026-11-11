@@ -74,7 +74,9 @@ class machine_x86_64 final : public machine {
     static constexpr std::string_view sector_write_label_{"baz_sector_write"};
     // the routine that the handlers with a line jump to
     static constexpr std::string_view report_line_label_{"baz_report_line"};
-    // the line and the exit code a handler passes to 'report_line_label_'
+    // the line and the exit code a handler passes to 'report_line_label_'; a
+    // handler does not return, so the variables and frame bases are free, and
+    // its 'syscall' keeps them
     static constexpr std::string_view report_line_register_{"rbp"};
     static constexpr std::string_view report_exit_code_register_{"rbx"};
     // the routine an exit jumps to with the exit code in 'rdi'

@@ -1,6 +1,14 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 342 (2026-11-11, confirming round: inside the backends)
+    => done (2026-11-11): CO: comments say why the rv32i i/o routines
+       return through 'a7', the registers of the divide routine and why the
+       minimum divides, why 'upper_bound_top' may write 'limit' before it is
+       loaded, why a handler may use 'rbp' and 'rbx' on x86_64; CN:
+       'machine_rv32i_bare_metal::memory_size_bytes' had one caller, the
+       fpga constructor checks the option itself; 15 candidates rejected;
+       listings equal
 [x] easy: round 341 (2026-11-11, CJ confirming round: versions and
     registers)
     => done (2026-11-11): every test and 4600 generated programs give the

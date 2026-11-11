@@ -147,14 +147,6 @@ class machine_rv32i_bare_metal : public machine_rv32i {
             memory_end_address, stack_bytes, memory_size_bytes_)};
     }
 
-    //
-    // class methods
-    //
-
-    [[nodiscard]] auto memory_size_bytes() const -> size_t {
-        return memory_size_bytes_;
-    }
-
   private:
     //
     // virtual methods
