@@ -1,6 +1,17 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 326 (2026-11-11, BD the asserts user input can reach)
+    => done (2026-11-11): about 1.1 million compiles under asan (a
+       structure-aware mutation fuzzer, sweeps of the tests with options the
+       harness never passes, probes of 457 asserts) reached no assert; the
+       dats and the '--vars' capacity were checked apart against what the
+       target addresses, so 'dat d = i8[0x7fff00000000]' with
+       '--vars=0x7ffffffffff0' compiled on x86_64 to an image that cannot
+       load, and rv32i reported it unlocated at the end of the build:
+       'storage_layout::assert_dats_and_vars_fit_target' checks the dats,
+       then the dats with the whole '--vars' capacity, at the 'dat'; three
+       cases in 'test-cli.sh'
 [x] easy: round 325 (2026-11-11, AX shorter x86_64 code)
     => done (2026-11-11): x86_64 zeroes a qword or dword register with
        'xor r32, r32' instead of 'mov r, 0' ('is_wide_register_zeroed'; no

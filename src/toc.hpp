@@ -1543,6 +1543,18 @@ class storage_layout final {
             std::max(used_vars_size_bytes(), max_body_vars_size_bytes_);
     }
 
+    // the dats, then with the padding after them the whole '--vars' capacity,
+    // which the image reserves, reach no further than the target addresses
+    auto assert_dats_and_vars_fit_target(const token& src_loc_tk) const
+        -> void {
+
+        assert_total_fits_target(src_loc_tk, data_.get().total_size_bytes());
+
+        assert_total_fits_target(
+            src_loc_tk,
+            sum_storage_size(vars_start_bytes(), vars_capacity_bytes_));
+    }
+
     // the declaration that makes the data and variables reach what the target
     // addresses is the error, not the end of the build; checked before the
     // scope holds the bytes
@@ -2688,8 +2700,7 @@ class toc final {
 
         // the dats reach no further than the target addresses, 'place_dat'
         // asserts it at the compile
-        storage_.assert_total_fits_target(var.src_loc_tk,
-                                          data_.total_size_bytes());
+        storage_.assert_dats_and_vars_fit_target(var.src_loc_tk);
 
         add_var(0, var, var_kind::dat);
     }
