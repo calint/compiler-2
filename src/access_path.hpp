@@ -37,14 +37,18 @@ struct path_step {
 // where a variable is accessed: the path of fields and indexes from its root
 // variable. two accesses cannot be the same bytes when their paths select
 // different fields or different constant elements of the same object
-struct access_path {
-    std::vector<path_step> steps;
+class access_path final {
+    std::vector<path_step> steps_;
+    // some step is a run-time index; kept as steps are added, asking after
+    // each step of a long path would walk it again
+    bool has_run_time_index_{};
 
+  public:
     // the end of the range of a run-time index, past every element
     static constexpr size_t run_time_end{std::numeric_limits<size_t>::max()};
 
     auto add_field(const size_t offset) -> void {
-        steps.push_back({
+        steps_.push_back({
             .is_field{true},
             .first{offset},
             .end{offset + 1},
@@ -60,26 +64,38 @@ struct access_path {
     auto add_index_range(const size_t first, const size_t end) -> void {
         assert(first < end);
 
-        steps.push_back({
+        steps_.push_back({
             .is_field{},
             .first{first},
             .end{end},
         });
+
+        if (end == run_time_end) {
+            has_run_time_index_ = true;
+        }
     }
 
     // an element of the array at a run-time index, any of them
     auto add_run_time_index() -> void { add_index_range(0, run_time_end); }
 
+    // the steps of 'suffix' after these, 'suffix' is relative to what this
+    // names
+    auto append(const access_path& suffix) -> void {
+        steps_.append_range(suffix.steps_);
+
+        if (suffix.has_run_time_index_) {
+            has_run_time_index_ = true;
+        }
+    }
+
     // the element is not known at compile time, e.g. 'ps[i].x'
     [[nodiscard]] auto has_run_time_index() const -> bool {
-        return std::ranges::any_of(steps, [](const path_step& step) -> bool {
-            return not step.is_field and step.end == run_time_end;
-        });
+        return has_run_time_index_;
     }
 
     [[nodiscard]] auto is_same(const access_path& other) const -> bool {
         return std::ranges::equal(
-            steps, other.steps,
+            steps_, other.steps_,
             [](const path_step& lhs, const path_step& rhs) -> bool {
                 return lhs.is_same(rhs);
             });
@@ -91,11 +107,13 @@ struct access_path {
     // 'es[1].other'. the steps of both start at the same root variable so they
     // line up until a field or a constant index differs
     [[nodiscard]] auto overlaps(const access_path& other) const -> bool {
-        const size_t common_count{std::min(steps.size(), other.steps.size())};
+        const size_t common_count{
+            std::min(steps_.size(), other.steps_.size()),
+        };
 
         for (size_t i{}; i < common_count; ++i) {
-            const path_step& lhs_step{steps.at(i)};
-            const path_step& rhs_step{other.steps.at(i)};
+            const path_step& lhs_step{steps_.at(i)};
+            const path_step& rhs_step{other.steps_.at(i)};
 
             // note: an index follows a field, so steps at the same position
             //       are both fields or both indexes
@@ -159,7 +177,7 @@ struct storage_path {
 
         storage_path result{*this};
 
-        result.path.steps.append_range(suffix.steps);
+        result.path.append(suffix);
 
         return result;
     }

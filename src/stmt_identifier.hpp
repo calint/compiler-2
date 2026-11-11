@@ -33,7 +33,8 @@
 // a path of names, fields and indexes, or a literal; the types and functions
 // below in reading order:
 //
-//   'longest_array_len', 'assert_constant_index', 'constant_range',
+//   'longest_array_len', 'is_constant_index_in_bounds',
+//   'throw_constant_index_out_of_bounds', 'constant_range',
 //   'assert_constant_range'  the constant checks of an index and a range
 //   'throw_call_not_array'   a call where an array is expected
 //   'lea_request'            what a caller asks of the address of a path
@@ -68,11 +69,10 @@
 // a constant index out of bounds is always a bug; an unsized array parameter
 // rejects a negative index and one past the longest array of its elements;
 // 'allow_end' accepts the end, where a range of a zero count starts
-inline auto assert_constant_index(const ident_info& array_info,
-                                  const token& index_tk,
-                                  const std::string_view array_name,
-                                  const int64_t index, const bool allow_end,
-                                  const size_t max_storage_bytes) -> void {
+[[nodiscard]] inline auto
+is_constant_index_in_bounds(const ident_info& array_info, const int64_t index,
+                            const bool allow_end,
+                            const size_t max_storage_bytes) -> bool {
 
     const size_t longest_len{longest_array_len(array_info, max_storage_bytes)};
 
@@ -81,9 +81,14 @@ inline auto assert_constant_index(const ident_info& array_info,
                   : std::cmp_greater_equal(index, longest_len),
     };
 
-    if (index >= 0 and not is_past_end) {
-        return;
-    }
+    return index >= 0 and not is_past_end;
+}
+
+// the error of an index 'is_constant_index_in_bounds' rejected; the caller
+// builds 'array_name' only then, it is the text of the path up to the array
+[[noreturn]] inline auto throw_constant_index_out_of_bounds(
+    const ident_info& array_info, const token& index_tk,
+    const std::string_view array_name, const int64_t index) -> void {
 
     const std::optional<size_t> array_len{array_info.array_len()};
 
@@ -137,9 +142,12 @@ inline auto assert_constant_range(const ident_info& array_info,
     const bool has_constant_start{range.start and range.start_tk};
 
     // a start at the end is the empty range of a zero count
-    if (has_constant_start) {
-        assert_constant_index(array_info, *range.start_tk, range.array_name,
-                              *range.start, true, max_storage_bytes);
+    if (has_constant_start and
+        not is_constant_index_in_bounds(array_info, *range.start, true,
+                                        max_storage_bytes)) {
+
+        throw_constant_index_out_of_bounds(array_info, *range.start_tk,
+                                           range.array_name, *range.start);
     }
 
     const size_t longest_len{longest_array_len(array_info, max_storage_bytes)};
@@ -995,8 +1003,8 @@ class stmt_identifier final : public statement {
     }
 
     // the constant index of the element at 'elem_index' of the path, checked
-    // against 'array_info' by 'assert_constant_index', empty when computed at
-    // run time
+    // against 'array_info' by 'is_constant_index_in_bounds', empty when
+    // computed at run time
     [[nodiscard]] auto checked_constant_index(const toc& tc, size_t elem_index,
                                               const ident_info& array_info,
                                               bool allow_end) const

@@ -6,6 +6,22 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
 --------------------------------------------------------------------------------
 1. clean up
 --------------------------------------------------------------------------------
+[ ] medium: user decision (round 315 AM): the size of an inline expansion
+    has no bound, only its depth (64 levels, 256 scopes): 'r(a, k - 1)'
+    called twice in 'r' and entered as 'r(a, 40)' doubles the work per
+    level (k 16: 2.6 s, 619 MB; k 20: 42 s, 10.6 GB; k 40 ends in
+    "internal error: std::bad_alloc"), also 20 functions that each call the
+    previous one twice; a limit on the inlined bodies of one call with the
+    advice to declare a function 'noinline' would reject it cleanly
+[ ] easy: user decision (round 315 AM): x86_64 writes a zero 'dat' as
+    'times N db 0' in '.data', which nasm takes about 65 ns per byte for
+    (256 MiB 17.6 s), so a 'dat' of 2 GiB or more does not assemble in
+    minutes although the compiler accepts it in milliseconds; a zero 'dat'
+    could be reserved ('resb' in '.bss') if its place before the variables
+    allows it, or chapter 8 item 4 names the limit
+[ ] easy: (round 315 AM) error output: 'var x = 1;;;' reports the last ';'
+    of the run ('throw_if_ends_with_semicolon'), not the first; an error on
+    a 1 MB literal prints the constant, its line and the caret line (3 MB)
 [ ] medium: user decision (round 307 ZY): in a function nothing calls, a
     noinline recursion that swaps its array arguments is checked per
     lengths ('len.4.u') and rejects an error at the swapped level, where

@@ -184,14 +184,23 @@ inline auto stmt_identifier::checked_constant_index(
     const expr_any& index{elems_.at(elem_index).index_expr()};
     const std::optional<int64_t> value{index.constant_value(tc)};
 
-    if (value) {
-        const machine& x{tc.machine()};
-
-        assert_constant_index(array_info, index.tok(), array_text(elem_index),
-                              *value, allow_end, x.max_storage_bytes());
+    if (not value) {
+        return value;
     }
 
-    return value;
+    const machine& x{tc.machine()};
+
+    if (is_constant_index_in_bounds(array_info, *value, allow_end,
+                                    x.max_storage_bytes())) {
+
+        return value;
+    }
+
+    // note: the text is built only for the error, each index of a long path
+    //       would build a text as long as the path
+
+    throw_constant_index_out_of_bounds(array_info, index.tok(),
+                                       array_text(elem_index), *value);
 }
 
 inline auto stmt_identifier::assert_count_in_bounds(const toc& tc,
@@ -249,7 +258,7 @@ inline auto stmt_identifier::narrow_to_element(const toc& tc,
 
     const std::optional<size_t> array_len{array_info.array_len()};
 
-    // note: 'assert_constant_index' rejected a negative index and one past the
+    // note: 'checked_constant_index' rejected a negative index and one past the
     //       end, the end itself starts the empty range of a zero count
 
     // an unsized array parameter: a constant element is known, its bytes
