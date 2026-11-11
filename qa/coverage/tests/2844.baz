@@ -1,0 +1,23 @@
+# an inlined body compiled with 's' unsized ends 'count' at a limit (2843)
+func count(n, s i8[]) res {
+    if n >= array_length(s) {
+        res = {}
+        return
+    }
+    res = 1 + count(n + 1, s)
+}
+
+func f(s i8[], t i8[]) res {
+    res = count(0, s) + t[3]
+}
+
+func g(ps i8[]) res {
+    var b = i8[4]
+    b[3] = 2
+    res = f(ps, b)
+}
+
+func main() {
+    var a = i8[3]
+    exit(g(a))
+}

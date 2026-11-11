@@ -525,8 +525,8 @@ class stmt_def_func final : public statement {
 
     // 'func' is a keyword so no user name or internal label starts with 'func.'
     // e.g. 'func.sum..len.4.8' for array lengths 4 and 8
-    [[nodiscard]] auto
-    body_label(const std::span<const size_t> array_lengths = {}) const
+    [[nodiscard]] auto body_label(
+        const std::span<const std::optional<size_t>> array_lengths = {}) const
         -> std::string {
 
         return std::format("{}{}", machine::body_label_prefix,
@@ -555,8 +555,9 @@ class stmt_def_func final : public statement {
 
     // the body of a noinline function for array lengths that only a dry run
     // asked for, compiled as 'emit_noinline_body' does, nothing kept
-    auto check_noinline_body(toc& tc,
-                             const std::span<const size_t> array_lengths) const
+    auto check_noinline_body(
+        toc& tc,
+        const std::span<const std::optional<size_t>> array_lengths) const
         -> void {
 
         assert(not is_inlined());
@@ -652,8 +653,9 @@ class stmt_def_func final : public statement {
     // the body of a noinline function for one set of array lengths, after
     // 'main'; the lengths are those of the array arguments, one per array
     // parameter
-    auto emit_noinline_body(toc& tc,
-                            const std::span<const size_t> array_lengths) const
+    auto emit_noinline_body(
+        toc& tc,
+        const std::span<const std::optional<size_t>> array_lengths) const
         -> void {
 
         assert(not is_inlined());
@@ -667,7 +669,15 @@ class stmt_def_func final : public statement {
         source_def_comment_to(x, 0);
 
         if (not array_lengths.empty()) {
-            x.comment({}, 0, "array parameter lengths: {:n}", array_lengths);
+            // note: an emitted body has every length, see 'add_noinline_body'
+            const auto known{
+                [](const std::optional<size_t>& length) -> size_t {
+                    return length.value();
+                },
+            };
+
+            x.comment({}, 0, "array parameter lengths: {:n}",
+                      std::views::transform(array_lengths, known));
         }
 
         x.begin_noinline_body(std::string{name()}, body_label(array_lengths));
@@ -681,8 +691,8 @@ class stmt_def_func final : public statement {
 
     // a suffix could collide with a method body, e.g. 'func.list.size' of
     // function 'list' and method 'list.size'
-    [[nodiscard]] auto
-    frame_size_label(const std::span<const size_t> array_lengths) const
+    [[nodiscard]] auto frame_size_label(
+        const std::span<const std::optional<size_t>> array_lengths) const
         -> std::string {
 
         return std::format("size.{}", body_label(array_lengths));
@@ -786,10 +796,11 @@ class stmt_def_func final : public statement {
 
     // the result and the parameters in the order of 'frame_slots', placed by
     // 'placement_of'; the array lengths are those of the body instance, empty
-    // where no call gives them: in the parse and in 'check_body'
-    auto add_signature_vars(toc& tc, const size_t indent,
-                            const var_access& access,
-                            const std::span<const size_t> array_lengths) const
+    // where no call gives them: in the parse and in 'check_body'; one is
+    // unknown where 'check_body' passes an unsized array parameter on
+    auto add_signature_vars(
+        toc& tc, const size_t indent, const var_access& access,
+        const std::span<const std::optional<size_t>> array_lengths) const
         -> void {
 
         assert(array_lengths.empty() or
@@ -825,7 +836,7 @@ class stmt_def_func final : public statement {
 
             const std::optional<size_t> array_len{
                 param.is_array() and not array_lengths.empty()
-                    ? std::optional{array_lengths.at(next_array_index++)}
+                    ? array_lengths.at(next_array_index++)
                     : std::nullopt,
             };
 
@@ -898,8 +909,8 @@ class stmt_def_func final : public statement {
     // keeps the labels of the body unique: the instances of one generic
     // definition have the same source locations, and a noinline body is
     // compiled once per array lengths
-    [[nodiscard]] auto
-    body_call_path(const std::span<const size_t> array_lengths) const
+    [[nodiscard]] auto body_call_path(
+        const std::span<const std::optional<size_t>> array_lengths) const
         -> std::string {
 
         if (instance_) {
@@ -915,8 +926,9 @@ class stmt_def_func final : public statement {
 
     // the body in a frame of its own at the frame base, which the caller
     // holds, inside its 'frame_scope'; returns the size of the frame
-    [[nodiscard]] auto
-    compile_in_frame(toc& tc, const std::span<const size_t> array_lengths) const
+    [[nodiscard]] auto compile_in_frame(
+        toc& tc,
+        const std::span<const std::optional<size_t>> array_lengths) const
         -> size_t {
 
         // the register is held while the body runs
@@ -951,8 +963,9 @@ class stmt_def_func final : public statement {
 
     // the body compiled in a frame of its own for 'array_lengths', nothing
     // kept
-    auto dry_run_in_frame(toc& tc,
-                          const std::span<const size_t> array_lengths) const
+    auto dry_run_in_frame(
+        toc& tc,
+        const std::span<const std::optional<size_t>> array_lengths) const
         -> void {
 
         tc.dry_run(
@@ -969,9 +982,11 @@ class stmt_def_func final : public statement {
     // is compiled without a call: a noinline body without array parameters,
     // checked as it is emitted, as 'main' is ('check_function_bodies'), or
     // 'check_body', of a body that a call gives its array lengths or, inlined,
-    // the bindings of its parameters and result
-    [[nodiscard]] auto
-    frame_scope(const std::span<const size_t> array_lengths) const -> scope {
+    // the bindings of its parameters and result; a checked body with a length
+    // unknown takes from a call as 'check_body' does
+    [[nodiscard]] auto frame_scope(
+        const std::span<const std::optional<size_t>> array_lengths) const
+        -> scope {
 
         scope body_scope{
             scope::noinline_func(name(), body_call_path(array_lengths)),
@@ -984,6 +999,21 @@ class stmt_def_func final : public statement {
             };
 
             body_scope.mark_without_call(takes_from_call);
+
+            return body_scope;
+        }
+
+        // note: a checked body with a length unknown does not check its
+        //       skipped code, as an inlined call does not; 'check_body' does
+
+        const bool has_unknown_length{
+            std::ranges::any_of(array_lengths,
+                                [](const std::optional<size_t>& length)
+                                    -> bool { return not length; }),
+        };
+
+        if (has_unknown_length) {
+            body_scope.mark_taking_from_call();
         }
 
         return body_scope;
@@ -997,8 +1027,8 @@ class stmt_def_func final : public statement {
     }
 
     // e.g. 'sum..len.4.8' for array lengths 4 and 8, 'sum' without lengths
-    [[nodiscard]] auto
-    name_with_lengths(const std::span<const size_t> array_lengths) const
+    [[nodiscard]] auto name_with_lengths(
+        const std::span<const std::optional<size_t>> array_lengths) const
         -> std::string {
 
         if (array_lengths.empty()) {
@@ -1158,15 +1188,21 @@ class stmt_def_func final : public statement {
     // statics
     //
 
-    // e.g. 'len.4.8', unlike the 'L.C' pairs of inlined calls
-    [[nodiscard]] static auto
-    array_lengths_path(const std::span<const size_t> array_lengths)
+    // e.g. 'len.4.8', 'len.u.8' with the first length unknown, unlike the
+    // 'L.C' pairs of inlined calls
+    [[nodiscard]] static auto array_lengths_path(
+        const std::span<const std::optional<size_t>> array_lengths)
         -> std::string {
 
         std::string path{"len"};
 
-        for (const size_t length : array_lengths) {
-            path += std::format(".{}", length);
+        for (const std::optional<size_t> length : array_lengths) {
+            if (not length) {
+                path += ".u";
+                continue;
+            }
+
+            path += std::format(".{}", *length);
         }
 
         return path;

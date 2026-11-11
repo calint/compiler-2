@@ -1,0 +1,16 @@
+# a noinline body checked with 's' unsized skips 't[5]' unchecked (2846)
+func noinline f(s i8[], t i8[]) res {
+    res = s[0]
+    if array_length(t) == 8 {
+        res = t[5]
+    }
+}
+
+func g(ps i8[]) res {
+    var b = i8[4]
+    res = f(ps, b)
+}
+
+func main() {
+    exit(0)
+}

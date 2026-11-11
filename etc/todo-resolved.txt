@@ -1,6 +1,13 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 303 (2026-11-11, ZT review of the exceptions, item 5)
+    => done (2026-11-11): in a body checked without a call, a noinline call
+       with an array argument of unknown length asks for a body checked
+       with that length unknown and the others known (checked bodies are
+       keyed by optional lengths, 'has_known_lengths' is gone), so inlined
+       and noinline calls get the same verdict there; new tests 2840-2847
+       (2840 and 2842 were accepted), no growth of generated code
 [x] easy: round 302 (2026-11-11, ZT review of the exceptions, item 2)
     => done (2026-11-11): 'check_recursion' no longer expands a recursion
        that a constant argument ends in the check of a body taking from a

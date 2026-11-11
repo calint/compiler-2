@@ -1,0 +1,13 @@
+# an inlined call with an unsized argument checks 't' of length 4 (2840)
+func f(s i8[], t i8[]) res {
+    res = s[0] + t[5]
+}
+
+func g(ps i8[]) res {
+    var b = i8[4]
+    res = f(ps, b)
+}
+
+func main() {
+    exit(0)
+}

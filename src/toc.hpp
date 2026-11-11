@@ -90,8 +90,9 @@ struct func_info {
 // a noinline body compiled for the array lengths of its calls
 struct noinline_body {
     const stmt_def_func* func{};
-    // one per array parameter, in parameter order
-    std::vector<size_t> array_lengths;
+    // one per array parameter, in parameter order; a length is unknown only
+    // in a body that is checked, not emitted, see 'toc::add_noinline_body'
+    std::vector<std::optional<size_t>> array_lengths;
     // the first call that asked for the body, where an error in the body
     // reports it was called from, e.g. 'third(b)'
     token call_tk;
@@ -305,10 +306,10 @@ class scope final {
         // 'main', a noinline body without array parameters and the body check
         // of 'stmt_def_func::check_body', see 'toc::check_skipped'
         bool is_without_call{};
-        // of such a body: a call would give it what the check does not have,
-        // e.g. the length of an unsized array, so the constants that end a
-        // recursion are unknown, see 'stmt_def_func::check_body' and
-        // 'inline_call::check_recursion'
+        // of such a body or of a checked body with a length unknown: a call
+        // would give it what the check does not have, e.g. the length of an
+        // unsized array, so the constants that end a recursion are unknown,
+        // see 'stmt_def_func::check_body' and 'inline_call::check_recursion'
         bool takes_from_call{};
 
         // the name of the result, empty when there is none
@@ -478,6 +479,8 @@ class scope final {
 
         vars_.get_ref(name).read_only_why = cause;
     }
+
+    auto mark_taking_from_call() -> void { func_part().takes_from_call = true; }
 
     auto mark_without_call(const bool takes_from_call_in) -> void {
         func_part().is_without_call = true;
@@ -810,8 +813,9 @@ class noinline_body_list final {
         return bodies_.at(index);
     }
 
-    [[nodiscard]] auto contains(const stmt_def_func& func,
-                                const std::vector<size_t>& array_lengths) const
+    [[nodiscard]] auto
+    contains(const stmt_def_func& func,
+             const std::vector<std::optional<size_t>>& array_lengths) const
         -> bool {
 
         return std::ranges::any_of(
@@ -2377,7 +2381,8 @@ class definition_checks final {
 //                             array lengths and 'scope::main_func'; read for
 //                             the innermost function by 'check_skipped'
 //   'scope::takes_from_call'  set by 'stmt_def_func::frame_scope' for
-//                             'stmt_def_func::check_body'; read for
+//                             'stmt_def_func::check_body' and a checked
+//                             body with a length unknown; read for
 //                             any function by 'inline_call::compile' through
 //                             'scope_stack::is_in_body_taking_from_call'
 class toc final {
@@ -2740,13 +2745,25 @@ class toc final {
     }
 
     // a body is emitted once per array lengths, for a call that is
-    // compiled for real; a call in a dry run asks for a body to check
+    // compiled for real; a call in a dry run asks for a body to check, with
+    // a length unknown where the check of a function without its calls
+    // passes on an unsized array parameter
     auto add_noinline_body(const stmt_def_func& func,
-                           std::vector<size_t> array_lengths,
+                           std::vector<std::optional<size_t>> array_lengths,
                            const token& call_tk, std::string call_source)
         -> void {
 
         assert(is_compiling_);
+
+        const ::machine& x{machine()};
+
+        // note: a length is unknown only where 'stmt_def_func::check_body'
+        //       passes an unsized array parameter on, in a dry run
+
+        assert(x.is_discarding() or
+               std::ranges::all_of(array_lengths,
+                                   [](const std::optional<size_t>& length)
+                                       -> bool { return length.has_value(); }));
 
         noinline_body body{
             .func{&func},
@@ -2754,8 +2771,6 @@ class toc final {
             .call_tk{call_tk},
             .call_source{std::move(call_source)},
         };
-
-        const ::machine& x{machine()};
 
         if (x.is_discarding()) {
             checked_bodies_.add_once(std::move(body));

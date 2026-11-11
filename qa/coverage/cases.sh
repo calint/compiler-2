@@ -5631,7 +5631,7 @@ SRC=1753 && COMPERR
 SRC=1754 && COMPERR
 
 # the bodies that only skipped code and the checks without calls ask for are
-# checked, not emitted; a length unknown there asks for none
+# checked, not emitted; a length unknown there is checked unknown
 SRC=1755 && EXP=7 && RUN
 
 # an array is not a condition
@@ -7801,3 +7801,19 @@ SRC=2801 && EXP=1 && RUN
 # the check of a function that takes only its result from a call ends an
 # inlined recursion that runs out of registers, the call compiles it whole
 SRC=2802 && EXP=0 && RUN
+
+# an argument of unknown length: a noinline call checks the known lengths too
+SRC=2840 && COMPERR
+SRC=2841 && COMPERR
+
+# such a checked body passes the known lengths on, as inlined calls do
+SRC=2842 && COMPERR
+SRC=2847 && COMPERR
+
+# such a checked body ends an inlined recursion at a limit, as inlined
+SRC=2843 && EXP=5 && RUN
+SRC=2844 && EXP=5 && RUN
+
+# such a checked body does not check its skipped code, as inlined
+SRC=2845 && EXP=0 && RUN
+SRC=2846 && EXP=0 && RUN

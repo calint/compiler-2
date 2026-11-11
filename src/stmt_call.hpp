@@ -1506,26 +1506,17 @@ class noinline_call final {
 
         call_.zero_result_padding(tc, indent, dst);
 
-        const std::vector<size_t> array_lengths{
+        const std::vector<std::optional<size_t>> array_lengths{
             array_argument_lengths(*call_.func, arguments),
         };
 
-        // note: an argument of unknown length is in the check of a function
-        //       without its calls, no body has its lengths
-
-        const bool has_known_lengths{
-            std::ranges::none_of(arguments,
-                                 [](const noinline_arg& a) -> bool {
-                                     return a.info.is_length_unknown();
-                                 }),
-        };
-
         // a body is emitted for a function that is called, once for all calls
-        // without array parameters
-        if (has_known_lengths) {
-            tc.add_noinline_body(*call_.func, array_lengths, call_.begin_tk,
-                                 call_.source);
-        }
+        // without array parameters; an argument of unknown length, in the
+        // check of a function without its calls, asks for a body to check
+        // with that length unknown and the others known, as an inlined call
+        // compiles it
+        tc.add_noinline_body(*call_.func, array_lengths, call_.begin_tk,
+                             call_.source);
 
         // start the callee frame after the caller's storage, not on the stack
         // pointer, the layout of README 4.1
@@ -1558,11 +1549,11 @@ class noinline_call final {
     // the slots of the callee frame at 'frame_address' get the addresses of
     // the result and the arguments, the registers that hold them stay
     // allocated until the frame is populated; returns 'write_frame_slots'
-    [[nodiscard]] auto
-    populate_frame(toc& tc, const size_t indent, const destination& dst,
-                   const std::span<const noinline_arg> arguments,
-                   const operand& frame_address,
-                   const std::span<const size_t> array_lengths) const
+    [[nodiscard]] auto populate_frame(
+        toc& tc, const size_t indent, const destination& dst,
+        const std::span<const noinline_arg> arguments,
+        const operand& frame_address,
+        const std::span<const std::optional<size_t>> array_lengths) const
         -> std::optional<operand> {
 
         machine& x{tc.machine()};
@@ -1621,15 +1612,15 @@ class noinline_call final {
     [[nodiscard]] static auto
     array_argument_lengths(const stmt_def_func& func,
                            const std::span<const noinline_arg> arguments)
-        -> std::vector<size_t> {
+        -> std::vector<std::optional<size_t>> {
 
-        std::vector<size_t> lengths;
+        std::vector<std::optional<size_t>> lengths;
 
         for (const auto [argument, param] :
              std::views::zip(arguments, func.params())) {
 
             if (param.is_array()) {
-                lengths.push_back(argument.info.element_count());
+                lengths.push_back(argument.info.shape().length());
             }
         }
 

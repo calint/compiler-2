@@ -1,0 +1,17 @@
+# the checked body of 'h' passes the length 4 on to 'f' as 's' (2847)
+func noinline f(s i8[], t i8[]) res {
+    res = s[5] + t[0]
+}
+
+func noinline h(s i8[], t i8[]) res {
+    res = f(t, s)
+}
+
+func g(ps i8[]) res {
+    var b = i8[4]
+    res = h(ps, b)
+}
+
+func main() {
+    exit(0)
+}

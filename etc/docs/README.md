@@ -407,12 +407,12 @@ program does not depend on inlining.
    ('program::check_noinline_bodies'). So 'f(a)' in 'if 1 == 2 { ... }' is
    rejected for 's[5]' in 'f(s i8[])' on an 'i8[4]' inlined or noinline. Its
    errors have the "called from" frame of the first such call. A call with
-   an array argument of unknown length asks for none, also for its other
-   array arguments: 'f(ps, b)' in a function 'g(ps i8[])' that nothing
-   calls, with 'b' an 'i8[4]', does not check 't[5]' of 'f(s i8[], t i8[])'
-   with length 4, which an inlined 'f' rejects; the verdict of such code
-   depends on inline versus noinline, a call of 'g' with a known length
-   checks it.
+   an array argument of unknown length asks for a body with that length
+   unknown and the others known, which takes from a call as 'check_body'
+   does and, as an inlined body, does not check its skipped code: 'f(ps, b)'
+   in a function 'g(ps i8[])' that nothing calls, with 'b' an 'i8[4]',
+   rejects 't[5]' of 'f(s i8[], t i8[])' with length 4, inlined or
+   noinline.
 
 #### 1.5.1 Code that is not reached
 
@@ -2103,10 +2103,6 @@ message, x86_64 stops with a signal.
   is passed in place complicates the parse.
 - Definite assignment does not count the writes of a call, e.g.
   'init(res)' is a read of 'res'; a conservative rejection.
-- A noinline call there with an array argument of unknown length is not
-  checked with the lengths of its other array arguments, which an inlined
-  call is: in a function nothing calls the verdict depends on inline versus
-  noinline (1.5 item 4).
 - An inlined call that never returns ends the path where it is a whole
   statement, an 'if' condition, a 'foo' count or the body of a 'foo' that
   runs, but not inside a longer expression ('stop(k) + a[k]', an argument,
