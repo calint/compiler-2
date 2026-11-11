@@ -65,8 +65,9 @@
 ### Names
 
 - Bytes: role-prefixed (`cur_`, `size_bytes`); elements: `count`.
-- Keep `src_loc_tk`, `indent`, `src`/`dst`, `lhs`/`rhs`, `tc`, `tz` and an
-  interface's paired vocabulary.
+- Keep `src_loc_tk`, `indent`, `site` (an `emit_site`, the pair in the
+  backend), `src`/`dst`, `lhs`/`rhs`, `tc`, `tz` and an interface's paired
+  vocabulary.
 - One-letter names only in tight loops.
 - Public fields have no trailing underscore; private and protected members do.
 - Parameters shadowing data members get an `_in` suffix, only where a member

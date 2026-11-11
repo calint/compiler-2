@@ -150,7 +150,7 @@ class bulk_operands final {
                     machine& x{tc_.machine()};
 
                     held.start = x.alloc_scratch_register(
-                        array.tok(), indent_, tc_.builtins().default_type());
+                        {array.tok(), indent_}, tc_.builtins().default_type());
                 }
 
                 walk_address(array, held.start, address_register, checks_ranges,
@@ -204,7 +204,7 @@ class bulk_operands final {
 
             machine& x{tc_.machine()};
 
-            x.check_bounds(count_tk, indent_, *range, options);
+            x.check_bounds({count_tk, indent_}, *range, options);
 
             return count_register.has_value() and options.lower;
         }
@@ -245,7 +245,7 @@ class bulk_operands final {
 
                 machine& x{tc_.machine()};
 
-                x.free_scratch_register(src_loc_tk_, indent_, *held.start);
+                x.free_scratch_register({src_loc_tk_, indent_}, *held.start);
                 held.start.reset();
             }
         }
@@ -322,9 +322,9 @@ class bulk_operands final {
 
             machine& x{tc_.machine()};
 
-            x.comment(array.tok(), indent_, statement::trimmed_source(array));
+            x.comment({array.tok(), indent_}, statement::trimmed_source(array));
 
-            machine::held_registers walk{x, src_loc_tk_, indent_};
+            machine::held_registers walk{x, {src_loc_tk_, indent_}};
 
             // note: the walk checks a start up to the length, its range is
             //       checked after the later arguments

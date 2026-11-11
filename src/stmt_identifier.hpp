@@ -326,12 +326,12 @@ class stmt_identifier final : public statement {
 
             if (not target) {
                 target = held_.get().alloc_scratch_register(
-                    src_loc_tk_, indent_, tc.builtins().address());
+                    {src_loc_tk_, indent_}, tc.builtins().address());
             }
 
             machine& x{tc.machine()};
 
-            x.address_of(src_loc_tk_, indent_, *target, address);
+            x.address_of({src_loc_tk_, indent_}, *target, address);
 
             return *target;
         }
@@ -380,13 +380,13 @@ class stmt_identifier final : public statement {
             toc& tc{tc_.get()};
 
             const operand address_register{
-                held_.get().alloc_scratch_register(src_loc_tk_, indent_,
+                held_.get().alloc_scratch_register({src_loc_tk_, indent_},
                                                    tc.builtins().address()),
             };
 
             machine& x{tc.machine()};
 
-            x.copy_value(src_loc_tk_, indent_, address_register,
+            x.copy_value({src_loc_tk_, indent_}, address_register,
                          operand::mem(address_slot, tc.builtins().address()));
 
             return operand::mem(address_register, tc.builtins().address());
@@ -470,7 +470,7 @@ class stmt_identifier final : public statement {
         // note: a list copies a constant itself
         assert(not src_info.is_const());
 
-        machine::held_registers held{x, tok(), indent};
+        machine::held_registers held{x, {tok(), indent}};
 
         const operand op{get_lea_operand(tc, indent, src_info, held)};
 
@@ -478,7 +478,7 @@ class stmt_identifier final : public statement {
         // may load the value into one of them
         held.release();
 
-        x.copy_value(tok(), indent, dst.operand(), op);
+        x.copy_value({tok(), indent}, dst.operand(), op);
 
         get_unary_ops().compile(x, indent, tok(), dst.operand(),
                                 tc.overflow_options(dst));
@@ -689,12 +689,12 @@ class stmt_identifier final : public statement {
         const operand storage{get_lea_operand(tc, indent, info, held)};
 
         const operand reg{
-            held.alloc_scratch_register(src_loc_tk, indent, register_type),
+            held.alloc_scratch_register({src_loc_tk, indent}, register_type),
         };
 
         machine& x{tc.machine()};
 
-        x.copy_value(src_loc_tk, indent, reg, storage);
+        x.copy_value({src_loc_tk, indent}, reg, storage);
         get_unary_ops().compile(x, indent, src_loc_tk, reg, overflow_check);
 
         return reg;
@@ -758,11 +758,11 @@ class stmt_identifier final : public statement {
 
         machine& x{tc.machine()};
 
-        machine::held_registers held{x, src_loc_tk, indent};
+        machine::held_registers held{x, {src_loc_tk, indent}};
 
         const operand address{get_lea_operand(tc, indent, info, held)};
 
-        x.address_of(src_loc_tk, indent, reg, address);
+        x.address_of({src_loc_tk, indent}, reg, address);
     }
 
     // this path may reach bytes of 'target', e.g. 'e.x' in a 'foo ps' reaches

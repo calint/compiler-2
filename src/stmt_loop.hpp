@@ -33,7 +33,7 @@ class stmt_loop final : public statement {
 
         machine& x{tc.machine()};
 
-        x.comment(tok(), indent, "loop");
+        x.comment({tok(), indent}, "loop");
 
         const std::string label{tc.create_unique_label(tok(), "loop")};
         x.label(indent, label);

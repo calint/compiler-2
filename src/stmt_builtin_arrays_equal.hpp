@@ -63,7 +63,7 @@ class stmt_builtin_arrays_equal final : public statement {
         if (size_bytes and *size_bytes > 0) {
             emit.both_addresses(
                 [&](const operand& lhs, const operand& rhs) -> void {
-                    x.memory_equal(tok(), indent, *size_bytes, lhs, rhs,
+                    x.memory_equal({tok(), indent}, *size_bytes, lhs, rhs,
                                    {
                                        .alignment{element_type.alignment()},
                                        .dst{dst.operand()},
@@ -74,9 +74,9 @@ class stmt_builtin_arrays_equal final : public statement {
             return;
         }
 
-        x.equal_elements(tok(), indent, element_type.size_bytes(), emit.count(),
-                         emit.first(), emit.second(), element_type.alignment(),
-                         dst.operand());
+        x.equal_elements({tok(), indent}, element_type.size_bytes(),
+                         emit.count(), emit.first(), emit.second(),
+                         element_type.alignment(), dst.operand());
     }
 
     auto visit_operands(const operand_visitor visitor) const -> void override {

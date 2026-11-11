@@ -47,15 +47,15 @@ class stmt_builtin_exit final : public statement {
         comment_source(x, indent);
 
         const operand exit_code{
-            x.alloc_named_register(tok(), indent, x.exit_code_register(),
+            x.alloc_named_register({tok(), indent}, x.exit_code_register(),
                                    tc.builtins().default_type()),
         };
 
         args_.at(0).compile(tc, indent, destination::of_register(exit_code));
 
-        x.exit(tok(), indent, exit_code);
+        x.exit({tok(), indent}, exit_code);
 
-        x.free_named_register(tok(), indent, exit_code);
+        x.free_named_register({tok(), indent}, exit_code);
 
         tc.end_path();
     }

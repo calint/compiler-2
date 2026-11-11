@@ -365,7 +365,7 @@ inline auto stmt_identifier::path_address::add_index(const ident_elem& cur_elem,
     if (not index_register_) {
         // index expressions are parsed with the default type
         index_register_ = held_.get().alloc_scratch_register(
-            index_tk, indent_, tc.builtins().default_type());
+            {index_tk, indent_}, tc.builtins().default_type());
     }
 
     const operand& index_register{*index_register_};
@@ -384,7 +384,7 @@ inline auto stmt_identifier::path_address::add_index(const ident_elem& cur_elem,
 
         assert(addend_elements == 0);
 
-        x.copy_value(index_tk, indent_, *request.start_register,
+        x.copy_value({index_tk, indent_}, *request.start_register,
                      index_register);
     }
 
@@ -394,7 +394,7 @@ inline auto stmt_identifier::path_address::add_index(const ident_elem& cur_elem,
     //       modulo the address width, e.g. 'a[i - 9223372036854775806]'
 
     if (addend_elements != 0) {
-        x.comment(index_tk, indent_,
+        x.comment({index_tk, indent_},
                   "index constant {} goes into the displacement",
                   addend_elements);
     }
@@ -404,7 +404,7 @@ inline auto stmt_identifier::path_address::add_index(const ident_elem& cur_elem,
     const bool is_encodable_scale{x.can_lower_index_scale(element_size_bytes)};
 
     if (not is_encodable_scale) {
-        x.scale_index(index_tk, indent_, index_register, element_size_bytes);
+        x.scale_index({index_tk, indent_}, index_register, element_size_bytes);
     }
 
     const int64_t displacement{
@@ -424,7 +424,7 @@ inline auto stmt_identifier::compile_checked_index(
 
     machine& x{tc.machine()};
 
-    x.comment(index_expr.tok(), indent, "set array index");
+    x.comment({index_expr.tok(), indent}, "set array index");
 
     const destination index_dst{
         destination::of_register(index_register),
@@ -457,7 +457,7 @@ inline auto stmt_identifier::compile_checked_index(
                                            shape.element_count()),
     };
 
-    x.check_bounds(index_expr.tok(), indent, checked, checks);
+    x.check_bounds({index_expr.tok(), indent}, checked, checks);
 
     return 0;
 }

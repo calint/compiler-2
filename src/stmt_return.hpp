@@ -33,7 +33,7 @@ class stmt_return final : public statement {
         tc.record_return();
 
         if (func_scp.is_main()) {
-            x.exit(tok(), indent,
+            x.exit({tok(), indent},
                    operand::imm(0, tc.builtins().default_type()));
 
             return;

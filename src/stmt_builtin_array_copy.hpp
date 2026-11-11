@@ -71,14 +71,15 @@ class stmt_builtin_array_copy final : public statement {
         if (size_bytes and not checks_overlap) {
             emit.both_addresses(
                 [&](const operand& src, const operand& dst_address) -> void {
-                    x.copy_block(tok(), indent, dst_address, src, *size_bytes,
+                    x.copy_block({tok(), indent}, dst_address, src, *size_bytes,
                                  element_type.alignment());
                 });
 
             return;
         }
 
-        x.copy_elements(tok(), indent, element_type.size_bytes(), emit.count(),
+        x.copy_elements({tok(), indent}, element_type.size_bytes(),
+                        emit.count(),
                         {
                             .alignment{element_type.alignment()},
                             .src{emit.first()},

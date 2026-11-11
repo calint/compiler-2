@@ -80,7 +80,7 @@ class stmt_assign_var final : public statement {
         // note: the parse rejected a constant destination
         assert(not dst_info.is_const());
 
-        machine::held_registers held{x, tok(), indent};
+        machine::held_registers held{x, {tok(), indent}};
 
         const operand address{
             stmt_ident_.get_lea_operand(tc, indent, dst_info, held),

@@ -240,7 +240,7 @@ class expr_bool_op final : public statement {
 
         machine& x{tc.machine()};
 
-        x.comment(tok(), indent, trimmed_source(*this, "?", label));
+        x.comment({tok(), indent}, trimmed_source(*this, "?", label));
 
         x.label(indent, tc.create_unique_label(tok(), "cmp"));
 
@@ -428,12 +428,12 @@ class expr_bool_op final : public statement {
 
         machine& x{tc.machine()};
 
-        x.comment(lhs_.tok(), indent, "const eval to {}",
+        x.comment({lhs_.tok(), indent}, "const eval to {}",
                   value ? "true" : "false");
 
         // note: a run-time element before it may have stored the other value
         if (not action.destination.is_empty()) {
-            x.store_boolean(tok(), indent, action.destination, value);
+            x.store_boolean({tok(), indent}, action.destination, value);
         }
 
         if (value == action.branch_on_true and not action.target.empty()) {
@@ -455,7 +455,7 @@ class expr_bool_op final : public statement {
 
         machine& x{tc.machine()};
 
-        machine::held_registers held{x, tok(), indent};
+        machine::held_registers held{x, {tok(), indent}};
 
         const comparison_side condition{side_of(tc, lhs_)};
 
@@ -466,11 +466,11 @@ class expr_bool_op final : public statement {
         // a 'bool' already holds 0 or 1, a copy is shorter than evaluating the
         // shorthand as '!= 0'
         if (is_bool_copy(action)) {
-            x.copy_value(tok(), indent, action.destination, value);
+            x.copy_value({tok(), indent}, action.destination, value);
             return;
         }
 
-        x.compare_and_branch(tok(), indent, value,
+        x.compare_and_branch({tok(), indent}, value,
                              operand::imm(0, tc.builtins().default_type()),
                              action);
     }
@@ -522,12 +522,12 @@ class expr_bool_op final : public statement {
 
         machine& x{tc.machine()};
 
-        machine::held_registers held{x, tok(), indent};
+        machine::held_registers held{x, {tok(), indent}};
 
         const operand dst{left_operand(tc, indent, lhs, held)};
         const operand src{right_operand(tc, indent, rhs, held)};
 
-        x.compare_and_branch(tok(), indent, dst, src, action);
+        x.compare_and_branch({tok(), indent}, dst, src, action);
     }
 
     // the bytes are compared and the result is branched on as for a shorthand
@@ -556,7 +556,7 @@ class expr_bool_op final : public statement {
 
         const operand result{
             is_stored ? action.destination
-                      : x.alloc_scratch_register(tok(), indent,
+                      : x.alloc_scratch_register({tok(), indent},
                                                  tc.builtins().boolean()),
         };
 
@@ -572,13 +572,13 @@ class expr_bool_op final : public statement {
             branch_action.operation = comparison_operator::not_equal;
             branch_action.destination = {};
 
-            x.compare_and_branch(tok(), indent, result,
+            x.compare_and_branch({tok(), indent}, result,
                                  operand::imm(0, tc.builtins().default_type()),
                                  branch_action);
         }
 
         if (not is_stored) {
-            x.free_scratch_register(tok(), indent, result);
+            x.free_scratch_register({tok(), indent}, result);
         }
     }
 
@@ -760,15 +760,15 @@ class expr_bool_op final : public statement {
 
         machine& x{tc.machine()};
 
-        machine::held_registers held{x, src_loc_tk, indent};
+        machine::held_registers held{x, {src_loc_tk, indent}};
 
-        x.comment(lhs.tok(), indent, trimmed_source(lhs));
+        x.comment({lhs.tok(), indent}, trimmed_source(lhs));
         const operand lhs_address{lhs.compile_lea(tc, indent, held, {})};
 
-        x.comment(rhs.tok(), indent, trimmed_source(rhs));
+        x.comment({rhs.tok(), indent}, trimmed_source(rhs));
         const operand rhs_address{rhs.compile_lea(tc, indent, held, {})};
 
-        x.memory_equal(src_loc_tk, indent, *size_bytes, lhs_address,
+        x.memory_equal({src_loc_tk, indent}, *size_bytes, lhs_address,
                        rhs_address,
                        {
                            .alignment{lhs_info.type_ref().alignment()},
@@ -784,7 +784,7 @@ class expr_bool_op final : public statement {
 
         // the operand is computed at the width of its first element
         const operand reg{
-            held.alloc_scratch_register(expr.tok(), indent, expr.get_type()),
+            held.alloc_scratch_register({expr.tok(), indent}, expr.get_type()),
         };
 
         expr.compile_checked(tc, indent + 1, destination::of_register(reg));
@@ -927,7 +927,7 @@ class expr_bool_op final : public statement {
 
         machine& x{tc.machine()};
 
-        x.comment(expr.tok(), indent, "src: folded constant {}",
+        x.comment({expr.tok(), indent}, "src: folded constant {}",
                   in_quotes(trimmed_source(expr)));
 
         return immediate_of(side, tc.builtins().default_type());
@@ -1055,12 +1055,12 @@ class expr_bool final : public statement {
         machine& x{tc.machine()};
 
         const operand reg{
-            x.alloc_scratch_register(tok(), indent, dst.type_ref()),
+            x.alloc_scratch_register({tok(), indent}, dst.type_ref()),
         };
 
         compile_value(tc, indent, reg);
-        x.copy_value(tok(), indent, dst.operand(), reg);
-        x.free_scratch_register(tok(), indent, reg);
+        x.copy_value({tok(), indent}, dst.operand(), reg);
+        x.free_scratch_register({tok(), indent}, reg);
     }
 
     // a condition known at compile time is 1 or 0
@@ -1370,7 +1370,7 @@ class expr_bool final : public statement {
         if (not is_only_element) {
             machine& x{tc.machine()};
 
-            x.comment(tok(), indent,
+            x.comment({tok(), indent},
                       trimmed_source(*this, "?",
                                      outer_inverted ? " inverted: " : " "));
         }

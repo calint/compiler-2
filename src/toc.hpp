@@ -2655,7 +2655,7 @@ class toc final {
         if (is_compiling_) {
             ::machine& x{machine()};
 
-            x.comment(src_loc_tk, indent, "const {} = {}", name,
+            x.comment({src_loc_tk, indent}, "const {} = {}", name,
                       constant.value);
         }
 
@@ -3118,7 +3118,7 @@ class toc final {
         ::machine& x{machine()};
 
         const bool keeps_first{
-            x.emit_most_efficient(src_loc_tk, indent, first, second),
+            x.emit_most_efficient({src_loc_tk, indent}, first, second),
         };
 
         restore_compile_state(keeps_first ? first_end : second_end);
@@ -3532,20 +3532,20 @@ class toc final {
         ::machine& x{machine()};
 
         if (reg) {
-            x.comment(src_loc_tk, indent, "{} ({})", text,
+            x.comment({src_loc_tk, indent}, "{} ({})", text,
                       reg->register_name());
 
             return;
         }
 
         if (holds_address(var.placement)) {
-            x.comment_held_address(src_loc_tk, indent, text,
+            x.comment_held_address({src_loc_tk, indent}, text,
                                    name_info.operand());
 
             return;
         }
 
-        x.comment_variable(src_loc_tk, indent, text,
+        x.comment_variable({src_loc_tk, indent}, text,
                            name_info.value_size_bytes(src_loc_tk),
                            name_info.operand());
     }

@@ -388,7 +388,7 @@ inline auto emit_write_plan(toc& tc, const size_t indent,
                 std::get_if<bytes_write>(&step.action),
             }) {
 
-            x.store_bytes(bytes->src_loc_tk, indent, bytes->bytes,
+            x.store_bytes({bytes->src_loc_tk, indent}, bytes->bytes,
                           part_dst.operand(), part_dst.type_ref().alignment(),
                           [&](const std::string_view laid_out) -> std::string {
                               return tc.add_read_only_constant(
@@ -400,9 +400,9 @@ inline auto emit_write_plan(toc& tc, const size_t indent,
         }
 
         if (const zero_fill* const zero{std::get_if<zero_fill>(&step.action)}) {
-            x.comment(zero->src_loc_tk, indent, zero->comment);
+            x.comment({zero->src_loc_tk, indent}, zero->comment);
 
-            x.zero(zero->src_loc_tk, indent,
+            x.zero({zero->src_loc_tk, indent},
                    part_dst.operand_at(zero->offset, *zero->value_type),
                    zero->size_bytes, zero->alignment);
 
@@ -411,7 +411,7 @@ inline auto emit_write_plan(toc& tc, const size_t indent,
 
         const write_comment& comment{std::get<write_comment>(step.action)};
 
-        x.comment(comment.src_loc_tk, indent, comment.text);
+        x.comment({comment.src_loc_tk, indent}, comment.text);
     }
 }
 
@@ -450,13 +450,13 @@ class expr_path final : public statement {
 
         machine& x{tc.machine()};
 
-        machine::held_registers held{x, tok(), indent};
+        machine::held_registers held{x, {tok(), indent}};
 
         const operand src_op{path_.get_lea_operand(tc, indent, src_info, held)};
 
         const size_t size_bytes{src_info.value_size_bytes(tok())};
 
-        x.copy_block(tok(), indent, dst.operand(), src_op, size_bytes,
+        x.copy_block({tok(), indent}, dst.operand(), src_op, size_bytes,
                      dst_type.alignment());
     }
 

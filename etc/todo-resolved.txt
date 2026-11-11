@@ -1,6 +1,17 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 319 (2026-11-11, AR the pair of a source token and an
+    indent in the backend)
+    => done (2026-11-11): the backend takes 'emit_site' (the token the
+       listing attributes an instruction to and its indent) where it took
+       'src_loc_tk' and 'indent'; functions of 6 or more parameters 69 to
+       40, 139 lines fewer; the front end keeps the pair and wraps it at
+       the call, '{tok(), indent}'; the token is a 'reference_wrapper' and
+       the struct has a constructor (clang-tidy: no reference members, no
+       positional aggregate initialization); listings equal; AGENTS.md
+       names 'site'; BA (refactors of rounds 306-316) and AV (no-UB
+       guarantee, 194 programs in 10 configurations) found no defect
 [x] easy: round 318 (2026-11-11, AY the README against the compiler)
     => done (2026-11-11): about 120 programs on four targets found no
        compiler defect; the README says that a negative constant index on

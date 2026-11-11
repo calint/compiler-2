@@ -313,7 +313,7 @@ class statement {
             return;
         }
 
-        x.comment(tok(), indent, trimmed_source(*this));
+        x.comment({tok(), indent}, trimmed_source(*this));
     }
 
     // the compile of a value that must fit 'dst', checked like 'fold_checked'

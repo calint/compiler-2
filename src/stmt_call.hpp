@@ -725,7 +725,7 @@ struct call_site {
 
         machine& x{tc.machine()};
 
-        x.copy_value(tk, indent, dst.operand(), result.operand());
+        x.copy_value({tk, indent}, dst.operand(), result.operand());
     }
 
     // a variable of the current block that holds the argument at 'index',
@@ -762,7 +762,7 @@ struct call_site {
 
         machine& x{tc.machine()};
 
-        x.zero_padding(tk, indent, dst.operand(), dst.type_ref());
+        x.zero_padding({tk, indent}, dst.operand(), dst.type_ref());
     }
 
     //
@@ -995,7 +995,7 @@ class inline_call final {
 
         machine& x{tc.machine()};
 
-        machine::held_registers held{x, call_.tk, indent + 1};
+        machine::held_registers held{x, {call_.tk, indent + 1}};
 
         std::ignore = bind_arguments(tc, indent, held);
     }
@@ -1022,7 +1022,7 @@ class inline_call final {
 
         machine& x{tc.machine()};
 
-        machine::held_registers held{x, call_.tk, indent + 1};
+        machine::held_registers held{x, {call_.tk, indent + 1}};
 
         for (param_binding& binding : bindings.arguments) {
             if (not is_indexed_reference(binding)) {
@@ -1032,14 +1032,14 @@ class inline_call final {
             ident_info& bound{binding.info};
 
             const operand address{
-                held.alloc_scratch_register(call_.tk, indent,
+                held.alloc_scratch_register({call_.tk, indent},
                                             tc.builtins().address()),
             };
 
-            x.comment(call_.tk, indent, "address of parameter {}",
+            x.comment({call_.tk, indent}, "address of parameter {}",
                       in_quotes(binding.from));
 
-            x.address_of(call_.tk, indent, address, bound.operand());
+            x.address_of({call_.tk, indent}, address, bound.operand());
 
             bound = bound.at_address(
                 operand::mem(address, bound.operand().type_ref()));
@@ -1094,14 +1094,14 @@ class inline_call final {
         machine& x{tc.machine()};
 
         const operand result{
-            x.alloc_scratch_register(call_.tk, indent,
+            x.alloc_scratch_register({call_.tk, indent},
                                      call_.func->result_type()),
         };
 
         compile_in_block(tc, indent, destination::of_register(result));
 
-        x.copy_value(call_.tk, indent, dst.operand(), result);
-        x.free_scratch_register(call_.tk, indent, result);
+        x.copy_value({call_.tk, indent}, dst.operand(), result);
+        x.free_scratch_register({call_.tk, indent}, result);
     }
 
     auto compile_with_bindings(toc& tc, const size_t indent,
@@ -1110,7 +1110,7 @@ class inline_call final {
         machine& x{tc.machine()};
 
         // scratch registers stay allocated until the inlined body is compiled
-        machine::held_registers held{x, call_.tk, indent + 1};
+        machine::held_registers held{x, {call_.tk, indent + 1}};
 
         const call_bindings bindings{make_bindings(tc, indent, dst, held)};
 
@@ -1304,7 +1304,7 @@ class inline_call final {
         }
 
         const operand reg{
-            held.alloc_scratch_register(arg.tok(), indent, param.get_type()),
+            held.alloc_scratch_register({arg.tok(), indent}, param.get_type()),
         };
 
         arg.compile(tc, indent, destination::of_register(reg));
@@ -1448,7 +1448,7 @@ class noinline_call final {
                             const frame_slot& slot) const -> void {
 
         if (not slot.param_index) {
-            x.comment(call_.tk, indent, "result address in callee frame");
+            x.comment({call_.tk, indent}, "result address in callee frame");
             return;
         }
 
@@ -1456,7 +1456,7 @@ class noinline_call final {
         const expr_any& arg{call_.args.at(index)};
         const stmt_def_func_param& param{call_.func->params().at(index)};
 
-        x.comment(call_.tk, indent, "address of argument {} to parameter {}",
+        x.comment({call_.tk, indent}, "address of argument {} to parameter {}",
                   in_quotes(statement::trimmed_source(arg)),
                   in_quotes(param.name()));
     }
@@ -1507,7 +1507,7 @@ class noinline_call final {
 
         machine& x{tc.machine()};
 
-        machine::held_registers held{x, call_.tk, indent};
+        machine::held_registers held{x, {call_.tk, indent}};
 
         const std::vector<noinline_arg> arguments{
             compile_arguments(tc, indent, held),
@@ -1554,7 +1554,7 @@ class noinline_call final {
 
         // the address in a register is loaded after the registers are saved,
         // a register that holds a value of the caller is not lost
-        x.call_function(call_.tk, indent, call_.func->name(),
+        x.call_function({call_.tk, indent}, call_.func->name(),
                         call_.func->body_label(array_lengths), frame_address,
                         register_address);
     }
@@ -1580,7 +1580,7 @@ class noinline_call final {
         machine& x{tc.machine()};
 
         if (tc.checks().frame) {
-            x.check_frame_capacity(call_.tk, indent, frame_address,
+            x.check_frame_capacity({call_.tk, indent}, frame_address,
                                    call_.func->frame_size_label(array_lengths));
         }
 
@@ -1588,7 +1588,7 @@ class noinline_call final {
         // allocated, the check must not change a register that is free but
         // used by the call
         if (tc.checks().stack) {
-            x.check_stack_capacity(call_.tk, indent);
+            x.check_stack_capacity({call_.tk, indent});
         }
 
         return write_frame_slots(x, indent, frame_address, dst, arguments);
@@ -1615,7 +1615,7 @@ class noinline_call final {
 
             comment_frame_slot(x, indent, slot);
 
-            x.address_of(call_.tk, indent, slot_address,
+            x.address_of({call_.tk, indent}, slot_address,
                          slot_address_of(dst, slot, arguments));
 
             slot_address.increment_offset(
@@ -2126,7 +2126,7 @@ class stmt_call final : public statement {
 
         machine& x{tc.machine()};
 
-        x.comment(tok(), indent, call.source);
+        x.comment({tok(), indent}, call.source);
 
         assert_call_accepted(tc, dst, call.places);
 

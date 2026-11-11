@@ -604,7 +604,7 @@ class stmt_def_func final : public statement {
                 const ident_info& bound{binding.info};
 
                 x.comment_binding(
-                    call_tk, indent + 1, binding.from, binding.text,
+                    {call_tk, indent + 1}, binding.from, binding.text,
                     bound.is_address_by_call() ? std::optional{bound.operand()}
                                                : std::nullopt);
 
@@ -636,7 +636,7 @@ class stmt_def_func final : public statement {
 
         machine& x{tc.machine()};
 
-        x.comment({}, 0, "");
+        x.comment({token{}, 0}, "");
 
         x.label(0, reserved_names::main);
 
@@ -646,7 +646,7 @@ class stmt_def_func final : public statement {
         // the compile knows the conditions it folded, e.g. with constant
         // arguments of an inlined call
         if (tc.is_reachable()) {
-            x.exit(token{}, 1, operand::imm(0, tc.builtins().default_type()));
+            x.exit({token{}, 1}, operand::imm(0, tc.builtins().default_type()));
         }
     }
 
@@ -665,7 +665,7 @@ class stmt_def_func final : public statement {
 
         machine& x{tc.machine()};
 
-        x.comment({}, 0, "");
+        x.comment({token{}, 0}, "");
         source_def_comment_to(x, 0);
 
         if (not array_lengths.empty()) {
@@ -676,7 +676,7 @@ class stmt_def_func final : public statement {
                 },
             };
 
-            x.comment({}, 0, "array parameter lengths: {:n}",
+            x.comment({token{}, 0}, "array parameter lengths: {:n}",
                       std::views::transform(array_lengths, known));
         }
 
@@ -926,8 +926,8 @@ class stmt_def_func final : public statement {
         machine& x{tc.machine()};
 
         if (has_self_param()) {
-            slot_register = x.alloc_named_register(tok(), 1, x.slot_register(),
-                                                   tc.builtins().address());
+            slot_register = x.alloc_named_register(
+                {tok(), 1}, x.slot_register(), tc.builtins().address());
         }
 
         add_constants(tc, 1);
@@ -944,7 +944,7 @@ class stmt_def_func final : public statement {
         const size_t frame_size_bytes{tc.layout().max_frame_size_bytes()};
 
         if (slot_register) {
-            x.free_named_register(tok(), 1, *slot_register);
+            x.free_named_register({tok(), 1}, *slot_register);
         }
 
         return frame_size_bytes;
@@ -1137,13 +1137,13 @@ class stmt_def_func final : public statement {
         // the signature of a generic definition names its parameters, the
         // instance names the arguments, e.g. 'pt.put<i16>'
         if (instance_) {
-            x.comment(head_.name_tk, indent, "{}, instance {}", signature,
+            x.comment({head_.name_tk, indent}, "{}, instance {}", signature,
                       in_quotes(instance_->name));
 
             return;
         }
 
-        x.comment(head_.name_tk, indent, "{}", signature);
+        x.comment({head_.name_tk, indent}, "{}", signature);
     }
 
     // the definition after its first token, without the body

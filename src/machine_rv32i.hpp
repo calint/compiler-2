@@ -436,52 +436,48 @@ class machine_rv32i : public machine {
     // overridden methods
     //
 
-    auto add_subtract(const token& src_loc_tk, const size_t indent,
-                      const arithmetic_operator operation, const operand& dst,
-                      const operand& src, const runtime_check& check)
-        -> void override {
+    auto add_subtract(const emit_site site, const arithmetic_operator operation,
+                      const operand& dst, const operand& src,
+                      const runtime_check& check) -> void override {
 
         assert(operation == arithmetic_operator::add or
                operation == arithmetic_operator::subtract);
 
-        binary_operation(src_loc_tk, indent,
-                         operation == arithmetic_operator::add ? op::add
-                                                               : op::sub,
-                         dst, src, check);
+        binary_operation(
+            site, operation == arithmetic_operator::add ? op::add : op::sub,
+            dst, src, check);
     }
 
-    auto address_of(const token& src_loc_tk, const size_t indent,
-                    const operand& dst, const operand& address)
-        -> void override {
+    auto address_of(const emit_site site, const operand& dst,
+                    const operand& address) -> void override {
 
         assert(dst.is_register() or dst.is_memory());
         assert(dst.type_ref().size_bytes() == word_size_bytes_);
 
         const operation_scope scope{*this, dst, address};
-        const operand value{working_register(src_loc_tk, indent, dst)};
+        const operand value{working_register(site, dst)};
 
         const operand lowered{
-            lower_address(src_loc_tk, indent, address, value),
+            lower_address(site, address, value),
         };
 
         // a nonzero residual offset still needs an add, a distinct base a
         // copy
         if (lowered.displacement() != 0) {
-            assembler_.addi(indent, value.register_name(),
+            assembler_.addi(site.indent, value.register_name(),
                             lowered.base_register(), lowered.displacement());
         } else if (value.register_name() != lowered.base_register()) {
-            assembler_.mv(indent, value.register_name(),
+            assembler_.mv(site.indent, value.register_name(),
                           lowered.base_register());
         }
 
         if (dst.is_memory()) {
-            copy_value(src_loc_tk, indent, dst, value);
+            copy_value(site, dst, value);
         }
     }
 
-    auto bitwise(const token& src_loc_tk, const size_t indent,
-                 const arithmetic_operator operation, const operand& dst,
-                 const operand& src) -> void override {
+    auto bitwise(const emit_site site, const arithmetic_operator operation,
+                 const operand& dst, const operand& src) -> void override {
 
         assert(operation == arithmetic_operator::bit_and or
                operation == arithmetic_operator::bit_or or
@@ -501,7 +497,7 @@ class machine_rv32i : public machine {
             instruction = op::or_op;
         }
 
-        binary_operation(src_loc_tk, indent, instruction, dst, src);
+        binary_operation(site, instruction, dst, src);
     }
 
     auto branch(const size_t indent, const std::string_view target)
@@ -513,9 +509,7 @@ class machine_rv32i : public machine {
     // a call saves the registers allocated now, the registers of the arguments
     // included, so the bound is not below what the call pushes; the callee
     // pushes 'leaf_stack_bytes' more without a check of its own
-    auto check_stack_capacity(const token& src_loc_tk, const size_t indent)
-        -> void override {
-
+    auto check_stack_capacity(const emit_site site) -> void override {
         assert(is_stack_bounded());
 
         const size_t saved_count{registers_saved_by_call().size()};
@@ -525,35 +519,36 @@ class machine_rv32i : public machine {
                 leaf_stack_bytes(),
         };
 
-        comment(src_loc_tk, indent, "stack capacity check begin");
+        comment(site, "stack capacity check begin");
 
         const operation_scope scope{*this};
 
         const operand limit{
-            alloc_scratch_register(src_loc_tk, indent, default_type()),
+            alloc_scratch_register(site, default_type()),
         };
 
         const operand lowest{
-            alloc_scratch_register(src_loc_tk, indent, default_type()),
+            alloc_scratch_register(site, default_type()),
         };
 
-        assembler_.li(indent, limit.register_name(), stack_limit_address());
+        assembler_.li(site.indent, limit.register_name(),
+                      stack_limit_address());
 
-        comment(src_loc_tk, indent, "lowest stack pointer the call reaches");
+        comment(site, "lowest stack pointer the call reaches");
 
-        assembler_.addi(indent, lowest.register_name(), "sp",
+        assembler_.addi(site.indent, lowest.register_name(), "sp",
                         -static_cast<int64_t>(call_bytes));
 
-        branch_to_failure(src_loc_tk, indent, op::bltu, lowest.register_name(),
+        branch_to_failure(site, op::bltu, lowest.register_name(),
                           limit.register_name(), stack_overflow_failure_);
 
-        comment(src_loc_tk, indent, "stack capacity check end");
+        comment(site, "stack capacity check end");
     }
 
     // the operation scope ends on return, before the caller frees its registers
-    auto compare_and_branch(const token& src_loc_tk, const size_t indent,
-                            const operand& lhs, const operand& rhs,
-                            const comparison_action& action) -> void override {
+    auto compare_and_branch(const emit_site site, const operand& lhs,
+                            const operand& rhs, const comparison_action& action)
+        -> void override {
 
         operation_scope scope{*this, lhs, rhs};
         scope.protect(action.destination);
@@ -585,7 +580,7 @@ class machine_rv32i : public machine {
         };
 
         const std::array<operand, 2> sides{
-            comparison_operands(src_loc_tk, indent, lhs, rhs, use_immediate,
+            comparison_operands(site, lhs, rhs, use_immediate,
                                 action.destination),
         };
 
@@ -594,35 +589,35 @@ class machine_rv32i : public machine {
 
         // branch-only comparisons do not need a materialized boolean
         if (action.destination.is_empty()) {
-            emit_comparison_branch(indent, operation, left, right, action);
+            emit_comparison_branch(site.indent, operation, left, right, action);
             return;
         }
 
         const operand value{
-            comparison_result_register(src_loc_tk, indent, action.destination,
-                                       lhs, rhs, left, right),
+            comparison_result_register(site, action.destination, lhs, rhs, left,
+                                       right),
         };
 
         const std::string_view result{value.register_name()};
 
-        emit_boolean_result(indent, operation, result, left, right, immediate);
+        emit_boolean_result(site.indent, operation, result, left, right,
+                            immediate);
 
         // memory results require a store, register results are in place
         if (action.destination.is_memory()) {
-            copy_value(src_loc_tk, indent, action.destination, value);
+            copy_value(site, action.destination, value);
         }
 
         // some callers request both a stored boolean and a branch
         if (not action.target.empty()) {
-            emit_branch(indent, action.branch_on_true ? op::bne : op::beq,
+            emit_branch(site.indent, action.branch_on_true ? op::bne : op::beq,
                         result, "zero", action.target);
         }
     }
 
-    auto copy_block(const token& src_loc_tk, const size_t indent,
-                    const operand& dst, const operand& src,
-                    const size_t size_bytes, const size_t alignment)
-        -> void override {
+    auto copy_block(const emit_site site, const operand& dst,
+                    const operand& src, const size_t size_bytes,
+                    const size_t alignment) -> void override {
 
         // the pointers of a loop advance together, unrolled accesses can
         // follow where each address is within its word
@@ -631,36 +626,35 @@ class machine_rv32i : public machine {
             start_of(dst, alignment),
         };
 
-        copy_from_starts(src_loc_tk, indent, dst, src, size_bytes, starts);
+        copy_from_starts(site, dst, src, size_bytes, starts);
     }
 
-    auto copy_elements(const token& src_loc_tk, const size_t indent,
-                       const size_t element_size_bytes,
+    auto copy_elements(const emit_site site, const size_t element_size_bytes,
                        const std::function_ref<void(const operand&)> emit_count,
                        const copy_request& request) -> void override {
 
         const operation_scope bulk_scope{*this};
 
         bulk_operation bulk{
-            begin_array_operation(src_loc_tk, indent, "source", "destination",
+            begin_array_operation(site, "source", "destination",
                                   request.alignment),
         };
 
-        load_bulk_addresses(src_loc_tk, indent, bulk, request.src, request.dst);
+        load_bulk_addresses(site, bulk, request.src, request.dst);
 
         emit_count(bulk.count());
-        count_to_bytes(src_loc_tk, indent, bulk, element_size_bytes);
+        count_to_bytes(site, bulk, element_size_bytes);
 
         if (request.overlap.enabled) {
-            check_copy_overlap(src_loc_tk, indent, bulk.pointer(0),
-                               bulk.pointer(1), bulk.count());
+            check_copy_overlap(site, bulk.pointer(0), bulk.pointer(1),
+                               bulk.count());
         }
 
-        copy_runtime_count(src_loc_tk, indent, bulk);
+        copy_runtime_count(site, bulk);
     }
 
-    auto copy_value(const token& src_loc_tk, const size_t indent,
-                    const operand& dst, const operand& src) -> void override {
+    auto copy_value(const emit_site site, const operand& dst,
+                    const operand& src) -> void override {
 
         validate_operands(dst, src);
 
@@ -682,40 +676,39 @@ class machine_rv32i : public machine {
 
         // known constants are truncated and extended before emission
         if (constant.has_value()) {
-            store_constant_result(src_loc_tk, indent, dst, *constant);
+            store_constant_result(site, dst, *constant);
             return;
         }
 
         if (shares_address_base(dst, src)) {
-            copy_through_shared_base(src_loc_tk, indent, dst, src);
+            copy_through_shared_base(site, dst, src);
             return;
         }
 
         operand value{dst};
 
         if (not dst.is_register()) {
-            value = src.is_register()
-                        ? src
-                        : scope.alloc_load_register(src_loc_tk, indent,
-                                                    default_type(), dst, src);
+            value =
+                src.is_register()
+                    ? src
+                    : scope.alloc_load_register(site, default_type(), dst, src);
         }
 
-        load_into(src_loc_tk, indent, value, src);
+        load_into(site, value, src);
 
         if (dst.is_memory()) {
-            store_low_bits(src_loc_tk, indent, dst, value);
+            store_low_bits(site, dst, value);
             return;
         }
 
         if (register_needs_extension(dst.type_ref(), src)) {
-            extend_register(indent, dst.type_ref(), value);
+            extend_register(site.indent, dst.type_ref(), value);
         }
     }
 
-    auto divide(const token& src_loc_tk, const size_t indent,
-                const arithmetic_operator operation, const operand& dst,
-                const operand& divisor, const runtime_check& check)
-        -> void override {
+    auto divide(const emit_site site, const arithmetic_operator operation,
+                const operand& dst, const operand& divisor,
+                const runtime_check& check) -> void override {
 
         assert(operation == arithmetic_operator::divide or
                operation == arithmetic_operator::remainder);
@@ -728,13 +721,12 @@ class machine_rv32i : public machine {
                          default_type()),
         };
 
-        call_arithmetic_helper(src_loc_tk, indent, dst, divisor,
-                               helper_routine::divide, result, check);
+        call_arithmetic_helper(site, dst, divisor, helper_routine::divide,
+                               result, check);
     }
 
     auto
-    equal_elements(const token& src_loc_tk, const size_t indent,
-                   const size_t element_size_bytes,
+    equal_elements(const emit_site site, const size_t element_size_bytes,
                    const std::function_ref<void(const operand&)> emit_count,
                    const address_emitter& lhs, const address_emitter& rhs,
                    const size_t alignment, const operand& dst)
@@ -743,10 +735,10 @@ class machine_rv32i : public machine {
         const operation_scope bulk_scope{*this};
 
         bulk_operation bulk{
-            begin_array_operation(src_loc_tk, indent, "lhs", "rhs", alignment),
+            begin_array_operation(site, "lhs", "rhs", alignment),
         };
 
-        load_bulk_addresses(src_loc_tk, indent, bulk, lhs, rhs);
+        load_bulk_addresses(site, bulk, lhs, rhs);
 
         emit_count(bulk.count());
 
@@ -754,19 +746,18 @@ class machine_rv32i : public machine {
             // scaling the count must not pick the result registers
             const operation_scope scope{*this, dst};
 
-            count_to_bytes(src_loc_tk, indent, bulk, element_size_bytes);
+            count_to_bytes(site, bulk, element_size_bytes);
         }
 
-        compare_runtime_count(src_loc_tk, indent, bulk, dst);
+        compare_runtime_count(site, bulk, dst);
     }
 
     // known size: the addresses are memory operands, small sizes unrolled and
     // larger ones in a loop; the result of the request is 1 when every access
     // matched, 0 at the first mismatch, its 'inverted' swaps them
-    auto memory_equal(const token& src_loc_tk, const size_t indent,
-                      const size_t size_bytes, const operand& lhs,
-                      const operand& rhs, const equality_request& request)
-        -> void override {
+    auto memory_equal(const emit_site site, const size_t size_bytes,
+                      const operand& lhs, const operand& rhs,
+                      const equality_request& request) -> void override {
 
         // note: compared sizes are limited by the variables that hold the data
         assert(size_bytes <= std::numeric_limits<uint32_t>::max());
@@ -785,12 +776,13 @@ class machine_rv32i : public machine {
         const std::array<operand, 2> in_use{lhs, rhs};
 
         const compare_registers registers{
-            alloc_compare_registers(src_loc_tk, indent, result, in_use),
+            alloc_compare_registers(site, result, in_use),
         };
 
         const auto access{
             [&](const size_t width, const std::span<const operand> at) -> void {
-                compare_access(indent, registers, width, at.front(), at.back());
+                compare_access(site.indent, registers, width, at.front(),
+                               at.back());
             },
         };
 
@@ -798,8 +790,8 @@ class machine_rv32i : public machine {
         // for small sizes
         walk_known_size(
             {
-                .src_loc_tk{src_loc_tk},
-                .indent{indent},
+                .src_loc_tk{site.src_loc_tk},
+                .indent{site.indent},
                 .verb{"compare"},
                 .addresses{in_use},
                 .starts{starts},
@@ -807,8 +799,7 @@ class machine_rv32i : public machine {
             },
             size_bytes, is_copy_unrolled(size_bytes));
 
-        write_compare_result(src_loc_tk, indent, result, registers,
-                             request.inverted);
+        write_compare_result(site, result, registers, request.inverted);
     }
 
     auto return_function(const size_t indent) -> void override {
@@ -817,10 +808,9 @@ class machine_rv32i : public machine {
         assembler_.ret(indent);
     }
 
-    auto shift(const token& src_loc_tk, const size_t indent,
-               const arithmetic_operator operation, const operand& dst,
-               const operand& count, const runtime_check& check)
-        -> void override {
+    auto shift(const emit_site site, const arithmetic_operator operation,
+               const operand& dst, const operand& count,
+               const runtime_check& check) -> void override {
 
         assert(operation == arithmetic_operator::shift_left or
                operation == arithmetic_operator::shift_right);
@@ -844,25 +834,23 @@ class machine_rv32i : public machine {
         const operation_scope scope{*this, dst, count};
 
         const loaded_destination loaded{
-            load_destination(src_loc_tk, indent, dst),
+            load_destination(site, dst),
         };
 
         if (constant.has_value()) {
-            shift_by_constant(indent, operation, dst, loaded, shift_count,
+            shift_by_constant(site.indent, operation, dst, loaded, shift_count,
                               bits);
 
             return;
         }
 
-        shift_by_register(src_loc_tk, indent, operation, dst, count, loaded,
-                          check);
+        shift_by_register(site, operation, dst, count, loaded, check);
     }
 
     // few bytes are stored with immediates when that takes no more code than
     // their copy from read-only data ('copy_constant')
     auto store_bytes(
-        const token& src_loc_tk, const size_t indent,
-        const std::string_view bytes, const operand& dst,
+        const emit_site site, const std::string_view bytes, const operand& dst,
         const size_t alignment,
         const std::function_ref<std::string(std::string_view)> add_constant)
         -> void override {
@@ -898,20 +886,20 @@ class machine_rv32i : public machine {
         };
 
         if (are_immediates_smaller(parts, bytes.size(), copy_part_count)) {
-            comment_aligned_parts(src_loc_tk, indent, "store", bytes.size(),
+            comment_aligned_parts(site, "store", bytes.size(),
                                   std::span{&dst_start, 1});
 
-            store_byte_parts(src_loc_tk, indent, parts, dst, bytes.size());
+            store_byte_parts(site, parts, dst, bytes.size());
 
             return;
         }
 
-        copy_constant(src_loc_tk, indent, bytes, dst, dst_start, add_constant);
+        copy_constant(site, bytes, dst, dst_start, add_constant);
     }
 
-    auto unary(const token& src_loc_tk, const size_t indent,
-               const arithmetic_operator operation, const operand& dst,
-               const runtime_check& check) -> void override {
+    auto unary(const emit_site site, const arithmetic_operator operation,
+               const operand& dst, const runtime_check& check)
+        -> void override {
 
         assert(operation == arithmetic_operator::negate or
                operation == arithmetic_operator::complement);
@@ -926,31 +914,30 @@ class machine_rv32i : public machine {
         const operation_scope scope{*this, dst};
 
         const loaded_destination loaded{
-            load_destination(src_loc_tk, indent, dst),
+            load_destination(site, dst),
         };
 
         if (operation == arithmetic_operator::negate) {
             if (check.enabled) {
-                check_negate(src_loc_tk, indent, loaded.value,
-                             dst.type_ref().size_bytes());
+                check_negate(site, loaded.value, dst.type_ref().size_bytes());
             }
 
-            assembler_.sub(indent, loaded.value.register_name(), "zero",
+            assembler_.sub(site.indent, loaded.value.register_name(), "zero",
                            loaded.value.register_name());
 
             // note: a checked negation is not of the minimum, the negated
             //       value of an extended register is extended
 
-            store_operation_result(indent, dst, loaded.address, loaded.value,
-                                   not check.enabled);
+            store_operation_result(site.indent, dst, loaded.address,
+                                   loaded.value, not check.enabled);
 
             return;
         }
 
-        assembler_.xori(indent, loaded.value.register_name(),
+        assembler_.xori(site.indent, loaded.value.register_name(),
                         loaded.value.register_name(), -1);
 
-        store_operation_result(indent, dst, loaded.address, loaded.value,
+        store_operation_result(site.indent, dst, loaded.address, loaded.value,
                                false);
     }
 
@@ -975,9 +962,8 @@ class machine_rv32i : public machine {
         }
     }
 
-    auto zero(const token& src_loc_tk, const size_t indent, const operand& dst,
-              const size_t size_bytes, const size_t alignment)
-        -> void override {
+    auto zero(const emit_site site, const operand& dst, const size_t size_bytes,
+              const size_t alignment) -> void override {
 
         assert(size_bytes != 0);
 
@@ -989,7 +975,7 @@ class machine_rv32i : public machine {
 
         const auto access{
             [&](const size_t width, const std::span<const operand> at) -> void {
-                zero_access(indent, width, at.front());
+                zero_access(site.indent, width, at.front());
             },
         };
 
@@ -1004,8 +990,8 @@ class machine_rv32i : public machine {
 
         walk_known_size(
             {
-                .src_loc_tk{src_loc_tk},
-                .indent{indent},
+                .src_loc_tk{site.src_loc_tk},
+                .indent{site.indent},
                 .verb{"zero"},
                 .addresses{std::span{&dst, 1}},
                 .starts{starts},
@@ -1063,15 +1049,15 @@ class machine_rv32i : public machine {
     //
 
     // the operation scope frees its temporaries before the end comment
-    auto emit_bounds_check(const token& src_loc_tk, const size_t indent,
-                           const bounds_range& range, const bounds_plan& plan)
-        -> void override {
+    auto emit_bounds_check(const emit_site site, const bounds_range& range,
+                           const bounds_plan& plan) -> void override {
 
         // note: array lengths are limited by the variables that hold the
         //       arrays, the line is loaded with 'li' into a 32-bit register
 
         assert(range.array_count <= std::numeric_limits<uint32_t>::max() and
-               src_loc_tk.at_line() <= std::numeric_limits<uint32_t>::max());
+               site.src_loc_tk.get().at_line() <=
+                   std::numeric_limits<uint32_t>::max());
 
         operation_scope scope{*this, range.checked};
 
@@ -1097,8 +1083,7 @@ class machine_rv32i : public machine {
         failure_tests tests{bounds_failure_, test_count};
 
         for (const operand& value : plan.sign_tested) {
-            fail_if(src_loc_tk, indent, tests, op::blt, value.register_name(),
-                    "zero");
+            fail_if(site, tests, op::blt, value.register_name(), "zero");
         }
 
         if (not plan.upper) {
@@ -1106,15 +1091,13 @@ class machine_rv32i : public machine {
         }
 
         if (not upper_compared) {
-            comment(src_loc_tk, indent,
-                    "upper bound: a 32-bit index is below the count");
-
+            comment(site, "upper bound: a 32-bit index is below the count");
             return;
         }
 
-        comment(src_loc_tk, indent, "upper bound");
+        comment(site, "upper bound");
 
-        check_upper_bound(src_loc_tk, indent, range, plan.lower_checked, tests);
+        check_upper_bound(site, range, plan.lower_checked, tests);
     }
 
     auto emit_call(const size_t indent, const std::string_view label)
@@ -1133,31 +1116,30 @@ class machine_rv32i : public machine {
         assembler_.add_separator_newline();
     }
 
-    auto emit_frame_capacity_check(const token& src_loc_tk, const size_t indent,
+    auto emit_frame_capacity_check(const emit_site site,
                                    const operand& frame_address,
                                    const std::string_view frame_size_label)
         -> void override {
 
         const operand start{
-            alloc_scratch_register(src_loc_tk, indent, default_type()),
+            alloc_scratch_register(site, default_type()),
         };
 
         const operand last_start{
-            alloc_scratch_register(src_loc_tk, indent, default_type()),
+            alloc_scratch_register(site, default_type()),
         };
 
-        address_of(src_loc_tk, indent, start, frame_address);
+        address_of(site, start, frame_address);
 
         // the highest start at which the frame fits, compared unsigned since
         // an address can be 2 GiB or more
         // note: a frame fits in '--vars' when compiled, so the end of 'vars'
         //       less the frame size does not wrap
-        assembler_.la(indent, last_start.register_name(), variables_end_label_,
-                      frame_size_label);
+        assembler_.la(site.indent, last_start.register_name(),
+                      variables_end_label_, frame_size_label);
 
-        branch_to_failure(src_loc_tk, indent, op::bltu,
-                          last_start.register_name(), start.register_name(),
-                          frame_overflow_failure_);
+        branch_to_failure(site, op::bltu, last_start.register_name(),
+                          start.register_name(), frame_overflow_failure_);
     }
 
     // a 'noinline' body saves the return address below 'sp'
@@ -1204,8 +1186,8 @@ class machine_rv32i : public machine {
 
     // a constant factor that 'multiply' did not resolve shifts and adds
     // unless checked, else the helper multiplies
-    auto emit_multiply(const token& src_loc_tk, const size_t indent,
-                       const operand& product, const operand& factor,
+    auto emit_multiply(const emit_site site, const operand& product,
+                       const operand& factor,
                        [[maybe_unused]] const factor_use use,
                        const runtime_check& check) -> void override {
 
@@ -1222,7 +1204,7 @@ class machine_rv32i : public machine {
             };
 
             multiply_by_shifts_and_adds(
-                src_loc_tk, indent, product, factor,
+                site, product, factor,
                 static_cast<uint32_t>(factor_info.multiplier), width_bits);
 
             return;
@@ -1233,7 +1215,7 @@ class machine_rv32i : public machine {
                           : helper_routine::multiply,
         };
 
-        call_arithmetic_helper(src_loc_tk, indent, product, factor, routine,
+        call_arithmetic_helper(site, product, factor, routine,
                                operand::reg("a0", default_type()), check);
     }
 
@@ -1293,7 +1275,7 @@ class machine_rv32i : public machine {
         assembler_.li(1, "a0", stderr_descriptor_);
         emit_stderr_write(1);
 
-        exit(token{}, 1,
+        exit({token{}, 1},
              make_register_operand(report_exit_code_register_, default_type()));
 
         constexpr std::array<int64_t, 10> decimal_places{
@@ -1311,16 +1293,16 @@ class machine_rv32i : public machine {
     // the functions are routines, see 'emit_io_routines'; the sector functions
     // take the sector in 'a0' where 'read' has the descriptor, there is no
     // result
-    auto emit_target_call(const token& src_loc_tk, const size_t indent,
-                          const target_call function) -> void override {
+    auto emit_target_call(const emit_site site, const target_call function)
+        -> void override {
 
         const operation_scope scope{*this};
 
         // the arguments are in the registers of 'target_calls', allocated by
         // 'call_target'; 'a7' receives the return address
-        reserve_named_register(src_loc_tk, indent, "a7");
+        reserve_named_register(site, "a7");
 
-        call_io_routine(indent, routine_label(function));
+        call_io_routine(site.indent, routine_label(function));
     }
 
     // the arithmetic helpers
@@ -1511,26 +1493,26 @@ class machine_rv32i : public machine {
                         pointer.register_name(), size_bytes);
     }
 
-    [[nodiscard]] auto alloc_compare_registers(
-        const token& src_loc_tk, const size_t indent, const operand& result,
-        const std::span<const operand> in_use) -> compare_registers {
+    [[nodiscard]] auto
+    alloc_compare_registers(const emit_site site, const operand& result,
+                            const std::span<const operand> in_use)
+        -> compare_registers {
 
         const bool left_is_result{can_hold_left_value(result, in_use)};
 
         const operand left{
-            left_is_result
-                ? result
-                : alloc_scratch_register(src_loc_tk, indent, default_type()),
+            left_is_result ? result
+                           : alloc_scratch_register(site, default_type()),
         };
 
         const operand right{
-            alloc_scratch_register(src_loc_tk, indent, default_type()),
+            alloc_scratch_register(site, default_type()),
         };
 
-        comment(src_loc_tk, indent, "{}: left value/result, {}: right value",
+        comment(site, "{}: left value/result, {}: right value",
                 left.register_name(), right.register_name());
 
-        comment(src_loc_tk, indent, "stop at first mismatch");
+        comment(site, "stop at first mismatch");
 
         return {
             .left{left},
@@ -1551,7 +1533,7 @@ class machine_rv32i : public machine {
     // the bulk registers of an array copy or comparison of elements aligned
     // to 'alignment', the roles of the pointers name them in the comment,
     // e.g. 'source' and 'destination'
-    auto begin_array_operation(const token& src_loc_tk, const size_t indent,
+    auto begin_array_operation(const emit_site site,
                                const std::string_view first_role,
                                const std::string_view second_role,
                                const size_t alignment) -> bulk_operation {
@@ -1562,10 +1544,10 @@ class machine_rv32i : public machine {
         // argument-order allocation keeps pointer and count names easy to
         // follow
         for (operand& reg : bulk.registers) {
-            reg = alloc_scratch_register(src_loc_tk, indent, default_type());
+            reg = alloc_scratch_register(site, default_type());
         }
 
-        comment(src_loc_tk, indent, "{}: {}, {}: {}, {}: count",
+        comment(site, "{}: {}, {}: {}, {}: count",
                 bulk.pointer(0).register_name(), first_role,
                 bulk.pointer(1).register_name(), second_role,
                 bulk.count().register_name());
@@ -1573,10 +1555,9 @@ class machine_rv32i : public machine {
         return bulk;
     }
 
-    auto binary_operation(const token& src_loc_tk, const size_t indent,
-                          const op instruction, const operand& dst,
-                          const operand& src, const runtime_check& check = {})
-        -> void {
+    auto binary_operation(const emit_site site, const op instruction,
+                          const operand& dst, const operand& src,
+                          const runtime_check& check = {}) -> void {
 
         validate_operands(dst, src);
 
@@ -1590,23 +1571,22 @@ class machine_rv32i : public machine {
             yields_constant(instruction, *constant,
                             dst.type_ref().size_bytes())) {
 
-            store_constant_result(src_loc_tk, indent, dst, *constant);
+            store_constant_result(site, dst, *constant);
             return;
         }
 
         const operation_scope scope{*this, dst, src};
 
         const loaded_destination loaded{
-            load_destination(src_loc_tk, indent, dst),
+            load_destination(site, dst),
         };
 
         if (check.enabled) {
-            emit_checked_add_subtract(src_loc_tk, indent, instruction, src,
-                                      loaded.value, dst.type_ref().size_bytes(),
-                                      constant);
+            emit_checked_add_subtract(site, instruction, src, loaded.value,
+                                      dst.type_ref().size_bytes(), constant);
         } else {
-            emit_binary_instruction(src_loc_tk, indent, instruction, src,
-                                    loaded.value, constant);
+            emit_binary_instruction(site, instruction, src, loaded.value,
+                                    constant);
         }
 
         // note: a checked narrow result passed 'check_fits_width', so the
@@ -1620,7 +1600,7 @@ class machine_rv32i : public machine {
         };
 
         store_operation_result(
-            indent, dst, loaded.address, loaded.value,
+            site.indent, dst, loaded.address, loaded.value,
             not check.enabled and
                 (needs_normalize(instruction) or wider_source));
     }
@@ -1628,21 +1608,21 @@ class machine_rv32i : public machine {
     // a failed check branches to the handler, or with the line to the stub
     // of its line ('failure_target'); grown when out of reach, a far jump
     // takes 'no_return_jump_register_', the handler does not return
-    auto branch_to_failure(const token& src_loc_tk, const size_t indent,
-                           const op failed, const std::string_view rs1,
+    auto branch_to_failure(const emit_site site, const op failed,
+                           const std::string_view rs1,
                            const std::string_view rs2,
                            const failure_handler& handler) -> void {
 
-        const std::string target{failure_target(handler, src_loc_tk)};
+        const std::string target{failure_target(handler, site.src_loc_tk)};
 
-        assembler_.resolved_branch(indent, failed, rs1, rs2, target,
+        assembler_.resolved_branch(site.indent, failed, rs1, rs2, target,
                                    no_return_jump_register_);
     }
 
     // 'result' is the register of 'routine' that 'dst' receives, 'check' the
     // overflow check of 'multiply_checked' or the division check of 'divide'
-    auto call_arithmetic_helper(const token& src_loc_tk, const size_t indent,
-                                const operand& dst, const operand& source,
+    auto call_arithmetic_helper(const emit_site site, const operand& dst,
+                                const operand& source,
                                 const helper_routine routine,
                                 const operand& result,
                                 const runtime_check& check) -> void {
@@ -1650,7 +1630,7 @@ class machine_rv32i : public machine {
         // the first argument would overwrite a source in 'a0', which is
         // allocated last, when every other register is taken
         if (source.uses_register("a0")) {
-            throw out_of_registers_error(src_loc_tk);
+            throw out_of_registers_error(site.src_loc_tk);
         }
 
         operation_scope scope{*this, dst, source};
@@ -1680,200 +1660,192 @@ class machine_rv32i : public machine {
         assert(not source.uses_register("sp"));
 
         // save caller values before argument setup overwrites 'a0' or 'a1'
-        save_call_registers(indent, saved);
+        save_call_registers(site.indent, saved);
 
-        load_helper_arguments(src_loc_tk, indent, dst, source);
+        load_helper_arguments(site, dst, source);
 
         if (check.enabled and routine == helper_routine::divide) {
-            check_divisor(src_loc_tk, indent, dst.type_ref().size_bytes());
+            check_divisor(site, dst.type_ref().size_bytes());
         }
 
-        assembler_.call(indent, spec.label);
+        assembler_.call(site.indent, spec.label);
 
         if (routine == helper_routine::multiply_checked) {
-            check_multiply_result(src_loc_tk, indent, dst);
+            check_multiply_result(site, dst);
         }
 
         // the destination is not restored so it can retain the result
         if (dst.is_register()) {
-            copy_value(src_loc_tk, indent, dst, result);
-            restore_call_registers(indent, saved);
+            copy_value(site, dst, result);
+            restore_call_registers(site.indent, saved);
             return;
         }
 
         const operand kept{
-            preserved_helper_result(src_loc_tk, indent, result, saved),
+            preserved_helper_result(site, result, saved),
         };
 
-        restore_call_registers(indent, saved);
+        restore_call_registers(site.indent, saved);
 
         // memory destinations need their original address registers back
-        copy_value(src_loc_tk, indent, dst, kept);
+        copy_value(site, dst, kept);
     }
 
     // a check named 'name' that fails to the handler when 'failed' holds for
     // 'value' and 'constant', loaded into a scratch register
-    auto check_against_constant(const token& src_loc_tk, const size_t indent,
+    auto check_against_constant(const emit_site site,
                                 const std::string_view name, const op failed,
                                 const std::string_view value,
                                 const int64_t constant,
                                 const failure_handler& handler) -> void {
 
-        comment(src_loc_tk, indent, "{} check begin", name);
+        comment(site, "{} check begin", name);
 
         const operation_scope scope{*this};
 
         const operand constant_register{
-            alloc_scratch_register(src_loc_tk, indent, default_type()),
+            alloc_scratch_register(site, default_type()),
         };
 
-        assembler_.li(indent, constant_register.register_name(), constant);
+        assembler_.li(site.indent, constant_register.register_name(), constant);
 
-        branch_to_failure(src_loc_tk, indent, failed, value,
+        branch_to_failure(site, failed, value,
                           constant_register.register_name(), handler);
 
-        comment(src_loc_tk, indent, "{} check end", name);
+        comment(site, "{} check end", name);
     }
 
     // a distance from the source to the destination that is not zero and below
     // the byte count jumps to the failure handler, the copy would overwrite
     // source bytes it has not read yet
-    auto check_copy_overlap(const token& src_loc_tk, const size_t indent,
-                            const operand& src, const operand& dst,
-                            const operand& count_bytes) -> void {
+    auto check_copy_overlap(const emit_site site, const operand& src,
+                            const operand& dst, const operand& count_bytes)
+        -> void {
 
-        comment(src_loc_tk, indent, "overlap check begin");
+        comment(site, "overlap check begin");
 
         const operation_scope scope{*this};
 
         const operand distance{
-            alloc_scratch_register(src_loc_tk, indent, default_type()),
+            alloc_scratch_register(site, default_type()),
         };
 
-        assembler_.sub(indent, distance.register_name(), dst.register_name(),
-                       src.register_name());
+        assembler_.sub(site.indent, distance.register_name(),
+                       dst.register_name(), src.register_name());
 
-        comment(src_loc_tk, indent, "the same range is not an overlap");
+        comment(site, "the same range is not an overlap");
 
-        assembler_.beqz(indent, distance.register_name(),
+        assembler_.beqz(site.indent, distance.register_name(),
                         check_passed_.reference);
 
-        comment(src_loc_tk, indent, "destination starts inside the source");
+        comment(site, "destination starts inside the source");
 
-        branch_to_failure(src_loc_tk, indent, op::bltu,
-                          distance.register_name(), count_bytes.register_name(),
-                          overlap_failure_);
+        branch_to_failure(site, op::bltu, distance.register_name(),
+                          count_bytes.register_name(), overlap_failure_);
 
-        assembler_.label(indent, check_passed_.name);
+        assembler_.label(site.indent, check_passed_.name);
 
-        comment(src_loc_tk, indent, "overlap check end");
+        comment(site, "overlap check end");
     }
 
     // jumps to the failure handler when the divisor in 'a1' is zero or the
     // dividend in 'a0' is the minimum of its width and the divisor is -1
-    auto check_divisor(const token& src_loc_tk, const size_t indent,
-                       const size_t dividend_size_bytes) -> void {
+    auto check_divisor(const emit_site site, const size_t dividend_size_bytes)
+        -> void {
 
         const int64_t minimum{
             constant_arith::signed_minimum(dividend_size_bytes * bits_per_byte),
         };
 
-        comment(src_loc_tk, indent, "division check begin");
+        comment(site, "division check begin");
 
-        comment(src_loc_tk, indent, "zero divisor");
+        comment(site, "zero divisor");
 
         failure_tests tests{division_failure_, 3};
         // note: 3 for the two 'fail_if' and the 'pass_if' below
 
-        fail_if(src_loc_tk, indent, tests, op::beq, "a1", "zero");
+        fail_if(site, tests, op::beq, "a1", "zero");
 
-        comment(src_loc_tk, indent, "minimum divided by -1 overflows");
+        comment(site, "minimum divided by -1 overflows");
 
-        assembler_.li(indent, "a2", -1);
-        pass_if(indent, tests, op::bne, "a1", "a2");
-        assembler_.li(indent, "a2", minimum);
+        assembler_.li(site.indent, "a2", -1);
+        pass_if(site.indent, tests, op::bne, "a1", "a2");
+        assembler_.li(site.indent, "a2", minimum);
 
-        fail_if(src_loc_tk, indent, tests, op::beq, "a0", "a2");
+        fail_if(site, tests, op::beq, "a0", "a2");
 
-        comment(src_loc_tk, indent, "division check end");
+        comment(site, "division check end");
     }
 
     // the register holds a sign extended result of a narrow operation, which
     // fits when sign extending its low bits gives it back; 'extended' is a
     // register the check may change
-    auto check_fits_width(const token& src_loc_tk, const size_t indent,
-                          const std::string_view value,
+    auto check_fits_width(const emit_site site, const std::string_view value,
                           const size_t width_bytes,
                           const std::string_view extended) -> void {
 
-        sign_extend(indent, extended, value, width_bytes * bits_per_byte);
+        sign_extend(site.indent, extended, value, width_bytes * bits_per_byte);
 
-        branch_to_failure(src_loc_tk, indent, op::bne, extended, value,
-                          overflow_failure_);
+        branch_to_failure(site, op::bne, extended, value, overflow_failure_);
     }
 
     // after the checked multiply helper: the flag is in 'a1', the product in
     // 'a0' must fit the width of the destination
-    auto check_multiply_result(const token& src_loc_tk, const size_t indent,
-                               const operand& dst) -> void {
+    auto check_multiply_result(const emit_site site, const operand& dst)
+        -> void {
 
-        comment(src_loc_tk, indent, "overflow check begin");
+        comment(site, "overflow check begin");
 
-        branch_to_failure(src_loc_tk, indent, op::bne, "a1", "zero",
-                          overflow_failure_);
+        branch_to_failure(site, op::bne, "a1", "zero", overflow_failure_);
 
         const size_t width{dst.type_ref().size_bytes()};
 
         // the product of a narrow width also fits the width, 'a1' is free
         if (width < word_size_bytes_) {
-            check_fits_width(src_loc_tk, indent, "a0", width, "a1");
+            check_fits_width(site, "a0", width, "a1");
         }
 
-        comment(src_loc_tk, indent, "overflow check end");
+        comment(site, "overflow check end");
     }
 
     // the minimum of the width has no positive counterpart
-    auto check_negate(const token& src_loc_tk, const size_t indent,
-                      const operand& value, const size_t width_bytes) -> void {
+    auto check_negate(const emit_site site, const operand& value,
+                      const size_t width_bytes) -> void {
 
         const int64_t minimum{
             constant_arith::signed_minimum(width_bytes * bits_per_byte),
         };
 
-        check_against_constant(src_loc_tk, indent, "overflow", op::beq,
-                               value.register_name(), minimum,
-                               overflow_failure_);
+        check_against_constant(site, "overflow", op::beq, value.register_name(),
+                               minimum, overflow_failure_);
     }
 
     // a count below zero or not below the width jumps to the failure handler,
     // a negative count is a large unsigned one
-    auto check_shift_count(const token& src_loc_tk, const size_t indent,
-                           const operand& amount, const type& dst_type)
-        -> void {
+    auto check_shift_count(const emit_site site, const operand& amount,
+                           const type& dst_type) -> void {
 
         const int64_t width_bits{static_cast<int64_t>(dst_type.size_bits())};
 
-        check_against_constant(src_loc_tk, indent, "shift", op::bgeu,
-                               amount.register_name(), width_bits,
-                               shift_failure_);
+        check_against_constant(site, "shift", op::bgeu, amount.register_name(),
+                               width_bits, shift_failure_);
     }
 
     // fails when the checked value or the end of a range reaches the array
     // count, with 'allow_end' when it passes it
-    auto check_upper_bound(const token& src_loc_tk, const size_t indent,
-                           const bounds_range& range, const bool lower_checked,
-                           failure_tests& tests) -> void {
+    auto check_upper_bound(const emit_site site, const bounds_range& range,
+                           const bool lower_checked, failure_tests& tests)
+        -> void {
 
         const operand limit{
-            alloc_scratch_register(src_loc_tk, indent, default_type()),
+            alloc_scratch_register(site, default_type()),
         };
 
         const std::string top{
-            upper_bound_top(src_loc_tk, indent, range, limit, lower_checked,
-                            tests),
+            upper_bound_top(site, range, limit, lower_checked, tests),
         };
 
-        assembler_.li(indent, limit.register_name(), range.array_count);
+        assembler_.li(site.indent, limit.register_name(), range.array_count);
 
         // unchecked below, a negative index is compared signed and passes, it
         // is left to the lower check as on x86_64; the end of a range is
@@ -1881,21 +1853,19 @@ class machine_rv32i : public machine {
         const bool compared_unsigned{lower_checked or range.count};
 
         if (range.allow_end) {
-            fail_if(src_loc_tk, indent, tests,
-                    compared_unsigned ? op::bltu : op::blt,
+            fail_if(site, tests, compared_unsigned ? op::bltu : op::blt,
                     limit.register_name(), top);
 
             return;
         }
 
-        fail_if(src_loc_tk, indent, tests,
-                compared_unsigned ? op::bgeu : op::bge, top,
+        fail_if(site, tests, compared_unsigned ? op::bgeu : op::bge, top,
                 limit.register_name());
     }
 
     // accesses widen after the first only when a start inside a word was
     // peeled, other sequences keep the uncommented widths of the alignment
-    auto comment_aligned_parts(const token& src_loc_tk, const size_t indent,
+    auto comment_aligned_parts(const emit_site site,
                                const std::string_view verb,
                                const size_t size_bytes,
                                const std::span<const access_start> starts)
@@ -1915,14 +1885,13 @@ class machine_rv32i : public machine {
             return;
         }
 
-        comment(src_loc_tk, indent,
-                "{} {}: {}, widest aligned access at each offset", verb,
+        comment(site, "{} {}: {}, widest aligned access at each offset", verb,
                 describe_parts(size_bytes, starts), describe_starts(starts));
     }
 
     // names the parts of a known-size loop
-    auto comment_known_loop(const token& src_loc_tk, const size_t indent,
-                            const std::string_view verb, const known_loop& loop,
+    auto comment_known_loop(const emit_site site, const std::string_view verb,
+                            const known_loop& loop,
                             const std::span<const access_start> starts)
         -> void {
 
@@ -1932,26 +1901,24 @@ class machine_rv32i : public machine {
                 : std::format(" after a {} B head", loop.head_size_bytes),
         };
 
-        comment(src_loc_tk, indent, "{} loop of {}-byte accesses{}: {}", verb,
-                loop.width, head, describe_starts(starts));
+        comment(site, "{} loop of {}-byte accesses{}: {}", verb, loop.width,
+                head, describe_starts(starts));
     }
 
     // names what decided the width of a pointer loop
-    auto comment_pointer_loop(const token& src_loc_tk, const size_t indent,
-                              const loop_start& start,
+    auto comment_pointer_loop(const emit_site site, const loop_start& start,
                               const std::array<access_start, 2>& starts,
                               const size_t alignment) -> void {
 
         if (start.head_size_bytes != 0) {
-            comment(src_loc_tk, indent,
-                    "{}-byte accesses after a {} B head: {}", start.width,
+            comment(site, "{}-byte accesses after a {} B head: {}", start.width,
                     start.head_size_bytes, describe_starts(starts));
 
             return;
         }
 
         if (start.width > alignment) {
-            comment(src_loc_tk, indent,
+            comment(site,
                     "{}-byte accesses: both addresses {}-byte aligned, type "
                     "{}-byte aligned",
                     start.width, start.width, alignment);
@@ -1959,7 +1926,7 @@ class machine_rv32i : public machine {
             return;
         }
 
-        comment(src_loc_tk, indent,
+        comment(site,
                 "{}-byte accesses: type {}-byte aligned, addresses not proven "
                 "more aligned",
                 start.width, alignment);
@@ -1984,8 +1951,7 @@ class machine_rv32i : public machine {
 
     // run-time count: the addresses are pointer registers and 'count' is a
     // byte count, 'result' is 1 when every access matched, else 0
-    auto compare_runtime_count(const token& src_loc_tk, const size_t indent,
-                               const bulk_operation& bulk,
+    auto compare_runtime_count(const emit_site site, const bulk_operation& bulk,
                                const operand& result) -> void {
 
         const operand& left{bulk.pointer(0)};
@@ -1998,7 +1964,7 @@ class machine_rv32i : public machine {
         const std::array<operand, 3> in_use{left, right, count};
 
         const compare_registers registers{
-            alloc_compare_registers(src_loc_tk, indent, result, in_use),
+            alloc_compare_registers(site, result, in_use),
         };
 
         const operand left_at{memory_at(left)};
@@ -2006,7 +1972,8 @@ class machine_rv32i : public machine {
 
         const auto access{
             [&](const size_t width) -> void {
-                compare_access(indent, registers, width, left_at, right_at);
+                compare_access(site.indent, registers, width, left_at,
+                               right_at);
             },
         };
 
@@ -2016,8 +1983,8 @@ class machine_rv32i : public machine {
 
             walk_runtime_count(
                 {
-                    .src_loc_tk{src_loc_tk},
-                    .indent{indent},
+                    .src_loc_tk{site.src_loc_tk},
+                    .indent{site.indent},
                     .verb{"compare"},
                     .src{left},
                     .dst{right},
@@ -2027,14 +1994,13 @@ class machine_rv32i : public machine {
                 bulk);
         }
 
-        write_compare_result(src_loc_tk, indent, result, registers, false);
+        write_compare_result(site, result, registers, false);
     }
 
     // 'source' in a register of the comparison width
-    auto comparison_operand(const token& src_loc_tk, const size_t indent,
-                            const operand& source, const operand& other,
-                            const type& width_type, const operand& dst)
-        -> operand {
+    auto comparison_operand(const emit_site site, const operand& source,
+                            const operand& other, const type& width_type,
+                            const operand& dst) -> operand {
 
         // matching register representations need no conversion
         if (source.is_register() and source.type_ref().is_same(width_type)) {
@@ -2057,12 +2023,11 @@ class machine_rv32i : public machine {
 
         // preserve the comparison width rather than narrowing to bool
         const operand value{
-            reuse_destination
-                ? operand::reg(dst.register_name(), width_type)
-                : alloc_scratch_register(src_loc_tk, indent, width_type),
+            reuse_destination ? operand::reg(dst.register_name(), width_type)
+                              : alloc_scratch_register(site, width_type),
         };
 
-        copy_value(src_loc_tk, indent, value, source);
+        copy_value(site, value, source);
 
         return value;
     }
@@ -2070,27 +2035,24 @@ class machine_rv32i : public machine {
     // both sides in registers of the comparison width, the right one is a zero
     // register when 'use_immediate' compares against an immediate
     [[nodiscard]] auto
-    comparison_operands(const token& src_loc_tk, const size_t indent,
-                        const operand& lhs, const operand& rhs,
-                        const bool use_immediate, const operand& dst)
-        -> std::array<operand, 2> {
+    comparison_operands(const emit_site site, const operand& lhs,
+                        const operand& rhs, const bool use_immediate,
+                        const operand& dst) -> std::array<operand, 2> {
 
         if (shares_address_base(lhs, rhs)) {
-            return comparison_operands_through_shared_base(src_loc_tk, indent,
-                                                           lhs, rhs);
+            return comparison_operands_through_shared_base(site, lhs, rhs);
         }
 
         const operand left{
-            comparison_operand(src_loc_tk, indent, lhs, rhs, lhs.type_ref(),
-                               dst),
+            comparison_operand(site, lhs, rhs, lhs.type_ref(), dst),
         };
 
         // the immediate is encoded in the instruction, so the register is
         // never read
         const operand right{
-            use_immediate ? operand::reg("zero", lhs.type_ref())
-                          : comparison_operand(src_loc_tk, indent, rhs, left,
-                                               lhs.type_ref(), dst),
+            use_immediate
+                ? operand::reg("zero", lhs.type_ref())
+                : comparison_operand(site, rhs, left, lhs.type_ref(), dst),
         };
 
         return {left, right};
@@ -2099,8 +2061,8 @@ class machine_rv32i : public machine {
     // both addresses are 'base + upper + low', so one 'lui' and 'add' serve
     // both loads and the base register ends up holding the left value
     [[nodiscard]] auto comparison_operands_through_shared_base(
-        const token& src_loc_tk, const size_t indent, const operand& lhs,
-        const operand& rhs) -> std::array<operand, 2> {
+        const emit_site site, const operand& lhs, const operand& rhs)
+        -> std::array<operand, 2> {
 
         // note: the front end compares a 'bool' only with a 'bool' and
         //       rejects a right side wider than the left, so the load of the
@@ -2109,27 +2071,25 @@ class machine_rv32i : public machine {
         assert(not register_needs_extension(lhs.type_ref(), rhs));
 
         const operand left{
-            alloc_scratch_register(src_loc_tk, indent, lhs.type_ref()),
+            alloc_scratch_register(site, lhs.type_ref()),
         };
 
         const operand right{
-            alloc_scratch_register(src_loc_tk, indent, lhs.type_ref()),
+            alloc_scratch_register(site, lhs.type_ref()),
         };
 
-        comment(src_loc_tk, indent, "operands share base {}",
-                left.register_name());
+        comment(site, "operands share base {}", left.register_name());
 
-        const operand left_at{lower_address(src_loc_tk, indent, lhs, left)};
+        const operand left_at{lower_address(site, lhs, left)};
 
-        load_into(src_loc_tk, indent, right, rebased(rhs, left_at));
-        load_into(src_loc_tk, indent, left, left_at);
+        load_into(site, right, rebased(rhs, left_at));
+        load_into(site, left, left_at);
 
         return {left, right};
     }
 
     // prefer the output register or a temporary the comparison owns
-    auto comparison_result_register(const token& src_loc_tk,
-                                    const size_t indent, const operand& dst,
+    auto comparison_result_register(const emit_site site, const operand& dst,
                                     const operand& lhs, const operand& rhs,
                                     const operand& left, const operand& right)
         -> operand {
@@ -2149,7 +2109,7 @@ class machine_rv32i : public machine {
         }
 
         // both operands are live inputs or zero
-        return alloc_scratch_register(src_loc_tk, indent, default_type());
+        return alloc_scratch_register(site, default_type());
     }
 
     auto copy_access(const size_t indent, const operand& value,
@@ -2166,14 +2126,13 @@ class machine_rv32i : public machine {
     // 'bytes' from a read-only constant that starts as far into a word as
     // 'dst', so the copy takes words also at an address inside a word
     auto copy_constant(
-        const token& src_loc_tk, const size_t indent,
-        const std::string_view bytes, const operand& dst,
+        const emit_site site, const std::string_view bytes, const operand& dst,
         const access_start& dst_start,
         const std::function_ref<std::string(std::string_view)> add_constant)
         -> void {
 
         const operand pointer{
-            alloc_scratch_register(src_loc_tk, indent, default_type()),
+            alloc_scratch_register(site, default_type()),
         };
 
         // note: read-only constants are word aligned, the zero bytes before
@@ -2183,7 +2142,8 @@ class machine_rv32i : public machine {
             std::string(dst_start.phase, '\0') + std::string{bytes},
         };
 
-        assembler_.la(indent, pointer.register_name(), add_constant(laid_out));
+        assembler_.la(site.indent, pointer.register_name(),
+                      add_constant(laid_out));
 
         const std::array<access_start, 2> copy_starts{
             access_start{
@@ -2195,15 +2155,13 @@ class machine_rv32i : public machine {
 
         const operand constant{offset_by(memory_at(pointer), dst_start.phase)};
 
-        copy_from_starts(src_loc_tk, indent, dst, constant, bytes.size(),
-                         copy_starts);
+        copy_from_starts(site, dst, constant, bytes.size(), copy_starts);
     }
 
     // 'copy_block' where 'starts' tells where 'src' and then 'dst' are within
     // a word
-    auto copy_from_starts(const token& src_loc_tk, const size_t indent,
-                          const operand& dst, const operand& src,
-                          const size_t size_bytes,
+    auto copy_from_starts(const emit_site site, const operand& dst,
+                          const operand& src, const size_t size_bytes,
                           const std::array<access_start, 2>& starts) -> void {
 
         if (size_bytes == 0) {
@@ -2218,14 +2176,14 @@ class machine_rv32i : public machine {
         const operation_scope scope{*this, dst, src};
 
         const operand value{
-            alloc_scratch_register(src_loc_tk, indent, default_type()),
+            alloc_scratch_register(site, default_type()),
         };
 
         const std::array<operand, 2> addresses{src, dst};
 
         const auto access{
             [&](const size_t width, const std::span<const operand> at) -> void {
-                copy_access(indent, value, width, at.front(), at.back());
+                copy_access(site.indent, value, width, at.front(), at.back());
             },
         };
 
@@ -2233,8 +2191,8 @@ class machine_rv32i : public machine {
         // copies
         walk_known_size(
             {
-                .src_loc_tk{src_loc_tk},
-                .indent{indent},
+                .src_loc_tk{site.src_loc_tk},
+                .indent{site.indent},
                 .verb{"copy"},
                 .addresses{addresses},
                 .starts{starts},
@@ -2245,8 +2203,8 @@ class machine_rv32i : public machine {
 
     // run-time count: the addresses are pointer registers and 'count' is a
     // byte count
-    auto copy_runtime_count(const token& src_loc_tk, const size_t indent,
-                            const bulk_operation& bulk) -> void {
+    auto copy_runtime_count(const emit_site site, const bulk_operation& bulk)
+        -> void {
 
         const operand& src{bulk.pointer(0)};
         const operand& dst{bulk.pointer(1)};
@@ -2255,7 +2213,7 @@ class machine_rv32i : public machine {
         const operation_scope scope{*this, dst, src};
 
         const operand value{
-            alloc_scratch_register(src_loc_tk, indent, default_type()),
+            alloc_scratch_register(site, default_type()),
         };
 
         const operand from{memory_at(src)};
@@ -2263,14 +2221,14 @@ class machine_rv32i : public machine {
 
         const auto access{
             [&](const size_t width) -> void {
-                copy_access(indent, value, width, from, to);
+                copy_access(site.indent, value, width, from, to);
             },
         };
 
         walk_runtime_count(
             {
-                .src_loc_tk{src_loc_tk},
-                .indent{indent},
+                .src_loc_tk{site.src_loc_tk},
+                .indent{site.indent},
                 .verb{"copy"},
                 .src{src},
                 .dst{dst},
@@ -2282,36 +2240,34 @@ class machine_rv32i : public machine {
 
     // both addresses are 'base + upper + low', so one 'lui' and 'add' serve
     // the load and the store
-    auto copy_through_shared_base(const token& src_loc_tk, const size_t indent,
-                                  const operand& dst, const operand& src)
-        -> void {
+    auto copy_through_shared_base(const emit_site site, const operand& dst,
+                                  const operand& src) -> void {
 
         const operand base{
-            alloc_scratch_register(src_loc_tk, indent, default_type()),
+            alloc_scratch_register(site, default_type()),
         };
 
         const operand value{
-            alloc_scratch_register(src_loc_tk, indent, default_type()),
+            alloc_scratch_register(site, default_type()),
         };
 
-        comment(src_loc_tk, indent, "source and destination share base {}",
+        comment(site, "source and destination share base {}",
                 base.register_name());
 
-        const operand src_at{lower_address(src_loc_tk, indent, src, base)};
+        const operand src_at{lower_address(site, src, base)};
 
-        load_into(src_loc_tk, indent, value, src_at);
-        store_low_bits(src_loc_tk, indent, rebased(dst, src_at), value);
+        load_into(site, value, src_at);
+        store_low_bits(site, rebased(dst, src_at), value);
     }
 
     // the element count of 'bulk' becomes its byte count
-    auto count_to_bytes(const token& src_loc_tk, const size_t indent,
-                        const bulk_operation& bulk,
+    auto count_to_bytes(const emit_site site, const bulk_operation& bulk,
                         const size_t element_size_bytes) -> void {
 
-        comment(src_loc_tk, indent, "{}: elements to bytes ({} bytes/element)",
+        comment(site, "{}: elements to bytes ({} bytes/element)",
                 bulk.count().register_name(), element_size_bytes);
 
-        scale_index(src_loc_tk, indent, bulk.count(), element_size_bytes);
+        scale_index(site, bulk.count(), element_size_bytes);
     }
 
     // the label '5' of an i/o routine returns 'bad_descriptor_'
@@ -2322,9 +2278,8 @@ class machine_rv32i : public machine {
     }
 
     // applies 'instruction' to 'left' with an immediate when it fits
-    auto emit_binary_instruction(const token& src_loc_tk, const size_t indent,
-                                 const op instruction, const operand& src,
-                                 const operand& left,
+    auto emit_binary_instruction(const emit_site site, const op instruction,
+                                 const operand& src, const operand& left,
                                  const std::optional<int32_t> constant)
         -> void {
 
@@ -2338,7 +2293,7 @@ class machine_rv32i : public machine {
         if (constant.has_value() and
             assembler_rv32i::fits_immediate(immediate)) {
 
-            assembler_.immediate_op(indent, immediate_form(instruction),
+            assembler_.immediate_op(site.indent, immediate_form(instruction),
                                     left.register_name(), left.register_name(),
                                     immediate);
 
@@ -2355,20 +2310,20 @@ class machine_rv32i : public machine {
                               : assembler_rv32i::immediate_max,
             };
 
-            assembler_.addi(indent, left.register_name(), left.register_name(),
-                            first);
+            assembler_.addi(site.indent, left.register_name(),
+                            left.register_name(), first);
 
-            assembler_.addi(indent, left.register_name(), left.register_name(),
-                            immediate - first);
+            assembler_.addi(site.indent, left.register_name(),
+                            left.register_name(), immediate - first);
 
             return;
         }
 
         const operand right{
-            source_register(src_loc_tk, indent, src, constant),
+            source_register(site, src, constant),
         };
 
-        assembler_.register_op(indent, instruction, left.register_name(),
+        assembler_.register_op(site.indent, instruction, left.register_name(),
                                left.register_name(), right.register_name());
     }
 
@@ -2419,9 +2374,8 @@ class machine_rv32i : public machine {
     //           one first
     //   narrow: the result is exact, it fits when sign extending its low bits
     //           gives it back
-    auto emit_checked_add_subtract(const token& src_loc_tk, const size_t indent,
-                                   const op instruction, const operand& src,
-                                   const operand& value,
+    auto emit_checked_add_subtract(const emit_site site, const op instruction,
+                                   const operand& src, const operand& value,
                                    const size_t width_bytes,
                                    const std::optional<int32_t> constant)
         -> void {
@@ -2440,35 +2394,34 @@ class machine_rv32i : public machine {
                 assembler_rv32i::fits_immediate(-int64_t{*constant}),
         };
 
-        comment(src_loc_tk, indent, "overflow check begin");
+        comment(site, "overflow check begin");
 
         if (width_bytes < word_size_bytes_) {
-            emit_binary_instruction(src_loc_tk, indent, instruction, src, value,
-                                    constant);
+            emit_binary_instruction(site, instruction, src, value, constant);
 
             const operand extended{
-                alloc_scratch_register(src_loc_tk, indent, default_type()),
+                alloc_scratch_register(site, default_type()),
             };
 
-            check_fits_width(src_loc_tk, indent, value.register_name(),
-                             width_bytes, extended.register_name());
+            check_fits_width(site, value.register_name(), width_bytes,
+                             extended.register_name());
         } else if (is_register_source or is_small_constant) {
-            emit_checked_with_one_register(src_loc_tk, indent, instruction, src,
-                                           value, constant);
+            emit_checked_with_one_register(site, instruction, src, value,
+                                           constant);
         } else {
             // a memory source, a constant past the immediate or the value's
             // own register gets a register of its own
             const operand second{
-                alloc_scratch_register(src_loc_tk, indent, default_type()),
+                alloc_scratch_register(site, default_type()),
             };
 
-            load_operand(src_loc_tk, indent, second, src, constant);
+            load_operand(site, second, src, constant);
 
-            emit_checked_with_one_register(src_loc_tk, indent, instruction,
-                                           second, value, constant);
+            emit_checked_with_one_register(site, instruction, second, value,
+                                           constant);
         }
 
-        comment(src_loc_tk, indent, "overflow check end");
+        comment(site, "overflow check end");
     }
 
     // a 32 bit sum or difference with the second operand in a register or an
@@ -2476,9 +2429,8 @@ class machine_rv32i : public machine {
     // 'result + second' for a subtract, the result is below it exactly when
     // the second operand is negative for an add or positive for a subtract
     auto emit_checked_with_one_register(
-        const token& src_loc_tk, const size_t indent, const op instruction,
-        const operand& src, const operand& value,
-        const std::optional<int32_t> constant) -> void {
+        const emit_site site, const op instruction, const operand& src,
+        const operand& value, const std::optional<int32_t> constant) -> void {
 
         constexpr local_label below{
             .name{"3"},
@@ -2492,31 +2444,29 @@ class machine_rv32i : public machine {
             src.is_register() ? std::nullopt : constant,
         };
 
-        emit_binary_instruction(src_loc_tk, indent, instruction, src, value,
-                                immediate);
+        emit_binary_instruction(site, instruction, src, value, immediate);
 
         const operand first{
-            alloc_scratch_register(src_loc_tk, indent, default_type()),
+            alloc_scratch_register(site, default_type()),
         };
 
         if (immediate) {
-            assembler_.addi(indent, first.register_name(),
+            assembler_.addi(site.indent, first.register_name(),
                             value.register_name(),
                             is_add ? -*immediate : *immediate);
         } else if (is_add) {
-            assembler_.sub(indent, first.register_name(), value.register_name(),
-                           src.register_name());
+            assembler_.sub(site.indent, first.register_name(),
+                           value.register_name(), src.register_name());
         } else {
-            assembler_.add(indent, first.register_name(), value.register_name(),
-                           src.register_name());
+            assembler_.add(site.indent, first.register_name(),
+                           value.register_name(), src.register_name());
         }
 
         if (constant.has_value()) {
             // the sign of the second operand is known
             const bool below_first{is_add ? *constant < 0 : *constant > 0};
 
-            branch_to_failure(src_loc_tk, indent,
-                              below_first ? op::bge : op::blt,
+            branch_to_failure(site, below_first ? op::bge : op::blt,
                               value.register_name(), first.register_name(),
                               overflow_failure_);
 
@@ -2524,26 +2474,26 @@ class machine_rv32i : public machine {
         }
 
         if (is_add) {
-            assembler_.bltz(indent, src.register_name(), below.reference);
+            assembler_.bltz(site.indent, src.register_name(), below.reference);
         } else {
-            assembler_.bgtz(indent, src.register_name(), below.reference);
+            assembler_.bgtz(site.indent, src.register_name(), below.reference);
         }
 
-        assembler_.branch(indent, op::bge, value.register_name(),
+        assembler_.branch(site.indent, op::bge, value.register_name(),
                           first.register_name(), check_passed_.reference);
 
         // note: one jump to the handler for both signs, which a far handler
         //       grows once
 
-        assembler_.label(indent, check_failed_before_.name);
-        jump_to_failure(src_loc_tk, indent, overflow_failure_);
-        assembler_.label(indent, below.name);
+        assembler_.label(site.indent, check_failed_before_.name);
+        jump_to_failure(site, overflow_failure_);
+        assembler_.label(site.indent, below.name);
 
-        assembler_.branch(indent, op::bge, value.register_name(),
+        assembler_.branch(site.indent, op::bge, value.register_name(),
                           first.register_name(),
                           check_failed_before_.reference);
 
-        assembler_.label(indent, check_passed_.name);
+        assembler_.label(site.indent, check_passed_.name);
     }
 
     auto emit_comparison_branch(const size_t indent,
@@ -2610,7 +2560,7 @@ class machine_rv32i : public machine {
         assembler_.label(0, "5");
 
         // without '--checks=division' a zero divisor exits like its panic
-        exit(token{}, 1,
+        exit({token{}, 1},
              operand::imm(division_failure_.exit_code, default_type()));
     }
 
@@ -2729,7 +2679,7 @@ class machine_rv32i : public machine {
     // the result replaces the value in 'loaded', a partial sum goes through a
     // scratch register
     //   x * 10  =>  t = x << 2; x = t + x; x = x << 1
-    auto emit_shift_add_sequence(const token& src_loc_tk, const size_t indent,
+    auto emit_shift_add_sequence(const emit_site site,
                                  const loaded_destination& loaded,
                                  const digit_sequence& sequence) -> void {
 
@@ -2737,7 +2687,7 @@ class machine_rv32i : public machine {
         const operand partial{
             sequence.lowest == sequence.top
                 ? operand{}
-                : alloc_scratch_register(src_loc_tk, indent, default_type()),
+                : alloc_scratch_register(site, default_type()),
         };
 
         std::string_view shifted{loaded.value.register_name()};
@@ -2751,7 +2701,7 @@ class machine_rv32i : public machine {
                 continue;
             }
 
-            assembler_.slli(indent, partial.register_name(), shifted,
+            assembler_.slli(site.indent, partial.register_name(), shifted,
                             pending_shift);
 
             const std::string_view sum{
@@ -2760,8 +2710,8 @@ class machine_rv32i : public machine {
             };
 
             assembler_.register_op(
-                indent, sequence.digits.at(bit) < 0 ? op::sub : op::add, sum,
-                partial.register_name(), loaded.value.register_name());
+                site.indent, sequence.digits.at(bit) < 0 ? op::sub : op::add,
+                sum, partial.register_name(), loaded.value.register_name());
 
             shifted = partial.register_name();
             pending_shift = 0;
@@ -2769,12 +2719,12 @@ class machine_rv32i : public machine {
 
         // the zero bits below the lowest digit
         if (sequence.lowest != 0) {
-            assembler_.slli(indent, loaded.value.register_name(),
+            assembler_.slli(site.indent, loaded.value.register_name(),
                             loaded.value.register_name(), sequence.lowest);
         }
 
         if (sequence.negate) {
-            assembler_.sub(indent, loaded.value.register_name(), "zero",
+            assembler_.sub(site.indent, loaded.value.register_name(), "zero",
                            loaded.value.register_name());
         }
     }
@@ -2825,8 +2775,7 @@ class machine_rv32i : public machine {
 
     // a check of one test branches to the handler; of more, the last passing
     // test branches past the shared jump to the handler, the others to it
-    auto fail_if(const token& src_loc_tk, const size_t indent,
-                 failure_tests& tests, const op failed,
+    auto fail_if(const emit_site site, failure_tests& tests, const op failed,
                  const std::string_view rs1, const std::string_view rs2)
         -> void {
 
@@ -2835,25 +2784,23 @@ class machine_rv32i : public machine {
         --tests.remaining;
 
         if (not tests.shared) {
-            branch_to_failure(src_loc_tk, indent, failed, rs1, rs2,
-                              tests.handler.get());
-
+            branch_to_failure(site, failed, rs1, rs2, tests.handler.get());
             return;
         }
 
         if (tests.remaining > 0) {
-            assembler_.branch(indent, failed, rs1, rs2,
+            assembler_.branch(site.indent, failed, rs1, rs2,
                               check_failed_.reference);
 
             return;
         }
 
-        assembler_.branch(indent, assembler_rv32i::inverse_branch(failed), rs1,
-                          rs2, check_passed_.reference);
+        assembler_.branch(site.indent, assembler_rv32i::inverse_branch(failed),
+                          rs1, rs2, check_passed_.reference);
 
-        assembler_.label(indent, check_failed_.name);
-        jump_to_failure(src_loc_tk, indent, tests.handler.get());
-        assembler_.label(indent, check_passed_.name);
+        assembler_.label(site.indent, check_failed_.name);
+        jump_to_failure(site, tests.handler.get());
+        assembler_.label(site.indent, check_passed_.name);
     }
 
     // a jump grown beyond 1 MiB needs a register without a live value
@@ -2897,12 +2844,12 @@ class machine_rv32i : public machine {
     }
 
     // the target as 'branch_to_failure' chooses it
-    auto jump_to_failure(const token& src_loc_tk, const size_t indent,
-                         const failure_handler& handler) -> void {
+    auto jump_to_failure(const emit_site site, const failure_handler& handler)
+        -> void {
 
-        const std::string target{failure_target(handler, src_loc_tk)};
+        const std::string target{failure_target(handler, site.src_loc_tk)};
 
-        emit_no_return_jump(indent, target);
+        emit_no_return_jump(site.indent, target);
     }
 
     // the clobbered registers that hold a live value, an allocated or a
@@ -2934,32 +2881,31 @@ class machine_rv32i : public machine {
     // the pointer of 'slot', 0 the first address and 1 the second, holds the
     // address; the pointers advance together so both starts decide the width
     // of the loop
-    auto load_bulk_address(const token& src_loc_tk, const size_t indent,
-                           bulk_operation& bulk, const size_t slot,
-                           const operand& address) -> void {
+    auto load_bulk_address(const emit_site site, bulk_operation& bulk,
+                           const size_t slot, const operand& address) -> void {
 
         bulk.starts.at(slot) = start_of(address, bulk.alignment);
         ++bulk.address_count;
 
-        address_of(src_loc_tk, indent, bulk.pointer(slot), address);
+        address_of(site, bulk.pointer(slot), address);
     }
 
     // borrowed pointers avoid a temporary address and final move for indexing
-    auto load_bulk_addresses(const token& src_loc_tk, const size_t indent,
-                             bulk_operation& bulk, const address_emitter& first,
+    auto load_bulk_addresses(const emit_site site, bulk_operation& bulk,
+                             const address_emitter& first,
                              const address_emitter& second) -> void {
 
         first(bulk.pointer(0), [&](const operand& address) -> void {
-            load_bulk_address(src_loc_tk, indent, bulk, 0, address);
+            load_bulk_address(site, bulk, 0, address);
         });
 
         second(bulk.pointer(1), [&](const operand& address) -> void {
-            load_bulk_address(src_loc_tk, indent, bulk, 1, address);
+            load_bulk_address(site, bulk, 1, address);
         });
     }
 
-    [[nodiscard]] auto load_destination(const token& src_loc_tk,
-                                        const size_t indent, const operand& dst)
+    [[nodiscard]] auto load_destination(const emit_site site,
+                                        const operand& dst)
         -> loaded_destination {
 
         if (dst.is_register()) {
@@ -2970,13 +2916,13 @@ class machine_rv32i : public machine {
         }
 
         // lowering before allocating keeps the scratch register order
-        const operand address{lower_address(src_loc_tk, indent, dst)};
+        const operand address{lower_address(site, dst)};
 
         const operand value{
-            alloc_scratch_register(src_loc_tk, indent, default_type()),
+            alloc_scratch_register(site, default_type()),
         };
 
-        copy_value(src_loc_tk, indent, value, address);
+        copy_value(site, value, address);
 
         return {
             .address{address},
@@ -2985,8 +2931,7 @@ class machine_rv32i : public machine {
     }
 
     // writes 'first_value' to 'a0' and 'source' to 'a1'
-    auto load_helper_arguments(const token& src_loc_tk, const size_t indent,
-                               const operand& first_value,
+    auto load_helper_arguments(const emit_site site, const operand& first_value,
                                const operand& source) -> void {
 
         const operand first_argument{operand::reg("a0", default_type())};
@@ -3004,24 +2949,25 @@ class machine_rv32i : public machine {
         };
 
         if (consumed) {
-            assembler_.move_consumed(indent, "a0", first_value.register_name());
+            assembler_.move_consumed(site.indent, "a0",
+                                     first_value.register_name());
         } else {
-            copy_value(src_loc_tk, indent, first_argument, first_value);
+            copy_value(site, first_argument, first_value);
         }
 
-        copy_value(src_loc_tk, indent, second_argument, source);
+        copy_value(site, second_argument, source);
     }
 
-    auto load_into(const token& src_loc_tk, const size_t indent,
-                   const operand& value, const operand& src) -> void {
+    auto load_into(const emit_site site, const operand& value,
+                   const operand& src) -> void {
 
         if (src.is_memory()) {
             // a load may build its address in the register it will overwrite
             const operand lowered{
-                lower_address(src_loc_tk, indent, src, value),
+                lower_address(site, src, value),
             };
 
-            assembler_.load(indent, load_op(src.type_ref()),
+            assembler_.load(site.indent, load_op(src.type_ref()),
                             value.register_name(), lowered.displacement(),
                             lowered.base_register());
 
@@ -3032,42 +2978,41 @@ class machine_rv32i : public machine {
         assert(src.is_register());
 
         if (value.register_name() != src.register_name()) {
-            assembler_.mv(indent, value.register_name(), src.register_name());
+            assembler_.mv(site.indent, value.register_name(),
+                          src.register_name());
         }
     }
 
     // 'src' into the register 'dst', the immediate 'constant' when it is
     // known
-    auto load_operand(const token& src_loc_tk, const size_t indent,
-                      const operand& dst, const operand& src,
-                      const std::optional<int32_t> constant) -> void {
+    auto load_operand(const emit_site site, const operand& dst,
+                      const operand& src, const std::optional<int32_t> constant)
+        -> void {
 
         if (constant.has_value()) {
-            assembler_.li(indent, dst.register_name(), *constant);
+            assembler_.li(site.indent, dst.register_name(), *constant);
             return;
         }
 
-        copy_value(src_loc_tk, indent, dst, src);
+        copy_value(site, dst, src);
     }
 
     // a register holding 'address'
-    [[nodiscard]] auto load_pointer(const token& src_loc_tk,
-                                    const size_t indent, const operand& address)
-        -> operand {
+    [[nodiscard]] auto load_pointer(const emit_site site,
+                                    const operand& address) -> operand {
 
         const operand pointer{
-            alloc_scratch_register(src_loc_tk, indent, default_type()),
+            alloc_scratch_register(site, default_type()),
         };
 
-        address_of(src_loc_tk, indent, pointer, address);
+        address_of(site, pointer, address);
 
         return pointer;
     }
 
     // lower base + index * scale + displacement to register + signed 12-bit
     // offset
-    [[nodiscard]] auto lower_address(const token& src_loc_tk,
-                                     const size_t indent,
+    [[nodiscard]] auto lower_address(const emit_site site,
                                      const operand& address,
                                      const operand& dst = {}) -> operand {
 
@@ -3091,15 +3036,15 @@ class machine_rv32i : public machine {
         const operand result{
             can_reuse_address_destination(address, dst)
                 ? dst
-                : alloc_scratch_register(src_loc_tk, indent, default_type()),
+                : alloc_scratch_register(site, default_type()),
         };
 
         const std::string& result_name{result.register_name()};
 
         // only the upper part; the memory instruction adds the low
         if (index.empty()) {
-            assembler_.lui(indent, result_name, upper);
-            assembler_.add(indent, result_name, result_name, base);
+            assembler_.lui(site.indent, result_name, upper);
+            assembler_.add(site.indent, result_name, result_name, base);
             return operand::mem(result_name, {}, 1, low, address.type_ref());
         }
 
@@ -3108,9 +3053,9 @@ class machine_rv32i : public machine {
         if (upper != 0 and address.scale() == 1 and result_name != base and
             result_name != index) {
 
-            assembler_.lui(indent, result_name, upper);
-            assembler_.add(indent, result_name, result_name, base);
-            assembler_.add(indent, result_name, result_name, index);
+            assembler_.lui(site.indent, result_name, upper);
+            assembler_.add(site.indent, result_name, result_name, base);
+            assembler_.add(site.indent, result_name, result_name, index);
             return operand::mem(result_name, {}, 1, low, address.type_ref());
         }
 
@@ -3120,25 +3065,25 @@ class machine_rv32i : public machine {
         // unit scale: one add combines the register inputs, even when the
         // result aliases either
         if (address.scale() == 1) {
-            assembler_.add(indent, result_name, base, index);
+            assembler_.add(site.indent, result_name, base, index);
         } else {
             // scaled index: form the product before adding the base
-            assembler_.slli(indent, result_name, index,
+            assembler_.slli(site.indent, result_name, index,
                             std::countr_zero(address.scale()));
 
-            assembler_.add(indent, result_name, result_name, base);
+            assembler_.add(site.indent, result_name, result_name, base);
         }
 
         if (upper != 0) {
             const operation_scope scope{*this};
 
             const operand displacement{
-                alloc_scratch_register(src_loc_tk, indent, default_type()),
+                alloc_scratch_register(site, default_type()),
             };
 
-            assembler_.lui(indent, displacement.register_name(), upper);
+            assembler_.lui(site.indent, displacement.register_name(), upper);
 
-            assembler_.add(indent, result_name, result_name,
+            assembler_.add(site.indent, result_name, result_name,
                            displacement.register_name());
         }
 
@@ -3152,26 +3097,26 @@ class machine_rv32i : public machine {
 
     // the remaining constant needs shifts and adds; keep the original value
     // for the additions while the result changes
-    auto
-    multiply_by_shifts_and_adds(const token& src_loc_tk, const size_t indent,
-                                const operand& product, const operand& factor,
-                                const uint32_t multiplier, const size_t bits)
-        -> void {
+    auto multiply_by_shifts_and_adds(const emit_site site,
+                                     const operand& product,
+                                     const operand& factor,
+                                     const uint32_t multiplier,
+                                     const size_t bits) -> void {
 
         const operation_scope scope{*this, product, factor};
 
         // the original value stays here until the last add or sub, which
         // writes the result in its place so no copy is needed
         const loaded_destination loaded{
-            load_destination(src_loc_tk, indent, product),
+            load_destination(site, product),
         };
 
         const digit_sequence sequence{make_digit_sequence(multiplier, bits)};
 
-        emit_shift_add_sequence(src_loc_tk, indent, loaded, sequence);
+        emit_shift_add_sequence(site, loaded, sequence);
 
-        store_operation_result(indent, product, loaded.address, loaded.value,
-                               true);
+        store_operation_result(site.indent, product, loaded.address,
+                               loaded.value, true);
     }
 
     // a test that passes the check branches past the shared jump to the
@@ -3188,8 +3133,7 @@ class machine_rv32i : public machine {
     }
 
     // a register holding the result after the saved registers are restored
-    auto preserved_helper_result(const token& src_loc_tk, const size_t indent,
-                                 const operand& result,
+    auto preserved_helper_result(const emit_site site, const operand& result,
                                  const std::span<const std::string_view> saved)
         -> operand {
 
@@ -3203,10 +3147,10 @@ class machine_rv32i : public machine {
 
         // restoring the saved registers would overwrite the result
         const operand kept{
-            alloc_scratch_register(src_loc_tk, indent, default_type()),
+            alloc_scratch_register(site, default_type()),
         };
 
-        copy_value(src_loc_tk, indent, kept, result);
+        copy_value(site, kept, result);
 
         return kept;
     }
@@ -3214,14 +3158,13 @@ class machine_rv32i : public machine {
     // the loop ends when its pointer reaches 'end', replacing a counter that
     // costs a decrement in every iteration, a size below 2 KiB takes one
     // 'addi' through 'address_of'
-    auto set_loop_end(const token& src_loc_tk, const size_t indent,
-                      const operand& end, const operand& pointer,
-                      const size_t size_bytes) -> void {
+    auto set_loop_end(const emit_site site, const operand& end,
+                      const operand& pointer, const size_t size_bytes) -> void {
 
         const operand at{memory_at(pointer)};
         const operand past_end{offset_by(at, size_bytes)};
 
-        address_of(src_loc_tk, indent, end, past_end);
+        address_of(site, end, past_end);
     }
 
     // a narrow register shifts to the top and back, extending in one pair
@@ -3257,27 +3200,28 @@ class machine_rv32i : public machine {
                                is_left);
     }
 
-    auto shift_by_register(const token& src_loc_tk, const size_t indent,
+    auto shift_by_register(const emit_site site,
                            const arithmetic_operator operation,
                            const operand& dst, const operand& count,
                            const loaded_destination& loaded,
                            const runtime_check& check) -> void {
 
         const operand amount{
-            source_register(src_loc_tk, indent, count, std::nullopt),
+            source_register(site, count, std::nullopt),
         };
 
         if (check.enabled) {
-            check_shift_count(src_loc_tk, indent, amount, dst.type_ref());
+            check_shift_count(site, amount, dst.type_ref());
         }
 
         const bool is_left{operation == arithmetic_operator::shift_left};
 
-        assembler_.register_op(
-            indent, is_left ? op::sll : op::sra, loaded.value.register_name(),
-            loaded.value.register_name(), amount.register_name());
+        assembler_.register_op(site.indent, is_left ? op::sll : op::sra,
+                               loaded.value.register_name(),
+                               loaded.value.register_name(),
+                               amount.register_name());
 
-        store_operation_result(indent, dst, loaded.address, loaded.value,
+        store_operation_result(site.indent, dst, loaded.address, loaded.value,
                                is_left);
     }
 
@@ -3292,8 +3236,7 @@ class machine_rv32i : public machine {
         assembler_.srai(indent, dst, dst, shift);
     }
 
-    auto source_register(const token& src_loc_tk, const size_t indent,
-                         const operand& src,
+    auto source_register(const emit_site site, const operand& src,
                          const std::optional<int32_t> constant) -> operand {
 
         if (src.is_register()) {
@@ -3301,10 +3244,10 @@ class machine_rv32i : public machine {
         }
 
         const operand right{
-            alloc_scratch_register(src_loc_tk, indent, default_type()),
+            alloc_scratch_register(site, default_type()),
         };
 
-        load_operand(src_loc_tk, indent, right, src, constant);
+        load_operand(site, right, src, constant);
 
         return right;
     }
@@ -3329,12 +3272,12 @@ class machine_rv32i : public machine {
         };
     }
 
-    auto store_byte_parts(const token& src_loc_tk, const size_t indent,
+    auto store_byte_parts(const emit_site site,
                           const std::span<const byte_part> parts,
                           const operand& dst, const size_t size_bytes) -> void {
 
         const operand address{
-            unrolled_address(src_loc_tk, indent, dst, size_bytes),
+            unrolled_address(site, dst, size_bytes),
         };
 
         const bool has_load{
@@ -3343,9 +3286,7 @@ class machine_rv32i : public machine {
         };
 
         const operand value{
-            has_load
-                ? alloc_scratch_register(src_loc_tk, indent, default_type())
-                : operand{},
+            has_load ? alloc_scratch_register(site, default_type()) : operand{},
         };
 
         for (const byte_part& p : parts) {
@@ -3354,52 +3295,50 @@ class machine_rv32i : public machine {
             };
 
             if (p.value == 0) {
-                assembler_.store(indent, store_op(p.size_bytes), "zero",
+                assembler_.store(site.indent, store_op(p.size_bytes), "zero",
                                  displacement, address.base_register());
 
                 continue;
             }
 
             if (p.needs_load) {
-                assembler_.li(indent, value.register_name(), p.value);
+                assembler_.li(site.indent, value.register_name(), p.value);
             }
 
-            assembler_.store(indent, store_op(p.size_bytes),
+            assembler_.store(site.indent, store_op(p.size_bytes),
                              value.register_name(), displacement,
                              address.base_register());
         }
     }
 
-    auto store_constant_result(const token& src_loc_tk, const size_t indent,
-                               const operand& dst, const int32_t constant)
-        -> void {
+    auto store_constant_result(const emit_site site, const operand& dst,
+                               const int32_t constant) -> void {
 
         const operation_scope scope{*this, dst};
 
         const operand address{
-            dst.is_memory() ? lower_address(src_loc_tk, indent, dst)
-                            : operand{},
+            dst.is_memory() ? lower_address(site, dst) : operand{},
         };
 
         if (dst.is_memory() and constant == 0) {
-            store_operation_result(indent, dst, address,
+            store_operation_result(site.indent, dst, address,
                                    operand::reg("zero", default_type()), false);
 
             return;
         }
 
-        const operand value{working_register(src_loc_tk, indent, dst)};
+        const operand value{working_register(site, dst)};
 
-        assembler_.li(indent, value.register_name(), constant);
-        store_operation_result(indent, dst, address, value, false);
+        assembler_.li(site.indent, value.register_name(), constant);
+        store_operation_result(site.indent, dst, address, value, false);
     }
 
-    auto store_low_bits(const token& src_loc_tk, const size_t indent,
-                        const operand& dst, const operand& value) -> void {
+    auto store_low_bits(const emit_site site, const operand& dst,
+                        const operand& value) -> void {
 
-        const operand lowered{lower_address(src_loc_tk, indent, dst)};
+        const operand lowered{lower_address(site, dst)};
 
-        assembler_.store(indent, store_op(dst.type_ref().size_bytes()),
+        assembler_.store(site.indent, store_op(dst.type_ref().size_bytes()),
                          value.register_name(), lowered.displacement(),
                          lowered.base_register());
     }
@@ -3420,21 +3359,20 @@ class machine_rv32i : public machine {
 
     // keeps an unrolled access of 'size_bytes' within the load/store offset
     // range
-    [[nodiscard]] auto unrolled_address(const token& src_loc_tk,
-                                        const size_t indent,
+    [[nodiscard]] auto unrolled_address(const emit_site site,
                                         const operand& address,
                                         const size_t size_bytes) -> operand {
 
-        operand lowered{lower_address(src_loc_tk, indent, address)};
+        operand lowered{lower_address(site, address)};
 
         if (lowered.displacement() + static_cast<int64_t>(size_bytes) - 1 >
             assembler_rv32i::immediate_max) {
 
             const operand pointer{
-                alloc_scratch_register(src_loc_tk, indent, default_type()),
+                alloc_scratch_register(site, default_type()),
             };
 
-            address_of(src_loc_tk, indent, pointer, lowered);
+            address_of(site, pointer, lowered);
 
             lowered = memory_at(pointer);
         }
@@ -3444,11 +3382,11 @@ class machine_rv32i : public machine {
     }
 
     // the value compared with the limit, the index or the end 'index + count'
-    [[nodiscard]] auto
-    upper_bound_top(const token& src_loc_tk, const size_t indent,
-                    const bounds_range& range, const operand& limit,
-                    const bool lower_checked, failure_tests& tests)
-        -> std::string {
+    [[nodiscard]] auto upper_bound_top(const emit_site site,
+                                       const bounds_range& range,
+                                       const operand& limit,
+                                       const bool lower_checked,
+                                       failure_tests& tests) -> std::string {
 
         const std::string_view index{range.checked.register_name()};
 
@@ -3459,14 +3397,14 @@ class machine_rv32i : public machine {
         const operand& reg_count{*range.count};
 
         const operand sum{
-            alloc_scratch_register(src_loc_tk, indent, default_type()),
+            alloc_scratch_register(site, default_type()),
         };
 
         const std::string& top{sum.register_name()};
 
         // after the lower checks both are below 2^31, so the sum cannot wrap
         if (lower_checked) {
-            assembler_.add(indent, top, index, reg_count.register_name());
+            assembler_.add(site.indent, top, index, reg_count.register_name());
             return top;
         }
 
@@ -3477,33 +3415,33 @@ class machine_rv32i : public machine {
         // high word of zero leaves the unsigned compare of 'top' with the
         // limit, which may be 2^31 or more
         const operand high{
-            alloc_scratch_register(src_loc_tk, indent, default_type()),
+            alloc_scratch_register(site, default_type()),
         };
 
-        assembler_.srai(indent, high.register_name(), index, sign_shift_);
+        assembler_.srai(site.indent, high.register_name(), index, sign_shift_);
 
-        assembler_.srai(indent, limit.register_name(),
+        assembler_.srai(site.indent, limit.register_name(),
                         reg_count.register_name(), sign_shift_);
 
-        assembler_.add(indent, high.register_name(), high.register_name(),
+        assembler_.add(site.indent, high.register_name(), high.register_name(),
                        limit.register_name());
 
-        assembler_.add(indent, top, index, reg_count.register_name());
-        assembler_.sltu(indent, limit.register_name(), top, index);
+        assembler_.add(site.indent, top, index, reg_count.register_name());
+        assembler_.sltu(site.indent, limit.register_name(), top, index);
 
-        assembler_.add(indent, high.register_name(), high.register_name(),
+        assembler_.add(site.indent, high.register_name(), high.register_name(),
                        limit.register_name());
 
         // note: a carry needs a negative operand, so the high word is not
         //       positive and the end below 2^32; below the minimum the high
         //       word is less than the sign of 'top'
 
-        assembler_.srai(indent, limit.register_name(), top, sign_shift_);
+        assembler_.srai(site.indent, limit.register_name(), top, sign_shift_);
 
-        fail_if(src_loc_tk, indent, tests, op::blt, high.register_name(),
+        fail_if(site, tests, op::blt, high.register_name(),
                 limit.register_name());
 
-        pass_if(indent, tests, op::blt, high.register_name(), "zero");
+        pass_if(site.indent, tests, op::blt, high.register_name(), "zero");
 
         return top;
     }
@@ -3519,7 +3457,7 @@ class machine_rv32i : public machine {
             const operand after_head{offset_by(address, loop.head_size_bytes)};
 
             const operand pointer{
-                load_pointer(walk.src_loc_tk, walk.indent, after_head),
+                load_pointer({walk.src_loc_tk, walk.indent}, after_head),
             };
 
             pointers.push_back(pointer);
@@ -3527,14 +3465,14 @@ class machine_rv32i : public machine {
         }
 
         const operand end{
-            alloc_scratch_register(walk.src_loc_tk, walk.indent,
+            alloc_scratch_register({walk.src_loc_tk, walk.indent},
                                    default_type()),
         };
 
-        comment(walk.src_loc_tk, walk.indent, "{}",
+        comment({walk.src_loc_tk, walk.indent}, "{}",
                 describe_loop(walk.verb, loop.width));
 
-        set_loop_end(walk.src_loc_tk, walk.indent, end, pointers.front(),
+        set_loop_end({walk.src_loc_tk, walk.indent}, end, pointers.front(),
                      loop.chunk_count * loop.width);
 
         assembler_.label(walk.indent, chunk_loop_.name);
@@ -3551,7 +3489,7 @@ class machine_rv32i : public machine {
             return;
         }
 
-        comment(walk.src_loc_tk, walk.indent, "{} {} B tail", walk.verb,
+        comment({walk.src_loc_tk, walk.indent}, "{} {} B tail", walk.verb,
                 loop.tail_size_bytes);
 
         // the pointers are at a boundary of the loop width
@@ -3572,7 +3510,7 @@ class machine_rv32i : public machine {
         const operation_scope walk_scope{*this};
 
         if (is_unrolled) {
-            comment_aligned_parts(walk.src_loc_tk, walk.indent, walk.verb,
+            comment_aligned_parts({walk.src_loc_tk, walk.indent}, walk.verb,
                                   size_bytes, walk.starts);
 
             walk_unrolled(walk, size_bytes);
@@ -3582,7 +3520,7 @@ class machine_rv32i : public machine {
 
         const known_loop loop{plan_known_loop(size_bytes, walk.starts)};
 
-        comment_known_loop(walk.src_loc_tk, walk.indent, walk.verb, loop,
+        comment_known_loop({walk.src_loc_tk, walk.indent}, walk.verb, loop,
                            walk.starts);
 
         if (loop.head_size_bytes != 0) {
@@ -3598,7 +3536,7 @@ class machine_rv32i : public machine {
     auto walk_runtime_bytes(const runtime_walk& walk) -> void {
         const std::string_view count{walk.count.register_name()};
 
-        comment(walk.src_loc_tk, walk.indent, "{}; skip if none",
+        comment({walk.src_loc_tk, walk.indent}, "{}; skip if none",
                 describe_loop(walk.verb, 1));
 
         assembler_.beqz(walk.indent, count, walk_end_.reference);
@@ -3618,7 +3556,7 @@ class machine_rv32i : public machine {
 
         const std::string_view count{walk.count.register_name()};
 
-        comment(walk.src_loc_tk, walk.indent,
+        comment({walk.src_loc_tk, walk.indent},
                 "split bytes into chunks and tail; skip loop if none");
 
         assembler_.andi(walk.indent, chunks.register_name(), count,
@@ -3632,7 +3570,7 @@ class machine_rv32i : public machine {
         assembler_.add(walk.indent, chunks.register_name(),
                        chunks.register_name(), walk.src.register_name());
 
-        comment(walk.src_loc_tk, walk.indent, "{}",
+        comment({walk.src_loc_tk, walk.indent}, "{}",
                 describe_loop(walk.verb, width));
 
         walk_runtime_loop(walk, chunks.register_name(), width);
@@ -3647,7 +3585,7 @@ class machine_rv32i : public machine {
 
         const loop_start start{plan_loop_start(starts)};
 
-        comment_pointer_loop(walk.src_loc_tk, walk.indent, start, starts,
+        comment_pointer_loop({walk.src_loc_tk, walk.indent}, start, starts,
                              bulk.alignment);
 
         // without a known alignment every access is a byte
@@ -3659,11 +3597,11 @@ class machine_rv32i : public machine {
         // the end of the chunks, also the scratch of the head check and the
         // halfword tail test
         const operand chunks{
-            alloc_scratch_register(walk.src_loc_tk, walk.indent,
+            alloc_scratch_register({walk.src_loc_tk, walk.indent},
                                    default_type()),
         };
 
-        comment(walk.src_loc_tk, walk.indent, "{}: end of {}, {}: tail bytes",
+        comment({walk.src_loc_tk, walk.indent}, "{}: end of {}, {}: tail bytes",
                 chunks.register_name(),
                 start.width == word_size_bytes_ ? "words" : "halfwords",
                 walk.count.register_name());
@@ -3684,7 +3622,7 @@ class machine_rv32i : public machine {
 
         const std::string_view count{walk.count.register_name()};
 
-        comment(walk.src_loc_tk, walk.indent, "{} {} B head", walk.verb,
+        comment({walk.src_loc_tk, walk.indent}, "{} {} B head", walk.verb,
                 head_size_bytes);
 
         if ((head_size_bytes & size_t{1}) != 0) {
@@ -3735,7 +3673,7 @@ class machine_rv32i : public machine {
         const std::string_view count{walk.count.register_name()};
 
         if (width == word_size_bytes_) {
-            comment(walk.src_loc_tk, walk.indent, "{} optional 2-byte tail",
+            comment({walk.src_loc_tk, walk.indent}, "{} optional 2-byte tail",
                     walk.verb);
 
             assembler_.andi(walk.indent, chunks.register_name(), count, 2);
@@ -3748,7 +3686,7 @@ class machine_rv32i : public machine {
             assembler_.andi(walk.indent, count, count, 1);
         }
 
-        comment(walk.src_loc_tk, walk.indent, "{} optional final byte",
+        comment({walk.src_loc_tk, walk.indent}, "{} optional final byte",
                 walk.verb);
 
         assembler_.beqz(walk.indent, count, walk_end_.reference);
@@ -3762,47 +3700,47 @@ class machine_rv32i : public machine {
 
         std::vector<operand> at;
         for (const operand& address : walk.addresses) {
-            at.push_back(unrolled_address(walk.src_loc_tk, walk.indent, address,
-                                          size_bytes));
+            at.push_back(unrolled_address({walk.src_loc_tk, walk.indent},
+                                          address, size_bytes));
         }
 
         walk_parts(walk, size_bytes, walk.starts, at);
     }
 
     // a register destination holds the result directly, memory needs a scratch
-    [[nodiscard]] auto working_register(const token& src_loc_tk,
-                                        const size_t indent, const operand& dst)
-        -> operand {
+    [[nodiscard]] auto working_register(const emit_site site,
+                                        const operand& dst) -> operand {
 
         if (dst.is_register()) {
             return dst;
         }
 
-        return alloc_scratch_register(src_loc_tk, indent, default_type());
+        return alloc_scratch_register(site, default_type());
     }
 
     // every access matched or the range was empty, unless a mismatch branched
     // to the false exit
-    auto write_compare_result(const token& src_loc_tk, const size_t indent,
-                              const operand& result,
+    auto write_compare_result(const emit_site site, const operand& result,
                               const compare_registers& registers,
                               const bool inverted) -> void {
 
-        comment(src_loc_tk, indent, "all matched or empty: {}",
-                inverted ? "false" : "true");
+        comment(site, "all matched or empty: {}", inverted ? "false" : "true");
 
-        assembler_.li(indent, registers.left.register_name(), inverted ? 0 : 1);
-        assembler_.j(indent, result_end_.reference);
-        assembler_.label(indent, false_exit_.name);
+        assembler_.li(site.indent, registers.left.register_name(),
+                      inverted ? 0 : 1);
 
-        comment(src_loc_tk, indent, "mismatch: {}",
-                inverted ? "true" : "false");
+        assembler_.j(site.indent, result_end_.reference);
+        assembler_.label(site.indent, false_exit_.name);
 
-        assembler_.li(indent, registers.left.register_name(), inverted ? 1 : 0);
-        assembler_.label(indent, result_end_.name);
+        comment(site, "mismatch: {}", inverted ? "true" : "false");
+
+        assembler_.li(site.indent, registers.left.register_name(),
+                      inverted ? 1 : 0);
+
+        assembler_.label(site.indent, result_end_.name);
 
         if (not registers.left_is_result) {
-            copy_value(src_loc_tk, indent, result, registers.left);
+            copy_value(site, result, registers.left);
         }
     }
 

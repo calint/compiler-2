@@ -58,7 +58,7 @@ struct report_section {
         }
 
         if (not title.empty()) {
-            x.comment({}, 0, "{:>28}:", title);
+            x.comment({token{}, 0}, "{:>28}:", title);
 
             // note: 28 is the length of the longest name, 'removed same target
             //       branches', the entries below align with it
@@ -66,15 +66,15 @@ struct report_section {
 
         for (const report_entry& entry : entries) {
             if (entry.value.empty()) {
-                x.comment({}, 0, "{:>28}", entry.name);
+                x.comment({token{}, 0}, "{:>28}", entry.name);
                 continue;
             }
 
-            x.comment({}, 0, "{:>28}: {}", entry.name, entry.value);
+            x.comment({token{}, 0}, "{:>28}: {}", entry.name, entry.value);
         }
 
         if (not title.empty()) {
-            x.comment({}, 0, "");
+            x.comment({token{}, 0}, "");
         }
     }
 };
@@ -101,11 +101,11 @@ class report_renderer final {
 
         // set apart from the reports above
         if (not register_lines.empty()) {
-            x.comment({}, 0, "");
+            x.comment({token{}, 0}, "");
         }
 
         for (const std::string& line : register_lines) {
-            x.comment({}, 0, "{}", line);
+            x.comment({token{}, 0}, "{}", line);
         }
     }
 
@@ -337,7 +337,7 @@ class program final {
         // the zero padding places each dat at the offset the data table gave it
         for (const placed_dat& dat : tc_.data().dats()) {
             if (dat.padding_bytes != 0) {
-                x.comment({}, 0, "padding {} B", dat.padding_bytes);
+                x.comment({token{}, 0}, "padding {} B", dat.padding_bytes);
                 x.emit_zero_data(dat.padding_bytes);
             }
 
@@ -529,7 +529,7 @@ class program final {
 
         machine& x{tc.machine()};
 
-        x.comment({}, 0, "");
+        x.comment({token{}, 0}, "");
         x.emit_read_only_constants(tc.data().constants());
     }
 

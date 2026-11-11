@@ -192,7 +192,7 @@ class stmt_builtin_convert final : public statement {
         const operand converted{
             dst.is_register()
                 ? x.register_view(dst.operand(), get_type())
-                : x.alloc_scratch_register(tok(), indent, get_type()),
+                : x.alloc_scratch_register({tok(), indent}, get_type()),
         };
 
         // the argument is made at the width of the type, where its
@@ -202,7 +202,7 @@ class stmt_builtin_convert final : public statement {
         const operand widened{x.register_view(converted, dst.type_ref())};
 
         if (dst.type_ref().size_bytes() > get_type().size_bytes()) {
-            x.copy_value(tok(), indent, widened, converted);
+            x.copy_value({tok(), indent}, widened, converted);
         }
 
         get_unary_ops().compile(x, indent, tok(), widened,
@@ -212,8 +212,8 @@ class stmt_builtin_convert final : public statement {
             return;
         }
 
-        x.copy_value(tok(), indent, dst.operand(), widened);
-        x.free_scratch_register(tok(), indent, converted);
+        x.copy_value({tok(), indent}, dst.operand(), widened);
+        x.free_scratch_register({tok(), indent}, converted);
     }
 
     // the argument in a scratch register of 'scratch_type', the unary ops
@@ -226,7 +226,7 @@ class stmt_builtin_convert final : public statement {
         machine& x{tc.machine()};
 
         const operand wide{
-            x.alloc_scratch_register(tok(), indent, scratch_type),
+            x.alloc_scratch_register({tok(), indent}, scratch_type),
         };
 
         argument().compile(tc, indent,
@@ -235,8 +235,8 @@ class stmt_builtin_convert final : public statement {
         // a 'bool' is not negated, e.g. the '-' of '-i8(b)' applies
         // to the copy
         if (scratch_type.is_bool()) {
-            x.copy_value(tok(), indent, target.operand(), wide);
-            x.free_scratch_register(tok(), indent, wide);
+            x.copy_value({tok(), indent}, target.operand(), wide);
+            x.free_scratch_register({tok(), indent}, wide);
 
             uops.compile(x, indent, tok(), target.operand(), uops_check);
 
@@ -253,12 +253,12 @@ class stmt_builtin_convert final : public statement {
                 x.register_view(wide, target.type_ref()),
             };
 
-            x.copy_value(tok(), indent, widened, wide);
+            x.copy_value({tok(), indent}, widened, wide);
 
             uops.compile(x, indent, tok(), widened, uops_check);
 
-            x.copy_value(tok(), indent, target.operand(), widened);
-            x.free_scratch_register(tok(), indent, wide);
+            x.copy_value({tok(), indent}, target.operand(), widened);
+            x.free_scratch_register({tok(), indent}, wide);
 
             return;
         }
@@ -267,8 +267,8 @@ class stmt_builtin_convert final : public statement {
         // store also narrows their result
         uops.compile(x, indent, tok(), wide, uops_check);
 
-        x.copy_value(tok(), indent, target.operand(), wide);
-        x.free_scratch_register(tok(), indent, wide);
+        x.copy_value({tok(), indent}, target.operand(), wide);
+        x.free_scratch_register({tok(), indent}, wide);
     }
 
     // a wider destination would compute the argument at its own width and

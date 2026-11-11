@@ -42,7 +42,7 @@ class unary_ops final {
         -> void {
 
         for (const arithmetic_operator op : applied_ops(check)) {
-            x.unary(src_loc_tk, indent, op, dst, check);
+            x.unary({src_loc_tk, indent}, op, dst, check);
         }
     }
 

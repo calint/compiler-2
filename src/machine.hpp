@@ -37,6 +37,21 @@ struct runtime_check {
     bool enabled{};
 };
 
+// where an emitted instruction comes from: the source token the listing
+// attributes it to and the indent it is written at
+//
+// note: passed by value for one emit call; 'src_loc_tk' refers to a token of
+//       the parsed program or of the caller, so a holder that outlives the
+//       call copies the token instead
+struct emit_site {
+    // note: a constructor keeps the call sites short: '{tok(), indent}'
+    emit_site(const token& src_loc_tk_in, const size_t indent_in)
+        : src_loc_tk{src_loc_tk_in}, indent{indent_in} {}
+
+    std::reference_wrapper<const token> src_loc_tk;
+    size_t indent{};
+};
+
 // the registers of the calls the target provides, see 'call_target'
 struct target_call_names {
     // the descriptor or sector, the address and the count or size; 'exit'
@@ -382,9 +397,9 @@ class machine {
         std::vector<operand> registers_;
 
       public:
-        held_registers(machine& backend, const token& src_loc_tk,
-                       const size_t indent)
-            : machine_{backend}, src_loc_tk_{src_loc_tk}, indent_{indent},
+        held_registers(machine& backend, const emit_site site)
+            : machine_{backend}, src_loc_tk_{site.src_loc_tk},
+              indent_{site.indent},
               uncaught_at_start_{std::uncaught_exceptions()} {}
 
         held_registers(const held_registers&) = delete;
@@ -397,17 +412,16 @@ class machine {
                 return;
             }
 
-            machine_.free_scratch_registers(src_loc_tk_, indent_, registers_);
+            machine_.free_scratch_registers({src_loc_tk_, indent_}, registers_);
         }
 
         // a scratch register held until the scope ends or 'release'
-        [[nodiscard]] auto alloc_scratch_register(const token& src_loc_tk,
-                                                  const size_t indent,
+        [[nodiscard]] auto alloc_scratch_register(const emit_site site,
                                                   const type& type_ref)
             -> operand {
 
             const operand reg{
-                machine_.alloc_scratch_register(src_loc_tk, indent, type_ref),
+                machine_.alloc_scratch_register(site, type_ref),
             };
 
             registers_.push_back(reg);
@@ -422,7 +436,7 @@ class machine {
         // frees the registers before the scope ends, e.g. before a call
         // that would save them as live
         auto release() -> void {
-            machine_.free_scratch_registers(src_loc_tk_, indent_, registers_);
+            machine_.free_scratch_registers({src_loc_tk_, indent_}, registers_);
             registers_.clear();
         }
     };
@@ -592,7 +606,7 @@ class machine {
                 // trace
                 const register_pool::allocation entry{pool.top()};
 
-                machine_.pop_allocation(entry.src_loc_tk, entry.indent,
+                machine_.pop_allocation({entry.src_loc_tk, entry.indent},
                                         entry.index);
             }
 
@@ -605,16 +619,16 @@ class machine {
         // caller has given those up, so they are dead once 'src' is read,
         // e.g. the index of 'b[j]' in 'a[i] = b[j]'
         [[nodiscard]] auto
-        alloc_load_register(const token& src_loc_tk, const size_t indent,
-                            const type& type_ref, const operand& dst,
-                            const operand& src) const -> operand {
+        alloc_load_register(const emit_site site, const type& type_ref,
+                            const operand& dst, const operand& src) const
+            -> operand {
 
             const uint32_t address{machine_.registers_mask(src)};
             const uint32_t kept{saved_mask_ | machine_.registers_mask(dst)};
             const uint32_t consumed{src.is_memory() ? address & ~kept : 0};
 
-            return machine_.alloc_scratch_register_from(src_loc_tk, indent,
-                                                        type_ref, consumed);
+            return machine_.alloc_scratch_register_from(site, type_ref,
+                                                        consumed);
         }
 
         // the registers of 'value' are not picked for scratch until the scope
@@ -804,16 +818,15 @@ class machine {
     // an enabled check makes a signed result that does not fit the width of
     // 'dst' jump to the overflow failure handler, also in 'multiply' and
     // 'unary'
-    virtual auto add_subtract(const token& src_loc_tk, const size_t indent,
+    virtual auto add_subtract(const emit_site site,
                               const arithmetic_operator operation,
                               const operand& dst, const operand& src,
                               const runtime_check& check = {}) -> void = 0;
 
-    virtual auto address_of(const token& src_loc_tk, const size_t indent,
-                            const operand& dst, const operand& address)
-        -> void = 0;
+    virtual auto address_of(const emit_site site, const operand& dst,
+                            const operand& address) -> void = 0;
 
-    virtual auto bitwise(const token& src_loc_tk, const size_t indent,
+    virtual auto bitwise(const emit_site site,
                          const arithmetic_operator operation,
                          const operand& dst, const operand& src) -> void = 0;
 
@@ -823,39 +836,35 @@ class machine {
     // jumps to the stack overflow handler when a noinline call, made with the
     // registers allocated now, does not fit in the stack; only a target that
     // 'is_stack_bounded' is asked
-    virtual auto check_stack_capacity([[maybe_unused]] const token& src_loc_tk,
-                                      [[maybe_unused]] const size_t indent)
+    virtual auto check_stack_capacity([[maybe_unused]] const emit_site site)
         -> void {
 
         std::unreachable();
     }
 
-    virtual auto compare_and_branch(const token& src_loc_tk,
-                                    const size_t indent, const operand& lhs,
+    virtual auto compare_and_branch(const emit_site site, const operand& lhs,
                                     const operand& rhs,
                                     const comparison_action& action)
         -> void = 0;
 
     // 'alignment' is the alignment known for both addresses
-    virtual auto copy_block(const token& src_loc_tk, const size_t indent,
-                            const operand& dst, const operand& src,
-                            const size_t size_bytes, const size_t alignment)
-        -> void = 0;
+    virtual auto copy_block(const emit_site site, const operand& dst,
+                            const operand& src, const size_t size_bytes,
+                            const size_t alignment) -> void = 0;
 
     // copies the count of elements 'emit_count' compiles after the request
     // emits the addresses, in the order of the arguments
     virtual auto
-    copy_elements(const token& src_loc_tk, const size_t indent,
-                  const size_t element_size_bytes,
+    copy_elements(const emit_site site, const size_t element_size_bytes,
                   const std::function_ref<void(const operand&)> emit_count,
                   const copy_request& request) -> void = 0;
 
-    virtual auto copy_value(const token& src_loc_tk, const size_t indent,
-                            const operand& dst, const operand& src) -> void = 0;
+    virtual auto copy_value(const emit_site site, const operand& dst,
+                            const operand& src) -> void = 0;
 
     // an enabled check makes a zero divisor, and the minimum of the type of
     // 'dst' divided by -1, jump to the division failure handler
-    virtual auto divide(const token& src_loc_tk, const size_t indent,
+    virtual auto divide(const emit_site site,
                         const arithmetic_operator operation, const operand& dst,
                         const operand& divisor, const runtime_check& check)
         -> void = 0;
@@ -865,8 +874,7 @@ class machine {
     // arguments, the elements of both arrays are compared at the width
     // 'alignment' allows and the result, 1 when they are equal, goes to 'dst'
     virtual auto
-    equal_elements(const token& src_loc_tk, const size_t indent,
-                   const size_t element_size_bytes,
+    equal_elements(const emit_site site, const size_t element_size_bytes,
                    const std::function_ref<void(const operand&)> emit_count,
                    const address_emitter& lhs, const address_emitter& rhs,
                    const size_t alignment, const operand& dst) -> void = 0;
@@ -874,16 +882,15 @@ class machine {
     // compares 'size_bytes' at the addresses 'lhs' and 'rhs', whose registers
     // the caller holds, and puts 1 into the destination of the request when
     // they are equal, when they differ if it is 'inverted'
-    virtual auto memory_equal(const token& src_loc_tk, const size_t indent,
-                              const size_t size_bytes, const operand& lhs,
-                              const operand& rhs,
+    virtual auto memory_equal(const emit_site site, const size_t size_bytes,
+                              const operand& lhs, const operand& rhs,
                               const equality_request& request) -> void = 0;
 
     virtual auto return_function(const size_t indent) -> void = 0;
 
     // an enabled check makes a count below zero or not below the width of the
     // type of 'dst' jump to the shift failure handler
-    virtual auto shift(const token& src_loc_tk, const size_t indent,
+    virtual auto shift(const emit_site site,
                        const arithmetic_operator operation, const operand& dst,
                        const operand& count, const runtime_check& check)
         -> void = 0;
@@ -892,22 +899,21 @@ class machine {
     // backend lays them out in and returns its label; it is called only when
     // the bytes are not stored with immediates
     virtual auto store_bytes(
-        const token& src_loc_tk, const size_t indent,
-        const std::string_view bytes, const operand& dst,
+        const emit_site site, const std::string_view bytes, const operand& dst,
         const size_t alignment,
         const std::function_ref<std::string(std::string_view)> add_constant)
         -> void = 0;
 
-    virtual auto unary(const token& src_loc_tk, const size_t indent,
+    virtual auto unary(const emit_site site,
                        const arithmetic_operator operation, const operand& dst,
                        const runtime_check& check = {}) -> void = 0;
 
     // writes the lines buffered from 'start'
     virtual auto write_assembly(std::ostream& os) -> void = 0;
 
-    virtual auto zero(const token& src_loc_tk, const size_t indent,
-                      const operand& dst, const size_t size_bytes,
-                      const size_t alignment) -> void = 0;
+    virtual auto zero(const emit_site site, const operand& dst,
+                      const size_t size_bytes, const size_t alignment)
+        -> void = 0;
 
     //
     // class methods
@@ -920,20 +926,19 @@ class machine {
     // a register that an instruction or the calling convention fixes, held
     // until 'free_named_register'
     [[nodiscard]] auto
-    alloc_named_register(const token& src_loc_tk, const size_t indent,
+    alloc_named_register(const emit_site site,
                          const std::string_view register_name,
                          const type& type_ref) -> operand {
 
-        reserve_named_register(src_loc_tk, indent, register_name);
+        reserve_named_register(site, register_name);
         return make_register_operand(register_name, type_ref);
     }
 
     // the first free register in the scratch order of the backend
-    [[nodiscard]] auto alloc_scratch_register(const token& src_loc_tk,
-                                              const size_t indent,
+    [[nodiscard]] auto alloc_scratch_register(const emit_site site,
                                               const type& type_ref) -> operand {
 
-        return alloc_scratch_register_from(src_loc_tk, indent, type_ref, 0);
+        return alloc_scratch_register_from(site, type_ref, 0);
     }
 
     // starts the data section, after the code and every routine it uses
@@ -967,8 +972,7 @@ class machine {
     // 'slot_address' is the address the callee finds in
     // 'slot_register', none when the register is not used; 'name' is the
     // callee's for the register report
-    auto call_function(const token& src_loc_tk, const size_t indent,
-                       const std::string_view name,
+    auto call_function(const emit_site site, const std::string_view name,
                        const std::string_view label,
                        const operand& frame_address,
                        const std::optional<operand>& slot_address) -> void {
@@ -985,21 +989,20 @@ class machine {
 
         if (state_.trace.is_enabled()) {
             call_log_.add_noinline_call({
-                .call_site_tk{src_loc_tk},
+                .call_site_tk{site.src_loc_tk},
                 .name{std::string{name}},
                 .saved{saved.size()},
             });
         }
 
         if (not saved.empty()) {
-            comment(src_loc_tk, indent,
-                    "before call: save allocated registers");
+            comment(site, "before call: save allocated registers");
         }
 
-        save_call_registers(indent, saved);
-        load_slot_address(src_loc_tk, indent, slot_address);
+        save_call_registers(site.indent, saved);
+        load_slot_address(site, slot_address);
 
-        comment(src_loc_tk, indent, "set function frame base");
+        comment(site, "set function frame base");
 
         // a far frame address is lowered through a scratch register, which
         // must not be the loaded slot register
@@ -1008,17 +1011,17 @@ class machine {
             make_register_operand(slot_register(), default_type()),
         };
 
-        address_of(src_loc_tk, indent,
+        address_of(site,
                    make_register_operand(frame_base_register(), default_type()),
                    frame_address);
 
-        emit_call(indent, label);
+        emit_call(site.indent, label);
 
         if (not saved.empty()) {
-            comment(src_loc_tk, indent, "after call: restore saved registers");
+            comment(site, "after call: restore saved registers");
         }
 
-        restore_call_registers(indent, saved);
+        restore_call_registers(site.indent, saved);
     }
 
     // a call of 'read', 'write', 'sector_read' or 'sector_write':
@@ -1029,8 +1032,7 @@ class machine {
     // size of a sector transfer is 'sector_size_bytes', a sector past the end
     // of the card panics where the target can tell
     auto
-    call_target(const token& src_loc_tk, const size_t indent,
-                const target_call function,
+    call_target(const emit_site site, const target_call function,
                 const std::function_ref<void(std::span<const operand> args)>
                     emit_arguments,
                 const std::function_ref<void(const operand& result)> use_result)
@@ -1041,8 +1043,7 @@ class machine {
         std::vector<operand> args;
         args.reserve(target_.target_calls.arguments.size());
         for (const std::string_view name : target_.target_calls.arguments) {
-            args.push_back(
-                alloc_named_register(src_loc_tk, indent, name, default_type()));
+            args.push_back(alloc_named_register(site, name, default_type()));
         }
 
         emit_arguments(args);
@@ -1053,13 +1054,13 @@ class machine {
         };
 
         if (is_sector) {
-            emit_target_call(src_loc_tk, indent, function);
+            emit_target_call(site, function);
             return;
         }
 
-        const operand result{alloc_target_call_result(src_loc_tk, indent)};
+        const operand result{alloc_target_call_result(site)};
 
-        emit_target_call(src_loc_tk, indent, function);
+        emit_target_call(site, function);
 
         use_result(result);
     }
@@ -1073,8 +1074,7 @@ class machine {
 
     // jumps to the bounds failure handler when 'range' is outside its array,
     // by the bounds that 'options' turns on
-    auto check_bounds(const token& src_loc_tk, const size_t indent,
-                      const bounds_range& range,
+    auto check_bounds(const emit_site site, const bounds_range& range,
                       const bounds_check_options& options) -> void {
 
         if (not options.upper and not options.lower) {
@@ -1092,33 +1092,32 @@ class machine {
 
         assert(not range.count_lower_checked or range.count);
 
-        comment(src_loc_tk, indent, "bounds check begin");
+        comment(site, "bounds check begin");
 
         const bounds_plan plan{
-            .sign_tested{lower_bound_tests(src_loc_tk, indent, range, options)},
+            .sign_tested{lower_bound_tests(site, range, options)},
             .upper{options.upper},
             .lower_checked{options.lower},
         };
 
-        emit_bounds_check(src_loc_tk, indent, range, plan);
+        emit_bounds_check(site, range, plan);
 
-        comment(src_loc_tk, indent, "bounds check end");
+        comment(site, "bounds check end");
     }
 
     // jumps to the frame overflow handler when the callee frame at
     // 'frame_address' does not fit in the variables; 'frame_size_label' is the
     // assembler constant of its size, defined after the body
-    auto check_frame_capacity(const token& src_loc_tk, const size_t indent,
+    auto check_frame_capacity(const emit_site site,
                               const operand& frame_address,
                               const std::string_view frame_size_label) -> void {
 
         assert(frame_address.is_memory());
         assert(frame_address.index_register().empty());
 
-        comment(src_loc_tk, indent, "frame capacity check begin");
+        comment(site, "frame capacity check begin");
 
-        comment(src_loc_tk, indent,
-                "callee storage starts after the caller's storage ({})",
+        comment(site, "callee storage starts after the caller's storage ({})",
                 address_text(frame_address));
 
         // note: the scratch registers of the check are freed after the end
@@ -1126,17 +1125,14 @@ class machine {
 
         const operation_scope scope{*this};
 
-        emit_frame_capacity_check(src_loc_tk, indent, frame_address,
-                                  frame_size_label);
+        emit_frame_capacity_check(site, frame_address, frame_size_label);
 
-        comment(src_loc_tk, indent, "frame capacity check end");
+        comment(site, "frame capacity check end");
     }
 
     // synthetic tokens and standalone backend calls have no source location;
     // the text may quote the source, e.g. a raw NUL that ends a line for nasm
-    auto comment(const token& src_loc_tk, const size_t indent,
-                 const std::string_view text) -> void {
-
+    auto comment(const emit_site site, const std::string_view text) -> void {
         if (state_.is_discarded) {
             return;
         }
@@ -1145,18 +1141,18 @@ class machine {
 
         assembler& output{output_.get()};
 
-        if (src_loc_tk.at_line() == 0) {
-            output.comment(indent, line);
+        if (site.src_loc_tk.get().at_line() == 0) {
+            output.comment(site.indent, line);
             return;
         }
 
-        const std::string location{locations_.for_comment(src_loc_tk)};
+        const std::string location{locations_.for_comment(site.src_loc_tk)};
 
-        output.comment(indent, location, line);
+        output.comment(site.indent, location, line);
     }
 
     template <typename... args_t>
-    auto comment(const token& src_loc_tk, const size_t indent,
+    auto comment(const emit_site site,
                  const std::format_string<args_t...> format, args_t&&... args)
         -> void {
 
@@ -1168,40 +1164,38 @@ class machine {
             std::format(format, std::forward<args_t>(args)...),
         };
 
-        comment(src_loc_tk, indent, std::string_view{text});
+        comment(site, std::string_view{text});
     }
 
     // a parameter bound to what 'to' names, with the address the call
     // computed when it did
-    auto comment_binding(const token& src_loc_tk, const size_t indent,
-                         const std::string_view from, const std::string_view to,
+    auto comment_binding(const emit_site site, const std::string_view from,
+                         const std::string_view to,
                          const std::optional<operand>& address) -> void {
 
         if (not address) {
-            comment(src_loc_tk, indent, "bind {} -> {}", from, to);
+            comment(site, "bind {} -> {}", from, to);
             return;
         }
 
-        comment(src_loc_tk, indent, "bind {} -> {} (address: {})", from, to,
+        comment(site, "bind {} -> {} (address: {})", from, to,
                 address_text(*address));
     }
 
     // the slot holds the address of the variable, e.g. a parameter of a
     // noinline body
-    auto comment_held_address(const token& src_loc_tk, const size_t indent,
-                              const std::string_view text,
+    auto comment_held_address(const emit_site site, const std::string_view text,
                               const operand& address) -> void {
 
-        comment(src_loc_tk, indent, "{} (address @ [{}])", text,
-                address_text(address));
+        comment(site, "{} (address @ [{}])", text, address_text(address));
     }
 
     // e.g. 'x: i32 (4 B @ [rbp + 8])'
-    auto comment_variable(const token& src_loc_tk, const size_t indent,
-                          const std::string_view text, const size_t size_bytes,
-                          const operand& address) -> void {
+    auto comment_variable(const emit_site site, const std::string_view text,
+                          const size_t size_bytes, const operand& address)
+        -> void {
 
-        comment(src_loc_tk, indent, "{} ({} B @ [{}])", text, size_bytes,
+        comment(site, "{} ({} B @ [{}])", text, size_bytes,
                 address_text(address));
     }
 
@@ -1271,7 +1265,7 @@ class machine {
     // compile code twice, not twice per level, unless '--versions=nested' or
     // 'last', which runs the code of every second version
     [[nodiscard]] auto
-    emit_most_efficient(const token& src_loc_tk, const size_t indent,
+    emit_most_efficient(const emit_site site,
                         const std::function_ref<void()> emit_first,
                         const std::function_ref<void()> emit_second) -> bool {
 
@@ -1280,8 +1274,7 @@ class machine {
         if (output.is_capturing() and options_.kept != kept_version::nested and
             options_.kept != kept_version::last) {
 
-            comment(src_loc_tk, indent,
-                    "kept the first of two versions, inside a version");
+            comment(site, "kept the first of two versions, inside a version");
 
             emit_first();
 
@@ -1300,7 +1293,7 @@ class machine {
 
         const version_choice choice{choose_version(first, second)};
 
-        comment(src_loc_tk, indent, choice.comment);
+        comment(site, choice.comment);
 
         compiled_version& kept{choice.keeps_first ? first : *second};
 
@@ -1355,7 +1348,7 @@ class machine {
     auto end_noinline_body() -> void {
         assert(state_.registers.scratch_count() == 0);
 
-        release_named_register(token{}, 0, frame_base_register());
+        release_named_register({token{}, 0}, frame_base_register());
 
         assembler& output{output_.get()};
 
@@ -1363,16 +1356,14 @@ class machine {
     }
 
     // the exit routine is shared, an exit is a jump to it
-    auto exit(const token& src_loc_tk, const size_t indent,
-              const operand& exit_code) -> void {
-
+    auto exit(const emit_site site, const operand& exit_code) -> void {
         const operand code{
             make_register_operand(exit_code_register(), default_type()),
         };
 
-        copy_value(src_loc_tk, indent, code, exit_code);
+        copy_value(site, code, exit_code);
 
-        emit_no_return_jump(indent, target_.routines.exit);
+        emit_no_return_jump(site.indent, target_.routines.exit);
         mark_used(target_.routines.exit);
     }
 
@@ -1385,7 +1376,7 @@ class machine {
     // balanced, optimizes the jumps, removes the reloads, then the target's
     // last steps; called once at the end of the compile pass
     auto finish() -> void {
-        release_named_register(token{}, 0, variables_base_register());
+        release_named_register({token{}, 0}, variables_base_register());
 
         // every operation freed what it allocated
         assert(state_.registers.is_empty());
@@ -1410,23 +1401,21 @@ class machine {
         return target_.frame_base_register;
     }
 
-    auto free_named_register(const token& src_loc_tk, const size_t indent,
-                             const operand& reg) -> void {
-
+    auto free_named_register(const emit_site site, const operand& reg) -> void {
         assert(reg.is_register());
 
-        release_named_register(src_loc_tk, indent, reg.register_name());
+        release_named_register(site, reg.register_name());
     }
 
-    auto free_scratch_register(const token& src_loc_tk, const size_t indent,
-                               const operand& reg) -> void {
+    auto free_scratch_register(const emit_site site, const operand& reg)
+        -> void {
 
         assert(reg.is_register());
 
         assert(state_.registers.top().holder ==
                register_pool::holder_kind::scratch);
 
-        pop_allocation(src_loc_tk, indent, pool_index(reg.register_name()));
+        pop_allocation(site, pool_index(reg.register_name()));
     }
 
     [[nodiscard]] auto has_indexed_addressing() const -> bool {
@@ -1455,15 +1444,14 @@ class machine {
     // a constant factor is resolved at the width of 'product': zero clears,
     // one needs no code, minus one negates and a power of two is a shift, the
     // other factors go to 'emit_multiply'
-    auto multiply(const token& src_loc_tk, const size_t indent,
-                  const operand& product, const operand& factor,
-                  const factor_use use, const runtime_check& check = {})
-        -> void {
+    auto multiply(const emit_site site, const operand& product,
+                  const operand& factor, const factor_use use,
+                  const runtime_check& check = {}) -> void {
 
         const std::optional<uint64_t> bits{immediate_bits(factor)};
 
         if (not bits) {
-            emit_multiply(src_loc_tk, indent, product, factor, use, check);
+            emit_multiply(site, product, factor, use, check);
             return;
         }
 
@@ -1472,9 +1460,7 @@ class machine {
         };
 
         if (factor_info.kind == factor_kind::zero) {
-            copy_value(src_loc_tk, indent, product,
-                       operand::imm(0, product.type_ref()));
-
+            copy_value(site, product, operand::imm(0, product.type_ref()));
             return;
         }
 
@@ -1483,19 +1469,17 @@ class machine {
         }
 
         if (factor_info.kind == factor_kind::minus_one) {
-            unary(src_loc_tk, indent, arithmetic_operator::negate, product,
-                  check);
-
+            unary(site, arithmetic_operator::negate, product, check);
             return;
         }
 
         // a shift does not report the bits it loses, a multiplication does
         if (factor_info.kind == factor_kind::other or check.enabled) {
-            emit_multiply(src_loc_tk, indent, product, factor, use, check);
+            emit_multiply(site, product, factor, use, check);
             return;
         }
 
-        shift(src_loc_tk, indent, arithmetic_operator::shift_left, product,
+        shift(site, arithmetic_operator::shift_left, product,
               operand::imm(factor_info.shift, default_type()), runtime_check{});
     }
 
@@ -1528,9 +1512,8 @@ class machine {
     }
 
     // an index or a count of elements becomes a byte offset
-    auto scale_index(const token& src_loc_tk, const size_t indent,
-                     const operand& index, const size_t element_size_bytes)
-        -> void {
+    auto scale_index(const emit_site site, const operand& index,
+                     const size_t element_size_bytes) -> void {
 
         // note: element sizes are limited by the variables that hold the
         //       arrays
@@ -1538,8 +1521,7 @@ class machine {
         assert(index.type_ref().size_bytes() == address_size_bytes());
         assert(element_size_bytes <= max_storage_bytes());
 
-        multiply(src_loc_tk, indent, index,
-                 operand::imm(element_size_bytes, default_type()),
+        multiply(site, index, operand::imm(element_size_bytes, default_type()),
                  factor_use::read_only);
     }
 
@@ -1595,11 +1577,10 @@ class machine {
     }
 
     // a 'bool' is stored as 0 or 1
-    auto store_boolean(const token& src_loc_tk, const size_t indent,
-                       const operand& dst, const bool value) -> void {
+    auto store_boolean(const emit_site site, const operand& dst,
+                       const bool value) -> void {
 
-        copy_value(src_loc_tk, indent, dst,
-                   operand::imm(value ? 1 : 0, default_type()));
+        copy_value(site, dst, operand::imm(value ? 1 : 0, default_type()));
     }
 
     [[nodiscard]] auto variables_base_past_vars_bytes() const
@@ -1615,8 +1596,8 @@ class machine {
     // the padding of the instance 'dst' of 'dst_type', zeroed gap by gap or as
     // the whole instance, whichever the target emits smaller; the fields are
     // written over the zeroes after
-    auto zero_padding(const token& src_loc_tk, const size_t indent,
-                      const operand& dst, const type& dst_type) -> void {
+    auto zero_padding(const emit_site site, const operand& dst,
+                      const type& dst_type) -> void {
 
         const size_t max_gap_count{target_.max_padding_gaps_zeroed_one_by_one};
 
@@ -1628,11 +1609,10 @@ class machine {
         //       with thousands of gaps would cost compile time
 
         if (gaps.size() > max_gap_count) {
-            comment(src_loc_tk, indent, "zero instance for its padding: {} B",
+            comment(site, "zero instance for its padding: {} B",
                     dst_type.size_bytes());
 
-            zero(src_loc_tk, indent, dst, dst_type.size_bytes(),
-                 dst_type.alignment());
+            zero(site, dst, dst_type.size_bytes(), dst_type.alignment());
 
             return;
         }
@@ -1640,8 +1620,8 @@ class machine {
         for (const padding_gap& gap : gaps) {
             const operand gap_dst{offset_by(dst, gap.offset)};
 
-            comment(src_loc_tk, indent, "zero padding: {} B", gap.size_bytes);
-            zero(src_loc_tk, indent, gap_dst, gap.size_bytes, gap.alignment);
+            comment(site, "zero padding: {} B", gap.size_bytes);
+            zero(site, gap_dst, gap.size_bytes, gap.alignment);
         }
     }
 
@@ -1662,7 +1642,7 @@ class machine {
     // begin and end comments: the sign tests, then the upper compare; none
     // for an empty plan, e.g. a start that the walk of its address checked,
     // under '--checks=lower' alone
-    virtual auto emit_bounds_check(const token& src_loc_tk, const size_t indent,
+    virtual auto emit_bounds_check(const emit_site site,
                                    const bounds_range& range,
                                    const bounds_plan& plan) -> void = 0;
 
@@ -1678,11 +1658,9 @@ class machine {
 
     // the compare and branch of 'check_frame_capacity', between its begin and
     // end comments
-    virtual auto
-    emit_frame_capacity_check(const token& src_loc_tk, const size_t indent,
-                              const operand& frame_address,
-                              const std::string_view frame_size_label)
-        -> void = 0;
+    virtual auto emit_frame_capacity_check(
+        const emit_site site, const operand& frame_address,
+        const std::string_view frame_size_label) -> void = 0;
 
     // the code at the start of a 'noinline' body after the frame base is
     // reserved, none by default; 'return_function' is its exit
@@ -1699,10 +1677,9 @@ class machine {
     // a multiplication that 'multiply' did not resolve: a run-time factor, a
     // constant one that is not zero, one, minus one or a power of two, or a
     // checked power of two
-    virtual auto emit_multiply(const token& src_loc_tk, const size_t indent,
-                               const operand& product, const operand& factor,
-                               const factor_use use, const runtime_check& check)
-        -> void = 0;
+    virtual auto emit_multiply(const emit_site site, const operand& product,
+                               const operand& factor, const factor_use use,
+                               const runtime_check& check) -> void = 0;
 
     // a jump to a handler or a routine that does not return, so the registers
     // are dead at the target
@@ -1725,7 +1702,7 @@ class machine {
 
     // the call of 'call_target', its arguments in their registers and the
     // result register of 'read' and 'write' allocated
-    virtual auto emit_target_call(const token& src_loc_tk, const size_t indent,
+    virtual auto emit_target_call(const emit_site site,
                                   const target_call function) -> void = 0;
 
     // the routines of the target besides 'routine_labels' that the code
@@ -1817,7 +1794,7 @@ class machine {
     // exits, with it each file of its failures has an entry
     // ('emit_failure_entry'); its comment above it
     auto emit_failure_handler(const failure_handler& handler) -> void {
-        comment({}, 0, handler.comment);
+        comment({token{}, 0}, handler.comment);
 
         if (not reports_line(handler)) {
             const std::string message{
@@ -1984,18 +1961,16 @@ class machine {
 
     // 'alloc_named_register' without an operand, for a register that the
     // backend uses by name
-    auto reserve_named_register(const token& src_loc_tk, const size_t indent,
+    auto reserve_named_register(const emit_site site,
                                 const std::string_view register_name) -> void {
 
-        comment(src_loc_tk, indent, "allocate named register {}",
-                register_name);
+        comment(site, "allocate named register {}", register_name);
 
         if (is_register_unavailable(register_name)) {
-            throw register_in_use_error(src_loc_tk, register_name);
+            throw register_in_use_error(site.src_loc_tk, register_name);
         }
 
-        push_allocation(src_loc_tk, indent, register_name,
-                        register_pool::holder_kind::named);
+        push_allocation(site, register_name, register_pool::holder_kind::named);
     }
 
     // only a target that 'is_stack_bounded' is asked
@@ -2129,9 +2104,9 @@ class machine {
 
     // the first register in the scratch order that is free or in 'consumed',
     // registers the operation protects but no one holds
-    [[nodiscard]] auto
-    alloc_scratch_register_from(const token& src_loc_tk, const size_t indent,
-                                const type& type_ref, const uint32_t consumed)
+    [[nodiscard]] auto alloc_scratch_register_from(const emit_site site,
+                                                   const type& type_ref,
+                                                   const uint32_t consumed)
         -> operand {
 
         const std::optional<std::string_view> register_name{
@@ -2139,15 +2114,14 @@ class machine {
         };
 
         if (not register_name) {
-            throw out_of_registers_error(src_loc_tk);
+            throw out_of_registers_error(site.src_loc_tk);
         }
 
-        comment(src_loc_tk, indent, "allocate scratch register -> {}",
-                *register_name);
+        comment(site, "allocate scratch register -> {}", *register_name);
 
         state_.registers.unprotect(consumed & register_mask(*register_name));
 
-        push_allocation(src_loc_tk, indent, *register_name,
+        push_allocation(site, *register_name,
                         register_pool::holder_kind::scratch);
 
         state_.max_scratch_registers = std::max(
@@ -2158,8 +2132,7 @@ class machine {
 
     // the register of the count that 'read' and 'write' return, not allocated
     // again when an argument register holds it
-    [[nodiscard]] auto alloc_target_call_result(const token& src_loc_tk,
-                                                const size_t indent)
+    [[nodiscard]] auto alloc_target_call_result(const emit_site site)
         -> operand {
 
         const target_call_names& registers{target_.target_calls};
@@ -2168,8 +2141,7 @@ class machine {
             return make_register_operand(registers.result, default_type());
         }
 
-        return alloc_named_register(src_loc_tk, indent, registers.result,
-                                    default_type());
+        return alloc_named_register(site, registers.result, default_type());
     }
 
     // a routine marked while another one is emitted is emitted only if a
@@ -2307,7 +2279,7 @@ class machine {
                 operand::imm(static_cast<int64_t>(line), default_type()),
             };
 
-            copy_value(token{}, 1, line_register, line_value);
+            copy_value({token{}, 1}, line_register, line_value);
             emit_no_return_jump(1, entry_label);
         }
 
@@ -2350,7 +2322,7 @@ class machine {
 
         output.label(0, label);
         emit_panic_message(message_label, message);
-        copy_value(token{}, 1, code, operand::imm(exit_code, default_type()));
+        copy_value({token{}, 1}, code, operand::imm(exit_code, default_type()));
         emit_no_return_jump(1, routine);
         mark_used(routine);
 
@@ -2398,12 +2370,12 @@ class machine {
                            printable(locations_.relative_name(file_ix)));
     }
 
-    auto free_scratch_registers(const token& src_loc_tk, const size_t indent,
+    auto free_scratch_registers(const emit_site site,
                                 const std::span<const operand> registers)
         -> void {
 
         for (const operand& reg : registers | std::views::reverse) {
-            free_scratch_register(src_loc_tk, indent, reg);
+            free_scratch_register(site, reg);
         }
     }
 
@@ -2416,7 +2388,7 @@ class machine {
 
     // loaded before the frame base is set, the address may be relative to the
     // caller's; the receiver already in the register is passed as is
-    auto load_slot_address(const token& src_loc_tk, const size_t indent,
+    auto load_slot_address(const emit_site site,
                            const std::optional<operand>& slot_address) -> void {
 
         if (not slot_address or
@@ -2425,10 +2397,9 @@ class machine {
             return;
         }
 
-        comment(src_loc_tk, indent, "address of the slot in a register");
+        comment(site, "address of the slot in a register");
 
-        address_of(src_loc_tk, indent,
-                   make_register_operand(slot_register(), default_type()),
+        address_of(site, make_register_operand(slot_register(), default_type()),
                    *slot_address);
     }
 
@@ -2446,8 +2417,7 @@ class machine {
 
     // the values of 'range' that a lower bound check tests for a sign, with
     // the comments of what it leaves out
-    [[nodiscard]] auto lower_bound_tests(const token& src_loc_tk,
-                                         const size_t indent,
+    [[nodiscard]] auto lower_bound_tests(const emit_site site,
                                          const bounds_range& range,
                                          const bounds_check_options& options)
         -> std::vector<operand> {
@@ -2456,7 +2426,7 @@ class machine {
             return {};
         }
 
-        comment(src_loc_tk, indent, "lower bound");
+        comment(site, "lower bound");
 
         // the compare is at the default type, 'signed_max' its largest value
         const uint64_t signed_max{
@@ -2470,8 +2440,7 @@ class machine {
         if (options.upper and not range.count and
             range.array_count <= signed_max) {
 
-            comment(src_loc_tk, indent,
-                    "{} lower bound covered by the unsigned upper bound",
+            comment(site, "{} lower bound covered by the unsigned upper bound",
                     range.checked.register_name());
 
             return {};
@@ -2480,7 +2449,7 @@ class machine {
         std::vector<operand> tested;
 
         if (range.start_lower_checked) {
-            comment(src_loc_tk, indent, "start {} lower bound already checked",
+            comment(site, "start {} lower bound already checked",
                     range.checked.register_name());
         } else {
             tested.push_back(range.checked);
@@ -2491,7 +2460,7 @@ class machine {
         }
 
         if (range.count_lower_checked) {
-            comment(src_loc_tk, indent, "count {} lower bound already checked",
+            comment(site, "count {} lower bound already checked",
                     range.count->register_name());
 
             return tested;
@@ -2542,30 +2511,28 @@ class machine {
 
     // registers are released in reverse order of allocation, the comment
     // names the register as the report does
-    auto pop_allocation(const token& src_loc_tk, const size_t indent,
-                        const size_t index) -> void {
-
+    auto pop_allocation(const emit_site site, const size_t index) -> void {
         const bool is_scratch{
             state_.registers.top().holder ==
                 register_pool::holder_kind::scratch,
         };
 
-        comment(src_loc_tk, indent, "free {} register {}",
-                is_scratch ? "scratch" : "named", register_display_name(index));
+        comment(site, "free {} register {}", is_scratch ? "scratch" : "named",
+                register_display_name(index));
 
         state_.registers.pop(index);
     }
 
     // named and scratch allocations share one stack, each is recorded for
     // the report of the use of registers
-    auto push_allocation(const token& src_loc_tk, const size_t indent,
+    auto push_allocation(const emit_site site,
                          const std::string_view register_name,
                          const register_pool::holder_kind holder) -> void {
 
         state_.registers.push({
             .index{pool_index(register_name)},
-            .src_loc_tk{src_loc_tk},
-            .indent{indent},
+            .src_loc_tk{site.src_loc_tk},
+            .indent{site.indent},
             .holder{holder},
             .frame{state_.trace.current_frame()},
         });
@@ -2639,13 +2606,13 @@ class machine {
         return index ? uint32_t{1} << *index : 0;
     }
 
-    auto release_named_register(const token& src_loc_tk, const size_t indent,
+    auto release_named_register(const emit_site site,
                                 const std::string_view register_name) -> void {
 
         assert(state_.registers.top().holder !=
                register_pool::holder_kind::scratch);
 
-        pop_allocation(src_loc_tk, indent, pool_index(register_name));
+        pop_allocation(site, pool_index(register_name));
     }
 
     // the failure of 'handler' reports its line, e.g. not a frame overflow,
@@ -2661,9 +2628,9 @@ class machine {
     auto reserve_backend_register(const std::string_view register_name)
         -> void {
 
-        comment(token{}, 0, "allocate named register {}", register_name);
+        comment({token{}, 0}, "allocate named register {}", register_name);
 
-        push_allocation(token{}, 0, register_name,
+        push_allocation({token{}, 0}, register_name,
                         register_pool::holder_kind::backend);
     }
 

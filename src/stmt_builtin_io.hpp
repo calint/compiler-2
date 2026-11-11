@@ -136,7 +136,7 @@ class stmt_builtin_io final : public statement {
         comment_source(x, indent);
 
         x.call_target(
-            tok(), indent, io_.function,
+            {tok(), indent}, io_.function,
             [&](const std::span<const operand> args) -> void {
                 compile_arguments(tc, indent, buffer, args);
             },
@@ -145,7 +145,7 @@ class stmt_builtin_io final : public statement {
                                         tc.overflow_options(dst));
 
                 if (not dst.is_empty()) {
-                    x.copy_value(tok(), indent, dst.operand(), result);
+                    x.copy_value({tok(), indent}, dst.operand(), result);
                 }
             });
     }
@@ -399,7 +399,7 @@ class stmt_builtin_io final : public statement {
                                buffer_info);
 
         // the count becomes the byte count
-        x.scale_index(tok(), indent, count,
+        x.scale_index({tok(), indent}, count,
                       buffer_info.type_ref().size_bytes());
     }
 
@@ -420,7 +420,7 @@ class stmt_builtin_io final : public statement {
 
         const int64_t count_value{known_count.value_or(discarded_array_len)};
 
-        x.copy_value(tok(), indent, count,
+        x.copy_value({tok(), indent}, count,
                      operand::imm(count_value, tc.builtins().default_type()));
     }
 
@@ -498,7 +498,7 @@ class stmt_builtin_io final : public statement {
                 start_arg != nullptr ? *start_arg : *count_arg,
             };
 
-            x.check_bounds(checked_arg.tok(), indent,
+            x.check_bounds({checked_arg.tok(), indent},
                            machine::bounds_range::up_to(count, element_count -
                                                                    start_count),
                            tc.checks().bounds_options());
@@ -511,7 +511,8 @@ class stmt_builtin_io final : public statement {
         if (offset_bytes != 0) {
             const type& default_type{tc.builtins().default_type()};
 
-            x.add_subtract(tok(), indent, arithmetic_operator::add, buffer_reg,
+            x.add_subtract({tok(), indent}, arithmetic_operator::add,
+                           buffer_reg,
                            operand::imm(offset_bytes, default_type));
         }
     }
@@ -535,7 +536,7 @@ class stmt_builtin_io final : public statement {
         machine& x{tc.machine()};
 
         const operand start{
-            x.alloc_scratch_register(start_arg->tok(), indent, default_type),
+            x.alloc_scratch_register({start_arg->tok(), indent}, default_type),
         };
 
         start_arg->compile(tc, indent, destination::of_register(start));
@@ -546,20 +547,20 @@ class stmt_builtin_io final : public statement {
                 std::cmp_less_equal(*known_count, element_count)));
 
         x.check_bounds(
-            start_arg->tok(), indent,
+            {start_arg->tok(), indent},
             known_count and array_len
                 ? machine::bounds_range::up_to(
                       start, element_count - static_cast<size_t>(*known_count))
                 : machine::bounds_range::range(start, count, element_count),
             tc.checks().bounds_options());
 
-        x.scale_index(tok(), indent, start,
+        x.scale_index({tok(), indent}, start,
                       buffer_info.type_ref().size_bytes());
 
-        x.add_subtract(tok(), indent, arithmetic_operator::add, buffer_reg,
+        x.add_subtract({tok(), indent}, arithmetic_operator::add, buffer_reg,
                        start);
 
-        x.free_scratch_register(tok(), indent, start);
+        x.free_scratch_register({tok(), indent}, start);
     }
 
     // the start, the last argument a call can have, null when left out

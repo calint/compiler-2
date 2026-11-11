@@ -69,14 +69,14 @@ class stmt_builtin_foo final : public statement {
         // hide names they use
         const ident_info array_info{make_ident_info(tc, ident_)};
 
-        machine::held_registers held{x, tok(), indent};
+        machine::held_registers held{x, {tok(), indent}};
 
         const operand reg_iter{
-            held.alloc_scratch_register(ident_.tok(), indent,
+            held.alloc_scratch_register({ident_.tok(), indent},
                                         tc.builtins().address()),
         };
 
-        x.comment(ident_.tok(), indent, "initialize iterator e");
+        x.comment({ident_.tok(), indent}, "initialize iterator e");
 
         ident_.load_address(tc, indent, tok(), array_info, reg_iter);
 
@@ -102,9 +102,9 @@ class stmt_builtin_foo final : public statement {
             declare_loop_names(tc, indent, array_info, reg_iter, held),
         };
 
-        x.comment(tok(), indent, "initialize counter i");
+        x.comment({tok(), indent}, "initialize counter i");
 
-        x.copy_value(tok(), indent, counter,
+        x.copy_value({tok(), indent}, counter,
                      operand::imm(0, tc.builtins().default_type()));
 
         // a count that folds to 0 skips the body like a branch that folds to
@@ -227,13 +227,13 @@ class stmt_builtin_foo final : public statement {
 
         const type& default_type{tc.builtins().default_type()};
 
-        x.add_subtract(tok(), indent, arithmetic_operator::add, iterator,
+        x.add_subtract({tok(), indent}, arithmetic_operator::add, iterator,
                        operand::imm(element_size_bytes, default_type));
 
-        x.add_subtract(tok(), indent, arithmetic_operator::add, counter,
+        x.add_subtract({tok(), indent}, arithmetic_operator::add, counter,
                        operand::imm(1, default_type));
 
-        x.compare_and_branch(tok(), indent, counter, limit,
+        x.compare_and_branch({tok(), indent}, counter, limit,
                              {
                                  .operation{comparison_operator::not_equal},
                                  .destination{},
@@ -250,7 +250,7 @@ class stmt_builtin_foo final : public statement {
             header += ", " + trimmed_source(count_->count);
         }
 
-        x.comment(tok(), indent, "foo {}", header);
+        x.comment({tok(), indent}, "foo {}", header);
     }
 
     // a count register is checked against the array size like the count of
@@ -288,16 +288,16 @@ class stmt_builtin_foo final : public statement {
         }
 
         const operand reg_count{
-            held.alloc_scratch_register(count.tok(), indent, counter_type),
+            held.alloc_scratch_register({count.tok(), indent}, counter_type),
         };
 
         machine& x{tc.machine()};
 
-        x.comment(count.tok(), indent, "count {}", trimmed_source(count));
+        x.comment({count.tok(), indent}, "count {}", trimmed_source(count));
 
         count.compile(tc, indent, destination::of_register(reg_count));
 
-        x.check_bounds(count.tok(), indent,
+        x.check_bounds({count.tok(), indent},
                        machine::bounds_range::up_to(reg_count, array_len),
                        tc.checks().bounds_options());
 
@@ -324,7 +324,7 @@ class stmt_builtin_foo final : public statement {
         }
 
         const operand reg_counter{
-            held.alloc_scratch_register(tok(), indent,
+            held.alloc_scratch_register({tok(), indent},
                                         tc.builtins().default_type()),
         };
 
@@ -369,7 +369,7 @@ class stmt_builtin_foo final : public statement {
 
         machine& x{tc.machine()};
 
-        x.compare_and_branch(count_->count.tok(), indent, limit,
+        x.compare_and_branch({count_->count.tok(), indent}, limit,
                              operand::imm(0, tc.builtins().default_type()),
                              {
                                  .operation{comparison_operator::less_equal},

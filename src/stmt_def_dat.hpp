@@ -138,7 +138,7 @@ class stmt_def_dat final : public statement {
     auto compile_data(toc& tc) const -> void {
         machine& x{tc.machine()};
 
-        x.comment(name_tk_, 0, name_tk_.text());
+        x.comment({name_tk_, 0}, name_tk_.text());
         compile_data_rec(x, get_type(), root_elem_);
     }
 
@@ -168,13 +168,13 @@ class stmt_def_dat final : public statement {
     static auto compile_data_list(machine& x, const type& tp,
                                   const elem::elements& list) -> void {
 
-        x.comment(list.src_loc_tk, 0, "{}[{}]", tp.name(), list.array_count);
+        x.comment({list.src_loc_tk, 0}, "{}[{}]", tp.name(), list.array_count);
 
         if (tp.is_builtin()) {
             compile_data_elements(x, tp, list);
         } else {
             for (const auto [i, e] : std::views::enumerate(list.items)) {
-                x.comment(e.tok(), 0, "[{}]", i);
+                x.comment({e.tok(), 0}, "[{}]", i);
                 compile_data_record(x, tp, std::get<elem::fields>(e.form));
             }
         }
@@ -190,7 +190,7 @@ class stmt_def_dat final : public statement {
                 std::get_if<elem::scalar>(&el.form),
             }) {
 
-            x.comment(value->src_loc_tk, 0, "{}", tp.name());
+            x.comment({value->src_loc_tk, 0}, "{}", tp.name());
 
             x.emit_data_array(tp.size_bytes(),
                               std::array<int64_t, 1>{value->value});
@@ -230,7 +230,7 @@ class stmt_def_dat final : public statement {
             const size_t padding_bytes{f.offset - written_bytes};
 
             if (padding_bytes != 0) {
-                x.comment(e.tok(), 0, "zero padding: {} B", padding_bytes);
+                x.comment({e.tok(), 0}, "zero padding: {} B", padding_bytes);
                 x.emit_zero_data(padding_bytes);
             }
 
@@ -251,7 +251,9 @@ class stmt_def_dat final : public statement {
                                                 : "remaining fields",
         };
 
-        x.comment(record.src_loc_tk, 0, "zero {}: {} B", what, remaining_bytes);
+        x.comment({record.src_loc_tk, 0}, "zero {}: {} B", what,
+                  remaining_bytes);
+
         x.emit_zero_data(remaining_bytes);
     }
 
@@ -259,7 +261,7 @@ class stmt_def_dat final : public statement {
     static auto compile_data_string(machine& x, const type& tp,
                                     const elem::string& str) -> void {
 
-        x.comment(str.src_loc_tk, 0, "{}[{}]", tp.name(), str.array_count);
+        x.comment({str.src_loc_tk, 0}, "{}[{}]", tp.name(), str.array_count);
 
         const std::string bytes{str.src_loc_tk.string_bytes()};
 
@@ -283,7 +285,7 @@ class stmt_def_dat final : public statement {
 
         const size_t size_bytes{product_storage_size(tp.size_bytes(), count)};
 
-        x.comment(src_loc_tk, 0, "zero remaining elements: {} * {} B = {} B",
+        x.comment({src_loc_tk, 0}, "zero remaining elements: {} * {} B = {} B",
                   count, tp.size_bytes(), size_bytes);
 
         x.emit_zero_data(size_bytes);
