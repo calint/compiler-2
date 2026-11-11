@@ -1,0 +1,11 @@
+# an 'int' variable for an 'i32' parameter is narrowed, the message hints at
+# the conversion also where the default type is 32 bits wide
+
+func f(v i32) res i32 {
+    res = v
+}
+
+func main() {
+    var k = 1
+    exit(int(f(k)))
+}

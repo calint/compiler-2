@@ -1,6 +1,15 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 343 (2026-11-11, CM confirming round: conversions, unary
+    ops and shifts)
+    => done (2026-11-11): about 40000 programs against a model of the
+       conversion rules (W, wrapping, the conversion's own ops, shift
+       counts, 'int' of each target) and a sweep of 2900 type pairs and
+       contexts found no wrong value, missed panic or target-dependent
+       verdict; the hint "use 'i32(...)'" of a parameter type mismatch was
+       missing on rv32i (left from round 337, 'size_bits' compared):
+       'throw_parameter_type_mismatch' compares the check width; test 2970
 [x] easy: round 342 (2026-11-11, confirming round: inside the backends)
     => done (2026-11-11): CO: comments say why the rv32i i/o routines
        return through 'a7', the registers of the divide routine and why the

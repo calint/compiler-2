@@ -7900,5 +7900,9 @@ SRC=2968 && EXP=3 && RUN
 # in an 'i32' scratch on a 32-bit target
 SRC=2969 && EXP=2 && RUN
 
+# an 'int' variable for an 'i32' parameter hints at the conversion also where
+# the default type is 32 bits wide
+SRC=2970 && COMPERR
+
 # a hex escape ends before the escape after it, which is not quoted
 SRC=2990 && COMPERR

@@ -2897,11 +2897,12 @@ class stmt_call final : public statement {
         const type& param_type{param.get_type()};
 
         // e.g. an 'i64' variable for an 'i32' parameter, a converted value is
-        // passed like 'a + 1'
+        // passed like 'a + 1'; widths compared as the narrowing checks see
+        // them, so the default type of a 32-bit target gets the hint too
         const bool is_narrowing{
             param.is_read_only() and not param.is_array() and
                 param_type.is_integer() and arg_type.is_integer() and
-                arg_type.size_bits() > param_type.size_bits(),
+                arg_type.check_width_bytes() > param_type.check_width_bytes(),
         };
 
         const std::string hint{

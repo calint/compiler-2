@@ -1,0 +1,4 @@
+
+2970.baz:10:16: expected type 'i32' for parameter 'v', got 'i64', use 'i32(...)'
+    exit(int(f(k)))
+               ^
