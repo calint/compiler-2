@@ -237,14 +237,13 @@ class type final {
     size_t check_width_bytes_{}; // the width the narrowing rules compare
 
   public:
-    // builtins are aligned to their size, a zero size needs no alignment
+    // a built-in checked at its size
     type(const std::string_view name, const size_t size_bytes,
          const type_kind kind)
-        : name_{name}, size_bytes_{size_bytes},
-          alignment_{std::max(size_bytes, size_t{1})}, kind_{kind},
-          check_width_bytes_{size_bytes} {}
+        : type{name, size_bytes, kind, size_bytes} {}
 
-    // a built-in checked as wider than it is, see 'check_width_bytes'
+    // builtins are aligned to their size, a zero size needs no alignment; a
+    // built-in may be checked as wider than it is, see 'check_width_bytes'
     type(const std::string_view name, const size_t size_bytes,
          const type_kind kind, const size_t check_width_bytes)
         : name_{name}, size_bytes_{size_bytes},
@@ -545,7 +544,8 @@ class builtin_type_set final {
 
     static constexpr size_t type_count{6};
 
-    // every one, the source names them like the types it defines
+    // those with a name of their own, the source names them like the types
+    // it defines; 'int32' is named only as the default type
     [[nodiscard]] auto all() const -> std::array<const type*, type_count> {
         return {&i64, &i32, &i16, &i8, &boolean, &void_type};
     }

@@ -210,11 +210,9 @@ struct register_use_report final {
 // machine recorded and how the machine names its registers
 class register_reporter final {
     std::reference_wrapper<const machine> machine_;
-    std::reference_wrapper<const register_trace> trace_;
 
   public:
-    explicit register_reporter(const machine& backend)
-        : machine_{backend}, trace_{backend.state_.trace} {}
+    explicit register_reporter(const machine& backend) : machine_{backend} {}
 
     // see 'machine::register_error', the registers held now
     [[nodiscard]] auto make_error(const token& src_loc_tk, std::string message,
@@ -233,7 +231,7 @@ class register_reporter final {
 
         const std::vector<std::string> lines{
             report_lines("register use at the failure", pool.allocations(),
-                         trace_.get().frames()),
+                         x.state_.trace.frames()),
         };
 
         for (const std::string& part : wrapped_lines(lines, max_detail_width)) {
@@ -247,11 +245,15 @@ class register_reporter final {
     // the use of registers at the busiest point of the build, as lines after
     // the code when asked for, else none
     [[nodiscard]] auto peak_report() const -> std::vector<std::string> {
-        if (not trace_.get().is_enabled()) {
+        const machine& x{machine_.get()};
+
+        const register_trace& trace{x.state_.trace};
+
+        if (not trace.is_enabled()) {
             return {};
         }
 
-        const register_trace::peak_use& peak{trace_.get().peak()};
+        const register_trace::peak_use& peak{trace.peak()};
 
         std::vector<std::string> lines{
             report_lines("register use at the peak", peak.allocations,
@@ -306,8 +308,8 @@ class register_reporter final {
         return lines;
     }
 
-    // the frames without registers: the first is the function being compiled,
-    // the others are the calls inlined in it
+    // an entry per frame, its registers still empty: the first is the
+    // function being compiled, the others are the calls inlined in it
     [[nodiscard]] auto
     frame_uses(const std::vector<register_trace::frame>& frames) const
         -> std::vector<register_use_report::frame_use> {

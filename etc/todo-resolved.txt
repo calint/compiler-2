@@ -1,6 +1,15 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 344 (2026-11-12, confirming round: the infrastructure
+    headers)
+    => done (2026-11-12): CR: 'builtin_type_set::all' says it leaves out
+       'int32', which is named only as the default type, and
+       'register_reporter::frame_uses' gives an entry per frame, not a
+       filter; CQ: the 3-argument built-in constructor of 'type' delegates
+       to the 4-argument one, 'register_reporter' reaches the trace through
+       the machine as it does the registers; no dead code in 19 headers;
+       listings equal
 [x] easy: round 343 (2026-11-11, CM confirming round: conversions, unary
     ops and shifts)
     => done (2026-11-11): about 40000 programs against a model of the
