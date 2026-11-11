@@ -1,0 +1,10 @@
+# the routine 'read' follows 'exit', so 'exit' stays the next code of the
+# routine that reports the line and its jump is removed; 'write' is not
+# emitted in a program without it
+
+func main() {
+    var buffer = i8[4]
+    var count = read(0, buffer)
+    var a = [4]{1, 2, 3, 4}
+    exit(a[count + 3])
+}

@@ -1,0 +1,8 @@
+# without a failure handler, which writes its message on the uart targets, a
+# program with 'read' and without 'write' does not emit 'write'
+
+func main() {
+    var buffer = i8[4]
+    var count = read(0, buffer)
+    if count != 0 exit(1)
+}

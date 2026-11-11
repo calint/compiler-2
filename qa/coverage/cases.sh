@@ -7873,3 +7873,12 @@ SRC=2920 && EXP=0 && OPTS="--checks=upper" RUN
 # a run-time exit code is taken modulo 256
 SRC=2921 && EXP=255 && RUN
 SRC=2922 && EXP=44 && RUN
+
+# 'write' and 'read' follow 'exit', which stays the next code of the report of
+# a line, and a program without one of them does not emit it
+SRC=2960 && EXP=3 && DIFFNOPT
+SRC=2961 && EXP=4 && DIFFNOPT
+
+# without a failure handler, which writes its message on the uart targets, a
+# program without 'write' does not emit it
+SRC=2962 && EXP=0 && DIFFNOPT

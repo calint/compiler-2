@@ -1,0 +1,11 @@
+# the routine 'write' follows 'exit', so 'exit' stays the next code of the
+# routine that reports the line and its jump is removed; 'read' is not
+# emitted in a program without it
+
+dat text = "ok\n"
+func main() {
+    write(1, text)
+    var a = [4]{1, 2, 3, 4}
+    var i = 2
+    exit(a[i])
+}

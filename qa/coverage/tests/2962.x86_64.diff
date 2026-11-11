@@ -1,0 +1,12 @@
+49d48
+<     jmp if.7.5.code
+60d58
+<     jmp baz_exit
+87c85
+< ;   removed jumps to next code: 0
+---
+> ;   removed jumps to next code: 2
+98c96
+< ;                 instructions: 23
+---
+> ;                 instructions: 21
