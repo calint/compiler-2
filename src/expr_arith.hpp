@@ -306,7 +306,7 @@ struct list_parens {
             return false;
         }
 
-        close_tk = tz.is_next_char_token(')');
+        close_tk = tz.accept_char_token(')');
 
         return close_tk.has_value();
     }
@@ -426,7 +426,7 @@ class expr_arith final : public statement {
     expr_arith(toc& tc, tokenizer& tz, options opts)
         : statement{opts.first_expression
                         ? opts.first_expression->tok().start_position()
-                        : tz.next_token_position(),
+                        : tz.peek_token_position(),
                     std::move(opts.uops)},
           parens_{
               .open_tk{opts.open_paren_tk},
@@ -1166,7 +1166,7 @@ class expr_arith final : public statement {
         }
 
         const bool is_adjacent{
-            tz.next_token_position().start_index() == op_tk.end_index(),
+            tz.peek_token_position().start_index() == op_tk.end_index(),
         };
 
         if (not is_adjacent or
@@ -1470,7 +1470,7 @@ class expr_arith final : public statement {
 
         // the unary ops apply to the whole sub-expression
         if (const std::optional<token> open_paren_tk{
-                tz.is_next_char_token('('),
+                tz.accept_char_token('('),
             }) {
 
             std::unique_ptr<statement> enclosed{

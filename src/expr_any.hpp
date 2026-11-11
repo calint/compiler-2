@@ -614,7 +614,7 @@ class expr_any final : public statement {
             parse_array_prefix(tc, tz, tp, typing),
         };
 
-        const std::optional<token> open_brace_tk{tz.is_next_char_token('{')};
+        const std::optional<token> open_brace_tk{tz.accept_char_token('{')};
 
         // e.g. 'var a = i8[]', which lists nothing and gives no size
         if (not open_brace_tk and prefix and not prefix->size.has_value()) {
@@ -1134,7 +1134,7 @@ class expr_any final : public statement {
         }
 
         if (const std::optional<token> open_brace_tk{
-                tz.is_next_char_token('{'),
+                tz.accept_char_token('{'),
             }) {
 
             return parse_zero_braces(tc, tz, tp, *open_brace_tk);

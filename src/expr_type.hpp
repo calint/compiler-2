@@ -190,14 +190,14 @@ struct full_list {
                                           std::vector<token>& delims_tk,
                                           const full_list& full) -> token {
 
-    const std::optional<token> delimiter_tk{tz.is_next_char_token(',')};
+    const std::optional<token> delimiter_tk{tz.accept_char_token(',')};
 
     if (delimiter_tk) {
         delims_tk.emplace_back(*delimiter_tk);
     }
 
     if (const std::optional<token> close_brace_tk{
-            tz.is_next_char_token('}'),
+            tz.accept_char_token('}'),
         }) {
 
         return *close_brace_tk;
@@ -235,7 +235,7 @@ parse_braced_items(tokenizer& tz, std::vector<token>& delims_tk,
         }
 
         if (const std::optional<token> close_brace_tk{
-                tz.is_next_char_token('}'),
+                tz.accept_char_token('}'),
             }) {
 
             return *close_brace_tk;
@@ -640,7 +640,7 @@ class expr_type final : public statement {
 
         const token name_tk{probe.next_token()};
 
-        if (not name_tk.is_word() or not probe.is_next_char_token(':')) {
+        if (not name_tk.is_word() or not probe.accept_char_token(':')) {
             return;
         }
 

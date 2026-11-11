@@ -185,7 +185,7 @@ struct generic_call {
 
         // e.g. not the '<=' of 'p.get <= 3', which the deduction reports
         const std::optional<token> open_tk{
-            tz.is_type_args_next() ? tz.is_next_char_token('<') : std::nullopt,
+            tz.is_type_args_next() ? tz.accept_char_token('<') : std::nullopt,
         };
 
         std::vector<const type*> type_args;
@@ -450,7 +450,7 @@ struct generic_call {
         // the type names the result, the constructor, e.g. 'at', does not
         const token ctor_tk{tz.next_token()};
 
-        if (not tz.is_next_char_token('(')) {
+        if (not tz.accept_char_token('(')) {
             return nullptr;
         }
 
@@ -495,7 +495,7 @@ struct generic_call {
         // note: a function is a call here only before its '('
         //       ('classify_term'), a method at its name, e.g. 'p.get'
 
-        if (not scan.is_next_char_token('(')) {
+        if (not scan.accept_char_token('(')) {
             throw compile_error{name_tk, "expected '(' after method name"};
         }
 
@@ -556,7 +556,7 @@ struct generic_call {
         for (size_t i{}; i < index; ++i) {
             tz.skip_argument();
 
-            const std::optional<token> delimiter_tk{tz.is_next_char_token(',')};
+            const std::optional<token> delimiter_tk{tz.accept_char_token(',')};
 
             if (not delimiter_tk) {
                 return i;
@@ -601,7 +601,7 @@ struct generic_call {
         if (const type* const builtin_type{builtin_value_type(tc, tk, tm)};
             builtin_type != nullptr) {
 
-            if (not tz.is_next_char_token('(')) {
+            if (not tz.accept_char_token('(')) {
                 return nullptr;
             }
 
@@ -1808,7 +1808,7 @@ class builtin_arguments final {
 
         while (true) {
             if (const std::optional<token> close_paren_tk{
-                    tz.is_next_char_token(')'),
+                    tz.accept_char_token(')'),
                 }) {
 
                 close_paren_tk_ = *close_paren_tk;
@@ -1817,7 +1817,7 @@ class builtin_arguments final {
 
             read_argument(tc, tz, array_indexes);
 
-            const std::optional<token> delim_tk{tz.is_next_char_token(',')};
+            const std::optional<token> delim_tk{tz.accept_char_token(',')};
 
             if (not delim_tk) {
                 // e.g. 'array_copy(a b, 1)' lacks the ',' like a call of a
@@ -2647,7 +2647,7 @@ class stmt_call final : public statement {
 
     // the '(' after the callee, 'what' names the callee
     auto read_open_paren(tokenizer& tz, const std::string_view what) -> void {
-        const std::optional<token> paren_tk{tz.is_next_char_token('(')};
+        const std::optional<token> paren_tk{tz.accept_char_token('(')};
 
         // at the name, the next token can be on a later line
         if (not paren_tk) {

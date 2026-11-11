@@ -32,8 +32,8 @@ class stmt_block final : public statement {
     // without '{' the block is one statement unless braces are required,
     // e.g. the 'exit(1)' of 'if a == 1 exit(1)'
     stmt_block(toc& tc, tokenizer& tz, const block_braces braces = {})
-        : statement{tz.next_token_position()},
-          open_brace_tk_{tz.is_next_char_token('{')} {
+        : statement{tz.peek_token_position()},
+          open_brace_tk_{tz.accept_char_token('{')} {
 
         // note: 'tok' is at the '{' or at the one statement
         const toc::parse_nesting_scope nesting{tc, tok()};
@@ -131,7 +131,7 @@ class stmt_block final : public statement {
     // a block without braces is one statement, none at the end of the source
     auto parse_single_statement(toc& tc, tokenizer& tz) -> void {
         if (const std::optional<token> close_brace_tk{
-                tz.is_next_char_token('}'),
+                tz.accept_char_token('}'),
             }) {
 
             throw compile_error{*close_brace_tk,
@@ -158,7 +158,7 @@ class stmt_block final : public statement {
     // '{ var a = 1 exit(a) }'
     auto parse_statements(toc& tc, tokenizer& tz) -> void {
         while (true) {
-            close_brace_tk_ = tz.is_next_char_token('}');
+            close_brace_tk_ = tz.accept_char_token('}');
 
             if (close_brace_tk_) {
                 return;

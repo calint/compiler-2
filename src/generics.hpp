@@ -84,7 +84,7 @@ struct generic_param {
                                               const generic_param& param)
         -> bool {
 
-        if (tz.is_next_char_token('>')) {
+        if (tz.accept_char_token('>')) {
             return true;
         }
 
@@ -179,7 +179,7 @@ struct generic_arg_tokens {
             args.arg_tks.emplace_back(arg_tk);
             args.list_tks.emplace_back(arg_tk);
 
-            const std::optional<token> close_tk{tz.is_next_char_token('>')};
+            const std::optional<token> close_tk{tz.accept_char_token('>')};
 
             if (close_tk) {
                 args.list_tks.emplace_back(*close_tk);
@@ -213,7 +213,7 @@ struct generic_arg_tokens {
 
         // e.g. the '[' of 'f<i32[]>(a)', 'a T[]' takes an array of 'T'
         if (const std::optional<token> bracket_tk{
-                tz.is_next_char_token('['),
+                tz.accept_char_token('['),
             }) {
 
             // e.g. the '[' of 'buf<4[2]>', a field 'x T[n]' makes one

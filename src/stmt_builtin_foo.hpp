@@ -394,7 +394,7 @@ class stmt_builtin_foo final : public statement {
         const token first_tk{probe.next_token()};
 
         const bool is_element_named{
-            first_tk.is_word() and probe.is_next_word_token("in") and
+            first_tk.is_word() and probe.accept_word_token("in") and
                 probe.next_token().is_word(),
         };
 
@@ -411,7 +411,7 @@ class stmt_builtin_foo final : public statement {
     [[nodiscard]] static auto parse_count(toc& tc, tokenizer& tz)
         -> std::optional<count_part> {
 
-        const std::optional<token> delim_tk{tz.is_next_char_token(',')};
+        const std::optional<token> delim_tk{tz.accept_char_token(',')};
 
         if (not delim_tk) {
             return std::nullopt;

@@ -185,7 +185,7 @@ struct func_head {
         // e.g. 'func tokenizer.to<T type>()' or 'func text.to<T type>()'
         if (not head.open_paren_tk and tz.peek_char_after_whitespace() == '<') {
             head.type_param_tks = read_type_params(tc, tz);
-            head.open_paren_tk = tz.is_next_char_token('(');
+            head.open_paren_tk = tz.accept_char_token('(');
         }
 
         return head;
@@ -236,7 +236,7 @@ struct func_head {
         };
 
         name = method_name_of(type_name, method_name_tk.text());
-        open_paren_tk = tz.is_next_char_token('(');
+        open_paren_tk = tz.accept_char_token('(');
     }
 
     // 'keyword' before the name, e.g. 'noinline', then the next word is read
@@ -257,7 +257,7 @@ struct func_head {
     // a word, the name or a modifier before it, and the '(' if it follows
     auto read_name(tokenizer& tz) -> void {
         name_tk = tz.next_token();
-        open_paren_tk = tz.is_next_char_token('(');
+        open_paren_tk = tz.accept_char_token('(');
     }
 
     //

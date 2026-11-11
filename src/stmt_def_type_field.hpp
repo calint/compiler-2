@@ -49,7 +49,7 @@ class stmt_def_type_field final : public statement {
         set_type(type_tk_ ? tc.get_type_or_throw(*type_tk_)
                           : tc.builtins().default_type());
 
-        const std::optional<token> open_bracket_tk{tz.is_next_char_token('[')};
+        const std::optional<token> open_bracket_tk{tz.accept_char_token('[')};
 
         if (not open_bracket_tk) {
             return;

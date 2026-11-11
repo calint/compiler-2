@@ -1222,7 +1222,7 @@ class stmt_identifier final : public statement {
         -> path_continuation {
 
         // e.g. the '.entities' of 'rooms[i].entities[j]'
-        const std::optional<token> dot_tk{tz.is_next_char_token('.')};
+        const std::optional<token> dot_tk{tz.accept_char_token('.')};
 
         if (not dot_tk) {
             return path_end{};

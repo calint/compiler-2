@@ -71,7 +71,7 @@ class condition_nots final {
 
   public:
     explicit condition_nots(tokenizer& tz) {
-        while (const std::optional<token> tk{tz.is_next_word_token("not")}) {
+        while (const std::optional<token> tk{tz.accept_word_token("not")}) {
             nots_.emplace_back(*tk);
         }
     }
@@ -1455,7 +1455,7 @@ class expr_bool final : public statement {
         condition_nots nots{tz};
 
         // the list is located at its '(', which keeps the whitespace before it
-        const token pos_tk{tz.next_token_position()};
+        const token pos_tk{tz.peek_token_position()};
 
         // note: 'is_list_next' saw the '('
         const token open_paren_tk{tz.seen_char_token('(')};
@@ -1554,7 +1554,7 @@ class expr_bool final : public statement {
 
         std::ignore = condition_nots{probe};
 
-        return probe.is_next_char_token('(') and
+        return probe.accept_char_token('(') and
                not is_parenthesized_operand(probe);
     }
 

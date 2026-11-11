@@ -310,7 +310,7 @@ inline auto stmt_identifier::parse_element(toc& tc, tokenizer& tz,
     });
 
     // e.g. the '[i]' of 'rooms[i]', none for 'name'
-    const std::optional<token> open_bracket_tk{tz.is_next_char_token('[')};
+    const std::optional<token> open_bracket_tk{tz.accept_char_token('[')};
 
     if (not open_bracket_tk) {
         return;

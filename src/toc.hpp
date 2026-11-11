@@ -2578,7 +2578,7 @@ class toc final {
         }
 
         parse_nesting_scope(toc& tc, const tokenizer& tz)
-            : parse_nesting_scope{tc, tz.next_token_position()} {}
+            : parse_nesting_scope{tc, tz.peek_token_position()} {}
 
         parse_nesting_scope(const parse_nesting_scope&) = delete;
         parse_nesting_scope(parse_nesting_scope&&) = delete;

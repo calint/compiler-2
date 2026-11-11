@@ -366,7 +366,7 @@ inline auto assert_not_compound_assignment(const tokenizer& tz,
     tokenizer probe{tz};
 
     const token op_tk{probe.seen_operator()};
-    const token after_tk{probe.next_token_position()};
+    const token after_tk{probe.peek_token_position()};
     const char after{probe.peek_char_after_whitespace()};
 
     const bool is_adjacent{after_tk.start_index() == op_tk.end_index()};

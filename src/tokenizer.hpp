@@ -18,7 +18,10 @@
 #include "token.hpp"
 
 // reads the tokens of one source file, keeping the whitespace and comments
-// in the tokens so that the source can be reproduced
+// in the tokens so that the source can be reproduced; the names tell how a
+// member moves the cursor: 'next_' reads, 'accept_' reads only what matches,
+// 'expect_' reads what matches or throws, 'seen_' reads what the caller saw,
+// 'skip_' reads past, 'peek_' and 'is_..._next' do not read
 class tokenizer final {
     std::string_view src_;
     size_t char_ix_{}; // current char index in 'src_'
@@ -76,6 +79,40 @@ class tokenizer final {
         assert(char_ix_ <= src_.size());
     }
 
+    // reads 'ch' with the whitespace around it when it is next, the cursor
+    // stays when not
+    [[nodiscard]] auto accept_char_token(const char ch)
+        -> std::optional<token> {
+
+        const std::string_view ws_before{next_whitespace()};
+
+        if (peek_char() != ch) {
+            move_back(ws_before.size());
+            return std::nullopt;
+        }
+
+        const size_t at_line{at_line_};
+        const size_t bgn_ix{char_ix_};
+        ++char_ix_;
+
+        return finish_token(ws_before, at_line, bgn_ix);
+    }
+
+    // reads the word 'word' when it is next, the cursor stays when not, e.g.
+    // the 'else' after a branch
+    [[nodiscard]] auto accept_word_token(const std::string_view word)
+        -> std::optional<token> {
+
+        const token tk{next_token()};
+
+        if (not tk.is_text(word)) {
+            put_back_token(tk);
+            return std::nullopt;
+        }
+
+        return tk;
+    }
+
     // e.g. the last ',' of 'f(1, 2,)', 'close' ends the list; a braced list
     // may end with a ',', see the value literals and the type definitions
     auto assert_no_trailing_delimiter(const token& delimiter_tk,
@@ -124,7 +161,7 @@ class tokenizer final {
                                          const std::string_view message)
         -> token {
 
-        const std::optional<token> tk{is_next_char_token(ch)};
+        const std::optional<token> tk{accept_char_token(ch)};
 
         if (not tk) {
             throw compile_error{*this, std::string{message}};
@@ -145,40 +182,6 @@ class tokenizer final {
         return peek_char_after_whitespace() == '=' and peek_operator() != "==";
     }
 
-    // the token of 'ch' with the whitespace around it when 'ch' is next, the
-    // cursor stays when not
-    [[nodiscard]] auto is_next_char_token(const char ch)
-        -> std::optional<token> {
-
-        const std::string_view ws_before{next_whitespace()};
-
-        if (peek_char() != ch) {
-            move_back(ws_before.size());
-            return std::nullopt;
-        }
-
-        const size_t at_line{at_line_};
-        const size_t bgn_ix{char_ix_};
-        ++char_ix_;
-
-        return finish_token(ws_before, at_line, bgn_ix);
-    }
-
-    // the token of the word 'word' when it is next, the cursor stays when not,
-    // e.g. the 'else' after a branch
-    [[nodiscard]] auto is_next_word_token(const std::string_view word)
-        -> std::optional<token> {
-
-        const token tk{next_token()};
-
-        if (not tk.is_text(word)) {
-            put_back_token(tk);
-            return std::nullopt;
-        }
-
-        return tk;
-    }
-
     // a '<' follows that can start type arguments, e.g. the '<' of
     // 'show<i8>(x)' but not of the operators of 'show <= x' or 'show << x'
     [[nodiscard]] auto is_type_args_next() const -> bool {
@@ -192,18 +195,13 @@ class tokenizer final {
         const size_t at_line{at_line_};
         const size_t bgn_ix{char_ix_};
 
-        if (is_next_char('"') or is_next_char('\'')) {
+        if (accept_char('"') or accept_char('\'')) {
             return finish_quoted_token(ws_before, at_line, bgn_ix);
         }
 
         skip_to_delimiter();
 
         return finish_token(ws_before, at_line, bgn_ix);
-    }
-
-    // the position of the next token, past the whitespace and comments
-    [[nodiscard]] auto next_token_position() const -> token {
-        return past_whitespace().cur_position_token();
     }
 
     // the whitespace before a value, as the own token of a wrapper node (see
@@ -225,6 +223,11 @@ class tokenizer final {
         return past_whitespace().operator_at_cursor();
     }
 
+    // the position of the next token, past the whitespace and comments
+    [[nodiscard]] auto peek_token_position() const -> token {
+        return past_whitespace().cur_position_token();
+    }
+
     // only the last read token can be put back, otherwise the rewind lands
     // at an unrelated position
     auto put_back_token(const token& tk) -> void {
@@ -237,7 +240,7 @@ class tokenizer final {
     // the token of 'ch' that the caller saw next, e.g. by
     // 'peek_char_after_whitespace'
     [[nodiscard]] auto seen_char_token(const char ch) -> token {
-        const std::optional<token> tk{is_next_char_token(ch)};
+        const std::optional<token> tk{accept_char_token(ch)};
 
         assert(tk);
 
@@ -365,6 +368,17 @@ class tokenizer final {
     }
 
   private:
+    // reads 'ch' when it is at the cursor, without the whitespace before it
+    [[nodiscard]] auto accept_char(const char ch) -> bool {
+        if (peek_char() != ch) {
+            return false;
+        }
+
+        skip_char();
+
+        return true;
+    }
+
     // the opening quote has been read, the text keeps both quotes; a
     // character literal resolves like a numeric constant, e.g. 'a' or '\n'
     [[nodiscard]] auto finish_quoted_token(const std::string_view ws_before,
@@ -408,16 +422,6 @@ class tokenizer final {
 
     [[nodiscard]] auto is_eos() const -> bool {
         return char_ix_ >= src_.size();
-    }
-
-    [[nodiscard]] auto is_next_char(const char ch) -> bool {
-        if (peek_char() != ch) {
-            return false;
-        }
-
-        skip_char();
-
-        return true;
     }
 
     [[nodiscard]] auto is_token_text_at_source(const token& tk) const -> bool {
@@ -566,7 +570,7 @@ class tokenizer final {
 
             // the escaped character may be a quote; a carriage return is
             // followed by a line feed ('assert_source_well_formed')
-            std::ignore = is_next_char('\r');
+            std::ignore = accept_char('\r');
             skip_char();
         }
     }
@@ -656,4 +660,4 @@ class tokenizer final {
 
 // declared in 'compile_error.hpp'
 inline compile_error::compile_error(const tokenizer& tz, std::string message)
-    : compile_error{tz.next_token_position(), std::move(message)} {}
+    : compile_error{tz.peek_token_position(), std::move(message)} {}

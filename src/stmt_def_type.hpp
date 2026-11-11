@@ -73,7 +73,7 @@ class type_fields final {
 
             fields_.emplace_back(tc, field_tk, tz, name_tk);
 
-            if (is_next_close_brace(tz)) {
+            if (accept_close_brace(tz)) {
                 break;
             }
 
@@ -88,7 +88,7 @@ class type_fields final {
 
             // a trailing ',' lets each field end its line the same way
             // e.g. 'type point { x, y, }'
-            if (is_next_close_brace(tz)) {
+            if (accept_close_brace(tz)) {
                 break;
             }
         }
@@ -116,8 +116,8 @@ class type_fields final {
 
   private:
     // e.g. the '}' of 'type point { x, y }', kept for 'source_to'
-    auto is_next_close_brace(tokenizer& tz) -> bool {
-        const std::optional<token> close_brace_tk{tz.is_next_char_token('}')};
+    auto accept_close_brace(tokenizer& tz) -> bool {
+        const std::optional<token> close_brace_tk{tz.accept_char_token('}')};
 
         if (not close_brace_tk) {
             return false;
@@ -239,7 +239,7 @@ struct generic_type_use {
                                                 const token& generic_tk)
         -> generic_arg_tokens {
 
-        const std::optional<token> open_tk{tz.is_next_char_token('<')};
+        const std::optional<token> open_tk{tz.accept_char_token('<')};
 
         if (not open_tk) {
             throw compile_error{

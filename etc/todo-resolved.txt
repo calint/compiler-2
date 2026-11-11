@@ -1,6 +1,17 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 332 (2026-11-11, BL the tokenizer names what it reads)
+    => done (2026-11-11): 'is_next_char_token', 'is_next_word_token' and
+       'is_next_char' read the token when it matches, as the 'is_' prefix
+       does not say: 'accept_char_token', 'accept_word_token',
+       'accept_char', beside 'expect_char_token'; 'next_token_position',
+       which does not read, is 'peek_token_position';
+       'stmt_def_type::is_next_close_brace' is 'accept_close_brace'; 57
+       call sites; the class comment states the rule ('next_' reads,
+       'accept_' reads what matches, 'expect_' reads it or throws, 'peek_'
+       does not read); listings equal; BN (records and bulk operations,
+       30000 programs) found no defect
 [x] easy: round 331 (2026-11-11, BJ the indent of the listing in the
     front end)
     => done (2026-11-11): the front end passed the listing indent down

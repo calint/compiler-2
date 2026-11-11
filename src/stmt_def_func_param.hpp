@@ -53,7 +53,7 @@ class stmt_def_func_param final : public statement {
             tc.assert_valid_unqualified_name(name_tk);
 
             // 'mut' after the name allows the body to write the parameter
-            const std::optional<token> mut_tk{tz.is_next_word_token("mut")};
+            const std::optional<token> mut_tk{tz.accept_word_token("mut")};
 
             const std::optional<token> type_tk{read_declared_type(tc, tz)};
 
@@ -76,7 +76,7 @@ class stmt_def_func_param final : public statement {
             -> std::optional<bracket_tokens> {
 
             const std::optional<token> open_bracket_tk{
-                tz.is_next_char_token('['),
+                tz.accept_char_token('['),
             };
 
             if (not open_bracket_tk) {
@@ -84,7 +84,7 @@ class stmt_def_func_param final : public statement {
             }
 
             const std::optional<token> close_bracket_tk{
-                tz.is_next_char_token(']'),
+                tz.accept_char_token(']'),
             };
 
             // e.g. the '4' of 'a i8[4]', each size gets a body of its own
@@ -136,7 +136,7 @@ class stmt_def_func_param final : public statement {
 
             syntax_list list{};
 
-            std::optional<token> close_paren_tk{tz.is_next_char_token(')')};
+            std::optional<token> close_paren_tk{tz.accept_char_token(')')};
 
             while (not close_paren_tk) {
                 if (not list.params.empty()) {
@@ -157,7 +157,7 @@ class stmt_def_func_param final : public statement {
 
                 list.params.push_back(param);
 
-                close_paren_tk = tz.is_next_char_token(')');
+                close_paren_tk = tz.accept_char_token(')');
             }
 
             list.close_paren_tk = *close_paren_tk;

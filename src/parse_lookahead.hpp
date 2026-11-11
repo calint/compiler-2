@@ -124,7 +124,7 @@ inline auto assert_no_value_operator(const tokenizer& tz,
 
     tokenizer probe{tz};
 
-    if (const std::optional<token> not_tk{probe.is_next_word_token("not")}) {
+    if (const std::optional<token> not_tk{probe.accept_word_token("not")}) {
         throw_not_makes_condition(*not_tk, what);
     }
 
@@ -153,7 +153,7 @@ inline auto assert_no_operator_after_array(const tokenizer& tz) -> void {
 [[nodiscard]] inline auto is_zero_value(const tokenizer& tz) -> bool {
     tokenizer probe{tz};
 
-    return probe.is_next_char_token('{') and
+    return probe.accept_char_token('{') and
            probe.peek_char_after_whitespace() == '}';
 }
 
@@ -389,7 +389,7 @@ enum class term_kind : uint8_t {
     const token tk{probe.next_token()};
 
     if (classify_term(tc, tk, probe) != term_kind::generic_call or
-        not probe.is_next_char_token('(')) {
+        not probe.accept_char_token('(')) {
 
         return false;
     }
