@@ -1,0 +1,14 @@
+# a load of what the instruction before it stored, into the same register, is
+# removed, a dword load is kept since it clears the upper half on x86_64
+#
+# 'listing.py folds' checks the instructions of lines marked '# folds'
+
+func main() {
+    var y = 12
+    var x = y # folds
+    var q = x * 3 # folds
+    var s = i32(5)
+    var t = s # folds
+    var u = t * 3 # folds
+    exit(q + u)
+}

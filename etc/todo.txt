@@ -6,6 +6,13 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
 --------------------------------------------------------------------------------
 1. clean up
 --------------------------------------------------------------------------------
+[ ] easy: (round 294 XW) 'test-coverage.sh' runs the compiler without a
+    timeout, so a compiler that loops (a mutant of 'assembler::remove')
+    hangs the run instead of failing the case
+[ ] easy: (round 294 XW) running 'remove_copies' before 'remove_reloads'
+    removes more reloads (87 compiles of the tests are smaller): folding a
+    copy renames the source of a store to the register the next load
+    reads; both passes are sound in either order; measure and decide
 [ ] medium: user decision (round 293 ZK): an operation allocates its own
     result register before the named registers it then needs, so it blocks
     itself one live value before the real limit (the division of round 256

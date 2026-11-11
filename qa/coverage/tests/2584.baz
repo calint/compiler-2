@@ -1,0 +1,27 @@
+# a branch to the code of an 'if' over the jump to its end is inverted to a
+# branch to the end; with a negative operand the signed inverse differs from
+# the unsigned one
+
+func main() {
+    var x = -1
+    var k = 0
+    if x < 2 or false {
+        k = k + 1
+    }
+    if x <= 2 or false {
+        k = k + 2
+    }
+    if 2 > x or false {
+        k = k + 4
+    }
+    if 2 >= x or false {
+        k = k + 8
+    }
+    if x >= 2 or false {
+        k = k + 16
+    }
+    if x > 2 or false {
+        k = k + 32
+    }
+    exit(k)
+}

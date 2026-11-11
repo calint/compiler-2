@@ -1,0 +1,21 @@
+# the operand of a product by a helper call is an inlined result that an early
+# 'return' also sets, so the instruction before the end label of the function
+# keeps its register and the copy into the helper argument stays
+
+var g = 4
+
+func pick(v) res {
+    if v > 5 {
+        res = 2
+        return
+    }
+    res = g
+}
+
+func main() {
+    var v = 9
+    var a = pick(v) * v
+    v = 1
+    var b = pick(v) * v
+    exit(a + b)
+}

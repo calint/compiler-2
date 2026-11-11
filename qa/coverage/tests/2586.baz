@@ -1,0 +1,15 @@
+# rv32i: two branches in a row to the end of an 'if' compare registers that
+# the arguments of an inlined function hold; the first is not removed as one
+# of the same target, the second is conditional too
+
+func f(x, y) res {
+    res = 1
+    if x == 2 and y == y return
+    res = 2
+}
+
+func main() {
+    var a = 1
+    var b = 5
+    exit(f(a + 0, b + 0) * 10 + f(a + 1, b + 0))
+}

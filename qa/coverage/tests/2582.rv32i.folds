@@ -1,0 +1,12 @@
+=== 8:     var x = y # folds
+    sw t0, -2028(s0)
+=== 9:     var q = x * 3 # folds
+    slli t1, t0, 2
+    sub t0, t1, t0
+    sw t0, -2024(s0)
+=== 11:     var t = s # folds
+    sw t0, -2016(s0)
+=== 12:     var u = t * 3 # folds
+    slli t1, t0, 2
+    sub t0, t1, t0
+    sw t0, -2012(s0)

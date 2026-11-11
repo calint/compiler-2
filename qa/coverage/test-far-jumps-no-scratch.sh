@@ -159,6 +159,8 @@ EOF
 for optimize in "" "--nopt"; do
     echo -n "far jumps inverted branch rv32i $optimize: "
     "$BIN" far.baz --target=rv32i --bin=far.bin $optimize >far.s
+    # the jump of 'break' has a scratch register, so no jump borrows one
+    if grep -q 'jump \.Lbaz_landing\.' far.s; then false; fi
     run_rv32i far
     # note: 206 is the low byte of 'x * 10 + y', 3 * 10 + 270000
     [[ $status -eq 206 ]]

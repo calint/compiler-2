@@ -1,6 +1,18 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 294 (2026-11-11, XW mutation testing of the assembler
+    optimization passes)
+    => done (2026-11-11): 67 mutants of the shared jump, reload and copy
+       passes and their x86_64 and rv32i parts; 41 killed by the tests, 3
+       by the far-jump scripts (one with a new inverted-branch check in
+       'test-far-jumps-no-scratch.sh'), new tests 2580-2587 kill 10 more
+       (an inlined result copy kept, a dividend reload into 'rax', the
+       qword and dword reloads, a jump across the rodata label, inverted
+       signed branches, a backward branch at exactly 4096 bytes, two
+       branches to one target, a 'continue' as the last statement), 21
+       equivalent; two todo items (a compile timeout in the coverage run,
+       the order of the reload and copy passes); no compiler bug
 [x] easy: round 293 (2026-11-11, ZI design review of generics and
     definitions, ZJ of the built-in statements; YA mutation testing of
     'toc', YC of conversions, assignment analysis, declarations and

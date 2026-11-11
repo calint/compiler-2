@@ -1,0 +1,13 @@
+=== 8:     var x = y # folds
+    mov r15, qword [rbp]
+    mov qword [rbp + 8], r15
+=== 9:     var q = x * 3 # folds
+    imul r15, 3
+    mov qword [rbp + 16], r15
+=== 11:     var t = s # folds
+    mov r15d, dword [rbp + 24]
+    mov dword [rbp + 28], r15d
+=== 12:     var u = t * 3 # folds
+    mov r15d, dword [rbp + 28]
+    imul r15d, 3
+    mov dword [rbp + 32], r15d

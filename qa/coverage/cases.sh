@@ -7725,3 +7725,37 @@ SRC=2724 && COMPERR
 # the breaks of an inner loop are its own, an outer 'break' does not narrow
 # what is set after it
 SRC=2725 && EXP=11 && RUN
+
+# the operand of a product by a helper call is an inlined result that an early
+# 'return' also sets, so the copy into the helper argument stays
+SRC=2580 && EXP=22 && RUN
+
+# a dividend loaded right after the store of the same variable is loaded into
+# the division register, so the load stays
+SRC=2581 && EXP=3 && RUN
+
+# a load of what the instruction before it stored into the same register is
+# removed, a dword load on x86_64 is kept; the lines marked '# folds' are
+# pinned
+SRC=2582 && EXP=51 && RUN
+SRC=2582 && LISTING folds
+
+# the jump that ends a failure handler goes to the next code, after the data
+# of the handler in another section, so it is removed
+SRC=2583 && EXP=3 && DIFFNOPT
+
+# a branch over the jump to the end of an 'if' is inverted to the signed
+# inverse, which differs from the unsigned one for a negative operand
+SRC=2584 && EXP=15 && RUN
+
+# rv32i: the backward branch of a 'continue' 4096 bytes after the start of its
+# loop stays a branch, 4100 bytes after it grows to the inverted branch and 'j'
+SRC=2585 && EXP=5 && RUN
+
+# rv32i: two branches in a row to the end of an 'if' compare registers that
+# the arguments of an inlined function hold, the first one stays
+SRC=2586 && EXP=21 && RUN
+
+# a 'continue' under an 'if' that ends the body of a loop: the inverted branch
+# and the jump back after it go to the start of the loop, the jump stays
+SRC=2587 && EXP=54 && RUN

@@ -1,0 +1,15 @@
+# a 'continue' under an 'if' that ends the body of a loop: its branch, inverted
+# to the start of the loop, and the jump back after it go to the same place, so
+# the branch is removed and the jump stays
+
+func main() {
+    var i = 0
+    var n = 0
+    loop {
+        i = i + 1
+        if i >= 5 break
+        n = n + 1
+        if n > 100 continue
+    }
+    exit(i * 10 + n)
+}

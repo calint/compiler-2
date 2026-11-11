@@ -1,0 +1,14 @@
+57d56
+<     jmp baz_bounds_panic_file_0
+66d64
+<     jmp baz_report_line
+96d93
+<     jmp baz_exit
+117c114
+< ;   removed jumps to next code: 0
+---
+> ;   removed jumps to next code: 3
+128c125
+< ;                 instructions: 43
+---
+> ;                 instructions: 40

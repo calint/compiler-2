@@ -1,0 +1,9 @@
+# the jump that ends a failure handler goes to the routine that reports the
+# line, the next code after the data of the handler in another section, so it
+# is removed
+
+func main() {
+    var a = [4]{1, 2, 3, 4}
+    var i = 2
+    exit(a[i])
+}

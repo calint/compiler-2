@@ -1,0 +1,10 @@
+# a dividend loaded right after the store of the same variable is loaded into
+# the division register, which the store did not write, so the load stays
+
+func main() {
+    var y = 12
+    var d = 4
+    var x = y
+    var q = x / d
+    exit(q)
+}
