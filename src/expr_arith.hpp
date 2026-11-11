@@ -543,6 +543,10 @@ class expr_arith final : public statement {
 
         // a single element in memory that 'is_compiled_in_place' is compiled
         // once, without trying with and without a scratch register
+        // note: it needs no clobber check, a name is read before 'dst' is
+        //       written and a computed element orders its own reads, e.g. a
+        //       nested list checks itself and a call rejects a destination
+        //       it reads ('stmt_call::assert_no_shared_storage')
         if (not dst.is_register() and is_compiled_in_place()) {
             compile_steps(tc, dst, steps);
             return;

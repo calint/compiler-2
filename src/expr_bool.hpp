@@ -1117,8 +1117,10 @@ class expr_bool final : public statement {
         }
     }
 
-    // branches to 'targets', returns what the compile found out about the
-    // value without running it, empty when the run decides it
+    // branches to 'targets' and stores the value in 'dst', empty when only
+    // branching, e.g. the condition of an 'if'; returns what the compile
+    // found out about the value without running it, empty when the run
+    // decides it
     [[nodiscard]] auto compile_branches(toc& tc, const branch_targets& targets,
                                         const operand& dst) const
         -> std::optional<bool> {

@@ -1,6 +1,14 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 339 (2026-11-11, confirming round: assembler design and
+    readability of the expressions)
+    => done (2026-11-11): CI: 'expr_arith::compile' returns for a single
+       element in memory before the clobber check, a note says why that is
+       safe (a name is read before 'dst' is written, a call rejects a
+       destination it reads); 'expr_bool::compile_branches' says that an
+       empty 'dst' only branches; comments only; CH (assembler layer)
+       found nothing worth applying, 11 candidates rejected
 [x] easy: round 338 (2026-11-11, CE confirming round: design of 'toc'
     and the calls)
     => done (2026-11-11): 'loop_target' copied two fields of the loop scope
