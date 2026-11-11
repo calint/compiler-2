@@ -1,0 +1,7 @@
+# x86_64: a sector below -2^31 panics even when its value modulo 2^32 is a
+# sector of the image
+
+func main() {
+    var bytes = i8[512]
+    sector_read(-2147483649, bytes)
+}

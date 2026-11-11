@@ -869,7 +869,8 @@ class machine_x86_64 final : public machine {
 
     // the routines take the sector in 'rdi', the address in 'rsi' and the size
     // in 'rdx'; the image file is opened at the first transfer, a sector past
-    // its end or outside 32 bits, a failed open or a short transfer panics
+    // its end or outside -2^31 to 2^32 - 1, a failed open or a short transfer
+    // panics
     auto emit_sector_routines(const bool read_used, const bool write_used)
         -> void override {
 
@@ -877,6 +878,8 @@ class machine_x86_64 final : public machine {
         constexpr int read_write{2};
         constexpr int seek_end{2};
         constexpr int sector_shift{std::countr_zero(card_sector_size_bytes_)};
+        // the bits below the sign of a 32 bit register
+        constexpr int low_bits{31};
 
         // the descriptor is -1 until the file is opened
         constexpr std::array<int64_t, 1> not_opened{-1};
@@ -953,11 +956,16 @@ class machine_x86_64 final : public machine {
         assembler_.instruction(1, op::pop, "rdi");
         // here the file is open and only the system call is on the stack
         assembler_.label(0, "baz_sector_opened");
-        assembler_.comment(1, "the sector is an unsigned 32 bit number");
-        // zero extending 'edi' differs from 'rdi' when the upper half is set
-        assembler_.instruction(1, op::mov, "eax", "edi");
-        assembler_.instruction(1, op::cmp, "rax", "rdi");
-        assembler_.jcc(1, condition::ne, sd_card_failure_.label);
+        assembler_.comment(1, "the sector is its value modulo 2^32");
+        // a number from -2^31 to 2^32 - 1, which a 32 bit register holds,
+        // shifted right by 31 and incremented is 0, 1 or 2; one outside panics
+        assembler_.instruction(1, op::mov, "rax", "rdi");
+        assembler_.instruction(1, op::sar, "rax", low_bits);
+        assembler_.instruction(1, op::inc, "rax");
+        assembler_.instruction(1, op::cmp, "rax", 2);
+        assembler_.jcc(1, condition::a, sd_card_failure_.label);
+        // writing 'edi' zero extends it, the value modulo 2^32
+        assembler_.instruction(1, op::mov, "edi", "edi");
         // a sector at or past the end of the file panics
         assembler_.instruction(1, op::cmp, "rdi", sector_count);
         assembler_.jcc(1, condition::ae, sd_card_failure_.label);

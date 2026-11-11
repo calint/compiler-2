@@ -1,5 +1,5 @@
-# on rv32i a sector from 2^31 is written as a negative number, -2147483648 is
-# the sector 2^31 at 1 TB
+# a sector from 2^31 is written as a negative number, -2147483648 is the
+# sector 2^31 at 1 TB
 
 dat newline = "\n"
 

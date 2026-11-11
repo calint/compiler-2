@@ -1,0 +1,7 @@
+# the sector -1 is 2^32 - 1 on every target, past the end of a card of
+# 2^32 - 1 sectors
+
+func main() {
+    var bytes = i8[512]
+    sector_read(-1, bytes)
+}

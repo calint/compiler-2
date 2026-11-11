@@ -3307,8 +3307,8 @@ if [[ $MACHINE != rv32i-qemu ]]; then SRC=1034 && EXP=255 && SDCARD=1M RUN_ERR; 
 # a sector past the end of the sd card image panics
 if [[ $MACHINE == x86_64 || $MACHINE == rv32i ]]; then SRC=1035 && EXP=248 && SDCARD=1M RUN_ERR; fi
 
-# a sector number is 32 bits, a larger one panics even when its low 32 bits
-# are a sector of the image
+# x86_64: a sector from 2^32, which a 32 bit register cannot hold, panics even
+# when its value modulo 2^32 is a sector of the image
 if [[ $MACHINE == x86_64 ]]; then SRC=1036 && EXP=248 && SDCARD=1M RUN_ERR; fi
 
 # an sd card image that cannot be opened panics
@@ -3345,9 +3345,9 @@ if [[ $MACHINE != rv32i-fpga ]]; then SRC=1046 && EXP=248 && RUN_ERR; fi
 # the loop counters that registers hold survive the sector functions
 if [[ $MACHINE != rv32i-qemu ]]; then SRC=1047 && EXP=32 && SDCARD=1M RUN; fi
 
-# on rv32i a sector from 2^31 is written as a negative number, -2147483648 is
-# the sector 2^31 at 1 TB
-if [[ $MACHINE == rv32i || $MACHINE == rv32i-fpga ]]; then SRC=1048 && SDCARD=1100G DIFF; fi
+# a sector from 2^31 is written as a negative number, -2147483648 is the
+# sector 2^31 at 1 TB
+if [[ $MACHINE != rv32i-qemu ]]; then SRC=1048 && SDCARD=1100G DIFF; fi
 
 # a generic type based on another has the fields and the methods of the base
 # and its own, its methods are made only for its instances so their bodies may
@@ -7105,9 +7105,9 @@ SRC=2232 && COMPERR
 # destination, the shift of an inner conversion is checked at its width
 SRC=2233 && EXP=9 && OPTS="--vars=0x40000 --checks=shift" RUN
 
-# on rv32i the sector -1 is the last sector 2^32 - 1 of a card of 2 TB, which
-# a count of the sectors in 32 bits would leave out
-if [[ $MACHINE == rv32i || $MACHINE == rv32i-fpga ]]; then SRC=2234 && SDCARD=2T DIFF; fi
+# the sector -1 is the last sector 2^32 - 1 of a card of 2 TB, which a count
+# of the sectors in 32 bits would leave out
+if [[ $MACHINE != rv32i-qemu ]]; then SRC=2234 && SDCARD=2T DIFF; fi
 
 # a sector of 32 bits or less is its value modulo 2^32 on every target, the
 # 'i32' and 'i16' sector -2 is the sector 2^32 - 2 of a card of 2 TB
@@ -7498,8 +7498,8 @@ if [[ $MACHINE == x86_64 || $MACHINE == rv32i ]]; then SRC=2465 && EXP=248 && SD
 # an empty sd card image has no sector to write
 if [[ $MACHINE == x86_64 || $MACHINE == rv32i ]]; then SRC=2466 && EXP=248 && RUN_ERR; fi
 
-# a sector number is 32 bits, the sector 2^32 panics also on an image that
-# holds it
+# x86_64: the sector 2^32, which a 32 bit register cannot hold, panics also
+# on an image that holds it
 if [[ $MACHINE == x86_64 ]]; then SRC=2467 && EXP=248 && SDCARD=3T RUN_ERR; fi
 
 # the registers an expression holds survive a 'write' and the sector functions
@@ -7519,8 +7519,8 @@ if [[ $MACHINE != rv32i-qemu ]]; then SRC=2471 && EXP=1 && SDCARD=5G RUN; fi
 # 'read' stops at its count before the newline
 SRC=2472 && DIFFINP
 
-# on rv32i the sectors of a card of 3 TB reach 2^32 - 1
-if [[ $MACHINE == rv32i || $MACHINE == rv32i-fpga ]]; then SRC=2473 && EXP=3 && SDCARD=3T RUN; fi
+# the sectors of a card of 3 TB reach 2^32 - 1, -2147483648 is the sector 2^31
+if [[ $MACHINE != rv32i-qemu ]]; then SRC=2473 && EXP=3 && SDCARD=3T RUN; fi
 
 # the report of the use of registers (in 'test-cli.sh'): equal peaks, inlined
 # calls, and the noinline calls that save the most
@@ -7551,8 +7551,8 @@ SRC=2503 && EXP=15 && RUN
 # 'sector_write'
 if [[ $MACHINE != rv32i-qemu ]]; then SRC=2504 && EXP=10 && SDCARD=1M RUN; fi
 
-# a sector number is 32 bits: with an image of more than 2^32 sectors, sector
-# 2^32 is inside the image and still panics
+# x86_64: with an image of more than 2^32 sectors, sector 2^32 is inside the
+# image and still panics, a 32 bit register cannot hold it
 if [[ $MACHINE == x86_64 ]]; then SRC=2505 && EXP=248 && SDCARD=3T RUN_ERR; fi
 
 # a write to the sector at the end of the sd card image panics and does not
@@ -7824,3 +7824,20 @@ SRC=2861 && EXP=0 && RUN_ERR
 
 # 'read' from a descriptor other than 0 returns -9 on every target
 SRC=2862 && DIFFINP
+
+# the sector -1 is 2^32 - 1 on every target, past the end of a card of
+# 2^32 - 1 sectors
+if [[ $MACHINE == x86_64 || $MACHINE == rv32i ]]; then SRC=2850 && EXP=248 && SDCARD=2199023255040 RUN_ERR; fi
+
+# the sectors -2147483648 and 2147483647 are 2^31 and 2^31 - 1, apart
+if [[ $MACHINE != rv32i-qemu ]]; then SRC=2851 && EXP=1 && SDCARD=1100G RUN; fi
+
+# a sector computed negative at run time is its value modulo 2^32
+if [[ $MACHINE != rv32i-qemu ]]; then SRC=2852 && EXP=5 && SDCARD=2T RUN; fi
+
+# x86_64: a sector below -2^31 panics even when its value modulo 2^32 is a
+# sector of the image
+if [[ $MACHINE == x86_64 ]]; then SRC=2853 && EXP=248 && SDCARD=1100G RUN_ERR; fi
+
+# x86_64: the sector 4294967295 is the sector -1
+if [[ $MACHINE == x86_64 ]]; then SRC=2854 && EXP=7 && SDCARD=2T RUN; fi

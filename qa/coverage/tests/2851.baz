@@ -1,0 +1,12 @@
+# the sectors -2147483648 and 2147483647 are the sectors 2^31 and 2^31 - 1 on
+# every target, apart on a card of 1100 GB
+
+func main() {
+    var bytes = i8[512]
+    bytes[0] = 1
+    sector_write(-2147483648, bytes)
+    bytes[0] = 2
+    sector_write(2147483647, bytes)
+    sector_read(-2147483648, bytes)
+    exit(bytes[0])
+}

@@ -81,8 +81,9 @@ the binary image itself.
 * built-in functions: `array_copy`, `array_length`, `arrays_equal`, `read`,
   `write`, `sector_read`, `sector_write`, `exit`, `int`, `i8`, `i16`, `i32`, `i64`
 * read and write sectors from and to file on `x86_64` and `rv32i`, the file
-  (`--sdcard`) must exist and hold the sector; a sector of 32 bits or less,
-  e.g. `i32(-2)`, is its value modulo 2^32 on every target
+  (`--sdcard`) must exist and hold the sector; a sector is its value modulo
+  2^32 on every target, e.g. -2 is 2^32 - 2, and x86_64 panics on one
+  outside -2^31 to 2^32 - 1, which a 32 bit register cannot hold
 * read and write sectors from and to sd card on fpga hardware using `rv32i-fpga`
 
 ## Howto
@@ -221,10 +222,10 @@ examples:
 ```text
 Language                     files          blank        comment           code
 -------------------------------------------------------------------------------
-C/C++ Header                    64           9385           7145          27326
-C++                              1            204            103            825
+C/C++ Header                    64           9344           7202          27146
+C++                              1            208            105            829
 -------------------------------------------------------------------------------
-SUM:                            65           9589           7248          28151
+SUM:                            65           9552           7307          27975
 -------------------------------------------------------------------------------
 ```
 

@@ -1,5 +1,5 @@
-# a sector number is 32 bits: with an image of more than 2^32 sectors, sector
-# 2^32 is inside the image and still panics
+# x86_64: with an image of more than 2^32 sectors, sector 2^32 is inside the
+# image and still panics, a 32 bit register cannot hold it
 
 func main() {
     var bytes = i8[512]

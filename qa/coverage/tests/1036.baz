@@ -1,5 +1,5 @@
-# a sector number is 32 bits, a larger one panics even when its low 32 bits
-# are a sector of the image
+# x86_64: a sector from 2^32, which a 32 bit register cannot hold, panics even
+# when its value modulo 2^32 is a sector of the image
 
 func main() {
     var bytes = i8[512]

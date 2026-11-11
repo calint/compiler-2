@@ -1009,7 +1009,7 @@ class machine {
     // 'emit_arguments' compiles the arguments into the registers it is given,
     // in their order, and 'use_result' takes the count that 'read' and
     // 'write' return, it is not called for a sector function; the registers
-    // are held for the call only; a sector is an unsigned 32 bit number, the
+    // are held for the call only; a sector is its value modulo 2^32, the
     // size of a sector transfer is 'sector_size_bytes', a sector past the end
     // of the card panics where the target can tell
     auto

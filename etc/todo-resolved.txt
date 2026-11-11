@@ -1,6 +1,13 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 305 (2026-11-11, ZT review of the exceptions, item 3)
+    => done (2026-11-11): x86_64 takes a sector from -2^31 to 2^32 - 1
+       modulo 2^32 as rv32i does and panics 'sd card' outside it (3
+       instructions and 11 B more, once per program with sectors), so the
+       exception of a sector of the default type is gone; 1048, 2234 and
+       2473 run on x86_64 too, new tests 2850-2854; only the x86_64
+       listings of the 26 sector tests differ; README regenerated
 [x] easy: round 304 (2026-11-11, ZT review of the exceptions, item 7)
     => done (2026-11-11): the bare-metal 'read' serves only descriptor 0
        and 'write' only 1 and 2, any other returns -9 as on linux, so a

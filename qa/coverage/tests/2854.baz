@@ -1,0 +1,10 @@
+# x86_64: the sector 4294967295 is the sector -1
+
+func main() {
+    var bytes = i8[512]
+    bytes[0] = 7
+    sector_write(4294967295, bytes)
+    bytes[0] = 0
+    sector_read(-1, bytes)
+    exit(bytes[0])
+}

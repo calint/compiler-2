@@ -1,0 +1,13 @@
+# a sector computed negative at run time is its value modulo 2^32, the same
+# sector as 'i32(-2)'
+
+func main() {
+    var bytes = i8[512]
+    var s = 0
+    s = s - 2
+    bytes[0] = 5
+    sector_write(s, bytes)
+    bytes[0] = 0
+    sector_read(i32(-2), bytes)
+    exit(bytes[0])
+}
