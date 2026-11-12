@@ -279,10 +279,7 @@ class expr_any final : public statement {
 
     auto visit_operands(const operand_visitor visitor) const -> void override {
         for (size_t i{}; i < element_count(); ++i) {
-            visitor({
-                .node{&element(i)},
-                .index_only_place{},
-            });
+            visitor(node_operand::read(element(i)));
         }
     }
 

@@ -277,9 +277,6 @@ inline auto expr_type::visit_operands(const operand_visitor visitor) const
     -> void {
 
     for (const std::unique_ptr<expr_any>& e : exprs_) {
-        visitor({
-            .node{e.get()},
-            .index_only_place{},
-        });
+        visitor(node_operand::read(*e));
     }
 }

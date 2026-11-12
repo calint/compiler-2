@@ -129,10 +129,7 @@ inline auto stmt_identifier::visit_operands(const operand_visitor visitor) const
 
     for (const ident_elem& e : elems_) {
         if (e.index) {
-            visitor({
-                .node{&e.index_expr()},
-                .index_only_place{},
-            });
+            visitor(node_operand::read(e.index_expr()));
         }
     }
 }

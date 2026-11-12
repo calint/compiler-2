@@ -484,10 +484,7 @@ class expr_path final : public statement {
     }
 
     auto visit_operands(const operand_visitor visitor) const -> void override {
-        visitor({
-            .node{&path_},
-            .index_only_place{},
-        });
+        visitor(node_operand::read(path_));
     }
 
     //
@@ -544,10 +541,7 @@ class expr_call_result final : public statement {
     }
 
     auto visit_operands(const operand_visitor visitor) const -> void override {
-        visitor({
-            .node{call_.get()},
-            .index_only_place{},
-        });
+        visitor(node_operand::read(*call_));
     }
 };
 

@@ -144,10 +144,7 @@ class stmt_builtin_convert final : public statement {
     [[nodiscard]] auto keeps_low_bits() const -> bool override { return true; }
 
     auto visit_operands(const operand_visitor visitor) const -> void override {
-        visitor({
-            .node{&argument_.arg},
-            .index_only_place{},
-        });
+        visitor(node_operand::read(argument_.arg));
     }
 
   private:

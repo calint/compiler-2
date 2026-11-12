@@ -153,16 +153,10 @@ class expr_bool_op final : public statement {
     }
 
     auto visit_operands(const operand_visitor visitor) const -> void override {
-        visitor({
-            .node{&lhs_},
-            .index_only_place{},
-        });
+        visitor(node_operand::read(lhs_));
 
         if (comparison_) {
-            visitor({
-                .node{&comparison_->rhs},
-                .index_only_place{},
-            });
+            visitor(node_operand::read(comparison_->rhs));
         }
     }
 
@@ -1088,10 +1082,7 @@ class expr_bool final : public statement {
 
     auto visit_operands(const operand_visitor visitor) const -> void override {
         for (const element& e : bools_) {
-            visitor({
-                .node{&as_statement(e)},
-                .index_only_place{},
-            });
+            visitor(node_operand::read(as_statement(e)));
         }
     }
 

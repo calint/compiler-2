@@ -691,10 +691,7 @@ class expr_arith final : public statement {
 
     auto visit_operands(const operand_visitor visitor) const -> void override {
         for (const std::unique_ptr<statement>& e : exprs_) {
-            visitor({
-                .node{e.get()},
-                .index_only_place{},
-            });
+            visitor(node_operand::read(*e));
         }
     }
 

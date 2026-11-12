@@ -20,6 +20,18 @@ struct node_operand {
     const statement* node{};
     // null when the operand is read
     const stmt_identifier* index_only_place{};
+
+    //
+    // statics
+    //
+
+    // an operand that is read, e.g. an operand of an arithmetic expression
+    [[nodiscard]] static auto read(const statement& node) -> node_operand {
+        return {
+            .node{&node},
+            .index_only_place{},
+        };
+    }
 };
 
 // receives each operand of a node in evaluation order

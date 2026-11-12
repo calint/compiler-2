@@ -1,6 +1,18 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 374 (2026-11-12, design: patterns across files)
+    => done (2026-11-12): 'node_operand::read' names the operand that is
+       read, replacing 12 hand-built 'node_operand's of 'visit_operands' in
+       9 files; 'inline_call::compile_in_block' renamed
+       'compile_at_result_type' (it enters a block only for temporaries);
+       listings and errors unchanged, -24 lines; left: the check framing of
+       overlap, division and shift per target (only comments shared), the
+       bounds range of 'bulk_operands::range_of' and 'stmt_builtin_io' (io
+       does not mark the lower checks, unifying changes listings), the
+       generic argument count messages and the not-found ladders of
+       'toc.hpp' (unifying changes errors), the deleted copy and move of the
+       guards (clang-tidy wants them)
 [x] easy: round 373 (2026-11-12, readability: a newcomer adding a
     feature)
     => done (2026-11-12): chapter 9 checked against the code; the target

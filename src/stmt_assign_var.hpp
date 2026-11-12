@@ -114,10 +114,7 @@ class stmt_assign_var final : public statement {
             .index_only_place{&stmt_ident_},
         });
 
-        visitor({
-            .node{&expr_},
-            .index_only_place{},
-        });
+        visitor(node_operand::read(expr_));
     }
 
     //

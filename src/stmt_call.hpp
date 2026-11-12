@@ -888,10 +888,10 @@ struct call_site {
 //   0. 'compile': 'compile_within_limits', the limits on how deep the
 //      compile of calls nests, each a recursion of the compiler, or
 //      'check_recursion' in the check of a body that takes from a call
-//   1. 'compile_in_block': a result narrower than the operand it widens into
-//      is computed in a register and widened ('compile_widened'), a block
-//      holds the temporaries of the call when it has any
-//      ('call_site::compile_with_temporaries')
+//   1. 'compile_at_result_type': a result narrower than the operand it
+//      widens into is computed in a register and widened
+//      ('compile_widened'), a block holds the temporaries of the call when
+//      it has any ('call_site::compile_with_temporaries')
 //   2. 'compile_with_bindings': the bindings of the result and the arguments
 //      ('make_bindings'), an argument of an instance type without a place,
 //      e.g. an instance literal or a call result, is made in a temporary
@@ -1057,6 +1057,23 @@ class inline_call final {
             });
     }
 
+    auto compile_at_result_type(compile_toc& tc, const destination& dst) const
+        -> void {
+
+        if (call_.func->has_result() and
+            call_site::result_type_differs(dst, *call_.func)) {
+            // note: a narrower integer, see 'stmt_call::assert_result_type'
+
+            compile_widened(tc, dst);
+            return;
+        }
+
+        call_.compile_with_temporaries(tc, dst,
+                                       [&](const destination& result) -> void {
+                                           compile_with_bindings(tc, result);
+                                       });
+    }
+
     // an error found in the inlined body reports where it was called from,
     // an error in the arguments is in the caller and has no call frame
     auto compile_body(compile_toc& tc, const call_bindings& bindings) const
@@ -1105,23 +1122,6 @@ class inline_call final {
         compile_body(tc, bindings);
     }
 
-    auto compile_in_block(compile_toc& tc, const destination& dst) const
-        -> void {
-
-        if (call_.func->has_result() and
-            call_site::result_type_differs(dst, *call_.func)) {
-            // note: a narrower integer, see 'stmt_call::assert_result_type'
-
-            compile_widened(tc, dst);
-            return;
-        }
-
-        call_.compile_with_temporaries(tc, dst,
-                                       [&](const destination& result) -> void {
-                                           compile_with_bindings(tc, result);
-                                       });
-    }
-
     // the result is made at its type in a register that the body names, the
     // copy into the operand widens it
     auto compile_widened(compile_toc& tc, const destination& dst) const
@@ -1130,7 +1130,7 @@ class inline_call final {
         statement::compile_through_scratch(
             tc, call_.tk, dst.operand(), call_.func->result_type(),
             [&](const operand& result) -> void {
-                compile_in_block(tc, destination::of_register(result));
+                compile_at_result_type(tc, destination::of_register(result));
             });
     }
 
@@ -1188,7 +1188,7 @@ class inline_call final {
         assert_inline_nesting(tc, nesting);
 
         try {
-            compile_in_block(tc, dst);
+            compile_at_result_type(tc, dst);
         } catch (const compile_error& e) {
             if (nesting == 0 or
                 e.kind != compile_error::error_kind::out_of_registers) {
@@ -2158,10 +2158,7 @@ class stmt_call final : public statement {
     // the arguments in their order
     auto visit_operands(const operand_visitor visitor) const -> void override {
         for (const expr_any& e : args_) {
-            visitor({
-                .node{&e},
-                .index_only_place{},
-            });
+            visitor(node_operand::read(e));
         }
     }
 
