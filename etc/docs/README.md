@@ -588,7 +588,10 @@ inlined argument, the constant of a 'let'):
   an 'int', as with a variable 'k'), a 'let' of a type other than the
   default type, e.g. 'let k = i8(3)' or 'let b = true'
 - untyped: a literal or a 'let' of untyped values, checked by its value where
-  it is used, e.g. 'let k = 5' fits an 'i8', 'let k = 300' does not
+  it is used, e.g. 'let k = 5' fits an 'i8', 'let k = 300' does not; a 'let'
+  of one constant keeps it whole as its literal does, e.g. 'let u =
+  0x80000000' on rv32i, a 'let' of a list is computed and checked at the
+  default type where it is defined ('initializer_declaration::fold_let')
 
 The default type ('int') is the width of a register, 'i64' on x86_64 and 'i32'
 on rv32i (7.12). A variable or a parameter without a type has it, and so has

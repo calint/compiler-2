@@ -1,0 +1,9 @@
+# an untyped 'let' of one constant is checked where it is used, as its
+# literal: on rv32i 'var x = u' with 'u' of 0x80000000 does not fit 'int'
+
+let u = 0x80000000
+
+func main() {
+    var x = u
+    exit(0)
+}

@@ -1,6 +1,25 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: user decision (round 381): on rv32i an untyped 'let' must fit
+    'int' where it is defined: 'let U = 0x80000000' is rejected ("does not
+    fit 'int'", 'fold_let' in 'stmt_def_var.hpp' folds it at the default
+    type) while the literal in 'i32(0x80000000)' and a generic constant
+    'box<0x80000000>' with 'i32(n)' convert whole to -2^31; README 1.7 says
+    an untyped 'let' is checked by its value where it is used, which holds
+    for generic constants only
+    => document it in 1.7 and chapter 8 item 1, or have 'fold_let' keep an
+       untyped value unchecked until its use as generic constants do
+    => done (2026-11-12): round 389, the fix chosen by the user: an
+       untyped 'let' of one constant at the default type keeps its value
+       whole ('initializer_declaration::fold_let' folds it at 'i64' and
+       does not check it against 'int'), so it is checked where it is used
+       as its literal is: 'i32(u)' converts it whole, 'var x = u' is
+       rejected on rv32i at the line of the use; a 'let' of a list is still
+       computed and checked at the default type where it is defined, as the
+       same list in place; 'stmt_def_const::compile' checks its constant by
+       'fold_let'; 'expr_any::is_single_operand'; README 1.7; tests 3000,
+       3001; x86_64 unchanged
 [-] easy: 'read' and 'sector_read' into an element type that
     holds a 'bool' put bytes there that are neither 'true' nor 'false'
     ('read(0, b, 1)' of a 'bool[1]' with input 'x' is true as a condition;

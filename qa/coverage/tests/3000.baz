@@ -1,0 +1,15 @@
+# an untyped 'let' of one constant keeps its value whole, as its literal: on
+# rv32i 'let u = 0x80000000' is not checked against 'int' where it is defined,
+# a conversion takes it whole
+
+let u = 0x80000000
+let w = u
+
+func main() {
+    var a = i32(u) == i32(0x80000000)
+    var b = i32(w) < 0
+    if a and b {
+        exit(1)
+    }
+    exit(2)
+}

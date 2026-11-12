@@ -402,6 +402,18 @@ class expr_any final : public statement {
         return destination_.is_array();
     }
 
+    // one operand alone, e.g. '0x80000000', '-5' or 'k', not 'a + 1' or
+    // '(a + 1)'
+    [[nodiscard]] auto is_single_operand() const -> bool {
+        if (not std::holds_alternative<single_value>(form_)) {
+            return false;
+        }
+
+        const expr_arith* const arith{std::get_if<expr_arith>(&value_at(0))};
+
+        return arith != nullptr and arith->is_single_operand();
+    }
+
     [[nodiscard]] auto is_string() const -> bool {
         return std::holds_alternative<string_array>(form_);
     }

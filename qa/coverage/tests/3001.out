@@ -1,0 +1,4 @@
+
+3001.baz:7:13: constant 'u' does not fit 'int' (-2147483648 to 2147483647), 'int(...)' wraps it
+    var x = u
+            ^

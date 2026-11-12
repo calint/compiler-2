@@ -7916,3 +7916,10 @@ SRC=2996 && EXP=3 && RUN
 SRC=2997 && COMPERR
 SRC=2998 && COMPERR
 SRC=2999 && COMPERR
+
+# an untyped 'let' of one constant keeps its value whole, as its literal
+SRC=3000 && EXP=1 && RUN
+
+# an untyped 'let' of one constant is checked where it is used: does not fit
+# 'int' on rv32i
+if [[ $MACHINE != x86_64 ]]; then SRC=3001 && COMPERR; fi

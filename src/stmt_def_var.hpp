@@ -114,9 +114,26 @@ class initializer_declaration final {
             return std::nullopt;
         }
 
-        std::optional<folded_value> constant{
-            value.fold_checked(tc, tc.use_at(tp)),
+        const value_use use{tc.use_at(tp)};
+
+        std::optional<folded_value> constant{value.fold(tc, use)};
+
+        // note: one untyped constant at the default type keeps its value
+        //       whole and is checked where it is used, as the literal it
+        //       names, e.g. 'let k = 0x80000000' on a target whose default
+        //       type is 'i32'; a list is computed and checked at 'tp'
+
+        const bool is_whole_literal{
+            constant and not constant->is_typed() and
+                tp.is_same(tc.builtins().default_type()) and
+                value.is_single_operand(),
         };
+
+        if (is_whole_literal) {
+            constant = value.fold(tc, tc.use_at(tc.builtins().i64()));
+        } else if (constant) {
+            value.assert_not_narrowed(tc, use.width_ref());
+        }
 
         // note: untyped only at the default type, e.g. 'let k = 5' fits any
         //       integer where it is used; 'let b = true' is a 'bool'
@@ -412,8 +429,9 @@ class stmt_def_const final : public statement {
         // note: folded at the declared type like the parse, where it wraps
         //       without the overflow check, e.g. 'x + 1' of an 'i8' 127
 
-        assert(folded_value::value_of(initializer_.fold_checked(
-                   tc, tc.use_at(get_type()))) == constant_.value);
+        assert(folded_value::value_of(initializer_declaration::fold_let(
+                   tc, tok(), initializer_, get_type(), array_shape{})) ==
+               constant_.value);
 
         // note: the compile of a 'var' checks the elements of a condition
         //       after the one that decides it, so does this
