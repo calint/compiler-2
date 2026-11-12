@@ -481,7 +481,7 @@ class stmt_identifier final : public statement {
         x.copy_value({tok(), tc.indent()}, dst.operand(), op);
 
         get_unary_ops().compile(x, {tok(), tc.indent()}, dst.operand(),
-                                tc.overflow_options(dst));
+                                tc.overflow_check(dst));
     }
 
     auto assert_not_narrowed(const toc& tc, const type& dst_type) const

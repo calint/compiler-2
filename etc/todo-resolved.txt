@@ -1,6 +1,16 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 359 (2026-11-12, design: one way to decide each check)
+    => done (2026-11-12): 'toc::overflow_options' renamed 'overflow_check',
+       with an overload without a destination that 'use_at' and
+       'expr_bool::left_operand' use; 'toc::checks_overflow' removed in
+       favor of 'overflow_check(dst).enabled'; 'machine::check_bounds'
+       returns whether the values of its range are then known not to be
+       negative, so 'bulk_operands::check_range' no longer repeats the
+       machine's lower bound decision; division, shift and overlap were
+       already decided once, the 'is_bounds' guards decide the code shape;
+       README 1.5; listings unchanged
 [x] easy: round 358 (2026-11-12, architecture review: the layers, 'toc'
     as a grab bag, parallel passes, hidden mode)
     => done (2026-11-12): the dry-run mode is front-end state: 'toc' sets

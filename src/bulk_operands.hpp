@@ -199,9 +199,11 @@ class bulk_operands final {
 
             machine& x{tc_.machine()};
 
-            x.check_bounds({count_tk, tc_.indent()}, *range);
+            const bool is_lower_checked{
+                x.check_bounds({count_tk, tc_.indent()}, *range),
+            };
 
-            return count_register.has_value() and tc_.checks().bounds_lower;
+            return count_register.has_value() and is_lower_checked;
         }
 
         // the ranges of both arrays after the later arguments,

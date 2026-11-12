@@ -141,7 +141,7 @@ class stmt_builtin_io final : public statement {
             },
             [&](const operand& result) -> void {
                 get_unary_ops().compile(x, {tok(), tc.indent()}, result,
-                                        tc.overflow_options(dst));
+                                        tc.overflow_check(dst));
 
                 if (not dst.is_empty()) {
                     x.copy_value({tok(), tc.indent()}, dst.operand(), result);

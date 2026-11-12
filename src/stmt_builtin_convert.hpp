@@ -160,7 +160,7 @@ class stmt_builtin_convert final : public statement {
     auto compile_argument(toc& tc, const destination& target,
                           const unary_ops& uops) const -> void {
 
-        const machine::runtime_check uops_check{tc.overflow_options(target)};
+        const machine::runtime_check uops_check{tc.overflow_check(target)};
 
         const type* const scratch_type{plan_scratch_type(target)};
 
@@ -202,7 +202,7 @@ class stmt_builtin_convert final : public statement {
         }
 
         get_unary_ops().compile(x, {tok(), tc.indent()}, widened,
-                                tc.overflow_options(dst));
+                                tc.overflow_check(dst));
 
         if (dst.is_register()) {
             return;
@@ -277,7 +277,7 @@ class stmt_builtin_convert final : public statement {
             return true;
         }
 
-        if (not tc.checks_overflow(dst) or get_unary_ops().is_empty()) {
+        if (not tc.overflow_check(dst).enabled or get_unary_ops().is_empty()) {
             return false;
         }
 

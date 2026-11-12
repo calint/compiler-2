@@ -350,11 +350,15 @@ constants out of range, shared storage) always hold, see 8.1. The options are
 one record, held by the machine with the checks its target cannot honor off
 ('machine::checks', e.g. 'stack' on x86_64): a check of its own,
 'check_bounds', 'check_frame_capacity' and 'check_stack_capacity', emits
-nothing when its option is off, so its callers do not ask; an operation with
-a check, e.g. 'divide', takes a 'runtime_check' from its caller, which knows
-whether the operation can fail, e.g. not for a constant divisor other than -1,
-and 'toc::checks' gives the record to the front end for that and for the
-compile-time rules that follow a check, e.g. a constant that overflows.
+nothing when its option is off, so its callers do not ask ('check_bounds'
+returns whether the values of its range are then known not to be negative,
+e.g. the count of a bulk operation for the range of its second array); an
+operation with a check, e.g. 'divide', takes a 'runtime_check' from its
+caller, which knows whether the operation can fail, e.g. not for a constant
+divisor other than -1 ('toc::overflow_check' for the arithmetic, off where
+the destination wraps), and 'toc::checks' gives the record to the front end
+for that and for the compile-time rules that follow a check, e.g. a constant
+that overflows.
 
 The rule: whether a program is accepted does not depend on its calls, except
 for what needs the arguments of a call. So it can depend on inlining: in
@@ -602,7 +606,7 @@ type T: its argument is a list computed at W, the wider of T and the type of
 the argument's first element (on a tie the argument's type, so the 'b' of
 'i8(b)' stays 'bool'), where a wider element is rejected as narrowed and the
 arithmetic wraps. A destination carries whether the arithmetic of its value is
-checked for overflow ('destination::as_wrapping', 'toc::overflow_options'):
+checked for overflow ('destination::as_wrapping', 'toc::overflow_check'):
 the argument is compiled into a wrapping one, which its scratch registers
 keep; a call in it builds destinations of its own, so its arguments and body
 are checked as anywhere else, while the call's own unary ops follow the
@@ -2067,7 +2071,7 @@ constants out of range, and the code the run-time checks.
 | array index out of bounds | 'a[i]' | run time ('machine::check_bounds' from 'stmt_identifier::compile_checked_index', the range of a bulk operation or an io built-in ('bulk_operands', 'stmt_builtin_io') and the count of a 'foo') | 'upper', 'lower' | 0295, 0296, 0300-0302, 0617, 0618, 1342 |
 | division by zero and 'MIN / -1', also of '%' | 'a / b' | run time ('machine::divide' from 'expr_arith::emit_operation', not for a constant divisor other than -1); a constant 'MIN / -1' is rejected ('fold'), the 64-bit one also without the check, it has no value | 'division' | 0954-0957, 1757-1759 |
 | shift count below zero or not below the width | 'a << n' | run time ('machine::shift' with 'check_options::shift', from 'expr_arith::emit_operation') | 'shift' | 0964-0966 |
-| signed overflow | 'a + b' | run time ('machine::add_subtract', 'multiply' and 'unary' with 'toc::overflow_options') | 'overflow' | 0977, 0978, 0983 |
+| signed overflow | 'a + b' | run time ('machine::add_subtract', 'multiply' and 'unary' with 'toc::overflow_check') | 'overflow' | 0977, 0978, 0983 |
 | 'array_copy' whose destination starts inside the source | 'array_copy(a, a[1], 3)' | run time ('machine::copy_elements' with the overlap check of 'stmt_builtin_array_copy') | 'overlap' | 0970-0972 |
 | the variables of a noinline call past '--vars' | deep noinline recursion | run time ('machine::check_frame_capacity' from 'noinline_call::populate_frame', 4.1) | 'frame' | 0405, 0406, 0426 |
 | the stack of a noinline call | deep noinline recursion | run time on rv32i-qemu and rv32i-fpga ('machine::check_stack_capacity' from 'noinline_call::populate_frame'); on x86_64 and rv32i the operating system stops the program | 'stack' | 0974-0976 |

@@ -2120,7 +2120,7 @@ class stmt_call final : public statement {
         // the width and with the overflow check of the destination, e.g. the
         // '~' of '~f(x)'
         get_unary_ops().compile(x, {tok(), tc.indent()}, dst.operand(),
-                                tc.overflow_options(dst));
+                                tc.overflow_check(dst));
     }
 
     // the calls in the arguments run first, then the body

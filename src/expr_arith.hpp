@@ -866,7 +866,7 @@ class expr_arith final : public statement {
         // only a zero constant leaves a subtracted element first: '2 - b - 2'
         if (first.op == arithmetic_operator::subtract) {
             x.unary({tok(), tc.indent()}, arithmetic_operator::negate,
-                    dst.operand(), tc.overflow_options(dst));
+                    dst.operand(), tc.overflow_check(dst));
         }
     }
 
@@ -913,7 +913,7 @@ class expr_arith final : public statement {
 
         // the unary ops of the list apply to its result, e.g. '-(a + b)'
         get_unary_ops().compile(x, {tok(), tc.indent()}, dst.operand(),
-                                tc.overflow_options(dst));
+                                tc.overflow_check(dst));
     }
 
     // the destination keeps its value until the whole expression is computed;
@@ -1092,7 +1092,7 @@ class expr_arith final : public statement {
 
         // moving or combining constants changes which partial results
         // overflow
-        if (tc.checks_overflow(dst)) {
+        if (tc.overflow_check(dst).enabled) {
             return make_steps(tc, dst);
         }
 
@@ -1265,8 +1265,8 @@ class expr_arith final : public statement {
         //       of the negation, the check computes it
 
         const bool is_negation_folded{
-            arith_steps::is_additive(op) and not tc.checks_overflow(dst) and
-                s.is_negated_operand,
+            arith_steps::is_additive(op) and
+                not tc.overflow_check(dst).enabled and s.is_negated_operand,
         };
 
         const stmt_identifier& ident{*src.operand_path()};
@@ -1302,7 +1302,7 @@ class expr_arith final : public statement {
 
         const operand src_operand{
             ident.compile_value_operand(tc, src.tok(), src_info, dst.type_ref(),
-                                        tc.overflow_options(dst), held),
+                                        tc.overflow_check(dst), held),
         };
 
         emit_operation(tc, src.tok(), op, dst, src_operand,
@@ -1363,14 +1363,14 @@ class expr_arith final : public statement {
 
         if (family == operator_family::add_subtract) {
             x.add_subtract({src_loc_tk, tc.indent()}, op, dst.operand(), value,
-                           tc.overflow_options(dst));
+                           tc.overflow_check(dst));
 
             return;
         }
 
         if (family == operator_family::multiply) {
             x.multiply({src_loc_tk, tc.indent()}, dst.operand(), value, use,
-                       tc.overflow_options(dst));
+                       tc.overflow_check(dst));
 
             return;
         }

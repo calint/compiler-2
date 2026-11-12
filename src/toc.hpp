@@ -2331,15 +2331,16 @@ class definition_checks final {
 //                  'add_noinline_body', 'dry_run', 'check_skipped',
 //                  'emit_most_efficient', 'create_unique_label',
 //                  'is_dry_run', 'call_path_at', 'next_frame_address',
-//                  'use_of',
-//                  'overflow_options', 'checks_overflow', the listing indent
-//                  ('indent', 'indent_scope'), the reachability
+//                  'use_of', 'overflow_check' of a destination, the
+//                  listing indent ('indent', 'indent_scope'), the
+//                  reachability
 //                  ('is_reachable', 'end_path', 'record_break',
 //                  'record_continue', 'record_return', 'join_loop',
 //                  'path_merge')
 //   both           'add_var' and 'add_const' (placed and commented only while
 //                  compiling), 'scope_entry', 'resolve_declared',
-//                  'use_at' and 'storage_of'
+//                  'use_at', 'overflow_check' without a destination and
+//                  'storage_of'
 //   tables         'builtins', 'checked_bodies', 'checks', 'data',
 //                  'definitions', 'emitted_bodies', 'funcs', 'generics',
 //                  'layout', 'machine', 'scopes', 'types'
@@ -3012,14 +3013,6 @@ class toc final {
         return x.checks();
     }
 
-    // whether the arithmetic of a value that 'dst' receives is checked for
-    // overflow
-    [[nodiscard]] auto checks_overflow(const destination& dst) const -> bool {
-        assert(is_compiling_);
-
-        return overflow_options(dst).enabled;
-    }
-
     // a number, untyped, or a constant with its type
     [[nodiscard]] auto constant_value_of(const token& tk) const
         -> std::optional<folded_value> {
@@ -3328,7 +3321,17 @@ class toc final {
         return storage_.next_frame_address();
     }
 
-    [[nodiscard]] auto overflow_options(const destination& dst) const
+    // the overflow check of the arithmetic of a value without a destination,
+    // e.g. a comparison side or an argument, as '--checks' asks
+    [[nodiscard]] auto overflow_check() const -> machine::runtime_check {
+        return {
+            .enabled{checks().overflow},
+        };
+    }
+
+    // the overflow check of the arithmetic of a value that 'dst' receives,
+    // off where 'dst' wraps
+    [[nodiscard]] auto overflow_check(const destination& dst) const
         -> machine::runtime_check {
 
         assert(is_compiling_);
@@ -3337,9 +3340,7 @@ class toc final {
             return {};
         }
 
-        return {
-            .enabled{checks().overflow},
-        };
+        return overflow_check();
     }
 
     // a 'break' leaves the innermost 'loop' or 'foo', whose end is then
@@ -3448,12 +3449,11 @@ class toc final {
         };
     }
 
-    // a value used without a destination, e.g. a comparison side or an
-    // argument, is checked as '--checks' asks
+    // a value used without a destination at 'width'
     [[nodiscard]] auto use_at(const type& width) const -> value_use {
         return {
             .width{&width},
-            .checks_overflow{checks().overflow},
+            .checks_overflow{overflow_check().enabled},
         };
     }
 
@@ -3462,7 +3462,7 @@ class toc final {
 
         return {
             .width{&dst.type_ref()},
-            .checks_overflow{checks_overflow(dst)},
+            .checks_overflow{overflow_check(dst).enabled},
         };
     }
 

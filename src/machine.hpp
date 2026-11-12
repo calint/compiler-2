@@ -1088,12 +1088,13 @@ class machine {
     }
 
     // jumps to the bounds failure handler when 'range' is outside its array,
-    // by the bounds that '--checks' turns on
-    auto check_bounds(const emit_site site, const bounds_range& range) -> void {
+    // by the bounds that '--checks' turns on; true when the values of 'range'
+    // are then known not to be negative
+    auto check_bounds(const emit_site site, const bounds_range& range) -> bool {
         const check_options& checks{options_.checks};
 
         if (not checks.is_bounds()) {
-            return;
+            return false;
         }
 
         // note: an index and a count are values of the default type in
@@ -1118,6 +1119,8 @@ class machine {
         emit_bounds_check(site, range, plan);
 
         comment(site, "bounds check end");
+
+        return plan.lower_checked;
     }
 
     // jumps to the frame overflow handler when the callee frame at
