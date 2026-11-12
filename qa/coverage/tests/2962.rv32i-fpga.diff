@@ -6,7 +6,7 @@
 < #   removed jumps to next code: 0
 ---
 > #   removed jumps to next code: 2
-120c118
+121c119
 < #                 instructions: 40
 ---
 > #                 instructions: 38

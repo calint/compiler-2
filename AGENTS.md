@@ -143,6 +143,9 @@
   round of fresh agents (a bug hunt in an area not hunted recently, a design
   simplification, a newcomer readability walk) finds nothing to apply; what
   needs approval does not count.
+- Until the design is judged done, the loop takes no items from
+  `etc/todo.txt`: rounds look for design, readability and bugs; findings
+  that are not done go there.
 - Fixes: within a clean design, no hacks; refactor first when needed. State
   the intended fix in the round's entry.
 - Do not split large headers; helper classes go near their user in the same

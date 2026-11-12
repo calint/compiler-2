@@ -27,7 +27,7 @@
 ---
 > # inverted branches over jumps: 1
 > # removed reloads after stores: 1
-193c186
+194c187
 < #                 instructions: 49
 ---
 > #                 instructions: 42

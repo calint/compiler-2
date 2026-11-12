@@ -1,6 +1,38 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] medium: x86_64: a bool computed by 'setcc' and branched on at once is
+    tested again: 'sete r15b; test r15b, r15b; jne' (a bool argument of an
+    inline function, e.g. 'assert(k == 3)') and 'setg byte [m]; cmp byte
+    [m], 0; je' ('var f = k > 4 if f'); 'setcc' leaves the flags, so the
+    branch can read those of the comparison
+    => round 316 AX prototype, register form only: a pass 'remove_retests'
+       after 'remove_copies' rewrites 3699 sites, x86 test corpus -11.2 KB
+       (-1.6 %), roome -99 B; about 122 lines, mostly typed move records
+       ('memory_move', 'condition_store', 'register_test'), plus a report
+       line; set aside by the user (2026-11-11) for its size
+    => to try: a pass that matches only the two three-instruction shapes
+       beside 'remove_reloads', without the record variant; take it if it
+       is about 40 lines
+    => rv32i ('slt'/'xori'/'sltiu' then 'bnez', 3126 sites) needs to know
+       the register is dead, liveness or a front-end change; not this item
+    => round 348 CG (2026-11-12): the pass as a three-line match beside
+       'remove_reloads' (x86 line records a variant of 'memory_move' and
+       'condition_store', a hook 'retested_branch' that returns none on
+       rv32i, a report line 'removed tests after setcc') is about +149
+       lines (95 of code) for x86_64 tests -1936 instructions (-2.95 %,
+       -5929 B of 276829 B '.text'), roome -33 instructions (-99 B); rv32i
+       unchanged; all checks and 'fuzz-all.sh' pass; a version that reads
+       the 'setcc' back from its text would be about 40 lines, against the
+       rule of structured lines; left: 'sete; test; sete/setne' (about 50)
+       and joins at a referenced 'bool.N.end' (about 180); patch
+       /tmp/r348-cg-work/patch.diff (on 011f9315)
+    => done (2026-11-12): round 354, approved by the user: the pass of
+       round 348 CG, 'assembler::remove_retests' after 'remove_copies';
+       x86 line records a variant of 'memory_move' and 'condition_store',
+       the hook 'retested_branch' returns none on rv32i; report line
+       'removed tests after setcc'; x86_64 tests -1936 instructions
+       (-2.95 %), roome -99 B
 [x] easy: round 353 (2026-11-12, one consistency topic: the name
     'get_lea_operand')
 [x] easy: (round 350) 'get_lea_operand' (5 files) returns the storage

@@ -4,7 +4,7 @@
 < #   removed jumps to next code: 0
 ---
 > #   removed jumps to next code: 1
-67c66
+68c67
 < #                 instructions: 7
 ---
 > #                 instructions: 6

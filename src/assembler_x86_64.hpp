@@ -28,32 +28,6 @@
 // below, not text, so an encoder like the rv32i one can be added
 // (etc/todo.txt, on hold)
 class assembler_x86_64 final : public assembler {
-    // starts the comment of a line, the text before it is code
-    static constexpr std::string_view comment_marker_{";"};
-
-    // note: nasm truncates a symbol at 4095 characters, so two long labels
-    //       with a common prefix would collide, e.g. the bodies of generic
-    //       instances with long arguments
-
-    static constexpr size_t max_symbol_size_{4000};
-
-    struct op_info {
-        std::string_view mnemonic;
-        size_t operand_count{};
-    };
-
-    // a 'mov' between a register and memory, read by 'is_reload' and
-    // 'move_consumed'
-    struct memory_move {
-        std::string register_name;
-        // the operand with its width, e.g. 'word [rbp + 2]'
-        std::string address;
-        size_t size_bytes{};
-        bool stores{};
-    };
-
-    std::vector<memory_move> moves_;
-
   public:
     // 'and', 'or', 'xor' and 'not' are c++ operator names
     enum class op : uint8_t {
@@ -174,6 +148,45 @@ class assembler_x86_64 final : public assembler {
     // a register by name, memory or an immediate
     using argument = std::variant<std::string_view, memory, immediate>;
 
+  private:
+    // starts the comment of a line, the text before it is code
+    static constexpr std::string_view comment_marker_{";"};
+
+    // note: nasm truncates a symbol at 4095 characters, so two long labels
+    //       with a common prefix would collide, e.g. the bodies of generic
+    //       instances with long arguments
+
+    static constexpr size_t max_symbol_size_{4000};
+
+    struct op_info {
+        std::string_view mnemonic;
+        size_t operand_count{};
+    };
+
+    // a 'mov' between a register and memory, read by 'is_reload' and
+    // 'move_consumed'
+    struct memory_move {
+        std::string register_name;
+        // the operand with its width, e.g. 'word [rbp + 2]'
+        std::string address;
+        size_t size_bytes{};
+        bool stores{};
+    };
+
+    // a 'setcc' and the test of its operand that a branch after it need not
+    // repeat, read by 'retested_branch'
+    struct condition_store {
+        condition cc{};
+        // e.g. 'test r15b, r15b' or 'cmp byte [rbp + 8], 0'
+        std::string retest;
+    };
+
+    // the structured form of a line
+    using record = std::variant<memory_move, condition_store>;
+
+    std::vector<record> records_;
+
+  public:
     // the widths of the operands
     static constexpr size_t size_qword{8};
     static constexpr size_t size_dword{4};
@@ -290,8 +303,8 @@ class assembler_x86_64 final : public assembler {
             return;
         }
 
-        moves_.push_back(std::move(*move));
-        add_line(std::move(text), instruction_size(), moves_.size() - 1);
+        records_.emplace_back(std::move(*move));
+        add_line(std::move(text), instruction_size(), records_.size() - 1);
     }
 
     auto jcc(const size_t indent, const condition cc,
@@ -338,8 +351,23 @@ class assembler_x86_64 final : public assembler {
     auto setcc(const size_t indent, const condition cc, const argument& dst)
         -> void {
 
-        add_instruction(std::format("{}set{} {}", indentation(indent),
-                                    condition_suffix(cc), argument_text(dst)));
+        const std::string operand{argument_text(dst)};
+
+        // a byte in memory is compared with zero, a register tested
+        const std::string retest{
+            std::holds_alternative<memory>(dst)
+                ? instruction_text(op::cmp, operand, "0")
+                : instruction_text(op::test, operand, operand),
+        };
+
+        records_.emplace_back(condition_store{
+            .cc{cc},
+            .retest{retest},
+        });
+
+        add_line(std::format("{}set{} {}", indentation(indent),
+                             condition_suffix(cc), operand),
+                 instruction_size(), records_.size() - 1);
     }
 
     // writes the lines as they are, nasm resolves the jump distances, a long
@@ -427,17 +455,42 @@ class assembler_x86_64 final : public assembler {
     [[nodiscard]] auto is_reload(const line& store, const line& load) const
         -> bool override {
 
-        if (not store.record or not load.record) {
+        const memory_move* const stored{record_of<memory_move>(store)};
+        const memory_move* const loaded{record_of<memory_move>(load)};
+
+        if (stored == nullptr or loaded == nullptr) {
             return false;
         }
 
-        const memory_move& stored{moves_.at(*store.record)};
-        const memory_move& loaded{moves_.at(*load.record)};
+        return stored->stores and not loaded->stores and
+               stored->size_bytes != 0 and
+               stored->register_name == loaded->register_name and
+               stored->address == loaded->address;
+    }
 
-        return stored.stores and not loaded.stores and
-               stored.size_bytes != 0 and
-               stored.register_name == loaded.register_name and
-               stored.address == loaded.address;
+    // 'jne' after the test is taken when the stored value is nonzero
+    [[nodiscard]] auto retested_branch(const line& set, const line& test,
+                                       const std::string_view branch) const
+        -> std::optional<std::string> override {
+
+        const condition_store* const stored{record_of<condition_store>(set)};
+
+        if (stored == nullptr or code_text(test) != stored->retest) {
+            return std::nullopt;
+        }
+
+        std::string taken{
+            std::format("j{}", condition_suffix(stored->cc)),
+        };
+
+        if (branch == "jne") {
+            return taken;
+        }
+
+        // note: a bool is branched on with 'je' or 'jne'
+        assert(branch == "je");
+
+        return std::string{inverse_branch_mnemonic(taken)};
     }
 
     [[nodiscard]] auto unconditional_jump_mnemonic() const
@@ -464,14 +517,29 @@ class assembler_x86_64 final : public assembler {
             return nullptr;
         }
 
-        memory_move& move{moves_.at(*l->record)};
+        record& structured{records_.at(*l->record)};
+        memory_move* const move{std::get_if<memory_move>(&structured)};
+
+        if (move == nullptr) {
+            return nullptr;
+        }
 
         const bool loads{
-            not move.stores and move.size_bytes == size_qword and
-                move.register_name == register_name,
+            not move->stores and move->size_bytes == size_qword and
+                move->register_name == register_name,
         };
 
-        return loads ? &move : nullptr;
+        return loads ? move : nullptr;
+    }
+
+    // none for a line without a record or with another record
+    template <typename record_t>
+    [[nodiscard]] auto record_of(const line& l) const -> const record_t* {
+        if (not l.record) {
+            return nullptr;
+        }
+
+        return std::get_if<record_t>(&records_.at(*l.record));
     }
 
     //
@@ -542,6 +610,12 @@ class assembler_x86_64 final : public assembler {
 
         return std::format("{} [{}]", size_specifier(address.size_bytes),
                            address_text(address));
+    }
+
+    // the instruction of 'l' without its indentation
+    [[nodiscard]] static auto code_text(const line& l) -> std::string_view {
+        const std::string_view text{l.text};
+        return text.substr(leading_whitespace(text).size());
     }
 
     // the marker replaces the first spaces of the indentation

@@ -1033,6 +1033,16 @@ class assembler_rv32i final : public assembler {
                stored->value.subtracted == loaded->value.subtracted;
     }
 
+    // a set instruction leaves no flags
+    [[nodiscard]] auto
+    retested_branch([[maybe_unused]] const line& set,
+                    [[maybe_unused]] const line& test,
+                    [[maybe_unused]] const std::string_view branch) const
+        -> std::optional<std::string> override {
+
+        return std::nullopt;
+    }
+
     [[nodiscard]] auto unconditional_jump_mnemonic() const
         -> std::string_view override {
 

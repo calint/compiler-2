@@ -190,6 +190,10 @@ class report_renderer final {
                     .name{"removed register copies"},
                     .value{std::format("{}", counts.removed_copies)},
                 },
+                {
+                    .name{"removed tests after setcc"},
+                    .value{std::format("{}", counts.removed_retests)},
+                },
             },
         };
     }

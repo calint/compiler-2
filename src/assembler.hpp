@@ -78,6 +78,17 @@
 //   to
 //                                       sw a0, -2016(s0)
 //                                       addi t0, a0, 1
+//
+// tests removed by 'remove_retests', after 'remove_copies', on x86_64: the
+// branch after a test of what a 'setcc' just stored reads the flags of the
+// comparison, with no such label in between:
+//
+//     sete r15b
+//     test r15b, r15b
+//     jne if.4.5.end
+//   to
+//     sete r15b
+//     je if.4.5.end
 class assembler {
   public:
     // 'optimized' applies the jump optimizations listed above the class
@@ -124,6 +135,7 @@ class assembler {
         size_t inverted_branches{};
         size_t removed_reloads{};
         size_t removed_copies{};
+        size_t removed_retests{};
     };
 
     // the bodies of one noinline function, valid once jumps are resolved
@@ -316,9 +328,10 @@ class assembler {
         return optimizations_;
     }
 
-    // the jump optimizations unless '--nopt', then 'remove_reloads' and
-    // 'remove_copies'; none changes a label or names one outside a jump, so
-    // the labels and the labels named outside jumps are found once
+    // the jump optimizations unless '--nopt', then 'remove_reloads',
+    // 'remove_copies' and 'remove_retests'; none changes a label or names one
+    // outside a jump, so the labels and the labels named outside jumps are
+    // found once
     auto optimize(const bool is_jumps_optimized) -> void {
         assert(captures_.empty());
 
@@ -343,6 +356,7 @@ class assembler {
 
         remove_reloads(referenced);
         remove_copies(referenced);
+        remove_retests(referenced);
     }
 
     // e.g. back to the code after the data of a failure handler
@@ -557,6 +571,13 @@ class assembler {
     // before it
     [[nodiscard]] virtual auto is_reload(const line& store,
                                          const line& load) const -> bool = 0;
+
+    // the mnemonic of 'branch' reading the flags that 'set' left, when 'test'
+    // only tests the value 'set' stored, else none
+    [[nodiscard]] virtual auto retested_branch(const line& set,
+                                               const line& test,
+                                               std::string_view branch) const
+        -> std::optional<std::string> = 0;
 
     // every other jump is a conditional branch
     [[nodiscard]] virtual auto unconditional_jump_mnemonic() const
@@ -798,6 +819,46 @@ class assembler {
             }
 
             previous = &l;
+        }
+    }
+
+    // removes a test of the value stored by the instruction before it, see
+    // above the class
+    auto remove_retests(const std::unordered_set<std::string_view>& referenced)
+        -> void {
+
+        // the two instructions executed right before 'l', none at an entry
+        line* set{};
+        line* test{};
+        for (line& l : lines_) {
+            if (is_enterable(l, referenced)) {
+                set = nullptr;
+                test = nullptr;
+                continue;
+            }
+
+            if (l.code_size == 0) {
+                continue;
+            }
+
+            if (set != nullptr and l.jump and is_conditional(*l.jump)) {
+                std::optional<std::string> mnemonic{
+                    retested_branch(*set, *test, l.jump->mnemonic),
+                };
+
+                if (mnemonic) {
+                    l.jump->mnemonic = std::move(*mnemonic);
+                    replace_text(l, format_jump(*l.jump));
+                    remove(*test);
+                    ++optimizations_.removed_retests;
+
+                    // note: the next instructions see 'set' before 'l'
+                    test = set;
+                }
+            }
+
+            set = test;
+            test = &l;
         }
     }
 

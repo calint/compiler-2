@@ -6,7 +6,7 @@
 < ;   removed jumps to next code: 0
 ---
 > ;   removed jumps to next code: 2
-98c96
+99c97
 < ;                 instructions: 23
 ---
 > ;                 instructions: 21
