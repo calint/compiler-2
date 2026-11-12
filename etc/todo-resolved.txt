@@ -1,6 +1,18 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 392 (2026-11-13, bug hunt: 'let' against the same literal
+    written in place after round 389, about 39700 programs on x86_64 and
+    rv32i: conversions, lists, indexes, counts, sizes, 'dat', generic
+    constants, inline and noinline arguments)
+    => done (2026-11-13): one defect: on rv32i with the overflow check
+       'let m = -0x80000000' 'let n = -m' was rejected ("constant
+       expression overflows the type") while x86_64 and the literal in
+       place accept it: 'fold_let' folded at 'int' before it kept the
+       value whole; it folds one operand at the default type whole first
+       and falls back to the fold at the type for a typed value or a list;
+       test 3002; fuzz-all: only the known doubling of '--versions=last'
+       on 1698.baz (a timeout of the asan build under load)
 [x] easy: round 391 (2026-11-12, the scratch register rule on the path
     of round 390's walk)
     => done (2026-11-12): x86_64 'address_of' into memory stores an address

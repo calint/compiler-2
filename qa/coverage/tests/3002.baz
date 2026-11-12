@@ -1,0 +1,15 @@
+# an untyped 'let' of one constant is folded whole before the default type:
+# on rv32i with the overflow check '-m' of an 'm' of -0x80000000 is
+# 0x80000000, as the literal it names
+
+let m = -0x80000000
+let n = -m
+
+func main() {
+    var a = i32(n) == i32(0x80000000)
+    var b = i8(n) == 0
+    if a and b {
+        exit(1)
+    }
+    exit(2)
+}

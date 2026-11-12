@@ -114,34 +114,42 @@ class initializer_declaration final {
             return std::nullopt;
         }
 
-        const value_use use{tc.use_at(tp)};
-
-        std::optional<folded_value> constant{value.fold(tc, use)};
+        const bool is_default_type{tp.is_same(tc.builtins().default_type())};
 
         // note: one untyped constant at the default type keeps its value
         //       whole and is checked where it is used, as the literal it
         //       names, e.g. 'let k = 0x80000000' on a target whose default
-        //       type is 'i32'; a list is computed and checked at 'tp'
+        //       type is 'i32'; it is folded whole first, so '-m' of an 'm'
+        //       of -0x80000000 is 0x80000000 there; a list is computed and
+        //       checked at 'tp'
 
-        const bool is_whole_literal{
-            constant and not constant->is_typed() and
-                tp.is_same(tc.builtins().default_type()) and
-                value.is_single_operand(),
-        };
+        if (is_default_type and value.is_single_operand()) {
+            const std::optional<folded_value> whole{
+                value.fold(tc, tc.use_at(tc.builtins().i64())),
+            };
 
-        if (is_whole_literal) {
-            constant = value.fold(tc, tc.use_at(tc.builtins().i64()));
-        } else if (constant) {
-            value.assert_not_narrowed(tc, use.width_ref());
+            if (whole and not whole->is_typed()) {
+                return *whole;
+            }
         }
+
+        const value_use use{tc.use_at(tp)};
+
+        const std::optional<folded_value> folded{value.fold(tc, use)};
+
+        if (not folded) {
+            return std::nullopt;
+        }
+
+        value.assert_not_narrowed(tc, use.width_ref());
+
+        folded_value constant{*folded};
 
         // note: untyped only at the default type, e.g. 'let k = 5' fits any
         //       integer where it is used; 'let b = true' is a 'bool'
 
-        if (constant and not constant->is_typed() and
-            not tp.is_same(tc.builtins().default_type())) {
-
-            constant->own_type = &tp;
+        if (not constant.is_typed() and not is_default_type) {
+            constant.own_type = &tp;
         }
 
         return constant;

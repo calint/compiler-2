@@ -7923,3 +7923,7 @@ SRC=3000 && EXP=1 && RUN
 # an untyped 'let' of one constant is checked where it is used: does not fit
 # 'int' on rv32i
 if [[ $MACHINE != x86_64 ]]; then SRC=3001 && COMPERR; fi
+
+# an untyped 'let' of one constant is folded whole before the default type, so
+# under the overflow check a negated constant is not rejected on rv32i
+SRC=3002 && EXP=1 && OPTS="--checks=noub" RUN
