@@ -30,9 +30,32 @@
 #include "token.hpp"
 #include "type.hpp"
 
+// what '--checks' turns on, one record for the program: the machine holds it
+// with the checks its target cannot honor off ('machine::checks'), it emits
+// 'check_bounds', 'check_frame_capacity' and 'check_stack_capacity' by it and
+// reports the line by 'reports_line'; the front end reads it through
+// 'toc::checks' for an operation that takes a 'runtime_check' and for the
+// compile-time rules that follow a check, e.g. a constant that overflows
+struct check_options {
+    bool bounds_upper{};
+    bool bounds_lower{};
+    bool reports_line{};
+    bool frame{};
+    bool division{};
+    bool shift{};
+    bool overlap{};
+    bool stack{};
+    bool overflow{};
+
+    // either bound
+    [[nodiscard]] auto is_bounds() const -> bool {
+        return bounds_upper or bounds_lower;
+    }
+};
+
 // a check of an operation at run time: enabled, a failure jumps to the failure
 // handler of the check, which reports the line when
-// 'target_options::reports_line'; the operation that takes it tells what fails
+// 'check_options::reports_line'; the operation that takes it tells what fails
 struct runtime_check {
     bool enabled{};
 };
@@ -148,8 +171,9 @@ struct target_description {
 //                  'copy_elements', 'equal_elements'
 //   control        'label', 'branch', 'compare_and_branch', 'call_function',
 //                  'call_target', 'return_function', 'exit'
-//   checks         'check_bounds', 'check_frame_capacity',
-//                  'check_stack_capacity'
+//   checks         'checks' (what '--checks' turns on, each check emits
+//                  nothing when its option is off), 'check_bounds',
+//                  'check_frame_capacity', 'check_stack_capacity'
 //   versions       'emit_most_efficient', 'emit_discarded', 'is_discarding'
 //   comments       'comment', 'comment_binding', 'comment_variable',
 //                  'comment_held_address'
@@ -217,8 +241,8 @@ class machine {
         size_t stack_size_bytes{};
         // the memory of 'rv32i-fpga'
         size_t memory_size_bytes{};
-        // '--checks=line': a failed check reports the line of its source
-        bool reports_line{};
+        // '--checks', see 'machine::checks'
+        check_options checks{};
     };
 
     struct output_statistics {
@@ -241,11 +265,6 @@ class machine {
 
         // branch when the comparison holds, otherwise when it does not
         bool branch_on_true{};
-    };
-
-    struct bounds_check_options {
-        bool upper{};
-        bool lower{};
     };
 
     // what a bounds check compares with 'array_count' elements: an index, a
@@ -678,6 +697,10 @@ class machine {
         : target_{target}, locations_{files}, builtins_{builtins},
           output_{output}, options_{options} {
 
+        // a check the target cannot honor is off, e.g. x86_64 has no stack
+        // bound
+        options_.checks.stack = options.checks.stack and is_stack_bounded();
+
         if (options.register_report) {
             state_.trace.enable();
         }
@@ -833,15 +856,6 @@ class machine {
 
     virtual auto branch(const size_t indent, const std::string_view target)
         -> void = 0;
-
-    // jumps to the stack overflow handler when a noinline call, made with the
-    // registers allocated now, does not fit in the stack; only a target that
-    // 'is_stack_bounded' is asked
-    virtual auto check_stack_capacity([[maybe_unused]] const emit_site site)
-        -> void {
-
-        std::unreachable();
-    }
 
     virtual auto compare_and_branch(const emit_site site, const operand& lhs,
                                     const operand& rhs,
@@ -1074,11 +1088,11 @@ class machine {
     }
 
     // jumps to the bounds failure handler when 'range' is outside its array,
-    // by the bounds that 'options' turns on
-    auto check_bounds(const emit_site site, const bounds_range& range,
-                      const bounds_check_options& options) -> void {
+    // by the bounds that '--checks' turns on
+    auto check_bounds(const emit_site site, const bounds_range& range) -> void {
+        const check_options& checks{options_.checks};
 
-        if (not options.upper and not options.lower) {
+        if (not checks.is_bounds()) {
             return;
         }
 
@@ -1096,9 +1110,9 @@ class machine {
         comment(site, "bounds check begin");
 
         const bounds_plan plan{
-            .sign_tested{lower_bound_tests(site, range, options)},
-            .upper{options.upper},
-            .lower_checked{options.lower},
+            .sign_tested{lower_bound_tests(site, range)},
+            .upper{checks.bounds_upper},
+            .lower_checked{checks.bounds_lower},
         };
 
         emit_bounds_check(site, range, plan);
@@ -1112,6 +1126,10 @@ class machine {
     auto check_frame_capacity(const emit_site site,
                               const operand& frame_address,
                               const std::string_view frame_size_label) -> void {
+
+        if (not options_.checks.frame) {
+            return;
+        }
 
         assert(frame_address.is_memory());
         assert(frame_address.index_register().empty());
@@ -1129,6 +1147,21 @@ class machine {
         emit_frame_capacity_check(site, frame_address, frame_size_label);
 
         comment(site, "frame capacity check end");
+    }
+
+    // jumps to the stack overflow handler when a noinline call, made with the
+    // registers allocated now, does not fit in the stack
+    auto check_stack_capacity(const emit_site site) -> void {
+        if (not options_.checks.stack) {
+            return;
+        }
+
+        emit_stack_capacity_check(site);
+    }
+
+    // what '--checks' turns on, of it the checks the target honors
+    [[nodiscard]] auto checks() const -> const check_options& {
+        return options_.checks;
     }
 
     // synthetic tokens and standalone backend calls have no source location;
@@ -1700,6 +1733,14 @@ class machine {
     // only when it is used
     virtual auto emit_sector_routines(const bool read_used,
                                       const bool write_used) -> void = 0;
+
+    // the check of 'check_stack_capacity'; only a target that
+    // 'is_stack_bounded' is asked
+    virtual auto
+    emit_stack_capacity_check([[maybe_unused]] const emit_site site) -> void {
+
+        std::unreachable();
+    }
 
     // the call of 'call_target', its arguments in their registers and the
     // result register of 'read' and 'write' allocated
@@ -2442,11 +2483,12 @@ class machine {
     // the values of 'range' that a lower bound check tests for a sign, with
     // the comments of what it leaves out
     [[nodiscard]] auto lower_bound_tests(const emit_site site,
-                                         const bounds_range& range,
-                                         const bounds_check_options& options)
+                                         const bounds_range& range)
         -> std::vector<operand> {
 
-        if (not options.lower) {
+        const check_options& checks{options_.checks};
+
+        if (not checks.bounds_lower) {
             return {};
         }
 
@@ -2461,7 +2503,7 @@ class machine {
         //       count as long as the limit is below 2^(width - 1), only a sum
         //       'index + count' needs both signs checked
 
-        if (options.upper and not range.count and
+        if (checks.bounds_upper and not range.count and
             range.array_count <= signed_max) {
 
             comment(site, "{} lower bound covered by the unsigned upper bound",
@@ -2644,7 +2686,7 @@ class machine {
     [[nodiscard]] auto reports_line(const failure_handler& handler) const
         -> bool {
 
-        return options_.reports_line and handler.takes_line;
+        return options_.checks.reports_line and handler.takes_line;
     }
 
     // a register the backend holds itself, which no source location asked

@@ -193,19 +193,15 @@ class bulk_operands final {
                 return false;
             }
 
-            const machine::bounds_check_options options{
-                tc_.checks().bounds_options(),
-            };
-
             // a range past the end names the count, as the check of a
             // constant count does ('assert_count_in_bounds')
             const token& count_tk{operands_.count().tok()};
 
             machine& x{tc_.machine()};
 
-            x.check_bounds({count_tk, tc_.indent()}, *range, options);
+            x.check_bounds({count_tk, tc_.indent()}, *range);
 
-            return count_register.has_value() and options.lower;
+            return count_register.has_value() and tc_.checks().bounds_lower;
         }
 
         // the ranges of both arrays after the later arguments,

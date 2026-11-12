@@ -261,10 +261,8 @@ class program final {
   public:
     // the main file is the first of 'files', the included ones are added
     program(machine& backend, const builtin_type_set& builtins,
-            source_files& files, const size_t vars_size_bytes,
-            const check_options& checks)
-        : files_{files},
-          tc_{backend, builtins, files, vars_size_bytes, checks} {
+            source_files& files, const size_t vars_size_bytes)
+        : files_{files}, tc_{backend, builtins, files, vars_size_bytes} {
 
         {
             const toc::scope_entry root{tc_, scope::block()};

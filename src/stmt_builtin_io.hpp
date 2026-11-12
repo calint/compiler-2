@@ -497,9 +497,8 @@ class stmt_builtin_io final : public statement {
             };
 
             x.check_bounds({checked_arg.tok(), tc.indent()},
-                           machine::bounds_range::up_to(count, element_count -
-                                                                   start_count),
-                           tc.checks().bounds_options());
+                           machine::bounds_range::up_to(
+                               count, element_count - start_count));
         }
 
         const size_t offset_bytes{
@@ -550,8 +549,7 @@ class stmt_builtin_io final : public statement {
             known_count and array_len
                 ? machine::bounds_range::up_to(
                       start, element_count - static_cast<size_t>(*known_count))
-                : machine::bounds_range::range(start, count, element_count),
-            tc.checks().bounds_options());
+                : machine::bounds_range::range(start, count, element_count));
 
         x.scale_index({tok(), tc.indent()}, start,
                       buffer_info.type_ref().size_bytes());

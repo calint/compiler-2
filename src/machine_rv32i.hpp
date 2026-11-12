@@ -53,12 +53,12 @@
 //   checks       'emit_bounds_check' with 'check_upper_bound',
 //                'check_divisor', 'check_fits_width', 'check_shift_count',
 //                'check_copy_overlap', 'emit_frame_capacity_check',
-//                'check_stack_capacity', the overflow checks 'check_negate',
-//                'check_multiply_result', 'emit_checked_add_subtract'; a
-//                failed test branches to its handler, all but the frame and
-//                stack checks with a stub per line for '--checks=line'
-//                ('branch_to_failure'), tests of one check share a jump
-//                ('failure_tests', 'fail_if', 'pass_if')
+//                'emit_stack_capacity_check', the overflow checks
+//                'check_negate', 'check_multiply_result',
+//                'emit_checked_add_subtract'; a failed test branches to its
+//                handler, all but the frame and stack checks with a stub per
+//                line for '--checks=line' ('branch_to_failure'), tests of one
+//                check share a jump ('failure_tests', 'fail_if', 'pass_if')
 //   handlers     'emit_panic_message', 'emit_report_line_routine'
 //   calls        'emit_call', 'emit_target_call' through 'call_io_routine'
 //                to the routines of 'emit_io_routines' and the sector routines
@@ -502,45 +502,6 @@ class machine_rv32i : public machine {
         -> void override {
 
         assembler_.resolved_jump(indent, target, far_jump_register());
-    }
-
-    // a call saves the registers allocated now, the registers of the arguments
-    // included, so the bound is not below what the call pushes; the callee
-    // pushes 'leaf_stack_bytes' more without a check of its own
-    auto check_stack_capacity(const emit_site site) -> void override {
-        assert(is_stack_bounded());
-
-        const size_t saved_count{registers_saved_by_call().size()};
-
-        const size_t call_bytes{
-            saved_registers_size_bytes(saved_count) + frame_save_bytes_ +
-                leaf_stack_bytes(),
-        };
-
-        comment(site, "stack capacity check begin");
-
-        const operation_scope scope{*this};
-
-        const operand limit{
-            alloc_scratch_register(site, default_type()),
-        };
-
-        const operand lowest{
-            alloc_scratch_register(site, default_type()),
-        };
-
-        assembler_.li(site.indent, limit.register_name(),
-                      stack_limit_address());
-
-        comment(site, "lowest stack pointer the call reaches");
-
-        assembler_.addi(site.indent, lowest.register_name(), "sp",
-                        -static_cast<int64_t>(call_bytes));
-
-        branch_to_failure(site, op::bltu, lowest.register_name(),
-                          limit.register_name(), stack_overflow_failure_);
-
-        comment(site, "stack capacity check end");
     }
 
     // the operation scope ends on return, before the caller frees its registers
@@ -1281,6 +1242,45 @@ class machine_rv32i : public machine {
         assembler_.label(0, decimal_places_label_);
         assembler_.data(word_size_bytes_, decimal_places);
         assembler_.switch_section(section::text);
+    }
+
+    // a call saves the registers allocated now, the registers of the arguments
+    // included, so the bound is not below what the call pushes; the callee
+    // pushes 'leaf_stack_bytes' more without a check of its own
+    auto emit_stack_capacity_check(const emit_site site) -> void override {
+        assert(is_stack_bounded());
+
+        const size_t saved_count{registers_saved_by_call().size()};
+
+        const size_t call_bytes{
+            saved_registers_size_bytes(saved_count) + frame_save_bytes_ +
+                leaf_stack_bytes(),
+        };
+
+        comment(site, "stack capacity check begin");
+
+        const operation_scope scope{*this};
+
+        const operand limit{
+            alloc_scratch_register(site, default_type()),
+        };
+
+        const operand lowest{
+            alloc_scratch_register(site, default_type()),
+        };
+
+        assembler_.li(site.indent, limit.register_name(),
+                      stack_limit_address());
+
+        comment(site, "lowest stack pointer the call reaches");
+
+        assembler_.addi(site.indent, lowest.register_name(), "sp",
+                        -static_cast<int64_t>(call_bytes));
+
+        branch_to_failure(site, op::bltu, lowest.register_name(),
+                          limit.register_name(), stack_overflow_failure_);
+
+        comment(site, "stack capacity check end");
     }
 
     // the functions are routines, see 'emit_io_routines'; the sector functions

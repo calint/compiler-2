@@ -42,7 +42,6 @@
 #include "register_report.hpp" // IWYU pragma: keep
 #include "source_files.hpp"
 #include "stmt_identifier_impl.hpp" // IWYU pragma: keep
-#include "toc.hpp"
 #include "type.hpp"
 
 // the version '--version' prints; 'make.sh' defines 'BAZ_VERSION' from 'git
@@ -967,7 +966,7 @@ auto print_compiler_error(const source_files& files, const compile_error& error)
         .memory_size_bytes{
             opts.memory_size_bytes.value_or(default_memory_size_bytes),
         },
-        .reports_line{opts.checks.reports_line},
+        .checks{opts.checks},
     };
 }
 
@@ -1122,12 +1121,7 @@ auto compile_to_stdout(const options& opts, source_files& files,
         opts.target->make(builtins, files, make_target_options(opts, binary)),
     };
 
-    // the checks the target cannot honor are off, e.g. x86_64 has no
-    // stack bound
-    check_options checks{opts.checks};
-    checks.stack = checks.stack and backend->is_stack_bounded();
-
-    program prg{*backend, builtins, files, opts.vars_size_bytes, checks};
+    program prg{*backend, builtins, files, opts.vars_size_bytes};
 
     check_image_destination(opts, files, binary);
     check_sd_card_is_not_source(opts, files);

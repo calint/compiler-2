@@ -300,8 +300,7 @@ class stmt_builtin_foo final : public statement {
         count.compile(tc, destination::of_register(reg_count));
 
         x.check_bounds({count.tok(), tc.indent()},
-                       machine::bounds_range::up_to(reg_count, array_len),
-                       tc.checks().bounds_options());
+                       machine::bounds_range::up_to(reg_count, array_len));
 
         return reg_count;
     }

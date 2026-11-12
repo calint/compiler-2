@@ -1550,17 +1550,13 @@ class noinline_call final {
 
         machine& x{tc.machine()};
 
-        if (tc.checks().frame) {
-            x.check_frame_capacity({call_.tk, tc.indent()}, frame_address,
-                                   call_.func->frame_size_label(array_lengths));
-        }
+        x.check_frame_capacity({call_.tk, tc.indent()}, frame_address,
+                               call_.func->frame_size_label(array_lengths));
 
         // the registers holding the addresses of the arguments are still
         // allocated, the check must not change a register that is free but
         // used by the call
-        if (tc.checks().stack) {
-            x.check_stack_capacity({call_.tk, tc.indent()});
-        }
+        x.check_stack_capacity({call_.tk, tc.indent()});
 
         return write_frame_slots(tc, frame_address, dst, arguments);
     }

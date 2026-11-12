@@ -429,11 +429,7 @@ inline auto stmt_identifier::compile_checked_index(
         destination::of_register(index_register),
     };
 
-    const machine::bounds_check_options checks{
-        tc.checks().bounds_options(),
-    };
-
-    if (not checks.upper and not checks.lower) {
+    if (not tc.checks().is_bounds()) {
         const std::optional<int64_t> addend{
             index_expr.compile_without_trailing_addend(tc, index_dst),
         };
@@ -456,7 +452,7 @@ inline auto stmt_identifier::compile_checked_index(
                                            shape.element_count()),
     };
 
-    x.check_bounds({index_expr.tok(), tc.indent()}, checked, checks);
+    x.check_bounds({index_expr.tok(), tc.indent()}, checked);
 
     return 0;
 }

@@ -342,12 +342,19 @@ So a statement can be compiled more than once, and what its compile adds to
 
 ### 1.5 Checks
 
-'--checks' ('check_options' in 'toc.hpp') turns on run-time checks, which the
-machine emits as a compare and a branch to a failure handler; 'line' adds the
-source line to the message of a failed bounds, division, shift, overlap or
+'--checks' ('check_options' in 'machine.hpp') turns on run-time checks, which
+the machine emits as a compare and a branch to a failure handler; 'line' adds
+the source line to the message of a failed bounds, division, shift, overlap or
 overflow check. The compile-time rules (narrowing, uninitialized reads,
-constants out of range, shared storage) always hold, see 8.1. 'toc::checks'
-gives the options, they build the option records of the machine methods.
+constants out of range, shared storage) always hold, see 8.1. The options are
+one record, held by the machine with the checks its target cannot honor off
+('machine::checks', e.g. 'stack' on x86_64): a check of its own,
+'check_bounds', 'check_frame_capacity' and 'check_stack_capacity', emits
+nothing when its option is off, so its callers do not ask; an operation with
+a check, e.g. 'divide', takes a 'runtime_check' from its caller, which knows
+whether the operation can fail, e.g. not for a constant divisor other than -1,
+and 'toc::checks' gives the record to the front end for that and for the
+compile-time rules that follow a check, e.g. a constant that overflows.
 
 The rule: whether a program is accepted does not depend on its calls, except
 for what needs the arguments of a call. So it can depend on inlining: in
@@ -2156,8 +2163,8 @@ outside 'src' included:
   text; outside: 'run.sh', 'qa/coverage/test-coverage.sh',
   'qa/coverage/test-all.sh' and 'qa/coverage/test-cli.sh' (their lists of
   targets) and 'qa/fuzz/fuzz-options.py'
-- a check: a field of 'check_options' ('toc.hpp'), its name and help text in
-  'main.cpp', a 'failure_handler' with its exit code in 'machine.hpp', the
-  operation that takes the check in both backends, and the tables of chapter
-  8; outside: 'qa/fuzz/fuzzlib.py' (the exit codes of the panics),
+- a check: a field of 'check_options' and a 'failure_handler' with its exit
+  code in 'machine.hpp', its name and help text in 'main.cpp', the operation
+  that takes the check in both backends, and the tables of chapter 8;
+  outside: 'qa/fuzz/fuzzlib.py' (the exit codes of the panics),
   'qa/fuzz/fuzz-options.py' and 'qa/coverage/test-cli.sh' (the check names)

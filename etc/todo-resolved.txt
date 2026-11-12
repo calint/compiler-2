@@ -1,6 +1,22 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 356 (2026-11-12, design: where the safety checks are
+    decided; which checks are on is one record)
+    => done (2026-11-12): 'check_options' moved to 'machine.hpp' and is
+       held by the machine ('target_options::checks', 'machine::checks'),
+       which turns off 'stack' where the target has no bounded stack;
+       'toc::checks' returns it; removed 'target_options::reports_line',
+       'machine::bounds_check_options', 'check_options::bounds_options',
+       'toc::checks_' and the masking in 'main'; 'check_bounds',
+       'check_frame_capacity' and 'check_stack_capacity' emit nothing when
+       their option is off (the stack check is 'emit_stack_capacity_check'
+       of the target), so their callers do not ask; README 1.5 and 9;
+       listings unchanged; left: the four overflow helpers of 'toc'
+       (rename 'overflow_options' to 'overflow_check'), the two
+       reachability walks (parse and compile, README 1.5.1 keeps both),
+       the lower bound of a bulk count decided in both
+       'bulk_operands::check_range' and the machine
 [x] easy: round 355 (2026-11-12, design of the front end expressions)
     => done (2026-11-12): 'statement::compile_through_scratch' replaces
        the alloc, compute, copy and free sequences of 'expr_arith' (now

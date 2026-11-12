@@ -48,7 +48,7 @@
 //   tables          'type_table', 'noinline_body_list' (the noinline bodies
 //                   to emit or only to check), 'function_table'
 //   'data_table'    the dats ('placed_dat') and the read-only constants
-//   options, usage  'check_options', 'usage_statistics'
+//   usage           'usage_statistics'
 //   'scope_stack'   the scopes from the globals to the innermost scope and
 //                   'lookup', the one rule of what a name means
 //                   ('name_meaning'), the target of 'break'
@@ -979,33 +979,6 @@ class data_table final {
 
     [[nodiscard]] auto total_size_bytes() const -> size_t {
         return total_size_bytes_;
-    }
-};
-
-// what the compiler checks while it compiles and what it makes the program
-// check at run time
-struct check_options {
-    bool bounds_upper{};
-    bool bounds_lower{};
-    // read by 'main' only, the machine has it as 'target_options::reports_line'
-    bool reports_line{};
-    bool frame{};
-    bool division{};
-    bool shift{};
-    bool overlap{};
-    bool stack{};
-    bool overflow{};
-
-    [[nodiscard]] auto bounds_options() const -> machine::bounds_check_options {
-        return {
-            .upper{bounds_upper},
-            .lower{bounds_lower},
-        };
-    }
-
-    // either bound
-    [[nodiscard]] auto is_bounds() const -> bool {
-        return bounds_upper or bounds_lower;
     }
 };
 
@@ -2418,7 +2391,6 @@ class toc final {
     builtin_roles builtins_;
     ident_resolver resolver_;
     storage_layout storage_;
-    check_options checks_{};
     // false while the program is parsed: the names are declared without
     // storage and without comments
     bool is_compiling_{};
@@ -2651,16 +2623,14 @@ class toc final {
 
     // 'builtins' are the types of the language, shared with the machine
     toc(::machine& backend, const builtin_type_set& builtins,
-        const source_files& files, const size_t vars_capacity_bytes,
-        const check_options& checks)
+        const source_files& files, const size_t vars_capacity_bytes)
         : machine_{backend}, locations_{files}, scopes_{order_},
           data_{backend.data_alignment()}, funcs_{order_}, generics_{order_},
           types_{order_},
           definitions_{scopes_, funcs_, types_, generics_, locations_},
           builtins_{backend, builtins},
           resolver_{scopes_, backend, funcs_, generics_, builtins_},
-          storage_{backend, scopes_, data_, vars_capacity_bytes},
-          checks_{checks} {
+          storage_{backend, scopes_, data_, vars_capacity_bytes} {
 
         // the built-in types are looked up by name like the defined ones
         for (const type* const tp : builtins.all()) {
@@ -3026,9 +2996,10 @@ class toc final {
         return checked_bodies_;
     }
 
-    // what '--checks' turned on
+    // what '--checks' turned on that the target honors, held by the machine
     [[nodiscard]] auto checks() const -> const check_options& {
-        return checks_;
+        const ::machine& x{machine_.get()};
+        return x.checks();
     }
 
     // whether the arithmetic of a value that 'dst' receives is checked for
@@ -3350,7 +3321,7 @@ class toc final {
         }
 
         return {
-            .enabled{checks_.overflow},
+            .enabled{checks().overflow},
         };
     }
 
@@ -3465,7 +3436,7 @@ class toc final {
     [[nodiscard]] auto use_at(const type& width) const -> value_use {
         return {
             .width{&width},
-            .checks_overflow{checks_.overflow},
+            .checks_overflow{checks().overflow},
         };
     }
 
