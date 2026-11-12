@@ -1,6 +1,19 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 379 (2026-11-12, design of the driver: 'main.cpp' and
+    'program.hpp')
+    => done (2026-11-12): 'make_target_options' fills in every default
+       including the image name, and the checks read the names from its
+       result; one 'check_output_files' with a 'names_same_file' predicate
+       replaces 'check_image_destination', 'check_image_is_not_sd_card'
+       and 'check_sd_card_is_not_source'; '--nopt' and '--reproduce-source'
+       are rows of the option table ('command_option', a name ending in '='
+       takes a value); 'flushed_stdout' prints through
+       'print_unlocated_error'; listings, errors and usage unchanged,
+       fuzz-options clean; left: the image written by the backend
+       ('write_assembly'), '--help' and '--version' outside the table (they
+       end the run)
 [x] easy: need approval: two fuzzers from the bug hunt of round 375 as new
     files in 'qa/fuzz': a layout model of the frame check (a noinline
     recursion with random locals, '--vars' at the model's threshold +-16,

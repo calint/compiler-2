@@ -175,8 +175,9 @@ struct options {
     std::optional<std::string_view> sd_card_file_name;
 };
 
-// an option with a value, e.g. '--vars=0x40000'
-struct value_option {
+// an option of the command line, e.g. '--nopt'; a name that ends with '='
+// takes the rest of the argument as its value, e.g. '--vars=0x40000'
+struct command_option {
     std::string_view name;
     void (*apply)(std::string_view value, options& opts){};
 };
@@ -590,7 +591,7 @@ static_assert([] -> bool {
     return parsed;
 }
 
-// the appliers of the options with a value store the value in 'opts'
+// the appliers of the options store the value in 'opts', a flag has none
 auto apply_vars(const std::string_view value, options& opts) -> void {
     opts.vars_size_bytes = parse_size_bytes(value, "--vars", vars_alignment);
 }
@@ -632,37 +633,54 @@ auto apply_versions(const std::string_view value, options& opts) -> void {
     opts.kept_version = row.kind;
 }
 
+auto apply_nopt([[maybe_unused]] const std::string_view value, options& opts)
+    -> void {
+
+    assert(value.empty());
+
+    opts.optimize_jumps = false;
+}
+
+auto apply_reproduce_source([[maybe_unused]] const std::string_view value,
+                            options& opts) -> void {
+
+    assert(value.empty());
+
+    opts.reproduce_source = true;
+}
+
 // one argument of the command line: an option or the source file
 auto parse_option(const std::string_view arg, options& opts) -> void {
-    constexpr std::array<value_option, 9> value_options{
-        value_option{.name{"--vars="}, .apply{apply_vars}},
-        value_option{.name{"--stack="}, .apply{apply_stack}},
-        value_option{.name{"--memory="}, .apply{apply_memory}},
-        value_option{.name{"--target="}, .apply{apply_target}},
-        value_option{.name{"--checks="}, .apply{apply_checks}},
-        value_option{.name{"--report="}, .apply{apply_report}},
-        value_option{.name{"--bin="}, .apply{apply_bin}},
-        value_option{.name{"--sdcard="}, .apply{apply_sdcard}},
-        value_option{.name{"--versions="}, .apply{apply_versions}},
+    constexpr std::array<command_option, 11> command_options{
+        command_option{.name{"--vars="}, .apply{apply_vars}},
+        command_option{.name{"--stack="}, .apply{apply_stack}},
+        command_option{.name{"--memory="}, .apply{apply_memory}},
+        command_option{.name{"--target="}, .apply{apply_target}},
+        command_option{.name{"--checks="}, .apply{apply_checks}},
+        command_option{.name{"--report="}, .apply{apply_report}},
+        command_option{.name{"--bin="}, .apply{apply_bin}},
+        command_option{.name{"--sdcard="}, .apply{apply_sdcard}},
+        command_option{.name{"--versions="}, .apply{apply_versions}},
+        command_option{.name{"--nopt"}, .apply{apply_nopt}},
+        command_option{
+            .name{"--reproduce-source"},
+            .apply{apply_reproduce_source},
+        },
     };
 
-    for (const value_option& option : value_options) {
-        if (arg.starts_with(option.name)) {
-            // e.g. '0x40000' of '--vars=0x40000'
+    for (const command_option& option : command_options) {
+        const bool takes_value{option.name.ends_with('=')};
+
+        const bool matches{
+            takes_value ? arg.starts_with(option.name) : arg == option.name,
+        };
+
+        if (matches) {
+            // e.g. '0x40000' of '--vars=0x40000', empty for a flag
             const std::string_view value{arg.substr(option.name.size())};
             option.apply(value, opts);
             return;
         }
-    }
-
-    if (arg == "--nopt") {
-        opts.optimize_jumps = false;
-        return;
-    }
-
-    if (arg == "--reproduce-source") {
-        opts.reproduce_source = true;
-        return;
     }
 
     if (arg.starts_with('-')) {
@@ -697,7 +715,7 @@ auto print_option_error(const std::string_view message) -> void {
         return 0;
     }
 
-    std::println(stderr, "error: cannot write {} to stdout", what);
+    print_unlocated_error(std::format("cannot write {} to stdout", what));
 
     return 1;
 }
@@ -944,9 +962,26 @@ auto print_compiler_error(const source_files& files, const compile_error& error)
     }
 }
 
-// the options of the backend, '--bin' resolved to 'binary'
+// '--bin' or by default in the directory of the source so the image lands
+// next to it
+[[nodiscard]] auto
+resolved_binary_file_name(const options& opts,
+                          const std::string_view src_file_name) -> std::string {
+
+    if (opts.binary_file_name) {
+        return std::string{*opts.binary_file_name};
+    }
+
+    std::filesystem::path path{src_file_name};
+    path.replace_extension();
+
+    return std::format("{}-{}.bin", path.string(), opts.target->text);
+}
+
+// the options of the backend, each default filled in; the checks of the output
+// files read the names from here
 [[nodiscard]] auto make_target_options(const options& opts,
-                                       const std::string& binary)
+                                       const std::string_view src_file_name)
     -> machine::target_options {
 
     return {
@@ -961,7 +996,7 @@ auto print_compiler_error(const source_files& files, const compile_error& error)
                 opts.sd_card_file_name.value_or(default_sd_card_file_name),
             },
         },
-        .binary_file_name{binary},
+        .binary_file_name{resolved_binary_file_name(opts, src_file_name)},
         .stack_size_bytes{
             opts.stack_size_bytes.value_or(default_stack_size_bytes),
         },
@@ -994,92 +1029,53 @@ auto check_reproduced_source(const program& prg, const source_files& files)
     }
 }
 
-// '--bin' or by default in the directory of the source so the image lands
-// next to it
-[[nodiscard]] auto
-resolved_binary_file_name(const options& opts,
-                          const std::string_view src_file_name) -> std::string {
-
-    if (opts.binary_file_name) {
-        return std::string{*opts.binary_file_name};
-    }
-
-    std::filesystem::path path{src_file_name};
-    path.replace_extension();
-
-    return std::format("{}-{}.bin", path.string(), opts.target->text);
-}
-
-// 'binary' is not the sd card, neither the same file nor the same path
-auto check_image_is_not_sd_card(const options& opts, const std::string& binary)
-    -> void {
-
-    const std::string_view sd_card{
-        opts.sd_card_file_name.value_or(default_sd_card_file_name),
-    };
+// the same file, or the same path for a file that does not exist yet
+[[nodiscard]] auto names_same_file(const std::string_view lhs,
+                                   const std::string_view rhs) -> bool {
 
     std::error_code error;
 
-    const bool is_same_file{
-        std::filesystem::equivalent(binary, sd_card, error),
-    };
-
-    // note: a card that does not exist yet is compared by its absolute path,
-    //       which is empty when it cannot be resolved
-
-    const std::filesystem::path image_path{
-        std::filesystem::weakly_canonical(
-            std::filesystem::absolute(binary, error), error),
-    };
-
-    const std::filesystem::path card_path{
-        std::filesystem::weakly_canonical(
-            std::filesystem::absolute(sd_card, error), error),
-    };
-
-    const bool is_same_path{
-        not image_path.empty() and image_path == card_path,
-    };
-
-    if (is_same_file or is_same_path) {
-        throw option_error{std::format("invalid --bin: {} is the sd card image",
-                                       in_quotes(binary))};
+    if (std::filesystem::equivalent(lhs, rhs, error)) {
+        return true;
     }
+
+    // note: the absolute path is empty when it cannot be resolved
+
+    const std::filesystem::path lhs_path{
+        std::filesystem::weakly_canonical(std::filesystem::absolute(lhs, error),
+                                          error),
+    };
+
+    const std::filesystem::path rhs_path{
+        std::filesystem::weakly_canonical(std::filesystem::absolute(rhs, error),
+                                          error),
+    };
+
+    return not lhs_path.empty() and lhs_path == rhs_path;
 }
 
-// the image replaces no input of the compile or of the program
-auto check_image_destination(const options& opts, const source_files& files,
-                             const std::string& binary) -> void {
+// the files the compile and the program write replace none they read: the
+// image no source file and not the sd card, the sd card no source file
+// note: after the parse, which read the includes into 'files'
+auto check_output_files(const target_name& target, const source_files& files,
+                        const machine::target_options& resolved) -> void {
 
-    if (not opts.target->writes_image) {
-        return;
-    }
+    const std::string& binary{resolved.binary_file_name};
+    const std::string& sd_card{resolved.sd_card_file_name};
 
-    // the image would replace a source file, the parse read the includes
-    if (files.contains(binary)) {
+    if (target.writes_image and files.contains(binary)) {
         throw option_error{std::format("invalid --bin: {} is a source file",
                                        in_quotes(binary))};
     }
 
-    // the image would replace the sd card that the program reads
-    if (opts.target->reads_sd_card) {
-        check_image_is_not_sd_card(opts, binary);
-    }
-}
+    if (target.writes_image and target.reads_sd_card and
+        names_same_file(binary, sd_card)) {
 
-// the sd card that the program writes is no source file
-auto check_sd_card_is_not_source(const options& opts, const source_files& files)
-    -> void {
-
-    if (not opts.target->reads_sd_card) {
-        return;
+        throw option_error{std::format("invalid --bin: {} is the sd card image",
+                                       in_quotes(binary))};
     }
 
-    const std::string_view sd_card{
-        opts.sd_card_file_name.value_or(default_sd_card_file_name),
-    };
-
-    if (files.contains(sd_card)) {
+    if (target.reads_sd_card and files.contains(sd_card)) {
         throw option_error{std::format("invalid --sdcard: {} is a source file",
                                        in_quotes(sd_card))};
     }
@@ -1087,7 +1083,7 @@ auto check_sd_card_is_not_source(const options& opts, const source_files& files)
 
 // e.g. a full disk, the listing is incomplete; a failed compile leaves no
 // image
-auto check_listing_written(const options& opts, const std::string& binary)
+auto check_listing_written(const target_name& target, const std::string& binary)
     -> void {
 
     std::cout.flush();
@@ -1096,7 +1092,7 @@ auto check_listing_written(const options& opts, const std::string& binary)
         return;
     }
 
-    if (opts.target->writes_image) {
+    if (target.writes_image) {
         std::error_code error;
         std::filesystem::remove(binary, error);
     }
@@ -1117,16 +1113,19 @@ auto compile_to_stdout(const options& opts, source_files& files,
 
     files.add(std::string{src_file_name}, std::move(src_text), std::nullopt);
 
-    const std::string binary{resolved_binary_file_name(opts, src_file_name)};
+    const target_name& target{*opts.target};
+
+    const machine::target_options resolved{
+        make_target_options(opts, src_file_name),
+    };
 
     const std::unique_ptr<machine> backend{
-        opts.target->make(builtins, files, make_target_options(opts, binary)),
+        target.make(builtins, files, resolved),
     };
 
     program prg{*backend, builtins, files, opts.vars_size_bytes};
 
-    check_image_destination(opts, files, binary);
-    check_sd_card_is_not_source(opts, files);
+    check_output_files(target, files, resolved);
 
     if (opts.reproduce_source) {
         check_reproduced_source(prg, files);
@@ -1134,7 +1133,7 @@ auto compile_to_stdout(const options& opts, source_files& files,
 
     prg.build(std::cout);
 
-    check_listing_written(opts, binary);
+    check_listing_written(target, resolved.binary_file_name);
 }
 
 [[nodiscard]] auto compile_file(const options& opts) -> int {
