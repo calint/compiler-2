@@ -451,9 +451,10 @@ expansion of a recursion with constant arguments, or after a 'loop' whose
 reached ('compile_toc::is_reachable'), 'compile_toc::end_path' and
 'compile_toc::record_break' end a path, 'compile_toc::path_merge' joins the
 branches of an 'if' with the same chain rule as the parse,
-'compile_toc::join_loop' ends a loop by its 'loop_end' ('loop_reach'; a 'foo'
-whose count folds above 0 runs out only where its body or a 'continue' reaches
-the counter step, 'loop_end::when_stepped'), an inlined call whose body reaches
+'compile_toc::join_loop' ends a loop by its 'loop_end' with the rule of the
+parse walk ('is_loop_end_reached', 'loop_reach'; a 'foo' whose count folds
+above 0 runs out only where its body or a 'continue' reaches the counter step,
+'loop_end::when_stepped'), an inlined call whose body reaches
 neither its end nor a 'return' leaves the code after the call unreached
 ('compile_toc::pop_scope'), and the end of 'main' is emitted when the compile
 reaches it.

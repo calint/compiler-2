@@ -3511,8 +3511,8 @@ class compile_toc final : public toc {
     }
 
     // the end of a loop is reached by a compiled 'break' or as its
-    // 'loop_end' says; called as the last step inside the loop's scope, where
-    // the end of its body is the current statement
+    // 'loop_end' says ('is_loop_end_reached'); called as the last step inside
+    // the loop's scope, where the end of its body is the current statement
     auto join_loop() -> void {
         const scope& loop{scopes().back()};
 
@@ -3523,12 +3523,8 @@ class compile_toc final : public toc {
 
         const bool is_step_reached{is_reachable() or reach.is_continued};
 
-        const bool runs_out{
-            end == loop_end::also_when_done or
-                (end == loop_end::when_stepped and is_step_reached),
-        };
-
-        tables().scopes.set_reachable(runs_out or reach.is_left_by_break);
+        tables().scopes.set_reachable(
+            is_loop_end_reached(end, reach.is_left_by_break, is_step_reached));
     }
 
     [[nodiscard]] auto layout() const -> const storage_layout& {

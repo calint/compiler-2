@@ -1,15 +1,12 @@
 #pragma once
 
 #include <cassert>
-#include <format>
 #include <optional>
 #include <ostream>
-#include <span>
 #include <utility>
 #include <variant>
 #include <vector>
 
-#include "compile_error.hpp"
 #include "expr_any.hpp"
 #include "ident_info.hpp"
 #include "machine.hpp"
@@ -18,6 +15,7 @@
 #include "toc.hpp"
 #include "token.hpp"
 #include "ub_assigned.hpp"
+#include "ub_order.hpp"
 #include "ub_reads.hpp"
 
 // 'dst = value' and the initializer of a declaration: the value is parsed as
@@ -133,43 +131,6 @@ class stmt_assign_var final : public statement {
     // statics
     //
 
-    static auto
-    assert_call_effect_not_written(const call_effect& effect,
-                                   const std::span<const storage_path> written)
-        -> void {
-
-        for (const storage_path& place : written) {
-            if (not effect.storage.may_overlap(place)) {
-                continue;
-            }
-
-            throw compile_error{
-                effect.call_tk,
-                std::format("the call of {} reaches {}, which has been "
-                            "written in the same statement, use a "
-                            "temporary variable",
-                            in_quotes(effect.call_tk.text()),
-                            in_quotes(effect.name))};
-        }
-    }
-
-    // 'item' reads none of the 'written' parts, under any name, nor does a call
-    // in it read or write one
-    static auto
-    assert_no_read_of_written_part(const toc& tc, const statement& item,
-                                   const std::span<const storage_path> written)
-        -> void {
-
-        item.visit_reads([&](const stmt_identifier& read) -> void {
-            assert_read_not_written(tc, read, written);
-        });
-
-        // e.g. 'gr()' of 'g = {1, gr()}' with 'gr' reading 'g.x'
-        item.visit_call_effects(tc, [&](const call_effect& effect) -> void {
-            assert_call_effect_not_written(effect, written);
-        });
-    }
-
     // the value is written part by part as 'plan' says, so a part must not
     // read what is already written, e.g. the 'p.x' of 'p = {p.y, p.x}'
     static auto
@@ -192,51 +153,12 @@ class stmt_assign_var final : public statement {
                     std::get_if<value_write>(&step.action),
                 }) {
 
-                assert_no_read_of_written_part(tc, *value->item, written);
+                assert_written_not_reached(tc, *value->item, written);
             }
 
             for (const access_path& part : step.covered) {
                 written.push_back(dst->extended_by(part));
             }
-        }
-    }
-
-    static auto
-    assert_read_not_written(const toc& tc, const stmt_identifier& read,
-                            const std::span<const storage_path> written)
-        -> void {
-
-        // a constant or a value in a register reaches no storage
-        const std::optional<storage_path> reached{read.storage(tc)};
-
-        if (not reached) {
-            return;
-        }
-
-        for (const storage_path& place : written) {
-            if (not reached->may_overlap(place)) {
-                continue;
-            }
-
-            // note: without a run-time index on either side the read is
-            //       of the written bytes, not only maybe
-
-            if (not reached->path.has_run_time_index() and
-                not place.path.has_run_time_index()) {
-
-                throw compile_error{
-                    read.tok(),
-                    std::format("{} is read but has been overwritten in "
-                                "the same statement, use a temporary "
-                                "variable",
-                                in_quotes(read.path_text()))};
-            }
-
-            throw compile_error{
-                read.tok(),
-                std::format("{} may have been overwritten in the same "
-                            "statement, use a temporary variable",
-                            in_quotes(read.path_text()))};
         }
     }
 

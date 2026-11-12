@@ -1,6 +1,18 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 370 (2026-11-12, design: the order and assignment rules)
+    => done (2026-11-12): 'is_loop_end_reached' next to 'loop_end'
+       ('ub_assigned.hpp') is the one rule of 'assignment_flow::trace_loop'
+       and 'compile_toc::join_loop' (README 1.5.1); the item check of a
+       value written in parts moved from 'stmt_assign_var' to 'ub_order.hpp'
+       as 'assert_written_not_reached', beside 'reaches_destination' whose
+       question it asks of the parts written ('assert_parts_not_clobbered'
+       keeps the plan walk); 'path_merge::start_path' holds the path start
+       of 'trace' and 'trace_skipped'; listings and errors unchanged; left:
+       one read primitive for the three checks (the message needs the
+       reached path and the first read in order), the two 'path_merge'
+       shapes ('expr_bool' starts paths at elements)
 [x] easy: round 369 (2026-11-12, newcomer readability walk of the whole
     compiler after rounds 355 to 368; 'fuzz-all.sh 1 777' at round 368
     clean)

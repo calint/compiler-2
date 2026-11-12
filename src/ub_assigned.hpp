@@ -22,6 +22,22 @@
 // constant above 0, so it runs its body
 enum class loop_end : uint8_t { at_break, also_when_done, when_stepped };
 
+// the rule both reach walks end a loop by ('assignment_flow::trace_loop',
+// 'compile_toc::join_loop'): the code after it is reached at a 'break' or
+// where it runs out as 'end' says; 'is_step_reached' when the end of its body
+// or a 'continue' reaches the counter step
+[[nodiscard]] inline auto is_loop_end_reached(const loop_end end,
+                                              const bool is_left_by_break,
+                                              const bool is_step_reached)
+    -> bool {
+
+    if (is_left_by_break or end == loop_end::also_when_done) {
+        return true;
+    }
+
+    return end == loop_end::when_stepped and is_step_reached;
+}
+
 // the bytes of a variable that are definitely assigned, as byte ranges so
 // that the cost follows the assignments, not the size of the variable
 class assigned_bytes final {
@@ -175,8 +191,7 @@ class assignment_flow final {
 
         // 'path' has 'trace_assignment(assignment_flow&)'
         auto trace(const auto& path) -> void {
-            flow_.assigned_ = entry_;
-            flow_.is_reachable_ = true;
+            start_path();
             path.trace_assignment(flow_);
             merged_.intersect(flow_.assigned_);
             is_reachable_ = is_reachable_ or flow_.is_reachable_;
@@ -194,10 +209,16 @@ class assignment_flow final {
         auto trace_skipped(const auto& path) -> void {
             const std::optional<assigned_bytes> breaks{flow_.at_breaks_};
 
-            flow_.assigned_ = entry_;
-            flow_.is_reachable_ = true;
+            start_path();
             path.trace_assignment(flow_);
             flow_.at_breaks_ = breaks;
+        }
+
+      private:
+        // every path starts at the 'if'
+        auto start_path() -> void {
+            flow_.assigned_ = entry_;
+            flow_.is_reachable_ = true;
         }
     };
 
@@ -248,6 +269,9 @@ class assignment_flow final {
     // to its breaks after it, without a 'break' only 'return' or 'exit'
     // leave it
     auto trace_loop(const auto& body, const loop_end end) -> void {
+        // note: only the compile folds the count of a 'foo', and the parse
+        //       does not record a 'continue', which that end needs
+
         assert(end != loop_end::when_stepped);
 
         const assigned_bytes entry{assigned_};
@@ -264,18 +288,21 @@ class assignment_flow final {
             std::exchange(at_breaks_, std::move(outer_breaks)),
         };
 
-        if (end == loop_end::also_when_done) {
-            assigned_ = entry;
-            is_reachable_ = true;
-            return;
-        }
-
-        if (not breaks) {
+        if (not is_loop_end_reached(end, breaks.has_value(), is_reachable_)) {
             end_path();
             return;
         }
 
-        assigned_ = *breaks;
+        if (end == loop_end::also_when_done) {
+            assigned_ = entry;
+        } else {
+            // note: a loop that does not run out is left at a 'break'
+
+            assert(breaks);
+
+            assigned_ = *breaks;
+        }
+
         is_reachable_ = true;
     }
 };
