@@ -7,6 +7,7 @@
 #include <utility>
 
 #include "bulk_operands.hpp"
+#include "parse_lookahead.hpp"
 #include "statement.hpp"
 #include "toc.hpp"
 #include "token.hpp"
@@ -26,7 +27,7 @@ class stmt_builtin_arrays_equal final : public statement {
           operands_{tc,      tz,       src_loc_tk,
                     "first", "second", bulk_operands::second_use::read} {
 
-        set_type(tc.builtins().boolean());
+        set_type(builtin_function_type(tc, src_loc_tk));
     }
 
     //

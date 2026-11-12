@@ -12,6 +12,7 @@
 #include "compile_error.hpp"
 #include "constant_arith.hpp"
 #include "ident_info.hpp"
+#include "parse_lookahead.hpp"
 #include "statement.hpp"
 #include "stmt_call.hpp"
 #include "stmt_identifier.hpp"
@@ -39,7 +40,7 @@ class stmt_builtin_array_length final : public statement {
         // checked at run time
         array().assert_constant_indexes(tc, tok().text());
 
-        set_type(tc.builtins().default_type());
+        set_type(builtin_function_type(tc, src_loc_tk));
     }
 
     //

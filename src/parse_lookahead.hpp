@@ -4,7 +4,8 @@
 // tells what the first token of a value or a statement denotes; a name
 // followed by a character has one meaning only, e.g. 'point{' is a record
 // literal and 'show<' a generic call; 'builtin_value_type' gives the type of
-// the value of a built-in; the name after a '.' is decided by
+// the value of a built-in, 'builtin_function_type' that of a call of a
+// built-in function; the name after a '.' is decided by
 // 'stmt_identifier::is_method_name', a function head by 'func_head'; the
 // rejections that run before a parse would misread ('assert_*') and the
 // predicates of the shape of what follows ('continues_*', 'is_*',
@@ -349,6 +350,32 @@ enum class term_kind : uint8_t {
     return converted;
 }
 
+// the type of a call of the built-in function named by 'name_tk', 'void' for
+// one without a value; the statement of the call takes it too, so the type
+// seen before the parse is the one after it
+[[nodiscard]] inline auto builtin_function_type(const toc& tc,
+                                                const token& name_tk)
+    -> const type& {
+
+    const reserved_names::builtin_function* const fn{
+        reserved_names::find_builtin_function(name_tk.text()),
+    };
+
+    // note: the name was classified as a built-in function
+    assert(fn != nullptr);
+
+    // e.g. the count of 'read(0, buf, 4)'
+    if (fn->value == reserved_names::builtin_value::count) {
+        return tc.builtins().default_type();
+    }
+
+    if (fn->value == reserved_names::builtin_value::boolean) {
+        return tc.builtins().boolean();
+    }
+
+    return tc.builtins().void_type();
+}
+
 // the type of the value of the built-in at 'tk', classified as 'tm', e.g. 'i8'
 // of 'i8(1)', none when 'tk' names no built-in with a value;
 // 'parse_builtin' makes a statement for each
@@ -364,20 +391,14 @@ builtin_value_type(const parse_toc& tc, const token& tk, const term_kind tm)
         return nullptr;
     }
 
-    const reserved_names::builtin_value value{
-        reserved_names::find_builtin_function(tk.text())->value,
-    };
+    const type& value_type{builtin_function_type(tc, tk)};
 
-    // e.g. the count of 'read(0, buf, 4)'
-    if (value == reserved_names::builtin_value::count) {
-        return &tc.builtins().default_type();
+    // e.g. 'exit', which has no value
+    if (value_type.is_same(tc.builtins().void_type())) {
+        return nullptr;
     }
 
-    if (value == reserved_names::builtin_value::boolean) {
-        return &tc.builtins().boolean();
-    }
-
-    return nullptr;
+    return &value_type;
 }
 
 // a call of a generic function without type arguments is the whole value,

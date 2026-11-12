@@ -1,6 +1,19 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 367 (2026-11-12, design: the built-in statements)
+    => done (2026-11-12): 'builtin_function_type' in 'parse_lookahead.hpp'
+       is the one mapping from the catalog 'reserved_names::
+       builtin_functions' to a result type, used by 'builtin_value_type'
+       before the parse and by the constructors of 'arrays_equal',
+       'array_length' and 'io' ('io_function::has_result' and
+       'result_type' removed, its static_assert checks only that the name
+       is cataloged); 'stmt_builtin_convert(tc, converted, uops, tk, tz)'
+       follows the order of 'stmt_builtin_io'; left: a dispatch table for
+       'make_builtin' (needs one constructor signature), one range
+       selection for 'bulk_operands' and 'io' (the case analysis moves,
+       does not shrink), 'bulk_operands::second_use'; listings and errors
+       unchanged
 [x] easy: round 366 (2026-11-12, design: rv32i internals)
     => done (2026-11-12): every load and store of 'machine_rv32i' goes
        through 'load_at' and 'store_at', which check that the address is

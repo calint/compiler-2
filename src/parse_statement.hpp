@@ -119,8 +119,8 @@ inline auto make_builtin(parse_toc& tc, tokenizer& tz, const token& tk,
 
     assert(converted != nullptr);
 
-    return std::make_unique<stmt_builtin_convert>(tc, std::move(uops), tk,
-                                                  *converted, tz);
+    return std::make_unique<stmt_builtin_convert>(tc, *converted,
+                                                  std::move(uops), tk, tz);
 }
 
 // a call of the built-in at 'tk', classified as 'tm', null when 'tk' names

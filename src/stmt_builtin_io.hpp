@@ -16,6 +16,7 @@
 #include "ident_info.hpp"
 #include "machine.hpp"
 #include "operand.hpp"
+#include "parse_lookahead.hpp"
 #include "stmt_call.hpp"
 #include "token.hpp"
 #include "ub_order.hpp"
@@ -30,27 +31,18 @@ class stmt_builtin_io final : public statement {
 
   public:
     // what tells the functions apart, a sector function takes a sector in
-    // place of the descriptor and has no count and no result
+    // place of the descriptor and has no count; the value of a call is in
+    // the catalog of the built-in functions ('builtin_function_type')
     struct io_function {
         std::string_view name;
         machine::target_call function{};
         bool fills_buffer{};
         bool is_sector{};
 
-        [[nodiscard]] constexpr auto has_result() const -> bool {
-            return not is_sector;
-        }
-
         // also the count and the start of a transfer, the start of a sector
         // function
         [[nodiscard]] constexpr auto max_arg_count() const -> size_t {
             return is_sector ? buffer_index_ + 2 : buffer_index_ + 3;
-        }
-
-        // the count of a transfer, nothing for a sector function
-        [[nodiscard]] auto result_type(const toc& tc) const -> const type& {
-            return has_result() ? tc.builtins().default_type()
-                                : tc.builtins().void_type();
         }
 
         //
@@ -102,7 +94,7 @@ class stmt_builtin_io final : public statement {
         : statement{src_loc_tk, std::move(uops)}, io_{io},
           args_{read_arguments(tc, io, src_loc_tk, tz)} {
 
-        set_type(io_.result_type(tc));
+        set_type(builtin_function_type(tc, src_loc_tk));
 
         assert_buffer_path();
 
@@ -200,17 +192,8 @@ class stmt_builtin_io final : public statement {
 
         constexpr auto is_cataloged{
             [](const io_function& io) -> bool {
-                const reserved_names::builtin_function* const fn{
-                    reserved_names::find_builtin_function(io.name),
-                };
-
-                // note: a call with a count may also stand alone
-                return fn != nullptr and
-                       io.has_result() ==
-                           (fn->value ==
-                            reserved_names::builtin_value::count) and
-                       io.has_result() ==
-                           (fn->use == reserved_names::builtin_use::either);
+                return reserved_names::find_builtin_function(io.name) !=
+                       nullptr;
             },
         };
 
