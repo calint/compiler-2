@@ -32,7 +32,7 @@ func noinline nested(value mut record) result point {
 
 func main() {
     var value = record{ 7, { -2, 20 }, 999 }
-    var result = record{ }
+    var result = record
     result = forward(value)
     assert(1, value.prefix == 7)
     assert(2, value.pt.x == -1)

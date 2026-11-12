@@ -1,6 +1,6 @@
-# branch coverage: stmt_identifier bounds check on array without indexing
-# targets compile_effective_address branch:
-#   if (is_last and not reg_size.empty() and curr_info.is_array)
+# 'array_copy' with a run-time count between whole arrays, not elements:
+# the count is checked against the arrays, the elements past it are not
+# copied
 
 func assert(err, expr bool) { if not expr exit(err) }
 

@@ -1,4 +1,4 @@
-# regression: user-type return and user-type indexed argument aliasing
+# user-type results and arguments that are elements at run-time indexes
 
 func assert(err, expr bool) { if not expr exit(err) }
 

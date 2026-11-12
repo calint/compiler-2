@@ -1,4 +1,4 @@
-# lea regression: user-type return assigned to indexed dst from indexed src
+# a struct result stored in a 'mut' element whose index the body changes
 
 func assert(err, expr bool) { if not expr exit(err) }
 

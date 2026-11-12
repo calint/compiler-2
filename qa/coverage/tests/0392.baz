@@ -1,4 +1,4 @@
-# lea regression: user-type indexed args (non-encodable element size path)
+# the same with user-type elements, 16 B on x86_64, more than an index scale
 
 func assert(err, expr bool) { if not expr exit(err) }
 

@@ -1,4 +1,4 @@
-# foo requires an array identifier
+# 'foo' over a name that is not an array is rejected
 
 var value = 1
 

@@ -1,4 +1,4 @@
-# regression: ident_info field destination and alias lea propagation
+# fields of array elements of structs as 'mut' arguments and call results
 
 func assert(x bool) { if not x exit(1) }
 

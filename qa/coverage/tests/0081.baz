@@ -1,4 +1,4 @@
-# assignment between user-defined values
+# the same as 0080 with an array of structs as the field
 
 func assert(expr bool) {
     if not expr exit(1)

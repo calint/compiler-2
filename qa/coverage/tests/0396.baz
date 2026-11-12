@@ -1,6 +1,6 @@
-# branch coverage: parse_statement recursive assign for non-builtin fields
-# targets compile_assign branch:
-#   if (not tf.type().is_built_in()) e.compile_assign(...)
+# a value literal assigned to an element at a run-time index, its nested
+# literal assigned in place to the field of a user type, then the scalar
+# field after it
 
 func assert(err, expr bool) { if not expr exit(err) }
 

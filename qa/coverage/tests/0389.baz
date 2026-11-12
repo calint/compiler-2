@@ -1,4 +1,4 @@
-# regression: stmt_call alias plain variables (is_indexed off)
+# the same with variables as the destination and the 'mut' argument
 
 func assert(err, expr bool) { if not expr exit(err) }
 

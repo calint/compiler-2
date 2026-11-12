@@ -1,4 +1,4 @@
-# assignment between user-defined values
+# a struct field assigned from a struct variable, a struct copied whole
 
 func assert(expr bool) {
     if not expr exit(1)

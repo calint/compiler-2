@@ -1,7 +1,7 @@
-# branch coverage: built-in array field assigned from array identifier
-# targets compile_assign branches:
-#   if (tf.is_array and src.is_array_identifier()) validate_array_assignment
-#   if (tf.is_array) { validate_array_assignment; x.copy(...); }
+# a value literal assigned to an element at a run-time index names an array
+# for the array field of the element: the array is copied into the field,
+# then the scalar field after it is set from the next value; the sizes of
+# the array and the field are the same
 
 func assert(err, expr bool) { if not expr exit(err) }
 

@@ -1,4 +1,4 @@
-# lea regression: nested field writes through user-type alias with lea path
+# a 'mut' struct element: its fields set while the body changes its index
 
 func assert(err, expr bool) { if not expr exit(err) }
 

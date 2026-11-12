@@ -1,4 +1,4 @@
-# all functions are inlined
+# fields of structs in arrays inside an element of an array of structs
 
 func assert(expr bool) {
     if not expr exit(1)

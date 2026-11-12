@@ -1,4 +1,4 @@
-# regression: a call result of each width compared with 0 uses a register of
+# a call result of each width compared with 0 uses a register of
 # its width
 
 func one8() r i8 { r = 1 }

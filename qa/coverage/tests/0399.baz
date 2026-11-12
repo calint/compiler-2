@@ -1,4 +1,4 @@
-# resolver path: alias chain with lea + indexed user-type argument
+# the same with a field of an element at run-time indexes
 
 func assert(err, expr bool) { if not expr exit(err) }
 

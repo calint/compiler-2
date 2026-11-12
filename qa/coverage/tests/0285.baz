@@ -1,4 +1,4 @@
-# struct assignment from a function result
+# a struct result computed from a struct parameter assigned to a variable
 
 func assert(expr bool) { if not expr exit(1) }
 

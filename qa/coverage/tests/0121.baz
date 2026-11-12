@@ -1,6 +1,6 @@
-# all functions are inlined
+# a struct field copied by a literal of its fields between array elements
 
-# single statement blocks can ommit braces
+# single statement blocks can omit braces
 
 func assert(expr bool) { if not expr exit(1) }
 

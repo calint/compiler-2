@@ -1,4 +1,4 @@
-# regression: nested destinations plus by-reference call semantics
+# fields of elements at run-time indexes copied, swapped and set by calls
 
 func assert(x bool) { if not x exit(1) }
 

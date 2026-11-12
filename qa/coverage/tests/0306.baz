@@ -1,4 +1,4 @@
-# extreme index exposes NASM overflow
+# the largest 64-bit index panics
 
 func main() {
     var arr = i8[8]

@@ -1,4 +1,4 @@
-# all functions are inlined
+# struct values: 'mut' parameters, results, nested literals and copies
 
 func assert(expr bool) {
     if not expr exit(1)

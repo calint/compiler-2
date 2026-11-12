@@ -1,4 +1,4 @@
-# unknown field access is rejected
+# a read of an unknown field is rejected
 
 type p { x }
 func main() {

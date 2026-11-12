@@ -1,4 +1,4 @@
-# arithmetic upper-bound failure
+# an index that a sum moves past the end panics
 
 func main() {
     var arr = i8[8]

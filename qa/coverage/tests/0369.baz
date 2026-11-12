@@ -1,4 +1,4 @@
-# foo requires an array identifier
+# 'foo' without an array is rejected
 
 func main() {
     foo {}

@@ -1,4 +1,4 @@
-# a shift count wider than the value is narrowed, as any operand
+# the same for an 'i32' count of an 'i8' (1005)
 
 func main() {
     var x = i8(1)

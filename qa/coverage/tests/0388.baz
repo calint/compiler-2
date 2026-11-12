@@ -1,4 +1,4 @@
-# regression: stmt_call alias must pin indexed operand (is_indexed on)
+# 'arr[ix]' with a call that increments 'ix' is the element before the call
 
 func assert(err, expr bool) { if not expr exit(err) }
 

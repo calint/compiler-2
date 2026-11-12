@@ -1,4 +1,4 @@
-# arithmetic underflow
+# an index that a difference moves below 0 panics
 
 func main() {
     var arr = i8[8]

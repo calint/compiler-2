@@ -1,4 +1,4 @@
-# lea regression: built-in indexed src/dst aliases and index mutation
+# 'mut' arguments 'a[i]' keep their element when the body changes 'i'
 
 func assert(err, expr bool) { if not expr exit(err) }
 

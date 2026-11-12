@@ -1,4 +1,4 @@
-# unknown field access is rejected
+# a write to an unknown field is rejected
 
 type point { x }
 
