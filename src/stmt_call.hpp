@@ -956,16 +956,26 @@ class inline_call final {
 
         const bool nests_alike{nests_alike_at_every_call(tc)};
 
+        const auto compile_level{
+            [&] -> void {
+                if (nests_alike) {
+                    compile_within_limits(tc, dst, nesting);
+                } else {
+                    compile_arguments_without_body(tc);
+                }
+            },
+        };
+
         // note: a deeper level is in the dry run of the first
         if (nesting > 1) {
-            compile_recursion_level(tc, dst, nesting, nests_alike);
+            compile_level();
             return;
         }
 
         const auto compile_first_level{
             [&] -> void {
                 try {
-                    compile_recursion_level(tc, dst, nesting, nests_alike);
+                    compile_level();
                 } catch (const compile_error& e) {
                     if (not ends_recursion(e, nests_alike)) {
                         throw;
@@ -1061,20 +1071,6 @@ class inline_call final {
                                        [&](const destination& result) -> void {
                                            compile_with_bindings(tc, result);
                                        });
-    }
-
-    // a level of a recursion in 'check_recursion': expanded when it nests
-    // alike at every call, otherwise only its arguments are bound
-    auto compile_recursion_level(toc& tc, const destination& dst,
-                                 const size_t nesting,
-                                 const bool nests_alike) const -> void {
-
-        if (not nests_alike) {
-            compile_arguments_without_body(tc);
-            return;
-        }
-
-        compile_within_limits(tc, dst, nesting);
     }
 
     // the result is made at its type in a register that the body names, the

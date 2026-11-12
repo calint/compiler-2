@@ -1,6 +1,18 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 348 (2026-11-12, design simplification of 'toc.hpp' and
+    'stmt_call.hpp': state duplicated or derivable, bool parameters,
+    parallel structures)
+    => done (2026-11-12): 'inline_call::compile_recursion_level' folded
+       into 'check_recursion' as the lambda 'compile_level' (one caller, a
+       bool passed through); 'scope::mark_without_call(bool)' became
+       'mark_without_call()', each setter sets one flag; pure refactor,
+       listings and errors of 2486 cases unchanged; discarded: deriving
+       'param_names' and 'result_name' from 'vars_', one noinline body
+       list (the emit worklist grows while walked), a function-like root
+       scope (changes the hiding errors), merging the 'body_uses' merge
+       loops, dropping 'toc::checks_overflow'
 [x] easy: need approval: two fuzzers as new files in 'qa/fuzz', called from
     'fuzz-all.sh'
     => 'fuzz-mutate.py' (round 319 BD 'smf.py'): mutates the accepted tests

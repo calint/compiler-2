@@ -487,10 +487,7 @@ class scope final {
 
     auto mark_taking_from_call() -> void { func_part().takes_from_call = true; }
 
-    auto mark_without_call(const bool takes_from_call_in) -> void {
-        func_part().is_without_call = true;
-        func_part().takes_from_call = takes_from_call_in;
-    }
+    auto mark_without_call() -> void { func_part().is_without_call = true; }
 
     [[nodiscard]] auto name() const -> std::string_view { return name_; }
 
@@ -603,7 +600,7 @@ class scope final {
             function(reserved_names::main, func_kind::main, {}, {}),
         };
 
-        scp.mark_without_call(false);
+        scp.mark_without_call();
 
         return scp;
     }

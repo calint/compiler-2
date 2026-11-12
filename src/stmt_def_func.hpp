@@ -992,12 +992,16 @@ class stmt_def_func final : public statement {
         };
 
         if (array_lengths.empty()) {
+            body_scope.mark_without_call();
+
             const bool takes_from_call{
                 array_param_count() != 0 or
                     (is_inlined() and (not params_.empty() or has_result())),
             };
 
-            body_scope.mark_without_call(takes_from_call);
+            if (takes_from_call) {
+                body_scope.mark_taking_from_call();
+            }
 
             return body_scope;
         }
