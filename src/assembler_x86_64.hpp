@@ -66,7 +66,22 @@ class assembler_x86_64 final : public assembler {
     };
 
     // suffixes of 'jcc' and 'setcc'
-    enum class condition : uint8_t { e, ne, l, le, g, ge, a, b, s, ae, o };
+    enum class condition : uint8_t {
+        e,
+        ne,
+        l,
+        le,
+        g,
+        ge,
+        a,
+        b,
+        s,
+        ae,
+        o,
+        be,
+        ns,
+        no,
+    };
 
     // '[symbol + displacement]' or '[base + index * scale + displacement]',
     // zero 'size_bytes' leaves the width to the other operand
@@ -173,15 +188,21 @@ class assembler_x86_64 final : public assembler {
     };
 
     // a 'setcc' and the test of its operand that a branch after it need not
-    // repeat, read by 'retested_branch'
+    // repeat, read by 'retest_branch'
     struct condition_store {
         condition cc{};
         // e.g. 'test r15b, r15b' or 'cmp byte [rbp + 8], 0'
         std::string retest;
     };
 
+    // the condition of a 'jcc', inverted by 'invert_branch' and replaced by
+    // 'retest_branch'
+    struct conditional_jump {
+        condition cc{};
+    };
+
     // the structured form of a line
-    using record = std::variant<memory_move, condition_store>;
+    using record = std::variant<memory_move, condition_store, conditional_jump>;
 
     line_records<record> records_;
 
@@ -312,23 +333,29 @@ class assembler_x86_64 final : public assembler {
     auto jcc(const size_t indent, const condition cc,
              const std::string_view target) -> void {
 
-        add_jump(indent,
+        const size_t index{
+            records_.add(conditional_jump{
+                .cc{cc},
+            }),
+        };
+
+        add_jump(indent, jump_text(cc, target),
                  {
-                     .mnemonic{std::format("j{}", condition_suffix(cc))},
-                     .operands{},
                      .target{std::string{target}},
                      .scratch{},
-                 });
+                     .conditional{true},
+                 },
+                 index);
     }
 
     // jumps go to the base as jumps so they can be optimized
     auto jmp(const size_t indent, const std::string_view target) -> void {
-        add_jump(indent, {
-                             .mnemonic{"jmp"},
-                             .operands{},
-                             .target{std::string{target}},
-                             .scratch{},
-                         });
+        add_jump(indent, std::format("jmp {}", target),
+                 {
+                     .target{std::string{target}},
+                     .scratch{},
+                     .conditional{},
+                 });
     }
 
     // copies qword register 'rs' to 'rd' where 'rs' is written before it is
@@ -433,37 +460,14 @@ class assembler_x86_64 final : public assembler {
     // every instruction counts as one
     [[nodiscard]] auto instruction_size() const -> size_t override { return 1; }
 
-    [[nodiscard]] auto
-    inverse_branch_mnemonic(const std::string_view mnemonic) const
-        -> std::string_view override {
+    auto invert_branch(line& l) -> void override {
+        conditional_jump* const jump{records_.find<conditional_jump>(l)};
 
-        // a branch mnemonic and its inverse
-        using mnemonic_pair = std::pair<std::string_view, std::string_view>;
+        // note: 'jcc' gives every branch its record
+        assert(jump != nullptr);
 
-        constexpr std::array<mnemonic_pair, 7> pairs{
-            {
-                {"je", "jne"},
-                {"jg", "jle"},
-                {"jge", "jl"},
-                {"jo", "jno"},
-                {"ja", "jbe"},
-                {"jb", "jae"},
-                {"js", "jns"},
-            },
-        };
-
-        for (const auto& [first, second] : pairs) {
-            if (mnemonic == first) {
-                return second;
-            }
-
-            if (mnemonic == second) {
-                return first;
-            }
-        }
-
-        // the branches the optimizer inverts are all paired
-        std::unreachable();
+        jump->cc = inverse(jump->cc);
+        replace_text(l, jump_text(jump->cc, l.jump->target));
     }
 
     // an address without a width takes the register's; a 32-bit load would
@@ -486,36 +490,29 @@ class assembler_x86_64 final : public assembler {
     }
 
     // 'jne' after the test is taken when the stored value is nonzero
-    [[nodiscard]] auto retested_branch(const line& set, const line& test,
-                                       const std::string_view branch) const
-        -> std::optional<std::string> override {
+    [[nodiscard]] auto retest_branch(const line& set, const line& test,
+                                     line& branch) -> bool override {
 
         const condition_store* const stored{
             records_.find<condition_store>(set),
         };
 
         if (stored == nullptr or code_text(test) != stored->retest) {
-            return std::nullopt;
+            return false;
         }
 
-        std::string taken{
-            std::format("j{}", condition_suffix(stored->cc)),
-        };
-
-        if (branch == "jne") {
-            return taken;
-        }
+        conditional_jump* const jump{records_.find<conditional_jump>(branch)};
 
         // note: a bool is branched on with 'je' or 'jne'
-        assert(branch == "je");
 
-        return std::string{inverse_branch_mnemonic(taken)};
-    }
+        assert(jump != nullptr);
+        assert(jump->cc == condition::e or jump->cc == condition::ne);
 
-    [[nodiscard]] auto unconditional_jump_mnemonic() const
-        -> std::string_view override {
+        jump->cc = jump->cc == condition::ne ? stored->cc : inverse(stored->cc);
 
-        return "jmp";
+        replace_text(branch, jump_text(jump->cc, branch.jump->target));
+
+        return true;
     }
 
     //
@@ -657,10 +654,13 @@ class assembler_x86_64 final : public assembler {
                 "s",
                 "ae",
                 "o",
+                "be",
+                "ns",
+                "no",
             }),
         };
 
-        static_assert(suffixes.size() == std::to_underlying(condition::o) + 1);
+        static_assert(suffixes.size() == std::to_underlying(condition::no) + 1);
 
         return suffixes.at(std::to_underlying(cc));
     }
@@ -748,6 +748,41 @@ class assembler_x86_64 final : public assembler {
         -> std::string {
 
         return std::format("{} {}, {}", info(code).mnemonic, dst, src);
+    }
+
+    // the condition that holds exactly when 'cc' does not
+    [[nodiscard]] static auto inverse(const condition cc) -> condition {
+        constexpr std::array<std::pair<condition, condition>, 7> pairs{
+            {
+                {condition::e, condition::ne},
+                {condition::g, condition::le},
+                {condition::ge, condition::l},
+                {condition::o, condition::no},
+                {condition::a, condition::be},
+                {condition::b, condition::ae},
+                {condition::s, condition::ns},
+            },
+        };
+
+        for (const auto& [first, second] : pairs) {
+            if (cc == first) {
+                return second;
+            }
+
+            if (cc == second) {
+                return first;
+            }
+        }
+
+        std::unreachable();
+    }
+
+    // a branch without its indentation, e.g. 'jne target'
+    [[nodiscard]] static auto jump_text(const condition cc,
+                                        const std::string_view target)
+        -> std::string {
+
+        return std::format("j{} {}", condition_suffix(cc), target);
     }
 
     // a 'mov' between a register and memory, else empty

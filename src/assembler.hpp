@@ -100,13 +100,13 @@ class assembler {
     enum class section : uint8_t { text, rodata, data, variables };
 
   protected:
+    // a jump the optimizer sees; the target keeps the condition of a branch
+    // in the record of its line
     struct jump_info {
-        std::string mnemonic;
-        // operands before the target, empty when the target is the only one
-        std::string operands;
         std::string target;
         // a free register for targets that need one to reach far
         std::string scratch;
+        bool conditional{};
     };
 
     struct line {
@@ -418,15 +418,16 @@ class assembler {
     }
 
   protected:
-    // the mnemonic of 'jump' is the unconditional jump or a branch taking
-    // its operands; the text is 'format_jump' of it
-    auto add_jump(const size_t indent, jump_info jump,
+    // 'text' is the instruction of 'jump' without indentation, 'record' the
+    // target's form of a branch
+    auto add_jump(const size_t indent, const std::string_view text,
+                  jump_info jump,
                   const std::optional<size_t> record = std::nullopt) -> void {
 
         assert(code_section_);
 
-        add_line(indentation(indent) + format_jump(jump), instruction_size(),
-                 record);
+        add_line(std::format("{}{}", indentation(indent), text),
+                 instruction_size(), record);
 
         current_lines().back().jump =
             std::make_unique<jump_info>(std::move(jump));
@@ -451,10 +452,6 @@ class assembler {
 
     // a line that emits no code, e.g. a comment or a directive
     auto add_text(std::string text) -> void { add_line(std::move(text), 0); }
-
-    [[nodiscard]] auto is_conditional(const jump_info& jump) const -> bool {
-        return jump.mnemonic != unconditional_jump_mnemonic();
-    }
 
     [[nodiscard]] auto label_lines() const
         -> std::unordered_map<std::string_view, size_t> {
@@ -613,26 +610,19 @@ class assembler {
     // the code size of one instruction in the target's unit
     [[nodiscard]] virtual auto instruction_size() const -> size_t = 0;
 
-    // the branch taken exactly when 'mnemonic' is not taken
-    [[nodiscard]] virtual auto
-    inverse_branch_mnemonic(std::string_view mnemonic) const
-        -> std::string_view = 0;
+    // rewrites the branch 'l' as the branch taken exactly when it is not, to
+    // the target of its jump
+    virtual auto invert_branch(line& l) -> void = 0;
 
     // 'load' leaves every register as it is after 'store', the instruction
     // before it
     [[nodiscard]] virtual auto is_reload(const line& store,
                                          const line& load) const -> bool = 0;
 
-    // the mnemonic of 'branch' reading the flags that 'set' left, when 'test'
-    // only tests the value 'set' stored, else none
-    [[nodiscard]] virtual auto retested_branch(const line& set,
-                                               const line& test,
-                                               std::string_view branch) const
-        -> std::optional<std::string> = 0;
-
-    // every other jump is a conditional branch
-    [[nodiscard]] virtual auto unconditional_jump_mnemonic() const
-        -> std::string_view = 0;
+    // rewrites 'branch' to read the flags that 'set' left when 'test' only
+    // tests the value 'set' stored, false when it does not
+    [[nodiscard]] virtual auto retest_branch(const line& set, const line& test,
+                                             line& branch) -> bool = 0;
 
     //
     // class methods
@@ -663,7 +653,7 @@ class assembler {
 
         const line& l{lines_.at(next)};
 
-        if (not l.jump or is_conditional(*l.jump)) {
+        if (not l.jump or l.jump->conditional) {
             return std::nullopt;
         }
 
@@ -676,13 +666,12 @@ class assembler {
 
     // every branch the optimizer sees has an inverse; the branch takes the
     // removed jump's scratch, chosen after the compared registers were freed
-    auto invert(line& l, const jump_info& removed) const -> void {
+    auto invert(line& l, const jump_info& removed) -> void {
         jump_info& jump{*l.jump};
 
-        jump.mnemonic = inverse_branch_mnemonic(jump.mnemonic);
         jump.target = removed.target;
         jump.scratch = removed.scratch;
-        replace_text(l, format_jump(jump));
+        invert_branch(l);
     }
 
     // labels named by lines other than jumps, e.g. calls, addresses and
@@ -750,7 +739,7 @@ class assembler {
         line& jump{lines_.at(*jump_index)};
 
         // nothing reaches a jump right after an unconditional jump
-        if (not is_conditional(*branch.jump)) {
+        if (not branch.jump->conditional) {
             remove(jump);
             ++optimizations_.unreachable_jumps;
             return true;
@@ -873,20 +862,16 @@ class assembler {
                     continue;
                 }
 
-                if (set != nullptr and l.jump and is_conditional(*l.jump)) {
-                    std::optional<std::string> mnemonic{
-                        retested_branch(*set, *test, l.jump->mnemonic),
-                    };
+                const bool is_branch{l.jump and l.jump->conditional};
 
-                    if (mnemonic) {
-                        l.jump->mnemonic = std::move(*mnemonic);
-                        replace_text(l, format_jump(*l.jump));
-                        remove(*test);
-                        ++optimizations_.removed_retests;
+                if (set != nullptr and is_branch and
+                    retest_branch(*set, *test, l)) {
 
-                        // note: the next instructions see 'set' before 'l'
-                        test = set;
-                    }
+                    remove(*test);
+                    ++optimizations_.removed_retests;
+
+                    // note: the next instructions see 'set' before 'l'
+                    test = set;
                 }
 
                 set = test;
@@ -965,18 +950,6 @@ class assembler {
         }
 
         return size;
-    }
-
-    // the jump instruction without indentation, e.g. 'beq t0, t1, target'
-    [[nodiscard]] static auto format_jump(const jump_info& jump)
-        -> std::string {
-
-        if (jump.operands.empty()) {
-            return std::format("{} {}", jump.mnemonic, jump.target);
-        }
-
-        return std::format("{} {}, {}", jump.mnemonic, jump.operands,
-                           jump.target);
     }
 
     // numeric labels, named by references such as '1b', are entries without a

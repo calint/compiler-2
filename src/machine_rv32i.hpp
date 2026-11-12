@@ -2454,29 +2454,18 @@ class machine_rv32i : public machine {
         // note: a comparison without a boolean result is a branch
         assert(not action.target.empty());
 
-        const bool inverted{not action.branch_on_true};
-
-        // equality and inequality share one branch pair
-        if (is_equality(operation)) {
-            const bool branch_on_unequal{
-                inverted != (operation == comparison_operator::not_equal),
-            };
-
-            emit_branch(indent, branch_on_unequal ? op::bne : op::beq,
-                        left.register_name(), right.register_name(),
-                        action.target);
-
-            return;
-        }
-
-        // ordered comparisons use signed blt/bge, swapping for > and <=
-        const bool swapped{swaps_operands(operation)};
-
-        const bool branch_on_greater_equal{
-            inverted != complements_less_than(operation),
+        // the comparison the branch is taken on
+        const comparison_operator taken{
+            action.branch_on_true ? operation : negated(operation),
         };
 
-        emit_branch(indent, branch_on_greater_equal ? op::bge : op::blt,
+        // only 'blt' and 'bge' exist: 'x > y' branches as 'y < x' and
+        // 'x <= y' as 'y >= x'
+        const bool swapped{swaps_operands(taken)};
+
+        const comparison_operator branched{swapped ? mirrored(taken) : taken};
+
+        emit_branch(indent, branch_for_comparison(branched),
                     swapped ? right.register_name() : left.register_name(),
                     swapped ? left.register_name() : right.register_name(),
                     action.target);
@@ -3807,6 +3796,27 @@ class machine_rv32i : public machine {
                (value_type.size_bytes() == byte_size_bytes_ or
                 value_type.size_bytes() == half_size_bytes_ or
                 value_type.size_bytes() == word_size_bytes_));
+    }
+
+    // the branch taken when 'holds' does, of the comparisons that have one
+    [[nodiscard]] static auto
+    branch_for_comparison(const comparison_operator holds) -> op {
+
+        if (holds == comparison_operator::equal) {
+            return op::beq;
+        }
+
+        if (holds == comparison_operator::not_equal) {
+            return op::bne;
+        }
+
+        if (holds == comparison_operator::less) {
+            return op::blt;
+        }
+
+        assert(holds == comparison_operator::greater_equal);
+
+        return op::bge;
     }
 
     // aligned hardware requires every access to be within the known alignment:

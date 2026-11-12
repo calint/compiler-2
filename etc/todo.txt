@@ -82,6 +82,18 @@ is the test 'qa/coverage/tests/NNNN.baz'
     dry run asks for is checked twice ('check_function_bodies' and
     'check_noinline_bodies'); only compile time; in a dry run
     'add_noinline_body' could add only bodies with array lengths
+[p] easy: need approval (round 400): the rv32i assembler has 28 one-line
+    emitters by mnemonic ('add', 'addi', 'beq', 'lw' ..., about 170 lines,
+    about 190 call sites) over the five forms that take an op, while
+    'sll', 'sra', 'blt', 'bge', 'lh', 'lhu', 'sh' are emitted by op; one
+    way to emit, as x86_64 'instruction(indent, op, ...)', removes the
+    wrappers but the hand-written routines ('emit_divide_body', the io
+    routines) read less like assembly; a matter of taste
+[p] easy: need approval (round 400): 'failure_tests' of 'machine_rv32i'
+    takes the number of tests up front ('upper_bound_test_count' mirrors
+    'check_upper_bound', "note: 3" in 'check_divisor'); without the count
+    about -25 lines and one more 'j' per check with several tests, growth
+    not measured
 [ ] hard: the listing indent lives in 'toc' (round 331) and the backend
     takes it in every 'emit_site' (round 319); held by the machine or the
     assembler, 'emit_site' would shrink to a token and the 142 front-end

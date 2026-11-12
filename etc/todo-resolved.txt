@@ -1,6 +1,25 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 400 (2026-11-13, design: the bodies of the two backends,
+    the assemblers and their passes)
+    => done (2026-11-13): a branch has one representation, the record of
+       its line: 'jump_info' is '{target, scratch, conditional}' (its
+       'mnemonic' and 'operands' strings are gone), the jump optimizer
+       rewrites a branch through 'invert_branch' and 'retest_branch';
+       rv32i 'branch_condition{code, rs1, rs2}' replaces 'jump_registers'
+       and 'find_op' (the op parsed back from the mnemonic to encode),
+       x86_64 'conditional_jump{cc}' and 'inverse(condition)' replace the
+       table of mnemonic pairs and the "je"/"jne" comparisons;
+       'format_jump', 'is_conditional', 'inverse_branch_mnemonic' and
+       'unconditional_jump_mnemonic' are gone; rv32i
+       'emit_comparison_branch' goes through 'negated' and 'mirrored' to
+       'branch_for_comparison', as x86_64 'condition_for_comparison';
+       listings and images unchanged (2495 cases), four targets, far jumps,
+       versions, roome, emulator
+    => not done: the jump form of rv32i held in the record (a second
+       state beside 'code_size'); 'check_copy_overlap' into 'machine'
+       (needs a new primitive)
 [x] easy: round 399 (2026-11-13, readability: a reviewer's walk with a
     strict bar of the files not walked in rounds 390 to 398: 'main.cpp',
     tokenizer, 'toc' tables, generics, types, errors, 'register_pool',

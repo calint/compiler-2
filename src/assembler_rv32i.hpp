@@ -197,8 +197,10 @@ class assembler_rv32i final : public assembler {
         std::string target;
     };
 
-    // the registers a branch given to the jump resolver compares
-    struct jump_registers {
+    // when a branch given to the jump resolver is taken: 'code' of the
+    // registers it compares, inverted by 'invert_branch'
+    struct branch_condition {
+        op code{};
         uint8_t rs1{};
         uint8_t rs2{};
     };
@@ -226,7 +228,7 @@ class assembler_rv32i final : public assembler {
         int64_t value{};
     };
 
-    using record = std::variant<instruction, jump_registers, data_values,
+    using record = std::variant<instruction, branch_condition, data_values,
                                 zero_fill, alignment, section_start, constant>;
 
     struct line_position {
@@ -721,19 +723,19 @@ class assembler_rv32i final : public assembler {
 
         assert(info(code).operands == form::branch);
 
-        const size_t index{
-            records_.add(jump_registers{
-                .rs1{number_of(rs1)},
-                .rs2{number_of(rs2)},
-            }),
+        const branch_condition taken{
+            .code{code},
+            .rs1{number_of(rs1)},
+            .rs2{number_of(rs2)},
         };
 
-        add_jump(indent,
+        const size_t index{records_.add(taken)};
+
+        add_jump(indent, branch_text(taken, target),
                  {
-                     .mnemonic{std::string{info(code).mnemonic}},
-                     .operands{std::format("{}, {}", rs1, rs2)},
                      .target{std::string{target}},
                      .scratch{std::string{scratch}},
+                     .conditional{true},
                  },
                  index);
     }
@@ -742,12 +744,12 @@ class assembler_rv32i final : public assembler {
     auto resolved_jump(const size_t indent, const std::string_view target,
                        const std::string_view scratch) -> void {
 
-        add_jump(indent, {
-                             .mnemonic{"j"},
-                             .operands{},
-                             .target{std::string{target}},
-                             .scratch{std::string{scratch}},
-                         });
+        add_jump(indent, std::format("j {}", target),
+                 {
+                     .target{std::string{target}},
+                     .scratch{std::string{scratch}},
+                     .conditional{},
+                 });
     }
 
     auto ret(const size_t indent) -> void {
@@ -1004,12 +1006,14 @@ class assembler_rv32i final : public assembler {
         return one_instruction_bytes;
     }
 
-    [[nodiscard]] auto
-    inverse_branch_mnemonic(const std::string_view mnemonic) const
-        -> std::string_view override {
+    auto invert_branch(line& l) -> void override {
+        branch_condition* const taken{records_.find<branch_condition>(l)};
 
-        const op inverse{inverse_branch(find_op(mnemonic))};
-        return info(inverse).mnemonic;
+        // note: 'resolved_branch' gives every branch its record
+        assert(taken != nullptr);
+
+        taken->code = inverse_branch(taken->code);
+        replace_text(l, branch_text(*taken, l.jump->target));
     }
 
     // a narrower load extends the value, which the register need not hold
@@ -1036,19 +1040,12 @@ class assembler_rv32i final : public assembler {
     }
 
     // a set instruction leaves no flags
-    [[nodiscard]] auto
-    retested_branch([[maybe_unused]] const line& set,
-                    [[maybe_unused]] const line& test,
-                    [[maybe_unused]] const std::string_view branch) const
-        -> std::optional<std::string> override {
+    [[nodiscard]] auto retest_branch([[maybe_unused]] const line& set,
+                                     [[maybe_unused]] const line& test,
+                                     [[maybe_unused]] line& branch)
+        -> bool override {
 
-        return std::nullopt;
-    }
-
-    [[nodiscard]] auto unconditional_jump_mnemonic() const
-        -> std::string_view override {
-
-        return "j";
+        return false;
     }
 
     //
@@ -1189,31 +1186,28 @@ class assembler_rv32i final : public assembler {
         const int64_t target{symbol_value(symbols, jump.target, line_index)};
         const jump_reach reach_form{reach(l)};
 
-        if (not is_conditional(jump)) {
+        if (not jump.conditional) {
             return long_jump(reach_form, jump, target - address);
         }
 
-        const jump_registers* const compared{
-            records_.find<jump_registers>(l),
+        const branch_condition* const taken{
+            records_.find<branch_condition>(l),
         };
 
-        assert(compared != nullptr);
-
-        // note: not kept in the record, the optimizer may invert the mnemonic
-        const op code{find_op(jump.mnemonic)};
+        assert(taken != nullptr);
 
         if (reach_form == jump_reach::branch) {
             return {
-                branch_word(code, compared->rs1, compared->rs2,
+                branch_word(taken->code, taken->rs1, taken->rs2,
                             target - address),
             };
         }
 
-        const op inverted{inverse_branch(code)};
+        const op inverted{inverse_branch(taken->code)};
 
         // the inverted branch skips the jump that follows it
         std::vector<uint32_t> words{
-            branch_word(inverted, compared->rs1, compared->rs2,
+            branch_word(inverted, taken->rs1, taken->rs2,
                         static_cast<int64_t>(l.code_size)),
         };
 
@@ -1247,18 +1241,6 @@ class assembler_rv32i final : public assembler {
         return encode_instruction(*ins, line_index, address, symbols);
     }
 
-    // 'target' is the line of the jump's label, a borrowed register adds the
-    // landing to it
-    auto grow(line& l, line& target) const -> void {
-        const jump_reach grown{grown_reach(l)};
-
-        if (grown == jump_reach::borrowed) {
-            target.code_size = landing_size_bytes_;
-        }
-
-        l.code_size = skip_size_bytes(*l.jump) + jump_size_bytes(grown);
-    }
-
     [[nodiscard]] auto grow_out_of_reach(
         const std::unordered_map<std::string_view, size_t>& labels) -> bool {
 
@@ -1285,23 +1267,6 @@ class assembler_rv32i final : public assembler {
         }
 
         return grown;
-    }
-
-    [[nodiscard]] auto grown_reach(const line& l) const -> jump_reach {
-        const jump_reach current{reach(l)};
-
-        if (current == jump_reach::branch) {
-            return jump_reach::jal;
-        }
-
-        // note: the far forms reach every address, so they do not grow
-        assert(current == jump_reach::jal);
-
-        if (l.jump->scratch.empty()) {
-            return jump_reach::borrowed;
-        }
-
-        return jump_reach::far;
     }
 
     [[nodiscard]] auto image_size_bytes(const line& l) const -> size_t {
@@ -1382,57 +1347,6 @@ class assembler_rv32i final : public assembler {
         return image;
     }
 
-    // the form a jump has grown to follows from its size
-    [[nodiscard]] auto reach(const line& l) const -> jump_reach {
-        if (is_conditional(*l.jump) and l.code_size == one_instruction_bytes) {
-            return jump_reach::branch;
-        }
-
-        const size_t skip_bytes{skip_size_bytes(*l.jump)};
-
-        if (l.code_size == skip_bytes + one_instruction_bytes) {
-            return jump_reach::jal;
-        }
-
-        if (l.code_size == skip_bytes + two_instructions_bytes) {
-            return jump_reach::far;
-        }
-
-        return jump_reach::borrowed;
-    }
-
-    [[nodiscard]] auto reaches(const line& l, const size_t source_offset,
-                               const size_t target_offset) const -> bool {
-
-        const int64_t distance{
-            static_cast<int64_t>(target_offset) -
-                static_cast<int64_t>(source_offset),
-        };
-
-        const jump_reach form{reach(l)};
-
-        if (form == jump_reach::branch) {
-            return fits(distance, branch_min_, branch_max_);
-        }
-
-        // the distance counts from the 'jal', which follows the skip
-        if (form == jump_reach::jal) {
-            const int64_t skip_bytes{
-                static_cast<int64_t>(skip_size_bytes(*l.jump)),
-            };
-
-            return fits(distance - skip_bytes, jal_min_, jal_max_);
-        }
-
-        // 'auipc' and 'jalr' reach any address of the 32-bit address space
-        return true;
-    }
-
-    // a grown conditional jump starts with an inverted branch around the jump
-    [[nodiscard]] auto skip_size_bytes(const jump_info& jump) const -> size_t {
-        return is_conditional(jump) ? one_instruction_bytes : 0;
-    }
-
     auto write_code(std::ostream& os, const line& l, const size_t line_index,
                     const int64_t address, const symbol_table& symbols) const
         -> void {
@@ -1489,7 +1403,7 @@ class assembler_rv32i final : public assembler {
 
         const std::string_view indent{leading_whitespace(l.text)};
 
-        if (not is_conditional(*l.jump)) {
+        if (not l.jump->conditional) {
             write_long_jump(os, indent, l);
             return;
         }
@@ -1499,9 +1413,19 @@ class assembler_rv32i final : public assembler {
             std::format(".Lbaz_jump.{}", skip_count++),
         };
 
-        std::println(os, "{}{} {}, {}", indent,
-                     inverse_branch_mnemonic(l.jump->mnemonic),
-                     l.jump->operands, skip_label);
+        const branch_condition* const taken{
+            records_.find<branch_condition>(l),
+        };
+
+        assert(taken != nullptr);
+
+        const branch_condition skipped{
+            .code{inverse_branch(taken->code)},
+            .rs1{taken->rs1},
+            .rs2{taken->rs2},
+        };
+
+        std::println(os, "{}{}", indent, branch_text(skipped, skip_label));
 
         write_long_jump(os, indent, l);
         std::println(os, "{}:", skip_label);
@@ -1530,35 +1454,6 @@ class assembler_rv32i final : public assembler {
             write_code(os, l, line_index, static_cast<int64_t>(address),
                        symbols);
         }
-    }
-
-    auto write_long_jump(std::ostream& os, const std::string_view indent,
-                         const line& l) const -> void {
-
-        const jump_reach form{reach(l)};
-
-        if (form == jump_reach::far) {
-            std::println(os, "{}jump {}, {}", indent, l.jump->target,
-                         l.jump->scratch);
-
-            return;
-        }
-
-        if (form == jump_reach::borrowed) {
-            const std::string_view borrowed{
-                register_names.at(borrowed_register_),
-            };
-
-            std::println(os, "{}sw {}, {}(sp)", indent, borrowed,
-                         borrowed_slot_offset_);
-
-            std::println(os, "{}jump {}, {}", indent,
-                         landing_label(l.jump->target), borrowed);
-
-            return;
-        }
-
-        std::println(os, "{}j {}", indent, l.jump->target);
     }
 
     // returns the end address of the section, 'written' is where the image
@@ -1636,6 +1531,21 @@ class assembler_rv32i final : public assembler {
                           std::back_inserter(words));
 
         return words;
+    }
+
+    // the branch to 'target' without indentation, e.g. 'beq t0, t1, target'
+    [[nodiscard]] static auto branch_text(const branch_condition& taken,
+                                          const std::string_view target)
+        -> std::string {
+
+        return instruction_text({
+            .code{taken.code},
+            .rd{},
+            .rs1{taken.rs1},
+            .rs2{taken.rs2},
+            .value{},
+            .target{std::string{target}},
+        });
     }
 
     [[nodiscard]] static auto branch_word(const op code, const uint8_t first,
@@ -1831,22 +1741,39 @@ class assembler_rv32i final : public assembler {
         return one_instruction_bytes;
     }
 
-    [[nodiscard]] static auto find_op(const std::string_view mnemonic) -> op {
-        for (size_t index{}; index < op_count_; ++index) {
-            const op code{static_cast<op>(index)};
-
-            if (info(code).mnemonic == mnemonic) {
-                return code;
-            }
-        }
-
-        std::unreachable();
-    }
-
     [[nodiscard]] static auto fits(const int64_t number, const int64_t min,
                                    const int64_t max) -> bool {
 
         return number >= min and number <= max;
+    }
+
+    // 'target' is the line of the jump's label, a borrowed register adds the
+    // landing to it
+    static auto grow(line& l, line& target) -> void {
+        const jump_reach grown{grown_reach(l)};
+
+        if (grown == jump_reach::borrowed) {
+            target.code_size = landing_size_bytes_;
+        }
+
+        l.code_size = skip_size_bytes(*l.jump) + jump_size_bytes(grown);
+    }
+
+    [[nodiscard]] static auto grown_reach(const line& l) -> jump_reach {
+        const jump_reach current{reach(l)};
+
+        if (current == jump_reach::branch) {
+            return jump_reach::jal;
+        }
+
+        // note: the far forms reach every address, so they do not grow
+        assert(current == jump_reach::jal);
+
+        if (l.jump->scratch.empty()) {
+            return jump_reach::borrowed;
+        }
+
+        return jump_reach::far;
     }
 
     // an immediate out of range would assemble to a different instruction
@@ -2203,6 +2130,52 @@ class assembler_rv32i final : public assembler {
         }
     }
 
+    // the form a jump has grown to follows from its size
+    [[nodiscard]] static auto reach(const line& l) -> jump_reach {
+        if (l.jump->conditional and l.code_size == one_instruction_bytes) {
+            return jump_reach::branch;
+        }
+
+        const size_t skip_bytes{skip_size_bytes(*l.jump)};
+
+        if (l.code_size == skip_bytes + one_instruction_bytes) {
+            return jump_reach::jal;
+        }
+
+        if (l.code_size == skip_bytes + two_instructions_bytes) {
+            return jump_reach::far;
+        }
+
+        return jump_reach::borrowed;
+    }
+
+    [[nodiscard]] static auto reaches(const line& l, const size_t source_offset,
+                                      const size_t target_offset) -> bool {
+
+        const int64_t distance{
+            static_cast<int64_t>(target_offset) -
+                static_cast<int64_t>(source_offset),
+        };
+
+        const jump_reach form{reach(l)};
+
+        if (form == jump_reach::branch) {
+            return fits(distance, branch_min_, branch_max_);
+        }
+
+        // the distance counts from the 'jal', which follows the skip
+        if (form == jump_reach::jal) {
+            const int64_t skip_bytes{
+                static_cast<int64_t>(skip_size_bytes(*l.jump)),
+            };
+
+            return fits(distance - skip_bytes, jal_min_, jal_max_);
+        }
+
+        // 'auipc' and 'jalr' reach any address of the 32-bit address space
+        return true;
+    }
+
     [[nodiscard]] static auto register_fields(const uint8_t rd,
                                               const uint8_t rs1,
                                               const uint8_t rs2) -> uint32_t {
@@ -2266,6 +2239,11 @@ class assembler_rv32i final : public assembler {
 
     [[nodiscard]] static auto section_index(const section which) -> size_t {
         return std::to_underlying(which);
+    }
+
+    // a grown conditional jump starts with an inverted branch around the jump
+    [[nodiscard]] static auto skip_size_bytes(const jump_info& jump) -> size_t {
+        return jump.conditional ? one_instruction_bytes : 0;
     }
 
     // 'Nf' and 'Nb' refer to the nearest numeric label 'N' after or before
@@ -2337,6 +2315,35 @@ class assembler_rv32i final : public assembler {
                      borrowed_slot_offset_);
 
         std::println(os, "{}", l.text);
+    }
+
+    static auto write_long_jump(std::ostream& os, const std::string_view indent,
+                                const line& l) -> void {
+
+        const jump_reach form{reach(l)};
+
+        if (form == jump_reach::far) {
+            std::println(os, "{}jump {}, {}", indent, l.jump->target,
+                         l.jump->scratch);
+
+            return;
+        }
+
+        if (form == jump_reach::borrowed) {
+            const std::string_view borrowed{
+                register_names.at(borrowed_register_),
+            };
+
+            std::println(os, "{}sw {}, {}(sp)", indent, borrowed,
+                         borrowed_slot_offset_);
+
+            std::println(os, "{}jump {}, {}", indent,
+                         landing_label(l.jump->target), borrowed);
+
+            return;
+        }
+
+        std::println(os, "{}j {}", indent, l.jump->target);
     }
 
     // little endian regardless of the host
