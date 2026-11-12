@@ -322,7 +322,7 @@ class assembler {
         return instructions_in(code_size_of(lines));
     }
 
-    // inside 'capture', e.g. a version or discarded code
+    // inside 'capture', e.g. a version or a dry run
     [[nodiscard]] auto is_capturing() const -> bool {
         return not captures_.empty();
     }

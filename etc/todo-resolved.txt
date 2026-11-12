@@ -1,6 +1,27 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 398 (2026-11-13, design: across the layers, a first-time
+    architect's read from 'main' through the classes)
+    => done (2026-11-13): the design reads straight, nothing larger than
+       polish without approval; the dry run has one name in 'toc' and
+       'machine': 'machine::dry_run', 'is_dry_run',
+       'version_state::is_dry_run' (were 'emit_discarded', 'is_discarding',
+       'is_discarded'); the enum 'machine::discarded_code', passed
+       unchanged from the node through 'compile_toc::dry_run', is gone:
+       'stmt_def_func::dry_run_in_frame' calls 'machine::
+       begin_dry_run_body' as an emitted body calls 'begin_noinline_body';
+       'machine::comment_binding', 'comment_held_address' and
+       'comment_variable' (one caller each) are gone, the callers format
+       with 'comment'; 'address_text' is a member of 'operand';
+       'machine::is_stack_bounded' is private; README 1.1, 1.4, 5.2, 5.3,
+       7.11; listings unchanged (2495 cases)
+    => not done: 'in_storage::base_register' always set so
+       'ident_resolver' drops its machine (the parse resolves before it
+       places); 'machine::builtins()' public to drop a parameter of
+       'program' (makes the backend the source of the types); one spelling
+       of the overflow policy ('value_use' is a layer above
+       'runtime_check')
 [x] easy: round 397 (2026-11-13, readability: a reviewer's walk of what
     rounds 394 to 396 changed; bug hunt: whole programs that combine
     features)

@@ -3070,7 +3070,7 @@ struct usage_statistics {
 // the modes a node does not see, each set by one function and read elsewhere:
 //
 //   'is_dry_run'              held by the machine, set by 'dry_run'
-//                             ('machine::emit_discarded'); read by
+//                             ('machine::dry_run'); read by
 //                             'add_noinline_body' (a body to check, not
 //                             emit) and by 'statement::comment_source'
 //   'scope::is_without_call'  set by 'stmt_def_func::frame_scope' without
@@ -3384,12 +3384,10 @@ class compile_toc final : public toc {
         }
 
         // the dry run puts back the reach of the code after it
-        dry_run(
-            [&] -> void {
-                tables().scopes.set_reachable(true);
-                compile();
-            },
-            machine::discarded_code::here);
+        dry_run([&] -> void {
+            tables().scopes.set_reachable(true);
+            compile();
+        });
     }
 
     // the bodies that only a dry run asked for, see 'add_noinline_body'
@@ -3411,22 +3409,21 @@ class compile_toc final : public toc {
     }
 
     // runs 'compile' for its errors only: its output, read-only constants and
-    // use of storage leave no trace; 'code' says which registers it starts
-    // with ('machine::emit_discarded'); the error it ends at rejects the
+    // use of storage leave no trace ('machine::dry_run'); it starts with the
+    // registers held where it stands; the error it ends at rejects the
     // program and is rethrown as an error of the source, so no reader of the
     // kind drops it: the check of a body starts from the registers of a
-    // noinline body, and skipped code is never inside a version, an inlined
-    // body skips no code, see 'check_skipped'; 'inline_call::check_recursion'
-    // reads the kind inside the run, before it is rethrown
-    auto dry_run(const std::function_ref<void()> compile,
-                 const machine::discarded_code code) -> void {
-
+    // noinline body ('machine::begin_dry_run_body'), and skipped code is
+    // never inside a version, an inlined body skips no code, see
+    // 'check_skipped'; 'inline_call::check_recursion' reads the kind inside
+    // the run, before it is rethrown
+    auto dry_run(const std::function_ref<void()> compile) -> void {
         const dry_run_scope run{*this};
 
         ::machine& x{machine()};
 
         try {
-            x.emit_discarded(compile, code);
+            x.dry_run(compile);
         } catch (compile_error& e) {
             e.kind = compile_error::error_kind::source;
 
@@ -3489,7 +3486,7 @@ class compile_toc final : public toc {
     // the machine holds the mode with the state it puts back
     [[nodiscard]] auto is_dry_run() const -> bool {
         const ::machine& x{machine()};
-        return x.is_discarding();
+        return x.is_dry_run();
     }
 
     // the code after the current statement of the function being compiled
@@ -3630,16 +3627,20 @@ class compile_toc final : public toc {
             return;
         }
 
+        const std::string address{name_info.operand().address_text()};
+
+        // the slot holds the address of the variable, e.g. a parameter of a
+        // noinline body
         if (holds_address(var.placement)) {
-            x.comment_held_address({src_loc_tk, indent_}, text,
-                                   name_info.operand());
+            x.comment({src_loc_tk, indent_}, "{} (address @ [{}])", text,
+                      address);
 
             return;
         }
 
-        x.comment_variable({src_loc_tk, indent_}, text,
-                           name_info.value_size_bytes(src_loc_tk),
-                           name_info.operand());
+        // e.g. 'x: i32 (4 B @ [rbp + 8])'
+        x.comment({src_loc_tk, indent_}, "{} ({} B @ [{}])", text,
+                  name_info.value_size_bytes(src_loc_tk), address);
     }
 
     [[nodiscard]] auto compile_state_now() const -> compile_state {

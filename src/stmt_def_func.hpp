@@ -628,10 +628,15 @@ class stmt_def_func final : public statement {
             [&](const param_binding& binding) -> void {
                 const ident_info& bound{binding.info};
 
-                x.comment_binding(
-                    {call_tk, tc.indent() + 1}, binding.from, binding.text,
-                    bound.is_address_by_call() ? std::optional{bound.operand()}
-                                               : std::nullopt);
+                // with the address the call computed when it did
+                if (bound.is_address_by_call()) {
+                    x.comment({call_tk, tc.indent() + 1},
+                              "bind {} -> {} (address: {})", binding.from,
+                              binding.text, bound.operand().address_text());
+                } else {
+                    x.comment({call_tk, tc.indent() + 1}, "bind {} -> {}",
+                              binding.from, binding.text);
+                }
 
                 tc.add_binding(binding);
             },
@@ -955,14 +960,15 @@ class stmt_def_func final : public statement {
         const std::span<const std::optional<size_t>> array_lengths) const
         -> void {
 
-        tc.dry_run(
-            [&] -> void {
-                const compile_toc::scope_entry body{tc,
-                                                    frame_scope(array_lengths)};
+        tc.dry_run([&] -> void {
+            machine& x{tc.machine()};
 
-                std::ignore = compile_in_frame(tc, array_lengths);
-            },
-            machine::discarded_code::body);
+            x.begin_dry_run_body();
+
+            const compile_toc::scope_entry body{tc, frame_scope(array_lengths)};
+
+            std::ignore = compile_in_frame(tc, array_lengths);
+        });
     }
 
     // see 'emit_noinline_body'

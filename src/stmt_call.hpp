@@ -1038,7 +1038,7 @@ class inline_call final {
             },
         };
 
-        tc.dry_run(compile_first_level, machine::discarded_code::here);
+        tc.dry_run(compile_first_level);
     }
 
     // the arguments bound as for the body, which is not compiled, nor is the

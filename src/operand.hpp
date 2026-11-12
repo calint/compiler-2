@@ -10,6 +10,7 @@
 #include <concepts>
 #include <cstddef>
 #include <cstdint>
+#include <format>
 #include <optional>
 #include <string>
 #include <string_view>
@@ -64,6 +65,35 @@ class operand final {
     uint64_t scale_{1};
 
   public:
+    // a memory operand as the comments show it, e.g. 'rbp + 8' or
+    // 's0 + t0 * 4 + 28' of a variable at a run-time index
+    [[nodiscard]] auto address_text() const -> std::string {
+        // note: variables and frames are addressed from a base register
+        assert(not base_register().empty());
+
+        std::string text{base_register()};
+
+        if (not index_register().empty()) {
+            text += std::format(" + {}", index_register());
+
+            if (scale() != 1) {
+                text += std::format(" * {}", scale());
+            }
+        }
+
+        if (displacement() < 0) {
+            const uint64_t magnitude{
+                uint64_t{} - static_cast<uint64_t>(displacement()),
+            };
+
+            text += std::format(" - {}", magnitude);
+        } else if (displacement() > 0) {
+            text += std::format(" + {}", displacement());
+        }
+
+        return text;
+    }
+
     // the base of a memory operand, e.g. 'rbp' of '[rbp + 8]'
     [[nodiscard]] auto base_register() const -> const std::string& {
         assert(is_memory());

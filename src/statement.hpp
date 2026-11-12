@@ -307,7 +307,7 @@ class statement {
     //       complete
     [[nodiscard]] auto bare_path() const -> const stmt_identifier*;
 
-    // the source as a listing comment, not rendered in discarded code
+    // the source as a listing comment, not rendered in a dry run
     auto comment_source(compile_toc& tc) const -> void {
         if (tc.is_dry_run()) {
             return;

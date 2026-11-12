@@ -155,7 +155,8 @@ struct target_description {
 //
 //   lifecycle      in the order of a compile: 'start', 'begin_noinline_body'
 //                  and 'end_noinline_body' for each body
-//                  ('stmt_def_func'), 'emit_runtime',
+//                  ('stmt_def_func'; 'begin_dry_run_body' for one that is
+//                  only checked), 'emit_runtime',
 //                  'emit_read_only_constants', 'begin_data',
 //                  'reserve_variables', 'finish', 'write_assembly'
 //   data           'data_alignment', 'define_constant', 'emit_data_array',
@@ -174,12 +175,10 @@ struct target_description {
 //   checks         'checks' (what '--checks' turns on, each check emits
 //                  nothing when its option is off), 'check_bounds',
 //                  'check_frame_capacity', 'check_stack_capacity'
-//   versions       'emit_most_efficient', 'emit_discarded', 'is_discarding'
-//   comments       'comment', 'comment_binding', 'comment_variable',
-//                  'comment_held_address'
+//   versions       'emit_most_efficient', 'dry_run', 'is_dry_run'
+//   comments       'comment'
 //   target         'default_type', 'address_size_bytes',
 //                  'has_indexed_addressing', 'can_lower_index_scale',
-//                  'is_stack_bounded',
 //                  'max_storage_bytes', 'sector_size_bytes',
 //                  'foo_counter_in_memory', 'frame_base_register',
 //                  'variables_base_register', 'variables_base_past_vars_bytes',
@@ -214,11 +213,6 @@ class machine {
     // whether an operation may overwrite a register operand, e.g. a scratch
     // register that holds a factor and is freed after the operation
     enum class factor_use : uint8_t { read_only, may_overwrite };
-
-    // what discarded code stands for, which decides the registers it starts
-    // with ('emit_discarded'): the body of a function checked without its
-    // calls, or code that a compile skips where it stands
-    enum class discarded_code : uint8_t { body, here };
 
     using frame_kind = register_trace::frame_kind;
 
@@ -341,8 +335,8 @@ class machine {
     };
 
   private:
-    // what compiling a version of code changes in the machine, and the
-    // discarding mode, which 'version_scope' puts back with it
+    // what compiling a version of code changes in the machine, and the mode
+    // of a dry run, which 'version_scope' puts back with it
     struct version_state {
         // the indexes are those of the names of the backend, see
         // 'register_index_of'
@@ -354,8 +348,8 @@ class machine {
         // the routines, helpers and failure handlers the code uses, by label;
         // emitted after the code, see 'mark_used'
         std::set<std::string, std::less<>> used_routines;
-        // inside 'emit_discarded': nothing is kept, so no comment is built
-        bool is_discarded{};
+        // inside 'dry_run': nothing is kept, so no comment is built
+        bool is_dry_run{};
         // the local labels of the backend numbered so far, see
         // 'next_local_label_number'
         size_t local_label_count{};
@@ -496,7 +490,7 @@ class machine {
 
     // the state before a version, put back when the scope ends, also when an
     // error unwinds; a version that is kept is given its end state again
-    // ('emit_most_efficient'), discarded code is not ('emit_discarded')
+    // ('emit_most_efficient'), the code of a dry run is not ('dry_run')
     class version_scope final {
         machine& machine_;
         version_state start_{};
@@ -965,6 +959,16 @@ class machine {
         output.label(0, data_label_);
     }
 
+    // the body of a function that a dry run checks starts from the registers
+    // of a 'noinline' body, as 'begin_noinline_body' does for an emitted one,
+    // so the registers that the code around the dry run holds do not make it
+    // run out; the dry run puts them back
+    auto begin_dry_run_body() -> void {
+        assert(state_.is_dry_run);
+
+        state_.registers = noinline_body_pool();
+    }
+
     // the code emitted up to 'end_noinline_body' is a body of 'function':
     // its 'body_label', the frame base held and the entry code
     // ('emit_frame_entry'), whose exit is 'return_function'
@@ -1136,7 +1140,7 @@ class machine {
         comment(site, "frame capacity check begin");
 
         comment(site, "callee storage starts after the caller's storage ({})",
-                address_text(frame_address));
+                frame_address.address_text());
 
         // note: the scratch registers of the check are freed after the end
         //       comment
@@ -1178,7 +1182,7 @@ class machine {
     // synthetic tokens and standalone backend calls have no source location;
     // the text may quote the source, e.g. a raw NUL that ends a line for nasm
     auto comment(const emit_site site, const std::string_view text) -> void {
-        if (state_.is_discarded) {
+        if (state_.is_dry_run) {
             return;
         }
 
@@ -1201,7 +1205,7 @@ class machine {
                  const std::format_string<args_t...> format, args_t&&... args)
         -> void {
 
-        if (state_.is_discarded) {
+        if (state_.is_dry_run) {
             return;
         }
 
@@ -1210,38 +1214,6 @@ class machine {
         };
 
         comment(site, std::string_view{text});
-    }
-
-    // a parameter bound to what 'to' names, with the address the call
-    // computed when it did
-    auto comment_binding(const emit_site site, const std::string_view from,
-                         const std::string_view to,
-                         const std::optional<operand>& address) -> void {
-
-        if (not address) {
-            comment(site, "bind {} -> {}", from, to);
-            return;
-        }
-
-        comment(site, "bind {} -> {} (address: {})", from, to,
-                address_text(*address));
-    }
-
-    // the slot holds the address of the variable, e.g. a parameter of a
-    // noinline body
-    auto comment_held_address(const emit_site site, const std::string_view text,
-                              const operand& address) -> void {
-
-        comment(site, "{} (address @ [{}])", text, address_text(address));
-    }
-
-    // e.g. 'x: i32 (4 B @ [rbp + 8])'
-    auto comment_variable(const emit_site site, const std::string_view text,
-                          const size_t size_bytes, const operand& address)
-        -> void {
-
-        comment(site, "{} ({} B @ [{}])", text, size_bytes,
-                address_text(address));
     }
 
     [[nodiscard]] auto data_alignment() const -> size_t {
@@ -1270,6 +1242,20 @@ class machine {
         output.define_constant(name, static_cast<int64_t>(value));
     }
 
+    // runs 'emit' for its checks, nothing it emits is kept and the registers
+    // it used are not counted. it starts with the registers held where it
+    // stands, as code skipped there does; the body of a function starts from
+    // its own ('begin_dry_run_body')
+    auto dry_run(const std::function_ref<void()> emit) -> void {
+        const version_scope run{*this};
+
+        state_.is_dry_run = true;
+
+        assembler& output{output_.get()};
+
+        std::ignore = output.capture(emit);
+    }
+
     // the elements on one line, e.g. '.word 1, 2, 3'
     auto emit_data_array(const size_t element_size_bytes,
                          const std::span<const int64_t> values) -> void {
@@ -1279,34 +1265,13 @@ class machine {
         output.data(element_size_bytes, values);
     }
 
-    // runs 'emit' for its checks, nothing it emits is kept and the registers
-    // it used are not counted. it starts with the registers of the code it
-    // stands for: the body of a 'noinline' function holds its own, so the
-    // registers that the caller holds do not make it run out; code skipped
-    // where it stands holds those held there
-    auto emit_discarded(const std::function_ref<void()> emit,
-                        const discarded_code code) -> void {
-
-        const version_scope discarded{*this};
-
-        state_.is_discarded = true;
-
-        if (code == discarded_code::body) {
-            state_.registers = noinline_body_pool();
-        }
-
-        assembler& output{output_.get()};
-
-        std::ignore = output.capture(emit);
-    }
-
     // emits both versions and keeps the one with less code, the first on ties,
     // or the one that '--versions' names; a version that fails with an error
     // other than 'source', e.g. running out of registers, is not kept, when
     // the first does its error is thrown. each version starts from the
     // state before it, the state of the kept one remains; true when the first
     // is kept, 'compile_toc::emit_most_efficient' keeps its peaks.
-    // inside a version or discarded code only the first is emitted, so nested
+    // inside a version or a dry run only the first is emitted, so nested
     // choices compile code twice, not twice per level, unless
     // '--versions=nested' or 'last', which runs the code of every second
     // version
@@ -1451,15 +1416,9 @@ class machine {
         return target_.has_indexed_addressing;
     }
 
-    // inside 'emit_discarded', also in a version inside it: what the code
-    // emits is not kept ('compile_toc::is_dry_run')
-    [[nodiscard]] auto is_discarding() const -> bool {
-        return state_.is_discarded;
-    }
-
-    [[nodiscard]] auto is_stack_bounded() const -> bool {
-        return target_.stack_limit_address.has_value();
-    }
+    // inside 'dry_run', also in a version inside it: what the code emits is
+    // not kept ('compile_toc::is_dry_run')
+    [[nodiscard]] auto is_dry_run() const -> bool { return state_.is_dry_run; }
 
     auto label(const size_t indent, const std::string_view name) -> void {
         assembler& output{output_.get()};
@@ -1977,7 +1936,7 @@ class machine {
     }
 
     // the routine is emitted after the code; the use is version state, so a
-    // version that is not kept and discarded code use nothing
+    // version that is not kept and a dry run use nothing
     auto mark_used(const std::string_view routine) -> void {
         state_.used_routines.emplace(routine);
     }
@@ -2461,6 +2420,10 @@ class machine {
                                    });
     }
 
+    [[nodiscard]] auto is_stack_bounded() const -> bool {
+        return target_.stack_limit_address.has_value();
+    }
+
     // loaded before the frame base is set, the address may be relative to the
     // caller's; the receiver already in the register is passed as is
     auto load_receiver_address(const emit_site site,
@@ -2741,37 +2704,6 @@ class machine {
     //
     // statics
     //
-
-    // a memory operand as the comments show it, e.g. 'rbp + 8' or
-    // 's0 + t0 * 4 + 28' of a variable at a run-time index
-    [[nodiscard]] static auto address_text(const operand& address)
-        -> std::string {
-
-        // note: variables and frames are addressed from a base register
-        assert(not address.base_register().empty());
-
-        std::string text{address.base_register()};
-
-        if (not address.index_register().empty()) {
-            text += std::format(" + {}", address.index_register());
-
-            if (address.scale() != 1) {
-                text += std::format(" * {}", address.scale());
-            }
-        }
-
-        if (address.displacement() < 0) {
-            const uint64_t magnitude{
-                uint64_t{} - static_cast<uint64_t>(address.displacement()),
-            };
-
-            text += std::format(" - {}", magnitude);
-        } else if (address.displacement() > 0) {
-            text += std::format(" + {}", address.displacement());
-        }
-
-        return text;
-    }
 
     // what a version that fails with 'kind' ran out of, for the comment of
     // the choice

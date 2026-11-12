@@ -83,7 +83,7 @@ the layers with a lower number ('qa/lint/check-layers.py' checks it):
 
 The backend, layer 3, reaches the layers with a higher number only through
 callbacks: the versions of 'machine::emit_most_efficient' and the code of
-'machine::emit_discarded' compile statements, as do the count and address
+'machine::dry_run' compile statements, as do the count and address
 emitters of the bulk operations; 'store_bytes' asks 'compile_toc' for a
 read-only label.
 
@@ -314,7 +314,7 @@ Seven types answer "where is this value", each at its own step:
 Some code is compiled and then dropped: a dry run only to be checked, and
 the longer of two versions after both are measured:
 
-1. 'compile_toc::dry_run' and 'machine::emit_discarded': the body of each
+1. 'compile_toc::dry_run' over 'machine::dry_run': the body of each
    function but 'main' and an emitted noinline body without array parameters,
    without its calls (1.5), an inlined recursion there, and code that a compile
    skips ('compile_toc::check_skipped', 1.5.1): the code after a statement that
@@ -327,9 +327,9 @@ the longer of two versions after both are measured:
    instructions is kept with the state it ended in, e.g. with and without a
    scratch register, see 5.3
 
-Discarded code writes no listing comments ('machine::comment' returns while
-'version_state::is_discarded' is set), so a dry run does not render the
-source it would quote; a version writes them, its lines may be kept.
+A dry run writes no listing comments ('machine::comment' returns while
+'version_state::is_dry_run' is set), so it does not render the source it
+would quote; a version writes them, its lines may be kept.
 
 What dropped code changed is put back by its owner, also when an error
 unwinds it:
@@ -344,9 +344,9 @@ unwinds it:
    read-only constant that the dropped version added stays, unused, so the
    labels stay unique
 3. 'machine::version_scope', for a version and for the code of
-   'machine::emit_discarded': the members of 'machine::version_state', e.g.
+   'machine::dry_run': the members of 'machine::version_state', e.g.
    the registers held, the routines marked used ('machine::mark_used') and
-   the mode of a dry run ('version_state::is_discarded', read through
+   the mode of a dry run ('version_state::is_dry_run', read through
    'compile_toc::is_dry_run'): a noinline call reached inside a dry run adds a
    body to check only, not to emit ('compile_toc::add_noinline_body')
 
@@ -1442,7 +1442,7 @@ has it ('compile_toc::emit_most_efficient').
 ### 5.2 Nested choices take the first
 
 A version compiles everything under it, including the choices inside it. A
-choice inside a version, or inside discarded code such as a dry run, is not
+choice inside a version, or inside a dry run, is not
 measured: it emits its first version ('machine::emit_most_efficient'). So the
 code under a choice compiles twice whatever its depth, and the outermost choice
 compares two whole forms: the first version with the first of every choice
@@ -1477,7 +1477,7 @@ A version changes more than the lines it emits. 'machine::version_scope' and
 'compile_toc::emit_most_efficient' save what it changes and put it back when the
 version ends, also when an error unwinds it; 1.4 lists it by owner. The routines
 marked used ('machine::mark_used') are a set of values like the registers held,
-so those of a dropped version or of discarded code are dropped.
+so those of a dropped version or of a dry run are dropped.
 
 Each version starts from the saved state; after the choice the state the kept
 version ended in remains. So the footer and '--report=registers' describe the
@@ -1494,11 +1494,11 @@ registers in one version only. The error carries a kind other than 'source'
 second version holds the registers of the first and more, so only the second
 runs out alone; when the first runs out, its error is reported and the second
 is not compiled. Any other error is an error of the program and ends the
-compile. An error of discarded code is a 'source' error
+compile. An error of a dry run is a 'source' error
 ('compile_toc::dry_run'), so a version never drops it; the check of a body
 starts from the registers of a noinline body, which do not depend on the code
-around it, and skipped code from the registers held where it stands, as if it
-ran ('machine::emit_discarded', 'discarded_code::here').
+around it ('machine::begin_dry_run_body'), and skipped code from the registers
+held where it stands, as if it ran ('machine::dry_run').
 
 What a failed version entered must be left when its error unwinds:
 
@@ -1927,9 +1927,9 @@ changes is saved and put back by its owner (5.3).
 
 ### 7.11 The front end holds registers in stack order
 
-A node allocates the scratch registers its operands need from 'machine' and
-frees them in the reverse order (1.8); there is no register allocator over a
-function.
+A node holds the scratch registers its operands need in a
+'machine::held_registers', which frees them in the reverse order (1.8); there
+is no register allocator over a function.
 
 Rejected: virtual registers and an allocator, which need a representation below
 the statements (7.1).
