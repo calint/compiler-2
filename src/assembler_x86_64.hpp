@@ -14,6 +14,7 @@
 #include <span>
 #include <string>
 #include <string_view>
+#include <unordered_map>
 #include <utility>
 #include <variant>
 #include <vector>
@@ -29,6 +30,12 @@
 class assembler_x86_64 final : public assembler {
     // starts the comment of a line, the text before it is code
     static constexpr std::string_view comment_marker_{";"};
+
+    // note: nasm truncates a symbol at 4095 characters, so two long labels
+    //       with a common prefix would collide, e.g. the bodies of generic
+    //       instances with long arguments
+
+    static constexpr size_t max_symbol_size_{4000};
 
     struct op_info {
         std::string_view mnemonic;
@@ -335,13 +342,17 @@ class assembler_x86_64 final : public assembler {
                                     condition_suffix(cc), argument_text(dst)));
     }
 
-    // writes the lines as they are, nasm resolves the jump distances
+    // writes the lines as they are, nasm resolves the jump distances, a long
+    // symbol shortened by 'shorten_symbols'
     auto write(std::ostream& os) const -> void {
         assert(not is_capturing());
 
+        // the long symbols, keyed by views of the line texts
+        std::unordered_map<std::string_view, std::string> short_names;
+
         for (const line& l : lines()) {
             if (not l.removed) {
-                std::println(os, "{}", l.text);
+                std::println(os, "{}", shorten_symbols(l.text, short_names));
             }
         }
     }
@@ -410,8 +421,9 @@ class assembler_x86_64 final : public assembler {
         std::unreachable();
     }
 
-    // a 32-bit load clears the upper half, which the register need not hold
-    // clear, and an address without a width takes the register's
+    // an address without a width takes the register's; a 32-bit load would
+    // clear the upper half, which no reader of a dword value takes: it reads
+    // the 32-bit view or extends it with 'movsx'
     [[nodiscard]] auto is_reload(const line& store, const line& load) const
         -> bool override {
 
@@ -423,7 +435,7 @@ class assembler_x86_64 final : public assembler {
         const memory_move& loaded{moves_.at(*load.record)};
 
         return stored.stores and not loaded.stores and
-               stored.size_bytes != 0 and stored.size_bytes != size_dword and
+               stored.size_bytes != 0 and
                stored.register_name == loaded.register_name and
                stored.address == loaded.address;
     }
@@ -704,6 +716,58 @@ class assembler_x86_64 final : public assembler {
         }
 
         return std::nullopt;
+    }
+
+    // 'text' with each symbol over 'max_symbol_size_' characters in its code
+    // written as its first 'max_symbol_size_' characters, '$' and a number,
+    // the same for each use; no other symbol has a '$'; the code ends at a
+    // comment or a string, whose names nasm does not read as symbols
+    [[nodiscard]] static auto shorten_symbols(
+        const std::string_view text,
+        std::unordered_map<std::string_view, std::string>& short_names)
+        -> std::string {
+
+        const std::string_view code{text.substr(0, text.find_first_of(";`"))};
+
+        if (code.size() <= max_symbol_size_) {
+            return std::string{text};
+        }
+
+        std::string shortened;
+        size_t begin{};
+        while (begin < code.size()) {
+            size_t end{begin};
+            while (end < code.size() and is_symbol_char(code.at(end))) {
+                ++end;
+            }
+
+            const std::string_view symbol{code.substr(begin, end - begin)};
+
+            if (symbol.size() > max_symbol_size_) {
+                const auto [found, is_new]{short_names.try_emplace(symbol)};
+
+                if (is_new) {
+                    found->second =
+                        std::format("{}${}", symbol.substr(0, max_symbol_size_),
+                                    short_names.size());
+                }
+
+                shortened += found->second;
+            } else {
+                shortened += symbol;
+            }
+
+            // the character after the symbol, if any
+            if (end < code.size()) {
+                shortened += code.at(end);
+            }
+
+            begin = end + 1;
+        }
+
+        shortened += text.substr(code.size());
+
+        return shortened;
     }
 
     [[nodiscard]] static auto size_specifier(const size_t size_bytes)

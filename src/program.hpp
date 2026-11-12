@@ -567,8 +567,7 @@ class program final {
         try {
             run();
         } catch (compile_error& e) {
-            e.add_call_frame(body.call_tk, body.call_source,
-                             body.func->instance_name());
+            body.func->add_call_frame(e, body.call_tk, body.call_source);
 
             throw;
         }

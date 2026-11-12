@@ -8,6 +8,5 @@
     mov r15d, dword [rbp + 24]
     mov dword [rbp + 28], r15d
 === 12:     var u = t * 3 # folds
-    mov r15d, dword [rbp + 28]
     imul r15d, 3
     mov dword [rbp + 32], r15d

@@ -28,13 +28,6 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
     to '/dev/null'; 'fuzz-compiler.py' writes the image to a file and can
     report the same false 'compiler-crash')
     => decide whether a zero 'dat' at the end belongs in the image
-[ ] easy: x86_64: nasm truncates a label at 4000 characters, so two
-    noinline functions whose 4100-character names share a prefix give a
-    listing nasm rejects (round 323 BH demo t5); generic type arguments
-    lengthen labels, so a limit on name length does not bound them
-    => shorten a label over 4000 characters to a prefix and a counter in
-       the x86_64 listing, or reject such a label on every target, about 20
-       lines
 [ ] medium: user decision (round 315 AM): the size of an inline expansion
     has no bound, only its depth (64 levels, 256 scopes): 'r(a, k - 1)'
     called twice in 'r' and entered as 'r(a, 40)' doubles the work per
@@ -71,10 +64,6 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
     is accepted, the same program with a call of 'f' is rejected (the
     result is reached through an address in the check, which test 2802
     relies on)
-[ ] easy: (round 294 XW) running 'remove_copies' before 'remove_reloads'
-    removes more reloads (87 compiles of the tests are smaller): folding a
-    copy renames the source of a store to the register the next load
-    reads; both passes are sound in either order; measure and decide
 [ ] medium: user decision (round 293 ZK): an operation allocates its own
     result register before the named registers it then needs, so it blocks
     itself one live value before the real limit (the division of round 256
@@ -92,12 +81,6 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
     is held, while 'store_bytes' falls back to immediate stores at any
     size: 'p = {"<200 bytes>"}' is accepted and 'p = {"abc"}' is not; rv32i
     accepts all three
-[ ] easy: (round 291 YD) x86_64 'memory_equal' reserves 'rcx', which
-    only 'shift' names alone and which is held only when 'rsi' and 'rdi'
-    are; without the reservation a record '==' whose displacement is past
-    2 GiB under 11 live values compiles (the lowering borrows 'rcx' before
-    the count is loaded) instead of "out of scratch registers"; check that
-    no path holds 'rcx' alone, then drop the reservation
 [ ] easy: user decision (round 288 ZC): 'foo g[k].it, bump()' with 'bump'
     writing 'k' is accepted (the address of 'g[k].it' is taken before the
     count, the same on every target), while 'array_copy(g[k].it, b,
@@ -105,11 +88,6 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
     written by the call of 'bump' in a later argument"); either the count
     of a 'foo' falls under the later-argument rule or the rule's reason
     does not hold for the built-ins either
-[ ] easy: (round 285 XR) 'assembler_x86_64::is_reload' removes a reload
-    only after a store of qword width; a dword store would also do, since
-    every reader of a dword value reads the 32-bit view or uses 'movsx'
-    (7 tests would lose a reload: 0419, 0513, 0596, 0926, 2091, 2176, 2177);
-    measure and check that no reader takes the 64-bit view
 [ ] medium: user decision (round 251 VT2): an error found in a noinline
     body names only the first call that asked for the body ("called from
     'get(a)'"), not the calls down to 'main': with 'mid' calling a noinline
@@ -130,6 +108,10 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
     need <sys/stat.h>), and linear name searches over fields, parameters,
     'dat's and call arguments (an n^2 term that matters past about 1000 per
     type, call or program)
+    => round 352: left as it is: 3200 includes 2.1 s, 400 0.06 s; 8000
+       fields 0.17 s, 8000 globals 0.42 s; an exact include set needs
+       '(st_dev, st_ino)' from <sys/stat.h>, canonical paths miss hard
+       links
 [ ] medium: user decision (round 264 WS): the check of a body without its
     calls expands nested inlined recursions as the product of their
     depths: 'r1' -> 'r2' -> 'r3', each bounded by 'array_length(a)', in a
@@ -155,18 +137,6 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
     gives "'noinline' is a keyword": 'stmt_def_func' reads 'noinline' then
     'mut' in that order and the leftover 'noinline' becomes the name; a
     message "'noinline' goes before 'mut'" is about 4 lines
-[ ] easy: (round 253 VY) on rv32i 'dat a = i8[0xffffffff]' gets "code,
-    data and variables use 4294967344 B, which reaches the 4294967296 B
-    that the target addresses" with no source location: the check at the
-    'dat' counts the data and the allocated variables, not the '--vars'
-    capacity, so the end-of-build check reports it
-[ ] easy: (round 241 VE 2.2) an error in a method instance found while a
-    call is compiled names only the call ("'b.m' called from 'q.m(v)'"),
-    not the alias that made the instance ("instantiated by 'type b =
-    buf<200>'"), so "constant 'n' does not fit 'i8'" does not show that 'n'
-    is 200; without the call the alias frame is shown; reproducer: 'type
-    buf<n> {a i8[2]}', 'type b = buf<200>', 'func buf.m(x i8) res i8 { res
-    = x + n }', then 'q.m(v)'
 [ ] easy: user decision (round 234 US3): a constant, 'dat', variable or
     function used as a type, e.g. 'let n = 3' and 'type t { a n }', gives
     "type 'n' not found", also a generic's constant parameter ('type

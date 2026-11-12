@@ -338,6 +338,9 @@ class assembler {
             referenced_labels(labels, named),
         };
 
+        // note: a removed reload lets more copies fold, the reverse order
+        //       gives larger code
+
         remove_reloads(referenced);
         remove_copies(referenced);
     }
@@ -506,6 +509,11 @@ class assembler {
         return std::ranges::all_of(text, [](const char ch) -> bool {
             return std::isdigit(static_cast<unsigned char>(ch)) != 0;
         });
+    }
+
+    [[nodiscard]] static auto is_symbol_char(const char ch) -> bool {
+        return std::isalnum(static_cast<unsigned char>(ch)) != 0 or ch == '_' or
+               ch == '.' or ch == '$';
     }
 
     [[nodiscard]] static auto leading_whitespace(const std::string_view text)
@@ -869,11 +877,6 @@ class assembler {
         }
 
         return referenced.contains(l.label);
-    }
-
-    [[nodiscard]] static auto is_symbol_char(const char ch) -> bool {
-        return std::isalnum(static_cast<unsigned char>(ch)) != 0 or ch == '_' or
-               ch == '.' or ch == '$';
     }
 
     // the escape of a line end or a tab, which reads better than a numeric

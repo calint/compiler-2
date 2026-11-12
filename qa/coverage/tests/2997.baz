@@ -1,0 +1,16 @@
+# an error in a method instance found while a call is compiled names the alias
+# that made the instance, then the call
+
+type buf<n> {a i8[2]}
+
+type b = buf<200>
+
+func buf.m(x i8) res i8 {
+    res = x + n
+}
+
+func main() {
+    var q = b
+    var v = i8(1)
+    exit(q.m(v))
+}

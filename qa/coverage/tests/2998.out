@@ -1,0 +1,10 @@
+
+2998.baz:8:15: constant 'n' does not fit 'i8' (-128 to 127), 'i8(...)' wraps it
+    res = x + n
+              ^
+2998.baz:5:6: instantiated by
+type b = buf<200>
+     ^
+2998.baz:14:10: 'b.m<i8>' called from 'q.m<i8>(v)'
+    exit(q.m<i8>(v))
+         ^

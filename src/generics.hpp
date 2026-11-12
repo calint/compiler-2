@@ -584,10 +584,12 @@ struct func_instance {
     std::string generic_method;
     // the constants of the generic type of a method, in the scope of the body
     std::vector<generic_arg> constants;
-    // what made the instance, e.g. the call 'make<i8>' or the alias 'type str =
-    // text<8>', for the errors that the check of an instance without its calls
-    // finds
-    generic_trace trace;
+    // the call that made a generic function, e.g. 'make<i8>', none for a
+    // method of a generic type
+    std::optional<generic_trace> call_trace;
+    // what made the type of the receiver, e.g. the alias 'type str =
+    // text<8>', none for a generic function without a receiver
+    std::optional<generic_trace> receiver_trace;
 };
 
 // the generic functions and types of the program, the methods of the generic

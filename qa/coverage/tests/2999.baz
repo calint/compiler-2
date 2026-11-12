@@ -1,0 +1,16 @@
+# an error in the body of a method with type parameters of an instance, found
+# where the call instantiates it, names the call and the alias
+
+type buf<n> {a i8[2]}
+
+type b = buf<200>
+
+func buf.m<T type>(x T) res T {
+    res = x + zz
+}
+
+func main() {
+    var q = b
+    var v = i8(1)
+    exit(q.m<i8>(v))
+}

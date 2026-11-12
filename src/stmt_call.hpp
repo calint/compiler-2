@@ -691,7 +691,7 @@ struct call_site {
             return;
         }
 
-        e.add_call_frame(begin_tk, source, func->instance_name());
+        func->add_call_frame(e, begin_tk, source);
     }
 
     // 'compile' gets the destination of the result: 'dst', or a temporary of

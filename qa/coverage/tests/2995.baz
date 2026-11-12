@@ -1,0 +1,32 @@
+# x86: a record '==' whose address is past 2 GiB under ten live values lowers
+# the address through 'rcx' before it loads the count of 'repe cmpsq'
+
+type pt {x i64, y i64, z i64, w i64, v i64, u i64}
+
+func one_if(t bool) res {
+    res = 0
+    if t {
+        res = 1
+    }
+}
+
+func main() {
+    var p = pt
+    var pad = i8[0x80000000]
+    var q = pt
+    var a = 1
+    var b = 2
+    var c = 3
+    var d = 4
+    var e = 5
+    var f = 6
+    var g = 7
+    var h = 8
+    var i = 9
+    var j = 10
+    q.u = 1
+    var r = a + (b + (c + (d + (e + (f + (g + (h + (i + (j + one_if(p == q))))))))))
+    p.u = 1
+    var s = a + (b + (c + (d + (e + (f + (g + (h + (i + (j + one_if(p == q))))))))))
+    exit(r + s)
+}

@@ -1,0 +1,10 @@
+
+2999.baz:9:15: 'zz' not found
+    res = x + zz
+              ^~
+2999.baz:15:12: instantiated by 'b.m<i8>'
+    exit(q.m<i8>(v))
+           ^
+2999.baz:6:6: instantiated by
+type b = buf<200>
+     ^

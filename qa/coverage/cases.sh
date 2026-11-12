@@ -7916,3 +7916,16 @@ SRC=2993 && COMPERR
 
 # a generic type without its '}' ends at the next definition
 SRC=2994 && COMPERR
+
+# a record '==' past 2 GiB under ten live values borrows 'rcx' for its address
+# before the count of 'repe cmpsq' takes it
+if [[ $MACHINE == x86_64 ]]; then SRC=2995 && EXP=111 && OPTS="--vars=0x80000100" RUN; fi
+
+# two noinline functions whose labels share their first 4095 characters
+SRC=2996 && EXP=3 && RUN
+
+# an error in a method instance names the alias that made it, also when a
+# call compiles the body or instantiates a method with type parameters
+SRC=2997 && COMPERR
+SRC=2998 && COMPERR
+SRC=2999 && COMPERR

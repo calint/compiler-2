@@ -414,14 +414,13 @@ class machine_x86_64 final : public machine {
         reserve_named_register(site, "rsi");
         reserve_named_register(site, "rdi");
 
-        if (is_counted) {
-            reserve_named_register(site, "rcx");
-        }
-
         lea(site, qword_register("rsi"), lhs);
         lea(site, qword_register("rdi"), rhs);
 
+        // note: reserved after the addresses, so lowering one can borrow it
         if (is_counted) {
+            reserve_named_register(site, "rcx");
+
             mov(site, qword_register("rcx"),
                 immediate(size_bytes / size_qword_));
         }

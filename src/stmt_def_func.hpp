@@ -523,6 +523,18 @@ class stmt_def_func final : public statement {
     // class methods
     //
 
+    // an error found in the body while a call compiles it names the call; a
+    // method of a generic type names the alias of its receiver first, e.g.
+    // that 'n' is 200 for 'type b = buf<200>'
+    auto add_call_frame(compile_error& e, const token& call_tk,
+                        std::string call_source) const -> void {
+
+        add_receiver_frames(e);
+
+        e.add_call_frame(call_tk, std::move(call_source),
+                         instance_ ? instance_->name : std::string_view{});
+    }
+
     // 'func' is a keyword so no user name or internal label starts with 'func.'
     // e.g. 'func.sum..len.4.8' for array lengths 4 and 8
     [[nodiscard]] auto body_label(
@@ -544,10 +556,12 @@ class stmt_def_func final : public statement {
         try {
             dry_run_in_frame(tc, {});
         } catch (compile_error& e) {
-            // the frames of what made the instance, see 'func_instance::trace'
-            if (instance_) {
-                instance_->trace.add_to(e);
+            // the frames of what made the instance
+            if (instance_ and instance_->call_trace) {
+                instance_->call_trace->add_to(e);
             }
+
+            add_receiver_frames(e);
 
             throw;
         }
@@ -724,15 +738,6 @@ class stmt_def_func final : public statement {
         return result_.has_value();
     }
 
-    // e.g. 'tokenizer.to<name>', empty for a function written in the source
-    [[nodiscard]] auto instance_name() const -> std::string_view {
-        if (not instance_) {
-            return {};
-        }
-
-        return instance_->name;
-    }
-
     [[nodiscard]] auto is_body_parsed() const -> bool {
         return is_body_parsed_;
     }
@@ -777,6 +782,13 @@ class stmt_def_func final : public statement {
         for (const generic_arg& constant : instance_->constants) {
             tc.add_const(constant.param_tk, constant.param_tk.text(),
                          folded_value::untyped(constant.constant()));
+        }
+    }
+
+    // the frames of what made the type of the receiver
+    auto add_receiver_frames(compile_error& e) const -> void {
+        if (instance_ and instance_->receiver_trace) {
+            instance_->receiver_trace->add_to(e);
         }
     }
 
@@ -1402,6 +1414,12 @@ class func_instantiator final {
             parse_func_instance(tc, generic, name, type_args, call_trace);
         } catch (compile_error& e) {
             call_trace.add_to(e);
+
+            // e.g. the alias of 'b' for 'b.m<i8>'
+            if (generic.receiver) {
+                generic.receiver->trace.add_to(e);
+            }
+
             throw;
         }
 
@@ -1483,11 +1501,13 @@ class func_instantiator final {
             .name{name},
             .generic_method{generic.generic_method()},
             .constants{},
-            .trace{call_trace},
+            .call_trace{call_trace},
+            .receiver_trace{},
         };
 
         if (generic.receiver) {
             instance.constants = generic.receiver->constants();
+            instance.receiver_trace = generic.receiver->trace;
         }
 
         tc.add_func_instance(std::make_shared<stmt_def_func>(
@@ -1526,7 +1546,8 @@ class func_instantiator final {
             .name{head.name},
             .generic_method{method.report_name},
             .constants{receiver.constants()},
-            .trace{receiver.trace},
+            .call_trace{},
+            .receiver_trace{receiver.trace},
         };
 
         tc.add_func_instance(std::make_shared<stmt_def_func>(

@@ -1,0 +1,15 @@
+# the same for a method with type parameters of an instance
+
+type buf<n> {a i8[2]}
+
+type b = buf<200>
+
+func buf.m<T type>(x T) res T {
+    res = x + n
+}
+
+func main() {
+    var q = b
+    var v = i8(1)
+    exit(q.m<i8>(v))
+}
