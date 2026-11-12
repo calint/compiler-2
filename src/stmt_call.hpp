@@ -62,8 +62,8 @@
 //
 //   'stmt_call::argument_places' the place each argument names, none for a
 //                                value; whether an argument goes through a
-//                                temporary is the rule of 'inline_call' or
-//                                'noinline_call'
+//                                temporary is
+//                                'call_site::is_argument_temporary'
 //   'param_binding'              inlined: what the parameter stands for
 //                                ('inline_call::make_bindings')
 //   'noinline_call::noinline_arg'
@@ -705,17 +705,18 @@ struct call_site {
     //       none
     auto compile_with_temporaries(
         compile_toc& tc, const destination& dst,
-        const bool has_argument_temporary, const bool has_result_temporary,
         const std::function_ref<void(const destination&)> compile) const
         -> void {
 
+        const bool is_result_through_temporary{has_result_temporary(dst)};
+
         std::optional<compile_toc::scope_entry> temporaries;
 
-        if (has_argument_temporary or has_result_temporary) {
+        if (has_argument_temporary() or is_result_through_temporary) {
             temporaries.emplace(tc, scope::block());
         }
 
-        if (not has_result_temporary) {
+        if (not is_result_through_temporary) {
             compile(dst);
             return;
         }
@@ -730,6 +731,46 @@ struct call_site {
         machine& x{tc.machine()};
 
         x.copy_value({tk, tc.indent()}, dst.operand(), result.operand());
+    }
+
+    [[nodiscard]] auto has_argument_temporary() const -> bool {
+        for (size_t i{}; i < places.size(); ++i) {
+            if (is_argument_temporary(i)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    // the result reaches the body through 'dst' unless it needs storage at
+    // its own type: a noinline body writes it through its address, so a
+    // register destination or one it widens into goes through a temporary;
+    // an inlined body needs storage only to pass it to a 'mut' parameter
+    // note: an inlined call widens its result in a register before
+    //       ('inline_call::compile_widened'), an empty 'dst' binds no result
+    [[nodiscard]] auto has_result_temporary(const destination& dst) const
+        -> bool {
+
+        if (func->is_inlined()) {
+            return dst.is_register() and func->uses().is_result_passed_as_mut();
+        }
+
+        return func->has_result() and
+               (dst.is_register() or result_type_differs(dst, *func));
+    }
+
+    // the argument at 'index' is made in a temporary of the call that the
+    // body names: a value without a place, except one of a built-in type that
+    // an inlined body binds as a constant or a register, see
+    // 'stmt_call::argument_places'
+    [[nodiscard]] auto is_argument_temporary(const size_t index) const -> bool {
+        if (places.at(index)) {
+            return false;
+        }
+
+        return not func->is_inlined() or
+               not func->params().at(index).get_type().is_builtin();
     }
 
     // a variable of the current block that holds the argument at 'index',
@@ -930,7 +971,7 @@ class inline_call final {
             //       and named per call, so each level of an inlined recursion
             //       binds its own
 
-            if (is_temporary(arg_place, param)) {
+            if (call_.is_argument_temporary(i)) {
                 const destination temporary{
                     call_.make_argument_temporary(tc, i),
                 };
@@ -992,22 +1033,18 @@ class inline_call final {
         tc.dry_run(compile_first_level, machine::discarded_code::here);
     }
 
-    // the arguments bound as for the body, which is not compiled: an inlined
-    // recursion that the check of a body that takes from a call does not
-    // expand ('check_recursion')
+    // the arguments bound as for the body, which is not compiled, nor is the
+    // result bound: an inlined recursion that the check of a body that takes
+    // from a call does not expand ('check_recursion')
     auto compile_arguments_without_body(compile_toc& tc) const -> void {
-        // a block holds the temporaries of the call
-        std::optional<compile_toc::scope_entry> temporaries;
+        call_.compile_with_temporaries(
+            tc, destination{}, [&](const destination& /*result*/) -> void {
+                machine& x{tc.machine()};
 
-        if (has_argument_temporary()) {
-            temporaries.emplace(tc, scope::block());
-        }
+                machine::held_registers held{x, {call_.tk, tc.indent() + 1}};
 
-        machine& x{tc.machine()};
-
-        machine::held_registers held{x, {call_.tk, tc.indent() + 1}};
-
-        std::ignore = bind_arguments(tc, held);
+                std::ignore = bind_arguments(tc, held);
+            });
     }
 
     // an error found in the inlined body reports where it was called from,
@@ -1069,14 +1106,7 @@ class inline_call final {
             return;
         }
 
-        // a result the body passes to a 'mut' parameter needs storage, a
-        // register destination gets it through a temporary of the call
-        const bool has_result_temporary{
-            dst.is_register() and call_.func->uses().is_result_passed_as_mut(),
-        };
-
-        call_.compile_with_temporaries(tc, dst, has_argument_temporary(),
-                                       has_result_temporary,
+        call_.compile_with_temporaries(tc, dst,
                                        [&](const destination& result) -> void {
                                            compile_with_bindings(tc, result);
                                        });
@@ -1158,15 +1188,6 @@ class inline_call final {
 
             throw recursion_error();
         }
-    }
-
-    [[nodiscard]] auto has_argument_temporary() const -> bool {
-        return std::ranges::any_of(
-            std::views::zip(call_.places, call_.func->params()),
-            [](const auto& pair) -> bool {
-                const auto& [arg_place, param]{pair};
-                return is_temporary(arg_place, param);
-            });
     }
 
     // the bindings of the result and of the arguments of the inlined body
@@ -1359,15 +1380,6 @@ class inline_call final {
                not bound.operand().index_register().empty();
     }
 
-    // an instance literal or a call result, e.g. 'point{1, 2}', is made in
-    // a temporary of the call that the body names
-    [[nodiscard]] static auto
-    is_temporary(const std::optional<place>& arg_place,
-                 const stmt_def_func_param& param) -> bool {
-
-        return not arg_place and not param.get_type().is_builtin();
-    }
-
     // a parameter that takes a value, not a place: read-only, built-in and
     // not an array
     [[nodiscard]] static auto is_value_param(const stmt_def_func_param& param)
@@ -1419,14 +1431,12 @@ class noinline_call final {
     // the callee reaches the result and the arguments through their addresses,
     // a result destination or an argument that is not a variable in memory,
     // e.g. a register or an expression, goes through a temporary, as does a
-    // result that widens into an operand
+    // result that widens into an operand ('call_site::has_result_temporary')
     auto compile(compile_toc& tc, const destination& dst) const -> void {
-        call_.compile_with_temporaries(tc, dst, has_argument_temporary(),
-                                       has_result_temporary(dst, *call_.func),
-                                       [&](const destination& result) -> void {
-                                           compile_arguments_and_call(tc,
-                                                                      result);
-                                       });
+        call_.compile_with_temporaries(
+            tc, dst, [&](const destination& result) -> void {
+                compile_arguments_and_call(tc, result);
+            });
     }
 
   private:
@@ -1463,7 +1473,7 @@ class noinline_call final {
              std::views::zip(std::views::iota(size_t{}), call_.places)) {
 
             // e.g. a literal or an expression
-            if (not arg_place) {
+            if (call_.is_argument_temporary(i)) {
                 const destination temporary{
                     call_.make_argument_temporary(tc, i),
                 };
@@ -1475,6 +1485,9 @@ class noinline_call final {
 
                 continue;
             }
+
+            // note: a noinline call passes every value in a temporary
+            assert(arg_place);
 
             const operand address{
                 arg_place->ident->operand_of(tc, arg_place->info, held),
@@ -1529,7 +1542,7 @@ class noinline_call final {
 
         // start the callee frame after the caller's storage, not on the stack
         // pointer, the layout of README 4.1
-        const operand frame_address{tc.next_frame_address()};
+        const operand frame_address{tc.layout().next_frame_address()};
 
         const std::optional<operand> receiver_address{
             populate_frame(tc, dst, arguments, frame_address, array_lengths),
@@ -1544,14 +1557,6 @@ class noinline_call final {
         x.call_function({call_.tk, tc.indent()}, call_.func->name(),
                         call_.func->body_label(array_lengths), frame_address,
                         receiver_address);
-    }
-
-    // a value without storage, e.g. a literal or an expression, is passed in
-    // a temporary
-    [[nodiscard]] auto has_argument_temporary() const -> bool {
-        return std::ranges::any_of(
-            call_.places,
-            [](const std::optional<place>& p) -> bool { return not p; });
     }
 
     // the slots of the callee frame at 'frame_address' get the addresses of
@@ -1672,16 +1677,6 @@ class noinline_call final {
 
             assert(info.type_ref().is_same(param.get_type()));
         }
-    }
-
-    // the callee writes the result through its address at the type of the
-    // result
-    [[nodiscard]] static auto has_result_temporary(const destination& dst,
-                                                   const stmt_def_func& func)
-        -> bool {
-
-        return func.has_result() and
-               (dst.is_register() or call_site::result_type_differs(dst, func));
     }
 
     // the destination for the result, the argument for a parameter
@@ -2007,7 +2002,7 @@ class stmt_call final : public statement {
     std::optional<constructor_tokens> constructor_;
     // e.g. '<', 'name' and '>' in 'tz.to<name>()'
     std::vector<token> generic_tks_;
-    // the callee, resolved at the parse; 'toc' keeps it at this address
+    // the callee, resolved at the parse and kept by 'function_table'
     const stmt_def_func* func_{};
     token open_paren_tk_;
     std::vector<expr_any> args_;

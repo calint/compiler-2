@@ -34,21 +34,19 @@
 // and compiled, see 'etc/docs/README.md'. the classes below, in reading
 // order:
 //
-//   records         'func_info', 'noinline_body', 'body_uses' (what a body
-//                   reaches that its callers name too), 'param_binding' (what
-//                   a parameter of an inlined call stands for), 'const_info',
-//                   'loop_reach' and 'func_reach' (which code the compile
-//                   reaches, README 1.5.1)
-//   'scope'         a block, a loop or a function being compiled: its
-//                   constants, variables and parameter bindings; "frame" in
-//                   'scope' and 'storage_layout' is memory, e.g. the frame
+//   records         'func_info', 'body_uses' (what a body reaches that its
+//                   callers name too), 'param_binding' (what a parameter of
+//                   an inlined call stands for), 'const_info', 'loop_reach'
+//                   and 'func_reach' (which code the compile reaches,
+//                   README 1.5.1)
+//   'scope'         a block, a loop or a function being parsed or compiled:
+//                   its constants, variables and parameter bindings; "frame"
+//                   in 'scope' and 'storage_layout' is memory, e.g. the frame
 //                   of a noinline call, while the register trace
-//                   ('scope_entry', 'register_trace') and 'call_frame' of an
-//                   error use it for a call level
-//   tables          'type_table', 'noinline_body_list' (the noinline bodies
-//                   to emit or only to check), 'function_table'
+//                   ('compile_toc::scope_entry', 'register_trace') and
+//                   'call_frame' of an error use it for a call level
+//   tables          'type_table', 'function_table'
 //   'data_table'    the dats ('placed_dat') and the read-only constants
-//   usage           'usage_statistics'
 //   'scope_stack'   the scopes from the globals to the innermost scope and
 //                   'lookup', the one rule of what a name means
 //                   ('name_meaning'), the target of 'break'
@@ -63,15 +61,21 @@
 //                   'definition_order' ('generics.hpp') and
 //                   'source_locations' ('source_files.hpp'), held by
 //                   'program'
-//   'toc'           the facade the statements use, a context over the
-//                   tables and the base of one per phase, 'parse_toc' and
-//                   'compile_toc'; a method of a context changes state or
+//   'toc'           the context every node receives, over the tables: what
+//                   both phases do; a method of a context changes state or
 //                   combines tables, a query of one table goes through its
 //                   const accessor, e.g. 'tc.scopes().current_func_scope()';
 //                   a table without an accessor is asked through the
 //                   context: 'where', 'source_of' (the source locations),
 //                   'current_definition' (the definition order),
 //                   'resolve_declared', 'storage_of' (the resolver)
+//   'parse_toc'     the context of the parse: declarations without storage,
+//                   definitions, generic instances
+//   records         'noinline_body', 'noinline_body_list' (the noinline
+//                   bodies to emit or only to check), 'usage_statistics'
+//   'compile_toc'   the context of the compile: placed declarations, the
+//                   listing indent, reachability, dry runs, versions,
+//                   noinline bodies
 //   generics        'resolve_generic_args' and 'parse_toc::generic_scope',
 //                   the names of the parameters of a generic instance;
 //                   'generic_reparse', the definition parsed again for an
@@ -91,19 +95,6 @@ struct func_info {
     std::string generic_method;
     // see 'definition_order', 0 for a method, a constructor or an instance
     size_t definition{};
-};
-
-// a noinline body compiled for the array lengths of its calls
-struct noinline_body {
-    const stmt_def_func* func{};
-    // one per array parameter, in parameter order; a length is unknown only
-    // in a body that is checked, not emitted, see
-    // 'compile_toc::add_noinline_body'
-    std::vector<std::optional<size_t>> array_lengths;
-    // the first call that asked for the body, where an error in the body
-    // reports it was called from, e.g. 'third(b)'
-    token call_tk;
-    std::string call_source;
 };
 
 // whether a use of a variable reads or writes it, see 'parse_toc::record_use'
@@ -288,8 +279,8 @@ struct func_reach {
     }
 };
 
-// a block, a loop or a function being compiled; the static functions make
-// each kind, e.g. 'scope::block()'
+// a block, a loop or a function being parsed or compiled; the static
+// functions make each kind, e.g. 'scope::block()'
 class scope final {
     // a function scope is made by 'main_func', 'inlined_func' or
     // 'noinline_func'
@@ -800,40 +791,6 @@ class type_table final {
     }
 };
 
-// the noinline bodies of one kind, each once per function and array lengths:
-// a worklist that grows while its bodies compile
-class noinline_body_list final {
-    std::vector<noinline_body> bodies_;
-
-  public:
-    auto add_once(noinline_body body) -> void {
-        if (contains(*body.func, body.array_lengths)) {
-            return;
-        }
-
-        bodies_.push_back(std::move(body));
-    }
-
-    // a copy, the list grows while the bodies compile
-    [[nodiscard]] auto at(const size_t index) const -> noinline_body {
-        return bodies_.at(index);
-    }
-
-    [[nodiscard]] auto
-    contains(const stmt_def_func& func,
-             const std::vector<std::optional<size_t>>& array_lengths) const
-        -> bool {
-
-        return std::ranges::any_of(
-            bodies_, [&](const noinline_body& known) -> bool {
-                return known.func == &func and
-                       known.array_lengths == array_lengths;
-            });
-    }
-
-    [[nodiscard]] auto count() const -> size_t { return bodies_.size(); }
-};
-
 // the functions of the program: the defined ones and the instances of
 // generic ones
 class function_table final {
@@ -984,16 +941,6 @@ class data_table final {
     [[nodiscard]] auto total_size_bytes() const -> size_t {
         return total_size_bytes_;
     }
-};
-
-// what the compile used, for the report
-struct usage_statistics {
-    size_t max_scope_count{};
-    // see 'storage_layout::max_body_vars_size_bytes_'
-    size_t max_body_vars_size_bytes{};
-    size_t dat_size_bytes{};
-    size_t dat_var_padding_bytes{};
-    std::vector<std::string> uninstantiated_generics;
 };
 
 // what a name means where it is used, see 'scope_stack::lookup'
@@ -2358,19 +2305,18 @@ struct toc_tables final {
     storage_layout storage;
 };
 
-// the context of every node, the table of contents: the names, their storage
-// and the machine; what both phases do, the queries and the declarations of
-// names, while the phase is the type of the context: 'parse_toc' for the
-// parse, 'compile_toc' for the compile, so a parse-time constructor takes a
-// 'parse_toc', a 'compile' a 'compile_toc' and what both run, e.g. 'fold' or
-// the declarations of a function body, a 'toc'
+// the context every node receives over the tables, the table of contents:
+// the names, their storage and the machine. the phase is the type of the
+// context: a parse-time constructor takes a 'parse_toc', a 'compile' a
+// 'compile_toc' and what both phases run, e.g. 'fold' or the declarations of
+// a function body, this base, which holds what both phases do
 //
 //   both           'add_var' and 'add_const' (placed and commented only by
 //                  'compile_toc'), 'resolve_declared', 'storage_of',
 //                  'use_at', 'overflow_check' without a destination,
-//                  'get_main_or_throw', 'assert_released', 'usage'
-//   tables         'builtins', 'checks', 'data', 'definitions', 'funcs',
-//                  'generics', 'layout', 'machine', 'scopes', 'types'
+//                  'get_main_or_throw'
+//   tables         'builtins', 'checks', 'funcs', 'generics', 'machine',
+//                  'scopes', 'types'
 //
 // the tables are read through these const accessors, a change goes through a
 // method of a context, which may combine tables (README 7.6)
@@ -2401,12 +2347,6 @@ class toc {
     // class methods
     //
 
-    // the scopes of the phase are popped
-    auto assert_released() const -> void {
-        // note: the scopes hold the storage in use, see 'storage_layout'
-        assert(tables().scopes.is_empty());
-    }
-
     [[nodiscard]] auto builtins() const -> const builtin_roles& {
         return tables().builtins;
     }
@@ -2415,17 +2355,6 @@ class toc {
     [[nodiscard]] auto checks() const -> const check_options& {
         const ::machine& x{machine()};
         return x.checks();
-    }
-
-    [[nodiscard]] auto data() const -> const data_table& {
-        return tables().data;
-    }
-
-    // a check of a name read at the parse, e.g. a type name is checked where
-    // it is read, before the body, so the field type 'p' of a second
-    // 'type p {x p}' names the first 'p'
-    [[nodiscard]] auto definitions() const -> const definition_checks& {
-        return tables().definitions;
     }
 
     [[nodiscard]] auto funcs() const -> const function_table& {
@@ -2445,10 +2374,6 @@ class toc {
         }
 
         return *table.get(reserved_names::main).def;
-    }
-
-    [[nodiscard]] auto layout() const -> const storage_layout& {
-        return tables().storage;
     }
 
     [[nodiscard]] auto machine() const -> const ::machine& {
@@ -2486,18 +2411,6 @@ class toc {
 
     [[nodiscard]] auto types() const -> const type_table& {
         return tables().types;
-    }
-
-    [[nodiscard]] auto usage() const -> usage_statistics {
-        const toc_tables& t{tables()};
-
-        return {
-            .max_scope_count{t.scopes.max_scope_count()},
-            .max_body_vars_size_bytes{t.storage.max_body_vars_size_bytes()},
-            .dat_size_bytes{t.data.total_size_bytes()},
-            .dat_var_padding_bytes{t.data.dat_var_padding_bytes()},
-            .uninstantiated_generics{t.generics.uninstantiated_func_names()},
-        };
     }
 
     // a value used without a destination at 'width'
@@ -2560,10 +2473,12 @@ class toc {
 // the parse that needs it, in a 'generic_scope'
 //
 //   program        'begin_definition'
-//   definitions    'add_type', 'add_func', 'add_func_instance',
-//                  'add_generic_func', 'add_generic_method',
-//                  'add_generic_type', 'add_generic_type_instance',
-//                  'add_dat', 'mark_generic_func_instantiated',
+//   scopes         'scope_entry'
+//   definitions    'definitions', 'add_type', 'add_func',
+//                  'add_func_instance', 'add_generic_func',
+//                  'add_generic_method', 'add_generic_type',
+//                  'add_generic_type_instance', 'add_dat',
+//                  'mark_generic_func_instantiated',
 //                  'generic_scope', 'current_definition'
 //   names          'assert_loop_names_free', 'assert_valid_unqualified_name',
 //                  'assert_valid_name', 'constant_value_of',
@@ -2874,6 +2789,13 @@ class parse_toc final : public toc {
         return tables().order.current();
     }
 
+    // a check of a name read at the parse, e.g. a type name is checked where
+    // it is read, before the body, so the field type 'p' of a second
+    // 'type p {x p}' names the first 'p'
+    [[nodiscard]] auto definitions() const -> const definition_checks& {
+        return tables().definitions;
+    }
+
     [[nodiscard]] auto get_func_or_throw(const token& src_loc_tk,
                                          const std::string_view name) const
         -> const stmt_def_func& {
@@ -3055,16 +2977,76 @@ class parse_toc final : public toc {
     }
 };
 
+// a noinline body compiled for the array lengths of its calls
+struct noinline_body {
+    const stmt_def_func* func{};
+    // one per array parameter, in parameter order; a length is unknown only
+    // in a body that is checked, not emitted, see
+    // 'compile_toc::add_noinline_body'
+    std::vector<std::optional<size_t>> array_lengths;
+    // the first call that asked for the body, where an error in the body
+    // reports it was called from, e.g. 'third(b)'
+    token call_tk;
+    std::string call_source;
+};
+
+// the noinline bodies of one kind, each once per function and array lengths:
+// a worklist that grows while its bodies compile
+class noinline_body_list final {
+    std::vector<noinline_body> bodies_;
+
+  public:
+    auto add_once(noinline_body body) -> void {
+        if (contains(*body.func, body.array_lengths)) {
+            return;
+        }
+
+        bodies_.push_back(std::move(body));
+    }
+
+    // a copy, the list grows while the bodies compile
+    [[nodiscard]] auto at(const size_t index) const -> noinline_body {
+        return bodies_.at(index);
+    }
+
+    [[nodiscard]] auto
+    contains(const stmt_def_func& func,
+             const std::vector<std::optional<size_t>>& array_lengths) const
+        -> bool {
+
+        return std::ranges::any_of(
+            bodies_, [&](const noinline_body& known) -> bool {
+                return known.func == &func and
+                       known.array_lengths == array_lengths;
+            });
+    }
+
+    [[nodiscard]] auto count() const -> size_t { return bodies_.size(); }
+};
+
+// what the compile used, for the report
+struct usage_statistics {
+    size_t max_scope_count{};
+    // see 'storage_layout::max_body_vars_size_bytes_'
+    size_t max_body_vars_size_bytes{};
+    size_t dat_size_bytes{};
+    size_t dat_var_padding_bytes{};
+    std::vector<std::string> uninstantiated_generics;
+};
+
 // the context of the compile, made after the parse: the declarations are
-// placed, comment where they are stored and the storage capacity is checked,
+// placed, commented where they are stored and the storage capacity is checked,
 // e.g. a parameter 'self' of a type larger than the vars section holds an
 // address once the body is compiled; it holds what only the compile has:
 //
-//   program        'emitted_bodies', 'checked_bodies'
-//   code           'add_binding', 'add_read_only_constant',
-//                  'add_noinline_body', 'dry_run', 'check_skipped',
+//   program        'emitted_bodies', 'checked_bodies', 'usage',
+//                  'assert_released'
+//   tables         'data', 'layout'
+//   scopes         'scope_entry', 'add_binding'
+//   code           'add_read_only_constant', 'add_noinline_body',
+//                  'dry_run', 'check_skipped',
 //                  'emit_most_efficient', 'create_unique_label',
-//                  'is_dry_run', 'call_path_at', 'next_frame_address',
+//                  'is_dry_run', 'call_path_at',
 //                  'use_of', 'overflow_check' of a destination, the machine
 //   listing        'indent', 'indent_scope', 'end_label', 'continue_label'
 //   reachability   'is_reachable', 'end_path', 'record_break',
@@ -3245,6 +3227,8 @@ class compile_toc final : public toc {
         tables().scopes.set_max_scope_count(0);
     }
 
+    // the overloads of 'machine' and 'overflow_check' below would hide
+    // those of the base
     using toc::machine;
 
     using toc::overflow_check;
@@ -3340,6 +3324,12 @@ class compile_toc final : public toc {
         return tables().data.add_constant(std::move(label), std::move(bytes));
     }
 
+    // the scopes of the compile are popped
+    auto assert_released() const -> void {
+        // note: the scopes hold the storage in use, see 'storage_layout'
+        assert(tables().scopes.is_empty());
+    }
+
     // the location of 'src_loc_tk' and the call path of the inlined bodies
     // around it, which keeps labels unique per call, e.g. '12.5.30.9' for
     // 12:5 in a body inlined by the call at 30:9; the labels of a listing:
@@ -3418,6 +3408,10 @@ class compile_toc final : public toc {
         -> std::string {
 
         return std::format("{}.{}", prefix, call_path_at(src_loc_tk));
+    }
+
+    [[nodiscard]] auto data() const -> const data_table& {
+        return tables().data;
     }
 
     // runs 'compile' for its errors only: its output, read-only constants and
@@ -3533,13 +3527,12 @@ class compile_toc final : public toc {
         tables().scopes.set_reachable(runs_out or reach.is_left_by_break);
     }
 
-    [[nodiscard]] auto machine() -> ::machine& {
-        return tables().backend.get();
+    [[nodiscard]] auto layout() const -> const storage_layout& {
+        return tables().storage;
     }
 
-    // a callee frame starts aligned for any variable it holds
-    [[nodiscard]] auto next_frame_address() const -> operand {
-        return layout().next_frame_address();
+    [[nodiscard]] auto machine() -> ::machine& {
+        return tables().backend.get();
     }
 
     // the overflow check of the arithmetic of a value that 'dst' receives,
@@ -3574,6 +3567,18 @@ class compile_toc final : public toc {
     auto record_return() -> void {
         tables().scopes.record_return();
         end_path();
+    }
+
+    [[nodiscard]] auto usage() const -> usage_statistics {
+        const toc_tables& t{tables()};
+
+        return {
+            .max_scope_count{t.scopes.max_scope_count()},
+            .max_body_vars_size_bytes{t.storage.max_body_vars_size_bytes()},
+            .dat_size_bytes{t.data.total_size_bytes()},
+            .dat_var_padding_bytes{t.data.dat_var_padding_bytes()},
+            .uninstantiated_generics{t.generics.uninstantiated_func_names()},
+        };
     }
 
     [[nodiscard]] auto use_of(const destination& dst) const -> value_use {

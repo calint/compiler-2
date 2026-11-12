@@ -1309,7 +1309,7 @@ class machine {
     // other than 'source', e.g. running out of registers, is not kept, when
     // the first does its error is thrown. each version starts from the
     // state before it, the state of the kept one remains; true when the first
-    // is kept, 'toc' keeps its peaks ('compile_toc::emit_most_efficient').
+    // is kept, 'compile_toc::emit_most_efficient' keeps its peaks.
     // inside a version or discarded code only the first is emitted, so nested
     // choices compile code twice, not twice per level, unless
     // '--versions=nested' or 'last', which runs the code of every second

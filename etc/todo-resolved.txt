@@ -1,6 +1,27 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 365 (2026-11-12, design of calls and function
+    definitions; newcomer walk of the name tables after the 'toc' split)
+    => done (2026-11-12): calls: 'call_site::is_argument_temporary',
+       'has_argument_temporary' and 'has_result_temporary' hold the rule
+       of both kinds of call, written before in 'inline_call' and
+       'noinline_call' and handed over as two bools;
+       'compile_with_temporaries' decides by them and
+       'inline_call::compile_arguments_without_body' reuses it; left: a
+       shared argument loop (indirection for few lines), one entry point
+       for noinline emit and check (different registers and error frames),
+       one walk for 'visit_callee_effects' and 'assert_no_shared_storage'
+       (different orders); name tables: the file map of 'toc.hpp' has an
+       entry per context; 'noinline_body', 'noinline_body_list' and
+       'usage_statistics' moved above 'compile_toc', which owns them; the
+       accessors of a table one phase reads moved to that context
+       ('definitions' to 'parse_toc'; 'data', 'layout', 'usage',
+       'assert_released' to 'compile_toc'); the forwarder
+       'compile_toc::next_frame_address' removed; stale 'toc' in comments
+       names the table; README 1.1, 1.3, 7.6; left: one 'scope_entry' for
+       both phases (the compile one owns a register trace frame);
+       listings and errors unchanged
 [x] easy: round 364 (2026-11-12, design and readability of the test and
     fuzz infrastructure)
     => done (2026-11-12): 'test-coverage.sh' cases compile through

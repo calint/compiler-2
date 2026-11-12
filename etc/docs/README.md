@@ -138,7 +138,8 @@ read by its header comments and class maps first.
                                skim: the records of generic definitions and
                                instances, functions, inlined and noinline
                                calls (4), the generic instances (2.11)
-12. toc.hpp                    skim: what the names are while compiling
+12. toc.hpp                    skim: what the names are while parsing and
+                               compiling
 13. machine.hpp, register_pool.hpp, register_report.hpp, machine_x86_64.hpp,
     assembler.hpp, assembler_x86_64.hpp
                                skim: the operations, the registers (1.8),
@@ -233,10 +234,11 @@ Invariants the code relies on:
 
 ### 1.3 Names during compile: scopes and bindings
 
-'toc' keeps a stack of scopes: blocks, loops, 'foo' loops and functions. What
-a name means is decided by one rule, 'scope_stack::lookup': the scopes of the
-innermost function from the innermost outwards, then the root scope that
-holds the globals; the first scope that declares the name decides. A scope
+'toc_tables' keeps a stack of scopes ('scope_stack'): blocks, loops, 'foo'
+loops and functions. What a name means is decided by one rule,
+'scope_stack::lookup': the scopes of the innermost function from the
+innermost outwards, then the root scope that holds the globals; the first
+scope that declares the name decides. A scope
 declares a variable or a constant of a name, not both, a second declaration is
 rejected. The body of a function is the block above its scope, a name declared
 there that repeats a parameter or the result is rejected, a deeper block or a
@@ -1797,10 +1799,12 @@ Cost:
 Every statement receives a context over 'toc_tables', which owns the scopes,
 the types, the functions, the generics, the data and the storage layout. A
 method of a context changes state or combines tables, a question to one table
-goes through its const accessor, e.g. 'tc.scopes().lookup(name)'. A table
-without an accessor is asked through the context: 'where' and 'source_of'
-(the source locations), 'current_definition' (the definition order), and the
-two answers of 'ident_resolver', 'resolve_declared' and 'storage_of'.
+goes through its const accessor, e.g. 'tc.scopes().lookup(name)', on the
+context of the phase that reads the table, e.g. 'definitions' on 'parse_toc'
+and 'layout' on 'compile_toc'. A table without an accessor is asked through
+the context: 'where' and 'source_of' (the source locations),
+'current_definition' (the definition order), and the two answers of
+'ident_resolver', 'resolve_declared' and 'storage_of'.
 
 The phase is the type of the context: the parse-time constructors take a
 'parse_toc', which declares names without storage, adds definitions and
@@ -1819,9 +1823,9 @@ Rejected: passing the tables one by one, every signature would carry the
 ones its callees need; one context with a run-time phase, each method of one
 phase asserted it at run time and a declaration branched on it.
 
-Cost: 'toc.hpp' holds about 4k lines; 'toc' has 19 public methods,
-'parse_toc' and 'compile_toc' 26 each, grouped by the maps above the
-classes; a node can reach every table through its context. A function
+Cost: 'toc.hpp' holds about 4k lines; 'toc' has 14 public methods,
+'parse_toc' 27 and 'compile_toc' 30, grouped by the maps above the classes;
+a node can reach every table its phase reads through its context. A function
 that both phases run takes the base, so it cannot ask for what only one phase
 has, e.g. the listing indent.
 

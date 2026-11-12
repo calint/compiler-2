@@ -95,7 +95,7 @@ class stmt_def_dat final : public statement {
         tc.add_dat(*this, declaration_.declared_var());
     }
 
-    // 'toc' keeps the address of the definition
+    // 'data_table' keeps the address of the definition
     stmt_def_dat(const stmt_def_dat&) = delete;
     stmt_def_dat(stmt_def_dat&&) = delete;
     auto operator=(const stmt_def_dat&) -> stmt_def_dat& = delete;

@@ -354,7 +354,8 @@ class type_instantiator final {
     // statics
     //
 
-    // 'tp' becomes the type of the alias 'alias_tk', 'toc' keeps its address
+    // 'tp' becomes the type of the alias 'alias_tk', 'type_table' keeps its
+    // address
     static auto instantiate(parse_toc& tc, const token& alias_tk,
                             const generic_type_use& use, type& tp) -> void {
 
@@ -521,7 +522,7 @@ class stmt_def_type final : public statement {
         tc.add_type(name_tk_, type_);
     }
 
-    // 'toc' keeps the address of the type
+    // 'type_table' keeps the address of the type
     stmt_def_type(const stmt_def_type&) = delete;
     stmt_def_type(stmt_def_type&&) = delete;
     auto operator=(const stmt_def_type&) -> stmt_def_type& = delete;

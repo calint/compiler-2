@@ -257,7 +257,7 @@ class program final {
 
     std::reference_wrapper<source_files> files_;
     std::vector<parsed_file> parsed_files_;
-    // the names and the storage of the program, see 'toc'
+    // the names and the storage of the program, see 'toc_tables'
     toc_tables tables_;
 
   public:
