@@ -890,11 +890,13 @@ struct call_site {
 //      'check_recursion' in the check of a body that takes from a call
 //   1. 'compile_in_block': a result narrower than the operand it widens into
 //      is computed in a register and widened ('compile_widened'), a block
-//      holds the temporaries of the call
+//      holds the temporaries of the call when it has any
+//      ('call_site::compile_with_temporaries')
 //   2. 'compile_with_bindings': the bindings of the result and the arguments
-//      ('make_bindings'), an instance literal or a call result argument is
-//      made in a temporary, an indexed argument may get its address in a
-//      register, the shorter of two versions
+//      ('make_bindings'), an argument of an instance type without a place,
+//      e.g. an instance literal or a call result, is made in a temporary
+//      ('call_site::is_argument_temporary'), an indexed argument may get its
+//      address in a register, the shorter of two versions
 //      ('compile_body_with_address_registers')
 //   3. 'compile_body': the body in place with the bindings
 //      ('stmt_def_func::compile_inlined')

@@ -44,7 +44,7 @@
 //                   in 'scope' and 'storage_layout' is memory, e.g. the frame
 //                   of a noinline call, while the register trace
 //                   ('compile_toc::scope_entry', 'register_trace') and
-//                   'call_frame' of an error use it for a call level
+//                   'compile_error::call_frame' use it for a call level
 //   tables          'type_table', 'function_table'
 //   'data_table'    the dats ('placed_dat') and the read-only constants
 //   'scope_stack'   the scopes from the globals to the innermost scope and
@@ -65,12 +65,12 @@
 //                   both phases do; a method of a context changes state or
 //                   combines tables, a query of one table goes through its
 //                   const accessor, e.g. 'tc.scopes().current_func_scope()';
-//                   a table without an accessor is asked through the
-//                   context: 'where', 'source_of' (the source locations),
-//                   'current_definition' (the definition order),
+//                   a table without an accessor is asked through a context:
 //                   'resolve_declared', 'storage_of' (the resolver)
 //   'parse_toc'     the context of the parse: declarations without storage,
-//                   definitions, generic instances
+//                   definitions, generic instances; 'where', 'source_of'
+//                   (the source locations) and 'current_definition' (the
+//                   definition order), which only the parse reads
 //   records         'noinline_body', 'noinline_body_list' (the noinline
 //                   bodies to emit or only to check), 'usage_statistics'
 //   'compile_toc'   the context of the compile: placed declarations, the
@@ -127,7 +127,7 @@ class body_uses final {
     std::vector<global_use> globals_;
     std::vector<binding_use> bindings_;
     // the result is passed to a 'mut' parameter, so an inlined call keeps it
-    // in memory, see 'inline_call::compile_in_block'
+    // in memory, see 'call_site::has_result_temporary'
     bool is_result_passed_as_mut_{};
 
   public:
@@ -3692,7 +3692,7 @@ class compile_toc final : public toc {
 //   1. 'resolve_generic_args' reads the argument tokens of an alias or a base
 //      as types and constants, e.g. '<i8, 8>' of 'list<T type, capacity>'
 //      gives 'T' 'i8' and 'capacity' 8; a call reads its type arguments in
-//      'stmt_call'
+//      'generic_call' ('stmt_call.hpp')
 //   2. a 'parse_toc::generic_scope' makes them names while the text of the
 //      definition is parsed again, 'type_table' holds the type names of the
 //      innermost scope

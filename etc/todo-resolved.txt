@@ -1,6 +1,28 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 369 (2026-11-12, newcomer readability walk of the whole
+    compiler after rounds 355 to 368; 'fuzz-all.sh 1 777' at round 368
+    clean)
+    => done (2026-11-12): README 4.1 'storage_layout::next_frame_address',
+       the bodies queued by 'add_noinline_body' and emitted by
+       'program::emit_noinline_bodies', the frame by
+       'stmt_def_func::with_call_frame'; 7.6 and the 'toc.hpp' map: 'where',
+       'source_of' and 'current_definition' are on 'parse_toc' only; 3.3
+       and 3.5: a run-time index is the range up to 'run_time_end', every
+       step a range ('access_path::overlaps'); 3.10: definite assignment
+       tracks the result only, 'var x = x + 1' is the resolver's
+       ('scope::initializer'); 4.2: an inlined instance argument goes
+       through a temporary; 2.11: 'generic_registry' holds the definitions
+       and the type instances, 'generic_call::parse' makes the instance,
+       rows for 'func_instance' and 'definition_order'; 5.3
+       'machine::emit_discarded'; 6.8 explains '(_impl)'; 9: the target's
+       description and hooks, a check's 'failure_handlers_',
+       'check_names' and 'usage_format'; the 'main.cpp' header names the
+       entry from 'main'; stale comments of 'inline_call', 'body_uses',
+       'func_instance::call_trace', 'generic_registry' and the rv32i maps;
+       left: the name 'inline_call::compile_in_block' (no longer always a
+       block), "instance" for both a generic instance and a literal
 [x] easy: round 368 (2026-11-12, design of generics: definition,
     instantiation, resolution and traces)
     => done (2026-11-12): one 'func_instantiator::parse_instance' parses

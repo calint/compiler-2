@@ -42,8 +42,9 @@
 //   operations   'binary_operation', 'emit_binary_instruction',
 //                'emit_multiply' through 'multiply_by_shifts_and_adds'
 //                (signed digits), 'shift_by_constant', 'shift_by_register'
-//   helpers      '.Lbaz_multiply', '.Lbaz_multiply_checked' and
-//                '.Lbaz_divide' for 'mul' and 'div',
+//   helpers      '.Lbaz_multiply' and, with '--checks=overflow',
+//                '.Lbaz_multiply_checked' for 'mul', '.Lbaz_divide' for 'div'
+//                and 'rem',
 //                'helper_specs_', 'call_arithmetic_helper',
 //                'emit_target_routines'
 //   memory       'zero', 'copy_block', 'memory_equal'
@@ -53,10 +54,10 @@
 //                immediates or a copy of a constant ('copy_constant')
 //   comparisons  'compare_and_branch', 'emit_comparison_branch'
 //   checks       'emit_bounds_check' with 'check_upper_bound',
-//                'check_divisor', 'check_fits_width', 'check_shift_count',
+//                'check_divisor', 'check_shift_count',
 //                'check_copy_overlap', 'emit_frame_capacity_check',
 //                'emit_stack_capacity_check', the overflow checks
-//                'check_negate', 'check_multiply_result',
+//                'check_fits_width', 'check_negate', 'check_multiply_result',
 //                'emit_checked_add_subtract'; a failed test branches to its
 //                handler, all but the frame and stack checks with a stub per
 //                line for '--checks=line' ('branch_to_failure'), tests of one

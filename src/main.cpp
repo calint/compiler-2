@@ -1,6 +1,7 @@
 // the driver: reads the options, makes the backend that '--target' names,
 // compiles the program and writes the output, or prints the first error with
-// its source line
+// its source line; it reads from 'main' at the end upwards: 'parse_options',
+// 'compile_file', 'compile_to_stdout', which makes the 'program'
 #include <algorithm>
 #include <array>
 #include <cassert>

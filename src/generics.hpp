@@ -566,7 +566,7 @@ struct func_instance {
     // 'str.print', its constants are in the scope of the body
     std::optional<generic_type_instance> receiver;
     // the call that made a generic function, e.g. 'make<i8>', none for a
-    // method of a generic type
+    // method made with its type instance, one without type parameters
     std::optional<generic_trace> call_trace;
 
     // what made the type of the receiver
@@ -587,8 +587,9 @@ struct func_instance {
     }
 };
 
-// the generic functions and types of the program, the methods of the generic
-// types and the instances made of them
+// the generic functions and types of the program, kept as text, the methods
+// of the generic types and the instances of the types; an instance of a
+// function is a function of 'function_table'
 class generic_registry final {
     lut<generic_func_info> funcs_;
     lut<generic_type_info> types_;
@@ -606,8 +607,9 @@ class generic_registry final {
     explicit generic_registry(const definition_order& order) : order_{order} {}
 
     // note: a generic function without a receiver is added at its
-    //       definition, one with a receiver at an alias, so 'add_method'
-    //       lists it at the definition of its method
+    //       definition, one with a receiver when its type instance and its
+    //       method both exist, so 'add_method' lists it at the definition of
+    //       its method
 
     auto add_func(std::string name, generic_func_info info) -> void {
         if (not info.receiver) {

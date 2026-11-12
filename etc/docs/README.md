@@ -86,7 +86,8 @@ read by its header comments and class maps first.
 
 ```text
 1. main.cpp, program.hpp, stmt_include.hpp
-                               skim: the driver, the passes and the files
+                               skim: the driver (from 'main' at the end of
+                               the file up), the passes and the files
 2. compile_error.hpp           read: the error every step throws (1.9)
    token.hpp, source_files.hpp, lut.hpp, constant_parser.hpp,
    constant_arith.hpp, type.hpp, operand.hpp, ident_info.hpp,
@@ -1069,16 +1070,26 @@ example.baz:13:13: instantiated by 'make<name>'
 ### 2.11 Where in the code
 
 ```text
-generic_registry (generics.hpp)       the generic definitions and their
-                                      instances, kept as text
+generic_registry (generics.hpp)       the generic definitions, kept as text,
+                                      and the instances of the types; an
+                                      instance of a function is a function
+                                      ('function_table')
 type_instantiator (stmt_def_type.hpp) a generic type instance from an alias
 func_instantiator::define             a generic function, a method of a
   (stmt_def_func.hpp)                 generic type, kept as text
 generic_call::parse (stmt_call.hpp)   the type arguments of a call, written
-                                      or deduced from the arguments
+                                      or deduced from the arguments, then
+                                      the instance they name
 func_instantiator::instantiate_func,  the instance of a generic function, the
-  instantiate_methods                 methods of a type instance, both parsed
-  (stmt_def_func.hpp)                 by 'parse_instance'
+  instantiate_methods                 methods of a type instance (one with
+  (stmt_def_func.hpp)                 type parameters of its own becomes a
+                                      generic function of the instance),
+                                      both parsed by the private
+                                      'func_instantiator::parse_instance'
+func_instance (generics.hpp)          the instance being parsed: its
+                                      receiver and the call that made it
+definition_order (generics.hpp)       what is defined before what (2.9,
+                                      2.10.4)
 generic_reparse,                      the text parsed again with each
   parse_toc::generic_scope (toc.hpp)  parameter naming its argument
 generic_trace (generics.hpp)          the instances that led to an error
@@ -1132,9 +1143,9 @@ start of a bulk operand (3.6).
 
 ```text
 step         holds
-field        offset of the field in its parent
+field        offset of the field in its parent, a range of one
 index range  the first index and the end
-run-time     nothing
+run-time     the range of every index, from 0 to 'access_path::run_time_end'
 
 rooms[i].items[1].name
 
@@ -1161,10 +1172,11 @@ it is exact for every path the language can write.
 
 ### 3.5 Comparing two paths
 
-The steps line up, so they are walked together:
+The steps line up, so they are walked together; each step is a range, so one
+test, whether the ranges meet, decides every row ('access_path::overlaps'):
 
 ```text
-run-time index on either side             => go on, may be the same
+run-time index on either side             => go on, its range meets any
 field, different offset in the parent     => disjoint
 constant index ranges, no index in both   => disjoint
 same field (same offset) or ranges meet   => go on
@@ -1258,8 +1270,8 @@ needed (8.3).
 
 ### 3.10 Definite assignment
 
-'ub_assigned.hpp' tells which bytes of a variable are set before they are read.
-'assignment_flow' walks the result of a function through its body, which every
+'ub_assigned.hpp' tells which bytes of the result of a function are set before
+they are read. 'assignment_flow' walks the result of a function through its body, which every
 path must set before it returns ('stmt_def_func::assert_sets_result'). The
 parse tells which reads and writes name the result, by the one lookup of 1.3
 ('scope_stack::names_result'), so a name that hides it is not the result.
@@ -1270,19 +1282,18 @@ outside them is "result 'res' is read before it is set". The same walk finds the
 statements that are not reached (1.5.1); a function without a result has no
 bytes to assign. A variable is set
 where it is declared, so the one local that can be read unset is the variable
-its own initializer names, e.g. 'var x = x + 1' ('stmt_def_var'). The compile
+its own initializer names, e.g. 'var x = x + 1', which the resolver rejects
+without bytes: the initializer is parsed in a scope of its own
+('scope::initializer'), where the name is "'x' is read in its own
+initializer" ('ident_resolver::resolve'). The compile
 tells which code is reached with the same join rules
 ('compile_toc::path_merge').
 
-Unlike the aliasing check, these checks need bytes, because they ask whether
+Unlike the aliasing check, this check needs bytes, because it asks whether
 a read is inside what has been assigned:
 
 ```text
 type point {x, y}
-
-var x = x + 1                  the variable is not set while its value is
-                               computed: its bytes are read, none are assigned
-                               => "'x' is read in its own initializer"
 
 func point.at(x) self {        a constructor must assign every field: it
     self.x = x                 assigns the bytes of 'x', not those of 'y'
@@ -1309,13 +1320,15 @@ the element is not known.
 ### 4.1 The call and its frame
 
 A noinline function has one body per set of array lengths of its array
-arguments, emitted after 'main' ('compile_toc::add_noinline_body'), and its
+arguments, asked for by the first call that needs it
+('compile_toc::add_noinline_body') and emitted after 'main'
+('program::emit_noinline_bodies'), and its
 callers pass addresses, not values ('noinline_call' in 'stmt_call.hpp'):
 
 ```text
 frame base +------------------------+
            | caller's storage       |
-frame      +------------------------+ <- 'compile_toc::next_frame_address',
+frame      +------------------------+ <- 'storage_layout::next_frame_address',
 address    | result address         |    the callee's frame base
            | argument address       |    one slot per parameter
            +------------------------+
@@ -1348,7 +1361,8 @@ address    | result address         |    the callee's frame base
    'noinline_call::populate_frame' before the slots are written.
 
 The body is compiled for the first call that needs it. An error in the body
-carries that call as a frame ('noinline_body::call_tk'), so it points both at
+carries that call as a frame ('noinline_body::call_tk', added by
+'stmt_def_func::with_call_frame'), so it points both at
 the call and at the line in the body. A body with array parameters is also
 checked without its calls; one without them was checked as it was emitted
 (1.5).
@@ -1377,8 +1391,9 @@ record of 'f' (3.9). A call of the function it is in reaches its arguments and
 its result whole, its record is not complete yet (3.9).
 
 A value without storage (a constant, '{1, 2}') shares storage with nothing: a
-noinline call passes it in a temporary of the call, an inlined call folds a
-constant.
+noinline call passes it in a temporary of the call, an inlined call binds a
+value of a built-in type, a constant or a register, and passes an instance in
+a temporary ('call_site::is_argument_temporary').
 
 ## 5. Versions of the same code: compiled, measured, the shorter kept
 
@@ -1468,7 +1483,7 @@ compile. An error of discarded code is a 'source' error
 ('compile_toc::dry_run'), so a version never drops it; the check of a body
 starts from the registers of a noinline body, which do not depend on the code
 around it, and skipped code from the registers held where it stands, as if it
-ran ('machine::discarded_code').
+ran ('machine::emit_discarded', 'discarded_code::here').
 
 What a failed version entered must be left when its error unwinds:
 
@@ -1672,6 +1687,8 @@ allocation.
 
 ### 6.8 Where in the code
 
+'(_impl)' marks a member defined in 'stmt_identifier_impl.hpp'.
+
 ```text
 stmt_identifier::compile_lea          the walk of 6.2
 path_address::indexed_element         a constant or a run-time index (_impl)
@@ -1802,8 +1819,9 @@ method of a context changes state or combines tables, a question to one table
 goes through its const accessor, e.g. 'tc.scopes().lookup(name)', on the
 context of the phase that reads the table, e.g. 'definitions' on 'parse_toc'
 and 'layout' on 'compile_toc'. A table without an accessor is asked through
-the context: 'where' and 'source_of' (the source locations),
-'current_definition' (the definition order), and the two answers of
+a context: the parse, the one phase that reads them, asks 'parse_toc' for
+'where' and 'source_of' (the source locations) and 'current_definition' (the
+definition order); both phases ask 'toc' for the two answers of
 'ident_resolver', 'resolve_declared' and 'storage_of'.
 
 The phase is the type of the context: the parse-time constructors take a
@@ -2019,7 +2037,7 @@ What depends on the target is listed here, nothing else does:
 4. the limits of a target: '--vars' and the memory it addresses, which a
    type stays below, e.g. a field 'i8[0x100000000]' is rejected on rv32i,
    and so does a constant index or count on an unsized array parameter,
-   e.g. 'arrays_equal(a, b, 0x1000)' of 1 MiB records (2198, 2200, 2201),
+   e.g. 'arrays_equal(a, b, 0x1000)' of 1 MiB records (tests 2198, 2200, 2201),
    the depth of noinline calls that fits in '--vars' before 'frame' stops
    it, since a frame holds an address for each parameter and the result,
    8 B on x86_64 and 4 B on rv32i (and '--versions': 'nested', 'first' and
@@ -2180,14 +2198,20 @@ message, x86_64 stops with a signal.
 The language is final; what a target or a check option touches, the copies
 outside 'src' included:
 
-- a target: a subclass of 'machine_rv32i_bare_metal' or 'machine_rv32i' with
-  its 'target_description', and in 'main.cpp' its row in 'target_names'
+- a target: a subclass of 'machine_rv32i', e.g. 'machine_rv32i_linux', or of
+  'machine_rv32i_bare_metal', which builds its 'target_description' from the
+  memory start and size it is given; it implements the exit and sector
+  routines ('emit_exit_routine', 'emit_sector_routines'), a bare-metal one
+  also the uart hooks; and in 'main.cpp' its row in 'target_names'
   (name, backend, image, the options it reads) and the help
   text; outside: 'run.sh', 'qa/coverage/test-coverage.sh',
   'qa/coverage/test-all.sh' and 'qa/coverage/test-cli.sh' (their lists of
   targets) and 'qa/fuzz/fuzz-options.py'
-- a check: a field of 'check_options' and a 'failure_handler' with its exit
-  code in 'machine.hpp', its name and help text in 'main.cpp', the operation
+- a check: a field of 'check_options', turned off in the 'machine'
+  constructor where the target cannot honor it, and a 'failure_handler' with
+  an exit code of its own in 'machine::failure_handlers_' ('machine.hpp'), its
+  row in 'check_names' and its help text in 'usage_format' ('main.cpp'), the
+  operation
   that takes the check in both backends, and the tables of chapter 8;
   outside: 'qa/fuzz/fuzzlib.py' (the exit codes of the panics),
   'qa/fuzz/fuzz-options.py' and 'qa/coverage/test-cli.sh' (the check names)
