@@ -2604,7 +2604,11 @@ class parse_toc final : public toc {
             tc_.tables().types.add_receiver(generic.src_loc_tk,
                                             *instance.type_ptr);
 
-            add_args(instance.type_args());
+            for (const generic_arg& arg : instance.args) {
+                if (arg.is_type()) {
+                    tc_.tables().types.add_param(arg.param_tk, arg.type_ref());
+                }
+            }
         }
 
       private:

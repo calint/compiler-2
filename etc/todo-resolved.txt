@@ -1,6 +1,25 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 368 (2026-11-12, design of generics: definition,
+    instantiation, resolution and traces)
+    => done (2026-11-12): one 'func_instantiator::parse_instance' parses
+       both kinds of function instance (it replaces 'parse_func_instance'
+       and 'parse_method_instance') and adds the frames in one catch;
+       'func_instance' keeps its 'receiver' instead of copies of its
+       constants and trace, 'add_trace_to' and 'add_receiver_trace_to'
+       serve 'parse_instance', 'check_body' and 'add_call_frame'
+       ('add_receiver_frames', 'generic_type_instance::constants',
+       'type_args' and 'args_of_kind' removed); the type arguments of a
+       call are 'generic_arg's as those of a type instance;
+       'generic_func_info::method_tk' replaces 'is_type_member', so a
+       generic method of an instance is named without parsing its head
+       again; README 2.11; left: one mechanism for type and function
+       instances (they share the reparse, the scope, the arguments and the
+       trace, the rest differs), the constants of a method's receiver in
+       the function scope (the compile needs them), a variant for the
+       fields or the base of 'generic_type_info' (small gain); listings and
+       errors unchanged, -28 lines
 [x] easy: round 367 (2026-11-12, design: the built-in statements)
     => done (2026-11-12): 'builtin_function_type' in 'parse_lookahead.hpp'
        is the one mapping from the catalog 'reserved_names::

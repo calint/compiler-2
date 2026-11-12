@@ -160,7 +160,7 @@ struct generic_call {
     // the type arguments of a call without '<...>' and the arguments they
     // were taken from
     struct deduction {
-        std::vector<const type*> type_args;
+        std::vector<generic_arg> type_args;
         std::vector<size_t> deducing_args;
     };
 
@@ -190,7 +190,7 @@ struct generic_call {
             tz.is_type_args_next() ? tz.accept_char_token('<') : std::nullopt,
         };
 
-        std::vector<const type*> type_args;
+        std::vector<generic_arg> type_args;
         std::vector<token> generic_tks;
         std::vector<size_t> deducing_args;
 
@@ -544,7 +544,10 @@ struct generic_call {
                                 in_quotes(generic_name), name_tk.text())};
             }
 
-            deduced.type_args.push_back(arg_type);
+            deduced.type_args.push_back({
+                .param_tk{param_tk},
+                .value{arg_type},
+            });
         }
 
         return deduced;
@@ -639,7 +642,7 @@ struct generic_call {
     written_type_arguments(const parse_toc& tc, const token& name_tk,
                            const std::string_view generic_name,
                            const std::span<const token> arg_tks)
-        -> std::vector<const type*> {
+        -> std::vector<generic_arg> {
 
         const std::span<const token> param_tks{
             tc.generics().get_func(generic_name).signature.type_param_tks,
@@ -653,14 +656,19 @@ struct generic_call {
                                      arg_tks.size())};
         }
 
-        std::vector<const type*> type_args;
+        std::vector<generic_arg> type_args;
         type_args.reserve(arg_tks.size());
 
         for (const auto [param_tk, arg_tk] :
              std::views::zip(param_tks, arg_tks)) {
 
-            type_args.emplace_back(
-                &resolve_type_arg(tc, generic_name, param_tk.text(), arg_tk));
+            type_args.push_back({
+                .param_tk{param_tk},
+                .value{
+                    &resolve_type_arg(tc, generic_name, param_tk.text(),
+                                      arg_tk),
+                },
+            });
         }
 
         return type_args;

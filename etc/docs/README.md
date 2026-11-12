@@ -1077,8 +1077,8 @@ func_instantiator::define             a generic function, a method of a
 generic_call::parse (stmt_call.hpp)   the type arguments of a call, written
                                       or deduced from the arguments
 func_instantiator::instantiate_func,  the instance of a generic function, the
-  instantiate_methods                 methods of a type instance
-  (stmt_def_func.hpp)
+  instantiate_methods                 methods of a type instance, both parsed
+  (stmt_def_func.hpp)                 by 'parse_instance'
 generic_reparse,                      the text parsed again with each
   parse_toc::generic_scope (toc.hpp)  parameter naming its argument
 generic_trace (generics.hpp)          the instances that led to an error

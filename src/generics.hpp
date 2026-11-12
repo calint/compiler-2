@@ -294,18 +294,18 @@ struct generic_arg {
 // e.g. 'tokenizer.to<name>' for the generic 'tokenizer.to'
 [[nodiscard]] inline auto
 generic_func_instance_name(const std::string_view generic_name,
-                           const std::span<const type* const> type_args)
+                           const std::span<const generic_arg> type_args)
     -> std::string {
 
     std::string name{generic_name};
     name += '<';
 
-    for (const type* const type_arg : type_args) {
+    for (const generic_arg& type_arg : type_args) {
         if (name.back() != '<') {
             name += ',';
         }
 
-        name += type_arg->name();
+        name += type_arg.type_ref().name();
     }
 
     name += '>';
@@ -446,31 +446,6 @@ struct generic_type_instance {
     // e.g. 'list<i8, 8>' then 'type str = text<8>' for the base 'list', the
     // alias last
     generic_trace trace;
-
-    // e.g. 'capacity' is 8
-    [[nodiscard]] auto constants() const -> std::vector<generic_arg> {
-        return args_of_kind(false);
-    }
-
-    // e.g. 'T' is 'i8'
-    [[nodiscard]] auto type_args() const -> std::vector<generic_arg> {
-        return args_of_kind(true);
-    }
-
-  private:
-    [[nodiscard]] auto args_of_kind(const bool is_type) const
-        -> std::vector<generic_arg> {
-
-        std::vector<generic_arg> result;
-
-        for (const generic_arg& arg : args) {
-            if (arg.is_type() == is_type) {
-                result.push_back(arg);
-            }
-        }
-
-        return result;
-    }
 };
 
 // how a call without type arguments can tell a type parameter
@@ -559,8 +534,8 @@ struct generic_func_info {
     std::optional<generic_type_instance> receiver;
     // the last definition the body sees, see 'definition_order'
     size_t definition{};
-    // reached through its type wherever it is defined
-    bool is_type_member{};
+    // the name after the '.' of a method, e.g. 'append' of 'text.append'
+    std::optional<token> method_tk;
 
     // e.g. 'text.append', empty for a generic function without a receiver,
     // see 'func_instance::generic_method'
@@ -570,6 +545,11 @@ struct generic_func_info {
         }
 
         return report_name;
+    }
+
+    // reached through its type wherever it is defined
+    [[nodiscard]] auto is_type_member() const -> bool {
+        return method_tk.has_value();
     }
 };
 
@@ -582,14 +562,29 @@ struct func_instance {
     // e.g. 'text.print' for 'str.print', empty for a generic function without
     // a receiver
     std::string generic_method;
-    // the constants of the generic type of a method, in the scope of the body
-    std::vector<generic_arg> constants;
+    // the instance of the generic type of a method, e.g. 'text<8>' for
+    // 'str.print', its constants are in the scope of the body
+    std::optional<generic_type_instance> receiver;
     // the call that made a generic function, e.g. 'make<i8>', none for a
     // method of a generic type
     std::optional<generic_trace> call_trace;
-    // what made the type of the receiver, e.g. the alias 'type str =
-    // text<8>', none for a generic function without a receiver
-    std::optional<generic_trace> receiver_trace;
+
+    // what made the type of the receiver
+    auto add_receiver_trace_to(compile_error& e) const -> void {
+        if (receiver) {
+            receiver->trace.add_to(e);
+        }
+    }
+
+    // what made the instance: the call, then what made the type of the
+    // receiver, e.g. the alias 'type str = text<8>'
+    auto add_trace_to(compile_error& e) const -> void {
+        if (call_trace) {
+            call_trace->add_to(e);
+        }
+
+        add_receiver_trace_to(e);
+    }
 };
 
 // the generic functions and types of the program, the methods of the generic
@@ -688,7 +683,8 @@ class generic_registry final {
 
         const generic_func_info& info{funcs_.get_const_ref(name)};
 
-        return info.is_type_member or order_.get().is_visible(info.definition);
+        return info.is_type_member() or
+               order_.get().is_visible(info.definition);
     }
 
     [[nodiscard]] auto has_type(const std::string_view name) const -> bool {

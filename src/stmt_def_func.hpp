@@ -533,7 +533,9 @@ class stmt_def_func final : public statement {
     auto add_call_frame(compile_error& e, const token& call_tk,
                         std::string call_source) const -> void {
 
-        add_receiver_frames(e);
+        if (instance_) {
+            instance_->add_receiver_trace_to(e);
+        }
 
         e.add_call_frame(call_tk, std::move(call_source),
                          instance_ ? instance_->name : std::string_view{});
@@ -561,11 +563,9 @@ class stmt_def_func final : public statement {
             dry_run_in_frame(tc, {});
         } catch (compile_error& e) {
             // the frames of what made the instance
-            if (instance_ and instance_->call_trace) {
-                instance_->call_trace->add_to(e);
+            if (instance_) {
+                instance_->add_trace_to(e);
             }
-
-            add_receiver_frames(e);
 
             throw;
         }
@@ -759,20 +759,17 @@ class stmt_def_func final : public statement {
     // the constant arguments of the generic type of a method, in the scope of
     // the body
     auto add_constants(toc& tc) const -> void {
-        if (not instance_) {
+        if (not instance_ or not instance_->receiver) {
             return;
         }
 
-        for (const generic_arg& constant : instance_->constants) {
-            tc.add_const(constant.param_tk, constant.param_tk.text(),
-                         folded_value::untyped(constant.constant()));
-        }
-    }
+        for (const generic_arg& arg : instance_->receiver->args) {
+            if (arg.is_type()) {
+                continue;
+            }
 
-    // the frames of what made the type of the receiver
-    auto add_receiver_frames(compile_error& e) const -> void {
-        if (instance_ and instance_->receiver_trace) {
-            instance_->receiver_trace->add_to(e);
+            tc.add_const(arg.param_tk, arg.param_tk.text(),
+                         folded_value::untyped(arg.constant()));
         }
     }
 
@@ -1361,11 +1358,13 @@ class stmt_def_func final : public statement {
 //      'generic_signature', which tells a call how to deduce its types, or a
 //      method, which it makes for the instances of the type made so far
 //   2. an alias: 'instantiate_methods' makes each method for the new instance
-//      and its bases in the order they are defined ('instantiate_method',
-//      'parse_method_instance'), a method with type parameters of its own
-//      is recorded as a generic function of the instance
+//      and its bases in the order they are defined ('instantiate_method'), a
+//      method with type parameters of its own is recorded as a generic
+//      function of the instance
 //   3. a call: 'instantiate_func' makes the instance for the type arguments
-//      once ('parse_func_instance')
+//      once
+//
+// both kinds of instance are parsed by 'parse_instance'
 class func_instantiator final {
   public:
     //
@@ -1390,7 +1389,10 @@ class func_instantiator final {
             .signature{signature},
             .receiver{std::nullopt},
             .definition{tc.current_definition()},
-            .is_type_member{head.is_type_member()},
+            .method_tk{
+                head.method ? std::optional{head.method->name_tk}
+                            : std::nullopt,
+            },
         };
 
         if (not head.is_generic_type_method()) {
@@ -1419,7 +1421,7 @@ class func_instantiator final {
     [[nodiscard]] static auto
     instantiate_func(parse_toc& tc, const token& call_tk,
                      const std::string_view generic_name,
-                     const std::span<const type* const> type_args)
+                     const std::span<const generic_arg> type_args)
         -> std::string {
 
         // note: the reference stays valid while the instance is parsed, a body
@@ -1446,20 +1448,8 @@ class func_instantiator final {
 
         // an error in the instance reports the call that needed it, like the
         // frames of a generic type instance
-        const generic_trace call_trace{call_tk, name};
-
-        try {
-            parse_func_instance(tc, generic, name, type_args, call_trace);
-        } catch (compile_error& e) {
-            call_trace.add_to(e);
-
-            // e.g. the alias of 'b' for 'b.m<i8>'
-            if (generic.receiver) {
-                generic.receiver->trace.add_to(e);
-            }
-
-            throw;
-        }
+        parse_instance(tc, generic, type_args, name,
+                       generic_trace{call_tk, name});
 
         return name;
     }
@@ -1488,112 +1478,83 @@ class func_instantiator final {
     // statics
     //
 
-    // an error in the method is in the generic code, the frames name the bases
-    // and the alias
+    // e.g. 'str.print' of 'func text.print()' for 'text<8>'; a method with
+    // type parameters of its own is a generic function of the instance, e.g.
+    // 'str.append' of 'func text.append<T type>(s T)', which keeps 'text<8>';
+    // an error is in the generic code, the frames name the bases and the
+    // alias
     static auto instantiate_method(parse_toc& tc,
                                    const generic_func_info& method,
                                    const generic_type_instance& receiver)
         -> void {
 
+        // note: a method of a generic type is recorded with its method name
+        assert(method.method_tk);
+
+        // the name the head has where 'text' names 'str', see
+        // 'func_head::read_method'
+        std::string name{
+            method_name_of(receiver.type_ptr->name(), method.method_tk->text()),
+        };
+
+        generic_func_info generic{method};
+        generic.receiver = receiver;
+
+        if (generic.signature.type_param_tks.empty()) {
+            parse_instance(tc, generic, {}, std::move(name), std::nullopt);
+            return;
+        }
+
         try {
-            parse_method_instance(tc, method, receiver);
+            tc.add_generic_func(std::move(name), std::move(generic));
         } catch (compile_error& e) {
             receiver.trace.add_to(e);
             throw;
         }
     }
 
-    // e.g. 'tokenizer.to<name>' of 'func tokenizer.to<T type>()', 'T' names
-    // 'name' while the definition is parsed again; a method of a generic type
-    // keeps the method it instantiates and the constants of the receiver,
-    // e.g. 'str.append<i8>' keeps 'text.append' and those of 'text<8>'
-    static auto
-    parse_func_instance(parse_toc& tc, const generic_func_info& generic,
-                        const std::string& name,
-                        const std::span<const type* const> type_args,
-                        const generic_trace& call_trace) -> void {
-
-        generic_reparse reparse{tc, generic.definition, generic.start_tk};
-
-        // e.g. 'text' names 'str' for 'func text.append<T type>(s T)'
-        if (generic.receiver) {
-            reparse.scope().add_receiver(*generic.receiver);
-        }
-
-        // e.g. 'T' names 'name'
-        std::vector<generic_arg> args;
-
-        for (const auto [param_tk, type_arg] :
-             std::views::zip(generic.signature.type_param_tks, type_args)) {
-
-            args.push_back({
-                .param_tk{param_tk},
-                .value{type_arg},
-            });
-        }
-
-        reparse.scope().add_args(args);
-
-        tokenizer& tz{reparse.tz()};
-
-        const func_head head{func_head::read(tc, tz)};
-
-        func_instance instance{
-            .name{name},
-            .generic_method{generic.generic_method()},
-            .constants{},
-            .call_trace{call_trace},
-            .receiver_trace{},
-        };
-
-        if (generic.receiver) {
-            instance.constants = generic.receiver->constants();
-            instance.receiver_trace = generic.receiver->trace;
-        }
-
-        tc.add_func_instance(std::make_shared<stmt_def_func>(
-            tc, generic.func_tk, head, tz, std::move(instance)));
-    }
-
-    // e.g. 'str.print' of 'func text.print()', 'text' names 'str' while the
-    // definition is parsed again; a method with type parameters of its own is
-    // a generic function of the instance, e.g. 'str.append' of 'func
-    // text.append<T type>(s T)', which keeps 'text<8>'
-    static auto parse_method_instance(parse_toc& tc,
-                                      const generic_func_info& method,
-                                      const generic_type_instance& receiver)
+    // the definition of 'generic' parsed again as the function 'name', each
+    // type parameter naming its argument and the generic type of a method
+    // its instance, e.g. 'T' names 'name' for 'tokenizer.to<name>' and
+    // 'text' names 'str' for 'str.print'; an error gets the frames of what
+    // made the instance, the call 'call_trace' of a generic function first
+    static auto parse_instance(parse_toc& tc, const generic_func_info& generic,
+                               const std::span<const generic_arg> type_args,
+                               std::string name,
+                               std::optional<generic_trace> call_trace)
         -> void {
 
-        generic_reparse reparse{tc, method.definition, method.start_tk};
-        reparse.scope().add_receiver(receiver);
-
-        tokenizer& tz{reparse.tz()};
-
-        // note: 'text' names 'str' now, so the head is the method 'str.print'
-        const func_head head{func_head::read(tc, tz)};
-
-        assert(not head.is_generic_type_method());
-        assert(head.method);
-
-        if (not method.signature.type_param_tks.empty()) {
-            generic_func_info generic{method};
-            generic.receiver = receiver;
-
-            tc.add_generic_func(head.name, std::move(generic));
-
-            return;
-        }
-
-        func_instance instance{
-            .name{head.name},
-            .generic_method{method.report_name},
-            .constants{receiver.constants()},
-            .call_trace{},
-            .receiver_trace{receiver.trace},
+        const func_instance instance{
+            .name{std::move(name)},
+            .generic_method{generic.generic_method()},
+            .receiver{generic.receiver},
+            .call_trace{std::move(call_trace)},
         };
 
-        tc.add_func_instance(std::make_shared<stmt_def_func>(
-            tc, method.func_tk, head, tz, std::move(instance)));
+        try {
+            generic_reparse reparse{tc, generic.definition, generic.start_tk};
+
+            if (generic.receiver) {
+                reparse.scope().add_receiver(*generic.receiver);
+            }
+
+            reparse.scope().add_args(type_args);
+
+            tokenizer& tz{reparse.tz()};
+
+            const func_head head{func_head::read(tc, tz)};
+
+            // note: the head names the instance's receiver type, e.g.
+            //       'str.print'
+
+            assert(not head.is_generic_type_method());
+
+            tc.add_func_instance(std::make_shared<stmt_def_func>(
+                tc, generic.func_tk, head, tz, instance));
+        } catch (compile_error& e) {
+            instance.add_trace_to(e);
+            throw;
+        }
     }
 };
 
