@@ -58,8 +58,18 @@ class bulk_operands final {
         // a run-time start, held in a register from before the walk of its
         // address until the walk has returned and the ranges are checked
         struct held_start {
-            std::optional<operand> start;
+            // holds the register of the start, none for a constant start and
+            // once the start is freed
+            std::optional<machine::held_registers> holder;
             bool is_walked{};
+
+            [[nodiscard]] auto start() const -> std::optional<operand> {
+                if (not holder) {
+                    return std::nullopt;
+                }
+
+                return holder->registers().front();
+            }
         };
 
         const bulk_operands& operands_;
@@ -147,13 +157,16 @@ class bulk_operands final {
 
                     machine& x{tc_.machine()};
 
-                    held.start =
-                        x.alloc_scratch_register({array.tok(), tc_.indent()},
-                                                 tc_.builtins().default_type());
+                    held.holder.emplace(x,
+                                        emit_site{src_loc_tk_, tc_.indent()});
+
+                    std::ignore = held.holder->alloc_scratch_register(
+                        {array.tok(), tc_.indent()},
+                        tc_.builtins().default_type());
                 }
 
-                walk_address(array, held.start, address_register, checks_ranges,
-                             use);
+                walk_address(array, held.start(), address_register,
+                             checks_ranges, use);
 
                 held.is_walked = true;
 
@@ -205,14 +218,14 @@ class bulk_operands final {
         auto check_ranges(const std::optional<operand>& count_register)
             -> void {
 
-            check_range(operands_.first(), starts_.at(0).start, count_register,
-                        false);
+            check_range(operands_.first(), starts_.at(0).start(),
+                        count_register, false);
 
             // note: the check of the first range tested the sign of a
             //       run-time count where '--checks=lower' asks for it
 
-            check_range(operands_.second(), starts_.at(1).start, count_register,
-                        true);
+            check_range(operands_.second(), starts_.at(1).start(),
+                        count_register, true);
 
             are_ranges_checked_ = true;
         }
@@ -227,7 +240,7 @@ class bulk_operands final {
             }
 
             for (held_start& held : std::views::reverse(starts_)) {
-                if (not held.start) {
+                if (not held.holder) {
                     continue;
                 }
 
@@ -235,12 +248,7 @@ class bulk_operands final {
                     return;
                 }
 
-                machine& x{tc_.machine()};
-
-                x.free_scratch_register({src_loc_tk_, tc_.indent()},
-                                        *held.start);
-
-                held.start.reset();
+                held.holder.reset();
             }
         }
 

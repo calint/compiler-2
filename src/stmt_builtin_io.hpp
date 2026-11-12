@@ -517,9 +517,11 @@ class stmt_builtin_io final : public statement {
 
         machine& x{tc.machine()};
 
+        machine::held_registers held{x, {tok(), tc.indent()}};
+
         const operand start{
-            x.alloc_scratch_register({start_arg->tok(), tc.indent()},
-                                     default_type),
+            held.alloc_scratch_register({start_arg->tok(), tc.indent()},
+                                        default_type),
         };
 
         start_arg->compile(tc, destination::of_register(start));
@@ -541,8 +543,6 @@ class stmt_builtin_io final : public statement {
 
         x.add_subtract({tok(), tc.indent()}, arithmetic_operator::add,
                        buffer_reg, start);
-
-        x.free_scratch_register({tok(), tc.indent()}, start);
     }
 
     // the start, the last argument a call can have, null when left out

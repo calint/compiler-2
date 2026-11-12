@@ -1,6 +1,22 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 394 (2026-11-13, design: the middle and back end, the
+    interface of 'machine')
+    => done (2026-11-13): the front end holds a register in one way,
+       'machine::held_registers' (scratch, and named by the new
+       'held_registers::alloc_named_register'): the raw alloc and free
+       pairs of 'statement::compile_through_scratch', 'expr_arith',
+       'expr_bool', 'stmt_builtin_io', 'stmt_builtin_convert',
+       'stmt_builtin_exit', 'stmt_def_func::compile_in_frame' and the
+       starts of 'bulk_operands' are holders; 'alloc_scratch_register' and
+       'alloc_named_register' of 'machine' are protected (a backend uses
+       them in an 'operation_scope'), 'free_scratch_register',
+       'free_named_register' and 'free_scratch_registers' are gone;
+       README 1.8; listings unchanged (2495 cases)
+    => not done: one convention for the routine hooks ('emit_io_routines'
+       takes two bools, 'exit' gets its label from the base; changes the
+       routine order in the listings); 'emit_call' into 'machine'
 [x] easy: round 393 (2026-11-13, preparation for a human review: a
     first-time reviewer's day: the docs against the tree, every command as
     written, stale files, the todo list)

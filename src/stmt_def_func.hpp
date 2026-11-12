@@ -917,13 +917,15 @@ class stmt_def_func final : public statement {
         // a body is listed from the left also where a call checks it
         const compile_toc::indent_scope body_indent{tc, 0};
 
-        // the register is held while the body runs
-        std::optional<operand> receiver_register;
-
         machine& x{tc.machine()};
 
+        // the register is held while the body runs
+        machine::held_registers held{x, {tok(), 1}};
+
+        std::optional<operand> receiver_register;
+
         if (has_self_param()) {
-            receiver_register = x.alloc_named_register(
+            receiver_register = held.alloc_named_register(
                 {tok(), 1}, x.receiver_register(), tc.builtins().address());
         }
 
@@ -943,13 +945,7 @@ class stmt_def_func final : public statement {
         code_.compile(tc, destination{});
         x.return_function(1);
 
-        const size_t frame_size_bytes{tc.layout().max_frame_size_bytes()};
-
-        if (receiver_register) {
-            x.free_named_register({tok(), 1}, *receiver_register);
-        }
-
-        return frame_size_bytes;
+        return tc.layout().max_frame_size_bytes();
     }
 
     // the body compiled in a frame of its own for 'array_lengths', nothing

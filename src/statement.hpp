@@ -423,14 +423,16 @@ class statement {
 
         machine& x{tc.machine()};
 
+        machine::held_registers held{x, {src_loc_tk, tc.indent()}};
+
         const operand reg{
-            x.alloc_scratch_register({src_loc_tk, tc.indent()}, scratch_type),
+            held.alloc_scratch_register({src_loc_tk, tc.indent()},
+                                        scratch_type),
         };
 
         compile_value(reg);
 
         x.copy_value({src_loc_tk, tc.indent()}, dst, reg);
-        x.free_scratch_register({src_loc_tk, tc.indent()}, reg);
     }
 
     // the type after the name of a field or a parameter, none for the default

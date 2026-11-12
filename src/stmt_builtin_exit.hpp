@@ -44,16 +44,17 @@ class stmt_builtin_exit final : public statement {
 
         comment_source(tc);
 
+        machine::held_registers held{x, {tok(), tc.indent()}};
+
         const operand exit_code{
-            x.alloc_named_register({tok(), tc.indent()}, x.exit_code_register(),
-                                   tc.builtins().default_type()),
+            held.alloc_named_register({tok(), tc.indent()},
+                                      x.exit_code_register(),
+                                      tc.builtins().default_type()),
         };
 
         args_.at(0).compile(tc, destination::of_register(exit_code));
 
         x.exit({tok(), tc.indent()}, exit_code);
-
-        x.free_named_register({tok(), tc.indent()}, exit_code);
 
         tc.end_path();
     }

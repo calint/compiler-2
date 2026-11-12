@@ -159,10 +159,9 @@ struct target_description {
 //                  'reserve_variables', 'finish', 'write_assembly'
 //   data           'data_alignment', 'define_constant', 'emit_data_array',
 //                  'emit_string_data', 'emit_zero_data'
-//   registers      'alloc_scratch_register', 'free_scratch_register',
-//                  'held_registers' (what a front-end step holds),
-//                  'free_named_register', 'receiver_register', 'register_view',
-//                  'alloc_named_register'
+//   registers      'held_registers' (the registers a front-end step
+//                  holds, scratch or named), 'receiver_register',
+//                  'register_view'
 //   operations     'add_subtract', 'multiply', 'divide', 'shift', 'bitwise',
 //                  'unary', 'zero', 'zero_padding', 'copy_value',
 //                  'store_bytes', 'address_of', 'scale_index', 'store_boolean';
@@ -399,10 +398,11 @@ class machine {
         }
     };
 
-    // the scratch registers a front-end step allocates for its operands and
-    // holds until it ends, e.g. the address registers of a path; it frees
-    // them in reverse when it goes out of scope, with the site it was made
-    // with. like 'operation_scope' for the backend, but it frees only
+    // the registers a front-end step allocates and holds until it ends: the
+    // scratch registers of its operands, e.g. the address registers of a
+    // path, and a register it needs by name, e.g. that of the exit code; it
+    // frees them in reverse when it goes out of scope, with the site it was
+    // made with. like 'operation_scope' for the backend, but it frees only
     // what was added to it
     //
     // note: an error leaves the registers allocated: a version or a dry run
@@ -429,7 +429,23 @@ class machine {
                 return;
             }
 
-            machine_.free_scratch_registers(site_, registers_);
+            machine_.free_held_registers(site_, registers_);
+        }
+
+        // a register that the calling convention fixes, held until the scope
+        // ends or 'release'
+        [[nodiscard]] auto
+        alloc_named_register(const emit_site site,
+                             const std::string_view register_name,
+                             const type& type_ref) -> operand {
+
+            const operand reg{
+                machine_.alloc_named_register(site, register_name, type_ref),
+            };
+
+            registers_.push_back(reg);
+
+            return reg;
         }
 
         // a scratch register held until the scope ends or 'release'
@@ -453,7 +469,7 @@ class machine {
         // frees the registers before the scope ends, e.g. before a call
         // that would save them as live
         auto release() -> void {
-            machine_.free_scratch_registers(site_, registers_);
+            machine_.free_held_registers(site_, registers_);
             registers_.clear();
         }
     };
@@ -936,24 +952,6 @@ class machine {
 
     [[nodiscard]] auto address_size_bytes() const -> size_t {
         return target_.address_size_bytes;
-    }
-
-    // a register that an instruction or the calling convention fixes, held
-    // until 'free_named_register'
-    [[nodiscard]] auto
-    alloc_named_register(const emit_site site,
-                         const std::string_view register_name,
-                         const type& type_ref) -> operand {
-
-        reserve_named_register(site, register_name);
-        return make_register_operand(register_name, type_ref);
-    }
-
-    // the first free register in the scratch order of the backend
-    [[nodiscard]] auto alloc_scratch_register(const emit_site site,
-                                              const type& type_ref) -> operand {
-
-        return alloc_scratch_register_from(site, type_ref, 0);
     }
 
     // starts the data section, after the code and every routine it uses
@@ -1448,23 +1446,6 @@ class machine {
         return target_.frame_base_register;
     }
 
-    auto free_named_register(const emit_site site, const operand& reg) -> void {
-        assert(reg.is_register());
-
-        release_named_register(site, reg.register_name());
-    }
-
-    auto free_scratch_register(const emit_site site, const operand& reg)
-        -> void {
-
-        assert(reg.is_register());
-
-        assert(state_.registers.top().holder ==
-               register_pool::holder_kind::scratch);
-
-        pop_allocation(site, pool_index(reg.register_name()));
-    }
-
     [[nodiscard]] auto has_indexed_addressing() const -> bool {
         return target_.has_indexed_addressing;
     }
@@ -1797,6 +1778,26 @@ class machine {
     //
     // class methods
     //
+
+    // a register that an instruction or the calling convention fixes, freed
+    // by the 'operation_scope' it is allocated in; the front end allocates
+    // through 'held_registers'
+    [[nodiscard]] auto
+    alloc_named_register(const emit_site site,
+                         const std::string_view register_name,
+                         const type& type_ref) -> operand {
+
+        reserve_named_register(site, register_name);
+        return make_register_operand(register_name, type_ref);
+    }
+
+    // the first free register in the scratch order of the backend, freed by
+    // its 'operation_scope' too
+    [[nodiscard]] auto alloc_scratch_register(const emit_site site,
+                                              const type& type_ref) -> operand {
+
+        return alloc_scratch_register_from(site, type_ref, 0);
+    }
 
     [[nodiscard]] auto builtins() const -> const builtin_type_set& {
         return builtins_.get();
@@ -2431,12 +2432,18 @@ class machine {
                            printable(locations_.relative_name(file_ix)));
     }
 
-    auto free_scratch_registers(const emit_site site,
-                                const std::span<const operand> registers)
-        -> void {
+    // frees what a 'held_registers' holds, in reverse
+    auto free_held_registers(const emit_site site,
+                             const std::span<const operand> registers) -> void {
 
         for (const operand& reg : registers | std::views::reverse) {
-            free_scratch_register(site, reg);
+            assert(reg.is_register());
+
+            // note: the backend releases its own registers by name
+            assert(state_.registers.top().holder !=
+                   register_pool::holder_kind::backend);
+
+            pop_allocation(site, pool_index(reg.register_name()));
         }
     }
 

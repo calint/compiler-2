@@ -666,12 +666,13 @@ The front end holds registers, the backend names and picks them
    e.g. 'rcx' of a shift count on x86_64 or the argument registers of a
    system call; and the backend's own, the variables base and the frame base
    of a noinline body, which no source location asked for.
-2. Registers are freed in the reverse order of their allocation. A
-   front-end step holds the registers of its operands in
-   'machine::held_registers', which frees them when the step ends; a
-   backend operation holds its own in 'machine::operation_scope', which also
-   keeps the registers of its operands from being picked while it is
-   lowered.
+2. Registers are freed in the reverse order of their allocation, by the
+   scope that holds them. A front-end step allocates only through
+   'machine::held_registers', the scratch registers of its
+   operands and a register it needs by name (the exit code, the receiver of a
+   noinline body), which frees them when the step ends; a backend operation
+   holds its own in 'machine::operation_scope', which also keeps the
+   registers of its operands from being picked while it is lowered.
 3. No free scratch register is the error kind 'out_of_registers'
    ('machine::out_of_registers_error'), and so is a named register that a
    scratch value holds, since which register a scratch value takes depends on

@@ -468,10 +468,12 @@ class expr_bool_op final : public statement {
 
         machine& x{tc.machine()};
 
+        machine::held_registers held{x, {tok(), tc.indent()}};
+
         const operand result{
             is_stored ? action.destination
-                      : x.alloc_scratch_register({tok(), tc.indent()},
-                                                 tc.builtins().boolean()),
+                      : held.alloc_scratch_register({tok(), tc.indent()},
+                                                    tc.builtins().boolean()),
         };
 
         compile_memory_equality(tc, tok(), lhs, rhs, result,
@@ -489,10 +491,6 @@ class expr_bool_op final : public statement {
             x.compare_and_branch({tok(), tc.indent()}, result,
                                  operand::imm(0, tc.builtins().default_type()),
                                  branch_action);
-        }
-
-        if (not is_stored) {
-            x.free_scratch_register({tok(), tc.indent()}, result);
         }
     }
 

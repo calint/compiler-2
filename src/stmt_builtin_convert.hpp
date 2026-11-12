@@ -183,10 +183,12 @@ class stmt_builtin_convert final : public statement {
 
         machine& x{tc.machine()};
 
+        machine::held_registers held{x, {tok(), tc.indent()}};
+
         const operand converted{
             dst.is_register()
                 ? x.register_view(dst.operand(), get_type())
-                : x.alloc_scratch_register({tok(), tc.indent()}, get_type()),
+                : held.alloc_scratch_register({tok(), tc.indent()}, get_type()),
         };
 
         // the argument is made at the width of the type, where its
@@ -207,7 +209,6 @@ class stmt_builtin_convert final : public statement {
         }
 
         x.copy_value({tok(), tc.indent()}, dst.operand(), widened);
-        x.free_scratch_register({tok(), tc.indent()}, converted);
     }
 
     // the argument in a scratch register of 'scratch_type', the unary ops
@@ -219,8 +220,10 @@ class stmt_builtin_convert final : public statement {
 
         machine& x{tc.machine()};
 
+        machine::held_registers held{x, {tok(), tc.indent()}};
+
         const operand wide{
-            x.alloc_scratch_register({tok(), tc.indent()}, scratch_type),
+            held.alloc_scratch_register({tok(), tc.indent()}, scratch_type),
         };
 
         argument().compile(tc, destination::of_register(wide).as_wrapping());
@@ -229,7 +232,9 @@ class stmt_builtin_convert final : public statement {
         // to the copy
         if (scratch_type.is_bool()) {
             x.copy_value({tok(), tc.indent()}, target.operand(), wide);
-            x.free_scratch_register({tok(), tc.indent()}, wide);
+
+            // the ops apply to the copy with the register free
+            held.release();
 
             uops.compile(x, {tok(), tc.indent()}, target.operand(), uops_check);
 
@@ -251,7 +256,6 @@ class stmt_builtin_convert final : public statement {
             uops.compile(x, {tok(), tc.indent()}, widened, uops_check);
 
             x.copy_value({tok(), tc.indent()}, target.operand(), widened);
-            x.free_scratch_register({tok(), tc.indent()}, wide);
 
             return;
         }
@@ -261,7 +265,6 @@ class stmt_builtin_convert final : public statement {
         uops.compile(x, {tok(), tc.indent()}, wide, uops_check);
 
         x.copy_value({tok(), tc.indent()}, target.operand(), wide);
-        x.free_scratch_register({tok(), tc.indent()}, wide);
     }
 
     // a wider destination would compute the argument at its own width and

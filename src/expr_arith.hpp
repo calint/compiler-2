@@ -1225,8 +1225,11 @@ class expr_arith final : public statement {
 
         x.comment({src.tok(), tc.indent()}, "src: expression");
 
+        machine::held_registers held{x, {src.tok(), tc.indent()}};
+
         const operand reg{
-            x.alloc_scratch_register({src.tok(), tc.indent()}, dst.type_ref()),
+            held.alloc_scratch_register({src.tok(), tc.indent()},
+                                        dst.type_ref()),
         };
 
         // note: a step after the first, 'dst' holds the value so far
@@ -1234,8 +1237,6 @@ class expr_arith final : public statement {
 
         emit_operation(tc, src.tok(), op, dst, reg,
                        machine::factor_use::may_overwrite);
-
-        x.free_scratch_register({src.tok(), tc.indent()}, reg);
     }
 
     static auto compile_constant(compile_toc& tc, const token& src_loc_tk,
