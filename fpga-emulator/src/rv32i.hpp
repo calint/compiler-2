@@ -10,6 +10,7 @@
 
 #include <cstdint>
 #include <cstdio>
+#include <utility>
 
 namespace rv32i {
 
@@ -23,7 +24,7 @@ using bus = auto (*)(uint32_t address, bus_op_width op_width, bool is_store,
                      uint32_t &data) -> bus_status;
 
 // status of a misaligned access, e.g. 'lw' at an address not a multiple of 4,
-// 'CPU error: 199' for a fetch to 204 for an 'sw' (exit code, modulo 256)
+// exit code 199 for a fetch to 204 for an 'sw' (the status modulo 256)
 enum misaligned : uint32_t {
   MISALIGNED_FETCH = 1991,
   MISALIGNED_LH = 1992,
@@ -31,6 +32,28 @@ enum misaligned : uint32_t {
   MISALIGNED_LW = 1994,
   MISALIGNED_SH = 1995,
   MISALIGNED_SW = 1996,
+};
+
+// status of an encoding rv32i does not allow or the soft core does not run
+enum illegal : uint32_t {
+  // 'funct7' of an immediate right shift other than 'srli' and 'srai'
+  ILLEGAL_SRLI_SRAI = 1,
+  // 'funct7' other than 'add' and 'sub'
+  ILLEGAL_ADD_SUB = 3,
+  // 'funct7' other than 'srl' and 'sra'
+  ILLEGAL_SRL_SRA = 4,
+  ILLEGAL_STORE = 6,
+  ILLEGAL_LOAD = 7,
+  ILLEGAL_BRANCH = 8,
+  ILLEGAL_OPCODE = 9,
+  // a system instruction other than 'ebreak', e.g. 'ecall'
+  ILLEGAL_SYSTEM = 10,
+  // 'slli' with a 'funct7', e.g. a shift amount of 32 or more
+  ILLEGAL_SLLI = 11,
+  // a register operation with an extension's 'funct7', e.g. 'div'
+  ILLEGAL_FUNCT7 = 12,
+  ILLEGAL_JALR = 13,
+  ILLEGAL_FENCE = 14,
 };
 
 class cpu final {
@@ -129,7 +152,7 @@ public:
         printf("slli x%u, x%u, %u\n", rd, rs1, shift_amount);
 #endif
         if (FUNCT7_from(instruction) != 0) {
-          return 11;
+          return ILLEGAL_SLLI;
         }
         regs_[rd] = regs_[rs1] << shift_amount;
         break;
@@ -153,12 +176,13 @@ public:
           break;
         }
         default:
-          return 1;
+          return ILLEGAL_SRLI_SRAI;
         }
         break;
       }
       default:
-        return 2;
+        // note: the 8 values of 'funct3' are handled
+        unreachable();
       }
       break;
     }
@@ -173,12 +197,12 @@ public:
       //       extension's op such as 'div' is not run as 'xor'
       if (funct3 != FUNCT3_ADD_SUB and funct3 != FUNCT3_SRL_SRA and
           FUNCT7_from(instruction) != 0) {
-        return 12;
+        return ILLEGAL_FUNCT7;
       }
       switch (funct3) {
       case FUNCT3_ADD_SUB: {
-        uint32_t const FUNCT7 = FUNCT7_from(instruction);
-        switch (FUNCT7) {
+        uint32_t const funct7 = FUNCT7_from(instruction);
+        switch (funct7) {
         case FUNCT7_ADD: {
 #ifdef RV32I_DEBUG
           printf("add x%u, x%u, x%u\n", rd, rs1, rs2);
@@ -194,7 +218,7 @@ public:
           break;
         }
         default:
-          return 3;
+          return ILLEGAL_ADD_SUB;
         }
         break;
       }
@@ -245,7 +269,7 @@ public:
           break;
         }
         default:
-          return 4;
+          return ILLEGAL_SRL_SRA;
         }
         break;
       }
@@ -264,7 +288,8 @@ public:
         break;
       }
       default:
-        return 5;
+        // note: the 8 values of 'funct3' are handled
+        unreachable();
       }
       break;
     }
@@ -313,7 +338,7 @@ public:
         break;
       }
       default:
-        return 6;
+        return ILLEGAL_STORE;
       }
       break;
     }
@@ -392,7 +417,7 @@ public:
         break;
       }
       default:
-        return 7;
+        return ILLEGAL_LOAD;
       }
       break;
     }
@@ -419,7 +444,7 @@ public:
       printf("jal x%u, 0x%x\n", rd, pc_ + uint32_t(J_imm20));
 #endif
       regs_[rd] = int32_t(pc_ + 4);
-      next_pc = uint32_t(int32_t(pc_) + J_imm20);
+      next_pc = pc_ + uint32_t(J_imm20);
       break;
     }
     //-----------------------------------------------------------------------
@@ -432,7 +457,7 @@ public:
       printf("jalr x%u, %d(x%u)\n", rd, I_imm12, rs1);
 #endif
       if (FUNCT3_from(instruction) != 0) {
-        return 13;
+        return ILLEGAL_JALR;
       }
       // note: an odd target traps at the fetch; the soft core keeps it
       next_pc = uint32_t(regs_[rs1]) + uint32_t(I_imm12);
@@ -450,7 +475,7 @@ public:
       uint32_t const rs1 = RS1_from(instruction);
       uint32_t const rs2 = RS2_from(instruction);
       int32_t const B_imm12 = B_imm12_from(instruction);
-      uint32_t const branch_taken_pc = uint32_t(int32_t(pc_) + B_imm12);
+      uint32_t const branch_taken_pc = pc_ + uint32_t(B_imm12);
       uint32_t const funct3 = FUNCT3_from(instruction);
       switch (funct3) {
       case FUNCT3_BEQ: {
@@ -512,7 +537,7 @@ public:
         break;
       }
       default:
-        return 8;
+        return ILLEGAL_BRANCH;
       }
       break;
     }
@@ -523,7 +548,7 @@ public:
 #endif
       // 'fence.i' and the reserved forms are not supported
       if (FUNCT3_from(instruction) != 0) {
-        return 14;
+        return ILLEGAL_FENCE;
       }
       // NOP
       break;
@@ -533,7 +558,7 @@ public:
     {
       // only ebreak is supported, it halts with pc at the instruction
       if (instruction != INSTRUCTION_EBREAK) {
-        return 10;
+        return ILLEGAL_SYSTEM;
       }
 #ifdef RV32I_DEBUG
       printf("ebreak\n");
@@ -542,7 +567,7 @@ public:
       return 0;
     }
     default:
-      return 9;
+      return ILLEGAL_OPCODE;
     }
 
     pc_ = next_pc;

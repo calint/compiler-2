@@ -1,6 +1,6 @@
 // aligned accesses of each kind that must not trap, then the one misaligned
-// access, odd jump or unsupported encoding selected by 'CASE'; without a trap
-// the program exits with 0
+// access, odd jump, unsupported encoding or access between the device
+// registers selected by 'CASE'; without a trap the program exits with 0
 
 .global _start
 
@@ -37,8 +37,12 @@ _start:
 	.word 0x00029067		# 'jalr x0, 0(x5)' with 'funct3' 1
 #elif CASE == 11
 	.word 0x0000200f		# 'fence' with 'funct3' 2
+#elif CASE == 12
+	lbu x6, -11(x0)			# 0xffff'fff5, a device address but no register
+#elif CASE == 13
+	sb x0, -31(x0)			# 0xffff'ffe1, a device address but no register
 #else
-#error "CASE is 1 to 11"
+#error "CASE is 1 to 13"
 #endif
 done:
 	ebreak

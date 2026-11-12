@@ -1,6 +1,20 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 387 (2026-11-12, bug hunt and design: the fpga emulator)
+    => done (2026-11-12): 400 random programs of 400 instructions from edge
+       values agree with qemu (every rv32i instruction, x0 as destination,
+       jalr with rd equal to rs1); about 90000 encodings compared with
+       objdump of rv32i: the emulator stops at what rv32i does not allow
+       ('ecall' and privileged forms included), 'fence' ignores its
+       reserved fields as the spec says; uart and sd card agree with
+       'ramio.sv', 'sdcard.sv' and the rv32i-fpga routines; an access
+       between the device registers, e.g. 'lbu' at 0xffff'fff5, read or
+       wrote past the memory of the emulator (a crash), it stops with bus
+       status 10 ("CPU error: 1710" for 'lbu'), the bus has a device and a
+       memory path (cases 12 and 13 in 'misaligned.S'); the statuses of an
+       illegal encoding are named ('enum illegal'), the two unreachable are
+       'unreachable()', jal and branch targets are unsigned arithmetic
 [x] easy: round 386 (2026-11-12, the tree-sitter grammar against the
     language: every accepted source parsed, the highlight queries against
     'src/token.hpp')

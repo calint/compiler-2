@@ -40,6 +40,12 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
     for generic constants only
     => document it in 1.7 and chapter 8 item 1, or have 'fold_let' keep an
        untyped value unchecked until its use as generic constants do
+[p] easy: need approval: a differential test of the fpga emulator against
+    qemu-riscv32 user mode as new files in 'fpga-emulator/qa' (random
+    instructions from edge register values over random data, final
+    registers and data compared; caught three injected mutants); needs
+    qemu-riscv32 and python3 in 'qa/test.sh'; sources
+    /tmp/r385-em-work/diff/ (gen.py, harness.cpp, run.sh), at risk on reboot
 [ ] easy: (round 380) duplicate tests: 2465 and 2506 have the same source,
     expected file, options and targets; 2466 has the source of 2870, whose
     targets include those of 2466; one of each pair is redundant

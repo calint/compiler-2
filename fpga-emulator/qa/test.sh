@@ -106,7 +106,7 @@ if [ "$BYTES" != " 3 10 17 24" ]; then
     exit 1
 fi
 
-echo " * run misaligned access and decoding tests in the emulator"
+echo " * run misaligned access, decoding and device address tests in the emulator"
 
 # CASE=N assembles the case N of 'misaligned.S', which must stop with the exit
 # code and print the message
@@ -143,6 +143,8 @@ misaligned 8 12 "CPU error: 12"
 misaligned 9 11 "CPU error: 11"
 misaligned 10 13 "CPU error: 13"
 misaligned 11 14 "CPU error: 14"
+misaligned 12 174 "CPU error: 1710"
+misaligned 13 86 "CPU error: 1110"
 
 rm misaligned.bin misaligned.err
 
