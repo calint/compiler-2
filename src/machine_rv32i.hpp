@@ -29,14 +29,16 @@
 #include "type.hpp"
 
 // the rv32i backend, written as llvm assembler text and a binary image
-// through 'assembler_rv32i'; the targets derive from it, 'machine_rv32i_linux'
-// for linux in qemu user mode and 'machine_rv32i_bare_metal'. the
-// formatter sorts the functions by name, so by topic they are:
+// through 'assembler_rv32i'; the targets derive from it: 'rv32i' is
+// 'machine_rv32i_linux' for linux in qemu user mode, 'rv32i-qemu' and
+// 'rv32i-fpga' are 'machine_rv32i_qemu' and 'machine_rv32i_fpga', which share
+// 'machine_rv32i_bare_metal'. the formatter sorts the functions by name, so
+// by topic they are:
 //
 //   registers    'machine' allocates them, here the order
 //                'scratch_registers_' and the roles in 'rv32i_target'
 //   addresses    'lower_address': an operand into a base register and a
-//                12-bit offset
+//                12-bit offset, which 'load_at' and 'store_at' access
 //   operations   'binary_operation', 'emit_binary_instruction',
 //                'emit_multiply' through 'multiply_by_shifts_and_adds'
 //                (signed digits), 'shift_by_constant', 'shift_by_register'
@@ -146,6 +148,19 @@ class machine_rv32i : public machine {
     // note: ascending t and s names keep generated code readable while argument
     //       registers stay late to avoid builtin conflicts and 'a0' stays last
     //       because syscalls overwrite it with their result
+
+    // the instructions of an access of 1, 2 or 4 bytes and what comments call
+    // a sequence of them
+    struct access_width {
+        size_t size_bytes{};
+        // sign extends as a narrow integer reads it
+        op load{};
+        // zero extends, for a 'bool' and for copying bytes unchanged
+        op unsigned_load{};
+        // stores the low 8, 16 or 32 bits
+        op store{};
+        std::string_view units;
+    };
 
     // where unrolled accesses start: the address minus 'phase' is aligned to
     // 'alignment', which is at most a word
@@ -517,29 +532,15 @@ class machine_rv32i : public machine {
 
         const comparison_operator operation{action.operation};
 
-        const std::optional<int32_t> constant{
-            narrowed_immediate(rhs, lhs.type_ref()),
-        };
-
-        // x > c and x <= c use the signed threshold c + 1
-        const bool inclusive_threshold{swaps_operands(operation)};
-
-        const int64_t threshold{
-            int64_t{constant.value_or(0)} + (inclusive_threshold ? 1 : 0),
-        };
-
         // a branch compares registers, a boolean result can use an immediate
-        const bool use_immediate{
-            not action.destination.is_empty() and constant.has_value() and
-                assembler_rv32i::fits_immediate(threshold),
-        };
-
         const std::optional<int64_t> immediate{
-            use_immediate ? std::optional<int64_t>{threshold} : std::nullopt,
+            action.destination.is_empty()
+                ? std::nullopt
+                : comparison_immediate(operation, lhs, rhs),
         };
 
         const std::array<operand, 2> sides{
-            comparison_operands(site, lhs, rhs, use_immediate,
+            comparison_operands(site, lhs, rhs, immediate.has_value(),
                                 action.destination),
         };
 
@@ -1078,13 +1079,9 @@ class machine_rv32i : public machine {
                                    const std::string_view frame_size_label)
         -> void override {
 
-        const operand start{
-            alloc_scratch_register(site, default_type()),
-        };
+        const operand start{alloc_word_register(site)};
 
-        const operand last_start{
-            alloc_scratch_register(site, default_type()),
-        };
+        const operand last_start{alloc_word_register(site)};
 
         address_of(site, start, frame_address);
 
@@ -1255,13 +1252,9 @@ class machine_rv32i : public machine {
                 leaf_stack_bytes(),
         };
 
-        const operand limit{
-            alloc_scratch_register(site, default_type()),
-        };
+        const operand limit{alloc_word_register(site)};
 
-        const operand lowest{
-            alloc_scratch_register(site, default_type()),
-        };
+        const operand lowest{alloc_word_register(site)};
 
         assembler_.li(site.indent, limit.register_name(),
                       stack_limit_address());
@@ -1487,13 +1480,10 @@ class machine_rv32i : public machine {
         const bool left_is_result{can_hold_left_value(result, in_use)};
 
         const operand left{
-            left_is_result ? result
-                           : alloc_scratch_register(site, default_type()),
+            left_is_result ? result : alloc_word_register(site),
         };
 
-        const operand right{
-            alloc_scratch_register(site, default_type()),
-        };
+        const operand right{alloc_word_register(site)};
 
         comment(site, "{}: left value/result, {}: right value",
                 left.register_name(), right.register_name());
@@ -1505,6 +1495,11 @@ class machine_rv32i : public machine {
             .right{right},
             .left_is_result{left_is_result},
         };
+    }
+
+    // a scratch register of 'default_type', as wide as the register
+    [[nodiscard]] auto alloc_word_register(const emit_site site) -> operand {
+        return alloc_scratch_register(site, default_type());
     }
 
     // in a helper body: 'dst' is 'src' negated when 'sign' is -1 and 'src'
@@ -1530,7 +1525,7 @@ class machine_rv32i : public machine {
         // argument-order allocation keeps pointer and count names easy to
         // follow
         for (operand& reg : bulk.registers) {
-            reg = alloc_scratch_register(site, default_type());
+            reg = alloc_word_register(site);
         }
 
         comment(site, "{}: {}, {}: {}, {}: count",
@@ -1684,9 +1679,7 @@ class machine_rv32i : public machine {
 
         const operation_scope scope{*this};
 
-        const operand constant_register{
-            alloc_scratch_register(site, default_type()),
-        };
+        const operand constant_register{alloc_word_register(site)};
 
         assembler_.li(site.indent, constant_register.register_name(), constant);
 
@@ -1707,9 +1700,7 @@ class machine_rv32i : public machine {
 
         const operation_scope scope{*this};
 
-        const operand distance{
-            alloc_scratch_register(site, default_type()),
-        };
+        const operand distance{alloc_word_register(site)};
 
         assembler_.sub(site.indent, distance.register_name(),
                        dst.register_name(), src.register_name());
@@ -1818,9 +1809,7 @@ class machine_rv32i : public machine {
                            const bool lower_checked, failure_tests& tests)
         -> void {
 
-        const operand limit{
-            alloc_scratch_register(site, default_type()),
-        };
+        const operand limit{alloc_word_register(site)};
 
         const std::string top{
             upper_bound_top(site, range, limit, lower_checked, tests),
@@ -1918,13 +1907,10 @@ class machine_rv32i : public machine {
                         const size_t width, const operand& left,
                         const operand& right) -> void {
 
-        assembler_.load(indent, unsigned_load_op(width),
-                        registers.left.register_name(), left.displacement(),
-                        left.base_register());
+        const op load{access_width_of(width).unsigned_load};
 
-        assembler_.load(indent, unsigned_load_op(width),
-                        registers.right.register_name(), right.displacement(),
-                        right.base_register());
+        load_at(indent, load, registers.left.register_name(), left);
+        load_at(indent, load, registers.right.register_name(), right);
 
         assembler_.bne(indent, registers.left.register_name(),
                        registers.right.register_name(), false_exit_.reference);
@@ -2091,18 +2077,17 @@ class machine_rv32i : public machine {
         }
 
         // both operands are live inputs or zero
-        return alloc_scratch_register(site, default_type());
+        return alloc_word_register(site);
     }
 
     auto copy_access(const size_t indent, const operand& value,
                      const size_t width, const operand& from, const operand& to)
         -> void {
 
-        assembler_.load(indent, unsigned_load_op(width), value.register_name(),
-                        from.displacement(), from.base_register());
+        const access_width& access{access_width_of(width)};
 
-        assembler_.store(indent, store_op(width), value.register_name(),
-                         to.displacement(), to.base_register());
+        load_at(indent, access.unsigned_load, value.register_name(), from);
+        store_at(indent, access.store, value.register_name(), to);
     }
 
     // 'bytes' from a read-only constant that starts as far into a word as
@@ -2113,9 +2098,7 @@ class machine_rv32i : public machine {
         const std::function_ref<std::string(std::string_view)> add_constant)
         -> void {
 
-        const operand pointer{
-            alloc_scratch_register(site, default_type()),
-        };
+        const operand pointer{alloc_word_register(site)};
 
         // note: read-only constants are word aligned, the zero bytes before
         //       the constant bring its first byte to the phase of 'dst'
@@ -2157,9 +2140,7 @@ class machine_rv32i : public machine {
 
         const operation_scope scope{*this, dst, src};
 
-        const operand value{
-            alloc_scratch_register(site, default_type()),
-        };
+        const operand value{alloc_word_register(site)};
 
         const std::array<operand, 2> addresses{src, dst};
 
@@ -2193,9 +2174,7 @@ class machine_rv32i : public machine {
 
         const operation_scope scope{*this, dst, src};
 
-        const operand value{
-            alloc_scratch_register(site, default_type()),
-        };
+        const operand value{alloc_word_register(site)};
 
         const operand from{memory_at(src)};
         const operand to{memory_at(dst)};
@@ -2223,13 +2202,9 @@ class machine_rv32i : public machine {
     auto copy_through_shared_base(const emit_site site, const operand& dst,
                                   const operand& src) -> void {
 
-        const operand base{
-            alloc_scratch_register(site, default_type()),
-        };
+        const operand base{alloc_word_register(site)};
 
-        const operand value{
-            alloc_scratch_register(site, default_type()),
-        };
+        const operand value{alloc_word_register(site)};
 
         comment(site, "source and destination share base {}",
                 base.register_name());
@@ -2379,9 +2354,7 @@ class machine_rv32i : public machine {
         if (width_bytes < word_size_bytes_) {
             emit_binary_instruction(site, instruction, src, value, constant);
 
-            const operand extended{
-                alloc_scratch_register(site, default_type()),
-            };
+            const operand extended{alloc_word_register(site)};
 
             check_fits_width(site, value.register_name(), width_bytes,
                              extended.register_name());
@@ -2391,9 +2364,7 @@ class machine_rv32i : public machine {
         } else {
             // a memory source, a constant past the immediate or the value's
             // own register gets a register of its own
-            const operand second{
-                alloc_scratch_register(site, default_type()),
-            };
+            const operand second{alloc_word_register(site)};
 
             load_operand(site, second, src, constant);
 
@@ -2426,9 +2397,7 @@ class machine_rv32i : public machine {
 
         emit_binary_instruction(site, instruction, src, value, immediate);
 
-        const operand first{
-            alloc_scratch_register(site, default_type()),
-        };
+        const operand first{alloc_word_register(site)};
 
         if (immediate) {
             assembler_.addi(site.indent, first.register_name(),
@@ -2669,9 +2638,8 @@ class machine_rv32i : public machine {
 
         // a single digit needs only the final shift
         const operand partial{
-            sequence.lowest == sequence.top
-                ? operand{}
-                : alloc_scratch_register(site, default_type()),
+            sequence.lowest == sequence.top ? operand{}
+                                            : alloc_word_register(site),
         };
 
         std::string_view shifted{loaded.value.register_name()};
@@ -2852,6 +2820,16 @@ class machine_rv32i : public machine {
         return saved;
     }
 
+    // a load through 'at', an address as 'lower_address' returns it
+    auto load_at(const size_t indent, const op code, const std::string_view rd,
+                 const operand& at) -> void {
+
+        validate_lowered(at);
+
+        assembler_.load(indent, code, rd, at.displacement(),
+                        at.base_register());
+    }
+
     // the pointer of 'slot', 0 the first address and 1 the second, holds the
     // address; the pointers advance together so both starts decide the width
     // of the loop
@@ -2892,9 +2870,7 @@ class machine_rv32i : public machine {
         // lowering before allocating keeps the scratch register order
         const operand address{lower_address(site, dst)};
 
-        const operand value{
-            alloc_scratch_register(site, default_type()),
-        };
+        const operand value{alloc_word_register(site)};
 
         copy_value(site, value, address);
 
@@ -2941,9 +2917,8 @@ class machine_rv32i : public machine {
                 lower_address(site, src, value),
             };
 
-            assembler_.load(site.indent, load_op(src.type_ref()),
-                            value.register_name(), lowered.displacement(),
-                            lowered.base_register());
+            load_at(site.indent, load_op(src.type_ref()), value.register_name(),
+                    lowered);
 
             return;
         }
@@ -2975,9 +2950,7 @@ class machine_rv32i : public machine {
     [[nodiscard]] auto load_pointer(const emit_site site,
                                     const operand& address) -> operand {
 
-        const operand pointer{
-            alloc_scratch_register(site, default_type()),
-        };
+        const operand pointer{alloc_word_register(site)};
 
         address_of(site, pointer, address);
 
@@ -3010,7 +2983,7 @@ class machine_rv32i : public machine {
         const operand result{
             can_reuse_address_destination(address, dst)
                 ? dst
-                : alloc_scratch_register(site, default_type()),
+                : alloc_word_register(site),
         };
 
         const std::string& result_name{result.register_name()};
@@ -3051,9 +3024,7 @@ class machine_rv32i : public machine {
         if (upper != 0) {
             const operation_scope scope{*this};
 
-            const operand displacement{
-                alloc_scratch_register(site, default_type()),
-            };
+            const operand displacement{alloc_word_register(site)};
 
             assembler_.lui(site.indent, displacement.register_name(), upper);
 
@@ -3120,9 +3091,7 @@ class machine_rv32i : public machine {
         }
 
         // restoring the saved registers would overwrite the result
-        const operand kept{
-            alloc_scratch_register(site, default_type()),
-        };
+        const operand kept{alloc_word_register(site)};
 
         copy_value(site, kept, result);
 
@@ -3215,9 +3184,7 @@ class machine_rv32i : public machine {
             return src;
         }
 
-        const operand right{
-            alloc_scratch_register(site, default_type()),
-        };
+        const operand right{alloc_word_register(site)};
 
         load_operand(site, right, src, constant);
 
@@ -3244,6 +3211,16 @@ class machine_rv32i : public machine {
         };
     }
 
+    // a store through 'at', an address as 'lower_address' returns it
+    auto store_at(const size_t indent, const op code,
+                  const std::string_view src, const operand& at) -> void {
+
+        validate_lowered(at);
+
+        assembler_.store(indent, code, src, at.displacement(),
+                         at.base_register());
+    }
+
     auto store_byte_parts(const emit_site site,
                           const std::span<const byte_part> parts,
                           const operand& dst, const size_t size_bytes) -> void {
@@ -3258,17 +3235,15 @@ class machine_rv32i : public machine {
         };
 
         const operand value{
-            has_load ? alloc_scratch_register(site, default_type()) : operand{},
+            has_load ? alloc_word_register(site) : operand{},
         };
 
         for (const byte_part& p : parts) {
-            const int64_t displacement{
-                address.displacement() + static_cast<int64_t>(p.offset),
-            };
+            const operand at{offset_by(address, p.offset)};
 
             if (p.value == 0) {
-                assembler_.store(site.indent, store_op(p.size_bytes), "zero",
-                                 displacement, address.base_register());
+                store_at(site.indent, access_width_of(p.size_bytes).store,
+                         "zero", at);
 
                 continue;
             }
@@ -3277,9 +3252,8 @@ class machine_rv32i : public machine {
                 assembler_.li(site.indent, value.register_name(), p.value);
             }
 
-            assembler_.store(site.indent, store_op(p.size_bytes),
-                             value.register_name(), displacement,
-                             address.base_register());
+            store_at(site.indent, access_width_of(p.size_bytes).store,
+                     value.register_name(), at);
         }
     }
 
@@ -3310,9 +3284,9 @@ class machine_rv32i : public machine {
 
         const operand lowered{lower_address(site, dst)};
 
-        assembler_.store(site.indent, store_op(dst.type_ref().size_bytes()),
-                         value.register_name(), lowered.displacement(),
-                         lowered.base_register());
+        store_at(site.indent,
+                 access_width_of(dst.type_ref().size_bytes()).store,
+                 value.register_name(), lowered);
     }
 
     auto store_operation_result(const size_t indent, const operand& dst,
@@ -3322,8 +3296,8 @@ class machine_rv32i : public machine {
         const size_t width{dst.type_ref().size_bytes()};
 
         if (dst.is_memory()) {
-            assembler_.store(indent, store_op(width), value.register_name(),
-                             address.displacement(), address.base_register());
+            store_at(indent, access_width_of(width).store,
+                     value.register_name(), address);
         } else if (width < word_size_bytes_ and normalize) {
             extend_register(indent, dst.type_ref(), value);
         }
@@ -3340,9 +3314,7 @@ class machine_rv32i : public machine {
         if (lowered.displacement() + static_cast<int64_t>(size_bytes) - 1 >
             assembler_rv32i::immediate_max) {
 
-            const operand pointer{
-                alloc_scratch_register(site, default_type()),
-            };
+            const operand pointer{alloc_word_register(site)};
 
             address_of(site, pointer, lowered);
 
@@ -3369,9 +3341,7 @@ class machine_rv32i : public machine {
 
         const operand& reg_count{*range.count};
 
-        const operand sum{
-            alloc_scratch_register(site, default_type()),
-        };
+        const operand sum{alloc_word_register(site)};
 
         const std::string& top{sum.register_name()};
 
@@ -3387,9 +3357,7 @@ class machine_rv32i : public machine {
         // a negative end that fits passes and is left to the lower check, a
         // high word of zero leaves the unsigned compare of 'top' with the
         // limit, which may be 2^31 or more
-        const operand high{
-            alloc_scratch_register(site, default_type()),
-        };
+        const operand high{alloc_word_register(site)};
 
         assembler_.srai(site.indent, high.register_name(), index, sign_shift_);
 
@@ -3437,9 +3405,7 @@ class machine_rv32i : public machine {
             at.push_back(memory_at(pointer));
         }
 
-        const operand end{
-            alloc_scratch_register(walk.site, default_type()),
-        };
+        const operand end{alloc_word_register(walk.site)};
 
         comment(walk.site, "{}", describe_loop(walk.verb, loop.width));
 
@@ -3563,13 +3529,10 @@ class machine_rv32i : public machine {
 
         // the end of the chunks, also the scratch of the head check and the
         // halfword tail test
-        const operand chunks{
-            alloc_scratch_register(walk.site, default_type()),
-        };
+        const operand chunks{alloc_word_register(walk.site)};
 
         comment(walk.site, "{}: end of {}, {}: tail bytes",
-                chunks.register_name(),
-                start.width == word_size_bytes_ ? "words" : "halfwords",
+                chunks.register_name(), access_width_of(start.width).units,
                 walk.count.register_name());
 
         if (start.head_size_bytes != 0) {
@@ -3678,7 +3641,7 @@ class machine_rv32i : public machine {
             return dst;
         }
 
-        return alloc_scratch_register(site, default_type());
+        return alloc_word_register(site);
     }
 
     // every access matched or the range was empty, unless a mismatch branched
@@ -3710,13 +3673,48 @@ class machine_rv32i : public machine {
     auto zero_access(const size_t indent, const size_t width,
                      const operand& address) -> void {
 
-        assembler_.store(indent, store_op(width), "zero",
-                         address.displacement(), address.base_register());
+        store_at(indent, access_width_of(width).store, "zero", address);
     }
 
     //
     // statics
     //
+
+    [[nodiscard]] static auto access_width_of(const size_t size_bytes)
+        -> const access_width& {
+
+        static constexpr std::array<access_width, 3> access_widths{
+            access_width{
+                .size_bytes{byte_size_bytes_},
+                .load{op::lb},
+                .unsigned_load{op::lbu},
+                .store{op::sb},
+                .units{"bytes"},
+            },
+            access_width{
+                .size_bytes{half_size_bytes_},
+                .load{op::lh},
+                .unsigned_load{op::lhu},
+                .store{op::sh},
+                .units{"halfwords"},
+            },
+            access_width{
+                .size_bytes{word_size_bytes_},
+                .load{op::lw},
+                .unsigned_load{op::lw},
+                .store{op::sw},
+                .units{"words"},
+            },
+        };
+
+        for (const access_width& access : access_widths) {
+            if (access.size_bytes == size_bytes) {
+                return access;
+            }
+        }
+
+        std::unreachable();
+    }
 
     // each access is the widest that fits the remaining bytes and is aligned
     // for every address, so an unaligned start takes a byte and a halfword up
@@ -3882,6 +3880,33 @@ class machine_rv32i : public machine {
             memory_end_address, assembler_rv32i::address_space_bytes)};
     }
 
+    // the immediate that a boolean result compares the left side with, when
+    // the constant right side fits; 'x > c' and 'x <= c' compare with the
+    // signed threshold 'c + 1' ('emit_boolean_result')
+    [[nodiscard]] static auto
+    comparison_immediate(const comparison_operator operation,
+                         const operand& lhs, const operand& rhs)
+        -> std::optional<int64_t> {
+
+        const std::optional<int32_t> constant{
+            narrowed_immediate(rhs, lhs.type_ref()),
+        };
+
+        if (not constant.has_value()) {
+            return std::nullopt;
+        }
+
+        const int64_t threshold{
+            int64_t{*constant} + (swaps_operands(operation) ? 1 : 0),
+        };
+
+        if (not assembler_rv32i::fits_immediate(threshold)) {
+            return std::nullopt;
+        }
+
+        return threshold;
+    }
+
     // only 'slt' and 'blt' exist: 'x >= y' is the complement of 'x < y' and,
     // with 'swaps_operands', 'x <= y' of 'y < x'
     [[nodiscard]] static auto
@@ -3900,7 +3925,7 @@ class machine_rv32i : public machine {
         }
 
         return std::format("{} {}-byte {}", verb, width,
-                           width == word_size_bytes_ ? "words" : "halfwords");
+                           access_width_of(width).units);
     }
 
     // runs of equal widths, e.g. '1 + 2 + 4 x 4 + 1 B'
@@ -4036,21 +4061,10 @@ class machine_rv32i : public machine {
         return constant == 0;
     }
 
-    // lb and lh sign-extend, a bool is zero-extended
+    // a narrow integer is sign extended, a 'bool' zero extended
     [[nodiscard]] static auto load_op(const type& value_type) -> op {
-        if (value_type.size_bytes() == word_size_bytes_) {
-            return op::lw;
-        }
-
-        if (value_type.size_bytes() == half_size_bytes_) {
-            return op::lh;
-        }
-
-        if (value_type.is_bool()) {
-            return op::lbu;
-        }
-
-        return op::lb;
+        const access_width& access{access_width_of(value_type.size_bytes())};
+        return value_type.is_bool() ? access.unsigned_load : access.load;
     }
 
     [[nodiscard]] static auto make_digit_sequence(const uint32_t multiplier,
@@ -4303,19 +4317,6 @@ class machine_rv32i : public machine {
         return parts;
     }
 
-    // stores the low 8, 16 or 32 bits
-    [[nodiscard]] static auto store_op(const size_t width) -> op {
-        if (width == word_size_bytes_) {
-            return op::sw;
-        }
-
-        if (width == half_size_bytes_) {
-            return op::sh;
-        }
-
-        return op::sb;
-    }
-
     // only 'slt' and 'blt' exist: 'x > y' is 'y < x' and 'x <= y' is the
     // complement of 'y < x'
     [[nodiscard]] static auto
@@ -4323,19 +4324,6 @@ class machine_rv32i : public machine {
 
         return operation == comparison_operator::greater or
                operation == comparison_operator::less_equal;
-    }
-
-    // loads without sign extension, for copying bytes unchanged
-    [[nodiscard]] static auto unsigned_load_op(const size_t width) -> op {
-        if (width == word_size_bytes_) {
-            return op::lw;
-        }
-
-        if (width == half_size_bytes_) {
-            return op::lhu;
-        }
-
-        return op::lbu;
     }
 
     // the 'fail_if' and 'pass_if' of 'check_upper_bound'
@@ -4366,6 +4354,15 @@ class machine_rv32i : public machine {
         // note: any displacement is valid, addresses wrap at 32 bits and
         //       'upper_part' and 'lower_part' keep its low 32 bits, e.g.
         //       the addend of 'a[i + K]' may pass the address range
+    }
+
+    // a base register and an offset that a load or store holds, e.g. the
+    // result of 'lower_address' or 'memory_at'
+    static auto validate_lowered(const operand& at) -> void {
+        validate_address(at);
+
+        assert(at.index_register().empty() and
+               assembler_rv32i::fits_immediate(at.displacement()));
     }
 
     // scalar operands in a register or an address of the target, the result

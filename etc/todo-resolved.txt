@@ -1,6 +1,20 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 366 (2026-11-12, design: rv32i internals)
+    => done (2026-11-12): every load and store of 'machine_rv32i' goes
+       through 'load_at' and 'store_at', which check that the address is
+       lowered ('validate_lowered': base register, no index, 12-bit
+       offset), the 9 sites no longer spell the displacement and base;
+       one table 'access_width' ('access_width_of') holds the signed and
+       unsigned load, the store and the comment name of 1, 2 and 4
+       bytes, replacing 'unsigned_load_op', 'store_op' and two ternaries,
+       another width is unreachable; 'comparison_immediate' takes the
+       threshold decision out of 'compare_and_branch'; 33 sites use
+       'alloc_word_register'; the header maps rv32i, rv32i-qemu and
+       rv32i-fpga to their classes; reviewed and kept: target variants
+       are classes, not flags, offsets are lowered in 'lower_address'
+       only, no i64 on rv32i; listings and errors unchanged
 [x] easy: round 365 (2026-11-12, design of calls and function
     definitions; newcomer walk of the name tables after the 'toc' split)
     => done (2026-11-12): calls: 'call_site::is_argument_temporary',
