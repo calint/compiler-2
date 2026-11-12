@@ -18,11 +18,13 @@ import constructs as cs
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 # fuzzers that build programs through 'fuzz_one', 'fuzz-compiler.py' and
-# 'fuzz-mutate.py' mutate the tests and 'fuzz-roome.py' the session of roome:
-# none is a generator
+# 'fuzz-mutate.py' mutate the tests, 'fuzz-roome.py' the session of roome and
+# 'fuzz-limits.py' builds the programs of 'fuzz-programs.py': none is a
+# generator
 FUZZERS = ("fuzz-exprs", "fuzz-data", "fuzz-flow", "fuzz-bools",
            "fuzz-calls", "fuzz-methods", "fuzz-generics", "fuzz-reject",
-           "fuzz-io", "fuzz-programs", "fuzz-whole", "fuzz-versions")
+           "fuzz-io", "fuzz-programs", "fuzz-whole", "fuzz-versions",
+           "fuzz-frames")
 
 
 def load(name):

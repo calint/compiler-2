@@ -1,6 +1,17 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: need approval: two fuzzers from the bug hunt of round 375 as new
+    files in 'qa/fuzz': a layout model of the frame check (a noinline
+    recursion with random locals, '--vars' at the model's threshold +-16,
+    every target) and tight '--vars'/'--stack' agreement of the rv32i
+    targets (fuzz-programs output made noinline); sources
+    /tmp/r373-bh-work/ff/frame_fuzz.py and tf/tight.py, at risk on reboot
+    => done (2026-11-12): round 378: approved; 'qa/fuzz/fuzz-frames.py'
+       (the layout model, with the option lists of '--nopt' and
+       '--versions' and '--checks=noub') and 'qa/fuzz/fuzz-limits.py' (the
+       generator of 'fuzz-programs.py' through import, also x86_64 at tight
+       '--vars'), in 'fuzz-all.sh', the README table and 'fuzz-coverage.py'
 [x] easy: round 377 (2026-11-12, design: remove what no guarantee needs)
     => done (2026-11-12): a coverage build over the tests of the four
        targets, cli, far jumps, versions, roome and six fuzzers executes
