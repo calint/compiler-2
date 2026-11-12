@@ -29,7 +29,8 @@ class tokenizer final {
     size_t file_ix_{}; // index of the source file of 'src_'
 
     static constexpr std::string_view delimiters_{
-        " \t\r\n(){}[]=,.:+-*/%&|^<>!~#"};
+        " \t\r\n(){}[]=,.:+-*/%&|^<>!~#",
+    };
 
     // the operators of expressions, the longer first so that '<<' and '<='
     // are not read as '<'; '=' and '!' alone are not operators
@@ -152,8 +153,8 @@ class tokenizer final {
         return token::position(file_ix_, char_ix_, at_line_);
     }
 
-    // the token of the character 'ch' when it is next, otherwise an error at
-    // the cursor
+    // the token of the character 'ch' when it is next, otherwise an error
+    // with 'message' at the token found instead
     [[nodiscard]] auto expect_char_token(const char ch,
                                          const std::string_view message)
         -> token {

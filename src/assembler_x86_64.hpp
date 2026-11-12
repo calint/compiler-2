@@ -152,11 +152,10 @@ class assembler_x86_64 final : public assembler {
     // starts the comment of a line, the text before it is code
     static constexpr std::string_view comment_marker_{";"};
 
+    static constexpr size_t max_symbol_size_{4000};
     // note: nasm truncates a symbol at 4095 characters, so two long labels
     //       with a common prefix would collide, e.g. the bodies of generic
     //       instances with long arguments
-
-    static constexpr size_t max_symbol_size_{4000};
 
     struct op_info {
         std::string_view mnemonic;

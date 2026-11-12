@@ -217,6 +217,8 @@ class operand final {
         return result;
     }
 
+    // a value of 'value_type' at 'address': at the same address for a memory
+    // operand, at the address that a register operand holds
     [[nodiscard]] static auto mem(const operand& address,
                                   const type& value_type) -> operand {
 

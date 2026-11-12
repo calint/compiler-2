@@ -1,6 +1,30 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 399 (2026-11-13, readability: a reviewer's walk with a
+    strict bar of the files not walked in rounds 390 to 398: 'main.cpp',
+    tokenizer, 'toc' tables, generics, types, errors, 'register_pool',
+    'operand', the assemblers, loops and conditions; bug hunt: input,
+    output, strings and 'dat')
+    => done (2026-11-13): 'operand::mem' says its two uses (another type
+       at a memory operand, the memory at the address a register holds);
+       'expect_char_token' says where its error is; the note of
+       'max_symbol_size_' is below its member; a trailing comma in
+       'tokenizer::delimiters_'; '<format>' included by 'register_pool.hpp'
+       and 'stmt_builtin_foo.hpp'; the other files and the class maps of
+       'toc' and 'parse_toc' were in order; listings unchanged
+    => open: the comment of 'assembler_x86_64::is_reload' ("an address
+       without a width takes the register's") does not say whether it is
+       the reason a store without a width is excluded
+    => bug hunt (about 64000 programs against a model of the bytes, four
+       targets and the emulator: 'read' and 'write' on every element type
+       and records, short reads, sectors, every escape, twin strings, 'dat'
+       and 'var' literals, offsets past 4 KiB; four of five mutants of the
+       compiler caught): no defect
+    => phase checks at round 398: four targets, far jumps, roome, linear
+       growth, emulator, asan build; fuzz-all: only the doubling of inlined
+       calls (a mutant of 2911.baz that calls 'r' twice per level, the open
+       item of round 226 UF1)
 [x] easy: round 398 (2026-11-13, design: across the layers, a first-time
     architect's read from 'main' through the classes)
     => done (2026-11-13): the design reads straight, nothing larger than

@@ -139,10 +139,10 @@
   agents keep the default.
 - Standing loop: improve readability by humans, simplify the design and hunt
   bugs, round after round; implement what is recommended. Refactoring is
-  allowed, large ones too, when the design improves. The loop ends when one
-  round of fresh agents (a bug hunt in an area not hunted recently, a design
-  simplification, a newcomer readability walk) finds nothing to apply; what
-  needs approval does not count.
+  allowed, large ones too, when the design improves. The loop ends when two
+  rounds in a row of fresh agents (a bug hunt in an area not hunted recently,
+  a design simplification, a newcomer readability walk) find nothing to
+  apply; what needs approval does not count.
 - Until the design is judged done, the loop takes no items from
   `etc/todo.txt`: rounds look for design, readability and bugs; findings
   that are not done go there.
