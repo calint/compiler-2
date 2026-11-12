@@ -284,9 +284,12 @@ class expr_bool_op final : public statement {
         return &lhs_;
     }
 
-    // takes the operand that 'lone_operand' points to
-    [[nodiscard]] auto release_lone_operand() -> expr_arith {
-        assert(lone_operand() != nullptr);
+    // takes the operand that 'lone_operand' points to, none when negated or
+    // compared
+    [[nodiscard]] auto release_lone_operand() -> std::optional<expr_arith> {
+        if (lone_operand() == nullptr) {
+            return std::nullopt;
+        }
 
         return std::move(lhs_);
     }
@@ -1144,35 +1147,17 @@ class expr_bool final : public statement {
         return (not is_or_list()) != inverted;
     }
 
-    // e.g. 'a + 1' or '(a + 1)', null when the list negates, compares, or
-    // combines with 'and' or 'or'
-    [[nodiscard]] auto lone_operand() const -> const expr_arith* {
-        if (bools_.size() != 1 or has_not()) {
-            return nullptr;
-        }
-
-        return bools_.front().visit([](const auto& e) -> const expr_arith* {
-            return e.lone_operand();
-        });
-    }
-
-    // the operand when the whole expression is one 'bool' operand, e.g. 'x'
-    // or 'f(x)' but not 'not x', else none and the expression is unchanged
+    // the operand when the whole expression is one operand, e.g. 'x', 'f(x)'
+    // or the 'a + 1' of '(a + 1)', but not 'not x' or 'x == 1'; else none and
+    // the expression is unchanged
     [[nodiscard]] auto release_lone_operand() -> std::optional<expr_arith> {
-        // note: only a group in parentheses has 'not's of its own
-        assert(not has_not());
-
-        if (bools_.size() != 1) {
+        if (bools_.size() != 1 or has_not()) {
             return std::nullopt;
         }
 
-        expr_bool_op* const op{std::get_if<expr_bool_op>(&bools_.front())};
-
-        if (op == nullptr or op->lone_operand() == nullptr) {
-            return std::nullopt;
-        }
-
-        return op->release_lone_operand();
+        return bools_.front().visit([](auto& e) -> std::optional<expr_arith> {
+            return e.release_lone_operand();
+        });
     }
 
   private:

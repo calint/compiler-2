@@ -215,13 +215,14 @@ class initializer_declaration final {
 
         tz.put_back_token(tk);
 
-        // 'expr_bool' parses any arithmetic too, as a comparison shorthand
-        const expr_bool condition{tc, tz.next_whitespace_token(), tz};
+        // 'expr_bool' parses any arithmetic too, as a comparison shorthand;
+        // only the parse tells '(a + 1)' from '(a == 1)'
+        expr_bool condition{tc, tz.next_whitespace_token(), tz};
 
-        // a comparison, 'not', 'and' or 'or'
-        const expr_arith* const arith{condition.lone_operand()};
+        // none for a comparison, 'not', 'and' or 'or'
+        const std::optional<expr_arith> arith{condition.release_lone_operand()};
 
-        if (arith == nullptr) {
+        if (not arith) {
             set_type(tc.builtins().boolean());
             return;
         }

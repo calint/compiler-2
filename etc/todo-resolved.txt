@@ -1,6 +1,18 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 360 (2026-11-12, design: a condition parsed then
+    unwrapped to a value)
+    => done (2026-11-12): discarded the arithmetic-first parse: a leading
+       '(' is told apart only by parsing ('(a + 1)' and '(a == 1)'), so
+       'deduce_from_initializer' must still unwrap a parsed group ('var x
+       = (a + 1)' is an 'i64', tests 1015 and 1609); the alternative would
+       add a second way into 'expr_bool' and lookaheads, about 20 lines
+       more; instead one unwrap with one rule: 'expr_bool::
+       release_lone_operand' also looks inside a group and
+       'expr_bool_op::release_lone_operand' returns an optional; the const
+       'expr_bool::lone_operand' is removed; listings and errors unchanged;
+       -14 lines
 [x] easy: round 359 (2026-11-12, design: one way to decide each check)
     => done (2026-11-12): 'toc::overflow_options' renamed 'overflow_check',
        with an overload without a destination that 'use_at' and
