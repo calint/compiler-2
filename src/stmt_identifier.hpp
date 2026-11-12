@@ -559,24 +559,6 @@ class stmt_identifier final : public statement {
     // class methods
     //
 
-    // the path as written up to the element at 'elem_index', without its
-    // index, as the messages about that index name the array, e.g. 'hs[1].v'
-    // of 'hs[1].v[2]'
-    [[nodiscard]] auto array_text(const size_t elem_index) const
-        -> std::string {
-
-        std::stringstream ss;
-
-        for (size_t i{}; i < elem_index; ++i) {
-            elems_.at(i).source_to(ss);
-            elem_delims_tk_.at(i).source_to(ss);
-        }
-
-        elems_.at(elem_index).name_tk.source_to(ss);
-
-        return one_line_source::of(ss.view());
-    }
-
     // a whole array, e.g. the 'a' of 'array_length(a)' or of 'foo a'
     auto assert_array() const -> void {
         if (shape_.is_array()) {
@@ -916,6 +898,24 @@ class stmt_identifier final : public statement {
 
   private:
     stmt_identifier(parse_toc& tc, token tk, tokenizer& tz, path_reach reach);
+
+    // the path as written up to the element at 'elem_index', without its
+    // index, as the messages about that index name the array, e.g. 'hs[1].v'
+    // of 'hs[1].v[2]'
+    [[nodiscard]] auto array_text(const size_t elem_index) const
+        -> std::string {
+
+        std::stringstream ss;
+
+        for (size_t i{}; i < elem_index; ++i) {
+            elems_.at(i).source_to(ss);
+            elem_delims_tk_.at(i).source_to(ss);
+        }
+
+        elems_.at(elem_index).name_tk.source_to(ss);
+
+        return one_line_source::of(ss.view());
+    }
 
     // only signed types exist so a constant must fit the signed range
     auto assert_constant_fits(const ident_info& info,

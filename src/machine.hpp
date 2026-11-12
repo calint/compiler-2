@@ -1791,44 +1791,6 @@ class machine {
         }
     }
 
-    // the routines that the code marked used; a routine may mark another one
-    // it calls, see 'emit_runtime'
-    auto emit_used_routines() -> void {
-        const routine_labels& routines{target_.routines};
-
-        if (is_used(routines.report_line)) {
-            label(0, routines.report_line);
-            emit_report_line_routine();
-        }
-
-        emit_target_routines();
-
-        const bool is_sector_read_used{is_used(routines.sector_read)};
-        const bool is_sector_write_used{is_used(routines.sector_write)};
-
-        if (is_sector_read_used or is_sector_write_used) {
-            emit_sector_routines(is_sector_read_used, is_sector_write_used);
-        }
-
-        // note: after the routines that may use 'exit', e.g. the report of a
-        //       line
-
-        if (is_used(routines.exit)) {
-            label(0, routines.exit);
-            emit_exit_routine();
-        }
-
-        // note: after 'exit', so that 'exit' follows the report of a line,
-        //       which writes and exits, as its next code
-
-        const bool is_read_used{is_used(routines.read)};
-        const bool is_write_used{is_used(routines.write)};
-
-        if (is_read_used or is_write_used) {
-            emit_io_routines(is_read_used, is_write_used);
-        }
-    }
-
     // the label a failed check at 'src_loc_tk' jumps to, 'handler' marked
     // used: the handler, or with the line the stub of the line, which loads
     // the line for the entry of the handler for the file
@@ -1905,13 +1867,6 @@ class machine {
                 return allocated.index == index and
                        allocated.holder == register_pool::holder_kind::backend;
             });
-    }
-
-    // the register 'name' is allocated or protected, it may hold a live value
-    [[nodiscard]] auto
-    is_register_unavailable(const std::string_view name) const -> bool {
-
-        return state_.registers.is_unavailable(register_mask(name));
     }
 
     [[nodiscard]] auto is_used(const std::string_view routine) const -> bool {
@@ -2373,6 +2328,44 @@ class machine {
         }
     }
 
+    // the routines that the code marked used; a routine may mark another one
+    // it calls, see 'emit_runtime'
+    auto emit_used_routines() -> void {
+        const routine_labels& routines{target_.routines};
+
+        if (is_used(routines.report_line)) {
+            label(0, routines.report_line);
+            emit_report_line_routine();
+        }
+
+        emit_target_routines();
+
+        const bool is_sector_read_used{is_used(routines.sector_read)};
+        const bool is_sector_write_used{is_used(routines.sector_write)};
+
+        if (is_sector_read_used or is_sector_write_used) {
+            emit_sector_routines(is_sector_read_used, is_sector_write_used);
+        }
+
+        // note: after the routines that may use 'exit', e.g. the report of a
+        //       line
+
+        if (is_used(routines.exit)) {
+            label(0, routines.exit);
+            emit_exit_routine();
+        }
+
+        // note: after 'exit', so that 'exit' follows the report of a line,
+        //       which writes and exits, as its next code
+
+        const bool is_read_used{is_used(routines.read)};
+        const bool is_write_used{is_used(routines.write)};
+
+        if (is_read_used or is_write_used) {
+            emit_io_routines(is_read_used, is_write_used);
+        }
+    }
+
     // the lines of the failures of 'routine' by the file they are in
     [[nodiscard]] auto failure_lines_of(const std::string_view routine) const
         -> failure_lines {
@@ -2411,6 +2404,13 @@ class machine {
 
             pop_allocation(site, pool_index(reg.register_name()));
         }
+    }
+
+    // the register 'name' is allocated or protected, it may hold a live value
+    [[nodiscard]] auto
+    is_register_unavailable(const std::string_view name) const -> bool {
+
+        return state_.registers.is_unavailable(register_mask(name));
     }
 
     [[nodiscard]] auto is_scratch_register(const size_t index) const -> bool {

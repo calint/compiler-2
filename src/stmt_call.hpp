@@ -741,33 +741,6 @@ struct call_site {
         x.copy_value({tk, tc.indent()}, dst.operand(), result.operand());
     }
 
-    [[nodiscard]] auto has_argument_temporary() const -> bool {
-        for (size_t i{}; i < places.size(); ++i) {
-            if (is_argument_temporary(i)) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    // the result reaches the body through 'dst' unless it needs storage at
-    // its own type: a noinline body writes it through its address, so a
-    // register destination or one it widens into goes through a temporary;
-    // an inlined body needs storage only to pass it to a 'mut' parameter
-    // note: an inlined call widens its result in a register before
-    //       ('inline_call::compile_widened'), an empty 'dst' binds no result
-    [[nodiscard]] auto has_result_temporary(const destination& dst) const
-        -> bool {
-
-        if (func->is_inlined()) {
-            return dst.is_register() and func->uses().is_result_passed_as_mut();
-        }
-
-        return func->has_result() and
-               (dst.is_register() or result_type_differs(dst, *func));
-    }
-
     // the argument at 'index' is made in a temporary of the call that the
     // body names: a value without a place, except one of a built-in type that
     // an inlined body binds as a constant or a register, see
@@ -859,6 +832,33 @@ struct call_site {
                 .storage{tc.storage_of(name, access_path::whole_variable())},
                 .text{name},
             });
+    }
+
+    [[nodiscard]] auto has_argument_temporary() const -> bool {
+        for (size_t i{}; i < places.size(); ++i) {
+            if (is_argument_temporary(i)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    // the result reaches the body through 'dst' unless it needs storage at
+    // its own type: a noinline body writes it through its address, so a
+    // register destination or one it widens into goes through a temporary;
+    // an inlined body needs storage only to pass it to a 'mut' parameter
+    // note: an inlined call widens its result in a register before
+    //       ('inline_call::compile_widened'), an empty 'dst' binds no result
+    [[nodiscard]] auto has_result_temporary(const destination& dst) const
+        -> bool {
+
+        if (func->is_inlined()) {
+            return dst.is_register() and func->uses().is_result_passed_as_mut();
+        }
+
+        return func->has_result() and
+               (dst.is_register() or result_type_differs(dst, *func));
     }
 
     [[nodiscard]] auto is_located_in_call(const compile_error& e) const

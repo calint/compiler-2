@@ -54,8 +54,9 @@ machine.hpp      one virtual method per operation the front end needs,
   |              machine_rv32i_qemu.hpp and machine_rv32i_fpga.hpp
   |              (machine_rv32i_bare_metal.hpp)
   v
-assembler.hpp    buffers the lines, optimizes the jumps, removes reloads
-                 and on rv32i register copies
+assembler.hpp    buffers the lines, optimizes the jumps, removes reloads,
+                 on rv32i register copies and on x86_64 tests after a
+                 'setcc'
                  assembler_x86_64.hpp: nasm text
                  assembler_rv32i.hpp: llvm assembler text and the flat
                  binary image of the rv32i targets
@@ -234,7 +235,9 @@ Invariants the code relies on:
    right after a store of its register to the same address is removed, also
    with '--nopt' ('assembler::remove_reloads'), on rv32i a register copy is
    removed when its reads up to the next write of the register in straight
-   code can take the source ('assembler::remove_copies') and the jumps that
+   code can take the source ('assembler::remove_copies'), on x86_64 the
+   test of what a 'setcc' just stored is removed, the branch after it takes
+   the condition ('assembler::remove_retests'), and on rv32i the jumps that
    do not reach their targets grow ('assembler_rv32i::resolve_jumps'; one
    without a free scratch register borrows 't0', restored at a landing before
    the target, so '--nopt' decides no verdict), the report is added as
@@ -495,7 +498,7 @@ call that gives 'x' 4 elements is accepted (etc/todo.txt).
 ### 1.6 Reports
 
 After the code, as comments: noinline functions, uninstantiated generics, jump
-optimizations, removed reloads and copies, usage ('report_renderer' in
+optimizations, removed reloads, copies and tests, usage ('report_renderer' in
 'program.hpp'), and with '--report=registers' the use of registers at the
 busiest point ('register_report.hpp').
 
@@ -1738,9 +1741,10 @@ depends on code not compiled yet, both are compiled and measured (chapter 5).
 
 Cost: no optimization across statements, e.g. a value stored and loaded again
 into another register by the next statement; only a load into the register
-just stored is removed ('assembler::remove_reloads'; 'etc/todo.txt' section 2)
-and, on rv32i, a register copy whose reads can take its source
-('assembler::remove_copies').
+just stored is removed ('assembler::remove_reloads'; 'etc/todo.txt' section 2),
+on rv32i a register copy whose reads can take its source
+('assembler::remove_copies') and on x86_64 the test of a condition that a
+'setcc' just stored ('assembler::remove_retests').
 
 ### 7.2 A node parses itself and keeps every token
 
@@ -2241,8 +2245,10 @@ outside 'src' included:
   an exit code of its own in 'machine::failure_handlers_' ('machine.hpp'), its
   row in 'check_names' and its line in 'usage_format' ('main.cpp'), also
   named in the 'noub' entry there and, when the handler takes the line, in
-  the 'line' entry; the operation that takes the check as a 'runtime_check' in both
-  backends, its tests in 'qa/coverage/cases.sh' (the exit code of a run),
+  the 'line' entry; the operation that takes the check as a 'runtime_check'
+  in both backends and its caller in the front end, which enables it from
+  'toc::checks' (1.5), e.g. 'expr_arith::emit_operation'; its tests in
+  'qa/coverage/cases.sh' (the exit code of a run),
   the tables of chapter 8 (the row of 8.1 and the 'noub' list below it, the
   exit code in 8.2), the lists of checks and of exit codes in
   'etc/readme/README.1.md', whose panics 'qa/lint/check-doc-examples.py'

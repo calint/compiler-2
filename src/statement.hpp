@@ -546,6 +546,11 @@ class statement {
                            in_quotes(root));
     }
 
+  private:
+    //
+    // statics
+    //
+
     [[noreturn]] static auto throw_narrowed(const token& src_loc_tk,
                                             const std::string_view source,
                                             const type& src_type,

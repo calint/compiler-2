@@ -1,6 +1,31 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 401 (2026-11-13, a confirming round. design by evidence
+    over all of 'src': the callers of every member, clones of 8 lines,
+    branches an assert excludes, error messages without a test;
+    readability: a newcomer's first day by the reading order of 1.1 and
+    three tasks (a new operator, a new built-in, a new check); bug hunt:
+    the passes after code generation)
+    => done (2026-11-13): six members private, each used only by its own
+       class: 'machine::emit_used_routines' and 'is_register_unavailable',
+       'statement::throw_narrowed', 'call_site::has_argument_temporary'
+       and 'has_result_temporary', 'stmt_identifier::array_text'; no
+       function without a caller (2245 declarations), no clone to share
+       (22803 lines), no unreachable branch, no reachable error without a
+       test (the failure of '--reproduce-source' is reached only by a
+       defect of the compiler)
+    => 'etc/docs/README.md': the x86_64 pass 'assembler::remove_retests'
+       (round 348) was missing from the pipeline of 1.1, the passes of
+       1.2, the report of 1.6 and the cost of 7.1; chapter 9 "a check"
+       names the caller in the front end that enables it; the reading
+       order, the calls from 'main', the class maps and the three tasks
+       held
+    => bug hunt (about 22000 programs against a model of control flow,
+       the image against llvm-mc and ld.lld, cascades of grown jumps,
+       immediates at the limits of the formats, the footer counts of
+       every test, the exact reach of a branch and a jump; run again on
+       round 400): no defect
 [x] easy: round 400 (2026-11-13, design: the bodies of the two backends,
     the assemblers and their passes)
     => done (2026-11-13): a branch has one representation, the record of
