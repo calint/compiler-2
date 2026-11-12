@@ -56,17 +56,18 @@ if [ -n "$RV32I" ]; then
     COMMENT='#'
 fi
 awk -v comment="$COMMENT" '$0 !~ "^[[:space:]]*" comment && $0 !~ /^[[:space:]]*$/ { print }' "$ASM" >"$ASM_NO_COMMENTS"
+# the count of the footer of the listing: machine instructions, a pseudo
+# instruction as those it expands to, no directive or data
+awk -v comment="$COMMENT" '$1 == comment && $2 == "instructions:" { print "instructions: " $3 }' "$ASM"
 if [ -n "$RV32I" ]; then
     awk '
 		/^[[:space:]]*[[:alpha:]][[:alnum:]]*[[:space:]]/ {
-			instructions++
 			if ($1 == "j") jumps++
 			if ($1 ~ /^b/) branches++
 		}
-		END { print "instructions: " instructions+0; print "jmp: " jumps+0; print "jcc: " branches+0 }
+		END { print "jmp: " jumps+0; print "jcc: " branches+0 }
 	' "$ASM_NO_COMMENTS"
 else
-    grep -v -e'^\s*$' -e'^.*:\s*$' "$ASM_NO_COMMENTS" | wc | awk '{print "instructions: " $1}'
     grep -E '^\s*jmp\s.*.*$' "$ASM" | wc | awk '{print "jmp: " $1}'
     grep -E '^\s*j[a-z]{1,2}\s' "$ASM" | grep -v '^\s*jmp\s' | wc | awk '{print "jcc: " $1}'
 fi

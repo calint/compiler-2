@@ -30,7 +30,7 @@ addi s0, s0, 2032
 #
 main:
     # [codegen-inefficiencies.baz:62:5] var x = 1
-    # [codegen-inefficiencies.baz:62:9] x: i32 (4 B @ [s0 - 2032])
+    # [codegen-inefficiencies.baz:62:9] x: int (4 B @ [s0 - 2032])
     # [codegen-inefficiencies.baz:62:9] x = 1
     # [codegen-inefficiencies.baz:62:13] x = 1
     # [codegen-inefficiencies.baz:62:13] src: folded constant '1'
@@ -47,7 +47,7 @@ main:
     sw zero, -2020(s0)
     sw zero, -2016(s0)
     # [codegen-inefficiencies.baz:64:5] var arr3 = []{ 3, 5 }
-    # [codegen-inefficiencies.baz:64:9] arr3: i32[2] (8 B @ [s0 - 2012])
+    # [codegen-inefficiencies.baz:64:9] arr3: int[2] (8 B @ [s0 - 2012])
     # [codegen-inefficiencies.baz:64:9] arr3 = []{ 3, 5 }
     # [codegen-inefficiencies.baz:64:18] allocate scratch register -> t0
     li t0, 3
@@ -196,7 +196,7 @@ main:
     sw t0, -1944(s0)
     # [codegen-inefficiencies.baz:77:30] free scratch register t0
     # [codegen-inefficiencies.baz:83:5] var ix = 1
-    # [codegen-inefficiencies.baz:83:9] ix: i32 (4 B @ [s0 - 1724])
+    # [codegen-inefficiencies.baz:83:9] ix: int (4 B @ [s0 - 1724])
     # [codegen-inefficiencies.baz:83:9] ix = 1
     # [codegen-inefficiencies.baz:83:14] ix = 1
     # [codegen-inefficiencies.baz:83:14] src: folded constant '1'
@@ -243,7 +243,7 @@ main:
     # [codegen-inefficiencies.baz:85:31] free scratch register t1
     # [codegen-inefficiencies.baz:85:5] free scratch register t0
     # [codegen-inefficiencies.baz:87:5] var a = -x
-    # [codegen-inefficiencies.baz:87:9] a: i32 (4 B @ [s0 - 1720])
+    # [codegen-inefficiencies.baz:87:9] a: int (4 B @ [s0 - 1720])
     # [codegen-inefficiencies.baz:87:9] a = -x
     # [codegen-inefficiencies.baz:87:13] kept the second of two versions of 5 and 3 instructions, the smaller
     # [codegen-inefficiencies.baz:87:13] allocate scratch register -> t0
@@ -678,7 +678,7 @@ func.print_num:
 # allocate named register s1
     addi sp, sp, -16
     sw ra, 0(sp)
-    # [codegen-inefficiencies.baz:44:25] num: i32 (address @ [s1])
+    # [codegen-inefficiencies.baz:44:25] num: int (address @ [s1])
     # [codegen-inefficiencies.baz:45:5] var buf = i8[20]{}
     # [codegen-inefficiencies.baz:45:9] buf: i8[20] (20 B @ [s1 + 4])
     # [codegen-inefficiencies.baz:45:9] buf = i8[20]{}
@@ -689,7 +689,7 @@ func.print_num:
     sw zero, 16(s1)
     sw zero, 20(s1)
     # [codegen-inefficiencies.baz:46:5] var n = num
-    # [codegen-inefficiencies.baz:46:9] n: i32 (4 B @ [s1 + 24])
+    # [codegen-inefficiencies.baz:46:9] n: int (4 B @ [s1 + 24])
     # [codegen-inefficiencies.baz:46:9] n = num
     # [codegen-inefficiencies.baz:46:13] num
     # [codegen-inefficiencies.baz:46:13] allocate scratch register -> t0
@@ -700,7 +700,7 @@ func.print_num:
     sw t0, 24(s1)
     # [codegen-inefficiencies.baz:46:13] free scratch register t0
     # [codegen-inefficiencies.baz:47:5] var i = 20
-    # [codegen-inefficiencies.baz:47:9] i: i32 (4 B @ [s1 + 28])
+    # [codegen-inefficiencies.baz:47:9] i: int (4 B @ [s1 + 28])
     # [codegen-inefficiencies.baz:47:9] i = 20
     # [codegen-inefficiencies.baz:47:13] i = 20
     # [codegen-inefficiencies.baz:47:13] src: folded constant '20'
@@ -779,8 +779,7 @@ func.print_num:
     # [codegen-inefficiencies.baz:58:19] src: folded constant '20'
     li a2, 20
     # [codegen-inefficiencies.baz:58:5] allocate named register a7
-    li a7, 64
-    ecall
+    call a7, .Lbaz_write
     # [codegen-inefficiencies.baz:58:5] free named register a7
     # [codegen-inefficiencies.baz:58:5] free named register a2
     # [codegen-inefficiencies.baz:58:5] free named register a1
@@ -822,6 +821,17 @@ func.print_num:
 .Lbaz_exit:
     li a7, 93
     ecall
+.Lbaz_write:
+    addi a5, a0, -1
+    li a4, 2
+    bgeu a5, a4, 5f
+    mv a6, a7
+    li a7, 64
+    ecall
+    jr a6
+5:
+    li a0, -9
+    jr a7
 
 .data
 .balign 16
@@ -844,9 +854,10 @@ vars.end:
 # inverted branches over jumps: 2
 # removed reloads after stores: 5
 #      removed register copies: 1
+#    removed tests after setcc: 0
 # max scratch registers in use: 4
 #            max scopes in use: 7
 #                     dat size: 0 B
 #              dat var padding: 0 B
 #           max body vars size: 364 B
-#                 instructions: 253
+#                 instructions: 262

@@ -957,8 +957,8 @@ class inline_call final {
 
         throw compile_error{
             call_.name_tk,
-            std::format("inlined calls and blocks are nested too deep, the "
-                        "limit is {} scopes, declare a function 'noinline'",
+            std::format("inlined call nested too deep, it is made inside {} "
+                        "open blocks and calls, declare a function 'noinline'",
                         max_scope_count_),
             compile_error::error_kind::inlining_limit,
         };

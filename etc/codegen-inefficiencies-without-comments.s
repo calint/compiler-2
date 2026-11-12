@@ -312,8 +312,7 @@ func.print_num:
     li a0, 1
     addi a1, s1, 4
     li a2, 20
-    li a7, 64
-    ecall
+    call a7, .Lbaz_write
     lw ra, 0(sp)
     addi sp, sp, 16
     ret
@@ -350,6 +349,17 @@ func.print_num:
 .Lbaz_exit:
     li a7, 93
     ecall
+.Lbaz_write:
+    addi a5, a0, -1
+    li a4, 2
+    bgeu a5, a4, 5f
+    mv a6, a7
+    li a7, 64
+    ecall
+    jr a6
+5:
+    li a0, -9
+    jr a7
 .data
 .balign 16
 dat:

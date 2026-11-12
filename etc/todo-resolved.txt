@@ -1,6 +1,22 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 384 (2026-11-12, bug hunt: what the compiler reports:
+    the line of a panic under '--checks=line', the footer and
+    '--report=registers' numbers, the locations of the listing comments,
+    '--reproduce-source')
+    => done (2026-11-12): no compiler defect (about 7400 generated programs
+       against a model of the first failing operation and its line, every
+       variant inline, noinline and included, four targets, '--nopt' and
+       '--versions'; the report numbers equal what each test listing uses);
+       'run.sh' printed its own 'instructions:' count (x86_64 counted data
+       and directives, rv32i a pseudo instruction once), it prints the
+       footer's; the scope limit is checked where an inlined call is
+       entered, so the message said "the limit is 256 scopes" while an
+       accepted program reports more ('max scopes in use: 257' in 2911):
+       now "inlined call nested too deep, it is made inside 256 open blocks
+       and calls" (0885, 2445); 'prog.s', the codegen listings and README.md
+       regenerated (they predated round 354)
 [x] easy: round 383 (2026-11-12, design: a first-time architect's single
     change that would most simplify the design)
     => done (2026-11-12): no large change is better than the decisions of

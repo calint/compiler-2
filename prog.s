@@ -82,8 +82,7 @@ main:
         if.38.24.190.5:
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.190.5:
-        test r15b, r15b
-        jne if.38.24.190.5.end
+        je if.38.24.190.5.end
         if.38.24.190.5.code:
 ;           [prog.baz:38:34] exit(1)
 ;           [prog.baz:38:34] allocate named register rdi
@@ -112,8 +111,7 @@ main:
         if.38.24.193.5:
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.193.5:
-        test r15b, r15b
-        jne if.38.24.193.5.end
+        je if.38.24.193.5.end
         if.38.24.193.5.code:
 ;           [prog.baz:38:34] exit(1)
 ;           [prog.baz:38:34] allocate named register rdi
@@ -237,8 +235,7 @@ main:
         if.38.24.208.5:
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.208.5:
-        test r15b, r15b
-        jne if.38.24.208.5.end
+        je if.38.24.208.5.end
         if.38.24.208.5.code:
 ;           [prog.baz:38:34] exit(1)
 ;           [prog.baz:38:34] allocate named register rdi
@@ -270,8 +267,7 @@ main:
         if.38.24.209.5:
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.209.5:
-        test r15b, r15b
-        jne if.38.24.209.5.end
+        je if.38.24.209.5.end
         if.38.24.209.5.code:
 ;           [prog.baz:38:34] exit(1)
 ;           [prog.baz:38:34] allocate named register rdi
@@ -303,8 +299,7 @@ main:
         if.38.24.210.5:
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.210.5:
-        test r15b, r15b
-        jne if.38.24.210.5.end
+        je if.38.24.210.5.end
         if.38.24.210.5.code:
 ;           [prog.baz:38:34] exit(1)
 ;           [prog.baz:38:34] allocate named register rdi
@@ -336,8 +331,7 @@ main:
         if.38.24.211.5:
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.211.5:
-        test r15b, r15b
-        jne if.38.24.211.5.end
+        je if.38.24.211.5.end
         if.38.24.211.5.code:
 ;           [prog.baz:38:34] exit(1)
 ;           [prog.baz:38:34] allocate named register rdi
@@ -371,8 +365,7 @@ main:
         if.38.24.212.5:
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.212.5:
-        test r15b, r15b
-        jne if.38.24.212.5.end
+        je if.38.24.212.5.end
         if.38.24.212.5.code:
 ;           [prog.baz:38:34] exit(1)
 ;           [prog.baz:38:34] allocate named register rdi
@@ -412,8 +405,7 @@ main:
         if.38.24.215.5:
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.215.5:
-        test r15b, r15b
-        jne if.38.24.215.5.end
+        je if.38.24.215.5.end
         if.38.24.215.5.code:
 ;           [prog.baz:38:34] exit(1)
 ;           [prog.baz:38:34] allocate named register rdi
@@ -451,8 +443,7 @@ main:
         if.38.24.216.5:
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.216.5:
-        test r15b, r15b
-        jne if.38.24.216.5.end
+        je if.38.24.216.5.end
         if.38.24.216.5.code:
 ;           [prog.baz:38:34] exit(1)
 ;           [prog.baz:38:34] allocate named register rdi
@@ -533,8 +524,7 @@ main:
         if.38.24.226.5:
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.226.5:
-        test r15b, r15b
-        jne if.38.24.226.5.end
+        je if.38.24.226.5.end
         if.38.24.226.5.code:
 ;           [prog.baz:38:34] exit(1)
 ;           [prog.baz:38:34] allocate named register rdi
@@ -572,8 +562,7 @@ main:
         if.38.24.231.5:
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.231.5:
-        test r15b, r15b
-        jne if.38.24.231.5.end
+        je if.38.24.231.5.end
         if.38.24.231.5.code:
 ;           [prog.baz:38:34] exit(1)
 ;           [prog.baz:38:34] allocate named register rdi
@@ -604,8 +593,7 @@ main:
         if.38.24.239.5:
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.239.5:
-        test r15b, r15b
-        jne if.38.24.239.5.end
+        je if.38.24.239.5.end
         if.38.24.239.5.code:
 ;           [prog.baz:38:34] exit(1)
 ;           [prog.baz:38:34] allocate named register rdi
@@ -693,8 +681,7 @@ main:
         if.38.24.247.5:
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.247.5:
-        test r15b, r15b
-        jne if.38.24.247.5.end
+        je if.38.24.247.5.end
         if.38.24.247.5.code:
 ;           [prog.baz:38:34] exit(1)
 ;           [prog.baz:38:34] allocate named register rdi
@@ -719,8 +706,7 @@ main:
         if.38.24.248.5:
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.248.5:
-        test r15b, r15b
-        jne if.38.24.248.5.end
+        je if.38.24.248.5.end
         if.38.24.248.5.code:
 ;           [prog.baz:38:34] exit(1)
 ;           [prog.baz:38:34] allocate named register rdi
@@ -773,8 +759,7 @@ main:
         if.38.24.251.5:
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.251.5:
-        test r15b, r15b
-        jne if.38.24.251.5.end
+        je if.38.24.251.5.end
         if.38.24.251.5.code:
 ;           [prog.baz:38:34] exit(1)
 ;           [prog.baz:38:34] allocate named register rdi
@@ -831,8 +816,7 @@ main:
         if.38.24.259.5:
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.259.5:
-        cmp byte [rbp + 480], 0
-        jne if.38.24.259.5.end
+        je if.38.24.259.5.end
         if.38.24.259.5.code:
 ;           [prog.baz:38:34] exit(1)
 ;           [prog.baz:38:34] allocate named register rdi
@@ -876,8 +860,7 @@ main:
         if.38.24.262.5:
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.262.5:
-        test r15b, r15b
-        jne if.38.24.262.5.end
+        je if.38.24.262.5.end
         if.38.24.262.5.code:
 ;           [prog.baz:38:34] exit(1)
 ;           [prog.baz:38:34] allocate named register rdi
@@ -923,8 +906,7 @@ main:
         if.38.24.265.5:
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.265.5:
-        test r15b, r15b
-        jne if.38.24.265.5.end
+        je if.38.24.265.5.end
         if.38.24.265.5.code:
 ;           [prog.baz:38:34] exit(1)
 ;           [prog.baz:38:34] allocate named register rdi
@@ -1019,8 +1001,7 @@ main:
         if.38.24.274.5:
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.274.5:
-        test r15b, r15b
-        jne if.38.24.274.5.end
+        je if.38.24.274.5.end
         if.38.24.274.5.code:
 ;           [prog.baz:38:34] exit(1)
 ;           [prog.baz:38:34] allocate named register rdi
@@ -1054,8 +1035,7 @@ main:
         if.38.24.277.5:
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.277.5:
-        test r15b, r15b
-        jne if.38.24.277.5.end
+        je if.38.24.277.5.end
         if.38.24.277.5.code:
 ;           [prog.baz:38:34] exit(1)
 ;           [prog.baz:38:34] allocate named register rdi
@@ -1082,7 +1062,7 @@ main:
 ;   [prog.baz:280:9] i: i64 (r14)
 ;   [prog.baz:280:9] const n = 2
 ;   [prog.baz:280:5] initialize counter i
-    mov r14, 0
+    xor r14d, r14d
     foo.280.5:
 ;       [prog.baz:281:9] e = e + i + n
 ;       [prog.baz:281:13] kept the first of two versions of 4 and 6 instructions, the smaller
@@ -1117,8 +1097,7 @@ main:
         if.38.24.283.5:
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.283.5:
-        test r15b, r15b
-        jne if.38.24.283.5.end
+        je if.38.24.283.5.end
         if.38.24.283.5.code:
 ;           [prog.baz:38:34] exit(1)
 ;           [prog.baz:38:34] allocate named register rdi
@@ -1144,8 +1123,7 @@ main:
         if.38.24.284.5:
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.284.5:
-        test r15b, r15b
-        jne if.38.24.284.5.end
+        je if.38.24.284.5.end
         if.38.24.284.5.code:
 ;           [prog.baz:38:34] exit(1)
 ;           [prog.baz:38:34] allocate named register rdi
@@ -1190,8 +1168,7 @@ main:
         if.38.24.295.5:
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.295.5:
-        test r15b, r15b
-        jne if.38.24.295.5.end
+        je if.38.24.295.5.end
         if.38.24.295.5.code:
 ;           [prog.baz:38:34] exit(1)
 ;           [prog.baz:38:34] allocate named register rdi
@@ -1216,8 +1193,7 @@ main:
         if.38.24.296.5:
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.296.5:
-        test r15b, r15b
-        jne if.38.24.296.5.end
+        je if.38.24.296.5.end
         if.38.24.296.5.code:
 ;           [prog.baz:38:34] exit(1)
 ;           [prog.baz:38:34] allocate named register rdi
@@ -1263,8 +1239,7 @@ main:
         if.38.24.301.5:
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.301.5:
-        test r15b, r15b
-        jne if.38.24.301.5.end
+        je if.38.24.301.5.end
         if.38.24.301.5.code:
 ;           [prog.baz:38:34] exit(1)
 ;           [prog.baz:38:34] allocate named register rdi
@@ -1304,7 +1279,6 @@ main:
         if.38.24.306.5:
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.306.5:
-        test r15b, r15b
         jne if.38.24.306.5.end
         if.38.24.306.5.code:
 ;           [prog.baz:38:34] exit(1)
@@ -1353,8 +1327,7 @@ main:
         if.38.24.310.5:
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.310.5:
-        test r15b, r15b
-        jne if.38.24.310.5.end
+        je if.38.24.310.5.end
         if.38.24.310.5.code:
 ;           [prog.baz:38:34] exit(1)
 ;           [prog.baz:38:34] allocate named register rdi
@@ -1400,8 +1373,7 @@ main:
         if.38.24.314.5:
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.314.5:
-        test r15b, r15b
-        jne if.38.24.314.5.end
+        je if.38.24.314.5.end
         if.38.24.314.5.code:
 ;           [prog.baz:38:34] exit(1)
 ;           [prog.baz:38:34] allocate named register rdi
@@ -1454,8 +1426,7 @@ main:
         if.38.24.318.5:
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.318.5:
-        test r15b, r15b
-        jne if.38.24.318.5.end
+        je if.38.24.318.5.end
         if.38.24.318.5.code:
 ;           [prog.baz:38:34] exit(1)
 ;           [prog.baz:38:34] allocate named register rdi
@@ -1493,8 +1464,7 @@ main:
         if.38.24.321.5:
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.321.5:
-        test r15b, r15b
-        jne if.38.24.321.5.end
+        je if.38.24.321.5.end
         if.38.24.321.5.code:
 ;           [prog.baz:38:34] exit(1)
 ;           [prog.baz:38:34] allocate named register rdi
@@ -1552,8 +1522,7 @@ main:
         if.38.24.325.5:
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.325.5:
-        test r15b, r15b
-        jne if.38.24.325.5.end
+        je if.38.24.325.5.end
         if.38.24.325.5.code:
 ;           [prog.baz:38:34] exit(1)
 ;           [prog.baz:38:34] allocate named register rdi
@@ -1598,8 +1567,7 @@ main:
         if.38.24.328.5:
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.328.5:
-        test r15b, r15b
-        jne if.38.24.328.5.end
+        je if.38.24.328.5.end
         if.38.24.328.5.code:
 ;           [prog.baz:38:34] exit(1)
 ;           [prog.baz:38:34] allocate named register rdi
@@ -1642,8 +1610,7 @@ main:
         if.38.24.334.5:
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.334.5:
-        test r15b, r15b
-        jne if.38.24.334.5.end
+        je if.38.24.334.5.end
         if.38.24.334.5.code:
 ;           [prog.baz:38:34] exit(1)
 ;           [prog.baz:38:34] allocate named register rdi
@@ -1668,8 +1635,7 @@ main:
         if.38.24.335.5:
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.335.5:
-        test r15b, r15b
-        jne if.38.24.335.5.end
+        je if.38.24.335.5.end
         if.38.24.335.5.code:
 ;           [prog.baz:38:34] exit(1)
 ;           [prog.baz:38:34] allocate named register rdi
@@ -1704,8 +1670,7 @@ main:
         if.38.24.338.5:
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.338.5:
-        test r15b, r15b
-        jne if.38.24.338.5.end
+        je if.38.24.338.5.end
         if.38.24.338.5.code:
 ;           [prog.baz:38:34] exit(1)
 ;           [prog.baz:38:34] allocate named register rdi
@@ -1747,8 +1712,7 @@ main:
         if.38.24.339.5:
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.339.5:
-        test r15b, r15b
-        jne if.38.24.339.5.end
+        je if.38.24.339.5.end
         if.38.24.339.5.code:
 ;           [prog.baz:38:34] exit(1)
 ;           [prog.baz:38:34] allocate named register rdi
@@ -1813,8 +1777,7 @@ main:
         if.38.24.345.5:
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.345.5:
-        test r15b, r15b
-        jne if.38.24.345.5.end
+        je if.38.24.345.5.end
         if.38.24.345.5.code:
 ;           [prog.baz:38:34] exit(1)
 ;           [prog.baz:38:34] allocate named register rdi
@@ -1839,8 +1802,7 @@ main:
         if.38.24.346.5:
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.346.5:
-        test r15b, r15b
-        jne if.38.24.346.5.end
+        je if.38.24.346.5.end
         if.38.24.346.5.code:
 ;           [prog.baz:38:34] exit(1)
 ;           [prog.baz:38:34] allocate named register rdi
@@ -1865,8 +1827,7 @@ main:
         if.38.24.347.5:
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.347.5:
-        test r15b, r15b
-        jne if.38.24.347.5.end
+        je if.38.24.347.5.end
         if.38.24.347.5.code:
 ;           [prog.baz:38:34] exit(1)
 ;           [prog.baz:38:34] allocate named register rdi
@@ -1920,8 +1881,7 @@ main:
         if.38.24.351.5:
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.351.5:
-        test r15b, r15b
-        jne if.38.24.351.5.end
+        je if.38.24.351.5.end
         if.38.24.351.5.code:
 ;           [prog.baz:38:34] exit(1)
 ;           [prog.baz:38:34] allocate named register rdi
@@ -1946,8 +1906,7 @@ main:
         if.38.24.352.5:
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.352.5:
-        test r15b, r15b
-        jne if.38.24.352.5.end
+        je if.38.24.352.5.end
         if.38.24.352.5.code:
 ;           [prog.baz:38:34] exit(1)
 ;           [prog.baz:38:34] allocate named register rdi
@@ -1985,8 +1944,7 @@ main:
         if.38.24.355.5:
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.355.5:
-        test r15b, r15b
-        jne if.38.24.355.5.end
+        je if.38.24.355.5.end
         if.38.24.355.5.code:
 ;           [prog.baz:38:34] exit(1)
 ;           [prog.baz:38:34] allocate named register rdi
@@ -2011,8 +1969,7 @@ main:
         if.38.24.356.5:
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.356.5:
-        test r15b, r15b
-        jne if.38.24.356.5.end
+        je if.38.24.356.5.end
         if.38.24.356.5.code:
 ;           [prog.baz:38:34] exit(1)
 ;           [prog.baz:38:34] allocate named register rdi
@@ -2037,8 +1994,7 @@ main:
         if.38.24.357.5:
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.357.5:
-        test r15b, r15b
-        jne if.38.24.357.5.end
+        je if.38.24.357.5.end
         if.38.24.357.5.code:
 ;           [prog.baz:38:34] exit(1)
 ;           [prog.baz:38:34] allocate named register rdi
@@ -2076,8 +2032,7 @@ main:
         if.38.24.360.5:
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.360.5:
-        test r15b, r15b
-        jne if.38.24.360.5.end
+        je if.38.24.360.5.end
         if.38.24.360.5.code:
 ;           [prog.baz:38:34] exit(1)
 ;           [prog.baz:38:34] allocate named register rdi
@@ -2115,8 +2070,7 @@ main:
         if.38.24.362.5:
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.362.5:
-        test r15b, r15b
-        jne if.38.24.362.5.end
+        je if.38.24.362.5.end
         if.38.24.362.5.code:
 ;           [prog.baz:38:34] exit(1)
 ;           [prog.baz:38:34] allocate named register rdi
@@ -2159,8 +2113,7 @@ main:
         if.38.24.372.5:
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.372.5:
-        test r15b, r15b
-        jne if.38.24.372.5.end
+        je if.38.24.372.5.end
         if.38.24.372.5.code:
 ;           [prog.baz:38:34] exit(1)
 ;           [prog.baz:38:34] allocate named register rdi
@@ -2217,8 +2170,7 @@ main:
         if.38.24.374.5:
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.374.5:
-        test r15b, r15b
-        jne if.38.24.374.5.end
+        je if.38.24.374.5.end
         if.38.24.374.5.code:
 ;           [prog.baz:38:34] exit(1)
 ;           [prog.baz:38:34] allocate named register rdi
@@ -2273,8 +2225,7 @@ main:
         if.38.24.377.5:
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.377.5:
-        test r15b, r15b
-        jne if.38.24.377.5.end
+        je if.38.24.377.5.end
         if.38.24.377.5.code:
 ;           [prog.baz:38:34] exit(1)
 ;           [prog.baz:38:34] allocate named register rdi
@@ -2317,8 +2268,7 @@ main:
         if.38.24.382.5:
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.382.5:
-        test r15b, r15b
-        jne if.38.24.382.5.end
+        je if.38.24.382.5.end
         if.38.24.382.5.code:
 ;           [prog.baz:38:34] exit(1)
 ;           [prog.baz:38:34] allocate named register rdi
@@ -2371,8 +2321,7 @@ main:
         if.38.24.391.5:
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.391.5:
-        test r15b, r15b
-        jne if.38.24.391.5.end
+        je if.38.24.391.5.end
         if.38.24.391.5.code:
 ;           [prog.baz:38:34] exit(1)
 ;           [prog.baz:38:34] allocate named register rdi
@@ -2393,9 +2342,9 @@ main:
 ;   [prog.baz:394:14] worlds[1].locations
 ;   [prog.baz:392:12] allocate named register rsi
 ;   [prog.baz:392:12] allocate named register rdi
-;   [prog.baz:392:12] allocate named register rcx
     lea rsi, [rbp + 752]
     lea rdi, [rbp + 816]
+;   [prog.baz:392:12] allocate named register rcx
     mov rcx, 8
     repe cmpsq
     sete r15b
@@ -2408,8 +2357,7 @@ main:
         if.38.24.392.5:
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.392.5:
-        test r15b, r15b
-        jne if.38.24.392.5.end
+        je if.38.24.392.5.end
         if.38.24.392.5.code:
 ;           [prog.baz:38:34] exit(1)
 ;           [prog.baz:38:34] allocate named register rdi
@@ -2450,8 +2398,7 @@ main:
         if.38.24.400.5:
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.400.5:
-        test r15b, r15b
-        jne if.38.24.400.5.end
+        je if.38.24.400.5.end
         if.38.24.400.5.code:
 ;           [prog.baz:38:34] exit(1)
 ;           [prog.baz:38:34] allocate named register rdi
@@ -2476,8 +2423,7 @@ main:
         if.38.24.401.5:
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.401.5:
-        test r15b, r15b
-        jne if.38.24.401.5.end
+        je if.38.24.401.5.end
         if.38.24.401.5.code:
 ;           [prog.baz:38:34] exit(1)
 ;           [prog.baz:38:34] allocate named register rdi
@@ -2523,8 +2469,7 @@ main:
         lea rsi, [rbp]
         mov rdx, 21
 ;       [prog.baz:42:5] allocate named register rax
-        mov rax, 1
-        syscall
+        call baz_write
 ;       [prog.baz:42:5] free named register rax
 ;       [prog.baz:42:5] free named register rdx
 ;       [prog.baz:42:5] free named register rsi
@@ -2570,8 +2515,7 @@ main:
             lea rsi, [rbp + 61]
             mov rdx, 2
 ;           [prog.baz:42:5] allocate named register rax
-            mov rax, 1
-            syscall
+            call baz_write
 ;           [prog.baz:42:5] free named register rax
 ;           [prog.baz:42:5] free named register rdx
 ;           [prog.baz:42:5] free named register rsi
@@ -2591,8 +2535,7 @@ main:
             lea rsi, [rbp + 21]
             mov rdx, 12
 ;           [prog.baz:42:5] allocate named register rax
-            mov rax, 1
-            syscall
+            call baz_write
 ;           [prog.baz:42:5] free named register rax
 ;           [prog.baz:42:5] free named register rdx
 ;           [prog.baz:42:5] free named register rsi
@@ -2613,12 +2556,11 @@ main:
 ;           [prog.baz:89:18] allocate named register rdx
 ;           [prog.baz:89:23] rdi = 0
 ;           [prog.baz:89:23] src: folded constant '0'
-            mov rdi, 0
+            xor edi, edi
             lea rsi, [rbp + 1289]
             mov rdx, 127
 ;           [prog.baz:89:18] allocate named register rax
-            mov rax, 0
-            syscall
+            call baz_read
             mov qword [rbp + 1416], rax
 ;           [prog.baz:89:18] free named register rax
 ;           [prog.baz:89:18] free named register rdx
@@ -2664,8 +2606,7 @@ main:
                 lea rsi, [rbp + 33]
                 mov rdx, 20
 ;               [prog.baz:42:5] allocate named register rax
-                mov rax, 1
-                syscall
+                call baz_write
 ;               [prog.baz:42:5] free named register rax
 ;               [prog.baz:42:5] free named register rdx
 ;               [prog.baz:42:5] free named register rsi
@@ -2692,8 +2633,7 @@ main:
                     lea rsi, [rbp + 53]
                     mov rdx, 6
 ;                   [prog.baz:42:5] allocate named register rax
-                    mov rax, 1
-                    syscall
+                    call baz_write
 ;                   [prog.baz:42:5] free named register rax
 ;                   [prog.baz:42:5] free named register rdx
 ;                   [prog.baz:42:5] free named register rsi
@@ -2721,8 +2661,7 @@ main:
                     ja baz_bounds_line_96
 ;                   [prog.baz:96:25] bounds check end
 ;                   [prog.baz:96:5] allocate named register rax
-                    mov rax, 1
-                    syscall
+                    call baz_write
 ;                   [prog.baz:96:5] free named register rax
 ;                   [prog.baz:96:5] free named register rdx
 ;                   [prog.baz:96:5] free named register rsi
@@ -2742,8 +2681,7 @@ main:
                     lea rsi, [rbp + 59]
                     mov rdx, 1
 ;                   [prog.baz:42:5] allocate named register rax
-                    mov rax, 1
-                    syscall
+                    call baz_write
 ;                   [prog.baz:42:5] free named register rax
 ;                   [prog.baz:42:5] free named register rdx
 ;                   [prog.baz:42:5] free named register rsi
@@ -2763,8 +2701,7 @@ main:
                     lea rsi, [rbp + 60]
                     mov rdx, 1
 ;                   [prog.baz:42:5] allocate named register rax
-                    mov rax, 1
-                    syscall
+                    call baz_write
 ;                   [prog.baz:42:5] free named register rax
 ;                   [prog.baz:42:5] free named register rdx
 ;                   [prog.baz:42:5] free named register rsi
@@ -2795,8 +2732,7 @@ main:
         lea rsi, [rbp + 352]
         mov rdx, 15
 ;       [prog.baz:42:5] allocate named register rax
-        mov rax, 1
-        syscall
+        call baz_write
 ;       [prog.baz:42:5] free named register rax
 ;       [prog.baz:42:5] free named register rdx
 ;       [prog.baz:42:5] free named register rsi
@@ -2833,8 +2769,7 @@ main:
         lea rsi, [rbp + 60]
         mov rdx, 1
 ;       [prog.baz:42:5] allocate named register rax
-        mov rax, 1
-        syscall
+        call baz_write
 ;       [prog.baz:42:5] free named register rax
 ;       [prog.baz:42:5] free named register rdx
 ;       [prog.baz:42:5] free named register rsi
@@ -2860,8 +2795,7 @@ main:
 ;   [prog.baz:428:19] src: folded constant '3'
     mov rdx, 3
 ;   [prog.baz:428:5] allocate named register rax
-    mov rax, 1
-    syscall
+    call baz_write
 ;   [prog.baz:428:5] free named register rax
 ;   [prog.baz:428:5] free named register rdx
 ;   [prog.baz:428:5] free named register rsi
@@ -2879,13 +2813,12 @@ main:
     mov rdx, 1
     add rsi, 12
 ;   [prog.baz:429:5] allocate named register rax
-    mov rax, 1
-    syscall
+    call baz_write
 ;   [prog.baz:429:5] free named register rax
 ;   [prog.baz:429:5] free named register rdx
 ;   [prog.baz:429:5] free named register rsi
 ;   [prog.baz:429:5] free named register rdi
-    mov rdi, 0
+    xor edi, edi
     jmp baz_exit
 ;
 ;[prog.baz:176:15] noinline factorial(n) res
@@ -3223,8 +3156,7 @@ func.print_num:
     ja baz_bounds_line_173
 ;   [prog.baz:173:19] bounds check end
 ;   [prog.baz:173:5] allocate named register rax
-    mov rax, 1
-    syscall
+    call baz_write
 ;   [prog.baz:173:5] free named register rax
 ;   [prog.baz:173:5] free named register rdx
 ;   [prog.baz:173:5] free named register rsi
@@ -3406,6 +3338,23 @@ baz_exit:
     mov rax, 60
     syscall
 
+baz_read:
+    cmp rdi, 0
+    jne baz_bad_descriptor
+    xor eax, eax
+    syscall
+    ret
+baz_write:
+    lea rax, [rdi - 1]
+    cmp rax, 2
+    jae baz_bad_descriptor
+    mov eax, 1
+    syscall
+    ret
+baz_bad_descriptor:
+    mov rax, -9
+    ret
+
 section .data
 align 16
 dat:
@@ -3468,7 +3417,7 @@ vars.end:
 
 ;           noinline functions:
 ;                    factorial: 1 body, 2 calls, 29 instructions
-;                    print_num: 1 body, 2 calls, 66 instructions
+;                    print_num: 1 body, 2 calls, 65 instructions
 ;
 ;   removed jumps to next code: 75
 ;    removed unreachable jumps: 2
@@ -3476,12 +3425,13 @@ vars.end:
 ; inverted branches over jumps: 7
 ; removed reloads after stores: 0
 ;      removed register copies: 0
+;    removed tests after setcc: 54
 ; max scratch registers in use: 4
 ;            max scopes in use: 10
 ;                     dat size: 376 B
 ;              dat var padding: 8 B
 ;           max body vars size: 1045 B
-;                 instructions: 899
+;                 instructions: 844
 ;
 ; register use at the peak: 6 of 13 registers live, 2 named by instructions
 ;

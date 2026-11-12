@@ -1,5 +1,5 @@
 
-0885.baz:532:5: inlined calls and blocks are nested too deep, the limit is 256 scopes, declare a function 'noinline'
+0885.baz:532:5: inlined call nested too deep, it is made inside 256 open blocks and calls, declare a function 'noinline'
     f127()
     ^~~~
 0885.baz:536:5: called from

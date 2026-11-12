@@ -13,8 +13,7 @@ main:
     func.assert..190.5:
         if.38.24.190.5:
         cmp.38.27.190.5:
-        test r15b, r15b
-        jne if.38.24.190.5.end
+        je if.38.24.190.5.end
         if.38.24.190.5.code:
             mov rdi, 1
             jmp baz_exit
@@ -28,8 +27,7 @@ main:
     func.assert..193.5:
         if.38.24.193.5:
         cmp.38.27.193.5:
-        test r15b, r15b
-        jne if.38.24.193.5.end
+        je if.38.24.193.5.end
         if.38.24.193.5.code:
             mov rdi, 1
             jmp baz_exit
@@ -91,8 +89,7 @@ main:
     func.assert..208.5:
         if.38.24.208.5:
         cmp.38.27.208.5:
-        test r15b, r15b
-        jne if.38.24.208.5.end
+        je if.38.24.208.5.end
         if.38.24.208.5.code:
             mov rdi, 1
             jmp baz_exit
@@ -107,8 +104,7 @@ main:
     func.assert..209.5:
         if.38.24.209.5:
         cmp.38.27.209.5:
-        test r15b, r15b
-        jne if.38.24.209.5.end
+        je if.38.24.209.5.end
         if.38.24.209.5.code:
             mov rdi, 1
             jmp baz_exit
@@ -123,8 +119,7 @@ main:
     func.assert..210.5:
         if.38.24.210.5:
         cmp.38.27.210.5:
-        test r15b, r15b
-        jne if.38.24.210.5.end
+        je if.38.24.210.5.end
         if.38.24.210.5.code:
             mov rdi, 1
             jmp baz_exit
@@ -139,8 +134,7 @@ main:
     func.assert..211.5:
         if.38.24.211.5:
         cmp.38.27.211.5:
-        test r15b, r15b
-        jne if.38.24.211.5.end
+        je if.38.24.211.5.end
         if.38.24.211.5.code:
             mov rdi, 1
             jmp baz_exit
@@ -157,8 +151,7 @@ main:
     func.assert..212.5:
         if.38.24.212.5:
         cmp.38.27.212.5:
-        test r15b, r15b
-        jne if.38.24.212.5.end
+        je if.38.24.212.5.end
         if.38.24.212.5.code:
             mov rdi, 1
             jmp baz_exit
@@ -176,8 +169,7 @@ main:
     func.assert..215.5:
         if.38.24.215.5:
         cmp.38.27.215.5:
-        test r15b, r15b
-        jne if.38.24.215.5.end
+        je if.38.24.215.5.end
         if.38.24.215.5.code:
             mov rdi, 1
             jmp baz_exit
@@ -194,8 +186,7 @@ main:
     func.assert..216.5:
         if.38.24.216.5:
         cmp.38.27.216.5:
-        test r15b, r15b
-        jne if.38.24.216.5.end
+        je if.38.24.216.5.end
         if.38.24.216.5.code:
             mov rdi, 1
             jmp baz_exit
@@ -235,8 +226,7 @@ main:
     func.assert..226.5:
         if.38.24.226.5:
         cmp.38.27.226.5:
-        test r15b, r15b
-        jne if.38.24.226.5.end
+        je if.38.24.226.5.end
         if.38.24.226.5.code:
             mov rdi, 1
             jmp baz_exit
@@ -252,8 +242,7 @@ main:
     func.assert..231.5:
         if.38.24.231.5:
         cmp.38.27.231.5:
-        test r15b, r15b
-        jne if.38.24.231.5.end
+        je if.38.24.231.5.end
         if.38.24.231.5.code:
             mov rdi, 1
             jmp baz_exit
@@ -267,8 +256,7 @@ main:
     func.assert..239.5:
         if.38.24.239.5:
         cmp.38.27.239.5:
-        test r15b, r15b
-        jne if.38.24.239.5.end
+        je if.38.24.239.5.end
         if.38.24.239.5.code:
             mov rdi, 1
             jmp baz_exit
@@ -298,8 +286,7 @@ main:
     func.assert..247.5:
         if.38.24.247.5:
         cmp.38.27.247.5:
-        test r15b, r15b
-        jne if.38.24.247.5.end
+        je if.38.24.247.5.end
         if.38.24.247.5.code:
             mov rdi, 1
             jmp baz_exit
@@ -312,8 +299,7 @@ main:
     func.assert..248.5:
         if.38.24.248.5:
         cmp.38.27.248.5:
-        test r15b, r15b
-        jne if.38.24.248.5.end
+        je if.38.24.248.5.end
         if.38.24.248.5.code:
             mov rdi, 1
             jmp baz_exit
@@ -337,8 +323,7 @@ main:
     func.assert..251.5:
         if.38.24.251.5:
         cmp.38.27.251.5:
-        test r15b, r15b
-        jne if.38.24.251.5.end
+        je if.38.24.251.5.end
         if.38.24.251.5.code:
             mov rdi, 1
             jmp baz_exit
@@ -362,8 +347,7 @@ main:
     func.assert..259.5:
         if.38.24.259.5:
         cmp.38.27.259.5:
-        cmp byte [rbp + 480], 0
-        jne if.38.24.259.5.end
+        je if.38.24.259.5.end
         if.38.24.259.5.code:
             mov rdi, 1
             jmp baz_exit
@@ -384,8 +368,7 @@ main:
     func.assert..262.5:
         if.38.24.262.5:
         cmp.38.27.262.5:
-        test r15b, r15b
-        jne if.38.24.262.5.end
+        je if.38.24.262.5.end
         if.38.24.262.5.code:
             mov rdi, 1
             jmp baz_exit
@@ -407,8 +390,7 @@ main:
     func.assert..265.5:
         if.38.24.265.5:
         cmp.38.27.265.5:
-        test r15b, r15b
-        jne if.38.24.265.5.end
+        je if.38.24.265.5.end
         if.38.24.265.5.code:
             mov rdi, 1
             jmp baz_exit
@@ -441,8 +423,7 @@ main:
     func.assert..274.5:
         if.38.24.274.5:
         cmp.38.27.274.5:
-        test r15b, r15b
-        jne if.38.24.274.5.end
+        je if.38.24.274.5.end
         if.38.24.274.5.code:
             mov rdi, 1
             jmp baz_exit
@@ -458,8 +439,7 @@ main:
     func.assert..277.5:
         if.38.24.277.5:
         cmp.38.27.277.5:
-        test r15b, r15b
-        jne if.38.24.277.5.end
+        je if.38.24.277.5.end
         if.38.24.277.5.code:
             mov rdi, 1
             jmp baz_exit
@@ -468,7 +448,7 @@ main:
     mov qword [rbp + 504], 3
     mov qword [rbp + 512], 5
     lea r15, [rbp + 504]
-    mov r14, 0
+    xor r14d, r14d
     foo.280.5:
         add qword [r15], r14
         jo baz_overflow_line_281
@@ -487,8 +467,7 @@ main:
     func.assert..283.5:
         if.38.24.283.5:
         cmp.38.27.283.5:
-        test r15b, r15b
-        jne if.38.24.283.5.end
+        je if.38.24.283.5.end
         if.38.24.283.5.code:
             mov rdi, 1
             jmp baz_exit
@@ -501,8 +480,7 @@ main:
     func.assert..284.5:
         if.38.24.284.5:
         cmp.38.27.284.5:
-        test r15b, r15b
-        jne if.38.24.284.5.end
+        je if.38.24.284.5.end
         if.38.24.284.5.code:
             mov rdi, 1
             jmp baz_exit
@@ -521,8 +499,7 @@ main:
     func.assert..295.5:
         if.38.24.295.5:
         cmp.38.27.295.5:
-        test r15b, r15b
-        jne if.38.24.295.5.end
+        je if.38.24.295.5.end
         if.38.24.295.5.code:
             mov rdi, 1
             jmp baz_exit
@@ -535,8 +512,7 @@ main:
     func.assert..296.5:
         if.38.24.296.5:
         cmp.38.27.296.5:
-        test r15b, r15b
-        jne if.38.24.296.5.end
+        je if.38.24.296.5.end
         if.38.24.296.5.code:
             mov rdi, 1
             jmp baz_exit
@@ -558,8 +534,7 @@ main:
     func.assert..301.5:
         if.38.24.301.5:
         cmp.38.27.301.5:
-        test r15b, r15b
-        jne if.38.24.301.5.end
+        je if.38.24.301.5.end
         if.38.24.301.5.code:
             mov rdi, 1
             jmp baz_exit
@@ -578,7 +553,6 @@ main:
     func.assert..306.5:
         if.38.24.306.5:
         cmp.38.27.306.5:
-        test r15b, r15b
         jne if.38.24.306.5.end
         if.38.24.306.5.code:
             mov rdi, 1
@@ -602,8 +576,7 @@ main:
     func.assert..310.5:
         if.38.24.310.5:
         cmp.38.27.310.5:
-        test r15b, r15b
-        jne if.38.24.310.5.end
+        je if.38.24.310.5.end
         if.38.24.310.5.code:
             mov rdi, 1
             jmp baz_exit
@@ -626,8 +599,7 @@ main:
     func.assert..314.5:
         if.38.24.314.5:
         cmp.38.27.314.5:
-        test r15b, r15b
-        jne if.38.24.314.5.end
+        je if.38.24.314.5.end
         if.38.24.314.5.code:
             mov rdi, 1
             jmp baz_exit
@@ -647,8 +619,7 @@ main:
     func.assert..318.5:
         if.38.24.318.5:
         cmp.38.27.318.5:
-        test r15b, r15b
-        jne if.38.24.318.5.end
+        je if.38.24.318.5.end
         if.38.24.318.5.code:
             mov rdi, 1
             jmp baz_exit
@@ -664,8 +635,7 @@ main:
     func.assert..321.5:
         if.38.24.321.5:
         cmp.38.27.321.5:
-        test r15b, r15b
-        jne if.38.24.321.5.end
+        je if.38.24.321.5.end
         if.38.24.321.5.code:
             mov rdi, 1
             jmp baz_exit
@@ -688,8 +658,7 @@ main:
     func.assert..325.5:
         if.38.24.325.5:
         cmp.38.27.325.5:
-        test r15b, r15b
-        jne if.38.24.325.5.end
+        je if.38.24.325.5.end
         if.38.24.325.5.code:
             mov rdi, 1
             jmp baz_exit
@@ -706,8 +675,7 @@ main:
     func.assert..328.5:
         if.38.24.328.5:
         cmp.38.27.328.5:
-        test r15b, r15b
-        jne if.38.24.328.5.end
+        je if.38.24.328.5.end
         if.38.24.328.5.code:
             mov rdi, 1
             jmp baz_exit
@@ -724,8 +692,7 @@ main:
     func.assert..334.5:
         if.38.24.334.5:
         cmp.38.27.334.5:
-        test r15b, r15b
-        jne if.38.24.334.5.end
+        je if.38.24.334.5.end
         if.38.24.334.5.code:
             mov rdi, 1
             jmp baz_exit
@@ -738,8 +705,7 @@ main:
     func.assert..335.5:
         if.38.24.335.5:
         cmp.38.27.335.5:
-        test r15b, r15b
-        jne if.38.24.335.5.end
+        je if.38.24.335.5.end
         if.38.24.335.5.code:
             mov rdi, 1
             jmp baz_exit
@@ -755,8 +721,7 @@ main:
     func.assert..338.5:
         if.38.24.338.5:
         cmp.38.27.338.5:
-        test r15b, r15b
-        jne if.38.24.338.5.end
+        je if.38.24.338.5.end
         if.38.24.338.5.code:
             mov rdi, 1
             jmp baz_exit
@@ -774,8 +739,7 @@ main:
     func.assert..339.5:
         if.38.24.339.5:
         cmp.38.27.339.5:
-        test r15b, r15b
-        jne if.38.24.339.5.end
+        je if.38.24.339.5.end
         if.38.24.339.5.code:
             mov rdi, 1
             jmp baz_exit
@@ -798,8 +762,7 @@ main:
     func.assert..345.5:
         if.38.24.345.5:
         cmp.38.27.345.5:
-        test r15b, r15b
-        jne if.38.24.345.5.end
+        je if.38.24.345.5.end
         if.38.24.345.5.code:
             mov rdi, 1
             jmp baz_exit
@@ -812,8 +775,7 @@ main:
     func.assert..346.5:
         if.38.24.346.5:
         cmp.38.27.346.5:
-        test r15b, r15b
-        jne if.38.24.346.5.end
+        je if.38.24.346.5.end
         if.38.24.346.5.code:
             mov rdi, 1
             jmp baz_exit
@@ -826,8 +788,7 @@ main:
     func.assert..347.5:
         if.38.24.347.5:
         cmp.38.27.347.5:
-        test r15b, r15b
-        jne if.38.24.347.5.end
+        je if.38.24.347.5.end
         if.38.24.347.5.code:
             mov rdi, 1
             jmp baz_exit
@@ -852,8 +813,7 @@ main:
     func.assert..351.5:
         if.38.24.351.5:
         cmp.38.27.351.5:
-        test r15b, r15b
-        jne if.38.24.351.5.end
+        je if.38.24.351.5.end
         if.38.24.351.5.code:
             mov rdi, 1
             jmp baz_exit
@@ -866,8 +826,7 @@ main:
     func.assert..352.5:
         if.38.24.352.5:
         cmp.38.27.352.5:
-        test r15b, r15b
-        jne if.38.24.352.5.end
+        je if.38.24.352.5.end
         if.38.24.352.5.code:
             mov rdi, 1
             jmp baz_exit
@@ -884,8 +843,7 @@ main:
     func.assert..355.5:
         if.38.24.355.5:
         cmp.38.27.355.5:
-        test r15b, r15b
-        jne if.38.24.355.5.end
+        je if.38.24.355.5.end
         if.38.24.355.5.code:
             mov rdi, 1
             jmp baz_exit
@@ -898,8 +856,7 @@ main:
     func.assert..356.5:
         if.38.24.356.5:
         cmp.38.27.356.5:
-        test r15b, r15b
-        jne if.38.24.356.5.end
+        je if.38.24.356.5.end
         if.38.24.356.5.code:
             mov rdi, 1
             jmp baz_exit
@@ -912,8 +869,7 @@ main:
     func.assert..357.5:
         if.38.24.357.5:
         cmp.38.27.357.5:
-        test r15b, r15b
-        jne if.38.24.357.5.end
+        je if.38.24.357.5.end
         if.38.24.357.5.code:
             mov rdi, 1
             jmp baz_exit
@@ -930,8 +886,7 @@ main:
     func.assert..360.5:
         if.38.24.360.5:
         cmp.38.27.360.5:
-        test r15b, r15b
-        jne if.38.24.360.5.end
+        je if.38.24.360.5.end
         if.38.24.360.5.code:
             mov rdi, 1
             jmp baz_exit
@@ -948,8 +903,7 @@ main:
     func.assert..362.5:
         if.38.24.362.5:
         cmp.38.27.362.5:
-        test r15b, r15b
-        jne if.38.24.362.5.end
+        je if.38.24.362.5.end
         if.38.24.362.5.code:
             mov rdi, 1
             jmp baz_exit
@@ -967,8 +921,7 @@ main:
     func.assert..372.5:
         if.38.24.372.5:
         cmp.38.27.372.5:
-        test r15b, r15b
-        jne if.38.24.372.5.end
+        je if.38.24.372.5.end
         if.38.24.372.5.code:
             mov rdi, 1
             jmp baz_exit
@@ -989,8 +942,7 @@ main:
     func.assert..374.5:
         if.38.24.374.5:
         cmp.38.27.374.5:
-        test r15b, r15b
-        jne if.38.24.374.5.end
+        je if.38.24.374.5.end
         if.38.24.374.5.code:
             mov rdi, 1
             jmp baz_exit
@@ -1012,8 +964,7 @@ main:
     func.assert..377.5:
         if.38.24.377.5:
         cmp.38.27.377.5:
-        test r15b, r15b
-        jne if.38.24.377.5.end
+        je if.38.24.377.5.end
         if.38.24.377.5.code:
             mov rdi, 1
             jmp baz_exit
@@ -1031,8 +982,7 @@ main:
     func.assert..382.5:
         if.38.24.382.5:
         cmp.38.27.382.5:
-        test r15b, r15b
-        jne if.38.24.382.5.end
+        je if.38.24.382.5.end
         if.38.24.382.5.code:
             mov rdi, 1
             jmp baz_exit
@@ -1056,8 +1006,7 @@ main:
     func.assert..391.5:
         if.38.24.391.5:
         cmp.38.27.391.5:
-        test r15b, r15b
-        jne if.38.24.391.5.end
+        je if.38.24.391.5.end
         if.38.24.391.5.code:
             mov rdi, 1
             jmp baz_exit
@@ -1071,8 +1020,7 @@ main:
     func.assert..392.5:
         if.38.24.392.5:
         cmp.38.27.392.5:
-        test r15b, r15b
-        jne if.38.24.392.5.end
+        je if.38.24.392.5.end
         if.38.24.392.5.code:
             mov rdi, 1
             jmp baz_exit
@@ -1092,8 +1040,7 @@ main:
     func.assert..400.5:
         if.38.24.400.5:
         cmp.38.27.400.5:
-        test r15b, r15b
-        jne if.38.24.400.5.end
+        je if.38.24.400.5.end
         if.38.24.400.5.code:
             mov rdi, 1
             jmp baz_exit
@@ -1106,8 +1053,7 @@ main:
     func.assert..401.5:
         if.38.24.401.5:
         cmp.38.27.401.5:
-        test r15b, r15b
-        jne if.38.24.401.5.end
+        je if.38.24.401.5.end
         if.38.24.401.5.code:
             mov rdi, 1
             jmp baz_exit
@@ -1122,8 +1068,7 @@ main:
         mov rdi, 1
         lea rsi, [rbp]
         mov rdx, 21
-        mov rax, 1
-        syscall
+        call baz_write
     func.print..405.5.end:
     loop.406.5:
         inc qword [rbp + 1280]
@@ -1139,22 +1084,19 @@ main:
             mov rdi, 1
             lea rsi, [rbp + 61]
             mov rdx, 2
-            mov rax, 1
-            syscall
+            call baz_write
         func.print..409.9.end:
         func.print..410.9:
             mov rdi, 1
             lea rsi, [rbp + 21]
             mov rdx, 12
-            mov rax, 1
-            syscall
+            call baz_write
         func.print..410.9.end:
         func.str.input..411.12:
-            mov rdi, 0
+            xor edi, edi
             lea rsi, [rbp + 1289]
             mov rdx, 127
-            mov rax, 0
-            syscall
+            call baz_read
             mov qword [rbp + 1416], rax
             mov r15b, byte [rbp + 1416]
             mov byte [rbp + 1288], r15b
@@ -1174,8 +1116,7 @@ main:
                 mov rdi, 1
                 lea rsi, [rbp + 33]
                 mov rdx, 20
-                mov rax, 1
-                syscall
+                call baz_write
             func.print..416.13.end:
             jmp loop.406.5
         if.413.9.else:
@@ -1184,8 +1125,7 @@ main:
                     mov rdi, 1
                     lea rsi, [rbp + 53]
                     mov rdx, 6
-                    mov rax, 1
-                    syscall
+                    call baz_write
                 func.print..100.5.419.13.end:
                 func.str.print..101.10.419.13:
                     mov rdi, 1
@@ -1193,22 +1133,19 @@ main:
                     movsx rdx, byte [rbp + 1288]
                     cmp rdx, 127
                     ja baz_bounds_line_96
-                    mov rax, 1
-                    syscall
+                    call baz_write
                 func.str.print..101.10.419.13.end:
                 func.print..102.5.419.13:
                     mov rdi, 1
                     lea rsi, [rbp + 59]
                     mov rdx, 1
-                    mov rax, 1
-                    syscall
+                    call baz_write
                 func.print..102.5.419.13.end:
                 func.print..103.5.419.13:
                     mov rdi, 1
                     lea rsi, [rbp + 60]
                     mov rdx, 1
-                    mov rax, 1
-                    syscall
+                    call baz_write
                 func.print..103.5.419.13.end:
                 inc qword [rbp + 368]
                 jo baz_overflow_line_104
@@ -1220,8 +1157,7 @@ main:
         mov rdi, 1
         lea rsi, [rbp + 352]
         mov rdx, 15
-        mov rax, 1
-        syscall
+        call baz_write
     func.print..423.5.end:
     mov r15, strict qword vars.end - size.func.print_num - 1416
     cmp r15, rbp
@@ -1234,8 +1170,7 @@ main:
         mov rdi, 1
         lea rsi, [rbp + 60]
         mov rdx, 1
-        mov rax, 1
-        syscall
+        call baz_write
     func.print..425.5.end:
     mov dword [rbp + 1416], 543521122
     mov dword [rbp + 1420], 1836020326
@@ -1244,15 +1179,13 @@ main:
     mov rdi, 1
     lea rsi, [rbp + 1416]
     mov rdx, 3
-    mov rax, 1
-    syscall
+    call baz_write
     mov rdi, 1
     lea rsi, [rbp + 1416]
     mov rdx, 1
     add rsi, 12
-    mov rax, 1
-    syscall
-    mov rdi, 0
+    call baz_write
+    xor edi, edi
     jmp baz_exit
 func.factorial:
     mov r15, qword [rbx]
@@ -1377,8 +1310,7 @@ func.print_num:
     mov rdx, qword [rbx + 56]
     cmp rdx, 20
     ja baz_bounds_line_173
-    mov rax, 1
-    syscall
+    call baz_write
     ret
 size.func.print_num equ 64
 baz_frame_overflow:
@@ -1543,6 +1475,22 @@ baz_report_line:
 baz_exit:
     mov rax, 60
     syscall
+baz_read:
+    cmp rdi, 0
+    jne baz_bad_descriptor
+    xor eax, eax
+    syscall
+    ret
+baz_write:
+    lea rax, [rdi - 1]
+    cmp rax, 2
+    jae baz_bad_descriptor
+    mov eax, 1
+    syscall
+    ret
+baz_bad_descriptor:
+    mov rax, -9
+    ret
 section .data
 align 16
 dat:
