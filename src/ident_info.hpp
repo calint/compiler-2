@@ -416,10 +416,9 @@ class destination final {
     // what a name in storage resolved to and the root variable and the path
     // of it that it names, all stepped with 'field' and 'element'
     struct stored_name {
-        ::operand address;
-        // the address is final, the name need not be resolved again, e.g. an
-        // indexed element or an address loaded from a slot
-        bool is_final_address{};
+        // its operand is the address written; an address computed for it,
+        // e.g. of an indexed element or loaded from a slot, is final
+        // ('var_address::by_call'), the name need not be resolved again
         ident_info info;
         storage_path storage{};
     };
@@ -435,8 +434,6 @@ class destination final {
 
     // what a resolved name adds as a destination, see 'of_name'
     struct name_parts {
-        ::operand address;
-        bool is_final_address{};
         std::optional<storage_path> storage;
         std::string text;
     };
@@ -457,15 +454,9 @@ class destination final {
 
     // what the result of an inlined call stands for when this is its
     // destination: the storage at the address computed for it, or as resolved
-    [[nodiscard]] auto bound_info() const -> ident_info {
+    [[nodiscard]] auto bound_info() const -> const ident_info& {
         // note: a register destination is bound as a register
-        const stored_name& name{stored()};
-
-        if (name.is_final_address) {
-            return name.info.at_address(name.address);
-        }
-
-        return name.info;
+        return stored().info;
     }
 
     // the element 'index' of the array, e.g. of an array literal; the type
@@ -474,11 +465,12 @@ class destination final {
         // note: an array is in storage
         stored_name name{stored()};
 
-        name.address.increment_offset(
+        ::operand address{name.info.operand()};
+
+        address.increment_offset(
             address_offset(index * type_ref().size_bytes()));
 
-        name.is_final_address = true;
-        name.info = name.info.as_element();
+        name.info = name.info.as_element().at_address(address);
         name.storage.path.add_fixed_index(index);
 
         destination result{*this};
@@ -492,9 +484,8 @@ class destination final {
     [[nodiscard]] auto field(const type_field& fld) const -> destination {
         // note: a record is in storage
         stored_name name{stored()};
-        name.address = operand_at(fld.offset, fld.type_ref());
-        name.is_final_address = true;
-        name.info = name.info.field(fld);
+        const ::operand address{operand_at(fld.offset, fld.type_ref())};
+        name.info = name.info.field(fld).at_address(address);
         name.storage.path.add_field(fld.offset);
 
         destination result{*this};
@@ -538,7 +529,7 @@ class destination final {
             return held->reg;
         }
 
-        return stored().address;
+        return stored().info.operand();
     }
 
     // 'offset' bytes into the destination as 'value_type', e.g. the padding
@@ -587,8 +578,8 @@ class destination final {
     // statics
     //
 
-    // a name resolved as 'info', e.g. the destination of an assignment or a
-    // call temporary
+    // a name resolved as 'info' at the address written, e.g. the destination
+    // of an assignment or a call temporary
     [[nodiscard]] static auto of_name(const ident_info& info, name_parts parts)
         -> destination {
 
@@ -599,20 +590,16 @@ class destination final {
         destination result;
 
         if (parts.storage) {
-            assert(parts.address.is_memory());
+            // note: an address held in a slot is loaded before it is written
+            assert(info.operand().is_memory() and not info.holds_address());
 
             result.place_ = stored_name{
-                .address{std::move(parts.address)},
-                .is_final_address{parts.is_final_address},
                 .info{info},
                 .storage{std::move(*parts.storage)},
             };
         } else {
-            // note: a name in a register has no address to keep
-            assert(parts.address.is_register() and not parts.is_final_address);
-
             result.place_ = held_register{
-                .reg{std::move(parts.address)},
+                .reg{info.operand()},
                 .is_named{true},
             };
         }

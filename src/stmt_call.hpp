@@ -856,8 +856,6 @@ struct call_site {
         return destination::of_name(
             info,
             {
-                .address{info.operand()},
-                .is_final_address{},
                 .storage{tc.storage_of(name, access_path::whole_variable())},
                 .text{name},
             });

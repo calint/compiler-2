@@ -1,6 +1,20 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 383 (2026-11-12, design: a first-time architect's single
+    change that would most simplify the design)
+    => done (2026-11-12): no large change is better than the decisions of
+       README 7.x (an intermediate representation, nodes as a variant, a
+       generic substitution, a cost model, tables passed one by one, a
+       register allocator); one redundancy removed: a 'destination' keeps
+       one 'ident_info' whose operand is the address written ('stored_name'
+       is '{info, storage}'), the 'address' copy and the 'is_final_address'
+       flag gone (it repeated 'var_address::by_call'), 'bound_info' an
+       accessor; listings and errors unchanged, -15 lines; not recommended:
+       one snapshot for dry runs and versions (layers own their state,
+       dry runs and versions differ on purpose), removing the trial parse
+       of initializers (README 7.13); later: 'place' has nearly the shape
+       of 'stored_name'
 [x] easy: round 382 (2026-11-12, readability: the language documentation
     for a new user)
     => done (2026-11-12): README: the default type 'int' named with the

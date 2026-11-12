@@ -83,15 +83,15 @@ class stmt_assign_var final : public statement {
         };
 
         // the destination is written at the address computed here
-        const bool is_final_address{
-            stmt_ident_.has_computed_address(dst_info),
+        const ident_info written{
+            stmt_ident_.has_computed_address(dst_info)
+                ? dst_info.at_address(address)
+                : dst_info,
         };
 
         const destination var_dst{
-            destination::of_name(dst_info,
+            destination::of_name(written,
                                  {
-                                     .address{address},
-                                     .is_final_address{is_final_address},
                                      .storage{dst_storage},
                                      .text{stmt_ident_.path_text()},
                                  }),
