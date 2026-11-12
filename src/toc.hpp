@@ -2832,7 +2832,7 @@ class parse_toc final : public toc {
         -> const type& {
 
         // note: a declared type is read by 'statement::read_declared_type'
-        //       and 'func_result::read', which reject a string
+        //       and 'read_func_result', which reject a string
 
         assert(not type_tk.is_string());
 

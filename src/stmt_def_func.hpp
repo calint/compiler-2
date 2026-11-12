@@ -36,7 +36,7 @@
 //   'make_stmt_def_func'     reads the head and picks the statement (last in
 //                            the file, it uses the others)
 //   'func_head'              'func [noinline] [mut] name[.method] [<T type>] ('
-//   'func_result'            the result 'name [type]' as written
+//   'read_func_result'       the result 'name [type]' as written
 //   'frame_slot'             a slot of the frame of a noinline call
 //   'stmt_def_func'          a function, of the user code or an instance
 //   'func_instantiator'      records the generic definitions and makes their
@@ -311,123 +311,100 @@ struct func_head {
     }
 };
 
-// the result 'name [type]' as written after the parameters, e.g. 'res i8';
-// its type is the node's ('stmt_def_func::result_type'); a generic definition
-// keeps it in its 'generic_signature'
-struct func_result {
-    // e.g. 'res', or 'self' of a constructor
-    token name_tk;
-    // none for the default type
-    std::optional<token> type_tk;
+// what follows the result name has no type arguments, 'mut' or '['
+inline auto assert_plain_result_type(const parse_toc& tc, tokenizer& tz,
+                                     const token& type_tk) -> void {
 
-    // e.g. 'func point.at(x, y) self'
-    [[nodiscard]] auto is_self() const -> bool {
-        return name_tk.is_text(reserved_names::self);
+    if (type_tk.is_word()) {
+        statement::assert_no_type_arguments(tc, tz, type_tk);
     }
 
-    //
-    // statics
-    //
+    // e.g. 'res mut', a parameter's modifier
+    if (type_tk.is_text("mut")) {
+        throw compile_error{type_tk,
+                            "a result takes no 'mut', its function writes "
+                            "it"};
+    }
 
-    // 'tz' is after the ')' of the parameters; none without a result
-    [[nodiscard]] static auto read(const parse_toc& tc, tokenizer& tz)
-        -> std::optional<func_result> {
+    // e.g. the '[' of 'res i8[4]' or 'res[4]'
+    if (tz.peek_char_after_whitespace() == '[') {
+        throw compile_error{tz, "a result cannot be an array, pass the "
+                                "array as a 'mut' parameter"};
+    }
+}
 
-        const token name_tk{tz.next_token()};
+// the result 'name [type]' after the parameters, e.g. 'res i8'; 'tz' is after
+// the ')' of the parameters; none without a result
+[[nodiscard]] inline auto read_func_result(const parse_toc& tc, tokenizer& tz)
+    -> std::optional<func_result> {
 
-        if (not name_tk.is_word()) {
+    const token name_tk{tz.next_token()};
+
+    if (not name_tk.is_word()) {
+        tz.put_back_token(name_tk);
+        return std::nullopt;
+    }
+
+    const token type_tk{tz.next_token()};
+
+    // 'self' is the result of a constructor
+    const bool is_keyword{
+        not name_tk.is_text(reserved_names::self) and
+            reserved_names::is_keyword(name_tk.text()),
+    };
+
+    // a keyword is not a result name, e.g. the 'func' of 'func g<T
+    // type>()' after a function that lacks its body
+    if (not is_keyword) {
+        assert_plain_result_type(tc, tz, type_tk);
+    }
+
+    // a word or a string before the '{' of the body is meant as the
+    // type, else a missing '{' is reported by the body, e.g. 'func f()
+    // res number {'
+    // note: the '{' also tells the type of a generic definition, where
+    //       'T' of 'res T {' is not a type yet
+    const bool is_type_before_body{
+        (type_tk.is_word() or type_tk.is_string()) and
+            tz.peek_char_after_whitespace() == '{',
+    };
+
+    // a keyword is read as a result name only before a '{' or a known
+    // type; before another name it starts what follows a function that
+    // lacks its body, e.g. the 'type' of 'type p {x}'
+    const bool has_type{
+        tc.types().has(type_tk.text()) or
+            (is_type_before_body and not is_keyword),
+    };
+
+    if (has_type) {
+        statement::assert_not_literal_type(type_tk);
+    } else {
+        tz.put_back_token(type_tk);
+
+        // a keyword without a '{' after it starts what follows a function
+        // that lacks its body, e.g. the 'func' of the next definition;
+        // before a '{' it is reported as a keyword
+        if (is_keyword and tz.peek_char_after_whitespace() != '{') {
             tz.put_back_token(name_tk);
             return std::nullopt;
         }
-
-        const token type_tk{tz.next_token()};
-
-        // 'self' is the result of a constructor
-        const bool is_keyword{
-            not name_tk.is_text(reserved_names::self) and
-                reserved_names::is_keyword(name_tk.text()),
-        };
-
-        // a keyword is not a result name, e.g. the 'func' of 'func g<T
-        // type>()' after a function that lacks its body
-        if (not is_keyword) {
-            assert_plain_type(tc, tz, type_tk);
-        }
-
-        // a word or a string before the '{' of the body is meant as the
-        // type, else a missing '{' is reported by the body, e.g. 'func f()
-        // res number {'
-        // note: the '{' also tells the type of a generic definition, where
-        //       'T' of 'res T {' is not a type yet
-        const bool is_type_before_body{
-            (type_tk.is_word() or type_tk.is_string()) and
-                tz.peek_char_after_whitespace() == '{',
-        };
-
-        // a keyword is read as a result name only before a '{' or a known
-        // type; before another name it starts what follows a function that
-        // lacks its body, e.g. the 'type' of 'type p {x}'
-        const bool has_type{
-            tc.types().has(type_tk.text()) or
-                (is_type_before_body and not is_keyword),
-        };
-
-        if (has_type) {
-            statement::assert_not_literal_type(type_tk);
-        } else {
-            tz.put_back_token(type_tk);
-
-            // a keyword without a '{' after it starts what follows a function
-            // that lacks its body, e.g. the 'func' of the next definition;
-            // before a '{' it is reported as a keyword
-            if (is_keyword and tz.peek_char_after_whitespace() != '{') {
-                tz.put_back_token(name_tk);
-                return std::nullopt;
-            }
-        }
-
-        // where it is read, also in a generic definition that no instance
-        // parses, e.g. the '5' of 'func f<T type>() 5 {'; without the '{'
-        // the body reports it missing first
-        if (not name_tk.is_text(reserved_names::self) and
-            tz.peek_char_after_whitespace() == '{') {
-
-            tc.assert_valid_unqualified_name(name_tk);
-        }
-
-        return func_result{
-            .name_tk{name_tk},
-            .type_tk{has_type ? std::optional{type_tk} : std::nullopt},
-        };
     }
 
-  private:
-    //
-    // statics
-    //
+    // where it is read, also in a generic definition that no instance
+    // parses, e.g. the '5' of 'func f<T type>() 5 {'; without the '{'
+    // the body reports it missing first
+    if (not name_tk.is_text(reserved_names::self) and
+        tz.peek_char_after_whitespace() == '{') {
 
-    // what follows the result name has no type arguments, 'mut' or '['
-    static auto assert_plain_type(const parse_toc& tc, tokenizer& tz,
-                                  const token& type_tk) -> void {
-
-        if (type_tk.is_word()) {
-            statement::assert_no_type_arguments(tc, tz, type_tk);
-        }
-
-        // e.g. 'res mut', a parameter's modifier
-        if (type_tk.is_text("mut")) {
-            throw compile_error{type_tk,
-                                "a result takes no 'mut', its function writes "
-                                "it"};
-        }
-
-        // e.g. the '[' of 'res i8[4]' or 'res[4]'
-        if (tz.peek_char_after_whitespace() == '[') {
-            throw compile_error{tz, "a result cannot be an array, pass the "
-                                    "array as a 'mut' parameter"};
-        }
+        tc.assert_valid_unqualified_name(name_tk);
     }
-};
+
+    return func_result{
+        .name_tk{name_tk},
+        .type_tk{has_type ? std::optional{type_tk} : std::nullopt},
+    };
+}
 
 // a slot of the frame of a noinline call: the address of the result, or of
 // the argument of the parameter at 'param_index'; the address of a receiver
@@ -1085,7 +1062,7 @@ class stmt_def_func final : public statement {
 
         add_constants(tc);
 
-        // note: 'func_result::read' only keeps a result with a name
+        // note: 'read_func_result' only keeps a result with a name
         assert(not result_ or result_->name_tk.is_word());
 
         add_signature_vars(tc, names_only{}, {});
@@ -1115,7 +1092,7 @@ class stmt_def_func final : public statement {
 
     // the result 'name [type]', without one the type is 'void'
     auto parse_result(parse_toc& tc, tokenizer& tz) -> void {
-        result_ = func_result::read(tc, tz);
+        result_ = read_func_result(tc, tz);
 
         if (not result_) {
             set_type(tc.builtins().void_type());
@@ -1637,10 +1614,10 @@ class stmt_def_func_generic final : public statement {
                                              const generic_signature& signature)
         -> void {
 
-        assert(signature.result_name_tk);
+        assert(signature.result);
 
-        head.assert_constructor_result(*signature.result_name_tk,
-                                       signature.result_type_tk);
+        head.assert_constructor_result(signature.result->name_tk,
+                                       signature.result->type_tk);
 
         // a constructor is called as 'point.at(...)', there is no place for
         // type arguments
@@ -1649,7 +1626,7 @@ class stmt_def_func_generic final : public statement {
         }
 
         throw compile_error{
-            *signature.result_name_tk,
+            signature.result->name_tk,
             std::format("constructor {} cannot have type parameters",
                         in_quotes(head.name))};
     }
@@ -1690,9 +1667,9 @@ class stmt_def_func_generic final : public statement {
                                               "parameter", true);
         }
 
-        if (signature.result_name_tk) {
+        if (signature.result) {
             assert_apart_from_receiver_params(
-                tc, head, *signature.result_name_tk, "result", true);
+                tc, head, signature.result->name_tk, "result", true);
         }
     }
 
@@ -1732,9 +1709,9 @@ class stmt_def_func_generic final : public statement {
                                                         "parameter");
         }
 
-        if (signature.result_name_tk) {
+        if (signature.result) {
             tc.definitions().assert_generic_param_apart(
-                param_tk, *signature.result_name_tk, "result");
+                param_tk, signature.result->name_tk, "result");
         }
     }
 
@@ -1749,8 +1726,7 @@ class stmt_def_func_generic final : public statement {
         generic_signature signature{
             .type_param_tks{head.type_param_tks},
             .params{},
-            .result_name_tk{std::nullopt},
-            .result_type_tk{std::nullopt},
+            .result{},
         };
 
         const stmt_def_func_param::syntax_list list{
@@ -1769,14 +1745,10 @@ class stmt_def_func_generic final : public statement {
             });
         }
 
-        if (const std::optional<func_result> result{
-                func_result::read(tc, tz),
-            }) {
+        signature.result = read_func_result(tc, tz);
 
-            list.assert_result_not_named_like_param(result->name_tk);
-
-            signature.result_name_tk = result->name_tk;
-            signature.result_type_tk = result->type_tk;
+        if (signature.result) {
+            list.assert_result_not_named_like_param(signature.result->name_tk);
         }
 
         assert_generic_signature(tc, head, signature);

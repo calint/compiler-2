@@ -971,7 +971,8 @@ class machine_x86_64 final : public machine {
     // 'emit_io_routines'; the routine changes 'rcx' and 'r11' by its 'syscall'
     // besides 'rax', the result register that 'call_target' allocated, a
     // sector routine changes 'rax' and 'r10' too, the live ones are saved
-    // around the call ('call_saving_live')
+    // around the call ('call_saving_live'); it also changes its argument
+    // 'rdi', which 'call_target' holds for the call only
     auto emit_target_call(const emit_site site, const target_call function)
         -> void override {
 
@@ -1125,7 +1126,8 @@ class machine_x86_64 final : public machine {
     }
 
     // 'left' holds the product of two bytes in a register of the default
-    // width, which fits when the low byte sign extended is the same value
+    // width, which fits when the low byte sign extended is the same value;
+    // 'right', the factor that was multiplied, is overwritten with it
     auto check_byte_product(const emit_site site, const operand& left,
                             const operand& right) -> void {
 

@@ -1,6 +1,30 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 402 (2026-11-13, design by the data: every struct, enum,
+    variant and table of 'src'; readability: the bodies of the two backends
+    against listings; bug hunt: generic types and constants)
+    => done (2026-11-13): the result of a generic signature is one
+       'std::optional<func_result>' ('generic_signature::result_name_tk'
+       and 'result_type_tk' were its fields copied one by one,
+       'is_constructor' repeated 'func_result::is_self'); 'func_result' is
+       in 'generics.hpp', its reader is 'read_func_result' in
+       'stmt_def_func.hpp', as 'generic_signature_param' and its reader;
+       317 types, 38 enums, 958 fields and about 45 tables: no alternative
+       never made, no table written twice
+    => backends, comments only: 'emit_target_call' names 'rdi',
+       'check_byte_product' says it overwrites 'right', rv32i
+       'check_divisor' says it changes 'a2', 'emit_multiply_body' says what
+       it computes, two notes of 'machine_rv32i.hpp' stand apart from their
+       statements; the emitted sequences match the comments; the sequences
+       longer than needed are an item of 'todo.txt' section 2
+    => open: no note says why 'data_alignment_' is 16, nor why x86_64
+       'divide' reserves 'rdx' after the dividend is in 'rax'
+    => bug hunt (22000 programs against a model, 8000 mutants, 28000 token
+       mutations through the asan build, 414 probes of what is accepted:
+       instances of instances, constants spelled several ways, based
+       generics, bodies valid for one instance, shadowing, deduction): no
+       defect; listings unchanged (2495 cases)
 [x] easy: round 401 (2026-11-13, a confirming round. design by evidence
     over all of 'src': the callers of every member, clones of 8 lines,
     branches an assert excludes, error messages without a test;

@@ -74,10 +74,15 @@ is the test 'qa/coverage/tests/NNNN.baz'
     'path_address' and 'fold_register' to save one 'mv' on rv32i; x86_64
     passes none); about -30 lines; rv32i listings change, growth not
     measured
-[p] easy: need approval (round 396): a new fuzzer file in 'qa/fuzz' for
-    the bulk operations (ranges of 'array_copy', 'arrays_equal', 'foo',
-    'write' against a model); written for the hunt of round 396, kept in
-    the session scratchpad ('bulk/fuzz_bulk4.py'), lost with it
+[p] easy: need approval (rounds 396 to 402): new fuzzer files in 'qa/fuzz'
+    from the generators the bug hunts wrote, each with a model, all clean
+    at round 402: the bulk operations (ranges of 'array_copy',
+    'arrays_equal', 'foo', 'write'), whole programs that combine features,
+    input and output with strings and 'dat', the passes after code
+    generation (control flow, cascades of grown jumps, immediates) and
+    generic types; they are kept in '/tmp' and the session scratchpad
+    ('bulk', 'mixgen.py', 'iofuzz', 'bh', 'tyhunt') and are lost with them;
+    each has the path of a removed worktree to replace
 [ ] easy: (round 396) a noinline function without array parameters that a
     dry run asks for is checked twice ('check_function_bodies' and
     'check_noinline_bodies'); only compile time; in a dry run
@@ -524,6 +529,17 @@ is the test 'qa/coverage/tests/NNNN.baz'
 --------------------------------------------------------------------------------
 2. machine operations: fewer instructions, largest gain first
 --------------------------------------------------------------------------------
+[ ] medium: (round 402, a walk of the backends against listings)
+    sequences longer than needed that the front end asks for, 2145.baz:
+    'exit(f(a, 1, 1, 1))' saves the argument register of 'exit' around the
+    call while it holds nothing (x86_64 'push rdi' 'pop rdi', rv32i 4
+    instructions); 'array_copy(a[i], a, 2)' loads the address of 'a'
+    twice, copies the index for the range check, scales the constant count
+    at run time ('mov rcx, 2' 'sal rcx, 2') and on rv32i sends a constant
+    count of 8 bytes through the run-time walk (about 14 instructions that
+    never run); 'arrays_equal(a, c[1], y)' checks the count against 16
+    then 15; rv32i loads 'li t0, 1' once per argument; a shift result goes
+    through 'mv a1, t1' when a load stands between
 [ ] medium: an inline bool call used as a condition is materialized then
     tested (roome.baz 'tk.is', 'tk.is_empty', 'tk.is_name'): x86 'sete;
     cmp; je', rv32i 'xor; sltiu; beq' instead of 'bne'; 'arrays_equal' 'li

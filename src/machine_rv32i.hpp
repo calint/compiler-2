@@ -1086,10 +1086,11 @@ class machine_rv32i : public machine {
 
         address_of(site, start, frame_address);
 
-        // the highest start at which the frame fits, compared unsigned since
-        // an address can be 2 GiB or more
         // note: a frame fits in '--vars' when compiled, so the end of 'vars'
         //       less the frame size does not wrap
+
+        // the highest start at which the frame fits, compared unsigned since
+        // an address can be 2 GiB or more
         assembler_.la(site.indent, last_start.register_name(),
                       variables_end_label_, frame_size_label);
 
@@ -1106,10 +1107,11 @@ class machine_rv32i : public machine {
     // 'a0' is the descriptor and receives the result, 'a1' is the address and
     // 'a2' the count; a routine returns through 'a7' and changes only
     // 'io_routine_clobbered_' else, see 'call_io_routine'
-    // note: the label '5' of each routine returns 'bad_descriptor_', a
-    //       transfer may use the labels '1' to '4'
     auto emit_io_routines(const bool read_used, const bool write_used)
         -> void override {
+
+        // note: the label '5' of each routine returns 'bad_descriptor_', a
+        //       transfer may use the labels '1' to '4'
 
         if (read_used) {
             // note: 'bnez' compares the descriptor with 'stdin_descriptor_'
@@ -1722,7 +1724,8 @@ class machine_rv32i : public machine {
     }
 
     // jumps to the failure handler when the divisor in 'a1' is zero or the
-    // dividend in 'a0' is the minimum of its width and the divisor is -1
+    // dividend in 'a0' is the minimum of its width and the divisor is -1;
+    // changes 'a2', which the helper changes too, so the call saved it
     auto check_divisor(const emit_site site, const size_t dividend_size_bytes)
         -> void {
 
@@ -2559,6 +2562,8 @@ class machine_rv32i : public machine {
                        swapped ? left.register_name() : right.register_name());
     }
 
+    // the product of 'a0' and 'a1' modulo 2^32 by shift and add: 'a2' is the
+    // multiplicand, doubled per bit of the multiplier in 'a1', 'a3' that bit
     auto emit_multiply_body() -> void {
         assembler_.mv(1, "a2", "a0");
         assembler_.li(1, "a0", 0);

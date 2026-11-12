@@ -458,6 +458,22 @@ struct generic_deduction {
     bool is_result{};
 };
 
+// the result 'name [type]' of a function as written after the parameters,
+// e.g. 'res i8', read by 'read_func_result' ('stmt_def_func.hpp'); the type is
+// the node's ('stmt_def_func::result_type'), resolved by each instance of a
+// generic definition
+struct func_result {
+    // e.g. 'res', or 'self' of a constructor
+    token name_tk;
+    // none for the default type
+    std::optional<token> type_tk;
+
+    // e.g. 'func point.at(x, y) self'
+    [[nodiscard]] auto is_self() const -> bool {
+        return name_tk.is_text(reserved_names::self);
+    }
+};
+
 // a parameter of a generic function as written, e.g. 'x' of type 'U' in
 // '(x U)'
 struct generic_signature_param {
@@ -475,10 +491,8 @@ struct generic_signature {
     // its own, e.g. 'U', not the parameters of the generic type 'box'
     std::vector<token> type_param_tks;
     std::vector<generic_signature_param> params;
-    // e.g. 'res', or 'self' of a constructor, none without a result
-    std::optional<token> result_name_tk;
-    // none for the default type
-    std::optional<token> result_type_tk;
+    // none without a result
+    std::optional<func_result> result;
 
     // how a call tells the type parameter 'type_param': the first parameter
     // declared with exactly its type and the result, e.g. 's T' and 'res T'
@@ -499,14 +513,15 @@ struct generic_signature {
                       },
             },
             .is_result{
-                result_type_tk and result_type_tk->is_text(type_param),
+                result and result->type_tk and
+                    result->type_tk->is_text(type_param),
             },
         };
     }
 
     // the result 'self' builds an instance of the receiver type
     [[nodiscard]] auto is_constructor() const -> bool {
-        return result_name_tk and result_name_tk->is_text(reserved_names::self);
+        return result and result->is_self();
     }
 };
 
