@@ -506,9 +506,8 @@ class token final {
                             hex_base),
         };
 
-        if (parsed.ec != std::errc{} or parsed.ptr != end) {
-            return std::nullopt;
-        }
+        // note: 'escape_length' took only hex digits
+        assert(parsed.ec == std::errc{} and parsed.ptr == end);
 
         return static_cast<char>(decoded);
     }

@@ -1,6 +1,18 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 377 (2026-11-12, design: remove what no guarantee needs)
+    => done (2026-11-12): a coverage build over the tests of the four
+       targets, cli, far jumps, versions, roome and six fuzzers executes
+       99.77% of the lines, the rest is 'std::unreachable', virtual
+       defaults, internal-error handlers and one rethrow; no parameter
+       always receives the same argument, no template has one
+       instantiation, no member is written without being read;
+       'decode_hex_escape' asserts instead of checking the parse of its
+       digits ('escape_length' takes only hex digits); left: the source
+       rethrow of 'compile_available_version' (never reached, not proven),
+       the 'is_discarded' shortcut of the formatting 'comment' (an
+       optimization)
 [x] easy: round 376 (2026-11-12, readability: error message wording, one
     message per rule and the house style: problem first, then the fix
     after a comma, no ':' or ';', clashes say "is also the name of ...,
