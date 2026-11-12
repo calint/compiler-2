@@ -1486,11 +1486,11 @@ class expr_bool final : public statement {
 
         // the connective after an operand, e.g. the 'and' of
         // 'a == 1 and b == 2'
-        const token op_tk{tz.next_token()};
+        const token op_tk{tz.peek_token()};
 
         if (const std::optional<connective> op{connective_of(op_tk)}) {
             return spelled_operator<connective>{
-                .tk{op_tk},
+                .tk{tz.next_token()},
                 .op{*op},
             };
         }
@@ -1502,8 +1502,6 @@ class expr_bool final : public statement {
         if (parens_.is_enclosed()) {
             throw_unclosed_list(op_tk);
         }
-
-        tz.put_back_token(op_tk);
 
         return std::nullopt;
     }

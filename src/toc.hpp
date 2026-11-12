@@ -2950,7 +2950,7 @@ class parse_toc final : public toc {
             throw_invalid_name(name_tk, name_tk.text());
         }
 
-        if (std::ranges::contains(reserved_names::keywords, name_tk.text())) {
+        if (reserved_names::is_keyword(name_tk.text())) {
             throw compile_error{
                 name_tk,
                 std::format("{} is a keyword", in_quotes(name_tk.text()))};

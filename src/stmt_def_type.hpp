@@ -163,7 +163,7 @@ struct generic_type_use {
         //       definition after 'type str ='
 
         if (not name_tk.is_word() or
-            std::ranges::contains(reserved_names::keywords, name_tk.text())) {
+            reserved_names::is_keyword(name_tk.text())) {
 
             throw compile_error{name_tk, "expected a generic type after '='"};
         }

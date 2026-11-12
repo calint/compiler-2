@@ -1,6 +1,5 @@
 #pragma once
 
-#include <algorithm>
 #include <cassert>
 #include <cstddef>
 #include <format>
@@ -441,14 +440,13 @@ class statement {
                                                  tokenizer& tz)
         -> std::optional<token> {
 
-        const token type_tk{tz.next_token()};
+        const token next_tk{tz.peek_token()};
 
-        if (type_tk.is_none() or
-            std::ranges::contains(reserved_names::keywords, type_tk.text())) {
-
-            tz.put_back_token(type_tk);
+        if (next_tk.is_none() or reserved_names::is_keyword(next_tk.text())) {
             return std::nullopt;
         }
+
+        const token type_tk{tz.next_token()};
 
         assert_not_literal_type(type_tk);
         assert_no_type_arguments(tc, tz, type_tk);

@@ -172,11 +172,9 @@ class stmt_block final : public statement {
 
             const token tk{tz.next_token()};
 
-            // the source ended before the '}'
+            // e.g. the source ended before the '}'
             if (tk.is_none()) {
-                tz.assert_not_at_delimiter();
-
-                throw compile_error{tz, "expected '}' to close block"};
+                tz.throw_unclosed_block();
             }
 
             statements_.emplace_back(parse_statement(tc, tz, tk));

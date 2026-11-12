@@ -448,6 +448,37 @@ throw_condition_not_operand(const token& src_loc_tk,
                                     maker)};
 }
 
+// a literal or a call result has no storage, e.g. 'literal' is "an array
+// literal", "an instance literal of 'point'" or "'mk()'"
+[[noreturn]] inline auto
+throw_literal_not_operand(const token& tk, const std::string_view literal)
+    -> void {
+
+    throw compile_error{tk, std::format("{} is not an operand here, store it "
+                                        "in a variable first",
+                                        literal)};
+}
+
+// an instance literal of 'type_name' has no storage, e.g. 'point{1, 2}.x'
+[[noreturn]] inline auto
+throw_instance_literal_not_operand(const token& tk,
+                                   const std::string_view type_name) -> void {
+
+    throw_literal_not_operand(
+        tk, std::format("an instance literal of {}", in_quotes(type_name)));
+}
+
+// a value named like a type hides the type, e.g. 'point' after
+// 'var point = 1'
+[[noreturn]] inline auto throw_value_hides_type(const token& tk,
+                                                const std::string_view name)
+    -> void {
+
+    throw compile_error{tk, std::format("{} names a value here, which hides "
+                                        "the type {}",
+                                        in_quotes(name), in_quotes(name))};
+}
+
 // a 'not' where 'what' is expected, e.g. the 'not' of 'q = not b' for "an
 // instance of 'pt'"
 [[noreturn]] inline auto throw_not_makes_condition(const token& not_tk,

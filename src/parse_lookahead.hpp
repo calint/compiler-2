@@ -9,10 +9,8 @@
 // 'stmt_identifier::is_method_name', a function head by 'func_head'; the
 // rejections that run before a parse would misread ('assert_*') and the
 // predicates of the shape of what follows ('continues_*', 'is_*',
-// 'starts_value'); 'throw_literal_not_operand' words a literal or a call
-// result used where only storage is an operand
+// 'starts_value')
 
-#include <algorithm>
 #include <cassert>
 #include <cstddef>
 #include <cstdint>
@@ -41,10 +39,7 @@
         return true;
     }
 
-    tokenizer probe{tz};
-    const token next_tk{probe.next_token()};
-
-    return connective_of(next_tk).has_value();
+    return connective_of(tz.peek_token()).has_value();
 }
 
 // a binary operator or a connective follows, which would continue the
@@ -95,10 +90,9 @@ inline auto assert_no_surplus_argument(const tokenizer& tz,
         return false;
     }
 
-    tokenizer probe{tz};
-    const token tk{probe.next_token()};
+    const token tk{tz.peek_token()};
 
-    if (not std::ranges::contains(reserved_names::keywords, tk.text())) {
+    if (not reserved_names::is_keyword(tk.text())) {
         return true;
     }
 
@@ -123,10 +117,10 @@ inline auto assert_not_string_argument(tokenizer& tz) -> void {
 inline auto assert_no_value_operator(const tokenizer& tz,
                                      const std::string_view what) -> void {
 
-    tokenizer probe{tz};
+    const token next_tk{tz.peek_token()};
 
-    if (const std::optional<token> not_tk{probe.accept_word_token("not")}) {
-        throw_not_makes_condition(*not_tk, what);
+    if (next_tk.is_text("not")) {
+        throw_not_makes_condition(next_tk, what);
     }
 
     if (tz.peek_char_after_whitespace() == '(') {
@@ -293,8 +287,7 @@ enum class term_kind : uint8_t {
 
     // a keyword before '(' is not a call, e.g. 'not (a == 2)'
     // note: 'self' is the one keyword that names a value
-    if (not is_hidden and
-        std::ranges::contains(reserved_names::keywords, text)) {
+    if (not is_hidden and reserved_names::is_keyword(text)) {
 
         return term_kind::keyword;
     }
@@ -476,35 +469,4 @@ builtin_value_type(const parse_toc& tc, const token& tk, const term_kind tm)
 [[nodiscard]] inline auto is_literal_reached_into(const tokenizer& tz) -> bool {
     tokenizer after_literal{tz};
     return skip_literal(after_literal) and is_reached_into(after_literal);
-}
-
-// a literal or a call result has no storage, e.g. 'literal' is "an array
-// literal", "an instance literal of 'point'" or "'mk()'"
-[[noreturn]] inline auto
-throw_literal_not_operand(const token& tk, const std::string_view literal)
-    -> void {
-
-    throw compile_error{tk, std::format("{} is not an operand here, store it "
-                                        "in a variable first",
-                                        literal)};
-}
-
-// an instance literal of 'type_name' has no storage, e.g. 'point{1, 2}.x'
-[[noreturn]] inline auto
-throw_instance_literal_not_operand(const token& tk,
-                                   const std::string_view type_name) -> void {
-
-    throw_literal_not_operand(
-        tk, std::format("an instance literal of {}", in_quotes(type_name)));
-}
-
-// a value named like a type hides the type, e.g. 'point' after
-// 'var point = 1'
-[[noreturn]] inline auto throw_value_hides_type(const token& tk,
-                                                const std::string_view name)
-    -> void {
-
-    throw compile_error{tk, std::format("{} names a value here, which hides "
-                                        "the type {}",
-                                        in_quotes(name), in_quotes(name))};
 }

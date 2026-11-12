@@ -8,7 +8,6 @@
 // function is defined before its use, so the entry points are last: read from
 // the bottom
 
-#include <algorithm>
 #include <cassert>
 #include <cstdint>
 #include <format>
@@ -85,7 +84,7 @@ assert_builtin_place(const token& tk,
 // the statement of the built-in at 'tk', a conversion to 'converted' when it
 // is not null
 inline auto make_builtin(parse_toc& tc, tokenizer& tz, const token& tk,
-                         const type* const converted, unary_ops& uops)
+                         const type* const converted, unary_ops uops)
     -> std::unique_ptr<statement> {
 
     if (const stmt_builtin_io::io_function* const io{
@@ -123,13 +122,19 @@ inline auto make_builtin(parse_toc& tc, tokenizer& tz, const token& tk,
                                                   std::move(uops), tk, tz);
 }
 
-// a call of the built-in at 'tk', classified as 'tm', null when 'tk' names
-// none; the catalog says where it may stand ('assert_builtin_place'); 'uops'
-// are taken only by a statement made
+// a built-in function or a conversion, the terms 'parse_builtin' takes
+[[nodiscard]] inline auto is_builtin_term(const term_kind tm) -> bool {
+    return tm == term_kind::builtin_function or tm == term_kind::conversion;
+}
+
+// a call of the built-in at 'tk', classified as 'tm' ('is_builtin_term'); the
+// catalog says where it may stand ('assert_builtin_place')
 inline auto parse_builtin(parse_toc& tc, tokenizer& tz, const token& tk,
-                          const term_kind tm, unary_ops& uops,
+                          const term_kind tm, unary_ops uops,
                           const builtin_place at)
     -> std::unique_ptr<statement> {
+
+    assert(is_builtin_term(tm));
 
     const reserved_names::builtin_function* const fn{
         reserved_names::find_builtin_function(tk.text()),
@@ -154,13 +159,9 @@ inline auto parse_builtin(parse_toc& tc, tokenizer& tz, const token& tk,
         tm == term_kind::conversion ? &conversion_type(tc, tk) : nullptr,
     };
 
-    if (fn == nullptr and converted == nullptr) {
-        return nullptr;
-    }
-
     assert_builtin_place(tk, fn, at);
 
-    return make_builtin(tc, tz, tk, converted, uops);
+    return make_builtin(tc, tz, tk, converted, std::move(uops));
 }
 
 // e.g. the 'a' of 'return a', a value on the line of the 'return' that no
@@ -183,7 +184,7 @@ inline auto assert_return_without_value(const tokenizer& tz,
 
     const bool is_lone_name{
         is_identifier(tk.text()) and
-            not std::ranges::contains(reserved_names::keywords, tk.text()) and
+            not reserved_names::is_keyword(tk.text()) and
             not probe.is_lone_equals_next() and
             not std::string_view{"(.[<"}.contains(
                 probe.peek_char_after_whitespace()),
@@ -214,7 +215,7 @@ inline auto parse_keyword_statement(parse_toc& tc, tokenizer& tz,
 
     // rejected before its initializer or body, whose errors would hide this
     // one
-    if (std::ranges::contains(reserved_names::definition_keywords, tk.text())) {
+    if (reserved_names::is_definition_keyword(tk.text())) {
         throw_not_global(tk);
     }
 
@@ -517,11 +518,9 @@ inline auto parse_operand(parse_toc& tc, tokenizer& tz, unary_ops uops,
     const token tk{tz.next_token()};
     const term_kind tm{classify_operand(tc, tk, tz)};
 
-    if (std::unique_ptr<statement> builtin{
-            parse_builtin(tc, tz, tk, tm, uops, builtin_place::value),
-        }) {
-
-        return builtin;
+    if (is_builtin_term(tm)) {
+        return parse_builtin(tc, tz, tk, tm, std::move(uops),
+                             builtin_place::value);
     }
 
     call_or_identifier parsed{
@@ -561,13 +560,9 @@ inline auto parse_statement(parse_toc& tc, tokenizer& tz, const token& tk)
 
     // e.g. 'arrays_equal(a, b, 4)' or 'i8(x)' alone is rejected, its value is
     // all it does
-    unary_ops no_uops;
-
-    if (std::unique_ptr<statement> builtin{
-            parse_builtin(tc, tz, tk, tm, no_uops, builtin_place::statement),
-        }) {
-
-        return builtin;
+    if (is_builtin_term(tm)) {
+        return parse_builtin(tc, tz, tk, tm, unary_ops{},
+                             builtin_place::statement);
     }
 
     // e.g. 'lst.add(1)'

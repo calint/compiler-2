@@ -113,18 +113,17 @@ inline auto expr_any::parse_instance_source(parse_toc& tc, tokenizer& tz,
                                             const token& tk, const term_kind tm,
                                             const type& tp) -> expr_variant {
 
-    unary_ops no_uops;
-
     // a built-in is not a function, its value is a scalar of a built-in type
-    if (const std::unique_ptr<statement> builtin{
-            parse_builtin(tc, tz, tk, tm, no_uops, builtin_place::value),
-        }) {
+    if (is_builtin_term(tm)) {
+        const std::unique_ptr<statement> builtin{
+            parse_builtin(tc, tz, tk, tm, unary_ops{}, builtin_place::value),
+        };
 
         throw_type_mismatch(tk, tp.name(), builtin->get_type().name());
     }
 
     call_or_identifier parsed{
-        parse_call_or_identifier(tc, tz, tk, tm, std::move(no_uops), &tp),
+        parse_call_or_identifier(tc, tz, tk, tm, unary_ops{}, &tp),
     };
 
     if (std::unique_ptr<stmt_call>* const call{

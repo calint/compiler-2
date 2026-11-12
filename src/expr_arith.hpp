@@ -767,13 +767,12 @@ class expr_arith final : public statement {
     // a comparison, 'and' or 'or' after a number, e.g. the '>' of 'int(a > 2)'
     // or the 'and' of '(t and f) == f'
     static auto assert_no_condition_next(const tokenizer& tz) -> void {
-        tokenizer probe{tz};
-
-        if (comparison_of(probe.peek_operator())) {
+        if (comparison_of(tz.peek_operator())) {
+            tokenizer probe{tz};
             throw_condition_not_operand(probe.seen_operator(), "a comparison");
         }
 
-        const token next_tk{probe.next_token()};
+        const token next_tk{tz.peek_token()};
 
         if (connective_of(next_tk)) {
             throw_condition_not_operand(next_tk, in_quotes(next_tk.text()));

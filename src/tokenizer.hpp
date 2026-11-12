@@ -103,14 +103,11 @@ class tokenizer final {
     [[nodiscard]] auto accept_word_token(const std::string_view word)
         -> std::optional<token> {
 
-        const token tk{next_token()};
-
-        if (not tk.is_text(word)) {
-            put_back_token(tk);
+        if (not peek_token().is_text(word)) {
             return std::nullopt;
         }
 
-        return tk;
+        return next_token();
     }
 
     // e.g. the last ',' of 'f(1, 2,)', 'close' ends the list; a braced list
@@ -223,13 +220,22 @@ class tokenizer final {
         return past_whitespace().operator_at_cursor();
     }
 
+    // the token that 'next_token' would read, without reading it, e.g. the
+    // 'and' of ' and c'
+    [[nodiscard]] auto peek_token() const -> token {
+        tokenizer probe{*this};
+        return probe.next_token();
+    }
+
     // the position of the next token, past the whitespace and comments
     [[nodiscard]] auto peek_token_position() const -> token {
         return past_whitespace().cur_position_token();
     }
 
-    // only the last read token can be put back, otherwise the rewind lands
-    // at an unrelated position
+    // undoes the read of 'tk' after a look at what follows it, e.g. by
+    // 'classify_term'; a look at the token alone is 'peek_token'; only the
+    // last read token can be put back, otherwise the rewind lands at an
+    // unrelated position
     auto put_back_token(const token& tk) -> void {
         assert(tk.source_end_index() == char_ix_);
         assert(is_token_text_at_source(tk));
@@ -281,17 +287,7 @@ class tokenizer final {
     // body without its '}'
     auto skip_braced_block_after(const token& tk) -> std::string_view {
         if (not skip_braced_block()) {
-            if (const std::optional<token> keyword_tk{
-                    definition_keyword_next(),
-                }) {
-
-                throw_not_global(*keyword_tk);
-            }
-
-            // e.g. the ')' of '{ x ) }', as in a block that is parsed
-            assert_not_at_delimiter();
-
-            throw compile_error{*this, "expected '}' to close block"};
+            throw_unclosed_block();
         }
 
         return text_after(tk);
@@ -329,6 +325,21 @@ class tokenizer final {
         // note: the text starts after 'tk' because its statement prints 'tk'
 
         return src_.substr(begin_ix, char_ix_ - begin_ix);
+    }
+
+    // a block that the parse or a skip read up to here lacks its '}': a
+    // keyword that starts a definition is next, e.g. the 'func' after a body
+    // without its '}', a closer of no open bracket, e.g. the ')' of
+    // '{ x ) }', or the end of the source; one report for both, so a skipped
+    // generic body is rejected as a parsed one
+    [[noreturn]] auto throw_unclosed_block() const -> void {
+        if (const std::optional<token> keyword_tk{definition_keyword_next()}) {
+            throw_not_global(*keyword_tk);
+        }
+
+        assert_not_at_delimiter();
+
+        throw compile_error{*this, "expected '}' to close block"};
     }
 
     //
@@ -390,13 +401,9 @@ class tokenizer final {
 
     // the keyword that starts a definition when it is next, e.g. 'func'
     [[nodiscard]] auto definition_keyword_next() const -> std::optional<token> {
-        tokenizer probe{*this};
+        const token tk{peek_token()};
 
-        const token tk{probe.next_token()};
-
-        if (not std::ranges::contains(reserved_names::definition_keywords,
-                                      tk.text())) {
-
+        if (not reserved_names::is_definition_keyword(tk.text())) {
             return std::nullopt;
         }
 

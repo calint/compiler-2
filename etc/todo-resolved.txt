@@ -1,6 +1,22 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 371 (2026-11-12, design: the tokenizer and parse layer)
+    => done (2026-11-12): one look at the next token,
+       'tokenizer::peek_token', replaces the copies of single-token probes
+       and three put-backs ('read_connective', 'read_declared_type',
+       'accept_word_token'); 'put_back_token' only undoes a read classified
+       with what follows; 'throw_unclosed_block' is the one report of a
+       block without its '}' for 'stmt_block' and 'skip_braced_block_after',
+       so a skipped generic body is rejected as a parsed one by
+       construction; callers decide 'is_builtin_term' and 'parse_builtin'
+       takes its 'unary_ops' by value, never null, no dummy 'no_uops';
+       'throw_literal_not_operand', 'throw_instance_literal_not_operand'
+       and 'throw_value_hides_type' moved to 'compile_error.hpp';
+       'reserved_names::is_keyword' and 'is_definition_keyword' replace 9
+       'std::ranges::contains' calls; listings and errors unchanged; left:
+       the put-backs that classify with what follows, the deduction skips
+       of 'stmt_call'
 [x] easy: round 370 (2026-11-12, design: the order and assignment rules)
     => done (2026-11-12): 'is_loop_end_reached' next to 'loop_end'
        ('ub_assigned.hpp') is the one rule of 'assignment_flow::trace_loop'

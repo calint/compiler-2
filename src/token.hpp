@@ -62,6 +62,16 @@ inline constexpr std::array<std::string_view, 4> definition_keywords{
     "include",
 };
 
+[[nodiscard]] constexpr auto is_keyword(const std::string_view text) -> bool {
+    return std::ranges::contains(keywords, text);
+}
+
+[[nodiscard]] constexpr auto is_definition_keyword(const std::string_view text)
+    -> bool {
+
+    return std::ranges::contains(definition_keywords, text);
+}
+
 // the value a built-in function call has: none for a statement, a count at
 // the default type, or a 'bool'
 enum class builtin_value : uint8_t { none, count, boolean };
