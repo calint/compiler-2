@@ -1,6 +1,21 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 404 (2026-11-13, design by the measured layering: every
+    reference of 'src' resolved to the file of its declaration, against
+    the layers and the reading order of README 1.1; readability: every
+    function of 'toc.hpp', 'ident_info.hpp', the 'ub_*' files and
+    'access_path.hpp', the examples of their comments compiled)
+    => done (2026-11-13): 'machine::body_label_prefix' is gone, its one
+       user 'stmt_def_func::body_label' (layer 5) writes "func.{}" as the
+       labels beside it; 65 files each in one layer, no include cycle, no
+       upward include; layers 2 and 3 name nothing above them; five
+       upward names, all forward declarations used by reference; the 17
+       forward declarations are needed, the members defined in a later
+       file are those of README 7.7; listings unchanged (2495 cases)
+    => readability: nothing to fix: the names the comments cite exist,
+       the class maps match, every note holds, every example is rejected
+       or accepted as its comment says
 [x] easy: round 403 (2026-11-13, design by measured control flow: the
     2307 functions of 'src' ranked by length, nesting, branches,
     parameters and bool parameters; readability: every function of

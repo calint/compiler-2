@@ -524,8 +524,7 @@ class stmt_def_func final : public statement {
         const std::span<const std::optional<size_t>> array_lengths = {}) const
         -> std::string {
 
-        return std::format("{}{}", machine::body_label_prefix,
-                           name_with_lengths(array_lengths));
+        return std::format("func.{}", name_with_lengths(array_lengths));
     }
 
     // for the errors of a function without its calls, also those in code a

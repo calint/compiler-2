@@ -729,9 +729,6 @@ class machine {
         std::numeric_limits<unsigned char>::digits,
     };
 
-    // the start of the label of a noinline body
-    static constexpr std::string_view body_label_prefix{"func."};
-
   protected:
     // 'read' serves only standard input and 'write' standard output and
     // standard error, see 'emit_io_routines'
