@@ -66,7 +66,7 @@ operation.
 | `fuzz-mutate.py` | mutations of the structure of the sources in `qa/coverage/tests`, mostly of the accepted ones (types, array sizes, numbers at the edges, `mut`, `noinline`, statements moved, wrapped and taken from another test, blocks nested, definitions swapped and renamed, arguments) into the sanitizer build of the compiler on the four targets with random options: crashes, hangs, rejections without a position |
 | `fuzz-options.py` | the command line: sizes, check lists, targets, odd files |
 | `fuzz-roome.py` | mutated sessions of `roome/src/main.baz` on x86_64 and rv32i-fpga, every other one also on rv32i |
-| `fuzz-alias.sh` | the alias check against a brute force of the bytes |
+| `fuzz-alias.sh`, `alias-path-fuzz.cpp`, `alias-foo-fuzz.py` | the alias check against a brute force of the bytes: the comparison of two paths alone, then programs through the compiler |
 | `fuzz-ub.sh --mutants` | the check of the checks: turns off one check at a time and requires a mismatch of `fuzz-ub.py` |
 | `fuzz-reduce.py`, `fuzz-reduce-roome.py` | shrink a finding |
 

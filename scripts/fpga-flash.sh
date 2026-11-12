@@ -1,4 +1,7 @@
 #!/bin/sh
+# compiles a baz program for 'rv32i-fpga' and flashes the image to a tang nano
+# board with 'openFPGALoader', see 'print_usage'; the board settings are in
+# 'fpga-config-20k.sh' and 'fpga-config-9k.sh'
 set -eu
 
 print_usage() {

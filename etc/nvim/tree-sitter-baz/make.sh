@@ -1,4 +1,9 @@
 #!/bin/sh
+# generates and tests the parser, installs it with the queries and the
+# plugins into '~/.local/share/nvim/site/' and copies the grammar to the
+# checkout of the 'tree-sitter-baz' project next to this repository, which
+# must exist
+# usage: etc/nvim/tree-sitter-baz/make.sh
 set -eu
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"

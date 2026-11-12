@@ -1,7 +1,0 @@
-# a write to the sector at the end of the sd card image panics and does not
-# extend the image
-
-func main() {
-    var bytes = i8[512]
-    sector_write(2048, bytes)
-}

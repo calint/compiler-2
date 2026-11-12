@@ -1,4 +1,10 @@
 #!/bin/sh
+# the full check before a commit: clang-tidy with fixes, the formatter, the
+# design rules, the editor support tests, every test with the coverage build
+# ('qa/coverage/test-all.sh'), the plain build, roome, then the tracked
+# listings and 'README.md' written again
+# usage: scripts/prepare-for-commit.sh
+# note: './run.sh' runs 'prog.baz', which reads a line of input
 set -eu
 cd "$(dirname "$0")"
 

@@ -1,3 +1,5 @@
+# only for the profile build of 'scripts/perf.sh'; the build of the compiler is
+# './make.sh build', which also sets the version and the sanitizers
 cmake_minimum_required(VERSION 3.25)
 project(compiler-2)
 set(CMAKE_CXX_COMPILER "clang++")

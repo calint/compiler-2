@@ -1,4 +1,10 @@
 #!/bin/sh
+# tests the emulator: the instructions ('ram.S' assembled with
+# 'riscv64-elf-g++', run by 'main.cpp'), the sd card ('sdcard.cpp',
+# 'sdcard-firmware.cpp') and the stops at a misaligned access, an instruction
+# that is not rv32i and a device address ('misaligned.S'); needs
+# 'riscv64-elf-g++', 'riscv64-elf-objcopy' and 'riscv64-elf-objdump'
+# usage: fpga-emulator/qa/test.sh
 set -e
 cd "$(dirname "$0")"
 

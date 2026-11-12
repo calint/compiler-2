@@ -1,4 +1,7 @@
 #!/bin/sh
+# prints the peak heap of the compiler for each test source, measured with
+# valgrind massif: 'NNNN.baz: BYTES mem_heap_B'
+# usage: scripts/run-tests-and-print-peak-mem-usage.sh
 set -eu
 cd "$(dirname "$0")"
 

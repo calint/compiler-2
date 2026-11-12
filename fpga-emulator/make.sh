@@ -1,4 +1,6 @@
 #!/bin/sh
+# builds the emulator 'osqa' from 'src/main.cpp'
+# usage: fpga-emulator/make.sh [options of g++]
 set -e
 cd "$(dirname "$0")"
 

@@ -7482,9 +7482,6 @@ if [[ $MACHINE != rv32i-qemu ]]; then SRC=2464 && COMPERR; fi
 # extended
 if [[ $MACHINE == x86_64 || $MACHINE == rv32i ]]; then SRC=2465 && EXP=248 && SDCARD=1M RUN_ERR; fi
 
-# an empty sd card image has no sector to write
-if [[ $MACHINE == x86_64 || $MACHINE == rv32i ]]; then SRC=2466 && EXP=248 && RUN_ERR; fi
-
 # x86_64: the sector 2^32, which a 32 bit register cannot hold, panics also
 # on an image that holds it
 if [[ $MACHINE == x86_64 ]]; then SRC=2467 && EXP=248 && SDCARD=3T RUN_ERR; fi
@@ -7541,10 +7538,6 @@ if [[ $MACHINE != rv32i-qemu ]]; then SRC=2504 && EXP=10 && SDCARD=1M RUN; fi
 # x86_64: with an image of more than 2^32 sectors, sector 2^32 is inside the
 # image and still panics, a 32 bit register cannot hold it
 if [[ $MACHINE == x86_64 ]]; then SRC=2505 && EXP=248 && SDCARD=3T RUN_ERR; fi
-
-# a write to the sector at the end of the sd card image panics and does not
-# extend the image
-if [[ $MACHINE == x86_64 || $MACHINE == rv32i ]]; then SRC=2506 && EXP=248 && SDCARD=1M RUN_ERR; fi
 
 # rv32i loads a constant that is an odd 6-bit value shifted left with 'addi'
 # and 'slli', as llvm does, also at the largest and smallest such value

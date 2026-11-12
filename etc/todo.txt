@@ -3,9 +3,48 @@
 --------------------------------------------------------------------------------
 each open item starts with its difficulty: easy, medium or hard
 sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
+'user decision', 'need approval': waits for the owner, not for work
+'(round N XX)': the review round that raised the item and its finding there,
+the rounds are the entries of 'etc/todo-resolved.txt'; a four-digit number
+is the test 'qa/coverage/tests/NNNN.baz'
 --------------------------------------------------------------------------------
 1. clean up
 --------------------------------------------------------------------------------
+[p] easy: need approval (round 393, preparation for a human review):
+    files nothing refers to, the owner's notes: 'etc/clipboard.txt' (stale
+    paths), 'etc/from/*.html', 'etc/notes/*.html' and
+    'etc/notes/x86-64-reference.pdf' (third-party pages saved into the
+    repository, a copyright question), 'etc/notes/cmov.txt',
+    'etc/notes/registers.txt', 'etc/mascot.png', 'qa/perf/top-baz.txt' (a
+    perf output of 2026-09-22 naming symbols that are gone),
+    'qa/coverage/test-coverage-full.sh' (runs less than 'test-all.sh')
+    => delete them; move the dated studies ('etc/baz-memory-usage.txt',
+       'etc/compiling-baz-for-size.txt', 'etc/roome-*.txt') to
+       'etc/studies/'; refresh the versions in 'etc/tools.txt'
+[p] easy: need approval (round 393): a new file 'qa/README.md': what to
+    run in five minutes, 'coverage/' ('cases.sh', the helpers, the expected
+    files, 'UPDATE=1'), 'lint/', 'fuzz/' (a link), 'perf/', what
+    'test-all.sh' adds and costs; it would also say that 'qa/coverage'
+    holds every test and 'test-coverage.sh run' is the plain test runner
+[p] easy: need approval (round 393): 'README.md' is about 5700 lines, the
+    feature list is followed by the full listing of 'prog.s'
+    => keep a short listing and link the file
+[p] easy: need approval (round 393): 'qa/lint/cppcheck.sh' exits 0 after
+    one 'syntaxError' at 'src/machine.hpp' ('static_assert([] -> bool {')
+    and analyses nothing (cppcheck 2.22 on c++23 code)
+    => remove the script and its mention in 'etc/docs/README.md', or write
+       the lambda with '()' if cppcheck then gets through
+[ ] easy: (round 393) a reviewer stumbles on: '.gitignore' does not cover
+    the outputs of the README's first program ('hello', 'hello.s',
+    'hello-without-comments.s'); commented-out lines in
+    'scripts/fast-prepare-for-commit.sh', 'qa/coverage/test-all.sh',
+    'fpga-emulator/make.sh', 'fpga-emulator/qa/test.sh'; 'scripts/perf.sh'
+    and 'qa/perf/perf.sh' are two profilers with one name;
+    'etc/nvim/tree-sitter-baz/make.sh' needs a sibling checkout outside the
+    repository and 'scripts/prepare-for-commit.sh' depends on it;
+    'scripts/fpga-config-*.sh' name a generator of another repository; the
+    emulator namespace 'osqa' is not explained; 'source_files::contains'
+    is the subject of three items here
 [ ] hard: the listing indent lives in 'toc' (round 331) and the backend
     takes it in every 'emit_site' (round 319); held by the machine or the
     assembler, 'emit_site' would shrink to a token and the 142 front-end
@@ -35,11 +74,9 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
     qemu-riscv32 user mode as new files in 'fpga-emulator/qa' (random
     instructions from edge register values over random data, final
     registers and data compared; caught three injected mutants); needs
-    qemu-riscv32 and python3 in 'qa/test.sh'; sources
-    /tmp/r385-em-work/diff/ (gen.py, harness.cpp, run.sh), at risk on reboot
-[ ] easy: (round 380) duplicate tests: 2465 and 2506 have the same source,
-    expected file, options and targets; 2466 has the source of 2870, whose
-    targets include those of 2466; one of each pair is redundant
+    qemu-riscv32 and python3 in 'qa/test.sh'; its sources
+    (gen.py, harness.cpp, run.sh) were kept in '/tmp' and are gone
+    (2026-11-13), so the test is written again when approved
 [ ] easy: (round 364) 'test-coverage.sh' has no way to run one case (about
     30 s on x86_64 for all); e.g. 'ONLY=NNNN'
 [ ] easy: rv32i writes a zero 'dat' at full size into its image: 'dat
@@ -48,13 +85,6 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
     to '/dev/null'; 'fuzz-compiler.py' writes the image to a file and can
     report the same false 'compiler-crash')
     => decide whether a zero 'dat' at the end belongs in the image
-[ ] medium: user decision (round 315 AM): the size of an inline expansion
-    has no bound, only its depth (64 levels, 256 scopes): 'r(a, k - 1)'
-    called twice in 'r' and entered as 'r(a, 40)' doubles the work per
-    level (k 16: 2.6 s, 619 MB; k 20: 42 s, 10.6 GB; k 40 ends in
-    "internal error: std::bad_alloc"), also 20 functions that each call the
-    previous one twice; a limit on the inlined bodies of one call with the
-    advice to declare a function 'noinline' would reject it cleanly
 [ ] easy: user decision (round 315 AM): x86_64 writes a zero 'dat' as
     'times N db 0' in '.data', which nasm takes about 65 ns per byte for
     (256 MiB 17.6 s), so a 'dat' of 2 GiB or more does not assemble in
@@ -184,6 +214,10 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
     by dry runs and dropped versions) and throw 'inlining_limit' past a
     measured bound (about 65536 bodies, about 6 s), README chapter 8 as
     another place where acceptance depends on inlining
+    => round 315 AM, the same finding: 'r(a, k - 1)' called twice in 'r'
+       and entered as 'r(a, 40)': k 16 takes 2.6 s and 619 MB, k 20 42 s and
+       10.6 GB, k 40 ends in "internal error: std::bad_alloc"; the message
+       of the limit would advise to declare the function 'noinline'
 [ ] medium: user decision (round 224 UB1): a typed 'let' passed as a
     generic constant loses its type, 'let K = i8(127)' and 'type B =
     buf<K>' make 'N + 1' 128 at the default type inside the instance where
@@ -406,12 +440,11 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
     a noinline 'g(v [], i)': 13 of 13 registers; the callee may be inlined
     or noinline; an inlined caller runs out too: 'main' calling an inlined
     'sum(a item, ..., g item)' with seven arguments 'w[i].items[j]' is
-    rejected on x86_64 and accepted on rv32i (bug hunt round 16 D2); probes
-    in the session scratchpad 'regs'; the frame check
-    ('machine::check_frame_capacity') took two more registers while the
-    addresses are held, so 13 indexed arguments of a noinline call in 'main'
-    were rejected with '--checks=frame' (bug hunt round 12 Z2-1); since
-    design review round 10 it takes one on x86_64, which accepts them
+    rejected on x86_64 and accepted on rv32i (bug hunt round 16 D2); the
+    frame check ('machine::check_frame_capacity') took two more registers
+    while the addresses are held, so 13 indexed arguments of a noinline call
+    in 'main' were rejected with '--checks=frame' (bug hunt round 12 Z2-1);
+    since design review round 10 it takes one on x86_64, which accepts them
     => fix: keep an argument's address in one register once it is computed
        (fold the base and the index), as rv32i does; in the shared code that
        keeps a call argument's address, so the listings of inlined and
@@ -425,7 +458,8 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
        with one 'lea' and frees the index ('held_registers::free_last'),
        about +65 lines; x86_64 +11 instructions over the tests, rv32i -90
        (nested versions get folded addresses), 56 of 2264 compiles change,
-       2089 runs out later; the diff is '/tmp/r203-keep/fold.diff'
+       2089 runs out later; the diff was kept in '/tmp' and is gone
+       (2026-11-13)
 [ ] hard: noinline calls: cost of the call protocol (roome, x86_64, no
     checks, 2026-11-06: every function but 'main' noinline 6035
     instructions against 10139 all inline and 5815 as written; 331 calls,
@@ -592,13 +626,13 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
        ('assert_not_declared_in_scope' merged into it); 14 source lines
        fewer; 1177 and 2644 become rejection tests, the box part of 1185
        goes; rejects programs accepted today, e.g. 'func list.get(n)' on
-       'type list<T type, n>'; patch /tmp/r324-bi-work/bi-2.diff
+       'type list<T type, n>'; the patch was kept in '/tmp' and is gone
+       (2026-11-13)
 [p] medium: need approval: in a generic instance a guard on a length does not
     protect a constant index: 'if array_length(b.items) > 4 { b.items[4] =
     1 }' instantiated with 'buf<4>' is rejected, the condition is constant
     at the parse of the instance and skipped code obeys the rules; the same
-    guard on an unsized 'i8[]' parameter is accepted (round 325 BM, probes
-    /tmp/r325-bm-work/t/g1-g3.baz)
+    guard on an unsized 'i8[]' parameter is accepted (round 325 BM)
     => round 92 J1 rejected a check per length because it would reject code
        guarded by a length, which is what an instance does here
     => decide whether an instance behaves as an unsized parameter there

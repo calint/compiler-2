@@ -1,4 +1,8 @@
 #!/bin/sh
+# like 'prepare-for-commit.sh' without the coverage build: the cases on
+# x86_64 and rv32i-fpga and the command line tests with the '-O3' build
+# usage: scripts/fast-prepare-for-commit.sh
+# note: './run.sh' runs 'prog.baz', which reads a line of input
 set -eu
 cd "$(dirname "$0")"
 

@@ -111,7 +111,10 @@ the binary image itself.
 * requirements: `clang++` 23 or later (tested with 23.1), `nasm`, `ld`,
   `llvm-mc`, `ld.lld`, `qemu-riscv32`, `qemu-system-riscv32`, `g++` (C++23)
   for the fpga emulator of `rv32i-fpga`; the tests need `python3` and
-  `llvm-objcopy`, the coverage report `llvm-profdata` and `llvm-cov`
+  `llvm-objcopy`, the coverage report `llvm-profdata` and `llvm-cov`, the
+  tests of the emulator (`fpga-emulator/qa/test.sh`) `riscv64-elf-g++` with
+  its `objcopy` and `objdump`; the versions last used are in
+  [`etc/tools.txt`](etc/tools.txt)
 * [`./make.sh`](make.sh) compiles the compiler then compiles and runs
   [`prog.baz`](prog.baz), `./make.sh build` only compiles the compiler
 * [`./run.sh`](run.sh) `[options] [NAME.baz]` compiles, assembles and runs
@@ -149,15 +152,23 @@ the binary image itself.
   * generics, type aliases, the zero value `{}`, `let` and `foo arr, count`
     are explained there; inside `foo` the names `e`, `i` and `n` hide outer
     names and cannot be declared in its body
-* [`qa/coverage/test-all.sh`](qa/coverage/test-all.sh) runs the tests, coverage
-  report in `qa/coverage/report/`
+* tests: after `./make.sh -O3 build`,
+  `qa/coverage/test-coverage.sh --target=x86_64 run` runs the cases of
+  [`qa/coverage/cases.sh`](qa/coverage/cases.sh) on one target (also `rv32i`,
+  `rv32i-qemu`, `rv32i-fpga`; one run at a time, they share files) and
+  `qa/coverage/test-cli.sh` the command line;
+  [`qa/coverage/test-all.sh`](qa/coverage/test-all.sh) runs every test on
+  every target with a coverage and sanitizer build that replaces `./baz` and
+  is many times slower, coverage report in `qa/coverage/report/`
 * neovim (lazyvim, see [`etc/nvim/tree-sitter-baz/`](etc/nvim/tree-sitter-baz/))
   with syntax highlighting and lsp (symbols, go to definition, rename,
   references)
 * example application [`roome/src/main.baz`](roome/src/main.baz), a text
   adventure that `roome/run.sh` runs on the fpga soft core emulator; type
   `help` for the commands and `go home` to end it
-* how the compiler works in [`etc/docs/README.md`](etc/docs/README.md)
+* how the compiler works in [`etc/docs/README.md`](etc/docs/README.md), which
+  starts with what a reviewer reads first; the order to read the sources of
+  `src/` is in its chapter 1.1
 * todo list of planned fixes and features in [`etc/todo.txt`](etc/todo.txt)
 
 ## Usage
@@ -256,10 +267,10 @@ examples:
 ```text
 Language                     files          blank        comment           code
 -------------------------------------------------------------------------------
-C/C++ Header                    64           9491           7602          27347
+C/C++ Header                    64           9502           7612          27365
 C++                              1            223            112            850
 -------------------------------------------------------------------------------
-SUM:                            65           9714           7714          28197
+SUM:                            65           9725           7724          28215
 -------------------------------------------------------------------------------
 ```
 

@@ -1,20 +1,28 @@
 # baz: how the compiler works
 
 The design documents of the compiler, in reading order: each chapter
-builds on the ones before it.
+builds on the ones before it. A comment in the sources or the scripts that
+says 'README 7.7' or 'README chapter 8' means a chapter of this document,
+not of the 'README.md' of the repository root.
 
 For a reviewer:
 
 1. the language: 'README.md', then 'etc/tutorial.baz'
 2. the code: the reading order in 1.1, the choices in chapter 7
 3. build: './make.sh build' (clang++ with c++26), one translation unit
-4. test: 'qa/coverage/test-all.sh', see its header and AGENTS.md "Tests"
-   (needs nasm, ld, llvm-mc, llvm-objcopy, ld.lld, llvm-profdata, llvm-cov,
-   qemu-riscv32, qemu-system-riscv32, g++ and python3); a four-digit number
-   in this document, e.g. (1711), is the test 'qa/coverage/tests/1711.baz'
-5. lint and format: 'qa/lint/clang-tidy.sh', 'qa/lint/check-all.sh' (the
-   design rules), 'qa/lint/format-source.sh', 'qa/lint/fix-source.py'
-   ('format-source.py' and 'fix-source.py' need the python libclang bindings)
+4. test: after './make.sh -O3 build',
+   'qa/coverage/test-coverage.sh --target=x86_64 run' (the cases of
+   'qa/coverage/cases.sh' on one target, well under a minute) and
+   'qa/coverage/test-cli.sh'; 'qa/coverage/test-all.sh' runs every test on
+   every target with a coverage and sanitizer build, many times slower, see
+   its header and AGENTS.md "Tests" (needs nasm, ld, llvm-mc, llvm-objcopy,
+   ld.lld, llvm-profdata, llvm-cov, qemu-riscv32, qemu-system-riscv32, g++
+   and python3); a four-digit number in this document, e.g. (1711), is the
+   test 'qa/coverage/tests/1711.baz'
+5. lint and format: 'qa/lint/clang-tidy.sh', 'qa/lint/cppcheck.sh',
+   'qa/lint/check-all.sh' (the design rules), 'qa/lint/format-source.sh',
+   'qa/lint/fix-source.py' ('format-source.py' and 'fix-source.py' need the
+   python libclang bindings); each script says what it does in its header
 6. fuzzing: 'qa/fuzz/fuzz-all.sh', see 'qa/fuzz/README.md'
 7. known limitations and planned work: 'etc/todo.txt', the reasons of past
    decisions: 'etc/todo-resolved.txt'

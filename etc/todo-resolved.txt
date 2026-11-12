@@ -1,6 +1,20 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 393 (2026-11-13, preparation for a human review: a
+    first-time reviewer's day: the docs against the tree, every command as
+    written, stale files, the todo list)
+    => done (2026-11-13): the docs give the quick test path first
+       ('./make.sh -O3 build', 'test-coverage.sh --target=x86_64 run',
+       'test-cli.sh'), name 'etc/tools.txt' and the riscv toolchain of the
+       emulator test, and say that 'README 7.7' in a comment means
+       'etc/docs/README.md'; header comments for the scripts that had none
+       ('scripts/*.sh', the emulator and tree-sitter ones); 'CMakeLists.txt'
+       says it is only for 'scripts/perf.sh'; 'README.md' regenerated;
+       'todo.txt': legend of its markers, a duplicate item merged,
+       references to lost '/tmp' files say so; the reading order of 1.1,
+       every file and class name in the docs and 13 sampled sources were
+       in order; what needs the owner is in 'todo.txt' (round 393)
 [x] easy: round 392 (2026-11-13, bug hunt: 'let' against the same literal
     written in place after round 389, about 39700 programs on x86_64 and
     rv32i: conversions, lists, indexes, counts, sizes, 'dat', generic
@@ -32,6 +46,22 @@
        ('term_kind::literal' example is a character literal,
        'compile_computed_operand' says why 'dst' is not the destination);
        listings unchanged
+[x] easy: (round 380) duplicate tests: 2465 and 2506 have the same source,
+    expected file, options and targets; 2466 has the source of 2870, whose
+    targets include those of 2466; one of each pair is redundant
+    => done (2026-11-13): 2506 and 2466 removed with their expected files
+       and their lines of 'qa/coverage/cases.sh'; 2465 and 2870 run the
+       same programs with the same options on the same targets and more
+[-] medium: user decision (round 315 AM): the size of an inline expansion
+    has no bound, only its depth (64 levels, 256 scopes): 'r(a, k - 1)'
+    called twice in 'r' and entered as 'r(a, 40)' doubles the work per
+    level (k 16: 2.6 s, 619 MB; k 20: 42 s, 10.6 GB; k 40 ends in
+    "internal error: std::bad_alloc"), also 20 functions that each call the
+    previous one twice; a limit on the inlined bodies of one call with the
+    advice to declare a function 'noinline' would reject it cleanly
+    => discarded (2026-11-13): a duplicate of the open item of round 226
+       UF1 (inlined calls that double per level have no limit), which holds
+       the proposal; the measurements were added there
 [x] easy: user decision (round 381): on rv32i an untyped 'let' must fit
     'int' where it is defined: 'let U = 0x80000000' is rejected ("does not
     fit 'int'", 'fold_let' in 'stmt_def_var.hpp' folds it at the default

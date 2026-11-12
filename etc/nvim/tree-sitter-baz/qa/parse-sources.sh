@@ -4,6 +4,8 @@
 # loses the types around them
 # error tests are skipped: the first line of their '.out' that is not empty
 # starts with 'NAME.baz:line:column: '
+# needs the parser that '../make.sh' or 'tree-sitter generate' writes to
+# '../src/'
 # usage: parse-sources.sh
 set -eu
 cd "$(dirname "$0")/.."

@@ -1,4 +1,6 @@
 #!/bin/sh
+# opens a serial terminal on the uart of the fpga board
+# usage: scripts/fpga-connect-serial.sh
 set -eu
 cd "$(dirname "$0")"
 

@@ -1,4 +1,9 @@
 #!/bin/sh
+# profiles one compile with 'perf': builds 'build/baz' with cmake
+# ('CMakeLists.txt', used only here), records it and writes the symbols by
+# overhead to 'perf-report.txt'; 'qa/perf/perf.sh' profiles the whole test
+# suite
+# usage: scripts/perf.sh [options of baz] [NAME.baz]
 set -eu
 cd "$(dirname "$0")"
 # the build directory is not tracked
