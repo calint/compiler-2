@@ -345,11 +345,11 @@ class stmt_def_dat final : public statement {
     [[nodiscard]] static auto fold_data_value(const toc& tc, const type& tp,
                                               const expr_any& value) -> elem {
 
-        const statement& element{value.single()};
+        const statement& single{value.single()};
 
         if (tp.is_builtin()) {
             const std::optional<folded_value> folded{
-                element.fold_checked(tc, tc.use_at(tp)),
+                single.fold_checked(tc, tc.use_at(tp)),
             };
 
             const std::optional<int64_t> constant{
@@ -357,13 +357,13 @@ class stmt_def_dat final : public statement {
             };
 
             if (not constant) {
-                throw_not_constant(element);
+                throw_not_constant(single);
             }
 
             return {
                 .form{
                     elem::scalar{
-                        .src_loc_tk{element.tok()},
+                        .src_loc_tk{single.tok()},
                         .value{*constant},
                     },
                 },
@@ -375,11 +375,11 @@ class stmt_def_dat final : public statement {
         const expr_type* const record{value.instance_literal()};
 
         if (record == nullptr) {
-            throw_not_constant(element);
+            throw_not_constant(single);
         }
 
         elem::fields fields{
-            .src_loc_tk{element.tok()},
+            .src_loc_tk{single.tok()},
             .values{},
         };
 

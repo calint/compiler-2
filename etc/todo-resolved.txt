@@ -1,6 +1,22 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 397 (2026-11-13, readability: a reviewer's walk of what
+    rounds 394 to 396 changed; bug hunt: whole programs that combine
+    features)
+    => done (2026-11-13): four seams of the refactors: the comment of the
+       receiver holder in 'stmt_def_func.hpp', 'check_folded_conditions'
+       tests the form as the other members of 'expr_any' do,
+       'fold_data_value' names its value 'single', the one dropped holder
+       allocation of 'bulk_operands' says where the register is read;
+       '<tuple>' included by the eight sources that use 'std::ignore';
+       class maps, header comments and the docs match the code, no removed
+       name is left; listings unchanged
+    => bug hunt (about 32000 programs, 390000 builds against a model:
+       records of arrays of records, 'mut' methods on indexed elements,
+       generics, 'let', conversions, inline in noinline and the reverse,
+       early exits, large arrays; targets, inlining, checks and
+       optimization options compared): no defect
 [x] easy: round 396 (2026-11-13, design: the state of a compilation
     ('program', 'toc', generics, versions, errors, calls); loops, the
     built-ins, 'stmt_identifier', 'ub_assigned', 'unary_ops')

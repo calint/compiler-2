@@ -9,6 +9,7 @@
 #include <ostream>
 #include <span>
 #include <string>
+#include <tuple>
 #include <utility>
 #include <variant>
 #include <vector>
@@ -339,11 +340,8 @@ class expr_any final : public statement {
     // of 'true or a / 0 == 1'; every condition of the value is, also in the
     // elements of a list and in the fields of an instance literal
     auto check_folded_conditions(compile_toc& tc) const -> void {
-        if (const single_value* const single{
-                std::get_if<single_value>(&form_),
-            }) {
-
-            check_folded_conditions_of(tc, single->value);
+        if (std::holds_alternative<single_value>(form_)) {
+            check_folded_conditions_of(tc, value_variant());
             return;
         }
 

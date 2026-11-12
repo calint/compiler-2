@@ -10,6 +10,7 @@
 #include <ostream>
 #include <ranges>
 #include <string_view>
+#include <tuple>
 #include <utility>
 
 #include "compile_error.hpp"
@@ -160,6 +161,7 @@ class bulk_operands final {
                     held.holder.emplace(x,
                                         emit_site{src_loc_tk_, tc_.indent()});
 
+                    // 'held.start' reads the register back from the holder
                     std::ignore = held.holder->alloc_scratch_register(
                         {array.tok(), tc_.indent()},
                         tc_.builtins().default_type());

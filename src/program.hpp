@@ -9,6 +9,7 @@
 #include <ostream>
 #include <string>
 #include <system_error>
+#include <tuple>
 #include <utility>
 #include <vector>
 
