@@ -1,6 +1,21 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 373 (2026-11-12, readability: a newcomer adding a
+    feature)
+    => done (2026-11-12): chapter 9 checked against the code; the target
+       recipe names the transfers of a 'machine_rv32i' subclass, the uart
+       hooks, a new instruction set ('machine' and 'assembler' subclasses),
+       the include, chapter 8, README.1.md and the copies in run scripts,
+       compare-listings, far jumps, fuzzlib, fuzz-combos, constructs and
+       the target cases and files of cases.sh; the check recipe names
+       'runtime_check', the 'noub' and 'line' entries of the help, its
+       tests, the 8.1 row and 8.2 code, README.1.md and check-doc-examples,
+       the tutorial, fuzz-combos, the 2145.baz of test-cli and a fuzz-ub
+       scenario with its mutant row; 'check_names' has a header comment;
+       'fuzz-compiler.py' takes the panic codes from 'fuzzlib.PANIC_CODE'
+       instead of the range 249 to 255; operator, built-in and statement
+       recipes not added, the language is final (user, 2026-10-26)
 [x] easy: round 372 (2026-11-12, design: the x86_64 backend and the
     assembler passes)
     => done (2026-11-12): the passes share one walk: 'straight_run' names

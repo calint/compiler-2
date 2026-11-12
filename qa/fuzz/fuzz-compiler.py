@@ -341,7 +341,7 @@ def fuzz_one(args):
             elif c3.returncode and not c3.timed_out and c3.signal not in (
                     signal.SIGKILL, signal.SIGXCPU):
                 findings.append(("diff-nopt", "--nopt rejects", c3.stderr[-500:]))
-            if noub and not (249 <= x86.code <= 255):
+            if noub and x86.code not in fl.PANIC_CODE.values():
                 c4, other, p4 = fl.run_x86(asan, path, [], work, "u")
                 if not c4.returncode and not p4 and other.finished():
                     if not x86.same(other):

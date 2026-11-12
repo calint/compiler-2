@@ -472,6 +472,7 @@ struct check_name {
     bool is_ub{};
 };
 
+// the values of '--checks' but 'noub', in the order of the usage text
 constexpr std::array<check_name, 9> check_names{
     {
         {.text{"upper"}, .member{&check_options::bounds_upper}, .is_ub{true}},

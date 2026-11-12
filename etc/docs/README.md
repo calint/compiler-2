@@ -2199,20 +2199,44 @@ message, x86_64 stops with a signal.
 The language is final; what a target or a check option touches, the copies
 outside 'src' included:
 
-- a target: a subclass of 'machine_rv32i', e.g. 'machine_rv32i_linux', or of
+- a target: a subclass of 'machine_rv32i', e.g. 'machine_rv32i_linux', which
+  implements the exit and sector routines ('emit_exit_routine',
+  'emit_sector_routines') and the transfers ('emit_read_transfer',
+  'emit_write_transfer', 'emit_stderr_write'), or of
   'machine_rv32i_bare_metal', which builds its 'target_description' from the
-  memory start and size it is given; it implements the exit and sector
-  routines ('emit_exit_routine', 'emit_sector_routines'), a bare-metal one
-  also the uart hooks; and in 'main.cpp' its row in 'target_names'
-  (name, backend, image, the options it reads) and the help
-  text; outside: 'run.sh', 'qa/coverage/test-coverage.sh',
-  'qa/coverage/test-all.sh' and 'qa/coverage/test-cli.sh' (their lists of
-  targets) and 'qa/fuzz/fuzz-options.py'
+  memory start and size it is given and leaves the exit and sector routines
+  and the uart hooks ('emit_receive_byte', 'emit_transmit_byte',
+  'emit_uart_setup'); another instruction set is a 'machine' and an
+  'assembler' subclass as 'machine_x86_64' and 'assembler_x86_64', the class
+  comment of 'machine' lists what a backend supplies; in 'main.cpp' the
+  include of its header, its row in 'target_names' (name, backend, image,
+  the options it reads) and its line in 'usage_format', which
+  'etc/readme/make.sh' pastes into 'README.md'; chapter 8, what depends on
+  the target, and the targets of 'run.sh' in 'etc/readme/README.1.md';
+  outside: the lists of targets of 'run.sh' (with a run script such as
+  'run-rv32i-qemu.sh' for a device), 'qa/coverage/test-coverage.sh' (also
+  how it assembles and runs a target), 'qa/coverage/test-all.sh',
+  'qa/coverage/test-cli.sh', 'qa/coverage/compare-listings.sh',
+  'qa/coverage/test-far-jumps-no-scratch.sh', 'qa/fuzz/fuzzlib.py' (also how
+  it runs a target), 'qa/fuzz/fuzz-options.py', 'qa/fuzz/fuzz-combos.py' and
+  'qa/fuzz/constructs.py', and in 'qa/coverage/cases.sh' the target
+  conditions and the expected files of a target ('NNN.TARGET.out') where a
+  result differs
 - a check: a field of 'check_options', turned off in the 'machine'
   constructor where the target cannot honor it, and a 'failure_handler' with
   an exit code of its own in 'machine::failure_handlers_' ('machine.hpp'), its
-  row in 'check_names' and its help text in 'usage_format' ('main.cpp'), the
-  operation
-  that takes the check in both backends, and the tables of chapter 8;
+  row in 'check_names' and its line in 'usage_format' ('main.cpp'), also
+  named in the 'noub' entry there and, when the handler takes the line, in
+  the 'line' entry; the operation that takes the check as a 'runtime_check' in both
+  backends, its tests in 'qa/coverage/cases.sh' (the exit code of a run),
+  the tables of chapter 8 (the row of 8.1 and the 'noub' list below it, the
+  exit code in 8.2), the lists of checks and of exit codes in
+  'etc/readme/README.1.md', whose panics 'qa/lint/check-doc-examples.py'
+  runs, one program each, and the list of checks of 'etc/tutorial.baz';
   outside: 'qa/fuzz/fuzzlib.py' (the exit codes of the panics),
-  'qa/fuzz/fuzz-options.py' and 'qa/coverage/test-cli.sh' (the check names)
+  'qa/fuzz/fuzz-compiler.py' (the range of those codes),
+  'qa/fuzz/fuzz-options.py', 'qa/fuzz/fuzz-combos.py' and
+  'qa/coverage/test-cli.sh' (the check names; each check must change the
+  code of its '2145.baz'), and a scenario of 'qa/fuzz/fuzz-ub.py' that
+  reaches the failure with its row in the mutant list of
+  'qa/fuzz/fuzz-ub.sh'
