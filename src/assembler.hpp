@@ -17,6 +17,7 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <utility>
+#include <variant>
 #include <vector>
 
 // buffers generated assembly with its labels and jumps known so every target
@@ -147,6 +148,44 @@ class assembler {
         size_t instruction_count{};
     };
 
+  protected:
+    // the structured forms of a target's lines, a variant 'record_t' with an
+    // alternative for each kind of line, found by 'line::record'
+    template <typename record_t> class line_records {
+        std::vector<record_t> records_;
+
+      public:
+        // the index for 'line::record'
+        [[nodiscard]] auto add(record_t structured) -> size_t {
+            records_.push_back(std::move(structured));
+            return records_.size() - 1;
+        }
+
+        // none for a line without a record
+        [[nodiscard]] auto find(const line& l) const -> const record_t* {
+            if (not l.record) {
+                return nullptr;
+            }
+
+            return &records_.at(*l.record);
+        }
+
+        // none for a line without a record or with another record
+        template <typename alternative_t>
+        [[nodiscard]] auto find(const line& l) const -> const alternative_t* {
+            return std::get_if<alternative_t>(find(l));
+        }
+
+        template <typename alternative_t>
+        [[nodiscard]] auto find(const line& l) -> alternative_t* {
+            if (not l.record) {
+                return nullptr;
+            }
+
+            return std::get_if<alternative_t>(&records_.at(*l.record));
+        }
+    };
+
   private:
     // the lines from 'first_line' up to 'end_line' are a body of noinline
     // 'function'
@@ -155,6 +194,13 @@ class assembler {
         std::string label;
         size_t first_line{};
         size_t end_line{};
+    };
+
+    // the lines from 'first' up to 'end', entered only at the first, so a
+    // pass relates an instruction to those executed right before it
+    struct straight_run {
+        size_t first{};
+        size_t end{};
     };
 
     std::vector<line> lines_;
@@ -351,12 +397,17 @@ class assembler {
             referenced_labels(labels, named),
         };
 
+        // note: the passes below only remove and rewrite instructions, so the
+        //       entries stay
+
+        const std::vector<straight_run> runs{straight_runs(referenced)};
+
         // note: a removed reload lets more copies fold, the reverse order
         //       gives larger code
 
-        remove_reloads(referenced);
-        remove_copies(referenced);
-        remove_retests(referenced);
+        remove_reloads(runs);
+        remove_copies(runs);
+        remove_retests(runs);
     }
 
     // e.g. back to the code after the data of a failure handler
@@ -595,32 +646,28 @@ class assembler {
         return captures_.back();
     }
 
-    // a label in between would let execution enter between the two jumps
-    [[nodiscard]] auto following_unconditional_jump(
-        const size_t index,
-        const std::unordered_set<std::string_view>& referenced) const
+    // the unconditional jump right after line 'index' in its run, which ends
+    // at 'run_end'; an entry in between would let execution enter between
+    // the two jumps
+    [[nodiscard]] auto following_unconditional_jump(const size_t index,
+                                                    const size_t run_end) const
         -> std::optional<size_t> {
 
-        for (size_t next{index + 1}; next < lines_.size(); ++next) {
-            const line& l{lines_.at(next)};
+        const size_t next{next_instruction(index + 1)};
 
-            if (is_enterable(l, referenced)) {
-                return std::nullopt;
-            }
-
-            if (l.code_size == 0) {
-                continue;
-            }
-
-            if (not l.jump or is_conditional(*l.jump)) {
-                return std::nullopt;
-            }
-
-            return next;
+        // the run or the code ends, e.g. with the jump of a loop that never
+        // ends
+        if (next >= run_end) {
+            return std::nullopt;
         }
 
-        // the code ends, e.g. with the jump of a loop that never ends
-        return std::nullopt;
+        const line& l{lines_.at(next)};
+
+        if (not l.jump or is_conditional(*l.jump)) {
+            return std::nullopt;
+        }
+
+        return next;
     }
 
     [[nodiscard]] auto instructions_in(const size_t code_size) const -> size_t {
@@ -656,6 +703,10 @@ class assembler {
         return named;
     }
 
+    [[nodiscard]] auto lines_of(const straight_run run) -> std::span<line> {
+        return std::span{lines_}.subspan(run.first, run.end - run.first);
+    }
+
     // labels, comments, other sections and removed lines emit no code
     [[nodiscard]] auto next_instruction(size_t index) const -> size_t {
         while (index < lines_.size() and lines_.at(index).code_size == 0) {
@@ -665,10 +716,10 @@ class assembler {
         return index;
     }
 
+    // 'run_end' is the end of the run of line 'index'
     [[nodiscard]] auto
-    optimize_jump(const size_t index,
-                  const std::unordered_map<std::string_view, size_t>& labels,
-                  const std::unordered_set<std::string_view>& referenced)
+    optimize_jump(const size_t index, const size_t run_end,
+                  const std::unordered_map<std::string_view, size_t>& labels)
         -> bool {
 
         line& branch{lines_.at(index)};
@@ -689,7 +740,7 @@ class assembler {
         }
 
         const std::optional<size_t> jump_index{
-            following_unconditional_jump(index, referenced),
+            following_unconditional_jump(index, run_end),
         };
 
         if (not jump_index) {
@@ -742,8 +793,10 @@ class assembler {
                 referenced_labels(labels, named),
             };
 
-            for (size_t index{}; index < lines_.size(); ++index) {
-                changed = optimize_jump(index, labels, referenced) or changed;
+            for (const straight_run run : straight_runs(referenced)) {
+                for (size_t index{run.first}; index < run.end; ++index) {
+                    changed = optimize_jump(index, run.end, labels) or changed;
+                }
             }
         }
     }
@@ -768,98 +821,105 @@ class assembler {
     }
 
     // removes a copy whose reads can take its source, see above the class
-    auto remove_copies(const std::unordered_set<std::string_view>& referenced)
-        -> void {
+    auto remove_copies(const std::span<const straight_run> runs) -> void {
+        for (const straight_run run : runs) {
+            const std::span<line> run_lines{lines_of(run)};
 
-        // the lines from a copy up to 'end' run without an entry
-        size_t end{lines_.size()};
-        for (size_t index{lines_.size()}; index > 0; --index) {
-            const size_t first{index - 1};
+            for (size_t first{run_lines.size()}; first > 0; --first) {
+                const std::span<line> block{run_lines.subspan(first - 1)};
 
-            if (is_enterable(lines_.at(first), referenced)) {
-                end = first;
-                continue;
-            }
+                if (block.front().code_size == 0) {
+                    continue;
+                }
 
-            if (lines_.at(first).code_size == 0) {
-                continue;
-            }
-
-            const std::span<line> block{
-                std::span{lines_}.subspan(first, end - first),
-            };
-
-            if (fold_copy(block)) {
-                ++optimizations_.removed_copies;
+                if (fold_copy(block)) {
+                    ++optimizations_.removed_copies;
+                }
             }
         }
     }
 
     // removes a load that reads back into the register what the instruction
     // before it stored, see above the class
-    auto remove_reloads(const std::unordered_set<std::string_view>& referenced)
-        -> void {
+    auto remove_reloads(const std::span<const straight_run> runs) -> void {
+        for (const straight_run run : runs) {
+            // the instruction executed right before 'l'
+            const line* previous{};
+            for (line& l : lines_of(run)) {
+                if (l.code_size == 0) {
+                    continue;
+                }
 
-        // the instruction executed right before 'l', none at an entry
-        const line* previous{};
-        for (line& l : lines_) {
-            if (is_enterable(l, referenced)) {
-                previous = nullptr;
-                continue;
+                if (previous != nullptr and is_reload(*previous, l)) {
+                    remove(l);
+                    ++optimizations_.removed_reloads;
+                    continue;
+                }
+
+                previous = &l;
             }
-
-            if (l.code_size == 0) {
-                continue;
-            }
-
-            if (previous != nullptr and is_reload(*previous, l)) {
-                remove(l);
-                ++optimizations_.removed_reloads;
-                continue;
-            }
-
-            previous = &l;
         }
     }
 
     // removes a test of the value stored by the instruction before it, see
     // above the class
-    auto remove_retests(const std::unordered_set<std::string_view>& referenced)
-        -> void {
-
-        // the two instructions executed right before 'l', none at an entry
-        line* set{};
-        line* test{};
-        for (line& l : lines_) {
-            if (is_enterable(l, referenced)) {
-                set = nullptr;
-                test = nullptr;
-                continue;
-            }
-
-            if (l.code_size == 0) {
-                continue;
-            }
-
-            if (set != nullptr and l.jump and is_conditional(*l.jump)) {
-                std::optional<std::string> mnemonic{
-                    retested_branch(*set, *test, l.jump->mnemonic),
-                };
-
-                if (mnemonic) {
-                    l.jump->mnemonic = std::move(*mnemonic);
-                    replace_text(l, format_jump(*l.jump));
-                    remove(*test);
-                    ++optimizations_.removed_retests;
-
-                    // note: the next instructions see 'set' before 'l'
-                    test = set;
+    auto remove_retests(const std::span<const straight_run> runs) -> void {
+        for (const straight_run run : runs) {
+            // the two instructions executed right before 'l'
+            line* set{};
+            line* test{};
+            for (line& l : lines_of(run)) {
+                if (l.code_size == 0) {
+                    continue;
                 }
-            }
 
-            set = test;
-            test = &l;
+                if (set != nullptr and l.jump and is_conditional(*l.jump)) {
+                    std::optional<std::string> mnemonic{
+                        retested_branch(*set, *test, l.jump->mnemonic),
+                    };
+
+                    if (mnemonic) {
+                        l.jump->mnemonic = std::move(*mnemonic);
+                        replace_text(l, format_jump(*l.jump));
+                        remove(*test);
+                        ++optimizations_.removed_retests;
+
+                        // note: the next instructions see 'set' before 'l'
+                        test = set;
+                    }
+                }
+
+                set = test;
+                test = &l;
+            }
         }
+    }
+
+    // the lines split at each entry
+    [[nodiscard]] auto
+    straight_runs(const std::unordered_set<std::string_view>& referenced) const
+        -> std::vector<straight_run> {
+
+        std::vector<straight_run> runs;
+
+        size_t first{};
+        for (size_t index{1}; index < lines_.size(); ++index) {
+            if (is_enterable(lines_.at(index), referenced)) {
+                runs.push_back({
+                    .first{first},
+                    .end{index},
+                });
+
+                first = index;
+            }
+        }
+
+        runs.push_back({
+            .first{first},
+            .end{lines_.size()},
+        });
+
+        return runs;
     }
 
     //

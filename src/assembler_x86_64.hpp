@@ -1,6 +1,7 @@
 #pragma once
 
 #include <array>
+#include <bit>
 #include <cassert>
 #include <concepts>
 #include <cstddef>
@@ -17,7 +18,6 @@
 #include <unordered_map>
 #include <utility>
 #include <variant>
-#include <vector>
 
 #include "assembler.hpp"
 
@@ -184,7 +184,7 @@ class assembler_x86_64 final : public assembler {
     // the structured form of a line
     using record = std::variant<memory_move, condition_store>;
 
-    std::vector<record> records_;
+    line_records<record> records_;
 
   public:
     // the widths of the operands
@@ -192,6 +192,9 @@ class assembler_x86_64 final : public assembler {
     static constexpr size_t size_dword{4};
     static constexpr size_t size_word{2};
     static constexpr size_t size_byte{1};
+
+    // the tables by width have the byte first and the qword last
+    static constexpr size_t width_count{4};
 
     //
     // overridden methods
@@ -303,8 +306,8 @@ class assembler_x86_64 final : public assembler {
             return;
         }
 
-        records_.emplace_back(std::move(*move));
-        add_line(std::move(text), instruction_size(), records_.size() - 1);
+        add_line(std::move(text), instruction_size(),
+                 records_.add(std::move(*move)));
     }
 
     auto jcc(const size_t indent, const condition cc,
@@ -360,14 +363,16 @@ class assembler_x86_64 final : public assembler {
                 : instruction_text(op::test, operand, operand),
         };
 
-        records_.emplace_back(condition_store{
-            .cc{cc},
-            .retest{retest},
-        });
+        const size_t index{
+            records_.add(condition_store{
+                .cc{cc},
+                .retest{retest},
+            }),
+        };
 
         add_line(std::format("{}set{} {}", indentation(indent),
                              condition_suffix(cc), operand),
-                 instruction_size(), records_.size() - 1);
+                 instruction_size(), index);
     }
 
     // writes the lines as they are, nasm resolves the jump distances, a long
@@ -383,6 +388,19 @@ class assembler_x86_64 final : public assembler {
                 std::println(os, "{}", shorten_symbols(l.text, short_names));
             }
         }
+    }
+
+    //
+    // statics
+    //
+
+    // the index of an operand width in the tables by width
+    [[nodiscard]] static constexpr auto width_index(const size_t size_bytes)
+        -> size_t {
+
+        assert(std::has_single_bit(size_bytes) and size_bytes <= size_qword);
+
+        return static_cast<size_t>(std::countr_zero(size_bytes));
     }
 
   private:
@@ -455,8 +473,8 @@ class assembler_x86_64 final : public assembler {
     [[nodiscard]] auto is_reload(const line& store, const line& load) const
         -> bool override {
 
-        const memory_move* const stored{record_of<memory_move>(store)};
-        const memory_move* const loaded{record_of<memory_move>(load)};
+        const memory_move* const stored{records_.find<memory_move>(store)};
+        const memory_move* const loaded{records_.find<memory_move>(load)};
 
         if (stored == nullptr or loaded == nullptr) {
             return false;
@@ -473,7 +491,9 @@ class assembler_x86_64 final : public assembler {
                                        const std::string_view branch) const
         -> std::optional<std::string> override {
 
-        const condition_store* const stored{record_of<condition_store>(set)};
+        const condition_store* const stored{
+            records_.find<condition_store>(set),
+        };
 
         if (stored == nullptr or code_text(test) != stored->retest) {
             return std::nullopt;
@@ -513,12 +533,11 @@ class assembler_x86_64 final : public assembler {
                                   const std::string_view register_name)
         -> memory_move* {
 
-        if (l == nullptr or not l->record) {
+        if (l == nullptr) {
             return nullptr;
         }
 
-        record& structured{records_.at(*l->record)};
-        memory_move* const move{std::get_if<memory_move>(&structured)};
+        memory_move* const move{records_.find<memory_move>(*l)};
 
         if (move == nullptr) {
             return nullptr;
@@ -530,16 +549,6 @@ class assembler_x86_64 final : public assembler {
         };
 
         return loads ? move : nullptr;
-    }
-
-    // none for a line without a record or with another record
-    template <typename record_t>
-    [[nodiscard]] auto record_of(const line& l) const -> const record_t* {
-        if (not l.record) {
-            return nullptr;
-        }
-
-        return std::get_if<record_t>(&records_.at(*l.record));
     }
 
     //
@@ -660,22 +669,14 @@ class assembler_x86_64 final : public assembler {
     [[nodiscard]] static auto data_directive(const size_t element_size_bytes)
         -> std::string_view {
 
-        switch (element_size_bytes) {
-        case size_qword:
-            return "dq";
+        constexpr std::array<std::string_view, width_count> directives{
+            "db",
+            "dw",
+            "dd",
+            "dq",
+        };
 
-        case size_dword:
-            return "dd";
-
-        case size_word:
-            return "dw";
-
-        case size_byte:
-            return "db";
-
-        default:
-            std::unreachable();
-        }
+        return directives.at(width_index(element_size_bytes));
     }
 
     // nasm rejects a count above the signed 32-bit range in 'times' and 'resb',
@@ -847,21 +848,13 @@ class assembler_x86_64 final : public assembler {
     [[nodiscard]] static auto size_specifier(const size_t size_bytes)
         -> std::string_view {
 
-        switch (size_bytes) {
-        case size_qword:
-            return "qword";
+        constexpr std::array<std::string_view, width_count> specifiers{
+            "byte",
+            "word",
+            "dword",
+            "qword",
+        };
 
-        case size_dword:
-            return "dword";
-
-        case size_word:
-            return "word";
-
-        case size_byte:
-            return "byte";
-
-        default:
-            std::unreachable();
-        }
+        return specifiers.at(width_index(size_bytes));
     }
 };

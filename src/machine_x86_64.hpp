@@ -1,5 +1,6 @@
 #pragma once
 
+#include <algorithm>
 #include <array>
 #include <bit>
 #include <cassert>
@@ -124,31 +125,29 @@ class machine_x86_64 final : public machine {
     //       what the tests expect, 5 accepts 0716 and from 9 1798 runs out of
     //       registers
 
-    struct register_names {
-        std::string_view qword;
-        std::string_view dword;
-        std::string_view word;
-        std::string_view byte;
-    };
+    static constexpr size_t width_count_{assembler_x86_64::width_count};
+
+    // the names of a register by width, see 'assembler_x86_64::width_index'
+    using register_names = std::array<std::string_view, width_count_>;
 
     static constexpr std::array<register_names, 16> register_names_{
         {
-            {.qword{"rax"}, .dword{"eax"}, .word{"ax"}, .byte{"al"}},
-            {.qword{"rbx"}, .dword{"ebx"}, .word{"bx"}, .byte{"bl"}},
-            {.qword{"rcx"}, .dword{"ecx"}, .word{"cx"}, .byte{"cl"}},
-            {.qword{"rdx"}, .dword{"edx"}, .word{"dx"}, .byte{"dl"}},
-            {.qword{"rbp"}, .dword{"ebp"}, .word{"bp"}, .byte{"bpl"}},
-            {.qword{"rsi"}, .dword{"esi"}, .word{"si"}, .byte{"sil"}},
-            {.qword{"rdi"}, .dword{"edi"}, .word{"di"}, .byte{"dil"}},
-            {.qword{"rsp"}, .dword{"esp"}, .word{"sp"}, .byte{"spl"}},
-            {.qword{"r8"}, .dword{"r8d"}, .word{"r8w"}, .byte{"r8b"}},
-            {.qword{"r9"}, .dword{"r9d"}, .word{"r9w"}, .byte{"r9b"}},
-            {.qword{"r10"}, .dword{"r10d"}, .word{"r10w"}, .byte{"r10b"}},
-            {.qword{"r11"}, .dword{"r11d"}, .word{"r11w"}, .byte{"r11b"}},
-            {.qword{"r12"}, .dword{"r12d"}, .word{"r12w"}, .byte{"r12b"}},
-            {.qword{"r13"}, .dword{"r13d"}, .word{"r13w"}, .byte{"r13b"}},
-            {.qword{"r14"}, .dword{"r14d"}, .word{"r14w"}, .byte{"r14b"}},
-            {.qword{"r15"}, .dword{"r15d"}, .word{"r15w"}, .byte{"r15b"}},
+            {"al", "ax", "eax", "rax"},
+            {"bl", "bx", "ebx", "rbx"},
+            {"cl", "cx", "ecx", "rcx"},
+            {"dl", "dx", "edx", "rdx"},
+            {"bpl", "bp", "ebp", "rbp"},
+            {"sil", "si", "esi", "rsi"},
+            {"dil", "di", "edi", "rdi"},
+            {"spl", "sp", "esp", "rsp"},
+            {"r8b", "r8w", "r8d", "r8"},
+            {"r9b", "r9w", "r9d", "r9"},
+            {"r10b", "r10w", "r10d", "r10"},
+            {"r11b", "r11w", "r11d", "r11"},
+            {"r12b", "r12w", "r12d", "r12"},
+            {"r13b", "r13w", "r13d", "r13"},
+            {"r14b", "r14w", "r14d", "r14"},
+            {"r15b", "r15w", "r15d", "r15"},
         },
     };
 
@@ -1013,9 +1012,7 @@ class machine_x86_64 final : public machine {
         for (const auto [index, names] :
              std::views::enumerate(register_names_)) {
 
-            if (name == names.qword or name == names.dword or
-                name == names.word or name == names.byte) {
-
+            if (std::ranges::contains(names, name)) {
                 return static_cast<size_t>(index);
             }
         }
@@ -1049,7 +1046,8 @@ class machine_x86_64 final : public machine {
     [[nodiscard]] auto register_display_name(const size_t index) const
         -> std::string_view override {
 
-        return register_names_.at(index).qword;
+        const size_t qword{assembler_x86_64::width_index(size_qword_)};
+        return register_names_.at(index).at(qword);
     }
 
     //
@@ -1094,22 +1092,14 @@ class machine_x86_64 final : public machine {
     [[nodiscard]] auto
     builtin_type_for_size_bytes(const size_t size_bytes) const -> const type& {
 
-        switch (size_bytes) {
-        case size_qword_:
-            return builtins().i64;
+        const std::array<const type*, width_count_> types{
+            &builtins().i8,
+            &builtins().i16,
+            &builtins().i32,
+            &builtins().i64,
+        };
 
-        case size_dword_:
-            return builtins().i32;
-
-        case size_word_:
-            return builtins().i16;
-
-        case size_byte_:
-            return builtins().i8;
-
-        default:
-            std::unreachable();
-        }
+        return *types.at(assembler_x86_64::width_index(size_bytes));
     }
 
     // a call of the routine 'label', which changes the registers 'clobbered';
@@ -1674,22 +1664,9 @@ class machine_x86_64 final : public machine {
         // part of its width
         const register_names& names{register_names_.at(*row)};
 
-        switch (size_bytes) {
-        case size_qword_:
-            return std::string{names.qword};
+        const size_t width{assembler_x86_64::width_index(size_bytes)};
 
-        case size_dword_:
-            return std::string{names.dword};
-
-        case size_word_:
-            return std::string{names.word};
-
-        case size_byte_:
-            return std::string{names.byte};
-
-        default:
-            std::unreachable();
-        }
+        return std::string{names.at(width)};
     }
 
     // 'setcc' writes one byte
@@ -1913,22 +1890,14 @@ class machine_x86_64 final : public machine {
     }
 
     [[nodiscard]] static auto string_compare(const size_t size_bytes) -> op {
-        switch (size_bytes) {
-        case size_qword_:
-            return op::cmpsq;
+        constexpr std::array<op, width_count_> compares{
+            op::cmpsb,
+            op::cmpsw,
+            op::cmpsd,
+            op::cmpsq,
+        };
 
-        case size_dword_:
-            return op::cmpsd;
-
-        case size_word_:
-            return op::cmpsw;
-
-        case size_byte_:
-            return op::cmpsb;
-
-        default:
-            std::unreachable();
-        }
+        return compares.at(assembler_x86_64::width_index(size_bytes));
     }
 
     // the address without a width, as 'lea' takes it

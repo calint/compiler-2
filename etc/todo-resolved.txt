@@ -1,6 +1,22 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 372 (2026-11-12, design: the x86_64 backend and the
+    assembler passes)
+    => done (2026-11-12): the passes share one walk: 'straight_run' names
+       the lines entered only at the first, 'straight_runs' splits at each
+       entry once for 'remove_reloads', 'remove_copies' and
+       'remove_retests', and 'optimize_jumps' finds the jump after a branch
+       in its run with 'next_instruction'; the line records of both
+       targets are kept by 'assembler::line_records' ('add', 'find',
+       'find<alternative>'), replacing 'record_of', 'instruction_of' and
+       'store_record'; the x86 per-width switches (directives, size
+       specifiers, register names, builtin types, string compares) are
+       tables indexed by 'assembler_x86_64::width_index'; left:
+       'emit_multiply' (unifying its paths changes listings), branch
+       inversion on mnemonic strings (the base jump optimizer holds
+       strings), 'emit_sector_routines' (a fixed listing); listings
+       unchanged
 [x] easy: round 371 (2026-11-12, design: the tokenizer and parse layer)
     => done (2026-11-12): one look at the next token,
        'tokenizer::peek_token', replaces the copies of single-token probes

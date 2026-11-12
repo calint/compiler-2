@@ -259,7 +259,7 @@ class assembler_rv32i final : public assembler {
         }
     };
 
-    std::vector<record> records_;
+    line_records<record> records_;
     // the jumps have been grown to reach their targets ('resolve_jumps'),
     // the image layout is then final, only lines without code follow, e.g.
     // the report
@@ -722,7 +722,7 @@ class assembler_rv32i final : public assembler {
         assert(info(code).operands == form::branch);
 
         const size_t index{
-            store_record(jump_registers{
+            records_.add(jump_registers{
                 .rs1{number_of(rs1)},
                 .rs2{number_of(rs2)},
             }),
@@ -957,7 +957,9 @@ class assembler_rv32i final : public assembler {
     //       path reaches them and no line after them reads the copy
 
     auto fold_copy(const std::span<line> block) -> bool override {
-        const instruction* const copy{instruction_of(block.front())};
+        const instruction* const copy{
+            records_.find<instruction>(block.front()),
+        };
 
         if (copy == nullptr or copy->code != op::mv or copy->rd == copy->rs1) {
             return false;
@@ -982,7 +984,7 @@ class assembler_rv32i final : public assembler {
                 continue;
             }
 
-            instruction* const ins{instruction_of(l)};
+            instruction* const ins{records_.find<instruction>(l)};
 
             // note: 'copy_end' passed only instructions
             assert(ins != nullptr);
@@ -1014,8 +1016,8 @@ class assembler_rv32i final : public assembler {
     [[nodiscard]] auto is_reload(const line& store, const line& load) const
         -> bool override {
 
-        const instruction* const stored{instruction_of(store)};
-        const instruction* const loaded{instruction_of(load)};
+        const instruction* const stored{records_.find<instruction>(store)};
+        const instruction* const loaded{records_.find<instruction>(load)};
 
         if (stored == nullptr or loaded == nullptr) {
             return false;
@@ -1065,7 +1067,7 @@ class assembler_rv32i final : public assembler {
     auto add_record(std::string text, const size_t code_size, record structured)
         -> void {
 
-        const size_t index{store_record(std::move(structured))};
+        const size_t index{records_.add(std::move(structured))};
         add_line(std::move(text), code_size, index);
     }
 
@@ -1092,7 +1094,7 @@ class assembler_rv32i final : public assembler {
         for (size_t index{}; index < lines().size(); ++index) {
             const line& l{lines().at(index)};
 
-            const constant* const defined{std::get_if<constant>(record_of(l))};
+            const constant* const defined{records_.find<constant>(l)};
 
             if (defined != nullptr) {
                 symbols.add_value(defined->name, defined->value);
@@ -1130,7 +1132,7 @@ class assembler_rv32i final : public assembler {
             return nullptr;
         }
 
-        instruction* const ins{instruction_of(*l)};
+        instruction* const ins{records_.find<instruction>(*l)};
 
         if (ins == nullptr or ins->rd != rd) {
             return nullptr;
@@ -1153,7 +1155,7 @@ class assembler_rv32i final : public assembler {
                 continue;
             }
 
-            const instruction* const ins{instruction_of(l)};
+            const instruction* const ins{records_.find<instruction>(l)};
 
             if (ins == nullptr) {
                 return std::nullopt;
@@ -1192,7 +1194,7 @@ class assembler_rv32i final : public assembler {
         }
 
         const jump_registers* const compared{
-            std::get_if<jump_registers>(record_of(l)),
+            records_.find<jump_registers>(l),
         };
 
         assert(compared != nullptr);
@@ -1238,7 +1240,7 @@ class assembler_rv32i final : public assembler {
             return landing_words();
         }
 
-        const instruction* const ins{instruction_of(l)};
+        const instruction* const ins{records_.find<instruction>(l)};
 
         assert(ins != nullptr);
 
@@ -1303,32 +1305,17 @@ class assembler_rv32i final : public assembler {
     }
 
     [[nodiscard]] auto image_size_bytes(const line& l) const -> size_t {
-        if (const zero_fill* const fill{std::get_if<zero_fill>(record_of(l))}) {
+        if (const zero_fill* const fill{records_.find<zero_fill>(l)}) {
             return fill->size_bytes;
         }
 
-        const data_values* const data{std::get_if<data_values>(record_of(l))};
+        const data_values* const data{records_.find<data_values>(l)};
 
         if (data == nullptr) {
             return l.code_size;
         }
 
         return data_size_bytes(*data);
-    }
-
-    // none for a line without a record or with another record, e.g. a jump
-    [[nodiscard]] auto instruction_of(const line& l) const
-        -> const instruction* {
-
-        return std::get_if<instruction>(record_of(l));
-    }
-
-    [[nodiscard]] auto instruction_of(const line& l) -> instruction* {
-        if (not l.record) {
-            return nullptr;
-        }
-
-        return std::get_if<instruction>(&records_.at(*l.record));
     }
 
     // the offset of the label of line 'index' in its section
@@ -1348,7 +1335,7 @@ class assembler_rv32i final : public assembler {
 
         section current{section::text};
         for (const line& l : lines()) {
-            const record* const structured{record_of(l)};
+            const record* const structured{records_.find(l)};
 
             const section_start* const start{
                 std::get_if<section_start>(structured),
@@ -1441,22 +1428,9 @@ class assembler_rv32i final : public assembler {
         return true;
     }
 
-    [[nodiscard]] auto record_of(const line& l) const -> const record* {
-        if (not l.record) {
-            return nullptr;
-        }
-
-        return &records_.at(*l.record);
-    }
-
     // a grown conditional jump starts with an inverted branch around the jump
     [[nodiscard]] auto skip_size_bytes(const jump_info& jump) const -> size_t {
         return is_conditional(jump) ? one_instruction_bytes : 0;
-    }
-
-    [[nodiscard]] auto store_record(record structured) -> size_t {
-        records_.push_back(std::move(structured));
-        return records_.size() - 1;
     }
 
     auto write_code(std::ostream& os, const line& l, const size_t line_index,
@@ -1539,7 +1513,7 @@ class assembler_rv32i final : public assembler {
                           const size_t line_index, const size_t address,
                           const symbol_table& symbols) const -> void {
 
-        const record* const structured{record_of(l)};
+        const record* const structured{records_.find(l)};
 
         const data_values* const data{
             std::get_if<data_values>(structured),
