@@ -44,7 +44,7 @@ inline stmt_identifier::stmt_identifier(parse_toc& tc, token tk, tokenizer& tz)
 
 inline stmt_identifier::stmt_identifier(parse_toc& tc, token tk, tokenizer& tz,
                                         const path_reach reach)
-    : statement{tk} {
+    : statement{tk}, reach_{reach} {
 
     // note: the callers read a name, a string or no token was rejected
     //       before, e.g. by 'parse_array_argument'
@@ -73,7 +73,7 @@ inline stmt_identifier::stmt_identifier(parse_toc& tc, token tk, tokenizer& tz,
 
         // only the last element reaches to the end of its array
         narrow_to_element(tc, prefix,
-                          field == nullptr ? reach : path_reach::element);
+                          field == nullptr ? reach_ : path_reach::element);
 
         // the path so far is resolved as the receiver
         if (const method_tokens* const method{
@@ -347,10 +347,9 @@ inline auto stmt_identifier::parse_element(parse_toc& tc, tokenizer& tz,
     }
 }
 
-inline auto stmt_identifier::path_address::add_index(const ident_elem& cur_elem,
-                                                     const ident_info& cur_info,
-                                                     const lea_request& request,
-                                                     const operand& address)
+inline auto stmt_identifier::path_address::add_index(
+    const ident_elem& cur_elem, const ident_info& cur_info, const bool is_range,
+    const std::optional<operand>& start_register, const operand& address)
     -> operand {
 
     compile_toc& tc{tc_.get()};
@@ -369,19 +368,18 @@ inline auto stmt_identifier::path_address::add_index(const ident_elem& cur_elem,
 
     const int64_t addend_elements{
         compile_checked_index(tc, cur_elem.index_expr(), index_register,
-                              cur_info.shape(), request.is_range),
+                              cur_info.shape(), is_range),
     };
 
     machine& x{tc.machine()};
 
-    if (request.start_register) {
+    if (start_register) {
         // note: a start is copied only under bounds checks, which compile the
         //       whole index
 
         assert(addend_elements == 0);
 
-        x.copy_value({index_tk, tc.indent()}, *request.start_register,
-                     index_register);
+        x.copy_value({index_tk, tc.indent()}, *start_register, index_register);
     }
 
     const size_t element_size_bytes{cur_info.type_ref().size_bytes()};
@@ -456,12 +454,13 @@ inline auto stmt_identifier::compile_checked_index(
 
 inline auto stmt_identifier::path_address::indexed_element(
     const ident_elem& cur_elem, const std::optional<int64_t> constant_index,
-    const ident_info& cur_info, const lea_request& request,
-    const operand& address) -> operand {
+    const ident_info& cur_info, const bool is_range,
+    const std::optional<operand>& start_register, const operand& address)
+    -> operand {
 
     if (constant_index) {
         // note: the caller checks the range from a constant start
-        assert(not request.start_register);
+        assert(not start_register);
 
         operand folded{address};
 
@@ -480,5 +479,5 @@ inline auto stmt_identifier::path_address::indexed_element(
         base = operand::mem(folded_register, cur_info.type_ref());
     }
 
-    return add_index(cur_elem, cur_info, request, base);
+    return add_index(cur_elem, cur_info, is_range, start_register, base);
 }

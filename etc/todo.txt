@@ -60,6 +60,28 @@ is the test 'qa/coverage/tests/NNNN.baz'
     changes the language: 'f(a + 1)' would deduce where it is rejected
     today (README 2.10.2); see also "generic deduction by a trial parse"
     below
+[p] medium: need approval (round 396): the counter of a 'foo' always in
+    memory: today it is in a register, or in memory on x86_64 when 6 or
+    more scratch registers are in use; that choice carries
+    'machine::foo_counter_in_memory', 'memory_counter_pressure_count', the
+    'in_value_register' alternative of 'var_placement' (its only user), two
+    branches in 'toc.hpp' ('storage_of', 'resolve_var') and
+    'declare_loop_names'; about -50 lines; removes an optimization: a load
+    and a store per iteration on rv32i, growth not measured
+[p] easy: need approval (round 396): drop the preferred address register
+    of a bulk address ('machine::address_emitter', threaded through
+    'argument_emitters::address_of', 'walk_address', 'lea_request',
+    'path_address' and 'fold_register' to save one 'mv' on rv32i; x86_64
+    passes none); about -30 lines; rv32i listings change, growth not
+    measured
+[p] easy: need approval (round 396): a new fuzzer file in 'qa/fuzz' for
+    the bulk operations (ranges of 'array_copy', 'arrays_equal', 'foo',
+    'write' against a model); written for the hunt of round 396, kept in
+    the session scratchpad ('bulk/fuzz_bulk4.py'), lost with it
+[ ] easy: (round 396) a noinline function without array parameters that a
+    dry run asks for is checked twice ('check_function_bodies' and
+    'check_noinline_bodies'); only compile time; in a dry run
+    'add_noinline_body' could add only bodies with array lengths
 [ ] hard: the listing indent lives in 'toc' (round 331) and the backend
     takes it in every 'emit_site' (round 319); held by the machine or the
     assembler, 'emit_site' would shrink to a token and the 142 front-end

@@ -335,7 +335,6 @@ class bulk_operands final {
             const operand address{
                 array.compile_lea(tc_, walk,
                                   {
-                                      .is_range{true},
                                       .start_register{start},
                                       .address_register{address_register},
                                   }),

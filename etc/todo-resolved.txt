@@ -1,6 +1,21 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 396 (2026-11-13, design: the state of a compilation
+    ('program', 'toc', generics, versions, errors, calls); loops, the
+    built-ins, 'stmt_identifier', 'ub_assigned', 'unary_ops')
+    => done (2026-11-13): the mode of a dry run is held once, by the
+       machine ('version_state::is_discarded', 'machine::is_discarding'):
+       'compile_toc::is_dry_run_' and the saved flag of 'dry_run_scope' are
+       gone, 'is_dry_run()' forwards; README 1.4; the reach of the last
+       index of a path is decided once, at the parse: 'stmt_identifier'
+       keeps 'reach_' and 'compile_lea' derives the range from it,
+       'lea_request::is_range' (which 'bulk_operands' had to pass to match
+       its parse) is gone; listings unchanged (2495 cases); both reviews
+       found nothing else larger than polish without approval
+    => bug hunt of the bulk operations (about 17500 programs against a
+       model, 770000 builds, four targets, every list of bounds checks,
+       inlined and noinline; a mutant of 'range_of' caught): no defect
 [x] easy: round 395 (2026-11-13, design: the front end, statements and
     expressions)
     => done (2026-11-13): a value at a part of a literal has one

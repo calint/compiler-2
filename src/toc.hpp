@@ -3068,10 +3068,10 @@ struct usage_statistics {
 //
 // the modes a node does not see, each set by one function and read elsewhere:
 //
-//   'is_dry_run_'             set by 'dry_run' ('dry_run_scope'); read by
+//   'is_dry_run'              held by the machine, set by 'dry_run'
+//                             ('machine::emit_discarded'); read by
 //                             'add_noinline_body' (a body to check, not
-//                             emit) and through 'is_dry_run' by
-//                             'statement::comment_source'
+//                             emit) and by 'statement::comment_source'
 //   'scope::is_without_call'  set by 'stmt_def_func::frame_scope' without
 //                             array lengths and 'scope::main_func'; read for
 //                             the innermost function by 'check_skipped'
@@ -3085,9 +3085,6 @@ class compile_toc final : public toc {
     // not emitted
     noinline_body_list emitted_bodies_;
     noinline_body_list checked_bodies_;
-    // inside 'dry_run', also in a version inside it: the code compiled is
-    // discarded, so a noinline call asks for a body to check, not to emit
-    bool is_dry_run_{};
     // the indent of the listing lines the code being compiled emits, see
     // 'indent_scope'
     size_t indent_{};
@@ -3102,22 +3099,17 @@ class compile_toc final : public toc {
     };
 
     // what a dry run changes in the context is put back when it ends, also
-    // when an error unwinds: the 'compile_state', the read-only constants and
-    // the mode ('is_dry_run')
+    // when an error unwinds: the 'compile_state' and the read-only constants;
+    // the machine puts back the mode ('is_dry_run')
     class dry_run_scope final {
         compile_toc& tc_;
         compile_state kept_state_{};
         size_t kept_constant_count_{};
-        bool was_dry_run_{};
 
       public:
         explicit dry_run_scope(compile_toc& tc)
             : tc_{tc}, kept_state_{tc.compile_state_now()},
-              kept_constant_count_{tc.data().constant_count()},
-              was_dry_run_{tc.is_dry_run_} {
-
-            tc.is_dry_run_ = true;
-        }
+              kept_constant_count_{tc.data().constant_count()} {}
 
         dry_run_scope(const dry_run_scope&) = delete;
         dry_run_scope(dry_run_scope&&) = delete;
@@ -3127,7 +3119,6 @@ class compile_toc final : public toc {
         ~dry_run_scope() {
             tc_.restore_compile_state(kept_state_);
             tc_.tables().data.resize_constants(kept_constant_count_);
-            tc_.is_dry_run_ = was_dry_run_;
         }
     };
 
@@ -3295,7 +3286,7 @@ class compile_toc final : public toc {
         // note: a length is unknown only where 'stmt_def_func::check_body'
         //       passes an unsized array parameter on, in a dry run
 
-        assert(is_dry_run_ or
+        assert(is_dry_run() or
                std::ranges::all_of(array_lengths,
                                    [](const std::optional<size_t>& length)
                                        -> bool { return length.has_value(); }));
@@ -3307,7 +3298,7 @@ class compile_toc final : public toc {
             .call_source{std::move(call_source)},
         };
 
-        if (is_dry_run_) {
+        if (is_dry_run()) {
             checked_bodies_.add_once(std::move(body));
             return;
         }
@@ -3492,8 +3483,13 @@ class compile_toc final : public toc {
     // the indent of the listing lines the code being compiled emits
     [[nodiscard]] auto indent() const -> size_t { return indent_; }
 
-    // see 'dry_run'
-    [[nodiscard]] auto is_dry_run() const -> bool { return is_dry_run_; }
+    // inside 'dry_run', also in a version inside it: the code compiled is
+    // discarded, so a noinline call asks for a body to check, not to emit;
+    // the machine holds the mode with the state it puts back
+    [[nodiscard]] auto is_dry_run() const -> bool {
+        const ::machine& x{machine()};
+        return x.is_discarding();
+    }
 
     // the code after the current statement of the function being compiled
     // runs on some path, the words of 'assignment_flow': 'end_path',

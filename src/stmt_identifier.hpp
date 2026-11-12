@@ -205,12 +205,8 @@ class stmt_identifier;
 
 // what a caller asks of the address of an identifier
 struct lea_request {
-    // the path starts a range, its last index may be the end; false for an
-    // element
-    bool is_range{};
-
-    // a run-time start of the range is copied here, the caller checks it
-    // against a count after the later arguments
+    // a run-time start of the range a bulk operand starts is copied here, the
+    // caller checks it against a count after the later arguments
     std::optional<operand> start_register;
 
     // the register the caller prefers the address to start in, none without
@@ -293,10 +289,13 @@ class stmt_identifier final : public statement {
         // the address after the element index, a constant index, which the
         // caller checked, goes into the displacement and any other one into an
         // index register
+        // 'is_range' when the index starts a range, 'start_register' then
+        // receives a run-time index
         [[nodiscard]] auto
         indexed_element(const ident_elem& cur_elem,
                         std::optional<int64_t> constant_index,
-                        const ident_info& cur_info, const lea_request& request,
+                        const ident_info& cur_info, bool is_range,
+                        const std::optional<operand>& start_register,
                         const operand& address) -> operand;
 
         // the address a call computed, the address a slot holds or the
@@ -312,10 +311,10 @@ class stmt_identifier final : public statement {
       private:
         // adds the element index of 'cur_elem' to 'address', which has no
         // index yet, keeping its base and displacement
-        [[nodiscard]] auto add_index(const ident_elem& cur_elem,
-                                     const ident_info& cur_info,
-                                     const lea_request& request,
-                                     const operand& address) -> operand;
+        [[nodiscard]] auto
+        add_index(const ident_elem& cur_elem, const ident_info& cur_info,
+                  bool is_range, const std::optional<operand>& start_register,
+                  const operand& address) -> operand;
 
         // computes 'address' into a register so another index can be added
         [[nodiscard]] auto fold_indexed_address(const operand& address)
@@ -400,6 +399,9 @@ class stmt_identifier final : public statement {
 
     std::vector<ident_elem> elems_;
     std::vector<token> elem_delims_tk_;
+    // what the last index reaches; the parse and the compile check and
+    // address the index by it
+    path_reach reach_{};
     // of what the path names, not an array after an index
     array_shape shape_;
 
@@ -622,9 +624,6 @@ class stmt_identifier final : public statement {
 
         path_address builder{tc, tok(), held, request.address_register};
 
-        // only the last element starts a range
-        const lea_request inner_request{};
-
         operand address;
 
         for_each_prefix(tc, [&](const prefix_step& step) -> void {
@@ -644,17 +643,22 @@ class stmt_identifier final : public statement {
                 return;
             }
 
-            const lea_request& elem_request{
-                step.is_last ? request : inner_request,
+            // only the last index starts a range
+            const bool is_range{
+                step.is_last and reach_ == path_reach::to_end,
             };
 
             const std::optional<int64_t> constant_index{
-                checked_constant_index(tc, step.elem_index, cur_info,
-                                       elem_request.is_range),
+                checked_constant_index(tc, step.elem_index, cur_info, is_range),
             };
 
-            address = builder.indexed_element(*step.elem, constant_index,
-                                              cur_info, elem_request, address);
+            const std::optional<operand> start_register{
+                step.is_last ? request.start_register : std::nullopt,
+            };
+
+            address =
+                builder.indexed_element(*step.elem, constant_index, cur_info,
+                                        is_range, start_register, address);
         });
 
         // note: the type the parse resolved is that of the last element

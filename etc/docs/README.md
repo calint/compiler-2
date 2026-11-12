@@ -337,9 +337,7 @@ unwinds it:
 1. 'compile_toc::dry_run_scope', for a dry run: the 'compile_toc::compile_state'
    (the deepest scope count, the storage peak and the frame peak
    ('storage_layout::peaks'), and whether the code after is reached,
-   'scope_stack::reach_state'), the read-only constants added and the mode
-   ('compile_toc::is_dry_run'): a noinline call reached inside a dry run adds a
-   body to check only, not to emit ('compile_toc::add_noinline_body')
+   'scope_stack::reach_state') and the read-only constants added
 2. 'compile_toc::emit_most_efficient', for a version: the same peaks and reach
    state, each version starts from those before it and the kept one's remain,
    e.g. the frame size of a noinline body that '--checks=frame' checks; a
@@ -347,7 +345,10 @@ unwinds it:
    labels stay unique
 3. 'machine::version_scope', for a version and for the code of
    'machine::emit_discarded': the members of 'machine::version_state', e.g.
-   the registers held and the routines marked used ('machine::mark_used')
+   the registers held, the routines marked used ('machine::mark_used') and
+   the mode of a dry run ('version_state::is_discarded', read through
+   'compile_toc::is_dry_run'): a noinline call reached inside a dry run adds a
+   body to check only, not to emit ('compile_toc::add_noinline_body')
 
 So a statement can be compiled more than once, and what its compile adds to
 'compile_toc' is the same each time or put back by its owner; the class
