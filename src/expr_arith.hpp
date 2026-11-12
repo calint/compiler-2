@@ -1299,7 +1299,7 @@ class expr_arith final : public statement {
             };
 
             const operand src_operand{
-                ident.get_lea_operand(tc, src_info, held),
+                ident.operand_of(tc, src_info, held),
             };
 
             emit_operation(tc, src.tok(), flipped, dst, src_operand,

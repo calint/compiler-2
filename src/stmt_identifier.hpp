@@ -472,7 +472,7 @@ class stmt_identifier final : public statement {
 
         machine::held_registers held{x, {tok(), tc.indent()}};
 
-        const operand op{get_lea_operand(tc, src_info, held)};
+        const operand op{operand_of(tc, src_info, held)};
 
         // the copy protects the address registers until it reads them, then
         // may load the value into one of them
@@ -671,10 +671,10 @@ class stmt_identifier final : public statement {
         assert(not info.is_const());
 
         if (get_unary_ops().is_empty()) {
-            return get_lea_operand(tc, info, held);
+            return operand_of(tc, info, held);
         }
 
-        const operand storage{get_lea_operand(tc, info, held)};
+        const operand storage{operand_of(tc, info, held)};
 
         const operand reg{
             held.alloc_scratch_register({src_loc_tk, tc.indent()},
@@ -695,19 +695,6 @@ class stmt_identifier final : public statement {
     // computed at run time
     [[nodiscard]] auto constant_start_index(const toc& tc) const
         -> std::optional<int64_t>;
-
-    // the operand of what 'info' resolves this statement to, a computed
-    // address goes into 'held'
-    [[nodiscard]] auto get_lea_operand(toc& tc, const ident_info& info,
-                                       machine::held_registers& held) const
-        -> operand {
-
-        if (not has_computed_address(info)) {
-            return info.operand();
-        }
-
-        return compile_lea(tc, held, {});
-    }
 
     // the address of what 'info' resolves this statement to is computed into
     // a register: an indexed access, an address held in a slot or an address
@@ -749,7 +736,7 @@ class stmt_identifier final : public statement {
 
         machine::held_registers held{x, {src_loc_tk, tc.indent()}};
 
-        const operand address{get_lea_operand(tc, info, held)};
+        const operand address{operand_of(tc, info, held)};
 
         x.address_of({src_loc_tk, tc.indent()}, reg, address);
     }
@@ -774,6 +761,19 @@ class stmt_identifier final : public statement {
         assert(method_);
 
         return method_->name_tk;
+    }
+
+    // the operand of what 'info' resolves this statement to, a computed
+    // address goes into 'held'
+    [[nodiscard]] auto operand_of(toc& tc, const ident_info& info,
+                                  machine::held_registers& held) const
+        -> operand {
+
+        if (not has_computed_address(info)) {
+            return info.operand();
+        }
+
+        return compile_lea(tc, held, {});
     }
 
     // the path as written, with indexes but without unary operators

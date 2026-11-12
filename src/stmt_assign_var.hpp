@@ -81,7 +81,7 @@ class stmt_assign_var final : public statement {
         machine::held_registers held{x, {tok(), tc.indent()}};
 
         const operand address{
-            stmt_ident_.get_lea_operand(tc, dst_info, held),
+            stmt_ident_.operand_of(tc, dst_info, held),
         };
 
         // the destination is written at the address computed here

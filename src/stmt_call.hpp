@@ -1466,7 +1466,7 @@ class noinline_call final {
             }
 
             const operand address{
-                arg_place->ident->get_lea_operand(tc, arg_place->info, held),
+                arg_place->ident->operand_of(tc, arg_place->info, held),
             };
 
             arguments.push_back({

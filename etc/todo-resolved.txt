@@ -1,6 +1,13 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 353 (2026-11-12, one consistency topic: the name
+    'get_lea_operand')
+[x] easy: (round 350) 'get_lea_operand' (5 files) returns the storage
+    operand itself when no address is computed, so no 'lea' happens; rename
+    it as one consistency topic, e.g. 'operand_of'
+    => done (2026-11-12): round 353: renamed 'operand_of' (5 sources and
+       chapter 'etc/docs/README.md'); listings unchanged
 [x] easy: round 352 (2026-11-12, open todo items that need no decision,
     second part)
     => done (2026-11-12): the six items below; 265 WT kept open with

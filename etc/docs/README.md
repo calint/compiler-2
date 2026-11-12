@@ -1662,7 +1662,7 @@ path_address::fold_indexed_address    the second index
 stmt_identifier::compile_checked_index
                                       the bounds check and the '+ c' of 6.4
                                       (_impl)
-stmt_identifier::get_lea_operand      an operand without a path to walk is
+stmt_identifier::operand_of           an operand without a path to walk is
                                       the storage of the name
 machine_x86_64::lower_address, machine_rv32i::lower_address
                                       what the target encodes
