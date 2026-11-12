@@ -323,9 +323,9 @@ unwinds it:
 1. 'toc::dry_run_scope', for a dry run: the 'toc::compile_state' (the
    deepest scope count, the storage peak and the frame peak
    ('storage_layout::peaks'), and whether the code after is reached,
-   'scope_stack::reach_state') and the read-only constants added; a noinline
-   call reached inside a dry run adds a body to check only, not to emit
-   ('toc::add_noinline_body')
+   'scope_stack::reach_state'), the read-only constants added and the mode
+   ('toc::is_dry_run'): a noinline call reached inside a dry run adds a body
+   to check only, not to emit ('toc::add_noinline_body')
 2. 'toc::emit_most_efficient', for a version: the same peaks and reach state,
    each version starts from those before it and the kept one's remain, e.g.
    the frame size of a noinline body that '--checks=frame' checks; a

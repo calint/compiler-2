@@ -501,9 +501,7 @@ class program final {
                 continue;
             }
 
-            with_call_frame(body, [&] -> void {
-                body.func->check_noinline_body(tc, body.array_lengths);
-            });
+            body.func->check_noinline_body(tc, body);
         }
     }
 
@@ -517,9 +515,7 @@ class program final {
         for (size_t i{}; i < tc.emitted_bodies().count(); ++i) {
             const noinline_body body{tc.emitted_bodies().at(i)};
 
-            with_call_frame(body, [&] -> void {
-                body.func->emit_noinline_body(tc, body.array_lengths);
-            });
+            body.func->emit_noinline_body(tc, body);
         }
     }
 
@@ -560,18 +556,5 @@ class program final {
         };
 
         return resolved.lexically_proximate(std::filesystem::current_path());
-    }
-
-    // an error in the body reports the call that asked for it
-    static auto with_call_frame(const noinline_body& body,
-                                const std::function_ref<void()> run) -> void {
-
-        try {
-            run();
-        } catch (compile_error& e) {
-            body.func->add_call_frame(e, body.call_tk, body.call_source);
-
-            throw;
-        }
     }
 };

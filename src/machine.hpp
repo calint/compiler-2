@@ -174,7 +174,7 @@ struct target_description {
 //   checks         'checks' (what '--checks' turns on, each check emits
 //                  nothing when its option is off), 'check_bounds',
 //                  'check_frame_capacity', 'check_stack_capacity'
-//   versions       'emit_most_efficient', 'emit_discarded', 'is_discarding'
+//   versions       'emit_most_efficient', 'emit_discarded'
 //   comments       'comment', 'comment_binding', 'comment_variable',
 //                  'comment_held_address'
 //   target         'default_type', 'address_size_bytes',
@@ -1466,11 +1466,6 @@ class machine {
 
     [[nodiscard]] auto has_indexed_addressing() const -> bool {
         return target_.has_indexed_addressing;
-    }
-
-    // inside 'emit_discarded', also in a version inside it
-    [[nodiscard]] auto is_discarding() const -> bool {
-        return state_.is_discarded;
     }
 
     [[nodiscard]] auto is_stack_bounded() const -> bool {

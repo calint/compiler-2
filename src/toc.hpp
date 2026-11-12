@@ -2330,7 +2330,8 @@ class definition_checks final {
 //   compile        'add_binding', 'add_read_only_constant',
 //                  'add_noinline_body', 'dry_run', 'check_skipped',
 //                  'emit_most_efficient', 'create_unique_label',
-//                  'call_path_at', 'next_frame_address', 'use_of',
+//                  'is_dry_run', 'call_path_at', 'next_frame_address',
+//                  'use_of',
 //                  'overflow_options', 'checks_overflow', the listing indent
 //                  ('indent', 'indent_scope'), the reachability
 //                  ('is_reachable', 'end_path', 'record_break',
@@ -2357,9 +2358,10 @@ class definition_checks final {
 //
 //   'is_compiling_'           set by 'begin_compile'; read by 'scope_entry',
 //                             'add_var' and 'add_const' (storage and comments)
-//   'machine::is_discarding'  set by 'machine::emit_discarded' ('dry_run');
-//                             read by 'add_noinline_body' (a body to check,
-//                             not emit)
+//   'is_dry_run_'             set by 'dry_run' ('dry_run_scope'); read by
+//                             'add_noinline_body' (a body to check, not
+//                             emit) and through 'is_dry_run' by
+//                             'statement::comment_source'
 //   'scope::is_without_call'  set by 'stmt_def_func::frame_scope' without
 //                             array lengths and 'scope::main_func'; read for
 //                             the innermost function by 'check_skipped'
@@ -2394,6 +2396,9 @@ class toc final {
     // false while the program is parsed: the names are declared without
     // storage and without comments
     bool is_compiling_{};
+    // inside 'dry_run', also in a version inside it: the code compiled is
+    // discarded, so a noinline call asks for a body to check, not to emit
+    bool is_dry_run_{};
     // the parsers recurse on the one stack, e.g. a generic instance is parsed
     // inside the parse that needs it, so the levels are counted once for all
     // of them, see 'parse_nesting_scope'
@@ -2412,16 +2417,22 @@ class toc final {
     };
 
     // what a dry run changes in 'toc' is put back when it ends, also when an
-    // error unwinds: the 'compile_state' and the read-only constants
+    // error unwinds: the 'compile_state', the read-only constants and the
+    // mode ('is_dry_run')
     class dry_run_scope final {
         toc& tc_;
         compile_state kept_state_{};
         size_t kept_constant_count_{};
+        bool was_dry_run_{};
 
       public:
         explicit dry_run_scope(toc& tc)
             : tc_{tc}, kept_state_{tc.compile_state_now()},
-              kept_constant_count_{tc.data_.constant_count()} {}
+              kept_constant_count_{tc.data_.constant_count()},
+              was_dry_run_{tc.is_dry_run_} {
+
+            tc.is_dry_run_ = true;
+        }
 
         dry_run_scope(const dry_run_scope&) = delete;
         dry_run_scope(dry_run_scope&&) = delete;
@@ -2431,6 +2442,7 @@ class toc final {
         ~dry_run_scope() {
             tc_.restore_compile_state(kept_state_);
             tc_.data_.resize_constants(kept_constant_count_);
+            tc_.is_dry_run_ = was_dry_run_;
         }
     };
 
@@ -2757,12 +2769,10 @@ class toc final {
 
         assert(is_compiling_);
 
-        const ::machine& x{machine()};
-
         // note: a length is unknown only where 'stmt_def_func::check_body'
         //       passes an unsized array parameter on, in a dry run
 
-        assert(x.is_discarding() or
+        assert(is_dry_run_ or
                std::ranges::all_of(array_lengths,
                                    [](const std::optional<size_t>& length)
                                        -> bool { return length.has_value(); }));
@@ -2774,7 +2784,7 @@ class toc final {
             .call_source{std::move(call_source)},
         };
 
-        if (x.is_discarding()) {
+        if (is_dry_run_) {
             checked_bodies_.add_once(std::move(body));
             return;
         }
@@ -3232,6 +3242,13 @@ class toc final {
     [[nodiscard]] auto indent() const -> size_t { return indent_; }
 
     // a plain or a generic function, unlike 'funcs().has'
+    // see 'dry_run'
+    [[nodiscard]] auto is_dry_run() const -> bool {
+        assert(is_compiling_);
+
+        return is_dry_run_;
+    }
+
     [[nodiscard]] auto is_func(const std::string_view name) const -> bool {
         assert(not is_compiling_);
 

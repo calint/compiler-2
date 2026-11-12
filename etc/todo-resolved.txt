@@ -1,6 +1,20 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 358 (2026-11-12, architecture review: the layers, 'toc'
+    as a grab bag, parallel passes, hidden mode)
+    => done (2026-11-12): the dry-run mode is front-end state: 'toc' sets
+       'is_dry_run_' in 'dry_run_scope' and 'add_noinline_body' and
+       'statement::comment_source' read 'toc::is_dry_run', the backend
+       query 'machine::is_discarding' is gone (README 7.6 said 'toc'
+       carries it); the "called from" frame of a noinline body error is
+       added by 'stmt_def_func' ('emit_noinline_body' and
+       'check_noinline_body' take the requested 'noinline_body', private
+       'with_call_frame' and 'emit_in_frame'), so 'program' no longer
+       decorates errors; listings unchanged; proposed: a typed compile
+       context instead of the run-time phase 'is_compiling_' (42 phase
+       asserts); one function for the loop-end rule of the parse and
+       compile reach walks (small)
 [x] easy: round 357 (2026-11-12, design of the backend interface)
     => done (2026-11-12): 'machine::check_stack_capacity' has the shape of
        'check_frame_capacity' (begin and end comments, operation scope)

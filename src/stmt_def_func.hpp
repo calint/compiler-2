@@ -4,6 +4,7 @@
 #include <cassert>
 #include <cstddef>
 #include <format>
+#include <functional>
 #include <memory>
 #include <optional>
 #include <ostream>
@@ -568,16 +569,18 @@ class stmt_def_func final : public statement {
     }
 
     // the body of a noinline function for array lengths that only a dry run
-    // asked for, compiled as 'emit_noinline_body' does, nothing kept
-    auto check_noinline_body(
-        toc& tc,
-        const std::span<const std::optional<size_t>> array_lengths) const
+    // asked for, compiled as 'emit_noinline_body' does, nothing kept; an
+    // error in it reports the call that asked for it
+    auto check_noinline_body(toc& tc, const noinline_body& requested) const
         -> void {
 
+        assert(requested.func == this);
         assert(not is_inlined());
-        assert(array_lengths.size() == array_param_count());
+        assert(requested.array_lengths.size() == array_param_count());
 
-        dry_run_in_frame(tc, array_lengths);
+        with_call_frame(requested, [&] -> void {
+            dry_run_in_frame(tc, requested.array_lengths);
+        });
     }
 
     // the body in place at the call 'call_tk', under labels named by the
@@ -666,41 +669,17 @@ class stmt_def_func final : public statement {
 
     // the body of a noinline function for one set of array lengths, after
     // 'main'; the lengths are those of the array arguments, one per array
-    // parameter
-    auto emit_noinline_body(
-        toc& tc,
-        const std::span<const std::optional<size_t>> array_lengths) const
+    // parameter; an error in it reports the call that asked for it
+    auto emit_noinline_body(toc& tc, const noinline_body& requested) const
         -> void {
 
+        assert(requested.func == this);
         assert(not is_inlined());
-        assert(array_lengths.size() == array_param_count());
+        assert(requested.array_lengths.size() == array_param_count());
 
-        const toc::scope_entry body{tc, frame_scope(array_lengths)};
-
-        machine& x{tc.machine()};
-
-        x.comment({token{}, 0}, "");
-        source_def_comment_to(x, 0);
-
-        if (not array_lengths.empty()) {
-            // note: an emitted body has every length, see 'add_noinline_body'
-            const auto known{
-                [](const std::optional<size_t>& length) -> size_t {
-                    return length.value();
-                },
-            };
-
-            x.comment({token{}, 0}, "array parameter lengths: {:n}",
-                      std::views::transform(array_lengths, known));
-        }
-
-        x.begin_noinline_body(std::string{name()}, body_label(array_lengths));
-
-        const size_t frame_size_bytes{compile_in_frame(tc, array_lengths)};
-
-        x.end_noinline_body();
-
-        x.define_constant(frame_size_label(array_lengths), frame_size_bytes);
+        with_call_frame(requested, [&] -> void {
+            emit_in_frame(tc, requested.array_lengths);
+        });
     }
 
     // 'size.' is a prefix, a suffix could collide with a method body, e.g.
@@ -985,6 +964,40 @@ class stmt_def_func final : public statement {
             machine::discarded_code::body);
     }
 
+    // see 'emit_noinline_body'
+    auto emit_in_frame(
+        toc& tc,
+        const std::span<const std::optional<size_t>> array_lengths) const
+        -> void {
+
+        const toc::scope_entry body{tc, frame_scope(array_lengths)};
+
+        machine& x{tc.machine()};
+
+        x.comment({token{}, 0}, "");
+        source_def_comment_to(x, 0);
+
+        if (not array_lengths.empty()) {
+            // note: an emitted body has every length, see 'add_noinline_body'
+            const auto known{
+                [](const std::optional<size_t>& length) -> size_t {
+                    return length.value();
+                },
+            };
+
+            x.comment({token{}, 0}, "array parameter lengths: {:n}",
+                      std::views::transform(array_lengths, known));
+        }
+
+        x.begin_noinline_body(std::string{name()}, body_label(array_lengths));
+
+        const size_t frame_size_bytes{compile_in_frame(tc, array_lengths)};
+
+        x.end_noinline_body();
+
+        x.define_constant(frame_size_label(array_lengths), frame_size_bytes);
+    }
+
     // the scope of the body in a frame of its own, entered before the frame
     // base and the receiver register are taken; whether the body takes from
     // a call ('scope::takes_from_call'):
@@ -1196,6 +1209,20 @@ class stmt_def_func final : public statement {
         if (result_) {
             result_->name_tk.source_to(os);
             token::source_to(os, result_->type_tk);
+        }
+    }
+
+    // an error in the body reports the call that asked for it
+    auto with_call_frame(const noinline_body& requested,
+                         const std::function_ref<void()> compile) const
+        -> void {
+
+        try {
+            compile();
+        } catch (compile_error& e) {
+            add_call_frame(e, requested.call_tk, requested.call_source);
+
+            throw;
         }
     }
 

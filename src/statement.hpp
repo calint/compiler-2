@@ -310,11 +310,11 @@ class statement {
 
     // the source as a listing comment, not rendered in discarded code
     auto comment_source(toc& tc) const -> void {
-        machine& x{tc.machine()};
-
-        if (x.is_discarding()) {
+        if (tc.is_dry_run()) {
             return;
         }
+
+        machine& x{tc.machine()};
 
         x.comment({tok(), tc.indent()}, trimmed_source(*this));
     }
