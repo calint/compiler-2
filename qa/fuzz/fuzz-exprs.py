@@ -22,6 +22,7 @@
 #
 # usage: [FUZZ_CHECKS=noub] [FUZZ_SPELLING=1] fuzz-exprs.py [count] [seed]
 #        [jobs]
+# the model panics on overflow, so FUZZ_CHECKS must keep the overflow check
 import os
 import random
 import shutil

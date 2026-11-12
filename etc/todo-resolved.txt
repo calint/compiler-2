@@ -1,6 +1,20 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 381 (2026-11-12, bug hunt: compile-time folding against
+    run time)
+    => done (2026-11-12): no defect; twin programs (one expression folded
+       as a local and top-level 'let', 'dat', inlined constant arguments,
+       a condition, a generic constant, a nested alias that reverses the
+       arguments, an untyped 'let'; computed through 'var's, noinline
+       parameters, mixed constant/variable leaves), 9000 programs on the
+       four targets with 'noub', 'noub,-overflow', 'division,shift',
+       'overflow', no checks, '--nopt' and '--versions'; fuzz-exprs
+       (spelling 7000, noub 3000), fuzz-ub 6000, fuzz-data, fuzz-generics,
+       fuzz-calls 1500 each with FUZZ_TARGETS=all; exhaustive matrices of
+       the operators and immediates at every width, every shift count, the
+       asan build on the i64 edges; the usage of 'fuzz-exprs.py' says its
+       model needs the overflow check
 [x] easy: round 380 (2026-11-12, readability: the test corpus,
     'cases.sh' and 'tests/*.baz' for a newcomer)
     => done (2026-11-12): the header of 'cases.sh' says the cases are in

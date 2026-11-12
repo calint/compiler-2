@@ -31,6 +31,15 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
     'test-coverage.sh', 'test-far-jumps.sh', 'test-far-jumps-no-scratch.sh',
     'test-cli.sh' and 'fuzzlib.py', the default options also in
     'compare-listings.sh'; about 20 duplicated lines fewer (round 364)
+[ ] easy: user decision (round 381): on rv32i an untyped 'let' must fit
+    'int' where it is defined: 'let U = 0x80000000' is rejected ("does not
+    fit 'int'", 'fold_let' in 'stmt_def_var.hpp' folds it at the default
+    type) while the literal in 'i32(0x80000000)' and a generic constant
+    'box<0x80000000>' with 'i32(n)' convert whole to -2^31; README 1.7 says
+    an untyped 'let' is checked by its value where it is used, which holds
+    for generic constants only
+    => document it in 1.7 and chapter 8 item 1, or have 'fold_let' keep an
+       untyped value unchecked until its use as generic constants do
 [ ] easy: (round 380) duplicate tests: 2465 and 2506 have the same source,
     expected file, options and targets; 2466 has the source of 2870, whose
     targets include those of 2466; one of each pair is redundant
