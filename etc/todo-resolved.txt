@@ -1,6 +1,18 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[-] easy: 'read' and 'sector_read' into an element type that
+    holds a 'bool' put bytes there that are neither 'true' nor 'false'
+    ('read(0, b, 1)' of a 'bool[1]' with input 'x' is true as a condition;
+    chapter 8, exception 2)
+    => round 323 BH: reject 'read' and 'sector_read' into an element type
+       that holds a 'bool' (a recursive predicate in 'type.hpp' used by
+       'stmt_builtin_io::assert_buffer', 2 error tests, about 25 lines, no
+       change to generated code; no test or roome reads into one); records
+       with a 'bool' field can no longer be read; padding is left out, it
+       depends on the target ('{a i32, b int}')
+    => discarded (2026-11-12): rejected by the user; a 'bool' read from
+       input stays chapter 8, exception 2
 [x] easy: round 387 (2026-11-12, bug hunt and design: the fpga emulator)
     => done (2026-11-12): 400 random programs of 400 instructions from edge
        values agree with qemu (every rv32i instruction, x0 as destination,

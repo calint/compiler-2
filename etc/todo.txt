@@ -613,16 +613,6 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
     => decide whether an instance behaves as an unsized parameter there
        (the bounds rule of skipped code not applied to a constant index
        under a folded length guard) or keeps the rules of skipped code
-[p] easy: need approval: 'read' and 'sector_read' into an element type that
-    holds a 'bool' put bytes there that are neither 'true' nor 'false'
-    ('read(0, b, 1)' of a 'bool[1]' with input 'x' is true as a condition;
-    chapter 8, exception 2)
-    => round 323 BH: reject 'read' and 'sector_read' into an element type
-       that holds a 'bool' (a recursive predicate in 'type.hpp' used by
-       'stmt_builtin_io::assert_buffer', 2 error tests, about 25 lines, no
-       change to generated code; no test or roome reads into one); records
-       with a 'bool' field can no longer be read; padding is left out, it
-       depends on the target ('{a i32, b int}')
 [ ] easy: a type argument is deduced from the result of a function call,
     'show(mk(1, 2))', not from the result of a method call, 'show(p.sum())'
     is "cannot deduce 'T'" (2077; design review series 2, round 67 B5)
