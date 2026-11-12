@@ -77,6 +77,23 @@ new room description
 a pleasant location
 u c u
 exits: roome
+me > rnt mind the gap
+
+new room note
+--
+
+a pleasant location
+u c me
+exits: roome
+mind the gap
+u > rnt
+
+new room note
+--
+
+a pleasant location
+u c u
+exits: roome
 me > rnm
 
 what name
@@ -450,6 +467,7 @@ u > help
 
   help: this message
   go to: go <exit>
+  end the program: go home
   inventory: i
   create new object: on <name>
   drop object: d <object>
@@ -457,7 +475,7 @@ u > help
   tell entity: t <entity> <message>
   say to room: s <text>
   new room: rn <to exit> <from exit>
-  set room name: rnm <text>
+  set room name: rnm <name>
   set room description: rd <text>
   set room note: rnt <text>
   new entity: en <name>

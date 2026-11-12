@@ -1,3 +1,10 @@
+# roome: a text adventure whose players build it while they play
+# the entities take turns at one terminal, each turn one line is read and run
+# as a command, see 'str_help' for the commands and 'go home' ends the program
+# the files: 'lib.baz' the generic parts (output, lists, line editing, the
+# tokenizer), 'model.baz' the rooms, entities and objects, 'actions.baz' the
+# commands, this file the parsing of a line and the main loop
+
 include "actions.baz"
 
 dat str_ascii_art = "\
@@ -110,7 +117,7 @@ go roome\n\
 en me\n"
 
 # runs the lines of the script as the bare entity, a line ends with '\n'
-# note: no message is left because the entities are made after it moves
+# note: its moves leave no messages since the other entities are made after
 func run_creation_script() {
     out.set_silenced(true)
 
@@ -139,6 +146,7 @@ func main() {
     out.print_all(str_hello)
 
     var tz = tokenizer
+    # the entity whose turn it is
     var eid = 0
     loop {
         if eid == entities.len {

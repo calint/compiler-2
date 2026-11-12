@@ -1,3 +1,7 @@
+# the world: rooms joined by named exits, the entities in them, the objects
+# they carry or that lie in a room, all in lists of fixed capacity that refer
+# to each other by index
+
 include "lib.baz"
 
 dat       str_uc = "u c "
@@ -171,9 +175,9 @@ type rooms = list<room, rooms_len>
 dat rooms = rooms {
     { # array
         { # room[0]
-            { }, # name
-            { }, # description
-            { }, # note
+            {}, # name
+            {}, # description
+            {}, # note
             { { 0 }, 1 } # entities id_list
         }
     },
@@ -185,6 +189,17 @@ func noinline entity.find_object(tz tokenizer) res {
     res = self.objects.len
     foo self.objects.array, self.objects.len {
         if tz.is(objects.array[e].name) {
+            res = i
+            break
+        }
+    }
+}
+
+# the index of the link named by the token or the length
+func links.find(tz tokenizer) res {
+    res = self.len
+    foo self.array, self.len {
+        if tz.is(link_names.array[e.link_name_id]) {
             res = i
             break
         }

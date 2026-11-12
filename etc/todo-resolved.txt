@@ -1,6 +1,19 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 385 (2026-11-12, readability: the example application
+    'roome' for a new user after the tutorial)
+    => done (2026-11-12): in good shape (Baz code rules kept, lib, model,
+       actions and main split cleanly); header comments for 'main.baz',
+       'actions.baz' and 'model.baz' (the game, the turns, each file's
+       role); the help text names 'go home' and 'rnm <name>'; 'rnt'
+       confirms like 'rd' and 'rnm' ("new room note"); 'links.find'
+       replaces the inline exit search of 'action_go'; 'action_give' finds
+       the receiver with the 'entities.len' sentinel like 'action_tell';
+       'find_link_name_or_make' -> 'find_or_add_link_name',
+       'next_int_or_say' -> 'next_sector_or_say'; 'roome/qa/roome.in' sets
+       and clears a note (two lines so the turns stay aligned), 'roome.out'
+       updated; fuzz-roome 1000 sessions clean
 [x] easy: round 384 (2026-11-12, bug hunt: what the compiler reports:
     the line of a panic under '--checks=line', the footer and
     '--report=registers' numbers, the locations of the listing comments,
