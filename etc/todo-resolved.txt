@@ -1,6 +1,23 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 362 (2026-11-12, bug hunt of rounds 348 to 360:
+    'remove_retests', dword reloads, 'memory_equal' and 'rcx', long labels,
+    the definition keyword stop of skipped bodies, the check plumbing, the
+    dry-run mode)
+    => done (2026-11-12): no defect in code generation, checks or error
+       lines; the comment of 'toc::is_func' had moved above 'is_dry_run'
+       (round 358), moved back; 'emit_target_call' said the allocated
+       registers are saved, since round 357 the live ones are; probes:
+       2500 bool programs (also 'arrays_equal' and record '==') against the
+       build of round 347 with 7 option lists, the flag and dword readers
+       of every test listing, 300 i32 narrowings, 15 record '==' past
+       2 GiB under 8 to 12 live values, 4100-character labels, 26 unclosed
+       constructs; listings of the tests unchanged from round 347 on the
+       rv32i targets and from round 354 on x86_64 under 8 to 9 check
+       lists; fuzzers with FUZZ_TARGETS=all: bools 2500, exprs 12000,
+       versions 400, whole 500, ub 800, generics 600, reject 1500, flow
+       600, calls 600, compiler 3000, mutate 3000, io 4300, data 600
 [x] easy: round 361 (2026-11-12, design: values of a user type and of an
     array, 'expr_type' and 'expr_any')
     => done (2026-11-12): 'expr_type' is only an instance literal (or the

@@ -962,8 +962,8 @@ class machine_x86_64 final : public machine {
     // every function is a routine, 'read' and 'write' those of
     // 'emit_io_routines'; the routine changes 'rcx' and 'r11' by its 'syscall'
     // besides 'rax', the result register that 'call_target' allocated, a
-    // sector routine changes 'rax' and 'r10' too, the allocated ones are
-    // saved around the call
+    // sector routine changes 'rax' and 'r10' too, the live ones are saved
+    // around the call ('call_saving_live')
     auto emit_target_call(const emit_site site, const target_call function)
         -> void override {
 

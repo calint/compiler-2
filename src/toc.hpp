@@ -3234,7 +3234,6 @@ class toc final {
     // the indent of the listing lines the code being compiled emits
     [[nodiscard]] auto indent() const -> size_t { return indent_; }
 
-    // a plain or a generic function, unlike 'funcs().has'
     // see 'dry_run'
     [[nodiscard]] auto is_dry_run() const -> bool {
         assert(is_compiling_);
@@ -3242,6 +3241,7 @@ class toc final {
         return is_dry_run_;
     }
 
+    // a plain or a generic function, unlike 'funcs().has'
     [[nodiscard]] auto is_func(const std::string_view name) const -> bool {
         assert(not is_compiling_);
 
