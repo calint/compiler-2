@@ -223,6 +223,15 @@ class machine_x86_64 final : public machine {
             return;
         }
 
+        // an address held in a register is stored as it is, e.g. that of a
+        // parameter of a noinline body passed on to a call
+        if (address.index_register().empty() and address.displacement() == 0 and
+            register_index_of(address.base_register()).has_value()) {
+
+            mov(site, dst, qword_register(address.base_register()));
+            return;
+        }
+
         const operation_scope scope{*this};
 
         const operand reg{

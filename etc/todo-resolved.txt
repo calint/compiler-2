@@ -1,6 +1,14 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 391 (2026-11-12, the scratch register rule on the path
+    of round 390's walk)
+    => done (2026-11-12): x86_64 'address_of' into memory stores an address
+       already held in a register ('[reg]', no index or displacement) as it
+       is: 'lea r13, [r14]' 'mov qword [rbx + 64], r13' -> 'mov qword
+       [rbx + 64], r14' (the address of a parameter of a noinline body
+       passed on to a call); x86_64 -185 instructions over the tests, roome
+       -2; rv32i unchanged ('mv' or nothing already)
 [x] easy: round 390 (2026-11-12, design: the path of a no-UB check from
     its rule to the emitted code; readability: one statement followed from
     'main.cpp' to the assembly)
