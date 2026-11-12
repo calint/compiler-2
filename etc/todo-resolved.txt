@@ -1,6 +1,20 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 361 (2026-11-12, design: values of a user type and of an
+    array, 'expr_type' and 'expr_any')
+    => done (2026-11-12): 'expr_type' is only an instance literal (or the
+       type name alone); the copy of an instance is an 'expr_path' and the
+       result of a call the new 'expr_call_result' ('expr_type.hpp'), both
+       alternatives of 'expr_any::expr_variant' like the whole array copy;
+       the parse is 'expr_any::parse_instance' and 'parse_instance_source'
+       in 'expr_type_impl.hpp'; 'copy_or_call', 'is_literal',
+       'expr_type::operand_path' and the 4 branches on it are gone;
+       'as_expr_type' -> 'instance_literal' (null for a copy or a call);
+       not done: the array forms split out of 'expr_any', its 4 holders
+       take either kind and the elements share its private parse and plan,
+       a split adds a dispatcher and a friend for no fewer branches;
+       listings and errors unchanged; -15 lines
 [x] easy: round 360 (2026-11-12, design: a condition parsed then
     unwrapped to a value)
     => done (2026-11-12): discarded the arithmetic-first parse: a leading

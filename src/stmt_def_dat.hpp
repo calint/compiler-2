@@ -372,10 +372,10 @@ class stmt_def_dat final : public statement {
 
         // e.g. 'dat p = q', a copy of the instance 'q', which only the run time
         // makes
-        const expr_type& record{value.as_expr_type(index)};
+        const expr_type* const record{value.instance_literal(index)};
 
-        if (not record.is_literal()) {
-            throw_not_constant(record);
+        if (record == nullptr) {
+            throw_not_constant(element);
         }
 
         elem::fields fields{
@@ -386,7 +386,7 @@ class stmt_def_dat final : public statement {
         const std::span<const type_field> flds{tp.fields()};
 
         for (const auto [f, field_value] :
-             std::views::zip(flds, record.field_values())) {
+             std::views::zip(flds, record->field_values())) {
 
             fields.values.emplace_back(
                 fold_data(tc, f.type_ref(), *field_value));

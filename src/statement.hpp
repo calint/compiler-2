@@ -190,8 +190,8 @@ class stmt_identifier;
 //                  and 'expr_any'; 'keeps_low_bits': 'stmt_identifier' and
 //                  'stmt_builtin_convert', forwarded by 'expr_arith'
 //   a place        'operand_path': 'stmt_identifier' and 'expr_path',
-//                  forwarded by 'expr_arith', 'expr_any' and 'expr_type'
-//                  when they hold one; 'bare_path' and the free function
+//                  forwarded by 'expr_arith' and 'expr_any' when they hold
+//                  one; 'bare_path' and the free function
 //                  'as_place' ('stmt_identifier.hpp') derive from it, the
 //                  path is then asked through the members of
 //                  'stmt_identifier'

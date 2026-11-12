@@ -48,7 +48,8 @@
 //                            the steps that write a value in parts, read by
 //                            the compile and by the aliasing check
 //   'expr_path'              a path taken whole, copied as bytes
-//   'expr_type'              a literal, a type name alone, a copy or a call
+//   'expr_call_result'       the result of a call taken whole
+//   'expr_type'              an instance literal or a type name alone
 //
 
 // whether a literal names its type, e.g. 'point{1, 2}': only where the name
@@ -510,34 +511,65 @@ class expr_path final : public statement {
     }
 };
 
-// note: members that use 'expr_any' or 'stmt_call' are
-//       implemented in 'expr_type_impl.hpp', which includes their headers;
-//       'expr_any.hpp' and 'stmt_call.hpp' include this one
-
-// a value of a user type: a list of fields '{...}', the type name alone as its
-// zero value, a copy of a name or a call
-class expr_type final : public statement {
-    // the fields of a literal, e.g. '{1, 2}' of 'point{1, 2}', none for the
-    // type name alone
-    struct field_list {
-        token open_brace_tk;
-        std::vector<std::unique_ptr<expr_any>> exprs;
-        std::vector<token> delims_tk;
-        token close_brace_tk;
-    };
-
-    // a literal, or the copy or the call that is the value, an 'expr_path'
-    // or a 'stmt_call'
-    std::variant<field_list, std::unique_ptr<statement>> value_;
+// the result of a call of a user type taken whole, e.g. the 'f()' of
+// 'q = f()'; compiled, the call writes its result at the destination and
+// zeroes its padding ('call_site::zero_result_padding')
+// note: the call is held as a 'statement', 'stmt_call.hpp' includes this
+//       header
+class expr_call_result final : public statement {
+    std::unique_ptr<statement> call_;
 
   public:
-    // parses 'expr_any' items and creates the 'stmt_call' or 'expr_path'; the
-    // type name alone is its zero value, e.g. 'var p = point' is 'point{}'
-    expr_type(toc& tc, tokenizer& tz, const type& tp,
-              const literal_typing typing);
+    // 'first_tk' is the first token of the call
+    expr_call_result(const token& first_tk, std::unique_ptr<statement> call)
+        : statement{first_tk}, call_{std::move(call)} {
 
-    // a 'unique_ptr' of a class that is incomplete here needs
-    // the special members where 'expr_any' is complete
+        set_type(call_->get_type());
+    }
+
+    //
+    // overridden methods
+    //
+
+    auto source_to(std::ostream& os) const -> void override {
+        call_->source_to(os);
+    }
+
+    auto compile(toc& tc, const destination& dst) const -> void override {
+        call_->compile(tc, dst);
+    }
+
+    auto visit_operands(const operand_visitor visitor) const -> void override {
+        visitor({
+            .node{call_.get()},
+            .index_only_place{},
+        });
+    }
+};
+
+// note: the members that use 'expr_any' are implemented in
+//       'expr_type_impl.hpp', which includes its header; 'expr_any.hpp'
+//       includes this one
+
+// an instance literal: a list of fields '{...}', or the type name alone as
+// its zero value, e.g. 'point{1, 2}', '{1, 2}' or 'var p = point'
+class expr_type final : public statement {
+    // none for the type name alone
+    token open_brace_tk_;
+    std::vector<std::unique_ptr<expr_any>> exprs_;
+    std::vector<token> delims_tk_;
+    token close_brace_tk_;
+
+  public:
+    // the type name alone at 'type_tk', e.g. 'var p = point' is 'point{}'
+    expr_type(const token& type_tk, const type& tp);
+
+    // parses an 'expr_any' for each field after 'first_tk', the type name or
+    // none at '{', e.g. 'point' of 'point{1, 2}'
+    expr_type(toc& tc, tokenizer& tz, const token& first_tk, const type& tp);
+
+    // a 'unique_ptr' of a class that is incomplete here needs the
+    // constructors and the special members where 'expr_any' is complete
 
     expr_type(expr_type&&) noexcept;
 
@@ -553,30 +585,17 @@ class expr_type final : public statement {
 
     auto source_to(std::ostream& os) const -> void override;
 
-    // a copy is of its source, e.g. the 'p' of 'q = p'
-    [[nodiscard]] auto operand_path() const -> const stmt_identifier* override {
-        const statement* const value{copy_or_call()};
-        return value != nullptr ? value->operand_path() : nullptr;
-    }
-
-    // a copy or a call reads its source instead of the '{...}' items
     auto visit_operands(const operand_visitor visitor) const -> void override;
 
     //
     // class methods
     //
 
-    // the values of the listed fields of a literal, e.g. '1' and '2' of
-    // 'point{1, 2}'
+    // the values of the listed fields, e.g. '1' and '2' of 'point{1, 2}'
     [[nodiscard]] auto field_values() const
         -> std::span<const std::unique_ptr<expr_any>> {
 
-        return std::get<field_list>(value_).exprs;
-    }
-
-    // e.g. 'point{1, 2}' or 'point', not a copy of 'p' or of a call result
-    [[nodiscard]] auto is_literal() const -> bool {
-        return std::holds_alternative<field_list>(value_);
+        return exprs_;
     }
 
     // appends the steps that write the value at 'at'
@@ -584,21 +603,6 @@ class expr_type final : public statement {
                      write_plan& plan) const -> void;
 
   private:
-    // the copy or the call that is the value, null for a literal
-    [[nodiscard]] auto copy_or_call() const -> const statement* {
-        const std::unique_ptr<statement>* const value{
-            std::get_if<std::unique_ptr<statement>>(&value_),
-        };
-
-        return value != nullptr ? value->get() : nullptr;
-    }
-
-    // creates the 'stmt_call' or 'expr_path'
-    auto parse_copy_source(toc& tc, tokenizer& tz, const term_kind tm) -> void;
-
-    // creates an 'expr_any' for each field
-    auto parse_fields(toc& tc, tokenizer& tz) -> void;
-
     // padding is zeroed too so that instances compare equal byte by byte,
     // 'offset' bytes into the instance at 'at'; 'covered' are the unlisted
     // fields among the bytes, none for padding
@@ -633,8 +637,7 @@ class expr_type final : public statement {
     // statics
     //
 
-    // a field value of 'parse_fields' names no field, e.g. the 'x:' of
-    // 'point{x: 1, y: 2}'
+    // a field value names no field, e.g. the 'x:' of 'point{x: 1, y: 2}'
     static auto assert_field_unnamed(const tokenizer& tz) -> void {
         tokenizer probe{tz};
 

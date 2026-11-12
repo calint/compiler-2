@@ -5,8 +5,9 @@
 //     make the statements of a block and the elements of an expression,
 //     defined in 'parse_statement.hpp', which includes every statement
 //   - the class 'expr_type' holds, 'expr_any', whose header includes
-//     'expr_type.hpp'; its members that use it or 'stmt_call' are in
-//     'expr_type_impl.hpp'
+//     'expr_type.hpp'; the members of 'expr_type' that use it and the parse
+//     of an instance value ('expr_any::parse_instance'), which makes a
+//     'stmt_call', are in 'expr_type_impl.hpp'
 
 #include <memory>
 

@@ -106,8 +106,8 @@ class stmt_array_size final : public statement {
 // its destination; one of the forms below, an array form only where the
 // destination is an array
 class expr_any final : public statement {
-    using expr_variant =
-        std::variant<expr_arith, expr_bool, expr_type, expr_path>;
+    using expr_variant = std::variant<expr_arith, expr_bool, expr_type,
+                                      expr_path, expr_call_result>;
 
     // e.g. 'i8[3]' of 'i8[3]{1, 2}' or '[3]' at the default type, empty for
     // '{1, 2}', whose type and size the destination gives
@@ -122,8 +122,9 @@ class expr_any final : public statement {
         }
     };
 
-    // a value or an instance literal; where the destination is an array, the
-    // array copied whole as bytes, e.g. the 'a' of 'var b = a'
+    // a number, a condition or an instance: a literal, a copy or the result
+    // of a call; where the destination is an array, the array copied whole
+    // as bytes, e.g. the 'a' of 'var b = a'
     struct single_value {
         expr_variant value;
     };
@@ -332,14 +333,6 @@ class expr_any final : public statement {
         return tok();
     }
 
-    // the element at 'index' of an instance value or of an array of
-    // instances
-    [[nodiscard]] auto as_expr_type(const size_t index) const
-        -> const expr_type& {
-
-        return std::get<expr_type>(value_at(index));
-    }
-
     // the fold of a condition stops at the element that decides it, so the
     // elements after it are checked like skipped code, e.g. the 'a / 0 == 1'
     // of 'true or a / 0 == 1'; every condition of the value is, also in the
@@ -396,6 +389,14 @@ class expr_any final : public statement {
         }
 
         return 1;
+    }
+
+    // the element at 'index' when it is an instance literal, null for a copy
+    // or the result of a call
+    [[nodiscard]] auto instance_literal(const size_t index) const
+        -> const expr_type* {
+
+        return std::get_if<expr_type>(&value_at(index));
     }
 
     [[nodiscard]] auto is_array() const -> bool {
@@ -985,11 +986,6 @@ class expr_any final : public statement {
             return;
         }
 
-        // note: only a 'dat' folds an instance and it holds literals
-        //       ('stmt_def_dat::fold_data')
-
-        assert(instance->is_literal());
-
         for (const std::unique_ptr<expr_any>& field :
              instance->field_values()) {
 
@@ -1122,6 +1118,19 @@ class expr_any final : public statement {
         return value;
     }
 
+    // an instance of the user type 'tp': a literal, the type name alone as
+    // its zero value, a copy of a path or the result of a call; defined in
+    // 'expr_type_impl.hpp', which includes 'stmt_call.hpp'
+    [[nodiscard]] static auto parse_instance(toc& tc, tokenizer& tz,
+                                             const type& tp,
+                                             const literal_typing typing)
+        -> expr_variant;
+
+    // the copy or the call at 'tk', a term of kind 'tm' that is no literal
+    [[nodiscard]] static auto
+    parse_instance_source(toc& tc, tokenizer& tz, const token& tk,
+                          const term_kind tm, const type& tp) -> expr_variant;
+
     // e.g. 'var x = i8' is 'var x = i8(0)' and 'var b = bool' is
     // 'var b = false'
     [[nodiscard]] static auto
@@ -1157,7 +1166,7 @@ class expr_any final : public statement {
 
         // an instance value, e.g. 'point{1, 2}' or 'p'
         if (not tp.is_builtin()) {
-            return expr_type{tc, tz, tp, typing};
+            return parse_instance(tc, tz, tp, typing);
         }
 
         if (const std::optional<token> open_brace_tk{
